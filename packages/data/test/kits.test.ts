@@ -25,7 +25,24 @@ describe.each(Object.values(data.kits.operators))("kit $operator", (kit) => {
     const groups = data.operators[kit.operator]?.skillGroups ?? {};
     // Skills in the operator's groups that have an attack multiplier but no kit entry.
     const missing = Object.keys(groups).filter((id) => !covered.has(id) && data.skills[id]?.levels[0]?.blackboard["atk_scale"] !== undefined);
-    // Known gaps, kept explicit so new ones show up: Laevatain's heavy/plunging attacks.
-    expect(missing.sort()).toEqual(kit.operator === "chr_0016_laevat" ? ["chr_0016_laevat_plunging_attack_end", "chr_0016_laevat_power_attack"] : []);
+    // Known gaps, kept explicit so new ones show up (reasons in each kit's sources).
+    const knownGaps: Record<string, string[]> = {
+      // Heavy and plunging attacks.
+      chr_0016_laevat: ["chr_0016_laevat_plunging_attack_end", "chr_0016_laevat_power_attack"],
+      // Basic attacks: never logged, branchy SkillData. Ultimate: its only log contradicts the data binding.
+      // normal_skill_combo: no DamageAction of its own (it continues the battle skill's music after the combo).
+      chr_0035_liino: [
+        "chr_0035_liino_attack1",
+        "chr_0035_liino_attack2",
+        "chr_0035_liino_attack3",
+        "chr_0035_liino_attack4",
+        "chr_0035_liino_attack5",
+        "chr_0035_liino_normal_skill_combo",
+        "chr_0035_liino_plunging_attack_end",
+        "chr_0035_liino_power_attack",
+        "chr_0035_liino_ultimate_skill",
+      ],
+    };
+    expect(missing.sort()).toEqual(knownGaps[kit.operator] ?? []);
   });
 });

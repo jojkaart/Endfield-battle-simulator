@@ -1,0 +1,51 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0035_liino",
+  "sources": [
+    "Hit structure: rmxlinux Json/SkillData chr_0035_liino_* (game 1.6). Battle skill: frames 10/10/12/12/16/16 launch six projhit_start projectiles, each relaunching one projhit on reach; their DamageActions (normal_skill_projhit, normal_skill_projhit_02) bind atk_scale. The follow-up volley (normal_skill_projhit_hit, atk_scale_2) is cast by buff_chr_0035_liino_normalskill_spelllnfliction_extraattack when a teammate's arts infliction lands, at most every atk_trigger (10) s while the skill's music lasts. Combo: DamageAction atk_scale at frame 9, atk_scale_2 at frame 33.",
+    "Verified (zmdlogs check, ±1): battle-skill projectiles = atk_scale, 6 per cast (5 logged as normal_skill_projhit_02, 1 as normal_skill_projhit): fixtures/zmdlogs-0eef2474a26f.json 6/6 and fixtures/zmdlogs-bdf223db8e49.json 6/6 (battle skill level 12, no Corrosion, buff_chr_0035_liino_atkup_owner +10% ATK logged).",
+    "Verified by hand, not enforced by the log test: the follow-up volley = atk_scale_2, 6 hits per trigger. fixtures/zmdlogs-bdf223db8e49.json t=3231-3465: implied multiplier 0.1999-0.2000 for all 6 hits (one crit) with no Corrosion. Its events are left empty because the volley's other logged hits are all under Corrosion and the engine's Corrosion model doesn't reproduce them (bdf223 t=14699-15033 logged 985, predicted 1062-1186 for levels 1-4; the hit needs 4.5 resistance points of shred 6.5 s after Corrosion started, the model gives at least 11.9). In fixtures/zmdlogs-0eef2474a26f.json t=4187 the six volley hits match only assuming Corrosion level 2.",
+    "Combo: both hits are logged only under Corrosion, so their events are left empty. Hit 1 (atk_scale) logged 5534 (0eef2474 t=7570) and 6355 (bdf223 t=11729), predicted 5472/5610 and 6274/6453 at Corrosion levels 1/2: both sit at the same point between levels 1 and 2 (+1.1% / +1.3% over level 1). Hit 2 (atk_scale_2) appears once (bdf223 t=12613, logged 10755) and only fits if Typhoea's logged combo debuff (+16% damage taken, which has a hit condition in its BuffData) didn't apply. 0eef2474 has hit 1 without hit 2.",
+    "Ultimate left out: its only log (fixtures/zmdlogs-d9e59d0fb737.json, parser v58) doesn't record Liino's own ultimate buffs (+atk_up ATK via buff_chr_0035_liino_atkup_owner; Amp for Electric and Cryo via buff_chr_0035_liino_spellenhance with rate min(Will x will_up, will_max)), and every hit is under Corrosion. Structure from SkillData: the ability entity chr_0035_liino_ultimate_skill_projhit_abilityentity launches 20 projectiles (16 projhit, 2 projhit_l, 2 projhit_r, all atk_scale) and one bomb (projhit_damage_02, atk_scale_2, forces an Electric infliction); buff_chr_0035_liino_ultskill_music_damage fires soundwave_projhit (atk_scale_3) every ultmusic_trigger s; the finale soundwave_02_projhit uses atk_scale_4 = atk_scale_3 x final_value (3). In d9e59 the 21 projectiles imply exactly 2.0 x atk_scale with no Corrosion and no unlogged buffs, the soundwaves 1.87-2.02 x atk_scale_3 and the bomb 2.02-2.26 x atk_scale_2: not explained yet; needs a parser v59 log.",
+    "Basic attacks (attack1-5, power_attack, plunging_attack_end) are left out: no fixture logs any (Liino is a support) and their hit counts depend on branches and channels in SkillData. chr_0035_liino_normal_skill_combo has no DamageAction of its own: it continues the battle skill's music after the combo (same atk_scale / atk_scale_2 values)."
+  ],
+  "element": "pulse",
+  "skills": [
+    {
+      "skillId": "chr_0035_liino_normal_skill",
+      "label": "Battle skill",
+      "damageType": "battle",
+      "note": "No durationFrames: SkillData durationFrame 2100 is the 60 s music state; the cancel windows (AllowNextSkillAction from frames 2 and 50) aren't verified yet.",
+      "hits": [
+        {
+          "id": "projectiles",
+          "label": "Projectiles",
+          "scale": ["atk_scale"],
+          "count": 6,
+          "frames": [10, 10, 12, 12, 16, 16],
+          "events": ["chr_0035_liino_normal_skill_projhit", "chr_0035_liino_normal_skill_projhit_02"],
+          "note": "Frames are the launch frames of the six projhit_start projectiles. Verified: zmdlogs-0eef2474a26f 6/6, zmdlogs-bdf223db8e49 6/6."
+        },
+        {
+          "id": "followup",
+          "label": "Follow-up volley (per trigger)",
+          "scale": ["atk_scale_2"],
+          "count": 6,
+          "events": [],
+          "note": "Cast when a teammate's arts infliction lands, at most every atk_trigger s during the music; not at fixed frames. Matches zmdlogs-bdf223db8e49 t=3231-3465 (6 hits) by hand; event chr_0035_liino_normal_skill_projhit_hit left out of the log test until Corrosion is reproduced."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0035_liino_combo_skill",
+      "label": "Combo skill",
+      "damageType": "combo",
+      "durationFrames": 150,
+      "note": "durationFrames is SkillData durationFrame; AllowNextSkillAction opens at frame 68 (not verified). Both hits log as chr_0035_liino_combo_skill; events left empty until the Corrosion-affected log hits are reproduced (see sources).",
+      "hits": [
+        { "id": "hit1", "label": "Hit 1", "scale": ["atk_scale"], "frames": [9], "events": [] },
+        { "id": "hit2", "label": "Hit 2", "scale": ["atk_scale_2"], "frames": [33], "events": [] }
+      ]
+    }
+  ]
+}
