@@ -105,7 +105,7 @@ text table, BuffData effects.
 | attributeType | 63 | ShelterDmgScalar (Protection) | End-DPScope list |
 | attributeType | 64–69 | Amp | formula research |
 | attributeType | 70–75 | Susceptibility | formula research |
-| attributeType | 78, 79 | possibly Link | unverified |
+| attributeType | 78, 79 | possibly Link-related; Link itself is applied as a `ComboCalcZone` damage modifier (`buff_common_affixes_skillimbue_atk`), not an attribute | unverified |
 | attributeType | 94–98 | resistance points, five elements | English text table; Corrosion buff |
 | costType | 0 / 1 | ultimate energy / SP | SkillPatchTable |
 | stackingType | 13 values | unlimited, high priority, stack, enhance, refresh, extend, modify, unique, enhance+refresh, overwrite duration, enhance+overwrite, high priority with max, timed growing enhance (order to verify) | Endaxis (described, not copied) |

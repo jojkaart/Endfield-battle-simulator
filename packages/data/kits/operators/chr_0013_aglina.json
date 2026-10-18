@@ -1,0 +1,62 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0013_aglina",
+  "sources": [
+    "Hit structure: rmxlinux Json/SkillData chr_0013_aglina_* (game 1.6). Basic attacks launch projectiles (LaunchProjectile with assignBlackboard, so the projectile hit uses the parent's atk_scale); their damage is in the *_projhit files and logged under those keys. attack4 launches one chr_0013_aglina_attack4_projhit and two chr_0013_aglina_attack4_projhit_2. The battle skill hits directly: 4 pulls (atk_scale_pull) and the explosion, whose damage unit takes atk_scale_explosion through atkCalculation (kit-draft shows it as LITERAL_0). Combo and ultimate: one direct hit each. The battle skill's and ultimate's ability entities (*_abilityrange) only apply buffs (pull, slow, Arts Susceptibility) and deal no damage. Inflictions: the explosion and the ultimate each have a SpellInfliction with inflictionType 3 (Nature; 0 is Heat in Laevatain's files) in their damage frame, listed before the DamageAction.",
+    "Frames: DamageAction frames; projectile hits at their launch frame (travel time isn't in the data). durationFrames: the first AllowNextSkillAction window's start (exclusiveFrame where there is none), the convention of the other kits; projectile travel makes the logs too coarse to check it.",
+    "Not in the kit: power_attack is a finisher (BreakingAttackCalculation: atk_scale × 0.05 six times, then × 0.7; btl_upload_576da29ffa7a logs 2510 ×5 and 35135, ratio 0.0714 = 0.05 / 0.7), not ATK × key. dash_attack isn't in her skill groups.",
+    "Verified (zmdlogs check): fixtures/zmdlogs-40d9a3c1da37.json (Rhodagn, P3, basic attack level 1): all 9 basic-attack hits exact. fixtures/zmdlogs-4e5e1390085e.json (Rhodagn, P0, game 1.5): 40 basic-attack hits and 2 combo hits exact; after that fixture's annotated Camille ATK buff (+9.6%), 12 more basic hits, the third combo, the ultimate and the 4 battle-skill pulls are exactly ×1.0960. fixtures/zmdlogs-d9e59d0fb737.json is under Corrosion with unlogged buffs (see the ultimate's note); nothing there is exact."
+  ],
+  "element": "natural",
+  "skills": [
+    {
+      "skillId": "chr_0013_aglina_attack1", "label": "Basic attack 1", "damageType": "basic", "durationFrames": 18,
+      "hits": [{ "id": "projhit", "scale": ["atk_scale"], "events": ["chr_0013_aglina_attack1_projhit"], "frames": [7] }]
+    },
+    {
+      "skillId": "chr_0013_aglina_attack2", "label": "Basic attack 2", "damageType": "basic", "durationFrames": 22,
+      "hits": [{ "id": "projhit", "scale": ["atk_scale"], "count": 2, "events": ["chr_0013_aglina_attack2_projhit"], "frames": [4, 8] }]
+    },
+    {
+      "skillId": "chr_0013_aglina_attack3", "label": "Basic attack 3", "damageType": "basic", "durationFrames": 23,
+      "hits": [{ "id": "projhit", "scale": ["atk_scale"], "count": 3, "events": ["chr_0013_aglina_attack3_projhit"], "frames": [7, 10, 14] }]
+    },
+    {
+      "skillId": "chr_0013_aglina_attack4", "label": "Basic attack 4 (final strike)", "damageType": "basic", "durationFrames": 40,
+      "hits": [
+        { "id": "projhit", "label": "Final strike, centre orb", "scale": ["atk_scale"], "events": ["chr_0013_aglina_attack4_projhit"], "frames": [23] },
+        { "id": "projhit_2", "label": "Final strike, side orbs", "scale": ["atk_scale"], "count": 2, "events": ["chr_0013_aglina_attack4_projhit_2"], "frames": [25, 27] }
+      ]
+    },
+    {
+      "skillId": "chr_0013_aglina_normal_skill", "label": "Battle skill", "damageType": "battle", "durationFrames": 123,
+      "note": "btl_upload_4e5e1390085e (level 12, one cast): pulls 2777, 2777, 3611, 3611 are atk_scale_pull (0.55) ×1.0960 (the fixture's annotated ATK buff), the last two under the logged stagger ×1.3. The explosion 8972 is atk_scale_explosion (1.30) ×1.0960 ×1.0513: its own Nature infliction triggered Corrosion on the logged Heat infliction first (buff_common_natural_triggered at the same time), and Corrosion level 1's initial shred at her Arts Intensity 80.7 is 3.6 × 1.424 = 5.13 points, ×1.0513. So the infliction, and the reaction it causes, come before the hit's damage.",
+      "hits": [
+        { "id": "pull", "label": "Gravity pull", "scale": ["atk_scale_pull"], "count": 4, "events": ["chr_0013_aglina_normal_skill"], "frames": [29, 46, 62, 78] },
+        {
+          "id": "explosion", "label": "Explosion", "scale": ["atk_scale_explosion"], "events": ["chr_0013_aglina_normal_skill"], "frames": [108],
+          "applies": [{ "kind": "infliction", "element": "natural" }]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0013_aglina_combo_skill", "label": "Combo skill", "damageType": "combo", "durationFrames": 53,
+      "hits": [{
+        "id": "hit", "scale": ["atk_scale"], "events": ["chr_0013_aglina_combo_skill"], "frames": [48],
+        "note": "Matches with the boundary buffs: the cast triggers her weapon's buff_wpn_funnel_0011_valid (logged as starting at the hit) before the damage. The physical hits logged at the same time (buff_physical_airborne: the Lift it applies; buff_equipsuit_physuit_01: a gear-set proc) aren't kit hits, and Lift isn't modelled."
+      }]
+    },
+    {
+      "skillId": "chr_0013_aglina_ultimate_skill", "label": "Ultimate", "damageType": "ultimate", "durationFrames": 64,
+      "hits": [{
+        "id": "hit", "scale": ["atk_scale"], "events": ["chr_0013_aglina_ultimate_skill"], "frames": [60],
+        "applies": [{ "kind": "infliction", "element": "natural" }],
+        "note": "Her own Arts Susceptibility (the aura's buff_common_affixes_vulnerable_spell, logged as starting at the hit) comes after the hit and doesn't count for it. btl_upload_4e5e1390085e: exact apart from the annotated +9.6% ATK. btl_upload_40d9a3c1da37: exactly ×1.2000, Link at 1 stack (annotated there): buff_common_affixes_combo_trigger from Camille's combo becomes, on her cast, buff_common_affixes_skillimbue_atk, a ComboCalcZone addition (imbue_scale; ×1.5 for battle-skill hits) for that cast's hits only, valued by stack count from the skill-setting key 连击增伤, which isn't in the fetched tables (Talos: ultimate +20/30/40/50%, battle skill +30/45/60/75%). btl_upload_d9e59d0fb737 needs ×1.2689 under Corrosion with no Link logged: Link ×1.2 and Corrosion level 2's initial shred (×1.0567 at Arcane's Arts Intensity 30) give 21651 against 21666, so it's unexplained."
+      }]
+    },
+    {
+      "skillId": "chr_0013_aglina_plunging_attack_end", "label": "Plunging attack", "damageType": "basic", "durationFrames": 20,
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "events": ["chr_0013_aglina_plunging_attack_end"], "frames": [0], "note": "Not yet checked against an in-game value (no logged plunging attack)." }]
+    }
+  ]
+}
