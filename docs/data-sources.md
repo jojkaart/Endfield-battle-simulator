@@ -52,7 +52,7 @@ agreement, note.com terms, GameKee user agreement, and the publisher's
 | Skill hit timing, buff logic | rmxlinux/EndfieldData (`Json/SkillData`, `Json/BuffData`) | none available (only one source has it) |
 | Per-patch regression data | 555me/beyondGameData (one commit per game resource version) | Sudsier/EndfieldTable (lags) |
 | Damage formula | [Endfield Talos Wiki](#endfield-talos-wiki-endfieldwikigg) + [666bj documentation](#666bj-base-damage-documentation) | EndfieldHub guides, Chinese community wikis |
-| Human-readable data cross-check | Talos Wiki | EndfieldHub, end.wiki, Icy Veins |
+| Human-readable data cross-check | Talos Wiki (derived from the tables; tooltip values) | EndfieldHub (light spot checks; not independent) |
 | Reference results (MVP fixtures) | [Zero Sanity Laevatain hit table](#zero-sanity-simulations) (in-game verified) | [ZMDLogs](#zmdlogs) battle logs (real in-game per-hit data) |
 | Full-rotation cross-simulator check | [End-DPScope / Endaxis timelines](#endaxis-and-end-dpscope) | (computed, not ground truth) |
 
@@ -172,8 +172,25 @@ consistent with them deriving from the client tables.
 - **Formula:** the most complete documentation found
   ([Damage calculation](https://endfield.wiki.gg/wiki/Damage_calculation),
   [Attribute](https://endfield.wiki.gg/wiki/Attribute)). One extract said the
-  damage page was last edited ~231 days ago, so parts may be stale.
-- **Data origin:** not stated, but matches the tables exactly.
+  damage page was last edited ~231 days ago; in fact it was edited 20 times
+  between 2026-03-26 and 2026-10-12 (verified). The Attribute page was last
+  edited 2026-03-04.
+- **Data origin:** not stated, but matches the tables exactly (verified
+  2026-10-18 for Perlica, Laevatain and Si skills, Forgeborn Scathe ATK,
+  Rhodagn HP/ATK/DEF). So it's derived from them and adds little independent
+  information; its formula pages are its real value.
+- **Where data lives:** template parameters in each page's wikitext
+  (`{{Combat skill|…}}`, `{{Operator data|…}}`, `{{Weapon data|…}}`,
+  `{{Enemy data|…}}`), six stat levels (1/20/40/60/80/90) and skill ranks
+  1–12 as whole percentages. Cargo is queryable (`action=cargoquery`;
+  Operators, Abilities, Weapons, Enemies, Gears, GearSets, GearStats) but
+  holds metadata and gear stats, no skill multipliers or enemy curves. Lua
+  modules are mostly helpers (`Module:Weapon skill/data` is a real table).
+- **Tooltip values, not per-hit values:** for multi-hit skills the wiki shows
+  the tooltip number (`display_atk_scale`), e.g. Si's combo 333–750% vs
+  per-hit keys 0.178–0.4 and 1.556–3.5. Use raw keys; the wiki only checks
+  displayed numbers. Some rows have entry errors (Laevatain battle-skill SP
+  cost row has 24 values).
 - **Machine-readable:** MediaWiki `api.php` works (verified 2026-10-18), but
   robots.txt disallows it for automated agents; see
   [Licences and terms](#licences-and-terms-in-short). Pages are behind a
@@ -194,6 +211,11 @@ consistent with them deriving from the client tables.
   Operator data there was dated 2026-08-09, i.e. before 1.6.
   **(verified 2026-10-18)** Terms: see
   [Licences and terms](#licences-and-terms-in-short).
+- **What's in the JSON** (verified): `find_operator` (profiles, no stats),
+  `find_enemy` (59 enemies with HP, ATK, resistances as multipliers, stagger;
+  dated 2026-02-19), `find_gear` (278 pieces, 2026-10-15),
+  `get_weapon_tier_list` (base ATK, no 1.6 weapons). **No skill
+  multipliers** in any JSON; spot-checked values match the raw tables.
 - **Not independent:** its `llms-full.txt` credits the Talos Wiki, Prydwen,
   Game8, Mobalytics and datafield.cc, so agreement with the Talos Wiki
   doesn't confirm a value.
@@ -209,9 +231,9 @@ consistent with them deriving from the client tables.
 |---|---|
 | ~~end.wiki~~ | Was described as datamine-driven, multilingual, with internal IDs. Domain no longer resolves (2026-10-18). |
 | [Icy Veins](https://www.icy-veins.com/arknights-endfield/) | Skill tables at rank 12, weapons, gear. Matched the Talos Wiki exactly. HTML only, proprietary. Spot checks only. |
-| [BWIKI](https://wiki.biligame.com/zmd/) (CN) | Skill tables Lv1–9 + 专1–3. Front page once said data was incomplete. No content licence; all rights reserved (verified 2026-10-18). |
+| [BWIKI](https://wiki.biligame.com/zmd/) (CN) | Skill tables Lv1–9 + 专1–3, numbers only in rendered HTML. No page for Si (behind on 1.6). Rate-limits automated requests. No content licence; all rights reserved (verified 2026-10-18). |
 | [Huiji wiki](https://endfield.huijiwiki.com/wiki/伤害), [GameKee](https://www.gamekee.com/zmd/691878.html) (CN) | Damage formula from community testing; agrees with the Talos Wiki. Some labelling errors. |
-| end.canmoe.com | The CEP planner ([cmyyx/cep](https://github.com/cmyyx/cep), AGPL-3.0). Datamine-style IDs and full level tables. Extra cross-check. |
+| end.canmoe.com | The CEP planner ([cmyyx/cep](https://github.com/cmyyx/cep), AGPL-3.0). Display strings in page payloads, no API, no Si (behind on 1.6). Not useful. |
 | Prydwen, Game8, GameWith, Fandom | Agree on spot checks. HTML only, proprietary. |
 | **GamerGuides, Fextralife** | **Stale closed-beta numbers** (e.g. Forgeborn Scathe 545 ATK at Lv90 instead of 510). Don't use. |
 | endfield.gg, talos2codex.com, arknightsendfield.wiki, Dexerto, qieyou.com | Stale, borrowed from mainline Arknights, or contradict everything else. Don't use. |
@@ -232,50 +254,131 @@ consistent with them deriving from the client tables.
 
 ### Consensus
 
-From the Talos Wiki, with EndfieldHub, Huiji, GameKee and the 666bj
-documentation agreeing. Constants marked † are also confirmed in the raw
-`BattleConst` table.
+From the Talos Wiki, with GameKee, Huiji and the 666bj documentation agreeing.
+Updated 2026-10-18 against the game's own BuffData and the Talos Wiki as of
+revision 64660 (2026-10-12). † = also in the raw `BattleConst` table;
+‡ = confirmed from `Json/BuffData` (rmxlinux, game 1.6).
 
 ```
-DMG = ATK × BaseMult × MultiplierGroup × Crit × Amp × Stagger × Finisher × Link
-      × Weaken × Susceptibility × IncreasedDMGTaken × DMGReduction × Protection
+DMG = ATK × BaseMult × DMGBonus × Crit × Amp × Stagger × Finisher × Link
+      × Weakness × Susceptibility × IncreasedDMGTaken × DMGReduction × Protection
       × DEF × RES × Multiplicative
 ```
 
+**How the game groups modifiers ‡.** Every damage modifier in BuffData names a
+side (attacker / defender) and a zone: `NormalCalcZone` modifiers add
+together within their side; `ProdCalcZone` modifiers each multiply
+separately (rarer zones: `EnergyTypeCalcZone`, `RaceCalcZone`,
+`ComboCalcZone`). Amp, Susceptibility, Weakness and Protection are separate
+stats (attribute types 64–69, 70–75, 62, 63), not zones.
+
 - **ATK** = `((OperatorATK + WeaponATK) × (1 + ATK%) + flat) × (1 + 0.005 × MainAttr + 0.002 × SecondaryAttr)` †.
-  Attributes may be fractional; calculations use exact values.
-- **MultiplierGroup** = 1 + sum of DMG bonuses (element, skill type,
-  vs staggered…).
-- **Crit:** base 5% rate, +50% damage. DoT can't crit.
-- **DEF:** `100 / (DEF + 100)` for DEF ≥ 0 †; `2 − 0.99^(−DEF)` below 0. All
-  enemies have 100 DEF (×0.5).
+  Attributes have hidden decimals in the tables (e.g. 177.985). Whether the
+  attribute is floored before the bonus is disputed; see
+  [rounding](#rounding).
+- **DMGBonus** (attacker `NormalCalcZone` ‡) = 1 + sum of element, skill-type,
+  "vs Staggered" and weapon/talent "DMG +x%" bonuses.
+- **IncreasedDMGTaken** (defender `NormalCalcZone` ‡) = 1 + sum of Breach,
+  Electrification, the Endministrator talent and weapon "target takes DMG
+  +x%" effects.
+- **Stagger:** ×1.3 while staggered, its own multiplier (defender
+  `ProdCalcZone`, `buff_common_poise_break_damage_taken_scale`) ‡. So "DMG
+  Bonus vs Staggered" adds into DMGBonus, while being staggered multiplies.
+- **Multiplicative:** `ProdCalcZone` bonuses, e.g. Fluorite's 30% ‡.
+- **Crit:** base 5% rate, +50% damage. DoT can't crit, though some skills
+  described as DoT can (Talos, 2026).
+- **DEF:** `100 / (DEF + 100)` for DEF ≥ 0 †. All enemies have 100 DEF (×0.5).
+  Negative DEF is "currently not achievable" (Talos); no buff lowers DEF
+  below 0 ‡.
 - **RES:** `(100 − EnemyRES + IgnoreRES + CorrosionShred) / 100`; grades map
-  to 0 / 0.2 / 0.5 / 0.8 / 1 †.
-- **Stagger:** ×1.3 while staggered. **Finisher:** ×1 / 1.25 / 1.5 / 1.75 by
-  enemy tier.
+  to 0 / 0.2 / 0.5 / 0.8 / 1 †. Can exceed ×1 (Talos rewrite, 2026).
+- **Finisher:** ×1 / 1.25 / 1.5 / 1.75 by enemy tier.
 - **Link:** battle skill +30/45/60/75%, ultimate +20/30/40/50% by stack count.
+  How it's stored in the data is unknown (possibly attribute types 78/79).
+- **Susceptibility** has an effect multiplier (Last Rite's talent);
+  **Weakness** (formerly "Weaken") stacks multiplicatively; **Protection**
+  can go negative (Purrchena). (Talos, 2026)
 - **Reactions and statuses:** Arts Burst 160%; Arts Reaction 80% + 80% per
   infliction stack; Lift/Knockdown 120%; Crush 150% + 150% per Vulnerable
-  stack; Combustion DoT 12% + 12% per level; Shatter 240–600%.
+  stack (300–750%); Breach hit 50% + 50% per Vulnerable stack (100–250%,
+  lasts 12–30 s); Combustion DoT 12% + 12% per level; Shatter 120% + 120%
+  per level (240–600%); Industrial Explosive 1250 + 1.2 × ATK.
 - **Level coefficient** (operator level, reactions only): arts
-  `1 + (Lv−1)/196`, physical statuses `1 + (Lv−1)/392`.
-- **Arts Intensity:** ×(1 + AI/100) on reactions, bursts and physical
-  statuses.
+  `1 + (Lv−1)/196` (Shatter uses this one too), physical statuses
+  `1 + (Lv−1)/392`. Enemies have no level multiplier.
+- **Breach** ‡ (`buff_physical_do_fracture`): no DEF change; adds
+  +12 / 16 / 20 / 24% (levels I–IV) to the target's IncreasedDMGTaken for
+  Physical damage. Its BuffData value key is the misleading
+  `physical_res_down`. Beta values were 11–20%; changed at release
+  (Talos revision 43077, 2026-03-22).
+- **Corrosion** ‡: lowers resistance of all five elements (Physical
+  included; extended at launch) by an initial 3.6 / 4.8 / 6 / 7.2 points,
+  +0.84 / 1.12 / 1.4 / 1.68 per second, up to 12 / 16 / 20 / 24.
+- **Arts Intensity (AI)** has three curves:
+  - reaction, burst and physical status damage: ×(1 + AI/100);
+  - Breach, Electrification and Corrosion effect strength:
+    ×(1 + 2·AI/(AI+300)), approaching ×3 (the "soft cap 300%": a ceiling of
+    3× the base, not a cap at 300 AI); ×1.5 at 100 AI, ×2 at 300;
+  - Lift / Knock Down stagger: ×(1 + AI/200).
+- **Constants:** `BattleConst` is identical in 555me and rmxlinux 1.6; no
+  formula constant changed since March. Talos edits since then are listed in
+  the journal (2026-10-18).
+
+**Simulator caveats:** Zero Sanity uses beta Breach values (11–20%) and no
+AI scaling for Breach/Electrification
+(`src/controller/timeline/eventsQueryService.ts:34-36`), and rounds ATK to
+0.1 (`src/model/calculation/damageFormulas.ts:700`), which no other source
+supports. EndfieldHub's damage guide contradicts itself on Breach (§9
+fragility vs §10 negative DEF); its negative-DEF claim is wrong.
+
+### Rounding
+
+From note.com/at67275, "ダメージ計算に関わる小数と端数処理" (2026-03-09,
+updated 03-15, game ≤1.1, in-game measurements):
+
+- Calculations use raw values; only final damage is rounded, "probably"
+  half-up.
+- Exception: attributes appear to be rounded before the attribute ATK bonus
+  (it moves in 0.5% / 0.2% steps); one Lv60 Catcher case breaks this.
+- Display only: whole-number stats truncated, percentages rounded half-up.
+  The game's Lua display code floors (`LuaScripts/Common/Utils/AttributeUtils.lua`).
+- Hidden decimals are real: weapon substats follow 1 : 0.8 : 0.6 for
+  large / medium / small (large element DMG = 5.555% at rank 1, table
+  `0.0555555559694767`); gear artificing ×1.1 / 1.2 / 1.3; gear AI 49.68
+  shows as 49. Table floats are single precision.
+
+Sources disagree on attributes: the Talos Attribute page uses exact values;
+666bj, EndfieldHub, Zero Sanity and Endaxis floor the effective attribute.
+**Plan:** exact table values, floor effective attributes before the ATK
+bonus, round final damage half-up, each rounding step behind one switch so
+fixtures can decide.
+
+### Frame rate
+
+**30 FPS** ‡: all 626 animation actions in `chr_*` SkillData files convert at
+exactly 30 frames per second (e.g. `chr_0004_pelica_attack1`: 166 frames for
+5.5333 s). Zero Sanity's parser and Endaxis use 30; End-DPScope's "60 fps"
+comes from an old Endaxis export format.
 
 ### Open questions
 
-1. **Breach:** Talos Wiki says +12–24% Physical DMG taken; EndfieldHub says it
-   makes DEF negative. Biggest disagreement.
-2. **Corrosion vs Arts Intensity** scaling (a "soft cap 300%" is claimed).
-3. **Grouping of stagger** with other multipliers. Doesn't change the arithmetic
-   shown above, but matters for which buffs stack additively.
-4. **Rounding rules.** A Japanese article
-   (note.com/at67275, "Decimals and Rounding in Damage Calculation") may cover
-   this; unread. One repo notes ±0.1% rounding differences.
-5. **Frame rate** of skill timelines: Endaxis uses 30 FPS; one End-DPScope
-   scenario mentions 60 fps.
+Each with the in-game test that would settle it:
 
-These can be settled from the raw SkillData/BuffData, or by in-game tests.
+1. **AI scaling of Breach / Electrification** (data says yes, untested): apply
+   Breach IV from an operator with 150 AI, hit with a 0-AI operator; the model
+   predicts +40% damage taken, not +24%.
+2. **Corrosion ramp timing:** Corrosion I from a 0-AI and a 300-AI operator;
+   read Nature damage at 0, 5 and 15 s.
+3. **Final damage rounding** (half-up or floor): find a hit whose exact value
+   ends in .5–.99 and see what the game shows.
+4. **Attribute flooring** before the ATK bonus (strong consensus, but the
+   Talos Wiki and one measurement disagree).
+5. **Burst / reaction DMG bonuses** (attribute types 35–38, 49, 56–59): Endaxis
+   treats them as a separate multiplicative group; Talos and 666bj don't
+   mention them. Compare a Combustion hit with a "+Arts Reaction DMG" source,
+   a "+Heat DMG" source, and both.
+6. **How Link is stored** in the data.
+7. **Order of operations**, which only matters for single-precision rounding.
 
 ### 666bj base damage documentation
 
@@ -300,13 +403,27 @@ nothing on a server. API documented in
 
 - **What it is:** a community battle-log site (like FFLogs). A capture client
   records real fights.
-- **Per battle:** each hit's actual damage and the multiplier zones applied;
-  from parser v57 (~2026-09-25) also crit flag, crit rate, crit damage and
-  uncapped damage; full loadouts (levels, potentials, weapon refinement,
-  skill levels, gear with stats); boss; cast timeline. Per-hit values sum
-  exactly to the total.
-- **Access:** public read-only export API (`GET /api/v1/battles/{id}/export`,
-  60 requests/min), intended for external tools.
+- **Per battle:** each hit's actual damage; from parser v57 (~2026-09-25)
+  also crit flag, crit rate, crit damage and uncapped damage; full loadouts
+  (levels, potentials, weapon refinement, skill levels, gear with stats);
+  boss; cast timeline. Per-hit values sum exactly to the total (verified on
+  15 battles). Parser v58 from 2026-10-05, **v59 from 2026-10-15 (1.6)**.
+- **Access** (verified 2026-10-18):
+  - `GET /api/v1/battles/{id}/export` (documented for external tools,
+    60 requests/min per IP per a third-party note): schema v1, **loadout and
+    cast timeline only, no per-hit damage**.
+  - `GET /api/battles/{id}` (the site's own call, may change without
+    notice): `timelineEvents` with per-hit `value`, element, `poiseDamage`,
+    `hitContext.critical` (`isCritical`, `critRate`, `critDamageBonus`,
+    `uncappedDamage`, `damageCap`). Multiplier zones are not on hits but on
+    buff events: `effects[{zone, element, rate, …}]` with zones `dmg_inc`,
+    `vuln_taken`, `fragile`, `atk`, `res`, `prod_vuln_taken` (mapping to our
+    zones inferred, not documented). No stat panel (`initialBaseline.attrs`
+    empty), so stats must be computed from the loadout.
+  - No battle list or search. Find candidates through boards:
+    `GET /api/home/hot-bosses` → `GET /api/bosses/{slug}/rankings` (each
+    account's fastest run only) or
+    `GET /api/characters/{charId}/profile?range=all`.
 - **Caveats:** real fights include movement, damage caps and multi-part bosses;
   enemy stats must come from the datamine; older uploads lack crit flags.
   Logs are made with a packet-capture client, which may conflict with the
@@ -315,9 +432,21 @@ nothing on a server. API documented in
 - **Verdict:** the best source of ground truth found. Ideal for per-hit
   validation once single hits are right.
 
-Example battles: `btl_upload_960a800ae840` (3,375,148 over ~75 s),
-`btl_upload_9e9fe2ffaf34` (9,725,405 over ~69 s),
-`btl_upload_f239236b857f` (4,939,659 over ~131 s). All include Laevatain.
+Example battles (totals verified): `btl_upload_960a800ae840` (3,375,148,
+~75 s, 2 targets), `btl_upload_9e9fe2ffaf34` (9,725,405, ~69 s, 3 targets),
+`btl_upload_f239236b857f` (4,939,659, ~131 s, single target). All include
+Laevatain.
+
+**Fixture candidates** (single target, parser v57+):
+
+| Battle | Target | Parser, date | Length / hits | Notes |
+|---|---|---|---|---|
+| `btl_upload_40d9a3c1da37` | Rhodagn rush, `eny_0051_rodin` Lv90 | v59, 2026-10-16 (1.6) | 19 s / 57 (13 Laevatain) | Same enemy as the Zero Sanity fixture; Laevatain P5, Forgeborn Scathe R6, skills L12; ultimate-enhanced hits, burning, 2 reactions; two identical `ult_attack4` hits. But Laevatain only 50% of damage, Si 46%; ultimate cast before the timer; 8 hits lack crit data. **First choice for single-hit arithmetic.** |
+| `btl_upload_f239236b857f` | `eny_0125_fdcentur` | v57, 2026-09-28 (1.5) | 130 s / 532 | Laevatain 87%, all hits crit-verified, full kit. Buff-heavy; needs data pinned to 1.5. **Full-kit fixture once buffs are modelled.** |
+| `btl_upload_7e19489ae503` | Rhodagn rush | v58, 2026-10-12 | 36 s / 105 | All hits crit-verified, no Si; top dealer is the Endministrator (34%). |
+
+Rhodagn-rush kills total 2,292,898–2,292,917 against Lv90 HP 2,292,909 (last
+hit capped), a hint about per-hit rounding.
 
 ### Zero Sanity Simulations
 

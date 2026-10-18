@@ -2,21 +2,13 @@
 
 ## Next steps
 
-1. **Verify the unverified.** Items marked *(unverified)* in
-   [data-sources.md](data-sources.md) came from search-engine extracts because
-   the sites were blocked during research. With web access, check them,
-   especially:
-   - licences/terms: Talos Wiki footer, EndfieldHub terms;
-   - APIs: Talos Wiki `api.php` / Lua data modules, EndfieldHub `/webmcp/*.json`,
-     ZMDLogs export API;
-   - the open formula questions (Breach, Corrosion vs Arts Intensity, rounding;
-     note.com/at67275 on rounding).
-   Update data-sources.md with what's found.
-2. **Design document** (`docs/design.md`) before code: data model, rotation
-   format, and the boundary between engine, data loading, search and UI. The
-   engine boundary is what the Rust port will replace, so keep it explicit.
-   Also start `docs/glossary.md`: game terms, naming variants
-   (Rank 1–12 = Lv1–9 + M1–M3 = 专1–3) and internal IDs (`pelica` = Perlica).
+1. **Review the design with the owner** ([design.md](design.md)), then
+   settle its open questions where data can (tie-break order, which action
+   types the first fixtures need). Keep [glossary.md](glossary.md) growing.
+2. **In-game tests the owner could run** (see open questions in
+   [data-sources.md](data-sources.md#open-questions)): Breach AI scaling,
+   Corrosion ramp, final damage rounding, attribute flooring, burst/reaction
+   bonus grouping. Optional; fixtures may settle some of them.
 3. **Set up the TypeScript project:** package layout, test runner, lint and
    typecheck, and a loader that reads tables from `data/` submodules
    (watch for int64 text IDs and 555me's string-encoded numbers). Include:
@@ -31,7 +23,9 @@
    - **SessionStart hook** for cloud sessions: initialise submodules and
      install dependencies so tests can run immediately;
    - `NOTICE` file with copyright notices whenever MIT code from
-     `reference/` is copied.
+     `reference/` is copied;
+   - JSON Schemas for `DataBundle`, `Scenario`, `Result` (`schemas/`);
+   - the version-pinned enum map ([game-data-format.md](game-data-format.md#known-enum-values)).
 4. **Table cross-check test:** compare the tables the engine uses between the
    two `data/` submodules and fail on any difference.
 5. **First fixture: single-hit damage.** Reproduce the in-game verified
@@ -39,8 +33,10 @@
    `reference/zero-sanity-timeline` (`src/tests/unit/laevatainDamageCalc.test.ts`,
    `loadoutAggregator.test.ts`). Those values date from ~March 2026, so check
    for balance changes in the data history first.
-6. **Second fixture:** one short single-target ZMDLogs battle (parser v57+),
-   matched hit by hit.
+6. **Second fixture:** ZMDLogs `btl_upload_40d9a3c1da37` (Rhodagn, 1.6,
+   19 s, Laevatain ultimate hits), matched hit by hit via `/api/battles/{id}`;
+   later `btl_upload_f239236b857f` as the full-kit Laevatain fixture
+   (needs 1.5 data). See [data-sources.md](data-sources.md#zmdlogs).
 7. **Rotation fixture:** the End-DPScope standard Endaxis scenario
    (3,700,482 and its three variants), as a loose cross-simulator check.
 

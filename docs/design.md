@@ -136,12 +136,36 @@ DataBundle {
 Operator/weapon/gear growth curves are stored as tables, not pre-applied, so
 the engine computes stats from levels the same way the game does.
 
-`Timeline` and `Buff` are the hard part: the raw SkillData/BuffData are C#
-action graphs. The data layer translates the subset that matters for damage
-(hit frames, multipliers via blackboard keys, buff applications, resource
-changes) into a small, explicit set of engine event types. Unknown node
-types are reported, not silently ignored, so coverage gaps are visible.
-(*Open*: which node types matter; see the architecture notes.)
+### Skills and buffs from SkillData / BuffData
+
+The raw files are C# action graphs, mostly presentation (animation, VFX,
+sound, camera). Structure and known enum values:
+[game-data-format.md](game-data-format.md). The data layer does **not**
+interpret the graphs at run time. It compiles each skill and buff into a
+small summary:
+
+- **Skill:** hit frames (including hits from spawned entities and
+  projectiles), per hit the blackboard scale key, poise, element and damage
+  category (`damageDecorateMask`), inflictions, which buffs are applied at
+  which frame, cancel windows, `durationFrame`, cooldown and cost.
+- **Buff:** stacking type and limit, duration, attribute modifiers, damage
+  modifiers (side, zone, value key).
+
+Then it **overlays `SkillPatchTable`** by skill ID and level: the blackboard
+and cost inside SkillData are defaults, not the real per-level values
+(e.g. Laevatain's file says cost 0, the table says 100 SP).
+
+What can't be compiled mechanically (conditional and triggered logic, combo
+trigger conditions, which come from data we don't have) goes in a small
+**hand-written behaviour layer per operator**, in a typed, schema-checked
+format. Each hand-written rule cites its source and has a test. Unknown
+action types or enum values fail the build, so coverage gaps are visible.
+
+Numeric enums (attribute types, stacking types, buff events, formula slots)
+are decoded through **one version-pinned enum map**, each entry verified
+against a known effect. Starting points: End-DPScope's
+`research/附录A 全属性列表.md` (attribute IDs) and the game's English text
+table.
 
 ## Engine
 
@@ -151,9 +175,9 @@ types are reported, not silently ignored, so coverage gaps are visible.
 Scenario {
   team: Loadout[]          // 1–4 operators
   enemy: { id, level, count?: 1 }
-  duration: Ticks
+  duration: Frames
   rotation: Rotation
-  options: { crit: "expected" | "never" | "always" | { seed } }
+  options: { crit: "expected" | "never" | "always" | { seed }, rounding: … }
 }
 Loadout {
   operator: CharId, level, promotion, potential,
@@ -164,67 +188,110 @@ Loadout {
 
 ### Rotation
 
-Two forms, the first needed for the MVP:
+All three reference simulators take absolute timestamps and, when an action
+is illegal (not enough SP, cooldown not ready, combo window closed), run it
+anyway with a warning. That breaks search: changing one operator invalidates
+every timestamp. So rotations are **programs** the engine schedules:
 
-1. **Explicit timeline:** an ordered list of actions, each
-   `{ operator, action, at? }` where `action` is a basic-attack chain,
-   battle skill, combo, ultimate, swap…, and `at` is a time or "as soon as
-   possible after the previous action". This is enough to reproduce
-   published rotations (End-DPScope scenarios, ZMDLogs cast timelines).
-2. **Policy (later, for search):** a priority list ("ultimate when ready,
-   combo when its window opens, else battle skill if SP ≥ cost, else basic")
-   that the engine expands into an explicit timeline. Search varies
-   policies, not hand-written timelines.
+1. **Action list (MVP):** an ordered list of actions per operator
+   (`{ operator, action, after?, at? }`; actions are basic chain segments,
+   battle skill, combo, ultimate, swap). The engine runs each at the
+   **earliest legal frame** given SP, energy, cooldowns, combo windows and
+   animation lock. An explicit `at` frame is allowed for reproducing
+   published timelines (ZMDLogs casts, End-DPScope scenarios); if it isn't
+   legal there, that's an error.
+2. **Priority policy (later, for search):** "ultimate when ready, combo when
+   its window opens, else battle skill if SP ≥ cost, else basic". Search
+   varies policies, not timelines.
 
-The engine **checks** every action: not enough SP or energy, cooldown not
-ready, combo window closed. An invalid action is an error in the result, not
-a silent skip, so a reproduced rotation can't quietly differ from the
-original.
+An illegal action is always an error in the result, never silently run or
+skipped.
 
 ### Time
 
-Integer ticks, never floating-point seconds, so event ordering is exact.
-The tick is the game's timeline frame (`_startFrame` / `_endFrame` in
-SkillData). *Open:* its rate (30 or 60 FPS); durations given in seconds are
-converted to ticks with a documented rounding rule.
+Integer frames at **30 FPS**, the game's own timeline unit (verified across
+all operator SkillData files; Zero Sanity's 120 and old Endaxis's 60 are
+tool choices). Seconds appear only for cooldowns, buff durations and table
+values, and are converted once at load with a documented rounding rule.
+
+From day one the engine has **several clocks**: global scaled time (an
+ultimate or combo can freeze or slow it, which pauses ordinary buffs and SP
+regen), per-entity time, and unscaled time for cooldowns. Adding these later
+would touch everything.
 
 ### Simulation model
 
-Discrete-event: a priority queue of events ordered by (tick, a fixed
-tie-break order). Skill casts schedule their hits and buff changes; buffs
-schedule their expiry. Ties are resolved by a documented rule (e.g. buff
-expiry before hits in the same tick), *open* until checked against the
-reference simulators or logs. Discrete events skip idle time, which keeps
-long fights cheap for search.
+Two stages:
 
-State per operator: stats, SP (team), ultimate energy, cooldowns, active
-buffs. State per enemy: HP, stagger, infliction stacks, statuses, debuffs.
+1. **Build stage**, per operator and build, cached: the stat snapshot with
+   its contributions, plus the list of passive and triggered effects. Search
+   reuses it across rotations and teams.
+2. **Event stage:** an integer-frame priority queue ordered by
+   (frame, a documented tie-break order). Casts schedule hits and buff
+   changes; buffs schedule expiry; triggers fire from a registry. Each hit is
+   emitted with the modifiers active at that moment, and damage is a cheap
+   pure function of (snapshot, active modifiers, hit). Discrete events skip
+   idle frames, which keeps long fights cheap.
+
+SP, ultimate energy, stagger and cooldowns are **live state** that gates
+actions, not post-passes. (Known details to model: team SP regenerates
+8/s with a 1.5 s pause after spending; refunded SP doesn't give ultimate
+energy.)
+
+State is **plain data** (flat records and arrays, no object graph), so a
+simulation can be forked by copying: search can simulate a shared opening
+once and branch from it.
 
 ### Damage
 
-One module computes a hit from the current state as a product of
-**multiplier zones**, matching the formula in
-[data-sources.md](data-sources.md#3-damage-formula). Each hit's zones are
-kept in the result, so a hit can be compared zone by zone with ZMDLogs, which
-logs the same zones.
+Follows the **game's own pipeline**, as encoded in BuffData (see
+[data-sources.md](data-sources.md#3-damage-formula)), not a flat product of
+named multipliers:
 
-Crit: `expected` multiplies by `1 + rate × critDmg` (deterministic, for
-search); `never` / `always` for matching in-game tests; seeded rolls only if
-needed.
+1. Attacker and defender sides each accumulate modifiers by zone:
+   `NormalCalcZone`-type zones add within a side, `ProdCalcZone` multiplies
+   within a side; the two sides multiply.
+2. Pre-calculation modifiers (ATK ratio, crit rate and damage, attribute
+   edits in the game's formula slots, zone additions), then raw damage
+   (ATK × scale, attribute × scale, fixed value), then post-calculation
+   modifiers.
+3. Shared factors: DEF, RES × damage taken, weakness, protection, level
+   coefficient.
+4. Crit last.
+
+Each hit keeps its full breakdown (zone values and the buffs that fed them),
+so it can be compared with a ZMDLogs hit and its buff events.
+
+**Crit modes:** `expected` (each hit × (1 + rate × crit DMG); deterministic,
+for search), `never` / `always` (in-game tests), seeded sampling. *Open:*
+what `expected` means for crit-triggered effects. Endaxis fires them on
+every crit-capable hit (overstates them); Zero Sanity tracks expected stack
+counts. Pick one and document it. Other probabilities use a named PRNG with
+one seeded stream per source; never `Math.random`.
+
+**Numerics:** game tables are float32, and the game may compute in float32.
+Where that matters, emulate it explicitly (`Math.fround` ↔ `f32`) behind one
+switch, decided by fixtures. Rounding steps (attribute floor, final damage)
+are each one switch; see [rounding](data-sources.md#rounding). Empirical
+rounding rules fitted on a couple of data points are hypotheses, not facts.
 
 ### Output: Result
 
 ```ts
 Result {
   total, dps, perOperator: Record<CharId, number>,
-  hits: { tick, operator, source: SkillId, target, damage, zones, crit }[],
+  hits: { frame, operator, source: SkillId, target, damage, breakdown, crit }[],
   events?: … ,               // resources, buffs; only when requested
   errors: RotationError[]
 }
 ```
 
-The per-hit list is optional at runtime (search only needs totals), but
-always produced in tests.
+Breakdowns and event traces are opt-in at run time (search only needs
+totals), but always produced in tests.
+
+**Per-operator contribution** of buffs and debuffs uses LMDI (log-mean
+Divisia) attribution, as End-DPScope does: it splits each hit's damage
+exactly and additively across the operators whose effects contributed.
 
 ## Fixtures and tests
 
@@ -234,10 +301,18 @@ always produced in tests.
   commits it was verified against). TypeScript tests read them now; Rust
   tests read the same files later.
 - **Tolerance per fixture:** exact (or ±1 for rounding) for in-game verified
-  values; looser for other simulators' outputs.
+  values; looser for other simulators' outputs (they can be ~10% off for
+  some operators).
+- Fixture values are observations, so Zero Sanity's in-game per-hit tables
+  and End-DPScope's scenario totals can be used. **Don't copy Zero Sanity's
+  game-data JSON:** it's hand-curated, partly sourced from Endaxis
+  (unlicensed), and we load from the submodules.
 - **Unit tests** for each formula zone and each data adapter.
 - **Cross-check test:** the tables the engine uses must be identical between
   the two `data/` sources.
+- **Consistency tests:** the data compiler is deterministic (build twice,
+  compare); a forked simulation equals one run from scratch; the same seed
+  gives the same result.
 - A fixture whose value changes after a data update is reviewed, never just
   re-recorded: balance change or bug.
 
@@ -246,22 +321,38 @@ always produced in tests.
 npm workspaces, one package per layer:
 
 ```
-packages/data     loaders, adapters, DataBundle builder, cross-check
+packages/data     loaders, adapters, SkillData/BuffData compiler, DataBundle, cross-check
 packages/engine   simulate(); no dependencies on other packages
 packages/search   (later)
 packages/cli
 packages/web      (later)
 fixtures/         language-neutral fixtures
+schemas/          JSON Schemas for DataBundle, Scenario, Result
 ```
 
 `engine` depends on nothing but its own types, which keeps the Rust port's
 surface exactly the `DataBundle`, `Scenario` and `Result` schemas.
 
+## Lessons from the reference simulators
+
+Details: [reference-simulators.md](reference-simulators.md).
+
+- Don't run the engine through UI state or a process per evaluation
+  (End-DPScope spawns Node per simulation; Zero Sanity's engine imports view
+  types and is tested through a React hook).
+- Don't re-derive combo windows or time-stops on every insertion, or rerun
+  the whole pipeline after stagger (Zero Sanity).
+- Don't interpret a string-keyed rule language at run time; compile
+  conditions and effects to small closed enums. That also makes the Rust
+  port mechanical.
+- Don't step every frame through a full action-graph interpreter (current
+  Endaxis): highest fidelity, but too slow for search and too big to port.
+
 ## Open questions
 
-- Frame rate and tie-break rules (timeline).
-- Rounding rules (damage, stats).
-- Breach, Corrosion vs Arts Intensity, stagger grouping (formula).
-- Which SkillData/BuffData node types the engine must understand.
-- Whether the explicit-timeline rotation format can express ZMDLogs cast
-  timelines directly.
+- Tie-break rules within a frame.
+- Rounding and float32 (see [data-sources.md](data-sources.md#rounding)).
+- Meaning of `expected` crit for crit-triggered effects.
+- Which SkillData/BuffData action types the compiler must understand for
+  the first fixtures.
+- How combo trigger conditions are expressed without CharacterData.

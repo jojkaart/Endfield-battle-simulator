@@ -31,20 +31,25 @@ used), **blocked by site** (allowed, but the site rejects our requests),
 | Host | Purpose | Reachable | Status |
 |---|---|---|---|
 | endfield.wiki.gg | Talos Wiki: formula pages, data | `api.php` only, with a descriptive user agent | useful (licence read; robots.txt disallows `/api.php`, so only a few targeted lookups) |
-| endfieldhub.org | Database, `/webmcp/*.json` | yes | useful (terms, robots, WebMCP read) |
-| zmdlogs.com | Published battle logs (API) | yes | useful (no terms pages exist) |
-| www.end-axis.com | Endaxis simulator site (bare `end-axis.com` not allowed) | yes | untested |
-| wiki.biligame.com | CN wiki | yes | useful, limited (licence checked) |
-| note.com | Rounding article (note.com/at67275) | yes | untested |
+| endfieldhub.org | Database, `/webmcp/*.json` | yes | useful, limited: light spot checks only (no skill values in JSON; derived from other sites) |
+| zmdlogs.com | Published battle logs (API) | yes | **most useful**: per-hit ground truth |
+| www.end-axis.com | Endaxis simulator site (bare `end-axis.com` not allowed) | yes | not useful (same data as `reference/Endaxis`; no API) |
+| wiki.biligame.com | CN wiki | yes, but returns Tencent EdgeOne "567 Restricted Access" after a few requests; title search disabled | blocked by site (licence read before the block) |
+| note.com | Rounding article (note.com/at67275) | yes; `/api/v3/notes/{id}` returns the full article | useful |
 | arknightsendfield.gg | "Datafield runs": in-game damage totals | yes | useful (run figures confirmed) |
-| www.gamekee.com | CN wiki, damage formula | pages are a JS shell; JSON API `/v1/content/detail/{id}` with header `game-alias: zmd` works | useful |
-| end.canmoe.com | Datamine-style IDs and level tables (CEP planner, AGPL) | yes | useful (licence found) |
-| www.endfieldsimulations.dev | Zero Sanity live site (source is in `reference/`) | yes | untested |
+| www.gamekee.com | CN wiki, damage formula (article updated 2026-04-12) | pages are a JS shell; JSON API `/v1/content/detail/{id}` with header `game-alias: zmd` works | useful |
+| end.canmoe.com | Datamine-style IDs and level tables (CEP planner, AGPL) | yes | not useful (display strings only, no Si) |
+| www.endfieldsimulations.dev | Zero Sanity live site (source is in `reference/`) | yes | not useful (devlog older than the repo; use the repo) |
 | endfield.huijiwiki.com | CN wiki, damage formula | no: Cloudflare 403, also on `api.php` | blocked by site |
 | www.icy-veins.com | Guides, skill values | no: Cloudflare 403 | blocked by site |
 | ngabbs.com | CN forum, community testing | no: site 403 | blocked by site |
 
 If the "blocked by site" hosts stay unreachable, remove them.
+
+**Removal candidates (2026-10-18):** www.end-axis.com, end.canmoe.com,
+www.endfieldsimulations.dev (not useful); endfield.huijiwiki.com,
+www.icy-veins.com, ngabbs.com (blocked by site). wiki.biligame.com is
+borderline (blocked after a few requests, behind on 1.6).
 
 ## Candidates (not added)
 
