@@ -132,6 +132,7 @@ function stateKey(s: TimelineState): string {
     s.enemy,
     s.pending.map((p) => [p.frame, p.operator, p.skillId, p.hitId, p.trigger?.id]),
     s.pendingEnergy,
+    s.pendingActions.map((x) => [x.frame, x.owner, x.trigger]),
   ]);
 }
 

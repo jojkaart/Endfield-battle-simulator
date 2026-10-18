@@ -198,3 +198,10 @@ Then re-analysis of all seven.
   efficiency, and `clearEnergy`; a skill's team energy at its data frame
   (`teamEnergyFrame`). The enemy's Vulnerability stacks in values (V2,
   Gilberta) come with physical statuses (P1).
+- S1, S2, S4, S7 (part): skills may have no hits; a trigger can be
+  narrowed to casts of given skills and delayed (`delay`), so a skill's
+  effects at frames are its own delayed cast triggers; availability is a
+  Predicate (`available`, replacing `availableWhile` / `unavailableWhile`,
+  kits migrated); cooldown groups (`cooldownGroup`); `takesControl`; buffs
+  that block energy gain while they last (`blocksEnergy`). Cancel windows
+  (S3), chains (S5) and off-field follow-up casts (S6) next.

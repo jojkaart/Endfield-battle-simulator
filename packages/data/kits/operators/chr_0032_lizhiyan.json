@@ -575,8 +575,10 @@
       "label": "Ultimate sequence 2 (Gloompurge Arcana)",
       "damageType": "ultimate",
       "durationFrames": 287,
-      "availableWhile": "gloompurger_array",
       "note": "In game it's castable for 10 s after the second Cluster Strike (buff_chr_0032_lizhiyan_ultimate_skill_listener), paid by that buff's 100% energy grant. The kit only requires the array; its 100 energy can't come in while the array blocks gain, so the timeline never casts it until Cluster Strikes and energy grants that bypass a block exist.",
+      "available": {
+        "buffActive": "gloompurger_array"
+      },
       "hits": [
         {
           "id": "will",

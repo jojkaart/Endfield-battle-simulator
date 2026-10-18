@@ -76,8 +76,12 @@
       "skillId": "chr_0035_liino_normal_skill",
       "label": "Battle skill",
       "damageType": "battle",
-      "unavailableWhile": "vocalist_stance",
       "note": "No durationFrames: the timeline uses the cancel window (AllowNextSkillAction for combo / End Stance from frame 50); SkillData durationFrame 2100 is the stance's 60 s state, during which she can move. Re-casting during the stance is End Stance (no damage, ends the stance, SP cooldown set_cd), so the skill is unavailable while vocalist_stance lasts.",
+      "available": {
+        "not": {
+          "buffActive": "vocalist_stance"
+        }
+      },
       "hits": [
         {
           "id": "projectiles",

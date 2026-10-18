@@ -279,6 +279,8 @@ export interface KitBuff {
    * on no others.
    */
   readonly consumedBy?: readonly SkillType[];
+  /** While active, its owner gains no ultimate energy (SkillData / BuffData RefrainObtainUsp, e.g. for as long as an ultimate's state lasts). */
+  readonly blocksEnergy?: boolean;
   /** Periodic: a `buffTick` event every this many seconds while active (Liino's soundwave every 3 s), for triggers. */
   readonly every?: ValueExpr;
   /** The first tick comes when it's applied (default: one interval later). */
@@ -338,10 +340,13 @@ export interface KitSkill {
   readonly teamEnergyFrame?: number;
   /** The operator gains no ultimate energy for this long after the cast (SkillData RefrainObtainUsp, e.g. Laevatain's ultimate). */
   readonly energyBlockSeconds?: number;
-  /** Castable only while the operator's own kit buff is active (e.g. enhanced attacks during an ultimate)… */
-  readonly availableWhile?: string;
-  /** …or only while it isn't (the plain attacks they replace). */
-  readonly unavailableWhile?: string;
+  /** Castable only when this holds for the operator at the start frame (a state: `buffActive`; replaced by a stance: `not`). */
+  readonly available?: Predicate;
+  /** The caster becomes the controlled operator at the cast (an ultimate's "becomes the controlled operator"). */
+  readonly takesControl?: boolean;
+  /** Skills of one group share a cooldown: casting one puts every member on its own cooldown (Typhoeus's two combos). */
+  readonly cooldownGroup?: string;
+  /** Hits may be none: a skill that only changes state (Laevatain's ultimate, Liino's End Stance) does it with triggers on its cast. */
   readonly hits: readonly KitHit[];
 }
 

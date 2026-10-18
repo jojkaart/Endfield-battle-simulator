@@ -78,8 +78,8 @@ describe("timeline", () => {
     expect(() => simulate(data, scenario([{ operator: "chr_0004_pelica", skill: "x" }]))).toThrow(EngineError);
     expect(() => simulate(data, scenario([{ operator: op, skill: "chr_0016_laevat_dodge" }]))).toThrow(/kit has no skill/);
     // Plain attacks are replaced during her ultimate, and the enhanced ones need it.
-    expect(() => simulate(data, scenario([{ operator: op, skill: L + "ultimate_skill" }, { operator: op, skill: L + "attack1" }]))).toThrow(/isn't available during twilight/);
-    expect(() => simulate(data, scenario([{ operator: op, skill: L + "ult_attack1" }]))).toThrow(/needs twilight active/);
+    expect(() => simulate(data, scenario([{ operator: op, skill: L + "ultimate_skill" }, { operator: op, skill: L + "attack1" }]))).toThrow(/isn't available at frame \d+ \({"not":{"buffActive":"twilight"}}\)/);
+    expect(() => simulate(data, scenario([{ operator: op, skill: L + "ult_attack1" }]))).toThrow(/isn't available at frame \d+ \({"buffActive":"twilight"}\)/);
     // Her combo needs Combustion or Corrosion on the enemy first.
     expect(() => simulate(data, scenario([{ operator: op, skill: L + "combo_skill" }]))).toThrow(/combo trigger hasn't happened/);
   });
@@ -582,5 +582,56 @@ describe("timeline: values and resources", () => {
     const efficiency = computeStats(data, build).attrs[44]?.total ?? data.attributeDefaults[44] ?? 1;
     expect(stepTo(d, noEnergy([skill("normal_skill")]), 28).energy[op]).toBe(0);
     expect(stepTo(d, noEnergy([skill("normal_skill")]), 29).energy[op]).toBeCloseTo(100 * 0.065 * efficiency, 9);
+  });
+});
+
+describe("timeline: skills", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const withKit = (patch: Partial<OperatorKit>): GameData => ({ ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, ...patch } } } });
+  const skill = (s: string) => ({ operator: op, skill: L + s });
+  const run = (d: GameData, sc: TimelineScenario, frame: number) => {
+    const ctx = createContext(d, sc);
+    let s = init(ctx);
+    for (const a of sc.rotation) s = apply(ctx, s, a);
+    return advance(ctx, s, frame);
+  };
+  const state: KitBuff = { id: "state", label: "state", target: "self", duration: 5, modifiers: [] };
+
+  it("a hitless skill changes state at a frame through a delayed trigger on its own cast", () => {
+    const d = withKit({
+      buffs: [...kit.buffs, state],
+      skills: kit.skills.map((s) => (s.skillId === L + "normal_skill" ? { ...s, hits: [] } : s)),
+      triggers: [...kit.triggers, { id: "at10", on: { event: "cast", skills: [L + "normal_skill"] }, by: "self", delay: 10, do: [{ kind: "buff", buff: "state" }] }],
+    });
+    const before = run(d, scenario([skill("normal_skill")]), 9);
+    expect(before.buffs.some((b) => b.id === "state")).toBe(false);
+    expect(before.hits).toEqual([]);
+    expect(run(d, scenario([skill("normal_skill")]), 10).buffs.find((b) => b.id === "state")?.appliedAt).toBe(10);
+  });
+
+  it("skills in a cooldown group put each other on cooldown", () => {
+    const grouped = withKit({ skills: kit.skills.map((s) => (s.skillId === L + "normal_skill" || s.skillId === L + "combo_skill" ? { ...s, cooldownGroup: "g" } : s)) });
+    const plain = run(data, scenario([skill("normal_skill")]), 1);
+    const s = run(grouped, scenario([skill("normal_skill")]), 1);
+    expect(plain.readyAt[L + "combo_skill"]).toBeUndefined();
+    expect(s.readyAt[L + "combo_skill"]).toBeGreaterThan(0);
+  });
+
+  it("a skill that takes control makes its caster the controlled operator", () => {
+    const g = "chr_0013_aglina";
+    const fx = JSON.parse(readFileSync(new URL("../fixtures/zmdlogs-40d9a3c1da37.json", import.meta.url), "utf8")) as { team: Build[] };
+    const team = fx.team.filter((b) => b.operator === op || b.operator === g);
+    const sc: TimelineScenario = { ...scenario([skill("ultimate_skill")]), team, controlled: g };
+    expect(run(data, sc, 1).controlled).toBe(g);
+    const d = withKit({ skills: kit.skills.map((s) => (s.skillId === L + "ultimate_skill" ? { ...s, takesControl: true } : s)) });
+    expect(run(d, sc, 1).controlled).toBe(op);
+  });
+
+  it("a buff can block its owner's energy gain while it lasts", () => {
+    const d = withKit({ buffs: [...kit.buffs, { ...state, blocksEnergy: true }], triggers: [...kit.triggers, { id: "b", on: { event: "cast", kinds: ["basic"] }, by: "self", do: [{ kind: "buff", buff: "state" }] }] });
+    const { startEnergy: _f, ...sc } = scenario([skill("attack1"), skill("normal_skill"), { ...skill("normal_skill"), at: 30 * 8 }]);
+    const r = simulate(d, sc);
+    expect(r.casts[1]?.energyAfter).toBe(0);
+    expect(r.casts[2]?.energyAfter).toBeGreaterThan(0);
   });
 });

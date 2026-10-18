@@ -59,8 +59,9 @@ interface RawKit {
     durationFrames?: number;
     energyBlockSeconds?: number;
     teamEnergyFrame?: number;
-    availableWhile?: string;
-    unavailableWhile?: string;
+    available?: Predicate;
+    takesControl?: boolean;
+    cooldownGroup?: string;
     hits: RawHit[];
   }[];
   conditions?: RawCondition[];
@@ -139,6 +140,8 @@ interface KitScope {
   readonly element?: Element;
   readonly stackIds: ReadonlySet<string>;
   readonly buffDefs: ReadonlyMap<string, KitBuff>;
+  /** Whether a skill ID is one of the owner's skills (cast filters name them). */
+  readonly isSkill: (id: string) => boolean;
   /** Whether a skill or source ID is one the kit can read values from. */
   readonly isSource: (id: string) => boolean;
   /** Throws unless the source has the key (at every level, for skills). */
@@ -232,6 +235,7 @@ function kitChecker(scope: KitScope) {
     triggerIds.add(t.id);
     const skillId = triggerSkillId(scope.owner, t);
     if (t.skill && !scope.isSource(t.skill)) throw new Error(`${where}: ${t.skill} isn't one of ${scope.owner}'s value sources`);
+    if (t.on.event === "cast") for (const id of t.on.skills ?? []) if (!scope.isSkill(id)) throw new Error(`${where}: ${id} isn't a skill of ${scope.owner}`);
     if (t.on.event === "stackAtLeast" && !stackIds.has(t.on.stack)) throw new Error(`${where}: unknown stack ${t.on.stack}`);
     if ((t.on.event === "buffApplied" || t.on.event === "buffEnded" || t.on.event === "buffTick") && !buffDefs.has(t.on.buff)) throw new Error(`${where}: unknown buff ${t.on.buff}`);
     if (t.if) checkPredicate(t.if, where);
@@ -322,6 +326,7 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
     ...(kit.element ? { element: kit.element } : {}),
     stackIds: idsOf(where0, "stack", kit.stacks ?? []),
     buffDefs: new Map((kit.buffs ?? []).map((b) => [b.id, b])),
+    isSkill: ownSkill,
     isSource: (id) => attached.has(id) || ownSkill(id),
     checkSourceKey: (id, key, where) => {
       const keys = attached.get(id);
@@ -336,7 +341,7 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
     const skill = data.skills[s.skillId];
     if (!skill) throw new Error(`${where}: unknown skill`);
     if (op.skillGroups[s.skillId] === undefined) throw new Error(`${where}: not one of ${kit.operator}'s skills`);
-    for (const b of [s.availableWhile, s.unavailableWhile]) if (b && !(kit.buffs ?? []).some((x) => x.id === b)) throw new Error(`${where}: unknown buff ${b}`);
+    if (s.available) c.checkPredicate(s.available, `${where} available`);
     return {
       skillId: s.skillId,
       label: s.label,
@@ -344,8 +349,9 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
       ...(s.durationFrames !== undefined ? { durationFrames: s.durationFrames } : {}),
       ...(s.energyBlockSeconds !== undefined ? { energyBlockSeconds: s.energyBlockSeconds } : {}),
       ...(s.teamEnergyFrame !== undefined ? { teamEnergyFrame: s.teamEnergyFrame } : {}),
-      ...(s.availableWhile ? { availableWhile: s.availableWhile } : {}),
-      ...(s.unavailableWhile ? { unavailableWhile: s.unavailableWhile } : {}),
+      ...(s.available ? { available: s.available } : {}),
+      ...(s.takesControl ? { takesControl: true } : {}),
+      ...(s.cooldownGroup ? { cooldownGroup: s.cooldownGroup } : {}),
       hits: c.normalizeHits(s.hits, { skillId: s.skillId, damageType: s.damageType, label: s.label, checkScale: (key, w) => checkKey(skill, key, w), defaultEvent: s.skillId, finalStrike: (h, events) => isFinalStrike(s.skillId, events, s.hits.length) }, where),
     };
   });
@@ -392,6 +398,8 @@ function loadEquipmentKit(data: KitData, file: string, kit: RawEquipmentKit): Eq
     owner: id,
     stackIds: idsOf(where0, "stack", kit.stacks ?? []),
     buffDefs: new Map((kit.buffs ?? []).map((b) => [b.id, b])),
+    // Equipment acts for any wearer, so its cast filters can only be by kind.
+    isSkill: () => false,
     isSource: (sid) => skills.has(sid) && data.skills[sid] !== undefined,
     checkSourceKey: (sid, key, where) => checkKey(data.skills[sid] as SkillData, key, where),
   });

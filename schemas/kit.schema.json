@@ -146,6 +146,10 @@
           "tickOnApply": {
             "type": "boolean",
             "description": "The first tick comes when it's applied (default: one interval later)."
+          },
+          "blocksEnergy": {
+            "type": "boolean",
+            "description": "While active, its owner gains no ultimate energy (RefrainObtainUsp)."
           }
         }
       }
@@ -221,6 +225,14 @@
                       "$ref": "#/$defs/skillType"
                     },
                     "minItems": 1
+                  },
+                  "skills": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "description": "Only casts of these skill IDs (a skill's own effects at frames, with delay)."
                   }
                 }
               },
@@ -391,6 +403,11 @@
             "type": "integer",
             "minimum": 1,
             "description": "At most this many times per fight."
+          },
+          "delay": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Frames after the event when the actions run (the trigger's if is judged at the event, each action's own if when it runs)."
           },
           "skill": {
             "type": "string",
@@ -787,13 +804,9 @@
           "damageType": {
             "$ref": "#/$defs/skillType"
           },
-          "availableWhile": {
-            "type": "string",
-            "description": "Castable only while this kit buff of the operator is active (e.g. enhanced attacks during the ultimate)."
-          },
-          "unavailableWhile": {
-            "type": "string",
-            "description": "Not castable while this kit buff of the operator is active (the plain attacks an ultimate replaces)."
+          "available": {
+            "$ref": "#/$defs/predicate",
+            "description": "Castable only when this holds for the operator at the start frame (a state: buffActive; a stance: not buffActive; …)."
           },
           "energyBlockSeconds": {
             "type": "number",
@@ -815,10 +828,17 @@
           },
           "hits": {
             "type": "array",
-            "minItems": 1,
             "items": {
               "$ref": "#/$defs/hit"
             }
+          },
+          "takesControl": {
+            "type": "boolean",
+            "description": "The caster becomes the controlled operator at the cast (ultimates: 'becomes the controlled operator')."
+          },
+          "cooldownGroup": {
+            "type": "string",
+            "description": "Skills sharing a group share one cooldown: casting one puts every member on its own cooldown (Typhoeus's two combos)."
           }
         }
       }

@@ -33,6 +33,8 @@ export interface ActiveBuff {
   readonly consumedBy?: readonly SkillType[];
   /** Consumed by a cast: acts only on that cast's hits (the index of the cast in the timeline). */
   readonly cast?: number;
+  /** While active, its owner gains no ultimate energy (KitBuff.blocksEnergy). */
+  readonly blocksEnergy?: boolean;
   /** Periodic: frames between ticks (KitBuff.every), and the next tick's frame. */
   readonly every?: number;
   readonly nextTick?: number;
@@ -85,6 +87,7 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
     ...(recipients ? { recipients } : {}),
     ...(maxLayers !== undefined ? { maxLayers } : {}),
     ...(buff.consumedBy ? { consumedBy: buff.consumedBy } : {}),
+    ...(buff.blocksEnergy ? { blocksEnergy: true } : {}),
     ...(every !== undefined ? { every, nextTick: frame + (buff.tickOnApply ? 0 : every) } : {}),
   };
 }

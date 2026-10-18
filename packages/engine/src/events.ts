@@ -39,7 +39,8 @@ export type BattleEvent =
 /** Which events a trigger listens to (and filters on them). */
 export type TriggerOn =
   | { readonly event: "hit"; readonly kinds?: readonly (SkillType | "none")[]; readonly elements?: readonly Element[]; readonly finalStrike?: boolean }
-  | { readonly event: "cast"; readonly kinds?: readonly SkillType[] }
+  /** A skill is cast; `skills` narrows it to these skill IDs (a skill's own effects at frames: with the trigger's `delay`). */
+  | { readonly event: "cast"; readonly kinds?: readonly SkillType[]; readonly skills?: readonly string[] }
   /** A reaction status is applied (forced ones included). */
   | { readonly event: "reaction"; readonly statuses?: readonly ReactionStatus[] }
   /** An infliction is consumed or absorbed (a reaction consumes the one it lands on, too). */
@@ -105,6 +106,8 @@ export interface KitTrigger {
   readonly cooldown?: ValueExpr;
   /** At most this many times per fight. */
   readonly maxCount?: number;
+  /** Frames after the event when its actions run (its `if` is judged at the event; each action's own `if` when it runs). */
+  readonly delay?: number;
   /** The skill a plain value key names (a skill of the owner, or a talent / weapon / gear-set source). */
   readonly skill?: string;
   readonly do: readonly TriggerAction[];
@@ -122,7 +125,7 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
     case "hit":
       return e.type === "hit" && has(on.kinds, e.kind) && has(on.elements, e.element) && (on.finalStrike === undefined || on.finalStrike === e.finalStrike);
     case "cast":
-      return e.type === "cast" && has(on.kinds, e.kind);
+      return e.type === "cast" && has(on.kinds, e.kind) && has(on.skills, e.skillId);
     case "buffApplied":
     case "buffEnded":
     case "buffTick":

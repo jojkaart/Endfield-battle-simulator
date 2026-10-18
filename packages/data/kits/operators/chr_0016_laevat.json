@@ -82,6 +82,11 @@
       "skillId": "chr_0016_laevat_attack1",
       "label": "Basic attack 1",
       "damageType": "basic",
+      "available": {
+        "not": {
+          "buffActive": "twilight"
+        }
+      },
       "hits": [
         {
           "id": "hit",
@@ -92,13 +97,17 @@
             6
           ]
         }
-      ],
-      "unavailableWhile": "twilight"
+      ]
     },
     {
       "skillId": "chr_0016_laevat_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
+      "available": {
+        "not": {
+          "buffActive": "twilight"
+        }
+      },
       "hits": [
         {
           "id": "hit",
@@ -111,13 +120,17 @@
             13
           ]
         }
-      ],
-      "unavailableWhile": "twilight"
+      ]
     },
     {
       "skillId": "chr_0016_laevat_attack3",
       "label": "Basic attack 3",
       "damageType": "basic",
+      "available": {
+        "not": {
+          "buffActive": "twilight"
+        }
+      },
       "hits": [
         {
           "id": "hit",
@@ -128,13 +141,17 @@
             9
           ]
         }
-      ],
-      "unavailableWhile": "twilight"
+      ]
     },
     {
       "skillId": "chr_0016_laevat_attack4",
       "label": "Basic attack 4",
       "damageType": "basic",
+      "available": {
+        "not": {
+          "buffActive": "twilight"
+        }
+      },
       "hits": [
         {
           "id": "hit",
@@ -148,13 +165,17 @@
             19
           ]
         }
-      ],
-      "unavailableWhile": "twilight"
+      ]
     },
     {
       "skillId": "chr_0016_laevat_attack5",
       "label": "Basic attack 5 (final strike)",
       "damageType": "basic",
+      "available": {
+        "not": {
+          "buffActive": "twilight"
+        }
+      },
       "hits": [
         {
           "id": "hit",
@@ -168,13 +189,17 @@
           ],
           "note": "Final strike: with Laevatain in the team, the controlled operator's final strike absorbs Heat Infliction for 1 Melting Flame per stack (talent description). Only her own final strike does so here."
         }
-      ],
-      "unavailableWhile": "twilight"
+      ]
     },
     {
       "skillId": "chr_0016_laevat_normal_skill",
       "label": "Battle skill",
       "damageType": "battle",
+      "available": {
+        "not": {
+          "buffActive": "twilight"
+        }
+      },
       "hits": [
         {
           "id": "explosion",
@@ -238,13 +263,15 @@
           },
           "energy": "extra_usp"
         }
-      ],
-      "unavailableWhile": "twilight"
+      ]
     },
     {
       "skillId": "chr_0016_laevat_normal_skill_during_ult",
       "label": "Battle skill (during ultimate)",
       "damageType": "battle",
+      "available": {
+        "buffActive": "twilight"
+      },
       "hits": [
         {
           "id": "hit1",
@@ -299,8 +326,7 @@
             "consume": true
           }
         }
-      ],
-      "availableWhile": "twilight"
+      ]
     },
     {
       "skillId": "chr_0016_laevat_combo_skill",
@@ -351,6 +377,9 @@
       "skillId": "chr_0016_laevat_ult_attack1",
       "label": "Enhanced basic attack 1 (during ultimate)",
       "damageType": "basic",
+      "available": {
+        "buffActive": "twilight"
+      },
       "hits": [
         {
           "id": "hit",
@@ -362,13 +391,15 @@
             12
           ]
         }
-      ],
-      "availableWhile": "twilight"
+      ]
     },
     {
       "skillId": "chr_0016_laevat_ult_attack2",
       "label": "Enhanced basic attack 2 (during ultimate)",
       "damageType": "basic",
+      "available": {
+        "buffActive": "twilight"
+      },
       "hits": [
         {
           "id": "hit",
@@ -382,13 +413,15 @@
             21
           ]
         }
-      ],
-      "availableWhile": "twilight"
+      ]
     },
     {
       "skillId": "chr_0016_laevat_ult_attack3",
       "label": "Enhanced basic attack 3 (during ultimate)",
       "damageType": "basic",
+      "available": {
+        "buffActive": "twilight"
+      },
       "hits": [
         {
           "id": "hit",
@@ -407,13 +440,15 @@
           ],
           "note": "Skill description (I18nTextTable_EN): during the ultimate, \"BATK sequence 3 also applies Heat Infliction\"."
         }
-      ],
-      "availableWhile": "twilight"
+      ]
     },
     {
       "skillId": "chr_0016_laevat_ult_attack4",
       "label": "Enhanced basic attack 4 (during ultimate)",
       "damageType": "basic",
+      "available": {
+        "buffActive": "twilight"
+      },
       "hits": [
         {
           "id": "hit",
@@ -427,8 +462,7 @@
             26
           ]
         }
-      ],
-      "availableWhile": "twilight"
+      ]
     }
   ],
   "conditions": [

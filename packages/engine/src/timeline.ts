@@ -153,6 +153,8 @@ export interface TimelineState {
   /** Per skill ID: frame from which it's off cooldown. */
   readonly readyAt: Readonly<Record<string, number>>;
   readonly pending: readonly PendingHit[];
+  /** Trigger actions due later (KitTrigger.delay), with the event that started them. */
+  readonly pendingActions: readonly { readonly frame: number; readonly owner: string; readonly trigger: string; readonly event: BattleEvent; readonly origin: Origin | null }[];
   /** Ultimate energy given later than the cast (a battle skill's team energy at its data frame, KitSkill.teamEnergyFrame). */
   readonly pendingEnergy: readonly { readonly frame: number; readonly operator: string; readonly amount: number }[];
   readonly enemy: EnemyStatus;
@@ -214,6 +216,7 @@ export function init(ctx: TimelineContext): TimelineState {
     readyAt: {},
     pending: [],
     pendingEnergy: [],
+    pendingActions: [],
     enemy: NO_STATUS,
     buffs: [],
     triggerState: {},
@@ -298,7 +301,8 @@ export interface EnergyGrantOptions {
 }
 
 function gainEnergy(ctx: TimelineContext, st: TimelineState, operator: string, amount: number, frame: number, opts: EnergyGrantOptions = {}): TimelineState {
-  if (amount <= 0 || (!opts.ignoreBlock && (st.energyBlockedUntil[operator] ?? -1) > frame)) return st;
+  const blocked = (st.energyBlockedUntil[operator] ?? -1) > frame || st.buffs.some((b) => b.blocksEnergy && b.owner === operator && b.appliedAt <= frame && b.expiresAt > frame);
+  if (amount <= 0 || (!opts.ignoreBlock && blocked)) return st;
   const panel = ctx.panels.get(operator) as StatPanel;
   const efficiency = opts.ignoreEfficiency ? 1 : (panel.attrs[Attr.UltimateSpGainScalar]?.total ?? ctx.data.attributeDefaults[Attr.UltimateSpGainScalar] ?? 1) + buffAttr(st.buffs, operator, frame, Attr.UltimateSpGainScalar);
   const now = st.energy[operator] ?? 0;
@@ -469,6 +473,10 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
         if (t.if && !decide(t.if, ec)) continue;
         const cooldown = t.cooldown === undefined ? 0 : Math.round(evaluate(t.cooldown, ec) * FPS);
         st = { ...st, triggerState: { ...st.triggerState, [key]: { readyAt: e.frame + cooldown, count: (ts?.count ?? 0) + 1 } } };
+        if (t.delay) {
+          st = { ...st, pendingActions: [...st.pendingActions, { frame: e.frame + t.delay, owner, trigger: t.id, event: e, origin }] };
+          continue;
+        }
         const r = runActions(ctx, st, t, owner, e, origin);
         st = r.state;
         queue.push(...r.events);
@@ -703,7 +711,16 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
       st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: at, operator: b.owner, buff: b.id })), null);
       continue;
     }
+    const due = st.pendingActions.reduce<TimelineState["pendingActions"][number] | null>((a, x) => (x.frame <= frame && (!a || x.frame < a.frame) ? x : a), null);
     const grant = st.pendingEnergy.reduce<TimelineState["pendingEnergy"][number] | null>((a, g) => (g.frame <= frame && (!a || g.frame < a.frame) ? g : a), null);
+    if (due && first(due.frame, grant?.frame ?? null, buffTick?.frame ?? null, hitFrame)) {
+      const t = ctx.kits.get(due.owner)?.triggers.find((x) => x.id === due.trigger);
+      if (!t) throw new EngineError(`${due.owner} has no trigger ${due.trigger}`);
+      st = { ...st, pendingActions: st.pendingActions.filter((x) => x !== due) };
+      const r = runActions(ctx, st, t, due.owner, { ...due.event, frame: due.frame }, due.origin);
+      st = runTriggers(ctx, r.state, r.events, due.origin);
+      continue;
+    }
     if (grant && first(grant.frame, buffTick?.frame ?? null, hitFrame)) {
       st = gainEnergy(ctx, { ...st, pendingEnergy: st.pendingEnergy.filter((g) => g !== grant) }, grant.operator, grant.amount, grant.frame);
       continue;
@@ -755,11 +772,11 @@ export function earliestStart(ctx: TimelineContext, state: TimelineState, action
   if (frame > ctx.scenario.durationFrames) return { error: `${action.skill} can't start before the fight ends` };
   // Energy, combo windows and states change only as hits land, so check them as they'll be at the start frame.
   const skill = kitSkill(ctx, action.operator, action.skill);
-  if (skill.availableWhile || skill.unavailableWhile) {
+  if (skill.available) {
     const then = advance(ctx, state, frame);
-    const active = (id: string) => then.buffs.some((x) => x.id === id && x.owner === action.operator && x.appliedAt <= frame && x.expiresAt > frame);
-    if (skill.availableWhile && !active(skill.availableWhile)) return { error: `${action.skill} needs ${skill.availableWhile} active` };
-    if (skill.unavailableWhile && active(skill.unavailableWhile)) return { error: `${action.skill} isn't available during ${skill.unavailableWhile}` };
+    const build = ctx.builds.get(action.operator) as Build;
+    const ok = decide(skill.available, evalContext(ctx.data, build, ctx.panels.get(action.operator) as StatPanel, skill.skillId, situationAt(ctx, action.operator, then, frame)));
+    if (!ok) return { error: `${action.skill} isn't available at frame ${frame} (${JSON.stringify(skill.available)})` };
   }
   if (costs.energyCost > 0 || (costs.kind === "combo" && hasComboTrigger(ctx, action.operator))) {
     const then = advance(ctx, state, frame);
@@ -790,6 +807,20 @@ function hasComboTrigger(ctx: TimelineContext, operator: string): boolean {
   return (ctx.kits.get(operator)?.triggers ?? []).some(
     (t) => t.do.some((a) => a.kind === "openCombo") && (!t.if || test(t.if, evalContext(ctx.data, build, panel, triggerSkillId(operator, t), { team: ctx.scenario.team })) !== false),
   );
+}
+
+/** Cooldowns after a cast: the skill's own, and every member of its cooldown group on its own cooldown. */
+function castCooldowns(ctx: TimelineContext, readyAt: TimelineState["readyAt"], operator: string, skill: KitSkill, cooldownFrames: number, frame: number): TimelineState["readyAt"] {
+  const out = { ...readyAt };
+  if (cooldownFrames > 0) out[skill.skillId] = frame + cooldownFrames;
+  if (skill.cooldownGroup) {
+    for (const other of ctx.kits.get(operator)?.skills ?? []) {
+      if (other.cooldownGroup !== skill.cooldownGroup || other.skillId === skill.skillId) continue;
+      const cd = skillCosts(ctx, operator, other.skillId).cooldownFrames;
+      if (cd > 0) out[other.skillId] = Math.max(out[other.skillId] ?? 0, frame + cd);
+    }
+  }
+  return out;
 }
 
 /** Applies one rotation action at its earliest legal frame. Throws if it can't happen. */
@@ -847,7 +878,8 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
     sp: s.sp - costs.spCost,
     spPausedUntil: costs.spCost > 0 ? start.frame + SP.pauseAfterSpendFrames : s.spPausedUntil,
     freeAt: { ...s.freeAt, [action.operator]: start.frame + costs.lockFrames },
-    readyAt: costs.cooldownFrames > 0 ? { ...next.readyAt, [action.skill]: start.frame + costs.cooldownFrames } : next.readyAt,
+    readyAt: castCooldowns(ctx, next.readyAt, action.operator, skill, costs.cooldownFrames, start.frame),
+    ...(skill.takesControl ? { controlled: action.operator } : {}),
     pending: [...s.pending, ...pending],
     stacks,
     casts: [...s.casts, { frame: start.frame, operator: action.operator, skill: action.skill, spAfter: s.sp - costs.spCost, energyAfter: next.energy[action.operator] ?? 0 }],

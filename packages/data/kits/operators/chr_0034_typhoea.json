@@ -332,9 +332,11 @@
       "skillId": "chr_0034_typhoea_floating_attack1",
       "label": "Aerial basic attack 1",
       "damageType": "basic",
-      "availableWhile": "hovering",
       "durationFrames": 18,
       "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). The shot consumes 1 Hunting Arrow at frame 1 if there is one (Power Shot; kit: slot arrow_1). durationFrames: the next shot is allowed from frame 18 (SkillData cancel frame; durationFrame 160 holds 5 direction variants).",
+      "available": {
+        "buffActive": "hovering"
+      },
       "hits": [
         {
           "id": "power_shot",
@@ -410,9 +412,11 @@
       "skillId": "chr_0034_typhoea_floating_attack2",
       "label": "Aerial basic attack 2",
       "damageType": "basic",
-      "availableWhile": "hovering",
       "durationFrames": 18,
       "note": "As floating_attack1 (cancel frame 18); a Power Shot when Hunting Arrow slot 2 is filled.",
+      "available": {
+        "buffActive": "hovering"
+      },
       "hits": [
         {
           "id": "power_shot",
@@ -486,9 +490,11 @@
       "skillId": "chr_0034_typhoea_floating_attack3",
       "label": "Aerial basic attack 3",
       "damageType": "basic",
-      "availableWhile": "hovering",
       "durationFrames": 18,
       "note": "As floating_attack1 (cancel frame 18); a Power Shot when Hunting Arrow slot 3 is filled.",
+      "available": {
+        "buffActive": "hovering"
+      },
       "hits": [
         {
           "id": "power_shot",
@@ -562,9 +568,11 @@
       "skillId": "chr_0034_typhoea_floating_attack4",
       "label": "Aerial basic attack 4",
       "damageType": "basic",
-      "availableWhile": "hovering",
       "durationFrames": 28,
       "note": "As floating_attack1 (cancel frame 28); a Power Shot when Hunting Arrow slot 4 is filled.",
+      "available": {
+        "buffActive": "hovering"
+      },
       "hits": [
         {
           "id": "power_shot",
@@ -638,9 +646,11 @@
       "skillId": "chr_0034_typhoea_floating_attack5",
       "label": "Aerial basic attack 5 (final strike)",
       "damageType": "basic",
-      "availableWhile": "hovering",
       "durationFrames": 35,
       "note": "The 5th shot of a hover: as the controlled operator always a Power Shot that doesn't consume Hunting Arrows (its FinishBuff of arrow_num is disabled), and a Final Strike (mask 2101376). It ends the floating stance at frame 15. durationFrames: SkillData exclusiveFrame 35 (no cancel window).",
+      "available": {
+        "buffActive": "hovering"
+      },
       "hits": [
         {
           "id": "power_shot",
@@ -810,9 +820,11 @@
       "skillId": "chr_0034_typhoea_combo_skillfloating",
       "label": "Combo skill (floating)",
       "damageType": "combo",
-      "availableWhile": "hovering",
       "durationFrames": 57,
       "note": "The combo cast in the floating stance (the stance's ChangeSkillAction swaps it in): same arrows, refreshes the stance (resets the ABATK attempts) and returns to it from frame 57 (SkillData durationFrame 70). Both combos log under the same event keys. At frame 35: usp energy and the Sign conversion. The game shares one cooldown between the two combos; the timeline doesn't.",
+      "available": {
+        "buffActive": "hovering"
+      },
       "hits": [
         {
           "id": "first_arrow",
