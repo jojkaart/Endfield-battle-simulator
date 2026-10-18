@@ -1,5 +1,5 @@
 {
- "$schema": "../schemas/log-fixture.schema.json",
+ "$schema": "../../schemas/log-fixture.schema.json",
  "id": "zmdlogs-e82d45c46040",
  "description": "ZMDLogs battle btl_upload_e82d45c46040 vs eny_0051_rodin: chr_0032_lizhiyan, chr_0004_pelica, chr_0036_jsspsi, chr_0011_seraph; per-hit damage with the logged buff effects.",
  "provenance": {

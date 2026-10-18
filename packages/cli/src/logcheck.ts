@@ -14,10 +14,11 @@ import {
   type KitHit,
   type KitSkill,
   type Modifier,
+  type ReactionKind,
   type SkillType,
   type StatPanel,
 } from "@efsim/engine";
-import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
+import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit, type RawBuffFile } from "@efsim/data";
 
 export type HitVerdict =
   | { readonly kind: "match"; readonly hit: LogHit; readonly predicted: number; readonly assumed: readonly string[] }
@@ -47,8 +48,55 @@ function buffSkillType(buffId: string): SkillType | null {
   return result;
 }
 
-export function logModifiers(effects: readonly LogEffect[]): Modifier[] {
-  return effects.map((e) => {
+/** What kind of damage a hit is, for buffs limited to some kinds (BuffData decorate masks). */
+export type HitCategory = SkillType | ReactionKind;
+
+/**
+ * Decorate-mask bits whose meaning is established: the skill types (from
+ * SkillData DamageActions: basic attacks 128, battle skill 256, ultimate
+ * 512, combo 8192) and Arts Burst (33554432: Typhoeus's combo debuff only
+ * raises bursts, btl_upload_dbaee23b801d).
+ */
+const MASK_BITS: Readonly<Record<string, number>> = { basic: 128, battle: 256, ultimate: 512, combo: 8192, burst: 33554432 };
+const KNOWN_MASK = Object.values(MASK_BITS).reduce((a, b) => a | b, 0);
+
+const buffCache = new Map<string, RawBuffFile | null>();
+function buffFile(buffId: string): RawBuffFile | null {
+  if (!buffCache.has(buffId)) buffCache.set(buffId, isBuffFileListed(buffId) ? readBuffFile(buffId) : null);
+  return buffCache.get(buffId) ?? null;
+}
+
+/** Whether a buff's damage modifiers reach this kind of hit. Masks with unknown bits or other check types aren't filtered. */
+function reaches(buffId: string, category: HitCategory | null): boolean {
+  const m = buffFile(buffId)?.damageMask;
+  if (!m || m.checkType !== 2 || (m.mask & ~KNOWN_MASK) !== 0 || category === null) return true;
+  return ((MASK_BITS[category] ?? 0) & m.mask) !== 0;
+}
+
+/**
+ * Logged instances as the game counts them: a priority-keyed buff
+ * (stackingType 1, "effects of the same name don't stack") counts only its
+ * strongest instance, and a buff with a literal maximum stack count counts at
+ * most that many.
+ */
+function countedInstances(effects: readonly LogEffect[]): LogEffect[] {
+  const groups = new Map<string, LogEffect[]>();
+  for (const e of effects) {
+    const k = `${e.buff}|${e.zone}|${e.element}`;
+    groups.set(k, [...(groups.get(k) ?? []), e]);
+  }
+  const out: LogEffect[] = [];
+  for (const g of groups.values()) {
+    const stacking = buffFile((g[0] as LogEffect).buff)?.stacking;
+    const sorted = [...g].sort((a, b) => b.value - a.value);
+    const limit = stacking?.type === 1 ? 1 : (stacking?.maxStacks ?? sorted.length);
+    out.push(...sorted.slice(0, limit));
+  }
+  return out;
+}
+
+export function logModifiers(effects: readonly LogEffect[], category: HitCategory | null = null): Modifier[] {
+  return countedInstances(effects.filter((e) => reaches(e.buff, category))).map((e) => {
     const skillType = buffSkillType(e.buff);
     return {
       zone: e.zone,
@@ -93,7 +141,10 @@ export function isCorrosionBuff(buff: string): boolean {
 
 interface Candidate {
   readonly assumed: readonly string[];
-  readonly modifiers: readonly Modifier[];
+  /** Logged effects taken as active; they become modifiers per hit category (logModifiers). */
+  readonly effects: readonly LogEffect[];
+  /** Modelled extras, e.g. Corrosion. */
+  readonly extra: readonly Modifier[];
   readonly crit: boolean;
   readonly stacks: number;
 }
@@ -104,7 +155,7 @@ function candidates(hit: LogHit, panels: ReadonlyMap<string, { panel: StatPanel 
   const corrosion = hit.unquantified.find((u) => isCorrosionBuff(u.buff));
   const corrosionLevels = corrosion ? [1, 2, 3, 4] : [0];
   for (const boundary of boundarySubsets(hit.boundaryEffects)) {
-    const base = logModifiers([...hit.effects, ...boundary.effects]);
+    const effects = [...hit.effects, ...boundary.effects];
     for (const level of corrosionLevels) {
       const extra: Modifier[] = [];
       const assumed: string[] = boundary.label ? [boundary.label] : [];
@@ -117,7 +168,8 @@ function candidates(hit: LogHit, panels: ReadonlyMap<string, { panel: StatPanel 
         for (const stacks of stackOptions) {
           out.push({
             assumed: [...assumed, ...(hit.crit === null ? [crit ? "crit" : "no crit"] : []), ...(stackOptions.length > 1 ? [`${stacks} stack(s)`] : [])],
-            modifiers: [...base, ...extra],
+            effects,
+            extra,
             crit,
             stacks,
           });
@@ -140,10 +192,12 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
     const stackOptions = reaction && reaction.kind !== "burst" ? [1, 2, 3, 4] : [1];
     const predicted: number[] = [];
     for (const c of candidates(hit, panels, stackOptions)) {
-      const options = { crit: c.crit ? ("always" as const) : ("never" as const), staggered: false, conditions: [], modifiers: c.modifiers };
+      const options = (category: HitCategory) => ({
+        crit: c.crit ? ("always" as const) : ("never" as const), staggered: false, conditions: [], modifiers: [...logModifiers(c.effects, category), ...c.extra],
+      });
       const results = reaction
-        ? [{ label: null, r: computeReaction(data, member.build, member.panel, target, { ...reaction, stacks: c.stacks }, options) }]
-        : found.map(([s, h]) => ({ label: found.length > 1 ? `kit hit ${h.id}` : null, r: computeHit(data, member.build, member.panel, target, s, h, options) }));
+        ? [{ label: null, r: computeReaction(data, member.build, member.panel, target, { ...reaction, stacks: c.stacks }, options(reaction.kind)) }]
+        : found.map(([s, h]) => ({ label: found.length > 1 ? `kit hit ${h.id}` : null, r: computeHit(data, member.build, member.panel, target, s, h, options(h.damageType)) }));
       for (const { label, r } of results) {
         const p = roundDamage(r.exact);
         if (Math.abs(p - actual) <= 1) return { kind: "match", hit, predicted: p, assumed: label ? [...c.assumed, label] : c.assumed };
@@ -218,7 +272,7 @@ export function impliedScales(data: GameData, fx: LogFixture, operator: string):
           crit: h.crit ? "always" : "never",
           staggered: false,
           conditions: [],
-          modifiers: logModifiers(h.effects),
+          modifiers: logModifiers(h.effects, type),
         }).exact;
         bySkillType[type] = (h.uncapped ?? h.value) / unit;
       }
@@ -264,7 +318,7 @@ export function findScales(data: GameData, fx: LogFixture, operator: string): Sc
         const kitHit: KitHit = { id: "x", label: "", scale: [], count: 1, events: [], damageType, element: hit.element ?? "physical" };
         for (const c of candidates(hit, panels, [1])) {
           const unit = computeHit(data, build, panel, target, { skillId: values[0]?.skillId ?? "", label: "", hits: [] }, kitHit, {
-            crit: c.crit ? "always" : "never", staggered: false, conditions: [], modifiers: c.modifiers,
+            crit: c.crit ? "always" : "never", staggered: false, conditions: [], modifiers: [...logModifiers(c.effects, damageType), ...c.extra],
           }).exact;
           const need = (hit.uncapped ?? hit.value) / unit;
           const corrosion = Number(/Corrosion level (\d)/.exec(c.assumed.join(" "))?.[1] ?? 0);
