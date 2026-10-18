@@ -343,6 +343,32 @@ stats (attribute types 64–69, 70–75, 62, 63), not zones.
   formula constant changed since March. Talos edits since then are listed in
   the journal (2026-10-18).
 
+**Physical state** (research 2026-10-18: BuffData, the in-game tutorial
+text in `I18nTextTable_EN`, the Talos Wiki pages Physical Status rev 65612,
+Vulnerability 65556, Lift 65560, Breach 65564, Stagger 64620, and Endaxis's
+runtime, read not copied; engine `status.ts`):
+- **Vulnerable** (`buff_physical_no_guard`): max 4 stacks, 20 s, each new
+  stack refreshes it (stacking type 8). Gained only from physical-status
+  actions and skills that create it directly; plain physical hits don't.
+- A physical-status action on an enemy without Vulnerable only adds one
+  stack, unless forced (`forceAirborne`, `forceKnockDown`; Crush and Breach
+  have no force flag).
+- **Lift / Knock Down** (`buff_physical_airborne` 3 s, `_knockdown`): +1
+  Vulnerable, not consumed; a 120% hit (masks 32768 / 65536); poise
+  10 × (1 + AI/200); a 2 s interrupt.
+- **Crush** (`buff_physical_do_crushed`): consumes all n stacks; 3 / 4.5 /
+  6 / 7.5 × the action's `damageMultiplier` (mask 16384); no poise.
+- **Breach** (`buff_physical_do_fracture`): consumes all n stacks; hit 1 /
+  1.5 / 2 / 2.5 (mask 1073741824); Physical DMG taken +12–24% for 12 / 18
+  / 24 / 30 s; a new Breach replaces the old one (stacking key `fracture`).
+- **Shatter** (`buff_common_cryst_triggered_physical_break`, mask
+  134217728): any physical status, or any new Vulnerable stack, on a
+  Solidified enemy consumes Solidification for 2.4 / 3.6 / 4.8 / 6 by its
+  level, after the status's own hit; Vulnerable is unaffected.
+- Zero Sanity's notes (Lift consumes Vulnerable; Crush / Breach need none)
+  describe the Beta I rules, changed since.
+- Verified: Estella's Lift hits in `zmdlogs-4e5e1390085e` match exactly.
+
 **Simulator caveats:** Zero Sanity uses beta Breach values (11–20%) and no
 AI scaling for Breach/Electrification
 (`src/controller/timeline/eventsQueryService.ts:34-36`), and rounds ATK to

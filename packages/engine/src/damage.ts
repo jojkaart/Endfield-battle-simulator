@@ -8,7 +8,7 @@ import { STAGGER_DAMAGE_TAKEN } from "./constants.ts";
 import { applies, attrModifier, zoneProduct, zoneSum, type HitContext, type HitKind, type Modifier, type Zone } from "./effects.ts";
 import { EngineError } from "./errors.ts";
 import type { Condition, GameData, KitHit, KitSkill } from "./model.ts";
-import { artsIntensityDamage, artsLevelCoefficient, reactionBase, type ReactionKind } from "./reactions.ts";
+import { artsIntensityDamage, levelCoefficientOf, reactionBase, type ReactionKind } from "./reactions.ts";
 import { evaluate, test, type EvalContext, type Predicate } from "./expr.ts";
 import { computeStats, skillLevel, wornEquipment, type StatPanel } from "./stats.ts";
 
@@ -296,7 +296,7 @@ function reactionScaleParts(
   const ai = zoneSum(activeModifiers(data, build, panel, options), "artsIntensity", ctx);
   return [
     { key: `${reaction.kind} base`, value: reactionBase(reaction.kind, reaction.stacks) },
-    { key: "level coefficient", value: artsLevelCoefficient(build.level) },
+    { key: "level coefficient", value: levelCoefficientOf(reaction.kind, build.level) },
     { key: "arts intensity", value: artsIntensityDamage(ai) },
   ];
 }

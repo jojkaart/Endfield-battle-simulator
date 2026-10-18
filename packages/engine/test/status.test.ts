@@ -12,6 +12,8 @@ import {
   statusEventKey,
   statusModifiers,
   tickStatus,
+  reactionBase,
+  levelCoefficientOf,
   type EnemyStatus,
   type HitApplication,
   type StatusEvent,
@@ -152,5 +154,57 @@ describe("arts state: applications kits need (batch 1, A1–A5)", () => {
     // Long after it's applied, the shred sits at the raised cap: 16 × 1.3 at level 2 (AI 0), 20 s in.
     expect(statusModifiers(tweaked, 3 + 30 * 20)[0]?.value).toBeCloseTo(16 * 1.3, 9);
     expect(corrosionShred(2, 60_000, 0, 1.3)).toBeCloseTo(20.8, 9);
+  });
+});
+
+describe("physical state (Vulnerable, Lift, Knock Down, Crush, Breach, Shatter)", () => {
+  const phys = (s: EnemyStatus, status: "lift" | "knockdown" | "crush" | "breach", frame: number, forced = false) => applyToEnemy(s, { kind: "physicalStatus", status, forced }, frame, "a", 0);
+
+  it("without Vulnerable, a status only adds a stack, unless it's a forced Lift", () => {
+    const r = phys(NO_STATUS, "crush", 0);
+    expect(r.events).toEqual([{ kind: "vulnerable", frame: 0, operator: "a", stacks: 1 }]);
+    expect(r.state.vulnerable).toEqual({ stacks: 1, expiresAt: 600 });
+    const f = phys(NO_STATUS, "lift", 0, true);
+    expect(f.events.map((e) => e.kind)).toEqual(["vulnerable", "physical"]);
+    expect(f.state.physical.map((x) => x.status)).toEqual(["lift"]);
+  });
+
+  it("Lift adds a stack and keeps them; Crush and Breach consume all, at that level", () => {
+    let s = phys(NO_STATUS, "lift", 0).state;
+    s = phys(s, "lift", 30).state;
+    expect(s.vulnerable?.stacks).toBe(2);
+    s = phys(s, "knockdown", 60).state;
+    expect(s.vulnerable?.stacks).toBe(3);
+    const crush = phys(s, "crush", 90);
+    expect(crush.state.vulnerable).toBeNull();
+    expect(crush.events).toEqual([{ kind: "physical", frame: 90, operator: "a", status: "crush", level: 3, forced: false }]);
+    const breach = phys(s, "breach", 90);
+    expect(breach.state.physical.find((x) => x.status === "breach")).toMatchObject({ level: 3, expiresAt: 90 + 24 * 30 });
+    // Breach: Physical DMG taken +20% at level III (AI 0).
+    expect(statusModifiers(breach.state, 100).find((m) => m.source === "Breach level 3")).toMatchObject({ zone: "damageTaken", element: "physical", value: 0.2 });
+  });
+
+  it("Vulnerable caps at 4 and refreshes to 20 s", () => {
+    let s = NO_STATUS;
+    for (let i = 0; i < 6; i++) s = applyToEnemy(s, { kind: "vulnerable" }, i * 30, "a", 0).state;
+    expect(s.vulnerable).toEqual({ stacks: 4, expiresAt: 5 * 30 + 600 });
+  });
+
+  it("a physical status or a new Vulnerable stack shatters a Solidified enemy, after the status's own hit", () => {
+    const solid = applyToEnemy(NO_STATUS, { kind: "forcedReaction", status: "solidification", level: 2 }, 2, "a", 0).state;
+    const lift = phys(solid, "lift", 10, true);
+    expect(lift.events.map((e) => e.kind)).toEqual(["vulnerable", "physical", "shatter"]);
+    expect(lift.events.at(-1)).toMatchObject({ kind: "shatter", level: 2 });
+    expect(lift.state.statuses.some((x) => x.status === "solidification")).toBe(false);
+    const stack = applyToEnemy(solid, { kind: "vulnerable" }, 10, "b", 0);
+    expect(stack.events.map((e) => e.kind)).toEqual(["vulnerable", "shatter"]);
+  });
+
+  it("their hits' multipliers and log keys", () => {
+    expect([reactionBase("lift", 1), reactionBase("crush", 4), reactionBase("breach", 1), reactionBase("shatter", 2)]).toEqual([1.2, 7.5, 1, 3.6]);
+    expect(levelCoefficientOf("lift", 90)).toBeCloseTo(1 + 89 / 392, 12);
+    expect(levelCoefficientOf("shatter", 90)).toBeCloseTo(1 + 89 / 196, 12);
+    expect(statusEventKey({ kind: "physical", frame: 0, operator: "a", status: "lift", level: 1, forced: true })).toBe("buff_physical_airborne");
+    expect(statusEventKey({ kind: "shatter", frame: 0, operator: "a", level: 1 })).toBe("buff_common_cryst_triggered_physical_break");
   });
 });

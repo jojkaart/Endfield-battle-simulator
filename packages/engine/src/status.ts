@@ -17,6 +17,21 @@
 // - Reapplying a status overrides it and resets its duration.
 // Battle logs name a reaction buff_common_<new>_<consumed>_triggered and a
 // burst buff_common_<e>_<e>_triggered (fixtures/zmdlogs-40d9a3c1da37.json).
+//
+// Physical state (research 2026-10-18 from BuffData, the in-game tutorial
+// text, the Talos Wiki and Endaxis's runtime; docs/data-sources.md):
+// - Vulnerable (buff_physical_no_guard): max 4 stacks, 20 s, each new stack
+//   refreshes it. Only physical-status applications and skills that apply it
+//   directly add stacks; plain physical hits don't.
+// - A physical status on an enemy without Vulnerable only adds 1 stack,
+//   unless forced (a forced Lift / Knock Down always lands).
+// - Lift / Knock Down: +1 Vulnerable (not consumed), a 120% hit, the status
+//   (3 s / 10 s). Crush: consumes all n stacks for a 300–750% hit. Breach:
+//   consumes all n stacks for a 100–250% hit and Physical DMG taken
+//   +12–24% (× Arts Intensity effect) for 12–30 s, replacing any Breach.
+// - Shatter: a physical status, or any new Vulnerable stack, on a
+//   Solidified enemy consumes Solidification for a 240–600% hit (by its
+//   level), after the status's own hit.
 
 import type { Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
@@ -41,6 +56,20 @@ export const ELEMENT_OF: Readonly<Record<ReactionStatus, ArtsElement>> = {
   solidification: "cryst",
   corrosion: "natural",
 };
+
+export type PhysicalStatus = "lift" | "knockdown" | "crush" | "breach";
+
+export const MAX_VULNERABLE_STACKS = 4;
+export const VULNERABLE_FRAMES = 20 * FPS;
+/** How long the status itself lasts (BuffData duration; Breach by level). */
+export const PHYSICAL_FRAMES: Readonly<Record<PhysicalStatus, readonly number[]>> = {
+  lift: [3, 3, 3, 3].map((x) => x * FPS),
+  knockdown: [10, 10, 10, 10].map((x) => x * FPS),
+  crush: [3, 3, 3, 3].map((x) => x * FPS),
+  breach: [12, 18, 24, 30].map((x) => x * FPS),
+};
+/** Breach's Physical DMG Taken by level, before Arts Intensity. */
+export const BREACH_DAMAGE_TAKEN = [0.12, 0.16, 0.2, 0.24] as const;
 
 export const MAX_INFLICTION_STACKS = 4;
 export const INFLICTION_FRAMES = 20 * FPS;
@@ -82,7 +111,16 @@ export type HitApplication =
    */
   | { readonly kind: "consumeInfliction"; readonly elements?: readonly ArtsElement[]; readonly stacks?: number }
   /** Remove a reaction status (only the listed ones, when given), e.g. a skill that consumes Solidification. */
-  | { readonly kind: "consumeStatus"; readonly statuses?: readonly ReactionStatus[] };
+  | { readonly kind: "consumeStatus"; readonly statuses?: readonly ReactionStatus[] }
+  /** Add Vulnerable stacks directly (CreateBuff buff_physical_no_guard). */
+  | { readonly kind: "vulnerable"; readonly stacks?: number }
+  /**
+   * A physical status (AirborneAction, KnockDownAction, CrushAction,
+   * FractureAction). `forced`: a Lift or Knock Down that lands without
+   * Vulnerable (forceAirborne / forceKnockDown). `multiplierKey`: a skill
+   * value multiplying its hit (CrushAction damageMultiplier).
+   */
+  | { readonly kind: "physicalStatus"; readonly status: PhysicalStatus; readonly forced?: boolean; readonly multiplierKey?: string };
 
 export interface Infliction {
   readonly element: ArtsElement;
@@ -107,13 +145,27 @@ export interface ActiveStatus {
   readonly capScale?: number;
 }
 
+export interface ActivePhysical {
+  readonly status: PhysicalStatus;
+  /** Crush and Breach: the Vulnerable stacks consumed; Lift and Knock Down: 1. */
+  readonly level: number;
+  readonly appliedAt: number;
+  readonly expiresAt: number;
+  readonly operator: string;
+  /** Breach's strength follows the applier's Arts Intensity. */
+  readonly artsIntensity: number;
+}
+
 export interface EnemyStatus {
   readonly infliction: Infliction | null;
   /** At most one of each status. */
   readonly statuses: readonly ActiveStatus[];
+  readonly vulnerable: { readonly stacks: number; readonly expiresAt: number } | null;
+  /** At most one of each physical status. */
+  readonly physical: readonly ActivePhysical[];
 }
 
-export const NO_STATUS: EnemyStatus = { infliction: null, statuses: [] };
+export const NO_STATUS: EnemyStatus = { infliction: null, statuses: [], vulnerable: null, physical: [] };
 
 export type StatusEvent =
   /** An infliction landed without a reaction (fresh, or stacking with a burst); `stacks` is the count after it. */
@@ -134,6 +186,12 @@ export type StatusEvent =
   | { readonly kind: "consumed"; readonly frame: number; readonly operator: string; readonly element: ArtsElement; readonly stacks: number }
   /** A reaction status was removed by a hit before it ran out. */
   | { readonly kind: "statusConsumed"; readonly frame: number; readonly operator: string; readonly status: ReactionStatus; readonly level: number }
+  /** Vulnerable stacks were added; `stacks` is the count after. */
+  | { readonly kind: "vulnerable"; readonly frame: number; readonly operator: string; readonly stacks: number }
+  /** A physical status landed (its hit is its damage); `multiplier` scales the hit (Crush). */
+  | { readonly kind: "physical"; readonly frame: number; readonly operator: string; readonly status: PhysicalStatus; readonly level: number; readonly forced: boolean; readonly multiplier?: number }
+  /** Solidification shattered (its level). */
+  | { readonly kind: "shatter"; readonly frame: number; readonly operator: string; readonly level: number }
   | {
       readonly kind: "combustionTick";
       readonly frame: number;
@@ -142,11 +200,21 @@ export type StatusEvent =
       readonly damageScale?: { readonly key: string; readonly value: number };
     };
 
+/** The BuffData file that holds each physical status's hit: battle logs name the hit after it. */
+export const PHYSICAL_KEYS: Readonly<Record<PhysicalStatus, string>> = {
+  lift: "buff_physical_airborne",
+  knockdown: "buff_physical_knockdown",
+  crush: "buff_physical_do_crushed",
+  breach: "buff_physical_do_fracture",
+};
+
 /** The log event key of a burst or reaction's initial hit (ZMDLogs naming). */
 export function statusEventKey(e: StatusEvent): string | null {
   if (e.kind === "burst") return `buff_common_${e.element}_${e.element}_triggered`;
   if (e.kind === "reaction") return e.consumed ? `buff_common_${e.element}_${e.consumed}_triggered` : null;
   if (e.kind === "combustionTick") return "buff_common_burning_status";
+  if (e.kind === "physical") return PHYSICAL_KEYS[e.status];
+  if (e.kind === "shatter") return "buff_common_cryst_triggered_physical_break";
   return null;
 }
 
@@ -154,7 +222,10 @@ export function statusEventKey(e: StatusEvent): string | null {
 export function expireStatus(s: EnemyStatus, frame: number): EnemyStatus {
   const infliction = s.infliction && s.infliction.expiresAt > frame ? s.infliction : null;
   const statuses = s.statuses.filter((x) => x.expiresAt > frame);
-  return infliction === s.infliction && statuses.length === s.statuses.length ? s : { infliction, statuses };
+  const vulnerable = s.vulnerable && s.vulnerable.expiresAt > frame ? s.vulnerable : null;
+  const physical = s.physical.filter((x) => x.expiresAt > frame);
+  if (infliction === s.infliction && statuses.length === s.statuses.length && vulnerable === s.vulnerable && physical.length === s.physical.length) return s;
+  return { infliction, statuses, vulnerable, physical };
 }
 
 /** Frame of the next damage tick, or null. */
@@ -267,6 +338,21 @@ export function applyToEnemy(
       events: [{ kind: "reaction", frame, operator, status: app.status, element: ELEMENT_OF[app.status], level, consumed: null, initialHit: false }],
     };
   }
+  if (app.kind === "vulnerable") return addVulnerable(s, app.stacks ?? 1, frame, operator, true);
+  if (app.kind === "physicalStatus") {
+    const n = s.vulnerable?.stacks ?? 0;
+    const lifting = app.status === "lift" || app.status === "knockdown";
+    // Without Vulnerable (and not a forced Lift / Knock Down) it only adds a stack.
+    if (n === 0 && !(lifting && app.forced)) return addVulnerable(s, 1, frame, operator, true);
+    const level = lifting ? 1 : n;
+    const multiplier = app.multiplierKey ? skillValue(app.multiplierKey) : undefined;
+    const added = lifting ? addVulnerable(s, 1, frame, operator, false) : { state: { ...s, vulnerable: null }, events: [] };
+    const phys: ActivePhysical = { status: app.status, level, appliedAt: frame, expiresAt: frame + (PHYSICAL_FRAMES[app.status][level - 1] as number), operator, artsIntensity };
+    const state = { ...added.state, physical: [...added.state.physical.filter((x) => x.status !== app.status), phys] };
+    const hit: StatusEvent = { kind: "physical", frame, operator, status: app.status, level, forced: app.forced === true, ...(multiplier !== undefined ? { multiplier } : {}) };
+    const sh = shatter(state, frame, operator);
+    return { state: sh.state, events: [...added.events, hit, ...sh.events] };
+  }
   if (app.kind === "consumeStatus") {
     const gone = s.statuses.filter((x) => !app.statuses || app.statuses.includes(x.status));
     if (gone.length === 0) return { state: s, events: [] };
@@ -282,7 +368,26 @@ export function applyToEnemy(
   return { state: { ...s, infliction: left > 0 ? { ...cur, stacks: left } : null }, events: [{ kind: "consumed", frame, operator, element: cur.element, stacks: n }] };
 }
 
-/** The damage modifiers the enemy's statuses give at a frame: Corrosion's resistance shred, Electrification's Arts DMG Taken. */
+/** Adds Vulnerable stacks (refreshing it to at least 20 s); a new stack on a Solidified enemy shatters it, unless `shatters` is false. */
+function addVulnerable(s: EnemyStatus, n: number, frame: number, operator: string, shatters: boolean): { state: EnemyStatus; events: StatusEvent[] } {
+  if (!Number.isInteger(n) || n < 1) throw new EngineError(`Vulnerable stacks ${n}`);
+  const cur = s.vulnerable;
+  const stacks = Math.min(MAX_VULNERABLE_STACKS, (cur?.stacks ?? 0) + n);
+  const state: EnemyStatus = { ...s, vulnerable: { stacks, expiresAt: Math.max(cur?.expiresAt ?? 0, frame + VULNERABLE_FRAMES) } };
+  const events: StatusEvent[] = [{ kind: "vulnerable", frame, operator, stacks }];
+  if (!shatters) return { state, events };
+  const sh = shatter(state, frame, operator);
+  return { state: sh.state, events: [...events, ...sh.events] };
+}
+
+/** Shatter: on a Solidified enemy, Solidification ends with a hit of its level. */
+function shatter(s: EnemyStatus, frame: number, operator: string): { state: EnemyStatus; events: StatusEvent[] } {
+  const solid = s.statuses.find((x) => x.status === "solidification" && x.expiresAt > frame);
+  if (!solid) return { state: s, events: [] };
+  return { state: { ...s, statuses: s.statuses.filter((x) => x !== solid) }, events: [{ kind: "shatter", frame, operator, level: solid.level }] };
+}
+
+/** The damage modifiers the enemy's statuses give at a frame: Corrosion's resistance shred, Electrification's Arts DMG Taken, Breach's Physical DMG Taken. */
 export function statusModifiers(state: EnemyStatus, frame: number): Modifier[] {
   const out: Modifier[] = [];
   for (const x of expireStatus(state, frame).statuses) {
@@ -292,6 +397,10 @@ export function statusModifiers(state: EnemyStatus, frame: number): Modifier[] {
       const value = (ELECTRIFICATION_DAMAGE_TAKEN[x.level - 1] as number) * artsIntensityEffect(x.artsIntensity);
       for (const element of ARTS_ELEMENTS) out.push({ zone: "damageTaken", value, element, source: `Electrification level ${x.level}` });
     }
+  }
+  for (const x of expireStatus(state, frame).physical) {
+    if (x.status !== "breach") continue;
+    out.push({ zone: "damageTaken", value: (BREACH_DAMAGE_TAKEN[x.level - 1] as number) * artsIntensityEffect(x.artsIntensity), element: "physical", source: `Breach level ${x.level}` });
   }
   return out;
 }

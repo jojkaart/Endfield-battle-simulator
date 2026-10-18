@@ -8,7 +8,7 @@ import type { Element, SkillType } from "./attributes.ts";
 import type { Predicate, ValueExpr } from "./expr.ts";
 import type { KitApplication, KitHit, StackGain } from "./model.ts";
 import type { ArtsElement } from "./reactions.ts";
-import type { ReactionStatus, StatusEvent } from "./status.ts";
+import type { PhysicalStatus, ReactionStatus, StatusEvent } from "./status.ts";
 
 export type BattleEvent =
   /** A kit hit landed (after its damage). */
@@ -48,6 +48,11 @@ export type TriggerOn =
   /** An infliction is applied without a reaction, leaving at least `minStacks`. */
   | { readonly event: "inflictionApplied"; readonly elements?: readonly ArtsElement[]; readonly minStacks?: number }
   | { readonly event: "burst"; readonly elements?: readonly ArtsElement[] }
+  /** A physical status lands (Lift, Knock Down, Crush, Breach); `forced` narrows it to forced ones. */
+  | { readonly event: "physicalStatus"; readonly statuses?: readonly PhysicalStatus[]; readonly forced?: boolean }
+  /** Vulnerable stacks are added (by a physical status or directly), leaving at least `minStacks`. */
+  | { readonly event: "vulnerable"; readonly minStacks?: number }
+  | { readonly event: "shatter" }
   /** A reaction status is removed by a hit before it runs out (Liino's combo: "an Arts Reaction is consumed"). */
   | { readonly event: "statusConsumed"; readonly statuses?: readonly ReactionStatus[] }
   /** One of the trigger owner's own kit buffs is applied, ends, or ticks (KitBuff.every). */
@@ -152,6 +157,12 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
       return s.kind === "burst" && has(on.elements, s.element);
     case "statusConsumed":
       return s.kind === "statusConsumed" && has(on.statuses, s.status);
+    case "physicalStatus":
+      return s.kind === "physical" && has(on.statuses, s.status) && (on.forced === undefined || on.forced === s.forced);
+    case "vulnerable":
+      return s.kind === "vulnerable" && s.stacks >= (on.minStacks ?? 1);
+    case "shatter":
+      return s.kind === "shatter";
   }
 }
 

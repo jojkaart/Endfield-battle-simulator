@@ -244,6 +244,8 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
     // Corrosion's ramp doesn't fit every log yet (time dilation may pause its ticks; talents change its cap and
     // duration): a hit under Corrosion that matches no level counts as under an unmodelled effect, not a mismatch.
     if (hit.unquantified.length > 0) return { kind: "unquantified", hit, predicted: predicted[0] ?? 0 };
+    // A status hit by an operator without a kit: its talents and potentials (which can change its statuses) aren't modelled.
+    if (reaction && !data.kits.operators[hit.operator]) return { kind: "unquantified", hit, predicted: predicted[0] ?? 0 };
     return { kind: "mismatch", hit, predicted: [...new Set(predicted)].slice(0, 6), ratio: actual / (predicted[0] ?? 1) };
   });
 }

@@ -27,7 +27,7 @@ export interface ReactionCheck {
 }
 
 /** buff_common_<new>_<consumed>_triggered, or buff_common_<new>_triggered in newer logs (reactions only). */
-const REACTION_KEY = /^buff_common_(fire|natural|pulse|cryst)(_(fire|natural|pulse|cryst))?_triggered$/;
+const REACTION_KEY = /^buff_common_(fire|natural|pulse|cryst)(_(fire|natural|pulse|cryst))?_triggered$|^buff_physical_(airborne|knockdown|do_crushed|do_fracture)$|^buff_common_cryst_triggered_physical_break$/;
 
 /** Whether a logged key is what a predicted event would be logged as. */
 function sameKey(logged: string, predicted: StatusEvent): boolean {
@@ -101,6 +101,9 @@ function describe(e: StatusEvent): string {
   if (e.kind === "inflicted") return `${e.operator}: ${e.element} infliction (${e.stacks})`;
   if (e.kind === "consumed") return `${e.operator}: consumed ${e.stacks} ${e.element}`;
   if (e.kind === "statusConsumed") return `${e.operator}: consumed ${e.status} level ${e.level}`;
+  if (e.kind === "vulnerable") return `${e.operator}: Vulnerable (${e.stacks})`;
+  if (e.kind === "physical") return `${e.operator}: ${e.status} level ${e.level}${e.forced ? " (forced)" : ""}`;
+  if (e.kind === "shatter") return `${e.operator}: Shatter level ${e.level}`;
   return `${e.operator}: combustion tick level ${e.level}`;
 }
 

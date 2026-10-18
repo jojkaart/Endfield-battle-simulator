@@ -36,7 +36,7 @@ export type Zone = (typeof ZONES)[number];
 
 /** What kind of damage a hit is: its skill type, or a reaction kind for reaction damage. */
 /** `none`: a hit of no skill type (some triggered hits, e.g. from weapons or gear sets). */
-export type HitKind = SkillType | "none" | "burst" | "reaction" | "combustionTick";
+export type HitKind = SkillType | "none" | "burst" | "reaction" | "combustionTick" | "lift" | "knockdown" | "crush" | "breach" | "shatter";
 
 export interface Modifier {
   readonly zone: Zone;

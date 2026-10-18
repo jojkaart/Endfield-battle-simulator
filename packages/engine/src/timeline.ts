@@ -409,6 +409,8 @@ function shiftWorld(st: TimelineState, start: number, n: number): TimelineState 
   return {
     ...st,
     enemy: {
+      vulnerable: e.vulnerable ? { ...e.vulnerable, expiresAt: later(e.vulnerable.expiresAt) } : null,
+      physical: e.physical.map((x) => ({ ...x, expiresAt: later(x.expiresAt) })),
       infliction: e.infliction ? { ...e.infliction, expiresAt: later(e.infliction.expiresAt) } : null,
       statuses: e.statuses.map((x) => ({
         ...x,
@@ -561,14 +563,16 @@ function statusTweaks(ctx: TimelineContext, st: TimelineState, operator: string,
 
 /** The damage a status event deals, if any (bursts, reactions with an initial hit, Combustion ticks). */
 function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, buffs: readonly ActiveBuff[]): LandedHit | null {
-  if (e.kind === "consumed" || e.kind === "inflicted" || e.kind === "statusConsumed" || (e.kind === "reaction" && !e.initialHit)) return null;
+  if (e.kind === "consumed" || e.kind === "inflicted" || e.kind === "statusConsumed" || e.kind === "vulnerable" || (e.kind === "reaction" && !e.initialHit)) return null;
   const reaction =
     e.kind === "burst" ? { kind: "burst" as const, element: e.element, stacks: 1 }
     : e.kind === "reaction" ? { kind: "reaction" as const, element: e.element, stacks: e.level }
+    : e.kind === "physical" ? { kind: e.status, element: "physical" as const, stacks: e.level }
+    : e.kind === "shatter" ? { kind: "shatter" as const, element: "physical" as const, stacks: e.level }
     : { kind: "combustionTick" as const, element: "fire" as const, stacks: e.level };
   const build = ctx.builds.get(e.operator) as Build;
   const result = computeReaction(ctx.data, build, ctx.panels.get(e.operator) as StatPanel, ctx.scenario.target, reaction, damageOptions(ctx, e.operator, enemy, buffs, e.frame));
-  const scale = e.kind === "combustionTick" ? e.damageScale : undefined;
+  const scale = e.kind === "combustionTick" ? e.damageScale : e.kind === "physical" && e.multiplier !== undefined ? { key: "multiplier", value: e.multiplier } : undefined;
   if (!scale) return { ...result, frame: e.frame, operator: e.operator };
   const exact = result.exact * scale.value;
   return { ...result, scaleParts: [...result.scaleParts, scale], zones: { ...result.zones, scale: result.zones.scale * scale.value }, exact, damage: roundDamage(exact), frame: e.frame, operator: e.operator };
@@ -626,7 +630,7 @@ function triggerSituation(ctx: TimelineContext, owner: string, st: TimelineState
 function eventCountOf(e: BattleEvent): number {
   if (e.type !== "status") return 1;
   const s = e.event;
-  return s.kind === "inflicted" || s.kind === "consumed" ? s.stacks : s.kind === "reaction" || s.kind === "statusConsumed" ? s.level : 1;
+  return s.kind === "inflicted" || s.kind === "consumed" || s.kind === "vulnerable" ? s.stacks : s.kind === "reaction" || s.kind === "statusConsumed" || s.kind === "physical" || s.kind === "shatter" ? s.level : 1;
 }
 
 /** Runs every team member's triggers on a chain of events, in order; what they do can add events to the chain. */

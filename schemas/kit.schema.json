@@ -107,7 +107,12 @@
                       "none",
                       "burst",
                       "reaction",
-                      "combustionTick"
+                      "combustionTick",
+                      "lift",
+                      "knockdown",
+                      "crush",
+                      "breach",
+                      "shatter"
                     ]
                   },
                   "minItems": 1
@@ -401,6 +406,62 @@
                       ]
                     },
                     "minItems": 1
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "event"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
+                    "const": "physicalStatus"
+                  },
+                  "statuses": {
+                    "type": "array",
+                    "items": {
+                      "enum": [
+                        "lift",
+                        "knockdown",
+                        "crush",
+                        "breach"
+                      ]
+                    },
+                    "minItems": 1
+                  },
+                  "forced": {
+                    "type": "boolean"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "event"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
+                    "const": "vulnerable"
+                  },
+                  "minStacks": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 4
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "event"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
+                    "const": "shatter"
                   }
                 }
               }
@@ -1093,6 +1154,60 @@
               "description": "Only in this situation (judged when it happens)."
             }
           }
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "vulnerable"
+            },
+            "stacks": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4
+            },
+            "if": {
+              "$ref": "#/$defs/predicate",
+              "description": "Only in this situation (judged when it happens)."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "status"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "physicalStatus"
+            },
+            "status": {
+              "enum": [
+                "lift",
+                "knockdown",
+                "crush",
+                "breach"
+              ]
+            },
+            "forced": {
+              "type": "boolean",
+              "description": "A Lift / Knock Down that lands without Vulnerable (forceAirborne / forceKnockDown)."
+            },
+            "multiplierKey": {
+              "type": "string",
+              "description": "Skill value multiplying the status's hit (CrushAction damageMultiplier)."
+            },
+            "if": {
+              "$ref": "#/$defs/predicate",
+              "description": "Only in this situation (judged when it happens)."
+            }
+          }
         }
       ]
     },
@@ -1546,6 +1661,39 @@
               "description": "Judged for the operator who caused the event a trigger reacts to."
             }
           }
+        },
+        {
+          "type": "object",
+          "required": [
+            "enemyPhysical"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "enemyPhysical": {
+              "enum": [
+                "lift",
+                "knockdown",
+                "crush",
+                "breach"
+              ],
+              "description": "The enemy has this physical status."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "enemyVulnerable"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "enemyVulnerable": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4,
+              "description": "The enemy has at least this many Vulnerable stacks."
+            }
+          }
         }
       ]
     },
@@ -1715,6 +1863,19 @@
           "properties": {
             "targetsHit": {
               "const": true
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "enemyVulnerableStacks"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "enemyVulnerableStacks": {
+              "const": true,
+              "description": "The enemy's Vulnerable stacks."
             }
           }
         }

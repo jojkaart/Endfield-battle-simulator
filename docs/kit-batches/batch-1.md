@@ -244,3 +244,12 @@ Then re-analysis of all seven.
   Gilberta's example −1.6%, Si's +2.9%, Typhoeus's +1.0% (Laevatain's, Arcane's,
   Estella's and Liino's unchanged). Not yet: entity-layer dilation,
   hit-stop, jumps (Ti3), haste (Ti4). In-game test 18.
+- P1: the physical state (docs/data-sources.md "Physical state"):
+  Vulnerable, Lift, Knock Down, Crush, Breach and Shatter as applications
+  (`vulnerable`, `physicalStatus` with `forced`), their hits as status
+  damage, events (`physicalStatus`, `vulnerable`, `shatter`), predicates
+  (`enemyPhysical`, `enemyVulnerable`) and the `enemyVulnerableStacks`
+  value (Gilberta's V2). The log checker now checks physical-status hits:
+  Estella's coverage 52% → 83% and Gilberta's 67% → 79% of their damage,
+  no mismatches (a kit-less operator's status hit counts as unmodelled).
+  Control-status tags (Immobilization) and stagger (P2) next.

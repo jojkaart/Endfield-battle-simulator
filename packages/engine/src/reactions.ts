@@ -14,7 +14,14 @@ export type ReactionKind =
   /** An infliction meeting a different element: Combustion (Heat), Electrification (Electric), Solidification (Cryo), Corrosion (Nature). */
   | "reaction"
   /** A tick of Combustion's burning. */
-  | "combustionTick";
+  | "combustionTick"
+  /** Physical statuses' hits (Physical; level = Vulnerable stacks consumed for Crush and Breach). */
+  | "lift"
+  | "knockdown"
+  | "crush"
+  | "breach"
+  /** Solidification shattered by a physical status (Physical; level = Solidification's). */
+  | "shatter";
 
 /**
  * Base multipliers. Talos Wiki, GameKee, 666bj agree; verified on
@@ -24,7 +31,23 @@ export type ReactionKind =
 export function reactionBase(kind: ReactionKind, stacks: number): number {
   if (kind === "burst") return 1.6;
   if (kind === "reaction") return 0.8 + 0.8 * stacks;
-  return 0.12 + 0.12 * stacks;
+  if (kind === "combustionTick") return 0.12 + 0.12 * stacks;
+  // Physical statuses (docs/data-sources.md "Consensus"; the in-game tutorial's tables, below).
+  if (kind === "lift" || kind === "knockdown") return 1.2;
+  const table = kind === "crush" ? CRUSH : kind === "breach" ? BREACH : SHATTER;
+  const v = table[stacks - 1];
+  if (v === undefined) throw new RangeError(`${kind} level ${stacks}`);
+  return v;
+}
+
+/** By level 1–4: Crush 150% + 150% per Vulnerable stack, Breach 50% + 50%, Shatter 120% + 120% per Solidification level. */
+const CRUSH = [3, 4.5, 6, 7.5] as const;
+const BREACH = [1, 1.5, 2, 2.5] as const;
+const SHATTER = [2.4, 3.6, 4.8, 6] as const;
+
+/** Physical statuses' hits scale with operator level by 1 + (Lv − 1) / 392; Shatter, like arts reactions, by / 196. */
+export function levelCoefficientOf(kind: ReactionKind, level: number): number {
+  return kind === "lift" || kind === "knockdown" || kind === "crush" || kind === "breach" ? 1 + (level - 1) / 392 : artsLevelCoefficient(level);
 }
 
 /** Operator level scaling of arts reactions and bursts: 1 + (Lv − 1) / 196 (verified: Lv90 → 1.4541). */
@@ -66,6 +89,15 @@ export function corrosionModifier(level: number, elapsedMs: number, applierAi: n
   return { zone: "ignoreResistance", value: corrosionShred(level, elapsedMs, applierAi, capScale), source: `Corrosion level ${level}` };
 }
 
+/** Log keys of physical-status hits and Shatter (the BuffData files holding their damage). */
+const PHYSICAL_EVENT_KINDS: Readonly<Record<string, ReactionKind>> = {
+  buff_physical_airborne: "lift",
+  buff_physical_knockdown: "knockdown",
+  buff_physical_do_crushed: "crush",
+  buff_physical_do_fracture: "breach",
+  buff_common_cryst_triggered_physical_break: "shatter",
+};
+
 /**
  * Reaction damage element and kind from a log event key like
  * buff_common_fire_natural_triggered (burst when both are the same). Newer
@@ -73,8 +105,10 @@ export function corrosionModifier(level: number, elapsedMs: number, applierAi: n
  * btl_upload_bdf223db8e49), but its damage is ×1.42–1.43 of a level I
  * reaction in both logs seen, so it isn't treated as one until explained.
  */
-export function parseReactionEvent(event: string): { kind: ReactionKind; element: ArtsElement } | null {
+export function parseReactionEvent(event: string): { kind: ReactionKind; element: Element } | null {
   if (event === "buff_common_burning_status") return { kind: "combustionTick", element: "fire" };
+  const physical = PHYSICAL_EVENT_KINDS[event];
+  if (physical) return { kind: physical, element: "physical" };
   const m = /^buff_common_(fire|natural|pulse|cryst)_(fire|natural|pulse|cryst)_triggered$/.exec(event);
   if (!m) return null;
   const [, a, b] = m as unknown as [string, ArtsElement, ArtsElement];

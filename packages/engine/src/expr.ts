@@ -8,7 +8,7 @@ import type { Build } from "./build.ts";
 import type { GameData } from "./model.ts";
 import type { ArtsElement } from "./reactions.ts";
 import type { Modifier, Zone } from "./effects.ts";
-import type { EnemyStatus, ReactionStatus } from "./status.ts";
+import type { EnemyStatus, PhysicalStatus, ReactionStatus } from "./status.ts";
 import type { StatPanel } from "./stats.ts";
 
 export type Predicate =
@@ -22,8 +22,12 @@ export type Predicate =
   | { readonly teamSlotElement: { readonly slot: number; readonly element: Element } }
   /** The enemy has this infliction, with at least `minStacks` (default 1). */
   | { readonly enemyInfliction: ArtsElement; readonly minStacks?: number }
-  /** The enemy has this reaction status (Estella's combo on a Solidified target). */
+  /** The enemy has this reaction status (Estella's combo on a Solidified target)… */
   | { readonly enemyStatus: ReactionStatus }
+  /** …or physical status (Lifted, Breached, …). */
+  | { readonly enemyPhysical: PhysicalStatus }
+  /** The enemy has at least this many Vulnerable stacks. */
+  | { readonly enemyVulnerable: number }
   /** The operator's own stack is at least / below a count. */
   | { readonly stack: string; readonly atLeast?: number; readonly below?: number }
   /** One of the operator's own kit buffs is active. */
@@ -72,6 +76,8 @@ export type ValueExpr =
   | { readonly targetsHit: true }
   /** The operator's own stack count (e.g. the room left: max − count). */
   | { readonly stackCount: string }
+  /** The enemy's Vulnerable stacks (Gilberta's Arts Susceptibility per stack). */
+  | { readonly enemyVulnerableStacks: true }
   | { readonly if: Predicate; readonly then: ValueExpr; readonly else?: ValueExpr };
 
 /** What a predicate or value is evaluated against. Fields left out are unknown. */
@@ -127,6 +133,8 @@ export function test(p: Predicate, c: EvalContext): boolean | undefined {
     return i !== null && i.element === p.enemyInfliction && i.stacks >= (p.minStacks ?? 1);
   }
   if ("enemyStatus" in p) return c.enemy ? c.enemy.statuses.some((s) => s.status === p.enemyStatus) : undefined;
+  if ("enemyPhysical" in p) return c.enemy ? c.enemy.physical.some((s) => s.status === p.enemyPhysical) : undefined;
+  if ("enemyVulnerable" in p) return c.enemy ? (c.enemy.vulnerable?.stacks ?? 0) >= p.enemyVulnerable : undefined;
   if ("stack" in p) {
     if (!c.stacks) return undefined;
     const n = c.stacks[p.stack] ?? 0;
@@ -170,6 +178,10 @@ export function evaluate(v: ValueExpr, c: EvalContext): number {
     return c.eventCount;
   }
   if ("targetsHit" in v) return 1;
+  if ("enemyVulnerableStacks" in v) {
+    if (!c.enemy) throw new Error("value needs the enemy's Vulnerable stacks, which aren't known here");
+    return c.enemy.vulnerable?.stacks ?? 0;
+  }
   if ("stackCount" in v) {
     if (!c.stacks) throw new Error(`value needs stack ${v.stackCount}, which isn't known here`);
     return c.stacks[v.stackCount] ?? 0;
