@@ -7,6 +7,8 @@ import { readTable, type SourceName } from "../sources.ts";
 import { attrModifier, records, type RawAttrModifier } from "./common.ts";
 
 export interface Growth {
+  /** Skill ID → skill group type (0 basic, 1 battle, 2 ultimate, 3 combo): whose level applies. */
+  readonly skillGroups: Readonly<Record<string, number>>;
   readonly attributeNodes: readonly { nodeId: string; breakStage: number; modifiers: readonly RawAttrModifier[] }[];
   readonly talentNodes: readonly { nodeId: string; index: number; level: number; effectId: string }[];
 }
@@ -45,7 +47,15 @@ export function normalizeGrowth(raw: unknown, source: SourceName): Record<string
     }
     attributeNodes.sort((a, b) => a.breakStage - b.breakStage || (a.nodeId < b.nodeId ? -1 : 1));
     talentNodes.sort((a, b) => a.index - b.index || a.level - b.level);
-    out[charId] = { attributeNodes, talentNodes };
+    const skillGroups: Record<string, number> = {};
+    const gc = at(c, "skillGroupMap");
+    const groups = obj(record["skillGroupMap"], gc);
+    for (const groupId of Object.keys(groups).sort()) {
+      const g = obj(groups[groupId], at(gc, groupId));
+      const type = get(g, "skillGroupType", at(gc, groupId), int);
+      for (const s of get(g, "skillIdList", at(gc, groupId), arr)) skillGroups[str(s, at(gc, groupId))] = type;
+    }
+    out[charId] = { skillGroups, attributeNodes, talentNodes };
   }
   return out;
 }

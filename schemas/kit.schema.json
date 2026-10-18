@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jojkaart/Endfield-battle-simulator/schemas/kit.schema.json",
+  "title": "Operator kit",
+  "description": "Hand-written hit structure of an operator's skills: which blackboard values multiply into each hit and how often it lands. Numbers come from the game tables; only structure is written here. Each kit lists its sources.",
+  "type": "object",
+  "required": ["operator", "sources", "skills"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "operator": { "type": "string" },
+    "sources": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+    "element": { "$ref": "#/$defs/element", "description": "Default element of the operator's hits." },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["skillId", "label", "damageType", "hits"],
+        "additionalProperties": false,
+        "properties": {
+          "skillId": { "type": "string" },
+          "label": { "type": "string" },
+          "damageType": { "$ref": "#/$defs/skillType" },
+          "hits": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["id", "scale"],
+              "additionalProperties": false,
+              "properties": {
+                "id": { "type": "string" },
+                "label": { "type": "string" },
+                "scale": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+                "count": { "type": "integer", "minimum": 1 },
+                "element": { "$ref": "#/$defs/element" },
+                "note": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "conditions": { "type": "array", "items": { "$ref": "#/$defs/condition" } }
+  },
+  "$defs": {
+    "element": { "enum": ["physical", "fire", "pulse", "cryst", "natural", "ether"] },
+    "skillType": { "enum": ["basic", "battle", "combo", "ultimate"] },
+    "condition": {
+      "type": "object",
+      "required": ["id", "label", "source", "effect"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+        "label": { "type": "string" },
+        "note": { "type": "string" },
+        "source": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["kind", "index", "buffId", "key"],
+              "additionalProperties": false,
+              "properties": {
+                "kind": { "const": "talent" },
+                "index": { "type": "integer", "minimum": 0 },
+                "buffId": { "type": "string" },
+                "key": { "type": "string" },
+                "scale": { "type": "number" }
+              }
+            },
+            {
+              "type": "object",
+              "required": ["kind", "skill", "key"],
+              "additionalProperties": false,
+              "properties": {
+                "kind": { "const": "weaponSkill" },
+                "skill": { "type": "integer", "minimum": 0, "maximum": 2 },
+                "key": { "type": "string" },
+                "scale": { "type": "number" }
+              }
+            }
+          ]
+        },
+        "effect": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["kind", "attr"],
+              "additionalProperties": false,
+              "properties": { "kind": { "const": "attr" }, "attr": { "type": "integer", "minimum": 0 } }
+            },
+            {
+              "type": "object",
+              "required": ["kind", "element"],
+              "additionalProperties": false,
+              "properties": { "kind": { "const": "ignoreResistance" }, "element": { "$ref": "#/$defs/element" } }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

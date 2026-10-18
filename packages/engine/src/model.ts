@@ -1,7 +1,7 @@
 // Game data as the engine sees it. The data layer builds these from the
 // tables; the engine never reads tables itself (docs/design.md#layers).
 
-import type { AttrType, Element } from "./attributes.ts";
+import type { AttrType, Element, SkillType } from "./attributes.ts";
 
 /**
  * How a modifier combines with an attribute (the tables' `formulaItem` /
@@ -89,6 +89,8 @@ export interface OperatorData {
   readonly mainAttr: AttrType;
   readonly subAttr: AttrType;
   readonly levelRows: readonly OperatorLevelRow[];
+  /** Which skill level applies to each of the operator's skills. */
+  readonly skillGroups: Readonly<Record<string, SkillType>>;
   readonly attributeNodes: readonly AttributeNode[];
   readonly talentNodes: readonly TalentNode[];
   /** Effects per potential level; index 0 is P1. */
@@ -162,4 +164,55 @@ export interface GameData {
   readonly gear: Readonly<Record<string, GearData>>;
   readonly gearSets: Readonly<Record<string, GearSetData>>;
   readonly enemies: Readonly<Record<string, EnemyData>>;
+  readonly kits: Kits;
+}
+
+// ── Kits: hand-written hit structure (docs/design.md#skills-and-buffs-from-skilldata--buffdata) ──
+
+/** One kind of hit of a skill. Its multiplier is the product of the named blackboard values. */
+export interface KitHit {
+  readonly id: string;
+  readonly label: string;
+  readonly scale: readonly string[];
+  /** How many times the hit lands per use. */
+  readonly count: number;
+  /** Which skill-type damage bonus applies (enhanced basic attacks during an ultimate are still "basic"). */
+  readonly damageType: SkillType;
+  readonly element: Element;
+}
+
+export interface KitSkill {
+  readonly skillId: string;
+  readonly label: string;
+  readonly hits: readonly KitHit[];
+}
+
+/** Where a condition's value comes from, so it follows the build's levels. */
+export type ConditionSource =
+  | { readonly kind: "talent"; readonly index: number; readonly buffId: string; readonly key: string; readonly scale: number }
+  | { readonly kind: "weaponSkill"; readonly skill: number; readonly key: string; readonly scale: number };
+
+export type ConditionEffect =
+  | { readonly kind: "attr"; readonly attr: AttrType }
+  | { readonly kind: "ignoreResistance"; readonly element: Element };
+
+/** A state the user (later: the timeline) switches on, e.g. a talent buff at full stacks. */
+export interface Condition {
+  /** Globally unique: `<operator or weapon ID>.<name>`. */
+  readonly id: string;
+  readonly label: string;
+  readonly source: ConditionSource;
+  readonly effect: ConditionEffect;
+}
+
+export interface OperatorKit {
+  readonly operator: string;
+  readonly skills: readonly KitSkill[];
+  readonly conditions: readonly Condition[];
+}
+
+export interface Kits {
+  readonly operators: Readonly<Record<string, OperatorKit>>;
+  /** Conditions of weapons, by weapon ID. */
+  readonly weapons: Readonly<Record<string, readonly Condition[]>>;
 }

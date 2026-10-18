@@ -10,10 +10,12 @@ import type {
   GearSetData,
   OperatorData,
   SkillData,
+  SkillType,
   WeaponData,
 } from "@efsim/engine";
 import { DataError } from "./errors.ts";
 import { at, get, obj, type Ctx } from "./fields.ts";
+import { loadKits } from "./kits.ts";
 import { Names } from "./names.ts";
 import { isSkillFileListed, readSkillFile } from "./skillData.ts";
 import { PRIMARY, readTable, sourceCommit, SOURCES } from "./sources.ts";
@@ -27,6 +29,9 @@ import { loadOperators } from "./tables/operators.ts";
 import { loadEffects, loadPotentials, type RawEffect } from "./tables/potentials.ts";
 import { loadSkills } from "./tables/skills.ts";
 import { loadWeaponCurves, loadWeapons } from "./tables/weapons.ts";
+
+// CharGrowthTable skillGroupType → the build's skill level that applies.
+const SKILL_GROUP_TYPES: Record<number, SkillType> = { 0: "basic", 1: "battle", 2: "ultimate", 3: "combo" };
 
 const modifier = (m: RawAttrModifier): AttrModifier => ({ attr: m.attr, slot: m.slot, target: m.target, value: m.value });
 
@@ -67,6 +72,13 @@ function build(): GameData {
       mainAttr: op.mainAttrType,
       subAttr: op.subAttrType,
       levelRows: op.levelRows.map((r) => ({ breakStage: r.breakStage, level: r.attrs[0] ?? Number.NaN, attrs: r.attrs })),
+      skillGroups: Object.fromEntries(
+        Object.entries(g.skillGroups).map(([skillId, type]) => {
+          const group = SKILL_GROUP_TYPES[type];
+          if (!group) throw new DataError(PRIMARY, `CharGrowthTable.${op.charId}.skillGroupMap`, `unknown skillGroupType ${type}`);
+          return [skillId, group];
+        }),
+      ),
       attributeNodes: g.attributeNodes.map((n) => ({ ...n, modifiers: n.modifiers.map(modifier) })),
       talentNodes: g.talentNodes.map((n) => ({
         nodeId: n.nodeId,
@@ -144,6 +156,7 @@ function build(): GameData {
   }
 
   const c = loadBattleConst(PRIMARY);
+  const kits = loadKits({ skills, operators, weapons });
   return {
     provenance: { sources: SOURCES.map((name) => ({ name, commit: sourceCommit(name) })) },
     constants: {
@@ -159,6 +172,7 @@ function build(): GameData {
     gear,
     gearSets,
     enemies,
+    kits,
   };
 }
 

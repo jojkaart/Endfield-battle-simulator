@@ -1,0 +1,56 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0016_laevat",
+  "sources": [
+    "Hit counts and blackboard keys: rmxlinux Json/SkillData chr_0016_laevat_* (game 1.6): direct DamageActions, plus projectile hits (attack4 hits 2–3, attack5 hit 2) and the battle skill's ability entity (DoT).",
+    "Which values multiply (ratio, extra_scaling): checked against Zero Sanity's in-game verified hit table (fixtures/zero-sanity-laevatain-p5.json). P1's ratio applies to the enhanced battle skill but not to the normal one; P3's extra_scaling only to the normal battle skill's empowered extra hit."
+  ],
+  "element": "fire",
+  "skills": [
+    { "skillId": "chr_0016_laevat_attack1", "label": "Basic attack 1", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"] }] },
+    { "skillId": "chr_0016_laevat_attack2", "label": "Basic attack 2", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2 }] },
+    { "skillId": "chr_0016_laevat_attack3", "label": "Basic attack 3", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"] }] },
+    { "skillId": "chr_0016_laevat_attack4", "label": "Basic attack 4", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 3 }] },
+    { "skillId": "chr_0016_laevat_attack5", "label": "Basic attack 5 (final strike)", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2 }] },
+    {
+      "skillId": "chr_0016_laevat_normal_skill",
+      "label": "Battle skill",
+      "damageType": "battle",
+      "hits": [
+        { "id": "explosion", "label": "Explosion", "scale": ["atk_scale"] },
+        { "id": "dot", "label": "Burn tick", "scale": ["atk_scale_2"], "count": 10 },
+        { "id": "empowered_extra", "label": "Empowered extra hit", "scale": ["atk_scale_3", "extra_scaling"], "note": "Only when the cast consumes 4 Melting Flame stacks." }
+      ]
+    },
+    {
+      "skillId": "chr_0016_laevat_normal_skill_during_ult",
+      "label": "Battle skill (during ultimate)",
+      "damageType": "battle",
+      "hits": [
+        { "id": "hit1", "label": "Hit 1", "scale": ["atk_scale", "ratio"] },
+        { "id": "hit2", "label": "Hit 2", "scale": ["atk_scale_2", "ratio"] },
+        { "id": "extra", "label": "Extra hit", "scale": ["atk_scale_3", "ratio"], "note": "Only when the cast consumes 4 Melting Flame stacks." }
+      ]
+    },
+    { "skillId": "chr_0016_laevat_combo_skill", "label": "Combo skill", "damageType": "combo", "hits": [{ "id": "hit", "scale": ["atk_scale"] }] },
+    {
+      "skillId": "chr_0016_laevat_ultimate_skill",
+      "label": "Ultimate cast",
+      "damageType": "ultimate",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Not yet checked against an in-game value." }]
+    },
+    { "skillId": "chr_0016_laevat_ult_attack1", "label": "Enhanced basic attack 1 (during ultimate)", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale", "ratio"] }] },
+    { "skillId": "chr_0016_laevat_ult_attack2", "label": "Enhanced basic attack 2 (during ultimate)", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale", "ratio"], "count": 2 }] },
+    { "skillId": "chr_0016_laevat_ult_attack3", "label": "Enhanced basic attack 3 (during ultimate)", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale", "ratio"] }] },
+    { "skillId": "chr_0016_laevat_ult_attack4", "label": "Enhanced basic attack 4 (during ultimate)", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale", "ratio"], "count": 2 }] }
+  ],
+  "conditions": [
+    {
+      "id": "scorching_heart",
+      "label": "Scorching Heart active (talent 1): ignore Heat resistance",
+      "note": "Talent buff buff_chr_0016_laevat_passive; ignore_fire_resist is negative in the data (-20 at talent level 3).",
+      "source": { "kind": "talent", "index": 0, "buffId": "buff_chr_0016_laevat_passive", "key": "ignore_fire_resist", "scale": -1 },
+      "effect": { "kind": "ignoreResistance", "element": "fire" }
+    }
+  ]
+}

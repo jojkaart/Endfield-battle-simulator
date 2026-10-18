@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jojkaart/Endfield-battle-simulator/schemas/weapon-kits.schema.json",
+  "title": "Weapon kits",
+  "description": "Hand-written conditional effects of weapons, by weapon ID. Values come from the weapon's skill levels.",
+  "type": "object",
+  "required": ["weapons"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "weapons": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["sources", "conditions"],
+        "additionalProperties": false,
+        "properties": {
+          "sources": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "conditions": { "type": "array", "items": { "$ref": "kit.schema.json#/$defs/condition" } }
+        }
+      }
+    }
+  }
+}

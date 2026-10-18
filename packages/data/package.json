@@ -5,6 +5,7 @@
   "type": "module",
   "exports": "./src/index.ts",
   "dependencies": {
-    "@efsim/engine": "*"
+    "@efsim/engine": "*",
+    "ajv": "^8.20.0"
   }
 }
