@@ -365,6 +365,15 @@ runtime, read not copied; engine `status.ts`):
   134217728): any physical status, or any new Vulnerable stack, on a
   Solidified enemy consumes Solidification for 2.4 / 3.6 / 4.8 / 6 by its
   level, after the status's own hit; Vulnerable is unaffected.
+- **Stagger** (EnemyAttributeTemplateTable `levelIndependentAttributes`):
+  stagger HP is attribute 20 (Rhodagn 280), the Staggered time attribute
+  21 × 31 (10 s), the finisher multiplier attribute 27 (1–1.75), the
+  finisher SP `breakingAttackedAtbObtain` (25–100), stagger nodes
+  `poiseKnotPctList`. A hit's stagger = its value × the attacker's
+  attribute 26 × the enemy's 24; Final Strikes' only when their operator is
+  controlled (`onlyEnableForMainChar`). At 0 the enemy is Staggered: ×1.3
+  damage taken (`buff_common_poise_break_damage_taken_scale`, its own
+  multiplier), no more stagger, one finisher allowed; then the bar refills.
 - Zero Sanity's notes (Lift consumes Vulnerable; Crush / Breach need none)
   describe the Beta I rules, changed since.
 - Verified: Estella's Lift hits in `zmdlogs-4e5e1390085e` match exactly.

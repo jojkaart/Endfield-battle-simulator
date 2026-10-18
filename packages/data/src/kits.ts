@@ -40,6 +40,8 @@ interface RawHit {
   sp?: ValueExpr;
   heals?: "self" | "controlled" | "team";
   detached?: boolean;
+  poise?: ValueExpr;
+  poiseControlledOnly?: boolean;
   /** Triggered hits only: which skill-type bonus applies (`none`: no skill type). */
   damageType?: SkillType | "none";
 }
@@ -209,6 +211,7 @@ function kitChecker(scope: KitScope) {
       }
       if (h.energy !== undefined) checkValue(h.energy, src.skillId, `${where} hit ${h.id} energy`);
       if (h.sp !== undefined) checkValue(h.sp, src.skillId, `${where} hit ${h.id} sp`);
+      if (h.poise !== undefined) checkValue(h.poise, src.skillId, `${where} hit ${h.id} poise`);
       for (const a of h.buffs ?? []) {
         const b = buffDefs.get(a.buff);
         if (!b) throw new Error(`${where} hit ${h.id}: unknown buff ${a.buff}`);
@@ -227,6 +230,8 @@ function kitChecker(scope: KitScope) {
         ...(h.buffs ? { buffs: h.buffs } : {}),
         ...(h.energy ? { energy: h.energy } : {}),
         ...(h.sp !== undefined ? { sp: h.sp } : {}),
+        ...(h.poise !== undefined ? { poise: h.poise } : {}),
+        ...(h.poiseControlledOnly ? { poiseControlledOnly: true } : {}),
         ...(h.heals ? { heals: h.heals } : {}),
         // A hit dealt from another SkillData file (a projectile or ability entity) is on its way and survives an interrupt.
         ...((h.detached ?? (src.defaultEvent !== undefined && events.length > 0 && !events.includes(src.defaultEvent))) ? { detached: true } : {}),

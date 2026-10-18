@@ -35,7 +35,7 @@ function gameData(over: { def?: number; fireRes?: number; atkPercent?: number } 
     weapons: { wpn: { id: "wpn", name: "Wpn", rarity: 6, weaponType: 1, maxLevel: 1, baseAtk: [100], skills: ["wpn_stat", "wpn_stat", "wpn_stat"] } },
     gear: {}, gearSets: {},
     enemies: { eny: { id: "eny", name: "Eny", levels: [{ 0: 1, [Attr.Def]: over.def ?? 100 }], staticAttrs: {},
-      resistance: { physical: 0, fire: over.fireRes ?? 0, pulse: 0, cryst: 0, natural: 0, ether: 0 } } },
+      resistance: { physical: 0, fire: over.fireRes ?? 0, pulse: 0, cryst: 0, natural: 0, ether: 0 }, finisherSp: 0, staggerNodes: [] } },
     kits: { operators: {}, equipment: {} },
   };
 }

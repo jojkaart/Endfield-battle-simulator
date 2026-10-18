@@ -161,7 +161,7 @@ function build(): GameData {
             source: PRIMARY,
             path: `EnemyTemplateDisplayInfoTable.${e.id}.name`,
           });
-    enemies[e.id] = { id: e.id, name, levels: e.levels, staticAttrs: e.staticAttrs, resistance: { ...e.resistance, ether: 0 } };
+    enemies[e.id] = { id: e.id, name, levels: e.levels, staticAttrs: e.staticAttrs, resistance: { ...e.resistance, ether: 0 }, finisherSp: e.finisherSp, staggerNodes: e.staggerNodes };
   }
 
   const c = loadBattleConst(PRIMARY);

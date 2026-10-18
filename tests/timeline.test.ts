@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, buffModifiers, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
+import { advance, apply, buffModifiers, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -813,5 +813,54 @@ describe("timeline: an ultimate's time stop", () => {
     const both = runTo([{ operator: op, skill: L + "ultimate_skill" }, { operator: g, skill: "chr_0013_aglina_ultimate_skill", at: 0 }], 0).s;
     expect(both.slowdowns.map((x) => [x.start, x.scales.length, x.exempt])).toEqual([[0, 61, op], [0, 52, g]]);
     expect(both.spPausedUntil).toBe(61);
+  });
+});
+
+describe("timeline: stagger and finishers", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const finisherSkill: KitSkill = {
+    skillId: L + "power_attack",
+    label: "Finisher",
+    kind: "basic",
+    hits: [{ id: "hit", label: "Finisher", scale: ["atk_scale"], count: 1, frames: [10], events: [], damageType: "basic", element: "fire" }],
+  };
+  // attack1 deals 300 stagger: Rhodagn's stagger HP is 280, so one hit staggers it for 10 s (attribute 21 × 31).
+  const d: GameData = {
+    ...data,
+    kits: {
+      ...data.kits,
+      operators: {
+        ...data.kits.operators,
+        [op]: { ...kit, skills: [...kit.skills.map((s) => (s.skillId === L + "attack1" ? { ...s, hits: s.hits.map((h) => ({ ...h, poise: 300 })) } : s)), finisherSkill] },
+      },
+    },
+  };
+  const at = (rotation: RotationAction[], frame: number) => {
+    const ctx = createContext(d, scenario(rotation));
+    let s = init(ctx);
+    for (const a of rotation) s = apply(ctx, s, a);
+    return { ctx, s, end: advance(ctx, s, frame) };
+  };
+
+  it("enough stagger staggers the enemy for its stagger time; meanwhile hits take ×1.3", () => {
+    const { end } = at([{ operator: op, skill: L + "attack1" }], 7);
+    expect(end.stagger).toEqual({ poise: 0, until: 6 + 300, finisherUsed: false });
+    const r = simulate(d, scenario([{ operator: op, skill: L + "attack1" }, { operator: op, skill: L + "attack2" }]));
+    const a2 = r.hits.find((h) => h.skillId === L + "attack2");
+    expect(a2?.modifiers.some((m) => m.source === "Staggered" && m.zone === "multiplicative" && m.value === 0.3)).toBe(true);
+  });
+
+  it("a finisher needs a Staggered enemy, once per stagger, and is multiplied by its finisher multiplier with its SP", () => {
+    const { ctx, s } = at([], 0);
+    expect(earliestStart(ctx, s, { operator: op, skill: L + "power_attack" })).toHaveProperty("error");
+    const { ctx: c2, s: s2 } = at([{ operator: op, skill: L + "attack1" }, { operator: op, skill: L + "power_attack", at: 40 }], 40);
+    expect(s2.stagger.finisherUsed).toBe(true);
+    expect(earliestStart(c2, s2, { operator: op, skill: L + "power_attack", at: 200 })).toHaveProperty("error");
+    const end = advance(c2, s2, 60);
+    const hit = end.hits.find((h) => h.skillId === L + "power_attack");
+    expect(hit?.modifiers.find((m) => m.source === "Finisher")).toMatchObject({ zone: "multiplicative", value: 0.75 });
+    // Rhodagn gives 100 SP for a finisher (breakingAttackedAtbObtain).
+    expect(end.sp).toBeGreaterThanOrEqual(Math.min(SP.max, advance(c2, s2, 49).sp + 100) - 1e-9);
+    expect(s2.pending.find((h) => h.skillId === L + "power_attack")?.sp).toBe(100);
   });
 });

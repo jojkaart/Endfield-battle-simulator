@@ -33,6 +33,8 @@ export type BattleEvent =
   | { readonly type: "buffTick"; readonly frame: number; readonly operator: string; readonly buff: string }
   /** `operator` healed `target` (no amounts: what matters is who, and when). */
   | { readonly type: "heal"; readonly frame: number; readonly operator: string; readonly target: string }
+  /** The enemy became Staggered (`operator` dealt the last stagger). */
+  | { readonly type: "staggered"; readonly frame: number; readonly operator: string }
   /** An operator's own stacks changed. */
   | { readonly type: "stacks"; readonly frame: number; readonly operator: string };
 
@@ -53,6 +55,8 @@ export type TriggerOn =
   /** Vulnerable stacks are added (by a physical status or directly), leaving at least `minStacks`. */
   | { readonly event: "vulnerable"; readonly minStacks?: number }
   | { readonly event: "shatter" }
+  /** The enemy becomes Staggered. */
+  | { readonly event: "staggered" }
   /** A reaction status is removed by a hit before it runs out (Liino's combo: "an Arts Reaction is consumed"). */
   | { readonly event: "statusConsumed"; readonly statuses?: readonly ReactionStatus[] }
   /** One of the trigger owner's own kit buffs is applied, ends, or ticks (KitBuff.every). */
@@ -143,6 +147,8 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
       return e.type === "heal" && (!on.toOthers || e.target !== e.operator);
     case "stackAtLeast":
       return e.type === "stacks" && e.operator === owner && (ownStacks[on.stack] ?? 0) >= on.atLeast;
+    case "staggered":
+      return e.type === "staggered";
   }
   if (e.type !== "status") return false;
   const s = e.event;

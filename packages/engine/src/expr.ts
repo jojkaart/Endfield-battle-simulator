@@ -28,6 +28,8 @@ export type Predicate =
   | { readonly enemyPhysical: PhysicalStatus }
   /** The enemy has at least this many Vulnerable stacks. */
   | { readonly enemyVulnerable: number }
+  /** The enemy is Staggered. */
+  | { readonly enemyStaggered: true }
   /** The operator's own stack is at least / below a count. */
   | { readonly stack: string; readonly atLeast?: number; readonly below?: number }
   /** One of the operator's own kit buffs is active. */
@@ -96,6 +98,8 @@ export interface EvalContext {
   readonly eventCount?: number;
   /** The controlled operator. */
   readonly controlled?: string;
+  /** Whether the enemy is Staggered. */
+  readonly staggered?: boolean;
   /** Modifiers of the buffs on the enemy, from anyone. */
   readonly enemyModifiers?: readonly Modifier[];
   /** Whose effect is judged, when `build` is someone else (a team buff's recipient); default: `build`'s operator. */
@@ -134,6 +138,7 @@ export function test(p: Predicate, c: EvalContext): boolean | undefined {
   }
   if ("enemyStatus" in p) return c.enemy ? c.enemy.statuses.some((s) => s.status === p.enemyStatus) : undefined;
   if ("enemyPhysical" in p) return c.enemy ? c.enemy.physical.some((s) => s.status === p.enemyPhysical) : undefined;
+  if ("enemyStaggered" in p) return c.staggered;
   if ("enemyVulnerable" in p) return c.enemy ? (c.enemy.vulnerable?.stacks ?? 0) >= p.enemyVulnerable : undefined;
   if ("stack" in p) {
     if (!c.stacks) return undefined;

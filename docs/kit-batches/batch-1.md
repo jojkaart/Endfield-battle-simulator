@@ -253,3 +253,11 @@ Then re-analysis of all seven.
   Estella's coverage 52% → 83% and Gilberta's 67% → 79% of their damage,
   no mismatches (a kit-less operator's status hit counts as unmodelled).
   Control-status tags (Immobilization) and stagger (P2) next.
+- P2: stagger (docs/data-sources.md "Physical state"): hits' `poise` (and
+  `poiseControlledOnly` for Final Strikes), Lift / Knock Down stagger, the
+  Staggered state (×1.3, "vs Staggered" bonuses, a `staggered` event and
+  `enemyStaggered` predicate), finishers (skillSpecification 8) only on a
+  Staggered enemy and once per stagger, with the enemy's finisher
+  multiplier and SP. Stagger nodes (small staggers) have no damage effect
+  and aren't modelled. Kits don't carry poise values yet (D1 compiles
+  them).

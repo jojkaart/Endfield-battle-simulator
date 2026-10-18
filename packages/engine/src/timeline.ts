@@ -161,6 +161,8 @@ export interface TimelineState {
   readonly pending: readonly PendingHit[];
   /** Trigger actions due later (KitTrigger.delay), with the event that started them. */
   readonly pendingActions: readonly { readonly frame: number; readonly owner: string; readonly trigger: string; readonly event: BattleEvent; readonly origin: Origin | null }[];
+  /** The enemy's stagger: its stagger HP left, until when it's Staggered, and whether this stagger's finisher is used. */
+  readonly stagger: { readonly poise: number; readonly until: number | null; readonly finisherUsed: boolean };
   /** Global time slow-downs (an ultimate's time stop, a combo's slow-down) still running or to come: per frame from `start`, all but `exempt` (the caster). */
   readonly slowdowns: readonly { readonly start: number; readonly scales: readonly number[]; readonly exempt: string }[];
   /** Ultimate energy given later than the cast (a battle skill's team energy at its data frame, KitSkill.teamEnergyFrame). */
@@ -227,6 +229,7 @@ export function init(ctx: TimelineContext): TimelineState {
     pendingEnergy: [],
     pendingActions: [],
     slowdowns: [],
+    stagger: { poise: maxPoise(ctx), until: null, finisherUsed: false },
     enemy: NO_STATUS,
     buffs: [],
     triggerState: {},
@@ -423,6 +426,7 @@ function shiftWorld(st: TimelineState, start: number, n: number): TimelineState 
     buffs: st.buffs.map((b) => (b.expiresAt > start || (b.nextTick ?? -1) > start ? { ...b, expiresAt: later(b.expiresAt), ...(b.nextTick !== undefined ? { nextTick: later(b.nextTick) } : {}) } : b)),
     comboWindow: Object.fromEntries(Object.entries(st.comboWindow).map(([k, w]) => [k, { ...w, until: later(w.until) }])),
     energyBlockedUntil: Object.fromEntries(Object.entries(st.energyBlockedUntil).map(([k, f]) => [k, later(f)])),
+    stagger: st.stagger.until !== null ? { ...st.stagger, until: later(st.stagger.until) } : st.stagger,
     // SP doesn't regenerate meanwhile (taken from the current frame: slow-downs start at their cast or soon after).
     sp: spAt(st, st.frame),
     spPausedUntil: st.spPausedUntil > start ? st.spPausedUntil + n : start + n,
@@ -490,13 +494,51 @@ function skillSpGain(ctx: TimelineContext, operator: string, skillId: string): n
 }
 
 /** `cast`: the hit's cast, for buffs a cast consumed (they act on its hits only). */
-function damageOptions(ctx: TimelineContext, operator: string, enemy: EnemyStatus, buffs: readonly ActiveBuff[], frame: number, cast?: number) {
+function damageOptions(ctx: TimelineContext, st: TimelineState, operator: string, enemy: EnemyStatus, frame: number, cast?: number) {
+  const staggered = isStaggered(st, frame);
   return {
     crit: ctx.scenario.options.crit,
-    staggered: false,
+    staggered,
     conditions: [],
-    modifiers: [...(ctx.modifiers.get(operator) ?? []), ...statusModifiers(enemy, frame), ...buffModifiers(buffs, operator, frame, cast)],
+    modifiers: [
+      ...(ctx.modifiers.get(operator) ?? []),
+      ...statusModifiers(enemy, frame),
+      ...buffModifiers(st.buffs, operator, frame, cast),
+      // buff_common_poise_break_damage_taken_scale: defender ProdCalcZone ×1.3 while Staggered.
+      ...(staggered ? [{ zone: "multiplicative" as const, value: 0.3, source: "Staggered" }] : []),
+    ],
   };
+}
+
+/** An enemy attribute from its level-independent ones, else the attribute's default. */
+function enemyAttr(ctx: TimelineContext, attr: number): number {
+  return ctx.data.enemies[ctx.scenario.target.enemy]?.staticAttrs[attr] ?? ctx.data.attributeDefaults[attr] ?? 0;
+}
+
+/** The enemy's stagger HP (attribute 20); an enemy without one can't be staggered. */
+function maxPoise(ctx: TimelineContext): number {
+  const v = enemyAttr(ctx, Attr.MaxPoise);
+  return v > 0 ? v : Infinity;
+}
+
+const isStaggered = (st: TimelineState, frame: number) => st.stagger.until !== null && st.stagger.until > frame;
+
+/**
+ * Stagger damage to the enemy (docs/data-sources.md "Physical state"):
+ * value × the attacker's attribute 26 × the enemy's 24. At 0 it's Staggered
+ * for attribute 21 × 31 seconds, taking no more stagger, then its stagger
+ * HP refills.
+ */
+function dealPoise(ctx: TimelineContext, st: TimelineState, operator: string, value: number, frame: number): { state: TimelineState; events: BattleEvent[] } {
+  if (value <= 0 || isStaggered(st, frame)) return { state: st, events: [] };
+  const panel = ctx.panels.get(operator) as StatPanel;
+  const dealt = value * (panel.attrs[Attr.PoiseDamageOutputScalar]?.total ?? ctx.data.attributeDefaults[Attr.PoiseDamageOutputScalar] ?? 1) * enemyAttr(ctx, Attr.PoiseDamageTakenScalar);
+  // A stagger that has ended refilled the bar.
+  const before = st.stagger.until !== null ? maxPoise(ctx) : st.stagger.poise;
+  const poise = before - dealt;
+  if (poise > 0) return { state: { ...st, stagger: { poise, until: null, finisherUsed: false } }, events: [] };
+  const until = frame + Math.round(enemyAttr(ctx, Attr.PoiseRecTime) * enemyAttr(ctx, Attr.PoiseRecTimeScalar) * FPS);
+  return { state: { ...st, stagger: { poise: 0, until, finisherUsed: false } }, events: [{ type: "staggered", frame, operator }] };
 }
 
 /** What kit predicates and values see for an operator at a frame. */
@@ -508,6 +550,7 @@ function situationAt(ctx: TimelineContext, operator: string, st: TimelineState, 
     stacks: st.stacks[operator] ?? {},
     buffActive: (id) => st.buffs.some((b) => b.id === id && b.owner === operator && b.cast === undefined && active(b)),
     controlled: st.controlled,
+    staggered: isStaggered(st, frame),
     enemyModifiers: st.buffs.filter((b) => b.target === "enemy" && active(b)).flatMap((b) => b.modifiers),
     ...(consumed !== undefined ? { consumed } : {}),
   };
@@ -562,7 +605,7 @@ function statusTweaks(ctx: TimelineContext, st: TimelineState, operator: string,
 }
 
 /** The damage a status event deals, if any (bursts, reactions with an initial hit, Combustion ticks). */
-function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, buffs: readonly ActiveBuff[]): LandedHit | null {
+function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, st: TimelineState): LandedHit | null {
   if (e.kind === "consumed" || e.kind === "inflicted" || e.kind === "statusConsumed" || e.kind === "vulnerable" || (e.kind === "reaction" && !e.initialHit)) return null;
   const reaction =
     e.kind === "burst" ? { kind: "burst" as const, element: e.element, stacks: 1 }
@@ -571,7 +614,7 @@ function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, b
     : e.kind === "shatter" ? { kind: "shatter" as const, element: "physical" as const, stacks: e.level }
     : { kind: "combustionTick" as const, element: "fire" as const, stacks: e.level };
   const build = ctx.builds.get(e.operator) as Build;
-  const result = computeReaction(ctx.data, build, ctx.panels.get(e.operator) as StatPanel, ctx.scenario.target, reaction, damageOptions(ctx, e.operator, enemy, buffs, e.frame));
+  const result = computeReaction(ctx.data, build, ctx.panels.get(e.operator) as StatPanel, ctx.scenario.target, reaction, damageOptions(ctx, st, e.operator, enemy, e.frame));
   const scale = e.kind === "combustionTick" ? e.damageScale : e.kind === "physical" && e.multiplier !== undefined ? { key: "multiplier", value: e.multiplier } : undefined;
   if (!scale) return { ...result, frame: e.frame, operator: e.operator };
   const exact = result.exact * scale.value;
@@ -602,7 +645,7 @@ function recordStatus(ctx: TimelineContext, st: TimelineState, events: readonly 
   for (const e of events) {
     if (e.kind === "inflicted") continue;
     records.push(e);
-    const d = eventDamage(ctx, e, enemy, st.buffs);
+    const d = eventDamage(ctx, e, enemy, st);
     if (d) landed.push(d);
   }
   return records.length ? { ...st, reactions: [...st.reactions, ...records], hits: [...st.hits, ...landed] } : st;
@@ -640,6 +683,12 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
   for (let n = 0; queue.length > 0; n++) {
     if (n > MAX_CHAIN) throw new EngineError(`more than ${MAX_CHAIN} chained events at frame ${queue[0]?.frame}: a trigger loop in the kits?`);
     const e = queue.shift() as BattleEvent;
+    // Lift and Knock Down stagger: 10 × (1 + AI/200) of the applier.
+    if (e.type === "status" && e.event.kind === "physical" && (e.event.status === "lift" || e.event.status === "knockdown") && ctx.builds.has(e.operator)) {
+      const r = dealPoise(ctx, st, e.operator, 10 * (1 + artsIntensity(ctx, st, e.operator, e.frame) / 200), e.frame);
+      st = r.state;
+      queue.push(...r.events);
+    }
     for (const b of ctx.scenario.team) {
       const owner = b.operator;
       for (const t of ctx.kits.get(owner)?.triggers ?? []) {
@@ -847,8 +896,11 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     }
   };
   applyBuffs(true);
+  // A finisher (skillSpecification 8) is multiplied by the enemy's finisher multiplier (attribute 27).
+  const finisher = !hit.trigger && ctx.data.skills[hit.skillId]?.timing?.specification === 8;
   const result = computeHit(ctx.data, build, panel, ctx.scenario.target, skill, kitHit, {
-    ...damageOptions(ctx, hit.operator, st.enemy, st.buffs, hit.frame, hit.cast),
+    ...damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast),
+    ...(finisher ? { modifiers: [...damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast).modifiers, { zone: "multiplicative" as const, value: enemyAttr(ctx, Attr.BreakingAttackDamageTakenScalar) - 1, source: "Finisher" }] } : {}),
     situation: { ...before, consumed },
   });
   st = { ...st, hits: [...st.hits, { ...result, count: 1, frame: hit.frame, operator: hit.operator }] };
@@ -863,13 +915,20 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     st = gainEnergy(ctx, st, hit.operator, amount, hit.frame);
   }
   st = recordStatus(ctx, st, statusEvents, st.enemy);
+  // Stagger: Final Strikes' only while their operator is controlled (onlyEnableForMainChar).
+  const poiseEvents: BattleEvent[] = [];
+  if (kitHit.poise !== undefined && (!kitHit.poiseControlledOnly || controlled === hit.operator)) {
+    const r = dealPoise(ctx, st, hit.operator, resolveValue(ctx.data, build, panel, hit.skillId, kitHit.poise, at(consumed)), hit.frame);
+    st = r.state;
+    poiseEvents.push(...r.events);
+  }
   const hitEvent: BattleEvent = {
     type: "hit", frame: hit.frame, operator: hit.operator, skillId: hit.skillId, kind,
     element: kitHit.reaction?.element ?? kitHit.element, finalStrike: kitHit.finalStrike ?? false, controlled: st.controlled === hit.operator,
   };
   // A hit computed as a burst is one for triggers too (its damage is the hit's own).
   const burst: StatusEvent[] = kitHit.reaction?.kind === "burst" ? [{ kind: "burst", frame: hit.frame, operator: hit.operator, element: kitHit.reaction.element }] : [];
-  const all: BattleEvent[] = [hitEvent, ...asEvents(statusEvents), ...asEvents(burst), ...events, ...(kitHit.heals ? healEvents(ctx, st, hit.operator, kitHit.heals, hit.frame) : []), ...(kitHit.gains?.length ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator }] : [])];
+  const all: BattleEvent[] = [hitEvent, ...asEvents(statusEvents), ...asEvents(burst), ...poiseEvents, ...events, ...(kitHit.heals ? healEvents(ctx, st, hit.operator, kitHit.heals, hit.frame) : []), ...(kitHit.gains?.length ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator }] : [])];
   return runTriggers(ctx, st, all, { operator: hit.operator, kind });
 }
 
@@ -962,6 +1021,8 @@ export function earliestStart(ctx: TimelineContext, state: TimelineState, action
   const gate = actionGate(ctx, state, action.operator, action.skill, frame);
   if ("error" in gate) return gate;
   frame = gate.frame;
+  // A finisher only on a Staggered enemy, once per stagger.
+  if (costs.timing.specification === 8 && ((then) => !isStaggered(then, frame) || then.stagger.finisherUsed)(advance(ctx, state, frame))) return { error: `${action.skill} is a finisher: the enemy isn't Staggered (or this stagger's finisher is used) at frame ${frame}` };
   if (costs.spCost > SP.max) return { error: `${action.skill} costs ${costs.spCost} SP, more than the maximum` };
   // Wait for SP: regen is linear after any pause.
   const spThen = spAt(state, frame);
@@ -1076,8 +1137,9 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     const frames = h.frames ?? Array.from({ length: h.count }, () => 0);
     for (const f of frames) pending.push({ frame: frame + f, operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castIndex, ...(usesAtHit(h.id).length && f === frames[0] ? { usesUp: usesAtHit(h.id) } : {}), ...(h.detached ? { detached: true } : {}), ...(windowCount !== undefined ? { eventCount: windowCount } : {}) });
   }
-  // A skill whose kit names the hit that returns SP gets it there, not on its first hit.
-  const spGain = skill.hits.some((h) => h.sp !== undefined) ? 0 : skillSpGain(ctx, operator, skillId);
+  // A skill whose kit names the hit that returns SP gets it there, not on its first hit; a finisher also gets the enemy's finisher SP (GainBreakingAttackAtb).
+  const finisherSp = full.timing.specification === 8 && !followUp ? (ctx.data.enemies[ctx.scenario.target.enemy]?.finisherSp ?? 0) : 0;
+  const spGain = (skill.hits.some((h) => h.sp !== undefined) ? 0 : skillSpGain(ctx, operator, skillId)) + finisherSp;
   if (spGain > 0 && pending.length > 0) {
     const first = pending.reduce((a, b) => (b.frame < a.frame ? b : a));
     pending[pending.indexOf(first)] = { ...first, sp: spGain };
@@ -1108,7 +1170,8 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     ...next,
     sp: s.sp - costs.spCost,
     spPausedUntil: costs.spCost > 0 ? frame + SP.pauseAfterSpendFrames : s.spPausedUntil,
-    acting: { ...s.acting, [operator]: { skill: skillId, frame: frame } },
+    acting: { ...s.acting, [operator]: { skill: skillId, frame } },
+    ...(full.timing.specification === 8 ? { stagger: { ...s.stagger, finisherUsed: true } } : {}),
     chainNext: chainAfter(ctx, next, operator, skill, frame),
     readyAt: castCooldowns(ctx, next.readyAt, operator, skill, costs.cooldownFrames, frame),
     ...(skill.takesControl ? { controlled: operator } : {}),

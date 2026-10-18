@@ -464,6 +464,18 @@
                     "const": "shatter"
                   }
                 }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "event"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
+                    "const": "staggered"
+                  }
+                }
               }
             ]
           },
@@ -1694,6 +1706,19 @@
               "description": "The enemy has at least this many Vulnerable stacks."
             }
           }
+        },
+        {
+          "type": "object",
+          "required": [
+            "enemyStaggered"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "enemyStaggered": {
+              "const": true,
+              "description": "The enemy is Staggered."
+            }
+          }
         }
       ]
     },
@@ -2126,6 +2151,14 @@
         "detached": {
           "type": "boolean",
           "description": "Lands even if the skill is interrupted before it (a projectile or ability entity already on its way); other hits still to land are cancelled when the operator starts another skill."
+        },
+        "poise": {
+          "$ref": "#/$defs/valueExpr",
+          "description": "Stagger damage (SkillData damage units of damageAttributeType 1, e.g. the skill's poise key)."
+        },
+        "poiseControlledOnly": {
+          "type": "boolean",
+          "description": "Its stagger counts only while its operator is controlled (onlyEnableForMainChar: Final Strikes)."
         }
       }
     }

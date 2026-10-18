@@ -28,15 +28,17 @@ export interface Candidate {
 /**
  * The basic attacks an attack input can be for an operator: the chain's
  * next step while it points at one, and the chain heads (basic attacks that
- * aren't chain steps; not finishers or plunging attacks, which need states
- * the timeline doesn't have yet).
+ * aren't chain steps), and finishers; not plunging attacks, which need a
+ * jump the timeline doesn't have.
  */
 function nextBasics(data: GameData, state: TimelineState, operator: string): string[] {
   const out = new Set<string>();
   const chain = state.chainNext[operator];
   if (chain && chain.until >= state.frame) out.add(chain.skill);
   for (const s of data.kits.operators[operator]?.skills ?? []) {
-    if (s.kind === "basic" && !s.chainStep && data.skills[s.skillId]?.timing?.specification === 1) out.add(s.skillId);
+    // Basic attacks that start a chain, and finishers (castable only on a Staggered enemy).
+    const spec = data.skills[s.skillId]?.timing?.specification;
+    if (s.kind === "basic" && ((!s.chainStep && spec === 1) || spec === 8)) out.add(s.skillId);
   }
   return [...out];
 }

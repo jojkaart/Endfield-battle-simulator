@@ -11,6 +11,10 @@ export interface RawEnemy {
   readonly levels: readonly Record<number, number>[];
   readonly staticAttrs: Record<number, number>;
   readonly resistance: { physical: number; fire: number; pulse: number; cryst: number; natural: number };
+  /** SP the team gets for a finisher on it (breakingAttackedAtbObtain). */
+  readonly finisherSp: number;
+  /** Stagger nodes: fractions of its stagger HP that trigger a small stagger (poiseKnotPctList). */
+  readonly staggerNodes: readonly number[];
 }
 
 function attrs(raw: unknown, ctx: Ctx): Record<number, number> {
@@ -43,6 +47,11 @@ export function normalizeEnemies(raw: unknown, source: SourceName): Record<strin
         cryst: get(r, "crystResistance", c, num),
         natural: get(r, "naturalResistance", c, num),
       },
+      finisherSp: get(r, "breakingAttackedAtbObtain", c, num),
+      staggerNodes: get(r, "poiseKnotPctList", c, arr).map((x, i) => {
+        if (typeof x !== "number") throw new DataError(source, `${c.path}.poiseKnotPctList[${i}]`, "not a number");
+        return x;
+      }),
     };
   }
   return out;

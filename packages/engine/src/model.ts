@@ -195,6 +195,10 @@ export interface EnemyData {
   readonly staticAttrs: Readonly<Record<number, number>>;
   /** Resistance points by element (100 = immune). */
   readonly resistance: Readonly<Record<Element, number>>;
+  /** SP the team gets for a finisher on it (breakingAttackedAtbObtain). */
+  readonly finisherSp: number;
+  /** Stagger nodes: fractions of its stagger HP that trigger a small stagger (poiseKnotPctList). */
+  readonly staggerNodes: readonly number[];
 }
 
 export interface BattleConstants {
@@ -258,6 +262,10 @@ export interface KitHit {
   readonly energy?: ValueExpr;
   /** SP the hit returns when it lands (SkillData ObtainCostAction costType 1 at this hit); then the skill's `atb` isn't added to its first hit. */
   readonly sp?: ValueExpr;
+  /** Stagger damage the hit deals (SkillData damage units of damageAttributeType 1, e.g. the skill's `poise`). */
+  readonly poise?: ValueExpr;
+  /** Its stagger counts only while its operator is controlled (onlyEnableForMainChar, Final Strikes). */
+  readonly poiseControlledOnly?: boolean;
   /** Lands even if the skill is interrupted before it: a projectile or ability entity already on its way. */
   readonly detached?: boolean;
   /** Whom the hit heals (an event for heal triggers; amounts aren't modelled). */
