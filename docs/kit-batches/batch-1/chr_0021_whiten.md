@@ -687,3 +687,147 @@ hit, scale: [atk_scale], element: physical, damageType: none, poise:
 5. **Test 11 (combo on a target that isn't Solidified)** still applies; it
    now checks the `not_solidified` hit, and should also show a Lift damage
    number and a Vulnerable stack (forced Lift), but no Shatter.
+
+## Re-analysis (pass 3, 2026-10-18)
+
+Against the engine after batch-1.md "Pass 2 progress". Evidence: `events.ts`
+(`TriggerOn`, `TriggerActionKind`, `KitTrigger`), `model.ts` (`KitHit.branch`,
+`detached`), `expr.ts` (`talentAtLeast`, `{talent, key}`), `timeline.ts`
+(`landHit` branch selection, `runTriggers` delayed actions, the
+interrupt filter on `pendingActions`), `damage.ts` `skillValue` (unlearned
+talent/potential sources → 0), loader `kits.ts`, both schemas. The plan
+below was **loaded and run** from a scratch copy of `packages/data` (the
+repo's kits untouched): it passes schema and loader checks;
+`efsim zmdlogs check fixtures/zmdlogs-4e5e1390085e.json` gives Estella
+41 hits, **26 match, 0 mismatch**, 15 under unmodelled effects (the ×1.08
+after 49.4 s), **0 not covered (100% of her damage)**; in
+`examples/estella-solidification.scenario.json` plus a second battle skill,
+the Solidified combo lands one combo hit, one Lift, one Shatter, one
+Valiant hit, one set hit, and the next battle skill returns 15 SP; a combo
+cast after Solidification has run out lands `not_solidified` (Lift, no
+Shatter); a build with talent 1 at level 0 and P0 runs without error and
+returns no SP.
+
+Re-checked against the data in this pass: talent 1 is talent index 0
+(`chr_0021_whiten_passive_skill_0_1/_2` → `buff_chr_0021_whiten_talent_0`,
+`atb` 7.5 / 15); the SP read is in `chr_0021_whiten_normal_skill` itself,
+a sequence at frames 21–24 (CheckBuffStackNumAdvanced → GetTargetBuffBBAdvanced
+→ ObtainCostAction → FinishBuffAdvanced), not in the projhit; the battle
+skill's own `atb` is 0 (SkillData default); `buff_chr_0021_whiten_talent_0_active`
+is lifeType 1 (no expiry; its only event, 150, ends it, most likely on leaving
+the fight: Liino's report), stackingType 7, max 1. Its CreateBuff has
+`finishWithNextSkillIfNotInherited: true`, but that flag is true on every
+one of the 4,342 CreateBuff actions in BuffData/SkillData, and
+`autoFinishByAction` is false here, so it doesn't end with the next skill.
+P5's attached blackboard is only `usp` 5 (`cd` 1 is in `_potential_5` /
+`_potential_5_inaura` BuffData). Valiant's skills: `wpn_attr_agi_high`,
+`wpn_sp_attr_phydam_high`, `sk_wpn_lance_0010`. All **confirmed**.
+
+### (a) Pass-2 gaps now
+
+| Pass 2 | Now | Fields / interim rule |
+|---|---|---|
+| R1 alternatives judged one after another | **supported** (C4) | `branch: "target"` on both combo hits: judged together on the situation before either lands; the first in kit order whose `if` holds lands. So the order now matters the other way: `solidified` (with `if: {enemyStatus: solidification}`) first, `not_solidified` (no `if`, the else) second. An `if`-less hit listed first would always win. The loader requires a branch's hits to have the same `count` (1 each) |
+| R2 talent level in predicates | **supported** (V8) | `if: {talentAtLeast: [0, 1]}` on the Shatter trigger; the SP value is `{talent: 0, key: "atb"}` (0 while unlearned; the loader checks `atb` on every buff talent 0 attaches). `{key, skill: buff_…}` no longer throws either (unlearned sources give 0) |
+| R3 projectile travel; `detached` before launch | **still open**: Ti2 | interim: kits write landing frames; the projhit stays at its launch frame 21 (no log measures her travel: test 47). `detached` now means what R3 wanted for cast triggers (S8); for the projhit see the plan's `"detached": false` |
+| R4 hit-stop; what her own time stop freezes | **still open**: Ti1b (hit-stop not modelled) | the engine freezes every buff, the caster's own included, during an ultimate's time stop: her Susceptibility may last up to 1.8 s too long per own ultimate. Tests 18 (Estella bullet) and 37 |
+| R5 mid-air availability | **supported as a rule** (S10) | `earliestStart` refuses any skillSpecification-6 skill ("needs mid-air, and rotations have no jumps"): the dive can't be cast at all until rotations have jumps. Keep its hit in the kit |
+| R6 compiler leftovers | **still open**: D2 | kits hand-write (no effect on numbers). The D2 row in batch-1.md doesn't name one of R6's items: values of the **BuffData** of a buff a talent or potential attaches (P5's `cd`). The loader reads attached values only from the attachBuff blackboard, so `cooldown: "cd"` with `skill: buff_chr_0021_whiten_potential_5` is **rejected** ("has no value cd"): keep the literal `1` |
+| Note: delayed cast-trigger actions not cancelled | **supported** (S8) | delayed actions of a cast event are dropped when the cast is cut short before they run (unless `detached`). Talent 1's SP now uses this (plan) |
+
+Not needed by her kit: `decorations`, `fromKinds`, `categories`,
+`maxPerCast`, `beforeDamage` on triggers (Valiant's and the set's hits are
+separate hits, so they don't care), `scaleValue`, `fixedDamage`, `records`,
+`endsWithCast`, `cancelHits`, `endAction`, `fraction`, `eventRemaining`,
+`eventRecorded`, the hit trigger's `reaction` filter.
+
+### (b) Kit plan: what changed
+
+Everything else in the pass-2 plan (§ 3) stands: buffs, attack1–4,
+power_attack, dive, ultimate, `combo_window`, `p5_energy`, Valiant's kit,
+Swordmancer's trigger. No `durationFrames`.
+
+1. **Combo** (replaces the two rows; R1):
+
+```json
+{ "skillId": "chr_0021_whiten_combo_skill", "label": "Combo skill", "damageType": "combo", "hits": [
+  { "id": "solidified", "label": "Combo skill (Solidified target)", "branch": "target",
+    "if": { "enemyStatus": "solidification" },
+    "scale": ["atk_scale2"], "events": ["chr_0021_whiten_combo_skill"], "frames": [19],
+    "buffs": [{ "buff": "physical_susceptibility", "beforeDamage": true }],
+    "applies": [{ "kind": "physicalStatus", "status": "lift", "forced": true }],
+    "energy": "usp", "poise": "poise" },
+  { "id": "not_solidified", "label": "Combo skill (target not Solidified)", "branch": "target",
+    "scale": ["atk_scale"], "events": ["chr_0021_whiten_combo_skill"], "frames": [19],
+    "applies": [{ "kind": "physicalStatus", "status": "lift", "forced": true }],
+    "energy": "usp", "poise": "poise" }
+] }
+```
+
+2. **Talent 1** (R2 and S8): the projhit loses its `sp`, the `talent1_used`
+   hit trigger goes, and one delayed cast trigger does both at the frame the
+   data does them (frames 21–24 of the battle skill). Each action's `if` is
+   judged when it runs, so the trigger itself has none (its `if` would be
+   judged at the cast). A cast cut short before frame 21 does neither,
+   as in game.
+
+```json
+{ "id": "talent1_shatter", "on": { "event": "shatter" }, "by": "self",
+  "if": { "talentAtLeast": [0, 1] },
+  "do": [{ "kind": "gain", "gains": [{ "stack": "commiseration" }] }] },
+{ "id": "talent1_sp", "on": { "event": "cast", "skills": ["chr_0021_whiten_normal_skill"] }, "by": "self", "delay": 21,
+  "do": [
+    { "kind": "sp", "value": { "talent": 0, "key": "atb" }, "if": { "stack": "commiseration", "atLeast": 1 } },
+    { "kind": "gain", "gains": [{ "stack": "commiseration", "amount": -1 }] }
+  ] }
+```
+
+   The stack: `{ "id": "commiseration", "label": "Commiseration (talent 1)",
+   "max": 1 }` (`label` is required by the schema). The `sp` action counts as
+   returned SP (no team energy), as before.
+
+3. **Battle-skill projhit: write `"detached": false`.** Pass 2 said "leave
+   it out"; but the loader *defaults* a hit to detached when its `events`
+   don't include the skill's own ID, and `chr_0021_whiten_normal_skill_projhit`
+   doesn't. Left out, it would land even when her combo or ultimate cuts
+   the battle skill before frame 21 (checked: the loaded hit has
+   `detached: true`). The rest of the hit is unchanged: `atk_scale`,
+   `element: cryst`, `frames: [21]`, `bonuses` `dmg_up`, Cryo infliction,
+   `poise: "poise"`, skill `teamEnergyFrame: 21`.
+
+4. **`p5_energy`:** unchanged, `cooldown: 1` stays a literal (R6 row above:
+   `"cd"` is rejected).
+
+5. **Verification after the rewrite** (replaces pass 2's list):
+   - `skillCompile.test.ts` fails with exactly one new disagreement, to add
+     to `KNOWN`: `"chr_0021_whiten_normal_skill teamEnergyFrame: kit 21,
+     data 0"` (the first-target branch, D2). The branched combo hits, the
+     Lifts and poise raise none.
+   - The log check numbers above (26 / 0 / 15 / 0) once Valiant's and
+     Swordmancer's kits are in.
+   - `examples/estella-solidification.scenario.json`: re-baseline (Lift,
+     Shatter, Valiant and set hits; no test pins its total today).
+   - Unit tests: a Solidified combo lands one combo hit, one Lift, one
+     Shatter, one Valiant hit and 10 energy; a battle skill cut short before
+     frame 21 returns no SP and keeps the stack.
+
+Nothing in the plan is rejected by the loader.
+
+### (c) New gaps
+
+None. The only new finding is the loader default in (b) 3, a kit-writing
+trap rather than a missing feature: worth a line in the kit-format docs
+(a hit whose events name another SkillData file is `detached` unless it
+says otherwise).
+
+### (d) In-game tests the kit still depends on
+
+- **11** (combo on a non-Solidified target: the `not_solidified` hit, Lift
+  number, Vulnerable stack, no Shatter);
+- **18** (Estella bullet: does her own time stop freeze her Susceptibility; R4);
+- **38** (two Susceptibility sources add or not; her Physical one too);
+- **39** (Swordmancer's hit, if she wears it);
+- **47** (her battle skill's travel; R3, lower priority);
+- **48** (Valiant's skill-type bonus, `inheritFirstDamageMask`);
+- **49** (talent-1 SP, and that a teammate's Shatter doesn't count);
+- **50** (P5: anyone's Solidification, refreshes, 1 s cooldown).
