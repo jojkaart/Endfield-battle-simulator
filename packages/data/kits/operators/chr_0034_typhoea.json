@@ -2,13 +2,78 @@
   "$schema": "../../../../schemas/kit.schema.json",
   "operator": "chr_0034_typhoea",
   "sources": [
-    "Hit structure: rmxlinux Json/SkillData chr_0034_typhoea_* (game 1.6). Projectile and ability-entity hits take their parent's blackboard (LaunchProjectile / SpawnAbilityEntity assignBlackboard) and split it with SimpleCalcBBAction literals (operation 2 = ×, 3 = ÷): attack1 2 arrows × atk_scale/2; attack3 2 waves × atk_scale/2 (3 arrows per wave, one damages a target: buff_chr_0034_typhoea_attack_3_*_damagetaken gate); attack4 atk_scale×0.35 + 5 × atk_scale×0.13; battle skill 2 arrows × atk_scale×0.5; combo 7 arrows × atk_scale/7 and 18 ticks × atk_scale_persistent/18; ultimate sub-rains 3 ticks × atk_scale_outer/3 and 5 × atk_scale_center×0.08 + atk_scale_center×0.6.",
-    "The literals sum to 1 in every skill, so each skill's single-target total is its table value. Kits can't express a constant factor yet, so split hits are written here as one combined hit (count 1, frame of the first landing) with no log events: the per-arrow values can't be checked hit by hit until the kit format has a literal factor. The per-arrow values were checked with a scratch script implementing that factor (see each note).",
-    "Verification: fixtures/pending/zmdlogs-dbaee23b801d.json (P1, no Corrosion; all 43 Typhoeus hits reproduce within ±1 once the log checker (a) counts a stackingType-1 (highest-priority) buff such as buff_wpn_funnel_0016_will_dmg once, (b) applies damage-mask-conditioned buffs such as buff_chr_0034_typhoea_combo_enemy_debuff only to bursts (mask 33554432) and (c) tries boundary buffs one by one and (d) caps a buff's logged instances at its stack limit (buff_equipsuit_usp_02_AddAttack once; buff_equipsuit_spellburst_01_physpellup needs 3 instances to match, although its parent assigns max_stack 2: unexplained)), and fixtures/zmdlogs-0eef2474a26f.json (P5) up to t=6119 (14 hits, Corrosion level 2). Later 0eef hits drift under Corrosion; fixtures/zmdlogs-d9e59d0fb737.json (parser v58) is short of a large unlogged buff on every Typhoeus hit (×1.54–1.9 after t=9605, probably Lizhiyan's buff_common_affixes_enhance_spell, logged only as a boundary buff at t=6098; ×1.1585 on the first hit at t=4415) and matches nothing.",
-    "Not in this kit, ~80% of his logged damage: his burst buff_common_natural_natural_triggered_typhoea, created by enhanced floating arrows (floating_attack1_01_projhit, floating_attack5_01_projhit). It is the standard Nature burst (ReadSkillSettingData 法术爆发伤害倍率) × damage_enhence = potential_damage_rate (P5: 1.1), × enchence_burst_damage_rate (1.3 at level 12) when the target had a Nature infliction for the arrow to consume. Verified on dbaee (×1.3 at t=9860, 11237; ×1.0 at t=8391, 14084–16501) and 0eef (×1.1, t=4426–5899). Needs engine support (a reaction hit with a skill-value multiplier).",
+    "Hit structure: rmxlinux Json/SkillData chr_0034_typhoea_* (game 1.6). Projectile and ability-entity hits take their parent's blackboard (LaunchProjectile / SpawnAbilityEntity assignBlackboard) and split it with SimpleCalcBBAction literals (operation 2 = ×, 3 = ÷), written here as `factor`: attack1 2 arrows × atk_scale/2; attack3 2 waves × atk_scale/2 (3 arrows per wave, one damages a target: buff_chr_0034_typhoea_attack_3_*_damagetaken gate); attack4 atk_scale×0.35 + 5 × atk_scale×0.13; battle skill 2 arrows × atk_scale×0.5; combo 7 arrows × atk_scale/7 and 18 ticks × atk_scale_persistent/18; ultimate follow-up rains 3 ticks × atk_scale_outer/3, final rain 5 × atk_scale_center×0.08 + atk_scale_center×0.6. Frames are launch frames (projectiles) or spawn frame + entity frame (ability entities).",
+    "Skill descriptions (CharGrowthTable + I18nTextTable_EN). Battle skill: \"Typhoeus leaps into the air and enters a short Hovering state, during which she can unleash 5 Aerial Basic Attacks (ABATK) … Whenever an ABATK hits an enemy with Nature Infliction, it consumes 1 stack of Nature Infliction, grants Typhoeus 1 Sign, and gives additional Ultimate Energy. If Typhoeus has Hunting Arrow(s), she consumes 1 Hunting Arrow and converts the ABATK into a Power Shot. Power Shot: After hitting an enemy, Power Shot forcibly applies 1 instance of Nature Burst; if the Power Shot consumes the target's Nature Infliction, then increase the DMG dealt by this Nature Burst. If Typhoeus is the controlled operator, her 5th ABATK is regarded as a Final Strike and a Power Shot, and does not consume Hunting Arrows.\" Talent 1: \"Whenever a Nature Burst is triggered on an enemy, Typhoeus gains 1 Sign. DMG dealt by attacks empowered by consuming Hunting Arrows is increased to {atk_scale_enhence} times the original. When entering battle, Typhoeus immediately gains {energy_enterfight} Sign(s). Typhoeus can have up to 4 Hunting Arrows and 8 Signs.\" Combo: \"COMBO TRIGGER: When Typhoeus reaches max Signs. Typhoeus converts all her Signs to Hunting Arrows and resets her Aerial Basic Attack (ABATK) attempts … Enemies in the Barrage Array take Nature DMG over time, are slowed, and suffer increased Nature Burst DMG Taken. Every 2 Signs convert to 1 Hunting Arrow.\" Ultimate: \"… She then enters a Hovering state and her Aerial Basic Attack (ABATK) attempts are reset. For her next 5 ABATKs, hitting an enemy triggers a Hail of Arrows … Casting the ultimate gives {arrow_num_given} Hunting Arrows immediately.\"",
+    "Power Shots (SkillData floating_attack1_01_projhit / floating_attack5_01_projhit, enhence_arrow branch): the arrow deals atk_scale_base × atk_scale_enhence, then creates his burst buff_common_natural_natural_triggered_typhoea = the standard Nature burst (ReadSkillSettingData 法术爆发伤害倍率) × damage_enhence, where damage_enhence = potential_damage_rate, × enchence_burst_damage_rate when the target had a Nature infliction (consumed: FinishBuffAdvanced 1 layer of the infliction tag, ObtainCostAction usp_recover, arrow_energy_buffer_2 = 1 Sign). Every Nature burst on an enemy gives her 1 Sign (buff_chr_0034_typhoea_passitive_enemy_listennaturalspellbrust, an aura on enemies listening for the burst tag of buff_common_natural_natural_triggered and of her own burst). The burst is logged ~0.33 s after the arrow; here it lands with the arrow.",
+    "Hunting Arrows (buff_chr_0034_typhoea_normal_skill_arrow_num, max 4) and Signs (buff_chr_0034_typhoea_normal_skill_arrow_energy, max 8) are kit stacks. The kit format can only use up a whole stack, so the arrows are four one-arrow stacks arrow_1–arrow_4: shot N of a hover (floating_attackN, N = 1–4) is a Power Shot if slot N is filled and uses it up. Shots spend arrows in order, so this counts like the game's 1 arrow per shot: a full hover (shots 1–4) spends all of them, and a combo or ultimate refills slots 1–4 / 1–2 (it differs only when a hover was cut short before the ultimate). The 5th shot is always a Power Shot. A shot without an arrow is a plain shot in the game (atk_scale_base, a Sign and usp_recover energy when it consumes Nature Infliction); the kit format can't give a hit a no-arrow variant, so such shots have no hit here. Start of battle: she gains energy_enterfight (talent 1: 4) Signs and, in the dungeon categories of buff_chr_0034_typhoea_passive_arrowrecover, 4 arrows; kit stacks start at 0.",
+    "Verification (efsim zmdlogs check, every hit with event keys within ±1): fixtures/zmdlogs-dbaee23b801d.json (P1, no Corrosion) 35 of 43 Typhoeus hits match (battle-skill volley, floating shots, combo arrows and all 12 Barrage Array ticks, Hail of Arrows ticks); zmdlogs-0eef2474a26f.json (P5) 11 match, 14 under Corrosion; zmdlogs-bdf223db8e49.json (P5) 24 match (every grounded basic attack 1–5, the volley, floating shots and an array tick before Corrosion), 29 under Corrosion; zmdlogs-d9e59d0fb737.json (parser v58, P0) 0 match, 35 under Corrosion. Not keyed: her bursts (buff_common_natural_natural_triggered_typhoea) and the ultimate's main hit, see their notes. d9e59 is short of a large unlogged buff on every Typhoeus hit (×1.54–1.9 after t=9605, ×1.1585 on the ultimate at t=4415).",
     "Only ultimate_skillfloating is in CharGrowthTable's ultimate group (chr_0034_typhoea_ultimate_skill is unused), so the ultimate always uses its values (atk_scale_outer 0.75 at level 12)."
   ],
   "element": "natural",
+  "stacks": [
+    {
+      "id": "signs",
+      "label": "Signs",
+      "max": 8,
+      "note": "buff_chr_0034_typhoea_normal_skill_arrow_energy maxStackCnt 8; talent 1: \"up to … 8 Signs\". Reaching 8 opens the combo (the buff creates buff_chr_0034_typhoea_combo_trigger_combo at 8 stacks)."
+    },
+    {
+      "id": "arrow_1",
+      "label": "Hunting Arrow 1",
+      "max": 1,
+      "note": "Hunting Arrows (buff_chr_0034_typhoea_normal_skill_arrow_num maxStackCnt 4; talent 1: \"up to 4 Hunting Arrows\") as four one-arrow slots: the kit can only use up a whole stack, so shot N of a hover spends slot N. See sources."
+    },
+    {
+      "id": "arrow_2",
+      "label": "Hunting Arrow 2",
+      "max": 1,
+      "note": "See arrow_1."
+    },
+    {
+      "id": "arrow_3",
+      "label": "Hunting Arrow 3",
+      "max": 1,
+      "note": "See arrow_1."
+    },
+    {
+      "id": "arrow_4",
+      "label": "Hunting Arrow 4",
+      "max": 1,
+      "note": "See arrow_1."
+    }
+  ],
+  "buffs": [
+    {
+      "id": "hovering",
+      "label": "Hovering (floating stance)",
+      "target": "self",
+      "duration": { "literal": 10 },
+      "modifiers": [],
+      "note": "buff_chr_0034_typhoea_floatingmode (BuffData duration 10 s; the 5th shot ends it at its frame 15, which the kit can't do, so the state lasts its full 10 s here). Created at frame 0 by the battle skill, the ultimate and the floating combo. Gates the floating shots and the floating combo."
+    },
+    {
+      "id": "hovering_atk",
+      "label": "Hovering ATK (P1)",
+      "target": "self",
+      "duration": { "literal": 10 },
+      "modifiers": [{ "zone": "atk", "value": { "key": "atk_up", "capKey": "potential_atkup" } }],
+      "note": "buff_chr_0034_typhoea_potential_atkup (ATK + atk_up; attributeType 2, formula item 6; BuffData duration 10 s, ended with the stance), created by the floating stance when the casting skill's potential_atkup is 1 (P1 sets it to 1 and atk_up to 0.18 on the battle skill and the ultimate). The value is min(atk_up, potential_atkup): atk_up from P1, 0 below."
+    },
+    {
+      "id": "barrage_array",
+      "label": "Barrage Array: Nature Burst DMG taken",
+      "target": "enemy",
+      "duration": { "key": "persistent_time" },
+      "modifiers": [{ "zone": "damageTaken", "value": { "key": "persistent_naturalburst_increase" }, "onlyKinds": ["burst"] }],
+      "note": "buff_chr_0034_typhoea_combo_enemy_debuff, given by the combo's Barrage Array (combo_persistentdamage aura, 180 frames = persistent_time 6 s) while the enemy stands in it: damage_up = persistent_naturalburst_increase (0.10 at level 12, P3 +0.06) on hits with decorate mask 33554432 (Arts Bursts only, of any operator). Logged as a damageTaken zone; fixtures/zmdlogs-dbaee23b801d.json shows it only on bursts."
+    }
+  ],
+  "comboTriggers": [
+    {
+      "any": [{ "on": "stackAtLeast", "stack": "signs", "atLeast": 8 }],
+      "note": "CharGrowthTable: \"COMBO TRIGGER: When Typhoeus reaches max Signs.\""
+    }
+  ],
   "skills": [
     {
       "skillId": "chr_0034_typhoea_attack1",
@@ -18,12 +83,14 @@
       "note": "durationFrames: attack2 is allowed from frame 9 (AllowNextSkillAction; SkillData durationFrame 150).",
       "hits": [
         {
-          "id": "arrows",
-          "label": "2 arrows (combined)",
+          "id": "arrow",
+          "label": "Arrow (×2)",
           "scale": ["atk_scale"],
-          "events": [],
-          "frames": [5],
-          "note": "Two arrows launched at frames 5 and 8, each atk_scale/2, logged as chr_0034_typhoea_attack1_01_projhit. Per-arrow value matches fixtures/zmdlogs-0eef2474a26f.json t=1644 and t=1776 (1269 each)."
+          "factor": 0.5,
+          "count": 2,
+          "events": ["chr_0034_typhoea_attack1_01_projhit"],
+          "frames": [5, 8],
+          "note": "Two arrows launched at frames 5 and 8; SimpleCalcBB atk_scale ÷ 2."
         }
       ]
     },
@@ -37,9 +104,9 @@
         {
           "id": "arrow",
           "scale": ["atk_scale"],
-          "events": [],
+          "events": ["chr_0034_typhoea_attack1_01_projhit"],
           "frames": [9],
-          "note": "One arrow; logged under attack1's event chr_0034_typhoea_attack1_01_projhit (same projectile skill), so it can't carry the event while attack1's half-value arrows share it. Matches fixtures/zmdlogs-0eef2474a26f.json t=2719 (4958)."
+          "note": "One arrow, launched at frame 9; logged under attack1's projectile skill chr_0034_typhoea_attack1_01_projhit."
         }
       ]
     },
@@ -51,12 +118,22 @@
       "note": "durationFrames: attack4 is allowed from frame 20 (SkillData durationFrame 185).",
       "hits": [
         {
-          "id": "arrows",
-          "label": "2 arrow waves (combined, single target)",
+          "id": "wave1",
+          "label": "First arrow wave",
           "scale": ["atk_scale"],
-          "events": [],
+          "factor": 0.5,
+          "events": ["chr_0034_typhoea_attack3_01_projhit"],
           "frames": [5],
-          "note": "Waves of 3 arrows at frames 5–8 (attack3_01_projhit) and 14–17 (attack3_02_projhit), atk_scale/2 each; a target takes one arrow per wave. Per-wave value matches fixtures/zmdlogs-0eef2474a26f.json t=2943 (3807). Several targets can take more."
+          "note": "3 arrows at frames 5–8 (SimpleCalcBB atk_scale ÷ 2); one damages a given target. Several targets can take more."
+        },
+        {
+          "id": "wave2",
+          "label": "Second arrow wave",
+          "scale": ["atk_scale"],
+          "factor": 0.5,
+          "events": ["chr_0034_typhoea_attack3_02_projhit"],
+          "frames": [14],
+          "note": "3 arrows at frames 14–17, as the first wave."
         }
       ]
     },
@@ -65,15 +142,26 @@
       "label": "Basic attack 4",
       "damageType": "basic",
       "durationFrames": 27,
-      "note": "durationFrames: attack5 is allowed from frame 27 (SkillData durationFrame 170). Not yet seen in a log.",
+      "note": "durationFrames: attack5 is allowed from frame 27 (SkillData durationFrame 170).",
       "hits": [
         {
-          "id": "arrows",
-          "label": "6 arrows (combined)",
+          "id": "first",
+          "label": "First arrow",
           "scale": ["atk_scale"],
-          "events": [],
+          "factor": 0.35,
+          "events": ["chr_0034_typhoea_attack4_01_projhit"],
           "frames": [5],
-          "note": "atk_scale×0.35 at frame 5 (attack4_01_projhit) and 5 × atk_scale×0.13 at frames 15, 18, 21, 24, 27 (attack4_02_projhit). Unverified."
+          "note": "SimpleCalcBB atk_scale_1 = atk_scale × 0.35, launched at frame 5."
+        },
+        {
+          "id": "volley",
+          "label": "Volley arrow (×5)",
+          "scale": ["atk_scale"],
+          "factor": 0.13,
+          "count": 5,
+          "events": ["chr_0034_typhoea_attack4_02_projhit"],
+          "frames": [15, 18, 21, 24, 27],
+          "note": "SimpleCalcBB atk_scale_2 = atk_scale × 0.13, launched at frames 15, 18, 21, 24, 27."
         }
       ]
     },
@@ -82,14 +170,14 @@
       "label": "Basic attack 5 (final strike)",
       "damageType": "basic",
       "durationFrames": 46,
-      "note": "durationFrames: attack1 is allowed from frame 46 (SkillData durationFrame 150). Not yet seen in a log.",
+      "note": "durationFrames: attack1 is allowed from frame 46 (SkillData durationFrame 150).",
       "hits": [
         {
           "id": "arrow",
           "scale": ["atk_scale"],
-          "events": [],
+          "events": ["chr_0034_typhoea_attack5_01_projhit", "chr_0034_typhoea_attack5_02_projhit"],
           "frames": [22],
-          "note": "One arrow: attack5_01_projhit on a hit, or attack5_02_projhit on every target in range when the arrow is blocked. Unverified."
+          "note": "One arrow launched at frame 22: attack5_01_projhit on a hit, or attack5_02_projhit on every target in range when the arrow is blocked (mask 2097280: Final Strike)."
         }
       ]
     },
@@ -105,7 +193,8 @@
           "scale": ["atk_scale"],
           "events": [],
           "frames": [38],
-          "note": "The projectile casts attack5_01_projhit with this skill's blackboard. Unverified."
+          "finalStrike": false,
+          "note": "The projectile (launched at frame 38) casts attack5_01_projhit with this skill's blackboard; no event key, since attack5's arrow uses that key too and this hit hasn't been logged. Unverified."
         }
       ]
     },
@@ -114,64 +203,221 @@
       "label": "Battle skill: take flight (opening volley)",
       "damageType": "battle",
       "durationFrames": 26,
-      "note": "Enters the floating stance (buff_chr_0034_typhoea_floatingmode; from P1 it also carries buff_chr_0034_typhoea_potential_atkup, ATK +18%, which the logs list). durationFrames: floating_attack1 is allowed from frame 26 and cast automatically at frame 32 (SkillData durationFrame 40).",
+      "note": "Enters the floating stance (kit buff hovering, at frame 0). durationFrames: floating_attack1 is allowed from frame 26 and cast automatically at frame 32 (SkillData durationFrame 40).",
       "hits": [
         {
-          "id": "arrows",
-          "label": "2 arrows (combined)",
+          "id": "arrow1",
+          "label": "First arrow",
           "scale": ["atk_scale"],
-          "events": [],
+          "factor": 0.5,
+          "events": ["chr_0034_typhoea_normal_skill_attack1_projhit"],
           "frames": [2],
-          "note": "normal_skill_attack1_projhit at frames 2–5 and normal_skill_attack2_projhit at 7–10, each atk_scale×0.5 (damage mask 256, battle skill). Per-arrow value matches fixtures/pending/zmdlogs-dbaee23b801d.json t=2485, 2595 and fixtures/zmdlogs-0eef2474a26f.json t=3262, 3393."
+          "buffs": [{ "buff": "hovering", "beforeDamage": true }, { "buff": "hovering_atk", "beforeDamage": true }],
+          "note": "normal_skill_attack1_projhit launched at frames 2–5: SimpleCalcBB atk_scale × 0.5 (mask 256, battle skill). The hovering buff is created at frame 0, so it's on both arrows."
+        },
+        {
+          "id": "arrow2",
+          "label": "Second arrow",
+          "scale": ["atk_scale"],
+          "factor": 0.5,
+          "events": ["chr_0034_typhoea_normal_skill_attack2_projhit"],
+          "frames": [7],
+          "note": "normal_skill_attack2_projhit launched at frames 7–10, atk_scale × 0.5."
         }
       ]
     },
     {
       "skillId": "chr_0034_typhoea_floating_attack1",
-      "label": "Floating shot (enhanced arrow)",
+      "label": "Aerial basic attack 1",
       "damageType": "basic",
+      "availableWhile": "hovering",
       "durationFrames": 18,
-      "note": "Floating stance shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128, as basic attacks). Each shot consumes one buff_chr_0034_typhoea_normal_skill_arrow_num stack if there is one (enhanced arrow) and also creates his burst (see sources). durationFrames: the next shot is allowed from frame 18 of each 25-frame section and cast at 22 (SkillData durationFrame 160 holds 5 direction variants).",
+      "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). The shot consumes 1 Hunting Arrow at frame 1 if there is one (Power Shot; kit: slot arrow_1). durationFrames: the next shot is allowed from frame 18 (SkillData cancel frame; durationFrame 160 holds 5 direction variants).",
       "hits": [
         {
-          "id": "enhanced_arrow",
+          "id": "power_shot",
+          "label": "Power Shot arrow",
           "scale": ["atk_scale_base", "atk_scale_enhence"],
+          "events": ["chr_0034_typhoea_floating_attack1_01_projhit"],
+          "frames": [1],
+          "requires": { "stack": "arrow_1", "atLeast": 1, "consume": true },
+          "note": "floating_attack1_01_projhit: atk_scale_total = atk_scale_base × atk_scale_enhence (talent 1 sets atk_scale_enhence 1.2/1.4/1.6; P1 ×1.2 on atk_scale_base). Shots 2–4 cast the same projectile skill with their own (equal) values."
+        },
+        {
+          "id": "burst",
+          "label": "Power Shot Nature Burst",
+          "scale": ["potential_damage_rate"],
+          "reaction": { "kind": "burst", "element": "natural" },
+          "scaleIf": { "key": "enchence_burst_damage_rate", "enemyInfliction": "natural" },
           "events": [],
           "frames": [1],
-          "note": "floating_attack1_01_projhit: atk_scale_total = atk_scale_base × atk_scale_enhence (talent 1 sets 1.2/1.4/1.6; P1 ×1.2 on atk_scale_base). Matches all 7 floating hits in fixtures/pending/zmdlogs-dbaee23b801d.json and the first 4 in fixtures/zmdlogs-0eef2474a26f.json (t=4073–6119, Corrosion level 2), all enhanced. No event: the current log checker over-counts buffs on the later hits (see sources)."
+          "requires": { "stack": "arrow_1", "atLeast": 1, "consume": true },
+          "applies": [{ "kind": "consumeInfliction", "elements": ["natural"] }],
+          "gains": [{ "stack": "signs", "amount": "consumedInflictions" }, { "stack": "signs" }],
+          "note": "Standard Nature burst × damage_enhence = potential_damage_rate (P5 1.1), × enchence_burst_damage_rate (1.3 at level 12) when the arrow consumed a Nature infliction. With the log key buff_common_natural_natural_triggered_typhoea this matches 3 bursts each in fixtures/zmdlogs-0eef2474a26f.json and zmdlogs-bdf223db8e49.json and 2 in zmdlogs-dbaee23b801d.json (t=9860, 11237, both with enchence_burst_damage_rate), but dbaee's other 5 are 4–21% above it (t=8391 ×1.2134, 14084 ×1.0813, 15129–16501 ×1.0435): they need a third buff_equipsuit_spellburst_01_physpellup (Arts Intensity +16) where BuffData caps it at max_stack 2, which the log checker follows, so the key is left off until that's explained. Consuming gives 1 Sign (the engine consumes all stacks, so this counts each consumed stack) and the burst 1 more (talent 1). The consumption's usp_recover energy isn't granted: it only happens on consumption, which a kit hit's energy can't express."
         }
       ]
     },
     {
-      "skillId": "chr_0034_typhoea_floating_attack1",
-      "label": "Floating shot (no arrow left)",
+      "skillId": "chr_0034_typhoea_floating_attack2",
+      "label": "Aerial basic attack 2",
       "damageType": "basic",
+      "availableWhile": "hovering",
       "durationFrames": 18,
-      "note": "The same shot without an arrow stack: atk_scale_base only and no burst (it consumes one Nature infliction, if any, for usp_recover energy instead). Not yet seen in a log.",
-      "hits": [{ "id": "arrow", "scale": ["atk_scale_base"], "events": [], "frames": [1] }]
+      "note": "As floating_attack1 (cancel frame 18); a Power Shot when Hunting Arrow slot 2 is filled.",
+      "hits": [
+        {
+          "id": "power_shot",
+          "label": "Power Shot arrow",
+          "scale": ["atk_scale_base", "atk_scale_enhence"],
+          "events": ["chr_0034_typhoea_floating_attack1_01_projhit"],
+          "frames": [1],
+          "requires": { "stack": "arrow_2", "atLeast": 1, "consume": true }
+        },
+        {
+          "id": "burst",
+          "label": "Power Shot Nature Burst",
+          "scale": ["potential_damage_rate"],
+          "reaction": { "kind": "burst", "element": "natural" },
+          "scaleIf": { "key": "enchence_burst_damage_rate", "enemyInfliction": "natural" },
+          "events": [],
+          "frames": [1],
+          "requires": { "stack": "arrow_2", "atLeast": 1, "consume": true },
+          "applies": [{ "kind": "consumeInfliction", "elements": ["natural"] }],
+          "gains": [{ "stack": "signs", "amount": "consumedInflictions" }, { "stack": "signs" }]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0034_typhoea_floating_attack3",
+      "label": "Aerial basic attack 3",
+      "damageType": "basic",
+      "availableWhile": "hovering",
+      "durationFrames": 18,
+      "note": "As floating_attack1 (cancel frame 18); a Power Shot when Hunting Arrow slot 3 is filled.",
+      "hits": [
+        {
+          "id": "power_shot",
+          "label": "Power Shot arrow",
+          "scale": ["atk_scale_base", "atk_scale_enhence"],
+          "events": ["chr_0034_typhoea_floating_attack1_01_projhit"],
+          "frames": [1],
+          "requires": { "stack": "arrow_3", "atLeast": 1, "consume": true }
+        },
+        {
+          "id": "burst",
+          "label": "Power Shot Nature Burst",
+          "scale": ["potential_damage_rate"],
+          "reaction": { "kind": "burst", "element": "natural" },
+          "scaleIf": { "key": "enchence_burst_damage_rate", "enemyInfliction": "natural" },
+          "events": [],
+          "frames": [1],
+          "requires": { "stack": "arrow_3", "atLeast": 1, "consume": true },
+          "applies": [{ "kind": "consumeInfliction", "elements": ["natural"] }],
+          "gains": [{ "stack": "signs", "amount": "consumedInflictions" }, { "stack": "signs" }]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0034_typhoea_floating_attack4",
+      "label": "Aerial basic attack 4",
+      "damageType": "basic",
+      "availableWhile": "hovering",
+      "durationFrames": 28,
+      "note": "As floating_attack1 (cancel frame 28); a Power Shot when Hunting Arrow slot 4 is filled.",
+      "hits": [
+        {
+          "id": "power_shot",
+          "label": "Power Shot arrow",
+          "scale": ["atk_scale_base", "atk_scale_enhence"],
+          "events": ["chr_0034_typhoea_floating_attack1_01_projhit"],
+          "frames": [1],
+          "requires": { "stack": "arrow_4", "atLeast": 1, "consume": true }
+        },
+        {
+          "id": "burst",
+          "label": "Power Shot Nature Burst",
+          "scale": ["potential_damage_rate"],
+          "reaction": { "kind": "burst", "element": "natural" },
+          "scaleIf": { "key": "enchence_burst_damage_rate", "enemyInfliction": "natural" },
+          "events": [],
+          "frames": [1],
+          "requires": { "stack": "arrow_4", "atLeast": 1, "consume": true },
+          "applies": [{ "kind": "consumeInfliction", "elements": ["natural"] }],
+          "gains": [{ "stack": "signs", "amount": "consumedInflictions" }, { "stack": "signs" }]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0034_typhoea_floating_attack5",
+      "label": "Aerial basic attack 5 (final strike)",
+      "damageType": "basic",
+      "availableWhile": "hovering",
+      "durationFrames": 35,
+      "note": "The 5th shot of a hover: as the controlled operator always a Power Shot that doesn't consume Hunting Arrows (its FinishBuff of arrow_num is disabled), and a Final Strike (mask 2101376). It ends the floating stance at frame 15. durationFrames: SkillData exclusiveFrame 35 (no cancel window).",
+      "hits": [
+        {
+          "id": "power_shot",
+          "label": "Power Shot arrow",
+          "scale": ["atk_scale_base", "atk_scale_enhence"],
+          "events": ["chr_0034_typhoea_floating_attack5_01_projhit"],
+          "frames": [0],
+          "note": "floating_attack5_01_projhit: atk_scale_base (1.0 at level 12, P1 ×1.2) × atk_scale_enhence, launched at frame 0."
+        },
+        {
+          "id": "burst",
+          "label": "Power Shot Nature Burst",
+          "scale": ["potential_damage_rate"],
+          "reaction": { "kind": "burst", "element": "natural" },
+          "scaleIf": { "key": "enchence_burst_damage_rate", "enemyInfliction": "natural" },
+          "events": [],
+          "frames": [0],
+          "finalStrike": false,
+          "applies": [{ "kind": "consumeInfliction", "elements": ["natural"] }],
+          "gains": [{ "stack": "signs", "amount": "consumedInflictions" }, { "stack": "signs" }],
+          "note": "As floating_attack1's burst."
+        }
+      ]
     },
     {
       "skillId": "chr_0034_typhoea_combo_skill",
       "label": "Combo skill",
       "damageType": "combo",
       "durationFrames": 48,
-      "note": "durationFrames: the battle skill is allowed from frame 48 (SkillData durationFrame 241). Also puts buff_chr_0034_typhoea_combo_enemy_debuff on the target: +persistent_naturalburst_increase burst damage taken (bursts only, mask 33554432; P3 +0.06).",
+      "note": "durationFrames: the battle skill is allowed from frame 48 (SkillData durationFrame 241). At frame 35 she gains usp energy (ObtainCostAction) and converts her Signs to Hunting Arrows (buff_chr_0034_typhoea_common_func_arrowreload).",
       "hits": [
         {
-          "id": "arrows",
-          "label": "7 arrows (combined)",
+          "id": "first_arrow",
+          "label": "First arrow",
           "scale": ["atk_scale"],
-          "events": [],
+          "factor": 0.14285714285714285,
+          "events": ["chr_0034_typhoea_combo_01_projhit"],
           "frames": [35],
-          "note": "combo_01_projhit (1, frame 35) and combo_02_projhit (6, frames 40–52), atk_scale/7 each. Per-arrow value matches all 7 in fixtures/pending/zmdlogs-dbaee23b801d.json (t=10101–10781)."
+          "requires": { "stack": "signs", "atLeast": 8, "consume": true },
+          "gains": [{ "stack": "arrow_1" }, { "stack": "arrow_2" }, { "stack": "arrow_3" }, { "stack": "arrow_4" }],
+          "energy": { "key": "usp" },
+          "buffs": [{ "buff": "barrage_array" }],
+          "note": "combo_01_projhit (launched at frame 35): SimpleCalcBB atk_scale ÷ 7. Its hit spawns the Barrage Array. The cast uses up all 8 Signs (requires); 8 Signs at 2 Signs per arrow (energy_to_bullet_ratio 2) give 4 Hunting Arrows, the most she can hold (all four slots). usp: 10 at level 12."
+        },
+        {
+          "id": "arrow",
+          "label": "Arrow (×6)",
+          "scale": ["atk_scale"],
+          "factor": 0.14285714285714285,
+          "count": 6,
+          "events": ["chr_0034_typhoea_combo_02_projhit"],
+          "frames": [40, 43, 44, 45, 47, 49],
+          "note": "combo_02_projhit, atk_scale ÷ 7."
         },
         {
           "id": "area",
-          "label": "Lingering area (18 ticks, combined)",
+          "label": "Barrage Array tick (×18)",
           "scale": ["atk_scale_persistent"],
-          "events": [],
-          "frames": [35],
-          "note": "combo_persistentdamage ability entity spawned by the first arrow's hit: 18 ticks every 1/3 s (6 s) of atk_scale_persistent/18 while the target stays inside. Per-tick value matches all 12 in fixtures/pending/zmdlogs-dbaee23b801d.json."
+          "factor": 0.05555555555555555,
+          "count": 18,
+          "events": ["chr_0034_typhoea_combo_persistentdamage"],
+          "frames": [35, 45, 55, 65, 75, 85, 95, 105, 115, 125, 135, 145, 155, 165, 175, 185, 195, 205],
+          "note": "combo_persistentdamage ability entity spawned by the first arrow's hit: ChannelingAction every 1/3 s, up to 18 ticks (atk_scale_persistent ÷ 18) while the target stays inside; the first tick lands with the arrow (fixtures/zmdlogs-bdf223db8e49.json t=12171)."
         }
       ]
     },
@@ -179,11 +425,41 @@
       "skillId": "chr_0034_typhoea_combo_skillfloating",
       "label": "Combo skill (floating)",
       "damageType": "combo",
+      "availableWhile": "hovering",
       "durationFrames": 57,
-      "note": "Same arrows as the grounded combo skill; returns to the floating stance from frame 57 (SkillData durationFrame 70). Both log under the same event keys, so the logs don't tell which one was cast.",
+      "note": "The combo cast in the floating stance (the stance's ChangeSkillAction swaps it in): same arrows, refreshes the stance (resets the ABATK attempts) and returns to it from frame 57 (SkillData durationFrame 70). Both combos log under the same event keys. At frame 35: usp energy and the Sign conversion. The game shares one cooldown between the two combos; the timeline doesn't.",
       "hits": [
-        { "id": "arrows", "label": "7 arrows (combined)", "scale": ["atk_scale"], "events": [], "frames": [35], "note": "As combo_skill: atk_scale/7 per arrow." },
-        { "id": "area", "label": "Lingering area (18 ticks, combined)", "scale": ["atk_scale_persistent"], "events": [], "frames": [35], "note": "As combo_skill: atk_scale_persistent/18 per tick." }
+        {
+          "id": "first_arrow",
+          "label": "First arrow",
+          "scale": ["atk_scale"],
+          "factor": 0.14285714285714285,
+          "events": ["chr_0034_typhoea_combo_01_projhit"],
+          "frames": [35],
+          "requires": { "stack": "signs", "atLeast": 8, "consume": true },
+          "gains": [{ "stack": "arrow_1" }, { "stack": "arrow_2" }, { "stack": "arrow_3" }, { "stack": "arrow_4" }],
+          "energy": { "key": "usp" },
+          "buffs": [{ "buff": "barrage_array" }, { "buff": "hovering" }],
+          "note": "As combo_skill's first arrow (frame 35). The stance buff is created at frame 0; applied here with the first arrow."
+        },
+        {
+          "id": "arrow",
+          "label": "Arrow (×6)",
+          "scale": ["atk_scale"],
+          "factor": 0.14285714285714285,
+          "count": 6,
+          "events": ["chr_0034_typhoea_combo_02_projhit"],
+          "frames": [39, 43, 44, 45, 47, 49]
+        },
+        {
+          "id": "area",
+          "label": "Barrage Array tick (×18)",
+          "scale": ["atk_scale_persistent"],
+          "factor": 0.05555555555555555,
+          "count": 18,
+          "events": ["chr_0034_typhoea_combo_persistentdamage"],
+          "frames": [35, 45, 55, 65, 75, 85, 95, 105, 115, 125, 135, 145, 155, 165, 175, 185, 195, 205]
+        }
       ]
     },
     {
@@ -191,7 +467,7 @@
       "label": "Ultimate",
       "damageType": "ultimate",
       "durationFrames": 83,
-      "note": "Spawns the arrow rain (chr_0034_typhoea_ultimate_skill_arrowrain) at frame 61, which multiplies atk_scale_main/center/outer by potential_damge_up (P5 1.2) and passes them on. durationFrames: floating shots are allowed from frame 83 (SkillData durationFrame 92). Also gives arrow_num_given arrow stacks (P5 +1).",
+      "note": "Spawns the arrow rain (chr_0034_typhoea_ultimate_skill_arrowrain) at frame 61, which multiplies atk_scale_main/center/outer by potential_damge_up (P5 1.2) and passes them on, and gives arrow_num_given Hunting Arrows at frame 61. Enters the floating stance. durationFrames: floating shots are allowed from frame 83 (SkillData durationFrame 92).",
       "hits": [
         {
           "id": "main",
@@ -199,22 +475,35 @@
           "scale": ["atk_scale_main", "potential_damge_up"],
           "events": [],
           "frames": [61],
-          "note": "ultimate_skill_arrowrain (damage at the entity's frames 1–3). Matches fixtures/pending/zmdlogs-dbaee23b801d.json t=13975 (103923, crit). fixtures/zmdlogs-d9e59d0fb737.json t=4415 (15716) is 15.85% above the prediction with no logged buffs; unexplained."
+          "gains": [{ "stack": "arrow_1" }, { "stack": "arrow_2" }],
+          "buffs": [{ "buff": "hovering", "beforeDamage": true }, { "buff": "hovering_atk", "beforeDamage": true }],
+          "note": "ultimate_skill_arrowrain (damage at the entity's frames 1–3). Matches fixtures/zmdlogs-dbaee23b801d.json t=13975 (103923, crit), but fixtures/zmdlogs-d9e59d0fb737.json t=4415 (15716, P0, no logged buffs) is ×1.1585 above it, unexplained, so no event key. Hunting Arrows: arrow_num_given is 2 at every level (slots 1–2); P5 adds 1, which a fixed gain can't follow (assumed 2). The stance buff is created from frame 0; applied here."
         },
         {
           "id": "sub_rain",
-          "label": "Follow-up rain (3 ticks, combined)",
+          "label": "Hail of Arrows tick (4 rains × 3)",
           "scale": ["atk_scale_outer", "potential_damge_up"],
-          "count": 4,
-          "events": [],
-          "note": "buff_chr_0034_typhoea_ultimate_skill_cause_subarrowrain (5 s) spawns a follow-up rain on ability event 302 (0.2 s apart) up to 5 times: 4 × ultimate_skill_arrowrain_sub1 (3 ticks of atk_scale_outer/3) then 1 × sub2. Needs Typhoeus to keep hitting during the 5 s, so fewer may land. Per-tick value matches all 7 in fixtures/pending/zmdlogs-dbaee23b801d.json."
+          "factor": 0.3333333333333333,
+          "count": 12,
+          "events": ["chr_0034_typhoea_ultimate_skill_arrowrain_sub1"],
+          "note": "buff_chr_0034_typhoea_ultimate_skill_cause_subarrowrain (5 s) spawns a Hail of Arrows when one of her next ABATKs hits (damage tags of the floating shots), up to 5 times: 4 × ultimate_skill_arrowrain_sub1 (3 ticks of atk_scale_outer ÷ 3 at entity frames 6–15) then 1 × sub2. Needs those 5 shots within 5 s; when they land depends on the shots, so these have no frames (they count from the ultimate's start)."
         },
         {
-          "id": "final_rain",
-          "label": "Final rain (6 ticks, combined)",
+          "id": "final_rain_tick",
+          "label": "Empowered Hail of Arrows tick (×5)",
           "scale": ["atk_scale_center", "potential_damge_up"],
+          "factor": 0.08,
+          "count": 5,
           "events": [],
-          "note": "ultimate_skill_arrowrain_sub2: 5 ticks of atk_scale_center×0.08 then one of atk_scale_center×0.6. Seen only in fixtures/zmdlogs-d9e59d0fb737.json (t=13829–14675): the implied multipliers 0.3017 (×5) and 2.2629 are 7.50 apart, as 0.6/0.08, but that log's missing buff hides the absolute value. Unverified."
+          "note": "ultimate_skill_arrowrain_sub2: atk_scale_2 = atk_scale_center × 0.08 at entity frames 6–21. Seen only in fixtures/zmdlogs-d9e59d0fb737.json (t=13829–14675), whose missing buff hides the absolute value: no event key."
+        },
+        {
+          "id": "final_rain_blast",
+          "label": "Empowered Hail of Arrows blast",
+          "scale": ["atk_scale_center", "potential_damge_up"],
+          "factor": 0.6,
+          "events": [],
+          "note": "ultimate_skill_arrowrain_sub2: atk_scale_1 = atk_scale_center × 0.6 at entity frames 30–33. d9e59's implied multipliers 0.3017 (×5) and 2.2629 are 7.50 apart, as 0.6/0.08. Unverified."
         }
       ]
     },
