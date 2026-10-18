@@ -9,7 +9,7 @@ import { loadGameData } from "@efsim/data";
 import type { CritMode } from "@efsim/engine";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "./commands.ts";
 import { kitDraft } from "./kitdraft.ts";
-import { checkLog, formatLogCheck } from "./logcheck.ts";
+import { checkLog, findScales, formatLogCheck, impliedScales } from "./logcheck.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 import { importBattle, readLogFixture } from "./logs.ts";
@@ -23,6 +23,8 @@ const USAGE = `Usage:
                 [--enemy-level n]         (default: inferred from total damage on a clear)
                 [--note text]             Extra provenance note (repeatable)
   efsim zmdlogs check <fixture.json>      Predict every logged hit and compare
+  efsim zmdlogs scales <fixture> <op>     Multiplier each logged hit of an operator implies
+  efsim zmdlogs find-scales <fixture> <op> Skill values (keys) that explain each logged event
   efsim kit-draft <operator>              Draft a kit from SkillData (to verify against logs)
 
 Options for calc and compare:
@@ -87,8 +89,28 @@ async function main(argv: string[]): Promise<number> {
       text = calc(data, readBuild(args[0] as string), options);
       break;
     case "zmdlogs": {
-      const [sub, arg] = args;
-      if (args.length !== 2 || !arg || (sub !== "import" && sub !== "check")) throw new Error(`zmdlogs takes import <battle id> or check <file>\n\n${USAGE}`);
+      const [sub, arg, op] = args;
+      if ((sub === "scales" || sub === "find-scales") && arg && op) {
+        const fx = readLogFixture(arg);
+        if (sub === "scales") {
+          const lines: string[] = [];
+          for (const r of impliedScales(data, fx, op)) {
+            const s = r.bySkillType;
+            lines.push(`${r.event} t=${r.t}${r.unquantified.length ? ` [${r.unquantified.join(",")}]` : ""} crit=${r.crit} value=${r.value}` +
+              ` basic=${s.basic.toFixed(4)} battle=${s.battle.toFixed(4)} combo=${s.combo.toFixed(4)} ultimate=${s.ultimate.toFixed(4)}`);
+          }
+          text = lines.join("\n");
+        } else {
+          const lines: string[] = [];
+          for (const m of findScales(data, fx, op)) {
+            lines.push(`${m.event} (${m.hits} hits)`);
+            for (const x of m.matches) lines.push(`   ${x.agree}/${m.hits}  ${x.skillId} ${x.keys.join(" * ")} ${x.damageType}${x.corrosion ? ` corrosion L${x.corrosion}` : ""}`);
+          }
+          text = lines.join("\n");
+        }
+        break;
+      }
+      if (args.length !== 2 || !arg || (sub !== "import" && sub !== "check")) throw new Error(`zmdlogs takes import <battle id>, check <file>, scales <file> <op> or find-scales <file> <op>\n\n${USAGE}`);
       if (sub === "check") {
         const fx = readLogFixture(arg);
         text = formatLogCheck(data, fx, checkLog(data, fx));
