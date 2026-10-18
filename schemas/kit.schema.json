@@ -11,6 +11,29 @@
     "operator": { "type": "string" },
     "sources": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
     "element": { "$ref": "#/$defs/element", "description": "Default element of the operator's hits." },
+    "teamTriggers": {
+      "type": "array",
+      "description": "What the operator's kit does when any team member's hit of a kind lands (finalStrike: the controlled operator's Final Strikes, SkillData mask bit 2097152).",
+      "items": {
+        "type": "object",
+        "required": ["on", "applies"],
+        "additionalProperties": false,
+        "properties": {
+          "on": { "const": "finalStrike" },
+          "applies": { "type": "array", "items": { "$ref": "#/$defs/application" } },
+          "gains": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["stack"],
+              "additionalProperties": false,
+              "properties": { "stack": { "type": "string" }, "amount": { "oneOf": [{ "type": "integer", "minimum": 1 }, { "const": "consumedInflictions" }] } }
+            }
+          },
+          "note": { "type": "string" }
+        }
+      }
+    },
     "stacks": {
       "type": "array",
       "description": "The operator's own counters (e.g. Laevatain's Melting Flame) that hits gain and require.",
@@ -58,6 +81,7 @@
                     "properties": { "zone": { "$ref": "#/$defs/zone" }, "key": { "type": "string" } }
                   }
                 },
+                "finalStrike": { "type": "boolean", "description": "Override: whether the hit is a Final Strike. By default read from SkillData (decorate-mask bit 2097152) via the hit's events." },
                 "requires": {
                   "type": "object",
                   "description": "The hit only happens if the operator has at least this many stacks when the skill is cast; consume: all of the stack is used up by the cast.",

@@ -15,6 +15,26 @@
       "note": "Battle skill description: the cast consumes all stacks when she already has {count} (blackboard count = 4) stacks."
     }
   ],
+  "teamTriggers": [
+    {
+      "on": "finalStrike",
+      "applies": [
+        {
+          "kind": "consumeInfliction",
+          "elements": [
+            "fire"
+          ]
+        }
+      ],
+      "gains": [
+        {
+          "stack": "melting_flame",
+          "amount": "consumedInflictions"
+        }
+      ],
+      "note": "Talent: with Laevatain in battle, Final Strikes by the controlled operator absorb Heat Infliction stacks and grant her 1 Melting Flame per stack absorbed (I18nTextTable_EN)."
+    }
+  ],
   "skills": [
     {
       "skillId": "chr_0016_laevat_attack1",
@@ -99,20 +119,6 @@
           "frames": [
             23,
             26
-          ],
-          "applies": [
-            {
-              "kind": "consumeInfliction",
-              "elements": [
-                "fire"
-              ]
-            }
-          ],
-          "gains": [
-            {
-              "stack": "melting_flame",
-              "amount": "consumedInflictions"
-            }
           ],
           "note": "Final strike: with Laevatain in the team, the controlled operator's final strike absorbs Heat Infliction for 1 Melting Flame per stack (talent description). Only her own final strike does so here."
         }

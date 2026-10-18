@@ -1,10 +1,12 @@
 // Loads the hand-written kits (packages/data/kits) and checks them against
 // the game data: every skill, level group and blackboard key must exist.
 
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
+import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
+import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { ELEMENTS, type Condition, type HitApplication, type StackDef, type StackRequirement, type Element, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -24,6 +26,7 @@ interface RawKit {
   operator: string;
   element?: Element;
   stacks?: StackDef[];
+  teamTriggers?: { on: "finalStrike"; applies: HitApplication[]; gains?: { stack: string; amount?: number | "consumedInflictions" }[] }[];
   skills: {
     skillId: string;
     label: string;
@@ -33,6 +36,7 @@ interface RawKit {
       id: string; label?: string; scale: string[]; count?: number; element?: Element; events?: string[]; frames?: number[];
       applies?: HitApplication[]; requires?: StackRequirement; gains?: { stack: string; amount?: number | "consumedInflictions" }[];
       bonuses?: { zone: Zone; key: string }[];
+      finalStrike?: boolean;
     }[];
   }[];
   conditions?: RawCondition[];
@@ -70,6 +74,19 @@ export interface KitData {
   readonly skills: Readonly<Record<string, SkillData>>;
   readonly operators: Readonly<Record<string, { skillGroups: Readonly<Record<string, string>> }>>;
   readonly weapons: Readonly<Record<string, unknown>>;
+}
+
+/** SkillData decorate-mask bit of a Final Strike (the last hit of a basic attack chain; Laevatain's attack5, Gilberta's attack4 projectile). */
+const FINAL_STRIKE_BIT = 2097152;
+
+/**
+ * Whether a kit hit is a Final Strike: one of the SkillData files its log
+ * events name (or, for a skill's only hit entry without events, the skill's
+ * file and its projectile files) has a damage unit with the Final Strike bit.
+ */
+function isFinalStrike(skillId: string, events: readonly string[], hitEntries: number): boolean {
+  const files = events.length ? events : hitEntries === 1 ? operatorSkillFiles(skillId.replace(/^(chr_\d+_[a-z]+)_.*$/, "$1")).filter((f) => f === skillId || f.startsWith(`${skillId}_`)) : [];
+  return files.some((f) => isSkillFileListed(f) && existsSync(skillFilePath(f)) && damageSites(f).some((d) => (Math.floor(d.decorateMask / FINAL_STRIKE_BIT) & 1) === 1));
 }
 
 /** Checks that a blackboard key has a value at every level (or a SkillData default). */
@@ -121,6 +138,7 @@ export function loadKits(data: KitData): Kits {
             ...(h.applies ? { applies: h.applies } : {}),
             ...(h.requires ? { requires: h.requires } : {}),
             ...(h.bonuses ? { bonuses: h.bonuses } : {}),
+            ...((h.finalStrike ?? isFinalStrike(s.skillId, events, s.hits.length)) ? { finalStrike: true } : {}),
             ...(h.gains ? { gains: h.gains.map((g) => ({ stack: g.stack, amount: g.amount ?? 1 })) } : {}),
           };
         }),
@@ -129,6 +147,10 @@ export function loadKits(data: KitData): Kits {
     operators[kit.operator] = {
       operator: kit.operator,
       stacks: (kit.stacks ?? []).map((x) => ({ id: x.id, label: x.label, max: x.max })),
+      teamTriggers: (kit.teamTriggers ?? []).map((t) => {
+        for (const g of t.gains ?? []) if (!stackIds.has(g.stack)) throw new Error(`kits/operators/${file}: team trigger gains unknown stack ${g.stack}`);
+        return { on: t.on, applies: t.applies, ...(t.gains ? { gains: t.gains.map((g) => ({ stack: g.stack, amount: g.amount ?? 1 })) } : {}) };
+      }),
       skills,
       conditions: (kit.conditions ?? []).map((c) => {
         if (c.source.kind === "skill") {

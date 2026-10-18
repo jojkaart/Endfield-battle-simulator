@@ -201,6 +201,16 @@ export interface KitHit {
   readonly gains?: readonly StackGain[];
   /** The hit's own bonuses from its skill's values, e.g. a projectile's extra damage bonus on its first target. */
   readonly bonuses?: readonly HitBonus[];
+  /** A Final Strike (SkillData decorate-mask bit 2097152, set by the data loader). */
+  readonly finalStrike?: boolean;
+}
+
+/** Something an operator's kit does when any teammate's hit of a kind lands, e.g. Laevatain's talent absorbing Heat on Final Strikes. */
+export interface TeamTrigger {
+  readonly on: "finalStrike";
+  readonly applies: readonly HitApplication[];
+  /** Stacks the trigger's owner gains. */
+  readonly gains?: readonly StackGain[];
 }
 
 export interface HitBonus {
@@ -265,6 +275,7 @@ export interface Condition {
 export interface OperatorKit {
   readonly operator: string;
   readonly stacks: readonly StackDef[];
+  readonly teamTriggers: readonly TeamTrigger[];
   readonly skills: readonly KitSkill[];
   readonly conditions: readonly Condition[];
 }

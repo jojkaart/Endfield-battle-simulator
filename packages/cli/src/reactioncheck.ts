@@ -3,7 +3,7 @@
 // the bursts and reactions it predicts with the ones the log records. Logs
 // don't record inflictions, so this is how a kit's `applies` gets verified.
 
-import { applyToEnemy, expireStatus, FPS, NO_STATUS, statusEventKey, type GameData, type KitHit, type StatusEvent } from "@efsim/engine";
+import { applyToEnemy, expireStatus, FPS, hitEffects, NO_STATUS, statusEventKey, type GameData, type KitHit, type StatusEvent } from "@efsim/engine";
 import type { LogFixture } from "@efsim/data";
 
 /**
@@ -43,16 +43,20 @@ function kitHit(data: GameData, operator: string, event: string): KitHit | null 
 export function checkReactions(data: GameData, fixture: LogFixture): ReactionCheck {
   const hits = [...fixture.hits].sort((a, b) => a.t - b.t);
   let enemy = NO_STATUS;
+  const team = fixture.team.map((b) => b.operator);
   const predicted: { predicted: StatusEvent; t: number }[] = [];
   for (const h of hits) {
     const kh = kitHit(data, h.operator, h.event);
-    if (!kh?.applies) continue;
+    if (!kh) continue;
     const frame = (h.t * FPS) / 1000;
-    for (const app of kh.applies) {
-      // Arts Intensity only scales status strength, which this check doesn't compare.
-      const r = applyToEnemy(expireStatus(enemy, frame), app, frame, h.operator, 0);
-      enemy = r.state;
-      for (const e of r.events) predicted.push({ predicted: e, t: h.t });
+    // Only the controlled operator does basic attacks, so a logged Final Strike counts for Final Strike triggers.
+    for (const effect of hitEffects(data.kits, team, h.operator, kh)) {
+      for (const app of effect.applies) {
+        // Arts Intensity only scales status strength, and skill values only a forced status's duration and damage, which this check doesn't compare.
+        const r = applyToEnemy(expireStatus(enemy, frame), app, frame, h.operator, 0, () => 1);
+        enemy = r.state;
+        for (const e of r.events) predicted.push({ predicted: e, t: h.t });
+      }
     }
   }
   const logged = hits.filter((h) => REACTION_KEY.test(h.event)).map((h) => ({ t: h.t, operator: h.operator, event: h.event, used: false }));
@@ -78,7 +82,7 @@ export function checkReactions(data: GameData, fixture: LogFixture): ReactionChe
     other,
     withoutApplies: fixture.team
       .map((b) => b.operator)
-      .filter((op) => !(data.kits.operators[op]?.skills ?? []).some((s) => s.hits.some((h) => h.applies?.length))),
+      .filter((op) => !(data.kits.operators[op]?.skills ?? []).some((s) => s.hits.some((h) => h.applies?.length)) && !data.kits.operators[op]?.teamTriggers.length),
   };
 }
 

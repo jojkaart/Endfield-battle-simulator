@@ -101,9 +101,12 @@ describe("timeline: stacks and arts reactions", () => {
     expect(ticks.every((h) => h.zones.crit === 1)).toBe(true);
   });
 
-  it("ultimate attack 3 inflicts Heat: a second one bursts, a final strike absorbs it for Melting Flame", () => {
-    const twice = simulate(data, scenario([...ult, act("ult_attack4"), act("ult_attack1"), act("ult_attack2"), act("ult_attack3")]));
+  it("ultimate attack 3 inflicts Heat: a second one bursts, a Final Strike absorbs it for Melting Flame", () => {
+    const twice = simulate(data, scenario([...ult, act("ult_attack1"), act("ult_attack2"), act("ult_attack3")]));
     expect(twice.reactions.map((e) => e.kind)).toEqual(["burst"]);
+    // Ultimate attack 4 is a Final Strike in the data (mask bit 2097152): it absorbs the Heat before the next sequence.
+    const absorbed = simulate(data, scenario([...ult, act("ult_attack4"), act("ult_attack1"), act("ult_attack2"), act("ult_attack3")]));
+    expect(absorbed.reactions.map((e) => e.kind)).toEqual(["consumed"]);
     const burst = twice.hits.filter((h) => h.skillId === "reaction:burst");
     expect(burst).toHaveLength(1);
     expect(burst[0]?.scaleParts[0]).toEqual({ key: "burst base", value: 1.6 });
@@ -132,5 +135,30 @@ describe("timeline: Zero Sanity's in-game forced Combustion (fixtures/zero-sanit
     expect(r.hits.filter((h) => h.hitId === "empowered_extra").map((h) => h.damage)).toEqual([57552]);
     const ticks = r.hits.filter((h) => h.skillId === "reaction:combustionTick");
     expect(ticks.map((h) => h.damage)).toEqual(Array.from({ length: 7 }, () => 2608));
+  });
+});
+
+describe("timeline: a reaction applies before the hit that triggers it", () => {
+  const fx = JSON.parse(readFileSync(new URL("../fixtures/zmdlogs-40d9a3c1da37.json", import.meta.url), "utf8")) as { team: Build[] };
+  const team = fx.team.filter((b) => b.operator === op || b.operator === "chr_0013_aglina");
+  const r = simulate(data, {
+    team,
+    target: { enemy: "eny_0051_rodin", level: 90 },
+    durationFrames: 30 * 30,
+    rotation: [
+      ...["ultimate_skill", "ult_attack1", "ult_attack2", "ult_attack3"].map((s) => ({ operator: op, skill: L + s })),
+      { operator: "chr_0013_aglina", skill: "chr_0013_aglina_normal_skill" },
+    ],
+    options: { crit: "never" },
+  });
+
+  it("Gilberta's explosion consumes Laevatain's Heat into Corrosion, and its own damage already has the shred", () => {
+    const corrosion = r.reactions.find((e) => e.kind === "reaction");
+    expect(corrosion).toMatchObject({ operator: "chr_0013_aglina", status: "corrosion", level: 1, consumed: "fire", initialHit: true });
+    const explosion = r.hits.find((h) => h.operator === "chr_0013_aglina" && h.frame === corrosion?.frame && !h.skillId.startsWith("reaction"));
+    expect(explosion?.modifiers.some((m) => m.source === "Corrosion level 1")).toBe(true);
+    const initial = r.hits.find((h) => h.skillId === "reaction:reaction");
+    expect(initial?.element).toBe("natural");
+    expect(initial?.modifiers.some((m) => m.source === "Corrosion level 1")).toBe(true);
   });
 });

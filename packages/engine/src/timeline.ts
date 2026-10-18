@@ -24,7 +24,8 @@ import {
 } from "./damage.ts";
 import { zoneSum, type Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
-import type { GameData, KitHit, KitSkill } from "./model.ts";
+import type { GameData, KitHit, KitSkill, StackGain } from "./model.ts";
+import { hitEffects } from "./triggers.ts";
 import { computeStats, skillLevel, type StatPanel } from "./stats.ts";
 import { applyToEnemy, expireStatus, nextTick, NO_STATUS, statusModifiers, tickStatus, type EnemyStatus, type StatusEvent } from "./status.ts";
 import { FPS } from "./units.ts";
@@ -45,7 +46,7 @@ export const TIMELINE_ASSUMPTIONS = [
   "Projectile hits land at their launch frame (travel time isn't in the data).",
   "SP gain: a skill's blackboard value `atb` (e.g. a final strike's 20) is added when its first hit lands (unverified timing).",
   "Team buffs and debuffs from skills aren't applied yet; only always-on conditions, given modifiers and the enemy's reaction statuses.",
-  "Inflictions and reactions follow the Talos Wiki rules (status.ts); a hit's damage is computed before what it applies, and a reaction's initial hit before its status takes effect (unverified order).",
+  "Inflictions and reactions follow the Talos Wiki rules (status.ts). What a hit applies takes effect before its own damage and the reaction's initial hit (logs: Gilberta's explosion and Arcane's battle skill include the Corrosion they trigger).",
   "Physical statuses (Vulnerable, Lift, Knockdown, Crush, Breach) and Shatter aren't modelled; Solidification only records its duration.",
   "One enemy; every hit lands on it.",
   `Team SP: max ${SP.max}, start ${SP.start}, ${SP.perSecond}/s, paused ${SP.pauseAfterSpendFrames / FPS} s after spending (unverified).`,
@@ -241,6 +242,20 @@ function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus): 
   return { ...result, scaleParts: [...result.scaleParts, scale], zones: { ...result.zones, scale: result.zones.scale * scale.value }, exact, damage: roundDamage(exact), frame: e.frame, operator: e.operator };
 }
 
+type Stacks = TimelineState["stacks"];
+
+function gainStacks(ctx: TimelineContext, stacks: Stacks, owner: string, gains: readonly StackGain[], consumed: number): Stacks {
+  let out = stacks;
+  for (const g of gains) {
+    const def = ctx.data.kits.operators[owner]?.stacks.find((x) => x.id === g.stack);
+    if (!def) throw new EngineError(`${owner} has no stack ${g.stack}`);
+    const own = out[owner] ?? {};
+    const amount = g.amount === "consumedInflictions" ? consumed : g.amount;
+    out = { ...out, [owner]: { ...own, [g.stack]: Math.min(def.max, (own[g.stack] ?? 0) + amount) } };
+  }
+  return out;
+}
+
 /** Processes every pending hit and status tick up to (and including) a frame, in frame order. */
 export function advance(ctx: TimelineContext, state: TimelineState, frame: number): TimelineState {
   if (frame < state.frame) throw new EngineError(`can't go back from frame ${state.frame} to ${frame}`);
@@ -275,26 +290,26 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
     const skill = kitSkill(ctx, hit.operator, hit.skillId);
     const kitHit = skill.hits.find((h) => h.id === hit.hitId) as KitHit;
     enemy = expireStatus(enemy, hit.frame);
-    const result = computeHit(ctx.data, build, ctx.panels.get(hit.operator) as StatPanel, ctx.scenario.target, skill, kitHit, damageOptions(ctx, hit.operator, enemy, hit.frame));
-    landed.push({ ...result, count: 1, frame: hit.frame, operator: hit.operator });
-    let consumed = 0;
-    if (kitHit.applies?.length) {
+    // What the hit applies comes first: its own damage and a reaction's initial hit already see the new status.
+    const events: StatusEvent[] = [];
+    for (const effect of hitEffects(ctx.data.kits, ctx.scenario.team.map((b) => b.operator), hit.operator, kitHit)) {
+      let consumed = 0;
       const ai = artsIntensity(ctx, hit.operator);
-      for (const app of kitHit.applies) {
-        const before = enemy;
-        const r = applyToEnemy(enemy, app, hit.frame, hit.operator, ai, (key) => skillValue(ctx.data, ctx.panels.get(hit.operator) as StatPanel, build, hit.skillId, key));
+      for (const app of effect.applies) {
+        const values = (key: string) => {
+          if (!effect.own) throw new EngineError(`${effect.owner}'s team trigger names skill value ${key}; team triggers can't use skill values yet`);
+          return skillValue(ctx.data, ctx.panels.get(hit.operator) as StatPanel, build, hit.skillId, key);
+        };
+        const r = applyToEnemy(enemy, app, hit.frame, hit.operator, ai, values);
         enemy = r.state;
-        record(r.events, before);
+        events.push(...r.events);
         for (const e of r.events) if (e.kind === "consumed") consumed += e.stacks;
       }
+      stacks = gainStacks(ctx, stacks, effect.owner, effect.gains, consumed);
     }
-    for (const g of kitHit.gains ?? []) {
-      const def = ctx.data.kits.operators[hit.operator]?.stacks.find((x) => x.id === g.stack);
-      if (!def) throw new EngineError(`${hit.operator} has no stack ${g.stack}`);
-      const own = stacks[hit.operator] ?? {};
-      const amount = g.amount === "consumedInflictions" ? consumed : g.amount;
-      stacks = { ...stacks, [hit.operator]: { ...own, [g.stack]: Math.min(def.max, (own[g.stack] ?? 0) + amount) } };
-    }
+    const result = computeHit(ctx.data, build, ctx.panels.get(hit.operator) as StatPanel, ctx.scenario.target, skill, kitHit, damageOptions(ctx, hit.operator, enemy, hit.frame));
+    landed.push({ ...result, count: 1, frame: hit.frame, operator: hit.operator });
+    record(events, enemy);
   }
   return {
     ...st,
