@@ -32,9 +32,14 @@ export function kitCensus(dir: string = KITS): Map<string, Map<string, number>> 
     const kit = JSON.parse(readFileSync(join(dir, file), "utf8")) as Json;
     const c = new Map<string, number>();
     const add = (k: string, n = 1) => c.set(k, (c.get(k) ?? 0) + n);
-    for (const key of ["stacks", "buffs", "comboTriggers", "teamTriggers", "triggers", "conditions"]) {
+    for (const key of ["stacks", "buffs", "triggers", "conditions"]) {
       const v = kit[key];
       if (Array.isArray(v) && v.length) add(`kit.${key}`, v.length);
+    }
+    for (const t of (kit["triggers"] as Json[] | undefined) ?? []) {
+      add(`trigger.on.${String((t["on"] as Json)["event"])}`);
+      for (const a of (t["do"] as Json[] | undefined) ?? []) add(`trigger.do.${String(a["kind"])}`);
+      for (const key of ["if", "cooldown", "maxCount", "skill"]) if (t[key] !== undefined) add(`trigger.${key}`);
     }
     for (const s of (kit["skills"] as Json[] | undefined) ?? []) {
       for (const key of Object.keys(s)) if (!["skillId", "label", "damageType", "hits"].includes(key)) add(`skill.${key}`);

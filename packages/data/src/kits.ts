@@ -8,7 +8,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { isBuffFileListed, readBuffFile } from "./buffData.ts";
-import { ELEMENTS, predicateRefs, type Effect, valueKeys, type BuffApplication, type ComboTrigger, type Condition, type KitBuff, type Predicate, type ValueExpr, type HitApplication, type StackDef, type StackRequirement, type Element, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
+import { ELEMENTS, predicateRefs, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type KitBuff, type Predicate, type ValueExpr, type HitApplication, type StackDef, type StackRequirement, type Element, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
@@ -28,9 +28,8 @@ interface RawKit {
   element?: Element;
   stacks?: StackDef[];
   buffs?: (KitBuff & { note?: string; gameBuff?: string })[];
-  comboTriggers?: (ComboTrigger & { note?: string })[];
+  triggers?: (KitTrigger & { note?: string })[];
   activeConditions?: Record<string, Predicate>;
-  teamTriggers?: { on: "finalStrike"; applies: HitApplication[]; gains?: { stack: string; amount?: ValueExpr }[] }[];
   skills: {
     skillId: string;
     label: string;
@@ -155,6 +154,44 @@ export function loadKits(data: KitData): Kits {
     const checkBuff = (b: KitBuff, skillId: string, where: string) => {
       for (const v of [b.duration, ...b.modifiers.map((m) => m.value)]) checkValue(v, skillId, `${where}: buff ${b.id}`);
     };
+    const triggerIds = new Set<string>();
+    const checkTrigger = (t: KitTrigger, where: string): KitTrigger => {
+      if (triggerIds.has(t.id)) throw new Error(`${where}: duplicate trigger ID`);
+      triggerIds.add(t.id);
+      const skillId = t.skill ?? "";
+      if (t.skill && !attached.has(t.skill) && (!data.skills[t.skill] || op.skillGroups[t.skill] === undefined)) throw new Error(`${where}: ${t.skill} isn't one of ${kit.operator}'s skills or talent/potential sources`);
+      if (t.on.event === "stackAtLeast" && !stackIds.has(t.on.stack)) throw new Error(`${where}: unknown stack ${t.on.stack}`);
+      if ((t.on.event === "buffApplied" || t.on.event === "buffEnded") && !buffDefs.has(t.on.buff)) throw new Error(`${where}: unknown buff ${t.on.buff}`);
+      if (t.if) checkPredicate(t.if, where);
+      if (t.cooldown !== undefined) checkValue(t.cooldown, skillId, `${where} cooldown`);
+      for (const a of t.do) {
+        switch (a.kind) {
+          case "gain":
+            for (const g of a.gains) {
+              if (!stackIds.has(g.stack)) throw new Error(`${where}: gains unknown stack ${g.stack}`);
+              if ((g.amount as ValueExpr | undefined) !== undefined) checkValue(g.amount, skillId, `${where} gains`);
+            }
+            break;
+          case "energy":
+          case "sp":
+            checkValue(a.value, skillId, `${where} ${a.kind}`);
+            break;
+          case "buff":
+          case "endBuff": {
+            const b = buffDefs.get(a.buff);
+            if (!b) throw new Error(`${where}: unknown buff ${a.buff}`);
+            if (a.kind === "buff") checkBuff(b, skillId, where);
+            break;
+          }
+          case "cooldown":
+            checkValue(a.seconds, skillId, `${where} cooldown change`);
+            break;
+          case "hits":
+            throw new Error(`${where}: triggered hits aren't supported yet`);
+        }
+      }
+      return { ...t, do: t.do.map((a) => (a.kind === "gain" ? { ...a, gains: a.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1 })) } : a)) };
+    };
     const skills = kit.skills.map((s) => {
       const where = `kits/operators/${file}: ${s.skillId}`;
       const skill = data.skills[s.skillId];
@@ -206,7 +243,7 @@ export function loadKits(data: KitData): Kits {
             ...(h.energy ? { energy: h.energy } : {}),
             ...(h.if ? { if: h.if } : {}),
             ...((h.finalStrike ?? isFinalStrike(s.skillId, events, s.hits.length)) ? { finalStrike: true } : {}),
-            ...(h.gains ? { gains: h.gains.map((g) => ({ stack: g.stack, amount: g.amount ?? 1 })) } : {}),
+            ...(h.gains ? { gains: h.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1 })) } : {}),
           };
         }),
       };
@@ -222,19 +259,7 @@ export function loadKits(data: KitData): Kits {
         if (!raw) throw new Error(`kits/operators/${file}: buff ${b.id}: no BuffData file ${gameBuff}`);
         return raw.stacking.type === 1 ? { ...b, stackGroup: gameBuff } : b;
       }),
-      ...(kit.comboTriggers
-        ? {
-            comboTriggers: kit.comboTriggers.map(({ note: _note, ...t }) => {
-              if (t.if) checkPredicate(t.if, `kits/operators/${file}: combo trigger`);
-              for (const c of t.any) if (c.on === "stackAtLeast" && !stackIds.has(c.stack)) throw new Error(`kits/operators/${file}: combo trigger needs unknown stack ${c.stack}`);
-              return t;
-            }),
-          }
-        : {}),
-      teamTriggers: (kit.teamTriggers ?? []).map((t) => {
-        for (const g of t.gains ?? []) if (!stackIds.has(g.stack)) throw new Error(`kits/operators/${file}: team trigger gains unknown stack ${g.stack}`);
-        return { on: t.on, applies: t.applies, ...(t.gains ? { gains: t.gains.map((g) => ({ stack: g.stack, amount: g.amount ?? 1 })) } : {}) };
-      }),
+      triggers: (kit.triggers ?? []).map(({ note: _note, ...t }) => checkTrigger(t, `kits/operators/${file}: trigger ${t.id}`)),
       skills,
       conditions: (kit.conditions ?? []).map((c) => {
         if (c.source.kind === "skill") {

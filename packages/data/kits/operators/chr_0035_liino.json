@@ -53,16 +53,21 @@
       "note": "SkillData chr_0035_liino_ultimate_skill frame 77: fnlatk_up = min(will_up × Will (attribute 42), will_max), then buff_chr_0035_liino_ultskill_music_tag (duration = ultmusic_duration, 15 s) with spellenhance_rate = fnlatk_up and atk_up; its aura gives the team buff_chr_0035_liino_normalskill_buff_atkup (→ buff_chr_0035_liino_atkup / _atkup_owner, ATK +atk_up) and buff_chr_0035_liino_ultskill_buff_atkup (→ buff_chr_0035_liino_spellenhance, two EnhancedActions, logged as buff_common_affixes_enhance_pulse and _natural). finish_duration is 0 at every level, so nothing lingers after the stance. Applied by the first two projectiles (frame 76, before damage), so it ends at frame 526 (data: 527). Its ATK Boost (atk_up of the ultimate, 0.1) is left out on purpose: in the game this stance replaces Vocalist Stance and the two ATK buffs share stacking key liino_atk_up (highest only), but kits can't end or replace a buff yet, so modelling both would count the ATK Boost twice whenever the ultimate is cast during Vocalist Stance (the usual case). Until then the ATK during the ultimate comes from vocalist_stance; an ultimate cast without it is missing +atk_up ATK, and vocalist_stance wrongly outlasts the ultimate."
     }
   ],
-  "comboTriggers": [
+  "triggers": [
     {
-      "any": [
-        {
-          "on": "reaction"
-        }
-      ],
+      "id": "combo_window",
+      "on": {
+        "event": "reaction"
+      },
+      "by": "anyone",
       "if": {
         "buffActive": "vocalist_stance"
       },
+      "do": [
+        {
+          "kind": "openCombo"
+        }
+      ],
       "note": "CharGrowthTable: \"COMBO TRIGGER: While Vocalist Stance is active, an Arts Reaction is consumed or is applied on an enemy.\" Modelled: any reaction (forced ones included) while vocalist_stance is active. Not modelled: a reaction status being consumed (no such event yet), and whether Cosmovoice Stance (which replaces Vocalist Stance) also enables it."
     }
   ],

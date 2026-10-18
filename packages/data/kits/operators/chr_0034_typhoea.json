@@ -86,13 +86,18 @@
       "note": "buff_chr_0034_typhoea_combo_enemy_debuff, given by the combo's Barrage Array (combo_persistentdamage aura, 180 frames = persistent_time 6 s) while the enemy stands in it: damage_up = persistent_naturalburst_increase (0.10 at level 12, P3 +0.06) on hits with decorate mask 33554432 (Arts Bursts only, of any operator). Logged as a damageTaken zone; fixtures/zmdlogs-dbaee23b801d.json shows it only on bursts."
     }
   ],
-  "comboTriggers": [
+  "triggers": [
     {
-      "any": [
+      "id": "combo_window",
+      "on": {
+        "event": "stackAtLeast",
+        "stack": "signs",
+        "atLeast": 8
+      },
+      "by": "anyone",
+      "do": [
         {
-          "on": "stackAtLeast",
-          "stack": "signs",
-          "atLeast": 8
+          "kind": "openCombo"
         }
       ],
       "note": "CharGrowthTable: \"COMBO TRIGGER: When Typhoeus reaches max Signs.\""

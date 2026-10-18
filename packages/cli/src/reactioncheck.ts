@@ -56,7 +56,7 @@ export function checkReactions(data: GameData, fixture: LogFixture): ReactionChe
     if (!kh) continue;
     const frame = (h.t * FPS) / 1000;
     // Only the controlled operator does basic attacks, so a logged Final Strike counts for Final Strike triggers.
-    for (const effect of hitEffects(data.kits, team, h.operator, kh)) {
+    for (const effect of hitEffects(data.kits, team, h.operator, kh, h.event)) {
       for (const app of effect.applies) {
         // Arts Intensity only scales status strength, and skill values only a forced status's duration and damage, which this check doesn't compare.
         const r = applyToEnemy(expireStatus(enemy, frame), app, frame, h.operator, 0, () => 1);
@@ -89,7 +89,7 @@ export function checkReactions(data: GameData, fixture: LogFixture): ReactionChe
     other,
     withoutApplies: fixture.team
       .map((b) => b.operator)
-      .filter((op) => !(data.kits.operators[op]?.skills ?? []).some((s) => s.hits.some((h) => h.applies?.length)) && !data.kits.operators[op]?.teamTriggers.length),
+      .filter((op) => !(data.kits.operators[op]?.skills ?? []).some((s) => s.hits.some((h) => h.applies?.length)) && !(data.kits.operators[op]?.triggers ?? []).some((t) => t.do.some((a) => a.kind === "apply"))),
   };
 }
 

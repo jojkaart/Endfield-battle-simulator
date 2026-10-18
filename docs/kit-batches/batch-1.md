@@ -156,3 +156,15 @@ one enemy, so it comes with multi-enemy support.
 6. Log tooling L1.
 
 Then re-analysis of all seven.
+
+## Progress
+
+- V1 (value sources) and C3 (mode-limited effects): done (2c6942a).
+- T1, piece 1: the event model and one `triggers` list (engine
+  `events.ts`), replacing `comboTriggers` and `teamTriggers`; events for
+  hits, casts, status events, buffs applied and ended, stacks; actions
+  openCombo, apply, gain, energy, sp, buff, endBuff, cooldown; trigger
+  cooldowns and count limits. Kits migrated; all example totals unchanged.
+  Still to do in T1–T3: triggered hits, weapon and gear-set triggers, the
+  buff lifecycle (B1, B3, B4, B6), the remaining predicates (C1–C2) and
+  heal events.

@@ -9,6 +9,7 @@ export * from "./stats.ts";
 export * from "./damage.ts";
 export * from "./reactions.ts";
 export * from "./status.ts";
+export * from "./events.ts";
 export * from "./triggers.ts";
 export * from "./buffs.ts";
 export * from "./search.ts";

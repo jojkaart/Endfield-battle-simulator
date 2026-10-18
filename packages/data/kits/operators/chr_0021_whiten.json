@@ -29,14 +29,19 @@
       "note": "buff_chr_0021_whiten_combo_skill_physical_vulnerable: VulnerableAction subType 2 (physical) with the combo's rate (0.15 at level 12) for its duration (6 s). Potential 1 (\"Physical Susceptibility duration +{rate_plus:0}s\") sets has_potential1 = 1 and rate_plus = 3, and the combo then adds rate_plus to duration (ModifyDynamicBlackboard operation 1) before creating the buff: 9 s. A ValueSpec names one key, so P1+ builds get 6 s here (3 s short); the log check is unaffected (it uses the logged buffs). Logged as buff_common_affixes_vulnerable_physical, starting at the combo hit."
     }
   ],
-  "comboTriggers": [
+  "triggers": [
     {
-      "any": [
+      "id": "combo_window",
+      "on": {
+        "event": "reaction",
+        "statuses": [
+          "solidification"
+        ]
+      },
+      "by": "anyone",
+      "do": [
         {
-          "on": "reaction",
-          "statuses": [
-            "solidification"
-          ]
+          "kind": "openCombo"
         }
       ],
       "note": "CharGrowthTable: \"COMBO TRIGGER: When an enemy suffers Solidification.\""

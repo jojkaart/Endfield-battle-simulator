@@ -92,45 +92,71 @@
       "note": "State only: buff_chr_0032_lizhiyan_ultimate_skill_listener_owner, created at the ultimate's frame 47 with duration ← the ultimate's `duration` (20 s). While it lasts the ultimate slot shows Gloompurge Arcana (ChangeSkillAction to chr_0032_lizhiyan_ultimate_skill2)."
     }
   ],
-  "comboTriggers": [
+  "triggers": [
     {
-      "any": [
-        {
-          "on": "inflictionApplied",
-          "elements": [
-            "natural"
-          ]
-        },
-        {
-          "on": "inflictionApplied",
-          "elements": [
-            "fire",
-            "pulse",
-            "cryst"
-          ],
-          "minStacks": 2
-        }
-      ],
+      "id": "combo_window_1_a",
+      "on": {
+        "event": "inflictionApplied",
+        "elements": [
+          "natural"
+        ]
+      },
+      "by": "anyone",
       "if": {
         "attrAtLeast": [
           41,
           42
         ]
       },
+      "do": [
+        {
+          "kind": "openCombo"
+        }
+      ],
       "note": "Array Arcana: INT (CharGrowthTable conditionPostDesc1, conditionId1 lizhiyan_wisd): \"COMBO TRIGGER: When Nature Infliction or at least 2 stacks of non-Nature Arts Infliction are applied on an enemy.\""
     },
     {
-      "any": [
+      "id": "combo_window_1_b",
+      "on": {
+        "event": "inflictionApplied",
+        "elements": [
+          "fire",
+          "pulse",
+          "cryst"
+        ],
+        "minStacks": 2
+      },
+      "by": "anyone",
+      "if": {
+        "attrAtLeast": [
+          41,
+          42
+        ]
+      },
+      "do": [
         {
-          "on": "inflictionApplied"
+          "kind": "openCombo"
         }
       ],
+      "note": "Array Arcana: INT (CharGrowthTable conditionPostDesc1, conditionId1 lizhiyan_wisd): \"COMBO TRIGGER: When Nature Infliction or at least 2 stacks of non-Nature Arts Infliction are applied on an enemy.\""
+    },
+    {
+      "id": "combo_window_2",
+      "on": {
+        "event": "inflictionApplied"
+      },
+      "by": "anyone",
       "if": {
         "attrAtLeast": [
           42,
           41
         ]
       },
+      "do": [
+        {
+          "kind": "openCombo"
+        }
+      ],
       "note": "Array Arcana: WILL (CharGrowthTable conditionPostDesc2, conditionId2 lizhiyan_will): \"COMBO TRIGGER: When an Arts Infliction is applied on an enemy.\""
     }
   ],

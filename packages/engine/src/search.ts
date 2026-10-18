@@ -127,6 +127,7 @@ function stateKey(s: TimelineState): string {
     s.readyAt,
     s.stacks,
     s.comboWindow,
+    s.triggerState,
     s.buffs.map((b) => [b.owner, b.id, b.expiresAt]),
     s.enemy,
     s.pending.map((p) => [p.frame, p.operator, p.skillId, p.hitId]),

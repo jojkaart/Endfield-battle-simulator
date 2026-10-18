@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, buffModifiers, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type GameData, type KitBuff, type OperatorKit, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { advance, apply, buffModifiers, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type GameData, type KitBuff, type KitTrigger, type OperatorKit, type RotationAction, type TimelineScenario } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -279,5 +279,74 @@ describe("timeline: buffs that don't stack across operators", () => {
     const b = data.kits.operators["chr_0013_aglina"]?.buffs.find((x) => x.id === "arts_susceptibility");
     expect(b).toBeDefined();
     expect(b?.stackGroup).toBeUndefined();
+  });
+});
+
+describe("timeline: kit triggers", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const mark: KitBuff = { id: "test_mark", label: "test mark", target: "self", duration: 3, modifiers: [] };
+  const withTriggers = (triggers: KitTrigger[]): GameData => ({
+    ...data,
+    kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, buffs: [...kit.buffs, mark], triggers: [...kit.triggers, ...triggers] } } },
+  });
+  const skill = (s: string) => ({ operator: op, skill: L + s });
+  const run = (d: GameData, rotation: RotationAction[], until = 30 * 30) => {
+    const { startEnergy: _full, ...rest } = scenario(rotation);
+    const ctx = createContext(d, rest);
+    let s = init(ctx);
+    for (const a of rotation) s = apply(ctx, s, a);
+    return { ctx, s: advance(ctx, s, until) };
+  };
+
+  it("a cast trigger applies a buff, at most once per cooldown and maxCount times", () => {
+    const d = withTriggers([{ id: "t", on: { event: "cast", kinds: ["battle"] }, by: "self", cooldown: 4, maxCount: 2, do: [{ kind: "buff", buff: "test_mark" }] }]);
+    const casts = [skill("normal_skill"), { ...skill("normal_skill"), at: 30 * 2 }, { ...skill("normal_skill"), at: 30 * 5 }, { ...skill("normal_skill"), at: 30 * 10 }];
+    const { s } = run(d, casts);
+    // Cast at 0 fires; at 2 s it's on cooldown; at 5 s it fires again; at 10 s the count is used up.
+    expect(s.triggerState[`${op}:t`]).toEqual({ readyAt: (s.casts[2]?.frame ?? NaN) + 120, count: 2 });
+  });
+
+  it("a buff ending is an event: here it grants energy and SP", () => {
+    const d = withTriggers([
+      { id: "a", on: { event: "cast", kinds: ["battle"] }, by: "self", do: [{ kind: "buff", buff: "test_mark" }] },
+      { id: "b", on: { event: "buffEnded", buff: "test_mark" }, by: "self", do: [{ kind: "energy", value: 30 }, { kind: "sp", value: 10 }] },
+    ]);
+    const plain = run(data, [skill("normal_skill")], 30 * 2);
+    const at2 = run(d, [skill("normal_skill")], 30 * 2);
+    const at4 = run(d, [skill("normal_skill")], 30 * 4);
+    expect(at2.s.energy[op]).toBeCloseTo(plain.s.energy[op] ?? 0, 9);
+    const efficiency = computeStats(data, build).attrs[44]?.total ?? data.attributeDefaults[44] ?? 1;
+    const plain4 = run(data, [skill("normal_skill")], 30 * 4);
+    expect(at4.s.energy[op]).toBeCloseTo((plain4.s.energy[op] ?? 0) + 30 * efficiency, 9);
+    expect(at4.s.sp).toBeCloseTo(Math.min(SP.max, plain4.s.sp + 10), 9);
+  });
+
+  it("a cooldown action cuts a skill's remaining cooldown, not below now", () => {
+    const d = withTriggers([{ id: "c", on: { event: "cast", kinds: ["battle"] }, by: "self", do: [{ kind: "cooldown", who: "self", skills: "combo", seconds: -2 }] }]);
+    const ctx = createContext(d, { ...scenario([]), durationFrames: 30 * 120 });
+    const five = Array.from({ length: 5 }, () => skill("normal_skill"));
+    let s = init(ctx);
+    for (const a of five) s = apply(ctx, s, a);
+    const combustion = advance(ctx, s, ctx.scenario.durationFrames).reactions.find((e) => e.kind === "reaction");
+    if (!combustion) throw new Error("no Combustion");
+    s = apply(ctx, advance(ctx, s, combustion.frame), skill("combo_skill"));
+    const ready = s.readyAt[L + "combo_skill"] ?? 0;
+    const after = apply(ctx, s, skill("normal_skill"));
+    expect(after.readyAt[L + "combo_skill"]).toBe(Math.max(after.casts.at(-1)?.frame ?? NaN, ready - 60));
+  });
+
+  it("a trigger loop in the kit data is an error, not a hang", () => {
+    const d = withTriggers([
+      { id: "a", on: { event: "cast", kinds: ["battle"] }, by: "self", do: [{ kind: "buff", buff: "test_mark" }] },
+      { id: "loop", on: { event: "buffApplied", buff: "test_mark" }, by: "self", do: [{ kind: "buff", buff: "test_mark" }] },
+    ]);
+    expect(() => run(d, [skill("normal_skill")])).toThrow(EngineError);
+  });
+
+  it("the loader migrated combo windows and Laevatain's absorption into triggers", () => {
+    expect(kit.triggers.map((t) => [t.id, t.on.event, t.by])).toEqual([
+      ["final_strike_absorb", "hit", "controlled"],
+      ["combo_window", "reaction", "anyone"],
+    ]);
   });
 });

@@ -4,8 +4,9 @@
 import type { AttrType, Element, SkillType } from "./attributes.ts";
 import type { HitKind, Zone } from "./effects.ts";
 import type { ArtsElement } from "./reactions.ts";
+import type { KitTrigger } from "./events.ts";
 import type { Predicate, ValueExpr } from "./expr.ts";
-import type { HitApplication, ReactionStatus } from "./status.ts";
+import type { HitApplication } from "./status.ts";
 
 /**
  * How a modifier combines with an attribute (the tables' `formulaItem` /
@@ -265,37 +266,6 @@ export interface KitBuff {
   readonly modifiers: readonly KitBuffModifier[];
 }
 
-/**
- * What makes an operator's combo skill castable (CharGrowthTable "COMBO
- * TRIGGER" descriptions). Events come from any team member's hits.
- */
-export type ComboCondition =
-  /** A reaction status is applied to the enemy (forced ones included), optionally only these. */
-  | { readonly on: "reaction"; readonly statuses?: readonly ReactionStatus[] }
-  /** An infliction is consumed or absorbed. */
-  | { readonly on: "inflictionConsumed"; readonly elements?: readonly ArtsElement[] }
-  /** An infliction is applied (without a reaction), leaving at least `minStacks` (default 1). */
-  | { readonly on: "inflictionApplied"; readonly elements?: readonly ArtsElement[]; readonly minStacks?: number }
-  /** An Arts Burst happens. */
-  | { readonly on: "burst"; readonly elements?: readonly ArtsElement[] }
-  /** The operator's own stack reaches a count. */
-  | { readonly on: "stackAtLeast"; readonly stack: string; readonly atLeast: number };
-
-export interface ComboTrigger {
-  /** Any of these opens the combo window. */
-  readonly any: readonly ComboCondition[];
-  /** Only in this situation (e.g. Liino's Vocalist Stance active, one of Arcane's modes). */
-  readonly if?: Predicate;
-}
-
-/** Something an operator's kit does when any teammate's hit of a kind lands, e.g. Laevatain's talent absorbing Heat on Final Strikes. */
-export interface TeamTrigger {
-  readonly on: "finalStrike";
-  readonly applies: readonly HitApplication[];
-  /** Stacks the trigger's owner gains. */
-  readonly gains?: readonly StackGain[];
-}
-
 export interface HitBonus {
   readonly zone: Zone;
   /** Blackboard key of the hit's skill, at the build's level, after potentials. */
@@ -370,12 +340,15 @@ export interface Condition {
 export interface OperatorKit {
   readonly operator: string;
   readonly stacks: readonly StackDef[];
-  readonly teamTriggers: readonly TeamTrigger[];
   readonly buffs: readonly KitBuff[];
   /** What the game's condition IDs on this operator's talent and potential effects mean (e.g. Arcane's `lizhiyan_wisd`). */
   readonly activeConditions?: Readonly<Record<string, Predicate>>;
-  /** When absent, the timeline lets the combo skill be cast whenever it's off cooldown. */
-  readonly comboTriggers?: readonly ComboTrigger[];
+  /**
+   * What the kit does when things happen in the fight (events.ts): combo
+   * windows, team effects, talents. Without an `openCombo` trigger the
+   * combo skill can be cast whenever it's off cooldown.
+   */
+  readonly triggers: readonly KitTrigger[];
   readonly skills: readonly KitSkill[];
   readonly conditions: readonly Condition[];
 }

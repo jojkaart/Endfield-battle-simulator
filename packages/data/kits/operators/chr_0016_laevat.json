@@ -25,37 +25,53 @@
       "note": "Her ultimate's state: enhanced basic attacks and battle skill for `duration` (15 s). Counted from the ultimate's hit (assumed)."
     }
   ],
-  "teamTriggers": [
+  "triggers": [
     {
-      "on": "finalStrike",
-      "applies": [
+      "id": "final_strike_absorb",
+      "on": {
+        "event": "hit",
+        "finalStrike": true
+      },
+      "by": "controlled",
+      "do": [
         {
-          "kind": "consumeInfliction",
-          "elements": [
-            "fire"
+          "kind": "apply",
+          "applies": [
+            {
+              "kind": "consumeInfliction",
+              "elements": [
+                "fire"
+              ]
+            }
           ]
-        }
-      ],
-      "gains": [
+        },
         {
-          "stack": "melting_flame",
-          "amount": {
-            "consumed": true
-          }
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "melting_flame",
+              "amount": {
+                "consumed": true
+              }
+            }
+          ]
         }
       ],
       "note": "Talent: with Laevatain in battle, Final Strikes by the controlled operator absorb Heat Infliction stacks and grant her 1 Melting Flame per stack absorbed (I18nTextTable_EN)."
-    }
-  ],
-  "comboTriggers": [
+    },
     {
-      "any": [
+      "id": "combo_window",
+      "on": {
+        "event": "reaction",
+        "statuses": [
+          "combustion",
+          "corrosion"
+        ]
+      },
+      "by": "anyone",
+      "do": [
         {
-          "on": "reaction",
-          "statuses": [
-            "combustion",
-            "corrosion"
-          ]
+          "kind": "openCombo"
         }
       ],
       "note": "CharGrowthTable: \"COMBO TRIGGER: When an enemy suffers Combustion or Corrosion.\""

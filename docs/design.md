@@ -188,10 +188,21 @@ team or enemy, a duration and zone modifiers whose values are `ValueSpec`s
 (a literal, or a skill value at the applier's level, optionally times a
 panel attribute and capped by another key). Hits apply them, by default
 after their own damage. Modifiers can be limited to hit kinds (`onlyKinds`,
-the game's decorate-mask conditions, e.g. bursts only). Team-wide reactions
-to a hit (Laevatain's Heat absorption on any Final Strike) are kit
-`teamTriggers`; `triggers.ts` lists what a landing hit does for both the
-timeline and the log replay.
+the game's decorate-mask conditions, e.g. bursts only).
+
+**Triggers** (engine `events.ts`): the timeline emits events (a hit
+landing, a cast, the arts state's bursts / reactions / consumptions, a kit
+buff applied or ending, an operator's stacks changing) and runs every team
+member's kit `triggers` on them, in team order. A trigger names the event
+(`on`, with filters), whose events count (`by`: self, teammate, anyone, the
+controlled operator), an `if` Predicate judged for its owner, a cooldown and
+a count limit, and actions (`do`): open the combo window, apply to the
+enemy, gain stacks, energy, SP, apply or end a buff, change a cooldown.
+What the actions cause are events too, run in the same chain (a loop in the
+kit data is an error). Combo windows and team effects such as Laevatain's
+Heat absorption on the controlled operator's Final Strikes are triggers;
+`triggers.ts` gives the log replay the applications and gains a logged hit
+causes.
 
 Numeric enums (attribute types, stacking types, buff events, formula slots)
 are decoded through **one version-pinned enum map**, each entry verified

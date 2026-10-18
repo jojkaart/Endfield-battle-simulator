@@ -28,15 +28,20 @@
       "note": "Description: Si \"grants temporary Cryo Amp and Heat Amp to the entire team.\" buff_chr_0036_jsspsi_atk_buff_2 (CreateBuffAction at ultimate entity frame 62 on every team member, assigning enhance_final and duration = enhance_duration): two enabled EnhancedActions of rate enhance_final, logged as buff_common_affixes_enhance_crystal and buff_common_affixes_enhance_fire (amp 0.432 at level 12 and P3 in zmdlogs-40d9a3c1da37, 0.36 at P1 in zmdlogs-b7b3762d5da8)."
     }
   ],
-  "comboTriggers": [
+  "triggers": [
     {
-      "any": [
+      "id": "combo_window",
+      "on": {
+        "event": "inflictionConsumed",
+        "elements": [
+          "cryst",
+          "fire"
+        ]
+      },
+      "by": "anyone",
+      "do": [
         {
-          "on": "inflictionConsumed",
-          "elements": [
-            "cryst",
-            "fire"
-          ]
+          "kind": "openCombo"
         }
       ],
       "note": "CharGrowthTable: \"COMBO TRIGGER: When an enemy's Cryo Infliction or Heat Infliction is consumed or absorbed.\" A reaction that consumes the infliction counts (zmdlogs-bdf223db8e49: Si's battle skill at 2140 ms, a Cryo burst at 7371 ms, Lizhiyan's Nature reaction on the Cryo, buff_common_natural_triggered, at 8152 ms, Si's combo at 11940 ms, inside the 6 s window), and so does Laevatain's Final Strike absorption of Heat (a consumption by her team trigger)."

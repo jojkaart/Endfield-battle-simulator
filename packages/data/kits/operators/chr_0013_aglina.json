@@ -39,11 +39,16 @@
       "note": "The ultimate spawns its field (SpawnAbilityEntity chr_0013_aglina_ultimate_skill_abilityrange, frame 60 with the hit, duration = the skill's `duration`, 5 s at every level); its aura gives enemies inside buff_chr_0013_aglina_ultimate_skill, which creates buff_chr_0013_aglina_ultimate_spell_vulnerable (VulnerableAction subType 1 → buff_common_affixes_vulnerable_spell: attributes 71–74, Heat/Electric/Cryo/Nature Susceptibility, priority-keyed by rate) for as long as the aura lasts. Its rate (BuffData ModifyDynamicBlackboard chain): FinalRate = spell_vulnerable_rate × (1 + n × spell_vulnerable_perstack), n = the target's Vulnerability stacks; with potential 2 (potential2 = 1) n is first raised by 1 if below 3 and then doubled (P2: \"double the Arts Susceptibility increase per Vulnerability stack ... treated as having 1 additional stack\"). Modelled: n = 0 without potential 2, i.e. spell_vulnerable_rate (Vulnerability comes from physical statuses, which aren't modelled). Checked against the logs: btl_upload_d9e59d0fb737 (P1, ultimate level 12) logs 0.30 = spell_vulnerable_rate; btl_upload_40d9a3c1da37 (P3, level 10, no Vulnerability source in that team) logs 0.36 = 0.30 × (1 + 2 × 0.1), the P2 formula with n = 0, which this kit can't express (needs a product of two skill values: rate × perstack × potential2; see the report); btl_upload_4e5e1390085e (P0, level 12) logs 0.36 = 0.30 × (1 + 2 × 0.1), consistent with n = 2 Vulnerability stacks (her combo's Lift at 55403 ms and Wulfa's combos at 55289 and 57521 ms came before; the log doesn't record Vulnerability), not verified. Duration: in 40d9 present on hits from the cast (12951 ms) to 18009 ms and gone at 18684 ms, consistent with 5 s plus time stopped during another ultimate's animation; in 4e5e and d9e5 other ultimates' animations and Liino's own Arts Susceptibility overlap the window. In the game the strongest Arts Susceptibility instance counts (priority key rate); the timeline sums kit buffs from different operators."
     }
   ],
-  "comboTriggers": [
+  "triggers": [
     {
-      "any": [
+      "id": "combo_window",
+      "on": {
+        "event": "reaction"
+      },
+      "by": "anyone",
+      "do": [
         {
-          "on": "reaction"
+          "kind": "openCombo"
         }
       ],
       "note": "CharGrowthTable: \"COMBO TRIGGER: When an Arts Reaction is applied to an enemy.\" Any of the four reactions (Combustion, Electrification, Solidification, Corrosion), including forced ones; Arts Bursts (same element) and physical statuses don't count."
