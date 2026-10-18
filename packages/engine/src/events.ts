@@ -62,7 +62,8 @@ export type TriggerActionKind =
   | { readonly kind: "sp"; readonly value: ValueExpr }
   /** Apply one of the owner's kit buffs. */
   | { readonly kind: "buff"; readonly buff: string }
-  | { readonly kind: "endBuff"; readonly buff: string }
+  /** End one of the owner's kit buffs: all of it, or its oldest `layers`. */
+  | { readonly kind: "endBuff"; readonly buff: string; readonly layers?: number }
   /** Change the remaining cooldown of an operator's skills of a kind by `seconds` (negative cuts it). */
   | { readonly kind: "cooldown"; readonly who: "self" | "eventOperator" | { readonly slot: number }; readonly skills: SkillType; readonly seconds: ValueExpr }
   /** Land hits, as the owner, at frames counted from the event (values from the trigger's `skill`); each names its damage type. */

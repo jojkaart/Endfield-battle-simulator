@@ -159,7 +159,10 @@ function kitChecker(scope: KitScope) {
     for (const id of refs.buffs) if (!buffDefs.has(id)) throw new Error(`${where}: unknown buff ${id}`);
   };
   const checkBuff = (b: KitBuff, skillId: string, where: string) => {
-    for (const v of [b.duration, ...b.modifiers.map((m) => m.value)]) checkValue(v, skillId, `${where}: buff ${b.id}`);
+    for (const v of [b.duration, b.maxStacks, ...b.modifiers.map((m) => m.value)]) if (v !== undefined) checkValue(v, skillId, `${where}: buff ${b.id}`);
+    for (const m of b.modifiers) if ((m.zone === undefined) === (m.attr === undefined)) throw new Error(`${where}: buff ${b.id}: each modifier has a zone or an attribute`);
+    if (b.recipients && b.target !== "team") throw new Error(`${where}: buff ${b.id}: only team buffs have recipients`);
+    // Recipient filters judge the recipient; its own stacks and buffs aren't the kit's, so they aren't checked here.
   };
   /**
    * Checks and fills in a list of hits: a skill's (its damage type, Final
@@ -268,14 +271,14 @@ function kitChecker(scope: KitScope) {
       ),
     };
   };
-  /** Buffs, with their stack group from the game buff they stand for (BuffData stackingType 1). */
+  /** Buffs, with their stack group from the game buff they stand for (BuffData stackingType 1: its stackingKey, else its file). */
   const normalizeBuffs = (buffs: readonly RawBuff[]): KitBuff[] =>
     buffs.map(({ note: _note, gameBuff, ...b }) => {
       if (!gameBuff) return b;
       if (!isBuffFileListed(gameBuff)) throw new Error(`${scope.file}: buff ${b.id}: ${gameBuff} isn't covered by tables.json json.BuffData`);
       const raw = readBuffFile(gameBuff);
       if (!raw) throw new Error(`${scope.file}: buff ${b.id}: no BuffData file ${gameBuff}`);
-      return raw.stacking.type === 1 ? { ...b, stackGroup: gameBuff } : b;
+      return raw.stacking.type === 1 ? { ...b, stackGroup: raw.stacking.key ?? gameBuff } : b;
     });
   return { checkValue, checkPredicate, checkBuff, normalizeHits, checkTrigger, normalizeBuffs };
 }

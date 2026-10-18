@@ -285,9 +285,9 @@ describe("timeline: buffs that don't stack across operators", () => {
 describe("timeline: kit triggers", () => {
   const kit = data.kits.operators[op] as OperatorKit;
   const mark: KitBuff = { id: "test_mark", label: "test mark", target: "self", duration: 3, modifiers: [] };
-  const withTriggers = (triggers: KitTrigger[]): GameData => ({
+  const withTriggers = (triggers: KitTrigger[], buffs: KitBuff[] = []): GameData => ({
     ...data,
-    kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, buffs: [...kit.buffs, mark], triggers: [...kit.triggers, ...triggers] } } },
+    kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, buffs: [...kit.buffs, mark, ...buffs], triggers: [...kit.triggers, ...triggers] } } },
   });
   const skill = (s: string) => ({ operator: op, skill: L + s });
   const run = (d: GameData, rotation: RotationAction[], until = 30 * 30, modifiers: Modifier[] = []) => {
@@ -406,3 +406,76 @@ describe("timeline: equipment kits act for the wearer", () => {
     expect(wornEquipment(data, worn)).toEqual([W, set.id]);
   });
 });
+
+describe("timeline: buff lifecycle", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const withKit = (triggers: KitTrigger[], buffs: KitBuff[], who = op): GameData => {
+    const k = data.kits.operators[who] as OperatorKit;
+    return { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [who]: { ...k, buffs: [...k.buffs, ...buffs], triggers: [...k.triggers, ...triggers] } } } };
+  };
+  const skill = (s: string) => ({ operator: op, skill: L + s });
+  const onBattle = (d: KitTrigger["do"]): KitTrigger => ({ id: "t", on: { event: "cast", kinds: ["battle"] }, by: "self", do: d });
+  const amp = (id: string, extra: Partial<KitBuff> = {}): KitBuff => ({ id, label: id, target: "self", duration: 20, modifiers: [{ zone: "amp", value: 0.1 }], ...extra });
+  const ampOf = (r: ReturnType<typeof simulate>, hitId: string) => r.hits.filter((h) => h.hitId === hitId).map((h) => Math.round(h.zones.amp * 1000) / 1000);
+  const three = [skill("normal_skill"), { ...skill("normal_skill"), at: 30 * 4 }, { ...skill("normal_skill"), at: 30 * 8 }];
+  const plain = ampOf(simulate(data, scenario(three)), "explosion");
+
+  it("a layered buff adds a layer per application, each with its own duration, up to its maximum", () => {
+    const r = simulate(withKit([onBattle([{ kind: "buff", buff: "layered" }])], [amp("layered", { maxStacks: 2 })]), scenario(three));
+    // The explosion lands after the cast's trigger: 1, 2, then still 2 layers (the oldest replaced).
+    expect(ampOf(r, "explosion").map((a, i) => Math.round((a - (plain[i] ?? 0)) * 10) / 10)).toEqual([0.1, 0.2, 0.2]);
+  });
+
+  it("endBuff can end only the oldest layers", () => {
+    const d = withKit([onBattle([{ kind: "buff", buff: "layered" }, { kind: "buff", buff: "layered" }, { kind: "endBuff", buff: "layered", layers: 1 }])], [amp("layered", { maxStacks: 3 })]);
+    const r = simulate(d, scenario([skill("normal_skill")]));
+    expect(Math.round(((ampOf(r, "explosion")[0] ?? 0) - (plain[0] ?? 0)) * 10) / 10).toBe(0.1);
+  });
+
+  it("a buff with 0 s duration isn't applied; one without a duration lasts until ended", () => {
+    const zero = simulate(withKit([onBattle([{ kind: "buff", buff: "zero" }])], [amp("zero", { duration: 0 })]), scenario([skill("normal_skill")]));
+    expect(ampOf(zero, "explosion")).toEqual([plain[0]]);
+    const { duration: _d, ...forever } = amp("forever");
+    const r = simulate(withKit([onBattle([{ kind: "buff", buff: "forever" }])], [forever]), scenario([skill("normal_skill"), { ...skill("normal_skill"), at: 30 * 50 }]));
+    expect(ampOf(r, "explosion").map((a) => a > (plain[0] ?? Infinity))).toEqual([true, true]);
+  });
+
+  it("a buff consumed by the next cast of a kind acts on that cast's hits only", () => {
+    const link = amp("link", { consumedBy: ["ultimate"], modifiers: [{ zone: "amp", value: 0.5 }] });
+    const d = withKit([onBattle([{ kind: "buff", buff: "link" }])], [link]);
+    const rot = [skill("normal_skill"), skill("ultimate_skill"), skill("ult_attack1")];
+    const r = simulate(d, { ...scenario(rot), startEnergy: { [op]: "full" } });
+    const base = simulate(data, { ...scenario(rot), startEnergy: { [op]: "full" } });
+    const ult = (x: typeof r) => x.hits.find((h) => h.skillId === L + "ultimate_skill")?.zones.amp ?? NaN;
+    // The ultimate's hit has it; the enhanced attack after it doesn't: the cast used it up.
+    expect(ult(r) - ult(base)).toBeCloseTo(0.5, 9);
+    const after = (x: typeof r) => x.hits.find((h) => h.skillId === L + "ult_attack1")?.zones.amp;
+    expect(after(r)).toBe(after(base));
+  });
+
+  it("a team buff with a recipient filter reaches only the members it holds for", () => {
+    const g = "chr_0013_aglina";
+    const fx = JSON.parse(readFileSync(new URL("../fixtures/zmdlogs-40d9a3c1da37.json", import.meta.url), "utf8")) as { team: Build[] };
+    const team = fx.team.filter((b) => b.operator === op || b.operator === g);
+    const others = amp("others", { target: "team", recipients: { not: { isOwner: true } } });
+    const d = withKit([onBattle([{ kind: "buff", buff: "others" }])], [others]);
+    const rot = [skill("normal_skill"), { operator: g, skill: "chr_0013_aglina_normal_skill" }];
+    const sc = { ...scenario(rot), team };
+    const [r, base] = [simulate(d, sc), simulate(data, sc)];
+    const firstOf = (x: typeof r, who: string) => x.hits.find((h) => h.operator === who && !h.skillId.startsWith("reaction"))?.zones.amp ?? NaN;
+    expect(firstOf(r, op)).toBe(firstOf(base, op));
+    expect(firstOf(r, g) - firstOf(base, g)).toBeCloseTo(0.1, 9);
+  });
+
+  it("an attribute buff that doesn't act on hits is read where the game reads it: Ultimate Gain Efficiency", () => {
+    const uge: KitBuff = { id: "uge", label: "uge", target: "self", duration: 20, modifiers: [{ attr: 44, value: 0.5 }] };
+    const d = withKit([{ id: "t", on: { event: "cast", kinds: ["basic"] }, by: "self", do: [{ kind: "buff", buff: "uge" }] }], [uge]);
+    const rot = [skill("attack1"), skill("normal_skill")];
+    const { startEnergy: _f, ...sc } = scenario(rot);
+    const efficiency = computeStats(data, build).attrs[44]?.total ?? data.attributeDefaults[44] ?? 1;
+    const energy = simulate(d, sc).casts[1]?.energyAfter ?? NaN;
+    expect(energy).toBeCloseTo(100 * 0.065 * (efficiency + 0.5), 9);
+    expect(kit.buffs.length).toBeGreaterThan(0);
+  });
+});
+

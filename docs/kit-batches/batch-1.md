@@ -171,6 +171,18 @@ Then re-analysis of all seven.
   (stacks, buffs, triggers, legacy conditions), added to the wearer's kit
   (`effectiveKit`); `weapons.json` moved there. No equipment triggers are
   written yet (kits phase).
-- Still to do in this pass: the buff lifecycle (B1, B3, B4, B6), the
-  remaining predicates and per-effect `if` (C1–C2), heal events, trigger
-  targets beyond self / team / enemy (T2).
+- C1, C2: `if` on every effect (applications, buff applications, stack
+  gains, trigger actions); predicates `controlled` (for a hit: at its
+  cast), `enemyModifier`, `operatorElement`, `operatorProfession`,
+  `isOwner`, `sameElementAsOwner`, `eventOperator`. Operator elements in the
+  data are now lowercase kit elements (`teamSlotElement` never matched
+  before) and operators carry their profession.
+- B1, B3, B4, B6: buffs end by trigger (all or oldest layers; the end is an
+  event), last until ended without a duration, are skipped at 0 s; layered
+  buffs (`maxStacks`); next-cast buffs (`consumedBy`, acting on that cast's
+  hits only); attribute modifiers (UGE read by energy gain); recipient
+  filters; stack groups from BuffData `stackingKey` (also in the log
+  checker); timed Arts Intensity in status strength. B2 (pausing a buff's
+  timer) is still open.
+- Still to do in this pass: heal events and the healed operator as a buff
+  target (T1/T2, Liino G5), B2.

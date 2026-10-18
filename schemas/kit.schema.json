@@ -44,7 +44,6 @@
           "id",
           "label",
           "target",
-          "duration",
           "modifiers"
         ],
         "additionalProperties": false,
@@ -69,7 +68,7 @@
           },
           "duration": {
             "$ref": "#/$defs/valueExpr",
-            "description": "Seconds."
+            "description": "Seconds; 0: not applied (a buff a potential unlocks has 0 below it). Absent: until a trigger ends it or a cast consumes it."
           },
           "modifiers": {
             "type": "array",
@@ -77,7 +76,6 @@
             "items": {
               "type": "object",
               "required": [
-                "zone",
                 "value"
               ],
               "additionalProperties": false,
@@ -106,18 +104,40 @@
                       "battle",
                       "combo",
                       "ultimate",
+                      "none",
                       "burst",
                       "reaction",
                       "combustionTick"
                     ]
                   },
                   "minItems": 1
+                },
+                "attr": {
+                  "type": "integer",
+                  "description": "An attribute instead of a zone (mapped to its zone like any stat; one that doesn't act on hits, e.g. Ultimate Gain Efficiency 44, is read where the game reads it)."
                 }
-              }
+              },
+              "description": "A zone or an attribute (exactly one; the loader checks)."
             }
           },
           "note": {
             "type": "string"
+          },
+          "maxStacks": {
+            "$ref": "#/$defs/valueExpr",
+            "description": "Layered (BuffData stackingType 2 / 11): up to this many instances from one owner, each with its own duration; at the maximum a new one replaces the oldest. Modifiers add up per layer."
+          },
+          "recipients": {
+            "$ref": "#/$defs/predicate",
+            "description": "Team buffs only: the members it reaches, judged per member at application with the applier as owner (isOwner, sameElementAsOwner, operatorProfession, operatorElement)."
+          },
+          "consumedBy": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/skillType"
+            },
+            "minItems": 1,
+            "description": "The next cast of these kinds by someone it reaches consumes it; it then acts on that cast's hits only (Link, Jade Vessel's combo bonus)."
           }
         }
       }
@@ -514,6 +534,11 @@
                     "if": {
                       "$ref": "#/$defs/predicate",
                       "description": "This action only in this situation (judged for the owner when it runs)."
+                    },
+                    "layers": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "description": "End only the oldest this many layers (default: all)."
                     }
                   }
                 },

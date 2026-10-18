@@ -23,6 +23,8 @@ export interface RawBuffFile {
     readonly type: number;
     /** A literal maximum stack count, or null when none or set from a blackboard key. */
     readonly maxStacks: number | null;
+    /** stackingSettings.stackingKey: buffs of different files with one key are one buff for stacking (Liino's two stances: `liino_atk_up`). */
+    readonly key: string | null;
   };
   /**
    * The decorate-mask condition every damage modifier of the buff shares
@@ -68,6 +70,7 @@ export function readBuffFile(buffId: string): RawBuffFile | null {
     stacking: {
       type: get(stackingRaw, "stackingType", sc, int),
       maxStacks: stackingRaw["useMaxStackCntKey"] === true || literalMax <= 0 ? null : literalMax,
+      key: typeof stackingRaw["stackingKey"] === "string" && stackingRaw["stackingKey"] !== "" ? (stackingRaw["stackingKey"] as string) : null,
     },
     damageMask: shared ? { checkType: shared[0] as number, mask: shared[1] as number } : null,
     attributeModifiers: mods.map((m, i) => {

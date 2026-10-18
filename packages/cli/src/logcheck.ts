@@ -86,7 +86,9 @@ function reaches(buffId: string, category: HitCategory | null): boolean {
 function countedInstances(effects: readonly LogEffect[]): LogEffect[] {
   const groups = new Map<string, LogEffect[]>();
   for (const e of effects) {
-    const k = `${e.buff}|${e.zone}|${e.element}`;
+    // Strongest-only buffs of different files with one stacking key are one buff (BuffData stackingKey).
+    const st = buffFile(e.buff)?.stacking;
+    const k = `${st?.type === 1 && st.key ? `key:${st.key}` : e.buff}|${e.zone}|${e.element}`;
     groups.set(k, [...(groups.get(k) ?? []), e]);
   }
   const out: LogEffect[] = [];

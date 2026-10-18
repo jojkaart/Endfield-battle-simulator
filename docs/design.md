@@ -184,10 +184,17 @@ Laevatain's Melting Flame are kit `stacks` that hits `gain` and `require`.
 a kit's `applies` against the logged bursts and reactions.
 
 **Buffs from skills** are kit `buffs` (engine `buffs.ts`): target self,
-team or enemy, a duration and zone modifiers whose values are `ValueSpec`s
-(a literal, or a skill value at the applier's level, optionally times a
-panel attribute and capped by another key). Hits apply them, by default
-after their own damage. Modifiers can be limited to hit kinds (`onlyKinds`,
+team or enemy, a duration (0: not applied; none: until ended) and
+modifiers on a zone or an attribute whose values are ValueExprs at the
+applier's levels. Attributes that don't act on hits (Ultimate Gain
+Efficiency) are read where the game reads them. A buff can be layered
+(`maxStacks`, each layer with its own duration), reach only some team
+members (`recipients`, a Predicate per member), or be consumed by the next
+cast of a kind and act on that cast's hits only (`consumedBy`: Link). Buffs
+from the same BuffData stacking key count only their strongest instance.
+Hits and triggers apply them, by default after the hit's own damage;
+triggers end them (all, or the oldest layers), and a buff ending is an
+event. Modifiers can be limited to hit kinds (`onlyKinds`,
 the game's decorate-mask conditions, e.g. bursts only).
 
 **Triggers** (engine `events.ts`): the timeline emits events (a hit

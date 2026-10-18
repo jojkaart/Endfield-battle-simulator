@@ -248,22 +248,33 @@ export interface BuffApplication {
 export type ValueSpec = ValueExpr;
 
 export interface KitBuffModifier {
-  readonly zone: Zone;
+  /** A damage zone… */
+  readonly zone?: Zone;
+  /** …or an attribute (mapped to its zone like any stat; one that doesn't act on hits, e.g. Ultimate Gain Efficiency 44, is read where the game reads it). One of the two. */
+  readonly attr?: AttrType;
   readonly value: ValueExpr;
-  /** One modifier per listed element; any element when absent. */
+  /** One modifier per listed element; any element when absent (zones only). */
   readonly elements?: readonly Element[];
   readonly skillType?: SkillType;
   readonly onlyKinds?: readonly HitKind[];
 }
-
-/** A timed buff or debuff an operator's hits apply: on themselves, the whole team, or the enemy (then it acts on every team member's hits). */
 export interface KitBuff {
   /** Unique within the kit. Reapplying replaces the active instance and resets its duration. */
   readonly id: string;
   readonly label: string;
   readonly target: "self" | "team" | "enemy";
-  /** Seconds. */
-  readonly duration: ValueExpr;
+  /** Seconds (0: not applied, e.g. below the potential that unlocks it); absent: until something ends it. */
+  readonly duration?: ValueExpr;
+  /** Layered: up to this many instances from one owner, each with its own duration (BuffData stackingType 2 / 11); at the maximum a new one replaces the oldest. */
+  readonly maxStacks?: ValueExpr;
+  /** A team buff reaches only the members this holds for (judged per member at application, the applier as owner: `isOwner`, `operatorProfession`, …). */
+  readonly recipients?: Predicate;
+  /**
+   * Consumed by the next cast of these kinds by someone it reaches (Link,
+   * Jade Vessel's combo bonus): it then acts on that cast's hits only, and
+   * on no others.
+   */
+  readonly consumedBy?: readonly SkillType[];
   /**
    * Instances in the same group don't add up, whoever applied them: only the
    * strongest of each modifier counts. Set by the data loader from the game
