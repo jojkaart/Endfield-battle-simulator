@@ -433,3 +433,541 @@ In-game tests (existing 7 and 13 still apply; 13 settles G2's cooldown):
   `buff_common_obtain_ultimate_sp` at the hit; Cluster Strikes grant half
   the ultimate cost each (G9); Hot Work and the weapon's INT buffs are
   logged in d9e59d0fb737 but the ×1.9 residual remains with them.
+
+## Re-analysis (pass 2, 2026-10-18)
+
+Against the engine and kit format at b33e2e7 (everything in batch-1.md
+"Progress"), `efsim kit-draft chr_0032_lizhiyan` (v2) and the D1 `KNOWN`
+list in packages/data/test/skillCompile.test.ts. Every claim above was
+re-read in Json/SkillData, Json/BuffData, SkillPatchTable and
+I18nTextTable_EN (rmxlinux, game 1.6), and values were taken from the
+engine's `skillValue` on the fixture builds (P0 d9e59d0fb737, P4
+b7b3762d5da8, P5 bdf223db8e49).
+
+### Facts re-checked (corrections to the first round)
+
+- **The WILL "post-Imprisonment Susceptibility" (row 21, kit claim) isn't in
+  the data.** `buff_…_combo_skill_spell_vulnerable` is created only by
+  `combo_skill_abilityentity_seal_again`, which only `buff_…_seal_listener`
+  casts, on abilityEvent 204 (the seal or the bunshin_end_listener finished
+  *by an action*). Only INT ends it early: seal2's abilityEvent 101 handler
+  starts with `CompareFloat isWisd ≥ 1`, and bunshin_end_listener is only
+  created under INT (abilityentity_end frame 10). abilityentity_end (the
+  natural end) also finishes any spell_vulnerable at its frame 14. So in
+  WILL the Susceptibility ends with Imprisonment (spell_vulnerable_pre is
+  `asChildBuff` of the seal). b7b3762d5da8's 0.18 lasting ~2.0–2.3 s past
+  the modelled end (second touch 7150 ms, seen at 15652, gone at 15927)
+  matches the ultimate cast inside it: UltimateTimeAction frames 0–47
+  (1.57 s) plus the combo's ComboSkill slow-down (0.6 s curve), which Ti1
+  now models. bdf223db8e49's explosion +0.5 s (7418 ms vs 6.9 s) is the
+  same kind of shift (combo slow-down, hit-stops).
+- **WILL seal_finisher (row 22) is unreachable**: it sits at seal_again
+  frame 239, which only runs after an early end (INT only, above).
+- **seal_again's timing** (row 19): spell_vulnerable at its frame 0 (both
+  modes), seal_finisher_wisd at frame 41 (INT, if no lizhiyan_combo_finisher
+  marker), lasers at that buff's frames 2/5/8/11 (laser1) and 17 (laser2,
+  which also finishes spell_vulnerable). From the battle-skill hit H: lasers
+  at H+43/46/49/52/58. d9e59d0fb737 has them at H+41.4/44.4/48.2/50.6/56.9
+  (12450 → 13829…14345 ms): ~1.5 frames early, consistently.
+- **INT post-Imprisonment Susceptibility duration**: seal_again assigns
+  `duration_vul ← duration_calc = duration_vul (+ duration_extra in WILL)`,
+  but no blackboard gives seal_again a `duration_vul` (not in its
+  defaults, not in SkillPatch: `skillValue` throws). The buff falls back to
+  its default 12 s and is ended by the final laser, so in practice it lasts
+  from the early end to H+58 (1.93 s), rate `rate_final` (= `rate_pre` in
+  INT). SkillPatch's `duration_wisd` (2 s) isn't read by any graph.
+- **After a natural INT end** (row 20): bunshin_end_listener (99 s,
+  lifeType 1) gives the next battle-skill hit SP `atb_return_wisd` and an
+  explosion (`atk_scale_early_finish`, its own event key), then finishes
+  itself early (→ 204). The lasers would need seal_listener and the clone,
+  but the clone is removed by abilityentity_end's FinishOwnerAction at its
+  frame 44, so probably no lasers: in-game test C.
+- **Imprisonment slows the enemy's clock**: SealAction with a direct curve
+  over its duration, 0.3 → 0.2 (by 5%) → 1.0 (at the end); the tutorial
+  text says "An enemy under Imprisonment will experience a slower flow of
+  time". The seal buff itself has `useTimeDilationDt: false`.
+- **Cluster Strike** (rows 30–32): inaura abilityEvent 101, two paths:
+  (a) Final Strike (mask 2097152) by the controlled operator → target_mark
+  (0.1 s); at its end, if the array (listener_owner) is up and no 0.4 s
+  marker: laser buff by layer count, energy `usp_step`, layer +1; (b)
+  Finisher (mask 4), once per finisher (`is_power_attacked`, reset on
+  abilityEvent 21), no 0.4 s marker: the same at once. Laser buffs spawn
+  lasers at frames 0/4/8/12 (laser1, laser2: 4 each) or 0,0,5,5,10,10
+  (laser3: 6); each laser deals `atk_scale_laser` at its frame 12 (mask
+  4608, ultimate). So lasers at FS+15/19/23/27 or Finisher+12/16/20/24.
+  `atk_scale_laser_will` equals `atk_scale_laser` at all 12 levels (one hit
+  serves both modes). `usp_step` = attribute 22 (max energy) / 2 per strike,
+  ignoreUspGainScalar, uspRecoverTag. A third strike (laser3) is in practice
+  unreachable: at the second, listener_owner's abilityEvent 9 starts the
+  listener and finishes itself, and its end (buffEvent 2) ends the array
+  entity (abilityentity_finish_self), whose aura carries inaura.
+  `buff_…_ultimate_skill_inaura_attack` is referenced by nothing (dead).
+- **Ultimate state lifecycle**: listener_owner (array, `duration` 20 s):
+  ChangeSkillAction to ult 2, RefrainObtainUsp clearUspOnEnd, INT
+  talent1_enhance as a child; at its end with < 2 strikes, energy −999.
+  listener (Gloompurge Arcana): finishes listener_owner (clearing energy),
+  then +100% (isPercent, uspRecoverTag, *not* ignoreUspGainScalar), INT
+  talent1_enhance child, RefrainObtainUsp clearUspOnEnd; at its end, the
+  layer counter and energy −999. Its ChangeSkillAction lasts 10 s
+  (lifeTimeType 2); the buff's own `duration` isn't assigned (default 30 s).
+  Whether casting ult 2 ends it is unknown (test G).
+- **Arcane's ultimates don't take control** (`switchToCenterBeforeCast`
+  false; Laevatain's is true), so the Final Strikes that trigger Cluster
+  Strikes are usually a teammate's.
+- **Talent 1 WILL Susceptibility** (rows 35, ult 1 and ult 2): rate =
+  min(Will × `spell_vul_rate_per_will`, `spell_vul_rate`) +
+  `spell_vul_rate_potential` (Will by StoreAttributeValue 42), duration key
+  `duration` taken from the *ultimate's* blackboard by assignBlackboard
+  (ultimate `duration` = 20 s; the talent's `duration` = 10 s): which one
+  wins is unknown (test H; b7b3762d5da8 ends at 18024 ms with it still on,
+  10.9 s after the hit). Values: 0.128 cap, 0.0002 per Will, +0.07 at P5.
+- **Talent 1 INT Amp**: child of listener_owner and then of listener
+  (array + Gloompurge state), plus a cast-long child in ult 2 (frame 0,
+  autoFinishByAction). d9e59d0fb737 logs it (0.24) only as a boundary
+  buff on the ult hit; if it really lasts the array, it explains ×1.24 of
+  that log's ×1.9 residual (test B, test 7).
+- **Talent 2**: abilityEvent 202 on a Corrosion-tagged buff Arcane applies:
+  `duration` + `duration_add` (only if the duration is > 0), and
+  `max_def_decrease` × (1 + `corrupt_rate`); the ramp rate isn't touched.
+  Values: 10 s / 0.1 below P3, 15 s / 0.3 from P3.
+- **Talent 1 cooldown**: −6 s (paramType 2) now applies in INT only (C3).
+  `efsim calc` still lists "talent 1 level 2: effect type 2" (the paramType
+  4 half) as not applied.
+- **P5 cooldown cut**: ult2 frame 0, WILL only (`EntityBB_wisd_greater_will
+  == 0`, `cd_minus > 0`), SetSkillCdAtOnce isPercentage `cd_minus` (0.3)
+  on the combo. Text: "if … still in its cooldown, immediately shorten the
+  length of the cooldown by 30%". Typhoeus's combos use the same action
+  with value 1.0 for their shared cooldown, so "set to x of full" and
+  "shorten by x" can't both be its meaning: test D.
+- **WILL combo infliction element**: seal_total's Switch is on
+  `EntityBB_consumed_type`, which no SkillData or BuffData file writes (set
+  natively, probably the element of the infliction that opened the combo
+  window); the default branch is Heat. The ultimate instead checks the
+  enemy's infliction tags (Nature → Cryo → Electric → Heat), i.e. the
+  enemy's current element.
+- **Finisher** (row 3): six landings at 7, 10, 13, 32, 34, 36, all
+  `atk_scale` (9.0 at basic L12) × BreakingAttackCalculation `multiplier`
+  0.1 (×5) and 0.5 (sum 1.0), mask 132; GainBreakingAttackAtb at 36; poise
+  units 5/5/5/20/20/10 (DefiniteValueCalculation literals; the two at
+  32/34 share one action, to verify). No
+  ObtainCostAction, but the loader's file default `atb` = 8 makes the
+  timeline add 8 SP per finisher (`skillSpGain`), on top of the enemy's
+  finisher SP.
+- **Logged bursts credited to Arcane**: Cryo bursts
+  (`buff_common_cryst_cryst_triggered`) ~1.0–1.5 s after her WILL touch
+  (0eef 2719 → 3729, bdf2 6395 → 7371, e82d 7021 → 8561/8647), a Nature
+  burst 1.84 s after (dbae 8501 → 10341), never at the touch itself.
+  Either the log credits a burst to the owner of the stack it lands on, or
+  the stack lands later than the touch: test A.
+- **The misspelt combo entity** (`chr_032_lizhiyan_combo_skill_abilityentity_seal`,
+  now fetched) holds only animation, movement, sound and effects.
+- Unchanged and confirmed: frames of every hit in the current kit's
+  skills; P1 ×1.3 on touch, boom, laser1, laser2 (1.04 / 1.56 / 0.78 / 3.38
+  at P4); P1 `rate_pre` +0.06 WILL only and `atb_return_wisd` +10 INT only
+  (now applied per mode); P4 cost × 0.85 on both ultimates; combo
+  `duration_pre` 0.633 (file default), `duration` 4, `duration_will` 6,
+  cooldown 20/19/18; battle skill 100 SP; ult 2 cost 100, cooldown 10 s.
+
+### 1. First-round rows and gaps against the current engine
+
+| First round | Now | How (fields) or what's missing |
+|---|---|---|
+| 3 Stagger, Finisher (G14) | supported (data: poise, factor) | P2: the finisher is castable on a Staggered enemy only, with the finisher multiplier and SP. Kit: skill `chr_0032_lizhiyan_power_attack`, hits with `factor` 0.1 / 0.5 and `poise` (hand-written: kit-draft compiles neither, gap R8). Spurious `atb` 8 SP: gap R7. Finisher half of Cluster Strike: gap R1 |
+| 5 Mode ties and floors | supported (kit fix) | `{not: {attrAtLeast: [41, 42]}}` for WILL everywhere (kit triggers and hits still use `[42, 41]`). The in-game text floors deck attributes; whether the comparison floors is an edge case (± 1 point) |
+| 7, 26 compilable inflictions | compiled | kit-draft v2 emits SpellInfliction and the forced Corrosion |
+| 8 Battle skill team energy timing | supported (kit fix) | `teamEnergyFrame: 20` (KNOWN: "kit -, data 20") |
+| 9, 10 Combo triggers | supported | `inflictionApplied` (INT: `[natural]`, and `[fire, pulse, cryst]` with `minStacks: 2`; WILL: any). Applications that form a reaction don't count in the engine (test E) |
+| 12 Durations | supported (kit fix) | `{sum: ["duration_pre", "duration"]}` / `{sum: ["duration_pre", "duration_will"]}` |
+| 14 P1 by mode (G2) | supported | C3: kit `activeConditions`; verified: INT P0 `atb_return_wisd` 30, WILL P4 `rate_pre` 0.10 |
+| 15, 27 Same-element stack (G1) | supported (approx.) | A1: `{kind: "infliction", element: "enemy"}` with `if` WILL, on the touch and the array hit, before damage. The combo's element is natively the trigger's (`EntityBB_consumed_type`): gap R10 |
+| 16 Pulls | n/a | positional |
+| 17 Imprisonment slow | gap | the enemy's clock follows a curve during Imprisonment: gap R5 (entity time dilation) |
+| 18 Explosion at the natural end | supported | trigger `on: buffEnded imprisonment`, hit at +14 frames, guarded by an early-end marker buff. Time stops and global slow-downs shift it (Ti1); hit-stop doesn't yet (R6) |
+| 19 INT battle skill ends Imprisonment (G5, G7) | supported | trigger `on: hit, kinds: [battle], by: self, if: INT ∧ buffActive imprisonment`: `sp`, marker buff, `endBuff`, early explosion at +0, lasers at +43/46/49/52/58, post Susceptibility buff |
+| 20 After a natural INT end | supported (lasers unknown) | kit buff `int_after_end` (99 s) from the explosion trigger; trigger on the next battle-skill hit: `sp`, explosion, `endBuff`. Lasers: test C |
+| 21 Post-Imprisonment Susceptibility (G6a, b) | supported (INT); not a mechanic (WILL) | INT: buff `post_susceptibility_int` from the early-end trigger, duration 58/30 s (ended by the final laser). WILL: refuted above |
+| 22 WILL seal_finisher | not a mechanic | unreachable (needs an early end) |
+| 23 Combo cooldown | supported | |
+| 24 Talent 1 cooldown INT only (G2) | supported | C3. paramType 4 still undecoded (unknown, R11) |
+| 28 Energy block (G6c, G9) | supported | skill `energyBlockSeconds: 1.567` (RefrainObtainUsp 0–47), state buffs with `blocksEnergy`, `clearEnergy` when the array ends with < 2 strikes and when Gloompurge ends |
+| 30 Cluster Strike (G8) | supported (Final Strike half) | trigger `on: hit, finalStrike: true, by: controlled`, `if` array ∧ `stack below 2`, `cooldown: 0.4`, `hits` (4 lasers, `damageType: ultimate`), `gain`. Finisher half: gap R1 |
+| 31 Cluster Strike energy (G9) | supported | `energy` 0.5 `percentOfMax`, `ignoreEfficiency`, `ignoreBlock`; Gloompurge start: `clearEnergy`, then 1.0 `percentOfMax` `ignoreBlock` |
+| 32 Switch to Gloompurge Arcana | supported | actions with `if: {stack: cluster_strikes, atLeast: 2}` in the same trigger (`endBuff` array, `buff` gloompurge_arcana); ult 2 `available: buffActive gloompurge_arcana`, ult 1 `available: not` either state. Its length and whether casting ult 2 ends it: test G |
+| 33 Ult 2 hits | supported | reachable now (energy granted past the block) |
+| 34 P5 cooldown cut (G10) | gap | `cooldown` action takes seconds only; isPercentage needs a fraction of the full or remaining cooldown: gap R4 |
+| 35 Talent 1 WILL Susceptibility (G3) | supported (duration unknown) | V1: `{key: …, skill: "chr_0032_lizhiyan_talent1"}`, `{attr: 42}`, min/sum; duration 10 vs 20 s: test H |
+| 36 Talent 1 INT Amp (G3, G6c) | supported (duration unknown) | buff `int_amp` (zone `amp`, arts elements) applied at array start, ended by the state triggers; test B |
+| 37 Talent 2 (G4) | supported | A4: `statusTweaks` corrosion `extraSeconds: "duration_add"`, `capScale: {sum: [1, "corrupt_rate"]}`, `skill: chr_0032_lizhiyan_talent2` (forced and reaction Corrosion both) |
+| 41 Time stop, dilation, hit-stop (G13) | partly supported | Ti1: UltimateTimeAction (0–47, 0–50) and the combo's global TimeDilation are read from SkillData. Still missing: hit-stop (R6) and entity-layer dilation (combo frames 0–6 `layer 1` on the targets; Imprisonment, R5) |
+| 42 `buff_common_natural_triggered` (G15) | gap | L1 left the ×1.42 open: gap R9 |
+| W2 Mode gate on equipment (G11) | supported | equipment triggers' `if` is judged for the wearer: `attrAtLeast [41, 42]` / its negation (CompareDeckAttr lhsType 2 = attribute 41, rhsType 3 = 42) |
+| W3 INT: own infliction → Arts DMG (G12) | supported (approx.) | `on: inflictionApplied, by: self` → self buff (attrs 51–54, `spell_dmg_up`, `duration`). Missing: the source-skill filter [battle, combo, ultimate] and whether reacting applications count: gap R3 |
+| W4 INT: own Susceptibility → ATK (G12) | gap | no event for "the wearer applied a buff of a category": gap R2 |
+| W5 WILL: own burst → enemy Arts DMG Taken (G12) | supported (approx.) | `on: burst, by: self` → enemy buff (`damageTaken`, arts elements, `gameBuff` priority-keyed); source-skill filter: R3 |
+| W6 WILL: own Susceptibility → enemy Arts DMG Taken (G12) | gap | R2 |
+| S2 Eternal Xiranite (G12) | gap | team buff with `recipients: {not: {isOwner: true}}` is expressible; its trigger (Amp, Protection, Susceptibility or Weakness applied by the wearer) is R2 |
+| S4 Catastrophe (G12, G7) | supported | `on: cast, kinds: [battle], by: self, maxCount: 1` → `sp` `atb_recover` (`has_gain_atb` resets on abilityEvent 6, taken as the fight start) |
+| S6 Hot Work (G12) | supported | `on: reaction, statuses: [combustion]` / `[corrosion]`, `by: self` (forced included) → self buffs (attr 51 / 54, 10 s, refresh) |
+
+### 2. Remaining gaps
+
+**R1. Finisher as a trigger filter**
+- family: triggers
+- feature: `on: {event: "hit", finisher: true}` (and on `cast`), true for
+  landings with decorate-mask bit 4 / skills of skillSpecification 8, like
+  `finalStrike`; plus once per cast (the game's `is_power_attacked`, reset
+  on abilityEvent 21), e.g. `perCast: true` on the trigger, since a
+  finisher's six landings span 29 frames, longer than the 0.4 s debounce.
+- evidence: buff_chr_0032_lizhiyan_ultimate_skill_inaura abilityEvent 101,
+  CheckDamageDecorateMask checkType 1 mask 4; UltimateSkill desc ("with a
+  Finisher or a Final Strike performed by the controlled operator");
+  shared with Laevatain's talent 1 (passive_teammate mask 2097156, her
+  report row 44 / gap 12).
+- impact: Cluster Strikes only from Final Strikes: rotations that stagger
+  and finish inside the array lose up to 4 × 0.45 ATK per strike and the
+  route to ult 2 (INT 14.4 × ATK, 18.7 at P5).
+
+**R2. Events for buffs of a category applied by an operator**
+- family: triggers
+- feature: `on: {event: "buffApplied", categories: [...]}` without `buff`:
+  any kit buff (operator or equipment) applied by the event's operator
+  (`by` applies), whose category is Amp (zone `amp`), Susceptibility
+  (`susceptibility`), Weakness (attribute 62) or Protection (63), or the
+  BuffData tag of its `gameBuff`; also buffs on the enemy, self or team.
+  Today `buffApplied` names one of the owner's own kit buffs, which a
+  generic equipment kit can't.
+- evidence: buff_wpn_funnel_0016_wisd / _will abilityEvent 206 +
+  CheckBuffIdInContextAdvanced (tag 1427729990); buff_equipsuit_usp_02
+  abilityEvent 102 + CheckBuffIdInContext with four tags (2029588776,
+  −1748167886, −1957150384, −881002460). Logged: `wpn_funnel_0016_wisd_atkup`
+  4 frames after her combo Susceptibility (d9e59d0fb737),
+  `wpn_funnel_0016_will_dmg` on her WILL touch (dbaee23b801d),
+  `equipsuit_usp_02_AddAttack` 0.16 on Arcane from Liino's set
+  (d9e59d0fb737). Shared: every wearer of Eternal Xiranite (Liino, Arcane
+  in batch 1).
+- impact: Solemn Phalanx INT ATK +`atk_up2` (0.32 at weapon skill level 4,
+  0.36 at 5; first round: up to 0.56 at 9) and WILL enemy Arts DMG Taken
+  +`spell_dmg_taken_up2` (0.096 at 4, 0.108 at 5) for the team; Eternal Xiranite +16% DMG for three
+  teammates for 15 s after each Susceptibility or Amp: today all off.
+
+**R3. Which skill caused a status event; reacting inflictions**
+- family: triggers
+- feature: status events (inflictions, bursts, reactions) and buff
+  applications carry the source skill kind, and trigger filters take
+  `fromKinds: ["battle", "combo", "ultimate"]` (CheckOriginSkillType
+  [2, 6, 7]; 2 battle as in Catastrophe's CheckSkillType [2], 7 ultimate
+  as in Link). Also decide whether "applies Arts Infliction" (abilityEvent
+  126) includes an application that formed a reaction, which
+  `inflictionApplied` excludes.
+- evidence: buff_wpn_funnel_0016_wisd abilityEvent 126 and _will 127, 206,
+  each with CheckOriginSkillType skillTypeList [2, 6, 7].
+- impact: none for Arcane (her basic attacks don't inflict); a generic
+  weapon on an operator whose basic attacks inflict or burst would trigger
+  when the game doesn't. Reacting applications: W3's 20 s buff may not be
+  refreshed when the engine says it is (or the reverse).
+
+**R4. Cooldown change by a fraction**
+- family: triggers (cooldown change)
+- feature: the `cooldown` action with `fraction` (ValueExpr) instead of
+  `seconds`: SetSkillCdAtOnce isPercentage. Its meaning (shorten the
+  remaining time by x of it, by x of the full cooldown, or set it to x of
+  the full) needs test D; Typhoeus's value 1.0 (read as a shared cooldown)
+  must fit the same rule.
+- evidence: chr_0032_lizhiyan_ultimate_skill2 frame 0 (`cd_minus` 0.3 at
+  P5, WILL only); P5 text. Also chr_0034_typhoea_combo_skill(floating),
+  and in batch 2 buff_chr_0006_wolfgd_talent_1 (`ratio`),
+  buff_chr_0018_dapan_talent_1_cd_reduce, chr_0005_chen_combo_skill
+  (`cd_reduction`).
+- impact: WILL P5: one earlier combo per ult 2 (−5.4 s of 18 if of the
+  full cooldown); more for batch 2.
+
+**R5. Entity time dilation with a curve (Imprisonment)**
+- family: timing (Ti1, entity layer)
+- feature: an enemy-side slow-down applied by a hit or buff, with a curve
+  over its duration (SealAction directCurve 0.3 → 0.2 → 1.0), slowing the
+  enemy's own clock as `control.freezes` does at scale 0; plus which
+  timers follow the enemy's clock (its statuses, inflictions, debuffs from
+  every operator) and which don't (the seal itself: `useTimeDilationDt`
+  false).
+- evidence: buff_chr_0032_lizhiyan_combo_skill_seal buffEvent 5
+  SealAction; the tutorial text "An enemy under Imprisonment will
+  experience a slower flow of time"; design.md "Time" ("Not modelled yet:
+  entity-layer dilation").
+- impact: unknown until test I: if enemy-held timers follow its clock, a
+  6.6 s WILL Imprisonment adds ~2.5 s to every status and debuff on the
+  enemy (Corrosion ramp and duration, Electrification, teammates'
+  Susceptibilities) once per combo; if not, nothing.
+
+**R6. Hit-stop**
+- family: timing (Ti1)
+- feature: HitStopAction pauses its attacker (and, with affectType 2, the
+  target) for its duration: Arcane's touch 0.2 s, explosion 0.3 s, lasers
+  0.55 s, battle skill 0.4 s, ult 2 0.4 s, most basic attacks.
+- evidence: HitStopAction in seal_total, abilityentity_end,
+  seal_finisher_wisd, normal_skill_abilityrange2, ultimate_skill2;
+  bdf223db8e49 explosion +0.5 s; design.md "Time".
+- impact: her own actions 0.2–0.5 s later per skill than modelled; small
+  shifts of the explosion and the lasers. Shared with every operator.
+
+**R7. SP from a skill's `atb` default without an action reading it**
+- family: values (data compilation)
+- feature: a skill's SP (`skillSpGain`) only from an ObtainCostAction
+  costType 1 that the skill reaches (D1 compiles these), not from a
+  blackboard `atb` that no action uses.
+- evidence: chr_0032_lizhiyan_power_attack: no ObtainCostAction, file
+  default `atb` 8 (data.skills defaults), SkillPatch without `atb`; the
+  finisher's SP is GainBreakingAttackAtb (the enemy's
+  `breakingAttackedAtbObtain`). Liino's, Da Pan's, Tangtang's and
+  Purrchena's power_attack files also list an `atb` key (values to check).
+- impact: +8 SP per Arcane finisher (if the key isn't read natively:
+  test J).
+
+**R8. Poise and finisher multipliers in kit-draft** (status `data`)
+- family: data compilation (D1)
+- feature: the compiler skips damage units of damageAttributeType 1
+  (poise) and takes `atk_scale` without BreakingAttackCalculation's
+  `multiplier`; emit `poise` and `factor` for them.
+- evidence: skillCompile.ts `damage()` ("1 = poise (stagger) damage",
+  `continue`); power_attack draft: 6 × `atk_scale`, no factor; poise keys
+  `poise_touch`, `poise_boom`, `poise_early_finish`, `poise_final`,
+  `poise` (battle skill 10, ultimates), literal 20 (Cluster lasers), 5/20/10
+  (finisher).
+- impact: none once the kit hand-writes them (the batch-1 kits carry no
+  poise yet, so stagger is under-counted for everyone until then).
+
+**R9. `buff_common_<element>_triggered`**
+- family: log tooling
+- feature: explain the one-element reaction key (×1.42–1.43 of a level I
+  reaction in 0eef2474a26f 3620 ms and bdf223db8e49 8152 ms, both P5
+  Arcane's Nature onto Cryo) and map it (reactions.ts
+  `parseReactionEvent`).
+- evidence: as G15; reactions.ts comment; both are P5 (talent 2 at its P3
+  values), which may or may not matter.
+- impact: one unverifiable hit per such reaction (18.9k and 28.3k, a third
+  of her logged damage in 0eef2474a26f).
+
+**R10. WILL combo: the trigger's element or the enemy's** (status
+`unknown`)
+- family: arts state
+- feature: if `EntityBB_consumed_type` is the element of the infliction
+  that opened the combo window, the touch needs "the event's element"
+  (e.g. `element: "trigger"`, stored with the window like its count), not
+  `element: "enemy"`.
+- evidence: seal_total frames 6–9 SwitchAction on `EntityBB_consumed_type`
+  (written by no data file; default branch Heat); ultimate_skill frame 47
+  checks the enemy's tags instead.
+- impact: only when the enemy's infliction changes between the trigger
+  and the touch (up to 6 s): a burst more or less per such combo (160% ×
+  her ATK at the level coefficient).
+
+Unknowns that need only tests (no engine work whatever the answer): the
+paramType 4 half of talent 1 (R11; a second −6 on the combo, purpose
+unknown), Gloompurge's length and end (G), talent 1 Susceptibility
+duration (H), INT Amp duration (B), lasers after a natural INT end (C),
+combo trigger on a reacting application (E), burst attribution (A).
+
+### 3. Kit plan
+
+Operator kit `chr_0032_lizhiyan` (frames from the skill's start unless
+"+n" = after the trigger's event; INT = `{attrAtLeast: [41, 42]}`, WILL =
+`{not: INT}`; data = SkillData / BuffData files named; values at the
+build's levels):
+
+**Skills**
+
+- attack1–attack4, plunging_attack_end: as now (verified frames; kit-draft
+  agrees). Add `poise` once known (R8).
+- attack5: hit at 22, `finalStrike` from data, `sp: {if: {controlled:
+  true}, then: "atb"}` (17 at L12; kit-draft "SP atb only if controlled").
+- power_attack (new; finisher): `damageType: basic`, events
+  `[chr_0032_lizhiyan_power_attack]`; hit `a` count 5 frames [7, 10, 13,
+  32, 34] `factor: 0.1`, hit `b` frame [36] `factor: 0.5` (scale
+  `atk_scale`, BreakingAttackCalculation multipliers); poise 5/5/5/20/20/10;
+  `sp: 0` on `b` if test J shows the 8 SP isn't real (R7).
+- normal_skill: two hits (`atk_scale_will` if WILL, `atk_scale_wisd` if
+  INT) at 20, `applies: [{infliction, natural}]`, `detached: true`, events
+  `[chr_0032_lizhiyan_normal_skill_abilityrange2]`, `poise: "poise"`;
+  skill `teamEnergyFrame: 20`.
+- combo_skill: one hit `touch` at 15, `atk_scale_touch`, `detached`,
+  `energy: "usp"`, `poise: "poise_touch"`, events
+  `[buff_chr_0032_lizhiyan_combo_skill_seal_total]`, `applies: [{kind:
+  "infliction", element: "enemy", if: WILL}]` (seal_total frame 6, before
+  the damage; R10). No explosion or laser hits on the skill (they move to
+  triggers). Imprisonment and its Susceptibility by a delayed cast trigger
+  at 11 (seal_total frame 2), so teammates' hits from frame 11 see it.
+- ultimate_skill: `energyBlockSeconds: 1.567` (RefrainObtainUsp 0–47),
+  `available: {not: {any: [{buffActive: gloompurger_array}, {buffActive:
+  gloompurge_arcana}]}}`; one hit at 47 `atk_scale`, events
+  `[chr_0032_lizhiyan_ultimate_skill]`, `poise: "poise"`, `applies:
+  [{infliction, element: enemy, if: WILL}, {forcedReaction, corrosion,
+  level: 1, durationKey: "duration2", if: INT}]`, `buffs:
+  [{buff: t1_susceptibility, beforeDamage: true, if: WILL},
+  {buff: gloompurger_array}]`.
+- ultimate_skill2: `available: {buffActive: gloompurge_arcana}`; hits at
+  58: `atk_scale_will` if WILL with `buffs: [{t1_susceptibility,
+  beforeDamage}]`, `atk_scale` if INT with `buffs: [{int_amp,
+  beforeDamage}]`.
+
+**Buffs** (`gameBuff` = the BuffData buff)
+
+- `imprisonment`: enemy, no modifiers, duration `{if: INT, then: {sum:
+  [duration_pre, duration]}, else: {sum: [duration_pre, duration_will]}}`
+  (4.633 / 6.633 s), gameBuff `buff_chr_0032_lizhiyan_combo_skill_seal`.
+  (Its slow-down: R5.)
+- `doubles_susceptibility`: enemy, susceptibility natural + cryst, value
+  `{sum: ["rate_pre", {if: WILL, then: {min: [{product:
+  ["spell_vul_per_will", {attr: 42}]}, "max_spell_vul_will"]}, else: 0}]}`,
+  same duration as Imprisonment, gameBuff `…_spell_vulnerable_pre`.
+- `post_susceptibility_int`: enemy, susceptibility natural + cryst
+  `rate_pre`, duration 1.933 (58 frames, to the final laser), gameBuff
+  `…_combo_skill_spell_vulnerable`.
+- `early_end_marker`: self, no modifiers, 0.1 s (the game's timed
+  markers): tells the natural-end trigger to stay quiet.
+- `int_after_end`: enemy, no modifiers, 99 s, gameBuff
+  `…_seal_bunshin_end_listener`.
+- `gloompurger_array`: self, no modifiers, duration `duration` (20),
+  `blocksEnergy`, gameBuff `…_ultimate_skill_listener_owner`.
+- `gloompurge_arcana`: self, no modifiers, 10 s (ChangeSkillAction; test
+  G), `blocksEnergy`, gameBuff `…_ultimate_skill_listener`.
+- `int_amp`: self, zone `amp`, elements fire/pulse/cryst/natural, value
+  `{key: enhance_rate, skill: chr_0032_lizhiyan_talent1}`, no duration
+  (ended by triggers), gameBuff `buff_chr_0032_lizhiyan_talent1_enhance`.
+- `t1_susceptibility`: enemy, susceptibility natural + cryst, value
+  `{sum: [{min: [{product: [{key: spell_vul_rate_per_will, skill: T1},
+  {attr: 42}]}, {key: spell_vul_rate, skill: T1}]}, {key:
+  spell_vul_rate_potential, skill: T1}]}` (T1 =
+  chr_0032_lizhiyan_talent1), duration `{key: duration, skill: T1}` (10 s;
+  20 if test H says the ultimate's), gameBuff `…_talent1_vulnerable`.
+
+**Stacks:** `cluster_strikes` (max 2; the game's
+`…_ultimate_skill_layer`).
+
+**statusTweaks:** `[{status: corrosion, skill: chr_0032_lizhiyan_talent2,
+extraSeconds: "duration_add", capScale: {sum: [1, "corrupt_rate"]}}]`.
+
+**Triggers** (`skill` = the skill plain keys name)
+
+1. Combo windows: as now, with WILL = `{not: INT}` (INT: Nature, or ≥ 2
+   stacks of fire/pulse/cryst; WILL: any; `by: anyone`).
+2. `imprison` — `on: cast, skills: [chr_0032_lizhiyan_combo_skill]`,
+   `delay: 11`, skill combo: `buff imprisonment`, `buff
+   doubles_susceptibility`.
+3. `int_early_end` — `on: hit, kinds: [battle]`, `by: self`, `if: {all:
+   [INT, {buffActive: imprisonment}]}`, skill combo (data: seal2
+   abilityEvent 101 → seal_listener 204 → seal_again → seal_finisher_wisd):
+   `sp "atb_return_wisd"`; `buff early_end_marker`; `endBuff imprisonment`;
+   `endBuff doubles_susceptibility`; `buff post_susceptibility_int`;
+   `hits`: early explosion +0 `atk_scale_boom` (`poise_early_finish` =
+   seal_total's `poise_boom`), events `[buff_…_combo_skill_seal2]`;
+   lasers +43/46/49/52 `atk_scale_laser1`; final laser +58
+   `atk_scale_laser2` (`poise_final`); events
+   `[buff_…_combo_skill_seal_finisher_wisd]`; all `damageType: combo`
+   (mask 12288).
+4. `explosion` — `on: buffEnded imprisonment`, `if: {not: {buffActive:
+   early_end_marker}}`, skill combo: `hits` +14 `atk_scale_boom`
+   (`poise_boom`), events `[chr_0032_lizhiyan_combo_skill_abilityentity_end]`,
+   `damageType: combo`; `buff int_after_end` if INT (abilityentity_end
+   frame 10).
+5. `int_late_hit` — `on: hit, kinds: [battle]`, `by: self`, `if: {all:
+   [INT, {buffActive: int_after_end}, {not: {buffActive: imprisonment}}]}`:
+   `sp "atb_return_wisd"`, `endBuff int_after_end`, `hits` +0
+   `atk_scale_boom`, events `[buff_…_combo_skill_seal_bunshin_end_listener]`
+   (lasers only if test C shows them).
+6. `array_start` — `on: buffApplied gloompurger_array`: `gain
+   cluster_strikes −2` (reset), `buff int_amp` if INT.
+7. `cluster_strike` — `on: {event: hit, finalStrike: true}`, `by:
+   controlled`, `if: {all: [{buffActive: gloompurger_array}, {stack:
+   cluster_strikes, below: 2}]}`, `cooldown: 0.4`, skill ultimate_skill:
+   `gain cluster_strikes`; `energy 0.5 percentOfMax ignoreEfficiency
+   ignoreBlock` (`usp_step`); `hits` 4 × `atk_scale_laser` at +15/19/23/27,
+   `damageType: ultimate`, poise 20, events
+   `[chr_0032_lizhiyan_ultimate_skill_laser]`; then, each with `if:
+   {stack: cluster_strikes, atLeast: 2}`: `endBuff gloompurger_array`,
+   `clearEnergy`, `buff gloompurge_arcana`, `energy 1 percentOfMax
+   ignoreBlock` (listener start).
+8. `cluster_strike_finisher` — as 7 with `on: {event: hit, finisher:
+   true}` and lasers at +12/16/20/24, once per finisher: needs R1.
+9. `array_end` — `on: buffEnded gloompurger_array`, `if: {stack:
+   cluster_strikes, below: 2}`: `clearEnergy`, `endBuff int_amp`.
+10. `gloompurge_end` — `on: buffEnded gloompurge_arcana`: `clearEnergy`,
+    `endBuff int_amp`, `gain cluster_strikes −2`. If test G shows that
+    casting ult 2 ends the state: also `on: cast, skills: [ult2]` →
+    `endBuff gloompurge_arcana` (delay as the test shows).
+11. `p5_cooldown` — `on: cast, skills: [chr_0032_lizhiyan_ultimate_skill2]`,
+    `if: {all: [WILL, {potentialAtLeast: 5}]}`: `cooldown` self combo by
+    `cd_minus` as a fraction (R4; until then left out).
+
+Fix in `sources`: drop the `when` / ValueSpec wording and the not-modelled
+list; note inaura_attack and the WILL seal_finisher as unreachable. Update
+the D1 `KNOWN` entries for the explosion and laser frames (they become
+trigger hits; the compiled listener frames stay lower bounds) and for the
+ultimate's conditional inflictions.
+
+Equipment kits (generic: `by: self` = the wearer; values from the named
+skill at the build's levels):
+
+- `wpn_funnel_0016` (skill `sk_wpn_funnel_0016`): buffs `int_arts` (self,
+  attrs 51–54 `spell_dmg_up`, `duration` 20, gameBuff
+  `buff_wpn_funnel_0016_wisd_natureup`), `int_atk` (self, attr 2
+  `atk_up2`, `duration2` 20, `…_wisd_atkup`), `will_burst` (enemy,
+  `damageTaken` arts elements `spell_dmg_taken_up`, `duration3` 25,
+  `…_will_atk`, priority-keyed), `will_susc` (enemy, `spell_dmg_taken_up2`,
+  `duration4` 25, `…_will_dmg`, priority-keyed). Triggers: `inflictionApplied`
+  by self if INT → `int_arts`; `burst` by self if WILL → `will_burst`
+  (both with R3's `fromKinds` once it exists); `buffApplied` category
+  susceptibility by self → `int_atk` if INT / `will_susc` if WILL (R2).
+  The always-on stats stay in the panel.
+- `suit_usp02` Eternal Xiranite (skill `passive_equipsuit_usp_02`): buff
+  `team_dmg` (team, `recipients: {not: {isOwner: true}}`, `damageBonus`
+  `dmg_up` 0.16, `duration` 15, gameBuff `buff_equipsuit_usp_02_AddAttack`);
+  trigger `buffApplied` categories amp / protection / susceptibility /
+  weakness by self → `team_dmg` (R2).
+- `suit_usp01` Catastrophe (`passive_equipsuit_usp_01`): trigger `cast`
+  kinds [battle] by self, `maxCount: 1` → `sp "atb_recover"` (50).
+- `suit_fire_natr01` Hot Work (`passive_equipsuit_fninflict_01`): buffs
+  `heat` (self, attr 51 `fire_dmg_up`, `duration` 10) and `nature` (self,
+  attr 54 `nature_dmg_up`, `duration2` 10), refresh; triggers `reaction`
+  statuses [combustion] / [corrosion] by self → `heat` / `nature`.
+
+Fixtures that check it: b7b3762d5da8, bdf223db8e49, 0eef2474a26f,
+dbaee23b801d (WILL: touch with Susceptibility, `element: enemy`, talent 1
+Susceptibility from the kit, weapon W5/W6 and Eternal Xiranite from their
+kits instead of logged boundary buffs), d9e59d0fb737 (INT: early end,
+lasers at H+43…58 vs logged H+41.4…56.9, talent 2 Corrosion, Hot Work,
+weapon W3/W4, INT Amp), pending e82d45c46040. `efsim zmdlogs reactions` on
+the WILL logs tests the bursts credited to her (test A). No log has a
+Cluster Strike, ult 2, a finisher or a late INT explosion.
+
+### 4. In-game tests for the remaining unknowns
+
+The first round's A–F still apply, extended as below; 7 and 13 too.
+
+- **A (extended). WILL same-element stack and its element.** Will >
+  Intellect. (1) A teammate applies Cryo; Arcane's combo at once: is a
+  Cryo burst shown at the touch, and whose damage number is it (hers or
+  later on a teammate's hit)? (2) A teammate applies Cryo (opening the
+  window), then a Heat hit consumes it (Solidification), then Arcane's
+  combo: does the touch apply Cryo (the trigger's element), nothing, or
+  Heat? Settles R10 and the burst attribution.
+- **D (extended). P5 cooldown cut.** P5, Will > Intellect: note the combo's
+  remaining cooldown, cast ult 2, read it again. Compare with 30% of 18 s
+  (5.4 s off), 30% of the remaining time, or "set to 30%". Repeat with
+  Intellect ≥ Will (data: no cut). Settles R4 for Arcane; Typhoeus's two
+  combos (does casting one put the other on full cooldown?) check the
+  same rule.
+- **G. Gloompurge Arcana window.** After the second Cluster Strike, how
+  long does the ult 2 button stay (10 s expected)? Cast ult 2 early: does
+  her energy bar start refilling right after, or only when the 10 s are
+  over?
+- **H. Talent 1 Susceptibility duration.** Will > Intellect, ultimate on a
+  dummy: time the Nature Susceptibility icon from the ultimate (10 s or
+  20 s, plus the 1.6 s time stop).
+- **I. Imprisonment and the enemy's timers.** A teammate applies a timed
+  debuff or status to a dummy (e.g. Electrification, or Arcane's own
+  Corrosion), then Arcane's WILL combo (6.6 s Imprisonment): does the
+  status run out later than without the combo, by about 2–3 s?
+- **J. Finisher SP.** Arcane's finisher on a staggered enemy: how much SP
+  does it return (the enemy's finisher SP alone, or 8 more)?
+- **K. Cluster Strike from a Finisher.** Inside the array, stagger the
+  enemy and finish it with the controlled operator: do the four lasers
+  come, and does a finisher plus a Final Strike within 0.4 s count once?
