@@ -14,6 +14,7 @@ import { FPS } from "./units.ts";
 
 export interface ActiveBuff {
   readonly id: string;
+  readonly stackGroup?: string;
   readonly owner: string;
   readonly target: KitBuff["target"];
   readonly appliedAt: number;
@@ -41,7 +42,7 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
     const base = { zone: m.zone, value, source, ...(m.skillType ? { skillType: m.skillType } : {}), ...(m.onlyKinds ? { onlyKinds: m.onlyKinds } : {}) };
     return m.elements ? m.elements.map((element) => ({ ...base, element })) : [base];
   });
-  return { id: buff.id, owner: build.operator, target: buff.target, appliedAt: frame, expiresAt: frame + Math.round(seconds * FPS), modifiers };
+  return { id: buff.id, ...(buff.stackGroup ? { stackGroup: buff.stackGroup } : {}), owner: build.operator, target: buff.target, appliedAt: frame, expiresAt: frame + Math.round(seconds * FPS), modifiers };
 }
 
 /** Adds a buff, replacing an active instance of the same buff from the same owner. */
@@ -49,7 +50,21 @@ export function withBuff(buffs: readonly ActiveBuff[], b: ActiveBuff): ActiveBuf
   return [...buffs.filter((x) => !(x.id === b.id && x.owner === b.owner)), b];
 }
 
-/** The modifiers active buffs give an operator's hits at a frame. */
+/** The modifiers active buffs give an operator's hits at a frame; a stack group counts only its strongest modifier of each kind. */
 export function buffModifiers(buffs: readonly ActiveBuff[], operator: string, frame: number): Modifier[] {
-  return buffs.filter((b) => b.expiresAt > frame && b.appliedAt <= frame && (b.target !== "self" || b.owner === operator)).flatMap((b) => b.modifiers);
+  const out: Modifier[] = [];
+  const strongest = new Map<string, Modifier>();
+  for (const b of buffs) {
+    if (!(b.expiresAt > frame && b.appliedAt <= frame && (b.target !== "self" || b.owner === operator))) continue;
+    for (const m of b.modifiers) {
+      if (!b.stackGroup) {
+        out.push(m);
+        continue;
+      }
+      const k = JSON.stringify([b.stackGroup, m.zone, m.element ?? null, m.skillType ?? null, m.onlyKinds ?? null]);
+      const cur = strongest.get(k);
+      if (!cur || m.value > cur.value) strongest.set(k, m);
+    }
+  }
+  return [...out, ...strongest.values()];
 }

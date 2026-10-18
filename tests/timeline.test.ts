@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type GameData, type KitBuff, type OperatorKit, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { advance, apply, buffModifiers, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type GameData, type KitBuff, type OperatorKit, type RotationAction, type TimelineScenario } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -259,5 +259,25 @@ describe("timeline: ultimate energy and combo windows", () => {
     // Its hit grants 25 energy (one enemy), up to the cap (her ultimate's cost, 255 at P5).
     const landed = advance(ctx, cast, ctx.scenario.durationFrames);
     expect(landed.energy[op]).toBeCloseTo(Math.min(255.00000715255737, (cast.energy[op] ?? 0) + 25 * efficiency), 6);
+  });
+});
+
+describe("timeline: buffs that don't stack across operators", () => {
+  it("only the strongest instance of a priority-keyed game buff counts", () => {
+    const mk = (owner: string, value: number, stackGroup?: string) => ({
+      id: "s", owner, target: "enemy" as const, appliedAt: 0, expiresAt: 100,
+      modifiers: [{ zone: "susceptibility" as const, value, element: "fire" as const, source: owner }],
+      ...(stackGroup ? { stackGroup } : {}),
+    });
+    const grouped = buffModifiers([mk("a", 0.3, "g"), mk("b", 0.36, "g")], "a", 10);
+    expect(grouped.map((m) => m.value)).toEqual([0.36]);
+    const separate = buffModifiers([mk("a", 0.3), mk("b", 0.36)], "a", 10);
+    expect(separate.map((m) => m.value)).toEqual([0.3, 0.36]);
+  });
+
+  it("the loader takes the stack group from BuffData: Gilberta's Arts Susceptibility stacks (type 0), so it has none", () => {
+    const b = data.kits.operators["chr_0013_aglina"]?.buffs.find((x) => x.id === "arts_susceptibility");
+    expect(b).toBeDefined();
+    expect(b?.stackGroup).toBeUndefined();
   });
 });

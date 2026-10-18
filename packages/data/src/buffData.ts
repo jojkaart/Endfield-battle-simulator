@@ -14,7 +14,12 @@ export interface RawBuffFile {
   readonly id: string;
   readonly attributeModifiers: readonly { attr: number; slot: number; target: number; key: string | null; literal: number }[];
   readonly stacking: {
-    /** stackingSettings.stackingType; 1 = keyed by priority (only the strongest instance counts). */
+    /**
+     * stackingSettings.stackingType. 1: only the strongest instance counts
+     * ("effects of the same name don't stack"). A priority key alone doesn't
+     * mean that: `buff_common_affixes_vulnerable_crystal` (type 0, priority
+     * `rate`) from two sources adds up in btl_upload_b7b3762d5da8.
+     */
     readonly type: number;
     /** A literal maximum stack count, or null when none or set from a blackboard key. */
     readonly maxStacks: number | null;

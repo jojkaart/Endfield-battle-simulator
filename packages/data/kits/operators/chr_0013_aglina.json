@@ -16,70 +16,262 @@
       "id": "arts_susceptibility",
       "label": "Anomalous Gravity Field: Arts Susceptibility",
       "target": "enemy",
-      "duration": { "key": "duration", "skill": "chr_0013_aglina_ultimate_skill" },
+      "gameBuff": "buff_common_affixes_vulnerable_spell",
+      "duration": {
+        "key": "duration",
+        "skill": "chr_0013_aglina_ultimate_skill"
+      },
       "modifiers": [
-        { "zone": "susceptibility", "value": { "key": "spell_vulnerable_rate", "skill": "chr_0013_aglina_ultimate_skill" }, "elements": ["fire", "pulse", "cryst", "natural"] }
+        {
+          "zone": "susceptibility",
+          "value": {
+            "key": "spell_vulnerable_rate",
+            "skill": "chr_0013_aglina_ultimate_skill"
+          },
+          "elements": [
+            "fire",
+            "pulse",
+            "cryst",
+            "natural"
+          ]
+        }
       ],
       "note": "The ultimate spawns its field (SpawnAbilityEntity chr_0013_aglina_ultimate_skill_abilityrange, frame 60 with the hit, duration = the skill's `duration`, 5 s at every level); its aura gives enemies inside buff_chr_0013_aglina_ultimate_skill, which creates buff_chr_0013_aglina_ultimate_spell_vulnerable (VulnerableAction subType 1 → buff_common_affixes_vulnerable_spell: attributes 71–74, Heat/Electric/Cryo/Nature Susceptibility, priority-keyed by rate) for as long as the aura lasts. Its rate (BuffData ModifyDynamicBlackboard chain): FinalRate = spell_vulnerable_rate × (1 + n × spell_vulnerable_perstack), n = the target's Vulnerability stacks; with potential 2 (potential2 = 1) n is first raised by 1 if below 3 and then doubled (P2: \"double the Arts Susceptibility increase per Vulnerability stack ... treated as having 1 additional stack\"). Modelled: n = 0 without potential 2, i.e. spell_vulnerable_rate (Vulnerability comes from physical statuses, which aren't modelled). Checked against the logs: btl_upload_d9e59d0fb737 (P1, ultimate level 12) logs 0.30 = spell_vulnerable_rate; btl_upload_40d9a3c1da37 (P3, level 10, no Vulnerability source in that team) logs 0.36 = 0.30 × (1 + 2 × 0.1), the P2 formula with n = 0, which this kit can't express (needs a product of two skill values: rate × perstack × potential2; see the report); btl_upload_4e5e1390085e (P0, level 12) logs 0.36 = 0.30 × (1 + 2 × 0.1), consistent with n = 2 Vulnerability stacks (her combo's Lift at 55403 ms and Wulfa's combos at 55289 and 57521 ms came before; the log doesn't record Vulnerability), not verified. Duration: in 40d9 present on hits from the cast (12951 ms) to 18009 ms and gone at 18684 ms, consistent with 5 s plus time stopped during another ultimate's animation; in 4e5e and d9e5 other ultimates' animations and Liino's own Arts Susceptibility overlap the window. In the game the strongest Arts Susceptibility instance counts (priority key rate); the timeline sums kit buffs from different operators."
     }
   ],
   "comboTriggers": [
     {
-      "any": [{ "on": "reaction" }],
+      "any": [
+        {
+          "on": "reaction"
+        }
+      ],
       "note": "CharGrowthTable: \"COMBO TRIGGER: When an Arts Reaction is applied to an enemy.\" Any of the four reactions (Combustion, Electrification, Solidification, Corrosion), including forced ones; Arts Bursts (same element) and physical statuses don't count."
     }
   ],
   "skills": [
     {
-      "skillId": "chr_0013_aglina_attack1", "label": "Basic attack 1", "damageType": "basic", "durationFrames": 18,
-      "hits": [{ "id": "projhit", "scale": ["atk_scale"], "events": ["chr_0013_aglina_attack1_projhit"], "frames": [7] }]
-    },
-    {
-      "skillId": "chr_0013_aglina_attack2", "label": "Basic attack 2", "damageType": "basic", "durationFrames": 22,
-      "hits": [{ "id": "projhit", "scale": ["atk_scale"], "count": 2, "events": ["chr_0013_aglina_attack2_projhit"], "frames": [4, 8] }]
-    },
-    {
-      "skillId": "chr_0013_aglina_attack3", "label": "Basic attack 3", "damageType": "basic", "durationFrames": 23,
-      "hits": [{ "id": "projhit", "scale": ["atk_scale"], "count": 3, "events": ["chr_0013_aglina_attack3_projhit"], "frames": [7, 10, 14] }]
-    },
-    {
-      "skillId": "chr_0013_aglina_attack4", "label": "Basic attack 4 (final strike)", "damageType": "basic", "durationFrames": 40,
+      "skillId": "chr_0013_aglina_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "durationFrames": 18,
       "hits": [
-        { "id": "projhit", "label": "Final strike, centre orb", "scale": ["atk_scale"], "events": ["chr_0013_aglina_attack4_projhit"], "frames": [23] },
-        { "id": "projhit_2", "label": "Final strike, side orbs", "scale": ["atk_scale"], "count": 2, "events": ["chr_0013_aglina_attack4_projhit_2"], "frames": [25, 27] }
-      ]
-    },
-    {
-      "skillId": "chr_0013_aglina_normal_skill", "label": "Battle skill", "damageType": "battle", "durationFrames": 123,
-      "note": "btl_upload_4e5e1390085e (level 12, one cast): pulls 2777, 2777, 3611, 3611 are atk_scale_pull (0.55) ×1.0960 (the fixture's annotated ATK buff), the last two under the logged stagger ×1.3. The explosion 8972 is atk_scale_explosion (1.30) ×1.0960 ×1.0513: its own Nature infliction triggered Corrosion on the logged Heat infliction first (buff_common_natural_triggered at the same time), and Corrosion level 1's initial shred at her Arts Intensity 80.7 is 3.6 × 1.424 = 5.13 points, ×1.0513. So the infliction, and the reaction it causes, come before the hit's damage.",
-      "hits": [
-        { "id": "pull", "label": "Gravity pull", "scale": ["atk_scale_pull"], "count": 4, "events": ["chr_0013_aglina_normal_skill"], "frames": [29, 46, 62, 78] },
         {
-          "id": "explosion", "label": "Explosion", "scale": ["atk_scale_explosion"], "events": ["chr_0013_aglina_normal_skill"], "frames": [108],
-          "applies": [{ "kind": "infliction", "element": "natural" }]
+          "id": "projhit",
+          "scale": [
+            "atk_scale"
+          ],
+          "events": [
+            "chr_0013_aglina_attack1_projhit"
+          ],
+          "frames": [
+            7
+          ]
         }
       ]
     },
     {
-      "skillId": "chr_0013_aglina_combo_skill", "label": "Combo skill", "damageType": "combo", "durationFrames": 53,
-      "hits": [{
-        "id": "hit", "scale": ["atk_scale"], "events": ["chr_0013_aglina_combo_skill"], "frames": [48],
-        "energy": { "key": "usp" },
-        "note": "Ultimate energy: ObtainCostAction costType 0 `usp` (10 at every level) in the damage frame. Matches with the boundary buffs: the cast triggers her weapon's buff_wpn_funnel_0011_valid (logged as starting at the hit) before the damage. The physical hits logged at the same time (buff_physical_airborne: the Lift it applies; buff_equipsuit_physuit_01: a gear-set proc) aren't kit hits, and Lift isn't modelled."
-      }]
+      "skillId": "chr_0013_aglina_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "durationFrames": 22,
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": [
+            "atk_scale"
+          ],
+          "count": 2,
+          "events": [
+            "chr_0013_aglina_attack2_projhit"
+          ],
+          "frames": [
+            4,
+            8
+          ]
+        }
+      ]
     },
     {
-      "skillId": "chr_0013_aglina_ultimate_skill", "label": "Ultimate", "damageType": "ultimate", "durationFrames": 64,
-      "hits": [{
-        "id": "hit", "scale": ["atk_scale"], "events": ["chr_0013_aglina_ultimate_skill"], "frames": [60],
-        "applies": [{ "kind": "infliction", "element": "natural" }],
-        "buffs": [{ "buff": "arts_susceptibility" }],
-        "note": "Her own Arts Susceptibility (the aura's buff_common_affixes_vulnerable_spell, logged as starting at the hit) comes after the hit and doesn't count for it, so the kit applies it after the damage. btl_upload_4e5e1390085e: exact apart from the annotated +9.6% ATK. btl_upload_40d9a3c1da37: exactly ×1.2000, Link at 1 stack (annotated there): buff_common_affixes_combo_trigger from Camille's combo becomes, on her cast, buff_common_affixes_skillimbue_atk, a ComboCalcZone addition (imbue_scale; ×1.5 for battle-skill hits) for that cast's hits only, valued by stack count from the skill-setting key 连击增伤, which isn't in the fetched tables (Talos: ultimate +20/30/40/50%, battle skill +30/45/60/75%). btl_upload_d9e59d0fb737 needs ×1.2689 under Corrosion with no Link logged: Link ×1.2 and Corrosion level 2's initial shred (×1.0567 at Arcane's Arts Intensity 30) give 21651 against 21666, so it's unexplained."
-      }]
+      "skillId": "chr_0013_aglina_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "durationFrames": 23,
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": [
+            "atk_scale"
+          ],
+          "count": 3,
+          "events": [
+            "chr_0013_aglina_attack3_projhit"
+          ],
+          "frames": [
+            7,
+            10,
+            14
+          ]
+        }
+      ]
     },
     {
-      "skillId": "chr_0013_aglina_plunging_attack_end", "label": "Plunging attack", "damageType": "basic", "durationFrames": 20,
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "events": ["chr_0013_aglina_plunging_attack_end"], "frames": [0], "note": "Not yet checked against an in-game value (no logged plunging attack)." }]
+      "skillId": "chr_0013_aglina_attack4",
+      "label": "Basic attack 4 (final strike)",
+      "damageType": "basic",
+      "durationFrames": 40,
+      "hits": [
+        {
+          "id": "projhit",
+          "label": "Final strike, centre orb",
+          "scale": [
+            "atk_scale"
+          ],
+          "events": [
+            "chr_0013_aglina_attack4_projhit"
+          ],
+          "frames": [
+            23
+          ]
+        },
+        {
+          "id": "projhit_2",
+          "label": "Final strike, side orbs",
+          "scale": [
+            "atk_scale"
+          ],
+          "count": 2,
+          "events": [
+            "chr_0013_aglina_attack4_projhit_2"
+          ],
+          "frames": [
+            25,
+            27
+          ]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0013_aglina_normal_skill",
+      "label": "Battle skill",
+      "damageType": "battle",
+      "durationFrames": 123,
+      "note": "btl_upload_4e5e1390085e (level 12, one cast): pulls 2777, 2777, 3611, 3611 are atk_scale_pull (0.55) ×1.0960 (the fixture's annotated ATK buff), the last two under the logged stagger ×1.3. The explosion 8972 is atk_scale_explosion (1.30) ×1.0960 ×1.0513: its own Nature infliction triggered Corrosion on the logged Heat infliction first (buff_common_natural_triggered at the same time), and Corrosion level 1's initial shred at her Arts Intensity 80.7 is 3.6 × 1.424 = 5.13 points, ×1.0513. So the infliction, and the reaction it causes, come before the hit's damage.",
+      "hits": [
+        {
+          "id": "pull",
+          "label": "Gravity pull",
+          "scale": [
+            "atk_scale_pull"
+          ],
+          "count": 4,
+          "events": [
+            "chr_0013_aglina_normal_skill"
+          ],
+          "frames": [
+            29,
+            46,
+            62,
+            78
+          ]
+        },
+        {
+          "id": "explosion",
+          "label": "Explosion",
+          "scale": [
+            "atk_scale_explosion"
+          ],
+          "events": [
+            "chr_0013_aglina_normal_skill"
+          ],
+          "frames": [
+            108
+          ],
+          "applies": [
+            {
+              "kind": "infliction",
+              "element": "natural"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0013_aglina_combo_skill",
+      "label": "Combo skill",
+      "damageType": "combo",
+      "durationFrames": 53,
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "events": [
+            "chr_0013_aglina_combo_skill"
+          ],
+          "frames": [
+            48
+          ],
+          "energy": {
+            "key": "usp"
+          },
+          "note": "Ultimate energy: ObtainCostAction costType 0 `usp` (10 at every level) in the damage frame. Matches with the boundary buffs: the cast triggers her weapon's buff_wpn_funnel_0011_valid (logged as starting at the hit) before the damage. The physical hits logged at the same time (buff_physical_airborne: the Lift it applies; buff_equipsuit_physuit_01: a gear-set proc) aren't kit hits, and Lift isn't modelled."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0013_aglina_ultimate_skill",
+      "label": "Ultimate",
+      "damageType": "ultimate",
+      "durationFrames": 64,
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "events": [
+            "chr_0013_aglina_ultimate_skill"
+          ],
+          "frames": [
+            60
+          ],
+          "applies": [
+            {
+              "kind": "infliction",
+              "element": "natural"
+            }
+          ],
+          "buffs": [
+            {
+              "buff": "arts_susceptibility"
+            }
+          ],
+          "note": "Her own Arts Susceptibility (the aura's buff_common_affixes_vulnerable_spell, logged as starting at the hit) comes after the hit and doesn't count for it, so the kit applies it after the damage. btl_upload_4e5e1390085e: exact apart from the annotated +9.6% ATK. btl_upload_40d9a3c1da37: exactly ×1.2000, Link at 1 stack (annotated there): buff_common_affixes_combo_trigger from Camille's combo becomes, on her cast, buff_common_affixes_skillimbue_atk, a ComboCalcZone addition (imbue_scale; ×1.5 for battle-skill hits) for that cast's hits only, valued by stack count from the skill-setting key 连击增伤, which isn't in the fetched tables (Talos: ultimate +20/30/40/50%, battle skill +30/45/60/75%). btl_upload_d9e59d0fb737 needs ×1.2689 under Corrosion with no Link logged: Link ×1.2 and Corrosion level 2's initial shred (×1.0567 at Arcane's Arts Intensity 30) give 21651 against 21666, so it's unexplained."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0013_aglina_plunging_attack_end",
+      "label": "Plunging attack",
+      "damageType": "basic",
+      "durationFrames": 20,
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "events": [
+            "chr_0013_aglina_plunging_attack_end"
+          ],
+          "frames": [
+            0
+          ],
+          "note": "Not yet checked against an in-game value (no logged plunging attack)."
+        }
+      ]
     }
   ]
 }

@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
+import { isBuffFileListed, readBuffFile } from "./buffData.ts";
 import { ELEMENTS, type AttrType, type BuffApplication, type ComboTrigger, type Condition, type KitBuff, type ValueSpec, type HitApplication, type StackDef, type StackRequirement, type Element, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -26,7 +27,7 @@ interface RawKit {
   operator: string;
   element?: Element;
   stacks?: StackDef[];
-  buffs?: (KitBuff & { note?: string })[];
+  buffs?: (KitBuff & { note?: string; gameBuff?: string })[];
   comboTriggers?: (ComboTrigger & { note?: string })[];
   teamTriggers?: { on: "finalStrike"; applies: HitApplication[]; gains?: { stack: string; amount?: number | "consumedInflictions" }[] }[];
   skills: {
@@ -193,7 +194,13 @@ export function loadKits(data: KitData): Kits {
     operators[kit.operator] = {
       operator: kit.operator,
       stacks: (kit.stacks ?? []).map((x) => ({ id: x.id, label: x.label, max: x.max })),
-      buffs: (kit.buffs ?? []).map(({ note: _note, ...b }) => b),
+      buffs: (kit.buffs ?? []).map(({ note: _note, gameBuff, ...b }) => {
+        if (!gameBuff) return b;
+        if (!isBuffFileListed(gameBuff)) throw new Error(`kits/operators/${file}: buff ${b.id}: ${gameBuff} isn't covered by tables.json json.BuffData`);
+        const raw = readBuffFile(gameBuff);
+        if (!raw) throw new Error(`kits/operators/${file}: buff ${b.id}: no BuffData file ${gameBuff}`);
+        return raw.stacking.type === 1 ? { ...b, stackGroup: gameBuff } : b;
+      }),
       ...(kit.comboTriggers
         ? {
             comboTriggers: kit.comboTriggers.map(({ note: _note, ...t }) => {

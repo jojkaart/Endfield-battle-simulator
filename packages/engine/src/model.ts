@@ -252,6 +252,13 @@ export interface KitBuff {
   readonly target: "self" | "team" | "enemy";
   /** Seconds. */
   readonly duration: ValueSpec;
+  /**
+   * Instances in the same group don't add up, whoever applied them: only the
+   * strongest of each modifier counts. Set by the data loader from the game
+   * buff the kit buff stands for (BuffData stackingType 1, "effects of the
+   * same name don't stack"), e.g. Arts Susceptibility from two operators.
+   */
+  readonly stackGroup?: string;
   readonly modifiers: readonly KitBuffModifier[];
 }
 

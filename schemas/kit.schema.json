@@ -22,6 +22,7 @@
           "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
           "label": { "type": "string" },
           "target": { "enum": ["self", "team", "enemy"] },
+          "gameBuff": { "type": "string", "description": "The BuffData buff this stands for; when it is priority-keyed (stackingType 1), instances from different operators don't add up (only the strongest counts)." },
           "duration": { "$ref": "#/$defs/valueSpec", "description": "Seconds." },
           "modifiers": {
             "type": "array",
