@@ -314,6 +314,17 @@ stats (attribute types 64–69, 70–75, 62, 63), not zones.
 - **Corrosion** ‡: lowers resistance of all five elements (Physical
   included; extended at launch) by an initial 3.6 / 4.8 / 6 / 7.2 points,
   +0.84 / 1.12 / 1.4 / 1.68 per second, up to 12 / 16 / 20 / 24.
+- **Electrification** (checked against logs): Arts DMG Taken +12 / 16 / 20 / 24% (levels I–IV)
+  × (1 + 2·AI/(AI+300)), lasting 12 / 18 / 24 / 30 s (Talos). Verified on
+  ZMDLogs `vuln_taken` rates: Perlica's reaction Electrification
+  (`buff_common_pulse_cryst_triggered`, btl_upload_e82d45c46040) 0.39571 =
+  0.20 × 1.97855 at her panel AI 287.4 (level III); Liino's forced one
+  (`buff_common_pulse_pulse_conduct_triggered_do`, d9e59d0fb737) 0.12 at AI
+  0 (level I). Open: Perlica's forced one (btl_upload_b6082588d600) is
+  0.272665 = 0.1596 × 1.70843 at AI 164.55, i.e. level I × 1.33, probably a
+  talent or potential of hers; the reaction one is logged for element
+  "all", the forced one for the four arts elements (the engine applies it to
+  arts only, per Talos).
 - **Arts Intensity (AI)** has three curves:
   - reaction, burst and physical status damage: ×(1 + AI/100);
   - Breach, Electrification and Corrosion effect strength:

@@ -18,6 +18,13 @@ export const ZMDLOGS_ZONES: Readonly<Record<string, Zone>> = {
   arts_strength: "artsIntensity",
 };
 
+/**
+ * Zones that act on the target's side. A buff on an operator with one of
+ * these is about damage the operator takes (e.g. Endministrator's talent,
+ * `vuln_taken` on allies), so it doesn't change the operator's hits.
+ */
+const TARGET_SIDE_ZONES: ReadonlySet<Zone> = new Set(["susceptibility", "damageTaken", "multiplicative"]);
+
 export interface LogEffect {
   readonly buff: string;
   readonly zone: Zone;
@@ -170,11 +177,12 @@ export function zmdlogsToFixture(battleId: string, detail: unknown, exported: un
   const events = a(d["timelineEvents"], "timelineEvents").map((e) => o(e, "event"));
   const buffs = events.filter((e) => e["laneType"] === "buff");
   const effectsOf = (b: Json): LogEffect[] =>
-    a(b["effects"], "effects").map((x) => {
+    a(b["effects"], "effects").flatMap((x) => {
       const f = o(x, "effect");
       const zone = ZMDLOGS_ZONES[s(f["zone"], "zone")];
       if (!zone) throw new Error(`ZMDLogs: unknown zone ${String(f["zone"])} on ${String(b["eventKey"])}`);
-      return { buff: s(b["eventKey"], "eventKey").replace(/::.*$/, ""), zone, element: element(f["element"]), value: n(f["rate"], "rate") };
+      if (b["targetEnemyKey"] == null && TARGET_SIDE_ZONES.has(zone)) return [];
+      return [{ buff: s(b["eventKey"], "eventKey").replace(/::.*$/, ""), zone, element: element(f["element"]), value: n(f["rate"], "rate") }];
     });
 
   const hits: LogHit[] = [];
