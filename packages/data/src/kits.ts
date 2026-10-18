@@ -24,7 +24,7 @@ interface RawKit {
     skillId: string;
     label: string;
     damageType: "basic" | "battle" | "combo" | "ultimate";
-    hits: { id: string; label?: string; scale: string[]; count?: number; element?: Element }[];
+    hits: { id: string; label?: string; scale: string[]; count?: number; element?: Element; events?: string[] }[];
   }[];
   conditions?: RawCondition[];
 }
@@ -99,7 +99,8 @@ export function loadKits(data: KitData): Kits {
           for (const key of h.scale) checkKey(skill, key, `${where} hit ${h.id}`);
           const element = h.element ?? kit.element;
           if (!element || !ELEMENTS.includes(element)) throw new Error(`${where} hit ${h.id}: no element`);
-          return { id: h.id, label: h.label ?? s.label, scale: h.scale, count: h.count ?? 1, damageType: s.damageType, element };
+          const events = h.events ?? (s.hits.length === 1 ? [s.skillId] : []);
+          return { id: h.id, label: h.label ?? s.label, scale: h.scale, count: h.count ?? 1, damageType: s.damageType, element, events };
         }),
       };
     });

@@ -13,11 +13,11 @@ export interface RawSkillFile {
   readonly statModifiers: readonly { attr: number; slot: number; target: number; key: string | null; literal: number }[];
 }
 
-function globToRegExp(glob: string): RegExp {
+export function globToRegExp(glob: string): RegExp {
   return new RegExp("^" + glob.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*") + "$");
 }
 
-const ALLOWED = DATA_FILES.skillData.map(globToRegExp);
+const ALLOWED = DATA_FILES.json.SkillData.map(globToRegExp);
 
 export function isSkillFileListed(skillId: string): boolean {
   return ALLOWED.some((re) => re.test(skillId));
@@ -30,7 +30,7 @@ export function skillFilePath(skillId: string): string {
 /** Reads a skill file, or returns null when the game has none for this skill. */
 export function readSkillFile(skillId: string): RawSkillFile | null {
   if (!isSkillFileListed(skillId)) {
-    throw new Error(`skill file ${skillId} isn't covered by packages/data/tables.json skillData; add a pattern so it gets fetched`);
+    throw new Error(`skill file ${skillId} isn't covered by packages/data/tables.json json.SkillData; add a pattern so it gets fetched`);
   }
   const file = skillFilePath(skillId);
   if (!existsSync(file)) return null;

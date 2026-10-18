@@ -177,6 +177,8 @@ export interface KitHit {
   readonly scale: readonly string[];
   /** How many times the hit lands per use. */
   readonly count: number;
+  /** Event keys battle logs use for this hit (skill, projectile or ability-entity IDs). */
+  readonly events: readonly string[];
   /** Which skill-type damage bonus applies (enhanced basic attacks during an ultimate are still "basic"). */
   readonly damageType: SkillType;
   readonly element: Element;

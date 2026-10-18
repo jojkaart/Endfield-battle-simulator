@@ -1,5 +1,5 @@
 {
-  "$comment": "Game data the data layer reads. scripts/fetch-data.sh fetches only these; the loaders refuse anything else. `skillData` are file-name globs under rmxlinux's Json/SkillData (only rmxlinux has them).",
+  "$comment": "Game data the data layer reads. scripts/fetch-data.sh fetches only these; the loaders refuse anything else. `json` lists file-name globs per folder under rmxlinux's Json/ (only rmxlinux has these).",
   "tables": [
     "AttributeMetaTable",
     "BattleConst",
@@ -18,10 +18,34 @@
     "WeaponBasicTable",
     "WeaponUpgradeTemplateTable"
   ],
-  "skillData": [
-    "wpn_*",
-    "sk_wpn_*",
-    "passive_equipsuit_*",
-    "chr_0016_laevat*"
-  ]
+  "json": {
+    "SkillData": [
+      "wpn_*",
+      "sk_wpn_*",
+      "passive_equipsuit_*",
+      "chr_0016_laevat*",
+      "chr_0034_typhoea*",
+      "chr_0032_lizhiyan*",
+      "chr_0036_jsspsi*",
+      "chr_0013_aglina*",
+      "chr_0035_liino*",
+      "chr_0021_whiten*",
+      "chr_0033_camille*"
+    ],
+    "BuffData": [
+      "buff_wpn_*",
+      "buff_common_*",
+      "buff_equipsuit_*",
+      "buff_physical_*",
+      "buff_*potion*",
+      "buff_chr_0016_laevat*",
+      "buff_chr_0034_typhoea*",
+      "buff_chr_0032_lizhiyan*",
+      "buff_chr_0036_jsspsi*",
+      "buff_chr_0013_aglina*",
+      "buff_chr_0035_liino*",
+      "buff_chr_0021_whiten*",
+      "buff_chr_0033_camille*"
+    ]
+  }
 }

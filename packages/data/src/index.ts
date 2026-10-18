@@ -15,3 +15,5 @@ export * from "./tables/equip.ts";
 export * from "./tables/enemies.ts";
 export * from "./tables/attributeMeta.ts";
 export * from "./kits.ts";
+export * from "./buffData.ts";
+export * from "./zmdlogs.ts";

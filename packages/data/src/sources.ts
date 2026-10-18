@@ -40,7 +40,8 @@ export function sourceDir(source: SourceName): string {
  */
 export const DATA_FILES = JSON.parse(readFileSync(join(REPO_ROOT, "packages/data/tables.json"), "utf8")) as {
   readonly tables: readonly string[];
-  readonly skillData: readonly string[];
+  /** File-name globs per folder under rmxlinux's Json/. */
+  readonly json: Readonly<Record<"SkillData" | "BuffData", readonly string[]>>;
 };
 export const TABLES: readonly string[] = DATA_FILES.tables;
 

@@ -46,7 +46,7 @@ const build: Build = {
   weapon: { id: "wpn", level: 1, skillLevels: [1, 1, 1] }, gear: [],
 };
 const skill: KitSkill = { skillId: "op_skill", label: "Skill", hits: [] };
-const hit: KitHit = { id: "hit", label: "Hit", scale: ["atk_scale", "ratio"], count: 1, damageType: "battle", element: "fire" };
+const hit: KitHit = { id: "hit", label: "Hit", scale: ["atk_scale", "ratio"], count: 1, events: [], damageType: "battle", element: "fire" };
 const never: DamageOptions = { crit: "never", staggered: false, conditions: [] };
 
 function damage(data: GameData, options: DamageOptions = never) {

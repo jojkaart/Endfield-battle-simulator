@@ -33,6 +33,7 @@
                 "label": { "type": "string" },
                 "scale": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
                 "count": { "type": "integer", "minimum": 1 },
+                "events": { "type": "array", "items": { "type": "string" }, "description": "Event keys battle logs (ZMDLogs) use for this hit. Default: the skill ID, when the skill has a single hit entry." },
                 "element": { "$ref": "#/$defs/element" },
                 "note": { "type": "string" }
               }

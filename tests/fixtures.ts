@@ -44,7 +44,7 @@ export function loadFixtures(): { file: string; fixture: Fixture }[] {
   const validate = ajv.compile(schema("fixture.schema.json"));
   const dir = join(ROOT, "fixtures");
   return readdirSync(dir)
-    .filter((f) => f.endsWith(".json"))
+    .filter((f) => f.endsWith(".json") && !f.startsWith("zmdlogs-"))
     .sort()
     .map((file) => {
       const fixture: unknown = JSON.parse(readFileSync(join(dir, file), "utf8"));

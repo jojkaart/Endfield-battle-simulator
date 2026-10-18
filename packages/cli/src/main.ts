@@ -6,12 +6,17 @@ import { basename } from "node:path";
 import { loadGameData } from "@efsim/data";
 import type { CritMode } from "@efsim/engine";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "./commands.ts";
+import { checkLog, formatLogCheck } from "./logcheck.ts";
+import { importBattle, readLogFixture } from "./logs.ts";
 
 const USAGE = `Usage:
   efsim find <text>                       Look up operator, weapon, gear and enemy IDs by name
   efsim template <operator> [--weapon id] Print a build file to start from
   efsim calc <build.json> [options]       Stat panel and damage per hit
   efsim compare <a.json> <b.json> [opts]  Two builds of one operator side by side
+  efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
+                [--enemy-level n]         (default: inferred from total damage on a clear)
+  efsim zmdlogs check <fixture.json>      Predict every logged hit and compare
 
 Options for calc and compare:
   --enemy <id>        Target (default eny_0051_rodin, Rhodagn)
@@ -22,7 +27,7 @@ Options for calc and compare:
   --verbose           Every stat contribution and the zones of a hit
 `;
 
-function main(argv: string[]): number {
+async function main(argv: string[]): Promise<number> {
   const { values, positionals } = parseArgs({
     args: argv,
     allowPositionals: true,
@@ -33,6 +38,7 @@ function main(argv: string[]): number {
       staggered: { type: "boolean", default: false },
       condition: { type: "string", multiple: true, default: [] },
       weapon: { type: "string" },
+      "enemy-level": { type: "string" },
       verbose: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
     },
@@ -72,6 +78,18 @@ function main(argv: string[]): number {
       need(1);
       text = calc(data, readBuild(args[0] as string), options);
       break;
+    case "zmdlogs": {
+      const [sub, arg] = args;
+      if (args.length !== 2 || !arg || (sub !== "import" && sub !== "check")) throw new Error(`zmdlogs takes import <battle id> or check <file>\n\n${USAGE}`);
+      if (sub === "check") {
+        const fx = readLogFixture(arg);
+        text = formatLogCheck(data, fx, checkLog(data, fx));
+      } else {
+        const file = await importBattle(data, arg, values["enemy-level"] === undefined ? undefined : Number(values["enemy-level"]));
+        text = `wrote ${file}`;
+      }
+      break;
+    }
     case "compare":
       need(2);
       text = compare(data, readBuild(args[0] as string), readBuild(args[1] as string), options, [basename(args[0] as string), basename(args[1] as string)]);
@@ -83,9 +101,12 @@ function main(argv: string[]): number {
   return 0;
 }
 
-try {
-  process.exitCode = main(process.argv.slice(2));
-} catch (error) {
-  process.stderr.write(`efsim: ${error instanceof Error ? error.message : String(error)}\n`);
-  process.exitCode = 1;
-}
+main(process.argv.slice(2)).then(
+  (code) => {
+    process.exitCode = code;
+  },
+  (error: unknown) => {
+    process.stderr.write(`efsim: ${error instanceof Error ? error.message : String(error)}\n`);
+    process.exitCode = 1;
+  },
+);

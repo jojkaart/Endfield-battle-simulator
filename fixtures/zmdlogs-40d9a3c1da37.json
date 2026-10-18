@@ -1,0 +1,4759 @@
+{
+ "$schema": "../schemas/log-fixture.schema.json",
+ "id": "zmdlogs-40d9a3c1da37",
+ "description": "ZMDLogs battle btl_upload_40d9a3c1da37 vs eny_0051_rodin: chr_0016_laevat, chr_0036_jsspsi, chr_0013_aglina, chr_0033_camille; per-hit damage with the logged buff effects.",
+ "provenance": {
+  "source": "ZMDLogs (zmdlogs.com) battle log, captured in game by its client",
+  "url": "https://zmdlogs.com/battles/btl_upload_40d9a3c1da37",
+  "battleId": "btl_upload_40d9a3c1da37",
+  "parserVersion": "raw-log-parser-v59",
+  "inGame": true,
+  "measured": "2026-10-16T18:33:22+08:00",
+  "verifiedAgainst": {
+   "rmxlinux": "8b955ea78c6f04b6e5164b75f63f46b503c5f6f2",
+   "555me": "2737bc099e4848517eed01a19614ef88932c18a0"
+  },
+  "notes": [
+   "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
+   "Enemy level 90 is assumed, not logged."
+  ]
+ },
+ "enemy": {
+  "id": "eny_0051_rodin",
+  "level": 90
+ },
+ "team": [
+  {
+   "operator": "chr_0016_laevat",
+   "level": 90,
+   "promotion": 4,
+   "potential": 5,
+   "skillLevels": {
+    "basic": 12,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_sword_0006",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     9
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_fire_natr01_hand_02",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_parts_wuling02_body_04",
+     "artifice": [
+      3,
+      3,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_heal01_edc_03",
+     "artifice": [
+      0,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_heal01_edc_03",
+     "artifice": [
+      0,
+      3,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0036_jsspsi",
+   "level": 90,
+   "promotion": 4,
+   "potential": 5,
+   "skillLevels": {
+    "basic": 12,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_claym_0018",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     8
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_atk02_hand_03",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atk02_body_05",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atk02_edc_06",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_heal01_edc_03",
+     "artifice": [
+      0,
+      3,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0013_aglina",
+   "level": 90,
+   "promotion": 4,
+   "potential": 3,
+   "skillLevels": {
+    "basic": 1,
+    "battle": 9,
+    "combo": 12,
+    "ultimate": 10
+   },
+   "weapon": {
+    "id": "wpn_funnel_0005",
+    "level": 90,
+    "skillLevels": [
+     4,
+     5,
+     9
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_phy01_hand_02",
+     "artifice": [
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_phy01_body_01",
+     "artifice": [
+      0,
+      0,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_phy01_edc_01",
+     "artifice": [
+      0,
+      3,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_parts_wuling01_edc_03",
+     "artifice": [
+      0,
+      3,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0033_camille",
+   "level": 90,
+   "promotion": 4,
+   "potential": 3,
+   "skillLevels": {
+    "basic": 12,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_lance_0015",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     4
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_atb01_hand_03",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atb01_body_05",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atb01_edc_04",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_parts_wuling01_edc_03",
+     "artifice": [
+      3,
+      3,
+      0
+     ]
+    }
+   ]
+  }
+ ],
+ "hits": [
+  {
+   "t": 5493,
+   "operator": "chr_0013_aglina",
+   "event": "chr_0013_aglina_attack1_projhit",
+   "value": 469,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 6565,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_normal_skill_abilityrange_1",
+   "value": 5847,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    }
+   ]
+  },
+  {
+   "t": 6657,
+   "operator": "chr_0016_laevat",
+   "event": "chr_0016_laevat_ult_attack3",
+   "value": 70982,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_sword_0006_valid",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 2.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 6751,
+   "operator": "chr_0013_aglina",
+   "event": "chr_0013_aglina_attack2_projhit",
+   "value": 332,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    }
+   ]
+  },
+  {
+   "t": 6751,
+   "operator": "chr_0033_camille",
+   "event": "chr_0033_camille_normal_skill_abilityrange_first",
+   "value": 10485,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    }
+   ]
+  },
+  {
+   "t": 6845,
+   "operator": "chr_0013_aglina",
+   "event": "chr_0013_aglina_attack2_projhit",
+   "value": 498,
+   "crit": true,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 7550,
+   "operator": "chr_0016_laevat",
+   "event": "buff_common_fire_fire_triggered",
+   "value": 28161,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_sword_0006_valid",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 2.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 7550,
+   "operator": "chr_0013_aglina",
+   "event": "chr_0013_aglina_attack3_projhit",
+   "value": 258,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 7663,
+   "operator": "chr_0033_camille",
+   "event": "buff_common_fire_fire_triggered",
+   "value": 12197,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 7663,
+   "operator": "chr_0013_aglina",
+   "event": "chr_0013_aglina_attack3_projhit",
+   "value": 388,
+   "crit": true,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 7663,
+   "operator": "chr_0016_laevat",
+   "event": "chr_0016_laevat_ult_attack4",
+   "value": 71347,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_sword_0006_valid",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 2.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 7738,
+   "operator": "chr_0013_aglina",
+   "event": "chr_0013_aglina_attack3_projhit",
+   "value": 258,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 7738,
+   "operator": "chr_0016_laevat",
+   "event": "chr_0016_laevat_ult_attack4",
+   "value": 71347,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_sword_0006_valid",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 2.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 8462,
+   "operator": "chr_0033_camille",
+   "event": "chr_0033_camille_combo_skill",
+   "value": 4089,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 8664,
+   "operator": "chr_0033_camille",
+   "event": "chr_0033_camille_combo_skill",
+   "value": 4089,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 9053,
+   "operator": "chr_0016_laevat",
+   "event": "chr_0016_laevat_ult_attack1",
+   "value": 45687,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_sword_0006_valid",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 2.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 9147,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_attack1",
+   "value": 1587,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 9240,
+   "operator": "chr_0033_camille",
+   "event": "chr_0033_camille_combo_skill",
+   "value": 14557,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.04
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.04
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    }
+   ]
+  },
+  {
+   "t": 9334,
+   "operator": "chr_0013_aglina",
+   "event": "chr_0013_aglina_attack4_projhit",
+   "value": 388,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 9334,
+   "operator": "chr_0013_aglina",
+   "event": "chr_0013_aglina_attack4_projhit_2",
+   "value": 388,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 9334,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_attack1",
+   "value": 1857,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 10999,
+   "operator": "chr_0013_aglina",
+   "event": "chr_0013_aglina_attack4_projhit_2",
+   "value": 388,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 11110,
+   "operator": "chr_0016_laevat",
+   "event": "chr_0016_laevat_ult_attack2",
+   "value": 35342,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_sword_0006_valid",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 2.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 12951,
+   "operator": "chr_0033_camille",
+   "event": "buff_chr_0033_camille_normal_skill_delay_damage",
+   "value": 7566,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.04
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.04
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    }
+   ]
+  },
+  {
+   "t": 12951,
+   "operator": "chr_0013_aglina",
+   "event": "chr_0013_aglina_ultimate_skill",
+   "value": 24116,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    }
+   ]
+  },
+  {
+   "t": 13137,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 8424,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ]
+  },
+  {
+   "t": 13917,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 21320,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ]
+  },
+  {
+   "t": 13917,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 21320,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ]
+  },
+  {
+   "t": 13917,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 21320,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ]
+  },
+  {
+   "t": 13917,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 21320,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ]
+  },
+  {
+   "t": 13917,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 9209,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ]
+  },
+  {
+   "t": 13917,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 9209,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ]
+  },
+  {
+   "t": 13917,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 9209,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ]
+  },
+  {
+   "t": 13917,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 9209,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ]
+  },
+  {
+   "t": 13917,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 9209,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ]
+  },
+  {
+   "t": 13917,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 9209,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ]
+  },
+  {
+   "t": 13917,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 9209,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ]
+  },
+  {
+   "t": 13917,
+   "operator": "chr_0016_laevat",
+   "event": "chr_0016_laevat_ult_attack2",
+   "value": 66876,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_sword_0006_valid",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 2.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 14010,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 21320,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 14104,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 21320,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 14197,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 21320,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 14327,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 21320,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 14327,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 41440,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 14441,
+   "operator": "chr_0016_laevat",
+   "event": "buff_common_fire_natural_triggered",
+   "value": 69275,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_sword_0006_valid",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 2.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 14441,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 21320,
+   "crit": null,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 14441,
+   "operator": "chr_0016_laevat",
+   "event": "chr_0016_laevat_ult_attack3",
+   "value": 191075,
+   "crit": null,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_sword_0006_valid",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 2.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 14533,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 21320,
+   "crit": null,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 14737,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 599622,
+   "crit": null,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 15957,
+   "operator": "chr_0016_laevat",
+   "event": "buff_common_burning_status",
+   "value": 10391,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_sword_0006_valid",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 2.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 16627,
+   "operator": "chr_0016_laevat",
+   "event": "chr_0016_laevat_ult_attack1",
+   "value": 107296,
+   "crit": null,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_sword_0006_valid",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 2.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 16833,
+   "operator": "chr_0016_laevat",
+   "event": "buff_common_burning_status",
+   "value": 10391,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_sword_0006_valid",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 2.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 17128,
+   "operator": "chr_0016_laevat",
+   "event": "chr_0016_laevat_ult_attack2",
+   "value": 66876,
+   "crit": null,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_sword_0006_valid",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 2.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 17523,
+   "operator": "chr_0016_laevat",
+   "event": "chr_0016_laevat_ult_attack2",
+   "value": 100315,
+   "crit": null,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_sword_0006_valid",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 2.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 17708,
+   "operator": "chr_0016_laevat",
+   "event": "buff_common_burning_status",
+   "value": 10391,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_sword_0006_valid",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 2.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 18009,
+   "operator": "chr_0016_laevat",
+   "event": "chr_0016_laevat_ult_attack3",
+   "value": 191075,
+   "crit": null,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_sword_0006_valid",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 2.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "pulse",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_spell",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 18684,
+   "operator": "chr_0016_laevat",
+   "event": "buff_common_burning_status",
+   "value": 7864,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_sword_0006_valid",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 2.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": []
+  },
+  {
+   "t": 18836,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_normal_skill_inkmove_2",
+   "value": 121312,
+   "uncapped": 432652,
+   "crit": false,
+   "element": null,
+   "effects": [
+    {
+     "buff": "buff_common_atk_buff_potion_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.293469
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_lance_0015_dmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.096
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_fire",
+     "zone": "susceptibility",
+     "element": "fire",
+     "value": 0.12
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_chr_0033_camille_talent1_atkup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.01
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_lance_0015_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.096
+    },
+    {
+     "buff": "buff_wpn_funnel_0005_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.224
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "boundaryEffects": []
+  }
+ ]
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jojkaart/Endfield-battle-simulator/schemas/log-fixture.schema.json",
+  "title": "Log fixture",
+  "description": "A battle log reduced to what tests need: each operator's build and each damage hit with the buff effects the log says were active (packages/data/src/zmdlogs.ts). No player names or account IDs.",
+  "type": "object",
+  "required": ["id", "description", "provenance", "enemy", "team", "hits"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^zmdlogs-[a-z0-9]+$" },
+    "description": { "type": "string" },
+    "provenance": {
+      "type": "object",
+      "required": ["source", "url", "battleId", "parserVersion", "inGame", "measured", "verifiedAgainst", "notes"],
+      "additionalProperties": false,
+      "properties": {
+        "source": { "type": "string" },
+        "url": { "type": "string" },
+        "battleId": { "type": "string" },
+        "parserVersion": { "type": "string" },
+        "inGame": { "const": true },
+        "measured": { "type": "string" },
+        "verifiedAgainst": { "type": "object", "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{40}$" } },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "enemy": {
+      "type": "object",
+      "required": ["id", "level"],
+      "additionalProperties": false,
+      "properties": { "id": { "type": "string" }, "level": { "type": "integer", "minimum": 1 } }
+    },
+    "team": { "type": "array", "items": { "$ref": "build.schema.json" }, "minItems": 1, "maxItems": 4 },
+    "hits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["t", "operator", "event", "value", "crit", "element", "effects", "boundaryEffects"],
+        "additionalProperties": false,
+        "properties": {
+          "t": { "type": "number", "description": "Milliseconds from the battle timer's start." },
+          "operator": { "type": "string" },
+          "event": { "type": "string" },
+          "value": { "type": "number" },
+          "uncapped": { "type": "number" },
+          "crit": { "type": ["boolean", "null"] },
+          "element": { "type": ["string", "null"] },
+          "effects": { "$ref": "#/$defs/effects" },
+          "boundaryEffects": { "$ref": "#/$defs/effects" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "effects": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["buff", "zone", "element", "value"],
+        "additionalProperties": false,
+        "properties": {
+          "buff": { "type": "string" },
+          "zone": { "enum": ["atk", "damageBonus", "amp", "susceptibility", "damageTaken", "multiplicative", "ignoreResistance"] },
+          "element": { "type": ["string", "null"] },
+          "value": { "type": "number" }
+        }
+      }
+    }
+  }
+}

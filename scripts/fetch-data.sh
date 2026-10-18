@@ -9,19 +9,20 @@ root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
 
 tables=$(node -e 'console.log(require("./packages/data/tables.json").tables.join(" "))')
-skilldata=$(node -e 'console.log(require("./packages/data/tables.json").skillData.join(" "))')
+# "Folder/glob" pairs under rmxlinux's Json/.
+jsonfiles=$(node -e 'const j=require("./packages/data/tables.json").json; console.log(Object.entries(j).flatMap(([d,gs])=>gs.map(g=>d+"/"+g)).join(" "))')
 
 fetch() {
-  local path="$1" tabledir="$2" skilldir="${3:-}"
+  local path="$1" tabledir="$2" jsondir="${3:-}"
   local url sha
   url=$(git config -f .gitmodules "submodule.$path.url")
   sha=$(git ls-tree HEAD "$path" | awk '{print $3}')
   local patterns=()
   for t in $tables; do patterns+=("/$tabledir/$t.json"); done
   local globs=()
-  if [ -n "$skilldir" ]; then
+  if [ -n "$jsondir" ]; then
     set -f
-    for g in $skilldata; do globs+=("/$skilldir/$g.json"); done
+    for g in $jsonfiles; do globs+=("/$jsondir/$g.json"); done
     set +f
   fi
 
@@ -40,7 +41,7 @@ fetch() {
     fi
   fi
 
-  echo "$path: fetching ${#patterns[@]} tables and ${#globs[@]} skill file patterns at $sha"
+  echo "$path: fetching ${#patterns[@]} tables and ${#globs[@]} file patterns at $sha"
   rm -rf "$path"
   mkdir -p "$path"
   git -C "$path" init -q
@@ -50,5 +51,5 @@ fetch() {
   git -C "$path" checkout -q FETCH_HEAD
 }
 
-fetch data/rmxlinux-EndfieldData TableCfg Json/SkillData
+fetch data/rmxlinux-EndfieldData TableCfg Json
 fetch data/555me-beyondGameData tableCfg
