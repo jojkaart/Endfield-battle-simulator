@@ -204,7 +204,9 @@ member's kit `triggers` on them, in team order. A trigger names the event
 (`on`, with filters), whose events count (`by`: self, teammate, anyone, the
 controlled operator), an `if` Predicate judged for its owner, a cooldown and
 a count limit, and actions (`do`): open the combo window, apply to the
-enemy, gain stacks, energy, SP, apply or end a buff, change a cooldown.
+enemy, gain stacks, energy, SP, apply, extend or end a buff, change a
+cooldown, heal, land hits. Heals are events without amounts (who healed
+whom, when), and periodic buffs tick (`buffTick`) for triggers.
 What the actions cause are events too, run in the same chain (a loop in the
 kit data is an error). Combo windows and team effects such as Laevatain's
 Heat absorption on the controlled operator's Final Strikes are triggers;

@@ -184,5 +184,9 @@ Then re-analysis of all seven.
   filters; stack groups from BuffData `stackingKey` (also in the log
   checker); timed Arts Intensity in status strength. B2 (pausing a buff's
   timer) is still open.
-- Still to do in this pass: heal events and the healed operator as a buff
-  target (T1/T2, Liino G5), B2.
+- Heal events (hits' `heals`, a `heal` action; `on: heal` with
+  `toOthers`), a buff for the event's subject only (`to: eventSubject`:
+  the healed teammate), periodic buff ticks (`every`, a `buffTick` event),
+  and `extendBuff` (B2: a state a skill pauses is extended by the pause).
+  The triggers, conditions and buff-lifecycle families are done; the energy
+  block following a buff (B2's second half) belongs to the skills family.

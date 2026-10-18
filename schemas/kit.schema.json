@@ -138,6 +138,14 @@
             },
             "minItems": 1,
             "description": "The next cast of these kinds by someone it reaches consumes it; it then acts on that cast's hits only (Link, Jade Vessel's combo bonus)."
+          },
+          "every": {
+            "$ref": "#/$defs/valueExpr",
+            "description": "Periodic: a buffTick event every this many seconds while active, for triggers."
+          },
+          "tickOnApply": {
+            "type": "boolean",
+            "description": "The first tick comes when it's applied (default: one interval later)."
           }
         }
       }
@@ -334,12 +342,29 @@
                   "event": {
                     "enum": [
                       "buffApplied",
-                      "buffEnded"
+                      "buffEnded",
+                      "buffTick"
                     ]
                   },
                   "buff": {
                     "type": "string",
                     "description": "One of the kit's own buffs."
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "event"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
+                    "const": "heal"
+                  },
+                  "toOthers": {
+                    "type": "boolean",
+                    "description": "Only heals of someone other than the healer."
                   }
                 }
               }
@@ -514,6 +539,10 @@
                     "if": {
                       "$ref": "#/$defs/predicate",
                       "description": "This action only in this situation (judged for the owner when it runs)."
+                    },
+                    "to": {
+                      "const": "eventSubject",
+                      "description": "A team buff for the event's subject only: the healed operator of a heal, else the operator who caused the event."
                     }
                   }
                 },
@@ -610,6 +639,56 @@
                         "$ref": "#/$defs/hit"
                       },
                       "description": "Landed as the trigger's owner, at frames counted from the event; scale keys name the trigger's skill."
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "buff",
+                    "seconds"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "extendBuff"
+                    },
+                    "buff": {
+                      "type": "string"
+                    },
+                    "seconds": {
+                      "$ref": "#/$defs/valueExpr",
+                      "description": "Added to the remaining time of every active layer (a state a skill pauses)."
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "target"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "heal"
+                    },
+                    "target": {
+                      "enum": [
+                        "self",
+                        "controlled",
+                        "team",
+                        "eventOperator"
+                      ]
                     },
                     "if": {
                       "$ref": "#/$defs/predicate",
@@ -1638,6 +1717,14 @@
             }
           ],
           "description": "Triggered hits only (required there): which skill-type DMG bonus applies; none for no skill type. A skill's hits take the skill's."
+        },
+        "heals": {
+          "enum": [
+            "self",
+            "controlled",
+            "team"
+          ],
+          "description": "Whom the hit heals: an event for heal triggers (amounts aren't modelled)."
         }
       }
     }

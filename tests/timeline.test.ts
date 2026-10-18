@@ -467,6 +467,38 @@ describe("timeline: buff lifecycle", () => {
     expect(firstOf(r, g) - firstOf(base, g)).toBeCloseTo(0.1, 9);
   });
 
+  it("periodic ticks drive heals, and a heal trigger buffs the healed teammate only (Liino's weapon pattern)", () => {
+    const g = "chr_0013_aglina";
+    const fx = JSON.parse(readFileSync(new URL("../fixtures/zmdlogs-40d9a3c1da37.json", import.meta.url), "utf8")) as { team: Build[] };
+    const team = fx.team.filter((b) => b.operator === op || b.operator === g);
+    const aura: KitBuff = { id: "aura", label: "aura", target: "self", duration: 3.5, every: 1, tickOnApply: true, modifiers: [] };
+    const boost = amp("boost", { target: "team", maxStacks: 4 });
+    const d = withKit(
+      [
+        onBattle([{ kind: "buff", buff: "aura" }]),
+        { id: "tick", on: { event: "buffTick", buff: "aura" }, by: "self", do: [{ kind: "heal", target: "team" }] },
+        { id: "healed", on: { event: "heal", toOthers: true }, by: "self", do: [{ kind: "buff", buff: "boost", to: "eventSubject" }] },
+      ],
+      [aura, boost],
+    );
+    const rot = [skill("normal_skill"), { operator: g, skill: "chr_0013_aglina_normal_skill", at: 30 * 4 }];
+    const sc = { ...scenario(rot), team };
+    const [r, base] = [simulate(d, sc), simulate(data, sc)];
+    const firstOf = (x: typeof r, who: string) => x.hits.find((h) => h.operator === who && !h.skillId.startsWith("reaction"))?.zones.amp ?? NaN;
+    // Ticks at 0, 1, 2 and 3 s heal the team; each heal of Gilberta gives her a layer: 4 layers by 4 s.
+    expect(firstOf(r, g) - firstOf(base, g)).toBeCloseTo(0.4, 9);
+    expect(r.hits.filter((h) => h.operator === op).map((h) => h.zones.amp)).toEqual(base.hits.filter((h) => h.operator === op).map((h) => h.zones.amp));
+  });
+
+  it("extendBuff adds to a buff's remaining time", () => {
+    const short = amp("short", { duration: 2 });
+    const rot = [skill("normal_skill"), { ...skill("normal_skill"), at: 30 * 4 }];
+    const plain2 = ampOf(simulate(data, scenario(rot)), "explosion");
+    const extra = (d: KitTrigger["do"]) => ampOf(simulate(withKit([{ id: "t", on: { event: "cast", kinds: ["battle"] }, by: "self", maxCount: 1, do: d }], [short]), scenario(rot)), "explosion").map((a, i) => a > (plain2[i] ?? Infinity));
+    expect(extra([{ kind: "buff", buff: "short" }])).toEqual([true, false]);
+    expect(extra([{ kind: "buff", buff: "short" }, { kind: "extendBuff", buff: "short", seconds: 3 }])).toEqual([true, true]);
+  });
+
   it("an attribute buff that doesn't act on hits is read where the game reads it: Ultimate Gain Efficiency", () => {
     const uge: KitBuff = { id: "uge", label: "uge", target: "self", duration: 20, modifiers: [{ attr: 44, value: 0.5 }] };
     const d = withKit([{ id: "t", on: { event: "cast", kinds: ["basic"] }, by: "self", do: [{ kind: "buff", buff: "uge" }] }], [uge]);

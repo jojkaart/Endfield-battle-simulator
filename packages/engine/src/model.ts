@@ -4,7 +4,7 @@
 import type { AttrType, Element, SkillType } from "./attributes.ts";
 import type { HitKind, Zone } from "./effects.ts";
 import type { ArtsElement } from "./reactions.ts";
-import type { KitTrigger } from "./events.ts";
+import type { HealTarget, KitTrigger } from "./events.ts";
 import type { Predicate, ValueExpr } from "./expr.ts";
 import type { HitApplication } from "./status.ts";
 
@@ -231,6 +231,8 @@ export interface KitHit {
   readonly buffs?: readonly BuffApplication[];
   /** Ultimate energy the operator gains when the hit lands (SkillData ObtainCostAction, e.g. a combo's `usp`), after its own effects. */
   readonly energy?: ValueExpr;
+  /** Whom the hit heals (an event for heal triggers; amounts aren't modelled). */
+  readonly heals?: Exclude<HealTarget, "eventOperator">;
 }
 
 /** An application to the enemy's arts state that can depend on the situation (judged when it happens, after earlier ones). */
@@ -275,6 +277,10 @@ export interface KitBuff {
    * on no others.
    */
   readonly consumedBy?: readonly SkillType[];
+  /** Periodic: a `buffTick` event every this many seconds while active (Liino's soundwave every 3 s), for triggers. */
+  readonly every?: ValueExpr;
+  /** The first tick comes when it's applied (default: one interval later). */
+  readonly tickOnApply?: boolean;
   /**
    * Instances in the same group don't add up, whoever applied them: only the
    * strongest of each modifier counts. Set by the data loader from the game

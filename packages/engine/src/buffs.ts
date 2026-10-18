@@ -33,6 +33,9 @@ export interface ActiveBuff {
   readonly consumedBy?: readonly SkillType[];
   /** Consumed by a cast: acts only on that cast's hits (the index of the cast in the timeline). */
   readonly cast?: number;
+  /** Periodic: frames between ticks (KitBuff.every), and the next tick's frame. */
+  readonly every?: number;
+  readonly nextTick?: number;
 }
 
 /** A kit value for the applier, with `skillId` as the skill a plain key names. */
@@ -67,6 +70,8 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
     if (m.elements) for (const element of m.elements) modifiers.push({ ...base, element });
     else modifiers.push(base);
   }
+  const every = buff.every === undefined ? undefined : Math.round(resolveValue(data, build, panel, skillId, buff.every, situation) * FPS);
+  if (every !== undefined && !(every > 0)) throw new EngineError(`${build.operator} buff ${buff.id}: ticks every ${every} frames`);
   const maxLayers = buff.maxStacks === undefined ? undefined : Math.round(resolveValue(data, build, panel, skillId, buff.maxStacks, situation));
   return {
     id: buff.id,
@@ -80,6 +85,7 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
     ...(recipients ? { recipients } : {}),
     ...(maxLayers !== undefined ? { maxLayers } : {}),
     ...(buff.consumedBy ? { consumedBy: buff.consumedBy } : {}),
+    ...(every !== undefined ? { every, nextTick: frame + (buff.tickOnApply ? 0 : every) } : {}),
   };
 }
 
@@ -102,6 +108,17 @@ export function endBuff(buffs: readonly ActiveBuff[], id: string, owner: string,
   const active = buffs.filter((x) => x.id === id && x.owner === owner && x.cast === undefined && x.appliedAt <= frame && x.expiresAt > frame).sort((x, y) => x.appliedAt - y.appliedAt);
   const gone = new Set(layers === undefined ? active : active.slice(0, layers));
   return { buffs: buffs.filter((x) => !gone.has(x)), ended: gone.size > 0 };
+}
+
+/** Adds `frames` to the remaining time of an owner's active buff (every layer). Returns null when it isn't active. */
+export function extendBuff(buffs: readonly ActiveBuff[], id: string, owner: string, frame: number, frames: number): ActiveBuff[] | null {
+  let found = false;
+  const out = buffs.map((x) => {
+    if (x.id !== id || x.owner !== owner || x.cast !== undefined || !(x.appliedAt <= frame && x.expiresAt > frame)) return x;
+    found = true;
+    return { ...x, expiresAt: Math.max(frame + 1, x.expiresAt + frames) };
+  });
+  return found ? out : null;
 }
 
 /** Whether a buff reaches an operator: self buffs their owner, team buffs their recipients (everyone without a filter), enemy debuffs every hit on the enemy. */

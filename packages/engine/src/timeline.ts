@@ -32,7 +32,7 @@ import type { GameData, KitBuff, KitHit, KitSkill, OperatorKit, StackGain } from
 import { effectiveKit } from "./triggers.ts";
 import { causeMatches, eventMatches, triggerSkillId, type BattleEvent, type KitTrigger } from "./events.ts";
 import { evaluate, test, type EvalContext } from "./expr.ts";
-import { applyBuff, buffAttr, buffModifiers, endBuff, reaches, resolveValue, withBuff, type ActiveBuff } from "./buffs.ts";
+import { applyBuff, buffAttr, buffModifiers, endBuff, extendBuff, reaches, resolveValue, withBuff, type ActiveBuff } from "./buffs.ts";
 import { computeStats, skillLevel, skillParam, type StatPanel } from "./stats.ts";
 import { Attr } from "./attributes.ts";
 import { applyToEnemy, expireStatus, nextTick, NO_STATUS, statusModifiers, tickStatus, type EnemyStatus, type StatusEvent } from "./status.ts";
@@ -318,18 +318,26 @@ function artsIntensity(ctx: TimelineContext, st: TimelineState, operator: string
   return zoneSum(mods, "artsIntensity", { element: "physical", skillType: null, staggered: false });
 }
 
+/** Heal events from a healer: to itself, the controlled operator, the team, or named operators. */
+function healEvents(ctx: TimelineContext, st: TimelineState, healer: string, target: "self" | "controlled" | "team" | readonly string[], frame: number): BattleEvent[] {
+  const targets = target === "self" ? [healer] : target === "controlled" ? [st.controlled] : target === "team" ? ctx.scenario.team.map((b) => b.operator) : target;
+  return targets.map((t) => ({ type: "heal", frame, operator: healer, target: t }));
+}
+
 /**
  * Applies one of an owner's kit buffs (values for `skillId`); a filtered
  * team buff reaches the members its `recipients` holds for. Returns the
  * state and whether it was applied (a 0 s buff isn't).
  */
-function addBuff(ctx: TimelineContext, st: TimelineState, owner: string, skillId: string, def: KitBuff, frame: number, situation: Situation): { state: TimelineState; applied: boolean } {
+function addBuff(ctx: TimelineContext, st: TimelineState, owner: string, skillId: string, def: KitBuff, frame: number, situation: Situation, only?: readonly string[]): { state: TimelineState; applied: boolean } {
   const build = ctx.builds.get(owner) as Build;
   const panel = ctx.panels.get(owner) as StatPanel;
-  let recipients: string[] | undefined;
+  let recipients: readonly string[] | undefined = only;
+  if (only && def.target !== "team") throw new EngineError(`${owner} buff ${def.id}: only a team buff can go to one operator`);
   if (def.recipients && def.target === "team") {
     const filter = def.recipients;
     recipients = ctx.scenario.team
+      .filter((m) => !only || only.includes(m.operator))
       .filter((m) => decide(filter, evalContext(ctx.data, m, ctx.panels.get(m.operator) as StatPanel, skillId, { ...situationAt(ctx, m.operator, st, frame), owner })))
       .map((m) => m.operator);
   }
@@ -473,11 +481,20 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
       case "buff": {
         const def = ctx.kits.get(owner)?.buffs.find((x) => x.id === a.buff);
         if (!def) throw new EngineError(`${owner} has no buff ${a.buff}`);
-        const r = addBuff(ctx, st, owner, triggerSkillId(owner, t), def, frame, triggerSituation(ctx, owner, st, e, consumed));
+        const subject = a.to === "eventSubject" ? [e.type === "heal" ? e.target : e.operator] : undefined;
+        const r = addBuff(ctx, st, owner, triggerSkillId(owner, t), def, frame, triggerSituation(ctx, owner, st, e, consumed), subject);
         st = r.state;
         if (r.applied) events.push({ type: "buffApplied", frame, operator: owner, buff: a.buff });
         break;
       }
+      case "extendBuff": {
+        const buffs = extendBuff(st.buffs, a.buff, owner, frame, Math.round(evaluate(a.seconds, ec()) * FPS));
+        if (buffs) st = { ...st, buffs };
+        break;
+      }
+      case "heal":
+        events.push(...healEvents(ctx, st, owner, a.target === "eventOperator" ? [e.operator] : a.target, frame));
+        break;
       case "endBuff": {
         const r = endBuff(st.buffs, a.buff, owner, frame, a.layers);
         if (r.ended) {
@@ -511,6 +528,16 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
     }
   }
   return { state: st, events };
+}
+
+/** The earliest periodic tick of an active buff at or before `frame` (one that ends at that frame doesn't tick). */
+function nextBuffTick(buffs: readonly ActiveBuff[], frame: number): { b: ActiveBuff; frame: number } | null {
+  let next: { b: ActiveBuff; frame: number } | null = null;
+  for (const b of buffs) {
+    const t = b.nextTick;
+    if (t !== undefined && t <= frame && t < b.expiresAt && (next === null || t < next.frame)) next = { b, frame: t };
+  }
+  return next;
 }
 
 /** Earliest frame at or before `frame` when an active buff ends, or null. */
@@ -596,7 +623,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     type: "hit", frame: hit.frame, operator: hit.operator, skillId: hit.skillId, kind,
     element: kitHit.reaction?.element ?? kitHit.element, finalStrike: kitHit.finalStrike ?? false, controlled: st.controlled === hit.operator,
   };
-  const all: BattleEvent[] = [hitEvent, ...asEvents(statusEvents), ...events, ...(kitHit.gains?.length ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator }] : [])];
+  const all: BattleEvent[] = [hitEvent, ...asEvents(statusEvents), ...events, ...(kitHit.heals ? healEvents(ctx, st, hit.operator, kitHit.heals, hit.frame) : []), ...(kitHit.gains?.length ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator }] : [])];
   return runTriggers(ctx, st, all, { operator: hit.operator, kind });
 }
 
@@ -611,19 +638,31 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
     const tick = nextTick(st.enemy);
     const expiry = nextExpiry(st.buffs, frame);
     const tickDue = tick !== null && tick <= frame ? tick : null;
-    // Ticks of a status already on the enemy, then buffs ending, come before a hit at the same frame.
-    if (tickDue !== null && (expiry === null || tickDue <= expiry) && (!hit || tickDue <= hit.frame)) {
+    const buffTick = nextBuffTick(st.buffs, frame);
+    // At one frame: ticks of a status already on the enemy, then buffs ending, then buffs' periodic ticks, then hits.
+    const first = (x: number | null, ...later: (number | null)[]) => x !== null && later.every((y) => y === null || x <= y);
+    const hitFrame = hit ? hit.frame : null;
+    if (first(tickDue, expiry, buffTick?.frame ?? null, hitFrame)) {
+      const tickFrame = tickDue as number;
       const before = st.enemy;
-      const t = tickStatus(st.enemy, tickDue);
+      const t = tickStatus(st.enemy, tickFrame);
       st = recordStatus(ctx, { ...st, enemy: t.state }, t.events, before);
       st = runTriggers(ctx, st, asEvents(t.events), null);
       continue;
     }
-    if (expiry !== null && (!hit || expiry <= hit.frame)) {
+    if (first(expiry, buffTick?.frame ?? null, hitFrame)) {
+      const at = expiry as number;
       // A buff a cast consumed already ended when it was consumed.
-      const ended = st.buffs.filter((b) => b.expiresAt === expiry && b.cast === undefined);
-      st = { ...st, buffs: st.buffs.filter((b) => b.expiresAt !== expiry) };
-      st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: expiry, operator: b.owner, buff: b.id })), null);
+      const ended = st.buffs.filter((b) => b.expiresAt === at && b.cast === undefined);
+      st = { ...st, buffs: st.buffs.filter((b) => b.expiresAt !== at) };
+      st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: at, operator: b.owner, buff: b.id })), null);
+      continue;
+    }
+    if (buffTick && first(buffTick.frame, hitFrame)) {
+      const { b, frame: at } = buffTick;
+      const every = b.every as number;
+      st = { ...st, buffs: st.buffs.map((x) => (x === b ? { ...b, nextTick: at + every } : x)) };
+      st = runTriggers(ctx, st, [{ type: "buffTick", frame: at, operator: b.owner, buff: b.id }], null);
       continue;
     }
     if (!hit) break;

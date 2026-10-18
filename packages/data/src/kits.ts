@@ -159,7 +159,7 @@ function kitChecker(scope: KitScope) {
     for (const id of refs.buffs) if (!buffDefs.has(id)) throw new Error(`${where}: unknown buff ${id}`);
   };
   const checkBuff = (b: KitBuff, skillId: string, where: string) => {
-    for (const v of [b.duration, b.maxStacks, ...b.modifiers.map((m) => m.value)]) if (v !== undefined) checkValue(v, skillId, `${where}: buff ${b.id}`);
+    for (const v of [b.duration, b.maxStacks, b.every, ...b.modifiers.map((m) => m.value)]) if (v !== undefined) checkValue(v, skillId, `${where}: buff ${b.id}`);
     for (const m of b.modifiers) if ((m.zone === undefined) === (m.attr === undefined)) throw new Error(`${where}: buff ${b.id}: each modifier has a zone or an attribute`);
     if (b.recipients && b.target !== "team") throw new Error(`${where}: buff ${b.id}: only team buffs have recipients`);
     // Recipient filters judge the recipient; its own stacks and buffs aren't the kit's, so they aren't checked here.
@@ -227,7 +227,7 @@ function kitChecker(scope: KitScope) {
     const skillId = triggerSkillId(scope.owner, t);
     if (t.skill && !scope.isSource(t.skill)) throw new Error(`${where}: ${t.skill} isn't one of ${scope.owner}'s value sources`);
     if (t.on.event === "stackAtLeast" && !stackIds.has(t.on.stack)) throw new Error(`${where}: unknown stack ${t.on.stack}`);
-    if ((t.on.event === "buffApplied" || t.on.event === "buffEnded") && !buffDefs.has(t.on.buff)) throw new Error(`${where}: unknown buff ${t.on.buff}`);
+    if ((t.on.event === "buffApplied" || t.on.event === "buffEnded" || t.on.event === "buffTick") && !buffDefs.has(t.on.buff)) throw new Error(`${where}: unknown buff ${t.on.buff}`);
     if (t.if) checkPredicate(t.if, where);
     if (t.cooldown !== undefined) checkValue(t.cooldown, skillId, `${where} cooldown`);
     for (const a of t.do) {
@@ -249,8 +249,15 @@ function kitChecker(scope: KitScope) {
           const b = buffDefs.get(a.buff);
           if (!b) throw new Error(`${where}: unknown buff ${a.buff}`);
           if (a.kind === "buff") checkBuff(b, skillId, where);
+          if (a.kind === "buff" && a.to && b.target !== "team") throw new Error(`${where}: buff ${a.buff} goes to the event's subject, so it must target the team`);
           break;
         }
+        case "extendBuff":
+          if (!buffDefs.has(a.buff)) throw new Error(`${where}: unknown buff ${a.buff}`);
+          checkValue(a.seconds, skillId, `${where} extendBuff`);
+          break;
+        case "heal":
+          break;
         case "cooldown":
           checkValue(a.seconds, skillId, `${where} cooldown change`);
           break;

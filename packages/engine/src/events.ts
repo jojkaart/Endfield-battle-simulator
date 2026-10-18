@@ -29,6 +29,10 @@ export type BattleEvent =
   | { readonly type: "status"; readonly frame: number; readonly operator: string; readonly event: StatusEvent }
   | { readonly type: "buffApplied"; readonly frame: number; readonly operator: string; readonly buff: string }
   | { readonly type: "buffEnded"; readonly frame: number; readonly operator: string; readonly buff: string }
+  /** A periodic tick of one of the operator's kit buffs (KitBuff.every). */
+  | { readonly type: "buffTick"; readonly frame: number; readonly operator: string; readonly buff: string }
+  /** `operator` healed `target` (no amounts: what matters is who, and when). */
+  | { readonly type: "heal"; readonly frame: number; readonly operator: string; readonly target: string }
   /** An operator's own stacks changed. */
   | { readonly type: "stacks"; readonly frame: number; readonly operator: string };
 
@@ -43,8 +47,10 @@ export type TriggerOn =
   /** An infliction is applied without a reaction, leaving at least `minStacks`. */
   | { readonly event: "inflictionApplied"; readonly elements?: readonly ArtsElement[]; readonly minStacks?: number }
   | { readonly event: "burst"; readonly elements?: readonly ArtsElement[] }
-  /** One of the trigger owner's own kit buffs is applied or ends. */
-  | { readonly event: "buffApplied" | "buffEnded"; readonly buff: string }
+  /** One of the trigger owner's own kit buffs is applied, ends, or ticks (KitBuff.every). */
+  | { readonly event: "buffApplied" | "buffEnded" | "buffTick"; readonly buff: string }
+  /** Someone (`by`) heals someone; `toOthers`: only heals of someone other than the healer. */
+  | { readonly event: "heal"; readonly toOthers?: boolean }
   /** The owner's own stack reaches a count. */
   | { readonly event: "stackAtLeast"; readonly stack: string; readonly atLeast: number };
 
@@ -60,14 +66,25 @@ export type TriggerActionKind =
   | { readonly kind: "energy"; readonly value: ValueExpr }
   /** Return SP to the team (returned SP: it gives no ultimate energy when spent). */
   | { readonly kind: "sp"; readonly value: ValueExpr }
-  /** Apply one of the owner's kit buffs. */
-  | { readonly kind: "buff"; readonly buff: string }
+  /**
+   * Apply one of the owner's kit buffs; `to: "eventSubject"` gives a team
+   * buff to the event's subject only (the healed operator of a heal, else
+   * the operator who caused the event).
+   */
+  | { readonly kind: "buff"; readonly buff: string; readonly to?: "eventSubject" }
+  /** Add seconds to the remaining time of one of the owner's active kit buffs (all its layers), e.g. a state a skill pauses. */
+  | { readonly kind: "extendBuff"; readonly buff: string; readonly seconds: ValueExpr }
+  /** Heal (an event for heal triggers; amounts aren't modelled). */
+  | { readonly kind: "heal"; readonly target: HealTarget }
   /** End one of the owner's kit buffs: all of it, or its oldest `layers`. */
   | { readonly kind: "endBuff"; readonly buff: string; readonly layers?: number }
   /** Change the remaining cooldown of an operator's skills of a kind by `seconds` (negative cuts it). */
   | { readonly kind: "cooldown"; readonly who: "self" | "eventOperator" | { readonly slot: number }; readonly skills: SkillType; readonly seconds: ValueExpr }
   /** Land hits, as the owner, at frames counted from the event (values from the trigger's `skill`); each names its damage type. */
   | { readonly kind: "hits"; readonly hits: readonly KitHit[] };
+
+/** Whom a heal reaches: the healer, the controlled operator, the whole team, or the operator who caused the event. */
+export type HealTarget = "self" | "controlled" | "team" | "eventOperator";
 
 export interface KitTrigger {
   /** Unique within its kit. */
@@ -101,7 +118,10 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
       return e.type === "cast" && has(on.kinds, e.kind);
     case "buffApplied":
     case "buffEnded":
+    case "buffTick":
       return e.type === on.event && e.operator === owner && e.buff === on.buff;
+    case "heal":
+      return e.type === "heal" && (!on.toOthers || e.target !== e.operator);
     case "stackAtLeast":
       return e.type === "stacks" && e.operator === owner && (ownStacks[on.stack] ?? 0) >= on.atLeast;
   }
@@ -121,9 +141,10 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
 
 /** Whether the event's cause counts for a trigger (`by`). Stack and own-buff events are the owner's. */
 export function causeMatches(by: KitTrigger["by"], e: BattleEvent, owner: string): boolean {
-  if (e.type === "stacks" || e.type === "buffApplied" || e.type === "buffEnded") return true;
+  if (e.type === "stacks" || e.type === "buffApplied" || e.type === "buffEnded" || e.type === "buffTick") return true;
   if (by === "anyone") return true;
   if (by === "self") return e.operator === owner;
   if (by === "teammate") return e.operator !== owner;
-  return e.type === "hit" || e.type === "cast" ? e.controlled : false;
+  if (e.type === "hit" || e.type === "cast") return e.controlled;
+  return false;
 }
