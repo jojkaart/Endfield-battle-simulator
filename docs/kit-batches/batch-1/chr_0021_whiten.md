@@ -375,3 +375,315 @@ unknown 1 (row 31), n/a 1 (row 22).
    buff timers pause during the ultimate (G8).
 5. Existing test 11 (combo on a non-Solidified target) still applies;
    now it would confirm row 10's second hit rather than a missing one.
+
+## Re-analysis (pass 2, 2026-10-18)
+
+Against the engine and kit format after batch 1's implementation pass
+(batch-1.md "Progress": T1–T3, C1–C2, B1–B6, V1–V5, S1–S7, A1–A5, P1, P2,
+control statuses, Ti1 part, Ti4, L1, D1). Evidence used: `schemas/kit.schema.json`
+and `equipment-kit.schema.json`; engine `timeline.ts` (`landHit`, `castSkill`,
+`actionGate`), `status.ts` (physical statuses, Shatter), `events.ts`, `expr.ts`,
+`stats.ts` (`StatPanel.sources`); loader `kits.ts` (value sources);
+`efsim kit-draft chr_0021_whiten` (v2) and `compileSkill` on each of her
+skills; `packages/data/test/skillCompile.test.ts` (`KNOWN` has **no Estella
+entry**: her kit's frames, energy and inflictions agree with the compiled
+data); `efsim zmdlogs check fixtures/zmdlogs-4e5e1390085e.json` today:
+41 hits, **21 match, 0 mismatch**, 12 under unmodelled effects (the ×1.08
+after 49.4 s), 8 not covered (Valiant ×5, set ×3), 83% of her damage covered.
+
+Round-1 claims re-checked against the data in this pass: combo poise unit on
+all three DamageActions (`poise` 10 at L12), attack4's poise unit with
+`onlyEnableForMainChar` (`poise` 17), battle-skill projhit and ultimate
+poise units (`poise` 10 / 20), attack1–3 and the dive without poise units;
+`atb` is 0 on attack1–3 and the dive, 19 on attack4; P5's attached
+blackboard is only `usp` 5 (`cd` 1 is in `buff_chr_0021_whiten_potential_5_inaura`'s
+BuffData); talent 1's attached buff `buff_chr_0021_whiten_talent_0` carries
+`atb` 7.5 / 15 (BuffData default 5), its trigger is abilityEvent 102 (the
+owner applies a buff) with the Shatter tag −615023885; P5's is abilityEvent 9
+on the enemy (a buff added, any source) with the Solidified tag 1535684437;
+Valiant's `passiveEventActions` abilityEvent 402 → one DamageAction
+(`atk_scale`, damageType 0, mask 0, `inheritFirstDamageMask`, no poise
+unit, no cooldown). The ultimate's `UltimateTimeAction` spans frames 0–54
+unconditionally, the combo's `TimeDilationAction` (ComboSkill) 0–18: both
+are now read by the loader (`timing.slowdowns`). All **confirmed**.
+
+### 1. First-round rows against the current engine
+
+| Row | First round | Now | How (fields), or what's still missing |
+|---|---|---|---|
+| 3 | Final Strike stagger, poise per hit: gap (G9) | **supported** | `poise` on hits (P2): attack4 `poise: "poise", poiseControlledOnly: true`; combo, battle projhit, ultimate `poise: "poise"`. Lift's own stagger (10 × (1 + AI/200)) is the engine's. Kit-draft doesn't emit poise (R6) |
+| 4 | Finisher: gap (G9) | **supported** | `skillSpecification` 8 in the data → castable only on a Staggered enemy, once per stagger, × the enemy's finisher multiplier (attribute 27), finisher SP added at the cast (`finisherSp`). Kit: one hit `atk_scale` at 30. Not log-verified (no committed fixture with her finisher) |
+| 5 | Dive only in the air: gap (G10) | **gap** (R5) | `available` exists, but no predicate or state for "airborne after `plunging_attack_start`" (not one of her SkillTable skills, so a kit can't cast it) |
+| 7 | Battle-skill Cryo infliction from SpellInfliction: data (G11) | **supported** | D1 compiles it (draft has `applies: [{kind: infliction, element: cryst}]`); the D1 test checks the kit against it |
+| 8 | Projectile travel: gap | **gap** (R3) | Ti2 not done; the hit stays at the launch frame 21 |
+| 10 | Two combo variants: supported, kit stale | **supported, kit must change** | two hits with `if: {enemyStatus: solidification}` / `{not: …}`; listed **non-Solidified first** (R1). Shatter now consumes Solidification, so a teammate's physical status before her combo correctly gives the `atk_scale` variant |
+| 11 | Combo Physical Susceptibility | supported | kit buff, `beforeDamage: true`; optionally `gameBuff: buff_common_affixes_vulnerable_physical` like Gilberta's `vulnerable_spell` (stackingType 0: no stack group). Additivity with another source: still open (Gilberta's question too) |
+| 12 | Forced Lift (G1) | **supported** | `applies: [{kind: physicalStatus, status: lift, forced: true}]` on both combo hits: Lift hit (1.2 × ATK × level × AI), +1 Vulnerable, `physicalStatus` event. Order in `landHit`: applications, then `beforeDamage` buffs, the hit's damage, then the status hits (`recordStatus`), so Lift and Shatter are under her own Susceptibility as in the log (7174, 29524 ms). Log check: the 5 Lift hits match |
+| 13 | Shatter (G2) | **supported** | engine `status.ts`: a physical status (or new Vulnerable stack) on a Solidified enemy ends it and deals 2.4 / 3.6 / 4.8 / 6 by level; `shatter` event with the applier as operator. Log check: 3 Shatter hits match (levels I and II) |
+| 15 | Time dilation and time stop (G8) | **supported (data)** | Ti1: the loader reads `UltimateTimeAction` (54 frames) and the combo's global `TimeDilationAction` (ComboSkill curve, 11.8 frames lost); nothing in the kit. Hit-stop isn't modelled (R4) |
+| 16 | P1 +3 s: supported, kit stale | **supported, kit must change** | `duration: {sum: ["duration", {product: ["has_potential1", "rate_plus"]}]}`: 6 s below P1 (`has_potential1` 0 × `rate_plus` −0.1 = 0), 9 s from P1 |
+| 18 | Ultimate Lift on Physically Susceptible enemies (G3) | **supported** | `if` per application (C1) + `enemyModifier` (C2): `{kind: physicalStatus, status: lift, forced: true, if: {enemyModifier: {zone: susceptibility, element: physical}}}`; judged before the hit's own effects; any source's buff counts (all-element too). Shatters if the enemy is also Solidified. Log: both ultimates' Lifts match |
+| 21 | Talent 1 SP after Shatter (G4, G5, G6) | **supported, one hole** | stack `commiseration` (max 1) gained by a trigger on `shatter` `by: self`; the projhit's `sp` reads it (`{if: {stack…}, then: {key: atb, skill: buff_chr_0021_whiten_talent_0}, else: 0}`); a trigger on her `hit` of kind battle uses it up (−1). Hole: nothing gates the shatter trigger on talent 1 being learned, and at talent level 0 the value source is absent, so the read throws (R2) |
+| 22 | Talent 2 (defensive) | n/a | unchanged |
+| 26 | P5 energy on any Solidification, 1 s (G7) | **supported** (unknown stays) | trigger `on: {event: reaction, statuses: [solidification]}, by: anyone, if: {potentialAtLeast: 5}, cooldown: 1, skill: buff_chr_0021_whiten_potential_5, do: [{kind: energy, value: usp}]`. Reaction events include forced Solidifications and re-applications. `cd` is a literal (R6). Whose Solidifications count in game: test 1 |
+| 29 | Valiant's triggered hit (G1, G4/G12, G6) | **supported** | equipment kit `wpn_lance_0010`: trigger `on: {event: physicalStatus}, by: self, skill: sk_wpn_lance_0010` → `hits` action (`atk_scale`, physical, `damageType: none`). The engine emits `physicalStatus` for Lift / Knock Down / Crush / Breach, not for Shatter or a Vulnerable-only application, which fits the log (one hit per Lift, none extra per Shatter) |
+| 30 | Valiant's log key (G13) | **supported** | the hit's `events: ["chr_0015_lifeng_ultimate_skill", "sk_wpn_lance_0010"]` (L1: aliases are kit `events`) |
+| 31 | Valiant's skill-type bonus | unknown | `damageType: none` (mask 0) until test 3 settles `inheritFirstDamageMask` |
+
+Found in this pass (not in round 1):
+
+| # | Finding (source) | Status | What to do |
+|---|---|---|---|
+| 33 | Team energy of the battle skill comes at the projectile's hit: `buff_common_obtain_ultimate_sp` is created in `chr_0021_whiten_normal_skill_projhit` (frame 21) on the first-target branch (`EntityBB_first_hit = 0`) | supported (kit error) | `teamEnergyFrame: 21` (V5). Today the team gets it at the cast, 0.7 s early. The compiler leaves the first-hit branch undecided, so the D1 test reads "data 0" and will need a KNOWN line or a compiler fix (R6) |
+| 34 | Kit-draft gives `element: cryst` (CharacterTable) and no per-hit `element`, though only the projhit has damageType 4; everything else is 0 (physical) | data | keep the kit's `element: physical` and the projhit's `element: cryst` (R6) |
+| 35 | Draft marks the projhit `detached: true` | kit choice | leave it out: with no travel time the landing frame is the launch frame, and a `detached` hit survives an interrupt before frame 21, when in game the projectile was never launched (her combo and ultimate outrank the battle skill and may cut it at any frame) |
+| 36 | Basic attacks' SP: compiled `atb` "only if controlled" on attack1–4 and the dive | supported | engine default (`atb` on the first hit); only attack4's 19 is non-zero; basic attacks need control anyway |
+| 37 | `durationFrames` in the kit | redundant | `actionGate` takes timing from SkillData (`timing`); drop the field |
+| 38 | Her Susceptibility's lifetime in the log: present 7174–17282, gone by 17398–17589 ms (10.1–10.4 s, her own 1.8 s ultimate inside it, plus teammates' combos); 29524–39250, gone by 39556 (9.7–10.0 s, combos only); 54882–69142 and on (≥ 5.3 s over 9 s: Gilberta's 1.73 s and her own 1.78 s stops plus combos). The engine adds every time stop to every buff, so it predicts ≥ 10.8 s for the first window | unknown | the windows don't fit one rule (the first says her own ultimate didn't extend her debuff by the full 1.8 s, the third needs it). The log's own clock is real time (no hits 10418–12219 ms during her stop). In-game test 4 |
+
+### 2. Remaining gaps
+
+**Open: 6** (R1–R6). Everything else from round 1 can be expressed now.
+
+#### R1. Alternatives judged one after another
+
+- **family:** conditions
+- **feature:** two hits with opposite `if`s at the same frame (the format's
+  way of writing an IfElse branch, kit-abstractions §2) are judged one at a
+  time as each lands, after the earlier one's effects. If the
+  Solidified hit lands first, its Lift shatters the enemy, and then the
+  non-Solidified hit's `if` is true too: both land. Either the engine
+  judges a cast's same-frame alternatives together (e.g. an `else` hit or a
+  shared `branch` id: one situation for the group, judged before any of
+  them acts), or the loader enforces an order and a test pins it.
+- **evidence:** `landHit` returns early on `kitHit.if` and otherwise applies
+  `applies` before the next pending hit; pending hits at one frame land in
+  kit order (`castSkill` pushes `skill.hits` in order). Data: one
+  `IfElseAction` on tag 1535684437 per target in `chr_0021_whiten_combo_skill`.
+- **impact:** with the non-Solidified hit listed first (the kit plan) none.
+  In the other order, every combo on a Solidified enemy also deals 3.6 ×
+  ATK, a second Lift (2.9), a second Valiant hit (2.4) and a second `usp`
+  10: about +60% on the combo. Any kit whose branch changes its own
+  condition (consuming an infliction, a stack) has the same trap.
+
+#### R2. Talent level in predicates
+
+- **family:** conditions (with values)
+- **feature:** a Predicate `{talentAtLeast: [index, level]}` (talent index
+  0-based as in `Build.talents`, judged from the build), so triggers and
+  values from a talent's attached buff can be gated. Today a value
+  `{key, skill: <talent buff>}` throws when the build has that talent at
+  level 0 (`StatPanel.sources` lacks it), and nothing stops the trigger
+  that leads to it.
+- **evidence:** `computeStats` skips level-0 talents; `skillValue` throws
+  "isn't one of …'s skills, nor a … source of this build". Talent 1:
+  `chr_0021_whiten_passive_skill_0_1/_2` attach `buff_chr_0021_whiten_talent_0`.
+  Shared: any talent trigger (Laevatain's, Gilberta's and Arcane's talents
+  today use legacy `conditions` with `source.kind: talent`).
+- **impact:** only builds with talent 1 unlearned: the simulation stops
+  with an error at her first battle skill after a Shatter. No damage
+  error otherwise.
+
+#### R3. Projectile travel (Ti2) and "detached" before launch
+
+- **family:** timing
+- **feature:** a hit's launch frame and landing frame separately (travel
+  from the projectile's speed and distance, or a measured delay), with
+  `detached` meaning "survives an interrupt after launch" only.
+- **evidence:** `LaunchProjectile@21` → `projectile_chr_0021_whiten_normal_skill`
+  (its speed isn't in the fetched tables); engine note "Projectile hits land
+  at their launch frame".
+- **impact:** her battle skill's damage, Cryo infliction, the Solidification
+  it causes (and so her combo window, P5 energy and talent 1's SP) come a
+  little early; size unknown (a few frames at close range). Low.
+
+#### R4. Hit-stop, and what a time stop freezes
+
+- **family:** timing (Ti1 remainder)
+- **feature:** attacker hit-stop (`HitStopAction`, mostly under
+  `CheckMainCharacterCondition`), and whether a caster's own buffs and
+  debuffs are frozen by its own ultimate's time stop (row 38).
+- **evidence:** HitStop 0.08 / 0.16 / 0.06 + 0.15 / 0.38 s on attack1–4,
+  0.3 / 0.4 s on the combo, 0.05 s on the projhit, 0.4 s on the finisher.
+  The logs' basic-chain spacing (attack3→4 27–28 frames against a window
+  at 28) leaves no room for attack3's 0.21 s of hit-stop, so it doesn't
+  seem to delay the next action. Row 38 for the time stop.
+- **impact:** hit-stop: probably none on her timing (the log says so for
+  attack3). Time stop: her Physical Susceptibility (+15% Physical for the
+  whole team) may last up to 1.8 s too long after each of her own
+  ultimates; small.
+
+#### R5. Mid-air availability
+
+- **family:** skills (states)
+- **feature:** a state "in the air" (after a jump or
+  `plunging_attack_start`) that `available` can test, or a way to make
+  the dive castable only after a jump action. `plunging_attack_start`
+  has a SkillData file but isn't in SkillTable, so a kit can't list it.
+- **evidence:** `chr_0021_whiten_plunging_attack_end` `canCastInAir`,
+  `skillSpecification` 6; every operator has the same pair.
+- **impact:** low: search skips non-chain basic skills; a hand-written
+  rotation can cast the dive (1.8 × ATK) from the ground with no jump time.
+
+#### R6. Data compilation still missing for her kit (D1 remainder)
+
+- **family:** data compilation
+- **feature:** kit-draft / the compiler should also emit: the hit `element`
+  from `damageUnits[].damageType` (0 physical, 4 cryst), not the
+  operator's element as the kit default; `poise` from damage units of
+  `damageAttributeType` 1 (with `poiseControlledOnly` from
+  `onlyEnableForMainChar`); `AirborneAction forceAirborne` as
+  `physicalStatus lift forced`; `CheckTagMatch` on known tags as
+  predicates (1535684437 → `enemyStatus: solidification`, 1066759270 →
+  `enemyModifier susceptibility physical`); enemy buffs a skill creates
+  (`VulnerableAction` subType 2 → a `susceptibility` buff with its
+  `rate` / `duration`, P1's `ModifyDynamicBlackboard` as a `sum`);
+  DamageScaleProcessor `dmg_up` as `bonuses`; the first-target branch
+  (`EntityBB_first_hit`) decided for one enemy, as `CheckEntityNum` is;
+  BuffData values of buffs that talents and potentials attach (P5's `cd`).
+  The D1 test should compare physical statuses and poise too (today
+  `kitAppText` ignores them).
+- **evidence:** `efsim kit-draft chr_0021_whiten`: `element: cryst`, no
+  `poise`, no Lift, no `if`s (three combo hits from the IfElse paths, the
+  P1 path split into two), no buff, projhit split by `$EntityBB_first_hit`,
+  team energy reported as conditional.
+- **impact:** none on numbers once the kit hand-writes them (the kit plan
+  does); without it the draft is wrong for 8 of her 9 skills' element, and
+  the D1 test can't check Lifts, poise or `teamEnergyFrame`.
+
+**Found on the way, not needed by her kit (for the merge):** a trigger
+action delayed from a cast (`delay`, S1's way of writing a skill's
+timeline effects) isn't cancelled when its cast is interrupted
+(`castSkill` filters `pending` hits, not `pendingActions`). Her talent 1 SP
+would hit this if written as a cast trigger with `delay: 21`, so the plan
+puts it on the projhit instead.
+
+### 3. Kit plan
+
+**Operator kit `chr_0021_whiten`.** Default `element: physical`. Values at
+the build's levels (SkillPatchTable); L12 figures in brackets. No
+`durationFrames` (row 37).
+
+Stacks:
+
+- `commiseration` (max 1): talent 1's `buff_chr_0021_whiten_talent_0_active`
+  (stackingType 7, max 1: "cannot stack").
+
+Buffs:
+
+- `physical_susceptibility`: `target: enemy`, `gameBuff:
+  buff_common_affixes_vulnerable_physical`, `duration: {sum: ["duration",
+  {product: ["has_potential1", "rate_plus"]}]}` [6 s; 9 s from P1],
+  `modifiers: [{zone: susceptibility, value: "rate", elements: [physical]}]`
+  [0.15]. Source: `buff_chr_0021_whiten_combo_skill_physical_vulnerable`
+  (VulnerableAction subType 2), combo IfElse > CompareFloat
+  `has_potential1` > ModifyDynamicBlackboard `duration` += `rate_plus`.
+
+Skills, hit by hit (frames from `compileSkill`; events default to the skill
+ID unless listed):
+
+| Skill | Hit | Fields | Data |
+|---|---|---|---|
+| attack1 | `hit` | `scale: [atk_scale]` [0.56], `frames: [6]` | DamageAction mask 128 |
+| attack2 | `hit` | `atk_scale` [0.68], `[6]` | mask 128 |
+| attack3 | `hit1`, `hit2` | `atk_scale` [0.34] at 7, `atk_scale2` [0.45] at 18; both `events: [chr_0021_whiten_attack3]` | two DamageActions |
+| attack4 | `hit` | `atk_scale` [0.90], `[21]`, `poise: "poise"` [17], `poiseControlledOnly: true`; Final Strike and `atb` [19] from the data | mask 2097280; poise unit `onlyEnableForMainChar` |
+| power_attack | `hit` | `atk_scale` [9], `[30]`; finisher rules, multiplier and SP are the engine's (spec 8) | BreakingAttackCalculation, GainBreakingAttackAtb |
+| plunging_attack_end | `hit` | `atk_scale` [1.8], `[1]` (availability: R5) | mask 1152 |
+| normal_skill | `projhit` | skill: `teamEnergyFrame: 21`. Hit: `atk_scale` [3.5], `frames: [21]`, `element: cryst`, `events: [chr_0021_whiten_normal_skill_projhit]`, `bonuses: [{zone: damageBonus, key: dmg_up}]` [0; 0.4 from P3], `applies: [{kind: infliction, element: cryst}]`, `poise: "poise"` [10], `sp: {if: {stack: commiseration, atLeast: 1}, then: {key: atb, skill: buff_chr_0021_whiten_talent_0}, else: 0}` [15 at talent level 2]; not `detached` (row 35) | projhit SpellInfliction type 2; first-target DamageScaleProcessor; CreateBuff `buff_common_obtain_ultimate_sp`; battle-skill frame 21 CheckBuffStackNumAdvanced → GetTargetBuffBBAdvanced `atb` → ObtainCostAction costType 1 → FinishBuffAdvanced |
+| combo_skill | `not_solidified` (**first**) | `atk_scale` [3.6], `[19]`, `events: [chr_0021_whiten_combo_skill]`, `if: {not: {enemyStatus: solidification}}`, `applies: [{kind: physicalStatus, status: lift, forced: true}]`, `energy: usp` [10], `poise: "poise"` [10] | IfElse false path: AirborneAction → DamageAction `atk_scale` |
+| | `solidified` | `atk_scale2` [6.3], `[19]`, same events, `if: {enemyStatus: solidification}`, `buffs: [{buff: physical_susceptibility, beforeDamage: true}]`, `applies` as above, `energy: usp`, `poise: "poise"` | true path: (P1 blackboard) CreateBuff → AirborneAction → DamageAction `atk_scale2`; ObtainCostAction `usp` once if a target is hit |
+| ultimate_skill | `hit` | `atk_scale` [11] (`atk_scale_total` = `atk_scale` + unwritten `dmg_up_total`), `[54]`, `poise: "poise"` [20], `applies: [{kind: physicalStatus, status: lift, forced: true, if: {enemyModifier: {zone: susceptibility, element: physical}}}]` | ForEach > CheckTagMatch 1066759270 > AirborneAction, then DamageAction; time stop from the data |
+
+Triggers:
+
+- `combo_window` (unchanged): `on: {event: reaction, statuses:
+  [solidification]}, by: anyone, do: [{kind: openCombo}]` (CharGrowthTable
+  COMBO TRIGGER).
+- `talent1_shatter`: `on: {event: shatter}, by: self, do: [{kind: gain,
+  gains: [{stack: commiseration}]}]`, plus `if: {talentAtLeast: [0, 1]}`
+  once R2 exists. Source: `buff_chr_0021_whiten_talent_0` (abilityEvent 102,
+  Shatter tag, targetSource 1).
+- `talent1_used`: `on: {event: hit, kinds: [battle]}, by: self, do:
+  [{kind: gain, gains: [{stack: commiseration, amount: -1}]}]`. A trigger
+  rather than the hit's own `gains`, because `landHit` applies `gains`
+  before it resolves `sp`, so the stack would be gone when `sp` reads it.
+- `p5_energy`: `on: {event: reaction, statuses: [solidification]}, by:
+  anyone, if: {potentialAtLeast: 5}, cooldown: 1, skill:
+  buff_chr_0021_whiten_potential_5, do: [{kind: energy, value: usp}]` [5].
+  Cooldown literal from `buff_chr_0021_whiten_potential_5_inaura` `cd`
+  (R6); her cooldown, not per enemy (CreateTimedMarker targetSource 1).
+
+Notes to carry: talent 2 and P3's range not modelled (defensive / one
+enemy); P2's cost ×0.9 and P4's attributes come from the tables.
+
+**Equipment kit `wpn_lance_0010` (Valiant), new:**
+
+```json
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_lance_0010",
+  "sources": ["rmxlinux SkillData sk_wpn_lance_0010: passiveEventActions abilityEvent 402 (the wielder applies a physical status) → DamageAction atk_scale, damageType 0, mask 0 (inheritFirstDamageMask), no poise, no cooldown; SkillPatchTable atk_scale 1.2…3.36. Logged as chr_0015_lifeng_ultimate_skill (zmdlogs-4e5e1390085e: 5 hits at her 5 Lifts, 2.4 at skill level 6)."],
+  "triggers": [{
+    "id": "wpn_lance_0010.physical_status_hit",
+    "on": { "event": "physicalStatus" },
+    "by": "self",
+    "skill": "sk_wpn_lance_0010",
+    "do": [{ "kind": "hits", "hits": [{
+      "id": "hit", "scale": ["atk_scale"], "element": "physical", "damageType": "none",
+      "frames": [0], "events": ["chr_0015_lifeng_ultimate_skill", "sk_wpn_lance_0010"]
+    }] }]
+  }]
+}
+```
+
+Its ATK +20% (skill 3, `cardAttributeModifier`) and the stat skills stay in
+the stat panel; `buff_wpn_lance_0010` isn't created (row 32), so nothing
+else.
+
+**Equipment kit `suit_phy01` (Swordmancer):** owned by Gilberta's report
+(S2); it's expressible the same way. As her fixture needs it: trigger `on:
+{event: physicalStatus}, by: self, skill: passive_equipsuit_physuit_01,
+cooldown: "duration"` [15 s, per wearer: AddGlobalCDTimer], `hits: [{id:
+hit, scale: [atk_scale], element: physical, damageType: none, poise:
+"poise", frames: [0], events: [buff_equipsuit_physuit_01]}]` [2.5, poise
+10]. Fits the log: hits at the 3 combos only, none at the ultimates 5.0 and
+10.2 s later.
+
+**Verification after the rewrite:**
+
+- `efsim zmdlogs check fixtures/zmdlogs-4e5e1390085e.json`: all 41 of her
+  hits covered (Valiant ×5 and the set ×3 by event key); the ones after
+  49.4 s still need the ×1.08 annotation.
+- `skillCompile.test.ts`: expect one new KNOWN line for `teamEnergyFrame`
+  (kit 21, data 0, first-hit branch) unless R6's first-hit fix lands first;
+  the two combo hits and the ultimate match by key and frame.
+- `examples/estella-solidification.scenario.json` (Valiant + Swordmancer
+  ×3): its total rises (Lift, Shatter, Valiant and set hits; the team's
+  energy 0.7 s later); re-baseline it in the kits phase.
+- A unit test for R1: a Solidified combo lands exactly one combo hit, one
+  Lift, one Shatter, one Valiant hit and 10 energy.
+
+### 4. In-game tests for what's still unknown
+
+1. **P5 energy from a teammate's Solidification** (round 1 test 1, still
+   open; only with P5): with nothing else giving her energy, let a teammate
+   cause Solidification. +5 means anyone's counts (the data says so).
+   Then re-Solidify an enemy that is already Solidified: +5 again means a
+   refresh counts. Two within 1 s: +5 once.
+2. **Talent 1 SP** (round 1 test 2; talent 1 at level 2): note team SP,
+   combo on a Solidified enemy (Shatter), then her battle skill: SP should
+   end at before − 100 + 15. A second battle skill without a Shatter: −100
+   only. A teammate's Shatter (their Lift on a Solidified enemy), then her
+   battle skill: the data says no SP back.
+3. **Valiant's hit and skill-type bonuses** (round 1 test 3): with a bonus
+   for one skill type only (combo DMG or ultimate DMG), compare Valiant's
+   hit after her combo with the one after her ultimate.
+4. **Her Susceptibility across her own ultimate** (replaces round 1 test 4;
+   P1+, a variant of test 18): combo on a Solidified enemy, cast her
+   ultimate right after, and time how long the Physical Susceptibility icon
+   stays from the combo hit: about 9 s means her own time stop doesn't
+   freeze it, about 10.8 s means it does (row 38).
+5. **Test 11 (combo on a target that isn't Solidified)** still applies; it
+   now checks the `not_solidified` hit, and should also show a Lift damage
+   number and a Vulnerable stack (forced Lift), but no Shatter.
