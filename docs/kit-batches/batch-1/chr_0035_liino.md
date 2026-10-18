@@ -587,3 +587,233 @@ These are simple ones for the owner. They supersede U1–U6 above; U5 is settled
 6. **Weapon stacks (R1, new).** Liino with Bedazzling Night Debut and three teammates at full HP. Cast her battle skill and
    watch for 15 s: does each teammate's ATK icon count up on its own, to 4 each? Does it count up while they're at full HP
    (does an overheal count as a heal)? How often does it rise (every 3 s soundwave, or only when the teammate is near her)?
+
+## Re-analysis (pass 3, 2026-10-18)
+
+Phase 4, pass 3: the pass-2 gaps and kit plan against the engine after batch-1.md "Pass 2 progress". Code read:
+packages/engine/src/events.ts, model.ts, expr.ts, buffs.ts, timeline.ts (runTriggers, runActions, addBuff,
+endCurrentSkill, castSkill, earliestStart, afterCantCast), packages/data/src/kits.ts, schemas/kit.schema.json,
+schemas/equipment-kit.schema.json, tests/timeline.test.ts. Data re-checked through the loader and in rmxlinux
+SkillData / BuffData (scratch: `/tmp/claude-0/-home-user-Endfield-battle-simulator/cfb486ef-c396-564d-b928-8b0d87099e4f/scratchpad/liino3/`).
+
+### Facts checked in this pass
+
+1. **Every Liino heal is tagged** (R7's claim holds): the soundwave (normal_skill_soundwave_projhit) battle −320297214;
+   the combo and buff comboskill_ultskill_hit combo −1517158118; the beats (ultimate_skill_soundwave_projhit),
+   buff ultskill_music_heal_start and ultskill_music_heal ultimate −1499119779. Three of these are trigger `heal`
+   actions in the plan (soundwave, ultimate start, finale), and those always emit kind `none` (timeline.ts
+   `case "heal"`): N3.
+2. **The battle skill has no cooldown** (SkillPatchTable coolDown 0; normal_skill_end too), and End Stance's
+   SetSkillCdAtOnce is `functionType` 1 with `set_cd` (default 3), in an abilityEvent-9 listener on
+   normalskill_end_active in normal_skill and normal_skill_combo (none in the ultimate). Across the data, functionType 1
+   sets a cooldown (0 = reset for Wulfgard's combos, 10 s Yvonne, 15 s Zhuangfy, percentage 1.0 Typhoeus) and 0 changes
+   it (Si, Chen, Arcane, Da Pan, Endministrator P5). The engine's `cooldown` action only changes a cooldown that is
+   running (`(readyAt ?? 0) <= frame` → skipped), so pass 2's End Stance action was a no-op: N1.
+3. **The combo during Cosmovoice doesn't interrupt the ultimate.** combo_skill `switchToBuffConfig` (`asSkillCast`
+   true, condition CheckBuffStackNumAdvanced on tag −499637408 ≥ 1, the ultskill_music_tag) runs the combo as
+   buff_chr_0035_liino_comboskill_ultskill_hit while the ultimate's action goes on. End Stance has one too
+   (`asSkillCast` false, condition: current skill of type 2/7/8 → buff_chr_0035_liino_skill_end, which makes the
+   current action jump to its end). The same mechanism is in Si's normal_skill_2 (batch 1), Last Rite's normal_skill and
+   Camille's normal_skill_2: N2.
+4. **Talent 2** (buff_chr_0035_liino_combo_atb_return): abilityEvent 143, CheckSkillType `skillTypeList` [2], then the
+   caster's charType Pulse or Natural. Its values are skillValue sets on the combo (`talent_b` 1, `atb_return` 5 / 10,
+   `atb_return_duration` 30; default `atb_return` is 5 even unlearned, so the `talent_b` guard stays). It attaches no buff
+   or skill, so `{talent: 1, key}` doesn't apply (the loader rejects it: "no talent 1 to read … from").
+5. **Timing as loaded:** normal_skill durationFrames 2100, exclusive 1821, channel 0–90 cantCastSkill + cantSwitch;
+   normal_skill_combo 2100 / 1954, windows 0–1800 [End Stance, combo], 1723–1800 [End Stance, battle]; combo 150 / 98,
+   window 68–109 [normal_skill, normal_skill_combo]; normal_skill_end 0 / 0; ultimate 660 / 543, channels 0–77, 77–137,
+   508–527. A combo cast in Vocalist therefore puts her into normal_skill_combo (exclusive 65 s) at frame 67 in game.
+6. **Stack groups:** buff_chr_0035_liino_atkup and _atkup_owner stackingType 1, key `liino_atk_up`; _spellenhance type 1,
+   `liino_spellenhance`; buff_wpn_lance_0014_damageup type 11, max from `max_stack` (sk_wpn_lance_0014 L9: 4, `duration`
+   20, `atk_up` 0.098). All listed in tables.json (`buff_chr_0035_liino*`, `buff_wpn_*`).
+
+### (a) Pass-2 gaps now
+
+| Pass-2 gap | Now | How (fields), or what's left |
+|---|---|---|
+| R1 per-recipient layers of a `to: eventSubject` team buff | supported | B7: `{kind: "buff", to: "eventSubject"}` on a team buff with `maxStacks`; buffs.ts `withBuff` keys layers by (id, owner, recipient set), so 4 per teammate. `endBuff` acts on all recipients; `buffApplied` doesn't name the recipient (not needed). |
+| R2 rate limit per healed operator | supported | T6: `cooldown: 0.1`, `cooldownPer: "eventSubject"` (key per heal target). |
+| R3 combo ends an in-flight volley | supported | S8: `{kind: "cancelHits", trigger: "volley"}` in an undelayed cast trigger on the combo (the loader checks the trigger ID). |
+| R4 `cantCastSkill` channels | supported (engine) | S9 `afterCantCast`: no kit field. Her ultimate is held too (open-list interim: "no", test 15 / 28). |
+| R5 stance action: (a) resume after a combo, (b) end with the stance | supported | (a) `{kind: "cast", skill: "chr_0035_liino_normal_skill_combo"}` in a combo cast trigger with `delay: 67`, plus that skill in the kit with `hits: []`; (b) `{kind: "endAction"}` on `buffEnded vocalist_stance`, guarded by an `endsWithCast` marker buff (else it would end the ultimate or End Stance that ended the stance). The 1967–2100 tail after the game's JumpTo isn't played: Ti3, open (interim: no skip; test 17). |
+| R6 compiler: lifetimes, poise, finisher factors | still open | D2 on the open list; interim: the kit hand-writes them (no effect on numbers). |
+| R7 heal kind filter | partly | T4 `on: {event: "heal", kinds}` exists and hit `heals` carry the hit's kind, but trigger `heal` actions emit `none`: **N3**. Interim: the weapon trigger leaves `kinds` out (exact for Liino: all her heals are tagged). |
+| R8 projectile travel | still open | Ti2 (open list); interim: landing frames; Cosmovoice applied by the first pair `beforeDamage`. |
+| R9 entity-layer dilation, hit-stop | still open | Ti1b (open list); interim: not modelled (tests 18, 37). |
+
+First-round rows after this pass (45): 41 supported (5 no-ops; row 18 now by R3, row 43 by R1/R2, row 8 by N1's
+workaround), 3 partly (row 10: N2; rows 17, 27: Ti1b / Ti2), 1 unknown (row 14, combo in Cosmovoice, test 27).
+
+### (b) Kit plan: what changes
+
+Unchanged from pass 2: the buffs vocalist_stance, volley_window, cosmovoice_atk, cosmovoice_amp, cosmovoice_block,
+starry_boost; stack `p1_ready`; the battle skill's, combo's and ultimate's hits (all ultimate landings `detached`: now
+load-bearing, see N2); basic attacks from kit-draft. Changes:
+
+**Buffs** (add):
+
+| id | target | duration | flags | why |
+|---|---|---|---|---|
+| stance_action | self | none | `endsWithCast: true` | marker: she is in the stance's own action (normal_skill or normal_skill_combo); guards `endAction` |
+| end_stance_lockout | self | `set_cd` (normal_skill, 3 s) | — | interim for End Stance's SetSkillCdAtOnce (N1) |
+
+**Skills:**
+
+- chr_0035_liino_normal_skill: `available: {"not": {"any": [{"buffActive": "vocalist_stance"}, {"buffActive":
+  "cosmovoice_amp"}, {"buffActive": "end_stance_lockout"}]}}`. Until N1, a battle skill asked for during the lockout is
+  an error ("isn't available"), not a wait.
+- chr_0035_liino_normal_skill_combo (new, `damageType: "battle"`, `hits: []`, `available: {"potentialAtLeast": 6}`):
+  cast only by the `stance_resumes` trigger (follow-ups skip `available`); the predicate keeps rotations and search from
+  casting it by hand (it costs nothing and would use Link). `{"any": []}` would be the natural "never", but the schema
+  rejects it (minItems 1).
+- chr_0035_liino_power_attack: `ticks` `scale: ["atk_scale"]`, `factor: 0.1`, count 3 @12,15,18; `final` `scale:
+  ["atk_scale"]`, `factor: 0.7` @34. Pass 2's `[atk_scale, 0.1]` is rejected by the schema (scale items are keys).
+- attack5: drop the pass-2 `sp` override. Basic attacks need control, and with no `sp` on a hit the engine puts the
+  skill's `atb` (20) on its only hit.
+
+**Triggers** (full list, in this order):
+
+```json
+[
+  { "id": "combo_on_reaction", "on": { "event": "reaction" }, "by": "anyone",
+    "if": { "any": [{ "buffActive": "vocalist_stance" }, { "buffActive": "cosmovoice_amp" }] }, "do": [{ "kind": "openCombo" }] },
+  { "id": "combo_on_consumed", "on": { "event": "statusConsumed" }, "by": "anyone",
+    "if": { "any": [{ "buffActive": "vocalist_stance" }, { "buffActive": "cosmovoice_amp" }] }, "do": [{ "kind": "openCombo" }] },
+  { "id": "stance_action", "on": { "event": "cast", "skills": ["chr_0035_liino_normal_skill", "chr_0035_liino_normal_skill_combo"] },
+    "by": "self", "do": [{ "kind": "buff", "buff": "stance_action" }] },
+  { "id": "volley_window_open", "on": { "event": "cast", "skills": ["chr_0035_liino_normal_skill"] }, "by": "self", "delay": 45,
+    "do": [{ "kind": "buff", "buff": "volley_window", "if": { "buffActive": "vocalist_stance" } }] },
+  { "id": "volley", "on": { "event": "reaction" }, "by": "anyone", "if": { "buffActive": "volley_window" },
+    "cooldown": "atk_trigger", "skill": "chr_0035_liino_normal_skill",
+    "do": [{ "kind": "hits", "hits": [{ "id": "volley", "label": "Additional ATK", "damageType": "battle", "scale": ["atk_scale_2"],
+      "count": 6, "frames": [24, 25, 28, 29, 32, 33], "events": ["chr_0035_liino_normal_skill_projhit_hit"] }] }] },
+  { "id": "combo_cancels_volley", "on": { "event": "cast", "skills": ["chr_0035_liino_combo_skill"] }, "by": "self",
+    "do": [{ "kind": "cancelHits", "trigger": "volley" }] },
+  { "id": "stance_resumes", "on": { "event": "cast", "skills": ["chr_0035_liino_combo_skill"] }, "by": "self", "delay": 67,
+    "do": [{ "kind": "cast", "skill": "chr_0035_liino_normal_skill_combo", "if": { "buffActive": "vocalist_stance" } }] },
+  { "id": "stance_song", "on": { "event": "buffTick", "buff": "vocalist_stance" }, "by": "self", "do": [{ "kind": "heal", "target": "team" }] },
+  { "id": "stance_end", "on": { "event": "buffEnded", "buff": "vocalist_stance" }, "by": "self",
+    "do": [{ "kind": "endBuff", "buff": "volley_window" }, { "kind": "endAction", "if": { "buffActive": "stance_action" } }] },
+  { "id": "ult_replaces_vocalist", "on": { "event": "cast", "skills": ["chr_0035_liino_ultimate_skill"] }, "by": "self",
+    "do": [{ "kind": "endBuff", "buff": "vocalist_stance" }] },
+  { "id": "ult_heal_start", "on": { "event": "cast", "skills": ["chr_0035_liino_ultimate_skill"] }, "by": "self", "delay": 80,
+    "do": [{ "kind": "heal", "target": "team" }] },
+  { "id": "ult_heal_finale", "on": { "event": "cast", "skills": ["chr_0035_liino_ultimate_skill"] }, "by": "self", "delay": 513, "detached": true,
+    "do": [{ "kind": "heal", "target": "team", "if": { "buffActive": "cosmovoice_amp" } }] },
+  { "id": "end_stance", "on": { "event": "cast", "skills": ["chr_0035_liino_normal_skill_end"] }, "by": "self", "skill": "chr_0035_liino_normal_skill",
+    "do": [
+      { "kind": "buff", "buff": "end_stance_lockout", "if": { "buffActive": "vocalist_stance" } },
+      { "kind": "endBuff", "buff": "vocalist_stance" }, { "kind": "endBuff", "buff": "cosmovoice_atk" },
+      { "kind": "endBuff", "buff": "cosmovoice_amp" }, { "kind": "endBuff", "buff": "cosmovoice_block" } ] },
+  { "id": "p1_return", "on": { "event": "cast", "skills": ["chr_0035_liino_normal_skill"] }, "by": "self", "skill": "chr_0035_liino_normal_skill",
+    "if": { "stack": "p1_ready", "atLeast": 1 },
+    "do": [{ "kind": "sp", "value": "potential_atb_return" }, { "kind": "gain", "gains": [{ "stack": "p1_ready", "amount": -1 }] }] },
+  { "id": "starry_boost_start", "on": { "event": "cast", "skills": ["chr_0035_liino_combo_skill"] }, "by": "self", "delay": 33,
+    "skill": "chr_0035_liino_combo_skill", "do": [{ "kind": "buff", "buff": "starry_boost" }] },
+  { "id": "starry_boost_self", "on": { "event": "cast", "skills": ["chr_0035_liino_normal_skill", "chr_0035_liino_normal_skill_end"] },
+    "by": "self", "skill": "chr_0035_liino_combo_skill", "if": { "buffActive": "starry_boost" },
+    "do": [{ "kind": "sp", "value": "atb_return" }, { "kind": "endBuff", "buff": "starry_boost" }] },
+  { "id": "starry_boost_team", "on": { "event": "cast", "kinds": ["battle"] }, "by": "teammate", "skill": "chr_0035_liino_combo_skill",
+    "if": { "all": [{ "buffActive": "starry_boost" }, { "eventOperator": { "operatorElement": ["pulse", "natural"] } }] },
+    "do": [{ "kind": "sp", "value": "atb_return" }, { "kind": "endBuff", "buff": "starry_boost" }] }
+]
+```
+
+Notes:
+- `end_stance`: the pass-2 `cooldown` action (`seconds: set_cd`) loads but does nothing (fact 2); the lockout buff
+  replaces it until N1.
+- `stance_end`: on End Stance and on the ultimate, the cast has already ended the stance's action (and `stance_action`
+  with it) when the stance's `buffEnded` comes, so `endAction` only fires when the stance runs out.
+- `ult_heal_finale` `detached`: a combo during Cosmovoice ends the ultimate in the engine (N2) and would drop the finale's
+  heal; End Stance still stops it through the action's `if`. `ult_heal_start` (80) needs no `detached`: nothing can cut
+  the ultimate before 137 (channel).
+- Talent 2: pass 2's single `by: anyone`, `kinds: [battle]` trigger would be used up by her own normal_skill_combo
+  follow-up at combo frame 67, 34 frames after it starts. Split: her own casts by skill ID (End Stance counts, per the
+  open-list interim "sub-skills count as battle skills", test 29); teammates' by kind. A teammate's battle-kind follow-up
+  would still use it up (N4; none exists in batch 1).
+- `p1_return` gains `skill`: without one, `potential_atb_return` is read from `chr_0035_liino.p1_return`, and the
+  loader rejects it ("isn't one of chr_0035_liino's value sources").
+- Volley reading A (test 26) stays as written in pass 2.
+
+**Equipment kit wpn_lance_0014** (new file). Pass 2's snippet would be rejected: the equipment schema requires `sources`.
+
+```json
+{ "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_lance_0014",
+  "sources": ["rmxlinux SkillData sk_wpn_lance_0014 passiveEventActions: abilityEvent 50, CheckHealTag (battle, combo, ultimate heal tags), receiver ≠ wielder, TimedMarker 0.1 s per receiver → buff_wpn_lance_0014_damageup (stackingType 11, max_stack, duration, atk_up)."],
+  "buffs": [{ "id": "wpn_lance_0014.atk", "label": "Medicant: Shimmering Curtain (ATK)", "target": "team",
+    "gameBuff": "buff_wpn_lance_0014_damageup", "duration": "duration", "maxStacks": "max_stack",
+    "modifiers": [{ "zone": "atk", "value": "atk_up" }] }],
+  "triggers": [{ "id": "wpn_lance_0014.healed", "on": { "event": "heal", "toOthers": true }, "by": "self",
+    "skill": "sk_wpn_lance_0014", "cooldown": 0.1, "cooldownPer": "eventSubject",
+    "do": [{ "kind": "buff", "buff": "wpn_lance_0014.atk", "to": "eventSubject" }] }] }
+```
+
+Add `"kinds": ["battle", "combo", "ultimate"]` to `on` once N3 is in and her three trigger heals name their kind
+(soundwave `battle`, ultimate start and finale `ultimate`). Without N3, adding it would drop the soundwave, her main heal
+source in Vocalist.
+
+### (c) New gaps
+
+#### N1. Set a cooldown (SetSkillCdAtOnce functionType 1)
+- **family:** skills (cooldowns)
+- **feature:** the `cooldown` trigger action gets a set mode, `set: ValueExpr` (seconds; with `percentOfFull: true`, a
+  fraction of the full cooldown), in place of `seconds` / `fraction`: every matching skill's ready time becomes
+  frame + value, whether it was on cooldown or not. Matching by kind (`skills`, as now) or by one skill ID (`skill`, the
+  action's `skillId`), since SetSkillCdAtOnce names either.
+- **evidence:** fact 2; chr_0035_liino_normal_skill / _normal_skill_combo SetSkillCdAtOnce (functionType 1, `set_cd`,
+  skillId chr_0035_liino_normal_skill); timeline.ts `case "cooldown"` skips ready skills. Shared in the data: Yvonne
+  (buff_chr_0017_yvonne_ultimate_skill_end, 10 s), Zhuangfy (buff_chr_0030_zhuangfy_ult_base, 15 s), Wulfgard combos and
+  chr_0006 ultimate (0: reset; an add of −∞ does that today), Laevatain's buff_chr_0016_laevat_show_weapon (10 s).
+- **impact:** none on damage with the lockout-buff workaround; the workaround makes an early battle skill an error
+  instead of a 3 s wait, so recorded rotations need `at` there and search must retry later.
+
+#### N2. A cast that runs beside the current action (switchToBuffConfig)
+- **family:** skills (states)
+- **feature:** a kit skill lists `asBuffWhile: Predicate` (judged at the cast): when it holds, the cast doesn't end the
+  operator's current skill (its hits, delayed actions, `endsWithCast` buffs and lock all continue); the skill's own hits
+  and triggers run as usual, it costs and counts as a cast as usual (`asSkillCast` true), and the operator stays locked
+  by the current skill, not by this one. For Liino: the combo with `asBuffWhile: {buffActive: cosmovoice_amp}`.
+- **evidence:** fact 3 (combo_skill switchToBuffConfig, tag −499637408 of ultskill_music_tag); also End Stance (current
+  skill of type 2/7/8, `asSkillCast` false), Si's chr_0036_jsspsi_normal_skill_2 (batch 1), Last Rite, Camille.
+- **impact:** after a combo during Cosmovoice the engine frees Liino for the rest of the stance (up to ~12 s): basic
+  attacks, her finisher and swaps the game doesn't allow until frame 543 of the ultimate, and the 508–527 swap block is
+  lost. Damage: her basic attacks only (small); legality: search can exploit it. The ultimate's hits survive because
+  they're `detached`. Depends on test 27 (whether the combo is castable in Cosmovoice at all). For End Stance the engine
+  ends the action at once instead of jumping to its end and playing the tail (normal_skill 1967–2100, ultimate
+  540–660): a few frames of lock, and the same question as Ti3.
+
+#### N3. Trigger heals have no kind
+- **family:** triggers
+- **feature:** the `heal` trigger action takes an optional `healKind: SkillType | "none"` (default `none`), from the
+  healing HealAction's `healTags`, and the heal event carries it, so `on: {event: "heal", kinds}` sees it.
+- **evidence:** fact 1; events.ts `heal` action (`target` only), timeline.ts `case "heal"` (`"none"`), the schema's heal
+  action (`additionalProperties: false`). sk_wpn_lance_0014 CheckHealTag.
+- **impact:** none for Liino with the interim (weapon trigger without `kinds`). With `kinds`, her soundwave and ultimate
+  start/finale heals wouldn't give the weapon's ATK (most of its layers in Vocalist). Without it the weapon is wrong for
+  a wielder whose untagged heals reach teammates (generic-equipment rule), and for any kit whose tagged heals are
+  trigger actions.
+
+#### N4. Cast events don't say whether they are follow-ups (minor)
+- **family:** triggers
+- **feature:** cast events carry `followUp` (a skill cast by a `cast` action, SkillData CastSkill), and the cast filter
+  takes `followUp: false`; consumedBy buffs follow the same rule as Link (follow-ups neither give nor use them).
+- **evidence:** castSkill: Link checks `!followUp`, `consumedBuffs` and the cast event don't. Liino's
+  normal_skill_combo (battle kind, cast by the combo at frame 67).
+- **impact:** Liino's own case is handled by skill IDs (above). Left: a teammate's battle-kind follow-up would use up
+  Starry Boost, and her normal_skill_combo uses up a teammate's next-battle-skill buff (`consumedBy: ["battle"]`) that
+  reaches her. No such pair in batch 1; whether the game counts CastSkill casts for abilityEvent 143 is unknown (test 29
+  addition below).
+
+### (d) In-game tests the kit still depends on
+
+From [in-game-tests.md](../../in-game-tests.md): **6** (ultimate projectile scale in the other log), **15** (whether an
+ultimate may start in a `cantCastSkill` channel; her battle skill's 0–90), **17** (whether jumps skip time: her JumpTo
+1967 / 540), **18** (time stop; her ultimate's 0–77), **25** (weapon stacks per teammate: the engine now gives 4 each),
+**26** (volley reading A or B), **27** (combo and energy in Cosmovoice: U2, U3), **28** (actions in the stance, and (d)
+the 3 s lockout after End Stance), **29** (End Stance as a battle skill: Link and talent-2 SP), **47** (projectile
+travel; lower priority).
+
+Worth adding there (not edited in this pass): to 27, "(c) after her combo in Cosmovoice, can she basic attack or swap
+before Cosmovoice ends?" (N2); to 29, "after her combo in Vocalist, wait 3 s, then have an Electric or Nature teammate
+cast a battle skill: are SP returned?" (whether her stance's CastSkill follow-up uses up Starry Boost; N4).

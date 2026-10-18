@@ -366,5 +366,5 @@ engine uses, and what settles it.
 | Si R6: do Si's strokes count as battle skills | yes (skillSpecification 3) | in-game test 29 |
 | B9 stacking type 11 across wielders (Si R7) | layers per owner, no cross-wielder cap | minor; two Jade Vessel wielders only |
 | Ti2 projectile travel | kits write landing frames (launch + travel read from the logs) | data status, no engine work |
-| D2 compiler leftovers (poise, finisher factors, forced Lift, per-hit element, created buffs, team-energy frames, the finisher's `atb`, values of BuffData buffs a talent or potential creates, e.g. Estella's P5 `cd`) | kits hand-write them | data compilation; doesn't affect numbers |
+| D2 compiler leftovers (poise from a hit's `poiseCalculation`, finisher factors, forced Lift, per-hit element, created buffs, team-energy frames, the finisher's `atb`, values of BuffData buffs a talent or potential creates, e.g. Estella's P5 `cd`) | kits hand-write them | data compilation; doesn't affect numbers |
 | L2 the ×1.42 of one-element reaction keys (`buff_common_<element>_triggered`) | such hits stay unchecked | research |

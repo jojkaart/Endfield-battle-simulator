@@ -187,9 +187,9 @@ key at once, holding it: note roughly when the swap happens (about 3.7 s
 expected). Then try swapping during one of her basic attacks: it should
 swap at once, and the attack's hit should still land.
 The same 3.7 s of the data also forbid her casting another skill
-(`cantCastSkill`), which the engine ignores: today her ultimate or combo
-may start during the battle skill and cut its pulls and explosion. So
-also: with her energy full (or her combo just lit by a reaction), press
+(`cantCastSkill`); the engine now holds all of her casts until it ends,
+ultimates included (the data doesn't say whether they're an exception).
+So also: with her energy full (or her combo just lit by a reaction), press
 her ultimate (or combo) right after the battle skill. Does it start at
 once, or only after about 3.7 s? Does a teammate's combo still fire
 meanwhile? Liino's stance has the same question (test 28).

@@ -60,12 +60,12 @@ export const COMBO_WINDOW_FRAMES = 6 * FPS;
 export const TIMELINE_ASSUMPTIONS = [
   "Ultimate energy: max = the ultimate's cost, no passive gain; battle skills give the team 0.065 per natural SP spent (at the cast); kits list their fixed grants. Grants are scaled by Ultimate Gain Efficiency.",
   "Combo skills open a 6 s window on their kit's trigger (ignored while on cooldown); kits without a trigger allow the combo whenever off cooldown.",
-  "Each operator has its own animation lock; basic attacks need the operator to be the controlled one, other skills don't. A swap waits for the controlled operator to finish its action and costs no time.",
-  "Projectile hits land at their launch frame (travel time isn't in the data).",
+  "When the next action may start comes from SkillData (windows, priorities, exclusive time, cantCastSkill channels); basic attacks need the operator to be the controlled one. A swap costs no time and waits only for a cantSwitchPosition channel. Dive attacks need jumps, which rotations don't have.",
+  "Projectile hits land at the frames their kit gives (travel time isn't in the data; kits read it from logs where they can).",
   "SP gain: a skill's blackboard value `atb` (e.g. a final strike's 20) is added when its first hit lands (unverified timing).",
   "Buffs and debuffs from skills apply only where a kit declares them (OperatorKit.buffs); always-on conditions, given modifiers and the enemy's reaction statuses apply too.",
   "Inflictions and reactions follow the Talos Wiki rules (status.ts). What a hit applies takes effect before its own damage and the reaction's initial hit (logs: Gilberta's explosion and Arcane's battle skill include the Corrosion they trigger).",
-  "Physical statuses (Vulnerable, Lift, Knockdown, Crush, Breach) and Shatter aren't modelled; Solidification only records its duration.",
+  "Physical statuses (Vulnerable, Lift, Knock Down, Crush, Breach), Shatter and stagger follow the Talos Wiki tutorial tables (status.ts). Hit-stop and entity-layer slow-downs aren't modelled.",
   "One enemy; every hit lands on it.",
   `Team SP: max ${SP.max}, start ${SP.start}, ${SP.perSecond}/s, paused ${SP.pauseAfterSpendFrames / FPS} s after spending (unverified).`,
 ] as const;

@@ -668,3 +668,184 @@ are extended here):
 
 Not in-game: re-import 4e5e / 40d9 with `poiseDamage` per hit (R4), and a
 committed log with a finisher (seven landings).
+
+## Re-analysis (pass 3, 2026-10-18)
+
+Against the engine after [batch-1.md "Pass 2 progress"](../batch-1.md#pass-2-progress)
+(`events.ts`, `model.ts`, `expr.ts`, `timeline.ts`, `kits.ts`, both schemas).
+**Check:** the full plan below was written into a scratch copy of the repo
+and loaded by `loadKits` without errors. With it,
+`examples/gilberta-gravity-field.scenario.json` totals 295,474 instead of
+271,088 (+9.0%). Her combo hit is ×1.197 with Pursuit's buff acting
+before the damage. The same scenario with Twilight raises Laevatain's
+ult_attack1 ×1.161. `zmdlogs check` is unchanged on 4e5e (44 / 0 / 14) and
+40d9 (9 / 0 / 1), because the checker uses logged buffs, not triggers. On
+d9e5 the set hit is now covered by a kit (0 not covered). Pass 2's facts
+were re-read in the data where the plan relies on them.
+
+**Correction to pass 2 (data, R4).** A poise unit's stagger is in its
+`poiseCalculation`. Pass 2 read the unit's `atkCalculation` (the
+DefiniteValue 1). Read correctly, the data settles both of R4's readings:
+- ultimate: `poise` (20), `applyScale` false;
+- attack4: `poise` × `valueScale`, 0.34 on the centre orb
+  (attack4_projhit) and 0.33 on each side orb (attack4_projhit_2),
+  `applyScale` true. That is 16 in all, not 48. Every attack4 unit is
+  `onlyEnableForMainChar`;
+- combo `poise` 5;
+- battle skill: `poise` 10, on the explosion only (the 5th DamageAction;
+  the pulls have no poise unit);
+- Swordmancer: `poise` 10;
+- the finisher (power_attack) has no poise unit and no `poise` key.
+
+D2's compiler should read `poiseCalculation` (value × `valueScale` when
+`applyScale`).
+
+**Other re-checked facts.**
+- buff_wpn_funnel_0011 (Pursuit) has `maxTriggerCnt` 1. So its abilityEvent
+  402 fires once per buff instance, that is once per combo cast, and
+  `maxPerCast: 1` is the data's own limit. Its checks are
+  CheckOriginSkillType `skillTypeList` [6] and CheckPhysicalInflictionType
+  mask 1.
+- `buff_wpn_funnel_0011_valid` lasts its 15 s in 4e5e: from 7598 until
+  about 23.7 s, through her later basic attacks, although the CreateBuff
+  says `finishWithNextSkillIfNotInherited`.
+- The ultimate's FinalRate chain is as pass 2 read it. Its checks are
+  CompareFloat `potential2` compare 2, then `BuffStack` compare 1 against 3
+  → +1, then ×2.
+- Talent 0 attaches the skill `chr_0013_aglina_talent_0` with `add`
+  0.04 / 0.07, and P3 adds +0.05 to it. CheckProfession is
+  `professionCategories` 49.
+- `buff_common_affixes_vulnerable_spell` has stackingType 0, so it gets no
+  stack group.
+- Item names in the data: wpn_funnel_0011 is "Delivery Guaranteed" and
+  wpn_funnel_0005 is "Stanza of Memorials". This report's "Pursuit" and
+  "Twilight" refer to the same weapons. This "Twilight" isn't Laevatain's
+  state of the same name.
+
+### 1. Pass-2 gaps now
+
+| Pass-2 gap | Status now | How (fields, semantics) |
+|---|---|---|
+| R1 trigger acts before its hit's damage | supported (T5) | `beforeDamage: true` on a status-event trigger (loader: only `STATUS_EVENTS`). It runs in `landHit` after the hit's `applies` and before `computeHit`, so a buff it applies acts on that hit |
+| R2 causing hit's skill kind | supported (T4) | `fromKinds: ["combo"]` on `physicalStatus` (any status event). It matches the kind of the hit whose `applies` caused the event; a trigger's applications and status ticks are `none`. Pass 2's name `kinds` is **rejected** by the schema on status events (additionalProperties false) |
+| R3 Link | supported, built in (B8) | No kit field. Every combo cast leaves the team a 15 s stack. The next battle skill or ultimate by anyone uses all of them (at most 4) as a `multiplicative` modifier on that cast's hits: battle skill +30 / 45 / 60 / 75%, ultimate +20 / 30 / 40 / 50%. 40d9's ×1.2 at 1 stack fits. Values above 1 stack: test 8 |
+| R4 poise, finisher factors, forced Lift not compiled | still open: **D2** on the open list (interim: kits hand-write them) | The semantic half is settled (correction above). Hand-written: `poise` values, `factor` 0.05 / 0.7, `physicalStatus` lift `forced` |
+| R5 `cantCastSkill` and the finisher's disable-cast | supported (S9); the rest is open as **S9** (interim: no) | `skillData.ts` turns the battle skill's 0–111 channel and power_attack's `buff_common_power_attack_disable_cast_skill` (0–43) into `cantCastSkill` channels. `afterCantCast` then holds all her own casts, ultimate included. Teammates aren't held. Settled by test 15 |
+| R6 dive needs mid-air | supported as a refusal (S10) | `earliestStart` refuses skillSpecification 6 ("needs mid-air, and rotations have no jumps"), and search leaves plunges out. The plunge hit can stay in the kit (for `calc`) |
+| R7 projectile travel | still open: **Ti2** (interim: kits write landing frames) | none of hers measured, so launch frames; test 47 |
+| R8 fight-start event | supported (T7) | `on: {"event": "fightStart"}`, once at frame 0 (`by` isn't checked for it) |
+| R9 unlearned talent | supported (V8) | `skillValue` returns 0 for an attachable source the build lacks; `{"talent": 0, "key": "add"}` (0 while unlearned) and `talentAtLeast: [0, 1]` |
+| R10 `buff_common_<element>_triggered` ×1.42 | still open: **L2** (interim: unchecked) | research |
+| (pass 1 rows 17, 28, 29) | unknown, unchanged | own reaction opening her combo: test 35. Two `vulnerable_spell` sources add up (no stack group): test 38. Lift persisting in the field: no data, not modelled |
+
+### 2. Kit plan (changes to pass 2's)
+
+**Operator kit `chr_0013_aglina`.** Drop `durationFrames` everywhere,
+update the stale `sources` and hit notes (Lift, Messenger's Song, the P2
+formula), and make these changes:
+- `arts_susceptibility`: modifier value as pass 2, with explicit sources:
+  ```json
+  {"product": [{"key": "spell_vulnerable_rate", "skill": "chr_0013_aglina_ultimate_skill"},
+    {"sum": [1, {"product": [{"key": "spell_vulnerable_perstack", "skill": "chr_0013_aglina_ultimate_skill"},
+      {"if": {"potentialAtLeast": 2},
+       "then": {"product": [2, {"min": [{"sum": [{"enemyVulnerableStacks": true}, 1]}, 4]}]},
+       "else": {"enemyVulnerableStacks": true}}]}]}]}
+  ```
+- Messenger's Song uses `fightStart` and the talent value, so the interim
+  cast trigger is dropped and the R9 throw is gone:
+  ```json
+  {"id": "messengers_song", "label": "Messenger's Song: Ultimate Gain Efficiency", "target": "team",
+   "recipients": {"operatorProfession": [0, 4, 5]},
+   "modifiers": [{"attr": 44, "value": {"talent": 0, "key": "add"}}]}
+  ```
+  ```json
+  {"id": "messengers_song", "on": {"event": "fightStart"}, "by": "self",
+   "if": {"talentAtLeast": [0, 1]}, "do": [{"kind": "buff", "buff": "messengers_song"}]}
+  ```
+- attack4: centre orb `"poise": {"product": ["poise", 0.34]}`, side orbs
+  (count 2) `"poise": {"product": ["poise", 0.33]}`. All three keep
+  `"poiseControlledOnly": true` and `"sp": {"product": ["atb", 0.333400011]}`.
+  attack1–3 `sp` as in the draft, though `atb` is 0 for them in
+  SkillPatchTable.
+- ultimate hit `"poise": "poise"` (20).
+- combo hit `"poise": "poise"` and explosion `"poise": "poise"`, as in
+  pass 2.
+- power_attack as pass 2 (`hit` ×6 with `factor` 0.05, `final` with 0.7),
+  with no `poise`.
+- plunging_attack_end: keep it, with `"sp": "atb"` (the engine won't
+  schedule it).
+- Unchanged from pass 2: `combo_window`; normal_skill
+  `"teamEnergyFrame": 29`; the combo's `applies: [{"kind":
+  "physicalStatus", "status": "lift", "forced": true}]`.
+
+**Equipment kits.** Schema and loader need `sources` (minItems 1), and
+every stack, buff and trigger `id` prefixed with `<equipment>.`.
+- `wpn_funnel_0011.json`:
+  ```json
+  {"equipment": "wpn_funnel_0011", "sources": ["…"],
+   "buffs": [{"id": "wpn_funnel_0011.arts_dmg", "label": "Arts DMG Dealt", "target": "team",
+     "gameBuff": "buff_wpn_funnel_0011_valid", "duration": "duration",
+     "modifiers": [{"zone": "damageBonus", "elements": ["fire", "pulse", "cryst", "natural"],
+       "value": {"sum": ["spell_dmg_up", {"product": [{"min": [{"targetsHit": true}, "max_stack"]}, "spell_dmg_up2"]}]}}]}],
+   "triggers": [{"id": "wpn_funnel_0011.lift",
+     "on": {"event": "physicalStatus", "statuses": ["lift"], "fromKinds": ["combo"]},
+     "by": "self", "beforeDamage": true, "maxPerCast": 1, "skill": "sk_wpn_funnel_0011",
+     "do": [{"kind": "buff", "buff": "wpn_funnel_0011.arts_dmg"}]}]}
+  ```
+  The `gameBuff` gives stack group `buff_wpn_funnel_0011_valid`: two
+  wielders don't add up. The Nature DMG stays in the stat panel.
+- `wpn_funnel_0005.json`:
+  ```json
+  {"equipment": "wpn_funnel_0005", "sources": ["…"],
+   "buffs": [{"id": "wpn_funnel_0005.atk_up", "label": "ATK up", "target": "team",
+     "gameBuff": "buff_wpn_funnel_0005_atk_up", "duration": "duration",
+     "recipients": {"all": [{"not": {"isOwner": true}}, {"not": {"sameElementAsOwner": true}}]},
+     "modifiers": [{"zone": "atk", "value": "atk_up"}]}],
+   "triggers": [{"id": "wpn_funnel_0005.ultimate", "on": {"event": "cast", "kinds": ["ultimate"]},
+     "by": "self", "skill": "sk_wpn_funnel_0005", "do": [{"kind": "buff", "buff": "wpn_funnel_0005.atk_up"}]}]}
+  ```
+- `suit_phy01.json`:
+  ```json
+  {"equipment": "suit_phy01", "sources": ["…"],
+   "triggers": [{"id": "suit_phy01.proc", "on": {"event": "physicalStatus"}, "by": "self",
+     "cooldown": "duration", "skill": "passive_equipsuit_physuit_01",
+     "do": [{"kind": "hits", "hits": [{"id": "proc", "scale": ["atk_scale"], "element": "physical",
+       "damageType": "none", "events": ["buff_equipsuit_physuit_01"], "frames": [0], "poise": "poise"}]}]}]}
+  ```
+  A Vulnerable-only application emits a `vulnerable` event, not
+  `physicalStatus`, so it doesn't proc. Whether Shatter procs is open
+  (test 39).
+
+**What the loader would reject in pass 2's plan:**
+1. `kinds` on the Pursuit `physicalStatus` trigger; the field is `fromKinds`.
+2. The three equipment kits as sketched there: no `sources`, and triggers
+   with no `id` (the id is required and must be `<equipment>.`-prefixed).
+
+Everything else in it loads. Two parts load but are wrong: per-orb
+`"poise": "poise"` (3× the stagger) and the R4 "20 vs 1" reading.
+
+### 3. New gaps
+
+None. Every mechanic in the tables above is now expressible, or is on the
+open list with its interim rule (D2, S9, Ti2, L2), or has no effect against
+one enemy. The ones with no single-target effect are talent 2's heals
+(≥ 2 targets), Pursuit's count above 1 target, and the combo's "nearby
+enemies". Those wait for multi-enemy fights (N1).
+
+### 4. In-game tests the kit still depends on
+
+From [docs/in-game-tests.md](../../in-game-tests.md):
+- **12**: Arts Susceptibility per Vulnerable stack, and P2's "≤ 3" check.
+- **35**: her own reaction opening her combo.
+- **38**: two Arts Susceptibility sources.
+- **15**: cantCastSkill, and whether teammates are held. Its text "which
+  the engine ignores" is outdated: the engine now holds her own casts.
+- **39**: the Swordmancer scale, its cooldown, and Shatter.
+- **40**: Messenger's Song.
+- **8**: Link above 1 stack.
+- **18**: what time stops freeze. This sets her field's and the weapons'
+  windows.
+- **47**: projectile travel (lower priority).
+
+Not in-game: a committed finisher log, to check its seven landings.
+Optional, not in the file: pass 2's T7, whether Lift persists in her field.
