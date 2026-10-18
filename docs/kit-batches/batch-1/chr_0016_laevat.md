@@ -232,3 +232,333 @@ Simple in-game tests (training dummy, no crit numbers):
 6. **Scorching Heart window** (gap 7): the icon appears on reaching 4 MF and lasts 20 s.
 7. **P1 SP return** (gap 4, owner needs P1): SP after a plain battle skill vs an empowered one.
 8. **Ultimate damage** (gap 1): does a damage number appear when the ultimate is cast (expected: none)?
+
+## Re-analysis (pass 2, 2026-10-18)
+
+Against the engine and kit format at `b33e2e7` (batch-1 "Progress": T1–T3,
+C1–C2, B1–B6, V1–V5, S1–S7, A1–A5, P1–P2, Ti1 part, Ti4, L1, D1 compiler),
+`efsim kit-draft chr_0016_laevat` (v2) and the D1 `KNOWN` list in
+`packages/data/test/skillCompile.test.ts`. Data re-checked in rmxlinux
+SkillData / BuffData (game 1.6) and the loader's tables (level 12 values
+below unless said). Earlier claims re-checked; corrections are marked
+**(corrected)**.
+
+### 1. First-round rows and gaps against the current engine
+
+| First-round row (gap) | Now supported? | How (fields), or what's still missing |
+|---|---|---|
+| 2 Attack 4 hits 2–3 are projectiles | yes (timing unknown) | kit-draft: separate entry `chr_0016_laevat_attack_5_projhit` (frames 12, 19, `events: [chr_0016_laevat_attack_5_projhit]`, `detached: true`). Travel time isn't in the data (Ti2 open, no data): launch frame stays a lower bound |
+| 3, 42 Final Strike only on the 2nd landing (gap 10) | yes | split entries, as kit-draft does: attack5 `hit` (23, `finalStrike: false`) + `hit_2` (26, `finalStrike: true`); ult_attack4 `hit` (22) + `hit_2` (26). KNOWN lists both as kit errors |
+| 4 SP at the skill's first landing | yes | hit `sp` (replaces the skill's `atb` default): attack5 `hit_2` and ult_attack4 `hit_2` `sp: {if: {controlled: true}, then: "atb", else: 0}` (CheckMainCharacterCondition; `controlled` for a hit is judged at its cast). attack1–4, ult_attack1–3 have `atb` 0 at every level: no SP |
+| 5 Final Strike poise (gap 12) | yes (data) | P2: hit `poise` + `poiseControlledOnly`. The compiler skips damage units of `damageAttributeType` 1, so the kit hand-writes them: list in the kit plan (attack5 `poise` 18, ult_attack4 `poise` 24, battle-skill hits `poise` / `poise_extra` 10) |
+| 6 Finisher (gap 12) | yes (data) | P2: `skillSpecification` 8 gates it on a Staggered enemy, once per stagger, ×attr 27, finisher SP. kit-draft emits `power_attack` hits at 5 and 42 with plain `atk_scale`; the BreakingAttackCalculation `multiplier` (0.2 / 0.8) isn't compiled: hand-write `factor` |
+| 7 Dive, dash | yes | plunging_attack_end is in kit-draft (1.8, frame 1); dash_attack isn't a skill group (not castable in a rotation): leave out |
+| 8 Chain order (gap 14) | yes | S3/S5: chain steps from the data's AllowNextSkillAction windows (attack1→…→5, ult_attack1→…→4, each window also lists attack1) |
+| 11 Team energy at the first hit | yes | `teamEnergyFrame` 22 (normal_skill) and 13 (during_ult), from kit-draft (KNOWN lists the kit's missing value) |
+| 13 MF consumed at the extra hit (gap 3) | yes | B5: `requires: {stack: "melting_flame", atLeast: 4, consume: true, consumeAt: "hit"}` on the extra hit; the explosion's / hit 1's +1 lands before it, so 0 are left |
+| 14 Normal extra hit: `ratio` or `extra_scaling` | unknown | both writable. Data (re-checked): frame 104 `ModifyDynamicBlackboard atk_scale_3 ×= ratio`; `extra_scaling` only goes to `burning_triggered` (assignItems). Kit keeps Zero Sanity's `extra_scaling` until in-game test A |
+| 17 P1 SP only on the extra hit (gap 4) | yes | extra hit `sp: "atb"` on both battle skills (ObtainCostAction costType 1 inside the extra hit's channel, `second_hit == 1`); with a hit naming `sp`, the skill's default first-hit SP is off. `atb` is 0 below P1 |
+| 18 Branch jumps (gap 5) | **no** | Ti3 still open: kit-draft reports the jumps "not followed", and the engine reads every SkillData timing (windows, `exclusiveFrame`, `durationFrame`, channels) as real frames. Hits can be placed per branch by hand (`requires` at/below 4 picks the branch), but the lock, cancel windows and pause length can't depend on the branch. Gap R1 |
+| 19 InterruptAction / BlowOffAction | unknown (no consumer) | not a control status (no tag; Jade Vessel listens to Si's own hitstop buff). No equipment in batch 1 reacts to it; leave out |
+| 20 During-ult hits 1–2 and `ratio` | unknown | data (re-checked): no ratio on them (only `atk_scale_3 ×= ratio` at 98), and P1 sets `ratio` 1.2 on during_ult too. Kit keeps ×ratio (Zero Sanity) until test A |
+| 23 Twilight paused by the enhanced battle skill (gap 2) | yes, partly | `extendBuff` at the cast (kit trigger `twilight_paused_by_battle_skill`, +115 frames). Missing: (a) the length per branch (R1; 39 or 64 real frames if jumps skip time), (b) the pause ends early when the skill is cut short (`pause_ult` has `autoFinishByAction`, `finishWithNextSkillIfNotInherited`): a combo or second battle skill inside 33–75 keeps the whole +3.83 s. Gap R3 |
+| 26 Combo hits only enemies with Combustion / Corrosion | yes | hit `if: {any: [{enemyStatus: "combustion"}, {enemyStatus: "corrosion"}]}` |
+| 27 Combo hit dealt by a buff, ≈21 frames late (gap 11) | yes | kit-draft: frame 41, `events: [buff_chr_0016_laevat_combo_skill_hit]`, `detached: true` (CreateBuff@20 + 0.7 s trigger interval) |
+| 30 Combo holds Twilight (gap 2) | yes (semantics unknown) | `extendBuff` +1.9 s on combo casts (kit trigger `twilight_paused_by_combo`; no-op outside Twilight, like the data's `ult_end ≥ 1` check). Rests on stacking type 5 = "add duration" (claim): test C |
+| 31 Combo time dilation (gap 13) | yes | Ti1 reads it from SkillData (`TimeDilationAction` layer 0, curve `ComboSkill`, 0.6 s). **(corrected)** `ignoreTargets` are the caster (targetSource 4) and her own spawned entities, not "the controlled operator"; the engine exempts the caster |
+| 34 Ultimate has no damage (gap 1) | yes | S1: `hits: []` (kit-draft); Twilight from a cast trigger at frame 0 |
+| 36 Energy block follows show_weapon | yes | kit buff `show_weapon` (16 s, `blocksEnergy: true`), extended by the same pause triggers as Twilight; drop `energyBlockSeconds` |
+| 37 Ultimate cooldown from show_weapon's end (gap 15) | yes (workaround) | the `cooldown` action only changes a running cooldown, so add at the cast: ultimate cast trigger `{kind: "cooldown", who: "self", skills: "ultimate", seconds: 16}` (10 s from SkillPatchTable + 16 = show_weapon's end + 10) and the same `seconds` as each pause extension. Exact except the ultimate's own 61-frame time stop (buffs shift, cooldowns don't: ≤ 2 s, and only if test 18 says so) |
+| 38 Ultimate takes control (gap 15) | yes | S7: `takesControl: true` |
+| 39 UltimateTimeAction 0–61 (gap 13) | yes | Ti1, from SkillData (61 frames of scale 0) |
+| 41 Enhanced attack 3 inflicts Heat | yes | kit-draft compiles the enabled SpellInfliction (same frame as the damage, 9) |
+| 43, 47, 50 Kills and HP (gap 16) | deferred | owner decision (batch-1 "Owner decisions"): N1 comes with multi-enemy support. No effect on one enemy |
+| 44 Absorption on Finisher | **no** | the `hit` event filters on `kinds`, `elements`, `finalStrike` only; nothing tells a finisher hit (decorate bit 4, `skillSpecification` 8) from a basic attack. Gap R2 |
+| 45 Partial absorption with `if` (gap 6) | yes | A2 + C1: `if: {stack: "melting_flame", below: 4}` on the trigger; `consumeInfliction` `stacks: {sum: [4, {product: [-1, {stackCount: "melting_flame"}]}]}`; gain `{consumed: true}` |
+| 46 Absorption 1 s cooldown (gap 6) | yes | trigger `cooldown: 1` (set only when the trigger fires, as passive_teammate_cd is created only after the MF < 4 check) |
+| 48 Scorching Heart on reaching 4 MF (gap 7) | yes | trigger `on: {event: "stackAtLeast", stack: "melting_flame", atLeast: 4}`, `skill: "buff_chr_0016_laevat_passive"` (talent buff source, V1); kit buff with `ignoreResistance` fire `{product: [-1, "ignore_fire_resist"]}` for `ignore_fire_resist_duration`. Note: `stackAtLeast` fires on every stack event at ≥ 4, including a capped gain that changes nothing (the empowered cast's own explosion / hit 1); the data's Switch runs on a stack change (buffEvent 6). Guard with `if: {not: {buffActive: …}}`, else the window restarts at the consuming cast; whether a capped gain fires buffEvent 6 is test F |
+| W2 Forgeborn +210% basic for 20 s on the wielder's ultimate (gap 8) | yes | equipment kit trigger `on: {event: "cast", kinds: ["ultimate"]}`, `by: "self"`, buff attr 17 (CheckSkillType [7] = ultimate) |
+| W4 Umbral Torch layers (gaps 8, 9) | yes | equipment trigger `on: {event: "reaction", statuses: ["combustion", "corrosion"]}`, `by: "anyone"` (inaura on every enemy, abilityEvent 205, any applier, forced ones carry the tag), `cooldown: 0.1` (CreateTimedMarker on the wielder), buff `maxStacks: "max_stack"` (stacking type 2, separate durations) |
+| G1 Hot Work 3-piece | yes | gear-set kit `suit_fire_natr01`: `reaction` combustion / corrosion `by: "self"` → attr 51 / 54 buffs (stacking type 2, max 1: refresh). Not active in her builds (1 piece) |
+| G2 Tide Surge 3-piece | yes | gear-set kit `suit_burst01`: `inflictionApplied` `minStacks: 2` `by: "self"` (abilityEvent 102 + infliction tag + target stacks ≥ `stack_cond` 2) → attrs 51–54 + `spell_dmg_up`. Not active in her builds (1 piece); not a batch-1 set |
+| Static checks of the new buffs | **no** | the per-hit fixture (fixtures/zero-sanity-laevatain-p5.json, tests/damage.test.ts) switches on `wpn_sword_0006.after_ultimate` and `chr_0016_laevat.scorching_heart` as conditions; once both are triggered buffs, a static hit can't name them. Gap R5 |
+| Data the kit still hand-writes | data | kit-draft omits poise, BreakingAttackCalculation factors, own-stack gains (CreateBuff `buff_chr_0016_laevat_energy`: explosion, during-ult hit 1, `combo_skill_hit_self`), the forced Combustion's `durationKey` / `scaleKey` (the assignItems), the entity's end (FinishOwnerAction "ball" at 105). Gap R4 |
+| Log: Heat burst at 7550 ms credited to her | unknown | `efsim zmdlogs reactions` still: predicted Combustion at 6657 ms (ult_attack3's Heat on Si's Cryo) not logged; Heat bursts at 7550 (hers) and 7663 (Camille's) unexpected. ult_attack3's SpellInfliction is at its damage frame, so no hidden later infliction of hers; Camille's kit has no inflictions, so the replay stays incomplete. Not a Laevatain gap |
+
+Rows the first round already had as `supported` (1, 9, 10, 12, 15, 16, 21,
+22, 24, 25, 28, 29, 32, 33, 35, 40, 49, 51, 52, W1, W3) stay supported;
+24's `availableWhile` is now `available: {buffActive: "twilight"}`.
+
+### 2. Remaining gaps
+
+None is unique: each is in another operator's data (checked against
+[kit-unique.md](../../kit-unique.md), which is empty).
+
+**R1. Branch timing (JumpToAction).**
+- family: timing (Ti3) and data compilation.
+- feature: a skill's timeline played per branch: for each `JumpToAction`
+  (frame a → b, with its condition), timeline frames f ≥ b map to real
+  a + (f − b). The branch is chosen at the cast from the jump conditions; a
+  kit sketch: `"branches": [{"if": {"stack": "melting_flame", "atLeast": 4},
+  "jumps": [[30, 80], [214, 231]]}, {"jumps": [[37, 215]]}]` (normal_skill),
+  `[{"if": …, "jumps": [[24, 75], [195, 270]]}, {"jumps": [[39, 196]]}]`
+  (during_ult). The engine maps everything through it: hit frames, cast-trigger
+  `delay`s, AllowNextSkillAction windows, `exclusiveFrame`, `durationFrame`,
+  channels, timeline-range buffs (`pause_ult` 0–115); an action range the
+  cursor jumps past ends at the jump. The compiler follows jumps per branch
+  and drops detached entity hits after a FinishOwnerAction on the entity
+  (normal_skill frame 105 ends the Magma Fragment).
+- evidence: normal_skill JumpToAction 30→80 (if `has_max_energy`, set at
+  frame 3 when MF ≥ 4), 37→215, 214→231; FinishOwnerAction `ball` 105;
+  `exclusiveFrame` 117, `durationFrame` 282. normal_skill_during_ult 24→75
+  (if `has_max_energy`), 39→196, 195→270; `exclusiveFrame` 115, window
+  33–75, `pause_ult` 0–115, `durationFrame` 271. kit-draft notes "not
+  followed". Shared: JumpToAction in 20 operators' SkillData (Typhoeus,
+  Liino, Arcane's seal_again among batch 1; Purrchena in batch 2).
+- impact (if jumps skip time, test B): the empowered extra hit and forced
+  Combustion land at real 54 (normal) / 47 (during ult) instead of 104 / 98
+  (≈1.7 s late now); the plain battle skill locks her 37 frames, not 117
+  (2.7 s too long now), the empowered one 67; the enhanced battle skill locks
+  and pauses Twilight 39 (plain) / 64 (empowered) frames, not 115, so each
+  costs 1.7–2.5 s of rotation time and Twilight is held as much too long;
+  the empowered cast loses burn ticks at 58, 62, 66 (3 × 0.14 ATK). Damage
+  per hit unchanged; DPS and every buff window after a battle skill move.
+  Until it exists, the kit can place the hits per branch by hand (kit plan)
+  but not the lock.
+
+**R2. Finisher as a hit filter.**
+- family: triggers.
+- feature: `on: {event: "hit", finisher: true}` (and `false`): the hit is a
+  finisher (decorate-mask bit 4 on the landing; equivalently its skill's
+  `skillSpecification` 8). Her absorption is "Final Strike **or**
+  Finisher" with one 1 s cooldown, and two triggers can't share a cooldown,
+  so the filter must be an any-of in one trigger: e.g. `on: {event: "hit",
+  decorations: ["finalStrike", "finisher"]}` (any of the listed bits), with
+  `finalStrike: true` kept as shorthand.
+- evidence: buff_chr_0016_laevat_passive_teammate abilityEvent 302,
+  CheckDamageDecorateMask `mask` 2097156 (Final Strike | Finisher); talent
+  text "Final Strike or Finisher"; power_attack mask 132 (128 basic + 4).
+  Shared: Arcane's Cluster Strike (buff_chr_0032_lizhiyan_ultimate_skill_inaura,
+  mask 4 and 2097152; her report row 30), Avywenna's talent listener
+  (buff_chr_0012_avywen_talent_0_listener, mask 4; batch 2).
+- impact: no Heat absorption from any operator's finisher: up to 4 MF per
+  stagger lost (one empowered battle skill, 7.7 × ATK, forced Combustion,
+  100 energy, per stagger window where the team has Heat on the enemy).
+
+**R3. A pause that ends with the skill that pauses.**
+- family: buff lifecycle (B2's remainder).
+- feature: either `pausedWhile: Predicate` on a kit buff (its timer stops
+  while it holds; `pause_ult` becomes a kit buff applied by a cast trigger,
+  ended by `endBuff` on the owner's next cast), or the smaller value
+  `{buffRemaining: "<buff>"}` (seconds left) so a trigger on the owner's next
+  cast can `extendBuff` Twilight and show_weapon by its negative and end the
+  pause buff.
+- evidence: normal_skill_during_ult CreateBuff `pause_ult` 0–115 with
+  `autoFinishByAction`, `finishWithNextSkillIfNotInherited`;
+  buff_chr_0016_laevat_ult_end / _show_weapon PauseBuffTime while it
+  exists. Shared: PauseBuffTime in Wulfgard's, Mifu's and Purrchena's files
+  (first-round gap 2).
+- impact: when a combo, ultimate or second battle skill (window 33–75)
+  cuts the enhanced battle skill short, Twilight and the energy block keep
+  the full extension: up to ≈3 s (≈1 s if R1's skip semantics hold) per
+  such cut. Hand-written rotations that wait for the skill's hits lose
+  ≤ 0.6 s.
+
+**R4. Compiler leftovers for her kit.**
+- family: data compilation (D1).
+- feature: kit-draft and later loader defaults should also emit: poise per
+  landing (damage units with `damageAttributeType` 1: DefiniteValueCalculation
+  `value` key, `onlyEnableForMainChar` → `poiseControlledOnly`; the
+  dash attack's `valueScale` 0.5 with `applyScale`); BreakingAttackCalculation
+  `multiplier` as `factor`; own-stack gains and finishes (CreateBuff /
+  FinishBuffAction of a buff that is a kit stack, here
+  `buff_chr_0016_laevat_energy`: `gains`, `requires.consume`,
+  `consumeAt: "hit"`); the forced reaction's assigned `duration` /
+  `extra_scaling` as `durationKey` / `scaleKey`; the combo's energy under
+  the skill's own key (`usp_1_display`, the buff's `usp_1` isn't a skill key).
+- evidence: kit-draft output for chr_0016_laevat (none of these present);
+  `skillCompile.ts` damage() skips `damageAttributeType !== 0` and notes
+  non-ATK calculations only; KNOWN entry for the combo's energy key.
+- impact: none on numbers once the kit hand-writes them (the plan below
+  does); every hand-written value is one more thing to keep right.
+
+**R5. Triggered buffs in static per-hit checks.**
+- family: log tooling (fixtures and `calc`).
+- feature: per-hit fixtures and `efsim calc` name kit buffs (operator and
+  equipment, with a layer count) as active, e.g. fixture
+  `"buffs": ["wpn_sword_0006.valid", "chr_0016_laevat.scorching_heart"]`,
+  resolved through the same buff definitions the timeline uses
+  (`DamageOptions.modifiers` already carries such modifiers).
+- evidence: fixtures/zero-sanity-laevatain-p5.json entries with
+  `conditions: ["wpn_sword_0006.after_ultimate"]` (4 hits) and
+  `chr_0016_laevat.scorching_heart`; `schemas/fixture.schema.json` has only
+  `conditions`; tests/damage.test.ts. Shared: every kit whose legacy
+  conditions become triggered buffs (Jade Vessel's `enemy_vulnerable` /
+  `combo_after_battle_skill`, …).
+- impact: no numeric effect on simulations; without it the kits phase must
+  either keep duplicate legacy conditions (double-counting if a scenario
+  switches one on while its trigger fires) or lose the in-game check of
+  Forgeborn (+210%) and Scorching Heart.
+
+Deferred by the owner, not counted: kills and HP (first-round gap 16 → N1).
+
+### 3. Kit plan
+
+Values are level-12 / weapon-level-9 data; frames are timeline frames as the
+data has them (R1: a "real" alternative is given where jumps matter; use it
+only once test B says jumps skip time). Every hit lists `events` (log key).
+
+**Stacks.** `melting_flame`, max 4 (talent buff `max_stack` 4; BuffData
+buff_chr_0016_laevat_energy stacking type 3, lifeType 1: no expiry).
+
+**Buffs** (operator kit):
+- `twilight`: self, `duration: "duration"` (ultimate 15 s), no modifiers,
+  `gameBuff: buff_chr_0016_laevat_ult_end`.
+- `show_weapon`: self, `duration: 16` (BuffData default; created at the
+  ultimate's frame 0), `blocksEnergy: true`, `gameBuff:
+  buff_chr_0016_laevat_show_weapon`.
+- `scorching_heart`: self, `duration: "ignore_fire_resist_duration"` (20),
+  modifiers `[{zone: "ignoreResistance", elements: ["fire"], value:
+  {product: [-1, "ignore_fire_resist"]}}]` (−10 / −15 / −20 by talent level),
+  `gameBuff: buff_chr_0016_laevat_ignore_fire_resist`. Replaces the
+  `scorching_heart` condition (keep that only until R5).
+
+**Triggers** (operator kit):
+1. `ultimate_state`: `on: {event: "cast", skills: ["chr_0016_laevat_ultimate_skill"]}`,
+   `by: "self"`, `skill: "chr_0016_laevat_ultimate_skill"`, do: `buff
+   twilight`, `buff show_weapon`, `{kind: "cooldown", who: "self", skills:
+   "ultimate", seconds: 16}` (row 37).
+2. `twilight_paused_by_battle_skill`: `on: cast` of
+   `chr_0016_laevat_normal_skill_during_ult`, do: `extendBuff twilight` and
+   `extendBuff show_weapon` by 115/30 s, `cooldown` ultimate +115/30 s.
+   With R1's skip semantics: two triggers, `if: {stack: "melting_flame",
+   atLeast: 4}` → 64/30 s, `if: {stack: "melting_flame", below: 4}` → 39/30
+   s (the trigger's `if` sees MF before `consumeAt: "hit"` uses it).
+3. `twilight_paused_by_combo`: `on: {event: "cast", kinds: ["combo"]}`,
+   `if: {buffActive: "twilight"}`, do: `extendBuff` twilight / show_weapon
+   1.9 s, `cooldown` ultimate +1.9 s (combo_skill ChannelingAction 0–57
+   every 0.1 s).
+4. `final_strike_absorb`: `on: {event: "hit", finalStrike: true}`, `by:
+   "controlled"`, `if: {stack: "melting_flame", below: 4}`, `cooldown: 1`,
+   do: `apply consumeInfliction {elements: ["fire"], stacks: {sum: [4,
+   {product: [-1, {stackCount: "melting_flame"}]}]}}`, `gain melting_flame
+   {consumed: true}` (passive_teammate). Finisher half after R2.
+5. `combo_window`: `on: {event: "reaction", statuses: ["combustion",
+   "corrosion"]}`, `by: "anyone"`, do: `openCombo` (unchanged).
+6. `scorching_heart`: `on: {event: "stackAtLeast", stack: "melting_flame",
+   atLeast: 4}`, `skill: "buff_chr_0016_laevat_passive"`, `if: {not:
+   {buffActive: "scorching_heart"}}`, do: `buff scorching_heart`
+   (energy → energy_icon_5 → ignore_fire_resist). Drop the `if` if test F
+   shows capped gains refresh it.
+
+**Skills** (from kit-draft v2, corrections in bold):
+- attack1 `hit` 6; attack2 `hit` ×2 at 6, 13; attack3 `hit` 9; attack4
+  `hit` 6 + `chr_0016_laevat_attack_5_projhit` ×2 at 12, 19 (detached); all
+  `atk_scale`, `available: {not: {buffActive: "twilight"}}`, no SP (`atb` 0).
+- attack5: `hit` 23 (`finalStrike: false`); **`hit_2` 26 (`finalStrike:
+  true`, `sp: {if: {controlled: true}, then: "atb", else: 0}` (20),
+  `poise: "poise"` (18), `poiseControlledOnly: true`)**.
+- normal_skill (`teamEnergyFrame: 22`, available outside Twilight):
+  - `explosion` 22, `atk_scale` (1.4), events
+    `chr_0016_laevat_normal_skill_abilityentity`, detached, `gains:
+    [{stack: "melting_flame"}]`, **`poise: "poise"`** (10).
+  - `dot` ×10 at 29, 33, 37, 41, 45, 49, 54, 58, 62, 66, `atk_scale_2`
+    (0.14), same event key, detached. With R1's skip semantics, split off
+    58, 62, 66 with `requires: {stack: "melting_flame", below: 4}` (the
+    entity ends at real 55 in the empowered branch).
+  - `extra` 104 (real 54 if jumps skip), events `chr_0016_laevat_normal_skill`,
+    scale `["atk_scale_3", "extra_scaling"]` (Zero Sanity; data: `"ratio"`,
+    test A), **`requires: {stack: "melting_flame", atLeast: 4, consume:
+    true, consumeAt: "hit"}`**, `applies: [{kind: "forcedReaction", status:
+    "combustion", durationKey: "duration", scaleKey: "extra_scaling"}]`,
+    `energy: "extra_usp"` (100), **`sp: "atb"`** (P1 +20), **`poise:
+    "poise_extra"`** (10).
+- normal_skill_during_ult (`teamEnergyFrame: 13`, `available: {buffActive:
+  "twilight"}`): `hit1` 13 `["atk_scale", "ratio"]` (3.3; data: no ratio,
+  test A) with `gains`, `poise: "poise"`; `hit2` 23 `["atk_scale_2",
+  "ratio"]` (3.7), `poise`; `extra` 98 (real 47) `["atk_scale_3", "ratio"]`
+  (9.0), requires / forced Combustion as above, **`sp: "atb"`**, `poise`,
+  no energy.
+- combo_skill: **`hit` 41**, events **`buff_chr_0016_laevat_combo_skill_hit`**,
+  detached, `atk_scale` (5.4), `energy: "usp_1_display"` (25, one enemy),
+  `gains: [{stack: "melting_flame"}]` (combo_skill_hit_self, ≈41),
+  **`poise: "poise"`** (10), **`if: {any: [{enemyStatus: "combustion"},
+  {enemyStatus: "corrosion"}]}`**. Cooldown 9 s from SkillPatchTable.
+- ultimate_skill: **`hits: []`**, **`takesControl: true`**, no
+  `energyBlockSeconds` (show_weapon blocks), cost 300 (P4 ×0.85).
+- ult_attack1 12, ult_attack2 ×2 at 10, 21, ult_attack3 9 (`applies
+  infliction fire`), ult_attack4 `hit` 22 + **`hit_2` 26 (`finalStrike:
+  true`, `sp` as attack5 (22), `poise` 24, `poiseControlledOnly`)**; all
+  `["atk_scale", "ratio"]` (P5 ratio 1.2), `available: {buffActive:
+  "twilight"}`.
+- **power_attack** (finisher, both states): `hit` 5 `atk_scale` (9.0)
+  `factor: 0.2`, `hit_2` 42 `factor: 0.8`, events
+  `chr_0016_laevat_power_attack`, damage type basic (mask 132 has bit 128);
+  the engine adds the enemy's finisher multiplier and SP.
+- plunging_attack_end (optional): `hit` 1, `atk_scale` 1.8.
+
+**Equipment kits.**
+- `wpn_sword_0006.json` (Forgeborn Scathe): buff `wpn_sword_0006.valid`
+  (self, `duration: "duration"` 20, modifiers `[{attr: 17, value:
+  "normal_atk_up"}]` 2.1, `gameBuff: buff_wpn_sword_0006_valid`; stacking
+  type 4: a recast refreshes); trigger `wpn_sword_0006.on_ultimate` `on:
+  {event: "cast", kinds: ["ultimate"]}`, `by: "self"`, `skill:
+  "sk_wpn_sword_0006"`, do `buff`. Heat DMG +44.8% stays on the stat panel.
+  The `after_ultimate` condition goes once R5 exists (the example scenarios
+  don't switch it on; the Zero Sanity fixture does).
+- `wpn_sword_0010.json` (Umbral Torch, new): buff `wpn_sword_0010.valid`
+  (self, `duration: "duration"` 20, `maxStacks: "max_stack"` 2, modifiers
+  `[{attr: 51, value: "dmg_up"}, {attr: 54, value: "dmg_up"}]` 0.224,
+  `gameBuff: buff_wpn_sword_0010_valid`); trigger `on: {event: "reaction",
+  statuses: ["combustion", "corrosion"]}`, `by: "anyone"`, `cooldown: 0.1`,
+  `skill: "sk_wpn_sword_0010"`, do `buff`. ATK +19.6% stays on the panel.
+- `suit_fire_natr01.json` (Hot Work; written for the batch, inactive in her
+  builds): AI +`phy_spell_up` on the panel; triggers `reaction` combustion
+  / corrosion `by: "self"` → buffs attr 51 `fire_dmg_up` (0.5) for
+  `duration` (10 s), attr 54 `nature_dmg_up` (0.5) for `duration2` (10 s)
+  (SkillPatchTable; the BuffData defaults 0.2 / 8 s aren't the set's).
+- `suit_burst01.json` (Tide Surge; inactive, not a batch-1 set): skill DMG
+  `skill_dmg_up` on the panel; trigger `inflictionApplied` `minStacks: 2`,
+  `by: "self"` → buff attrs 51–54 `spell_dmg_up` (0.35) for `duration`
+  (15 s; BuffData default 10 s).
+
+**Checks after writing it.** `zero-sanity-laevatain-p5.json` per hit (with
+R5, or the legacy conditions kept); `zmdlogs-40d9a3c1da37.json` (17/17 must
+stay; the `buff_wpn_sword_0006_valid` window is logged); the four example
+scenarios with her (laevatain-solo, liino-laevatain, si-laevatain,
+gilberta-gravity-field): totals change by design (Scorching Heart window,
+MF consumption at the hit, combo at 41, show_weapon block), say by how much
+in the journal; the KNOWN entries for chr_0016_laevat should all disappear
+except the `ratio` / `extra_scaling` ones (test A); attack4's go once
+the kit takes kit-draft's projectile entry.
+
+### 4. In-game tests for what's still unknown
+
+New ones for docs/in-game-tests.md (training dummy; first round's 1–8
+renumbered by what's still open):
+- **A. Battle-skill multipliers** (rows 14, 20): with 4 MF, compare the
+  extra hit with the same cast's explosion: 5.5× (skill 12) at P0, ×1.2 at
+  P1–P2 if the data is right, ×1.5 at P3+ if Zero Sanity is. In Twilight,
+  enhanced hit 1 vs the explosion's unit with the Scorching Heart icon off:
+  ×1.2 at P1+ means `ratio` applies (kit), ×1.0 means it doesn't (data).
+- **B. Jump semantics** (R1): on video at 30 FPS, cast → empowered extra
+  hit: ≈54 frames (jumps skip time) or ≈104 (they don't); plain battle
+  skill → next action: ≈1.2 s or ≈3.9 s. Extends ready test 17 (in
+  Twilight: first enhanced attack 1.3 s / 2.1 s after a plain / empowered
+  enhanced battle skill if jumps skip time, 3.8 s if not).
+- **C. Twilight length** (rows 23, 30, R3): Twilight's timer with no battle
+  skills, then with one combo, then with an enhanced battle skill cancelled
+  by the combo at once.
+- **D. Partial absorption** (row 45): 3 MF, 3 Heat stacks, one Final
+  Strike: 4 MF and 2 Heat left (data). Optional confirmation.
+- **E. Finisher absorption** (R2): a finisher by any operator on a
+  Staggered dummy with Heat on it absorbs Heat for MF.
+- **F. Scorching Heart refresh** (row 48): reach 4 MF, wait 15 s, cast the
+  empowered battle skill: does the icon's 20 s restart (capped gain refreshes)?
+- **G. Her own buffs under her slow-downs** (rows 31, 39): does Twilight's
+  timer stop during her ultimate's 2 s animation and her combo's 0.6 s
+  slow-down? (Ti1 freezes every buff, the caster's included; the data
+  exempts the caster.) Complements ready test 18.
+- **H. P1 SP** (row 17, needs P1): SP after a plain vs an empowered battle
+  skill (0 vs 20 expected).
+- Projectile travel of attack 4 (row 2) only on video, low priority.
