@@ -353,8 +353,23 @@ export interface OperatorKit {
   readonly conditions: readonly Condition[];
 }
 
+/**
+ * A weapon's or gear set's kit (docs/kit-process.md, "Equipment is
+ * generic"): it acts for whoever wears it, so its triggers and buffs are
+ * the wearer's. Its stack, buff and trigger IDs start with `<id>.`; its
+ * values come from its own skills.
+ */
+export interface EquipmentKit {
+  /** Weapon or gear-set ID. */
+  readonly id: string;
+  readonly stacks: readonly StackDef[];
+  readonly buffs: readonly KitBuff[];
+  readonly triggers: readonly KitTrigger[];
+  readonly conditions: readonly Condition[];
+}
+
 export interface Kits {
   readonly operators: Readonly<Record<string, OperatorKit>>;
-  /** Conditions of weapons, by weapon ID. */
-  readonly weapons: Readonly<Record<string, readonly Condition[]>>;
+  /** Weapon and gear-set kits, by weapon or gear-set ID. */
+  readonly equipment: Readonly<Record<string, EquipmentKit>>;
 }

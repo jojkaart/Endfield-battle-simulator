@@ -1,5 +1,8 @@
 // Loads the hand-written kits (packages/data/kits) and checks them against
 // the game data: every skill, level group and blackboard key must exist.
+// Operator kits (kits/operators) hold skills, stacks, buffs and triggers;
+// equipment kits (kits/equipment: weapons and gear sets) hold stacks, buffs,
+// triggers and conditions that act for whoever wears them.
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -8,7 +11,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { isBuffFileListed, readBuffFile } from "./buffData.ts";
-import { ELEMENTS, predicateRefs, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type KitBuff, type Predicate, type ValueExpr, type HitApplication, type StackDef, type StackRequirement, type Element, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
+import { ELEMENTS, predicateRefs, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type KitBuff, type Predicate, type ValueExpr, type HitApplication, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
@@ -44,7 +47,7 @@ interface RawKit {
   operator: string;
   element?: Element;
   stacks?: StackDef[];
-  buffs?: (KitBuff & { note?: string; gameBuff?: string })[];
+  buffs?: RawBuff[];
   triggers?: RawTrigger[];
   activeConditions?: Record<string, Predicate>;
   skills: {
@@ -60,9 +63,16 @@ interface RawKit {
   conditions?: RawCondition[];
 }
 
-interface RawWeaponKits {
-  weapons: Record<string, { conditions: RawCondition[] }>;
+interface RawEquipmentKit {
+  equipment: string;
+  sources: string[];
+  stacks?: StackDef[];
+  buffs?: RawBuff[];
+  triggers?: RawTrigger[];
+  conditions?: RawCondition[];
 }
+
+type RawBuff = KitBuff & { note?: string; gameBuff?: string };
 
 function validator() {
   const ajv = new Ajv2020({ allErrors: true, strict: true });
@@ -71,7 +81,7 @@ function validator() {
   return {
     ajv,
     kit: ajv.getSchema("https://github.com/jojkaart/Endfield-battle-simulator/schemas/kit.schema.json"),
-    weapons: ajv.compile(schema("weapon-kits.schema.json")),
+    equipment: ajv.compile(schema("equipment-kit.schema.json")),
   };
 }
 
@@ -91,7 +101,8 @@ function condition(owner: string, c: RawCondition): Condition {
 export interface KitData {
   readonly skills: Readonly<Record<string, SkillData>>;
   readonly operators: Readonly<Record<string, { skillGroups: Readonly<Record<string, string>>; talentNodes?: readonly { effects: readonly Effect[] }[]; potentials?: readonly (readonly Effect[])[] }>>;
-  readonly weapons: Readonly<Record<string, unknown>>;
+  readonly weapons: Readonly<Record<string, { readonly skills: readonly string[] }>>;
+  readonly gearSets: Readonly<Record<string, { readonly skillId: string }>>;
 }
 
 /** SkillData decorate-mask bit of a Final Strike (the last hit of a basic attack chain; Laevatain's attack5, Gilberta's attack4 projectile). */
@@ -116,6 +127,261 @@ function checkKey(skill: SkillData, key: string, where: string) {
   }
 }
 
+/** What one kit's values, stacks and buffs may name. */
+interface KitScope {
+  /** Prefix of error messages (the kit file). */
+  readonly file: string;
+  /** The operator or equipment ID; a trigger without a `skill` names its values after it. */
+  readonly owner: string;
+  readonly element?: Element;
+  readonly stackIds: ReadonlySet<string>;
+  readonly buffDefs: ReadonlyMap<string, KitBuff>;
+  /** Whether a skill or source ID is one the kit can read values from. */
+  readonly isSource: (id: string) => boolean;
+  /** Throws unless the source has the key (at every level, for skills). */
+  readonly checkSourceKey: (id: string, key: string, where: string) => void;
+}
+
+/** Checks and normalises the parts operator and equipment kits share: values, predicates, buffs, hits, triggers. */
+function kitChecker(scope: KitScope) {
+  const { stackIds, buffDefs } = scope;
+  /** Every key a value names must exist in one of the kit's sources (a plain key names `skillId`). */
+  const checkValue = (v: ValueExpr, skillId: string, where: string) => {
+    for (const { skill: sid, key } of valueKeys(v, skillId)) {
+      if (!scope.isSource(sid)) throw new Error(`${where}: ${sid} isn't one of ${scope.owner}'s value sources`);
+      scope.checkSourceKey(sid, key, where);
+    }
+  };
+  /** Every own stack and buff a predicate names must exist in the kit. */
+  const checkPredicate = (p: Predicate, where: string) => {
+    const refs = predicateRefs(p);
+    for (const id of refs.stacks) if (!stackIds.has(id)) throw new Error(`${where}: unknown stack ${id}`);
+    for (const id of refs.buffs) if (!buffDefs.has(id)) throw new Error(`${where}: unknown buff ${id}`);
+  };
+  const checkBuff = (b: KitBuff, skillId: string, where: string) => {
+    for (const v of [b.duration, ...b.modifiers.map((m) => m.value)]) checkValue(v, skillId, `${where}: buff ${b.id}`);
+  };
+  /**
+   * Checks and fills in a list of hits: a skill's (its damage type, Final
+   * Strike from the data) or a trigger's (each hit names its damage type).
+   * `skillId` is where plain value keys come from.
+   */
+  const normalizeHits = (
+    hits: readonly RawHit[],
+    src: { skillId: string; label: string; damageType?: SkillType; checkScale: (key: string, where: string) => void; defaultEvent?: string; finalStrike?: (h: RawHit, events: string[]) => boolean },
+    where: string,
+  ): KitHit[] => {
+    const ids = new Set<string>();
+    return hits.map((h) => {
+      if (src.damageType && h.damageType) throw new Error(`${where} hit ${h.id}: a skill's hits take its damage type`);
+      if (!src.damageType && !h.damageType) throw new Error(`${where} hit ${h.id}: a triggered hit needs a damageType`);
+      if (ids.has(h.id)) throw new Error(`${where}: duplicate hit ${h.id}`);
+      ids.add(h.id);
+      for (const key of [...h.scale, ...(h.bonuses ?? []).map((b) => b.key)]) src.checkScale(key, `${where} hit ${h.id}`);
+      for (const x of h.extraScale ?? []) {
+        checkValue(x.value, src.skillId, `${where} hit ${h.id} extraScale`);
+        checkPredicate(x.if, `${where} hit ${h.id} extraScale`);
+      }
+      if (h.if) checkPredicate(h.if, `${where} hit ${h.id}`);
+      for (const g of h.gains ?? []) if (g.amount !== undefined) checkValue(g.amount, src.skillId, `${where} hit ${h.id} gains`);
+      const element = h.element ?? scope.element;
+      if (!element || !ELEMENTS.includes(element)) throw new Error(`${where} hit ${h.id}: no element`);
+      const events = h.events ?? (src.defaultEvent && hits.length === 1 ? [src.defaultEvent] : []);
+      if (!src.damageType && h.requires) throw new Error(`${where} hit ${h.id}: triggered hits can't require stacks (use the trigger's if)`);
+      for (const id of [h.requires?.stack, ...(h.gains ?? []).map((g) => g.stack)]) {
+        if (id !== undefined && !stackIds.has(id)) throw new Error(`${where} hit ${h.id}: unknown stack ${id} (the kit's stacks: ${[...stackIds].join(", ") || "none"})`);
+      }
+      if (h.energy !== undefined) checkValue(h.energy, src.skillId, `${where} hit ${h.id} energy`);
+      for (const a of h.buffs ?? []) {
+        const b = buffDefs.get(a.buff);
+        if (!b) throw new Error(`${where} hit ${h.id}: unknown buff ${a.buff}`);
+        checkBuff(b, src.skillId, `${where} hit ${h.id}`);
+      }
+      if (h.frames && h.frames.length !== (h.count ?? 1)) throw new Error(`${where} hit ${h.id}: ${h.frames.length} frames for count ${h.count ?? 1}`);
+      return {
+        id: h.id, label: h.label ?? src.label, scale: h.scale, count: h.count ?? 1, damageType: src.damageType ?? h.damageType ?? "none", element, events,
+        ...(h.frames ? { frames: h.frames } : {}),
+        ...(h.applies ? { applies: h.applies } : {}),
+        ...(h.requires ? { requires: h.requires } : {}),
+        ...(h.bonuses ? { bonuses: h.bonuses } : {}),
+        ...(h.factor !== undefined ? { factor: h.factor } : {}),
+        ...(h.reaction ? { reaction: h.reaction } : {}),
+        ...(h.extraScale ? { extraScale: h.extraScale } : {}),
+        ...(h.buffs ? { buffs: h.buffs } : {}),
+        ...(h.energy ? { energy: h.energy } : {}),
+        ...(h.if ? { if: h.if } : {}),
+        ...((h.finalStrike ?? src.finalStrike?.(h, events) ?? false) ? { finalStrike: true } : {}),
+        ...(h.gains ? { gains: h.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1 })) } : {}),
+      };
+    });
+  };
+  const triggerIds = new Set<string>();
+  const checkTrigger = (t: Omit<RawTrigger, "note">): KitTrigger => {
+    const where = `${scope.file}: trigger ${t.id}`;
+    if (triggerIds.has(t.id)) throw new Error(`${where}: duplicate trigger ID`);
+    triggerIds.add(t.id);
+    const skillId = triggerSkillId(scope.owner, t);
+    if (t.skill && !scope.isSource(t.skill)) throw new Error(`${where}: ${t.skill} isn't one of ${scope.owner}'s value sources`);
+    if (t.on.event === "stackAtLeast" && !stackIds.has(t.on.stack)) throw new Error(`${where}: unknown stack ${t.on.stack}`);
+    if ((t.on.event === "buffApplied" || t.on.event === "buffEnded") && !buffDefs.has(t.on.buff)) throw new Error(`${where}: unknown buff ${t.on.buff}`);
+    if (t.if) checkPredicate(t.if, where);
+    if (t.cooldown !== undefined) checkValue(t.cooldown, skillId, `${where} cooldown`);
+    for (const a of t.do) {
+      switch (a.kind) {
+        case "gain":
+          for (const g of a.gains) {
+            if (!stackIds.has(g.stack)) throw new Error(`${where}: gains unknown stack ${g.stack}`);
+            if ((g.amount as ValueExpr | undefined) !== undefined) checkValue(g.amount, skillId, `${where} gains`);
+          }
+          break;
+        case "energy":
+        case "sp":
+          checkValue(a.value, skillId, `${where} ${a.kind}`);
+          break;
+        case "buff":
+        case "endBuff": {
+          const b = buffDefs.get(a.buff);
+          if (!b) throw new Error(`${where}: unknown buff ${a.buff}`);
+          if (a.kind === "buff") checkBuff(b, skillId, where);
+          break;
+        }
+        case "cooldown":
+          checkValue(a.seconds, skillId, `${where} cooldown change`);
+          break;
+        case "openCombo":
+        case "apply":
+        case "hits":
+          break;
+      }
+    }
+    return {
+      ...t,
+      do: t.do.map((a) =>
+        a.kind === "gain" ? { ...a, gains: a.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1 })) }
+        : a.kind === "hits" ? { kind: "hits", hits: normalizeHits(a.hits, { skillId, label: t.id, checkScale: (key, w) => checkValue(key, skillId, w) }, where) }
+        : a,
+      ),
+    };
+  };
+  /** Buffs, with their stack group from the game buff they stand for (BuffData stackingType 1). */
+  const normalizeBuffs = (buffs: readonly RawBuff[]): KitBuff[] =>
+    buffs.map(({ note: _note, gameBuff, ...b }) => {
+      if (!gameBuff) return b;
+      if (!isBuffFileListed(gameBuff)) throw new Error(`${scope.file}: buff ${b.id}: ${gameBuff} isn't covered by tables.json json.BuffData`);
+      const raw = readBuffFile(gameBuff);
+      if (!raw) throw new Error(`${scope.file}: buff ${b.id}: no BuffData file ${gameBuff}`);
+      return raw.stacking.type === 1 ? { ...b, stackGroup: gameBuff } : b;
+    });
+  return { checkValue, checkPredicate, checkBuff, normalizeHits, checkTrigger, normalizeBuffs };
+}
+
+function idsOf(file: string, what: string, items: readonly { id: string }[]): Set<string> {
+  const ids = new Set(items.map((x) => x.id));
+  if (ids.size !== items.length) throw new Error(`${file}: duplicate ${what} ID`);
+  return ids;
+}
+
+function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit {
+  const where0 = `kits/operators/${file}`;
+  if (file !== `${kit.operator}.json`) throw new Error(`${where0}: file name must be ${kit.operator}.json`);
+  const op = data.operators[kit.operator];
+  if (!op) throw new Error(`${where0}: unknown operator ${kit.operator}`);
+  /** Values talents and potentials attach (skill or buff ID → keys at some level), for kits to read. */
+  const attached = new Map<string, Set<string>>();
+  for (const e of [...(op.talentNodes ?? []).flatMap((n) => n.effects), ...(op.potentials ?? []).flat()]) {
+    if (e.kind !== "skill" && e.kind !== "buff") continue;
+    const id = e.kind === "skill" ? e.skillId : e.buffId;
+    attached.set(id, new Set([...(attached.get(id) ?? []), ...Object.keys(e.blackboard)]));
+  }
+  const ownSkill = (id: string) => data.skills[id] !== undefined && op.skillGroups[id] !== undefined;
+  const c = kitChecker({
+    file: where0,
+    owner: kit.operator,
+    ...(kit.element ? { element: kit.element } : {}),
+    stackIds: idsOf(where0, "stack", kit.stacks ?? []),
+    buffDefs: new Map((kit.buffs ?? []).map((b) => [b.id, b])),
+    isSource: (id) => attached.has(id) || ownSkill(id),
+    checkSourceKey: (id, key, where) => {
+      const keys = attached.get(id);
+      if (keys) {
+        if (!keys.has(key)) throw new Error(`${where}: ${id} (attached by a talent or potential) has no value ${key}`);
+      } else checkKey(data.skills[id] as SkillData, key, where);
+    },
+  });
+  idsOf(where0, "buff", kit.buffs ?? []);
+  const skills = kit.skills.map((s) => {
+    const where = `${where0}: ${s.skillId}`;
+    const skill = data.skills[s.skillId];
+    if (!skill) throw new Error(`${where}: unknown skill`);
+    if (op.skillGroups[s.skillId] === undefined) throw new Error(`${where}: not one of ${kit.operator}'s skills`);
+    for (const b of [s.availableWhile, s.unavailableWhile]) if (b && !(kit.buffs ?? []).some((x) => x.id === b)) throw new Error(`${where}: unknown buff ${b}`);
+    return {
+      skillId: s.skillId,
+      label: s.label,
+      kind: s.damageType,
+      ...(s.durationFrames !== undefined ? { durationFrames: s.durationFrames } : {}),
+      ...(s.energyBlockSeconds !== undefined ? { energyBlockSeconds: s.energyBlockSeconds } : {}),
+      ...(s.availableWhile ? { availableWhile: s.availableWhile } : {}),
+      ...(s.unavailableWhile ? { unavailableWhile: s.unavailableWhile } : {}),
+      hits: c.normalizeHits(s.hits, { skillId: s.skillId, damageType: s.damageType, label: s.label, checkScale: (key, w) => checkKey(skill, key, w), defaultEvent: s.skillId, finalStrike: (h, events) => isFinalStrike(s.skillId, events, s.hits.length) }, where),
+    };
+  });
+  return {
+    operator: kit.operator,
+    stacks: (kit.stacks ?? []).map((x) => ({ id: x.id, label: x.label, max: x.max })),
+    ...(kit.activeConditions ? { activeConditions: kit.activeConditions } : {}),
+    buffs: c.normalizeBuffs(kit.buffs ?? []),
+    triggers: (kit.triggers ?? []).map(({ note: _note, ...t }) => c.checkTrigger(t)),
+    skills,
+    conditions: (kit.conditions ?? []).map((x) => {
+      if (x.source.kind === "skill") {
+        const where = `${where0}: condition ${x.id}`;
+        const skill = data.skills[x.source.skillId];
+        if (!skill || op.skillGroups[x.source.skillId] === undefined) throw new Error(`${where}: ${x.source.skillId} isn't one of ${kit.operator}'s skills`);
+        checkKey(skill, x.source.key, where);
+      }
+      return condition(kit.operator, x);
+    }),
+  };
+}
+
+/**
+ * A weapon's or gear set's kit. Its stack, buff and trigger IDs start with
+ * `<equipment ID>.`, so they can't clash with the wearer's own; its values
+ * come from its own skills (a weapon's skills, a gear set's set skill).
+ */
+function loadEquipmentKit(data: KitData, file: string, kit: RawEquipmentKit): EquipmentKit {
+  const where0 = `kits/equipment/${file}`;
+  const id = kit.equipment;
+  if (file !== `${id}.json`) throw new Error(`${where0}: file name must be ${id}.json`);
+  const weapon = data.weapons[id];
+  const set = data.gearSets[id];
+  if (!weapon && !set) throw new Error(`${where0}: ${id} is neither a weapon nor a gear set`);
+  const skills = new Set(weapon ? weapon.skills : [(set as { skillId: string }).skillId]);
+  for (const [what, items] of [["stack", kit.stacks ?? []], ["buff", kit.buffs ?? []], ["trigger", kit.triggers ?? []]] as const) {
+    for (const x of items) if (!x.id.startsWith(`${id}.`)) throw new Error(`${where0}: ${what} ${x.id} must start with "${id}."`);
+  }
+  const c = kitChecker({
+    file: where0,
+    owner: id,
+    stackIds: idsOf(where0, "stack", kit.stacks ?? []),
+    buffDefs: new Map((kit.buffs ?? []).map((b) => [b.id, b])),
+    isSource: (sid) => skills.has(sid) && data.skills[sid] !== undefined,
+    checkSourceKey: (sid, key, where) => checkKey(data.skills[sid] as SkillData, key, where),
+  });
+  idsOf(where0, "buff", kit.buffs ?? []);
+  return {
+    id,
+    stacks: (kit.stacks ?? []).map((x) => ({ id: x.id, label: x.label, max: x.max })),
+    buffs: c.normalizeBuffs(kit.buffs ?? []),
+    triggers: (kit.triggers ?? []).map(({ note: _note, ...t }) => c.checkTrigger(t)),
+    conditions: (kit.conditions ?? []).map((x) => {
+      if (x.source.kind !== "weaponSkill" || !weapon) throw new Error(`${where0}: condition ${x.id}: equipment conditions use weaponSkill sources (weapons only)`);
+      return condition(id, x);
+    }),
+  };
+}
+
 export function loadKits(data: KitData): Kits {
   const v = validator();
   if (!v.kit) throw new Error("kit schema not registered");
@@ -124,192 +390,16 @@ export function loadKits(data: KitData): Kits {
   for (const file of readdirSync(dir).filter((f) => f.endsWith(".json")).sort()) {
     const raw = readJson(join(dir, file));
     if (!v.kit(raw)) throw new Error(`kits/operators/${file}: ${v.ajv.errorsText(v.kit.errors)}`);
-    const kit = raw as RawKit;
-    if (file !== `${kit.operator}.json`) throw new Error(`kits/operators/${file}: file name must be ${kit.operator}.json`);
-    const op = data.operators[kit.operator];
-    if (!op) throw new Error(`kits/operators/${file}: unknown operator ${kit.operator}`);
-    const stackIds = new Set((kit.stacks ?? []).map((x) => x.id));
-    const buffDefs = new Map((kit.buffs ?? []).map((b) => [b.id, b]));
-    if (buffDefs.size !== (kit.buffs ?? []).length) throw new Error(`kits/operators/${file}: duplicate buff ID`);
-    /** Values talents and potentials attach (skill or buff ID → keys at some level), for kits to read. */
-    const attached = new Map<string, Set<string>>();
-    for (const e of [...(op.talentNodes ?? []).flatMap((n) => n.effects), ...(op.potentials ?? []).flat()]) {
-      if (e.kind !== "skill" && e.kind !== "buff") continue;
-      const id = e.kind === "skill" ? e.skillId : e.buffId;
-      attached.set(id, new Set([...(attached.get(id) ?? []), ...Object.keys(e.blackboard)]));
-    }
-    /** Every key a value names must exist: in the operator's skill (a plain key names `skillId`) or in what a talent or potential attaches. */
-    const checkValue = (v: ValueExpr, skillId: string, where: string) => {
-      for (const { skill: sid, key } of valueKeys(v, skillId)) {
-        const keys = attached.get(sid);
-        if (keys) {
-          if (!keys.has(key)) throw new Error(`${where}: ${sid} (attached by a talent or potential) has no value ${key}`);
-          continue;
-        }
-        const sk = data.skills[sid];
-        if (!sk || op.skillGroups[sid] === undefined) throw new Error(`${where}: ${sid} isn't one of ${kit.operator}'s skills or talent/potential sources`);
-        checkKey(sk, key, where);
-      }
-    };
-    /** Every own stack and buff a predicate names must exist in the kit. */
-    const checkPredicate = (p: Predicate, where: string) => {
-      const refs = predicateRefs(p);
-      for (const id of refs.stacks) if (!stackIds.has(id)) throw new Error(`${where}: unknown stack ${id}`);
-      for (const id of refs.buffs) if (!buffDefs.has(id)) throw new Error(`${where}: unknown buff ${id}`);
-    };
-    const checkBuff = (b: KitBuff, skillId: string, where: string) => {
-      for (const v of [b.duration, ...b.modifiers.map((m) => m.value)]) checkValue(v, skillId, `${where}: buff ${b.id}`);
-    };
-    /**
-     * Checks and fills in a list of hits: a skill's (its damage type, Final
-     * Strike from the data) or a trigger's (each hit names its damage type).
-     * `skillId` is where plain value keys come from.
-     */
-    const normalizeHits = (
-      hits: readonly RawHit[],
-      src: { skillId: string; label: string; damageType?: SkillType; checkScale: (key: string, where: string) => void; defaultEvent?: string; finalStrike?: (h: RawHit, events: string[]) => boolean },
-      where: string,
-    ): KitHit[] => {
-      const ids = new Set<string>();
-      return hits.map((h) => {
-        if (src.damageType && h.damageType) throw new Error(`${where} hit ${h.id}: a skill's hits take its damage type`);
-        if (!src.damageType && !h.damageType) throw new Error(`${where} hit ${h.id}: a triggered hit needs a damageType`);
-        if (ids.has(h.id)) throw new Error(`${where}: duplicate hit ${h.id}`);
-        ids.add(h.id);
-        for (const key of [...h.scale, ...(h.bonuses ?? []).map((b) => b.key)]) src.checkScale(key, `${where} hit ${h.id}`);
-        for (const x of h.extraScale ?? []) {
-          checkValue(x.value, src.skillId, `${where} hit ${h.id} extraScale`);
-          checkPredicate(x.if, `${where} hit ${h.id} extraScale`);
-        }
-        if (h.if) checkPredicate(h.if, `${where} hit ${h.id}`);
-        for (const g of h.gains ?? []) if (g.amount !== undefined) checkValue(g.amount, src.skillId, `${where} hit ${h.id} gains`);
-        const element = h.element ?? kit.element;
-        if (!element || !ELEMENTS.includes(element)) throw new Error(`${where} hit ${h.id}: no element`);
-        const events = h.events ?? (src.defaultEvent && hits.length === 1 ? [src.defaultEvent] : []);
-        if (!src.damageType && h.requires) throw new Error(`${where} hit ${h.id}: triggered hits can't require stacks (use the trigger's if)`);
-        for (const id of [h.requires?.stack, ...(h.gains ?? []).map((g) => g.stack)]) {
-          if (id !== undefined && !stackIds.has(id)) throw new Error(`${where} hit ${h.id}: unknown stack ${id} (the kit's stacks: ${[...stackIds].join(", ") || "none"})`);
-        }
-        if (h.energy !== undefined) checkValue(h.energy, src.skillId, `${where} hit ${h.id} energy`);
-        for (const a of h.buffs ?? []) {
-          const b = buffDefs.get(a.buff);
-          if (!b) throw new Error(`${where} hit ${h.id}: unknown buff ${a.buff}`);
-          checkBuff(b, src.skillId, `${where} hit ${h.id}`);
-        }
-        if (h.frames && h.frames.length !== (h.count ?? 1)) throw new Error(`${where} hit ${h.id}: ${h.frames.length} frames for count ${h.count ?? 1}`);
-        return {
-          id: h.id, label: h.label ?? src.label, scale: h.scale, count: h.count ?? 1, damageType: src.damageType ?? h.damageType ?? "none", element, events,
-          ...(h.frames ? { frames: h.frames } : {}),
-          ...(h.applies ? { applies: h.applies } : {}),
-          ...(h.requires ? { requires: h.requires } : {}),
-          ...(h.bonuses ? { bonuses: h.bonuses } : {}),
-          ...(h.factor !== undefined ? { factor: h.factor } : {}),
-          ...(h.reaction ? { reaction: h.reaction } : {}),
-          ...(h.extraScale ? { extraScale: h.extraScale } : {}),
-          ...(h.buffs ? { buffs: h.buffs } : {}),
-          ...(h.energy ? { energy: h.energy } : {}),
-          ...(h.if ? { if: h.if } : {}),
-          ...((h.finalStrike ?? src.finalStrike?.(h, events) ?? false) ? { finalStrike: true } : {}),
-          ...(h.gains ? { gains: h.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1 })) } : {}),
-        };
-      });
-    };
-    const triggerIds = new Set<string>();
-    const checkTrigger = (t: Omit<RawTrigger, "note">, where: string): KitTrigger => {
-      if (triggerIds.has(t.id)) throw new Error(`${where}: duplicate trigger ID`);
-      triggerIds.add(t.id);
-      const skillId = triggerSkillId(kit.operator, t);
-      if (t.skill && !attached.has(t.skill) && (!data.skills[t.skill] || op.skillGroups[t.skill] === undefined)) throw new Error(`${where}: ${t.skill} isn't one of ${kit.operator}'s skills or talent/potential sources`);
-      if (t.on.event === "stackAtLeast" && !stackIds.has(t.on.stack)) throw new Error(`${where}: unknown stack ${t.on.stack}`);
-      if ((t.on.event === "buffApplied" || t.on.event === "buffEnded") && !buffDefs.has(t.on.buff)) throw new Error(`${where}: unknown buff ${t.on.buff}`);
-      if (t.if) checkPredicate(t.if, where);
-      if (t.cooldown !== undefined) checkValue(t.cooldown, skillId, `${where} cooldown`);
-      for (const a of t.do) {
-        switch (a.kind) {
-          case "gain":
-            for (const g of a.gains) {
-              if (!stackIds.has(g.stack)) throw new Error(`${where}: gains unknown stack ${g.stack}`);
-              if ((g.amount as ValueExpr | undefined) !== undefined) checkValue(g.amount, skillId, `${where} gains`);
-            }
-            break;
-          case "energy":
-          case "sp":
-            checkValue(a.value, skillId, `${where} ${a.kind}`);
-            break;
-          case "buff":
-          case "endBuff": {
-            const b = buffDefs.get(a.buff);
-            if (!b) throw new Error(`${where}: unknown buff ${a.buff}`);
-            if (a.kind === "buff") checkBuff(b, skillId, where);
-            break;
-          }
-          case "cooldown":
-            checkValue(a.seconds, skillId, `${where} cooldown change`);
-            break;
-          case "hits":
-            break;
-        }
-      }
-      return {
-        ...t,
-        do: t.do.map((a) =>
-          a.kind === "gain" ? { ...a, gains: a.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1 })) }
-          : a.kind === "hits" ? { kind: "hits", hits: normalizeHits(a.hits, { skillId, label: t.id, checkScale: (key, w) => checkValue(key, skillId, w) }, where) }
-          : a,
-        ),
-      };
-    };
-    const skills = kit.skills.map((s) => {
-      const where = `kits/operators/${file}: ${s.skillId}`;
-      const skill = data.skills[s.skillId];
-      if (!skill) throw new Error(`${where}: unknown skill`);
-      if (op.skillGroups[s.skillId] === undefined) throw new Error(`${where}: not one of ${kit.operator}'s skills`);
-      for (const b of [s.availableWhile, s.unavailableWhile]) if (b && !buffDefs.has(b)) throw new Error(`${where}: unknown buff ${b}`);
-      return {
-        skillId: s.skillId,
-        label: s.label,
-        kind: s.damageType,
-        ...(s.durationFrames !== undefined ? { durationFrames: s.durationFrames } : {}),
-        ...(s.energyBlockSeconds !== undefined ? { energyBlockSeconds: s.energyBlockSeconds } : {}),
-        ...(s.availableWhile ? { availableWhile: s.availableWhile } : {}),
-        ...(s.unavailableWhile ? { unavailableWhile: s.unavailableWhile } : {}),
-        hits: normalizeHits(s.hits, { skillId: s.skillId, damageType: s.damageType, label: s.label, checkScale: (key, w) => checkKey(skill, key, w), defaultEvent: s.skillId, finalStrike: (h, events) => isFinalStrike(s.skillId, events, s.hits.length) }, where),
-      };
-    });
-    operators[kit.operator] = {
-      operator: kit.operator,
-      stacks: (kit.stacks ?? []).map((x) => ({ id: x.id, label: x.label, max: x.max })),
-      ...(kit.activeConditions ? { activeConditions: kit.activeConditions } : {}),
-      buffs: (kit.buffs ?? []).map(({ note: _note, gameBuff, ...b }) => {
-        if (!gameBuff) return b;
-        if (!isBuffFileListed(gameBuff)) throw new Error(`kits/operators/${file}: buff ${b.id}: ${gameBuff} isn't covered by tables.json json.BuffData`);
-        const raw = readBuffFile(gameBuff);
-        if (!raw) throw new Error(`kits/operators/${file}: buff ${b.id}: no BuffData file ${gameBuff}`);
-        return raw.stacking.type === 1 ? { ...b, stackGroup: gameBuff } : b;
-      }),
-      triggers: (kit.triggers ?? []).map(({ note: _note, ...t }) => checkTrigger(t, `kits/operators/${file}: trigger ${t.id}`)),
-      skills,
-      conditions: (kit.conditions ?? []).map((c) => {
-        if (c.source.kind === "skill") {
-          const where = `kits/operators/${file}: condition ${c.id}`;
-          const skill = data.skills[c.source.skillId];
-          if (!skill || op.skillGroups[c.source.skillId] === undefined) throw new Error(`${where}: ${c.source.skillId} isn't one of ${kit.operator}'s skills`);
-          checkKey(skill, c.source.key, where);
-        }
-        return condition(kit.operator, c);
-      }),
-    };
+    const kit = loadOperatorKit(data, file, raw as RawKit);
+    operators[kit.operator] = kit;
   }
-
-  const rawWeapons = readJson(join(KITS, "weapons.json"));
-  if (!v.weapons(rawWeapons)) throw new Error(`kits/weapons.json: ${v.ajv.errorsText(v.weapons.errors)}`);
-  const weapons: Record<string, Condition[]> = {};
-  for (const [id, w] of Object.entries((rawWeapons as RawWeaponKits).weapons)) {
-    if (!data.weapons[id]) throw new Error(`kits/weapons.json: unknown weapon ${id}`);
-    weapons[id] = w.conditions.map((c) => {
-      if (c.source.kind === "skill") throw new Error(`kits/weapons.json: ${id}.${c.id}: weapon conditions use weaponSkill sources`);
-      return condition(id, c);
-    });
+  const equipment: Record<string, EquipmentKit> = {};
+  const edir = join(KITS, "equipment");
+  for (const file of existsSync(edir) ? readdirSync(edir).filter((f) => f.endsWith(".json")).sort() : []) {
+    const raw = readJson(join(edir, file));
+    if (!v.equipment(raw)) throw new Error(`kits/equipment/${file}: ${v.ajv.errorsText(v.equipment.errors)}`);
+    const kit = loadEquipmentKit(data, file, raw as RawEquipmentKit);
+    equipment[kit.id] = kit;
   }
-  return { operators, weapons };
+  return { operators, equipment };
 }

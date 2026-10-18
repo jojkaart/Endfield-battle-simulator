@@ -3,7 +3,7 @@
 // the bursts and reactions it predicts with the ones the log records. Logs
 // don't record inflictions, so this is how a kit's `applies` gets verified.
 
-import { applyToEnemy, computeStats, expireStatus, FPS, hitAvailable, hitEffects, kitHitEntries, NO_STATUS, statusEventKey, type GameData, type KitHit, type StatusEvent } from "@efsim/engine";
+import { applyToEnemy, computeStats, expireStatus, FPS, effectiveKit, hitAvailable, hitEffects, kitHitEntries, NO_STATUS, statusEventKey, type GameData, type KitHit, type StatusEvent } from "@efsim/engine";
 import type { LogFixture } from "@efsim/data";
 
 /**
@@ -40,21 +40,21 @@ function kitHit(data: GameData, fixture: LogFixture, operator: string, event: st
   const build = fixture.team.find((b) => b.operator === operator);
   if (!build) return null;
   const panel = computeStats(data, build);
-  for (const e of kitHitEntries(data.kits.operators[operator])) if (e.hit.events.includes(event) && hitAvailable(data, build, panel, e.skillId, e.hit, { team: fixture.team })) return e.hit;
+  for (const e of kitHitEntries(effectiveKit(data, build))) if (e.hit.events.includes(event) && hitAvailable(data, build, panel, e.skillId, e.hit, { team: fixture.team })) return e.hit;
   return null;
 }
 
 export function checkReactions(data: GameData, fixture: LogFixture): ReactionCheck {
   const hits = [...fixture.hits].sort((a, b) => a.t - b.t);
   let enemy = NO_STATUS;
-  const team = fixture.team.map((b) => b.operator);
+  const teamKits = fixture.team.flatMap((b) => effectiveKit(data, b) ?? []);
   const predicted: { predicted: StatusEvent; t: number }[] = [];
   for (const h of hits) {
     const kh = kitHit(data, fixture, h.operator, h.event);
     if (!kh) continue;
     const frame = (h.t * FPS) / 1000;
     // Only the controlled operator does basic attacks, so a logged Final Strike counts for Final Strike triggers.
-    for (const effect of hitEffects(data.kits, team, h.operator, kh, h.event)) {
+    for (const effect of hitEffects(teamKits, h.operator, kh, h.event)) {
       for (const app of effect.applies) {
         // Arts Intensity only scales status strength, and skill values only a forced status's duration and damage, which this check doesn't compare.
         const r = applyToEnemy(expireStatus(enemy, frame), app, frame, h.operator, 0, () => 1);
@@ -86,8 +86,11 @@ export function checkReactions(data: GameData, fixture: LogFixture): ReactionChe
     unpredicted: logged.filter((l) => !l.used).map(({ used: _used, ...l }) => l),
     other,
     withoutApplies: fixture.team
-      .map((b) => b.operator)
-      .filter((op) => !(data.kits.operators[op]?.skills ?? []).some((s) => s.hits.some((h) => h.applies?.length)) && !(data.kits.operators[op]?.triggers ?? []).some((t) => t.do.some((a) => a.kind === "apply"))),
+      .filter((b) => {
+        const kit = effectiveKit(data, b);
+        return !kitHitEntries(kit).some((e) => e.hit.applies?.length) && !(kit?.triggers ?? []).some((t) => t.do.some((a) => a.kind === "apply"));
+      })
+      .map((b) => b.operator),
   };
 }
 

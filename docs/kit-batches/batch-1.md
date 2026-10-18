@@ -165,6 +165,12 @@ Then re-analysis of all seven.
   hits, casts, status events, buffs applied and ended, stacks; actions
   openCombo, apply, gain, energy, sp, buff, endBuff, cooldown; trigger
   cooldowns and count limits. Kits migrated; all example totals unchanged.
-  Still to do in T1–T3: triggered hits, weapon and gear-set triggers, the
-  buff lifecycle (B1, B3, B4, B6), the remaining predicates (C1–C2) and
-  heal events.
+- T2, triggered hits: a trigger's `hits` action, hits naming their damage
+  type (`none` included); log checks find them by event key.
+- T3, equipment kits: `kits/equipment/<id>.json` for weapons and gear sets
+  (stacks, buffs, triggers, legacy conditions), added to the wearer's kit
+  (`effectiveKit`); `weapons.json` moved there. No equipment triggers are
+  written yet (kits phase).
+- Still to do in this pass: the buff lifecycle (B1, B3, B4, B6), the
+  remaining predicates and per-effect `if` (C1–C2), heal events, trigger
+  targets beyond self / team / enemy (T2).

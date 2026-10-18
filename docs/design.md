@@ -202,7 +202,16 @@ What the actions cause are events too, run in the same chain (a loop in the
 kit data is an error). Combo windows and team effects such as Laevatain's
 Heat absorption on the controlled operator's Final Strikes are triggers;
 `triggers.ts` gives the log replay the applications and gains a logged hit
-causes.
+causes. A trigger's `hits` action lands hits as its owner; each names its
+damage type (`none` for hits of no skill type).
+
+**Equipment kits** (`packages/data/kits/equipment/<id>.json`, one per
+weapon or gear set) hold stacks, buffs and triggers that act for whoever
+wears them (the owner's rule: any equipment on any operator, effects just
+may not activate). Their IDs start with `<id>.`, their values come from the
+equipment's own skills at the build's levels (`StatPanel.sources`), and
+`effectiveKit` adds them to the wearer's kit for the fight: the weapon and
+every gear set with enough pieces (`wornEquipment`).
 
 Numeric enums (attribute types, stacking types, buff events, formula slots)
 are decoded through **one version-pinned enum map**, each entry verified

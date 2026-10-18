@@ -157,7 +157,7 @@ function build(): GameData {
   }
 
   const c = loadBattleConst(PRIMARY);
-  const kits = loadKits({ skills, operators, weapons });
+  const kits = loadKits({ skills, operators, weapons, gearSets });
   return {
     provenance: { sources: SOURCES.map((name) => ({ name, commit: sourceCommit(name) })) },
     constants: {

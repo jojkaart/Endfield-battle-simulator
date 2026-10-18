@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0006",
+  "sources": [
+    "rmxlinux Json/SkillData/sk_wpn_sword_0006 creates buff_wpn_sword_0006_valid (attribute 17, basic attack DMG) for `duration` (20 s); value key normal_atk_up in SkillPatchTable.",
+    "Zero Sanity's in-game hit table applies +210% (skill level 9) to Laevatain's enhanced basic attacks."
+  ],
+  "conditions": [
+    {
+      "id": "after_ultimate",
+      "label": "Forgeborn Scathe: after casting the ultimate, basic attack DMG up (20 s)",
+      "source": {
+        "kind": "weaponSkill",
+        "skill": 2,
+        "key": "normal_atk_up"
+      },
+      "effect": {
+        "kind": "attr",
+        "attr": 17
+      }
+    }
+  ]
+}

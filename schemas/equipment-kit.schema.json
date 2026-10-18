@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jojkaart/Endfield-battle-simulator/schemas/equipment-kit.schema.json",
+  "title": "Equipment kit",
+  "description": "A weapon's or gear set's hand-written effects. They act for whoever wears it (docs/kit-process.md, \"Equipment is generic\"): triggers listen to the wearer's events, buffs and stacks are the wearer's. Stack, buff and trigger IDs start with \"<equipment ID>.\". Values come from the equipment's own skills (a weapon's skills, a gear set's set skill).",
+  "type": "object",
+  "required": [
+    "equipment",
+    "sources"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "equipment": {
+      "type": "string",
+      "description": "Weapon ID (WeaponBasicTable) or gear-set ID (gear set table); the file is named after it."
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "stacks": {
+      "$ref": "kit.schema.json#/properties/stacks"
+    },
+    "buffs": {
+      "$ref": "kit.schema.json#/properties/buffs"
+    },
+    "triggers": {
+      "$ref": "kit.schema.json#/properties/triggers"
+    },
+    "conditions": {
+      "type": "array",
+      "items": {
+        "$ref": "kit.schema.json#/$defs/condition"
+      },
+      "description": "Legacy always-on states the user switches on (weapons only, weaponSkill sources); triggers replace them."
+    }
+  }
+}

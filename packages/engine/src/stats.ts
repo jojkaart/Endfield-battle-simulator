@@ -7,7 +7,7 @@ import { Attr, attrName, type AttrType } from "./attributes.ts";
 import type { Build } from "./build.ts";
 import { test } from "./expr.ts";
 import { EngineError } from "./errors.ts";
-import { Slot, Target, type Effect, type GameData, type OperatorData, type SkillData, type SkillValueOp } from "./model.ts";
+import { Slot, Target, type Effect, type GameData, type GearSetData, type OperatorData, type SkillData, type SkillValueOp } from "./model.ts";
 
 export interface Contribution {
   readonly source: string;
@@ -229,7 +229,6 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
     });
   }
 
-  const setCounts = new Map<string, number>();
   for (const piece of build.gear) {
     const g = data.gear[piece.id];
     if (!g) throw new EngineError(`unknown gear ${piece.id}`);
@@ -240,13 +239,8 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
       if (value === undefined) throw new EngineError(`${g.id} line ${l.line} has no artificing level ${level}`);
       apply(l.attr, l.slot, l.target, value, `${g.name} line ${l.line}${l.line === 0 ? "" : ` (artifice ${level})`}`);
     }
-    if (g.setId) setCounts.set(g.setId, (setCounts.get(g.setId) ?? 0) + 1);
   }
-  for (const [setId, count] of [...setCounts].sort()) {
-    const set = data.gearSets[setId];
-    if (!set) throw new EngineError(`unknown gear set ${setId}`);
-    if (count >= set.piecesRequired) applySkill(set.skillId, set.skillLevel, `${set.name} set (${count} pieces)`);
-  }
+  for (const { set, count } of activeGearSets(data, build)) applySkill(set.skillId, set.skillLevel, `${set.name} set (${count} pieces)`);
 
   // Totals: ((base + Σ add) × (1 + Σ percent) + Σ flat) × Π multiply.
   const attrs: Record<number, StatLine> = {};
@@ -331,4 +325,25 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
     if (holds) c.add();
   }
   return panel;
+}
+
+/** The gear sets a build has enough pieces of for their set effect, by set ID. */
+export function activeGearSets(data: GameData, build: Build): { readonly set: GearSetData; readonly count: number }[] {
+  const counts = new Map<string, number>();
+  for (const piece of build.gear) {
+    const setId = data.gear[piece.id]?.setId;
+    if (setId) counts.set(setId, (counts.get(setId) ?? 0) + 1);
+  }
+  const out: { set: GearSetData; count: number }[] = [];
+  for (const [setId, count] of [...counts].sort()) {
+    const set = data.gearSets[setId];
+    if (!set) throw new EngineError(`unknown gear set ${setId}`);
+    if (count >= set.piecesRequired) out.push({ set, count });
+  }
+  return out;
+}
+
+/** What a build wears that can have a kit: its weapon, then its active gear sets. */
+export function wornEquipment(data: GameData, build: Build): string[] {
+  return [...(build.weapon ? [build.weapon.id] : []), ...activeGearSets(data, build).map((x) => x.set.id)];
 }

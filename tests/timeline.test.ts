@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, buffModifiers, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type GameData, type KitBuff, type KitHit, type KitTrigger, type Modifier, type OperatorKit, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { advance, apply, buffModifiers, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitTrigger, type Modifier, type OperatorKit, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -364,5 +364,38 @@ describe("timeline: kit triggers", () => {
       ["final_strike_absorb", "hit", "controlled"],
       ["combo_window", "reaction", "anyone"],
     ]);
+  });
+});
+
+describe("timeline: equipment kits act for the wearer", () => {
+  const W = "wpn_sword_0006";
+  const forgeborn: EquipmentKit = {
+    id: W,
+    stacks: [],
+    buffs: [{ id: `${W}.after_ultimate`, label: "after ultimate", target: "self", duration: "duration", modifiers: [{ zone: "damageBonus", value: "normal_atk_up", skillType: "basic" }] }],
+    triggers: [{ id: `${W}.on_ultimate`, on: { event: "cast", kinds: ["ultimate"] }, by: "self", skill: "sk_wpn_sword_0006", do: [{ kind: "buff", buff: `${W}.after_ultimate` }] }],
+    conditions: [],
+  };
+  const withKit = (id: string): GameData => ({ ...data, kits: { ...data.kits, equipment: { ...data.kits.equipment, [id]: { ...forgeborn, id } } } });
+  const rot = [{ operator: op, skill: L + "ultimate_skill" }, { operator: op, skill: L + "ult_attack1" }];
+  const attack = (d: GameData) => simulate(d, scenario(rot)).hits.find((h) => h.skillId === L + "ult_attack1");
+
+  it("a weapon's trigger and buff are its wearer's, with values from the weapon's skill at its level", () => {
+    const v = skillValue(data, computeStats(data, build), build, "sk_wpn_sword_0006", "normal_atk_up");
+    expect(v).toBeGreaterThan(0);
+    expect(attack(withKit(W))?.zones.damageBonus).toBeCloseTo((attack(data)?.zones.damageBonus ?? NaN) + v, 9);
+  });
+
+  it("a kit of equipment the operator doesn't wear does nothing", () => {
+    expect(attack(withKit("wpn_sword_0001"))?.zones.damageBonus).toBe(attack(data)?.zones.damageBonus);
+  });
+
+  it("what a build wears: its weapon, then its active gear sets", () => {
+    expect(wornEquipment(data, build)[0]).toBe(W);
+    const set = Object.values(data.gearSets).find((s) => s.piecesRequired === 3);
+    const pieces = Object.values(data.gear).filter((g) => g.setId === set?.id).slice(0, 3);
+    if (!set || pieces.length < 3) throw new Error("no three-piece gear set in the data");
+    const worn: Build = { ...build, gear: pieces.map((g) => ({ id: g.id, artifice: [0, 0, 0] as const })) };
+    expect(wornEquipment(data, worn)).toEqual([W, set.id]);
   });
 });

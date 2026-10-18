@@ -36,7 +36,7 @@ function gameData(over: { def?: number; fireRes?: number; atkPercent?: number } 
     gear: {}, gearSets: {},
     enemies: { eny: { id: "eny", name: "Eny", levels: [{ 0: 1, [Attr.Def]: over.def ?? 100 }], staticAttrs: {},
       resistance: { physical: 0, fire: over.fireRes ?? 0, pulse: 0, cryst: 0, natural: 0, ether: 0 } } },
-    kits: { operators: {}, weapons: {} },
+    kits: { operators: {}, equipment: {} },
   };
 }
 

@@ -28,7 +28,8 @@ import {
 } from "./damage.ts";
 import { zoneSum, type Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
-import type { GameData, KitHit, KitSkill, StackGain } from "./model.ts";
+import type { GameData, KitHit, KitSkill, OperatorKit, StackGain } from "./model.ts";
+import { effectiveKit } from "./triggers.ts";
 import { causeMatches, eventMatches, triggerSkillId, type BattleEvent, type KitTrigger } from "./events.ts";
 import { evaluate, test, type EvalContext } from "./expr.ts";
 import { applyBuff, buffModifiers, resolveValue, withBuff, type ActiveBuff } from "./buffs.ts";
@@ -165,6 +166,8 @@ export interface TimelineContext {
   readonly panels: ReadonlyMap<string, StatPanel>;
   /** Per operator: always-on condition modifiers plus the scenario's extra modifiers (not the panel's own; the damage pipeline adds those). */
   readonly modifiers: ReadonlyMap<string, readonly Modifier[]>;
+  /** Per operator: its kit with what it wears (triggers.ts effectiveKit). */
+  readonly kits: ReadonlyMap<string, OperatorKit>;
 }
 
 export function createContext(data: GameData, scenario: TimelineScenario): TimelineContext {
@@ -175,7 +178,11 @@ export function createContext(data: GameData, scenario: TimelineScenario): Timel
   const modifiers = new Map(
     scenario.team.map((b) => [b.operator, [...conditionModifiers(data, b, scenario.options.conditions?.[b.operator] ?? []), ...(scenario.options.modifiers ?? [])]]),
   );
-  return { data, scenario, builds, panels, modifiers };
+  const kits = new Map(scenario.team.flatMap((b) => {
+    const kit = effectiveKit(data, b);
+    return kit ? [[b.operator, kit] as const] : [];
+  }));
+  return { data, scenario, builds, panels, modifiers, kits };
 }
 
 export function init(ctx: TimelineContext): TimelineState {
@@ -199,7 +206,7 @@ export function init(ctx: TimelineContext): TimelineState {
     enemy: NO_STATUS,
     buffs: [],
     triggerState: {},
-    stacks: Object.fromEntries(ctx.scenario.team.map((b) => [b.operator, Object.fromEntries((ctx.data.kits.operators[b.operator]?.stacks ?? []).map((x) => [x.id, 0]))])),
+    stacks: Object.fromEntries(ctx.scenario.team.map((b) => [b.operator, Object.fromEntries((ctx.kits.get(b.operator)?.stacks ?? []).map((x) => [x.id, 0]))])),
     casts: [],
     hits: [],
     reactions: [],
@@ -214,7 +221,7 @@ function spAt(state: TimelineState, frame: number): number {
 }
 
 function kitSkill(ctx: TimelineContext, operator: string, skillId: string): KitSkill {
-  const kit = ctx.data.kits.operators[operator];
+  const kit = ctx.kits.get(operator);
   if (!kit) throw new EngineError(`no kit for ${operator}`);
   const s = kit.skills.find((x) => x.skillId === skillId);
   if (!s) throw new EngineError(`${operator}'s kit has no skill ${skillId}`);
@@ -252,7 +259,7 @@ function skillCosts(ctx: TimelineContext, operator: string, skillId: string) {
 
 /** Most ultimate energy an operator can hold: its kit's ultimate cost (the highest, if it has several). */
 function maxEnergy(ctx: TimelineContext, operator: string): number {
-  const kit = ctx.data.kits.operators[operator];
+  const kit = ctx.kits.get(operator);
   const costs = (kit?.skills ?? []).filter((s) => ctx.data.operators[operator]?.skillGroups[s.skillId] === "ultimate").map((s) => skillCosts(ctx, operator, s.skillId).energyCost);
   return costs.length ? Math.max(...costs) : 0;
 }
@@ -323,7 +330,7 @@ type Stacks = TimelineState["stacks"];
 function gainStacks(ctx: TimelineContext, stacks: Stacks, owner: string, gains: readonly StackGain[], ec: EvalContext): Stacks {
   let out = stacks;
   for (const g of gains) {
-    const def = ctx.data.kits.operators[owner]?.stacks.find((x) => x.id === g.stack);
+    const def = ctx.kits.get(owner)?.stacks.find((x) => x.id === g.stack);
     if (!def) throw new EngineError(`${owner} has no stack ${g.stack}`);
     const own = out[owner] ?? {};
     const amount = evaluate(g.amount, ec);
@@ -366,7 +373,7 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
     const e = queue.shift() as BattleEvent;
     for (const b of ctx.scenario.team) {
       const owner = b.operator;
-      for (const t of ctx.data.kits.operators[owner]?.triggers ?? []) {
+      for (const t of ctx.kits.get(owner)?.triggers ?? []) {
         if (!eventMatches(t.on, e, owner, st.stacks[owner] ?? {}) || !causeMatches(t.by, e, owner)) continue;
         const key = `${owner}:${t.id}`;
         const ts = st.triggerState[key];
@@ -398,7 +405,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
     switch (a.kind) {
       case "openCombo": {
         if (origin && origin.operator === owner && origin.kind === "combo") break;
-        const combos = (ctx.data.kits.operators[owner]?.skills ?? []).filter((s) => s.kind === "combo");
+        const combos = (ctx.kits.get(owner)?.skills ?? []).filter((s) => s.kind === "combo");
         if (combos.length > 0 && combos.every((s) => (st.readyAt[s.skillId] ?? 0) > frame)) break;
         st = { ...st, comboWindow: { ...st.comboWindow, [owner]: { from: frame, until: frame + COMBO_WINDOW_FRAMES } } };
         break;
@@ -427,7 +434,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         break;
       }
       case "buff": {
-        const def = ctx.data.kits.operators[owner]?.buffs.find((x) => x.id === a.buff);
+        const def = ctx.kits.get(owner)?.buffs.find((x) => x.id === a.buff);
         if (!def) throw new EngineError(`${owner} has no buff ${a.buff}`);
         st = { ...st, buffs: withBuff(st.buffs, applyBuff(ctx.data, build, panel, triggerSkillId(owner, t), def, frame, situationAt(ctx, owner, st.enemy, st.stacks, st.buffs, frame, consumed))) };
         events.push({ type: "buffApplied", frame, operator: owner, buff: a.buff });
@@ -444,7 +451,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         if (!who) break;
         const change = Math.round(evaluate(a.seconds, ec()) * FPS);
         const readyAt = { ...st.readyAt };
-        for (const s of ctx.data.kits.operators[who]?.skills ?? []) {
+        for (const s of ctx.kits.get(who)?.skills ?? []) {
           if (s.kind === a.skills && (readyAt[s.skillId] ?? 0) > frame) readyAt[s.skillId] = Math.max(frame, (readyAt[s.skillId] ?? 0) + change);
         }
         st = { ...st, readyAt };
@@ -480,7 +487,7 @@ function pendingHitDef(ctx: TimelineContext, hit: PendingHit): { skill: Pick<Kit
     return { skill, kind: skill.kind, kitHit: skill.hits.find((h) => h.id === hit.hitId) as KitHit };
   }
   const { id, action } = hit.trigger;
-  const a = ctx.data.kits.operators[hit.operator]?.triggers.find((t) => t.id === id)?.do[action];
+  const a = ctx.kits.get(hit.operator)?.triggers.find((t) => t.id === id)?.do[action];
   const kitHit = a?.kind === "hits" ? a.hits.find((h) => h.id === hit.hitId) : undefined;
   if (!kitHit) throw new EngineError(`${hit.operator} trigger ${id} has no hit ${hit.hitId}`);
   return { skill: { skillId: hit.skillId }, kind: kitHit.damageType, kitHit };
@@ -517,7 +524,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   if (kitHit.gains?.length) {
     st = { ...st, stacks: gainStacks(ctx, st.stacks, hit.operator, kitHit.gains, evalContext(ctx.data, build, panel, hit.skillId, situationAt(ctx, hit.operator, st.enemy, st.stacks, st.buffs, hit.frame, consumed))) };
   }
-  const kitBuff = (id: string) => ctx.data.kits.operators[hit.operator]?.buffs.find((b) => b.id === id);
+  const kitBuff = (id: string) => ctx.kits.get(hit.operator)?.buffs.find((b) => b.id === id);
   const applyBuffs = (beforeDamage: boolean) => {
     for (const a of kitHit.buffs ?? []) {
       if ((a.beforeDamage ?? false) !== beforeDamage) continue;
@@ -644,7 +651,7 @@ export function earliestStart(ctx: TimelineContext, state: TimelineState, action
 function hasComboTrigger(ctx: TimelineContext, operator: string): boolean {
   const panel = ctx.panels.get(operator) as StatPanel;
   const build = ctx.builds.get(operator) as Build;
-  return (ctx.data.kits.operators[operator]?.triggers ?? []).some(
+  return (ctx.kits.get(operator)?.triggers ?? []).some(
     (t) => t.do.some((a) => a.kind === "openCombo") && (!t.if || test(t.if, evalContext(ctx.data, build, panel, triggerSkillId(operator, t), { team: ctx.scenario.team })) !== false),
   );
 }

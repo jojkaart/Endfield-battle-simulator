@@ -10,7 +10,7 @@ import { EngineError } from "./errors.ts";
 import type { Condition, GameData, KitHit, KitSkill } from "./model.ts";
 import { artsIntensityDamage, artsLevelCoefficient, reactionBase, type ReactionKind } from "./reactions.ts";
 import { evaluate, test, type EvalContext, type Predicate } from "./expr.ts";
-import { computeStats, skillLevel, type StatPanel } from "./stats.ts";
+import { computeStats, skillLevel, wornEquipment, type StatPanel } from "./stats.ts";
 
 export type CritMode = "never" | "always" | "expected";
 
@@ -171,9 +171,9 @@ function conditionValue(data: GameData, build: Build, c: Condition, panel: () =>
   return v * s.scale;
 }
 
-/** Conditions available to a build: its operator's kit conditions and its weapon's. */
+/** Conditions available to a build: its operator's kit conditions and those of what it wears. */
 export function availableConditions(data: GameData, build: Build): readonly Condition[] {
-  return [...(data.kits.operators[build.operator]?.conditions ?? []), ...(build.weapon ? (data.kits.weapons[build.weapon.id] ?? []) : [])];
+  return [...(data.kits.operators[build.operator]?.conditions ?? []), ...wornEquipment(data, build).flatMap((id) => data.kits.equipment[id]?.conditions ?? [])];
 }
 
 /** The active conditions as modifiers, with values at the build's levels. */

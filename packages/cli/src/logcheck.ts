@@ -5,8 +5,10 @@ import {
   attrModifier,
   computeHit,
   computeReaction,
+  effectiveKit,
   hitAvailable,
   kitHitEntries,
+  type Build,
   computeStats,
   corrosionModifier,
   parseReactionEvent,
@@ -111,8 +113,8 @@ export function logModifiers(effects: readonly LogEffect[], category: HitCategor
 }
 
 /** Every kit hit a logged event key could be (a key can stand for several hits, e.g. two hits of one attack). */
-function findHits(data: GameData, operator: string, event: string): [{ skillId: string }, KitHit][] {
-  return kitHitEntries(data.kits.operators[operator]).filter((e) => e.hit.events.includes(event)).map((e) => [{ skillId: e.skillId }, e.hit]);
+function findHits(data: GameData, build: Build, event: string): [{ skillId: string }, KitHit][] {
+  return kitHitEntries(effectiveKit(data, build)).filter((e) => e.hit.events.includes(event)).map((e) => [{ skillId: e.skillId }, e.hit]);
 }
 
 /** Above this many boundary buffs, only none or all are tried. */
@@ -186,7 +188,7 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
   return fx.hits.map((hit): HitVerdict => {
     const member = panels.get(hit.operator);
     const reaction = parseReactionEvent(hit.event);
-    const found = reaction ? [] : findHits(data, hit.operator, hit.event);
+    const found = reaction || !member ? [] : findHits(data, member.build, hit.event);
     if (!member || (found.length === 0 && !reaction)) return { kind: "uncovered", hit };
     const actual = hit.uncapped ?? hit.value;
     const stackOptions = reaction && reaction.kind !== "burst" ? [1, 2, 3, 4] : [1];

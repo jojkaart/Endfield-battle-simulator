@@ -1,4 +1,6 @@
-// What a logged hit does to the enemy besides damage, for log replays: its
+// Kits as a fight uses them: an operator's own kit together with the kits of
+// what it wears (effectiveKit), every hit a kit can land, and, for log
+// replays, what a logged hit does to the enemy besides damage: its
 // own kit entry's effects, and every team member's hit triggers that react
 // to it with applications or gains (e.g. Laevatain's talent: the controlled
 // operator's Final Strikes absorb Heat Infliction for her Melting Flame).
@@ -7,7 +9,9 @@
 
 import type { SkillType } from "./attributes.ts";
 import { causeMatches, eventMatches, triggerSkillId, type BattleEvent } from "./events.ts";
-import type { Kits, KitHit, OperatorKit, StackGain } from "./model.ts";
+import type { Build } from "./build.ts";
+import type { GameData, KitHit, OperatorKit, StackGain } from "./model.ts";
+import { wornEquipment } from "./stats.ts";
 import type { HitApplication } from "./status.ts";
 
 export interface HitEffect {
@@ -25,12 +29,13 @@ export interface HitEffect {
  * (a replay has no situation to judge them in). Only the controlled operator
  * does basic attacks, so a basic hit counts as the controlled operator's.
  */
-export function hitEffects(kits: Kits, team: readonly string[], hitter: string, hit: KitHit, skillId = "", kind: SkillType | "none" = hit.damageType): HitEffect[] {
+export function hitEffects(teamKits: readonly OperatorKit[], hitter: string, hit: KitHit, skillId = "", kind: SkillType | "none" = hit.damageType): HitEffect[] {
   const out: HitEffect[] = [];
   if (hit.applies?.length || hit.gains?.length) out.push({ owner: hitter, applies: hit.applies ?? [], gains: hit.gains ?? [], own: true });
   const e: BattleEvent = { type: "hit", frame: 0, operator: hitter, skillId, kind, element: hit.element, finalStrike: hit.finalStrike === true, controlled: kind === "basic" };
-  for (const member of team) {
-    for (const t of kits.operators[member]?.triggers ?? []) {
+  for (const kit of teamKits) {
+    const member = kit.operator;
+    for (const t of kit.triggers) {
       if (!eventMatches(t.on, e, member, {}) || !causeMatches(t.by, e, member)) continue;
       const applies = t.do.flatMap((a) => (a.kind === "apply" ? a.applies : []));
       const gains = t.do.flatMap((a) => (a.kind === "gain" ? a.gains : []));
@@ -47,4 +52,22 @@ export function kitHitEntries(kit: OperatorKit | undefined): { readonly skillId:
     ...kit.skills.flatMap((s) => s.hits.map((hit) => ({ skillId: s.skillId, hit }))),
     ...kit.triggers.flatMap((t) => t.do.flatMap((a) => (a.kind === "hits" ? a.hits.map((hit) => ({ skillId: triggerSkillId(kit.operator, t), hit })) : []))),
   ];
+}
+
+/**
+ * An operator's kit with what it wears added: the weapon's and active gear
+ * sets' stacks, buffs and triggers act as the operator's own (conditions: availableConditions)
+ * (their IDs are prefixed, so they can't clash). Undefined without a kit.
+ */
+export function effectiveKit(data: GameData, build: Build): OperatorKit | undefined {
+  const own = data.kits.operators[build.operator];
+  if (!own) return undefined;
+  const worn = wornEquipment(data, build).flatMap((id) => data.kits.equipment[id] ?? []);
+  if (worn.length === 0) return own;
+  return {
+    ...own,
+    stacks: [...own.stacks, ...worn.flatMap((k) => k.stacks)],
+    buffs: [...own.buffs, ...worn.flatMap((k) => k.buffs)],
+    triggers: [...own.triggers, ...worn.flatMap((k) => k.triggers)],
+  };
 }
