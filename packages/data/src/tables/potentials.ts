@@ -6,15 +6,21 @@ import { arr, at, get, int, num, obj, str, type Ctx } from "../fields.ts";
 import { readTable, type SourceName } from "../sources.ts";
 import { attrModifier, blackboard, records, type RawAttrModifier } from "./common.ts";
 
-export type RawEffect =
+/** Effects, optionally limited by an `activeCondition` (a condition ID such as Arcane's `lizhiyan_wisd`). */
+export type RawEffect = RawEffectBody & { activeCondition?: string[] };
+
+type RawEffectBody =
   | { kind: "attr"; modifier: RawAttrModifier }
+  | { kind: "skill"; skillId: string; blackboard: Record<string, number> }
   | { kind: "skillValue"; skillId: string; key: string; op: "add" | "multiply" | "set"; value: number }
   | { kind: "buff"; buffId: string; blackboard: Record<string, number> }
   | { kind: "skillParam"; skillId: string; param: "cost" | "cooldown"; op: "add" | "multiply" | "set"; value: number }
   | { kind: "other"; modifyType: number };
 
-// modifyType: 1 attach skill, 2 change a skill parameter (skillParamModifier),
-// 3 change a skill value, 4 attribute, 5 attach buff. 1 isn't read yet.
+// modifyType: 1 attach skill (its blackboard holds the talent's values),
+// 2 change a skill parameter (skillParamModifier), 3 change a skill value,
+// 4 attribute, 5 attach buff.
+const MODIFY_ATTACH_SKILL = 1;
 const MODIFY_SKILL_PARAM = 2;
 const MODIFY_SKILL_VALUE = 3;
 
@@ -31,6 +37,12 @@ const VALUE_OPS: Record<number, "add" | "multiply" | "set"> = { 1: "add", 2: "mu
 
 function effect(raw: unknown, ctx: Ctx): RawEffect {
   const d = obj(raw, ctx);
+  const body = effectBody(d, ctx);
+  const cond = Array.isArray(d["activeCondition"]) ? (d["activeCondition"] as unknown[]).map((x, i) => str(x, at(at(ctx, "activeCondition"), i))) : [];
+  return cond.length ? { ...body, activeCondition: cond } : body;
+}
+
+function effectBody(d: Record<string, unknown>, ctx: Ctx): RawEffectBody {
   const type = get(d, "modifyType", ctx, int);
   if (type === MODIFY_ATTRIBUTE) return { kind: "attr", modifier: attrModifier(d["attrModifier"], at(ctx, "attrModifier")) };
   if (type === MODIFY_SKILL_VALUE) {
@@ -41,6 +53,11 @@ function effect(raw: unknown, ctx: Ctx): RawEffect {
     if (!op) throw new DataError(ctx.source, c.path, `unknown skill value modifyType ${opType}`);
     if (get(m, "stringValue", c, str) !== "") throw new DataError(ctx.source, c.path, "string skill values aren't supported");
     return { kind: "skillValue", skillId: get(m, "skillId", c, str), key: get(m, "bbKey", c, str), op, value: get(m, "floatValue", c, num) };
+  }
+  if (type === MODIFY_ATTACH_SKILL) {
+    const c = at(ctx, "attachSkill");
+    const b = obj(d["attachSkill"], c);
+    return { kind: "skill", skillId: get(b, "skillId", c, str), blackboard: blackboard(b["blackboard"], at(c, "blackboard")) };
   }
   if (type === MODIFY_SKILL_PARAM) {
     const c = at(ctx, "skillParamModifier");

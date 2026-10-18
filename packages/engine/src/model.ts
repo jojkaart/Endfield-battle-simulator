@@ -41,8 +41,17 @@ export interface SkillAttrModifier {
 
 export type SkillValueOp = "add" | "multiply" | "set";
 
-export type Effect =
+/**
+ * A talent, potential or equipment effect. `activeCondition` names game
+ * conditions (e.g. Arcane's `lizhiyan_wisd`) that must hold for it; the
+ * operator's kit maps each to a Predicate (OperatorKit.activeConditions).
+ */
+export type Effect = EffectBody & { readonly activeCondition?: readonly string[] };
+
+type EffectBody =
   | { readonly kind: "attr"; readonly modifier: AttrModifier }
+  /** A skill attached by a talent: its blackboard holds the talent's values at that level. */
+  | { readonly kind: "skill"; readonly skillId: string; readonly blackboard: Readonly<Record<string, number>> }
   | { readonly kind: "skillValue"; readonly skillId: string; readonly key: string; readonly op: SkillValueOp; readonly value: number }
   | { readonly kind: "buff"; readonly buffId: string; readonly blackboard: Readonly<Record<string, number>> }
   | { readonly kind: "skillParam"; readonly skillId: string; readonly param: "cost" | "cooldown"; readonly op: SkillValueOp; readonly value: number }
@@ -363,6 +372,8 @@ export interface OperatorKit {
   readonly stacks: readonly StackDef[];
   readonly teamTriggers: readonly TeamTrigger[];
   readonly buffs: readonly KitBuff[];
+  /** What the game's condition IDs on this operator's talent and potential effects mean (e.g. Arcane's `lizhiyan_wisd`). */
+  readonly activeConditions?: Readonly<Record<string, Predicate>>;
   /** When absent, the timeline lets the combo skill be cast whenever it's off cooldown. */
   readonly comboTriggers?: readonly ComboTrigger[];
   readonly skills: readonly KitSkill[];

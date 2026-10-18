@@ -28,6 +28,13 @@
       "$ref": "#/$defs/element",
       "description": "Default element of the operator's hits."
     },
+    "activeConditions": {
+      "type": "object",
+      "description": "What the game's condition IDs on this operator's talent and potential effects (PotentialTalentEffectTable activeCondition) mean, as Predicates; cite where the meaning comes from in the kit's sources.",
+      "additionalProperties": {
+        "$ref": "#/$defs/predicate"
+      }
+    },
     "buffs": {
       "type": "array",
       "description": "Timed buffs and debuffs the operator's hits apply (engine buffs.ts): on themselves, the team, or the enemy (acting on every team member's hits). Values come from the game data (valueSpec).",

@@ -35,7 +35,7 @@ const SKILL_GROUP_TYPES: Record<number, SkillType> = { 0: "basic", 1: "battle", 
 
 const modifier = (m: RawAttrModifier): AttrModifier => ({ attr: m.attr, slot: m.slot, target: m.target, value: m.value });
 
-const toEffect = (e: RawEffect): Effect => (e.kind === "attr" ? { kind: "attr", modifier: modifier(e.modifier) } : e);
+const toEffect = (e: RawEffect): Effect => (e.kind === "attr" ? { ...e, kind: "attr", modifier: modifier(e.modifier) } : e);
 
 /** Reads `table[id].field` as a text reference and resolves it. */
 function nameLookup(names: Names, table: string, field: string): (id: string) => string {

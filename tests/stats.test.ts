@@ -1,6 +1,7 @@
 // Stat panel expectations from the fixtures.
 import { describe, expect, it } from "vitest";
-import { computeStats, Attr, type StatPanel } from "@efsim/engine";
+import { readFileSync } from "node:fs";
+import { computeStats, Attr, skillLevel, skillParam, skillValue, type Build, type SkillData, type StatPanel } from "@efsim/engine";
 import { loadGameData, sourceCommit, SOURCES } from "@efsim/data";
 import { loadFixtures } from "./fixtures.ts";
 
@@ -46,5 +47,39 @@ describe("weapon type", () => {
     const panel = computeStats(data, { ...fixture.build, weapon: { ...fixture.build.weapon, id: other.id } });
     expect(panel.warnings).toHaveLength(1);
     expect(panel.atk.total).toBeGreaterThan(0);
+  });
+});
+
+describe("effects limited to a mode (activeCondition)", () => {
+  it("Arcane's talent cuts her combo cooldown by 6 s in INT mode only", () => {
+    const will = JSON.parse(readFileSync(new URL("../examples/arcane-will.json", import.meta.url), "utf8")) as Build;
+    const fx = JSON.parse(readFileSync(new URL("../fixtures/zmdlogs-d9e59d0fb737.json", import.meta.url), "utf8")) as { team: Build[] };
+    const int = fx.team.find((b) => b.operator === "chr_0032_lizhiyan") as Build;
+    const id = "chr_0032_lizhiyan_combo_skill";
+    const cd = (b: Build) => {
+      const p = computeStats(data, b);
+      expect((p.attrs[Attr.Wisd]?.total ?? 0) >= (p.attrs[Attr.Will]?.total ?? 0)).toBe(b === int);
+      return skillParam(p, id, "cooldown", skillLevel(data.skills[id] as SkillData, b.skillLevels.combo).coolDown);
+    };
+    const base = (b: Build) => skillLevel(data.skills[id] as SkillData, b.skillLevels.combo).coolDown;
+    expect(cd(will)).toBe(base(will));
+    expect(cd(int)).toBe(base(int) - 6);
+  });
+});
+
+describe("value sources beyond the operator's skills", () => {
+  it("talent-attached skills and buffs, and weapon skills, are readable at the build's levels", () => {
+    const will = JSON.parse(readFileSync(new URL("../examples/arcane-will.json", import.meta.url), "utf8")) as Build;
+    const p = computeStats(data, will);
+    // Arcane's talent 1 attaches chr_0032_lizhiyan_talent1 (duration 10 s at every level).
+    expect(skillValue(data, p, will, "chr_0032_lizhiyan_talent1", "duration")).toBe(10);
+    const { fixture } = loadFixtures()[0] as ReturnType<typeof loadFixtures>[number];
+    const lp = computeStats(data, fixture.build);
+    // Laevatain's talent 1 attaches buff_chr_0016_laevat_passive with ignore_fire_resist.
+    expect(skillValue(data, lp, fixture.build, "buff_chr_0016_laevat_passive", "ignore_fire_resist")).toBeLessThan(0);
+    // Her weapon's skills, at the build's weapon skill levels.
+    const wSkill = data.weapons[fixture.build.weapon?.id ?? ""]?.skills[2] as string;
+    expect(Object.keys(lp.sources)).toContain(wSkill);
+    expect(() => skillValue(data, lp, fixture.build, "nope", "x")).toThrow(/isn't one of/);
   });
 });

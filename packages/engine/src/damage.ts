@@ -100,15 +100,29 @@ export function roundDamage(exact: number): number {
 }
 
 /** A skill's blackboard value at the build's level, after potentials. */
+/**
+ * A value from the game data at the build's level, after potentials: one of
+ * the operator's skills, or any other source the build has (a weapon or
+ * gear-set skill, a skill or buff a talent or potential attaches;
+ * StatPanel.sources).
+ */
 export function skillValue(data: GameData, panel: StatPanel, build: Build, skillId: string, key: string): number {
   const op = data.operators[build.operator];
-  const skill = data.skills[skillId];
-  if (!op || !skill) throw new EngineError(`unknown skill ${skillId}`);
+  if (!op) throw new EngineError(`unknown operator ${build.operator}`);
   const group = op.skillGroups[skillId];
-  if (!group) throw new EngineError(`${skillId} isn't one of ${op.id}'s skills`);
-  const level = skillLevel(skill, build.skillLevels[group]);
-  let value = level.blackboard[key] ?? skill.defaults[key];
-  if (value === undefined) throw new EngineError(`${skillId} level ${level.level} has no value ${key}`);
+  let value: number | undefined;
+  if (group) {
+    const skill = data.skills[skillId];
+    if (!skill) throw new EngineError(`unknown skill ${skillId}`);
+    const level = skillLevel(skill, build.skillLevels[group]);
+    value = level.blackboard[key] ?? skill.defaults[key];
+    if (value === undefined) throw new EngineError(`${skillId} level ${level.level} has no value ${key}`);
+  } else {
+    const bb = panel.sources[skillId];
+    if (!bb) throw new EngineError(`${skillId} isn't one of ${op.id}'s skills, nor a weapon, gear-set, talent or potential source of this build`);
+    value = bb[key];
+    if (value === undefined) throw new EngineError(`${skillId} has no value ${key} for this build`);
+  }
   for (const change of panel.skillValues[skillId] ?? []) {
     if (change.key !== key) continue;
     if (change.op === "add") value += change.value;

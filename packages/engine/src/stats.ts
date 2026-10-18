@@ -5,6 +5,7 @@
 
 import { Attr, attrName, type AttrType } from "./attributes.ts";
 import type { Build } from "./build.ts";
+import { test } from "./expr.ts";
 import { EngineError } from "./errors.ts";
 import { Slot, Target, type Effect, type GameData, type OperatorData, type SkillData, type SkillValueOp } from "./model.ts";
 
@@ -70,6 +71,12 @@ export interface StatPanel {
   readonly atk: AtkBreakdown;
   /** Skill values changed by potentials, by skill ID. */
   readonly skillValues: Readonly<Record<string, readonly SkillValueChange[]>>;
+  /**
+   * Blackboards of everything else that holds values kits can read, at the
+   * build's levels: weapon skills, active gear-set skills, and the skills and
+   * buffs talents and potentials attach. By skill or buff ID.
+   */
+  readonly sources: Readonly<Record<string, Readonly<Record<string, number>>>>;
   /** Skill costs and cooldowns changed by potentials and talents, by skill ID. */
   readonly skillParams: Readonly<Record<string, readonly SkillParamChange[]>>;
   /** Things about the build the game wouldn't allow (e.g. a weapon of another type); it's simulated anyway. */
@@ -136,14 +143,24 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
 
   const skillValues: Record<string, SkillValueChange[]> = {};
   const skillParams: Record<string, SkillParamChange[]> = {};
+  const sources: Record<string, Record<string, number>> = {};
   const notApplied: string[] = [];
   const warnings: string[] = [];
+  /** Skill changes under an activeCondition, decided once the panel's attributes are known. */
+  const conditional: { readonly cond: readonly string[]; readonly add: () => void; readonly source: string }[] = [];
   const applyEffects = (effects: readonly Effect[], source: string) => {
     for (const e of effects) {
-      if (e.kind === "attr") apply(e.modifier.attr, e.modifier.slot, e.modifier.target, e.modifier.value, source);
-      else if (e.kind === "skillValue") (skillValues[e.skillId] ??= []).push({ key: e.key, op: e.op, value: e.value, source });
-      else if (e.kind === "skillParam") (skillParams[e.skillId] ??= []).push({ param: e.param, op: e.op, value: e.value, source });
-      else if (e.kind === "buff") notApplied.push(`${source}: buff ${e.buffId}`);
+      const now = (f: () => void) => (e.activeCondition?.length ? conditional.push({ cond: e.activeCondition, add: f, source }) : f());
+      if (e.kind === "attr") {
+        if (e.activeCondition?.length) notApplied.push(`${source}: attribute under condition ${e.activeCondition.join(", ")}`);
+        else apply(e.modifier.attr, e.modifier.slot, e.modifier.target, e.modifier.value, source);
+      } else if (e.kind === "skillValue") now(() => (skillValues[e.skillId] ??= []).push({ key: e.key, op: e.op, value: e.value, source }));
+      else if (e.kind === "skillParam") now(() => (skillParams[e.skillId] ??= []).push({ param: e.param, op: e.op, value: e.value, source }));
+      else if (e.kind === "skill") now(() => (sources[e.skillId] = { ...e.blackboard }));
+      else if (e.kind === "buff") {
+        now(() => (sources[e.buffId] = { ...e.blackboard }));
+        notApplied.push(`${source}: buff ${e.buffId}`);
+      }
       else notApplied.push(`${source}: effect type ${e.modifyType}`);
     }
   };
@@ -180,6 +197,7 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
     if (!skill) throw new EngineError(`${source}: unknown skill ${skillId}`);
     if (!skill.fileLoaded) throw new EngineError(`${source}: SkillData for ${skillId} isn't loaded`);
     const bb = skillLevel(skill, level).blackboard;
+    sources[skillId] = { ...skill.defaults, ...bb };
     for (const m of skill.statModifiers) {
       let value = m.literal;
       if (m.key !== null) {
@@ -279,7 +297,7 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
   const atkBase = atkLine.base + weaponBase;
   const atkTotal = (atkBase * (1 + atkLine.percent) + atkLine.flat) * attributeBonus;
 
-  return {
+  const panel: StatPanel = {
     operator: op.id,
     mainAttr: op.mainAttr,
     subAttr: op.subAttr,
@@ -296,7 +314,21 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
     },
     skillValues,
     skillParams,
+    sources,
     notApplied,
     warnings,
   };
+  // Effects limited to a mode (activeCondition): the kit says what each condition means.
+  const meaning = data.kits.operators[op.id]?.activeConditions ?? {};
+  for (const c of conditional) {
+    const holds = c.cond.every((id) => {
+      const p = meaning[id];
+      if (!p) throw new EngineError(`${c.source}: condition ${id} has no meaning in ${op.id}'s kit (activeConditions)`);
+      const v = test(p, { data, build, panel, skillId: "", skillValue: () => { throw new EngineError(`condition ${id} can't use skill values`); } });
+      if (v === undefined) throw new EngineError(`${c.source}: condition ${id} can't be decided from the stat panel`);
+      return v;
+    });
+    if (holds) c.add();
+  }
+  return panel;
 }

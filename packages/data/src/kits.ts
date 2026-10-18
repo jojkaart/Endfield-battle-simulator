@@ -8,7 +8,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { isBuffFileListed, readBuffFile } from "./buffData.ts";
-import { ELEMENTS, predicateRefs, valueKeys, type BuffApplication, type ComboTrigger, type Condition, type KitBuff, type Predicate, type ValueExpr, type HitApplication, type StackDef, type StackRequirement, type Element, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
+import { ELEMENTS, predicateRefs, type Effect, valueKeys, type BuffApplication, type ComboTrigger, type Condition, type KitBuff, type Predicate, type ValueExpr, type HitApplication, type StackDef, type StackRequirement, type Element, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
@@ -29,6 +29,7 @@ interface RawKit {
   stacks?: StackDef[];
   buffs?: (KitBuff & { note?: string; gameBuff?: string })[];
   comboTriggers?: (ComboTrigger & { note?: string })[];
+  activeConditions?: Record<string, Predicate>;
   teamTriggers?: { on: "finalStrike"; applies: HitApplication[]; gains?: { stack: string; amount?: ValueExpr }[] }[];
   skills: {
     skillId: string;
@@ -84,7 +85,7 @@ function condition(owner: string, c: RawCondition): Condition {
 
 export interface KitData {
   readonly skills: Readonly<Record<string, SkillData>>;
-  readonly operators: Readonly<Record<string, { skillGroups: Readonly<Record<string, string>> }>>;
+  readonly operators: Readonly<Record<string, { skillGroups: Readonly<Record<string, string>>; talentNodes?: readonly { effects: readonly Effect[] }[]; potentials?: readonly (readonly Effect[])[] }>>;
   readonly weapons: Readonly<Record<string, unknown>>;
 }
 
@@ -125,11 +126,23 @@ export function loadKits(data: KitData): Kits {
     const stackIds = new Set((kit.stacks ?? []).map((x) => x.id));
     const buffDefs = new Map((kit.buffs ?? []).map((b) => [b.id, b]));
     if (buffDefs.size !== (kit.buffs ?? []).length) throw new Error(`kits/operators/${file}: duplicate buff ID`);
-    /** Every skill key a value names must exist (a plain key names `skillId`, the skill whose hit uses the value). */
+    /** Values talents and potentials attach (skill or buff ID → keys at some level), for kits to read. */
+    const attached = new Map<string, Set<string>>();
+    for (const e of [...(op.talentNodes ?? []).flatMap((n) => n.effects), ...(op.potentials ?? []).flat()]) {
+      if (e.kind !== "skill" && e.kind !== "buff") continue;
+      const id = e.kind === "skill" ? e.skillId : e.buffId;
+      attached.set(id, new Set([...(attached.get(id) ?? []), ...Object.keys(e.blackboard)]));
+    }
+    /** Every key a value names must exist: in the operator's skill (a plain key names `skillId`) or in what a talent or potential attaches. */
     const checkValue = (v: ValueExpr, skillId: string, where: string) => {
       for (const { skill: sid, key } of valueKeys(v, skillId)) {
+        const keys = attached.get(sid);
+        if (keys) {
+          if (!keys.has(key)) throw new Error(`${where}: ${sid} (attached by a talent or potential) has no value ${key}`);
+          continue;
+        }
         const sk = data.skills[sid];
-        if (!sk || op.skillGroups[sid] === undefined) throw new Error(`${where}: ${sid} isn't one of ${kit.operator}'s skills`);
+        if (!sk || op.skillGroups[sid] === undefined) throw new Error(`${where}: ${sid} isn't one of ${kit.operator}'s skills or talent/potential sources`);
         checkKey(sk, key, where);
       }
     };
@@ -201,6 +214,7 @@ export function loadKits(data: KitData): Kits {
     operators[kit.operator] = {
       operator: kit.operator,
       stacks: (kit.stacks ?? []).map((x) => ({ id: x.id, label: x.label, max: x.max })),
+      ...(kit.activeConditions ? { activeConditions: kit.activeConditions } : {}),
       buffs: (kit.buffs ?? []).map(({ note: _note, gameBuff, ...b }) => {
         if (!gameBuff) return b;
         if (!isBuffFileListed(gameBuff)) throw new Error(`kits/operators/${file}: buff ${b.id}: ${gameBuff} isn't covered by tables.json json.BuffData`);
