@@ -34,7 +34,9 @@ function walk(node: unknown, within: string[], frames: [number, number] | null, 
   if (Array.isArray(o["damageUnits"])) {
     for (const u of o["damageUnits"] as Record<string, unknown>[]) {
       if (u["damageAttributeType"] !== 0) continue; // 1 = poise (stagger) damage
-      const scale = (u["atkScale"] ?? {}) as Record<string, unknown>;
+      // An AtkScaleCalculation carries the real scale; the unit's own atkScale is then an unused 0.
+      const calc = (u["atkCalculation"] ?? null) as Record<string, unknown> | null;
+      const scale = ((calc && typeof calc["atkScale"] === "object" ? calc["atkScale"] : u["atkScale"]) ?? {}) as Record<string, unknown>;
       out.push({
         file,
         frames,
