@@ -1,0 +1,128 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0021_whiten",
+  "sources": [
+    "Hit structure, blackboard keys, elements (damageType 0 = physical, 4 = cryst) and frames: rmxlinux Json/SkillData chr_0021_whiten_* (game 1.6). Every DamageAction is a single hit per target; the battle skill's damage is its projectile-hit skill chr_0021_whiten_normal_skill_projhit, which inherits the battle skill's blackboard.",
+    "Values verified against ZMDLogs battle btl_upload_4e5e1390085e (fixtures/zmdlogs-4e5e1390085e.json; Rhodagn Lv90, Estella P5, skills 12/12/12/12, game 1.5): the log test checks attack1 0.56, attack2 0.68, attack4 0.90 and the ultimate 11.0 (6 hits, all ±1); attack3 (0.34, 0.45), the combo (Solidified target, 6.30 with its own 15% susceptibility) and the battle skill (3.5 with dmg_up) reproduce by hand but can't be log-checked yet (see their notes). Hits after 49.4 s are under a buff refresh the log missed (see the fixture's notes).",
+    "Also checked by hand, not committed: btl_upload_39e3cddab245 (Rhodagn Lv80, Estella P5, game 1.5). Every basic attack, attack3's second hit (atk_scale2 0.45), the ultimate and the combo reproduce once the importer stops applying Endministrator's talent buff (vuln_taken physical 0.2 on the allies, not on the enemy) to Estella's outgoing damage; the combo also needs 1 stack of the Type 50 Yinglung set's combo DMG +20% (not in the log).",
+    "durationFrames: the earliest frame the data lets the next action start (the first AllowNextSkillAction window, else exclusiveFrame); the basic-attack chain spacing in both logs agrees within the log's jitter (attack1→2 ≈ 12–14 frames, attack2→3 ≈ 15–17, attack3→4 ≈ 27–28)."
+  ],
+  "element": "physical",
+  "skills": [
+    {
+      "skillId": "chr_0021_whiten_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "durationFrames": 13,
+      "note": "Chains into attack2 from frame 13; exclusiveFrame 18, full animation 105.",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [6], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e." }]
+    },
+    {
+      "skillId": "chr_0021_whiten_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "durationFrames": 16,
+      "note": "Chains into attack3 from frame 16; exclusiveFrame 28, full animation 123.",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [6], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e." }]
+    },
+    {
+      "skillId": "chr_0021_whiten_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "durationFrames": 28,
+      "note": "Chains into attack4 from frame 28 (= exclusiveFrame); full animation 153. Both hits are logged under the same event key chr_0021_whiten_attack3 and the log checker can only map an event to one hit, so neither is listed for log checks; both values reproduce by hand in both logs (1429 / 1892 at 0.34 / 0.45 in zmdlogs-4e5e1390085e).",
+      "hits": [
+        { "id": "hit1", "label": "Basic attack 3, first hit", "scale": ["atk_scale"], "events": [], "frames": [7] },
+        { "id": "hit2", "label": "Basic attack 3, second hit", "scale": ["atk_scale2"], "events": [], "frames": [18] }
+      ]
+    },
+    {
+      "skillId": "chr_0021_whiten_attack4",
+      "label": "Basic attack 4 (final strike)",
+      "damageType": "basic",
+      "durationFrames": 46,
+      "note": "Loops back to attack1 from frame 46 (= exclusiveFrame); full animation 134.",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [21], "note": "Verified: 1 hit in zmdlogs-4e5e1390085e." }]
+    },
+    {
+      "skillId": "chr_0021_whiten_power_attack",
+      "label": "Heavy attack (finisher)",
+      "damageType": "basic",
+      "durationFrames": 30,
+      "note": "Battle or combo skill allowed from frame 30; exclusiveFrame 50, full animation 151.",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [30],
+          "note": "Uses BreakingAttackCalculation (the finisher on a staggered enemy), which the engine doesn't model. Not verified: the one logged hit (btl_upload_39e3cddab245, t=71860) is ×1.215 of atk_scale 9 with the logged buffs and stagger."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0021_whiten_plunging_attack_end",
+      "label": "Plunging attack",
+      "damageType": "basic",
+      "durationFrames": 15,
+      "note": "exclusiveFrame 15; full animation 175.",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "note": "Not logged yet." }]
+    },
+    {
+      "skillId": "chr_0021_whiten_normal_skill",
+      "label": "Battle skill",
+      "damageType": "battle",
+      "durationFrames": 45,
+      "note": "exclusiveFrame 45; full animation 121. Applies Cryst infliction to the target (SpellInfliction 2 in the projectile hit).",
+      "hits": [
+        {
+          "id": "projectile",
+          "scale": ["atk_scale"],
+          "element": "cryst",
+          "events": [],
+          "frames": [21],
+          "note": "Projectile launched at frame 21; it lands as chr_0021_whiten_normal_skill_projhit. The first target each projectile hits also gets +dmg_up in the damage-bonus zone (DamageScaleProcessor, NormalCalcZone); dmg_up is 0 unless potential 3 sets it to 0.4. Kits can't add a skill value to a zone yet, so this hit isn't log-checked and understates P3+ builds. By hand, atk_scale 3.5 with dmg_up added to the damage bonus reproduces all 3 logged hits in zmdlogs-4e5e1390085e (×1.4000 at no other bonus) and 3 of 5 in btl_upload_39e3cddab245."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0021_whiten_combo_skill",
+      "label": "Combo skill",
+      "damageType": "combo",
+      "durationFrames": 20,
+      "note": "Battle skill allowed from frame 20; exclusiveFrame 33, full animation 154. Per target: if it is Solidified (tag 1535684437, set by the Cryst reactions), the hit uses atk_scale2 and first applies Physical Susceptibility (rate, 15% at level 12) for duration s (6 s, +rate_plus 3 s with potential 1); otherwise atk_scale and no susceptibility. Both variants Lift the target. The two hits are alternatives, not both.",
+      "hits": [
+        {
+          "id": "solidified",
+          "label": "Combo skill (Solidified target)",
+          "scale": ["atk_scale2"],
+          "events": [],
+          "frames": [19],
+          "note": "Logged as chr_0021_whiten_combo_skill, but not listed for log checks: the susceptibility it applies itself is logged as starting at the hit, and at t=29524 in zmdlogs-4e5e1390085e a stagger (×1.3) also starts at that instant and doesn't apply to it; the checker applies boundary buffs all or none. By hand, atk_scale2 × (1 + 15% susceptibility) reproduces the 2 combo hits before 49.4 s in zmdlogs-4e5e1390085e exactly (23050, 27882) and the third (27194) with the missed +9.6% ATK."
+        },
+        {
+          "id": "normal",
+          "label": "Combo skill (target not Solidified)",
+          "scale": ["atk_scale"],
+          "events": [],
+          "frames": [19],
+          "note": "Not logged yet."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0021_whiten_ultimate_skill",
+      "label": "Ultimate",
+      "damageType": "ultimate",
+      "durationFrames": 60,
+      "note": "Basic attack, battle and combo skills allowed from frame 60; exclusiveFrame 77, full animation 168.",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [54],
+          "note": "The DamageAction reads atk_scale_total = atk_scale + dmg_up_total, and nothing in the file ever writes dmg_up_total (the blackboard's dmg_up 0.5 is unused), so it is atk_scale. Verified: 1 hit in zmdlogs-4e5e1390085e (11.0 exactly)."
+        }
+      ]
+    }
+  ]
+}
