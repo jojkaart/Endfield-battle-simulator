@@ -29,6 +29,8 @@ describe.each(Object.values(data.kits.operators))("kit $operator", (kit) => {
     const knownGaps: Record<string, string[]> = {
       // Heavy and plunging attacks.
       chr_0016_laevat: ["chr_0016_laevat_plunging_attack_end", "chr_0016_laevat_power_attack"],
+      // Finisher: BreakingAttackCalculation, not ATK × key.
+      chr_0032_lizhiyan: ["chr_0032_lizhiyan_power_attack"],
       // Basic attacks: never logged, branchy SkillData. Ultimate: its only log contradicts the data binding.
       // normal_skill_combo: no DamageAction of its own (it continues the battle skill's music after the combo).
       chr_0035_liino: [

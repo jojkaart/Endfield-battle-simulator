@@ -76,6 +76,16 @@ damage numbers of one ultimate, ideally recorded with the ZMDLogs client.
 multiply separately.
 **How (planned):** a Combustion hit with one bonus, the other, and both.
 
+### 6. Arcane's INT damage under her own Corrosion (ready, if you have Arcane)
+
+**Why:** in the only INT log (btl_upload_d9e59d0fb737, possibly still game
+1.5) all damage after her ultimate is about twice the model; WILL logs from
+1.6 match exactly. This tells whether 1.6 INT Arcane really does that.
+**How:** with Arcane at Intellect ≥ Will, on a training dummy: basic attack
+1 a few times, then her ultimate, then basic attack 1 again within a few
+seconds. Screenshots of the damage numbers before and after, plus her stat
+panel (ATK, Intellect, Will, Arts Intensity) and skill levels.
+
 ## Results
 
 None yet.
