@@ -200,3 +200,416 @@ Description: "Wearer's ATK +15%. When any operator in the team casts a battle sk
 - **T2 Combo n and P5:** extends #10: at P5, consume 1 stack and read the final hit (expect 4.025 + 2 × 1.15 at level 12) and, at P2+, the ATK buff (0.08 + 0.03 × 2 if the +1 counts for P2 too).
 - **T3 Jade Vessel window:** cast the ultimate (no battle skill), wait 10 s, cast the combo: the combo slashes should carry +combo_dmg_up; wait 25 s instead: they shouldn't. Also check the enemy's DMG-taken icon disappears 30 s after the battle skill.
 - **T4 Yinglung stacks from strokes:** wearer Si: battle skill, Initial Stroke, Final Stroke, then combo; count the Yinglung's Edge stacks shown (1 or 3).
+
+## Re-analysis (pass 2, 2026-10-18)
+
+Batch 1, phase 4. Checked against the engine and kit format at b33e2e7
+(`schemas/kit.schema.json`, `packages/engine/src/{timeline,events,buffs,expr,damage}.ts`),
+`efsim kit-draft chr_0036_jsspsi` (v2), the D1 `KNOWN` list in
+`packages/data/test/skillCompile.test.ts`, and the data again (rmxlinux
+SkillData/BuffData, SkillPatchTable, CharGrowthTable, I18nTextTable_EN).
+Fixtures: zmdlogs-40d9a3c1da37, -0eef2474a26f, -bdf223db8e49,
+-b7b3762d5da8, `fixtures/pending/zmdlogs-e82d45c46040`; examples
+`si-laevatain.scenario.json`, `si-jade-vessel.json`.
+
+### Corrections to the first round
+
+1. **P5's +1 stack is in the data** (first round: "both branches add 0",
+   G3/row 20, contradicted). SD combo_skill_abilityrange IfElse #85 on
+   CompareFloat #86 (`EntityBB_potential5` compare 3 = "≥" 1): its succeed
+   branch starts with ModifyDynamicBlackboard #87 `EntityBB_combo_count += 1`
+   (operation 1, directValue 1), then #88–#91 `atk_scale_count =
+   combo_count × atk_scale2_1 + atk_scale2`; the first round read only the
+   SimpleCalcBBs. The P2 buff branch (IfElse #15) does the same:
+   succeed #17 `combo_count + 1`, fail #21 `combo_count`. So
+   **n = stacks consumed + potential5** for both the final hit and the P2
+   ATK. kit-draft v2 shows exactly this (`(($EntityBB_combo_count + 1) ×
+   atk_scale2_1) + atk_scale2` only if potential5 ≥ 1). The log fits 3
+   consumed + 1 = 4 (final hit 8.625, P2 ATK 0.20 in 40d9a3c1da37). The
+   CompareFloat codes used across Si's files are consistent with 0 <, 1 ≤,
+   2 >, 3 ≥, 4 =.
+2. **The Artful Intent counting rule is settled by the logs** (G2: first
+   round "unclear", and its "kit claim contradicted" is withdrawn). The
+   fixtures' burst `value` is capped by the enemy's remaining HP (the burst
+   ended three of the fights); their `uncapped` field is the damage. In
+   all four logs the uncapped burst is **0.20 × the sum of every logged
+   hit from Si's battle-skill hit (inclusive) up to the end of Artful
+   Intent**, to within the per-hit rounding:
+
+   | Log | Burst (`value` / `uncapped`) | 0.2 × hits since the battle skill | Last recorded / first unrecorded hit before the burst |
+   |---|---|---|---|
+   | 0eef2474a26f (inkmove_2) | 301679 / 301679 | 301679.6 | 699 ms / 335 ms |
+   | 40d9a3c1da37 (inkmove_2) | 121312 / 432652 | 432652.8 | 827 ms / 152 ms |
+   | bdf223db8e49 (inkmark_projhit) | 284900 / 530319 | 530321.4 | 1210 ms / 231 ms |
+   | e82d45c46040, pending (inkmove_2) | 284977 / 401585 | 401586.4 | 1995 ms / none |
+
+   What counts: every hit on the target from anyone, reactions and
+   Combustion ticks included (rate `ink_damage_rate` 0.13 + P1 0.07). The
+   burst has no multipliers: Jade Vessel's DMG taken, amps and crit don't
+   change it, so it is Fixed DMG. The recording stops between 335 and 699 ms
+   before the burst in every log. That fits Final Stroke ending Artful
+   Intent at its frame 12 with the burst (`inkmove_2`) 13 frames (433 ms)
+   later, and an expiry whose projectile (`inkmark_projhit`) lands 14
+   frames (467 ms) after the end. Initial Stroke doesn't reset the record:
+   three logs have the Inksoul path (`inkmove_2`), and their record still
+   starts at the battle-skill hit. Data agrees: BD
+   xianjing_inkhurteffect ability event 12, group 1 (CheckObjectTypeMatch
+   8 → SaveDamageContext `ink_damage` valueType 1 → `EntityBB_ink_damage
+   += ink_damage × ink_damage_rate`) runs on every hit, with no
+   cooldown. The global CD (`ink_hitcd` 0.5 s) gates only group 2, the
+   visual `normal_skill_inkhurt_front` cast.
+3. **Artful Intent runs on the enemy's clock.** In bdf223db8e49 it lasted
+   about 21.7 s (battle-skill hit 2140 ms; burst 24321 ms − 467 ms), i.e.
+   20 s + the 1.5 s Immobilization freeze (P1) + combo slow-downs. That is
+   what the engine's `freezes` does to enemy debuffs.
+4. Initial Stroke's own ChangeSkillAction → `normal_skill_2` is
+   **disabled**. Its enabled one (→ `normal_skill`) sits under an IfElse, a
+   fallback when there is no target. The Initial → Final switch comes from
+   BD normal_skill_check's Switch on `EntityBB_normal_skill_id` (#3 → _2,
+   #4 → _1, #5 → normal_skill). The state machine is the same as in the
+   first round.
+5. Immobilization's freeze is **conditional**. BD normal_skill_hitstop
+   CheckBuffStackNumAdvanced (tag 188749032, compareType 0 "<" 1) runs
+   before TimeDilationAction (layer 1, curve 0 → 0, duration −1, finishByAction).
+   Tag 188749032 is `buff_cc_eny_control_immune_abnormal`'s, so
+   control-immune enemies aren't frozen. No enemy table references that
+   buff (game or level code applies it). See R8.
+6. Battle-skill team energy is unconditional at frame 15. Both infliction
+   branches of SD normal_skill_abilityrange_1 create
+   `buff_common_obtain_ultimate_sp` (#23, #31) after CheckEntityNum ≥ 1.
+   kit-draft reports "only conditionally" because it doesn't merge
+   exhaustive branches (R9).
+7. Both ultimate entities (`_abilityrange`, controlled; `_abilityrange_1`,
+   not) have the amp buff and the talent's SetSkillCdAtOnce (2 each).
+8. Poise per landing (damageAttributeType 1 units; SPT level 12):
+   - none on attacks 1–4, the combo slashes, the finisher or the dive;
+   - attack5 `poise` 18 (onlyEnableForMainChar);
+   - battle-skill hit `poise` 5;
+   - combo final hit `poise` 10;
+   - ultimate slashes `poise` (0); ultimate final hit `poise_2` 20;
+   - bursts `ink_poise`, which BD xianjing_linkline / xianjing_inkboom
+     assign from `EntityBB_ink_boom_poise` = `ink_boom_poise` 5.
+9. Jade Vessel's `buff_wpn_claym_0018_enemyvul` is stackingType **11**
+   (max 1, priorityKey `dmg_taken_up`). The loader turns only stackingType
+   1 into a stack group, so the engine adds up two wielders' copies (R7).
+10. Talents attach per-level buffs: talent 1 → `buff_chr_0036_jsspsi_talent2_1`
+    (coolDown −10) / `_talent2_2` (−20); talent 2 → `_talent1_1` (ratio_speed
+    0.15) / `_talent1_2` (0.30), both duration_speedup 5. A build has only
+    the one for its level in `StatPanel.sources` (R4).
+
+### 1. First-round rows and gaps against the current engine
+
+| First round | Now | How (fields), or what's missing |
+|---|---|---|
+| Row 2: attack 4 channel ends early on move input | rotation choice | The 6 fixed hits stay; no change. |
+| Row 4 + G8 (stagger on every hit; Final Strike stagger only when controlled) | **supported** | Hit `poise` with the keys in correction 8; attack5 `poiseControlledOnly: true`. The stagger meter is P2. Compiler gap: poise isn't emitted (R9). |
+| Row 5 (finisher landings and factors) | **supported**, hand-written | Four hits at 3/12/21/37, `scale ["atk_scale"]`, `factor` 0.07 / 0.10 / 0.13 / 0.70 (BreakingAttackCalculation `multiplier`). KNOWN lists the landings at 3/12/21; the compiler doesn't read the multiplier (R9). |
+| Row 6 + G8 (finisher only on a Staggered enemy, zone, SP) | **supported**, engine | skillSpecification 8: only while Staggered, once per stagger, × the enemy's attribute 27, finisher SP. Nothing in the kit. |
+| Row 7 (dive SP) | **supported** | Draft `sp: "atb"` (0 at every level). |
+| Row 9 (infliction by slot 0's element) | **supported** | `applies`: `{kind:"infliction", element:"fire", if:{teamSlotElement:{slot:0, element:"fire"}}}` and `{kind:"infliction", element:"cryst", if:{not:{teamSlotElement:{slot:0, element:"fire"}}}}`. The draft has both branches, but with an opaque condition (`SaveCharTypeIdToIntBySquadSlot→spellinficttype = 0`; charType 0 = Fire), R9. |
+| Row 10 + G7a + G13 (Immobilization, enemy freeze, tag) | **supported** | `{kind:"control", status:"immobilization", durationKey:"static_duration", freezes:true}` on the battle-skill hit; `control` event, `enemyControl` predicate. Control immunity isn't modelled (R8). |
+| Row 11 + G2 (Artful Intent record and burst) | **gap R1** | Counting rule now known (correction 2); mechanism missing. |
+| Row 12 + G1 (Initial / Final Stroke states) | **supported** | Hitless skills (`hits: []`, SP 15 / 0 from SPT), `available` predicates on `buffActive`, delayed cast triggers (`on:{event:"cast", skills:[…]}`, `delay`), `endBuff`, buffs without `duration`. Sketch in the kit plan. |
+| Row 13, 14 (Inksoul transfer; host defeated) | n/a | One enemy. |
+| Row 15 + G9 (team energy at the hit) | **supported** | `teamEnergyFrame: 15` (V5); Initial Stroke at the cast (default). |
+| Row 16 (combo trigger) | supported | Unchanged. |
+| Row 19 + G3 (combo n from the trigger) | **supported**, with R2 / R3 | ValueExpr `{eventCount:true}`: the largest count of the events that opened the window (timeline.ts openCombo: `Math.max`), as the description says ("highest stacks"). n = `{sum:[{eventCount:true}, "potential5"]}` (correction 1). One hit can't hold `atk_scale2 + n × atk_scale2_1` (R2), and the log checker has no event count (R3). |
+| Row 20 (P5 +1, where) | **settled by the data** | Correction 1. |
+| Row 21 + G7b (combo slow-down 0.8 s) | **supported**, automatic | Ti1 reads the combo's global TimeDilationAction (ComboSkill curve); Si's example +2.9%. Attacker hit-stop isn't modelled (generic, not Si's). |
+| Row 24 + G10 (amp 1 frame late) | **supported** | Delayed cast trigger at frame 62 (entity frame 62, spawned at 0) applies `ultimate_amp`; no `beforeDamage` on a slash. |
+| Row 26 + G12 (event keys by branch) | **supported** | A hit's `events` lists both `_abilityrange` and `_abilityrange_1` (and the three burst keys). |
+| Row 27 + G5 (talent 1: slot 0's combo cooldown) | **supported** except R4 | Trigger action `{kind:"cooldown", who:{slot:0}, skills:"combo", seconds:{key:"coolDown", skill:"buff_chr_0036_jsspsi_talent2_2"}}` (coolDown is −10 / −20: negative cuts). At frame 62 with the amp. The source name depends on the talent level (R4). |
+| Row 28 + G6 (talent 2: Haste when the Inksoul disappears) | **supported** except R4 | `on:{event:"buffEnded", buff:"inksoul"}` → team buff with `{attr:92, value:"ratio_speed"}`, duration `duration_speedup`, `gameBuff` `buff_chr_0036_jsspsi_talent1_speedup` (stackingType 1: strongest). Haste semantics are assumed (Ti4, in-game test 19). Source name: R4. |
+| Row 30 (P1 values) | supported | `static_duration` → control, `ink_damage_rate` → R1's rate; `ink_boom_range` (radius) is irrelevant against one enemy. |
+| Row 31 + G4 (P2 ATK buff) | **supported**, R5 minor | Buff `duration: "potential2_duration"` (0 below P2 → skipped, B6), zone `atk`, value `{sum:["potential2_base", {product:["potential2_enhance", {sum:[{eventCount:true},"potential5"]}]}]}`. Applied with `beforeDamage` on the first slash (frame 14) because a cast trigger can't read the window count (R5): it starts and ends 14 frames late. |
+| W4 + G13/G14 (Jade Vessel: DMG taken on Immobilization) | **supported** | Equipment trigger `on:{event:"control", statuses:["immobilization"]}`, `by:"self"` → enemy buff, zone `damageTaken`, `dmg_taken_up`, 30 s. Cross-wielder stacking: R7. |
+| W5 + G14/G15 (Jade Vessel: next combo DMG) | **supported** | Same control trigger plus `on:{event:"cast", kinds:["ultimate"]}`, `by:"self"` → self buff, `duration:"duration_combo"`, `consumedBy:["combo"]`, `damageBonus` `combo_dmg_up`, `skillType:"combo"`. |
+| W6 (dead buffs) | n/a | |
+| Y2 + G14–G16 (Yinglung's Edge) | **supported** | Gear-set kit (T3, `wornEquipment`): `on:{event:"cast", kinds:["battle"]}`, `by:"anyone"` → self buff, layered `maxStacks:"max_stack"`, no duration, `consumedBy:["combo"]`, `damageBonus` `dmg_up`, `skillType:"combo"` (layers add up; consumption takes all layers). |
+| Y3 (do the strokes count as battle-skill casts?) | **unknown → R6** | The strokes are battle-type skills (skillSpecification 3) with `normalSkillSubType` 1 (the battle skill has 0). A `cast` trigger with `kinds:["battle"]` counts them. In-game test T4. |
+| G11 (compiler) | **mostly done**, R9 | v2 now gets frames, `atk_scale1`, `EntityBB_` keys, the energy, `detached`, both infliction branches, the final hit's expression, attack5's SP and Final Strike. The dead `attack4_abilityrange` is gone. Rest: R9. |
+
+### 2. Remaining gaps
+
+#### R1. Damage record and Fixed-DMG burst (N2), family: values + buff lifecycle. **Unique** (data-wide)
+- **Feature:** (a) an enemy buff that, while active, adds
+  `rate × damage` of every hit on its target, from anyone, to its own
+  total. That includes the hit that applies it (so `beforeDamage`),
+  reactions and DoT ticks. The damage is the hit's full damage (no HP
+  cap). The burst doesn't count. (b) The total stays readable when the buff
+  ends, as a ValueExpr in the triggers that react to the end. (c) A
+  hit whose damage is that value exactly (Fixed DMG: no ATK, zones, crit,
+  DEF, RES or Staggered multiplier), still emitting a hit event of its kind
+  (mask 4352: battle) and dealing poise. Sketch:
+  `"buffs":[{"id":"artful_intent","target":"enemy","duration":"duration","modifiers":[],"records":{"rate":"ink_damage_rate"}}]`;
+  trigger `{"on":{"event":"buffEnded","buff":"artful_intent"},"by":"self","delay":13,"skill":"chr_0036_jsspsi_normal_skill","do":[{"kind":"hits","hits":[{"id":"burst","damageType":"battle","fixedDamage":{"recorded":"artful_intent"},"poise":"ink_boom_poise","detached":true,"events":["chr_0036_jsspsi_normal_skill_inkmove_2","chr_0036_jsspsi_normal_skill_inkmark_projhit","chr_0036_jsspsi_normal_skill_inboom_projhit"]}]}]}`.
+  Hits currently require `scale`, so `fixedDamage` replaces it.
+- **Evidence:** correction 2, all four logs, within ±2.4. The mechanism is
+  BD xianjing_inkhurteffect AE 12 group 1. The bursts are SD inkmove_2 /
+  inkmark_projhit / inboom_projhit, DamageAction damageType 8 with
+  DefiniteValueCalculation `ink_damage` / `EntityBB_ink_damage`.
+  SaveDamageContext appears in no other operator's files (only enemy
+  life-link, CC and gambling buffs), and damageType 8 only in these three
+  Si files (16 units). Batch 2 can't change that, so it goes on
+  [kit-unique.md](../../kit-unique.md) in the kits phase.
+- **Impact:** 302k–530k per burst (uncapped), 32–50% of Si's damage in
+  the logs (432652 of 1.37M in 40d9a3c1da37, 301679 of 0.87M in
+  0eef2474a26f, 530319 of 1.06M in bdf223db8e49). Without it
+  every Si rotation is under-predicted by that much, and search can't
+  value Final Stroke timing. Minor: the burst lands 13 or 20 frames after
+  the end depending on the Inksoul's distance (`$distancecount` 1 / 2,
+  SD inkmove_2); take 13.
+
+#### R2. Hit scale as a ValueExpr, family: values
+- **Feature:** a hit's multiplier as one ValueExpr (sums of products), not
+  only a product of keys, e.g. `"scale":{"sum":["atk_scale2",{"product":[{"sum":[{"eventCount":true},"potential5"]},"atk_scale2_1"]}]}`
+  (or `extraScale` terms that add). Evaluated where `computeHit` builds
+  `scaleParts`.
+- **Evidence:** SD combo_skill_abilityrange #88–#91 / #100–#103.
+  kit-draft: "scale is … not key × literal (write it by hand)". The
+  `atk_scale2 / atk_scale2_1` ratio changes with level (3.48–3.54), so no
+  literal factor works. KNOWN lists the kit's three-entry split.
+- **Impact:** the workaround is two hits at frame 49 (`atk_scale2`; and
+  `atk_scale2_1` with `extraScale [{value:{sum:[{eventCount:true},"potential5"]}, if:{potentialAtLeast:0}}]`).
+  Expected damage is right, but random crits roll twice. The log checker
+  can't map one logged hit to two kit hits, so a hit worth 62–74% of the
+  combo stays unverifiable.
+
+#### R3. Event counts in the log checker, family: log tooling
+- **Feature:** `zmdlogs check` evaluates hits that read `{eventCount:true}`
+  for each count 1–4 (as it already tries reaction stack counts) and
+  reports the one that matches.
+- **Evidence:** packages/cli/src/logcheck.ts computes kit hits with
+  `situation: {team}` only. `expr.ts` throws on `eventCount` without a
+  count, and the checker catches that as "doesn't happen".
+- **Impact:** the combo's final hit (599622 in 40d9a3c1da37, 379860 in
+  0eef2474a26f, 1135323 in e82d45c46040) can't be checked even after R2.
+
+#### R4. Talent values by the build's talent level, family: values
+- **Feature:** a value naming a talent's key without naming its per-level
+  buff, e.g. `{"talent":1,"key":"coolDown"}`, resolving to the buff that
+  talent attaches at the build's level. Also a predicate (or a skip rule)
+  for "talent not unlocked", so the trigger doesn't run at level 0.
+- **Evidence:** `talentNodes` (correction 10). `StatPanel.sources` holds
+  only the current level's buff ID, and `skillValue` throws for the other.
+- **Impact:** a kit written for level 2 (`_talent2_2`, `_talent1_2`) throws
+  for builds at talent level 1 or 0. It fails loudly, not wrongly, but
+  those builds can't be simulated. Affects Si's two talents; any talent
+  with per-level buffs and a triggered effect has the same problem.
+
+#### R5. The combo's window count in cast triggers, family: triggers (minor)
+- **Feature:** a cast event of a combo carries its window's count, so a
+  delayed cast trigger can read `{eventCount:true}` (today
+  `eventCountOf` returns 1 for every non-status event).
+- **Evidence:** BD combo_potential2 is created at combo entity frame 0
+  (`potential2_count = combo_count × enhance + base`); the first slash is
+  at 14.
+- **Impact:** the P2 ATK buff starts and ends 14 frames (0.47 s) late
+  (applied by the first slash instead). It never misses a hit of the
+  combo. Negligible.
+
+#### R6. Which battle skills count as "casts a battle skill", family: triggers. **Unknown** (in-game T4)
+- **Feature:** if T4 shows the strokes don't count, a cast filter that
+  tells the main battle skill from its sub-skills (SkillData
+  `normalSkillSubType` 0 vs 1; e.g. `on:{event:"cast", kinds:["battle"], subType:0}`),
+  read from the data.
+- **Evidence:** SD normal_skill_1 / _2 `normalSkillSubType` 1,
+  skillSpecification 3. The game's CheckSkillType `[2]` (Yinglung
+  `_aruadetect`; Link's battle-skill consumption) may or may not see them.
+- **Impact:** with the strokes counted, Yinglung gains up to 2 stacks too
+  many per Si cycle (+0.2 combo DMG each), and Link is wasted on a hitless
+  Initial Stroke. Either can be wrong by a whole stack.
+
+#### R7. Stacking type 11 across owners, family: buff lifecycle (minor, unknown)
+- **Feature:** decide whether stackingType 11 with a priority key
+  (`buff_wpn_claym_0018_enemyvul`) means only the strongest instance on the
+  target counts, as with type 1, and put it in the loader's stack groups.
+- **Evidence:** correction 9. The description says "do not stack with
+  themselves".
+- **Impact:** only with two Jade Vessel wielders on one team, which then
+  over-predict by 0.075–0.21 DMG taken. One wielder is unaffected.
+
+#### R8. Control immunity, family: physical state (minor)
+- **Feature:** enemies that carry the control-immune tag (188749032) get
+  the control status (Jade Vessel still triggers on applying it) but no
+  freeze. That needs an enemy property in the scenario or enemy data.
+- **Evidence:** correction 5. bdf223db8e49 (eny_0046) shows the freeze
+  working there; no table says which enemies are immune.
+- **Impact:** against an immune boss, Artful Intent, Jade Vessel's 30 s
+  debuff, infliction timers and Corrosion would run 1–1.5 s shorter per
+  battle skill than the engine predicts.
+
+#### R9. Compiler remainders (D1), family: data compilation
+- **Feature/evidence:** `kit-draft chr_0036_jsspsi` today:
+  - no `factor` from BreakingAttackCalculation `multiplier` (finisher);
+  - no `poise` (skillCompile.ts skips damageAttributeType 1 units);
+  - no `teamEnergyFrame` when every branch has the buff (battle skill, frame 15);
+  - the SaveCharTypeIdToIntBySquadSlot branch isn't turned into
+    `teamSlotElement {slot:0, element:"fire"}`;
+  - no buffs (atk_buff_2 at 62, combo_potential2 at 0, hitstop → a
+    `control` application);
+  - the bursts are drafted as `LITERAL_0` hits of normal_skill (at 629) and
+    of normal_skill_1;
+  - `inboom_projhit` isn't reached;
+  - normal_skill_2 isn't drafted (no landings);
+  - no SetSkillCdAtOnce.
+- **Impact:** all of these are hand-written in the kit; none blocks it.
+
+**Open: 9** (R1–R9; R6 and R7 depend on in-game answers). R1 is the only
+one with a large damage effect.
+
+### 3. Kit plan
+
+Data sources: SD = SkillData, BD = BuffData, SPT level 12 values; frames
+from kit-draft v2 unless noted. Drop every `durationFrames` (the loader
+reads the timing). All entity and projectile hits are `detached`.
+
+**Operator kit `chr_0036_jsspsi.json`** (element `cryst`)
+
+Buffs:
+- `artful_intent`: target enemy, `gameBuff` buff_chr_0036_jsspsi_xianjing_inkhurteffect,
+  duration `duration` (20 s), no modifiers, `records` rate
+  `ink_damage_rate` (R1).
+- `inksoul`: self, no duration, no modifiers (BD xianjing_linkline: "lasts
+  as long as the remaining duration of Artful Intent", so it is ended
+  with Artful Intent rather than timed).
+- `ultimate_amp`: team, `gameBuff` buff_chr_0036_jsspsi_atk_buff_2,
+  duration `enhance_duration`, zone `amp` `enhance_final` for `cryst` and
+  `fire` (as now).
+- `combo_p2_atk`: self, `gameBuff` buff_chr_0036_jsspsi_combo_potential2,
+  duration `potential2_duration`, zone `atk`, value
+  `{sum:["potential2_base",{product:["potential2_enhance",{sum:[{eventCount:true},"potential5"]}]}]}`.
+- `talent_haste`: team, `gameBuff` buff_chr_0036_jsspsi_talent1_speedup,
+  duration `duration_speedup`, `{attr:92, value:"ratio_speed"}` (values
+  from the talent-2 buff, R4).
+
+Triggers:
+- `combo_window`: unchanged (`inflictionConsumed` cryst/fire, anyone,
+  `openCombo`).
+- `ultimate_effects`: `on:{event:"cast", skills:["chr_0036_jsspsi_ultimate_skill"]}`,
+  `by:"self"`, `delay:62`, `do:[{kind:"buff", buff:"ultimate_amp"},
+  {kind:"cooldown", who:{slot:0}, skills:"combo", seconds:<talent 1 coolDown>}]`
+  (SD ultimate_skill_abilityrange(_1) CreateBuff atk_buff_2 and
+  SetSkillCdAtOnce at entity frame 62).
+- `initial_stroke`: `on:{event:"cast", skills:["chr_0036_jsspsi_normal_skill_1"]}`,
+  `delay:8`, `do:[{kind:"buff", buff:"inksoul"}]` (CreateBuff linkline at 8).
+- `final_stroke`: `on:{event:"cast", skills:["chr_0036_jsspsi_normal_skill_2"]}`,
+  `delay:12`, `do:[{kind:"endBuff", buff:"artful_intent"}]` (CreateBuff
+  xianjing_inkboom at 12; the recording ends here, correction 2).
+- `artful_intent_end`: `on:{event:"buffEnded", buff:"artful_intent"}`,
+  `do:[{kind:"endBuff", buff:"inksoul"}]`.
+- `burst`: `on:{event:"buffEnded", buff:"artful_intent"}`, `delay:13`,
+  `skill:"chr_0036_jsspsi_normal_skill"`, the burst hit of R1 (Fixed DMG
+  = record, poise `ink_boom_poise`, three event keys).
+- `inksoul_haste`: `on:{event:"buffEnded", buff:"inksoul"}`,
+  `do:[{kind:"buff", buff:"talent_haste"}]` (BD xianjing_inkboom /
+  xianjing_linkline create talent1_x).
+
+Skills, hit by hit:
+- attack1: `atk_scale1` @6, `atk_scale2` @15, event attack1 (as now).
+- attack2: `atk_scale` @5. attack3: `atk_scale` @9. attack4: `atk_scale`
+  ×6 @5–20.
+- attack5: `atk_scale` @25, `sp:"atb"` (20, controlled only per the draft),
+  `finalStrike`, `poise:"poise"` (18) with `poiseControlledOnly:true`,
+  event attack5.
+- power_attack (finisher): four hits `atk_scale` @3/12/21/37 with `factor`
+  0.07/0.10/0.13/0.70, event power_attack. The finisher multiplier and SP
+  come from the engine.
+- plunging_attack_end: `atk_scale` @1, `sp:"atb"` (0).
+- normal_skill:
+  - `available:{not:{buffActive:"artful_intent"}}`, `teamEnergyFrame:15`;
+  - one hit `atk_scale` @15, event normal_skill_abilityrange_1, `poise:"poise"`;
+  - `buffs:[{buff:"artful_intent", beforeDamage:true}]`, so the hit itself
+    is recorded (0eef2474a26f needs it);
+  - `applies`: Heat if slot 0 is Heat, else Cryo (row 9), then
+    `{kind:"control", status:"immobilization", durationKey:"static_duration", freezes:true}`
+    (SD normal_skill_abilityrange_1 #27/#28 and #19/#20; damage first, so
+    Jade Vessel's debuff misses this hit, as in the game).
+- normal_skill_1 (Initial Stroke): `damageType` battle,
+  `available:{all:[{buffActive:"artful_intent"},{not:{buffActive:"inksoul"}}]}`,
+  `hits: []` (15 SP and its team energy from SPT; effects by trigger).
+- normal_skill_2 (Final Stroke): `damageType` battle,
+  `available:{buffActive:"inksoul"}`, `hits: []` (0 SP).
+- combo_skill:
+  - `slash_first` `atk_scale` @14 with `energy:"usp"` and
+    `buffs:[{buff:"combo_p2_atk", beforeDamage:true}]` (R5);
+  - `slash` ×9 @17–41;
+  - `final` @49 with `poise:"poise"` (10) and scale
+    `atk_scale2 + (eventCount + potential5) × atk_scale2_1` (R2; until
+    then the two-hit split);
+  - event combo_skill_abilityrange on all of them.
+- ultimate_skill:
+  - `slash` ×8 `atk_scale` @63–88 (poise 0: none);
+  - `final` `atk_scale_2` @100 with `poise:"poise_2"` (20);
+  - `events` `[…_ultimate_skill_abilityrange, …_ultimate_skill_abilityrange_1]`;
+  - the amp moves to the trigger. The time stop is read from the data.
+- Notes to fix:
+  - the battle-skill note's ratio claim (0.1998) is right, but on
+    `uncapped`;
+  - the combo note's "+1 when potential5 ≥ 1" is right;
+  - the ultimate note's "not modelled" cooldown is now the trigger.
+
+**Weapon kit `equipment/wpn_claym_0018.json`** (values `sk_wpn_claym_0018`
+at the build's level; drop both legacy `conditions`)
+- Buff `wpn_claym_0018.enemy_vul`: enemy, `gameBuff` buff_wpn_claym_0018_enemyvul,
+  duration `duration` (30 s), zone `damageTaken` `dmg_taken_up`.
+- Buff `wpn_claym_0018.combo_ready`: self, `gameBuff`
+  buff_wpn_claym_0018_normal_skill_trigger, duration `duration_combo` (20 s),
+  `consumedBy:["combo"]`, zone `damageBonus` `combo_dmg_up`,
+  `skillType:"combo"` (max_stack 1, so a plain buff).
+- Trigger `on:{event:"control", statuses:["immobilization"]}`, `by:"self"`,
+  `skill:"sk_wpn_claym_0018"` → buff enemy_vul, buff combo_ready
+  (passiveEventActions abilityEvent 102, CheckBuffIdInContext checkType 1 on
+  tag −1065936627).
+- Trigger `on:{event:"cast", kinds:["ultimate"]}`, `by:"self"` → buff
+  combo_ready (abilityEvent 30, CheckSkillType [7]).
+- Permanent Intellect, Cryo DMG and ATK stay in the panel.
+
+**Gear-set kit `equipment/suit_atk02.json`** (values `passive_equipsuit_atk_02`;
+3 pieces)
+- Buff `suit_atk02.edge`: self, `gameBuff` buff_equipsuit_atk_02_addcombodamage,
+  no duration, `maxStacks:"max_stack"` (3), `consumedBy:["combo"]`, zone
+  `damageBonus` `dmg_up`, `skillType:"combo"`.
+- Trigger `on:{event:"cast", kinds:["battle"]}`, `by:"anyone"` → buff edge
+  (BD buff_equipsuit_atk_02 aura → `_aruadetect` CheckSkillType [2]; R6
+  for the strokes).
+- ATK +15% stays in the panel.
+
+**Examples and fixtures.**
+- `si-laevatain.scenario.json` loses its two `wpn_claym_0018.*`
+  conditions, and its total will change: Jade Vessel's bonuses become
+  timed, the set's stacks and P2 appear, and the burst appears once R1
+  exists.
+- Checks to expect:
+  - burst uncapped 432652 (40d9a3c1da37), 530319 (bdf223db8e49), 301679
+    (0eef2474a26f), 401585 (pending e82d45c46040);
+  - combo slashes with +0.6 / +0.7 weapon and 2 / 3 set stacks;
+  - P2 ATK 0.20 and final hit n = 3 + 1 in 40d9a3c1da37;
+  - ultimate under the amp from frame 62.
+
+### 4. In-game tests for what's still unknown
+
+The first round's T1 (what Artful Intent records) is answered by the logs.
+Proposed additions and changes to docs/in-game-tests.md (not made here):
+- **T2 (extends #10) Highest or latest count:** with Si's combo off
+  cooldown, consume 3 stacks of Cryo, then 1 stack within 6 s, then cast
+  the combo. Is the final hit 3 (+1 at P5) × `atk_scale2_1` + `atk_scale2`
+  (the engine: highest), or 1 (+1)? Also, without P5, check that 1 stack
+  gives 3.5 + 1.0 at level 12.
+- **T3 Jade Vessel windows:**
+  - cast only the ultimate, wait 10 s, then cast the combo: it should
+    carry +`combo_dmg_up`; after 25 s it shouldn't;
+  - time the enemy's DMG-taken icon after the battle skill: 30 s, or
+    31–31.5 s (frozen with the enemy during Immobilization, as the engine
+    assumes).
+- **T4 Strokes as battle skills (R6):**
+  - wearing 3× Type 50 Yinglung on Si: battle skill, Initial Stroke,
+    Final Stroke, then read the Yinglung's Edge stacks (1 or 3);
+  - with a teammate's Link up (after their combo), cast Initial Stroke:
+    is Link used up?
+- **T5 Control immunity (R8):** on a boss and on a normal enemy, cast
+  Si's battle skill and time Artful Intent's icon: 20 s + the
+  Immobilization (1 s, 1.5 s at P1) where the freeze works, 20 s where the
+  enemy is immune.
+- #14 (slot-0 element) stays an optional confirmation; #19 (Haste) still
+  decides Ti4's assumption for Si's talent 2.
