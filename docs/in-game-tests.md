@@ -139,7 +139,8 @@ the Arts Susceptibility value on the enemy and time how long it stays.
 ### 13. Arcane's combo cooldown in WILL mode (ready, if you have Arcane)
 
 **Why:** a talent shortens her combo cooldown by 6 s only in INT mode
-(data: `activeCondition lizhiyan_wisd`); the engine applies it always.
+(data: `activeCondition lizhiyan_wisd`); the engine now follows the data
+(the cut only with Intellect ≥ Will), and this confirms it.
 **How:** with Will > Intellect, cast her combo and time the cooldown:
 18 s expected (12 s would mean the cut applies in WILL mode too).
 
