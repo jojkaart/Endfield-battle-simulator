@@ -9,7 +9,7 @@ import { applies, attrModifier, zoneProduct, zoneSum, type HitContext, type Modi
 import { EngineError } from "./errors.ts";
 import type { Condition, GameData, KitHit, KitSkill } from "./model.ts";
 import { artsIntensityDamage, artsLevelCoefficient, reactionBase, type ReactionKind } from "./reactions.ts";
-import { skillLevel, type StatPanel } from "./stats.ts";
+import { computeStats, skillLevel, type StatPanel } from "./stats.ts";
 
 export type CritMode = "never" | "always" | "expected";
 
@@ -110,8 +110,9 @@ export function panelModifiers(data: GameData, panel: StatPanel): Modifier[] {
   return out;
 }
 
-function conditionValue(data: GameData, build: Build, c: Condition): number {
+function conditionValue(data: GameData, build: Build, c: Condition, panel: () => StatPanel): number {
   const s = c.source;
+  if (s.kind === "skill") return skillValue(data, panel(), build, s.skillId, s.key) * s.scale;
   if (s.kind === "talent") {
     const op = data.operators[build.operator];
     const nodes = op?.talentNodes.filter((n) => n.index === s.index) ?? [];
@@ -141,12 +142,14 @@ export function availableConditions(data: GameData, build: Build): readonly Cond
 }
 
 /** The active conditions as modifiers, with values at the build's levels. */
-export function conditionModifiers(data: GameData, build: Build, ids: readonly string[]): Modifier[] {
+export function conditionModifiers(data: GameData, build: Build, ids: readonly string[], panel?: StatPanel): Modifier[] {
   const available = availableConditions(data, build);
+  let p = panel;
+  const getPanel = () => (p ??= computeStats(data, build));
   return ids.map((id) => {
     const c = available.find((x) => x.id === id);
     if (!c) throw new EngineError(`unknown condition ${id} for this build (available: ${available.map((x) => x.id).join(", ") || "none"})`);
-    const value = conditionValue(data, build, c);
+    const value = conditionValue(data, build, c, getPanel);
     if (c.effect.kind === "attr") {
       const m = attrModifier(c.effect.attr, value, `condition ${c.id}`);
       if (!m) throw new EngineError(`${c.id}: attribute ${attrName(c.effect.attr)} doesn't act on hits directly; conditions on panel attributes aren't supported yet`);
@@ -173,7 +176,7 @@ export interface DamageSpec {
 
 /** All modifiers acting on a build's hits: stat panel, active conditions, and external ones. */
 export function activeModifiers(data: GameData, build: Build, panel: StatPanel, options: DamageOptions): Modifier[] {
-  return [...panelModifiers(data, panel), ...conditionModifiers(data, build, options.conditions), ...(options.modifiers ?? [])];
+  return [...panelModifiers(data, panel), ...conditionModifiers(data, build, options.conditions, panel), ...(options.modifiers ?? [])];
 }
 
 /** The shared damage pipeline: ATK × multiplier × zones (docs/data-sources.md#3-damage-formula). */
@@ -248,6 +251,8 @@ export function computeHit(
   options: DamageOptions = DEFAULT_DAMAGE_OPTIONS,
 ): HitDamage {
   const scaleParts = hit.scale.map((key) => ({ key, value: skillValue(data, panel, build, skill.skillId, key) }));
+  const bonuses = (hit.bonuses ?? []).map((b): Modifier => ({ zone: b.zone, value: skillValue(data, panel, build, skill.skillId, b.key), source: `${skill.skillId} ${b.key}` }));
+  if (bonuses.length) options = { ...options, modifiers: [...(options.modifiers ?? []), ...bonuses] };
   return computeDamage(data, build, panel, target, {
     skillId: skill.skillId,
     hitId: hit.id,

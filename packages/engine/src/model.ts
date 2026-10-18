@@ -199,6 +199,14 @@ export interface KitHit {
   readonly requires?: StackRequirement;
   /** Stacks the operator gains when the hit lands (after `applies`). */
   readonly gains?: readonly StackGain[];
+  /** The hit's own bonuses from its skill's values, e.g. a projectile's extra damage bonus on its first target. */
+  readonly bonuses?: readonly HitBonus[];
+}
+
+export interface HitBonus {
+  readonly zone: Zone;
+  /** Blackboard key of the hit's skill, at the build's level, after potentials. */
+  readonly key: string;
 }
 
 /** An operator's own counter, e.g. Laevatain's Melting Flame. */
@@ -232,7 +240,9 @@ export interface KitSkill {
 /** Where a condition's value comes from, so it follows the build's levels. */
 export type ConditionSource =
   | { readonly kind: "talent"; readonly index: number; readonly buffId: string; readonly key: string; readonly scale: number }
-  | { readonly kind: "weaponSkill"; readonly skill: number; readonly key: string; readonly scale: number };
+  | { readonly kind: "weaponSkill"; readonly skill: number; readonly key: string; readonly scale: number }
+  /** A value of one of the operator's own skills at the build's skill level, after potentials. */
+  | { readonly kind: "skill"; readonly skillId: string; readonly key: string; readonly scale: number };
 
 /**
  * What a condition does: change an attribute (mapped to its zone like any

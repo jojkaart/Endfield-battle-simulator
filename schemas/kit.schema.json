@@ -48,6 +48,16 @@
                 "events": { "type": "array", "items": { "type": "string" }, "description": "Event keys battle logs (ZMDLogs) use for this hit. Default: the skill ID, when the skill has a single hit entry." },
                 "frames": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "description": "Frame (30 FPS, from the skill's start) at which each landing happens; one entry per count. Projectile travel time isn't in the data, so projectile hits use the launch frame." },
                 "element": { "$ref": "#/$defs/element" },
+                "bonuses": {
+                  "type": "array",
+                  "description": "The hit's own zone bonuses from its skill's values (after potentials), e.g. a projectile's damage bonus on its first target.",
+                  "items": {
+                    "type": "object",
+                    "required": ["zone", "key"],
+                    "additionalProperties": false,
+                    "properties": { "zone": { "$ref": "#/$defs/zone" }, "key": { "type": "string" } }
+                  }
+                },
                 "requires": {
                   "type": "object",
                   "description": "The hit only happens if the operator has at least this many stacks when the skill is cast; consume: all of the stack is used up by the cast.",
@@ -77,6 +87,7 @@
   },
   "$defs": {
     "element": { "enum": ["physical", "fire", "pulse", "cryst", "natural", "ether"] },
+    "zone": { "enum": ["atk", "damageBonus", "amp", "susceptibility", "damageTaken", "multiplicative", "ignoreResistance", "critRate", "critDamage", "artsIntensity"] },
     "artsElement": { "enum": ["fire", "pulse", "cryst", "natural"] },
     "application": {
       "oneOf": [
@@ -139,6 +150,18 @@
                 "key": { "type": "string" },
                 "scale": { "type": "number" }
               }
+            },
+            {
+              "type": "object",
+              "description": "A value of one of the operator's own skills at the build's skill level, after potentials.",
+              "required": ["kind", "skillId", "key"],
+              "additionalProperties": false,
+              "properties": {
+                "kind": { "const": "skill" },
+                "skillId": { "type": "string" },
+                "key": { "type": "string" },
+                "scale": { "type": "number" }
+              }
             }
           ]
         },
@@ -156,7 +179,7 @@
               "additionalProperties": false,
               "properties": {
                 "kind": { "const": "zone" },
-                "zone": { "enum": ["atk", "damageBonus", "amp", "susceptibility", "damageTaken", "multiplicative", "ignoreResistance", "critRate", "critDamage", "artsIntensity"] },
+                "zone": { "$ref": "#/$defs/zone" },
                 "element": { "$ref": "#/$defs/element" },
                 "skillType": { "$ref": "#/$defs/skillType" }
               }

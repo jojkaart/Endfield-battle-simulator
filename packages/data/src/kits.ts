@@ -13,7 +13,10 @@ const KITS = join(ROOT, "packages/data/kits");
 interface RawCondition {
   id: string;
   label: string;
-  source: { kind: "talent"; index: number; buffId: string; key: string; scale?: number } | { kind: "weaponSkill"; skill: number; key: string; scale?: number };
+  source:
+    | { kind: "talent"; index: number; buffId: string; key: string; scale?: number }
+    | { kind: "weaponSkill"; skill: number; key: string; scale?: number }
+    | { kind: "skill"; skillId: string; key: string; scale?: number };
   effect: { kind: "attr"; attr: number } | { kind: "zone"; zone: Zone; element?: Element; skillType?: SkillType };
 }
 
@@ -29,6 +32,7 @@ interface RawKit {
     hits: {
       id: string; label?: string; scale: string[]; count?: number; element?: Element; events?: string[]; frames?: number[];
       applies?: HitApplication[]; requires?: StackRequirement; gains?: { stack: string; amount?: number | "consumedInflictions" }[];
+      bonuses?: { zone: Zone; key: string }[];
     }[];
   }[];
   conditions?: RawCondition[];
@@ -57,7 +61,7 @@ function condition(owner: string, c: RawCondition): Condition {
   return {
     id: `${owner}.${c.id}`,
     label: c.label,
-    source: c.source.kind === "talent" ? { ...c.source, scale: c.source.scale ?? 1 } : { ...c.source, scale: c.source.scale ?? 1 },
+    source: { ...c.source, scale: c.source.scale ?? 1 },
     effect: c.effect,
   };
 }
@@ -103,7 +107,7 @@ export function loadKits(data: KitData): Kits {
         hits: s.hits.map((h) => {
           if (ids.has(h.id)) throw new Error(`${where}: duplicate hit ${h.id}`);
           ids.add(h.id);
-          for (const key of h.scale) checkKey(skill, key, `${where} hit ${h.id}`);
+          for (const key of [...h.scale, ...(h.bonuses ?? []).map((b) => b.key)]) checkKey(skill, key, `${where} hit ${h.id}`);
           const element = h.element ?? kit.element;
           if (!element || !ELEMENTS.includes(element)) throw new Error(`${where} hit ${h.id}: no element`);
           const events = h.events ?? (s.hits.length === 1 ? [s.skillId] : []);
@@ -116,6 +120,7 @@ export function loadKits(data: KitData): Kits {
             ...(h.frames ? { frames: h.frames } : {}),
             ...(h.applies ? { applies: h.applies } : {}),
             ...(h.requires ? { requires: h.requires } : {}),
+            ...(h.bonuses ? { bonuses: h.bonuses } : {}),
             ...(h.gains ? { gains: h.gains.map((g) => ({ stack: g.stack, amount: g.amount ?? 1 })) } : {}),
           };
         }),
@@ -125,7 +130,15 @@ export function loadKits(data: KitData): Kits {
       operator: kit.operator,
       stacks: (kit.stacks ?? []).map((x) => ({ id: x.id, label: x.label, max: x.max })),
       skills,
-      conditions: (kit.conditions ?? []).map((c) => condition(kit.operator, c)),
+      conditions: (kit.conditions ?? []).map((c) => {
+        if (c.source.kind === "skill") {
+          const where = `kits/operators/${file}: condition ${c.id}`;
+          const skill = data.skills[c.source.skillId];
+          if (!skill || op.skillGroups[c.source.skillId] === undefined) throw new Error(`${where}: ${c.source.skillId} isn't one of ${kit.operator}'s skills`);
+          checkKey(skill, c.source.key, where);
+        }
+        return condition(kit.operator, c);
+      }),
     };
   }
 
@@ -134,7 +147,10 @@ export function loadKits(data: KitData): Kits {
   const weapons: Record<string, Condition[]> = {};
   for (const [id, w] of Object.entries((rawWeapons as RawWeaponKits).weapons)) {
     if (!data.weapons[id]) throw new Error(`kits/weapons.json: unknown weapon ${id}`);
-    weapons[id] = w.conditions.map((c) => condition(id, c));
+    weapons[id] = w.conditions.map((c) => {
+      if (c.source.kind === "skill") throw new Error(`kits/weapons.json: ${id}.${c.id}: weapon conditions use weaponSkill sources`);
+      return condition(id, c);
+    });
   }
   return { operators, weapons };
 }
