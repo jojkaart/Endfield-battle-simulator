@@ -168,10 +168,14 @@ trigger conditions, which come from data we don't have) goes in a small
 format. Each hand-written rule cites its source and has a test. Unknown
 action types or enum values fail the build, so coverage gaps are visible.
 
-**Arts state and stacks.** The game data doesn't mark which hits inflict
-(the `SpellInfliction` actions are disabled stubs; the logic is game code),
-so kits list per hit what it `applies` (inflictions, forced reactions,
-consumption), citing the skill description. One state machine
+**Arts state and stacks.** Kits list per hit what it `applies`
+(inflictions, forced reactions, consumption). Which hits inflict is in
+SkillData: an enabled `SpellInfliction` action next to the hit, with
+`inflictionType` 0 Heat, 1 Electric, 2 Cryo, 3 Nature (45 enabled across the
+operators' files, matching the skill descriptions; the 9 disabled ones are
+unused variants). An earlier note here called them all disabled stubs,
+generalising from Laevatain's disabled ones (corrected 2026-10-18, found
+by the batch 1 analysis); the kit compiler should read them. One state machine
 (`packages/engine/src/status.ts`) turns those into bursts, reactions and
 statuses (Corrosion, Electrification, Combustion ticks, Solidification),
 and statuses act on hits as ordinary Modifiers. Operator counters such as

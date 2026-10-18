@@ -24,11 +24,10 @@ Feature counts per kit (hits or skills using it) from the current files:
 | Action kind | (from `damageType`) | Decorate-mask bits: 128 basic, 256 battle, 512 ultimate, 8192 combo |
 | Forced reactions and their level | 2 | `ForceSpellStatusAction` (status, `count` → level) |
 | Partial consumption | 1 | `FinishBuffAdvanced finishLayerCnt` on an infliction tag |
+| Inflictions | 5 of 7 | Enabled `SpellInfliction` (`inflictionType` 0 Heat, 1 Electric, 2 Cryo, 3 Nature) next to the DamageAction |
 | Final Strike | done | mask bit 2097152 (already read by the loader) |
 
-**Genuinely hand-written** (the data hides it in game code or disabled
-stubs): which hits inflict which element (skill descriptions; the
-`SpellInfliction` actions are `isEnable: false`), combo trigger conditions
+**Genuinely hand-written** (the data hides it in game code): combo trigger conditions
 (CharGrowthTable "COMBO TRIGGER" text), and which branch of an IfElse a
 situation takes (modes, "on a Solidified target", "with an arrow").
 
