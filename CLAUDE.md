@@ -13,6 +13,14 @@ Until the first genuinely useful version exists:
 
 After that milestone, a `dev` branch takes over the role `main` has now.
 
+## Journal and roadmap
+
+- Read [docs/journal.md](docs/journal.md) and [docs/roadmap.md](docs/roadmap.md)
+  at the start of a session.
+- Before a session ends (or after a significant milestone), add a short entry
+  at the top of the journal: goal, what was done, decisions and why, dead ends
+  or problems, and update the roadmap's next steps.
+
 ## Correctness
 
 The tool is only useful if its numbers are right. Keep tests up to date and
