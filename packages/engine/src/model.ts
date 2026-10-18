@@ -6,7 +6,7 @@ import type { HitKind, Zone } from "./effects.ts";
 import type { ArtsElement } from "./reactions.ts";
 import type { HealTarget, KitTrigger } from "./events.ts";
 import type { Predicate, ValueExpr } from "./expr.ts";
-import type { HitApplication } from "./status.ts";
+import type { HitApplication, ReactionStatus } from "./status.ts";
 
 /**
  * How a modifier combines with an attribute (the tables' `formulaItem` /
@@ -258,8 +258,34 @@ export interface KitHit {
   readonly heals?: Exclude<HealTarget, "eventOperator">;
 }
 
-/** An application to the enemy's arts state that can depend on the situation (judged when it happens, after earlier ones). */
-export type KitApplication = HitApplication & { readonly if?: Predicate };
+/**
+ * An application to the enemy's arts state as kits write it: it can depend
+ * on the situation (`if`, judged when it happens, after earlier ones), and
+ * its stacks can be values (e.g. up to the room left in a stack).
+ */
+export type KitApplication = (
+  | Exclude<HitApplication, { readonly kind: "infliction" | "consumeInfliction" }>
+  | (Omit<Extract<HitApplication, { readonly kind: "infliction" }>, "stacks"> & { readonly stacks?: ValueExpr })
+  | (Omit<Extract<HitApplication, { readonly kind: "consumeInfliction" }>, "stacks"> & { readonly stacks?: ValueExpr })
+) & { readonly if?: Predicate };
+
+/** The arts-state application a kit application amounts to, with its values resolved. */
+export function resolveApplication(app: KitApplication, value: (v: ValueExpr) => number): HitApplication {
+  const { if: _if, ...rest } = app;
+  if ((rest.kind === "infliction" || rest.kind === "consumeInfliction") && rest.stacks !== undefined) return { ...rest, stacks: value(rest.stacks) } as HitApplication;
+  return rest as HitApplication;
+}
+
+/** How an operator's kit changes the statuses it applies (Arcane's talent: Corrosion lasts longer and shreds more). */
+export interface StatusTweak {
+  readonly status: ReactionStatus;
+  /** Seconds added to the status's duration. */
+  readonly extraSeconds?: ValueExpr;
+  /** Multiplier on its strength cap (Corrosion's shred cap). */
+  readonly capScale?: ValueExpr;
+  /** Where plain value keys come from. */
+  readonly skill?: string;
+}
 
 export interface BuffApplication {
   readonly buff: string;
@@ -418,6 +444,8 @@ export interface OperatorKit {
    * combo skill can be cast whenever it's off cooldown.
    */
   readonly triggers: readonly KitTrigger[];
+  /** How the statuses this operator applies differ from the standard ones. */
+  readonly statusTweaks?: readonly StatusTweak[];
   readonly skills: readonly KitSkill[];
   readonly conditions: readonly Condition[];
 }

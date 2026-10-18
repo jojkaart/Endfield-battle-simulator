@@ -746,3 +746,36 @@ describe("timeline: stack requirements", () => {
     expect(run(withRequire({ stack: "melting_flame", below: 1 }), 0, 10).hits.filter((h) => h.skillId === L + "attack1").length).toBe(1);
   });
 });
+
+describe("timeline: arts state for kits", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const withKit = (patch: Partial<OperatorKit>): GameData => ({ ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, ...patch } } } });
+  const run = (d: GameData, rotation: RotationAction[], frame: number, startStacks?: Record<string, number>) => {
+    const ctx = createContext(d, { ...scenario(rotation), ...(startStacks ? { startStacks: { [op]: startStacks } } : {}) });
+    let s = init(ctx);
+    for (const a of rotation) s = apply(ctx, s, a);
+    return advance(ctx, s, frame);
+  };
+
+  it("a hit computed as a burst is a burst for triggers", () => {
+    const d = withKit({
+      skills: kit.skills.map((s) => (s.skillId === L + "attack1" ? { ...s, hits: s.hits.map((h) => ({ ...h, reaction: { kind: "burst" as const, element: "fire" as const } })) } : s)),
+      triggers: [...kit.triggers, { id: "b", on: { event: "burst", elements: ["fire"] }, by: "self", do: [{ kind: "gain", gains: [{ stack: "melting_flame", amount: 1 }] }] }],
+    });
+    expect(run(d, [{ operator: op, skill: L + "attack1" }], 10).stacks[op]?.["melting_flame"]).toBe(1);
+    // Its damage is the hit's own: no second burst hit.
+    expect(run(d, [{ operator: op, skill: L + "attack1" }], 10).hits.filter((h) => h.skillId.startsWith("reaction")).length).toBe(0);
+  });
+
+  it("absorption up to the room left in a stack (Laevatain's talent at 3 of 4 Melting Flame)", () => {
+    const room = { sum: [4, { product: [-1, { stackCount: "melting_flame" }] }] };
+    const d = withKit({
+      triggers: [
+        { id: "heat", on: { event: "cast", kinds: ["basic"] }, by: "self", maxCount: 1, do: [{ kind: "apply", applies: [{ kind: "infliction", element: "fire", stacks: 3 }] }] },
+        { id: "absorb", on: { event: "cast", kinds: ["battle"] }, by: "self", do: [{ kind: "apply", applies: [{ kind: "consumeInfliction", elements: ["fire"], stacks: room }] }] },
+      ],
+    });
+    const s = run(d, [{ operator: op, skill: L + "attack1" }, { operator: op, skill: L + "normal_skill" }], 20, { melting_flame: 3 });
+    expect(s.enemy.infliction).toMatchObject({ element: "fire", stacks: 2 });
+  });
+});

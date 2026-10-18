@@ -10,14 +10,13 @@
 import type { SkillType } from "./attributes.ts";
 import { causeMatches, eventMatches, triggerSkillId, type BattleEvent } from "./events.ts";
 import type { Build } from "./build.ts";
-import type { GameData, KitHit, OperatorKit, StackGain } from "./model.ts";
+import type { GameData, KitApplication, KitHit, OperatorKit, StackGain } from "./model.ts";
 import { wornEquipment } from "./stats.ts";
-import type { HitApplication } from "./status.ts";
 
 export interface HitEffect {
   /** Whose stacks the gains go to. */
   readonly owner: string;
-  readonly applies: readonly HitApplication[];
+  readonly applies: readonly KitApplication[];
   readonly gains: readonly StackGain[];
   /** The hit's own entry (its skill values resolve forced-reaction keys), or a team member's trigger. */
   readonly own: boolean;

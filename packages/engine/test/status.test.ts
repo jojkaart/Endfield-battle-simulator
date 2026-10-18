@@ -116,3 +116,41 @@ describe("statuses", () => {
     expect(tickStatus(t.state, 10_000).events).toEqual([]);
   });
 });
+
+describe("arts state: applications kits need (batch 1, A1–A5)", () => {
+  const nature2 = applyToEnemy(applyToEnemy(NO_STATUS, { kind: "infliction", element: "natural" }, 0, "a", 0).state, { kind: "infliction", element: "natural" }, 1, "a", 0).state;
+  // Nature onto 2 Heat stacks: Corrosion level 2.
+  const heat2 = applyToEnemy(applyToEnemy(NO_STATUS, { kind: "infliction", element: "fire" }, 0, "a", 0).state, { kind: "infliction", element: "fire" }, 1, "a", 0).state;
+
+  it("an infliction of the enemy's element stacks on what it has, and does nothing on a clean enemy", () => {
+    expect(applyToEnemy(NO_STATUS, { kind: "infliction", element: "enemy" }, 0, "a", 0)).toEqual({ state: NO_STATUS, events: [] });
+    const r = applyToEnemy(nature2, { kind: "infliction", element: "enemy" }, 2, "b", 0);
+    expect(r.state.infliction).toMatchObject({ element: "natural", stacks: 3 });
+    expect(r.events.map((e) => e.kind)).toEqual(["inflicted", "burst"]);
+  });
+
+  it("consuming a number of stacks leaves the rest with its timer", () => {
+    const r = applyToEnemy(nature2, { kind: "consumeInfliction", stacks: 1 }, 5, "a", 0);
+    expect(r.state.infliction).toEqual({ ...nature2.infliction, stacks: 1 });
+    expect(r.events).toEqual([{ kind: "consumed", frame: 5, operator: "a", element: "natural", stacks: 1 }]);
+    expect(applyToEnemy(nature2, { kind: "consumeInfliction", stacks: 9 }, 5, "a", 0).state.infliction).toBeNull();
+  });
+
+  it("a status can be consumed, with an event", () => {
+    const corroded = applyToEnemy(heat2, { kind: "infliction", element: "natural" }, 3, "a", 0).state;
+    expect(corroded.statuses.map((x) => x.status)).toEqual(["corrosion"]);
+    const r = applyToEnemy(corroded, { kind: "consumeStatus", statuses: ["corrosion"] }, 10, "b", 0);
+    expect(r.state.statuses).toEqual([]);
+    expect(r.events).toEqual([{ kind: "statusConsumed", frame: 10, operator: "b", status: "corrosion", level: 2 }]);
+    expect(applyToEnemy(corroded, { kind: "consumeStatus", statuses: ["solidification"] }, 10, "b", 0).events).toEqual([]);
+  });
+
+  it("an applier's tweaks lengthen its statuses and raise Corrosion's cap", () => {
+    const plain = applyToEnemy(heat2, { kind: "infliction", element: "natural" }, 3, "a", 0).state.statuses[0];
+    const tweaked = applyToEnemy(heat2, { kind: "infliction", element: "natural" }, 3, "a", 0, undefined, { corrosion: { extraFrames: 300, capScale: 1.3 } }).state;
+    expect(tweaked.statuses[0]?.expiresAt).toBe((plain?.expiresAt ?? NaN) + 300);
+    // Long after it's applied, the shred sits at the raised cap: 16 × 1.3 at level 2 (AI 0), 20 s in.
+    expect(statusModifiers(tweaked, 3 + 30 * 20)[0]?.value).toBeCloseTo(16 * 1.3, 9);
+    expect(corrosionShred(2, 60_000, 0, 1.3)).toBeCloseTo(20.8, 9);
+  });
+});

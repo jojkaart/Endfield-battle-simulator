@@ -61,8 +61,8 @@ export const ELECTRIFICATION_DAMAGE_TAKEN = [0.12, 0.16, 0.2, 0.24] as const;
 
 /** What a hit does to the enemy's arts state besides damage. Kits list these per hit. */
 export type HitApplication =
-  /** Apply an infliction (usually 1 stack). */
-  | { readonly kind: "infliction"; readonly element: ArtsElement; readonly stacks?: number }
+  /** Apply an infliction (usually 1 stack); `enemy`: of the element the enemy already has (none: nothing happens). */
+  | { readonly kind: "infliction"; readonly element: ArtsElement | "enemy"; readonly stacks?: number }
   /**
    * Forcibly apply a reaction status. Some skills set its duration (seconds)
    * or scale its damage with their own blackboard values, e.g. Laevatain's
@@ -75,8 +75,14 @@ export type HitApplication =
       readonly durationKey?: string;
       readonly scaleKey?: string;
     }
-  /** Consume (absorb) the infliction without a reaction, e.g. a final strike absorbing Heat. Only the listed elements, when given. */
-  | { readonly kind: "consumeInfliction"; readonly elements?: readonly ArtsElement[] };
+  /**
+   * Consume (absorb) the infliction without a reaction, e.g. a final strike
+   * absorbing Heat: only the listed elements, when given; at most `stacks`
+   * (the rest stays, with its timer), all when absent.
+   */
+  | { readonly kind: "consumeInfliction"; readonly elements?: readonly ArtsElement[]; readonly stacks?: number }
+  /** Remove a reaction status (only the listed ones, when given), e.g. a skill that consumes Solidification. */
+  | { readonly kind: "consumeStatus"; readonly statuses?: readonly ReactionStatus[] };
 
 export interface Infliction {
   readonly element: ArtsElement;
@@ -97,6 +103,8 @@ export interface ActiveStatus {
   readonly nextTickAt?: number;
   /** Multiplier on its damage over time, from the applying skill (default none). */
   readonly damageScale?: { readonly key: string; readonly value: number };
+  /** Its strength cap × this (Corrosion's shred cap; an applier's talent). */
+  readonly capScale?: number;
 }
 
 export interface EnemyStatus {
@@ -124,6 +132,8 @@ export type StatusEvent =
       readonly initialHit: boolean;
     }
   | { readonly kind: "consumed"; readonly frame: number; readonly operator: string; readonly element: ArtsElement; readonly stacks: number }
+  /** A reaction status was removed by a hit before it ran out. */
+  | { readonly kind: "statusConsumed"; readonly frame: number; readonly operator: string; readonly status: ReactionStatus; readonly level: number }
   | {
       readonly kind: "combustionTick";
       readonly frame: number;
@@ -180,12 +190,17 @@ interface StatusOverrides {
   readonly damageScale?: { readonly key: string; readonly value: number };
 }
 
-function withStatus(s: EnemyStatus, st: ReactionStatus, level: number, frame: number, operator: string, artsIntensity: number, o: StatusOverrides = {}): EnemyStatus {
+/** How an applier's kit changes the statuses it applies (OperatorKit.statusTweaks, resolved for the applier). */
+export type StatusTweaks = Partial<Record<ReactionStatus, { readonly extraFrames: number; readonly capScale: number }>>;
+
+function withStatus(s: EnemyStatus, st: ReactionStatus, level: number, frame: number, operator: string, artsIntensity: number, o: StatusOverrides = {}, tweaks: StatusTweaks = {}): EnemyStatus {
+  const t = tweaks[st];
   const status: ActiveStatus = {
     status: st,
     level: checkLevel(level),
     appliedAt: frame,
-    expiresAt: frame + (o.durationFrames ?? (STATUS_FRAMES[st][level - 1] as number)),
+    expiresAt: frame + (o.durationFrames ?? (STATUS_FRAMES[st][level - 1] as number)) + (t?.extraFrames ?? 0),
+    ...(t && t.capScale !== 1 ? { capScale: t.capScale } : {}),
     operator,
     artsIntensity,
     ...(st === "combustion" ? { nextTickAt: frame + COMBUSTION_TICK_FRAMES } : {}),
@@ -211,31 +226,34 @@ export function applyToEnemy(
   operator: string,
   artsIntensity: number,
   skillValue: (key: string) => number = noSkillValues,
+  tweaks: StatusTweaks = {},
 ): { state: EnemyStatus; events: StatusEvent[] } {
   const s = expireStatus(state, frame);
   const cur = s.infliction;
   if (app.kind === "infliction") {
+    if (app.element === "enemy") return cur ? applyToEnemy(s, { ...app, element: cur.element }, frame, operator, artsIntensity, skillValue, tweaks) : { state: s, events: [] };
+    const element = app.element;
     const stacks = app.stacks ?? 1;
     if (!Number.isInteger(stacks) || stacks < 1) throw new EngineError(`infliction stacks ${stacks}`);
     if (!cur) {
       const n = Math.min(MAX_INFLICTION_STACKS, stacks);
       return {
-        state: { ...s, infliction: { element: app.element, stacks: n, expiresAt: frame + INFLICTION_FRAMES } },
-        events: [{ kind: "inflicted", frame, operator, element: app.element, stacks: n }],
+        state: { ...s, infliction: { element: element, stacks: n, expiresAt: frame + INFLICTION_FRAMES } },
+        events: [{ kind: "inflicted", frame, operator, element: element, stacks: n }],
       };
     }
-    if (cur.element === app.element) {
+    if (cur.element === element) {
       const n = Math.min(MAX_INFLICTION_STACKS, cur.stacks + stacks);
       return {
         state: { ...s, infliction: { element: cur.element, stacks: n, expiresAt: frame + INFLICTION_FRAMES } },
-        events: [{ kind: "inflicted", frame, operator, element: app.element, stacks: n }, { kind: "burst", frame, operator, element: app.element }],
+        events: [{ kind: "inflicted", frame, operator, element: element, stacks: n }, { kind: "burst", frame, operator, element: element }],
       };
     }
-    const status = REACTION_OF[app.element];
+    const status = REACTION_OF[element];
     const level = Math.min(MAX_INFLICTION_STACKS, cur.stacks);
     return {
-      state: withStatus({ ...s, infliction: null }, status, level, frame, operator, artsIntensity),
-      events: [{ kind: "reaction", frame, operator, status, element: app.element, level, consumed: cur.element, initialHit: true }],
+      state: withStatus({ ...s, infliction: null }, status, level, frame, operator, artsIntensity, {}, tweaks),
+      events: [{ kind: "reaction", frame, operator, status, element: element, level, consumed: cur.element, initialHit: true }],
     };
   }
   if (app.kind === "forcedReaction") {
@@ -245,12 +263,23 @@ export function applyToEnemy(
       ...(app.scaleKey ? { damageScale: { key: app.scaleKey, value: skillValue(app.scaleKey) } } : {}),
     };
     return {
-      state: withStatus(s, app.status, level, frame, operator, artsIntensity, o),
+      state: withStatus(s, app.status, level, frame, operator, artsIntensity, o, tweaks),
       events: [{ kind: "reaction", frame, operator, status: app.status, element: ELEMENT_OF[app.status], level, consumed: null, initialHit: false }],
     };
   }
+  if (app.kind === "consumeStatus") {
+    const gone = s.statuses.filter((x) => !app.statuses || app.statuses.includes(x.status));
+    if (gone.length === 0) return { state: s, events: [] };
+    return {
+      state: { ...s, statuses: s.statuses.filter((x) => !gone.includes(x)) },
+      events: gone.map((x) => ({ kind: "statusConsumed", frame, operator, status: x.status, level: x.level })),
+    };
+  }
   if (!cur || (app.elements && !app.elements.includes(cur.element))) return { state: s, events: [] };
-  return { state: { ...s, infliction: null }, events: [{ kind: "consumed", frame, operator, element: cur.element, stacks: cur.stacks }] };
+  const n = app.stacks === undefined ? cur.stacks : Math.min(cur.stacks, Math.max(0, Math.floor(app.stacks)));
+  if (n <= 0) return { state: s, events: [] };
+  const left = cur.stacks - n;
+  return { state: { ...s, infliction: left > 0 ? { ...cur, stacks: left } : null }, events: [{ kind: "consumed", frame, operator, element: cur.element, stacks: n }] };
 }
 
 /** The damage modifiers the enemy's statuses give at a frame: Corrosion's resistance shred, Electrification's Arts DMG Taken. */
@@ -258,7 +287,7 @@ export function statusModifiers(state: EnemyStatus, frame: number): Modifier[] {
   const out: Modifier[] = [];
   for (const x of expireStatus(state, frame).statuses) {
     if (x.status === "corrosion") {
-      out.push(corrosionModifier(x.level, ((frame - x.appliedAt) * 1000) / FPS, x.artsIntensity));
+      out.push(corrosionModifier(x.level, ((frame - x.appliedAt) * 1000) / FPS, x.artsIntensity, x.capScale ?? 1));
     } else if (x.status === "electrification") {
       const value = (ELECTRIFICATION_DAMAGE_TAKEN[x.level - 1] as number) * artsIntensityEffect(x.artsIntensity);
       for (const element of ARTS_ELEMENTS) out.push({ zone: "damageTaken", value, element, source: `Electrification level ${x.level}` });

@@ -379,6 +379,30 @@
                     "description": "Only heals of someone other than the healer."
                   }
                 }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "event"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
+                    "const": "statusConsumed"
+                  },
+                  "statuses": {
+                    "type": "array",
+                    "items": {
+                      "enum": [
+                        "combustion",
+                        "electrification",
+                        "solidification",
+                        "corrosion"
+                      ]
+                    },
+                    "minItems": 1
+                  }
+                }
               }
             ]
           },
@@ -771,6 +795,41 @@
         }
       }
     },
+    "statusTweaks": {
+      "type": "array",
+      "description": "How the statuses this operator applies differ from the standard ones (Arcane's talent: Corrosion lasts longer, shreds more).",
+      "items": {
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "enum": [
+              "combustion",
+              "electrification",
+              "solidification",
+              "corrosion"
+            ]
+          },
+          "extraSeconds": {
+            "$ref": "#/$defs/valueExpr"
+          },
+          "capScale": {
+            "$ref": "#/$defs/valueExpr",
+            "description": "Multiplier on the strength cap (Corrosion's shred cap)."
+          },
+          "skill": {
+            "type": "string",
+            "description": "Where plain value keys come from (an own skill or a talent / potential source)."
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      }
+    },
     "stacks": {
       "type": "array",
       "description": "The operator's own counters (e.g. Laevatain's Melting Flame) that hits gain and require.",
@@ -922,12 +981,19 @@
               "const": "infliction"
             },
             "element": {
-              "$ref": "#/$defs/artsElement"
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/artsElement"
+                },
+                {
+                  "const": "enemy",
+                  "description": "The element the enemy already has (none: nothing happens)."
+                }
+              ]
             },
             "stacks": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 4
+              "$ref": "#/$defs/valueExpr",
+              "description": "Default 1."
             },
             "if": {
               "$ref": "#/$defs/predicate",
@@ -987,6 +1053,38 @@
               "type": "array",
               "items": {
                 "$ref": "#/$defs/artsElement"
+              },
+              "minItems": 1
+            },
+            "if": {
+              "$ref": "#/$defs/predicate",
+              "description": "Only in this situation (judged when it happens)."
+            },
+            "stacks": {
+              "$ref": "#/$defs/valueExpr",
+              "description": "At most this many (the rest stays, with its timer); all when absent."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "consumeStatus"
+            },
+            "statuses": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "combustion",
+                  "electrification",
+                  "solidification",
+                  "corrosion"
+                ]
               },
               "minItems": 1
             },
@@ -1580,6 +1678,43 @@
             },
             "else": {
               "$ref": "#/$defs/valueExpr"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "stackCount"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "stackCount": {
+              "type": "string",
+              "description": "The operator's own stack count."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "eventCount"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "eventCount": {
+              "const": true
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "targetsHit"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "targetsHit": {
+              "const": true
             }
           }
         }

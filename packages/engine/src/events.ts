@@ -48,6 +48,8 @@ export type TriggerOn =
   /** An infliction is applied without a reaction, leaving at least `minStacks`. */
   | { readonly event: "inflictionApplied"; readonly elements?: readonly ArtsElement[]; readonly minStacks?: number }
   | { readonly event: "burst"; readonly elements?: readonly ArtsElement[] }
+  /** A reaction status is removed by a hit before it runs out (Liino's combo: "an Arts Reaction is consumed"). */
+  | { readonly event: "statusConsumed"; readonly statuses?: readonly ReactionStatus[] }
   /** One of the trigger owner's own kit buffs is applied, ends, or ticks (KitBuff.every). */
   | { readonly event: "buffApplied" | "buffEnded" | "buffTick"; readonly buff: string }
   /** Someone (`by`) heals someone; `toOthers`: only heals of someone other than the healer. */
@@ -148,6 +150,8 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
       return s.kind === "inflicted" && has(on.elements, s.element) && s.stacks >= (on.minStacks ?? 1);
     case "burst":
       return s.kind === "burst" && has(on.elements, s.element);
+    case "statusConsumed":
+      return s.kind === "statusConsumed" && has(on.statuses, s.status);
   }
 }
 

@@ -28,14 +28,14 @@ import {
 } from "./damage.ts";
 import { zoneSum, type Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
-import type { GameData, KitBuff, SkillTiming, StackRequirement, KitHit, KitSkill, OperatorKit, StackGain } from "./model.ts";
+import { resolveApplication, type GameData, type KitBuff, type KitHit, type KitSkill, type OperatorKit, type SkillTiming, type StackGain, type StackRequirement } from "./model.ts";
 import { effectiveKit } from "./triggers.ts";
 import { causeMatches, eventMatches, triggerSkillId, type BattleEvent, type KitTrigger } from "./events.ts";
 import { evaluate, test, type EvalContext } from "./expr.ts";
 import { applyBuff, buffAttr, buffModifiers, endBuff, extendBuff, reaches, resolveValue, withBuff, type ActiveBuff } from "./buffs.ts";
 import { computeStats, skillLevel, skillParam, type StatPanel } from "./stats.ts";
 import { Attr } from "./attributes.ts";
-import { applyToEnemy, expireStatus, nextTick, NO_STATUS, statusModifiers, tickStatus, type EnemyStatus, type StatusEvent } from "./status.ts";
+import { applyToEnemy, expireStatus, nextTick, NO_STATUS, statusModifiers, tickStatus, type EnemyStatus, type StatusEvent, type StatusTweaks } from "./status.ts";
 import { FPS } from "./units.ts";
 
 /**
@@ -468,9 +468,23 @@ function addBuff(ctx: TimelineContext, st: TimelineState, owner: string, skillId
   return { state: b ? { ...st, buffs: withBuff(st.buffs, b) } : st, applied: b !== null };
 }
 
+/** How an operator's kit changes the statuses it applies, resolved at a frame (OperatorKit.statusTweaks). */
+function statusTweaks(ctx: TimelineContext, st: TimelineState, operator: string, frame: number): StatusTweaks {
+  const tweaks = ctx.kits.get(operator)?.statusTweaks;
+  if (!tweaks?.length) return {};
+  const build = ctx.builds.get(operator) as Build;
+  const panel = ctx.panels.get(operator) as StatPanel;
+  const out: Record<string, { extraFrames: number; capScale: number }> = {};
+  for (const t of tweaks) {
+    const ec = evalContext(ctx.data, build, panel, t.skill ?? "", situationAt(ctx, operator, st, frame));
+    out[t.status] = { extraFrames: t.extraSeconds === undefined ? 0 : Math.round(evaluate(t.extraSeconds, ec) * FPS), capScale: t.capScale === undefined ? 1 : evaluate(t.capScale, ec) };
+  }
+  return out;
+}
+
 /** The damage a status event deals, if any (bursts, reactions with an initial hit, Combustion ticks). */
 function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, buffs: readonly ActiveBuff[]): LandedHit | null {
-  if (e.kind === "consumed" || e.kind === "inflicted" || (e.kind === "reaction" && !e.initialHit)) return null;
+  if (e.kind === "consumed" || e.kind === "inflicted" || e.kind === "statusConsumed" || (e.kind === "reaction" && !e.initialHit)) return null;
   const reaction =
     e.kind === "burst" ? { kind: "burst" as const, element: e.element, stacks: 1 }
     : e.kind === "reaction" ? { kind: "reaction" as const, element: e.element, stacks: e.level }
@@ -535,7 +549,7 @@ function triggerSituation(ctx: TimelineContext, owner: string, st: TimelineState
 function eventCountOf(e: BattleEvent): number {
   if (e.type !== "status") return 1;
   const s = e.event;
-  return s.kind === "inflicted" || s.kind === "consumed" ? s.stacks : s.kind === "reaction" ? s.level : 1;
+  return s.kind === "inflicted" || s.kind === "consumed" ? s.stacks : s.kind === "reaction" || s.kind === "statusConsumed" ? s.level : 1;
 }
 
 /** Runs every team member's triggers on a chain of events, in order; what they do can add events to the chain. */
@@ -596,7 +610,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         const ai = artsIntensity(ctx, st, owner, frame);
         for (const app of a.applies) {
           if (app.if && !decide(app.if, ec())) continue;
-          const r = applyToEnemy(expireStatus(st.enemy, frame), app, frame, owner, ai, (key) => skillValue(ctx.data, panel, build, triggerSkillId(owner, t), key));
+          const r = applyToEnemy(expireStatus(st.enemy, frame), resolveApplication(app, (v) => evaluate(v, ec())), frame, owner, ai, (key) => skillValue(ctx.data, panel, build, triggerSkillId(owner, t), key), statusTweaks(ctx, st, owner, frame));
           st = recordStatus(ctx, { ...st, enemy: r.state }, r.events, r.state);
           for (const x of r.events) if (x.kind === "consumed") consumed += x.stacks;
           events.push(...asEvents(r.events));
@@ -728,7 +742,8 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     const ai = artsIntensity(ctx, st, hit.operator, hit.frame);
     for (const app of kitHit.applies) {
       if (app.if && !decide(app.if, evalContext(ctx.data, build, panel, hit.skillId, at(consumed)))) continue;
-      const r = applyToEnemy(st.enemy, app, hit.frame, hit.operator, ai, (key) => skillValue(ctx.data, panel, build, hit.skillId, key));
+      const resolved = resolveApplication(app, (v) => evaluate(v, evalContext(ctx.data, build, panel, hit.skillId, at(consumed))));
+      const r = applyToEnemy(st.enemy, resolved, hit.frame, hit.operator, ai, (key) => skillValue(ctx.data, panel, build, hit.skillId, key), statusTweaks(ctx, st, hit.operator, hit.frame));
       st = { ...st, enemy: r.state };
       statusEvents.push(...r.events);
       for (const x of r.events) if (x.kind === "consumed") consumed += x.stacks;
@@ -771,7 +786,9 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     type: "hit", frame: hit.frame, operator: hit.operator, skillId: hit.skillId, kind,
     element: kitHit.reaction?.element ?? kitHit.element, finalStrike: kitHit.finalStrike ?? false, controlled: st.controlled === hit.operator,
   };
-  const all: BattleEvent[] = [hitEvent, ...asEvents(statusEvents), ...events, ...(kitHit.heals ? healEvents(ctx, st, hit.operator, kitHit.heals, hit.frame) : []), ...(kitHit.gains?.length ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator }] : [])];
+  // A hit computed as a burst is one for triggers too (its damage is the hit's own).
+  const burst: StatusEvent[] = kitHit.reaction?.kind === "burst" ? [{ kind: "burst", frame: hit.frame, operator: hit.operator, element: kitHit.reaction.element }] : [];
+  const all: BattleEvent[] = [hitEvent, ...asEvents(statusEvents), ...asEvents(burst), ...events, ...(kitHit.heals ? healEvents(ctx, st, hit.operator, kitHit.heals, hit.frame) : []), ...(kitHit.gains?.length ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator }] : [])];
   return runTriggers(ctx, st, all, { operator: hit.operator, kind });
 }
 

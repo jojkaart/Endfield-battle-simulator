@@ -223,3 +223,11 @@ Then re-analysis of all seven.
   "hit"` uses the stack up when the requiring hit lands; negative gains use
   stacks up, never below 0. With these, Typhoeus's four arrow slots become
   one counter and her aerial attempts a stack (kits phase).
+- A1–A5: infliction of the enemy's current element (`element: "enemy"`);
+  consuming N stacks (`stacks`, a value: e.g. the room left in a stack via
+  the new `stackCount` value), the rest keeping its timer; burst-type hits
+  emit their burst event (damage stays the hit's); applier status tweaks
+  (`statusTweaks`: extra duration, Corrosion cap scale); `consumeStatus`
+  with a `statusConsumed` event (Liino's combo trigger half). The schema
+  now also lists the `eventCount` / `targetsHit` values the V2 commit
+  added to the engine.

@@ -70,6 +70,8 @@ export type ValueExpr =
   | { readonly eventCount: true }
   /** Targets the hit (or the triggering hit) reached: 1 until fights have several enemies. */
   | { readonly targetsHit: true }
+  /** The operator's own stack count (e.g. the room left: max − count). */
+  | { readonly stackCount: string }
   | { readonly if: Predicate; readonly then: ValueExpr; readonly else?: ValueExpr };
 
 /** What a predicate or value is evaluated against. Fields left out are unknown. */
@@ -168,6 +170,10 @@ export function evaluate(v: ValueExpr, c: EvalContext): number {
     return c.eventCount;
   }
   if ("targetsHit" in v) return 1;
+  if ("stackCount" in v) {
+    if (!c.stacks) throw new Error(`value needs stack ${v.stackCount}, which isn't known here`);
+    return c.stacks[v.stackCount] ?? 0;
+  }
   const t = test(v.if, c);
   if (t === undefined) throw new Error("value depends on a condition that isn't known here");
   return t ? evaluate(v.then, c) : v.else === undefined ? 0 : evaluate(v.else, c);

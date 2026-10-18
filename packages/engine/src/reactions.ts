@@ -48,21 +48,22 @@ export function artsIntensityEffect(ai: number): number {
  * to 12 / 16 / 20 / 24 points, all × artsIntensityEffect(applier's AI).
  * Source: formula research (docs/data-sources.md#consensus) from BuffData
  * keys and the Talos Wiki. Tick timing (whole seconds) is an assumption the
- * log fixtures check.
+ * log fixtures check. `capScale` raises the cap (an applier's talent, e.g.
+ * Arcane's `corrupt_rate`).
  */
-export function corrosionShred(level: number, elapsedMs: number, applierAi: number): number {
+export function corrosionShred(level: number, elapsedMs: number, applierAi: number, capScale = 1): number {
   const i = level - 1;
   const initial = [3.6, 4.8, 6, 7.2][i];
   const perSecond = [0.84, 1.12, 1.4, 1.68][i];
   const max = [12, 16, 20, 24][i];
   if (initial === undefined || perSecond === undefined || max === undefined) throw new RangeError(`Corrosion level ${level}`);
-  const base = Math.min(max, initial + perSecond * Math.floor(Math.max(0, elapsedMs) / 1000));
+  const base = Math.min(max * capScale, initial + perSecond * Math.floor(Math.max(0, elapsedMs) / 1000));
   return base * artsIntensityEffect(applierAi);
 }
 
 /** Corrosion as a modifier: its shred adds back resistance points for every element (Physical included). */
-export function corrosionModifier(level: number, elapsedMs: number, applierAi: number): Modifier {
-  return { zone: "ignoreResistance", value: corrosionShred(level, elapsedMs, applierAi), source: `Corrosion level ${level}` };
+export function corrosionModifier(level: number, elapsedMs: number, applierAi: number, capScale = 1): Modifier {
+  return { zone: "ignoreResistance", value: corrosionShred(level, elapsedMs, applierAi, capScale), source: `Corrosion level ${level}` };
 }
 
 /**

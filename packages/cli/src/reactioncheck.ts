@@ -3,7 +3,7 @@
 // the bursts and reactions it predicts with the ones the log records. Logs
 // don't record inflictions, so this is how a kit's `applies` gets verified.
 
-import { applyToEnemy, computeStats, expireStatus, FPS, effectiveKit, hitAvailable, hitEffects, kitHitEntries, NO_STATUS, statusEventKey, type GameData, type KitHit, type StatusEvent } from "@efsim/engine";
+import { applyToEnemy, computeStats, expireStatus, FPS, effectiveKit, hitAvailable, hitEffects, kitHitEntries, NO_STATUS, resolveApplication, statusEventKey, type GameData, type KitHit, type StatusEvent } from "@efsim/engine";
 import type { LogFixture } from "@efsim/data";
 
 /**
@@ -57,7 +57,8 @@ export function checkReactions(data: GameData, fixture: LogFixture): ReactionChe
     for (const effect of hitEffects(teamKits, h.operator, kh, h.event)) {
       for (const app of effect.applies) {
         // Arts Intensity only scales status strength, and skill values only a forced status's duration and damage, which this check doesn't compare.
-        const r = applyToEnemy(expireStatus(enemy, frame), app, frame, h.operator, 0, () => 1);
+        // A replay doesn't know stack counts: a stack amount that's a value counts as all (4).
+        const r = applyToEnemy(expireStatus(enemy, frame), resolveApplication(app, (v) => (typeof v === "number" ? v : 4)), frame, h.operator, 0, () => 1);
         enemy = r.state;
         for (const e of r.events) predicted.push({ predicted: e, t: h.t });
       }
@@ -99,6 +100,7 @@ function describe(e: StatusEvent): string {
   if (e.kind === "reaction") return `${e.operator}: ${e.status} level ${e.level}${e.consumed ? ` (consumed ${e.consumed})` : " (forced)"}`;
   if (e.kind === "inflicted") return `${e.operator}: ${e.element} infliction (${e.stacks})`;
   if (e.kind === "consumed") return `${e.operator}: consumed ${e.stacks} ${e.element}`;
+  if (e.kind === "statusConsumed") return `${e.operator}: consumed ${e.status} level ${e.level}`;
   return `${e.operator}: combustion tick level ${e.level}`;
 }
 

@@ -11,7 +11,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { isBuffFileListed, readBuffFile } from "./buffData.ts";
-import { ELEMENTS, predicateRefs, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
+import { ELEMENTS, predicateRefs, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
@@ -52,6 +52,7 @@ interface RawKit {
   stacks?: StackDef[];
   buffs?: RawBuff[];
   triggers?: RawTrigger[];
+  statusTweaks?: (StatusTweak & { note?: string })[];
   activeConditions?: Record<string, Predicate>;
   skills: {
     skillId: string;
@@ -308,7 +309,7 @@ function kitChecker(scope: KitScope) {
       if (!raw) throw new Error(`${scope.file}: buff ${b.id}: no BuffData file ${gameBuff}`);
       return raw.stacking.type === 1 ? { ...b, stackGroup: raw.stacking.key ?? gameBuff } : b;
     });
-  return { checkValue, checkPredicate, checkBuff, normalizeHits, checkTrigger, normalizeBuffs };
+  return { checkValue, checkPredicate, checkBuff, normalizeHits, checkTrigger, normalizeBuffs, isSource: scope.isSource };
 }
 
 /**
@@ -392,6 +393,15 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
     ...(kit.activeConditions ? { activeConditions: kit.activeConditions } : {}),
     buffs: c.normalizeBuffs(kit.buffs ?? []),
     triggers: (kit.triggers ?? []).map(({ note: _note, ...t }) => c.checkTrigger(t)),
+    ...(kit.statusTweaks
+      ? {
+          statusTweaks: kit.statusTweaks.map(({ note: _note, ...t }) => {
+            if (t.skill && !c.isSource(t.skill)) throw new Error(`${where0}: status tweak: ${t.skill} isn't one of ${kit.operator}'s value sources`);
+            for (const v of [t.extraSeconds, t.capScale]) if (v !== undefined) c.checkValue(v, t.skill ?? "", `${where0}: status tweak ${t.status}`);
+            return t;
+          }),
+        }
+      : {}),
     skills,
     conditions: (kit.conditions ?? []).map((x) => {
       if (x.source.kind === "skill") {
