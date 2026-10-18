@@ -4,6 +4,44 @@ A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 
+## 2026-10-18: Arcane's kit
+
+**Goal:** hit structure for Arcane (chr_0032_lizhiyan), verified against
+ZMDLogs.
+
+**Done:** kit `packages/data/kits/operators/chr_0032_lizhiyan.json` (basic
+attacks, plunge, battle skill, combo skill and its "seal" buffs, both
+ultimates); two Rhodagn logs imported to `fixtures/pending/` (not under the
+log test yet, see problems).
+
+**Findings:**
+- Every damage unit, the seals included, is plain ATK × a combo-skill key
+  passed by assignBlackboard: seal_total = atk_scale_touch, seal2 / seal
+  listeners = atk_scale_boom, seal_finisher_wisd = 4 × atk_scale_laser1 +
+  atk_scale_laser2. Nothing scales on Intellect directly; the mode (Intellect
+  ≥ Will → INT) picks branches and Susceptibility amounts.
+- Log buffs with stackingType 1 ("cannot stack", e.g. Solemn Phalanx's
+  will_dmg / will_atk) appear once per refresh in ZMDLogs; counting each
+  buff ID once makes all 13 Arcane hits of btl_upload_b7b3762d5da8 and 4 of 5
+  of btl_upload_e82d45c46040 match ±1. The checker sums them today, so both
+  logs fail; parked in `fixtures/pending/`.
+- `buff_common_natural_triggered` is the Corrosion reaction's damage
+  (0eef: 2 stacks, 18904 exact); its stacks equal the Corrosion level the
+  same hit's battle skill then gets (level 2, also exact).
+- Arcane's ultimate (INT) forces Corrosion level 1 (`count` 1, duration
+  `duration2`); talent 2 hooks every Corrosion she applies: +duration_add s
+  and max reduction × (1 + corrupt_rate).
+
+**Problems:**
+- `fixtures/zmdlogs-d9e59d0fb737.json` (2026-10-15 01:55 +08:00, parser v58,
+  before 555me's 1.6 commit 371c743) is 1.7–2.2× the model for every Arcane,
+  Gilberta and Typhoeus hit after Arcane's ultimate. Within it the INT hits
+  agree with each other (same ×1.9617 residual), so the structure holds, but
+  its event keys can't be in the kit without failing the log test. Likely
+  game 1.5; needs a 1.6 INT log or in-game test 6.
+- The kit can't pick a hit by Intellect ≥ Will, and one event key maps to
+  one hit, so INT variants and the final INT laser carry no event keys.
+
 ## 2026-10-18: damage calculator
 
 **Goal:** something usable: the stat panel and damage per hit of a build,

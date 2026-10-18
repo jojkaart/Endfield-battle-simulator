@@ -1,0 +1,2992 @@
+{
+ "$schema": "../schemas/log-fixture.schema.json",
+ "id": "zmdlogs-e82d45c46040",
+ "description": "ZMDLogs battle btl_upload_e82d45c46040 vs eny_0051_rodin: chr_0032_lizhiyan, chr_0004_pelica, chr_0036_jsspsi, chr_0011_seraph; per-hit damage with the logged buff effects.",
+ "provenance": {
+  "source": "ZMDLogs (zmdlogs.com) battle log, captured in game by its client",
+  "url": "https://zmdlogs.com/battles/btl_upload_e82d45c46040",
+  "battleId": "btl_upload_e82d45c46040",
+  "parserVersion": "raw-log-parser-v59",
+  "inGame": true,
+  "measured": "2026-10-18T02:54:37+08:00",
+  "verifiedAgainst": {
+   "rmxlinux": "8b955ea78c6f04b6e5164b75f63f46b503c5f6f2",
+   "555me": "2737bc099e4848517eed01a19614ef88932c18a0"
+  },
+  "notes": [
+   "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
+   "Enemy level 90 is assumed, not logged."
+  ]
+ },
+ "enemy": {
+  "id": "eny_0051_rodin",
+  "level": 90
+ },
+ "team": [
+  {
+   "operator": "chr_0032_lizhiyan",
+   "level": 90,
+   "promotion": 4,
+   "potential": 5,
+   "skillLevels": {
+    "basic": 9,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_funnel_0016",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     9
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_usp02_hand_03",
+     "artifice": [
+      3,
+      0,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_usp02_body_03",
+     "artifice": [
+      3,
+      3,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_usp02_edc_03",
+     "artifice": [
+      3,
+      0,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_usp02_edc_04",
+     "artifice": [
+      3,
+      3,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0004_pelica",
+   "level": 60,
+   "promotion": 2,
+   "potential": 5,
+   "skillLevels": {
+    "basic": 1,
+    "battle": 1,
+    "combo": 1,
+    "ultimate": 1
+   },
+   "weapon": {
+    "id": "wpn_funnel_0008",
+    "level": 90,
+    "skillLevels": [
+     6,
+     9,
+     9
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_poise01_hand_01",
+     "artifice": [
+      0,
+      0,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_pulse_cryst01_body_01",
+     "artifice": [
+      0,
+      0,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_pulse_cryst01_edc_02",
+     "artifice": [
+      0,
+      3,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_pulse_cryst01_edc_02",
+     "artifice": [
+      0,
+      3,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0036_jsspsi",
+   "level": 90,
+   "promotion": 4,
+   "potential": 5,
+   "skillLevels": {
+    "basic": 9,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_claym_0018",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     9
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_atk02_hand_03",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atk02_body_05",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atk02_edc_06",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_heal01_edc_03",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0011_seraph",
+   "level": 90,
+   "promotion": 4,
+   "potential": 5,
+   "skillLevels": {
+    "basic": 9,
+    "battle": 12,
+    "combo": 9,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_funnel_0018",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     9
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_parts_wuling00_hand_03",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_parts_wuling01_body_02",
+     "artifice": [
+      3,
+      3,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atb01_edc_06",
+     "artifice": [
+      3,
+      0,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atb01_edc_06",
+     "artifice": [
+      3,
+      0,
+      3
+     ]
+    }
+   ]
+  }
+ ],
+ "hits": [
+  {
+   "t": 2315,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_normal_skill_abilityrange_1",
+   "value": 6056,
+   "crit": false,
+   "element": "cryst",
+   "effects": [],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 7021,
+   "operator": "chr_0032_lizhiyan",
+   "event": "buff_chr_0032_lizhiyan_combo_skill_seal_total",
+   "value": 4539,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 7022,
+   "operator": "chr_0032_lizhiyan",
+   "event": "chr_0032_lizhiyan_ultimate_skill",
+   "value": 9168,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 7196,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 8777,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 7284,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 18744,
+   "crit": true,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 7371,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 12496,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 7458,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 12496,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 7544,
+   "operator": "chr_0004_pelica",
+   "event": "buff_common_pulse_cryst_triggered",
+   "value": 36250,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_cpinflict_01_elecdamageadd",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.5
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    },
+    {
+     "buff": "buff_chr_0004_pelica_potential_3_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 7544,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 16084,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 7544,
+   "operator": "chr_0004_pelica",
+   "event": "chr_0004_pelica_normal_skill",
+   "value": 8542,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_cpinflict_01_elecdamageadd",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.5
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    },
+    {
+     "buff": "buff_chr_0004_pelica_potential_3_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 8370,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 42401,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 8370,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 42401,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 8370,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 63601,
+   "crit": true,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 8370,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 42401,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 8370,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 26776,
+   "crit": true,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 8370,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 17851,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 8370,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 17851,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 8370,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_ultimate_skill_abilityrange_1",
+   "value": 80329,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 8474,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 63601,
+   "crit": true,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8561,
+   "operator": "chr_0032_lizhiyan",
+   "event": "buff_common_cryst_cryst_triggered",
+   "value": 39488,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 8561,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 42401,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 8647,
+   "operator": "chr_0032_lizhiyan",
+   "event": "buff_common_cryst_cryst_triggered",
+   "value": 39488,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 8647,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 46417,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 8734,
+   "operator": "chr_0032_lizhiyan",
+   "event": "buff_chr_0032_lizhiyan_combo_skill_seal_total",
+   "value": 11992,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8734,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 46417,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8821,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 69625,
+   "crit": true,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8925,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 46417,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.179399
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.179399
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 9116,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 1135323,
+   "crit": null,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 11111,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_normal_skill_inkmove_2",
+   "value": 284977,
+   "uncapped": 401585,
+   "crit": false,
+   "element": null,
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.197039
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_fire",
+     "zone": "amp",
+     "element": "fire",
+     "value": 0.432
+    },
+    {
+     "buff": "buff_common_affixes_enhance_crystal",
+     "zone": "amp",
+     "element": "cryst",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_affixes_enhance_natural",
+     "zone": "amp",
+     "element": "natural",
+     "value": 0.606625
+    },
+    {
+     "buff": "buff_common_pulse_cryst_triggered",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.39571
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  }
+ ]
+}

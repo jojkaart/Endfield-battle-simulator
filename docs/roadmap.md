@@ -8,7 +8,12 @@ in-game values, all exact) and the `efsim` damage calculator.
 
 1. **More kits.** Hit structure for more operators, each verified against
    something in-game (a fixture). ZMDLogs is the best source: real hits with
-   full loadouts for many operators.
+   full loadouts for many operators. Arcane's kit is in; to finish it
+   (journal 2026-10-18 "Arcane's kit"): count stackingType-1 log buffs once
+   per buff ID, then move `fixtures/pending/` into `fixtures/`; let a kit hit
+   require Intellect ≥ Will (or the reverse); let one event key try several
+   hits; settle `zmdlogs-d9e59d0fb737` (game 1.5?) with a 1.6 INT log; then
+   restore the withheld event keys listed in the kit's notes.
 2. **ZMDLogs hit-by-hit fixture** (`btl_upload_40d9a3c1da37`, Rhodagn, 1.6,
    19 s): import the loadout and the per-hit damage (`/api/battles/{id}`),
    store only the extracted numbers with the battle ID (no names), and
