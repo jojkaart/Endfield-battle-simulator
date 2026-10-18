@@ -103,6 +103,7 @@ function build(): GameData {
         costValue: l.costValue,
       })),
       fileLoaded: file !== null,
+      timing: file?.timing ?? null,
       defaults: file?.defaults ?? {},
       statModifiers: file?.statModifiers ?? [],
     };

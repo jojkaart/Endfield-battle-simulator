@@ -9,6 +9,8 @@ import { parseJsonExact } from "./json.ts";
 import { DATA_FILES, sourceDir } from "./sources.ts";
 
 export interface RawSkillFile {
+  /** Animation length (durationFrame), the uninterruptible part (exclusiveFrame) and the first cancel-window frame (AllowNextSkillAction), 30 FPS. */
+  readonly timing: { readonly durationFrames: number; readonly exclusiveFrames: number; readonly cancelFrame: number | null };
   readonly defaults: Record<string, number>;
   readonly statModifiers: readonly { attr: number; slot: number; target: number; key: string | null; literal: number }[];
 }
@@ -63,5 +65,20 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
       });
     });
   }
-  return { defaults, statModifiers };
+  let cancelFrame: number | null = null;
+  const findCancel = (node: unknown, frame: number) => {
+    if (Array.isArray(node)) return node.forEach((x) => findCancel(x, frame));
+    if (typeof node !== "object" || node === null) return;
+    const o = node as Record<string, unknown>;
+    if (typeof o["$type"] === "string" && o["$type"].includes("AllowNextSkillAction")) cancelFrame = cancelFrame === null ? frame : Math.min(cancelFrame, frame);
+    for (const v of Object.values(o)) findCancel(v, frame);
+  };
+  const group = obj(j["actionGroupData"] ?? {}, at(ctx, "actionGroupData"));
+  for (const ta of (group["timelineActions"] ?? []) as Record<string, unknown>[]) findCancel(ta["_sequenceActionData"], Number(ta["_startFrame"]));
+  const timing = {
+    durationFrames: get(j, "durationFrame", ctx, int),
+    exclusiveFrames: get(j, "exclusiveFrame", ctx, int),
+    cancelFrame,
+  };
+  return { timing, defaults, statModifiers };
 }

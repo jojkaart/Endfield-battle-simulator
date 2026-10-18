@@ -9,6 +9,7 @@ import { loadGameData } from "@efsim/data";
 import type { CritMode } from "@efsim/engine";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "./commands.ts";
 import { kitDraft } from "./kitdraft.ts";
+import { formatSimulation, readScenario } from "./simulate.ts";
 import { checkLog, findScales, formatLogCheck, impliedScales } from "./logcheck.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -19,6 +20,7 @@ const USAGE = `Usage:
   efsim template <operator> [--weapon id] Print a build file to start from
   efsim calc <build.json> [options]       Stat panel and damage per hit
   efsim compare <a.json> <b.json> [opts]  Two builds of one operator side by side
+  efsim simulate <scenario.json>          Run a team rotation on the timeline (--verbose: every hit)
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
                 [--enemy-level n]         (default: inferred from total damage on a clear)
                 [--note text]             Extra provenance note (repeatable)
@@ -120,6 +122,10 @@ async function main(argv: string[]): Promise<number> {
       }
       break;
     }
+    case "simulate":
+      need(1);
+      text = formatSimulation(data, readScenario(args[0] as string), values.verbose);
+      break;
     case "kit-draft": {
       need(1);
       const op = args[0] as string;

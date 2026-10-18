@@ -1,0 +1,68 @@
+// efsim simulate: run a scenario file on the timeline.
+
+import { readFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { Ajv2020 } from "ajv/dist/2020.js";
+import { FPS, simulate, type Build, type CritMode, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { readBuild } from "./commands.ts";
+import { num, table } from "./format.ts";
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+
+interface RawScenario {
+  team: (string | Build)[];
+  controlled?: string;
+  target: { enemy: string; level: number };
+  durationSeconds: number;
+  crit?: CritMode;
+  conditions?: Record<string, string[]>;
+  rotation: { operator: string; skill: string; at?: number; repeat?: number }[];
+}
+
+export function readScenario(file: string): TimelineScenario {
+  const ajv = new Ajv2020({ allErrors: true, strict: true });
+  const schema = (name: string) => JSON.parse(readFileSync(join(ROOT, "schemas", name), "utf8")) as object;
+  ajv.addSchema(schema("build.schema.json"));
+  const validate = ajv.compile(schema("scenario.schema.json"));
+  const raw: unknown = JSON.parse(readFileSync(file, "utf8"));
+  if (!validate(raw)) throw new Error(`${file}: ${ajv.errorsText(validate.errors)}`);
+  const s = raw as RawScenario;
+  const rotation: RotationAction[] = s.rotation.flatMap((a) =>
+    Array.from({ length: a.repeat ?? 1 }, () => ({ operator: a.operator, skill: a.skill, ...(a.at !== undefined ? { at: Math.round(a.at * FPS) } : {}) })),
+  );
+  return {
+    team: s.team.map((t) => (typeof t === "string" ? readBuild(resolve(dirname(file), t)) : t)),
+    target: s.target,
+    durationFrames: Math.round(s.durationSeconds * FPS),
+    rotation,
+    options: { crit: s.crit ?? "expected", ...(s.conditions ? { conditions: s.conditions } : {}) },
+    ...(s.controlled ? { controlled: s.controlled } : {}),
+  };
+}
+
+export function formatSimulation(data: GameData, scenario: TimelineScenario, verbose: boolean): string {
+  const r = simulate(data, scenario);
+  const name = (op: string) => data.operators[op]?.name ?? op;
+  const out = [
+    `Total ${num(Math.round(r.total), 0)} damage in ${(r.lastHitFrame / FPS).toFixed(2)} s (last hit) → ${num(Math.round(r.dps), 0)} DPS` +
+      ` vs ${data.enemies[scenario.target.enemy]?.name ?? scenario.target.enemy} Lv${scenario.target.level}, crit: ${scenario.options.crit}`,
+    "",
+    table(
+      ["operator", "damage", "share"],
+      Object.entries(r.perOperator).map(([op, d]) => [name(op), num(Math.round(d), 0), r.total ? `${((d / r.total) * 100).toFixed(1)}%` : "-"]),
+      ["l", "r", "r"],
+    ),
+    "",
+    table(
+      ["time", "operator", "skill", "SP after"],
+      r.casts.map((c) => [`${(c.frame / FPS).toFixed(2)} s`, name(c.operator), c.skill.replace(/^chr_\d+_[a-z]+_/, ""), c.spAfter.toFixed(0)]),
+      ["r", "l", "l", "r"],
+    ),
+  ];
+  if (verbose) {
+    out.push("", table(["time", "operator", "hit", "damage"], r.hits.map((h) => [`${(h.frame / FPS).toFixed(2)} s`, name(h.operator), `${h.skillId.replace(/^chr_\d+_[a-z]+_/, "")} ${h.hitId}`, num(h.damage, 0)]), ["r", "l", "l", "r"]));
+  }
+  out.push("", "Assumptions (v1 timeline):", ...r.assumptions.map((a) => `  - ${a}`));
+  return out.join("\n");
+}

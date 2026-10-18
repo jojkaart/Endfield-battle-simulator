@@ -1,0 +1,23 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Laevatain alone vs Rhodagn: basic chains around a battle skill and a combo (v1 timeline, see its assumptions).",
+  "team": ["laevatain-forgeborn.json"],
+  "target": { "enemy": "eny_0051_rodin", "level": 90 },
+  "durationSeconds": 20,
+  "crit": "expected",
+  "rotation": [
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_attack1" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_attack2" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_attack3" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_attack4" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_attack5" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_normal_skill" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_combo_skill" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ultimate_skill" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack1" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack2" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack3" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack4" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_normal_skill_during_ult" }
+  ]
+}

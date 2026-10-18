@@ -55,8 +55,14 @@ export interface SkillLevelData {
 export interface SkillData {
   readonly id: string;
   readonly levels: readonly SkillLevelData[];
-  /** False when the skill's SkillData file isn't fetched; defaults and statModifiers are then unknown. */
+  /** False when the skill's SkillData file isn't fetched; defaults, statModifiers and timing are then unknown. */
   readonly fileLoaded: boolean;
+  /**
+   * From SkillData: animation length, uninterruptible frames, first frame of
+   * the cancel window (AllowNextSkillAction), all at 30 FPS. Null when the
+   * file isn't loaded.
+   */
+  readonly timing: { readonly durationFrames: number; readonly exclusiveFrames: number; readonly cancelFrame: number | null } | null;
   /** Blackboard defaults from SkillData, for keys the level table doesn't set (e.g. `ratio`). */
   readonly defaults: Readonly<Record<string, number>>;
   /** Permanent stat effects (`cardAttributeModifier`), e.g. weapon and gear set stats. */

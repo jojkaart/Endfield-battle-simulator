@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jojkaart/Endfield-battle-simulator/schemas/scenario.schema.json",
+  "title": "Scenario",
+  "description": "A team, a target and a rotation to simulate on the timeline (packages/engine/src/timeline.ts).",
+  "type": "object",
+  "required": ["team", "target", "durationSeconds", "rotation"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "description": { "type": "string" },
+    "team": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 4,
+      "items": { "oneOf": [{ "type": "string", "description": "Path of a build file, relative to the scenario file." }, { "$ref": "build.schema.json" }] }
+    },
+    "controlled": { "type": "string", "description": "Operator controlled at the start (default: the first)." },
+    "target": {
+      "type": "object",
+      "required": ["enemy", "level"],
+      "additionalProperties": false,
+      "properties": { "enemy": { "type": "string" }, "level": { "type": "integer", "minimum": 1 } }
+    },
+    "durationSeconds": { "type": "number", "exclusiveMinimum": 0 },
+    "crit": { "enum": ["never", "always", "expected"] },
+    "conditions": {
+      "type": "object",
+      "description": "Always-on conditions per operator ID.",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+    },
+    "rotation": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["operator", "skill"],
+        "additionalProperties": false,
+        "properties": {
+          "operator": { "type": "string" },
+          "skill": { "type": "string", "description": "Kit skill ID, or \"swap\"." },
+          "at": { "type": "number", "minimum": 0, "description": "Earliest start, in seconds." },
+          "repeat": { "type": "integer", "minimum": 1, "description": "Repeat this action n times." }
+        }
+      }
+    }
+  }
+}

@@ -1,3 +1,4 @@
 endfield-capture/
 node_modules/
 .proto/
+.claude/worktrees/
