@@ -14,6 +14,13 @@ the six favourites.
    sets (absorbs the remaining steps of
    [kit-abstractions.md](kit-abstractions.md#4-order-of-work)). Batch 2: the
    Endministrator and the 4- and 5-star operators nearly every player has.
+   - Batch 1 implementation pass: triggers, equipment kits, conditions,
+     buff lifecycle, values and resources, skills (timing from SkillData),
+     stacks, arts state and the log checker's stack caps are in
+     ([progress](kit-batches/batch-1.md#progress)). Still to do: physical
+     statuses and stagger (P1–P2), time dilation and haste (Ti1, Ti4), the
+     SkillData compiler and loader defaults (D1, with projectile timing
+     Ti2), then re-analysis of the seven and their kits.
 2. **Rotation search** (`efsim search`, beam search on the stepping API) is
    in; next: a resource-aware evaluator, team runs for the favourites, and a
    report of the best rotations found.
