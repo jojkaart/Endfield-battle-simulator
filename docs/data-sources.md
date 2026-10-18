@@ -361,5 +361,6 @@ Decided 2026-10-18:
    licence: read and compare only, don't copy code) and End-DPScope (MIT for
    its own code).
 4. **ZMDLogs:** using already-published logs through its public API is fine.
-5. **Network access:** a new cloud environment allows the hosts listed in the
-   *(unverified)* items, so those can now be checked.
+5. **Network access:** the cloud environment's allowlist and each host's
+   usefulness are tracked in [network-allowlist.md](network-allowlist.md).
+   end.wiki no longer resolves in DNS (2026-10-18).

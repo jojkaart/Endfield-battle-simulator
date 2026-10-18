@@ -4,6 +4,21 @@ A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 
+## 2026-10-18: network allowlist check
+
+**Goal:** confirm which websites the new environment can reach.
+
+**Done:** tested every host named in the docs; the owner added the useful
+blocked ones and removed dead ones. Results and each host's purpose are in
+[network-allowlist.md](network-allowlist.md).
+
+**Decisions:** keep the allowlist short; record in that file which hosts turn
+out useful or useless so the owner can prune it.
+
+**Problems:** Talos Wiki pages are behind a Cloudflare check, but its
+`api.php` works. Huiji wiki, Icy Veins and NGA reject automated requests even
+though they're allowed. end.wiki doesn't resolve in DNS.
+
 ## 2026-10-18: project setup and data-source research
 
 **Goal:** turn the empty repo into a plan and choose data sources.
