@@ -29,8 +29,12 @@ the simulation must support bad choices: an effect just doesn't activate if
 the wielder never does what it needs. So weapon and gear-set effects are
 always written as wielder-relative mechanisms (conditions and triggers on
 the wielder's own hits, skills, events and stats), never for a particular
-operator. The data gives operators and weapons a weapon type; the engine
-doesn't enforce it, and a loadout search may restrict to it by default.
+operator. Weapons are the exception to "anything goes": an operator can
+only equip weapons of its own type (owner, 2026-10-18). The rule comes from
+the data (CharacterTable and WeaponBasicTable `weaponType`), not from code,
+so a future operator that breaks it just needs its data; loadout searches
+offer only allowed weapons, and the engine flags a mismatched build rather
+than refusing to simulate it.
 
 ## Gap report format
 

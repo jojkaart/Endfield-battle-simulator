@@ -35,3 +35,16 @@ describe.each(fixtures)("$file", ({ fixture }) => {
     else expect(actual).toBe(expected);
   });
 });
+
+describe("weapon type", () => {
+  it("a weapon of another type is flagged but still simulated", () => {
+    const { fixture } = loadFixtures()[0] as ReturnType<typeof loadFixtures>[number];
+    const own = computeStats(data, fixture.build);
+    expect(own.warnings).toEqual([]);
+    const other = Object.values(data.weapons).find((w) => w.weaponType !== data.operators[fixture.build.operator]?.weaponType);
+    if (!other || !fixture.build.weapon) throw new Error("no weapon of another type");
+    const panel = computeStats(data, { ...fixture.build, weapon: { ...fixture.build.weapon, id: other.id } });
+    expect(panel.warnings).toHaveLength(1);
+    expect(panel.atk.total).toBeGreaterThan(0);
+  });
+});

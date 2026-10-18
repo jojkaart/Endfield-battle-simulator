@@ -72,6 +72,8 @@ export interface StatPanel {
   readonly skillValues: Readonly<Record<string, readonly SkillValueChange[]>>;
   /** Skill costs and cooldowns changed by potentials and talents, by skill ID. */
   readonly skillParams: Readonly<Record<string, readonly SkillParamChange[]>>;
+  /** Things about the build the game wouldn't allow (e.g. a weapon of another type); it's simulated anyway. */
+  readonly warnings: readonly string[];
   /** Effects that aren't permanent stats (buffs from talents, potentials, weapons, gear sets) and so aren't in this panel. */
   readonly notApplied: readonly string[];
 }
@@ -135,6 +137,7 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
   const skillValues: Record<string, SkillValueChange[]> = {};
   const skillParams: Record<string, SkillParamChange[]> = {};
   const notApplied: string[] = [];
+  const warnings: string[] = [];
   const applyEffects = (effects: readonly Effect[], source: string) => {
     for (const e of effects) {
       if (e.kind === "attr") apply(e.modifier.attr, e.modifier.slot, e.modifier.target, e.modifier.value, source);
@@ -196,6 +199,8 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
   if (build.weapon) {
     const w = data.weapons[build.weapon.id];
     if (!w) throw new EngineError(`unknown weapon ${build.weapon.id}`);
+    // An operator can only equip weapons of its own type (CharacterTable / WeaponBasicTable weaponType).
+    if (w.weaponType !== op.weaponType) warnings.push(`${w.name} is weapon type ${w.weaponType}; ${op.name} uses type ${op.weaponType}, so the game wouldn't allow it`);
     const atk = w.baseAtk[build.weapon.level - 1];
     if (atk === undefined) throw new EngineError(`${w.id} has no level ${build.weapon.level}`);
     weaponBase = atk;
@@ -292,5 +297,6 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
     skillValues,
     skillParams,
     notApplied,
+    warnings,
   };
 }

@@ -97,6 +97,7 @@ export function formatPanel(data: GameData, panel: StatPanel, verbose: boolean):
     rows.push([attrName(attr), showStat(attr, total), line ? showStat(attr, line.base) : "", verbose ? sources.join("; ") : `${sources.length} source${sources.length === 1 ? "" : "s"}`]);
   }
   out.push("", table(["stat", "total", "base", verbose ? "contributions" : "modifiers"], rows, ["l", "r", "r", "l"]));
+  if (panel.warnings.length) out.push("", ...panel.warnings.map((w) => `WARNING: ${w}`));
   if (panel.notApplied.length) {
     out.push("", "Not in this panel (conditional effects; see --condition):");
     for (const n of panel.notApplied) out.push(`  - ${n}`);
