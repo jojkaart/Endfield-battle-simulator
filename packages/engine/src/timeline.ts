@@ -651,6 +651,13 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         st = { ...st, readyAt };
         break;
       }
+      case "cast": {
+        // A follow-up the owner casts by itself (CastSkill): no control, cost or cooldown; it ends the owner's current skill.
+        const r = castSkill(ctx, st, owner, a.skill, frame, true);
+        st = r.state;
+        events.push(...r.events);
+        break;
+      }
       case "hits": {
         const index = t.do.indexOf(a);
         const pending: PendingHit[] = [];
@@ -917,27 +924,40 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
   if ("error" in start) throw new EngineError(`frame ${state.frame}: ${action.operator} ${action.skill}: ${start.error}`);
   const advanced = advance(ctx, state, start.frame);
   if (action.skill === "swap") return { ...advanced, controlled: action.operator };
+  const r = castSkill(ctx, advanced, action.operator, action.skill, start.frame, false);
+  return runTriggers(ctx, r.state, r.events, r.origin);
+}
+
+/**
+ * Casts a skill at a frame (the state already advanced to it): ends the
+ * operator's current skill, schedules the hits, spends and grants
+ * resources, and returns the cast's events for the triggers. A follow-up
+ * cast (`followUp`: a skill casting another, CastSkill) costs nothing and
+ * starts no cooldown.
+ */
+function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: string, skillId: string, frame: number, followUp: boolean): { state: TimelineState; events: BattleEvent[]; origin: Origin } {
   // Starting a skill ends the operator's current one: its hits still to land are cancelled, unless already on their way.
-  const prevCast = advanced.casts.length - 1 - [...advanced.casts].reverse().findIndex((c) => c.operator === action.operator);
-  const s = { ...advanced, pending: advanced.pending.filter((h) => !(h.operator === action.operator && h.cast === prevCast && !h.detached && h.frame > start.frame)) };
-  const skill = kitSkill(ctx, action.operator, action.skill);
-  const costs = skillCosts(ctx, action.operator, action.skill);
+  const prevCast = advanced.casts.length - 1 - [...advanced.casts].reverse().findIndex((c) => c.operator === operator);
+  const s = { ...advanced, pending: advanced.pending.filter((h) => !(h.operator === operator && h.cast === prevCast && !h.detached && h.frame > frame)) };
+  const skill = kitSkill(ctx, operator, skillId);
+  const full = skillCosts(ctx, operator, skillId);
+  const costs = followUp ? { ...full, spCost: 0, energyCost: 0, cooldownFrames: 0 } : full;
   // Hits that need stacks happen only if the stacks are there at the cast; meeting a consuming requirement uses the stack up.
-  const own = s.stacks[action.operator] ?? {};
-  const panel = ctx.panels.get(action.operator) as StatPanel;
-  const castSituation: Situation = { team: ctx.scenario.team, controlled: s.controlled, stacks: own, buffActive: (id) => s.buffs.some((b) => b.id === id && b.owner === action.operator && b.cast === undefined && b.appliedAt <= start.frame && b.expiresAt > start.frame) };
+  const own = s.stacks[operator] ?? {};
+  const panel = ctx.panels.get(operator) as StatPanel;
+  const castSituation: Situation = { team: ctx.scenario.team, controlled: s.controlled, stacks: own, buffActive: (id) => s.buffs.some((b) => b.id === id && b.owner === operator && b.cast === undefined && b.appliedAt <= frame && b.expiresAt > frame) };
   const castIndex = s.casts.length;
-  const windowCount = costs.kind === "combo" ? s.comboWindow[action.operator]?.count : undefined;
-  const met = (h: KitHit) => hitAvailable(ctx.data, ctx.builds.get(action.operator) as Build, panel, skill.skillId, h, castSituation) && (!h.requires || (own[h.requires.stack] ?? 0) >= h.requires.atLeast);
+  const windowCount = costs.kind === "combo" ? s.comboWindow[operator]?.count : undefined;
+  const met = (h: KitHit) => hitAvailable(ctx.data, ctx.builds.get(operator) as Build, panel, skill.skillId, h, castSituation) && (!h.requires || (own[h.requires.stack] ?? 0) >= h.requires.atLeast);
   const used = new Set(skill.hits.filter((h) => h.requires?.consume && met(h)).map((h) => h.requires?.stack as string));
-  const stacks = used.size ? { ...s.stacks, [action.operator]: { ...own, ...Object.fromEntries([...used].map((id) => [id, 0])) } } : s.stacks;
+  const stacks = used.size ? { ...s.stacks, [operator]: { ...own, ...Object.fromEntries([...used].map((id) => [id, 0])) } } : s.stacks;
   const pending: PendingHit[] = [];
   for (const h of skill.hits.filter(met)) {
     const frames = h.frames ?? Array.from({ length: h.count }, () => 0);
-    for (const f of frames) pending.push({ frame: start.frame + f, operator: action.operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castIndex, ...(h.detached ? { detached: true } : {}), ...(windowCount !== undefined ? { eventCount: windowCount } : {}) });
+    for (const f of frames) pending.push({ frame: frame + f, operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castIndex, ...(h.detached ? { detached: true } : {}), ...(windowCount !== undefined ? { eventCount: windowCount } : {}) });
   }
   // A skill whose kit names the hit that returns SP gets it there, not on its first hit.
-  const spGain = skill.hits.some((h) => h.sp !== undefined) ? 0 : skillSpGain(ctx, action.operator, action.skill);
+  const spGain = skill.hits.some((h) => h.sp !== undefined) ? 0 : skillSpGain(ctx, operator, skillId);
   if (spGain > 0 && pending.length > 0) {
     const first = pending.reduce((a, b) => (b.frame < a.frame ? b : a));
     pending[pending.indexOf(first)] = { ...first, sp: spGain };
@@ -946,39 +966,39 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
   const natural = Math.max(0, costs.spCost - s.spReturned);
   let next: TimelineState = { ...s, spReturned: Math.max(0, s.spReturned - costs.spCost) };
   if (natural > 0) {
-    if (skill.teamEnergyFrame === undefined) for (const b of ctx.scenario.team) next = gainEnergy(ctx, next, b.operator, natural * ENERGY.perNaturalSp, start.frame);
+    if (skill.teamEnergyFrame === undefined) for (const b of ctx.scenario.team) next = gainEnergy(ctx, next, b.operator, natural * ENERGY.perNaturalSp, frame);
     else {
-      const at = start.frame + skill.teamEnergyFrame;
+      const at = frame + skill.teamEnergyFrame;
       next = { ...next, pendingEnergy: [...next.pendingEnergy, ...ctx.scenario.team.map((b) => ({ frame: at, operator: b.operator, amount: natural * ENERGY.perNaturalSp }))] };
     }
   }
-  if (costs.energyCost > 0) next = { ...next, energy: { ...next.energy, [action.operator]: Math.max(0, (next.energy[action.operator] ?? 0) - costs.energyCost) } };
-  if (skill.energyBlockSeconds) next = { ...next, energyBlockedUntil: { ...next.energyBlockedUntil, [action.operator]: start.frame + Math.round(skill.energyBlockSeconds * FPS) } };
-  if (costs.kind === "combo" && next.comboWindow[action.operator]) {
-    const { [action.operator]: _used, ...rest } = next.comboWindow;
+  if (costs.energyCost > 0) next = { ...next, energy: { ...next.energy, [operator]: Math.max(0, (next.energy[operator] ?? 0) - costs.energyCost) } };
+  if (skill.energyBlockSeconds) next = { ...next, energyBlockedUntil: { ...next.energyBlockedUntil, [operator]: frame + Math.round(skill.energyBlockSeconds * FPS) } };
+  if (!followUp && costs.kind === "combo" && next.comboWindow[operator]) {
+    const { [operator]: _used, ...rest } = next.comboWindow;
     next = { ...next, comboWindow: rest };
   }
   // Buffs this cast consumes (Link, …) now act on its hits only, until its last hit.
-  const consumedBuffs = next.buffs.filter((b) => b.cast === undefined && b.consumedBy?.includes(costs.kind) && reaches(b, action.operator) && b.appliedAt <= start.frame && b.expiresAt > start.frame);
+  const consumedBuffs = next.buffs.filter((b) => b.cast === undefined && b.consumedBy?.includes(costs.kind) && reaches(b, operator) && b.appliedAt <= frame && b.expiresAt > frame);
   if (consumedBuffs.length) {
-    const lastHit = Math.max(start.frame, ...pending.map((h) => h.frame));
-    next = { ...next, buffs: [...next.buffs.filter((b) => !consumedBuffs.includes(b)), ...consumedBuffs.map((b) => ({ ...b, cast: castIndex, appliedAt: start.frame, expiresAt: lastHit + 1 }))] };
+    const lastHit = Math.max(frame, ...pending.map((h) => h.frame));
+    next = { ...next, buffs: [...next.buffs.filter((b) => !consumedBuffs.includes(b)), ...consumedBuffs.map((b) => ({ ...b, cast: castIndex, appliedAt: frame, expiresAt: lastHit + 1 }))] };
   }
   const cast: TimelineState = {
     ...next,
     sp: s.sp - costs.spCost,
-    spPausedUntil: costs.spCost > 0 ? start.frame + SP.pauseAfterSpendFrames : s.spPausedUntil,
-    acting: { ...s.acting, [action.operator]: { skill: action.skill, frame: start.frame } },
-    chainNext: chainAfter(ctx, next, action.operator, skill, start.frame),
-    readyAt: castCooldowns(ctx, next.readyAt, action.operator, skill, costs.cooldownFrames, start.frame),
-    ...(skill.takesControl ? { controlled: action.operator } : {}),
+    spPausedUntil: costs.spCost > 0 ? frame + SP.pauseAfterSpendFrames : s.spPausedUntil,
+    acting: { ...s.acting, [operator]: { skill: skillId, frame: frame } },
+    chainNext: chainAfter(ctx, next, operator, skill, frame),
+    readyAt: castCooldowns(ctx, next.readyAt, operator, skill, costs.cooldownFrames, frame),
+    ...(skill.takesControl ? { controlled: operator } : {}),
     pending: [...s.pending, ...pending],
     stacks,
-    casts: [...s.casts, { frame: start.frame, operator: action.operator, skill: action.skill, spAfter: s.sp - costs.spCost, energyAfter: next.energy[action.operator] ?? 0 }],
+    casts: [...s.casts, { frame, operator, skill: skillId, spAfter: s.sp - costs.spCost, energyAfter: next.energy[operator] ?? 0 }],
   };
-  const castEvent: BattleEvent = { type: "cast", frame: start.frame, operator: action.operator, skillId: action.skill, kind: costs.kind, controlled: s.controlled === action.operator };
-  const endedEvents: BattleEvent[] = [...new Map(consumedBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame: start.frame, operator: b.owner, buff: b.id }])).values()];
-  return runTriggers(ctx, cast, [castEvent, ...endedEvents], { operator: action.operator, kind: costs.kind });
+  const castEvent: BattleEvent = { type: "cast", frame, operator, skillId, kind: costs.kind, controlled: s.controlled === operator };
+  const endedEvents: BattleEvent[] = [...new Map(consumedBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id }])).values()];
+  return { state: cast, events: [castEvent, ...endedEvents], origin: { operator, kind: costs.kind } };
 }
 
 export interface TimelineResult {

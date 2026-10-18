@@ -88,6 +88,8 @@ export type TriggerActionKind =
   | { readonly kind: "endBuff"; readonly buff: string; readonly layers?: number }
   /** Change the remaining cooldown of an operator's skills of a kind by `seconds` (negative cuts it). */
   | { readonly kind: "cooldown"; readonly who: "self" | "eventOperator" | { readonly slot: number }; readonly skills: SkillType; readonly seconds: ValueExpr }
+  /** The owner casts one of its kit skills by itself (SkillData CastSkill: a follow-up, e.g. Typhoeus's aerial shots off-field): no control, cost or cooldown. */
+  | { readonly kind: "cast"; readonly skill: string }
   /** Land hits, as the owner, at frames counted from the event (values from the trigger's `skill`); each names its damage type. */
   | { readonly kind: "hits"; readonly hits: readonly KitHit[] };
 

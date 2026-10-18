@@ -694,3 +694,23 @@ describe("timeline: when the next action may start (SkillData windows, prioritie
     expect(swapAfter({ operator: g, skill: "chr_0013_aglina_normal_skill" }, g)).toEqual({ frame: 111 });
   });
 });
+
+describe("timeline: follow-up casts", () => {
+  it("a skill can cast another by itself, without control or cost: an off-field follow-up", () => {
+    const kit = data.kits.operators[op] as OperatorKit;
+    const g = "chr_0013_aglina";
+    const fx = JSON.parse(readFileSync(new URL("../fixtures/zmdlogs-40d9a3c1da37.json", import.meta.url), "utf8")) as { team: Build[] };
+    const team = fx.team.filter((b) => b.operator === op || b.operator === g);
+    const d: GameData = {
+      ...data,
+      kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, triggers: [...kit.triggers, { id: "follow", on: { event: "cast", skills: [L + "normal_skill"] }, by: "self", delay: 30, do: [{ kind: "cast", skill: L + "attack1" }] }] } } },
+    };
+    // Gilberta is controlled; Laevatain's battle skill casts her attack1 1 s later, which a recorded basic attack couldn't do off-field.
+    const { startEnergy: _f, ...sc } = scenario([{ operator: op, skill: L + "normal_skill" }]);
+    const r = simulate(d, { ...sc, team, controlled: g });
+    expect(r.casts.map((c) => [c.frame, c.skill])).toEqual([[0, L + "normal_skill"], [30, L + "attack1"]]);
+    expect(r.hits.some((h) => h.skillId === L + "attack1" && h.frame === 36)).toBe(true);
+    // Free: no SP spent (the explosion at frame 22 returned 20).
+    expect(r.casts[1]?.spAfter).toBe((r.casts[0]?.spAfter ?? NaN) + 20);
+  });
+});

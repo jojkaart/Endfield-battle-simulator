@@ -214,3 +214,7 @@ Then re-analysis of all seven.
   total is unchanged; Liino's example reorders one action the chain no
   longer allows; three examples change by up to 5% (same hits, different
   buff windows). In-game tests 15–17.
+- S6: a `cast` trigger action: the owner casts one of its skills by itself
+  (SkillData CastSkill), without control, cost or cooldown, ending its
+  current skill: off-field follow-ups (Typhoeus's aerial shots) with a
+  delayed cast trigger and `if: {not: {controlled: true}}`.

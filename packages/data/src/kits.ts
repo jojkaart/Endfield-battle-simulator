@@ -273,6 +273,9 @@ function kitChecker(scope: KitScope) {
         case "heal":
         case "clearEnergy":
           break;
+        case "cast":
+          if (!scope.isSkill(a.skill)) throw new Error(`${where}: ${a.skill} isn't one of ${scope.owner}'s skills`);
+          break;
         case "cooldown":
           checkValue(a.seconds, skillId, `${where} cooldown change`);
           break;

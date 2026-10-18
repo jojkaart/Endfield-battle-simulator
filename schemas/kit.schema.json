@@ -740,6 +740,27 @@
                       "description": "This action only in this situation (judged for the owner when it runs)."
                     }
                   }
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "skill"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "cast"
+                    },
+                    "skill": {
+                      "type": "string",
+                      "description": "One of the owner's kit skills, cast by itself (SkillData CastSkill): no control, cost or cooldown; it ends the owner's current skill."
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
+                    }
+                  }
                 }
               ]
             }
