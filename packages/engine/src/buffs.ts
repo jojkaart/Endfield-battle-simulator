@@ -99,7 +99,9 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
  */
 export function withBuff(buffs: readonly ActiveBuff[], b: ActiveBuff | null): ActiveBuff[] {
   if (!b) return [...buffs];
-  const same = (x: ActiveBuff) => x.id === b.id && x.owner === b.owner && x.cast === undefined;
+  // A buff given to some operators only keeps its layers per recipient set (Liino's weapon: 4 per teammate).
+  const who = (x: ActiveBuff) => (x.recipients ? x.recipients.join(",") : "");
+  const same = (x: ActiveBuff) => x.id === b.id && x.owner === b.owner && x.cast === undefined && who(x) === who(b);
   if (b.maxLayers === undefined) return [...buffs.filter((x) => !same(x)), b];
   const layers = buffs.filter(same).sort((x, y) => x.appliedAt - y.appliedAt);
   const drop = new Set(layers.slice(0, Math.max(0, layers.length - b.maxLayers + 1)));

@@ -33,6 +33,8 @@ export type BattleEvent =
   | { readonly type: "buffTick"; readonly frame: number; readonly operator: string; readonly buff: string }
   /** `operator` healed `target` (no amounts: what matters is who, and when). */
   | { readonly type: "heal"; readonly frame: number; readonly operator: string; readonly target: string }
+  /** The fight starts (permanent auras, start-of-fight effects); `operator` is the controlled one. */
+  | { readonly type: "fightStart"; readonly frame: number; readonly operator: string }
   /** The enemy became Staggered (`operator` dealt the last stagger). */
   | { readonly type: "staggered"; readonly frame: number; readonly operator: string }
   /** An operator's own stacks changed. */
@@ -57,6 +59,7 @@ export type TriggerOn =
   | { readonly event: "shatter" }
   /** The enemy becomes Staggered. */
   | { readonly event: "staggered" }
+  | { readonly event: "fightStart" }
   /** A control status is applied (Jade Vessel: "applies Immobilization"). */
   | { readonly event: "control"; readonly statuses?: readonly string[] }
   /** A reaction status is removed by a hit before it runs out (Liino's combo: "an Arts Reaction is consumed"). */
@@ -119,6 +122,8 @@ export interface KitTrigger {
   readonly if?: Predicate;
   /** Seconds before it can fire again. */
   readonly cooldown?: ValueExpr;
+  /** The cooldown counts per event subject (the healed operator of a heal, else the event's operator): Liino's weapon, per teammate. */
+  readonly cooldownPer?: "eventSubject";
   /** At most this many times per fight. */
   readonly maxCount?: number;
   /** Frames after the event when its actions run (its `if` is judged at the event; each action's own `if` when it runs). */
@@ -151,6 +156,8 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
       return e.type === "stacks" && e.operator === owner && (ownStacks[on.stack] ?? 0) >= on.atLeast;
     case "staggered":
       return e.type === "staggered";
+    case "fightStart":
+      return e.type === "fightStart";
   }
   if (e.type !== "status") return false;
   const s = e.event;
@@ -178,7 +185,7 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
 
 /** Whether the event's cause counts for a trigger (`by`). Stack and own-buff events are the owner's. */
 export function causeMatches(by: KitTrigger["by"], e: BattleEvent, owner: string): boolean {
-  if (e.type === "stacks" || e.type === "buffApplied" || e.type === "buffEnded" || e.type === "buffTick") return true;
+  if (e.type === "stacks" || e.type === "buffApplied" || e.type === "buffEnded" || e.type === "buffTick" || e.type === "fightStart") return true;
   if (by === "anyone") return true;
   if (by === "self") return e.operator === owner;
   if (by === "teammate") return e.operator !== owner;

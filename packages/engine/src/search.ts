@@ -132,6 +132,7 @@ function stateKey(s: TimelineState): string {
     s.pendingEnergy,
     s.pendingActions.map((x) => [x.frame, x.owner, x.trigger]),
     s.slowdowns.map((x) => [x.start, x.scales.length, x.exempt]),
+    s.link,
   ]);
 }
 

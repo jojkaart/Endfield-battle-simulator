@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, buffModifiers, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
+import { advance, apply, buffModifiers, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -904,5 +904,45 @@ describe("timeline: haste", () => {
     const delay = (r: typeof plain) => (r.hits.find((h) => h.skillId === L + "attack1")?.frame ?? NaN) - (r.casts[1]?.frame ?? NaN);
     expect(delay(plain)).toBe(6);
     expect(delay(fast)).toBe(5);
+  });
+});
+
+describe("timeline: Link and fight start", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const skill = (s: string, at?: number): RotationAction => ({ operator: op, skill: L + s, ...(at !== undefined ? { at } : {}) });
+  const comboThen = (next: RotationAction) => {
+    const five = Array.from({ length: 5 }, () => skill("normal_skill"));
+    const ctx = createContext(data, { ...scenario([]), durationFrames: 30 * 120 });
+    let s = init(ctx);
+    for (const a of five) s = apply(ctx, s, a);
+    const combustion = advance(ctx, s, ctx.scenario.durationFrames).reactions.find((e) => e.kind === "reaction");
+    s = apply(ctx, advance(ctx, s, combustion?.frame ?? 0), skill("combo_skill"));
+    return { ctx, s: advance(ctx, apply(ctx, s, next), ctx.scenario.durationFrames) };
+  };
+
+  it("a combo leaves the team a Link stack that the next battle skill uses for its own hits (+30% at one stack)", () => {
+    const { s } = comboThen(skill("normal_skill"));
+    const bs = s.casts.length - 1;
+    const last = s.hits.filter((h) => h.skillId === L + "normal_skill" && h.frame >= (s.casts[bs]?.frame ?? Infinity));
+    expect(last.length).toBeGreaterThan(0);
+    expect(last.every((h) => h.modifiers.some((m) => m.source === "Link (1)" && m.zone === "multiplicative" && Math.abs(m.value - 0.3) < 1e-12))).toBe(true);
+    expect(s.link).toEqual([]);
+  });
+
+  it("a fight-start trigger fires once at frame 0", () => {
+    const aura: KitBuff = { id: "aura", label: "aura", target: "team", modifiers: [{ zone: "amp", value: 0.1 }] };
+    const d: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, buffs: [...kit.buffs, aura], triggers: [...kit.triggers, { id: "start", on: { event: "fightStart" }, by: "self", do: [{ kind: "buff", buff: "aura" }] }] } } } };
+    const ctx = createContext(d, scenario([]));
+    expect(init(ctx).buffs.map((b) => [b.id, b.appliedAt, b.expiresAt])).toEqual([["aura", 0, Infinity]]);
+  });
+
+  it("a layered buff given to one operator keeps its layers per recipient", () => {
+    const g = "chr_0013_aglina";
+    const base = { owner: op, target: "team" as const, appliedAt: 0, expiresAt: 100, modifiers: [], maxLayers: 2 };
+    let buffs = withBuff([], { ...base, id: "x", recipients: [g] });
+    buffs = withBuff(buffs, { ...base, id: "x", recipients: [op] });
+    buffs = withBuff(buffs, { ...base, id: "x", recipients: [g], appliedAt: 1 });
+    buffs = withBuff(buffs, { ...base, id: "x", recipients: [g], appliedAt: 2 });
+    expect(buffs.map((b) => [b.recipients?.[0], b.appliedAt])).toEqual([[op, 0], [g, 1], [g, 2]]);
   });
 });

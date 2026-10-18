@@ -161,6 +161,8 @@ export interface TimelineState {
   readonly pending: readonly PendingHit[];
   /** Trigger actions due later (KitTrigger.delay), with the event that started them. */
   readonly pendingActions: readonly { readonly frame: number; readonly owner: string; readonly trigger: string; readonly event: BattleEvent; readonly origin: Origin | null }[];
+  /** The team's Link stacks (combo casts leave one each, 15 s): their expiry frames. */
+  readonly link: readonly number[];
   /** Until when a control status (Si's Immobilization) freezes the enemy's own clock. */
   readonly enemyFrozenUntil: number;
   /** The enemy's stagger: its stagger HP left, until when it's Staggered, and whether this stagger's finisher is used. */
@@ -210,6 +212,11 @@ export function createContext(data: GameData, scenario: TimelineScenario): Timel
 }
 
 export function init(ctx: TimelineContext): TimelineState {
+  const st = initialState(ctx);
+  return runTriggers(ctx, st, [{ type: "fightStart", frame: 0, operator: st.controlled }], null);
+}
+
+function initialState(ctx: TimelineContext): TimelineState {
   const controlled = ctx.scenario.controlled ?? (ctx.scenario.team[0] as Build).operator;
   if (!ctx.builds.has(controlled)) throw new EngineError(`controlled operator ${controlled} isn't in the team`);
   return {
@@ -233,6 +240,7 @@ export function init(ctx: TimelineContext): TimelineState {
     slowdowns: [],
     stagger: { poise: maxPoise(ctx), until: null, finisherUsed: false },
     enemyFrozenUntil: 0,
+    link: [],
     enemy: NO_STATUS,
     buffs: [],
     triggerState: {},
@@ -449,6 +457,7 @@ function shiftWorld(st: TimelineState, start: number, n: number): TimelineState 
     buffs: e.buffs.map((b) => (b.target === "enemy" ? b : shiftBuff(b, start, n))),
     comboWindow: Object.fromEntries(Object.entries(st.comboWindow).map(([k, w]) => [k, { ...w, until: later(w.until) }])),
     energyBlockedUntil: Object.fromEntries(Object.entries(st.energyBlockedUntil).map(([k, f]) => [k, later(f)])),
+    link: st.link.map(later),
     // SP doesn't regenerate meanwhile (taken from the current frame: slow-downs start at their cast or soon after).
     sp: spAt(st, st.frame),
     spPausedUntil: st.spPausedUntil > start ? st.spPausedUntil + n : start + n,
@@ -476,6 +485,9 @@ function actionSpeed(ctx: TimelineContext, st: TimelineState, operator: string, 
   const base = panel.attrs[Attr.KeywordSpeedUpScalar]?.total ?? ctx.data.attributeDefaults[Attr.KeywordSpeedUpScalar] ?? 1;
   return Math.max(0.1, Math.min(1.3, base + buffAttr(st.buffs, operator, frame, Attr.KeywordSpeedUpScalar)));
 }
+
+/** How long a Link stack lasts (buff_common_affixes_combo_trigger duration 15 s). */
+const LINK_FRAMES = 15 * FPS;
 
 /** How long a chain survives a skill that doesn't interrupt it, after that skill's exclusive time. */
 const CHAIN_CACHE_FRAMES = 30;
@@ -728,7 +740,8 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
       const owner = b.operator;
       for (const t of ctx.kits.get(owner)?.triggers ?? []) {
         if (!eventMatches(t.on, e, owner, st.stacks[owner] ?? {}) || !causeMatches(t.by, e, owner)) continue;
-        const key = `${owner}:${t.id}`;
+        const subject = e.type === "heal" ? e.target : e.operator;
+        const key = t.cooldownPer === "eventSubject" ? `${owner}:${t.id}:${subject}` : `${owner}:${t.id}`;
         const ts = st.triggerState[key];
         if (ts && ((ts.readyAt ?? 0) > e.frame || (t.maxCount !== undefined && ts.count >= t.maxCount))) continue;
         const panel = ctx.panels.get(owner) as StatPanel;
@@ -1198,7 +1211,20 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     const { [operator]: _used, ...rest } = next.comboWindow;
     next = { ...next, comboWindow: rest };
   }
-  // Buffs this cast consumes (Link, …) now act on its hits only, until its last hit.
+  // Link (buff_common_affixes_combo_trigger → skillimbue_atk): a combo leaves the team a stack for 15 s; the next battle
+  // skill or ultimate, by anyone, uses all of them (at most 4) for its own hits: +30/45/60/75% / +20/30/40/50%.
+  if (!followUp) {
+    const live = next.link.filter((f) => f > frame);
+    if (costs.kind === "combo") next = { ...next, link: [...live, frame + LINK_FRAMES] };
+    else if ((costs.kind === "battle" || costs.kind === "ultimate") && live.length > 0) {
+      const n = Math.min(4, live.length);
+      const value = costs.kind === "battle" ? 0.15 + 0.15 * n : 0.1 + 0.1 * n;
+      const lastHit = Math.max(frame, ...pending.map((h) => h.frame));
+      const link: ActiveBuff = { id: "link", owner: operator, target: "self", appliedAt: frame, expiresAt: lastHit + 1, cast: castIndex, modifiers: [{ zone: "multiplicative", value, source: `Link (${n})` }] };
+      next = { ...next, link: [], buffs: [...next.buffs, link] };
+    } else if (live.length !== next.link.length) next = { ...next, link: live };
+  }
+  // Buffs this cast consumes (Jade Vessel's, …) now act on its hits only, until its last hit.
   const consumedBuffs = next.buffs.filter((b) => b.cast === undefined && b.consumedBy?.includes(costs.kind) && reaches(b, operator) && b.appliedAt <= frame && b.expiresAt > frame);
   if (consumedBuffs.length) {
     const lastHit = Math.max(frame, ...pending.map((h) => h.frame));

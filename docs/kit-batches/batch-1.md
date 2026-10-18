@@ -301,3 +301,14 @@ Most first-round gaps are now expressible; what's left, by family:
 | D2 | Compiler leftovers: poise, finisher factors, forced Lift, per-hit element, created buffs, `autoFinishByAction`, the frame-12/15 team energy (`ObtainUspInNormalSkill`), the finisher's unread default `atb` (+8 SP) | all |
 | L2 | The log checker's `eventCount`; the ×1.42 of one-element reaction keys | Si R3, Arcane R9, Gilberta R10 |
 | N2 | Si's damage record and Fixed-DMG burst: **unique** in the game data (on kit-unique.md), 32–50% of her damage | Si R1 |
+
+### Pass 2 progress
+
+- B8 Link, built in for every team: each combo cast leaves a 15 s stack;
+  the next battle skill or ultimate, by anyone, uses all (at most 4) for
+  its own hits: +30/45/60/75% / +20/30/40/50% (verified ×1.2 on Gilberta's
+  ultimate in 40d9). Follow-up casts neither give nor use it (Si's strokes:
+  in-game test). Examples: Arcane +2.0%, Estella +8.0%, Gilberta +6.6%,
+  Liino +3.9%, Si +4.2%; Laevatain and Typhoeus unchanged.
+- B7 layers per recipient set; T6 `cooldownPer: "eventSubject"`; T7 a
+  `fightStart` event.
