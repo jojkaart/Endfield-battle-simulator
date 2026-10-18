@@ -30,6 +30,8 @@ export type Predicate =
   | { readonly enemyVulnerable: number }
   /** The enemy is Staggered. */
   | { readonly enemyStaggered: true }
+  /** The enemy has this control status (Immobilization, …). */
+  | { readonly enemyControl: string }
   /** The operator's own stack is at least / below a count. */
   | { readonly stack: string; readonly atLeast?: number; readonly below?: number }
   /** One of the operator's own kit buffs is active. */
@@ -139,6 +141,7 @@ export function test(p: Predicate, c: EvalContext): boolean | undefined {
   if ("enemyStatus" in p) return c.enemy ? c.enemy.statuses.some((s) => s.status === p.enemyStatus) : undefined;
   if ("enemyPhysical" in p) return c.enemy ? c.enemy.physical.some((s) => s.status === p.enemyPhysical) : undefined;
   if ("enemyStaggered" in p) return c.staggered;
+  if ("enemyControl" in p) return c.enemy ? c.enemy.controls.some((x) => x.status === p.enemyControl) : undefined;
   if ("enemyVulnerable" in p) return c.enemy ? (c.enemy.vulnerable?.stacks ?? 0) >= p.enemyVulnerable : undefined;
   if ("stack" in p) {
     if (!c.stacks) return undefined;

@@ -104,6 +104,7 @@ function describe(e: StatusEvent): string {
   if (e.kind === "vulnerable") return `${e.operator}: Vulnerable (${e.stacks})`;
   if (e.kind === "physical") return `${e.operator}: ${e.status} level ${e.level}${e.forced ? " (forced)" : ""}`;
   if (e.kind === "shatter") return `${e.operator}: Shatter level ${e.level}`;
+  if (e.kind === "control") return `${e.operator}: ${e.status} (${e.frames} frames)`;
   return `${e.operator}: combustion tick level ${e.level}`;
 }
 

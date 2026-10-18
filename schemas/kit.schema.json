@@ -476,6 +476,25 @@
                     "const": "staggered"
                   }
                 }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "event"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
+                    "const": "control"
+                  },
+                  "statuses": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1
+                  }
+                }
               }
             ]
           },
@@ -1220,6 +1239,39 @@
               "description": "Only in this situation (judged when it happens)."
             }
           }
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind",
+            "status"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "control"
+            },
+            "status": {
+              "type": "string",
+              "description": "The control status (the game's tag), e.g. immobilization."
+            },
+            "seconds": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "durationKey": {
+              "type": "string",
+              "description": "Skill value giving its duration in seconds."
+            },
+            "freezes": {
+              "type": "boolean",
+              "description": "It stops the enemy's own clock meanwhile (an entity time dilation of scale 0)."
+            },
+            "if": {
+              "$ref": "#/$defs/predicate",
+              "description": "Only in this situation (judged when it happens)."
+            }
+          }
         }
       ]
     },
@@ -1717,6 +1769,19 @@
             "enemyStaggered": {
               "const": true,
               "description": "The enemy is Staggered."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "enemyControl"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "enemyControl": {
+              "type": "string",
+              "description": "The enemy has this control status."
             }
           }
         }

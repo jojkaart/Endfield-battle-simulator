@@ -57,6 +57,8 @@ export type TriggerOn =
   | { readonly event: "shatter" }
   /** The enemy becomes Staggered. */
   | { readonly event: "staggered" }
+  /** A control status is applied (Jade Vessel: "applies Immobilization"). */
+  | { readonly event: "control"; readonly statuses?: readonly string[] }
   /** A reaction status is removed by a hit before it runs out (Liino's combo: "an Arts Reaction is consumed"). */
   | { readonly event: "statusConsumed"; readonly statuses?: readonly ReactionStatus[] }
   /** One of the trigger owner's own kit buffs is applied, ends, or ticks (KitBuff.every). */
@@ -169,6 +171,8 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
       return s.kind === "vulnerable" && s.stacks >= (on.minStacks ?? 1);
     case "shatter":
       return s.kind === "shatter";
+    case "control":
+      return s.kind === "control" && has(on.statuses, s.status);
   }
 }
 

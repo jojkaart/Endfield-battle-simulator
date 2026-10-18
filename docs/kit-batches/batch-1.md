@@ -261,3 +261,8 @@ Then re-analysis of all seven.
   multiplier and SP. Stagger nodes (small staggers) have no damage effect
   and aren't modelled. Kits don't carry poise values yet (D1 compiles
   them).
+- Control statuses (Si G13, G7a): a `control` application (Immobilization
+  and other tagged control statuses) with a `control` event for triggers
+  (Jade Vessel) and an `enemyControl` predicate; `freezes` stops the
+  enemy's own clock for its duration (its statuses, inflictions, debuffs
+  and stagger timer), overlapping freezes counted once.

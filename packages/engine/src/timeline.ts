@@ -161,6 +161,8 @@ export interface TimelineState {
   readonly pending: readonly PendingHit[];
   /** Trigger actions due later (KitTrigger.delay), with the event that started them. */
   readonly pendingActions: readonly { readonly frame: number; readonly owner: string; readonly trigger: string; readonly event: BattleEvent; readonly origin: Origin | null }[];
+  /** Until when a control status (Si's Immobilization) freezes the enemy's own clock. */
+  readonly enemyFrozenUntil: number;
   /** The enemy's stagger: its stagger HP left, until when it's Staggered, and whether this stagger's finisher is used. */
   readonly stagger: { readonly poise: number; readonly until: number | null; readonly finisherUsed: boolean };
   /** Global time slow-downs (an ultimate's time stop, a combo's slow-down) still running or to come: per frame from `start`, all but `exempt` (the caster). */
@@ -230,6 +232,7 @@ export function init(ctx: TimelineContext): TimelineState {
     pendingActions: [],
     slowdowns: [],
     stagger: { poise: maxPoise(ctx), until: null, finisherUsed: false },
+    enemyFrozenUntil: 0,
     enemy: NO_STATUS,
     buffs: [],
     triggerState: {},
@@ -404,8 +407,8 @@ function slowDown(ctx: TimelineContext, st: TimelineState, caster: string, timin
   return s;
 }
 
-/** Everything on the world's clock after `start` happens `n` frames later. */
-function shiftWorld(st: TimelineState, start: number, n: number): TimelineState {
+/** The enemy's own clock after `start` (its statuses, inflictions, Vulnerable, physical and control statuses, debuffs on it, its stagger) runs `n` frames later. */
+function shiftEnemy(st: TimelineState, start: number, n: number): TimelineState {
   if (n <= 0) return st;
   const later = (f: number) => (f > start ? f + n : f);
   const e = st.enemy;
@@ -414,6 +417,7 @@ function shiftWorld(st: TimelineState, start: number, n: number): TimelineState 
     enemy: {
       vulnerable: e.vulnerable ? { ...e.vulnerable, expiresAt: later(e.vulnerable.expiresAt) } : null,
       physical: e.physical.map((x) => ({ ...x, expiresAt: later(x.expiresAt) })),
+      controls: e.controls.map((x) => ({ ...x, expiresAt: later(x.expiresAt) })),
       infliction: e.infliction ? { ...e.infliction, expiresAt: later(e.infliction.expiresAt) } : null,
       statuses: e.statuses.map((x) => ({
         ...x,
@@ -423,10 +427,26 @@ function shiftWorld(st: TimelineState, start: number, n: number): TimelineState 
         ...(x.appliedAt <= start && x.expiresAt > start ? { appliedAt: x.appliedAt + n } : {}),
       })),
     },
-    buffs: st.buffs.map((b) => (b.expiresAt > start || (b.nextTick ?? -1) > start ? { ...b, expiresAt: later(b.expiresAt), ...(b.nextTick !== undefined ? { nextTick: later(b.nextTick) } : {}) } : b)),
+    buffs: st.buffs.map((b) => (b.target === "enemy" ? shiftBuff(b, start, n) : b)),
+    stagger: st.stagger.until !== null ? { ...st.stagger, until: later(st.stagger.until) } : st.stagger,
+  };
+}
+
+function shiftBuff(b: ActiveBuff, start: number, n: number): ActiveBuff {
+  const later = (f: number) => (f > start ? f + n : f);
+  return b.expiresAt > start || (b.nextTick ?? -1) > start ? { ...b, expiresAt: later(b.expiresAt), ...(b.nextTick !== undefined ? { nextTick: later(b.nextTick) } : {}) } : b;
+}
+
+/** Everything on the world's clock after `start` happens `n` frames later: the enemy's, every buff, combo windows, energy blocks, SP regen. */
+function shiftWorld(st: TimelineState, start: number, n: number): TimelineState {
+  if (n <= 0) return st;
+  const later = (f: number) => (f > start ? f + n : f);
+  const e = shiftEnemy(st, start, n);
+  return {
+    ...e,
+    buffs: e.buffs.map((b) => (b.target === "enemy" ? b : shiftBuff(b, start, n))),
     comboWindow: Object.fromEntries(Object.entries(st.comboWindow).map(([k, w]) => [k, { ...w, until: later(w.until) }])),
     energyBlockedUntil: Object.fromEntries(Object.entries(st.energyBlockedUntil).map(([k, f]) => [k, later(f)])),
-    stagger: st.stagger.until !== null ? { ...st.stagger, until: later(st.stagger.until) } : st.stagger,
     // SP doesn't regenerate meanwhile (taken from the current frame: slow-downs start at their cast or soon after).
     sp: spAt(st, st.frame),
     spPausedUntil: st.spPausedUntil > start ? st.spPausedUntil + n : start + n,
@@ -606,7 +626,7 @@ function statusTweaks(ctx: TimelineContext, st: TimelineState, operator: string,
 
 /** The damage a status event deals, if any (bursts, reactions with an initial hit, Combustion ticks). */
 function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, st: TimelineState): LandedHit | null {
-  if (e.kind === "consumed" || e.kind === "inflicted" || e.kind === "statusConsumed" || e.kind === "vulnerable" || (e.kind === "reaction" && !e.initialHit)) return null;
+  if (e.kind === "consumed" || e.kind === "inflicted" || e.kind === "statusConsumed" || e.kind === "vulnerable" || e.kind === "control" || (e.kind === "reaction" && !e.initialHit)) return null;
   const reaction =
     e.kind === "burst" ? { kind: "burst" as const, element: e.element, stacks: 1 }
     : e.kind === "reaction" ? { kind: "reaction" as const, element: e.element, stacks: e.level }
@@ -683,6 +703,12 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
   for (let n = 0; queue.length > 0; n++) {
     if (n > MAX_CHAIN) throw new EngineError(`more than ${MAX_CHAIN} chained events at frame ${queue[0]?.frame}: a trigger loop in the kits?`);
     const e = queue.shift() as BattleEvent;
+    // A control status that freezes the enemy stops its clock (overlapping freezes count once).
+    if (e.type === "status" && e.event.kind === "control" && e.event.freezes) {
+      const end = e.frame + e.event.frames;
+      const lost = Math.max(0, end - Math.max(e.frame, st.enemyFrozenUntil));
+      st = { ...shiftEnemy(st, e.frame, lost), enemyFrozenUntil: Math.max(st.enemyFrozenUntil, end) };
+    }
     // Lift and Knock Down stagger: 10 × (1 + AI/200) of the applier.
     if (e.type === "status" && e.event.kind === "physical" && (e.event.status === "lift" || e.event.status === "knockdown") && ctx.builds.has(e.operator)) {
       const r = dealPoise(ctx, st, e.operator, 10 * (1 + artsIntensity(ctx, st, e.operator, e.frame) / 200), e.frame);

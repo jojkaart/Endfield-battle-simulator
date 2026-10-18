@@ -120,7 +120,14 @@ export type HitApplication =
    * Vulnerable (forceAirborne / forceKnockDown). `multiplierKey`: a skill
    * value multiplying its hit (CrushAction damageMultiplier).
    */
-  | { readonly kind: "physicalStatus"; readonly status: PhysicalStatus; readonly forced?: boolean; readonly multiplierKey?: string };
+  | { readonly kind: "physicalStatus"; readonly status: PhysicalStatus; readonly forced?: boolean; readonly multiplierKey?: string }
+  /**
+   * A control status the game marks with a tag (Immobilization: tag
+   * −1065936627), for its duration (seconds, or a skill value). `freezes`:
+   * it stops the enemy's own clock meanwhile (an entity time dilation of
+   * scale 0, e.g. Si's battle-skill hit-stop).
+   */
+  | { readonly kind: "control"; readonly status: string; readonly seconds?: number; readonly durationKey?: string; readonly freezes?: boolean };
 
 export interface Infliction {
   readonly element: ArtsElement;
@@ -163,9 +170,11 @@ export interface EnemyStatus {
   readonly vulnerable: { readonly stacks: number; readonly expiresAt: number } | null;
   /** At most one of each physical status. */
   readonly physical: readonly ActivePhysical[];
+  /** Control statuses (Immobilization, …), at most one of each. */
+  readonly controls: readonly { readonly status: string; readonly appliedAt: number; readonly expiresAt: number; readonly operator: string }[];
 }
 
-export const NO_STATUS: EnemyStatus = { infliction: null, statuses: [], vulnerable: null, physical: [] };
+export const NO_STATUS: EnemyStatus = { infliction: null, statuses: [], vulnerable: null, physical: [], controls: [] };
 
 export type StatusEvent =
   /** An infliction landed without a reaction (fresh, or stacking with a burst); `stacks` is the count after it. */
@@ -190,6 +199,8 @@ export type StatusEvent =
   | { readonly kind: "vulnerable"; readonly frame: number; readonly operator: string; readonly stacks: number }
   /** A physical status landed (its hit is its damage); `multiplier` scales the hit (Crush). */
   | { readonly kind: "physical"; readonly frame: number; readonly operator: string; readonly status: PhysicalStatus; readonly level: number; readonly forced: boolean; readonly multiplier?: number }
+  /** A control status was applied (`frames` long); `freezes`: the enemy's own clock stops meanwhile. */
+  | { readonly kind: "control"; readonly frame: number; readonly operator: string; readonly status: string; readonly frames: number; readonly freezes: boolean }
   /** Solidification shattered (its level). */
   | { readonly kind: "shatter"; readonly frame: number; readonly operator: string; readonly level: number }
   | {
@@ -224,8 +235,9 @@ export function expireStatus(s: EnemyStatus, frame: number): EnemyStatus {
   const statuses = s.statuses.filter((x) => x.expiresAt > frame);
   const vulnerable = s.vulnerable && s.vulnerable.expiresAt > frame ? s.vulnerable : null;
   const physical = s.physical.filter((x) => x.expiresAt > frame);
-  if (infliction === s.infliction && statuses.length === s.statuses.length && vulnerable === s.vulnerable && physical.length === s.physical.length) return s;
-  return { infliction, statuses, vulnerable, physical };
+  const controls = s.controls.filter((x) => x.expiresAt > frame);
+  if (infliction === s.infliction && statuses.length === s.statuses.length && vulnerable === s.vulnerable && physical.length === s.physical.length && controls.length === s.controls.length) return s;
+  return { infliction, statuses, vulnerable, physical, controls };
 }
 
 /** Frame of the next damage tick, or null. */
@@ -339,6 +351,15 @@ export function applyToEnemy(
     };
   }
   if (app.kind === "vulnerable") return addVulnerable(s, app.stacks ?? 1, frame, operator, true);
+  if (app.kind === "control") {
+    const frames = Math.round((app.durationKey ? skillValue(app.durationKey) : (app.seconds ?? 0)) * FPS);
+    if (frames <= 0) throw new EngineError(`control status ${app.status}: ${frames} frames`);
+    const c = { status: app.status, appliedAt: frame, expiresAt: frame + frames, operator };
+    return {
+      state: { ...s, controls: [...s.controls.filter((x) => x.status !== app.status), c] },
+      events: [{ kind: "control", frame, operator, status: app.status, frames, freezes: app.freezes === true }],
+    };
+  }
   if (app.kind === "physicalStatus") {
     const n = s.vulnerable?.stacks ?? 0;
     const lifting = app.status === "lift" || app.status === "knockdown";

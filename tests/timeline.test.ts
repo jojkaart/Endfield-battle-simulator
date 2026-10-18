@@ -864,3 +864,29 @@ describe("timeline: stagger and finishers", () => {
     expect(s2.pending.find((h) => h.skillId === L + "power_attack")?.sp).toBe(100);
   });
 });
+
+describe("timeline: control statuses", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const d = (freezes: boolean): GameData => ({
+    ...data,
+    kits: {
+      ...data.kits,
+      operators: {
+        ...data.kits.operators,
+        [op]: { ...kit, triggers: [...kit.triggers, { id: "imm", on: { event: "cast", kinds: ["basic"] }, by: "self", maxCount: 1, do: [{ kind: "apply", applies: [{ kind: "infliction", element: "fire" }, { kind: "control", status: "immobilization", seconds: 1, freezes }] }] }] },
+      },
+    },
+  });
+  const run = (g: GameData) => {
+    const ctx = createContext(g, scenario([{ operator: op, skill: L + "attack1" }]));
+    return advance(ctx, apply(ctx, init(ctx), { operator: op, skill: L + "attack1" }), 5);
+  };
+
+  it("a control status is on the enemy for its duration; one that freezes stops the enemy's clock meanwhile", () => {
+    const plain = run(d(false));
+    expect(plain.enemy.controls).toEqual([{ status: "immobilization", appliedAt: 0, expiresAt: 30, operator: op }]);
+    expect(plain.enemy.infliction?.expiresAt).toBe(600);
+    // Frozen for 1 s: the Heat applied with it lasts 30 frames longer.
+    expect(run(d(true)).enemy.infliction?.expiresAt).toBe(630);
+  });
+});
