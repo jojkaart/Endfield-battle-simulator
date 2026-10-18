@@ -1711,11 +1711,9 @@
         },
         "requires": {
           "type": "object",
-          "description": "The hit only happens if the operator has at least this many stacks when the skill is cast; consume: all of the stack is used up by the cast.",
+          "description": "The hit only happens if the operator's stack is in range (atLeast, below) when the skill is cast, judged before the cast uses anything up. consume: all of the stack (true) or that many (a value), once per cast and stack (the largest amount named); consumeAt: at the cast (default) or when this hit lands.",
           "required": [
-            "stack",
-            "atLeast",
-            "consume"
+            "stack"
           ],
           "additionalProperties": false,
           "properties": {
@@ -1727,7 +1725,24 @@
               "minimum": 1
             },
             "consume": {
-              "type": "boolean"
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "$ref": "#/$defs/valueExpr"
+                }
+              ]
+            },
+            "below": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "consumeAt": {
+              "enum": [
+                "cast",
+                "hit"
+              ]
             }
           }
         },

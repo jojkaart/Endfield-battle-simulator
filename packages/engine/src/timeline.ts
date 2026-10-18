@@ -28,7 +28,7 @@ import {
 } from "./damage.ts";
 import { zoneSum, type Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
-import type { GameData, KitBuff, SkillTiming, KitHit, KitSkill, OperatorKit, StackGain } from "./model.ts";
+import type { GameData, KitBuff, SkillTiming, StackRequirement, KitHit, KitSkill, OperatorKit, StackGain } from "./model.ts";
 import { effectiveKit } from "./triggers.ts";
 import { causeMatches, eventMatches, triggerSkillId, type BattleEvent, type KitTrigger } from "./events.ts";
 import { evaluate, test, type EvalContext } from "./expr.ts";
@@ -106,6 +106,8 @@ interface PendingHit {
   readonly hitId: string;
   /** SP this hit returns when it lands (the skill's `atb`, on its first hit). */
   readonly sp: number;
+  /** Stacks this landing uses up (StackRequirement.consumeAt "hit"; Infinity: all). */
+  readonly usesUp?: readonly { readonly stack: string; readonly amount: number }[];
   /** A combo's hits: the count of the event that opened its window (ValueExpr `eventCount`). */
   readonly eventCount?: number;
   /** Lands even if its skill is interrupted (a projectile or entity already on its way: KitHit.detached). */
@@ -491,7 +493,8 @@ function gainStacks(ctx: TimelineContext, stacks: Stacks, owner: string, gains: 
     if (!def) throw new EngineError(`${owner} has no stack ${g.stack}`);
     const own = out[owner] ?? {};
     const amount = evaluate(g.amount, ec);
-    out = { ...out, [owner]: { ...own, [g.stack]: Math.min(def.max, (own[g.stack] ?? 0) + amount) } };
+    // Negative gains use stacks up, down to 0.
+    out = { ...out, [owner]: { ...own, [g.stack]: Math.max(0, Math.min(def.max, (own[g.stack] ?? 0) + amount)) } };
   }
   return out;
 }
@@ -754,6 +757,10 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   });
   st = { ...st, hits: [...st.hits, { ...result, count: 1, frame: hit.frame, operator: hit.operator }] };
   applyBuffs(false);
+  if (hit.usesUp) {
+    const own = st.stacks[hit.operator] ?? {};
+    st = { ...st, stacks: { ...st.stacks, [hit.operator]: { ...own, ...Object.fromEntries(hit.usesUp.map((u) => [u.stack, Math.max(0, (own[u.stack] ?? 0) - u.amount)])) } } };
+  }
   if (kitHit.sp !== undefined) st = returnSp(st, resolveValue(ctx.data, build, panel, hit.skillId, kitHit.sp, at(consumed)), hit.frame);
   if (kitHit.energy) {
     const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.energy, at(consumed));
@@ -948,13 +955,28 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   const castSituation: Situation = { team: ctx.scenario.team, controlled: s.controlled, stacks: own, buffActive: (id) => s.buffs.some((b) => b.id === id && b.owner === operator && b.cast === undefined && b.appliedAt <= frame && b.expiresAt > frame) };
   const castIndex = s.casts.length;
   const windowCount = costs.kind === "combo" ? s.comboWindow[operator]?.count : undefined;
-  const met = (h: KitHit) => hitAvailable(ctx.data, ctx.builds.get(operator) as Build, panel, skill.skillId, h, castSituation) && (!h.requires || (own[h.requires.stack] ?? 0) >= h.requires.atLeast);
-  const used = new Set(skill.hits.filter((h) => h.requires?.consume && met(h)).map((h) => h.requires?.stack as string));
-  const stacks = used.size ? { ...s.stacks, [operator]: { ...own, ...Object.fromEntries([...used].map((id) => [id, 0])) } } : s.stacks;
+  const inRange = (r: StackRequirement) => {
+    const n = own[r.stack] ?? 0;
+    return (r.atLeast === undefined || n >= r.atLeast) && (r.below === undefined || n < r.below);
+  };
+  const met = (h: KitHit) => hitAvailable(ctx.data, ctx.builds.get(operator) as Build, panel, skill.skillId, h, castSituation) && (!h.requires || inRange(h.requires));
+  // What the happening hits use up, per stack: all of it, or the largest amount named; at the cast, or at the requiring hit.
+  const castEc = evalContext(ctx.data, ctx.builds.get(operator) as Build, panel, skill.skillId, castSituation);
+  const usage = new Map<string, { amount: number; atHit: string | null }>();
+  for (const h of skill.hits.filter(met)) {
+    const r = h.requires;
+    if (!r?.consume) continue;
+    const amount = r.consume === true ? Infinity : evaluate(r.consume, castEc);
+    const cur = usage.get(r.stack);
+    usage.set(r.stack, { amount: Math.max(cur?.amount ?? 0, amount), atHit: r.consumeAt === "hit" ? (cur?.atHit ?? h.id) : null });
+  }
+  const atCast = [...usage].filter(([, u]) => u.atHit === null);
+  const stacks = atCast.length ? { ...s.stacks, [operator]: { ...own, ...Object.fromEntries(atCast.map(([id, u]) => [id, Math.max(0, (own[id] ?? 0) - u.amount)])) } } : s.stacks;
+  const usesAtHit = (hitId: string) => [...usage].filter(([, u]) => u.atHit === hitId).map(([stack, u]) => ({ stack, amount: u.amount }));
   const pending: PendingHit[] = [];
   for (const h of skill.hits.filter(met)) {
     const frames = h.frames ?? Array.from({ length: h.count }, () => 0);
-    for (const f of frames) pending.push({ frame: frame + f, operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castIndex, ...(h.detached ? { detached: true } : {}), ...(windowCount !== undefined ? { eventCount: windowCount } : {}) });
+    for (const f of frames) pending.push({ frame: frame + f, operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castIndex, ...(usesAtHit(h.id).length && f === frames[0] ? { usesUp: usesAtHit(h.id) } : {}), ...(h.detached ? { detached: true } : {}), ...(windowCount !== undefined ? { eventCount: windowCount } : {}) });
   }
   // A skill whose kit names the hit that returns SP gets it there, not on its first hit.
   const spGain = skill.hits.some((h) => h.sp !== undefined) ? 0 : skillSpGain(ctx, operator, skillId);

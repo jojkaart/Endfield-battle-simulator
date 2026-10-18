@@ -200,6 +200,9 @@ function kitChecker(scope: KitScope) {
       if (!element || !ELEMENTS.includes(element)) throw new Error(`${where} hit ${h.id}: no element`);
       const events = h.events ?? (src.defaultEvent && hits.length === 1 ? [src.defaultEvent] : []);
       if (!src.damageType && h.requires) throw new Error(`${where} hit ${h.id}: triggered hits can't require stacks (use the trigger's if)`);
+      const consume = h.requires?.consume;
+      if (consume !== undefined && typeof consume !== "boolean") checkValue(consume, src.skillId, `${where} hit ${h.id} requires.consume`);
+      if (h.requires && h.requires.atLeast === undefined && h.requires.below === undefined) throw new Error(`${where} hit ${h.id}: requires needs atLeast or below`);
       for (const id of [h.requires?.stack, ...(h.gains ?? []).map((g) => g.stack)]) {
         if (id !== undefined && !stackIds.has(id)) throw new Error(`${where} hit ${h.id}: unknown stack ${id} (the kit's stacks: ${[...stackIds].join(", ") || "none"})`);
       }

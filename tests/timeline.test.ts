@@ -714,3 +714,35 @@ describe("timeline: follow-up casts", () => {
     expect(r.casts[1]?.spAfter).toBe((r.casts[0]?.spAfter ?? NaN) + 20);
   });
 });
+
+describe("timeline: stack requirements", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const mf = (st: { stacks: Record<string, Record<string, number>> }) => st.stacks[op]?.["melting_flame"];
+  const withRequire = (r: KitHit["requires"]): GameData => ({
+    ...data,
+    kits: {
+      ...data.kits,
+      operators: {
+        ...data.kits.operators,
+        [op]: { ...kit, skills: kit.skills.map((s) => (s.skillId === L + "attack1" ? { ...s, hits: s.hits.map((h) => ({ ...h, ...(r ? { requires: r } : {}) })) } : s)) },
+      },
+    },
+  });
+  const run = (d: GameData, start: number, frame: number) => {
+    const ctx = createContext(d, { ...scenario([{ operator: op, skill: L + "attack1" }]), startStacks: { [op]: { melting_flame: start } } });
+    let s = init(ctx);
+    s = apply(ctx, s, { operator: op, skill: L + "attack1" });
+    return advance(ctx, s, frame);
+  };
+
+  it("a requirement can be a range, use up part of a stack, at the cast or at the hit", () => {
+    // attack1's hit lands at frame 6.
+    expect(mf(run(withRequire({ stack: "melting_flame", atLeast: 2, consume: 1 }), 3, 1))).toBe(2);
+    expect(mf(run(withRequire({ stack: "melting_flame", atLeast: 2, consume: 1, consumeAt: "hit" }), 3, 5))).toBe(3);
+    expect(mf(run(withRequire({ stack: "melting_flame", atLeast: 2, consume: 1, consumeAt: "hit" }), 3, 6))).toBe(2);
+    expect(mf(run(withRequire({ stack: "melting_flame", atLeast: 2, consume: true }), 3, 1))).toBe(0);
+    // below: the hit happens only with fewer stacks.
+    expect(run(withRequire({ stack: "melting_flame", below: 1 }), 3, 10).hits.filter((h) => h.skillId === L + "attack1")).toEqual([]);
+    expect(run(withRequire({ stack: "melting_flame", below: 1 }), 0, 10).hits.filter((h) => h.skillId === L + "attack1").length).toBe(1);
+  });
+});

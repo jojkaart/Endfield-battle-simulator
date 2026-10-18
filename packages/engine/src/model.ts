@@ -230,7 +230,7 @@ export interface KitHit {
   readonly element: Element;
   /** What each landing does to the enemy's arts state (inflictions, forced reactions), in order. */
   readonly applies?: readonly KitApplication[];
-  /** The hit only happens if the operator has these stacks when the skill is cast. */
+  /** The hit only happens if the operator's stack is in range when the skill is cast; it may use the stack up. */
   readonly requires?: StackRequirement;
   /** Stacks the operator gains when the hit lands (after `applies`). */
   readonly gains?: readonly StackGain[];
@@ -333,9 +333,17 @@ export interface StackDef {
 
 export interface StackRequirement {
   readonly stack: string;
-  readonly atLeast: number;
-  /** Consume all of the stack when the skill is cast with the requirement met. */
-  readonly consume: boolean;
+  /** Judged at the cast, before the cast uses anything up. */
+  readonly atLeast?: number;
+  readonly below?: number;
+  /**
+   * What the hit uses up: all of the stack (true), or this many (a value).
+   * A cast uses a stack up once, by the largest amount its happening hits
+   * name (two hit entries of one Power Shot use one arrow).
+   */
+  readonly consume?: boolean | ValueExpr;
+  /** When it's used up: at the cast (default), or when the requiring hit lands (Laevatain's Melting Flame, after earlier hits added to it). */
+  readonly consumeAt?: "cast" | "hit";
 }
 
 export interface StackGain {

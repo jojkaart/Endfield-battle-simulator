@@ -218,3 +218,8 @@ Then re-analysis of all seven.
   (SkillData CastSkill), without control, cost or cooldown, ending its
   current skill: off-field follow-ups (Typhoeus's aerial shots) with a
   delayed cast trigger and `if: {not: {controlled: true}}`.
+- B5: requirements are a range (`atLeast`, `below`) judged at the cast;
+  `consume` is all or an amount (once per cast and stack); `consumeAt:
+  "hit"` uses the stack up when the requiring hit lands; negative gains use
+  stacks up, never below 0. With these, Typhoeus's four arrow slots become
+  one counter and her aerial attempts a stack (kits phase).
