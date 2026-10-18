@@ -45,6 +45,23 @@ export interface SkillValueChange {
   readonly source: string;
 }
 
+export interface SkillParamChange {
+  readonly param: "cost" | "cooldown";
+  readonly op: "add" | "multiply" | "set";
+  readonly value: number;
+  readonly source: string;
+}
+
+/** A skill's cost or cooldown after the panel's changes. */
+export function skillParam(panel: StatPanel, skillId: string, param: "cost" | "cooldown", base: number): number {
+  let v = base;
+  for (const c of panel.skillParams[skillId] ?? []) {
+    if (c.param !== param) continue;
+    v = c.op === "add" ? v + c.value : c.op === "multiply" ? v * c.value : c.value;
+  }
+  return v;
+}
+
 export interface StatPanel {
   readonly operator: string;
   readonly mainAttr: AttrType;
@@ -53,6 +70,8 @@ export interface StatPanel {
   readonly atk: AtkBreakdown;
   /** Skill values changed by potentials, by skill ID. */
   readonly skillValues: Readonly<Record<string, readonly SkillValueChange[]>>;
+  /** Skill costs and cooldowns changed by potentials and talents, by skill ID. */
+  readonly skillParams: Readonly<Record<string, readonly SkillParamChange[]>>;
   /** Effects that aren't permanent stats (buffs from talents, potentials, weapons, gear sets) and so aren't in this panel. */
   readonly notApplied: readonly string[];
 }
@@ -114,11 +133,13 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
   };
 
   const skillValues: Record<string, SkillValueChange[]> = {};
+  const skillParams: Record<string, SkillParamChange[]> = {};
   const notApplied: string[] = [];
   const applyEffects = (effects: readonly Effect[], source: string) => {
     for (const e of effects) {
       if (e.kind === "attr") apply(e.modifier.attr, e.modifier.slot, e.modifier.target, e.modifier.value, source);
       else if (e.kind === "skillValue") (skillValues[e.skillId] ??= []).push({ key: e.key, op: e.op, value: e.value, source });
+      else if (e.kind === "skillParam") (skillParams[e.skillId] ??= []).push({ param: e.param, op: e.op, value: e.value, source });
       else if (e.kind === "buff") notApplied.push(`${source}: buff ${e.buffId}`);
       else notApplied.push(`${source}: effect type ${e.modifyType}`);
     }
@@ -269,6 +290,7 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
       total: atkTotal,
     },
     skillValues,
+    skillParams,
     notApplied,
   };
 }

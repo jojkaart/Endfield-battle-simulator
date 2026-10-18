@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, computeStats, createContext, EngineError, init, simulate, skillValue, SP, type Build, type GameData, type KitBuff, type OperatorKit, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { advance, apply, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type GameData, type KitBuff, type OperatorKit, type RotationAction, type TimelineScenario } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -15,10 +15,12 @@ const scenario = (rotation: RotationAction[]): TimelineScenario => ({
   durationFrames: 30 * 60,
   rotation,
   options: { crit: "never" },
+  // Tests that cast her ultimate start with it charged.
+  startEnergy: { [op]: "full" },
 });
 
 describe("timeline", () => {
-  const rotation = [...chain, { operator: op, skill: L + "normal_skill" }, ...chain, { operator: op, skill: L + "combo_skill" }, ...chain, { operator: op, skill: L + "normal_skill" }];
+  const rotation = [...chain, { operator: op, skill: L + "normal_skill" }, ...chain, ...chain, { operator: op, skill: L + "normal_skill" }];
   const result = simulate(data, scenario(rotation));
 
   it("total and per-operator damage are the sums of the hits", () => {
@@ -75,6 +77,8 @@ describe("timeline", () => {
   it("illegal actions are errors", () => {
     expect(() => simulate(data, scenario([{ operator: "chr_0004_pelica", skill: "x" }]))).toThrow(EngineError);
     expect(() => simulate(data, scenario([{ operator: op, skill: "chr_0016_laevat_dodge" }]))).toThrow(/kit has no skill/);
+    // Her combo needs Combustion or Corrosion on the enemy first.
+    expect(() => simulate(data, scenario([{ operator: op, skill: L + "combo_skill" }]))).toThrow(/combo trigger hasn't happened/);
   });
 });
 
@@ -150,6 +154,7 @@ describe("timeline: a reaction applies before the hit that triggers it", () => {
       { operator: "chr_0013_aglina", skill: "chr_0013_aglina_normal_skill" },
     ],
     options: { crit: "never" },
+    startEnergy: { [op]: "full" },
   });
 
   it("Gilberta's explosion consumes Laevatain's Heat into Corrosion, and its own damage already has the shred", () => {
@@ -205,5 +210,51 @@ describe("timeline: timed buffs from kits", () => {
     const r = simulate(withBuffKit(true), scenario(rot));
     const plain = simulate(data, scenario(rot));
     expect(r.hits[0]?.zones.amp).toBeGreaterThan(plain.hits[0]?.zones.amp ?? Infinity);
+  });
+});
+
+describe("timeline: ultimate energy and combo windows", () => {
+  const panel = computeStats(data, build);
+  const efficiency = panel.attrs[44]?.total ?? data.attributeDefaults[44] ?? 1;
+  const noEnergy = (rotation: RotationAction[]): TimelineScenario => {
+    const { startEnergy: _full, ...rest } = scenario(rotation);
+    return rest;
+  };
+
+  it("an ultimate needs its full cost (after potentials: P4 ×0.85) and uses it up", () => {
+    expect(() => simulate(data, noEnergy([{ operator: op, skill: L + "ultimate_skill" }]))).toThrow(/needs 255\.0+\d* ultimate energy/);
+    const r = simulate(data, scenario([{ operator: op, skill: L + "ultimate_skill" }]));
+    expect(r.casts[0]?.energyAfter).toBe(0);
+  });
+
+  it("a battle skill gives 0.065 energy per natural SP; SP returned by skills is spent first and gives none", () => {
+    const one = simulate(data, noEnergy([{ operator: op, skill: L + "normal_skill" }]));
+    expect(one.casts[0]?.energyAfter).toBeCloseTo(100 * 0.065 * efficiency, 9);
+    // The final strike returns 20 SP (atb); the battle skill after it spends those 20 first.
+    const after = simulate(data, noEnergy([...chain, { operator: op, skill: L + "normal_skill" }]));
+    expect(after.casts.at(-1)?.energyAfter).toBeCloseTo(80 * 0.065 * efficiency, 9);
+  });
+
+  it("her ultimate blocks her energy gain for 16 s", () => {
+    const r = simulate(data, scenario([{ operator: op, skill: L + "ultimate_skill" }, { operator: op, skill: L + "normal_skill" }]));
+    expect(r.casts[1]?.energyAfter).toBe(0);
+  });
+
+  it("the combo opens 6 s after its trigger and closes when cast", () => {
+    const five = Array.from({ length: 5 }, () => ({ operator: op, skill: L + "normal_skill" }));
+    const ctx = createContext(data, { ...noEnergy(five), durationFrames: 30 * 120 });
+    let s = init(ctx);
+    for (const a of five) s = apply(ctx, s, a);
+    const combustion = advance(ctx, s, ctx.scenario.durationFrames).reactions.find((e) => e.kind === "reaction");
+    if (!combustion) throw new Error("no Combustion");
+    s = advance(ctx, s, combustion.frame);
+    expect(s.comboWindow[op]).toEqual({ from: combustion.frame, until: combustion.frame + 180 });
+    // Too late: the window has closed.
+    expect(earliestStart(ctx, s, { operator: op, skill: L + "combo_skill", at: combustion.frame + 181 })).toHaveProperty("error");
+    const cast = apply(ctx, s, { operator: op, skill: L + "combo_skill" });
+    expect(cast.comboWindow[op]).toBeUndefined();
+    // Its hit grants 25 energy (one enemy), up to the cap (her ultimate's cost, 255 at P5).
+    const landed = advance(ctx, cast, ctx.scenario.durationFrames);
+    expect(landed.energy[op]).toBeCloseTo(Math.min(255.00000715255737, (cast.energy[op] ?? 0) + 25 * efficiency), 6);
   });
 });

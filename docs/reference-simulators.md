@@ -68,7 +68,10 @@ hand-written data, event queue); **current Endaxis** `fbf6a29`
 
 - SkillData's blackboard and cost are defaults; per-level values are in
   `SkillPatchTable`.
-- Team SP: 8/s with a 1.5 s pause after spending (`atbRecoverInterval`);
+- Team SP: 8/s with a pause after spending. Endaxis's generated native
+  settings say `atbRecoverInterval: 0.5`, so whether that is the pause or
+  the regen tick interval is open (the engine uses a 1.5 s pause); Zero
+  Sanity regenerates 7.6923/s;
   battle skill gives 0.065 ultimate energy per natural SP; refunded SP gives
   none. Zero Sanity uses max 300, start 200.
 - Ultimates set the global time scale to 0, pausing ordinary buffs.

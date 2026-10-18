@@ -350,6 +350,32 @@ AI scaling for Breach/Electrification
 supports. EndfieldHub's damage guide contradicts itself on Breach (§9
 fragility vs §10 negative DEF); its negative-DEF claim is wrong.
 
+### Ultimate energy and combo windows
+
+From the game data and both reference simulators (Endaxis's generated
+native skill settings, Zero Sanity's constants), which agree unless noted:
+
+- **Max energy = the ultimate's cost** (`SkillPatchTable` costType 0, same
+  at every level): Laevatain 300, Gilberta 90, Estella 70, Arcane 100,
+  Typhoeus 200, Liino 160, Si 80. Potentials cut it through
+  `skillParamModifier` paramType 1 (×0.85 at P4 for most; Estella ×0.9 at
+  P2). No passive regeneration; the ultimate uses all of it.
+- **Battle skills:** every team member gains 0.065 energy per *natural* SP
+  spent (6.5 per 100 SP); SP returned by skills is spent first and gives
+  none (`buff_common_obtain_ultimate_sp`; the per-SP rate is from the
+  native settings, not in our dump).
+- **Fixed grants:** `ObtainCostAction` costType 0 with a blackboard key
+  (combo skills mostly `usp` 10; Laevatain's combo 25/30/35 for 1/2/3
+  enemies, her empowered battle skill `extra_usp` 100). Scaled by Ultimate
+  Gain Efficiency (attribute 44, default 1) unless the action says not to.
+- **Blocks:** some ultimates stop their caster's gain (`RefrainObtainUsp`):
+  Laevatain 16 s from the cast (Zero Sanity: 15 s after the animation).
+- **Combo windows:** open 6 s after the trigger (`comboSkillPendingInterval`
+  6), per operator; triggers while the combo is on cooldown are ignored;
+  casting closes the window. Trigger conditions are the CharGrowthTable
+  "COMBO TRIGGER" texts. Cooldowns come from `SkillPatchTable`, and
+  potentials change some through `skillParamModifier` paramType 2.
+
 ### Rounding
 
 From note.com/at67275, "ダメージ計算に関わる小数と端数処理" (2026-03-09,

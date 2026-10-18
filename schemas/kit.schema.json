@@ -43,6 +43,38 @@
         }
       }
     },
+    "comboTriggers": {
+      "type": "array",
+      "description": "What makes the combo skill castable (CharGrowthTable COMBO TRIGGER text; quote it in the note). Any listed trigger opens the window. Without this the timeline allows the combo whenever it's off cooldown.",
+      "items": {
+        "type": "object",
+        "required": ["any"],
+        "additionalProperties": false,
+        "properties": {
+          "any": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "oneOf": [
+                { "type": "object", "required": ["on"], "additionalProperties": false, "properties": { "on": { "const": "reaction" }, "statuses": { "type": "array", "items": { "enum": ["combustion", "electrification", "solidification", "corrosion"] }, "minItems": 1 } } },
+                { "type": "object", "required": ["on"], "additionalProperties": false, "properties": { "on": { "const": "inflictionConsumed" }, "elements": { "type": "array", "items": { "$ref": "#/$defs/artsElement" }, "minItems": 1 } } },
+                { "type": "object", "required": ["on"], "additionalProperties": false, "properties": { "on": { "const": "inflictionApplied" }, "elements": { "type": "array", "items": { "$ref": "#/$defs/artsElement" }, "minItems": 1 }, "minStacks": { "type": "integer", "minimum": 1, "maximum": 4 } } },
+                { "type": "object", "required": ["on"], "additionalProperties": false, "properties": { "on": { "const": "burst" }, "elements": { "type": "array", "items": { "$ref": "#/$defs/artsElement" }, "minItems": 1 } } },
+                { "type": "object", "required": ["on", "stack", "atLeast"], "additionalProperties": false, "properties": { "on": { "const": "stackAtLeast" }, "stack": { "type": "string" }, "atLeast": { "type": "integer", "minimum": 1 } } }
+              ]
+            }
+          },
+          "whileBuff": { "type": "string" },
+          "when": {
+            "type": "object",
+            "required": ["attrAtLeast"],
+            "additionalProperties": false,
+            "properties": { "attrAtLeast": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "minItems": 2, "maxItems": 2 } }
+          },
+          "note": { "type": "string" }
+        }
+      }
+    },
     "teamTriggers": {
       "type": "array",
       "description": "What the operator's kit does when any team member's hit of a kind lands (finalStrike: the controlled operator's Final Strikes, SkillData mask bit 2097152).",
@@ -86,6 +118,7 @@
           "skillId": { "type": "string" },
           "label": { "type": "string" },
           "damageType": { "$ref": "#/$defs/skillType" },
+          "energyBlockSeconds": { "type": "number", "exclusiveMinimum": 0, "description": "The operator gains no ultimate energy for this long after the cast (SkillData RefrainObtainUsp buff duration)." },
           "durationFrames": { "type": "integer", "minimum": 1, "description": "How long the skill locks the operator, in 30 FPS frames (SkillData durationFrame unless the skill can be cancelled earlier; say which in a note)." },
           "note": { "type": "string" },
           "hits": {
@@ -135,6 +168,7 @@
                   "additionalProperties": false,
                   "properties": { "attrAtLeast": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "minItems": 2, "maxItems": 2 } }
                 },
+                "energy": { "$ref": "#/$defs/valueSpec", "description": "Ultimate energy the operator gains when the hit lands (SkillData ObtainCostAction costType 0, e.g. a combo's usp)." },
                 "buffs": {
                   "type": "array",
                   "description": "Kit buffs this hit applies when it lands; beforeDamage: the buff already acts on this hit.",

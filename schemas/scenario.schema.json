@@ -16,6 +16,11 @@
       "items": { "oneOf": [{ "type": "string", "description": "Path of a build file, relative to the scenario file." }, { "$ref": "build.schema.json" }] }
     },
     "controlled": { "type": "string", "description": "Operator controlled at the start (default: the first)." },
+    "startEnergy": {
+      "type": "object",
+      "description": "Ultimate energy at the start, per operator ID: a number or \"full\" (default 0).",
+      "additionalProperties": { "oneOf": [{ "type": "number", "minimum": 0 }, { "const": "full" }] }
+    },
     "target": {
       "type": "object",
       "required": ["enemy", "level"],

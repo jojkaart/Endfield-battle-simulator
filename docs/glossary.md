@@ -28,7 +28,7 @@ alias turns up.
 | Term | Meaning |
 |---|---|
 | SP | Team-shared skill points spent on battle skills. |
-| Ultimate energy | Per-operator gauge (max `maxUltimateSp` = 100 in `BattleConst`) spent on the ultimate. |
+| Ultimate energy | Per-operator gauge spent on the ultimate; its max is the ultimate's cost (`SkillPatchTable` costType 0, e.g. Laevatain 300). `BattleConst.maxUltimateSp` (100) is not the per-operator max. |
 | Stagger | Enemy gauge; when broken the enemy is staggered (×1.3 damage taken). |
 | Finisher | Hit on a staggered enemy; multiplier by enemy tier. |
 | Link | Bonus to battle skill / ultimate by stack count. |

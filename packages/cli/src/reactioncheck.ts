@@ -64,6 +64,7 @@ export function checkReactions(data: GameData, fixture: LogFixture): ReactionChe
   const unlogged: ReactionCheck["unlogged"][number][] = [];
   const other: ReactionCheck["other"][number][] = [];
   for (const p of predicted) {
+    if (p.predicted.kind === "inflicted") continue;
     const key = statusEventKey(p.predicted);
     if (!key || p.predicted.kind === "combustionTick") {
       other.push(p);
@@ -89,6 +90,7 @@ export function checkReactions(data: GameData, fixture: LogFixture): ReactionChe
 function describe(e: StatusEvent): string {
   if (e.kind === "burst") return `${e.operator}: ${e.element} burst`;
   if (e.kind === "reaction") return `${e.operator}: ${e.status} level ${e.level}${e.consumed ? ` (consumed ${e.consumed})` : " (forced)"}`;
+  if (e.kind === "inflicted") return `${e.operator}: ${e.element} infliction (${e.stacks})`;
   if (e.kind === "consumed") return `${e.operator}: consumed ${e.stacks} ${e.element}`;
   return `${e.operator}: combustion tick level ${e.level}`;
 }

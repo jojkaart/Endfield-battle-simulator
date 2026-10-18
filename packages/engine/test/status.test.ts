@@ -33,8 +33,9 @@ describe("inflictions", () => {
     const apps = Array.from({ length: 6 }, (_, i): [number, HitApplication] => [i * 10, { kind: "infliction", element: "fire" }]);
     const { s, events } = run(apps);
     expect(s.infliction).toEqual({ element: "fire", stacks: 4, expiresAt: 50 + INFLICTION_FRAMES });
-    expect(events.map((e) => e.kind)).toEqual(["burst", "burst", "burst", "burst", "burst"]);
-    expect(statusEventKey(events[0] as StatusEvent)).toBe("buff_common_fire_fire_triggered");
+    expect(events.filter((e) => e.kind === "burst")).toHaveLength(5);
+    expect(events.filter((e) => e.kind === "inflicted").map((e) => (e.kind === "inflicted" ? e.stacks : 0))).toEqual([1, 2, 3, 4, 4, 4]);
+    expect(statusEventKey(events.find((e) => e.kind === "burst") as StatusEvent)).toBe("buff_common_fire_fire_triggered");
   });
 
   it("expires 20 s after the last application", () => {
@@ -43,7 +44,7 @@ describe("inflictions", () => {
     expect(expireStatus(s, INFLICTION_FRAMES).infliction).toBeNull();
     // An expired infliction doesn't react: the next one starts fresh.
     const later = applyToEnemy(s, { kind: "infliction", element: "fire" }, INFLICTION_FRAMES, "op", 0);
-    expect(later.events).toEqual([]);
+    expect(later.events.map((e) => e.kind)).toEqual(["inflicted"]);
     expect(later.state.infliction?.element).toBe("fire");
   });
 
@@ -72,7 +73,8 @@ describe("inflictions", () => {
 
 describe("statuses", () => {
   it("a forced reaction is level I by default, consumes nothing and has no initial hit", () => {
-    const { s, events } = run([[0, { kind: "infliction", element: "pulse" }], [5, { kind: "forcedReaction", status: "corrosion" }]]);
+    const { s, events: all } = run([[0, { kind: "infliction", element: "pulse" }], [5, { kind: "forcedReaction", status: "corrosion" }]]);
+    const events = all.filter((e) => e.kind !== "inflicted");
     expect(s.infliction?.element).toBe("pulse");
     expect(events).toEqual([{ kind: "reaction", frame: 5, operator: "op", status: "corrosion", element: "natural", level: 1, consumed: null, initialHit: false }]);
     expect(statusEventKey(events[0] as StatusEvent)).toBeNull();

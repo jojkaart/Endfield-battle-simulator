@@ -108,6 +108,8 @@ export interface EnemyStatus {
 export const NO_STATUS: EnemyStatus = { infliction: null, statuses: [] };
 
 export type StatusEvent =
+  /** An infliction landed without a reaction (fresh, or stacking with a burst); `stacks` is the count after it. */
+  | { readonly kind: "inflicted"; readonly frame: number; readonly operator: string; readonly element: ArtsElement; readonly stacks: number }
   | { readonly kind: "burst"; readonly frame: number; readonly operator: string; readonly element: ArtsElement }
   | {
       readonly kind: "reaction";
@@ -215,11 +217,18 @@ export function applyToEnemy(
   if (app.kind === "infliction") {
     const stacks = app.stacks ?? 1;
     if (!Number.isInteger(stacks) || stacks < 1) throw new EngineError(`infliction stacks ${stacks}`);
-    if (!cur) return { state: { ...s, infliction: { element: app.element, stacks: Math.min(MAX_INFLICTION_STACKS, stacks), expiresAt: frame + INFLICTION_FRAMES } }, events: [] };
-    if (cur.element === app.element) {
+    if (!cur) {
+      const n = Math.min(MAX_INFLICTION_STACKS, stacks);
       return {
-        state: { ...s, infliction: { element: cur.element, stacks: Math.min(MAX_INFLICTION_STACKS, cur.stacks + stacks), expiresAt: frame + INFLICTION_FRAMES } },
-        events: [{ kind: "burst", frame, operator, element: app.element }],
+        state: { ...s, infliction: { element: app.element, stacks: n, expiresAt: frame + INFLICTION_FRAMES } },
+        events: [{ kind: "inflicted", frame, operator, element: app.element, stacks: n }],
+      };
+    }
+    if (cur.element === app.element) {
+      const n = Math.min(MAX_INFLICTION_STACKS, cur.stacks + stacks);
+      return {
+        state: { ...s, infliction: { element: cur.element, stacks: n, expiresAt: frame + INFLICTION_FRAMES } },
+        events: [{ kind: "inflicted", frame, operator, element: app.element, stacks: n }, { kind: "burst", frame, operator, element: app.element }],
       };
     }
     const status = REACTION_OF[app.element];

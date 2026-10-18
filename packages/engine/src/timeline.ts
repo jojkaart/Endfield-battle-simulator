@@ -15,6 +15,7 @@ import {
   activeModifiers,
   computeHit,
   hitAvailable,
+  whenAllows,
   computeReaction,
   conditionModifiers,
   roundDamage,
@@ -25,10 +26,11 @@ import {
 } from "./damage.ts";
 import { zoneSum, type Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
-import type { GameData, KitHit, KitSkill, StackGain } from "./model.ts";
+import type { ComboCondition, GameData, KitHit, KitSkill, StackGain } from "./model.ts";
 import { hitEffects } from "./triggers.ts";
-import { applyBuff, buffModifiers, withBuff, type ActiveBuff } from "./buffs.ts";
-import { computeStats, skillLevel, type StatPanel } from "./stats.ts";
+import { applyBuff, buffModifiers, resolveValue, withBuff, type ActiveBuff } from "./buffs.ts";
+import { computeStats, skillLevel, skillParam, type StatPanel } from "./stats.ts";
+import { Attr } from "./attributes.ts";
 import { applyToEnemy, expireStatus, nextTick, NO_STATUS, statusModifiers, tickStatus, type EnemyStatus, type StatusEvent } from "./status.ts";
 import { FPS } from "./units.ts";
 
@@ -40,10 +42,19 @@ import { FPS } from "./units.ts";
  */
 export const SP = { max: 300, start: 200, perSecond: 8, pauseAfterSpendFrames: 45 } as const;
 
+/**
+ * Ultimate energy and combo windows (Endaxis's native skill settings and
+ * Zero Sanity agree; docs/data-sources.md): a battle skill gives every team
+ * member 0.065 energy per natural (not returned) SP spent; combo windows stay
+ * open 6 s after their trigger.
+ */
+export const ENERGY = { perNaturalSp: 0.065 } as const;
+export const COMBO_WINDOW_FRAMES = 6 * FPS;
+
 /** What v1 doesn't model; returned with every result so numbers aren't over-trusted. */
 export const TIMELINE_ASSUMPTIONS = [
-  "Ultimate energy isn't tracked: an ultimate can be cast whenever the rotation asks for it.",
-  "Combo skills ignore their trigger conditions: usable whenever off cooldown.",
+  "Ultimate energy: max = the ultimate's cost, no passive gain; battle skills give the team 0.065 per natural SP spent (at the cast); kits list their fixed grants. Grants are scaled by Ultimate Gain Efficiency.",
+  "Combo skills open a 6 s window on their kit's trigger (ignored while on cooldown); kits without a trigger allow the combo whenever off cooldown.",
   "Each operator has its own animation lock; basic attacks need the operator to be the controlled one, other skills don't.",
   "Projectile hits land at their launch frame (travel time isn't in the data).",
   "SP gain: a skill's blackboard value `atb` (e.g. a final strike's 20) is added when its first hit lands (unverified timing).",
@@ -78,6 +89,8 @@ export interface TimelineScenario {
   readonly options: TimelineOptions;
   /** Controlled operator at the start; default the first in the team. */
   readonly controlled?: string;
+  /** Ultimate energy at the start, per operator ("full" = the ultimate's cost); default 0. */
+  readonly startEnergy?: Readonly<Record<string, number | "full">>;
 }
 
 interface PendingHit {
@@ -94,6 +107,8 @@ export interface Cast {
   readonly operator: string;
   readonly skill: string;
   readonly spAfter: number;
+  /** The caster's ultimate energy after the cast. */
+  readonly energyAfter: number;
 }
 
 export interface LandedHit extends HitDamage {
@@ -108,6 +123,14 @@ export type ReactionRecord = StatusEvent;
 export interface TimelineState {
   readonly frame: number;
   readonly sp: number;
+  /** The part of `sp` that was returned by skills; it's spent first and gives no ultimate energy. */
+  readonly spReturned: number;
+  /** Per operator: ultimate energy. */
+  readonly energy: Readonly<Record<string, number>>;
+  /** Per operator: frame until which it gains no energy (some ultimates block it). */
+  readonly energyBlockedUntil: Readonly<Record<string, number>>;
+  /** Per operator with a combo trigger: the open combo window, if any. */
+  readonly comboWindow: Readonly<Record<string, { readonly from: number; readonly until: number }>>;
   /** Frame until which SP doesn't regenerate. */
   readonly spPausedUntil: number;
   readonly controlled: string;
@@ -154,6 +177,13 @@ export function init(ctx: TimelineContext): TimelineState {
   return {
     frame: 0,
     sp: SP.start,
+    spReturned: 0,
+    energy: Object.fromEntries(ctx.scenario.team.map((b) => {
+      const v = ctx.scenario.startEnergy?.[b.operator] ?? 0;
+      return [b.operator, v === "full" ? maxEnergy(ctx, b.operator) : Math.min(v, maxEnergy(ctx, b.operator))];
+    })),
+    energyBlockedUntil: {},
+    comboWindow: {},
     spPausedUntil: 0,
     controlled,
     freeAt: Object.fromEntries(ctx.scenario.team.map((b) => [b.operator, 0])),
@@ -198,12 +228,32 @@ function skillCosts(ctx: TimelineContext, operator: string, skillId: string) {
   const level = skillLevel(skill, build.skillLevels[group]);
   const timing = skill.timing;
   if (!timing) throw new EngineError(`${skillId}: SkillData isn't loaded, so its timing is unknown`);
+  const panel = ctx.panels.get(operator) as StatPanel;
+  const cost = skillParam(panel, skillId, "cost", level.costValue);
   return {
     group,
-    spCost: level.costType === 1 ? level.costValue : 0,
-    cooldownFrames: Math.round(level.coolDown * FPS),
+    spCost: level.costType === 1 ? cost : 0,
+    /** costType 0: ultimate energy. */
+    energyCost: level.costType === 0 ? cost : 0,
+    cooldownFrames: Math.round(skillParam(panel, skillId, "cooldown", level.coolDown) * FPS),
     lockFrames: timing.cancelFrame ?? timing.exclusiveFrames,
   };
+}
+
+/** Most ultimate energy an operator can hold: its kit's ultimate cost (the highest, if it has several). */
+function maxEnergy(ctx: TimelineContext, operator: string): number {
+  const kit = ctx.data.kits.operators[operator];
+  const costs = (kit?.skills ?? []).filter((s) => ctx.data.operators[operator]?.skillGroups[s.skillId] === "ultimate").map((s) => skillCosts(ctx, operator, s.skillId).energyCost);
+  return costs.length ? Math.max(...costs) : 0;
+}
+
+/** Ultimate energy gained, scaled by the recipient's Ultimate Gain Efficiency (attribute 44), unless blocked. */
+function gainEnergy(ctx: TimelineContext, st: TimelineState, operator: string, amount: number, frame: number): TimelineState {
+  if (amount <= 0 || (st.energyBlockedUntil[operator] ?? -1) > frame) return st;
+  const panel = ctx.panels.get(operator) as StatPanel;
+  const efficiency = panel.attrs[Attr.UltimateSpGainScalar]?.total ?? ctx.data.attributeDefaults[Attr.UltimateSpGainScalar] ?? 1;
+  const now = st.energy[operator] ?? 0;
+  return { ...st, energy: { ...st.energy, [operator]: Math.min(maxEnergy(ctx, operator), now + amount * efficiency) } };
 }
 
 /** SP a skill returns (its blackboard `atb` at the operator's level, after potentials). */
@@ -235,7 +285,7 @@ function artsIntensity(ctx: TimelineContext, operator: string): number {
 
 /** The damage a status event deals, if any (bursts, reactions with an initial hit, Combustion ticks). */
 function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, buffs: readonly ActiveBuff[]): LandedHit | null {
-  if (e.kind === "consumed" || (e.kind === "reaction" && !e.initialHit)) return null;
+  if (e.kind === "consumed" || e.kind === "inflicted" || (e.kind === "reaction" && !e.initialHit)) return null;
   const reaction =
     e.kind === "burst" ? { kind: "burst" as const, element: e.element, stacks: 1 }
     : e.kind === "reaction" ? { kind: "reaction" as const, element: e.element, stacks: e.level }
@@ -249,6 +299,57 @@ function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, b
 }
 
 type Stacks = TimelineState["stacks"];
+
+function conditionMet(c: ComboCondition, events: readonly StatusEvent[], own: Readonly<Record<string, number>>): boolean {
+  const has = <T,>(list: readonly T[] | undefined, x: T) => !list || list.includes(x);
+  switch (c.on) {
+    case "reaction":
+      return events.some((e) => e.kind === "reaction" && has(c.statuses, e.status));
+    case "inflictionConsumed":
+      // A reaction consumes the infliction it lands on, too.
+      return events.some((e) => (e.kind === "consumed" && has(c.elements, e.element)) || (e.kind === "reaction" && e.consumed !== null && has(c.elements, e.consumed)));
+    case "inflictionApplied":
+      return events.some((e) => e.kind === "inflicted" && has(c.elements, e.element) && e.stacks >= (c.minStacks ?? 1));
+    case "burst":
+      return events.some((e) => e.kind === "burst" && has(c.elements, e.element));
+    case "stackAtLeast":
+      return (own[c.stack] ?? 0) >= c.atLeast;
+  }
+}
+
+/**
+ * Opens the combo window of every team member whose trigger the hit's events
+ * (or its stacks) satisfy, unless its combo is on cooldown. An operator's own
+ * combo hits don't trigger its combo.
+ */
+function openComboWindows(
+  ctx: TimelineContext,
+  st: TimelineState,
+  events: readonly StatusEvent[],
+  stacks: Stacks,
+  buffs: readonly ActiveBuff[],
+  frame: number,
+  hitter: string,
+  hitGroup: SkillType,
+): TimelineState {
+  let out = st;
+  for (const b of ctx.scenario.team) {
+    const m = b.operator;
+    const kit = ctx.data.kits.operators[m];
+    if (!kit?.comboTriggers || (m === hitter && hitGroup === "combo")) continue;
+    const combos = kit.skills.filter((s) => ctx.data.operators[m]?.skillGroups[s.skillId] === "combo");
+    if (combos.length > 0 && combos.every((s) => (st.readyAt[s.skillId] ?? 0) > frame)) continue;
+    const panel = ctx.panels.get(m) as StatPanel;
+    const fires = kit.comboTriggers.some(
+      (t) =>
+        (!t.when || whenAllows(t.when, panel)) &&
+        (!t.whileBuff || buffs.some((x) => x.id === t.whileBuff && x.owner === m && x.appliedAt <= frame && x.expiresAt > frame)) &&
+        t.any.some((c) => conditionMet(c, events, stacks[m] ?? {})),
+    );
+    if (fires) out = { ...out, comboWindow: { ...out.comboWindow, [m]: { from: frame, until: frame + COMBO_WINDOW_FRAMES } } };
+  }
+  return out;
+}
 
 function gainStacks(ctx: TimelineContext, stacks: Stacks, owner: string, gains: readonly StackGain[], consumed: number): Stacks {
   let out = stacks;
@@ -274,6 +375,7 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
   let buffs = state.buffs;
   const record = (events: readonly StatusEvent[], before: EnemyStatus) => {
     for (const e of events) {
+      if (e.kind === "inflicted") continue;
       records.push(e);
       const d = eventDamage(ctx, e, before, buffs);
       if (d) landed.push(d);
@@ -292,7 +394,11 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
     }
     if (!hit) break;
     i++;
-    if (hit.sp > 0) st = { ...st, sp: Math.min(SP.max, spAt(st, hit.frame) + hit.sp), frame: hit.frame };
+    if (hit.sp > 0) {
+      const before = spAt(st, hit.frame);
+      const after = Math.min(SP.max, before + hit.sp);
+      st = { ...st, sp: after, spReturned: Math.min(after, st.spReturned + (after - before)), frame: hit.frame };
+    }
     const build = ctx.builds.get(hit.operator) as Build;
     const skill = kitSkill(ctx, hit.operator, hit.skillId);
     const kitHit = skill.hits.find((h) => h.id === hit.hitId) as KitHit;
@@ -333,6 +439,8 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
     });
     landed.push({ ...result, count: 1, frame: hit.frame, operator: hit.operator });
     applyBuffs(false);
+    if (kitHit.energy) st = gainEnergy(ctx, st, hit.operator, resolveValue(ctx.data, build, panel, hit.skillId, kitHit.energy), hit.frame);
+    st = openComboWindows(ctx, st, events, stacks, buffs, hit.frame, hit.operator, skillGroup(ctx, hit.operator, hit.skillId));
     record(events, enemy);
   }
   return {
@@ -370,7 +478,32 @@ export function earliestStart(ctx: TimelineContext, state: TimelineState, action
     frame = from + Math.ceil(((costs.spCost - spAt(state, from)) * FPS) / SP.perSecond);
   }
   if (frame > ctx.scenario.durationFrames) return { error: `${action.skill} can't start before the fight ends` };
+  // Energy and combo windows change only as hits land, so check them as they'll be at the start frame.
+  if (costs.energyCost > 0 || (costs.group === "combo" && hasComboTrigger(ctx, action.operator))) {
+    const then = advance(ctx, state, frame);
+    if (costs.energyCost > 0 && (then.energy[action.operator] ?? 0) < costs.energyCost - 1e-9) {
+      return { error: `${action.skill} needs ${costs.energyCost} ultimate energy, ${(then.energy[action.operator] ?? 0).toFixed(1)} at frame ${frame}` };
+    }
+    if (costs.group === "combo" && hasComboTrigger(ctx, action.operator)) {
+      const w = then.comboWindow[action.operator];
+      if (!w || w.until < frame) {
+        // Not open yet: wait for a hit already on its way to open it (a recorded rotation's combo follows its trigger).
+        const later = [...new Set(state.pending.map((h) => h.frame).filter((f) => f > frame))].sort((a, b) => a - b);
+        const opens = later.find((f) => {
+          const x = advance(ctx, state, f).comboWindow[action.operator];
+          return x !== undefined && x.until >= f;
+        });
+        if (opens === undefined || opens > ctx.scenario.durationFrames) return { error: `${action.skill}: its combo trigger hasn't happened (no open window at frame ${frame})` };
+        frame = opens;
+      }
+    }
+  }
   return { frame };
+}
+
+function hasComboTrigger(ctx: TimelineContext, operator: string): boolean {
+  const panel = ctx.panels.get(operator) as StatPanel;
+  return (ctx.data.kits.operators[operator]?.comboTriggers ?? []).some((t) => !t.when || whenAllows(t.when, panel));
 }
 
 /** Applies one rotation action at its earliest legal frame. Throws if it can't happen. */
@@ -397,15 +530,25 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
     const first = pending.reduce((a, b) => (b.frame < a.frame ? b : a));
     pending[pending.indexOf(first)] = { ...first, sp: spGain };
   }
+  // Returned SP is spent first; only the natural part gives the team ultimate energy.
+  const natural = Math.max(0, costs.spCost - s.spReturned);
+  let next: TimelineState = { ...s, spReturned: Math.max(0, s.spReturned - costs.spCost) };
+  if (natural > 0) for (const b of ctx.scenario.team) next = gainEnergy(ctx, next, b.operator, natural * ENERGY.perNaturalSp, start.frame);
+  if (costs.energyCost > 0) next = { ...next, energy: { ...next.energy, [action.operator]: Math.max(0, (next.energy[action.operator] ?? 0) - costs.energyCost) } };
+  if (skill.energyBlockSeconds) next = { ...next, energyBlockedUntil: { ...next.energyBlockedUntil, [action.operator]: start.frame + Math.round(skill.energyBlockSeconds * FPS) } };
+  if (costs.group === "combo" && next.comboWindow[action.operator]) {
+    const { [action.operator]: _used, ...rest } = next.comboWindow;
+    next = { ...next, comboWindow: rest };
+  }
   return {
-    ...s,
+    ...next,
     sp: s.sp - costs.spCost,
     spPausedUntil: costs.spCost > 0 ? start.frame + SP.pauseAfterSpendFrames : s.spPausedUntil,
     freeAt: { ...s.freeAt, [action.operator]: start.frame + costs.lockFrames },
     readyAt: costs.cooldownFrames > 0 ? { ...s.readyAt, [action.skill]: start.frame + costs.cooldownFrames } : s.readyAt,
     pending: [...s.pending, ...pending],
     stacks,
-    casts: [...s.casts, { frame: start.frame, operator: action.operator, skill: action.skill, spAfter: s.sp - costs.spCost }],
+    casts: [...s.casts, { frame: start.frame, operator: action.operator, skill: action.skill, spAfter: s.sp - costs.spCost, energyAfter: next.energy[action.operator] ?? 0 }],
   };
 }
 

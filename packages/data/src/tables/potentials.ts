@@ -10,11 +10,18 @@ export type RawEffect =
   | { kind: "attr"; modifier: RawAttrModifier }
   | { kind: "skillValue"; skillId: string; key: string; op: "add" | "multiply" | "set"; value: number }
   | { kind: "buff"; buffId: string; blackboard: Record<string, number> }
+  | { kind: "skillParam"; skillId: string; param: "cost" | "cooldown"; op: "add" | "multiply" | "set"; value: number }
   | { kind: "other"; modifyType: number };
 
-// modifyType: 1 attach skill, 2 attach skill (variant), 3 change a skill
-// value, 4 attribute, 5 attach buff. Only 3, 4 and 5 are read so far.
+// modifyType: 1 attach skill, 2 change a skill parameter (skillParamModifier),
+// 3 change a skill value, 4 attribute, 5 attach buff. 1 isn't read yet.
+const MODIFY_SKILL_PARAM = 2;
 const MODIFY_SKILL_VALUE = 3;
+
+// skillParamModifier.paramType: 1 cost (P4 ultimates ×0.85, matching the
+// reference simulators), 2 cooldown (Liino P3 combo −1, Gilberta P5 combo −2).
+// 4 (Arcane's talent, combo −6) is unknown and left as "other".
+const SKILL_PARAMS: Record<number, "cost" | "cooldown"> = { 1: "cost", 2: "cooldown" };
 const MODIFY_ATTRIBUTE = 4;
 const MODIFY_ATTACH_BUFF = 5;
 
@@ -34,6 +41,13 @@ function effect(raw: unknown, ctx: Ctx): RawEffect {
     if (!op) throw new DataError(ctx.source, c.path, `unknown skill value modifyType ${opType}`);
     if (get(m, "stringValue", c, str) !== "") throw new DataError(ctx.source, c.path, "string skill values aren't supported");
     return { kind: "skillValue", skillId: get(m, "skillId", c, str), key: get(m, "bbKey", c, str), op, value: get(m, "floatValue", c, num) };
+  }
+  if (type === MODIFY_SKILL_PARAM) {
+    const c = at(ctx, "skillParamModifier");
+    const m = obj(d["skillParamModifier"], c);
+    const param = SKILL_PARAMS[get(m, "paramType", c, int)];
+    const op = VALUE_OPS[get(m, "modifyType", c, int)];
+    if (param && op) return { kind: "skillParam", skillId: get(m, "skillId", c, str), param, op, value: get(m, "paramValue", c, num) };
   }
   if (type === MODIFY_ATTACH_BUFF) {
     const c = at(ctx, "attachBuff");

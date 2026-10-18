@@ -243,11 +243,16 @@ export function computeDamage(
   };
 }
 
+/** Whether a panel meets a `when` condition (one attribute at least another), e.g. Arcane's INT mode. */
+export function whenAllows(when: KitHit["when"], panel: StatPanel): boolean {
+  if (!when) return true;
+  const [a, b] = when.attrAtLeast;
+  return (panel.attrs[a]?.total ?? 0) >= (panel.attrs[b]?.total ?? 0);
+}
+
 /** Whether a kit hit exists for this build (KitHit.when). */
 export function hitAvailable(hit: KitHit, panel: StatPanel): boolean {
-  if (!hit.when) return true;
-  const [a, b] = hit.when.attrAtLeast;
-  return (panel.attrs[a]?.total ?? 0) >= (panel.attrs[b]?.total ?? 0);
+  return whenAllows(hit.when, panel);
 }
 
 /** A reaction's own multiplier parts: base by kind and level, operator level, Arts Intensity. */

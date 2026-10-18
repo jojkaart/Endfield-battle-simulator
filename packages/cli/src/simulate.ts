@@ -17,6 +17,7 @@ interface RawScenario {
   durationSeconds: number;
   crit?: CritMode;
   conditions?: Record<string, string[]>;
+  startEnergy?: Record<string, number | "full">;
   rotation: { operator: string; skill: string; at?: number; repeat?: number }[];
 }
 
@@ -38,6 +39,7 @@ export function readScenario(file: string): TimelineScenario {
     rotation,
     options: { crit: s.crit ?? "expected", ...(s.conditions ? { conditions: s.conditions } : {}) },
     ...(s.controlled ? { controlled: s.controlled } : {}),
+    ...(s.startEnergy ? { startEnergy: s.startEnergy } : {}),
   };
 }
 
@@ -55,9 +57,9 @@ export function formatSimulation(data: GameData, scenario: TimelineScenario, ver
     ),
     "",
     table(
-      ["time", "operator", "skill", "SP after"],
-      r.casts.map((c) => [`${(c.frame / FPS).toFixed(2)} s`, name(c.operator), c.skill.replace(/^chr_\d+_[a-z]+_/, ""), c.spAfter.toFixed(0)]),
-      ["r", "l", "l", "r"],
+      ["time", "operator", "skill", "SP after", "energy after"],
+      r.casts.map((c) => [`${(c.frame / FPS).toFixed(2)} s`, name(c.operator), c.skill.replace(/^chr_\d+_[a-z]+_/, ""), c.spAfter.toFixed(0), c.energyAfter.toFixed(1)]),
+      ["r", "l", "l", "r", "r"],
     ),
   ];
   const reactions = r.reactions.filter((e) => e.kind !== "combustionTick");

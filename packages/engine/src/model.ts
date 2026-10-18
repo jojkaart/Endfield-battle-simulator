@@ -4,7 +4,7 @@
 import type { AttrType, Element, SkillType } from "./attributes.ts";
 import type { HitKind, Zone } from "./effects.ts";
 import type { ArtsElement } from "./reactions.ts";
-import type { HitApplication } from "./status.ts";
+import type { HitApplication, ReactionStatus } from "./status.ts";
 
 /**
  * How a modifier combines with an attribute (the tables' `formulaItem` /
@@ -44,6 +44,7 @@ export type Effect =
   | { readonly kind: "attr"; readonly modifier: AttrModifier }
   | { readonly kind: "skillValue"; readonly skillId: string; readonly key: string; readonly op: SkillValueOp; readonly value: number }
   | { readonly kind: "buff"; readonly buffId: string; readonly blackboard: Readonly<Record<string, number>> }
+  | { readonly kind: "skillParam"; readonly skillId: string; readonly param: "cost" | "cooldown"; readonly op: SkillValueOp; readonly value: number }
   | { readonly kind: "other"; readonly modifyType: number };
 
 export interface SkillLevelData {
@@ -214,6 +215,8 @@ export interface KitHit {
   readonly when?: { readonly attrAtLeast: readonly [AttrType, AttrType] };
   /** Kit buffs (OperatorKit.buffs) this hit applies when it lands. */
   readonly buffs?: readonly BuffApplication[];
+  /** Ultimate energy the operator gains when the hit lands (SkillData ObtainCostAction, e.g. a combo's `usp`). */
+  readonly energy?: ValueSpec;
 }
 
 export interface BuffApplication {
@@ -250,6 +253,31 @@ export interface KitBuff {
   /** Seconds. */
   readonly duration: ValueSpec;
   readonly modifiers: readonly KitBuffModifier[];
+}
+
+/**
+ * What makes an operator's combo skill castable (CharGrowthTable "COMBO
+ * TRIGGER" descriptions). Events come from any team member's hits.
+ */
+export type ComboCondition =
+  /** A reaction status is applied to the enemy (forced ones included), optionally only these. */
+  | { readonly on: "reaction"; readonly statuses?: readonly ReactionStatus[] }
+  /** An infliction is consumed or absorbed. */
+  | { readonly on: "inflictionConsumed"; readonly elements?: readonly ArtsElement[] }
+  /** An infliction is applied (without a reaction), leaving at least `minStacks` (default 1). */
+  | { readonly on: "inflictionApplied"; readonly elements?: readonly ArtsElement[]; readonly minStacks?: number }
+  /** An Arts Burst happens. */
+  | { readonly on: "burst"; readonly elements?: readonly ArtsElement[] }
+  /** The operator's own stack reaches a count. */
+  | { readonly on: "stackAtLeast"; readonly stack: string; readonly atLeast: number };
+
+export interface ComboTrigger {
+  /** Any of these opens the combo window. */
+  readonly any: readonly ComboCondition[];
+  /** Only while the operator's own kit buff is active (e.g. Liino's Vocalist Stance). */
+  readonly whileBuff?: string;
+  /** Only for builds whose panel allows it (e.g. one of Arcane's modes). */
+  readonly when?: { readonly attrAtLeast: readonly [AttrType, AttrType] };
 }
 
 /** Something an operator's kit does when any teammate's hit of a kind lands, e.g. Laevatain's talent absorbing Heat on Final Strikes. */
@@ -291,6 +319,8 @@ export interface KitSkill {
   readonly label: string;
   /** How long the skill locks the operator (30 FPS frames), when known. */
   readonly durationFrames?: number;
+  /** The operator gains no ultimate energy for this long after the cast (SkillData RefrainObtainUsp, e.g. Laevatain's ultimate). */
+  readonly energyBlockSeconds?: number;
   readonly hits: readonly KitHit[];
 }
 
@@ -324,6 +354,8 @@ export interface OperatorKit {
   readonly stacks: readonly StackDef[];
   readonly teamTriggers: readonly TeamTrigger[];
   readonly buffs: readonly KitBuff[];
+  /** When absent, the timeline lets the combo skill be cast whenever it's off cooldown. */
+  readonly comboTriggers?: readonly ComboTrigger[];
   readonly skills: readonly KitSkill[];
   readonly conditions: readonly Condition[];
 }
