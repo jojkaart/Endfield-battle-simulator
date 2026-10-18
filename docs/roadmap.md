@@ -8,12 +8,12 @@ in-game values, all exact), the `efsim` damage calculator, ZMDLogs fixtures
 and checker, the timeline (v1) with arts reactions and stacks, and kits for
 the six favourites.
 
-1. **Kit abstractions** ([kit-abstractions.md](kit-abstractions.md)), before
-   adding operators (owner's call, 2026-10-18): one `Condition` and one
-   `ValueExpr` replacing `when` / `requires` / `scaleIf` / `ValueSpec`; one
-   `triggers` list replacing `comboTriggers` / `teamTriggers`; buff
-   lifecycle; `kit-draft` v2 and loader defaults compiled from SkillData /
-   BuffData (frames, energy, blocks, factors, event keys, buffs).
+1. **Kit batches** ([kit-process.md](kit-process.md)): analysis → shared
+   features per family → re-analysis, until nothing is missing; then kits.
+   Batch 1: Laevatain and the six favourites with their weapons and gear
+   sets (absorbs the remaining steps of
+   [kit-abstractions.md](kit-abstractions.md#4-order-of-work)). Batch 2: the
+   Endministrator and the 4- and 5-star operators nearly every player has.
 2. **Rotation search** (`efsim search`, beam search on the stepping API) is
    in; next: a resource-aware evaluator, team runs for the favourites, and a
    report of the best rotations found.

@@ -33,11 +33,17 @@ when a new test becomes ready.
 
 ## Operator kits
 
-Every time an operator kit is added (or substantially changed), repeat the
-pattern review in [docs/kit-abstractions.md](docs/kit-abstractions.md#repeating-the-review):
-run `efsim kit-census`, read the kit reports, and move anything the new kit
-hand-writes that the data has, or that another kit already does differently,
-into shared code before moving on.
+Kits (operators, their weapons and gear sets) are implemented in batches,
+in phases: analysis of every operator in the batch first (gap reports, no
+implementation), then shared features per family, then re-analysis, until
+nothing is missing; only then the kits. See
+[docs/kit-process.md](docs/kit-process.md). Before implementing anything for
+one operator only, check [docs/kit-unique.md](docs/kit-unique.md): if
+another operator has it too, it's shared.
+
+After a batch's kits are in, repeat the pattern review in
+[docs/kit-abstractions.md](docs/kit-abstractions.md#repeating-the-review)
+(`efsim kit-census`).
 
 ## Worktrees and sub-agents
 
