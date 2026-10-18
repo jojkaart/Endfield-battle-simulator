@@ -15,6 +15,7 @@ export const ZMDLOGS_ZONES: Readonly<Record<string, Zone>> = {
   vuln_taken: "damageTaken",
   prod_vuln_taken: "multiplicative",
   res: "ignoreResistance",
+  arts_strength: "artsIntensity",
 };
 
 export interface LogEffect {
@@ -38,6 +39,12 @@ export interface LogHit {
   readonly effects: readonly LogEffect[];
   /** Buffs that start or end exactly at this hit; the log can't say whether they applied. */
   readonly boundaryEffects: readonly LogEffect[];
+  /**
+   * Active buffs whose effect the log can't quantify (it lists their zones
+   * without values, e.g. Corrosion's ramping resistance shred). Hits under
+   * these only match once the engine models the buff.
+   */
+  readonly unquantified: readonly { readonly buff: string; readonly since: number; readonly source: string }[];
 }
 
 export interface LogFixture {
@@ -175,7 +182,8 @@ export function zmdlogsToFixture(battleId: string, detail: unknown, exported: un
     if (typeof e["value"] !== "number" || e["value"] <= 0) continue;
     const t = n(e["tsMsFromStart"], "tsMsFromStart");
     const operator = s(e["sourceCharacterKey"], "sourceCharacterKey");
-    const target = e["targetEnemyKey"] ?? e["targetCharacterKey"];
+    // Some logs don't record the target; in a single-target fight it's the boss.
+    const target = e["targetEnemyKey"] ?? boss;
     const relevant = buffs.filter((b) => b["targetCharacterKey"] === operator || (b["targetEnemyKey"] !== null && b["targetEnemyKey"] === target));
     const start = (b: Json) => n(b["actualStartMsFromStart"], "actualStartMsFromStart");
     const end = (b: Json) => n(b["actualEndMsFromStart"], "actualEndMsFromStart");
@@ -194,6 +202,9 @@ export function zmdlogsToFixture(battleId: string, detail: unknown, exported: un
       element: element(e["damageElement"]),
       effects: inside.flatMap(effectsOf),
       boundaryEffects: boundary.flatMap(effectsOf),
+      unquantified: [...inside, ...boundary]
+        .filter((b) => Array.isArray(b["dynamicEffects"]) && (b["dynamicEffects"] as unknown[]).length > 0)
+        .map((b) => ({ buff: s(b["eventKey"], "eventKey").replace(/::.*$/, ""), since: start(b), source: s(b["sourceCharacterKey"], "sourceCharacterKey") })),
     });
   }
 

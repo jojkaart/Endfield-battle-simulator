@@ -96,7 +96,7 @@
               "additionalProperties": false,
               "properties": {
                 "kind": { "const": "zone" },
-                "zone": { "enum": ["atk", "damageBonus", "amp", "susceptibility", "damageTaken", "multiplicative", "ignoreResistance", "critRate", "critDamage"] },
+                "zone": { "enum": ["atk", "damageBonus", "amp", "susceptibility", "damageTaken", "multiplicative", "ignoreResistance", "critRate", "critDamage", "artsIntensity"] },
                 "element": { "$ref": "#/$defs/element" },
                 "skillType": { "$ref": "#/$defs/skillType" }
               }

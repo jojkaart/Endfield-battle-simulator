@@ -1,0 +1,6999 @@
+{
+ "$schema": "../schemas/log-fixture.schema.json",
+ "id": "zmdlogs-0eef2474a26f",
+ "description": "ZMDLogs battle btl_upload_0eef2474a26f vs eny_0102_hstiger2_hdg021: chr_0034_typhoea, chr_0032_lizhiyan, chr_0036_jsspsi, chr_0035_liino; per-hit damage with the logged buff effects.",
+ "provenance": {
+  "source": "ZMDLogs (zmdlogs.com) battle log, captured in game by its client",
+  "url": "https://zmdlogs.com/battles/btl_upload_0eef2474a26f",
+  "battleId": "btl_upload_0eef2474a26f",
+  "parserVersion": "raw-log-parser-v59",
+  "inGame": true,
+  "measured": "2026-10-18T18:57:59+08:00",
+  "verifiedAgainst": {
+   "rmxlinux": "8b955ea78c6f04b6e5164b75f63f46b503c5f6f2",
+   "555me": "2737bc099e4848517eed01a19614ef88932c18a0"
+  },
+  "notes": [
+   "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
+   "Enemy level 90 is assumed, not logged.",
+   "Challenge stage: total damage 1,857,259 = Lv90 HP 1,238,171 × 1.5 (stage HP scaling, inferred). DEF is 100 at every level of this enemy, so hit damage doesn't depend on the level."
+  ]
+ },
+ "enemy": {
+  "id": "eny_0102_hstiger2_hdg021",
+  "level": 90
+ },
+ "team": [
+  {
+   "operator": "chr_0034_typhoea",
+   "level": 90,
+   "promotion": 4,
+   "potential": 5,
+   "skillLevels": {
+    "basic": 12,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_funnel_0019",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     9
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_spellburst_hand_01",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_spellburst_body_01",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_spellburst_edc_01",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_heal01_edc_03",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0032_lizhiyan",
+   "level": 90,
+   "promotion": 4,
+   "potential": 5,
+   "skillLevels": {
+    "basic": 12,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_funnel_0016",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     9
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t3_suit_usp01_hand_01",
+     "artifice": [
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_usp02_body_03",
+     "artifice": [
+      3,
+      0,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t3_suit_usp01_edc_02",
+     "artifice": [
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t3_suit_usp01_edc_02",
+     "artifice": [
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0036_jsspsi",
+   "level": 90,
+   "promotion": 4,
+   "potential": 5,
+   "skillLevels": {
+    "basic": 9,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_claym_0018",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     9
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_atk02_hand_03",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atk02_body_05",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atk02_edc_06",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_heal01_edc_03",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0035_liino",
+   "level": 90,
+   "promotion": 4,
+   "potential": 0,
+   "skillLevels": {
+    "basic": 9,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_lance_0014",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     9
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t3_suit_usp01_hand_01",
+     "artifice": [
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t3_suit_usp01_body_02",
+     "artifice": [
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t3_suit_usp01_edc_03",
+     "artifice": [
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_heal01_edc_03",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    }
+   ]
+  }
+ ],
+ "hits": [
+  {
+   "t": 1644,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_attack1_01_projhit",
+   "value": 1269,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 1776,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_attack1_01_projhit",
+   "value": 1269,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 1776,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_02",
+   "value": 969,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 1776,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_02",
+   "value": 969,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 1776,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_02",
+   "value": 969,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 1885,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_02",
+   "value": 969,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 1885,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_02",
+   "value": 969,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 1885,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit",
+   "value": 969,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 2476,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_normal_skill_abilityrange_1",
+   "value": 5497,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 2719,
+   "operator": "chr_0032_lizhiyan",
+   "event": "buff_chr_0032_lizhiyan_combo_skill_seal_total",
+   "value": 4010,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 2719,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_attack1_01_projhit",
+   "value": 4958,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 2943,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_attack3_01_projhit",
+   "value": 3807,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 3262,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_normal_skill_attack1_projhit",
+   "value": 2464,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 3393,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_normal_skill_attack2_projhit",
+   "value": 2464,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 3620,
+   "operator": "chr_0032_lizhiyan",
+   "event": "buff_common_natural_triggered",
+   "value": 18904,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 3620,
+   "operator": "chr_0032_lizhiyan",
+   "event": "chr_0032_lizhiyan_normal_skill_abilityrange2",
+   "value": 18470,
+   "crit": true,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 3729,
+   "operator": "chr_0032_lizhiyan",
+   "event": "buff_common_cryst_cryst_triggered",
+   "value": 15052,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 4073,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_floating_attack1_01_projhit",
+   "value": 14692,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 4187,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_hit",
+   "value": 797,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 4187,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_hit",
+   "value": 797,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 4187,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_hit",
+   "value": 797,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 4187,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_hit",
+   "value": 797,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 4187,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_hit",
+   "value": 797,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 4187,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_hit",
+   "value": 797,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 4296,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_attack1",
+   "value": 1896,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 4426,
+   "operator": "chr_0034_typhoea",
+   "event": "buff_common_natural_natural_triggered_typhoea",
+   "value": 114587,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 4646,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_attack1",
+   "value": 1896,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 4756,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_floating_attack1_01_projhit",
+   "value": 15937,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 5087,
+   "operator": "chr_0034_typhoea",
+   "event": "buff_common_natural_natural_triggered_typhoea",
+   "value": 129346,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 5087,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_attack2",
+   "value": 6535,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 5528,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_floating_attack1_01_projhit",
+   "value": 17916,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 5659,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_attack3",
+   "value": 5972,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 5899,
+   "operator": "chr_0034_typhoea",
+   "event": "buff_common_natural_natural_triggered_typhoea",
+   "value": 153208,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 6009,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_attack4",
+   "value": 800,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 6119,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_floating_attack1_01_projhit",
+   "value": 19277,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 6119,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_attack4",
+   "value": 800,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 7151,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_attack4",
+   "value": 800,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.17
+    }
+   ],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 7570,
+   "operator": "chr_0034_typhoea",
+   "event": "buff_common_natural_natural_triggered_typhoea",
+   "value": 162035,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 7570,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_combo_skill",
+   "value": 5534,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 7810,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 15939,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.17
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 7810,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 15939,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.17
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 7937,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_01_projhit",
+   "value": 4667,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 7937,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_persistentdamage",
+   "value": 1361,
+   "crit": true,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 7937,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 24237,
+   "crit": true,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.17
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 8026,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 16158,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.17
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 8158,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_02_projhit",
+   "value": 4732,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 8158,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 16158,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.17
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 8273,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_02_projhit",
+   "value": 4732,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 8273,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_02_projhit",
+   "value": 4732,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 8273,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_persistentdamage",
+   "value": 920,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 8273,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 16158,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.17
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 8739,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_02_projhit",
+   "value": 4732,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 8739,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 16158,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.17
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 8741,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_02_projhit",
+   "value": 4478,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 8873,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_02_projhit",
+   "value": 4478,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 8873,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 15375,
+   "crit": null,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.17
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 8993,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_persistentdamage",
+   "value": 871,
+   "crit": null,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 8993,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_floating_attack1_01_projhit",
+   "value": 19560,
+   "crit": null,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 8993,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 15375,
+   "crit": null,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.17
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 8993,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 15375,
+   "crit": null,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.17
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 9331,
+   "operator": "chr_0034_typhoea",
+   "event": "buff_common_natural_natural_triggered_typhoea",
+   "value": 173881,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 9331,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_persistentdamage",
+   "value": 883,
+   "crit": null,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 9331,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_combo_skill_abilityrange",
+   "value": 379860,
+   "crit": null,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.17
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 9695,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_persistentdamage",
+   "value": 883,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 9695,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_floating_attack1_01_projhit",
+   "value": 19826,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 10030,
+   "operator": "chr_0034_typhoea",
+   "event": "buff_common_natural_natural_triggered_typhoea",
+   "value": 17238,
+   "uncapped": 173880,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 10030,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_persistentdamage",
+   "value": 883,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 98
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.112
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  },
+  {
+   "t": 10030,
+   "operator": "chr_0036_jsspsi",
+   "event": "chr_0036_jsspsi_normal_skill_inkmove_2",
+   "value": 301679,
+   "crit": false,
+   "element": null,
+   "effects": [
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_wpn_claym_0018_enemyvul",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.21
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_dmg",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.164459
+    },
+    {
+     "buff": "buff_wpn_funnel_0016_will_atk",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.168
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.098
+    },
+    {
+     "buff": "buff_chr_0036_jsspsi_combo_potential2",
+     "zone": "atk",
+     "element": null,
+     "value": 0.17
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [
+    {
+     "buff": "buff_common_natural_cryst_triggered",
+     "since": 3620,
+     "source": "chr_0032_lizhiyan"
+    }
+   ]
+  }
+ ]
+}

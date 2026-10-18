@@ -10,9 +10,11 @@ import type { Zone } from "./effects.ts";
  *   ((base + Σ add) × (1 + Σ percent) + Σ flat) × Π multiply.
  * add and percent are verified against an in-game stat panel; flat and
  * multiply follow the data patterns (flat ATK +12, cooldown ×0.85) and
- * End-DPScope's research notes, not yet an in-game check.
+ * End-DPScope's research notes, not yet an in-game check. Slot 0 appears
+ * once (sk_wpn_funnel_0011's Nature DMG) and is treated as add; to be
+ * confirmed by that weapon's logged hits.
  */
-export const Slot = { Add: 5, Percent: 6, Flat: 7, Multiply: 8 } as const;
+export const Slot = { Add: 5, Percent: 6, Flat: 7, Multiply: 8, AddUnverified: 0 } as const;
 export type SlotId = number;
 
 /** Which attribute a modifier targets: as written, or the operator's main / secondary attribute. */

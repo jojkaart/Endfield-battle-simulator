@@ -1,12 +1,17 @@
 #!/usr/bin/env node
 // efsim: Endfield battle simulator command line.
 
+import { readdirSync } from "node:fs";
 import { parseArgs } from "node:util";
-import { basename } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { loadGameData } from "@efsim/data";
 import type { CritMode } from "@efsim/engine";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "./commands.ts";
+import { kitDraft } from "./kitdraft.ts";
 import { checkLog, formatLogCheck } from "./logcheck.ts";
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 import { importBattle, readLogFixture } from "./logs.ts";
 
 const USAGE = `Usage:
@@ -16,7 +21,9 @@ const USAGE = `Usage:
   efsim compare <a.json> <b.json> [opts]  Two builds of one operator side by side
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
                 [--enemy-level n]         (default: inferred from total damage on a clear)
+                [--note text]             Extra provenance note (repeatable)
   efsim zmdlogs check <fixture.json>      Predict every logged hit and compare
+  efsim kit-draft <operator>              Draft a kit from SkillData (to verify against logs)
 
 Options for calc and compare:
   --enemy <id>        Target (default eny_0051_rodin, Rhodagn)
@@ -39,6 +46,7 @@ async function main(argv: string[]): Promise<number> {
       condition: { type: "string", multiple: true, default: [] },
       weapon: { type: "string" },
       "enemy-level": { type: "string" },
+      note: { type: "string", multiple: true, default: [] },
       verbose: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
     },
@@ -85,9 +93,19 @@ async function main(argv: string[]): Promise<number> {
         const fx = readLogFixture(arg);
         text = formatLogCheck(data, fx, checkLog(data, fx));
       } else {
-        const file = await importBattle(data, arg, values["enemy-level"] === undefined ? undefined : Number(values["enemy-level"]));
+        const file = await importBattle(data, arg, values["enemy-level"] === undefined ? undefined : Number(values["enemy-level"]), values.note);
         text = `wrote ${file}`;
       }
+      break;
+    }
+    case "kit-draft": {
+      need(1);
+      const op = args[0] as string;
+      const logged = new Map<string, number>();
+      for (const f of readdirSync(join(ROOT, "fixtures")).filter((x) => x.startsWith("zmdlogs-"))) {
+        for (const h of readLogFixture(join(ROOT, "fixtures", f)).hits) if (h.operator === op) logged.set(h.event, (logged.get(h.event) ?? 0) + 1);
+      }
+      text = kitDraft(data, op, logged);
       break;
     }
     case "compare":

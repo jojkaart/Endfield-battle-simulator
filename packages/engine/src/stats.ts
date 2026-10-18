@@ -69,7 +69,7 @@ export interface StatOptions {
 
 export const DEFAULT_STAT_OPTIONS: StatOptions = { floorAttributes: true };
 
-const SLOTS: readonly number[] = [Slot.Add, Slot.Percent, Slot.Flat, Slot.Multiply];
+const SLOTS: readonly number[] = [Slot.Add, Slot.Percent, Slot.Flat, Slot.Multiply, Slot.AddUnverified];
 
 interface Accumulator {
   base: number;
@@ -212,7 +212,7 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
     const a = line(attr);
     const sum = (slot: number) => a.contributions.filter((c) => c.slot === slot).reduce((s, c) => s + c.value, 0);
     const multiply = a.contributions.filter((c) => c.slot === Slot.Multiply).reduce((p, c) => p * c.value, 1);
-    const add = sum(Slot.Add);
+    const add = sum(Slot.Add) + sum(Slot.AddUnverified);
     const percent = sum(Slot.Percent);
     const flat = sum(Slot.Flat);
     attrs[attr] = {

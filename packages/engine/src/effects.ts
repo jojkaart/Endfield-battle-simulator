@@ -16,7 +16,9 @@ import { Attr, ELEMENTS, SKILL_TYPES, type AttrType, type Element, type SkillTyp
  * - damageTaken (ZMDLogs `vuln_taken`): 1 + Σ, separate;
  * - multiplicative (ZMDLogs `prod_vuln_taken`): each × (1 + v);
  * - ignoreResistance (ZMDLogs `res`): resistance points added back;
- * - critRate, critDamage: the crit zone's inputs.
+ * - critRate, critDamage: the crit zone's inputs;
+ * - artsIntensity (ZMDLogs `arts_strength`): Arts Intensity points; acts on
+ *   reactions and statuses only, not on direct hits.
  */
 export const ZONES = [
   "atk",
@@ -28,6 +30,7 @@ export const ZONES = [
   "ignoreResistance",
   "critRate",
   "critDamage",
+  "artsIntensity",
 ] as const;
 export type Zone = (typeof ZONES)[number];
 
@@ -56,6 +59,7 @@ type Mapping = Omit<Modifier, "value" | "source">;
 const ATTR_ZONES = new Map<AttrType, Mapping>([
   [Attr.CriticalRate, { zone: "critRate" }],
   [Attr.CriticalDamageIncrease, { zone: "critDamage" }],
+  [Attr.PhysicalAndSpellInflictionEnhance, { zone: "artsIntensity" }],
   [Attr.NormalAttackDamageIncrease, { zone: "damageBonus", skillType: "basic" }],
   [Attr.NormalSkillDamageIncrease, { zone: "damageBonus", skillType: "battle" }],
   [Attr.ComboSkillDamageIncrease, { zone: "damageBonus", skillType: "combo" }],

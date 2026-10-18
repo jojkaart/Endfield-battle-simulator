@@ -7,7 +7,9 @@ import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type L
 export type HitVerdict =
   | { readonly kind: "match"; readonly hit: LogHit; readonly predicted: number; readonly usedBoundary: boolean; readonly crit: boolean }
   | { readonly kind: "mismatch"; readonly hit: LogHit; readonly predicted: readonly number[]; readonly ratio: number }
-  | { readonly kind: "uncovered"; readonly hit: LogHit };
+  | { readonly kind: "uncovered"; readonly hit: LogHit }
+  /** A covered hit under an effect the log can't quantify and the engine doesn't model yet. */
+  | { readonly kind: "unquantified"; readonly hit: LogHit; readonly predicted: number };
 
 const skillTypeCache = new Map<string, SkillType | null>();
 
@@ -75,6 +77,7 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
         predicted.push(p);
       }
     }
+    if (hit.unquantified.length > 0) return { kind: "unquantified", hit, predicted: predicted[0] ?? 0 };
     return { kind: "mismatch", hit, predicted, ratio: actual / (predicted[0] ?? 1) };
   });
 }
@@ -89,7 +92,8 @@ export function formatLogCheck(data: GameData, fx: LogFixture, verdicts: readonl
     const covered = mine.filter((v) => v.kind !== "uncovered").reduce((s, v) => s + v.hit.value, 0);
     out.push(
       "",
-      `${name} (${build.operator}): ${mine.length} hits, ${count("match")} match, ${count("mismatch")} mismatch, ${count("uncovered")} not covered by a kit` +
+      `${name} (${build.operator}): ${mine.length} hits, ${count("match")} match, ${count("mismatch")} mismatch, ` +
+        `${count("unquantified")} under unmodelled effects, ${count("uncovered")} not covered by a kit` +
         ` (${damage ? Math.round((covered / damage) * 100) : 0}% of its damage covered)`,
     );
     for (const v of mine.filter((x) => x.kind === "mismatch")) {
@@ -101,4 +105,45 @@ export function formatLogCheck(data: GameData, fx: LogFixture, verdicts: readonl
     for (const [event, k] of [...uncovered].sort()) out.push(`  not covered: ${event} ×${k}`);
   }
   return out.join("\n");
+}
+
+export interface ImpliedScale {
+  readonly event: string;
+  readonly unquantified: readonly string[];
+  readonly t: number;
+  readonly crit: boolean | null;
+  readonly value: number;
+  /** The multiplier this hit must have had, assuming each skill type's damage bonus. */
+  readonly bySkillType: Readonly<Record<SkillType, number>>;
+}
+
+/**
+ * For writing kits: the skill multiplier each logged hit of an operator
+ * implies, given the build and the logged buffs (logged damage ÷ damage at
+ * multiplier 1). Matching these to SkillPatchTable values tells which key a
+ * projectile or ability entity uses.
+ */
+export function impliedScales(data: GameData, fx: LogFixture, operator: string): ImpliedScale[] {
+  const build = fx.team.find((b) => b.operator === operator);
+  if (!build) throw new Error(`${operator} isn't in ${fx.id}`);
+  const panel = computeStats(data, build);
+  const anySkill = Object.keys(data.operators[operator]?.skillGroups ?? {})[0];
+  if (!anySkill) throw new Error(`${operator} has no skills`);
+  const skill: KitSkill = { skillId: anySkill, label: "", hits: [] };
+  return fx.hits
+    .filter((h) => h.operator === operator && h.element !== null)
+    .map((h) => {
+      const bySkillType = {} as Record<SkillType, number>;
+      for (const type of ["basic", "battle", "combo", "ultimate"] as const) {
+        const hit: KitHit = { id: "x", label: "", scale: [], count: 1, events: [], damageType: type, element: h.element ?? "physical" };
+        const unit = computeHit(data, build, panel, { enemy: fx.enemy.id, level: fx.enemy.level }, skill, hit, {
+          crit: h.crit ? "always" : "never",
+          staggered: false,
+          conditions: [],
+          modifiers: logModifiers(h.effects),
+        }).exact;
+        bySkillType[type] = (h.uncapped ?? h.value) / unit;
+      }
+      return { event: h.event, unquantified: h.unquantified.map((u) => u.buff), t: h.t, crit: h.crit, value: h.uncapped ?? h.value, bySkillType };
+    });
 }

@@ -36,7 +36,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["t", "operator", "event", "value", "crit", "element", "effects", "boundaryEffects"],
+        "required": ["t", "operator", "event", "value", "crit", "element", "effects", "boundaryEffects", "unquantified"],
         "additionalProperties": false,
         "properties": {
           "t": { "type": "number", "description": "Milliseconds from the battle timer's start." },
@@ -47,7 +47,16 @@
           "crit": { "type": ["boolean", "null"] },
           "element": { "type": ["string", "null"] },
           "effects": { "$ref": "#/$defs/effects" },
-          "boundaryEffects": { "$ref": "#/$defs/effects" }
+          "boundaryEffects": { "$ref": "#/$defs/effects" },
+          "unquantified": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["buff", "since", "source"],
+              "additionalProperties": false,
+              "properties": { "buff": { "type": "string" }, "since": { "type": "number" }, "source": { "type": "string" } }
+            }
+          }
         }
       }
     }
@@ -61,7 +70,7 @@
         "additionalProperties": false,
         "properties": {
           "buff": { "type": "string" },
-          "zone": { "enum": ["atk", "damageBonus", "amp", "susceptibility", "damageTaken", "multiplicative", "ignoreResistance"] },
+          "zone": { "enum": ["atk", "damageBonus", "amp", "susceptibility", "damageTaken", "multiplicative", "ignoreResistance", "artsIntensity"] },
           "element": { "type": ["string", "null"] },
           "value": { "type": "number" }
         }

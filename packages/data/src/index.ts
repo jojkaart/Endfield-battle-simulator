@@ -17,3 +17,4 @@ export * from "./tables/attributeMeta.ts";
 export * from "./kits.ts";
 export * from "./buffData.ts";
 export * from "./zmdlogs.ts";
+export * from "./skillGraph.ts";

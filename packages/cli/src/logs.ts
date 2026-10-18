@@ -36,7 +36,7 @@ function inferEnemyLevel(data: GameData, detail: unknown): number {
   return (matches[0] as { level: number }).level;
 }
 
-export async function importBattle(data: GameData, battleId: string, enemyLevel?: number): Promise<string> {
+export async function importBattle(data: GameData, battleId: string, enemyLevel?: number, notes: readonly string[] = []): Promise<string> {
   const { detail, exported } = await fetchBattle(battleId);
   const level = enemyLevel ?? inferEnemyLevel(data, detail);
   const fx = zmdlogsToFixture(
@@ -51,7 +51,11 @@ export async function importBattle(data: GameData, battleId: string, enemyLevel?
   );
   const withCommits: LogFixture = {
     ...fx,
-    provenance: { ...fx.provenance, verifiedAgainst: Object.fromEntries(SOURCES.map((s) => [s, sourceCommit(s)])) },
+    provenance: {
+      ...fx.provenance,
+      verifiedAgainst: Object.fromEntries(SOURCES.map((s) => [s, sourceCommit(s)])),
+      notes: [...fx.provenance.notes, ...notes],
+    },
   };
   const { ajv, validate } = validator();
   if (!validate(withCommits)) throw new Error(`generated fixture is invalid: ${ajv.errorsText(validate.errors)}`);

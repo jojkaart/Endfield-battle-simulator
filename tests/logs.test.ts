@@ -23,6 +23,11 @@ describe.each(files)("%s", (file) => {
       .filter((v) => v.kind === "mismatch")
       .map((v) => `${v.hit.operator} t=${v.hit.t} ${v.hit.event} logged ${v.hit.uncapped ?? v.hit.value}${v.kind === "mismatch" ? ` predicted ${v.predicted.join("/")}` : ""}`);
     expect(mismatches).toEqual([]);
-    expect(verdicts.some((v) => v.kind === "match")).toBe(true);
+    // Operators with a kit must have at least one hit verified in each fixture they're in.
+    for (const b of fx.team) {
+      if (!data.kits.operators[b.operator]) continue;
+      const mine = verdicts.filter((v) => v.hit.operator === b.operator);
+      if (mine.some((v) => v.kind !== "uncovered" && v.kind !== "unquantified")) expect(mine.some((v) => v.kind === "match")).toBe(true);
+    }
   });
 });
