@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, buffModifiers, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type GameData, type KitBuff, type KitTrigger, type OperatorKit, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { advance, apply, buffModifiers, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type GameData, type KitBuff, type KitHit, type KitTrigger, type Modifier, type OperatorKit, type RotationAction, type TimelineScenario } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -290,9 +290,9 @@ describe("timeline: kit triggers", () => {
     kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, buffs: [...kit.buffs, mark], triggers: [...kit.triggers, ...triggers] } } },
   });
   const skill = (s: string) => ({ operator: op, skill: L + s });
-  const run = (d: GameData, rotation: RotationAction[], until = 30 * 30) => {
+  const run = (d: GameData, rotation: RotationAction[], until = 30 * 30, modifiers: Modifier[] = []) => {
     const { startEnergy: _full, ...rest } = scenario(rotation);
-    const ctx = createContext(d, rest);
+    const ctx = createContext(d, { ...rest, options: { ...rest.options, modifiers } });
     let s = init(ctx);
     for (const a of rotation) s = apply(ctx, s, a);
     return { ctx, s: advance(ctx, s, until) };
@@ -341,6 +341,22 @@ describe("timeline: kit triggers", () => {
       { id: "loop", on: { event: "buffApplied", buff: "test_mark" }, by: "self", do: [{ kind: "buff", buff: "test_mark" }] },
     ]);
     expect(() => run(d, [skill("normal_skill")])).toThrow(EngineError);
+  });
+
+  it("a trigger lands hits as its owner, at frames from the event, with values from its skill", () => {
+    const echo: KitHit = { id: "echo", label: "echo", scale: ["atk_scale"], count: 2, frames: [10, 40], events: [], damageType: "none", element: "fire", applies: [{ kind: "infliction", element: "fire" }] };
+    const d = withTriggers([{ id: "echo", on: { event: "cast", kinds: ["battle"] }, by: "self", skill: L + "normal_skill", do: [{ kind: "hits", hits: [echo] }] }]);
+    const { s } = run(d, [skill("normal_skill")], 30 * 30, [{ zone: "damageBonus", value: 0.5, skillType: "battle", source: "test battle bonus" }]);
+    const cast = s.casts[0]?.frame ?? NaN;
+    const echoes = s.hits.filter((h) => h.hitId === "echo");
+    expect(echoes.map((h) => h.frame)).toEqual([cast + 10, cast + 40]);
+    const explosion = s.hits.find((h) => h.hitId === "explosion");
+    // Same scale as the explosion, but no battle-skill DMG bonus: a hit of no skill type.
+    expect(echoes[0]?.scaleParts).toEqual(explosion?.scaleParts);
+    expect(explosion?.modifiers.some((m) => m.source === "test battle bonus")).toBe(true);
+    expect(echoes[0]?.modifiers.some((m) => m.source === "test battle bonus")).toBe(false);
+    // Its applications are events like any hit's: the second Heat infliction bursts.
+    expect(s.reactions.some((e) => e.kind === "burst" && e.frame === cast + 40)).toBe(true);
   });
 
   it("the loader migrated combo windows and Laevatain's absorption into triggers", () => {

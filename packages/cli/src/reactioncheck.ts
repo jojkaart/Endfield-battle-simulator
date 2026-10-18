@@ -3,7 +3,7 @@
 // the bursts and reactions it predicts with the ones the log records. Logs
 // don't record inflictions, so this is how a kit's `applies` gets verified.
 
-import { applyToEnemy, computeStats, expireStatus, FPS, hitAvailable, hitEffects, NO_STATUS, statusEventKey, type GameData, type KitHit, type StatusEvent } from "@efsim/engine";
+import { applyToEnemy, computeStats, expireStatus, FPS, hitAvailable, hitEffects, kitHitEntries, NO_STATUS, statusEventKey, type GameData, type KitHit, type StatusEvent } from "@efsim/engine";
 import type { LogFixture } from "@efsim/data";
 
 /**
@@ -40,9 +40,7 @@ function kitHit(data: GameData, fixture: LogFixture, operator: string, event: st
   const build = fixture.team.find((b) => b.operator === operator);
   if (!build) return null;
   const panel = computeStats(data, build);
-  for (const s of data.kits.operators[operator]?.skills ?? []) {
-    for (const h of s.hits) if (h.events.includes(event) && hitAvailable(data, build, panel, s.skillId, h, { team: fixture.team })) return h;
-  }
+  for (const e of kitHitEntries(data.kits.operators[operator])) if (e.hit.events.includes(event) && hitAvailable(data, build, panel, e.skillId, e.hit, { team: fixture.team })) return e.hit;
   return null;
 }
 

@@ -62,7 +62,7 @@ export type TriggerAction =
   | { readonly kind: "endBuff"; readonly buff: string }
   /** Change the remaining cooldown of an operator's skills of a kind by `seconds` (negative cuts it). */
   | { readonly kind: "cooldown"; readonly who: "self" | "eventOperator" | { readonly slot: number }; readonly skills: SkillType; readonly seconds: ValueExpr }
-  /** Land hits, at frames counted from the trigger (scale keys from the trigger's `skill`). */
+  /** Land hits, as the owner, at frames counted from the event (values from the trigger's `skill`); each names its damage type. */
   | { readonly kind: "hits"; readonly hits: readonly KitHit[] };
 
 export interface KitTrigger {
@@ -80,6 +80,11 @@ export interface KitTrigger {
   /** The skill a plain value key names (a skill of the owner, or a talent / weapon / gear-set source). */
   readonly skill?: string;
   readonly do: readonly TriggerAction[];
+}
+
+/** Where a trigger's plain value keys (and its hits' scale) come from: its `skill`, else a name of its own. */
+export function triggerSkillId(owner: string, t: Pick<KitTrigger, "id" | "skill">): string {
+  return t.skill ?? `${owner}.${t.id}`;
 }
 
 /** Whether an event is one a trigger listens to (not who caused it, nor its `if`). */

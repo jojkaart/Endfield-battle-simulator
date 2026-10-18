@@ -307,7 +307,8 @@ export function computeHit(
   build: Build,
   panel: StatPanel,
   target: DamageTarget,
-  skill: KitSkill,
+  /** Where the hit's plain value keys come from: its skill, or a triggered hit's source. */
+  skill: Pick<KitSkill, "skillId">,
   hit: KitHit,
   options: DamageOptions = DEFAULT_DAMAGE_OPTIONS,
 ): HitDamage {
@@ -328,7 +329,7 @@ export function computeHit(
     label: hit.label,
     count: hit.count,
     element: hit.reaction?.element ?? hit.element,
-    skillType: hit.reaction ? null : hit.damageType,
+    skillType: hit.reaction || hit.damageType === "none" ? null : hit.damageType,
     scaleParts,
     canCrit: true,
     kind: hit.reaction?.kind ?? hit.damageType,

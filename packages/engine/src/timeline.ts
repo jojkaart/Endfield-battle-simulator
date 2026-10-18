@@ -29,7 +29,7 @@ import {
 import { zoneSum, type Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
 import type { GameData, KitHit, KitSkill, StackGain } from "./model.ts";
-import { causeMatches, eventMatches, type BattleEvent, type KitTrigger } from "./events.ts";
+import { causeMatches, eventMatches, triggerSkillId, type BattleEvent, type KitTrigger } from "./events.ts";
 import { evaluate, test, type EvalContext } from "./expr.ts";
 import { applyBuff, buffModifiers, resolveValue, withBuff, type ActiveBuff } from "./buffs.ts";
 import { computeStats, skillLevel, skillParam, type StatPanel } from "./stats.ts";
@@ -103,6 +103,8 @@ interface PendingHit {
   readonly hitId: string;
   /** SP this hit returns when it lands (the skill's `atb`, on its first hit). */
   readonly sp: number;
+  /** A triggered hit: the owner's trigger and the index of its `hits` action (`skillId` is then the trigger's value source). */
+  readonly trigger?: { readonly id: string; readonly action: number };
 }
 
 export interface Cast {
@@ -370,7 +372,7 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
         const ts = st.triggerState[key];
         if (ts && ((ts.readyAt ?? 0) > e.frame || (t.maxCount !== undefined && ts.count >= t.maxCount))) continue;
         const panel = ctx.panels.get(owner) as StatPanel;
-        const ec = evalContext(ctx.data, b, panel, t.skill ?? "", situationAt(ctx, owner, st.enemy, st.stacks, st.buffs, e.frame));
+        const ec = evalContext(ctx.data, b, panel, triggerSkillId(owner, t), situationAt(ctx, owner, st.enemy, st.stacks, st.buffs, e.frame));
         if (t.if && !decide(t.if, ec)) continue;
         const cooldown = t.cooldown === undefined ? 0 : Math.round(evaluate(t.cooldown, ec) * FPS);
         st = { ...st, triggerState: { ...st.triggerState, [key]: { readyAt: e.frame + cooldown, count: (ts?.count ?? 0) + 1 } } };
@@ -391,7 +393,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
   const build = ctx.builds.get(owner) as Build;
   const panel = ctx.panels.get(owner) as StatPanel;
   let consumed = 0;
-  const ec = () => evalContext(ctx.data, build, panel, t.skill ?? "", situationAt(ctx, owner, st.enemy, st.stacks, st.buffs, frame, consumed));
+  const ec = () => evalContext(ctx.data, build, panel, triggerSkillId(owner, t), situationAt(ctx, owner, st.enemy, st.stacks, st.buffs, frame, consumed));
   for (const a of t.do) {
     switch (a.kind) {
       case "openCombo": {
@@ -404,7 +406,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
       case "apply": {
         const ai = artsIntensity(ctx, owner);
         for (const app of a.applies) {
-          const r = applyToEnemy(expireStatus(st.enemy, frame), app, frame, owner, ai, (key) => skillValue(ctx.data, panel, build, t.skill ?? "", key));
+          const r = applyToEnemy(expireStatus(st.enemy, frame), app, frame, owner, ai, (key) => skillValue(ctx.data, panel, build, triggerSkillId(owner, t), key));
           st = recordStatus(ctx, { ...st, enemy: r.state }, r.events, r.state);
           for (const x of r.events) if (x.kind === "consumed") consumed += x.stacks;
           events.push(...asEvents(r.events));
@@ -427,7 +429,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
       case "buff": {
         const def = ctx.data.kits.operators[owner]?.buffs.find((x) => x.id === a.buff);
         if (!def) throw new EngineError(`${owner} has no buff ${a.buff}`);
-        st = { ...st, buffs: withBuff(st.buffs, applyBuff(ctx.data, build, panel, t.skill ?? "", def, frame, situationAt(ctx, owner, st.enemy, st.stacks, st.buffs, frame, consumed))) };
+        st = { ...st, buffs: withBuff(st.buffs, applyBuff(ctx.data, build, panel, triggerSkillId(owner, t), def, frame, situationAt(ctx, owner, st.enemy, st.stacks, st.buffs, frame, consumed))) };
         events.push({ type: "buffApplied", frame, operator: owner, buff: a.buff });
         break;
       }
@@ -448,8 +450,17 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         st = { ...st, readyAt };
         break;
       }
-      case "hits":
-        throw new EngineError(`${owner} trigger ${t.id}: triggered hits aren't supported yet`);
+      case "hits": {
+        const index = t.do.indexOf(a);
+        const pending: PendingHit[] = [];
+        for (const h of a.hits) {
+          for (const f of h.frames ?? Array.from({ length: h.count }, () => 0)) {
+            pending.push({ frame: frame + f, operator: owner, skillId: triggerSkillId(owner, t), hitId: h.id, sp: 0, trigger: { id: t.id, action: index } });
+          }
+        }
+        st = { ...st, pending: [...st.pending, ...pending] };
+        break;
+      }
     }
   }
   return { state: st, events };
@@ -462,6 +473,19 @@ function nextExpiry(buffs: readonly ActiveBuff[], frame: number): number | null 
   return next;
 }
 
+/** A pending hit's kit entry, the skill its values come from and its kind. */
+function pendingHitDef(ctx: TimelineContext, hit: PendingHit): { skill: Pick<KitSkill, "skillId">; kind: SkillType | "none"; kitHit: KitHit } {
+  if (!hit.trigger) {
+    const skill = kitSkill(ctx, hit.operator, hit.skillId);
+    return { skill, kind: skill.kind, kitHit: skill.hits.find((h) => h.id === hit.hitId) as KitHit };
+  }
+  const { id, action } = hit.trigger;
+  const a = ctx.data.kits.operators[hit.operator]?.triggers.find((t) => t.id === id)?.do[action];
+  const kitHit = a?.kind === "hits" ? a.hits.find((h) => h.id === hit.hitId) : undefined;
+  if (!kitHit) throw new EngineError(`${hit.operator} trigger ${id} has no hit ${hit.hitId}`);
+  return { skill: { skillId: hit.skillId }, kind: kitHit.damageType, kitHit };
+}
+
 /** Lands one pending hit: its own effects, its damage, then the triggers its events start. */
 function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): TimelineState {
   let st = state;
@@ -471,8 +495,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     st = { ...st, sp: after, spReturned: Math.min(after, st.spReturned + (after - before)), frame: Math.max(st.frame, hit.frame) };
   }
   const build = ctx.builds.get(hit.operator) as Build;
-  const skill = kitSkill(ctx, hit.operator, hit.skillId);
-  const kitHit = skill.hits.find((h) => h.id === hit.hitId) as KitHit;
+  const { skill, kind, kitHit } = pendingHitDef(ctx, hit);
   st = { ...st, enemy: expireStatus(st.enemy, hit.frame) };
   const panel = ctx.panels.get(hit.operator) as StatPanel;
   // Its situation as it lands, before its own effects: whether it happens (KitHit.if) and its extra scale.
@@ -517,11 +540,11 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   }
   st = recordStatus(ctx, st, statusEvents, st.enemy);
   const hitEvent: BattleEvent = {
-    type: "hit", frame: hit.frame, operator: hit.operator, skillId: hit.skillId, kind: skill.kind,
+    type: "hit", frame: hit.frame, operator: hit.operator, skillId: hit.skillId, kind,
     element: kitHit.reaction?.element ?? kitHit.element, finalStrike: kitHit.finalStrike ?? false, controlled: st.controlled === hit.operator,
   };
   const all: BattleEvent[] = [hitEvent, ...asEvents(statusEvents), ...events, ...(kitHit.gains?.length ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator }] : [])];
-  return runTriggers(ctx, st, all, { operator: hit.operator, kind: skill.kind });
+  return runTriggers(ctx, st, all, { operator: hit.operator, kind });
 }
 
 /** Processes every pending hit, status tick and buff expiry up to (and including) a frame, in frame order. */
@@ -622,7 +645,7 @@ function hasComboTrigger(ctx: TimelineContext, operator: string): boolean {
   const panel = ctx.panels.get(operator) as StatPanel;
   const build = ctx.builds.get(operator) as Build;
   return (ctx.data.kits.operators[operator]?.triggers ?? []).some(
-    (t) => t.do.some((a) => a.kind === "openCombo") && (!t.if || test(t.if, evalContext(ctx.data, build, panel, t.skill ?? "", { team: ctx.scenario.team })) !== false),
+    (t) => t.do.some((a) => a.kind === "openCombo") && (!t.if || test(t.if, evalContext(ctx.data, build, panel, triggerSkillId(operator, t), { team: ctx.scenario.team })) !== false),
   );
 }
 

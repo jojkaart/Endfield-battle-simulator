@@ -6,6 +6,7 @@ import {
   computeHit,
   computeReaction,
   hitAvailable,
+  kitHitEntries,
   computeStats,
   corrosionModifier,
   parseReactionEvent,
@@ -50,7 +51,7 @@ function buffSkillType(buffId: string): SkillType | null {
 }
 
 /** What kind of damage a hit is, for buffs limited to some kinds (BuffData decorate masks). */
-export type HitCategory = SkillType | ReactionKind;
+export type HitCategory = SkillType | "none" | ReactionKind;
 
 /**
  * Decorate-mask bits whose meaning is established: the skill types (from
@@ -110,10 +111,8 @@ export function logModifiers(effects: readonly LogEffect[], category: HitCategor
 }
 
 /** Every kit hit a logged event key could be (a key can stand for several hits, e.g. two hits of one attack). */
-function findHits(data: GameData, operator: string, event: string): [KitSkill, KitHit][] {
-  const out: [KitSkill, KitHit][] = [];
-  for (const s of data.kits.operators[operator]?.skills ?? []) for (const h of s.hits) if (h.events.includes(event)) out.push([s, h]);
-  return out;
+function findHits(data: GameData, operator: string, event: string): [{ skillId: string }, KitHit][] {
+  return kitHitEntries(data.kits.operators[operator]).filter((e) => e.hit.events.includes(event)).map((e) => [{ skillId: e.skillId }, e.hit]);
 }
 
 /** Above this many boundary buffs, only none or all are tried. */
@@ -330,7 +329,7 @@ export function findScales(data: GameData, fx: LogFixture, operator: string): Sc
       for (const damageType of ["basic", "battle", "combo", "ultimate"] as const) {
         const kitHit: KitHit = { id: "x", label: "", scale: [], count: 1, events: [], damageType, element: hit.element ?? "physical" };
         for (const c of candidates(hit, panels, [1])) {
-          const unit = computeHit(data, build, panel, target, { skillId: values[0]?.skillId ?? "", label: "", kind: damageType, hits: [] }, kitHit, {
+          const unit = computeHit(data, build, panel, target, { skillId: values[0]?.skillId ?? "" }, kitHit, {
             crit: c.crit ? "always" : "never", staggered: false, conditions: [], modifiers: [...logModifiers(c.effects, damageType), ...c.extra],
           }).exact;
           const need = (hit.uncapped ?? hit.value) / unit;

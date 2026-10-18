@@ -203,8 +203,8 @@ export interface KitHit {
   readonly events: readonly string[];
   /** Frame of each landing from the skill's start (30 FPS), when known. */
   readonly frames?: readonly number[];
-  /** Which skill-type damage bonus applies (enhanced basic attacks during an ultimate are still "basic"). */
-  readonly damageType: SkillType;
+  /** Which skill-type damage bonus applies (enhanced basic attacks during an ultimate are still "basic"); `none` for triggered hits of no skill type. */
+  readonly damageType: SkillType | "none";
   readonly element: Element;
   /** What each landing does to the enemy's arts state (inflictions, forced reactions), in order. */
   readonly applies?: readonly HitApplication[];
