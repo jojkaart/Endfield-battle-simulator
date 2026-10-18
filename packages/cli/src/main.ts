@@ -41,6 +41,7 @@ Options for calc and compare:
   --crit <mode>       never | always | expected (default expected)
   --staggered         Target is staggered
   --condition <id>    Turn on a condition (repeatable; calc lists them)
+  --buff <id>[:<n>]   Count a kit buff (own or equipment) as active, with n layers (repeatable; calc)
   --verbose           Every stat contribution and the zones of a hit
 `;
 
@@ -54,6 +55,7 @@ async function main(argv: string[]): Promise<number> {
       crit: { type: "string", default: "expected" },
       staggered: { type: "boolean", default: false },
       condition: { type: "string", multiple: true, default: [] },
+      buff: { type: "string", multiple: true, default: [] },
       weapon: { type: "string" },
       "enemy-level": { type: "string" },
       note: { type: "string", multiple: true, default: [] },
@@ -77,6 +79,12 @@ async function main(argv: string[]): Promise<number> {
     crit,
     staggered: values.staggered,
     conditions: values.condition,
+    buffs: values.buff.map((b) => {
+      const [buff, n] = b.split(":");
+      const layers = n === undefined ? 1 : Number(n);
+      if (!buff || !Number.isInteger(layers) || layers < 1) throw new Error(`--buff takes <id> or <id>:<layers>`);
+      return { buff, layers };
+    }),
     verbose: values.verbose,
   };
 

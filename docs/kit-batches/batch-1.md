@@ -343,6 +343,12 @@ Most first-round gaps are now expressible; what's left, by family:
   `{eventRecorded: true}` reads it, and a hit with `fixedDamage` deals a
   value exactly (no zones). Si R4: `{talent: i, key}` reads a talent's
   buff at the build's level (0 while unlearned).
+- Typhoeus R2: hit triggers take `reaction: false` (not her bursts).
+  Liino R5: an `endAction` action (the stance's action jumps to its end
+  when the stance ends). L2: the log checker tries event counts 1–4 for
+  hits that read `eventCount`, and counts Fixed DMG hits as under
+  unmodelled effects. Laevatain R5: per-hit fixtures and `efsim calc
+  --buff` name kit buffs as active (`kitBuffModifiers`).
 - Not done in this batch: A6 reacting inflictions for "applies Arts
   Infliction" (Arcane R3's open question) stay excluded from
   `inflictionApplied`.

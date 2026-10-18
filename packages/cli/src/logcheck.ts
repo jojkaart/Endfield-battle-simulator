@@ -225,15 +225,20 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
         : found
             .filter(([s, h]) => hitAvailable(data, member.build, member.panel, s.skillId, h, { team: fx.team }))
             .flatMap(([s, h]) =>
-              // A hit whose conditions or extra scale depend on what the log doesn't record (inflictions, stacks): try both outcomes.
-              (h.extraScale?.length || h.if ? [false, true] : [false]).flatMap((assume) => {
-                try {
-                  const r = computeHit(data, member.build, member.panel, target, s, h, { ...options(h.reaction?.kind ?? h.damageType), situation: { team: fx.team }, assumeUnknown: assume });
-                  return [{ label: [found.length > 1 ? `kit hit ${h.id}` : null, assume ? "situational parts assumed" : null].filter((x) => x).join(", ") || null, r }];
-                } catch {
-                  return []; // the hit doesn't happen under this assumption
-                }
-              }),
+              // A hit whose conditions or extra scale depend on what the log doesn't record (inflictions, stacks): try both outcomes;
+              // one whose values read the count of the event behind it (Si's combo): try counts 1-4.
+              (h.extraScale?.length || h.if ? [false, true] : [false]).flatMap((assume) =>
+                (JSON.stringify(h).includes('"eventCount"') ? [1, 2, 3, 4] : [undefined]).flatMap((eventCount) => {
+                  try {
+                    const situation = { team: fx.team, ...(eventCount !== undefined ? { eventCount } : {}) };
+                    const r = computeHit(data, member.build, member.panel, target, s, h, { ...options(h.reaction?.kind ?? h.damageType), situation, assumeUnknown: assume });
+                    const label = [found.length > 1 ? `kit hit ${h.id}` : null, assume ? "situational parts assumed" : null, eventCount !== undefined ? `event count ${eventCount}` : null].filter((x) => x).join(", ");
+                    return [{ label: label || null, r }];
+                  } catch {
+                    return []; // the hit doesn't happen under this assumption
+                  }
+                }),
+              ),
             );
       for (const { label, r } of results) {
         const p = roundDamage(r.exact);
@@ -244,6 +249,8 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
     // Corrosion's ramp doesn't fit every log yet (time dilation may pause its ticks; talents change its cap and
     // duration): a hit under Corrosion that matches no level counts as under an unmodelled effect, not a mismatch.
     if (hit.unquantified.length > 0) return { kind: "unquantified", hit, predicted: predicted[0] ?? 0 };
+    // Fixed DMG that a fight computes (Si's recorded damage) can't be judged from one logged hit.
+    if (found.some(([, h]) => h.fixedDamage !== undefined)) return { kind: "unquantified", hit, predicted: predicted[0] ?? 0 };
     // A status hit by an operator without a kit: its talents and potentials (which can change its statuses) aren't modelled.
     if (reaction && !data.kits.operators[hit.operator]) return { kind: "unquantified", hit, predicted: predicted[0] ?? 0 };
     return { kind: "mismatch", hit, predicted: [...new Set(predicted)].slice(0, 6), ratio: actual / (predicted[0] ?? 1) };

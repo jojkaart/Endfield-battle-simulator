@@ -83,6 +83,16 @@
           }
         },
         "conditions": { "type": "array", "items": { "type": "string" }, "description": "Kit or weapon condition IDs that are active." },
+        "buffs": {
+          "type": "array",
+          "description": "Kit buffs (the operator's own or its equipment's, e.g. wpn_sword_0006.valid) active for the hit, with their values from the skill that applies them in the kit.",
+          "items": {
+            "oneOf": [
+              { "type": "string" },
+              { "type": "object", "required": ["buff"], "additionalProperties": false, "properties": { "buff": { "type": "string" }, "layers": { "type": "integer", "minimum": 1 } } }
+            ]
+          }
+        },
         "crit": { "enum": ["never", "always", "expected"] },
         "expected": { "type": "number" },
         "tolerance": { "type": "number", "minimum": 0 }

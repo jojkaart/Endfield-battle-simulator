@@ -895,6 +895,12 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         }
         break;
       }
+      case "endAction": {
+        const r = endCurrentSkill(st, owner, frame);
+        st = { ...r.state, acting: Object.fromEntries(Object.entries(r.state.acting).filter(([k]) => k !== owner)) };
+        events.push(...r.events);
+        break;
+      }
       case "cancelHits":
         st = { ...st, pending: st.pending.filter((h) => !(h.operator === owner && h.trigger?.id === a.trigger)) };
         break;
@@ -1062,6 +1068,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   const hitEvent: BattleEvent = {
     type: "hit", frame: hit.frame, operator: hit.operator, skillId: hit.skillId, kind,
     element: kitHit.reaction?.element ?? kitHit.element, finalStrike: kitHit.finalStrike ?? false, finisher, controlled: st.controlled === hit.operator,
+    ...(kitHit.reaction ? { reaction: true } : {}),
     ...(hit.cast !== undefined ? { cast: hit.cast } : {}),
   };
   // A hit computed as a burst is one for triggers too (its damage is the hit's own).
@@ -1252,6 +1259,29 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
 }
 
 /**
+ * Ends an operator's current skill at a frame: its hits still to land are
+ * cancelled, unless already on their way (detached), and so are its
+ * delayed cast-trigger actions; the buffs that end with it end (their
+ * `buffEnded` events are returned).
+ */
+function endCurrentSkill(advanced: TimelineState, operator: string, frame: number): { state: TimelineState; events: BattleEvent[] } {
+  const prevCast = advanced.casts.findLastIndex((c) => c.operator === operator);
+  const endsNow = advanced.buffs.filter((b) => b.owner === operator && b.endsWithCast !== undefined && b.endsWithCast === prevCast && b.expiresAt > frame);
+  const state = {
+    ...advanced,
+    pending: advanced.pending.filter((h) => !(h.operator === operator && h.cast === prevCast && !h.detached && h.frame > frame)),
+    pendingActions: advanced.pendingActions.filter((x) => !(x.cast && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame)),
+    buffs: advanced.buffs.filter((b) => !endsNow.includes(b)),
+  };
+  const events: BattleEvent[] = [...new Map(endsNow.map((b) => {
+    const same = endsNow.filter((x) => x.id === b.id);
+    const recorded = recordedOf(same);
+    return [b.id, { type: "buffEnded" as const, frame, operator, buff: b.id, remaining: remainingOf(same, frame), ...(recorded !== undefined ? { recorded } : {}) }];
+  })).values()];
+  return { state, events };
+}
+
+/**
  * Casts a skill at a frame (the state already advanced to it): ends the
  * operator's current skill, schedules the hits, spends and grants
  * resources, and returns the cast's events for the triggers. A follow-up
@@ -1259,21 +1289,10 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
  * starts no cooldown.
  */
 function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: string, skillId: string, frame: number, followUp: boolean): { state: TimelineState; events: BattleEvent[]; origin: Origin } {
-  // Starting a skill ends the operator's current one: its hits still to land are cancelled, unless already on their way.
-  const prevCast = advanced.casts.length - 1 - [...advanced.casts].reverse().findIndex((c) => c.operator === operator);
-  // So are its delayed cast-trigger actions, and the buffs that end with it.
-  const endsNow = advanced.buffs.filter((b) => b.owner === operator && b.endsWithCast !== undefined && b.endsWithCast === prevCast && b.expiresAt > frame);
-  const s = {
-    ...advanced,
-    pending: advanced.pending.filter((h) => !(h.operator === operator && h.cast === prevCast && !h.detached && h.frame > frame)),
-    pendingActions: advanced.pendingActions.filter((x) => !(x.cast && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame)),
-    buffs: advanced.buffs.filter((b) => !endsNow.includes(b)),
-  };
-  const endsNowEvents: BattleEvent[] = [...new Map(endsNow.map((b) => {
-    const same = endsNow.filter((x) => x.id === b.id);
-    const recorded = recordedOf(same);
-    return [b.id, { type: "buffEnded" as const, frame, operator, buff: b.id, remaining: remainingOf(same, frame), ...(recorded !== undefined ? { recorded } : {}) }];
-  })).values()];
+  // Starting a skill ends the operator's current one.
+  const ended = endCurrentSkill(advanced, operator, frame);
+  const s = ended.state;
+  const endsNowEvents = ended.events;
   const skill = kitSkill(ctx, operator, skillId);
   const full = skillCosts(ctx, operator, skillId);
   const costs = followUp ? { ...full, spCost: 0, energyCost: 0, cooldownFrames: 0 } : full;

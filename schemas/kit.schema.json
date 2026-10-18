@@ -247,6 +247,10 @@
                     },
                     "minItems": 1,
                     "description": "Only landings with any of these decorations (SkillData decorate-mask bits 2097152, 4; a finisher is a skillSpecification 8 skill's)."
+                  },
+                  "reaction": {
+                    "type": "boolean",
+                    "description": "Only hits computed as a reaction or burst (true), or only others (false)."
                   }
                 }
               },
@@ -1147,6 +1151,23 @@
                       "description": "This action only in this situation (judged for the owner when it runs)."
                     }
                   }
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "endAction"
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
+                    }
+                  },
+                  "description": "End the owner's current skill now (JumpToAction to its end): its hits and delayed actions still to come are dropped, and the operator is free."
                 }
               ]
             }

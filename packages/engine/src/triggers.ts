@@ -11,7 +11,10 @@ import type { SkillType } from "./attributes.ts";
 import { causeMatches, eventMatches, triggerSkillId, type BattleEvent } from "./events.ts";
 import type { Build } from "./build.ts";
 import type { GameData, KitApplication, KitHit, OperatorKit, StackGain } from "./model.ts";
-import { wornEquipment } from "./stats.ts";
+import { wornEquipment, type StatPanel } from "./stats.ts";
+import { applyBuff, buffModifiers } from "./buffs.ts";
+import type { Modifier } from "./effects.ts";
+import { EngineError } from "./errors.ts";
 
 export interface HitEffect {
   /** Whose stacks the gains go to. */
@@ -69,4 +72,24 @@ export function effectiveKit(data: GameData, build: Build): OperatorKit | undefi
     buffs: [...own.buffs, ...worn.flatMap((k) => k.buffs)],
     triggers: [...own.triggers, ...worn.flatMap((k) => k.triggers)],
   };
+}
+
+/**
+ * The modifiers one of a build's kit buffs (its own or what it wears) gives
+ * the build's hits with `layers` layers, as if applied at frame 0: for
+ * static per-hit checks (fixtures, `efsim calc`). Its values come from the
+ * skill that applies it in the kit (a hit's skill or a trigger's source).
+ */
+export function kitBuffModifiers(data: GameData, build: Build, panel: StatPanel, buffId: string, layers = 1): Modifier[] {
+  const kit = effectiveKit(data, build);
+  const def = kit?.buffs.find((b) => b.id === buffId);
+  if (!kit || !def) throw new EngineError(`${build.operator} has no kit buff ${buffId}${kit ? ` (its buffs: ${kit.buffs.map((b) => b.id).join(", ")})` : ""}`);
+  const source =
+    kit.skills.find((s) => s.hits.some((h) => h.buffs?.some((a) => a.buff === buffId)))?.skillId ??
+    kit.triggers.filter((t) => t.do.some((a) => a.kind === "buff" && a.buff === buffId)).map((t) => triggerSkillId(kit.operator, t))[0];
+  if (!source) throw new EngineError(`nothing in ${build.operator}'s kit applies ${buffId}`);
+  const b = applyBuff(data, build, panel, source, def, 0);
+  if (!b) return [];
+  const n = Math.min(layers, b.maxLayers ?? 1);
+  return buffModifiers(Array.from({ length: n }, (_, i) => ({ ...b, appliedAt: -i })), build.operator, 0);
 }

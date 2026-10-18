@@ -314,6 +314,7 @@ function kitChecker(scope: KitScope) {
         case "heal":
         case "clearEnergy":
         case "cancelHits":
+        case "endAction":
           break;
         case "cast":
           if (!scope.isSkill(a.skill)) throw new Error(`${where}: ${a.skill} isn't one of ${scope.owner}'s skills`);

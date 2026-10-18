@@ -18,6 +18,7 @@ import {
   type GameData,
   type HitDamage,
   type StatPanel,
+  kitBuffModifiers,
 } from "@efsim/engine";
 import { num, pct, signedPct, table } from "./format.ts";
 
@@ -118,6 +119,8 @@ function hitRows(hits: readonly HitDamage[]): string[][] {
 export interface CalcOptions extends DamageOptions {
   readonly target: DamageTarget;
   readonly verbose: boolean;
+  /** Kit buffs (own or equipment) to count as active, with layers. */
+  readonly buffs?: readonly { readonly buff: string; readonly layers: number }[];
 }
 
 export function calc(data: GameData, build: Build, options: CalcOptions): string {
@@ -128,12 +131,14 @@ export function calc(data: GameData, build: Build, options: CalcOptions): string
   out.push(
     "",
     `Damage per hit vs ${enemy?.name ?? options.target.enemy} Lv${options.target.level}, crit: ${options.crit}${options.staggered ? ", staggered" : ""}` +
-      (options.conditions.length ? `, conditions: ${options.conditions.join(", ")}` : ""),
+      (options.conditions.length ? `, conditions: ${options.conditions.join(", ")}` : "") +
+      (options.buffs?.length ? `, buffs: ${options.buffs.map((b) => (b.layers > 1 ? `${b.buff} ×${b.layers}` : b.buff)).join(", ")}` : ""),
   );
   if (!data.kits.operators[build.operator]) {
     out.push("  No kit for this operator yet, so no hit damage (stats above are complete).");
   } else {
-    const hits = computeKit(data, build, panel, options.target, options);
+    const buffMods = (options.buffs ?? []).flatMap((b) => kitBuffModifiers(data, build, panel, b.buff, b.layers));
+    const hits = computeKit(data, build, panel, options.target, { ...options, modifiers: [...(options.modifiers ?? []), ...buffMods] });
     out.push(table(["skill", "hit", "count", "multiplier", "damage"], hitRows(hits), ["l", "l", "l", "l", "r"]));
     if (options.verbose) {
       const z = hits[0]?.zones;

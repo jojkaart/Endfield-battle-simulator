@@ -1,6 +1,6 @@
 // Damage expectations from the fixtures.
 import { describe, expect, it } from "vitest";
-import { Attr, computeHit, computeReaction, NO_STATUS, resolveValue, computeStats, conditionModifiers, EngineError, hitAvailable, roundDamage, skillValue, type Condition, type KitHit, type OperatorKit } from "@efsim/engine";
+import { Attr, computeHit, kitBuffModifiers, computeReaction, NO_STATUS, resolveValue, computeStats, conditionModifiers, EngineError, hitAvailable, roundDamage, skillValue, type Condition, type KitHit, type OperatorKit } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { loadFixtures } from "./fixtures.ts";
 
@@ -9,8 +9,9 @@ const data = loadGameData();
 describe.each(loadFixtures().filter(({ fixture }) => fixture.expected.damage?.length))("$file", ({ fixture }) => {
   const panel = computeStats(data, fixture.build);
   const kit = data.kits.operators[fixture.build.operator];
-  it.each(fixture.expected.damage ?? [])("$label = $expected", ({ hits, conditions, crit, expected, tolerance }) => {
+  it.each(fixture.expected.damage ?? [])("$label = $expected", ({ hits, conditions, buffs, crit, expected, tolerance }) => {
     let exact = 0;
+    const modifiers = (buffs ?? []).flatMap((b) => (typeof b === "string" ? kitBuffModifiers(data, fixture.build, panel, b) : kitBuffModifiers(data, fixture.build, panel, b.buff, b.layers ?? 1)));
     for (const { skill, hit, times } of hits) {
       const s = kit?.skills.find((x) => x.skillId === skill);
       const h = s?.hits.find((x) => x.id === hit);
@@ -19,6 +20,7 @@ describe.each(loadFixtures().filter(({ fixture }) => fixture.expected.damage?.le
         crit: crit ?? "never",
         staggered: false,
         conditions: conditions ?? [],
+        modifiers,
       });
       exact += result.exact * (times ?? 1);
     }

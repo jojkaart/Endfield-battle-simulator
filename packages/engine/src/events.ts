@@ -22,6 +22,8 @@ export type BattleEvent =
       readonly finalStrike: boolean;
       /** A finisher's landing (its skill is of skillSpecification 8: decorate-mask bit 4). */
       readonly finisher: boolean;
+      /** Its damage is a reaction's or burst's (KitHit.reaction), not the skill's own. */
+      readonly reaction?: boolean;
       /** Whether the hitter was the controlled operator when it landed. */
       readonly controlled: boolean;
       /** The index of the hit's cast (a triggered hit has none). */
@@ -59,8 +61,8 @@ export type HitDecoration = "finalStrike" | "finisher";
 
 /** Which events a trigger listens to (and filters on them). */
 export type TriggerOn =
-  /** `skills`: only these skills' hits; `decorations`: only landings with any of these. */
-  | { readonly event: "hit"; readonly kinds?: readonly (SkillType | "none")[]; readonly elements?: readonly Element[]; readonly finalStrike?: boolean; readonly skills?: readonly string[]; readonly decorations?: readonly HitDecoration[] }
+  /** `skills`: only these skills' hits; `decorations`: only landings with any of these; `reaction`: only hits computed as a reaction or burst, or only others. */
+  | { readonly event: "hit"; readonly kinds?: readonly (SkillType | "none")[]; readonly elements?: readonly Element[]; readonly finalStrike?: boolean; readonly skills?: readonly string[]; readonly decorations?: readonly HitDecoration[]; readonly reaction?: boolean }
   /** A skill is cast; `skills` narrows it to these skill IDs (a skill's own effects at frames: with the trigger's `delay`); `finisher`: only finishers, or none. */
   | { readonly event: "cast"; readonly kinds?: readonly SkillType[]; readonly skills?: readonly string[]; readonly finisher?: boolean }
   | (StatusOn & {
@@ -129,6 +131,12 @@ export type TriggerActionKind =
   | { readonly kind: "extendBuff"; readonly buff: string; readonly seconds: ValueExpr }
   /** Heal (an event for heal triggers; amounts aren't modelled). */
   | { readonly kind: "heal"; readonly target: HealTarget }
+  /**
+   * End the owner's current skill now (JumpToAction to its end, e.g. when a
+   * stance it holds ends): its hits and delayed actions still to come are
+   * dropped as if another skill had started, and the operator is free.
+   */
+  | { readonly kind: "endAction" }
   /** Drop the owner's hits still to land from one of its triggers (a cast ending a volley on its way: FinishBuff of its launcher). */
   | { readonly kind: "cancelHits"; readonly trigger: string }
   /** End one of the owner's kit buffs: all of it, or its oldest `layers`. */
@@ -191,7 +199,7 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
     case "hit":
       return (
         e.type === "hit" && has(on.kinds, e.kind) && has(on.elements, e.element) && has(on.skills, e.skillId) && (on.finalStrike === undefined || on.finalStrike === e.finalStrike) &&
-        (!on.decorations || on.decorations.some((d) => (d === "finisher" ? e.finisher : e.finalStrike)))
+        (!on.decorations || on.decorations.some((d) => (d === "finisher" ? e.finisher : e.finalStrike))) && (on.reaction === undefined || on.reaction === (e.reaction ?? false))
       );
     case "cast":
       return e.type === "cast" && has(on.kinds, e.kind) && has(on.skills, e.skillId) && (on.finisher === undefined || on.finisher === e.finisher);

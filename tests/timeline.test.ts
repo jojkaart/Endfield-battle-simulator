@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, buffModifiers, causeMatches, eventMatches, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
+import { advance, apply, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -1167,5 +1167,38 @@ describe("timeline: recording buffs and Fixed DMG; talent values", () => {
     const v = { talent: 0, key: "ignore_fire_resist" } as const;
     expect(evaluate(v, ec(build))).toBe(skillValue(data, computeStats(data, build), build, "buff_chr_0016_laevat_passive", "ignore_fire_resist"));
     expect(evaluate(v, ec({ ...build, talents: [0, 2] }))).toBe(0);
+  });
+});
+
+describe("timeline: ending an action; reaction hit filter", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  it("endAction ends the owner's skill: the rest of its hits are dropped and it may act at once", () => {
+    const stop: KitTrigger = { id: "stop", on: { event: "cast", kinds: ["battle"] }, by: "self", delay: 10, do: [{ kind: "endAction" }] };
+    const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, triggers: [...kit.triggers, stop] } } } };
+    const ctx = createContext(g, scenario([]));
+    const s = advance(ctx, apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" }), 10);
+    expect(s.acting[op]).toBeUndefined();
+    expect(s.pending.some((h) => h.skillId === L + "normal_skill" && !h.detached)).toBe(false);
+    expect(earliestStart(ctx, s, { operator: op, skill: L + "attack1" })).toEqual({ frame: 10 });
+  });
+
+  it("hit triggers can take only hits computed as reactions, or only others", () => {
+    const hit = { type: "hit" as const, frame: 0, operator: op, skillId: "x", kind: "basic" as const, element: "natural" as const, finalStrike: false, finisher: false, controlled: true, reaction: true };
+    expect(eventMatches({ event: "hit", reaction: false }, hit, op, {})).toBe(false);
+    expect(eventMatches({ event: "hit", reaction: false }, { ...hit, reaction: false }, op, {})).toBe(true);
+    expect(eventMatches({ event: "hit", reaction: true }, hit, op, {})).toBe(true);
+  });
+});
+
+describe("kit buffs in static checks", () => {
+  it("kitBuffModifiers gives a kit buff's modifiers with layers, valued by the skill that applies it", () => {
+    const kit = data.kits.operators[op] as OperatorKit;
+    const amp: KitBuff = { id: "amp", label: "amp", target: "self", duration: 10, maxStacks: 3, modifiers: [{ zone: "amp", value: 0.2 }] };
+    const t: KitTrigger = { id: "amp", on: { event: "cast", kinds: ["battle"] }, by: "self", skill: L + "normal_skill", do: [{ kind: "buff", buff: "amp" }] };
+    const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, buffs: [...kit.buffs, amp], triggers: [...kit.triggers, t] } } } };
+    const panel = computeStats(g, build);
+    expect(kitBuffModifiers(g, build, panel, "amp", 2).map((m) => [m.zone, m.value])).toEqual([["amp", 0.2], ["amp", 0.2]]);
+    expect(kitBuffModifiers(g, build, panel, "amp", 5)).toHaveLength(3);
+    expect(() => kitBuffModifiers(g, build, panel, "nope")).toThrow(EngineError);
   });
 });
