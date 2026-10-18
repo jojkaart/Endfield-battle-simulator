@@ -59,7 +59,16 @@ needs 5.9 resistance points of shred 0.6 s into Corrosion
 (`zmdlogs-bdf223db8e49`), where the current model gives at least 11.9; and
 her 20 ultimate projectiles in `zmdlogs-d9e59d0fb737` all deal 1160 across
 a whole-second tick. Either the ramp is wrong or something (a Nature
-burst?) resets it.
+burst?) resets it. Si's logs (`zmdlogs-0eef2474a26f`) fit whole-second
+ticks that pause while time is dilated (three combos at 3.5 s held the
+count at 2 until 4.3 s), which would explain part of it. Arcane's talent
+also raises the cap and duration of every Corrosion she applies.
+
+### 5. Reaction bonus grouping (later)
+
+**Why:** whether "Arts Reaction DMG" bonuses add to element bonuses or
+multiply separately.
+**How (planned):** a Combustion hit with one bonus, the other, and both.
 
 ### 6. Liino's ultimate (ready)
 
@@ -69,12 +78,6 @@ doesn't explain, and it doesn't record her own ultimate buffs.
 **How:** Liino alone against a training dummy (no teammates' buffs, no
 Arts reactions): her stat panel (ATK, Will), ultimate level, and the
 damage numbers of one ultimate, ideally recorded with the ZMDLogs client.
-
-### 5. Reaction bonus grouping (later)
-
-**Why:** whether "Arts Reaction DMG" bonuses add to element bonuses or
-multiply separately.
-**How (planned):** a Combustion hit with one bonus, the other, and both.
 
 ### 7. Arcane's INT damage under her own Corrosion (ready, if you have Arcane)
 
@@ -95,6 +98,16 @@ tables we have. One log shows +20% for one stack on Gilberta's ultimate.
 single hit) cast: with no combo skill before it; after one teammate's
 combo; after two or three teammates' combos. Screenshots of the ultimate's
 damage number each time (no crits, same buffs otherwise).
+
+### 9. Typhoeus's burst with and without a Nature infliction (ready, if you have Typhoeus)
+
+**Why:** his enhanced floating shot's own Nature burst appears to deal
+×1.3 more when the target already has a Nature infliction for the arrow to
+consume (`enchence_burst_damage_rate`), seen in one log only.
+**How:** on a training dummy: one enhanced floating shot on a clean dummy,
+then one right after a teammate applied a Nature infliction (Gilberta's
+battle skill or ultimate). Screenshots of the burst's damage number both
+times (no crits).
 
 ## Results
 
