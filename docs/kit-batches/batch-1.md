@@ -138,24 +138,21 @@ Report references are `operator Gn` (Laevatain's report numbers its gaps
 - Si: the battle skill inflicts Heat with a Heat operator in slot 0 (data);
   P5's +1 isn't added in the data's formula.
 
-## Owner decisions needed
+## Owner decisions (2026-10-18)
 
-1. **Physical statuses and stagger (P1, P2):** implement in this batch.
-   They're large but carry up to half of Estella's damage and much of
-   Gilberta's; recommended.
-2. **Time dilation (Ti1):** implement a first version (what pauses during
-   ultimates and combo slow-downs), or defer; recommended to implement
-   after the trigger family, since Corrosion and buff windows depend on it.
-3. **Defer N1** (kills and HP) and Ti2 (projectile travel): recommended.
+"The simulator becomes useful when it's fully implemented": every gap is
+implemented, physical statuses, stagger and time dilation included;
+nothing is deferred. Order is free. N1 (kills and HP) has no effect against
+one enemy, so it comes with multi-enemy support.
 
-## Implementation order (proposed)
+## Implementation order
 
 1. Triggers T1–T3 with conditions C1–C2 and buff lifecycle B1, B3, B4, B6
    (one engine pass: they share the event model).
 2. Values V1–V5, C3 and data compilation D1 (the loader).
 3. Skills S1–S7.
 4. Arts state A1–A5.
-5. Physical state P1–P2, then timing Ti1 (if agreed).
+5. Physical state P1–P2, then timing Ti1–Ti4.
 6. Log tooling L1.
 
 Then re-analysis of all seven.
