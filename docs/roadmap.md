@@ -5,10 +5,9 @@
 1. **Review the design with the owner** ([design.md](design.md)), then
    settle its open questions where data can (tie-break order, which action
    types the first fixtures need). Keep [glossary.md](glossary.md) growing.
-2. **In-game tests the owner could run** (see open questions in
-   [data-sources.md](data-sources.md#open-questions)): Breach AI scaling,
-   Corrosion ramp, final damage rounding, attribute flooring, burst/reaction
-   bonus grouping. Optional; fixtures may settle some of them.
+2. **In-game tests:** the owner plays daily and may run simple tests;
+   list and status in [in-game-tests.md](in-game-tests.md). Stat panels
+   are ready now; the others wait on the engine.
 3. **Set up the TypeScript project:** package layout, test runner, lint and
    typecheck, and a loader that reads tables from `data/` submodules
    (watch for int64 text IDs and 555me's string-encoded numbers). Include:
@@ -43,6 +42,9 @@
 ## Later
 
 - Rotation simulation on a timeline (SP, energy, cooldowns, buffs, reactions).
+- Interactive search: drivers on the engine's stepping API that generate
+  the action list on the fly, with a battle policy / evaluator exploring the
+  tree of choices ([design.md](design.md#stepping-api)).
 - Team-composition search with constraints (must-include / always-exclude
   operators, available weapons and gear).
 - Web interface for browsing and comparing results.

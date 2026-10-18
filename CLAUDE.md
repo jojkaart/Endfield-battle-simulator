@@ -27,6 +27,10 @@ The tool is only useful if its numbers are right. Keep tests up to date and
 passing with every change. Follow the architectural principles in
 [docs/design.md](docs/design.md#architectural-principles).
 
+The owner plays daily and may run simple in-game tests. Keep
+[docs/in-game-tests.md](docs/in-game-tests.md) current and tell the owner
+when a new test becomes ready.
+
 ## Data and reference code
 
 - Game data comes from the submodules under `data/`; see

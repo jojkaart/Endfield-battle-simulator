@@ -1,0 +1,61 @@
+# In-game tests
+
+Tests the owner could run while playing, to settle questions only the game
+can answer. Each should be simple and take a few minutes. Claude keeps this
+list current and mentions new **ready** tests to the owner; results go in
+the "Results" section with the date and game version, then into fixtures or
+[data-sources.md](data-sources.md).
+
+Status: **ready** (worth doing now), **later** (waits on the engine or on
+choosing a setup), **done**.
+
+## Tests
+
+### 1. Stat panels (ready)
+
+**Why:** the first fixture checks stat aggregation (base stats + weapon +
+gear → ATK, attributes, crit, etc.) against patch 1.6 data. The Zero Sanity
+values we have are from March. It also tests whether attributes are rounded
+down before the ATK bonus: with real gear, attributes have hidden decimals,
+and the shown ATK differs depending on the rule.
+
+**How:** for 2–3 operators you have built, screenshots of:
+- the operator's detail screen with the full stat list (level, promotion,
+  potential, all attributes, ATK, crit rate, crit DMG, Arts Intensity…);
+- the skill levels;
+- the weapon (level, refinement / potential, its skills);
+- each gear piece (level, main stat, substats, artificing level) and the set
+  bonus.
+
+Laevatain is the most useful if you have her (same operator as the Zero
+Sanity fixture), but any built operator helps. Builds with different gear
+are more useful than the same build twice.
+
+### 2. Final damage rounding (later: needs single-hit damage working)
+
+**Why:** sources disagree whether final damage is rounded half-up or down.
+**How (planned):** one specific hit with a known loadout on a known enemy,
+picked so the exact value ends in .5–.99; read the damage number.
+
+### 3. Breach and Arts Intensity (later: needs a simple setup chosen)
+
+**Why:** game data says Breach's damage-taken bonus scales with the
+applier's Arts Intensity (Breach IV at 150 AI → +40%, not +24%); untested.
+**How (planned):** apply Breach from an operator with known AI, then
+compare another operator's hit with and without Breach.
+
+### 4. Corrosion ramp (later)
+
+**Why:** how the resistance reduction grows over time.
+**How (planned):** read the same hit's damage at 0, 5 and 15 s into
+Corrosion.
+
+### 5. Reaction bonus grouping (later)
+
+**Why:** whether "Arts Reaction DMG" bonuses add to element bonuses or
+multiply separately.
+**How (planned):** a Combustion hit with one bonus, the other, and both.
+
+## Results
+
+None yet.

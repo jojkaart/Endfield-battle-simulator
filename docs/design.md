@@ -200,12 +200,46 @@ every timestamp. So rotations are **programs** the engine schedules:
    animation lock. An explicit `at` frame is allowed for reproducing
    published timelines (ZMDLogs casts, End-DPScope scenarios); if it isn't
    legal there, that's an error.
-2. **Priority policy (later, for search):** "ultimate when ready, combo when
-   its window opens, else battle skill if SP ≥ cost, else basic". Search
-   varies policies, not timelines.
+2. **Generated on the fly (later, for search):** the action list isn't
+   given up front. A **battle policy** chooses each next action from the
+   current state while the battle runs, and the search explores the tree of
+   possible choices (see [stepping API](#stepping-api)). Simple priority
+   rules ("ultimate when ready, combo when its window opens, else battle
+   skill if SP ≥ cost, else basic") are just one policy.
 
 An illegal action is always an error in the result, never silently run or
 skipped.
+
+### Stepping API
+
+The engine's core is a **state machine**, not only a `simulate()` call, so
+the same code serves recorded rotations and interactive search:
+
+```ts
+init(bundle, scenario) → State
+advance(state) → { state, decision? }   // run until the next decision point or the end
+legalActions(state) → Action[]          // what can be done now, with earliest frames
+apply(state, action) → State            // or an error if illegal
+fork(state) → State                     // cheap copy for branching
+evaluate(state) → partial Result        // damage so far, resources, timings
+```
+
+- A **decision point** is a frame where some operator can act: an
+  animation lock or cancel window ends, a combo window opens, SP or energy
+  becomes enough, a cooldown ends. Between decision points the engine runs
+  events only.
+- **Recorded rotations** are a driver that feeds the action list into
+  `apply` at each decision point. `simulate(bundle, scenario)` is that
+  driver, run to the end.
+- **Search** is a driver too: at each decision point it asks a policy or
+  evaluator for candidate actions, `fork`s the state per candidate, and
+  explores the tree (beam search, Monte Carlo tree search, or similar;
+  *open*). The evaluator scores partial states, e.g. damage so far plus an
+  estimate of what the resources and buffs on hand are worth.
+- This is why state must be **plain data** with cheap `fork`, and why
+  `legalActions` must be fast and exact: search calls them at every node.
+- The Rust port implements the same API; drivers can stay in TypeScript at
+  first, calling the Rust engine, or move over later.
 
 ### Time
 
@@ -356,3 +390,5 @@ Details: [reference-simulators.md](reference-simulators.md).
 - Which SkillData/BuffData action types the compiler must understand for
   the first fixtures.
 - How combo trigger conditions are expressed without CharacterData.
+- Search algorithm over the decision tree, and how the evaluator scores
+  partial states.
