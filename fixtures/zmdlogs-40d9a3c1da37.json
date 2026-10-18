@@ -15,7 +15,8 @@
   },
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
-   "Enemy level 90 is assumed, not logged."
+   "Enemy level 90 is assumed, not logged.",
+   "Si (chr_0036_jsspsi) has attributeNodes 2, not all 4: nodes chr_0036_jsspsi_5 and _7 (+15 and +20 Wisd) also need trust 300, which the log doesn't record. With all 4 every Si hit is predicted 3.83% high; with 2, her battle skill, basic attack and ultimate hits match exactly (inferred 2026-10-18)."
   ]
  },
  "enemy": {
@@ -83,6 +84,7 @@
    "level": 90,
    "promotion": 4,
    "potential": 5,
+   "attributeNodes": 2,
    "skillLevels": {
     "basic": 12,
     "battle": 12,
