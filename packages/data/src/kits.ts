@@ -5,7 +5,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { ELEMENTS, type Condition, type Element, type Kits, type OperatorKit, type SkillData } from "@efsim/engine";
+import { ELEMENTS, type Condition, type Element, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
@@ -14,7 +14,7 @@ interface RawCondition {
   id: string;
   label: string;
   source: { kind: "talent"; index: number; buffId: string; key: string; scale?: number } | { kind: "weaponSkill"; skill: number; key: string; scale?: number };
-  effect: { kind: "attr"; attr: number } | { kind: "ignoreResistance"; element: Element };
+  effect: { kind: "attr"; attr: number } | { kind: "zone"; zone: Zone; element?: Element; skillType?: SkillType };
 }
 
 interface RawKit {

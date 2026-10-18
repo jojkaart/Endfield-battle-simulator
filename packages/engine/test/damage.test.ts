@@ -10,6 +10,8 @@ import {
   type GameData,
   type KitHit,
   type KitSkill,
+  type Modifier,
+  attrModifier,
 } from "../src/index.ts";
 
 function gameData(over: { def?: number; fireRes?: number; atkPercent?: number } = {}): GameData {
@@ -91,7 +93,9 @@ describe("damage zones", () => {
   it("damage is the product of the zones, rounded to the nearest whole number", () => {
     const d = damage(gameData());
     const z = d.zones;
-    expect(d.exact).toBeCloseTo(z.atk * z.scale * z.damageBonus * z.crit * z.amp * z.stagger * z.defense * z.resistance);
+    expect(d.exact).toBeCloseTo(
+      z.atk * z.scale * z.damageBonus * z.crit * z.amp * z.susceptibility * z.damageTaken * z.multiplicative * z.stagger * z.defense * z.resistance,
+    );
     expect(d.damage).toBe(Math.round(d.exact));
     expect(d.scaleParts).toEqual([{ key: "atk_scale", value: 2 }, { key: "ratio", value: 1 }]);
   });
@@ -109,5 +113,43 @@ describe("damage zones", () => {
       expect(d).toBeLessThanOrEqual(prev);
       prev = d;
     }
+  });
+});
+
+describe("modifiers", () => {
+  const m = (zone: Modifier["zone"], value: number, extra: Partial<Modifier> = {}): Modifier => ({ zone, value, source: "test", ...extra });
+
+  it("ATK% joins the panel's ATK% before the attribute bonus; other zones combine as documented", () => {
+    const data = gameData();
+    const base = damage(data);
+    const d = damage(data, {
+      ...never,
+      modifiers: [m("atk", 0.5), m("damageBonus", 1), m("amp", 0.2), m("susceptibility", 0.1), m("damageTaken", 0.3),
+        m("multiplicative", 0.1), m("multiplicative", 0.2), m("ignoreResistance", 10)],
+    });
+    expect(d.zones.atk).toBeCloseTo(200 * 3 * 1.6);
+    expect(d.zones.damageBonus).toBeCloseTo(base.zones.damageBonus + 1);
+    expect(d.zones.amp).toBeCloseTo(1.2);
+    expect(d.zones.susceptibility).toBeCloseTo(1.1);
+    expect(d.zones.damageTaken).toBeCloseTo(1.3);
+    expect(d.zones.multiplicative).toBeCloseTo(1.1 * 1.2);
+    expect(d.zones.resistance).toBeCloseTo(1.1);
+  });
+
+  it("element, skill type and staggered filters", () => {
+    const data = gameData();
+    const base = damage(data).zones.damageBonus;
+    const filtered = [m("damageBonus", 1, { element: "cryst" }), m("damageBonus", 2, { skillType: "basic" }), m("damageBonus", 4, { staggeredOnly: true }),
+      m("damageBonus", 8, { element: "fire", skillType: "battle" })];
+    expect(damage(data, { ...never, modifiers: filtered }).zones.damageBonus).toBeCloseTo(base + 8);
+    expect(damage(data, { ...never, staggered: true, modifiers: filtered }).zones.damageBonus).toBeCloseTo(base + 12);
+  });
+
+  it("stat panel attributes map to the same zones", () => {
+    expect(attrModifier(Attr.FireDamageIncrease, 0.3, "x")).toEqual({ zone: "damageBonus", element: "fire", value: 0.3, source: "x" });
+    expect(attrModifier(Attr.NormalAttackDamageIncrease, 0.15, "x")).toEqual({ zone: "damageBonus", skillType: "basic", value: 0.15, source: "x" });
+    expect(attrModifier(Attr.NaturalVulnerableDmgIncrease, 0.1, "x")?.zone).toBe("susceptibility");
+    expect(attrModifier(Attr.EtherEnhancedDmgIncrease, 0.1, "x")).toMatchObject({ zone: "amp", element: "ether" });
+    expect(attrModifier(Attr.Wisd, 100, "x")).toBeNull();
   });
 });

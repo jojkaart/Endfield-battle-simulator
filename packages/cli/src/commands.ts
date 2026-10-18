@@ -8,6 +8,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import {
   Attr,
   attrName,
+  availableConditions,
   computeKit,
   computeStats,
   NOT_MODELLED,
@@ -122,7 +123,7 @@ export function calc(data: GameData, build: Build, options: CalcOptions): string
   const panel = computeStats(data, build);
   const out = [formatPanel(data, panel, options.verbose)];
   const enemy = data.enemies[options.target.enemy];
-  const conditions = [...(data.kits.operators[build.operator]?.conditions ?? []), ...(build.weapon ? (data.kits.weapons[build.weapon.id] ?? []) : [])];
+  const conditions = availableConditions(data, build);
   out.push(
     "",
     `Damage per hit vs ${enemy?.name ?? options.target.enemy} Lv${options.target.level}, crit: ${options.crit}${options.staggered ? ", staggered" : ""}` +

@@ -50,7 +50,7 @@
       "label": "Scorching Heart active (talent 1): ignore Heat resistance",
       "note": "Talent buff buff_chr_0016_laevat_passive; ignore_fire_resist is negative in the data (-20 at talent level 3).",
       "source": { "kind": "talent", "index": 0, "buffId": "buff_chr_0016_laevat_passive", "key": "ignore_fire_resist", "scale": -1 },
-      "effect": { "kind": "ignoreResistance", "element": "fire" }
+      "effect": { "kind": "zone", "zone": "ignoreResistance", "element": "fire" }
     }
   ]
 }

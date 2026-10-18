@@ -4,5 +4,6 @@ export * from "./attributes.ts";
 export * from "./model.ts";
 export * from "./build.ts";
 export * from "./constants.ts";
+export * from "./effects.ts";
 export * from "./stats.ts";
 export * from "./damage.ts";

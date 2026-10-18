@@ -2,6 +2,7 @@
 // tables; the engine never reads tables itself (docs/design.md#layers).
 
 import type { AttrType, Element, SkillType } from "./attributes.ts";
+import type { Zone } from "./effects.ts";
 
 /**
  * How a modifier combines with an attribute (the tables' `formulaItem` /
@@ -192,9 +193,14 @@ export type ConditionSource =
   | { readonly kind: "talent"; readonly index: number; readonly buffId: string; readonly key: string; readonly scale: number }
   | { readonly kind: "weaponSkill"; readonly skill: number; readonly key: string; readonly scale: number };
 
+/**
+ * What a condition does: change an attribute (mapped to its zone like any
+ * stat, see effects.ts), or add directly to a damage zone with optional
+ * element and skill-type filters.
+ */
 export type ConditionEffect =
   | { readonly kind: "attr"; readonly attr: AttrType }
-  | { readonly kind: "ignoreResistance"; readonly element: Element };
+  | { readonly kind: "zone"; readonly zone: Zone; readonly element?: Element; readonly skillType?: SkillType };
 
 /** A state the user (later: the timeline) switches on, e.g. a talent buff at full stacks. */
 export interface Condition {

@@ -2,16 +2,10 @@
 // pipeline (docs/data-sources.md#3-damage-formula). Every zone is kept in the
 // result so a number can be compared zone by zone (design principle 10).
 
-import {
-  Attr,
-  ELEMENT_AMP,
-  ELEMENT_DAMAGE_INCREASE,
-  SKILL_TYPE_DAMAGE_INCREASE,
-  type AttrType,
-  type Element,
-} from "./attributes.ts";
+import { Attr, attrName, type Element } from "./attributes.ts";
 import type { Build } from "./build.ts";
 import { STAGGER_DAMAGE_TAKEN } from "./constants.ts";
+import { applies, attrModifier, zoneProduct, zoneSum, type HitContext, type Modifier, type Zone } from "./effects.ts";
 import { EngineError } from "./errors.ts";
 import type { Condition, GameData, KitHit, KitSkill } from "./model.ts";
 import { skillLevel, type StatPanel } from "./stats.ts";
@@ -23,6 +17,8 @@ export interface DamageOptions {
   readonly staggered: boolean;
   /** Active condition IDs (kit or weapon conditions). */
   readonly conditions: readonly string[];
+  /** Further active buffs and debuffs, e.g. from a battle log or the timeline. */
+  readonly modifiers?: readonly Modifier[];
 }
 
 export const DEFAULT_DAMAGE_OPTIONS: DamageOptions = { crit: "expected", staggered: false, conditions: [] };
@@ -38,6 +34,9 @@ export interface Zones {
   readonly damageBonus: number;
   readonly crit: number;
   readonly amp: number;
+  readonly susceptibility: number;
+  readonly damageTaken: number;
+  readonly multiplicative: number;
   readonly stagger: number;
   readonly defense: number;
   readonly resistance: number;
@@ -45,13 +44,10 @@ export interface Zones {
 
 /** Zones of the formula that are fixed at ×1 so far; listed so nobody mistakes them for modelled. */
 export const NOT_MODELLED = [
-  "susceptibility",
-  "increased damage taken",
   "weakness",
   "protection / damage reduction",
   "link",
   "finisher",
-  "multiplicative (ProdCalcZone) bonuses",
   "arts reactions and physical statuses",
 ] as const;
 
@@ -63,6 +59,8 @@ export interface HitDamage {
   readonly element: Element;
   readonly scaleParts: readonly { readonly key: string; readonly value: number }[];
   readonly zones: Zones;
+  /** The modifiers that applied to this hit, for tracing a number to its sources. */
+  readonly modifiers: readonly Modifier[];
   /** Damage of one hit before rounding. */
   readonly exact: number;
   /** Damage of one hit as the game shows it: rounded to the nearest whole number. */
@@ -98,13 +96,18 @@ export function skillValue(data: GameData, panel: StatPanel, build: Build, skill
   return value;
 }
 
-interface ConditionTotals {
-  readonly attrs: ReadonlyMap<AttrType, number>;
-  readonly ignoreResistance: ReadonlyMap<Element, number>;
+/** The stat panel as modifiers: every damage-relevant attribute total. */
+export function panelModifiers(data: GameData, panel: StatPanel): Modifier[] {
+  const out: Modifier[] = [];
+  const attrs = new Set([...Object.keys(panel.attrs).map(Number), Attr.CriticalRate, Attr.CriticalDamageIncrease]);
+  for (const attr of attrs) {
+    const total = panel.attrs[attr]?.total ?? data.attributeDefaults[attr] ?? 0;
+    if (total === 0) continue;
+    const m = attrModifier(attr, total, `stat panel: ${attrName(attr)}`);
+    if (m) out.push(m);
+  }
+  return out;
 }
-
-/** Attributes that feed the stat panel itself; a condition changing them would need the panel recomputed. */
-const PANEL_ATTRS: readonly number[] = [Attr.MaxHp, Attr.Atk, Attr.Def, Attr.Str, Attr.Agi, Attr.Wisd, Attr.Will];
 
 function conditionValue(data: GameData, build: Build, c: Condition): number {
   const s = c.source;
@@ -131,22 +134,26 @@ function conditionValue(data: GameData, build: Build, c: Condition): number {
   return v * s.scale;
 }
 
-function conditionTotals(data: GameData, build: Build, ids: readonly string[]): ConditionTotals {
-  const available = [...(data.kits.operators[build.operator]?.conditions ?? []), ...(build.weapon ? (data.kits.weapons[build.weapon.id] ?? []) : [])];
-  const attrs = new Map<AttrType, number>();
-  const ignore = new Map<Element, number>();
-  for (const id of ids) {
+/** Conditions available to a build: its operator's kit conditions and its weapon's. */
+export function availableConditions(data: GameData, build: Build): readonly Condition[] {
+  return [...(data.kits.operators[build.operator]?.conditions ?? []), ...(build.weapon ? (data.kits.weapons[build.weapon.id] ?? []) : [])];
+}
+
+/** The active conditions as modifiers, with values at the build's levels. */
+export function conditionModifiers(data: GameData, build: Build, ids: readonly string[]): Modifier[] {
+  const available = availableConditions(data, build);
+  return ids.map((id) => {
     const c = available.find((x) => x.id === id);
     if (!c) throw new EngineError(`unknown condition ${id} for this build (available: ${available.map((x) => x.id).join(", ") || "none"})`);
     const value = conditionValue(data, build, c);
     if (c.effect.kind === "attr") {
-      if (PANEL_ATTRS.includes(c.effect.attr)) throw new EngineError(`${c.id}: conditions on panel attributes aren't supported yet`);
-      attrs.set(c.effect.attr, (attrs.get(c.effect.attr) ?? 0) + value);
-    } else {
-      ignore.set(c.effect.element, (ignore.get(c.effect.element) ?? 0) + value);
+      const m = attrModifier(c.effect.attr, value, `condition ${c.id}`);
+      if (!m) throw new EngineError(`${c.id}: attribute ${attrName(c.effect.attr)} doesn't act on hits directly; conditions on panel attributes aren't supported yet`);
+      return m;
     }
-  }
-  return { attrs, ignoreResistance: ignore };
+    const { kind: _kind, ...filters } = c.effect;
+    return { ...filters, value, source: `condition ${c.id}` };
+  });
 }
 
 export function computeHit(
@@ -162,34 +169,42 @@ export function computeHit(
   if (!enemy) throw new EngineError(`unknown enemy ${target.enemy}`);
   const enemyLevel = enemy.levels[target.level - 1];
   if (!enemyLevel) throw new EngineError(`${enemy.id} has no level ${target.level}`);
-  const cond = conditionTotals(data, build, options.conditions);
-  const attr = (a: AttrType) => (panel.attrs[a]?.total ?? data.attributeDefaults[a] ?? 0) + (cond.attrs.get(a) ?? 0);
+
+  const ctx: HitContext = { element: hit.element, skillType: hit.damageType, staggered: options.staggered };
+  const all = [...panelModifiers(data, panel), ...conditionModifiers(data, build, options.conditions), ...(options.modifiers ?? [])];
+  const mods = all.filter((m) => applies(m, ctx));
+  const sum = (zone: Zone) => zoneSum(mods, zone, ctx);
 
   const scaleParts = hit.scale.map((key) => ({ key, value: skillValue(data, panel, build, skill.skillId, key) }));
   const scale = scaleParts.reduce((p, s) => p * s.value, 1);
 
-  // Attacker-side additive bonuses (NormalCalcZone): element + skill type (+ vs staggered).
-  const damageBonus =
-    1 +
-    attr(ELEMENT_DAMAGE_INCREASE[hit.element]) +
-    attr(SKILL_TYPE_DAMAGE_INCREASE[hit.damageType]) +
-    (options.staggered ? attr(Attr.DamageToBrokenUnitIncrease) : 0);
-
-  const critRate = Math.min(1, Math.max(0, attr(Attr.CriticalRate)));
-  const critDamage = attr(Attr.CriticalDamageIncrease);
+  const critRate = Math.min(1, Math.max(0, sum("critRate")));
+  const critDamage = sum("critDamage");
   const crit = options.crit === "never" ? 1 : options.crit === "always" ? 1 + critDamage : 1 + critRate * critDamage;
-
-  const amp = 1 + attr(ELEMENT_AMP[hit.element]);
-  const stagger = options.staggered ? STAGGER_DAMAGE_TAKEN : 1;
 
   const def = enemyLevel[Attr.Def] ?? 0;
   // 2 − 0.99^(−DEF) below zero per the Talos Wiki; negative DEF isn't reachable in the game today.
   const defense = def >= 0 ? 1 / (1 + data.constants.efficiencyOfDEF * def) : 2 - Math.pow(0.99, -def);
 
-  const resistance = (100 - enemy.resistance[hit.element] + (cond.ignoreResistance.get(hit.element) ?? 0)) / 100;
+  // ATK% from buffs joins the panel's ATK% before the attribute bonus.
+  const a = panel.atk;
+  const atkBuff = sum("atk");
+  const atk = atkBuff === 0 ? a.total : ((a.operatorBase + a.weaponBase) * (1 + a.percent + atkBuff) + a.flat) * a.attributeBonus;
 
-  const zones: Zones = { atk: panel.atk.total, scale, damageBonus, crit, amp, stagger, defense, resistance };
-  const exact = zones.atk * scale * damageBonus * crit * amp * stagger * defense * resistance;
+  const zones: Zones = {
+    atk,
+    scale,
+    damageBonus: 1 + sum("damageBonus"),
+    crit,
+    amp: 1 + sum("amp"),
+    susceptibility: 1 + sum("susceptibility"),
+    damageTaken: 1 + sum("damageTaken"),
+    multiplicative: zoneProduct(mods, "multiplicative", ctx),
+    stagger: options.staggered ? STAGGER_DAMAGE_TAKEN : 1,
+    defense,
+    resistance: (100 - enemy.resistance[hit.element] + sum("ignoreResistance")) / 100,
+  };
+  const exact = Object.values(zones).reduce((p, z) => p * z, 1);
   return {
     skillId: skill.skillId,
     hitId: hit.id,
@@ -198,6 +213,7 @@ export function computeHit(
     element: hit.element,
     scaleParts,
     zones,
+    modifiers: mods,
     exact,
     damage: roundDamage(exact),
   };

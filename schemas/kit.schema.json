@@ -91,9 +91,14 @@
             },
             {
               "type": "object",
-              "required": ["kind", "element"],
+              "required": ["kind", "zone"],
               "additionalProperties": false,
-              "properties": { "kind": { "const": "ignoreResistance" }, "element": { "$ref": "#/$defs/element" } }
+              "properties": {
+                "kind": { "const": "zone" },
+                "zone": { "enum": ["atk", "damageBonus", "amp", "susceptibility", "damageTaken", "multiplicative", "ignoreResistance", "critRate", "critDamage"] },
+                "element": { "$ref": "#/$defs/element" },
+                "skillType": { "$ref": "#/$defs/skillType" }
+              }
             }
           ]
         }

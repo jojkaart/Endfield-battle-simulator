@@ -1,0 +1,100 @@
+// One representation for everything that changes a hit's damage: stat panel
+// attributes, kit and weapon conditions, buffs from a battle log, and later
+// the timeline's buffs. All of them become Modifiers, and one function sums
+// them per zone, so effects that do the same thing share one implementation
+// (design principle 15).
+
+import { Attr, ELEMENTS, SKILL_TYPES, type AttrType, type Element, type SkillType } from "./attributes.ts";
+
+/**
+ * Damage zones. Semantics verified against ZMDLogs, which logs every buff by
+ * zone (fixtures/zmdlogs-*.json):
+ * - atk: adds to ATK% before the attribute bonus;
+ * - damageBonus: additive damage bonus (element, skill type, vs staggered, …);
+ * - amp: 1 + Σ;
+ * - susceptibility (ZMDLogs `fragile`): 1 + Σ, separate;
+ * - damageTaken (ZMDLogs `vuln_taken`): 1 + Σ, separate;
+ * - multiplicative (ZMDLogs `prod_vuln_taken`): each × (1 + v);
+ * - ignoreResistance (ZMDLogs `res`): resistance points added back;
+ * - critRate, critDamage: the crit zone's inputs.
+ */
+export const ZONES = [
+  "atk",
+  "damageBonus",
+  "amp",
+  "susceptibility",
+  "damageTaken",
+  "multiplicative",
+  "ignoreResistance",
+  "critRate",
+  "critDamage",
+] as const;
+export type Zone = (typeof ZONES)[number];
+
+export interface Modifier {
+  readonly zone: Zone;
+  readonly value: number;
+  /** Only hits of this element; any element when absent. */
+  readonly element?: Element;
+  /** Only hits counting as this skill type; any when absent. */
+  readonly skillType?: SkillType;
+  /** Only against a staggered target. */
+  readonly staggeredOnly?: boolean;
+  readonly source: string;
+}
+
+/** What a modifier is matched against. */
+export interface HitContext {
+  readonly element: Element;
+  readonly skillType: SkillType;
+  readonly staggered: boolean;
+}
+
+type Mapping = Omit<Modifier, "value" | "source">;
+
+/** Which zone each damage-relevant attribute feeds. Attributes not listed don't affect a hit directly. */
+const ATTR_ZONES = new Map<AttrType, Mapping>([
+  [Attr.CriticalRate, { zone: "critRate" }],
+  [Attr.CriticalDamageIncrease, { zone: "critDamage" }],
+  [Attr.NormalAttackDamageIncrease, { zone: "damageBonus", skillType: "basic" }],
+  [Attr.NormalSkillDamageIncrease, { zone: "damageBonus", skillType: "battle" }],
+  [Attr.ComboSkillDamageIncrease, { zone: "damageBonus", skillType: "combo" }],
+  [Attr.UltimateSkillDamageIncrease, { zone: "damageBonus", skillType: "ultimate" }],
+  [Attr.DamageToBrokenUnitIncrease, { zone: "damageBonus", staggeredOnly: true }],
+  ...ELEMENTS.flatMap((element, i): [AttrType, Mapping][] => [
+    [Attr.PhysicalDamageIncrease + i, { zone: "damageBonus", element }],
+    [Attr.PhysicalEnhancedDmgIncrease + i, { zone: "amp", element }],
+    [Attr.PhysicalVulnerableDmgIncrease + i, { zone: "susceptibility", element }],
+  ]),
+]);
+
+/** The modifier an attribute value amounts to, or null when the attribute doesn't act on hits directly. */
+export function attrModifier(attr: AttrType, value: number, source: string): Modifier | null {
+  const m = ATTR_ZONES.get(attr);
+  return m ? { ...m, value, source } : null;
+}
+
+export function applies(m: Modifier, hit: HitContext): boolean {
+  return (m.element === undefined || m.element === hit.element) &&
+    (m.skillType === undefined || m.skillType === hit.skillType) &&
+    (!m.staggeredOnly || hit.staggered);
+}
+
+/** Sum of a zone's modifiers that apply to the hit. */
+export function zoneSum(mods: readonly Modifier[], zone: Zone, hit: HitContext): number {
+  let sum = 0;
+  for (const m of mods) if (m.zone === zone && applies(m, hit)) sum += m.value;
+  return sum;
+}
+
+/** Product of (1 + v) over a zone's modifiers that apply to the hit. */
+export function zoneProduct(mods: readonly Modifier[], zone: Zone, hit: HitContext): number {
+  let p = 1;
+  for (const m of mods) if (m.zone === zone && applies(m, hit)) p *= 1 + m.value;
+  return p;
+}
+
+// Sanity: ELEMENTS order must match the attribute blocks (50–55, 64–69, 70–75).
+if (Attr.PhysicalDamageIncrease + ELEMENTS.indexOf("ether") !== Attr.EtherDamageIncrease || SKILL_TYPES.length !== 4) {
+  throw new Error("attribute blocks and ELEMENTS are out of order");
+}
