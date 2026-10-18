@@ -58,7 +58,7 @@ log test yet, see problems).
   Gilberta and Typhoeus hit after Arcane's ultimate. Within it the INT hits
   agree with each other (same ×1.9617 residual), so the structure holds, but
   its event keys can't be in the kit without failing the log test. Likely
-  game 1.5; needs a 1.6 INT log or in-game test 6.
+  game 1.5; needs a 1.6 INT log or in-game test 7.
 - The kit can't pick a hit by Intellect ≥ Will, and one event key maps to
   one hit, so INT variants and the final INT laser carry no event keys.
 

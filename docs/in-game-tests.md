@@ -76,7 +76,7 @@ damage numbers of one ultimate, ideally recorded with the ZMDLogs client.
 multiply separately.
 **How (planned):** a Combustion hit with one bonus, the other, and both.
 
-### 6. Arcane's INT damage under her own Corrosion (ready, if you have Arcane)
+### 7. Arcane's INT damage under her own Corrosion (ready, if you have Arcane)
 
 **Why:** in the only INT log (btl_upload_d9e59d0fb737, possibly still game
 1.5) all damage after her ultimate is about twice the model; WILL logs from

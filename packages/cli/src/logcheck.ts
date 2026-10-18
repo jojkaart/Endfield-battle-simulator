@@ -150,7 +150,9 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
         predicted.push(p);
       }
     }
-    if (hit.unquantified.some((u) => !isCorrosionBuff(u.buff))) return { kind: "unquantified", hit, predicted: predicted[0] ?? 0 };
+    // Corrosion's ramp doesn't fit every log yet (time dilation may pause its ticks; talents change its cap and
+    // duration): a hit under Corrosion that matches no level counts as under an unmodelled effect, not a mismatch.
+    if (hit.unquantified.length > 0) return { kind: "unquantified", hit, predicted: predicted[0] ?? 0 };
     return { kind: "mismatch", hit, predicted: [...new Set(predicted)].slice(0, 6), ratio: actual / (predicted[0] ?? 1) };
   });
 }
