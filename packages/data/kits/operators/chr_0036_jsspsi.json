@@ -4,11 +4,27 @@
   "sources": [
     "Hit structure, keys and frames: rmxlinux Json/SkillData chr_0036_jsspsi_* (game 1.6). Battle skill, combo and ultimate hits come from ability entities (*_abilityrange*) spawned by the skill; their frames are the spawn frame plus the entity's own DamageAction frames. Values: SkillPatchTable, potentials from PotentialTalentEffectTable (P3 ×1.2 ultimate atk_scale/atk_scale_2/enhance_final, P5 ×1.15 combo atk_scale/atk_scale2/atk_scale2_1 and +1 stack).",
     "Battle skill hit (normal_skill_abilityrange_1 = atk_scale) matches exactly in fixtures zmdlogs-40d9a3c1da37 (P5), zmdlogs-0eef2474a26f (P5) and zmdlogs-b7b3762d5da8 (P1). In 40d9a3c1da37 every Si hit was 3.83% low until her build there was given attributeNodes 2: nodes chr_0036_jsspsi_5 and _7 (+15 and +20 Wisd, her main attribute) need trust 300, which the log doesn't record; with them off, battle skill, basic attack and ultimate hits there all match exactly.",
-    "Basic attack 2 matches in zmdlogs-0eef2474a26f under Arcane's Corrosion (level 2, 1 tick). Basic attack 1 (both hits) matches in zmdlogs-40d9a3c1da37 and at 0.68 s into Corrosion in zmdlogs-0eef2474a26f; basic attacks 1, 3, 4 aren't mapped to log events because two of their hits in zmdlogs-0eef2474a26f sit just past a whole second of Corrosion while showing one tick fewer (ZMDLogs timestamps fall on a ~110 ms grid, so a hit can be logged up to ~0.11 s late; the log check doesn't allow for that yet). Corrosion ticks there run on the enemy's time: 0 ticks at 0.68/1.03 s, 1 at 1.47/2.04 s, 2 at 2.39/2.50 s and still 2 at 4.19 s after three combo casts (each with a 0.8 s time dilation) at 3.53 s, 3 from 4.32 s.",
-    "Ultimate: the 8 atk_scale hits and the atk_scale_2 hit all match in zmdlogs-40d9a3c1da37 (P3 ×1.2, under the ultimate's own amp, which the log lists) and the 8 atk_scale hits in zmdlogs-b7b3762d5da8 (P1, no ×1.2). Not mapped to log events because both hit kinds share one event key (the log check maps an event to the first kit hit) and because zmdlogs-b7b3762d5da8 logs some of them seconds late, under the wrong buffs.",
+    "Basic attacks 1–4 are mapped to their log events: attack 1 (both hits, one key) matches in zmdlogs-40d9a3c1da37 (2 of 2), attacks 1 and 2 at Corrosion level 2 in zmdlogs-0eef2474a26f and zmdlogs-bdf223db8e49. Their other hits there are under Corrosion and match no level (the log check tolerates that): some sit just past a whole second of Corrosion while showing one tick fewer (ZMDLogs timestamps fall on a ~110 ms grid, so a hit can be logged up to ~0.11 s late). Corrosion ticks in zmdlogs-0eef2474a26f run on the enemy's time: 0 ticks at 0.68/1.03 s, 1 at 1.47/2.04 s, 2 at 2.39/2.50 s and still 2 at 4.19 s after three combo casts (each with a 0.8 s time dilation) at 3.53 s, 3 from 4.32 s.",
+    "Ultimate: the 8 atk_scale hits and the atk_scale_2 hit all match in zmdlogs-40d9a3c1da37 (P3 ×1.2, under the ultimate's own amp, which the log lists; 9 of 9 with the shared event key) and in zmdlogs-b7b3762d5da8 (P1, no ×1.2) all but the slash at t=5688, whose buffs the log lists only as boundary effects, buff_common_affixes_vulnerable_crystal and _natural twice each (an instance ending and its refresh starting); the log check counts both instances (maxStackCnt 0), giving 0.36 Cryo susceptibility where the hit (4886, the same as the slashes before it) had 0.18. So the ultimate stays unmapped until the log check counts a boundary buff listed twice as one instance.",
     "Combo: the 10 atk_scale hits (P5 ×1.15) match exactly in zmdlogs-40d9a3c1da37 only with +100% DMG bonus the log doesn't list: Jade Vessel (wpn_claym_0018) skill 3 combo_dmg_up 0.6 at level 8 (buff_wpn_claym_0018_normal_skill_comboimbue_atk, after a battle skill) + Type 50 Yinglung set (buff_equipsuit_atk_02_addcombodamage_buff) 0.2 per stack, one stack per team battle-skill cast since the wearer's last combo (max_stack 3), here 2 stacks; and in zmdlogs-0eef2474a26f with +130% = 0.7 (skill 3 level 9) + 3 stacks, all 10 hits exact once the log's buff_chr_0034_typhoea_combo_enemy_debuff is dropped (its damageModifier needs decorate mask 33554432 and a slowed target, so it doesn't apply to Si) and Corrosion level 2 has 2 ticks at 4.19 s and 3 from 4.32 s. Not mapped to log events until the engine models both bonuses."
   ],
   "element": "cryst",
+  "buffs": [
+    {
+      "id": "ultimate_amp",
+      "label": "Ultimate: Cryo and Heat Amp",
+      "target": "team",
+      "duration": { "key": "enhance_duration" },
+      "modifiers": [{ "zone": "amp", "value": { "key": "enhance_final" }, "elements": ["cryst", "fire"] }],
+      "note": "Description: Si \"grants temporary Cryo Amp and Heat Amp to the entire team.\" buff_chr_0036_jsspsi_atk_buff_2 (CreateBuffAction at ultimate entity frame 62 on every team member, assigning enhance_final and duration = enhance_duration): two enabled EnhancedActions of rate enhance_final, logged as buff_common_affixes_enhance_crystal and buff_common_affixes_enhance_fire (amp 0.432 at level 12 and P3 in zmdlogs-40d9a3c1da37, 0.36 at P1 in zmdlogs-b7b3762d5da8)."
+    }
+  ],
+  "comboTriggers": [
+    {
+      "any": [{ "on": "inflictionConsumed", "elements": ["cryst", "fire"] }],
+      "note": "CharGrowthTable: \"COMBO TRIGGER: When an enemy's Cryo Infliction or Heat Infliction is consumed or absorbed.\" A reaction that consumes the infliction counts (zmdlogs-bdf223db8e49: Si's battle skill at 2140 ms, a Cryo burst at 7371 ms, Lizhiyan's Nature reaction on the Cryo, buff_common_natural_triggered, at 8152 ms, Si's combo at 11940 ms, inside the 6 s window), and so does Laevatain's Final Strike absorption of Heat (a consumption by her team trigger)."
+    }
+  ],
   "skills": [
     {
       "skillId": "chr_0036_jsspsi_attack1",
@@ -17,8 +33,8 @@
       "durationFrames": 170,
       "note": "durationFrame 170; the chain allows attack 2 from frame 20.",
       "hits": [
-        { "id": "hit1", "label": "Basic attack 1, hit 1", "scale": ["atk_scale1"], "frames": [6], "events": [], "note": "Logged as chr_0036_jsspsi_attack1; matches in zmdlogs-40d9a3c1da37 (t=9147, 9334). Unmapped: see sources (Corrosion tick vs log timestamp in zmdlogs-0eef2474a26f t=4646)." },
-        { "id": "hit2", "label": "Basic attack 1, hit 2", "scale": ["atk_scale2"], "frames": [15], "events": [], "note": "Same event key as hit 1 (atk_scale1 = atk_scale2 at every level)." }
+        { "id": "hit1", "label": "Basic attack 1, hit 1", "scale": ["atk_scale1"], "frames": [6], "events": ["chr_0036_jsspsi_attack1"], "note": "Logged as chr_0036_jsspsi_attack1; matches in zmdlogs-40d9a3c1da37 (t=9147, 9334). Unmapped: see sources (Corrosion tick vs log timestamp in zmdlogs-0eef2474a26f t=4646)." },
+        { "id": "hit2", "label": "Basic attack 1, hit 2", "scale": ["atk_scale2"], "frames": [15], "events": ["chr_0036_jsspsi_attack1"], "note": "Same event key as hit 1 (atk_scale1 = atk_scale2 at every level)." }
       ]
     },
     {
@@ -35,7 +51,7 @@
       "damageType": "basic",
       "durationFrames": 160,
       "note": "durationFrame 160; attack 4 allowed from frame 12.",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [9], "events": [], "note": "Logged as chr_0036_jsspsi_attack3; zmdlogs-0eef2474a26f t=5659 (2.04 s into Corrosion) shows 1 tick, the floor-of-seconds model says 2. Unmapped until the log check allows for timestamp granularity." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [9], "events": ["chr_0036_jsspsi_attack3"], "note": "Logged as chr_0036_jsspsi_attack3; zmdlogs-0eef2474a26f t=5659 (2.04 s into Corrosion) shows 1 tick, the floor-of-seconds model says 2. Unmapped until the log check allows for timestamp granularity." }]
     },
     {
       "skillId": "chr_0036_jsspsi_attack4",
@@ -49,7 +65,7 @@
           "scale": ["atk_scale"],
           "count": 6,
           "frames": [5, 8, 11, 14, 17, 20],
-          "events": [],
+          "events": ["chr_0036_jsspsi_attack4"],
           "note": "ChannelingAction frames 5–40, at most 6 hits per target, 0.1 s apart (display_atk_scale = 6 × atk_scale). Logged as chr_0036_jsspsi_attack4 (only 3 hits in zmdlogs-0eef2474a26f; the third is stamped at the following combo cast). chr_0036_jsspsi_attack4_abilityrange (same key, ≤6 hits 0.133 s apart) isn't spawned from any fetched file and was never logged."
         }
       ]
@@ -97,7 +113,8 @@
           "scale": ["atk_scale"],
           "frames": [15],
           "events": ["chr_0036_jsspsi_normal_skill_abilityrange_1"],
-          "note": "Entity abilityentity_chr_0036_jsspsi_normal_skill_1 spawned at frame 9, its DamageAction at entity frame 6."
+          "applies": [{ "kind": "infliction", "element": "cryst" }],
+          "note": "Entity abilityentity_chr_0036_jsspsi_normal_skill_1 spawned at frame 9, its DamageAction at entity frame 6. Description (I18nTextTable_EN): \"Si deals Cryo DMG and applies Artful Intent, Immobilization, and Cryo Infliction (or Heat Infliction if a Heat element operator is in Team Position 01) on the target.\" The kit can't condition on Team Position 01 yet, so it always inflicts Cryo: wrong when a Heat operator leads (zmdlogs-40d9a3c1da37, Laevatain first: the log's Heat bursts at 7550 and 7663 ms, 0.9 s after Laevatain's and Camille's Heat hits, show Si's 6565 ms hit inflicted Heat there). Immobilization (buff_chr_0036_jsspsi_normal_skill_hitstop) is what Jade Vessel's enemy_vulnerable condition keys on."
         }
       ]
     },
@@ -106,16 +123,49 @@
       "label": "Combo skill",
       "damageType": "combo",
       "durationFrames": 228,
-      "note": "durationFrame 228; battle skill allowed from frame 20; time dilation (curve ComboSkill) for 0.8 s from frame 0. Entity chr_0036_jsspsi_combo_skill_abilityrange spawned at frame 0. Final hit not in the kit: its multiplier is atk_scale2 + n × atk_scale2_1, where n is the number of Cryo/Heat infliction stacks consumed or absorbed to trigger the combo (+1 at P5); kits can only multiply keys. Verified by hand: zmdlogs-40d9a3c1da37 t=14737 = 18.75 × the slash hit ×1.5 crit, i.e. 4.025 + 4 × 1.15 = 8.625 (n = 3, +1 at P5; the same cast's buff_chr_0036_jsspsi_combo_potential2 ATK +0.2 = 0.08 + 0.03 × 4 agrees); zmdlogs-0eef2474a26f t=9331 = 4.025 + 3 × 1.15 with crit and one more Corrosion tick (±1). The combo also gives P2's ATK buff (0.08 + 0.03 × stacks, 10 s), which logs list.",
+      "note": "durationFrame 228; battle skill allowed from frame 20; time dilation (curve ComboSkill) for 0.8 s from frame 0. Entity chr_0036_jsspsi_combo_skill_abilityrange spawned at frame 0: 10 slashes (entity frames 14–41), the final hit at frame 49. Final hit multiplier (entity timeline action 24, SimpleCalcBB): atk_scale2 + combo_count × atk_scale2_1, where combo_count is the number of Cryo/Heat infliction stacks consumed or absorbed to trigger the combo, +1 when potential5 ≥ 1 (P5). Verified by hand: zmdlogs-40d9a3c1da37 t=14737 = 18.75 × the slash hit ×1.5 crit, i.e. 4.025 + 4 × 1.15 = 8.625 (3 stacks, +1 at P5); zmdlogs-0eef2474a26f t=9331 = 4.025 + 3 × 1.15 with crit and one more Corrosion tick (±1). The kit can't take the stack count from the trigger yet, so it models the smallest trigger (1 stack) plus P5's extra stack: a lower bound. P2 (buff_chr_0036_jsspsi_combo_potential2, entity frame 0, on Si): ATK + potential2_base + potential2_enhance × (combo_count, +1 at P5) for potential2_duration (10 s), e.g. 0.08 + 0.03 × 4 = 0.2 in zmdlogs-40d9a3c1da37; not in the kit (the value needs the stack count, and its duration is 0 below P2). Energy: the entity's ObtainCostAction costType 0 (EntityBB_usp = usp, 10) at frame 14; the two at frame 49 (if/else on potential5) are disabled (isEnable false), so 10 per cast.",
       "hits": [
         {
-          "id": "slash",
-          "label": "Combo slashes",
+          "id": "slash_first",
+          "label": "Combo slash 1",
           "scale": ["atk_scale"],
-          "count": 10,
-          "frames": [14, 17, 20, 23, 26, 29, 32, 35, 38, 41],
+          "frames": [14],
           "events": [],
-          "note": "Logged as chr_0036_jsspsi_combo_skill_abilityrange (with the final hit). Unmapped: needs the Jade Vessel and Yinglung-set combo DMG bonuses, which logs don't list."
+          "energy": { "key": "usp" },
+          "note": "Separate from the other slashes only because the energy grant comes with it."
+        },
+        {
+          "id": "slash",
+          "label": "Combo slashes 2–10",
+          "scale": ["atk_scale"],
+          "count": 9,
+          "frames": [17, 20, 23, 26, 29, 32, 35, 38, 41],
+          "events": [],
+          "note": "Logged as chr_0036_jsspsi_combo_skill_abilityrange (with the final hit). Unmapped: needs the Jade Vessel and Yinglung-set combo DMG bonuses, which logs don't list (see sources)."
+        },
+        {
+          "id": "final_base",
+          "label": "Final hit (base)",
+          "scale": ["atk_scale2"],
+          "frames": [49],
+          "events": [],
+          "note": "The final hit is one hit of atk_scale2 + n × atk_scale2_1; the kit sums it from three entries at the same frame (damage is linear in the multiplier). Unmapped: shares the slashes' event key."
+        },
+        {
+          "id": "final_stack",
+          "label": "Final hit (1 consumed stack)",
+          "scale": ["atk_scale2_1"],
+          "frames": [49],
+          "events": [],
+          "note": "One stack: the least that triggers the combo. Lower bound until the engine passes the trigger's stack count (up to 4)."
+        },
+        {
+          "id": "final_p5",
+          "label": "Final hit (P5 extra stack)",
+          "scale": ["atk_scale2_1", "potential5"],
+          "frames": [49],
+          "events": [],
+          "note": "potential5 is 0 below P5 and 1 at P5 (PotentialTalentEffectTable adds 1), so this entry deals nothing below P5."
         }
       ]
     },
@@ -124,14 +174,23 @@
       "label": "Ultimate",
       "damageType": "ultimate",
       "durationFrames": 214,
-      "note": "durationFrame 214; other skills allowed from frame 64. Entity chr_0036_jsspsi_ultimate_skill_abilityrange_1 (fail branch of a CheckMainCharacterCondition; the one every fixture logs) or _abilityrange (succeed branch; same hit timeline) spawned at frame 0. At frame 62 it gives the team buff_chr_0036_jsspsi_atk_buff_2: Cryo and Heat Amp = enhance_final (0.36 at level 12, ×1.2 at P3 = 0.432) for enhance_duration (12 s); every ultimate hit lands under it. Not a kit condition (its value is a skill value, not a talent's or weapon's).",
+      "note": "durationFrame 214; other skills allowed from frame 64. Entity chr_0036_jsspsi_ultimate_skill_abilityrange_1 (fail branch of a CheckMainCharacterCondition; the one every fixture logs) or _abilityrange (succeed branch; same hit timeline) spawned at frame 0. At frame 62 it gives the team buff_chr_0036_jsspsi_atk_buff_2: Cryo and Heat Amp = enhance_final (0.36 at level 12, ×1.2 at P3 = 0.432) for enhance_duration (12 s); every ultimate hit lands under it. Kit buff ultimate_amp, applied by the first slash (frame 63) before its damage, so it runs out one frame late. The same action also cuts the combo cooldown of the Team Position 01 operator by talent Proxy's Patronage's coolDown (SetSkillCdAtOnce, skill type mask 64; talent2_1 / talent2_2 coolDown −10 / −20, negated); not modelled. No RefrainObtainUsp in Si's files, so no energy block.",
       "hits": [
         {
-          "id": "slash",
-          "label": "Ultimate slashes",
+          "id": "slash_first",
+          "label": "Ultimate slash 1",
           "scale": ["atk_scale"],
-          "count": 8,
-          "frames": [63, 66, 70, 73, 77, 80, 84, 88],
+          "frames": [63],
+          "events": [],
+          "buffs": [{ "buff": "ultimate_amp", "beforeDamage": true }],
+          "note": "Separate from the other slashes only because it applies the amp buff."
+        },
+        {
+          "id": "slash",
+          "label": "Ultimate slashes 2–8",
+          "scale": ["atk_scale"],
+          "count": 7,
+          "frames": [66, 70, 73, 77, 80, 84, 88],
           "events": [],
           "note": "Logged as chr_0036_jsspsi_ultimate_skill_abilityrange_1; unmapped, see sources."
         },

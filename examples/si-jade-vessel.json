@@ -1,0 +1,55 @@
+{
+  "operator": "chr_0036_jsspsi",
+  "level": 90,
+  "promotion": 4,
+  "potential": 5,
+  "skillLevels": {
+    "basic": 12,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+  },
+  "weapon": {
+    "id": "wpn_claym_0018",
+    "level": 90,
+    "skillLevels": [
+      9,
+      9,
+      8
+    ]
+  },
+  "gear": [
+    {
+      "id": "item_equip_t4_suit_atk02_hand_03",
+      "artifice": [
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "id": "item_equip_t4_suit_atk02_body_05",
+      "artifice": [
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "id": "item_equip_t4_suit_atk02_edc_06",
+      "artifice": [
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "id": "item_equip_t4_suit_heal01_edc_03",
+      "artifice": [
+        0,
+        3,
+        3
+      ]
+    }
+  ]
+}
