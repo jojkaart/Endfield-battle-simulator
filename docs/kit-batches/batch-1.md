@@ -349,6 +349,22 @@ Most first-round gaps are now expressible; what's left, by family:
   hits that read `eventCount`, and counts Fixed DMG hits as under
   unmodelled effects. Laevatain R5: per-hit fixtures and `efsim calc
   --buff` name kit buffs as active (`kitBuffModifiers`).
-- Not done in this batch: A6 reacting inflictions for "applies Arts
-  Infliction" (Arcane R3's open question) stay excluded from
-  `inflictionApplied`.
+
+### Pass 2: what's still open
+
+Nothing here blocks writing the kits; each item has the interim rule the
+engine uses, and what settles it.
+
+| Item | Interim rule | Settled by |
+|---|---|---|
+| Ti3 jumps in a skill's timeline (Laevatain R1, Liino R5) | no skip: timeline frames are real frames | in-game test 17 |
+| Ti1b hit-stop; entity-layer slow-downs (Imprisonment) | not modelled | in-game tests 18, 37 |
+| A6 WILL combo's element: the triggering infliction's or the enemy's | the enemy's current | in-game test 33 |
+| Arcane R3: does "applies Arts Infliction" include one that forms a reaction | no (`inflictionApplied` excludes it) | in-game test 35 asks the same of combo triggers |
+| V7 cooldown `fraction` | of the full cooldown | in-game test 36 |
+| S9 whether ultimates may start during a `cantCastSkill` channel | no | in-game test 15 |
+| Si R6: do Si's strokes count as battle skills | yes (skillSpecification 3) | in-game test 29 |
+| B9 stacking type 11 across wielders (Si R7) | layers per owner, no cross-wielder cap | minor; two Jade Vessel wielders only |
+| Ti2 projectile travel | kits write landing frames (launch + travel read from the logs) | data status, no engine work |
+| D2 compiler leftovers (poise, finisher factors, forced Lift, per-hit element, created buffs, team-energy frames, the finisher's `atb`) | kits hand-write them | data compilation; doesn't affect numbers |
+| L2 the ×1.42 of one-element reaction keys (`buff_common_<element>_triggered`) | such hits stay unchecked | research |
