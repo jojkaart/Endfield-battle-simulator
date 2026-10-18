@@ -1,0 +1,37 @@
+{
+  "manifest_version": 3,
+  "name": "Endfield SKPORT capture",
+  "version": "0.1.0",
+  "description": "Saves the Endfield player data that SKPORT's own pages load (roster, builds, inventory) to a JSON file. Sends no requests of its own.",
+  "permissions": [
+    "downloads"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Endfield SKPORT capture: number of captured responses"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.skport.com/*"
+      ],
+      "js": [
+        "core.js",
+        "page-hook.js"
+      ],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": [
+        "https://*.skport.com/*"
+      ],
+      "js": [
+        "relay.js"
+      ],
+      "run_at": "document_start"
+    }
+  ]
+}
