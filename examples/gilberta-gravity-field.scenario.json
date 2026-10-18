@@ -1,0 +1,33 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Gilberta (build from btl_upload_4e5e1390085e, P0) with Laevatain vs Rhodagn, both ultimates charged. Gilberta's ultimate applies Nature Infliction and its field's Arts Susceptibility for 5 s; Laevatain's enhanced sequence 3 lands Heat on the Nature Infliction, and that Combustion opens Gilberta's combo window (Arts Reaction trigger); the combo grants her 10 ultimate energy. Her battle skill's explosion then applies Nature again.",
+  "team": [
+    "gilberta-usp02.json",
+    "laevatain-forgeborn.json"
+  ],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0013_aglina": "full",
+    "chr_0016_laevat": "full"
+  },
+  "durationSeconds": 20,
+  "crit": "expected",
+  "rotation": [
+    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_ultimate_skill" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ultimate_skill" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack1" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack2" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack3" },
+    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_combo_skill" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack4" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_normal_skill_during_ult" },
+    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_normal_skill" },
+    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_attack1" },
+    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_attack2" },
+    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_attack3" },
+    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_attack4" }
+  ]
+}
