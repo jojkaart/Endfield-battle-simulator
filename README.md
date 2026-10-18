@@ -3,7 +3,7 @@
 A utility for automatically evaluating team compositions and rotations in
 *Arknights: Endfield* and comparing them against each other.
 
-Status: planning. No code yet.
+Status: planning. No code yet. Next steps: [`docs/roadmap.md`](docs/roadmap.md).
 
 ## Goals
 
