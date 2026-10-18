@@ -238,3 +238,9 @@ Then re-analysis of all seven.
   `chr_0015_lifeng_ultimate_skill` goes in its equipment kit). Open: the
   ×1.42 of reactions logged as `buff_common_<element>_triggered` (Arcane
   G15) is unexplained.
+- Ti1 (part): global slow-downs from SkillData (ultimate time stops,
+  global time dilation with inline or known named curves) shift the world
+  and the other operators by the frames they cost; cooldowns run on.
+  Gilberta's example −1.6%, Si's +2.9%, Typhoeus's +1.0% (Laevatain's, Arcane's,
+  Estella's and Liino's unchanged). Not yet: entity-layer dilation,
+  hit-stop, jumps (Ti3), haste (Ti4). In-game test 18.

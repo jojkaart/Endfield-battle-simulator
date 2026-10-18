@@ -83,6 +83,12 @@ export interface SkillTiming {
   readonly specification: number;
   /** dontInterruptCombo: casting it keeps the basic-attack chain's next step. */
   readonly keepsChain: boolean;
+  /**
+   * Global time slow-downs the skill causes for everyone but its caster
+   * (UltimateTimeAction, global-layer TimeDilationAction): from frame
+   * `from`, the world's time scale for each following frame.
+   */
+  readonly slowdowns: readonly { readonly from: number; readonly scales: readonly number[] }[];
 }
 
 export interface SkillData {

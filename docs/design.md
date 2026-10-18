@@ -309,10 +309,22 @@ all operator SkillData files; Zero Sanity's 120 and old Endaxis's 60 are
 tool choices). Seconds appear only for cooldowns, buff durations and table
 values, and are converted once at load with a documented rounding rule.
 
-From day one the engine has **several clocks**: global scaled time (an
-ultimate or combo can freeze or slow it, which pauses ordinary buffs and SP
-regen), per-entity time, and unscaled time for cooldowns. Adding these later
-would touch everything.
+**Slow-downs** (engine `slowDown`; rules from Endaxis's time runtime, read
+not copied, 2026-10-18): an ultimate's `UltimateTimeAction` (time stop) and
+global-layer `TimeDilationAction`s (a combo's slow-down) scale time for
+everyone but the caster. The world (enemy statuses, inflictions, DoT ticks,
+every buff including the caster's, combo windows, SP regen, energy blocks)
+and the other operators (their hits on the way, delayed actions, current
+action) lose the frames the slow-down takes; skill cooldowns run on raw
+time. Overlapping slow-downs: the lowest scale counts. The engine shifts
+what comes after the slow-down's start by the lost frames, which is exact
+for a stop and, for a partial slow-down, for everything after it ends.
+Curves: inline Unity curves are evaluated (Hermite); of the named ones only
+`ComboSkill` (0.01 for 40% of the duration, up to 1 at 93%, ramp taken as
+linear) and `RESETto1` are known. Not modelled yet: entity-layer
+dilation (Si's hit-stop on the enemy), hit-stop (attacker pauses of
+0.03–0.4 s on most basic attacks) and jumps (Ti3): their curves and
+target enums aren't in the data, or need in-game tests (18).
 
 ### Skill timing
 

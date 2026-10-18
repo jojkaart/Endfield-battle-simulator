@@ -184,6 +184,18 @@ time. The old engine let the attack start after 1.1 s.
 from the battle skill to the first enhanced attack (3.8 s expected), and
 whether Twilight's remaining time stays the same meanwhile.
 
+### 18. What an ultimate's time stop freezes (ready)
+
+**Why:** the engine now freezes everyone but the caster for an ultimate's
+time stop (Laevatain's first 2 s, Gilberta's 1.7 s): the enemy's statuses
+and Combustion ticks, all buffs, combo windows and SP regen, but **not**
+skill cooldowns (Endaxis's rule, from its unit tests only).
+**How:** put a teammate's battle skill on cooldown, note the remaining
+seconds, cast an ultimate with a long animation, and read the teammate's
+cooldown right after: did it go down by the animation's length (cooldowns
+run) or not (frozen)? Also: does the team SP bar move during the
+animation?
+
 ## Results
 
 None yet.

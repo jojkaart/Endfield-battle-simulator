@@ -779,3 +779,39 @@ describe("timeline: arts state for kits", () => {
     expect(s.enemy.infliction).toMatchObject({ element: "fire", stacks: 2 });
   });
 });
+
+describe("timeline: an ultimate's time stop", () => {
+  const g = "chr_0013_aglina";
+  const fx = JSON.parse(readFileSync(new URL("../fixtures/zmdlogs-40d9a3c1da37.json", import.meta.url), "utf8")) as { team: Build[] };
+  const team = fx.team.filter((b) => b.operator === op || b.operator === g);
+  const runTo = (rotation: RotationAction[], frame: number) => {
+    const ctx = createContext(data, { ...scenario(rotation), team, controlled: g, startEnergy: { [op]: "full", [g]: "full" } });
+    let s = init(ctx);
+    for (const a of rotation) s = apply(ctx, s, a);
+    return { ctx, s, end: advance(ctx, s, frame) };
+  };
+
+  it("freezes everyone but the caster for its frames (Laevatain's: 0–61): others' hits on the way land later, the caster's don't", () => {
+    const gil = { operator: g, skill: "chr_0013_aglina_normal_skill" };
+    const ult = { operator: op, skill: L + "ultimate_skill", at: 10 };
+    const plain = runTo([gil], 30 * 20).end.hits.filter((h) => h.operator === g).map((h) => h.frame);
+    const stopped = runTo([gil, ult], 30 * 20).end.hits.filter((h) => h.operator === g).map((h) => h.frame);
+    expect(stopped).toEqual(plain.map((f) => (f > 10 ? f + 61 : f)));
+  });
+
+  it("freezes the world's timers and SP regen, but not cooldowns", () => {
+    const gil = { operator: g, skill: "chr_0013_aglina_normal_skill" };
+    const before = runTo([gil], 10).end;
+    const { s } = runTo([gil, { operator: op, skill: L + "ultimate_skill", at: 10 }], 10);
+    expect(s.readyAt["chr_0013_aglina_normal_skill"]).toBe(before.readyAt["chr_0013_aglina_normal_skill"]);
+    expect(s.spPausedUntil).toBe(Math.max(before.spPausedUntil, 10) + 61);
+    expect(s.slowdowns).toEqual([{ start: 10, scales: Array.from({ length: 61 }, () => 0), exempt: op }]);
+  });
+
+  it("overlapping stops cost only what the new one adds", () => {
+    // Gilberta's ultimate (0–52) right after Laevatain's (0–61): during the overlap Gilberta is frozen already; Laevatain loses Gilberta's 52 frames.
+    const both = runTo([{ operator: op, skill: L + "ultimate_skill" }, { operator: g, skill: "chr_0013_aglina_ultimate_skill", at: 0 }], 0).s;
+    expect(both.slowdowns.map((x) => [x.start, x.scales.length, x.exempt])).toEqual([[0, 61, op], [0, 52, g]]);
+    expect(both.spPausedUntil).toBe(61);
+  });
+});

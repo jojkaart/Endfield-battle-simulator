@@ -161,6 +161,8 @@ export interface TimelineState {
   readonly pending: readonly PendingHit[];
   /** Trigger actions due later (KitTrigger.delay), with the event that started them. */
   readonly pendingActions: readonly { readonly frame: number; readonly owner: string; readonly trigger: string; readonly event: BattleEvent; readonly origin: Origin | null }[];
+  /** Global time slow-downs (an ultimate's time stop, a combo's slow-down) still running or to come: per frame from `start`, all but `exempt` (the caster). */
+  readonly slowdowns: readonly { readonly start: number; readonly scales: readonly number[]; readonly exempt: string }[];
   /** Ultimate energy given later than the cast (a battle skill's team energy at its data frame, KitSkill.teamEnergyFrame). */
   readonly pendingEnergy: readonly { readonly frame: number; readonly operator: string; readonly amount: number }[];
   readonly enemy: EnemyStatus;
@@ -224,6 +226,7 @@ export function init(ctx: TimelineContext): TimelineState {
     pending: [],
     pendingEnergy: [],
     pendingActions: [],
+    slowdowns: [],
     enemy: NO_STATUS,
     buffs: [],
     triggerState: {},
@@ -363,6 +366,80 @@ function ownHitsLanded(st: TimelineState, operator: string): number {
   let last = 0;
   for (const h of st.pending) if (h.operator === operator && h.cast === cast && !h.detached && h.frame > last) last = h.frame;
   return last;
+}
+
+/**
+ * A skill's global slow-downs (docs/design.md "Time"): the world (enemy
+ * statuses and timers, every buff, combo windows, SP regen, energy blocks)
+ * and every operator but the caster (its hits on the way, its current
+ * action) lose the frames the slow-down takes; cooldowns run on. Where
+ * slow-downs overlap the lowest scale counts, so each loses only what the
+ * new one adds. Modelled as shifting everything after the slow-down's start
+ * by the lost frames: exact for a stop, and for a partial slow-down after
+ * it ends.
+ */
+function slowDown(ctx: TimelineContext, st: TimelineState, caster: string, timing: SkillTiming, frame: number): TimelineState {
+  let s: TimelineState = { ...st, slowdowns: st.slowdowns.filter((x) => x.start + x.scales.length > frame) };
+  for (const d of timing.slowdowns) {
+    const start = frame + d.from;
+    const scaleAt = (who: string | null, f: number) => {
+      let m = 1;
+      for (const x of s.slowdowns) if (x.exempt !== who && f >= x.start && f < x.start + x.scales.length) m = Math.min(m, x.scales[f - x.start] as number);
+      return m;
+    };
+    const lost = (who: string | null) => {
+      if (who === caster) return 0;
+      let sum = 0;
+      d.scales.forEach((v, k) => (sum += Math.max(0, scaleAt(who, start + k) - v)));
+      return Math.round(sum);
+    };
+    const world = lost(null);
+    const by = new Map(ctx.scenario.team.map((b) => [b.operator, lost(b.operator)]));
+    s = { ...shiftWorld(s, start, world), slowdowns: [...s.slowdowns, { start, scales: d.scales, exempt: caster }] };
+    for (const [op, n] of by) s = shiftOperator(s, op, start, n);
+  }
+  return s;
+}
+
+/** Everything on the world's clock after `start` happens `n` frames later. */
+function shiftWorld(st: TimelineState, start: number, n: number): TimelineState {
+  if (n <= 0) return st;
+  const later = (f: number) => (f > start ? f + n : f);
+  const e = st.enemy;
+  return {
+    ...st,
+    enemy: {
+      infliction: e.infliction ? { ...e.infliction, expiresAt: later(e.infliction.expiresAt) } : null,
+      statuses: e.statuses.map((x) => ({
+        ...x,
+        expiresAt: later(x.expiresAt),
+        ...(x.nextTickAt !== undefined ? { nextTickAt: later(x.nextTickAt) } : {}),
+        // Its ramp (Corrosion) doesn't advance while time stands still.
+        ...(x.appliedAt <= start && x.expiresAt > start ? { appliedAt: x.appliedAt + n } : {}),
+      })),
+    },
+    buffs: st.buffs.map((b) => (b.expiresAt > start || (b.nextTick ?? -1) > start ? { ...b, expiresAt: later(b.expiresAt), ...(b.nextTick !== undefined ? { nextTick: later(b.nextTick) } : {}) } : b)),
+    comboWindow: Object.fromEntries(Object.entries(st.comboWindow).map(([k, w]) => [k, { ...w, until: later(w.until) }])),
+    energyBlockedUntil: Object.fromEntries(Object.entries(st.energyBlockedUntil).map(([k, f]) => [k, later(f)])),
+    // SP doesn't regenerate meanwhile (taken from the current frame: slow-downs start at their cast or soon after).
+    sp: spAt(st, st.frame),
+    spPausedUntil: st.spPausedUntil > start ? st.spPausedUntil + n : start + n,
+  };
+}
+
+/** An operator's own timeline after `start` (its hits on the way, delayed actions, current action) happens `n` frames later. */
+function shiftOperator(st: TimelineState, operator: string, start: number, n: number): TimelineState {
+  if (n <= 0) return st;
+  const later = (f: number) => (f > start ? f + n : f);
+  const cur = st.acting[operator];
+  const chain = st.chainNext[operator];
+  return {
+    ...st,
+    pending: st.pending.map((h) => (h.operator === operator && h.frame > start ? { ...h, frame: h.frame + n } : h)),
+    pendingActions: st.pendingActions.map((a) => (a.owner === operator && a.frame > start ? { ...a, frame: a.frame + n } : a)),
+    ...(cur ? { acting: { ...st.acting, [operator]: { ...cur, frame: cur.frame + n } } } : {}),
+    ...(chain ? { chainNext: { ...st.chainNext, [operator]: { ...chain, from: later(chain.from), until: later(chain.until) } } } : {}),
+  };
 }
 
 /** How long a chain survives a skill that doesn't interrupt it, after that skill's exclusive time. */
@@ -1037,7 +1114,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   };
   const castEvent: BattleEvent = { type: "cast", frame, operator, skillId, kind: costs.kind, controlled: s.controlled === operator };
   const endedEvents: BattleEvent[] = [...new Map(consumedBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id }])).values()];
-  return { state: cast, events: [castEvent, ...endedEvents], origin: { operator, kind: costs.kind } };
+  return { state: slowDown(ctx, cast, operator, costs.timing, frame), events: [castEvent, ...endedEvents], origin: { operator, kind: costs.kind } };
 }
 
 export interface TimelineResult {

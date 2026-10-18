@@ -27,7 +27,7 @@ function gameData(over: { def?: number; fireRes?: number; atkPercent?: number } 
       },
     },
     skills: {
-      op_skill: { id: "op_skill", fileLoaded: true, timing: { durationFrames: 60, exclusiveFrames: 20, windows: [{ from: 15, to: 30, skills: [] }], channels: [], specification: 3, keepsChain: false }, defaults: { ratio: 1 }, statModifiers: [],
+      op_skill: { id: "op_skill", fileLoaded: true, timing: { durationFrames: 60, exclusiveFrames: 20, windows: [{ from: 15, to: 30, skills: [] }], channels: [], specification: 3, keepsChain: false, slowdowns: [] }, defaults: { ratio: 1 }, statModifiers: [],
         levels: [{ level: 1, blackboard: { atk_scale: 2 }, coolDown: 0, costType: 1, costValue: 100 }] },
       wpn_stat: { id: "wpn_stat", fileLoaded: true, timing: null, defaults: {}, statModifiers: [{ attr: Attr.Atk, slot: 6, target: 0, key: "atk", literal: 0 }],
         levels: [{ level: 1, blackboard: { atk: over.atkPercent ?? 0.5 }, coolDown: 0, costType: 0, costValue: 0 }] },
