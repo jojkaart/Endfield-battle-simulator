@@ -7,3 +7,4 @@ export * from "./constants.ts";
 export * from "./effects.ts";
 export * from "./stats.ts";
 export * from "./damage.ts";
+export * from "./reactions.ts";

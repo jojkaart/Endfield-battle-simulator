@@ -1,11 +1,26 @@
 // Checks a log fixture: predicts every logged hit that a kit covers from the
 // stored build and the logged buff effects, and compares with the real damage.
 
-import { attrModifier, computeHit, computeStats, roundDamage, type GameData, type KitHit, type KitSkill, type Modifier, type SkillType } from "@efsim/engine";
+import {
+  attrModifier,
+  computeHit,
+  computeReaction,
+  computeStats,
+  corrosionModifier,
+  parseReactionEvent,
+  roundDamage,
+  skillValue,
+  type GameData,
+  type KitHit,
+  type KitSkill,
+  type Modifier,
+  type SkillType,
+  type StatPanel,
+} from "@efsim/engine";
 import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
 
 export type HitVerdict =
-  | { readonly kind: "match"; readonly hit: LogHit; readonly predicted: number; readonly usedBoundary: boolean; readonly crit: boolean }
+  | { readonly kind: "match"; readonly hit: LogHit; readonly predicted: number; readonly assumed: readonly string[] }
   | { readonly kind: "mismatch"; readonly hit: LogHit; readonly predicted: readonly number[]; readonly ratio: number }
   | { readonly kind: "uncovered"; readonly hit: LogHit }
   /** A covered hit under an effect the log can't quantify and the engine doesn't model yet. */
@@ -52,33 +67,74 @@ function findHit(data: GameData, operator: string, event: string): [KitSkill, Ki
   return null;
 }
 
-export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
-  const panels = new Map(fx.team.map((b) => [b.operator, { build: b, panel: computeStats(data, b) }]));
-  return fx.hits.map((hit): HitVerdict => {
-    const found = findHit(data, hit.operator, hit.event);
-    const member = panels.get(hit.operator);
-    if (!found || !member) return { kind: "uncovered", hit };
-    const [skill, kitHit] = found;
-    const actual = hit.uncapped ?? hit.value;
-    const crits = hit.crit === null ? [false, true] : [hit.crit];
-    const predicted: number[] = [];
-    for (const usedBoundary of hit.boundaryEffects.length ? [false, true] : [false]) {
-      const modifiers = logModifiers(usedBoundary ? [...hit.effects, ...hit.boundaryEffects] : hit.effects);
-      for (const crit of crits) {
-        const p = roundDamage(
-          computeHit(data, member.build, member.panel, { enemy: fx.enemy.id, level: fx.enemy.level }, skill, kitHit, {
-            crit: crit ? "always" : "never",
-            staggered: false,
-            conditions: [],
-            modifiers,
-          }).exact,
-        );
-        if (Math.abs(p - actual) <= 1) return { kind: "match", hit, predicted: p, usedBoundary, crit };
-        predicted.push(p);
+/**
+ * Corrosion's resistance shred, which the log lists without a value: from a
+ * Nature burst (natural_natural_corrupt_do) or a Nature reaction onto another
+ * infliction (natural_<element>_triggered). Both modify attributes 94–98.
+ */
+export function isCorrosionBuff(buff: string): boolean {
+  return buff === "buff_common_natural_natural_corrupt_do" || /^buff_common_natural_(fire|pulse|cryst)_triggered$/.test(buff);
+}
+
+interface Candidate {
+  readonly assumed: readonly string[];
+  readonly modifiers: readonly Modifier[];
+  readonly crit: boolean;
+  readonly stacks: number;
+}
+
+/** Every combination of what the log leaves open for a hit. */
+function candidates(hit: LogHit, panels: ReadonlyMap<string, { panel: StatPanel }>, stackOptions: readonly number[]): Candidate[] {
+  const out: Candidate[] = [];
+  const corrosion = hit.unquantified.find((u) => isCorrosionBuff(u.buff));
+  const corrosionLevels = corrosion ? [1, 2, 3, 4] : [0];
+  for (const usedBoundary of hit.boundaryEffects.length ? [false, true] : [false]) {
+    const base = logModifiers(usedBoundary ? [...hit.effects, ...hit.boundaryEffects] : hit.effects);
+    for (const level of corrosionLevels) {
+      const extra: Modifier[] = [];
+      const assumed: string[] = usedBoundary ? ["boundary buffs applied"] : [];
+      if (corrosion && level > 0) {
+        const applierAi = panels.get(corrosion.source)?.panel.attrs[87]?.total ?? 0;
+        extra.push(corrosionModifier(level, hit.t - corrosion.since, applierAi));
+        assumed.push(`Corrosion level ${level}`);
+      }
+      for (const crit of hit.crit === null ? [false, true] : [hit.crit]) {
+        for (const stacks of stackOptions) {
+          out.push({
+            assumed: [...assumed, ...(hit.crit === null ? [crit ? "crit" : "no crit"] : []), ...(stackOptions.length > 1 ? [`${stacks} stack(s)`] : [])],
+            modifiers: [...base, ...extra],
+            crit,
+            stacks,
+          });
+        }
       }
     }
-    if (hit.unquantified.length > 0) return { kind: "unquantified", hit, predicted: predicted[0] ?? 0 };
-    return { kind: "mismatch", hit, predicted, ratio: actual / (predicted[0] ?? 1) };
+  }
+  return out;
+}
+
+export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
+  const panels = new Map(fx.team.map((b) => [b.operator, { build: b, panel: computeStats(data, b) }]));
+  const target = { enemy: fx.enemy.id, level: fx.enemy.level };
+  return fx.hits.map((hit): HitVerdict => {
+    const member = panels.get(hit.operator);
+    const reaction = parseReactionEvent(hit.event);
+    const found = reaction ? null : findHit(data, hit.operator, hit.event);
+    if (!member || (!found && !reaction)) return { kind: "uncovered", hit };
+    const actual = hit.uncapped ?? hit.value;
+    const stackOptions = reaction && reaction.kind !== "burst" ? [1, 2, 3, 4] : [1];
+    const predicted: number[] = [];
+    for (const c of candidates(hit, panels, stackOptions)) {
+      const options = { crit: c.crit ? ("always" as const) : ("never" as const), staggered: false, conditions: [], modifiers: c.modifiers };
+      const result = reaction
+        ? computeReaction(data, member.build, member.panel, target, { ...reaction, stacks: c.stacks }, options)
+        : computeHit(data, member.build, member.panel, target, (found as [KitSkill, KitHit])[0], (found as [KitSkill, KitHit])[1], options);
+      const p = roundDamage(result.exact);
+      if (Math.abs(p - actual) <= 1) return { kind: "match", hit, predicted: p, assumed: c.assumed };
+      predicted.push(p);
+    }
+    if (hit.unquantified.some((u) => !isCorrosionBuff(u.buff))) return { kind: "unquantified", hit, predicted: predicted[0] ?? 0 };
+    return { kind: "mismatch", hit, predicted: [...new Set(predicted)].slice(0, 6), ratio: actual / (predicted[0] ?? 1) };
   });
 }
 
@@ -96,6 +152,9 @@ export function formatLogCheck(data: GameData, fx: LogFixture, verdicts: readonl
         `${count("unquantified")} under unmodelled effects, ${count("uncovered")} not covered by a kit` +
         ` (${damage ? Math.round((covered / damage) * 100) : 0}% of its damage covered)`,
     );
+    const assumptions = new Map<string, number>();
+    for (const v of mine) if (v.kind === "match") for (const a of v.assumed) assumptions.set(a, (assumptions.get(a) ?? 0) + 1);
+    if (assumptions.size) out.push(`  matched assuming: ${[...assumptions].map(([a, k]) => `${a} ×${k}`).join(", ")}`);
     for (const v of mine.filter((x) => x.kind === "mismatch")) {
       if (v.kind !== "mismatch") continue;
       out.push(`  MISMATCH t=${v.hit.t} ${v.hit.event}: logged ${v.hit.uncapped ?? v.hit.value}, predicted ${v.predicted.join(" / ")} (ratio ${v.ratio.toFixed(4)})`);
@@ -146,4 +205,66 @@ export function impliedScales(data: GameData, fx: LogFixture, operator: string):
       }
       return { event: h.event, unquantified: h.unquantified.map((u) => u.buff), t: h.t, crit: h.crit, value: h.uncapped ?? h.value, bySkillType };
     });
+}
+
+export interface ScaleMatch {
+  readonly event: string;
+  readonly hits: number;
+  readonly matches: readonly { readonly skillId: string; readonly keys: readonly string[]; readonly damageType: SkillType; readonly corrosion: number; readonly agree: number }[];
+}
+
+/**
+ * For writing kits: which of the operator's skill values (one key, or a
+ * product of two) explain each logged event's damage, per skill type and
+ * Corrosion level. `agree` counts the event's hits that value reproduces
+ * within ±1.
+ */
+export function findScales(data: GameData, fx: LogFixture, operator: string): ScaleMatch[] {
+  const build = fx.team.find((b) => b.operator === operator);
+  const op = data.operators[operator];
+  if (!build || !op) throw new Error(`${operator} isn't in ${fx.id}`);
+  const panel = computeStats(data, build);
+  const panels = new Map(fx.team.map((b) => [b.operator, { panel: computeStats(data, b) }]));
+  const target = { enemy: fx.enemy.id, level: fx.enemy.level };
+  const values: { skillId: string; key: string; value: number }[] = [];
+  for (const skillId of Object.keys(op.skillGroups)) {
+    const skill = data.skills[skillId];
+    if (!skill) continue;
+    const level = skill.levels[build.skillLevels[op.skillGroups[skillId] as SkillType] - 1];
+    for (const [key, value] of Object.entries({ ...skill.defaults, ...(level?.blackboard ?? {}) })) {
+      if (value > 0 && value < 100) values.push({ skillId, key, value: skillValue(data, panel, build, skillId, key) });
+    }
+  }
+  const byEvent = new Map<string, LogHit[]>();
+  for (const h of fx.hits) if (h.operator === operator && h.element && !parseReactionEvent(h.event)) byEvent.set(h.event, [...(byEvent.get(h.event) ?? []), h]);
+  const out: ScaleMatch[] = [];
+  for (const [event, hits] of [...byEvent].sort()) {
+    const tally = new Map<string, { skillId: string; keys: string[]; damageType: SkillType; corrosion: number; agree: number }>();
+    for (const hit of hits) {
+      for (const damageType of ["basic", "battle", "combo", "ultimate"] as const) {
+        const kitHit: KitHit = { id: "x", label: "", scale: [], count: 1, events: [], damageType, element: hit.element ?? "physical" };
+        for (const c of candidates(hit, panels, [1])) {
+          const unit = computeHit(data, build, panel, target, { skillId: values[0]?.skillId ?? "", label: "", hits: [] }, kitHit, {
+            crit: c.crit ? "always" : "never", staggered: false, conditions: [], modifiers: c.modifiers,
+          }).exact;
+          const need = (hit.uncapped ?? hit.value) / unit;
+          const corrosion = Number(/Corrosion level (\d)/.exec(c.assumed.join(" "))?.[1] ?? 0);
+          const consider = (skillId: string, keys: string[], v: number) => {
+            if (Math.abs(Math.round(unit * v) - (hit.uncapped ?? hit.value)) > 1) return;
+            const id = `${skillId}|${keys.join("*")}|${damageType}|${corrosion}`;
+            const t = tally.get(id) ?? { skillId, keys, damageType, corrosion, agree: 0 };
+            t.agree++;
+            tally.set(id, t);
+          };
+          for (const a of values) {
+            consider(a.skillId, [a.key], a.value);
+            if (Math.abs(a.value - need) / need > 0.5) continue;
+            for (const b of values) if (b.skillId === a.skillId && b.key !== a.key && b.key > a.key) consider(a.skillId, [a.key, b.key], a.value * b.value);
+          }
+        }
+      }
+    }
+    out.push({ event, hits: hits.length, matches: [...tally.values()].sort((x, y) => y.agree - x.agree).slice(0, 8) });
+  }
+  return out;
 }

@@ -49,7 +49,8 @@ export interface Modifier {
 /** What a modifier is matched against. */
 export interface HitContext {
   readonly element: Element;
-  readonly skillType: SkillType;
+  /** Null for damage that isn't a skill's, e.g. reactions: skill-type bonuses don't apply. */
+  readonly skillType: SkillType | null;
   readonly staggered: boolean;
 }
 

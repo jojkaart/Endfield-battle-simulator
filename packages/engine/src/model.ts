@@ -181,6 +181,8 @@ export interface KitHit {
   readonly count: number;
   /** Event keys battle logs use for this hit (skill, projectile or ability-entity IDs). */
   readonly events: readonly string[];
+  /** Frame of each landing from the skill's start (30 FPS), when known. */
+  readonly frames?: readonly number[];
   /** Which skill-type damage bonus applies (enhanced basic attacks during an ultimate are still "basic"). */
   readonly damageType: SkillType;
   readonly element: Element;
@@ -189,6 +191,8 @@ export interface KitHit {
 export interface KitSkill {
   readonly skillId: string;
   readonly label: string;
+  /** How long the skill locks the operator (30 FPS frames), when known. */
+  readonly durationFrames?: number;
   readonly hits: readonly KitHit[];
 }
 

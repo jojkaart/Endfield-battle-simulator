@@ -2,12 +2,13 @@
 // pipeline (docs/data-sources.md#3-damage-formula). Every zone is kept in the
 // result so a number can be compared zone by zone (design principle 10).
 
-import { Attr, attrName, type Element } from "./attributes.ts";
+import { Attr, attrName, type Element, type SkillType } from "./attributes.ts";
 import type { Build } from "./build.ts";
 import { STAGGER_DAMAGE_TAKEN } from "./constants.ts";
 import { applies, attrModifier, zoneProduct, zoneSum, type HitContext, type Modifier, type Zone } from "./effects.ts";
 import { EngineError } from "./errors.ts";
 import type { Condition, GameData, KitHit, KitSkill } from "./model.ts";
+import { artsIntensityDamage, artsLevelCoefficient, reactionBase, type ReactionKind } from "./reactions.ts";
 import { skillLevel, type StatPanel } from "./stats.ts";
 
 export type CritMode = "never" | "always" | "expected";
@@ -48,7 +49,7 @@ export const NOT_MODELLED = [
   "protection / damage reduction",
   "link",
   "finisher",
-  "arts reactions and physical statuses",
+  "physical statuses (reactions: burst, reaction, burning only)",
 ] as const;
 
 export interface HitDamage {
@@ -156,13 +157,32 @@ export function conditionModifiers(data: GameData, build: Build, ids: readonly s
   });
 }
 
-export function computeHit(
+/** What is being hit with: everything a damage calculation needs besides the attacker and target. */
+export interface DamageSpec {
+  readonly skillId: string;
+  readonly hitId: string;
+  readonly label: string;
+  readonly count: number;
+  readonly element: Element;
+  /** Null for damage that isn't a skill's (reactions): no skill-type bonus. */
+  readonly skillType: SkillType | null;
+  readonly scaleParts: readonly { readonly key: string; readonly value: number }[];
+  /** Damage-over-time ticks can't crit. */
+  readonly canCrit: boolean;
+}
+
+/** All modifiers acting on a build's hits: stat panel, active conditions, and external ones. */
+export function activeModifiers(data: GameData, build: Build, panel: StatPanel, options: DamageOptions): Modifier[] {
+  return [...panelModifiers(data, panel), ...conditionModifiers(data, build, options.conditions), ...(options.modifiers ?? [])];
+}
+
+/** The shared damage pipeline: ATK × multiplier × zones (docs/data-sources.md#3-damage-formula). */
+export function computeDamage(
   data: GameData,
   build: Build,
   panel: StatPanel,
   target: DamageTarget,
-  skill: KitSkill,
-  hit: KitHit,
+  spec: DamageSpec,
   options: DamageOptions = DEFAULT_DAMAGE_OPTIONS,
 ): HitDamage {
   const enemy = data.enemies[target.enemy];
@@ -170,17 +190,15 @@ export function computeHit(
   const enemyLevel = enemy.levels[target.level - 1];
   if (!enemyLevel) throw new EngineError(`${enemy.id} has no level ${target.level}`);
 
-  const ctx: HitContext = { element: hit.element, skillType: hit.damageType, staggered: options.staggered };
-  const all = [...panelModifiers(data, panel), ...conditionModifiers(data, build, options.conditions), ...(options.modifiers ?? [])];
-  const mods = all.filter((m) => applies(m, ctx));
+  const ctx: HitContext = { element: spec.element, skillType: spec.skillType, staggered: options.staggered };
+  const mods = activeModifiers(data, build, panel, options).filter((m) => applies(m, ctx));
   const sum = (zone: Zone) => zoneSum(mods, zone, ctx);
 
-  const scaleParts = hit.scale.map((key) => ({ key, value: skillValue(data, panel, build, skill.skillId, key) }));
-  const scale = scaleParts.reduce((p, s) => p * s.value, 1);
+  const scale = spec.scaleParts.reduce((p, s) => p * s.value, 1);
 
   const critRate = Math.min(1, Math.max(0, sum("critRate")));
   const critDamage = sum("critDamage");
-  const crit = options.crit === "never" ? 1 : options.crit === "always" ? 1 + critDamage : 1 + critRate * critDamage;
+  const crit = !spec.canCrit || options.crit === "never" ? 1 : options.crit === "always" ? 1 + critDamage : 1 + critRate * critDamage;
 
   const def = enemyLevel[Attr.Def] ?? 0;
   // 2 − 0.99^(−DEF) below zero per the Talos Wiki; negative DEF isn't reachable in the game today.
@@ -202,21 +220,71 @@ export function computeHit(
     multiplicative: zoneProduct(mods, "multiplicative", ctx),
     stagger: options.staggered ? STAGGER_DAMAGE_TAKEN : 1,
     defense,
-    resistance: (100 - enemy.resistance[hit.element] + sum("ignoreResistance")) / 100,
+    resistance: (100 - enemy.resistance[spec.element] + sum("ignoreResistance")) / 100,
   };
   const exact = Object.values(zones).reduce((p, z) => p * z, 1);
   return {
-    skillId: skill.skillId,
-    hitId: hit.id,
-    label: hit.label,
-    count: hit.count,
-    element: hit.element,
-    scaleParts,
+    skillId: spec.skillId,
+    hitId: spec.hitId,
+    label: spec.label,
+    count: spec.count,
+    element: spec.element,
+    scaleParts: spec.scaleParts,
     zones,
     modifiers: mods,
     exact,
     damage: roundDamage(exact),
   };
+}
+
+/** A kit hit: its multiplier is the product of its skill's blackboard values. */
+export function computeHit(
+  data: GameData,
+  build: Build,
+  panel: StatPanel,
+  target: DamageTarget,
+  skill: KitSkill,
+  hit: KitHit,
+  options: DamageOptions = DEFAULT_DAMAGE_OPTIONS,
+): HitDamage {
+  const scaleParts = hit.scale.map((key) => ({ key, value: skillValue(data, panel, build, skill.skillId, key) }));
+  return computeDamage(data, build, panel, target, {
+    skillId: skill.skillId,
+    hitId: hit.id,
+    label: hit.label,
+    count: hit.count,
+    element: hit.element,
+    skillType: hit.damageType,
+    scaleParts,
+    canCrit: true,
+  }, options);
+}
+
+/** An arts reaction, burst or burning tick caused by the build's operator. */
+export function computeReaction(
+  data: GameData,
+  build: Build,
+  panel: StatPanel,
+  target: DamageTarget,
+  reaction: { readonly kind: ReactionKind; readonly element: Element; readonly stacks: number },
+  options: DamageOptions = DEFAULT_DAMAGE_OPTIONS,
+): HitDamage {
+  const ctx: HitContext = { element: reaction.element, skillType: null, staggered: options.staggered };
+  const ai = zoneSum(activeModifiers(data, build, panel, options), "artsIntensity", ctx);
+  return computeDamage(data, build, panel, target, {
+    skillId: `reaction:${reaction.kind}`,
+    hitId: `${reaction.element}:${reaction.stacks}`,
+    label: `${reaction.kind} (${reaction.element}, ${reaction.stacks})`,
+    count: 1,
+    element: reaction.element,
+    skillType: null,
+    scaleParts: [
+      { key: `${reaction.kind} base`, value: reactionBase(reaction.kind, reaction.stacks) },
+      { key: "level coefficient", value: artsLevelCoefficient(build.level) },
+      { key: "arts intensity", value: artsIntensityDamage(ai) },
+    ],
+    canCrit: reaction.kind !== "combustionTick",
+  }, options);
 }
 
 /** Every hit of the operator's kit. */

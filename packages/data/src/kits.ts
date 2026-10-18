@@ -24,7 +24,8 @@ interface RawKit {
     skillId: string;
     label: string;
     damageType: "basic" | "battle" | "combo" | "ultimate";
-    hits: { id: string; label?: string; scale: string[]; count?: number; element?: Element; events?: string[] }[];
+    durationFrames?: number;
+    hits: { id: string; label?: string; scale: string[]; count?: number; element?: Element; events?: string[]; frames?: number[] }[];
   }[];
   conditions?: RawCondition[];
 }
@@ -93,6 +94,7 @@ export function loadKits(data: KitData): Kits {
       return {
         skillId: s.skillId,
         label: s.label,
+        ...(s.durationFrames !== undefined ? { durationFrames: s.durationFrames } : {}),
         hits: s.hits.map((h) => {
           if (ids.has(h.id)) throw new Error(`${where}: duplicate hit ${h.id}`);
           ids.add(h.id);
@@ -100,7 +102,11 @@ export function loadKits(data: KitData): Kits {
           const element = h.element ?? kit.element;
           if (!element || !ELEMENTS.includes(element)) throw new Error(`${where} hit ${h.id}: no element`);
           const events = h.events ?? (s.hits.length === 1 ? [s.skillId] : []);
-          return { id: h.id, label: h.label ?? s.label, scale: h.scale, count: h.count ?? 1, damageType: s.damageType, element, events };
+          if (h.frames && h.frames.length !== (h.count ?? 1)) throw new Error(`${where} hit ${h.id}: ${h.frames.length} frames for count ${h.count ?? 1}`);
+          return {
+            id: h.id, label: h.label ?? s.label, scale: h.scale, count: h.count ?? 1, damageType: s.damageType, element, events,
+            ...(h.frames ? { frames: h.frames } : {}),
+          };
         }),
       };
     });
