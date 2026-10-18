@@ -22,6 +22,16 @@ sets they use), in phases that repeat until nothing is missing:
 5. **Kits:** write or update the batch's kits (now mostly data), verify
    them against the logs, then the [pattern review](kit-abstractions.md#repeating-the-review).
 
+## Equipment is generic
+
+Any weapon or gear set can be put on any operator (owner, 2026-10-18), and
+the simulation must support bad choices: an effect just doesn't activate if
+the wielder never does what it needs. So weapon and gear-set effects are
+always written as wielder-relative mechanisms (conditions and triggers on
+the wielder's own hits, skills, events and stats), never for a particular
+operator. The data gives operators and weapons a weapon type; the engine
+doesn't enforce it, and a loadout search may restrict to it by default.
+
 ## Gap report format
 
 One file per operator, `docs/kit-batches/batch-N/<operator>.md`:
