@@ -1,0 +1,55 @@
+{
+  "operator": "chr_0013_aglina",
+  "level": 90,
+  "promotion": 4,
+  "potential": 0,
+  "skillLevels": {
+    "basic": 9,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+  },
+  "weapon": {
+    "id": "wpn_funnel_0011",
+    "level": 90,
+    "skillLevels": [
+      9,
+      9,
+      4
+    ]
+  },
+  "gear": [
+    {
+      "id": "item_equip_t4_suit_usp02_hand_03",
+      "artifice": [
+        3,
+        0,
+        2
+      ]
+    },
+    {
+      "id": "item_equip_t4_suit_usp02_body_01",
+      "artifice": [
+        3,
+        2,
+        3
+      ]
+    },
+    {
+      "id": "item_equip_t4_suit_usp02_edc_03",
+      "artifice": [
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "id": "item_equip_t4_suit_fire_natr01_edc_03",
+      "artifice": [
+        3,
+        2,
+        3
+      ]
+    }
+  ]
+}
