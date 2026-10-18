@@ -11,7 +11,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { isBuffFileListed, readBuffFile } from "./buffData.ts";
-import { ELEMENTS, predicateRefs, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type KitBuff, type Predicate, type ValueExpr, type HitApplication, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
+import { ELEMENTS, predicateRefs, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
@@ -28,7 +28,7 @@ interface RawCondition {
 
 interface RawHit {
   id: string; label?: string; scale: string[]; count?: number; element?: Element; events?: string[]; frames?: number[];
-  applies?: HitApplication[]; requires?: StackRequirement; gains?: { stack: string; amount?: ValueExpr }[];
+  applies?: KitApplication[]; requires?: StackRequirement; gains?: { stack: string; amount?: ValueExpr; if?: Predicate }[];
   bonuses?: { zone: Zone; key: string }[];
   finalStrike?: boolean;
   factor?: number;
@@ -41,7 +41,7 @@ interface RawHit {
   damageType?: SkillType | "none";
 }
 
-type RawTrigger = Omit<KitTrigger, "do"> & { note?: string; do: (Exclude<KitTrigger["do"][number], { kind: "hits" }> | { kind: "hits"; hits: RawHit[] })[] };
+type RawTrigger = Omit<KitTrigger, "do"> & { note?: string; do: (Exclude<KitTrigger["do"][number], { kind: "hits" }> | { kind: "hits"; hits: RawHit[]; if?: Predicate })[] };
 
 interface RawKit {
   operator: string;
@@ -183,6 +183,7 @@ function kitChecker(scope: KitScope) {
         checkPredicate(x.if, `${where} hit ${h.id} extraScale`);
       }
       if (h.if) checkPredicate(h.if, `${where} hit ${h.id}`);
+      for (const x of [...(h.applies ?? []), ...(h.buffs ?? []), ...(h.gains ?? [])]) if (x.if) checkPredicate(x.if, `${where} hit ${h.id}`);
       for (const g of h.gains ?? []) if (g.amount !== undefined) checkValue(g.amount, src.skillId, `${where} hit ${h.id} gains`);
       const element = h.element ?? scope.element;
       if (!element || !ELEMENTS.includes(element)) throw new Error(`${where} hit ${h.id}: no element`);
@@ -211,7 +212,7 @@ function kitChecker(scope: KitScope) {
         ...(h.energy ? { energy: h.energy } : {}),
         ...(h.if ? { if: h.if } : {}),
         ...((h.finalStrike ?? src.finalStrike?.(h, events) ?? false) ? { finalStrike: true } : {}),
-        ...(h.gains ? { gains: h.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1 })) } : {}),
+        ...(h.gains ? { gains: h.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1, ...(g.if ? { if: g.if } : {}) })) } : {}),
       };
     });
   };
@@ -227,10 +228,12 @@ function kitChecker(scope: KitScope) {
     if (t.if) checkPredicate(t.if, where);
     if (t.cooldown !== undefined) checkValue(t.cooldown, skillId, `${where} cooldown`);
     for (const a of t.do) {
+      if (a.if) checkPredicate(a.if, where);
       switch (a.kind) {
         case "gain":
           for (const g of a.gains) {
             if (!stackIds.has(g.stack)) throw new Error(`${where}: gains unknown stack ${g.stack}`);
+            if (g.if) checkPredicate(g.if, where);
             if ((g.amount as ValueExpr | undefined) !== undefined) checkValue(g.amount, skillId, `${where} gains`);
           }
           break;
@@ -248,8 +251,10 @@ function kitChecker(scope: KitScope) {
         case "cooldown":
           checkValue(a.seconds, skillId, `${where} cooldown change`);
           break;
-        case "openCombo":
         case "apply":
+          for (const x of a.applies) if (x.if) checkPredicate(x.if, where);
+          break;
+        case "openCombo":
         case "hits":
           break;
       }
@@ -257,8 +262,8 @@ function kitChecker(scope: KitScope) {
     return {
       ...t,
       do: t.do.map((a) =>
-        a.kind === "gain" ? { ...a, gains: a.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1 })) }
-        : a.kind === "hits" ? { kind: "hits", hits: normalizeHits(a.hits, { skillId, label: t.id, checkScale: (key, w) => checkValue(key, skillId, w) }, where) }
+        a.kind === "gain" ? { ...a, gains: a.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1, ...(g.if ? { if: g.if } : {}) })) }
+        : a.kind === "hits" ? { ...(a.if ? { if: a.if } : {}), kind: "hits", hits: normalizeHits(a.hits, { skillId, label: t.id, checkScale: (key, w) => checkValue(key, skillId, w) }, where) }
         : a,
       ),
     };

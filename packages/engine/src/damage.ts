@@ -28,7 +28,7 @@ export interface DamageOptions {
 }
 
 /** The parts of an EvalContext that describe the moment rather than the build. */
-export type Situation = Partial<Pick<EvalContext, "team" | "enemy" | "stacks" | "buffActive" | "consumed">>;
+export type Situation = Partial<Pick<EvalContext, "team" | "enemy" | "stacks" | "buffActive" | "consumed" | "controlled" | "enemyModifiers" | "owner" | "eventOperator">>;
 
 /** The context kit predicates and values are evaluated in, for a build's skill. */
 export function evalContext(data: GameData, build: Build, panel: StatPanel, skillId: string, situation: Situation = {}): EvalContext {

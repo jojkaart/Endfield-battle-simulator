@@ -4,8 +4,6 @@
 import type { GameData } from "@efsim/engine";
 import { damageSites, operatorSkillFiles, parentSkill } from "@efsim/data";
 
-const ELEMENT_BY_CHAR_TYPE: Record<string, string> = { Fire: "fire", Pulse: "pulse", Cryst: "cryst", Natural: "natural", Physical: "physical", Ether: "ether" };
-
 export function kitDraft(data: GameData, operator: string, loggedEvents: ReadonlyMap<string, number>): string {
   const op = data.operators[operator];
   if (!op) throw new Error(`unknown operator ${operator}`);
@@ -34,7 +32,7 @@ export function kitDraft(data: GameData, operator: string, loggedEvents: Readonl
     $schema: "../../../../schemas/kit.schema.json",
     operator,
     sources: [`Draft from rmxlinux Json/SkillData ${operator}_* by efsim kit-draft; verify every hit against a log fixture.`],
-    element: ELEMENT_BY_CHAR_TYPE[op.element] ?? "physical",
+    element: op.element,
     skills: [...bySkill].sort().map(([skillId, sites]) => ({
       skillId,
       label: skillId.replace(`${operator}_`, ""),

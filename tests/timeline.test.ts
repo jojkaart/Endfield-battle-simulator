@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, buffModifiers, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitTrigger, type Modifier, type OperatorKit, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
+import { advance, apply, buffModifiers, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -333,6 +333,13 @@ describe("timeline: kit triggers", () => {
     const ready = s.readyAt[L + "combo_skill"] ?? 0;
     const after = apply(ctx, s, skill("normal_skill"));
     expect(after.readyAt[L + "combo_skill"]).toBe(Math.max(after.casts.at(-1)?.frame ?? NaN, ready - 60));
+  });
+
+  it("each action can have its own if: here only the controlled operator's casts give the buff", () => {
+    const d = (p: Predicate) => withTriggers([{ id: "c", on: { event: "cast", kinds: ["battle"] }, by: "self", do: [{ kind: "energy", value: 1 }, { kind: "buff", buff: "test_mark", if: p }] }]);
+    const marked = (p: Predicate) => run(d(p), [skill("normal_skill")], 30).s.buffs.some((b) => b.id === "test_mark");
+    expect(marked({ controlled: true })).toBe(true);
+    expect(marked({ not: { controlled: true } })).toBe(false);
   });
 
   it("a trigger loop in the kit data is an error, not a hang", () => {

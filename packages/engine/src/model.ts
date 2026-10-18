@@ -107,7 +107,10 @@ export interface OperatorData {
   readonly id: string;
   readonly name: string;
   readonly rarity: number;
-  readonly element: string;
+  /** From CharacterTable charTypeId (Fire → fire, Cryst → cryst, …). */
+  readonly element: Element;
+  /** CharacterTable profession (the class: Guard, Caster, …), as the game's number. */
+  readonly profession: number;
   readonly weaponType: number;
   readonly mainAttr: AttrType;
   readonly subAttr: AttrType;
@@ -207,7 +210,7 @@ export interface KitHit {
   readonly damageType: SkillType | "none";
   readonly element: Element;
   /** What each landing does to the enemy's arts state (inflictions, forced reactions), in order. */
-  readonly applies?: readonly HitApplication[];
+  readonly applies?: readonly KitApplication[];
   /** The hit only happens if the operator has these stacks when the skill is cast. */
   readonly requires?: StackRequirement;
   /** Stacks the operator gains when the hit lands (after `applies`). */
@@ -230,8 +233,13 @@ export interface KitHit {
   readonly energy?: ValueExpr;
 }
 
+/** An application to the enemy's arts state that can depend on the situation (judged when it happens, after earlier ones). */
+export type KitApplication = HitApplication & { readonly if?: Predicate };
+
 export interface BuffApplication {
   readonly buff: string;
+  /** Only in this situation (judged when the hit lands, after its applications). */
+  readonly if?: Predicate;
   /** Whether the buff already acts on this hit (default: it doesn't; logs differ by skill). */
   readonly beforeDamage?: boolean;
 }
@@ -288,6 +296,8 @@ export interface StackRequirement {
 
 export interface StackGain {
   readonly stack: string;
+  /** Only in this situation (judged when it happens). */
+  readonly if?: Predicate;
   /** How many, e.g. 1, or `{ consumed: true }` for the infliction stacks this hit consumed. */
   readonly amount: ValueExpr;
 }

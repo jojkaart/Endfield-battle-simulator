@@ -7,6 +7,7 @@ import type { AttrType, Element } from "./attributes.ts";
 import type { Build } from "./build.ts";
 import type { GameData } from "./model.ts";
 import type { ArtsElement } from "./reactions.ts";
+import type { Modifier, Zone } from "./effects.ts";
 import type { EnemyStatus, ReactionStatus } from "./status.ts";
 import type { StatPanel } from "./stats.ts";
 
@@ -28,7 +29,21 @@ export type Predicate =
   /** One of the operator's own kit buffs is active. */
   | { readonly buffActive: string }
   /** The hit itself consumed at least this many infliction stacks (default 1). */
-  | { readonly consumedAtLeast: number };
+  | { readonly consumedAtLeast: number }
+  /** The operator is the controlled one (Typhoeus's 5th aerial shot is a Final Strike only then). */
+  | { readonly controlled: true }
+  /** The enemy has a buff from anyone with a modifier in this zone that reaches this element (an all-element one counts). */
+  | { readonly enemyModifier: { readonly zone: Zone; readonly element?: Element } }
+  /** The operator's element is one of these. */
+  | { readonly operatorElement: readonly Element[] }
+  /** The operator's profession (CharacterTable `profession`) is one of these. */
+  | { readonly operatorProfession: readonly number[] }
+  /** The operator is the effect's owner (false for a teammate a team buff reaches). */
+  | { readonly isOwner: true }
+  /** The operator has the effect owner's element. */
+  | { readonly sameElementAsOwner: true }
+  /** Judged for the operator who caused the event a trigger reacts to (e.g. a teammate's battle skill: its caster's element). */
+  | { readonly eventOperator: Predicate };
 
 /**
  * A number from the game data. A number is a literal; a string is a skill
@@ -60,6 +75,14 @@ export interface EvalContext {
   readonly stacks?: Readonly<Record<string, number>>;
   readonly buffActive?: (id: string) => boolean;
   readonly consumed?: number;
+  /** The controlled operator. */
+  readonly controlled?: string;
+  /** Modifiers of the buffs on the enemy, from anyone. */
+  readonly enemyModifiers?: readonly Modifier[];
+  /** Whose effect is judged, when `build` is someone else (a team buff's recipient); default: `build`'s operator. */
+  readonly owner?: string;
+  /** The context of the operator who caused the event a trigger reacts to. */
+  readonly eventOperator?: EvalContext;
   /** Skill values (injected to keep this module free of the damage code). */
   readonly skillValue: (skillId: string, key: string) => number;
 }
@@ -97,7 +120,18 @@ export function test(p: Predicate, c: EvalContext): boolean | undefined {
     return (p.atLeast === undefined || n >= p.atLeast) && (p.below === undefined || n < p.below);
   }
   if ("buffActive" in p) return c.buffActive ? c.buffActive(p.buffActive) : undefined;
-  return c.consumed === undefined ? undefined : c.consumed >= p.consumedAtLeast;
+  if ("consumedAtLeast" in p) return c.consumed === undefined ? undefined : c.consumed >= p.consumedAtLeast;
+  if ("controlled" in p) return c.controlled === undefined ? undefined : c.controlled === c.build.operator;
+  if ("enemyModifier" in p) {
+    if (!c.enemyModifiers) return undefined;
+    const { zone, element } = p.enemyModifier;
+    return c.enemyModifiers.some((m) => m.zone === zone && (element === undefined || m.element === undefined || m.element === element));
+  }
+  if ("operatorElement" in p) return p.operatorElement.includes(c.data.operators[c.build.operator]?.element as Element);
+  if ("operatorProfession" in p) return p.operatorProfession.includes(c.data.operators[c.build.operator]?.profession ?? Number.NaN);
+  if ("isOwner" in p) return (c.owner ?? c.build.operator) === c.build.operator;
+  if ("sameElementAsOwner" in p) return c.data.operators[c.build.operator]?.element === c.data.operators[c.owner ?? c.build.operator]?.element;
+  return c.eventOperator ? test(p.eventOperator, c.eventOperator) : undefined;
 }
 
 function and3(v: readonly (boolean | undefined)[]): boolean | undefined {
@@ -140,6 +174,7 @@ export function predicateRefs(p: Predicate): { stacks: string[]; buffs: string[]
     return { stacks: parts.flatMap((x) => x.stacks), buffs: parts.flatMap((x) => x.buffs) };
   }
   if ("not" in p) return predicateRefs(p.not);
+  // An eventOperator predicate names the event operator's stacks and buffs, not the kit's own.
   if ("stack" in p) return { stacks: [p.stack], buffs: [] };
   if ("buffActive" in p) return { stacks: [], buffs: [p.buffActive] };
   return { stacks: [], buffs: [] };

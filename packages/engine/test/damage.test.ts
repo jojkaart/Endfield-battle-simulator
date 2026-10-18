@@ -21,7 +21,7 @@ function gameData(over: { def?: number; fireRes?: number; atkPercent?: number } 
     attributeDefaults: { [Attr.CriticalDamageIncrease]: 0.5 },
     operators: {
       op: {
-        id: "op", name: "Op", rarity: 6, element: "Fire", weaponType: 1, mainAttr: Attr.Wisd, subAttr: Attr.Str,
+        id: "op", name: "Op", rarity: 6, element: "fire", profession: 1, weaponType: 1, mainAttr: Attr.Wisd, subAttr: Attr.Str,
         levelRows: [{ breakStage: 0, level: 1, attrs: { 0: 1, [Attr.Atk]: 100, [Attr.Wisd]: 100.9, [Attr.Str]: 50.5, [Attr.CriticalRate]: 0.05 } }],
         skillGroups: { op_skill: "battle" }, attributeNodes: [], talentNodes: [], potentials: [],
       },

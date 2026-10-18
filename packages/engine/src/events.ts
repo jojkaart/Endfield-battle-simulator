@@ -6,9 +6,9 @@
 
 import type { Element, SkillType } from "./attributes.ts";
 import type { Predicate, ValueExpr } from "./expr.ts";
-import type { KitHit, StackGain } from "./model.ts";
+import type { KitApplication, KitHit, StackGain } from "./model.ts";
 import type { ArtsElement } from "./reactions.ts";
-import type { HitApplication, ReactionStatus, StatusEvent } from "./status.ts";
+import type { ReactionStatus, StatusEvent } from "./status.ts";
 
 export type BattleEvent =
   /** A kit hit landed (after its damage). */
@@ -48,11 +48,14 @@ export type TriggerOn =
   /** The owner's own stack reaches a count. */
   | { readonly event: "stackAtLeast"; readonly stack: string; readonly atLeast: number };
 
-export type TriggerAction =
+/** What a trigger does; each action can have its own `if` (judged for the owner when it runs). */
+export type TriggerAction = TriggerActionKind & { readonly if?: Predicate };
+
+export type TriggerActionKind =
   /** Open the owner's combo window (not while its combo is on cooldown). */
   | { readonly kind: "openCombo" }
   /** Apply to the enemy, as the owner. */
-  | { readonly kind: "apply"; readonly applies: readonly HitApplication[] }
+  | { readonly kind: "apply"; readonly applies: readonly KitApplication[] }
   | { readonly kind: "gain"; readonly gains: readonly StackGain[] }
   | { readonly kind: "energy"; readonly value: ValueExpr }
   /** Return SP to the team (returned SP: it gives no ultimate energy when spent). */

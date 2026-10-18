@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { evaluate, NO_STATUS, predicateRefs, test, valueKeys, type EvalContext, type GameData, type StatPanel } from "../src/index.ts";
 
 const panel = { attrs: { 41: { total: 300 }, 42: { total: 200 } } } as unknown as StatPanel;
-const data = { operators: { a: { element: "fire" }, b: { element: "cryst" } }, attributeDefaults: {} } as unknown as GameData;
+const data = { operators: { a: { element: "fire", profession: 2 }, b: { element: "cryst", profession: 4 } }, attributeDefaults: {} } as unknown as GameData;
 const values: Record<string, number> = { "s1.k": 2, "s1.cap": 5, "s2.k": 10 };
 const base: EvalContext = {
   data,
@@ -35,6 +35,28 @@ describe("predicates", () => {
     expect(test({ teamSlotElement: { slot: 1, element: "cryst" } }, { ...base, team: [base.build, { ...base.build, operator: "b" }] })).toBe(true);
     expect(test({ stack: "x", atLeast: 1, below: 4 }, { ...base, stacks: { x: 3 } })).toBe(true);
     expect(test({ consumedAtLeast: 1 }, { ...base, consumed: 0 })).toBe(false);
+  });
+
+  it("know who is controlled, what the enemy carries, and the operator's element and profession", () => {
+    expect(test({ controlled: true }, base)).toBeUndefined();
+    expect(test({ controlled: true }, { ...base, controlled: "a" })).toBe(true);
+    expect(test({ controlled: true }, { ...base, controlled: "b" })).toBe(false);
+    const enemyModifiers = [{ zone: "susceptibility" as const, value: 0.1, element: "physical" as const, source: "x" }, { zone: "damageTaken" as const, value: 0.1, source: "y" }];
+    expect(test({ enemyModifier: { zone: "susceptibility", element: "physical" } }, { ...base, enemyModifiers })).toBe(true);
+    expect(test({ enemyModifier: { zone: "susceptibility", element: "fire" } }, { ...base, enemyModifiers })).toBe(false);
+    // An all-element modifier reaches every element.
+    expect(test({ enemyModifier: { zone: "damageTaken", element: "fire" } }, { ...base, enemyModifiers })).toBe(true);
+    expect(test({ operatorElement: ["fire", "pulse"] }, base)).toBe(true);
+    expect(test({ operatorProfession: [4] }, base)).toBe(false);
+  });
+
+  it("judge a team buff's recipient against its owner, and a trigger's event operator", () => {
+    const recipient: EvalContext = { ...base, build: { ...base.build, operator: "b" }, owner: "a" };
+    expect(test({ isOwner: true }, recipient)).toBe(false);
+    expect(test({ isOwner: true }, base)).toBe(true);
+    expect(test({ sameElementAsOwner: true }, recipient)).toBe(false);
+    expect(test({ eventOperator: { operatorElement: ["cryst"] } }, base)).toBeUndefined();
+    expect(test({ eventOperator: { operatorElement: ["cryst"] } }, { ...base, eventOperator: recipient })).toBe(true);
   });
 });
 

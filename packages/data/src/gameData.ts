@@ -4,6 +4,7 @@
 import type {
   AttrModifier,
   Effect,
+  Element,
   EnemyData,
   GameData,
   GearData,
@@ -13,6 +14,7 @@ import type {
   SkillType,
   WeaponData,
 } from "@efsim/engine";
+import { ELEMENTS } from "@efsim/engine";
 import { DataError } from "./errors.ts";
 import { at, get, obj, type Ctx } from "./fields.ts";
 import { loadKits } from "./kits.ts";
@@ -59,6 +61,11 @@ function build(): GameData {
   const operatorName = nameLookup(names, "CharacterTable", "name");
   const growth = loadGrowth(PRIMARY);
   const potentials = loadPotentials(PRIMARY);
+  const elementOf = (charType: string, id: string): Element => {
+    const e = charType.toLowerCase();
+    if (!(ELEMENTS as readonly string[]).includes(e)) throw new DataError(PRIMARY, `CharacterTable.${id}.charTypeId`, `unknown element ${charType}`);
+    return e as Element;
+  };
   const operators: Record<string, OperatorData> = {};
   for (const op of Object.values(loadOperators(PRIMARY))) {
     const g = growth[op.charId];
@@ -67,7 +74,8 @@ function build(): GameData {
       id: op.charId,
       name: operatorName(op.charId),
       rarity: op.rarity,
-      element: op.element,
+      element: elementOf(op.element, op.charId),
+      profession: op.profession,
       weaponType: op.weaponType,
       mainAttr: op.mainAttrType,
       subAttr: op.subAttrType,

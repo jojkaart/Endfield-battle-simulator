@@ -365,6 +365,10 @@
                   "properties": {
                     "kind": {
                       "const": "openCombo"
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
                     }
                   }
                 },
@@ -385,6 +389,10 @@
                         "$ref": "#/$defs/application"
                       },
                       "minItems": 1
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
                     }
                   }
                 },
@@ -414,9 +422,17 @@
                           "amount": {
                             "$ref": "#/$defs/valueExpr",
                             "description": "How many (default 1); {\"consumed\": true} for the infliction stacks the hit consumed."
+                          },
+                          "if": {
+                            "$ref": "#/$defs/predicate",
+                            "description": "Only in this situation (judged when it happens)."
                           }
                         }
                       }
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
                     }
                   }
                 },
@@ -433,6 +449,10 @@
                     },
                     "value": {
                       "$ref": "#/$defs/valueExpr"
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
                     }
                   }
                 },
@@ -450,6 +470,10 @@
                     "value": {
                       "$ref": "#/$defs/valueExpr",
                       "description": "Returned SP (gives no ultimate energy when spent)."
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
                     }
                   }
                 },
@@ -466,6 +490,10 @@
                     },
                     "buff": {
                       "type": "string"
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
                     }
                   }
                 },
@@ -482,6 +510,10 @@
                     },
                     "buff": {
                       "type": "string"
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
                     }
                   }
                 },
@@ -528,6 +560,10 @@
                     "seconds": {
                       "$ref": "#/$defs/valueExpr",
                       "description": "Seconds added to the remaining cooldown (negative cuts it)."
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
                     }
                   }
                 },
@@ -549,6 +585,10 @@
                         "$ref": "#/$defs/hit"
                       },
                       "description": "Landed as the trigger's owner, at frames counted from the event; scale keys name the trigger's skill."
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
                     }
                   }
                 }
@@ -702,6 +742,10 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 4
+            },
+            "if": {
+              "$ref": "#/$defs/predicate",
+              "description": "Only in this situation (judged when it happens)."
             }
           }
         },
@@ -736,6 +780,10 @@
             "scaleKey": {
               "type": "string",
               "description": "Skill blackboard value multiplying the status's damage over time."
+            },
+            "if": {
+              "$ref": "#/$defs/predicate",
+              "description": "Only in this situation (judged when it happens)."
             }
           }
         },
@@ -755,6 +803,10 @@
                 "$ref": "#/$defs/artsElement"
               },
               "minItems": 1
+            },
+            "if": {
+              "$ref": "#/$defs/predicate",
+              "description": "Only in this situation (judged when it happens)."
             }
           }
         }
@@ -1099,6 +1151,117 @@
               "minimum": 1
             }
           }
+        },
+        {
+          "type": "object",
+          "required": [
+            "controlled"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "controlled": {
+              "const": true,
+              "description": "The operator is the controlled one (for a hit: when its skill was cast)."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "enemyModifier"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "enemyModifier": {
+              "type": "object",
+              "required": [
+                "zone"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "zone": {
+                  "$ref": "#/$defs/zone"
+                },
+                "element": {
+                  "$ref": "#/$defs/element"
+                }
+              },
+              "description": "The enemy has a buff from anyone with a modifier in this zone that reaches this element (an all-element one counts)."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "operatorElement"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "operatorElement": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/element"
+              },
+              "minItems": 1,
+              "description": "The operator's element is one of these."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "operatorProfession"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "operatorProfession": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              },
+              "minItems": 1,
+              "description": "The operator's profession (CharacterTable profession number) is one of these."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "isOwner"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "isOwner": {
+              "const": true,
+              "description": "The operator is the effect's owner (false for a teammate a team buff reaches)."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "sameElementAsOwner"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sameElementAsOwner": {
+              "const": true,
+              "description": "The operator has the effect owner's element."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "eventOperator"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "eventOperator": {
+              "$ref": "#/$defs/predicate",
+              "description": "Judged for the operator who caused the event a trigger reacts to."
+            }
+          }
         }
       ]
     },
@@ -1348,6 +1511,10 @@
               },
               "beforeDamage": {
                 "type": "boolean"
+              },
+              "if": {
+                "$ref": "#/$defs/predicate",
+                "description": "Only in this situation (judged when it happens)."
               }
             }
           }
@@ -1394,6 +1561,10 @@
               "amount": {
                 "$ref": "#/$defs/valueExpr",
                 "description": "How many (default 1); {\"consumed\": true} for the infliction stacks the hit consumed."
+              },
+              "if": {
+                "$ref": "#/$defs/predicate",
+                "description": "Only in this situation (judged when it happens)."
               }
             }
           }
