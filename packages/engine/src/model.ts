@@ -154,6 +154,8 @@ export interface BattleConstants {
 export interface GameData {
   readonly provenance: { readonly sources: readonly { readonly name: string; readonly commit: string }[] };
   readonly constants: BattleConstants;
+  /** Default value per attribute type (AttributeMetaTable), used where a level row has none (e.g. crit DMG 0.5). */
+  readonly attributeDefaults: Readonly<Record<number, number>>;
   readonly operators: Readonly<Record<string, OperatorData>>;
   readonly skills: Readonly<Record<string, SkillData>>;
   readonly weapons: Readonly<Record<string, WeaponData>>;

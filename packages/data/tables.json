@@ -1,6 +1,7 @@
 {
   "$comment": "Game data the data layer reads. scripts/fetch-data.sh fetches only these; the loaders refuse anything else. `skillData` are file-name globs under rmxlinux's Json/SkillData (only rmxlinux has them).",
   "tables": [
+    "AttributeMetaTable",
     "BattleConst",
     "CharGrowthTable",
     "CharacterPotentialTable",

@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jojkaart/Endfield-battle-simulator/schemas/fixture.schema.json",
+  "title": "Fixture",
+  "description": "A language-neutral test case: a build, an enemy and values that the engine must reproduce, with where they came from. Read by the TypeScript tests now and the Rust tests later.",
+  "type": "object",
+  "required": ["id", "description", "provenance", "build", "enemy", "expected"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+    "description": { "type": "string" },
+    "provenance": { "$ref": "#/$defs/provenance" },
+    "build": { "$ref": "build.schema.json" },
+    "enemy": {
+      "type": "object",
+      "required": ["id", "level"],
+      "additionalProperties": false,
+      "properties": { "id": { "type": "string" }, "level": { "type": "integer", "minimum": 1 } }
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stats": { "type": "array", "items": { "$ref": "#/$defs/statExpectation" } },
+        "damage": { "type": "array", "items": { "$ref": "#/$defs/damageExpectation" } }
+      }
+    }
+  },
+  "$defs": {
+    "provenance": {
+      "type": "object",
+      "required": ["source", "inGame", "verifiedAgainst"],
+      "additionalProperties": false,
+      "properties": {
+        "source": { "type": "string", "description": "Who measured or published the values." },
+        "url": { "type": "string" },
+        "files": { "type": "array", "items": { "type": "string" }, "description": "Source files, with the commit they were read at." },
+        "inGame": { "type": "boolean", "description": "True when the values were measured in the game, not computed by another tool." },
+        "measured": { "type": "string", "description": "When and how the values were measured, as far as known." },
+        "verifiedAgainst": {
+          "type": "object",
+          "description": "Data submodule commits this fixture last passed with.",
+          "additionalProperties": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+        },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "statExpectation": {
+      "type": "object",
+      "required": ["stat", "expected"],
+      "additionalProperties": false,
+      "properties": {
+        "stat": {
+          "type": "string",
+          "description": "An attribute name (see packages/engine/src/attributes.ts), or atk.operatorBase, atk.weaponBase, atk.percent, atk.total, atk.attributeBonus."
+        },
+        "expected": { "type": "number" },
+        "display": { "enum": ["exact", "floor"], "description": "How the game shows the value: exact (compare with tolerance) or floor (compare the whole-number part)." },
+        "tolerance": { "type": "number", "minimum": 0 },
+        "note": { "type": "string" }
+      }
+    },
+    "damageExpectation": {
+      "type": "object",
+      "required": ["label", "hits", "expected"],
+      "additionalProperties": false,
+      "properties": {
+        "label": { "type": "string" },
+        "hits": {
+          "type": "array",
+          "minItems": 1,
+          "description": "Hits whose damage is summed before rounding (one hit for a single damage number).",
+          "items": {
+            "type": "object",
+            "required": ["skill", "hit"],
+            "additionalProperties": false,
+            "properties": {
+              "skill": { "type": "string", "description": "Skill ID from the operator's kit." },
+              "hit": { "type": "string", "description": "Hit ID within that skill." },
+              "times": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "conditions": { "type": "array", "items": { "type": "string" }, "description": "Kit or weapon condition IDs that are active." },
+        "crit": { "enum": ["never", "always", "expected"] },
+        "expected": { "type": "number" },
+        "tolerance": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

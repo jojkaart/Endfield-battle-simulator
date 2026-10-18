@@ -17,6 +17,7 @@ import { at, get, obj, type Ctx } from "./fields.ts";
 import { Names } from "./names.ts";
 import { isSkillFileListed, readSkillFile } from "./skillData.ts";
 import { PRIMARY, readTable, sourceCommit, SOURCES } from "./sources.ts";
+import { loadAttributeDefaults } from "./tables/attributeMeta.ts";
 import { loadBattleConst } from "./tables/battleConst.ts";
 import type { RawAttrModifier } from "./tables/common.ts";
 import { loadEnemies } from "./tables/enemies.ts";
@@ -151,6 +152,7 @@ function build(): GameData {
       efficiencyOfDEF: c.efficiencyOfDEF,
       maxUltimateSp: c.maxUltimateSp,
     },
+    attributeDefaults: loadAttributeDefaults(PRIMARY),
     operators,
     skills,
     weapons,

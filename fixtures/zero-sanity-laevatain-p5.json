@@ -1,0 +1,483 @@
+{
+  "$schema": "../schemas/fixture.schema.json",
+  "id": "zero-sanity-laevatain-p5",
+  "description": "Laevatain Lv90 P5, skills 12, Forgeborn Scathe Lv90 (skills 9/9/9), Tide Fall Light Armor, Hot Work Gauntlets, 2× Redeemer Seal (all lines artificed to max) vs Rhodagn Lv90 (DEF 100, no resistances): stat panel and non-crit damage per hit.",
+  "provenance": {
+    "source": "Zero Sanity Simulations test suite; its project rules say these values are verified in game and must never change.",
+    "url": "https://github.com/mitchell-ma/zero-sanity-timeline",
+    "files": [
+      "src/tests/unit/loadoutAggregator.test.ts @ c44d46ccbcca1c33a3bf2c4f10398fe5a73f282d",
+      "src/tests/unit/laevatainDamageCalc.test.ts @ c44d46ccbcca1c33a3bf2c4f10398fe5a73f282d"
+    ],
+    "inGame": true,
+    "measured": "Stat panel from an in-game screenshot dated 2026-03-15 (game ~1.1). Damage values from the same loadout; date not recorded, before 2026-05-10.",
+    "verifiedAgainst": {
+      "rmxlinux": "8b955ea78c6f04b6e5164b75f63f46b503c5f6f2",
+      "555me": "2737bc099e4848517eed01a19614ef88932c18a0"
+    },
+    "notes": [
+      "Zero Sanity names gear artificing 'rank 4'; that is artificing level 3 on every line here.",
+      "Its forced combustion DoT (2608) is left out until reactions are modelled.",
+      "Its bare-loadout block (Tarr 11 Lv1) is skipped in Zero Sanity itself and still 1 off there, so it isn't used."
+    ]
+  },
+  "build": {
+    "operator": "chr_0016_laevat",
+    "level": 90,
+    "promotion": 4,
+    "potential": 5,
+    "talents": [
+      3,
+      2
+    ],
+    "skillLevels": {
+      "basic": 12,
+      "battle": 12,
+      "combo": 12,
+      "ultimate": 12
+    },
+    "weapon": {
+      "id": "wpn_sword_0006",
+      "level": 90,
+      "skillLevels": [
+        9,
+        9,
+        9
+      ]
+    },
+    "gear": [
+      {
+        "id": "item_equip_t4_suit_burst01_body_01",
+        "artifice": [
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "id": "item_equip_t4_suit_fire_natr01_hand_02",
+        "artifice": [
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "id": "item_equip_t4_parts_wuling01_edc_03",
+        "artifice": [
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "id": "item_equip_t4_parts_wuling01_edc_03",
+        "artifice": [
+          3,
+          3,
+          3
+        ]
+      }
+    ]
+  },
+  "enemy": {
+    "id": "eny_0051_rodin",
+    "level": 90
+  },
+  "expected": {
+    "stats": [
+      {
+        "stat": "atk.operatorBase",
+        "expected": 318
+      },
+      {
+        "stat": "atk.weaponBase",
+        "expected": 510
+      },
+      {
+        "stat": "atk.percent",
+        "expected": 0.39,
+        "tolerance": 1e-06
+      },
+      {
+        "stat": "Wisd",
+        "expected": 720.985,
+        "tolerance": 0.001,
+        "note": "Shown as 720 in game"
+      },
+      {
+        "stat": "Str",
+        "expected": 251.374,
+        "tolerance": 0.001
+      },
+      {
+        "stat": "Agi",
+        "expected": 99.973,
+        "tolerance": 0.001
+      },
+      {
+        "stat": "Will",
+        "expected": 89.814,
+        "tolerance": 0.001
+      },
+      {
+        "stat": "Def",
+        "expected": 140
+      },
+      {
+        "stat": "atk.attributeBonus",
+        "expected": 5.102,
+        "tolerance": 1e-06,
+        "note": "1 + 720 × 0.005 + 251 × 0.002, whole-number attributes"
+      },
+      {
+        "stat": "atk.total",
+        "expected": 5871,
+        "display": "floor",
+        "note": "Effective ATK as shown in game"
+      }
+    ],
+    "damage": [
+      {
+        "label": "Basic attack 1",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_attack1",
+            "hit": "hit"
+          }
+        ],
+        "crit": "never",
+        "expected": 1952
+      },
+      {
+        "label": "Basic attack 2, each hit",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_attack2",
+            "hit": "hit"
+          }
+        ],
+        "crit": "never",
+        "expected": 1464
+      },
+      {
+        "label": "Basic attack 3",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_attack3",
+            "hit": "hit"
+          }
+        ],
+        "crit": "never",
+        "expected": 3037
+      },
+      {
+        "label": "Basic attack 4, each hit",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_attack4",
+            "hit": "hit"
+          }
+        ],
+        "crit": "never",
+        "expected": 1573
+      },
+      {
+        "label": "Basic attack 5, each hit",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_attack5",
+            "hit": "hit"
+          }
+        ],
+        "crit": "never",
+        "expected": 3254
+      },
+      {
+        "label": "Battle skill explosion",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "explosion"
+          }
+        ],
+        "crit": "never",
+        "expected": 6976
+      },
+      {
+        "label": "Battle skill explosion + 1 DoT tick (running total)",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "explosion"
+          },
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "dot",
+            "times": 1
+          }
+        ],
+        "crit": "never",
+        "expected": 7674
+      },
+      {
+        "label": "Battle skill explosion + 2 DoT ticks (running total)",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "explosion"
+          },
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "dot",
+            "times": 2
+          }
+        ],
+        "crit": "never",
+        "expected": 8371
+      },
+      {
+        "label": "Battle skill explosion + 3 DoT ticks (running total)",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "explosion"
+          },
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "dot",
+            "times": 3
+          }
+        ],
+        "crit": "never",
+        "expected": 9069
+      },
+      {
+        "label": "Battle skill explosion + 4 DoT ticks (running total)",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "explosion"
+          },
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "dot",
+            "times": 4
+          }
+        ],
+        "crit": "never",
+        "expected": 9766
+      },
+      {
+        "label": "Battle skill explosion + 5 DoT ticks (running total)",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "explosion"
+          },
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "dot",
+            "times": 5
+          }
+        ],
+        "crit": "never",
+        "expected": 10464
+      },
+      {
+        "label": "Battle skill explosion + 6 DoT ticks (running total)",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "explosion"
+          },
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "dot",
+            "times": 6
+          }
+        ],
+        "crit": "never",
+        "expected": 11162
+      },
+      {
+        "label": "Battle skill explosion + 7 DoT ticks (running total)",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "explosion"
+          },
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "dot",
+            "times": 7
+          }
+        ],
+        "crit": "never",
+        "expected": 11859
+      },
+      {
+        "label": "Battle skill explosion + 8 DoT ticks (running total)",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "explosion"
+          },
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "dot",
+            "times": 8
+          }
+        ],
+        "crit": "never",
+        "expected": 12557
+      },
+      {
+        "label": "Battle skill explosion + 9 DoT ticks (running total)",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "explosion"
+          },
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "dot",
+            "times": 9
+          }
+        ],
+        "crit": "never",
+        "expected": 13254
+      },
+      {
+        "label": "Battle skill explosion + 10 DoT ticks (running total)",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "explosion"
+          },
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "dot",
+            "times": 10
+          }
+        ],
+        "crit": "never",
+        "expected": 13952
+      },
+      {
+        "label": "Battle skill empowered extra hit",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_normal_skill",
+            "hit": "empowered_extra"
+          }
+        ],
+        "crit": "never",
+        "expected": 57552
+      },
+      {
+        "label": "Combo skill",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_combo_skill",
+            "hit": "hit"
+          }
+        ],
+        "crit": "never",
+        "expected": 26908
+      },
+      {
+        "label": "Ultimate: enhanced basic attack 1 (after-ultimate weapon buff)",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_ult_attack1",
+            "hit": "hit"
+          }
+        ],
+        "conditions": [
+          "wpn_sword_0006.after_ultimate"
+        ],
+        "crit": "never",
+        "expected": 20304
+      },
+      {
+        "label": "Ultimate: enhanced basic attack 2, each hit",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_ult_attack2",
+            "hit": "hit"
+          }
+        ],
+        "conditions": [
+          "wpn_sword_0006.after_ultimate"
+        ],
+        "crit": "never",
+        "expected": 12655
+      },
+      {
+        "label": "Ultimate: enhanced basic attack 3",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_ult_attack3",
+            "hit": "hit"
+          }
+        ],
+        "conditions": [
+          "wpn_sword_0006.after_ultimate"
+        ],
+        "crit": "never",
+        "expected": 36157
+      },
+      {
+        "label": "Ultimate: enhanced basic attack 4, each hit",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_ult_attack4",
+            "hit": "hit"
+          }
+        ],
+        "conditions": [
+          "wpn_sword_0006.after_ultimate"
+        ],
+        "crit": "never",
+        "expected": 31707
+      },
+      {
+        "label": "Ultimate: enhanced battle skill hit 1",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_normal_skill_during_ult",
+            "hit": "hit1"
+          }
+        ],
+        "crit": "never",
+        "expected": 19732
+      },
+      {
+        "label": "Ultimate: enhanced battle skill hit 2",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_normal_skill_during_ult",
+            "hit": "hit2"
+          }
+        ],
+        "crit": "never",
+        "expected": 22124
+      },
+      {
+        "label": "Ultimate: enhanced battle skill extra hit (Scorching Heart active)",
+        "hits": [
+          {
+            "skill": "chr_0016_laevat_normal_skill_during_ult",
+            "hit": "extra"
+          }
+        ],
+        "conditions": [
+          "chr_0016_laevat.scorching_heart"
+        ],
+        "crit": "never",
+        "expected": 64578
+      }
+    ]
+  }
+}

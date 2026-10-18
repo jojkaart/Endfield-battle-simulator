@@ -2,6 +2,7 @@
 import { describe, expect, it } from "vitest";
 import {
   compare,
+  loadAttributeDefaults,
   loadBattleConst,
   loadEffects,
   loadEnemies,
@@ -46,6 +47,7 @@ describe("cross-check between the two data sources", () => {
     ["EquipTable", loadGear],
     ["EquipSuitTable", loadGearSets],
     ["EnemyAttributeTemplateTable", loadEnemies],
+    ["AttributeMetaTable", loadAttributeDefaults],
   ] as const)("%s agrees", (_name, load) => {
     const diffs = compare(load("rmxlinux"), load("555me"));
     expect(diffs.slice(0, 20)).toEqual([]);

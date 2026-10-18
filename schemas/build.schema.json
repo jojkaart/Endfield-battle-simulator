@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/jojkaart/Endfield-battle-simulator/schemas/build.schema.json",
+  "title": "Build",
+  "description": "An operator build: everything that determines its stat panel (packages/engine/src/build.ts).",
+  "type": "object",
+  "required": ["operator", "level", "promotion", "potential", "skillLevels", "weapon", "gear"],
+  "additionalProperties": false,
+  "properties": {
+    "operator": { "type": "string", "description": "Operator ID, e.g. chr_0016_laevat." },
+    "level": { "type": "integer", "minimum": 1 },
+    "promotion": { "type": "integer", "minimum": 0, "maximum": 4 },
+    "potential": { "type": "integer", "minimum": 0, "maximum": 5 },
+    "attributeNodes": { "type": "integer", "minimum": 0, "description": "Attribute nodes unlocked, in promotion order. Default: all available." },
+    "talents": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "description": "Level of each talent. Default: highest available." },
+    "skillLevels": {
+      "type": "object",
+      "required": ["basic", "battle", "combo", "ultimate"],
+      "additionalProperties": false,
+      "properties": {
+        "basic": { "$ref": "#/$defs/skillLevel" },
+        "battle": { "$ref": "#/$defs/skillLevel" },
+        "combo": { "$ref": "#/$defs/skillLevel" },
+        "ultimate": { "$ref": "#/$defs/skillLevel" }
+      }
+    },
+    "weapon": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["id", "level", "skillLevels"],
+          "additionalProperties": false,
+          "properties": {
+            "id": { "type": "string" },
+            "level": { "type": "integer", "minimum": 1 },
+            "skillLevels": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "minItems": 3, "maxItems": 3 }
+          }
+        }
+      ]
+    },
+    "gear": {
+      "type": "array",
+      "maxItems": 4,
+      "items": {
+        "type": "object",
+        "required": ["id", "artifice"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "artifice": {
+            "type": "array",
+            "items": { "type": "integer", "minimum": 0, "maximum": 3 },
+            "minItems": 3,
+            "maxItems": 3,
+            "description": "Artificing level of stat lines 1–3."
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "skillLevel": { "type": "integer", "minimum": 1, "maximum": 12 }
+  }
+}

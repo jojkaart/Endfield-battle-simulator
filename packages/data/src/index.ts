@@ -13,3 +13,4 @@ export * from "./tables/potentials.ts";
 export * from "./tables/weapons.ts";
 export * from "./tables/equip.ts";
 export * from "./tables/enemies.ts";
+export * from "./tables/attributeMeta.ts";
