@@ -143,11 +143,12 @@ the Arts Susceptibility value on the enemy and time how long it stays.
 **How:** with Will > Intellect, cast her combo and time the cooldown:
 18 s expected (12 s would mean the cut applies in WILL mode too).
 
-### 14. Si's battle skill element with a Heat operator in slot 1 (ready, if you have Si)
+### 14. Si's battle skill element with a Heat operator in slot 1 (optional confirmation)
 
 **Why:** her description says the battle skill applies Heat instead of Cryo
-Infliction when a Heat operator is in Team Position 01; which slot that is
-needs confirming.
+Infliction when a Heat operator is in Team Position 01. The data settles it
+(an enabled SpellInfliction branch on team slot index 0, i.e. the first
+slot); this would only confirm it.
 **How:** put a Heat operator in the first team slot, cast Si's battle skill
 and look at the infliction icon on the enemy; repeat with a Cryo or Nature
 operator first.
