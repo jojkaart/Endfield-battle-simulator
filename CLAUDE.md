@@ -38,5 +38,6 @@ passing with every change. Follow the architectural principles in
 - Web sources: follow the terms summarised in
   [docs/data-sources.md](docs/data-sources.md#licences-and-terms-in-short).
   Lookups are fine (including the Talos Wiki API); no scripted mass
-  downloads or anything that puts undue load on a site. Use a descriptive
+  downloads or anything that puts undue load on a site. If a mass download
+  really is the only option, ask the owner first. Use a descriptive
   user agent. Track hosts in [docs/network-allowlist.md](docs/network-allowlist.md).
