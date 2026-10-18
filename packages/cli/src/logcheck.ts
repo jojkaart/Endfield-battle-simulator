@@ -270,7 +270,7 @@ export function impliedScales(data: GameData, fx: LogFixture, operator: string):
   const panel = computeStats(data, build);
   const anySkill = Object.keys(data.operators[operator]?.skillGroups ?? {})[0];
   if (!anySkill) throw new Error(`${operator} has no skills`);
-  const skill: KitSkill = { skillId: anySkill, label: "", hits: [] };
+  const skill: KitSkill = { skillId: anySkill, label: "", kind: "basic", hits: [] };
   return fx.hits
     .filter((h) => h.operator === operator && h.element !== null)
     .map((h) => {
@@ -326,7 +326,7 @@ export function findScales(data: GameData, fx: LogFixture, operator: string): Sc
       for (const damageType of ["basic", "battle", "combo", "ultimate"] as const) {
         const kitHit: KitHit = { id: "x", label: "", scale: [], count: 1, events: [], damageType, element: hit.element ?? "physical" };
         for (const c of candidates(hit, panels, [1])) {
-          const unit = computeHit(data, build, panel, target, { skillId: values[0]?.skillId ?? "", label: "", hits: [] }, kitHit, {
+          const unit = computeHit(data, build, panel, target, { skillId: values[0]?.skillId ?? "", label: "", kind: damageType, hits: [] }, kitHit, {
             crit: c.crit ? "always" : "never", staggered: false, conditions: [], modifiers: [...logModifiers(c.effects, damageType), ...c.extra],
           }).exact;
           const need = (hit.uncapped ?? hit.value) / unit;

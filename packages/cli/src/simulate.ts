@@ -1,10 +1,10 @@
 // efsim simulate: run a scenario file on the timeline.
 
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { FPS, simulate, type Build, type CritMode, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { FPS, searchRotation, simulate, type TimelineResult, type Build, type CritMode, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
 import { readBuild } from "./commands.ts";
 import { num, table } from "./format.ts";
 
@@ -44,7 +44,40 @@ export function readScenario(file: string): TimelineScenario {
 }
 
 export function formatSimulation(data: GameData, scenario: TimelineScenario, verbose: boolean): string {
-  const r = simulate(data, scenario);
+  return formatResult(data, scenario, simulate(data, scenario), verbose);
+}
+
+/** Search a rotation for the scenario's team (its own rotation is ignored); optionally save it as a scenario that `simulate` replays. */
+export function searchCommand(data: GameData, scenario: TimelineScenario, options: { beam: number; out?: string; verbose: boolean }): string {
+  const { rotation: _ignored, ...rest } = scenario;
+  const t0 = Date.now();
+  const found = searchRotation(data, rest, { beamWidth: options.beam });
+  const seconds = ((Date.now() - t0) / 1000).toFixed(1);
+  const lines = [
+    `Searched ${found.expanded} states (beam ${options.beam}) in ${seconds} s.`,
+    "",
+    formatResult(data, { ...scenario, rotation: found.rotation }, found.result, options.verbose),
+  ];
+  if (options.out) {
+    const doc = {
+      $schema: "../schemas/scenario.schema.json",
+      description: `Rotation found by efsim search (beam ${options.beam}); replays with efsim simulate.`,
+      team: scenario.team,
+      target: scenario.target,
+      ...(scenario.controlled ? { controlled: scenario.controlled } : {}),
+      ...(scenario.startEnergy ? { startEnergy: scenario.startEnergy } : {}),
+      durationSeconds: scenario.durationFrames / FPS,
+      crit: scenario.options.crit,
+      ...(scenario.options.conditions ? { conditions: scenario.options.conditions } : {}),
+      rotation: found.rotation.map((a) => ({ operator: a.operator, skill: a.skill, ...(a.at !== undefined ? { at: a.at / FPS } : {}) })),
+    };
+    writeFileSync(options.out, JSON.stringify(doc, null, 2) + "\n");
+    lines.push("", `Wrote ${options.out}.`);
+  }
+  return lines.join("\n");
+}
+
+export function formatResult(data: GameData, scenario: TimelineScenario, r: TimelineResult, verbose: boolean): string {
   const name = (op: string) => data.operators[op]?.name ?? op;
   const out = [
     `Total ${num(Math.round(r.total), 0)} damage in ${(r.lastHitFrame / FPS).toFixed(2)} s (last hit) → ${num(Math.round(r.dps), 0)} DPS` +

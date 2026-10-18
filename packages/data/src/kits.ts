@@ -145,6 +145,7 @@ export function loadKits(data: KitData): Kits {
       return {
         skillId: s.skillId,
         label: s.label,
+        kind: s.damageType,
         ...(s.durationFrames !== undefined ? { durationFrames: s.durationFrames } : {}),
         ...(s.energyBlockSeconds !== undefined ? { energyBlockSeconds: s.energyBlockSeconds } : {}),
         ...(s.availableWhile ? { availableWhile: s.availableWhile } : {}),

@@ -9,7 +9,7 @@ import { loadGameData } from "@efsim/data";
 import type { CritMode } from "@efsim/engine";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "./commands.ts";
 import { kitDraft } from "./kitdraft.ts";
-import { formatSimulation, readScenario } from "./simulate.ts";
+import { formatSimulation, readScenario, searchCommand } from "./simulate.ts";
 import { checkLog, findScales, formatLogCheck, impliedScales } from "./logcheck.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -22,6 +22,8 @@ const USAGE = `Usage:
   efsim calc <build.json> [options]       Stat panel and damage per hit
   efsim compare <a.json> <b.json> [opts]  Two builds of one operator side by side
   efsim simulate <scenario.json>          Run a team rotation on the timeline (--verbose: every hit)
+  efsim search <scenario.json>            Find a rotation for the scenario's team (its rotation is ignored)
+                [--beam n] [--out file]   Beam width (default 24); save the rotation as a scenario
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
                 [--enemy-level n]         (default: inferred from total damage on a clear)
                 [--note text]             Extra provenance note (repeatable)
@@ -54,6 +56,8 @@ async function main(argv: string[]): Promise<number> {
       "enemy-level": { type: "string" },
       note: { type: "string", multiple: true, default: [] },
       verbose: { type: "boolean", default: false },
+      beam: { type: "string", default: "24" },
+      out: { type: "string" },
       help: { type: "boolean", short: "h", default: false },
     },
   });
@@ -129,6 +133,10 @@ async function main(argv: string[]): Promise<number> {
     case "simulate":
       need(1);
       text = formatSimulation(data, readScenario(args[0] as string), values.verbose);
+      break;
+    case "search":
+      need(1);
+      text = searchCommand(data, readScenario(args[0] as string), { beam: Number(values.beam), ...(values.out ? { out: values.out } : {}), verbose: values.verbose });
       break;
     case "kit-draft": {
       need(1);

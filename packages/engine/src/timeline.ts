@@ -55,7 +55,7 @@ export const COMBO_WINDOW_FRAMES = 6 * FPS;
 export const TIMELINE_ASSUMPTIONS = [
   "Ultimate energy: max = the ultimate's cost, no passive gain; battle skills give the team 0.065 per natural SP spent (at the cast); kits list their fixed grants. Grants are scaled by Ultimate Gain Efficiency.",
   "Combo skills open a 6 s window on their kit's trigger (ignored while on cooldown); kits without a trigger allow the combo whenever off cooldown.",
-  "Each operator has its own animation lock; basic attacks need the operator to be the controlled one, other skills don't.",
+  "Each operator has its own animation lock; basic attacks need the operator to be the controlled one, other skills don't. A swap waits for the controlled operator to finish its action and costs no time.",
   "Projectile hits land at their launch frame (travel time isn't in the data).",
   "SP gain: a skill's blackboard value `atb` (e.g. a final strike's 20) is added when its first hit lands (unverified timing).",
   "Buffs and debuffs from skills apply only where a kit declares them (OperatorKit.buffs); always-on conditions, given modifiers and the enemy's reaction statuses apply too.",
@@ -232,6 +232,8 @@ function skillCosts(ctx: TimelineContext, operator: string, skillId: string) {
   const cost = skillParam(panel, skillId, "cost", level.costValue);
   return {
     group,
+    /** The action's kind (KitSkill.kind), which basic-attack control and combo windows go by. */
+    kind: kitSkill(ctx, operator, skillId).kind,
     spCost: level.costType === 1 ? cost : 0,
     /** costType 0: ultimate energy. */
     energyCost: level.costType === 0 ? cost : 0,
@@ -337,7 +339,7 @@ function openComboWindows(
     const m = b.operator;
     const kit = ctx.data.kits.operators[m];
     if (!kit?.comboTriggers || (m === hitter && hitGroup === "combo")) continue;
-    const combos = kit.skills.filter((s) => ctx.data.operators[m]?.skillGroups[s.skillId] === "combo");
+    const combos = kit.skills.filter((s) => s.kind === "combo");
     if (combos.length > 0 && combos.every((s) => (st.readyAt[s.skillId] ?? 0) > frame)) continue;
     const panel = ctx.panels.get(m) as StatPanel;
     const fires = kit.comboTriggers.some(
@@ -440,7 +442,7 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
     landed.push({ ...result, count: 1, frame: hit.frame, operator: hit.operator });
     applyBuffs(false);
     if (kitHit.energy) st = gainEnergy(ctx, st, hit.operator, resolveValue(ctx.data, build, panel, hit.skillId, kitHit.energy), hit.frame);
-    st = openComboWindows(ctx, st, events, stacks, buffs, hit.frame, hit.operator, skillGroup(ctx, hit.operator, hit.skillId));
+    st = openComboWindows(ctx, st, events, stacks, buffs, hit.frame, hit.operator, kitSkill(ctx, hit.operator, hit.skillId).kind);
     record(events, enemy);
   }
   return {
@@ -460,7 +462,11 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
 export function earliestStart(ctx: TimelineContext, state: TimelineState, action: RotationAction): { frame: number } | { error: string } {
   if (!ctx.builds.has(action.operator)) return { error: `${action.operator} isn't in the team` };
   let frame = Math.max(state.frame, action.at ?? 0, state.freeAt[action.operator] ?? 0);
-  if (action.skill === "swap") return { frame };
+  if (action.skill === "swap") {
+    if (action.operator === state.controlled) return { error: `${action.operator} is already the controlled operator` };
+    // The controlled operator finishes its current action first (no cancelling by swapping, assumed).
+    return { frame: Math.max(frame, state.freeAt[state.controlled] ?? 0) };
+  }
   let costs;
   try {
     kitSkill(ctx, action.operator, action.skill);
@@ -468,7 +474,7 @@ export function earliestStart(ctx: TimelineContext, state: TimelineState, action
   } catch (e) {
     return { error: e instanceof Error ? e.message : String(e) };
   }
-  if (costs.group === "basic" && state.controlled !== action.operator) return { error: `${action.operator} isn't the controlled operator (swap first)` };
+  if (costs.kind === "basic" && state.controlled !== action.operator) return { error: `${action.operator} isn't the controlled operator (swap first)` };
   frame = Math.max(frame, state.readyAt[action.skill] ?? 0);
   if (costs.spCost > SP.max) return { error: `${action.skill} costs ${costs.spCost} SP, more than the maximum` };
   // Wait for SP: regen is linear after any pause.
@@ -486,12 +492,12 @@ export function earliestStart(ctx: TimelineContext, state: TimelineState, action
     if (skill.availableWhile && !active(skill.availableWhile)) return { error: `${action.skill} needs ${skill.availableWhile} active` };
     if (skill.unavailableWhile && active(skill.unavailableWhile)) return { error: `${action.skill} isn't available during ${skill.unavailableWhile}` };
   }
-  if (costs.energyCost > 0 || (costs.group === "combo" && hasComboTrigger(ctx, action.operator))) {
+  if (costs.energyCost > 0 || (costs.kind === "combo" && hasComboTrigger(ctx, action.operator))) {
     const then = advance(ctx, state, frame);
     if (costs.energyCost > 0 && (then.energy[action.operator] ?? 0) < costs.energyCost - 1e-9) {
       return { error: `${action.skill} needs ${costs.energyCost} ultimate energy, ${(then.energy[action.operator] ?? 0).toFixed(1)} at frame ${frame}` };
     }
-    if (costs.group === "combo" && hasComboTrigger(ctx, action.operator)) {
+    if (costs.kind === "combo" && hasComboTrigger(ctx, action.operator)) {
       const w = then.comboWindow[action.operator];
       if (!w || w.until < frame) {
         // Not open yet: wait for a hit already on its way to open it (a recorded rotation's combo follows its trigger).
@@ -543,7 +549,7 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
   if (natural > 0) for (const b of ctx.scenario.team) next = gainEnergy(ctx, next, b.operator, natural * ENERGY.perNaturalSp, start.frame);
   if (costs.energyCost > 0) next = { ...next, energy: { ...next.energy, [action.operator]: Math.max(0, (next.energy[action.operator] ?? 0) - costs.energyCost) } };
   if (skill.energyBlockSeconds) next = { ...next, energyBlockedUntil: { ...next.energyBlockedUntil, [action.operator]: start.frame + Math.round(skill.energyBlockSeconds * FPS) } };
-  if (costs.group === "combo" && next.comboWindow[action.operator]) {
+  if (costs.kind === "combo" && next.comboWindow[action.operator]) {
     const { [action.operator]: _used, ...rest } = next.comboWindow;
     next = { ...next, comboWindow: rest };
   }

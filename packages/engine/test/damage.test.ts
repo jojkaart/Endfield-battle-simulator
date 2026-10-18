@@ -45,7 +45,7 @@ const build: Build = {
   skillLevels: { basic: 1, battle: 1, combo: 1, ultimate: 1 },
   weapon: { id: "wpn", level: 1, skillLevels: [1, 1, 1] }, gear: [],
 };
-const skill: KitSkill = { skillId: "op_skill", label: "Skill", hits: [] };
+const skill: KitSkill = { skillId: "op_skill", label: "Skill", kind: "battle", hits: [] };
 const hit: KitHit = { id: "hit", label: "Hit", scale: ["atk_scale", "ratio"], count: 1, events: [], damageType: "battle", element: "fire" };
 const never: DamageOptions = { crit: "never", staggered: false, conditions: [] };
 

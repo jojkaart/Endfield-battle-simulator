@@ -317,6 +317,12 @@ export interface StackGain {
 export interface KitSkill {
   readonly skillId: string;
   readonly label: string;
+  /**
+   * What kind of action casting it is (basic attacks need the operator to be
+   * controlled; combos need their window). Not always the skill's level group:
+   * Laevatain's enhanced attacks level with her ultimate but are basic attacks.
+   */
+  readonly kind: SkillType;
   /** How long the skill locks the operator (30 FPS frames), when known. */
   readonly durationFrames?: number;
   /** The operator gains no ultimate energy for this long after the cast (SkillData RefrainObtainUsp, e.g. Laevatain's ultimate). */
