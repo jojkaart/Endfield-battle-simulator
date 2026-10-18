@@ -890,3 +890,19 @@ describe("timeline: control statuses", () => {
     expect(run(d(true)).enemy.infliction?.expiresAt).toBe(630);
   });
 });
+
+describe("timeline: haste", () => {
+  it("a cast while hasted plays faster: its hits come sooner", () => {
+    const kit = data.kits.operators[op] as OperatorKit;
+    const haste: KitBuff = { id: "haste", label: "haste", target: "self", duration: 10, modifiers: [{ attr: 92, value: 0.25 }] };
+    const d: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, buffs: [...kit.buffs, haste], triggers: [...kit.triggers, { id: "h", on: { event: "cast", kinds: ["battle"] }, by: "self", maxCount: 1, do: [{ kind: "buff", buff: "haste" }] }] } } },
+    };
+    const rot: RotationAction[] = [{ operator: op, skill: L + "normal_skill" }, { operator: op, skill: L + "attack1" }];
+    const plain = simulate(data, scenario(rot));
+    const fast = simulate(d, scenario(rot));
+    // The battle skill was cast before the haste; attack1 after it, at speed 1.25: its hit at frame 6 / 1.25 → 5.
+    const a1 = (r: typeof plain) => [r.casts[1]?.frame ?? NaN, r.hits.find((h) => h.skillId === L + "attack1")?.frame ?? NaN];
+    expect(a1(plain)[1] - a1(plain)[0]).toBe(6);
+    expect(a1(fast)[1] - a1(fast)[0]).toBe(5);
+  });
+});

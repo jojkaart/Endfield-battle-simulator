@@ -325,6 +325,10 @@ linear) and `RESETto1` are known. Not modelled yet: entity-layer
 dilation (Si's hit-stop on the enemy), hit-stop (attacker pauses of
 0.03–0.4 s on most basic attacks) and jumps (Ti3): their curves and
 target enums aren't in the data, or need in-game tests (18).
+**Haste** (attribute 92, `KeywordSpeedUpScalar`, default 1, within
+0.1–1.3): a cast plays at that speed (its hits, windows and locked part
+come sooner; cooldowns don't change). Assumed: Endaxis parses but doesn't
+use it; in-game test 19.
 
 ### Skill timing
 

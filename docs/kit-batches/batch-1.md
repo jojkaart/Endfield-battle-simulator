@@ -266,3 +266,6 @@ Then re-analysis of all seven.
   (Jade Vessel) and an `enemyControl` predicate; `freezes` stops the
   enemy's own clock for its duration (its statuses, inflictions, debuffs
   and stagger timer), overlapping freezes counted once.
+- Ti4: haste as action speed (attribute 92 from buffs): a cast plays
+  faster (hits, windows, locked part), cooldowns unchanged; assumed, in-game
+  test 19.

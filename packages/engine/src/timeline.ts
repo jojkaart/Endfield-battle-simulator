@@ -153,7 +153,7 @@ export interface TimelineState {
   readonly spPausedUntil: number;
   readonly controlled: string;
   /** Per operator: its current (last) action, which gates its next one (actionGate). */
-  readonly acting: Readonly<Record<string, { readonly skill: string; readonly frame: number }>>;
+  readonly acting: Readonly<Record<string, { readonly skill: string; readonly frame: number; readonly speed?: number }>>;
   /** Per operator: the basic-attack chain's next step and when an attack input resolves to it. */
   readonly chainNext: Readonly<Record<string, { readonly skill: string; readonly from: number; readonly until: number }>>;
   /** Per skill ID: frame from which it's off cooldown. */
@@ -330,7 +330,8 @@ function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, s
   const cur = st.acting[operator];
   if (cur) {
     const ct = timingOf(ctx, cur.skill);
-    const at = (x: number) => cur.frame + x;
+    const speed = cur.speed ?? 1;
+    const at = (x: number) => cur.frame + Math.round(x / speed);
     const options = [Math.max(frame, at(ct.durationFrames)), Math.max(frame, at(ct.exclusiveFrames))];
     if (priorityOf(nt) > priorityOf(ct)) options.push(frame);
     for (const w of ct.windows) if (w.skills.includes(skillId) && Math.max(frame, at(w.from)) <= at(w.to)) options.push(Math.max(frame, at(w.from)));
@@ -350,19 +351,20 @@ function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, s
 }
 
 /** The chain's next step after a cast: a basic attack's window that lists a basic attack; kept for a moment by skills that don't interrupt the chain, cleared by others. */
-function chainAfter(ctx: TimelineContext, st: TimelineState, operator: string, skill: KitSkill, frame: number): TimelineState["chainNext"] {
+function chainAfter(ctx: TimelineContext, st: TimelineState, operator: string, skill: KitSkill, frame: number, speed = 1): TimelineState["chainNext"] {
   const t = timingOf(ctx, skill.skillId);
+  const at = (x: number) => frame + Math.round(x / speed);
   const { [operator]: prev, ...rest } = st.chainNext;
   if (skill.kind === "basic" && t.specification === 1) {
     const kit = ctx.kits.get(operator);
     for (const w of t.windows) {
       const step = w.skills.find((id) => kit?.skills.some((s) => s.skillId === id && s.kind === "basic"));
-      if (step) return { ...rest, [operator]: { skill: step, from: frame + w.from, until: frame + w.to } };
+      if (step) return { ...rest, [operator]: { skill: step, from: at(w.from), until: at(w.to) } };
     }
     return rest;
   }
   // dontInterruptCombo: the next attack still continues the chain up to 1 s after this skill's exclusive time (Endaxis: OffsetCacheTime).
-  if (t.keepsChain && prev && prev.until >= frame) return { ...rest, [operator]: { skill: prev.skill, from: frame, until: frame + t.exclusiveFrames + CHAIN_CACHE_FRAMES } };
+  if (t.keepsChain && prev && prev.until >= frame) return { ...rest, [operator]: { skill: prev.skill, from: frame, until: at(t.exclusiveFrames) + CHAIN_CACHE_FRAMES } };
   return rest;
 }
 
@@ -466,6 +468,13 @@ function shiftOperator(st: TimelineState, operator: string, start: number, n: nu
     ...(cur ? { acting: { ...st.acting, [operator]: { ...cur, frame: cur.frame + n } } } : {}),
     ...(chain ? { chainNext: { ...st.chainNext, [operator]: { ...chain, from: later(chain.from), until: later(chain.until) } } } : {}),
   };
+}
+
+/** An operator's action speed: attribute 92 (KeywordSpeedUpScalar, default 1) plus haste buffs, within 0.1–1.3. */
+function actionSpeed(ctx: TimelineContext, st: TimelineState, operator: string, frame: number): number {
+  const panel = ctx.panels.get(operator) as StatPanel;
+  const base = panel.attrs[Attr.KeywordSpeedUpScalar]?.total ?? ctx.data.attributeDefaults[Attr.KeywordSpeedUpScalar] ?? 1;
+  return Math.max(0.1, Math.min(1.3, base + buffAttr(st.buffs, operator, frame, Attr.KeywordSpeedUpScalar)));
 }
 
 /** How long a chain survives a skill that doesn't interrupt it, after that skill's exclusive time. */
@@ -1139,6 +1148,9 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   const panel = ctx.panels.get(operator) as StatPanel;
   const castSituation: Situation = { team: ctx.scenario.team, controlled: s.controlled, stacks: own, buffActive: (id) => s.buffs.some((b) => b.id === id && b.owner === operator && b.cast === undefined && b.appliedAt <= frame && b.expiresAt > frame) };
   const castIndex = s.casts.length;
+  // Haste (attribute 92, KeywordSpeedUpScalar, default 1, at most 1.3): the cast plays faster (assumed; in-game test 19).
+  const speed = actionSpeed(ctx, s, operator, frame);
+  const scaled = (f: number) => (speed === 1 ? f : Math.round(f / speed));
   const windowCount = costs.kind === "combo" ? s.comboWindow[operator]?.count : undefined;
   const inRange = (r: StackRequirement) => {
     const n = own[r.stack] ?? 0;
@@ -1161,7 +1173,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   const pending: PendingHit[] = [];
   for (const h of skill.hits.filter(met)) {
     const frames = h.frames ?? Array.from({ length: h.count }, () => 0);
-    for (const f of frames) pending.push({ frame: frame + f, operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castIndex, ...(usesAtHit(h.id).length && f === frames[0] ? { usesUp: usesAtHit(h.id) } : {}), ...(h.detached ? { detached: true } : {}), ...(windowCount !== undefined ? { eventCount: windowCount } : {}) });
+    for (const f of frames) pending.push({ frame: frame + scaled(f), operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castIndex, ...(usesAtHit(h.id).length && f === frames[0] ? { usesUp: usesAtHit(h.id) } : {}), ...(h.detached ? { detached: true } : {}), ...(windowCount !== undefined ? { eventCount: windowCount } : {}) });
   }
   // A skill whose kit names the hit that returns SP gets it there, not on its first hit; a finisher also gets the enemy's finisher SP (GainBreakingAttackAtb).
   const finisherSp = full.timing.specification === 8 && !followUp ? (ctx.data.enemies[ctx.scenario.target.enemy]?.finisherSp ?? 0) : 0;
@@ -1176,7 +1188,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   if (natural > 0) {
     if (skill.teamEnergyFrame === undefined) for (const b of ctx.scenario.team) next = gainEnergy(ctx, next, b.operator, natural * ENERGY.perNaturalSp, frame);
     else {
-      const at = frame + skill.teamEnergyFrame;
+      const at = frame + scaled(skill.teamEnergyFrame);
       next = { ...next, pendingEnergy: [...next.pendingEnergy, ...ctx.scenario.team.map((b) => ({ frame: at, operator: b.operator, amount: natural * ENERGY.perNaturalSp }))] };
     }
   }
@@ -1196,9 +1208,9 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     ...next,
     sp: s.sp - costs.spCost,
     spPausedUntil: costs.spCost > 0 ? frame + SP.pauseAfterSpendFrames : s.spPausedUntil,
-    acting: { ...s.acting, [operator]: { skill: skillId, frame } },
+    acting: { ...s.acting, [operator]: { skill: skillId, frame, ...(speed !== 1 ? { speed } : {}) } },
     ...(full.timing.specification === 8 ? { stagger: { ...s.stagger, finisherUsed: true } } : {}),
-    chainNext: chainAfter(ctx, next, operator, skill, frame),
+    chainNext: chainAfter(ctx, next, operator, skill, frame, speed),
     readyAt: castCooldowns(ctx, next.readyAt, operator, skill, costs.cooldownFrames, frame),
     ...(skill.takesControl ? { controlled: operator } : {}),
     pending: [...s.pending, ...pending],

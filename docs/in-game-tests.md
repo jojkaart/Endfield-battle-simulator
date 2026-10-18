@@ -196,6 +196,16 @@ cooldown right after: did it go down by the animation's length (cooldowns
 run) or not (frozen)? Also: does the team SP bar move during the
 animation?
 
+### 19. What Haste speeds up (ready, if you have Si)
+
+**Why:** Si's talent gives the team Haste (`ratio_speed` 15% / 30%) for
+5 s after her Inksoul ends. The data says only "speed +x" (attribute 92);
+the engine assumes it plays skills faster (hits, cancel windows, the
+locked part) but not cooldowns. Nobody's simulator models it yet.
+**How:** with the Haste up, record a teammate's basic attack chain (or
+time five basic attacks) and compare with the same chain without it: is
+it about 15% / 30% faster? Does a skill's cooldown run faster too?
+
 ## Results
 
 None yet.
