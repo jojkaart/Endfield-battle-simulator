@@ -109,6 +109,49 @@ then one right after a teammate applied a Nature infliction (Gilberta's
 battle skill or ultimate). Screenshots of the burst's damage number both
 times (no crits).
 
+### 10. Si's combo by stacks consumed (ready, if you have Si)
+
+**Why:** her combo's final hit should be `atk_scale2 + n × atk_scale2_1`,
+n = the infliction stacks consumed by the trigger (+1 at P5). The engine
+can't count n yet; the numbers would confirm the rule before it's built.
+**How:** trigger her combo after consuming 1, then 2, then 3 stacks of Cryo
+or Heat Infliction (e.g. a reaction onto 1–3 stacks); screenshot the final
+hit each time (no crits).
+
+### 11. Estella's combo on a target that isn't Solidified (ready, if you have Estella)
+
+**Why:** on a Solidified target it uses the larger `atk_scale2` and applies
+Physical Susceptibility; otherwise the smaller `atk_scale`, without
+Susceptibility. The model assumes the target is still Solidified.
+**How:** with her combo window open, wait until Solidification ends (about
+6 s after a level I Solidification), then cast the combo; compare its
+damage with a cast right after Solidification, and check for the Physical
+Susceptibility icon.
+
+### 12. Gilberta's Arts Susceptibility value and duration (ready, if you have Gilberta)
+
+**Why:** the data says her ultimate's Arts Susceptibility is `rate` × 1.2
+from potential 2 (0.36 at ultimate level 10–12) and the plain rate below
+(0.30), for 5 s; one log showed 0.36 at P3, another 0.30 at P1.
+**How:** her ultimate on a training dummy with no physical teammates; read
+the Arts Susceptibility value on the enemy and time how long it stays.
+
+### 13. Arcane's combo cooldown in WILL mode (ready, if you have Arcane)
+
+**Why:** a talent shortens her combo cooldown by 6 s only in INT mode
+(data: `activeCondition lizhiyan_wisd`); the engine applies it always.
+**How:** with Will > Intellect, cast her combo and time the cooldown:
+18 s expected (12 s would mean the cut applies in WILL mode too).
+
+### 14. Si's battle skill element with a Heat operator in slot 1 (ready, if you have Si)
+
+**Why:** her description says the battle skill applies Heat instead of Cryo
+Infliction when a Heat operator is in Team Position 01; which slot that is
+needs confirming.
+**How:** put a Heat operator in the first team slot, cast Si's battle skill
+and look at the infliction icon on the enemy; repeat with a Cryo or Nature
+operator first.
+
 ## Results
 
 None yet.
