@@ -441,6 +441,13 @@ export interface KitSkill {
   readonly available?: Predicate;
   /** The caster becomes the controlled operator at the cast (an ultimate's "becomes the controlled operator"). */
   readonly takesControl?: boolean;
+  /**
+   * When this holds at the cast, the skill runs beside the operator's
+   * current action instead of ending it (SkillData switchToBuffConfig with
+   * asSkillCast: Liino's combo during Cosmovoice): the current skill keeps
+   * its hits, lock and chain.
+   */
+  readonly beside?: Predicate;
   /** A basic-attack chain step (attack2…): castable only while the chain points at it (the previous step's window lists it). The loader sets it from the data. */
   readonly chainStep?: boolean;
   /** Skills of one group share a cooldown: casting one puts every member on its own cooldown (Typhoeus's two combos). */

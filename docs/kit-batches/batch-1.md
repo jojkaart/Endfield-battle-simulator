@@ -368,3 +368,39 @@ engine uses, and what settles it.
 | Ti2 projectile travel | kits write landing frames (launch + travel read from the logs) | data status, no engine work |
 | D2 compiler leftovers (poise from a hit's `poiseCalculation`, finisher factors, forced Lift, per-hit element, created buffs, team-energy frames, the finisher's `atb`, values of BuffData buffs a talent or potential creates, e.g. Estella's P5 `cd`) | kits hand-write them | data compilation; doesn't affect numbers |
 | L2 the ×1.42 of one-element reaction keys (`buff_common_<element>_triggered`) | such hits stay unchecked | research |
+
+## Pass 3: re-analysis (2026-10-18)
+
+Each report's `## Re-analysis (pass 3)` checks the pass-2 gaps against the
+engine as built and rewrites the kit plan with the implemented fields; the
+plans were loaded and run from scratch copies. Every pass-2 gap is
+supported or on the open list above. New gaps, all implemented:
+
+| ID | Feature | From |
+|---|---|---|
+| P3-1 | A hit's `scale` may be empty (Fixed DMG; `scaleValue`-only hits) | Si R10 |
+| P3-2 | Skills a ChangeSkillAction puts in a slot get that slot's skill group (Final Stroke had none) | Si R11 |
+| P3-3 | The engine's reactions to a hit's own status events (freezes, Lift stagger) happen once, after the damage, also with before-damage triggers | Si R12 |
+| P3-4 | A cast trigger's `delay` plays at the cast's speed (Haste) | Si R13 |
+| P3-5 | The per-hit fixture test assumes what the fixture can't record (the enemy's statuses) | Laevatain L3 |
+| P3-6 | The cooldown action's `set` (SetSkillCdAtOnce functionType 1) | Liino N1 |
+| P3-7 | `beside` on a skill: it runs beside the current action (switchToBuffConfig) | Liino N2 |
+| P3-8 | `healKind` on a trigger's heal | Liino N3 |
+| P3-9 | Cast events say whether they're follow-ups (`followUp` filter) | Liino N4 |
+| P3-10 | A buff a hit applies before its damage runs its `buffApplied` triggers before it too | Arcane R12 |
+| P3-11 | `buffApplied` events carry the source skill's kind (`fromKinds` on categories) | Arcane R13 |
+
+Corrections the pass found in the data: stagger is read from a hit's
+`poiseCalculation` (Gilberta's ultimate 20, attack4's 16 split over its
+orbs); Arcane's talent-1 Susceptibility lasts 10 s; Typhoeus's shot 4
+ends the hover itself. In-game test 51 is new; 21, 24, 27, 29, 30 and 42
+were brought up to date.
+
+Pitfalls for the kits phase, from the reports: split hits need explicit
+`events` (only a single hit entry defaults to the skill's key);
+equipment buff, stack and trigger IDs carry the `<equipment>.` prefix;
+every trigger that reads plain keys names its `skill`; a hit whose
+event names another file is `detached` unless it says `detached: false`;
+Si's example drops its two `wpn_claym_0018.*` conditions; a few timeline
+tests are written against the current kits' shape and move with them.
+

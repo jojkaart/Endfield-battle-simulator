@@ -282,6 +282,10 @@
                   "finisher": {
                     "type": "boolean",
                     "description": "Only finishers (true) or only other casts (false)."
+                  },
+                  "followUp": {
+                    "type": "boolean",
+                    "description": "Only casts a skill made by itself (CastSkill, a trigger's cast action), or only the player's."
                   }
                 }
               },
@@ -725,6 +729,21 @@
                     },
                     "minItems": 1,
                     "description": "Any kit buff (own, weapon or gear set) of one of these categories, applied by whoever `by` names: Amp and Susceptibility by zone, Weakness and Protection by attribute 62, 63."
+                  },
+                  "fromKinds": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/skillType"
+                        },
+                        {
+                          "const": "none"
+                        }
+                      ]
+                    },
+                    "minItems": 1,
+                    "description": "Only buffs applied by skills of these kinds (a hit's, or a trigger's run by its owner's own skill); none otherwise."
                   }
                 }
               }
@@ -1012,12 +1031,16 @@
                       "$ref": "#/$defs/valueExpr",
                       "description": "Instead of seconds: this fraction of the skill's full cooldown added to the remaining time (negative cuts it; SetSkillCdAtOnce isPercentage, assumed, in-game test 36)."
                     },
+                    "set": {
+                      "$ref": "#/$defs/valueExpr",
+                      "description": "Instead: start a cooldown of this many seconds, whether one is running or not (SetSkillCdAtOnce functionType 1)."
+                    },
                     "if": {
                       "$ref": "#/$defs/predicate",
                       "description": "This action only in this situation (judged for the owner when it runs)."
                     }
                   },
-                  "description": "Exactly one of seconds and fraction (the loader checks)."
+                  "description": "Exactly one of seconds, fraction and set (the loader checks)."
                 },
                 {
                   "type": "object",
@@ -1091,6 +1114,10 @@
                     "if": {
                       "$ref": "#/$defs/predicate",
                       "description": "This action only in this situation (judged for the owner when it runs)."
+                    },
+                    "healKind": {
+                      "$ref": "#/$defs/skillType",
+                      "description": "The skill kind the heal's tag names (HealAction healTags); default none."
                     }
                   }
                 },
@@ -1306,6 +1333,10 @@
           "chainStep": {
             "type": "boolean",
             "description": "Override: a basic-attack chain step, castable only while the chain points at it (default from the data: an earlier step's cancel window lists it)."
+          },
+          "beside": {
+            "$ref": "#/$defs/predicate",
+            "description": "When this holds at the cast, the skill runs beside the operator's current action instead of ending it (SkillData switchToBuffConfig, asSkillCast): the current skill keeps its hits, lock and chain."
           }
         }
       }

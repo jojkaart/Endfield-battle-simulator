@@ -1233,3 +1233,55 @@ describe("timeline: delays under Haste, freezes with before-damage triggers", ()
     expect(expiry([{ id: "bd", on: { event: "control" }, by: "self", beforeDamage: true, do: [] }])).toBe(plain);
   });
 });
+
+describe("timeline: pass-3 gaps (set cooldowns, heal kinds, follow-ups, buffs before damage, casts beside)", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const counter = { id: "n", label: "n", max: 99 };
+  const withKit = (k: Partial<OperatorKit>): GameData => ({ ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, ...k, stacks: [...kit.stacks, counter] } } } });
+  const count = (on: KitTrigger["on"]): KitTrigger => ({ id: "count", on, by: "self", do: [{ kind: "gain", gains: [{ stack: "n", amount: 1 }] }] });
+  const a = (s: string, at?: number): RotationAction => ({ operator: op, skill: L + s, ...(at !== undefined ? { at } : {}) });
+  const run = (g: GameData, rotation: RotationAction[], frames = 120) => {
+    const ctx = createContext(g, scenario(rotation));
+    let s = init(ctx);
+    for (const x of rotation) s = apply(ctx, s, x);
+    return advance(ctx, s, frames);
+  };
+
+  it("a cooldown can be set whether one runs or not", () => {
+    const lock: KitTrigger = { id: "lock", on: { event: "cast", skills: [L + "attack1"] }, by: "self", do: [{ kind: "cooldown", who: "self", skills: "battle", set: 3 }] };
+    const s = run(withKit({ triggers: [...kit.triggers, lock] }), [a("attack1")], 1);
+    expect(s.readyAt[L + "normal_skill"]).toBe(90);
+  });
+
+  it("a trigger's heal carries its heal kind; casts tell follow-ups from the player's", () => {
+    const heal: KitTrigger = { id: "heal", on: { event: "cast", skills: [L + "attack1"] }, by: "self", do: [{ kind: "heal", target: "self", healKind: "battle" }] };
+    expect(run(withKit({ triggers: [...kit.triggers, heal, count({ event: "heal", kinds: ["battle"] })] }), [a("attack1")]).stacks[op]?.n).toBe(1);
+    const follow: KitTrigger = { id: "follow", on: { event: "cast", skills: [L + "attack1"] }, by: "self", delay: 5, do: [{ kind: "cast", skill: L + "attack1" }], maxCount: 1 };
+    expect(run(withKit({ triggers: [...kit.triggers, follow, count({ event: "cast", followUp: true })] }), [a("attack1")]).stacks[op]?.n).toBe(1);
+    expect(run(withKit({ triggers: [...kit.triggers, follow, count({ event: "cast", followUp: false })] }), [a("attack1")]).stacks[op]?.n).toBe(1);
+  });
+
+  it("a buff applied before a hit's damage runs its buffApplied triggers before it; buff categories filter by the source's kind", () => {
+    const mark: KitBuff = { id: "mark", label: "mark", target: "enemy", duration: 5, modifiers: [{ zone: "susceptibility", value: 0.1 }] };
+    const amp: KitBuff = { id: "amp", label: "amp", target: "self", duration: 5, modifiers: [{ zone: "amp", value: 0.5 }] };
+    const skills = kit.skills.map((s) => (s.skillId === L + "attack1" ? { ...s, hits: s.hits.map((h) => ({ ...h, buffs: [{ buff: "mark", beforeDamage: true }] })) } : s));
+    const onMark = (on: KitTrigger["on"]): KitTrigger => ({ id: "on_mark", on, by: "self", do: [{ kind: "buff", buff: "amp" }] });
+    const ampOn = (t: KitTrigger) => run(withKit({ skills, buffs: [...kit.buffs, mark, amp], triggers: [...kit.triggers, t] }), [a("attack1")]).hits.find((h) => h.skillId === L + "attack1")?.modifiers.some((m) => m.zone === "amp" && m.value === 0.5);
+    expect(ampOn(onMark({ event: "buffApplied", buff: "mark" }))).toBe(true);
+    expect(ampOn(onMark({ event: "buffApplied", categories: ["susceptibility"], fromKinds: ["basic"] }))).toBe(true);
+    expect(ampOn(onMark({ event: "buffApplied", categories: ["susceptibility"], fromKinds: ["combo"] }))).toBe(false);
+  });
+
+  it("a skill cast beside the current action leaves it running: its hits, its lock", () => {
+    const ultBeside = (beside: boolean) => withKit({ skills: kit.skills.map((s) => (s.skillId === L + "ultimate_skill" && beside ? { ...s, beside: { potentialAtLeast: 0 } } : s)) });
+    const left = (beside: boolean) => {
+      const ctx = createContext(ultBeside(beside), scenario([]));
+      const s = apply(ctx, apply(ctx, init(ctx), a("normal_skill")), a("ultimate_skill", 10));
+      return { acting: s.acting[op]?.skill, battleHits: s.pending.filter((h) => h.skillId === L + "normal_skill").length };
+    };
+    expect(left(false)).toMatchObject({ acting: L + "ultimate_skill" });
+    const kept = left(true);
+    expect(kept.acting).toBe(L + "normal_skill");
+    expect(kept.battleHits).toBeGreaterThan(left(false).battleHits);
+  });
+});

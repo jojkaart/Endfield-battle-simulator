@@ -31,11 +31,11 @@ export type BattleEvent =
     }
   /** A skill was cast. */
   /** A skill was cast; `cast` is its index, `count` a combo's window count (ValueExpr `eventCount`). */
-  | { readonly type: "cast"; readonly frame: number; readonly operator: string; readonly skillId: string; readonly kind: SkillType; readonly finisher: boolean; readonly controlled: boolean; readonly cast?: number; readonly count?: number }
+  | { readonly type: "cast"; readonly frame: number; readonly operator: string; readonly skillId: string; readonly kind: SkillType; readonly finisher: boolean; readonly controlled: boolean; readonly cast?: number; readonly count?: number; readonly followUp?: boolean }
   /** Something the enemy's arts state did (status.ts); `fromKind`: the kind of the hit that caused it (`none` for a trigger's or a tick's). */
   | { readonly type: "status"; readonly frame: number; readonly operator: string; readonly event: StatusEvent; readonly fromKind: SkillType | "none"; readonly cast?: number }
-  /** `operator` applied one of its kit buffs; `categories`: what the buff is (BuffCategory). */
-  | { readonly type: "buffApplied"; readonly frame: number; readonly operator: string; readonly buff: string; readonly categories: readonly BuffCategory[] }
+  /** `operator` applied one of its kit buffs; `categories`: what the buff is (BuffCategory); `fromKind`: the kind of the skill behind it. */
+  | { readonly type: "buffApplied"; readonly frame: number; readonly operator: string; readonly buff: string; readonly categories: readonly BuffCategory[]; readonly fromKind?: SkillType | "none" }
   /** `remaining`: frames it had left when it ended (0 when it ran out); `recorded`: what a recording buff recorded. */
   | { readonly type: "buffEnded"; readonly frame: number; readonly operator: string; readonly buff: string; readonly remaining: number; readonly recorded?: number }
   /** A periodic tick of one of the operator's kit buffs (KitBuff.every). */
@@ -63,16 +63,21 @@ export type HitDecoration = "finalStrike" | "finisher";
 export type TriggerOn =
   /** `skills`: only these skills' hits; `decorations`: only landings with any of these; `reaction`: only hits computed as a reaction or burst, or only others. */
   | { readonly event: "hit"; readonly kinds?: readonly (SkillType | "none")[]; readonly elements?: readonly Element[]; readonly finalStrike?: boolean; readonly skills?: readonly string[]; readonly decorations?: readonly HitDecoration[]; readonly reaction?: boolean }
-  /** A skill is cast; `skills` narrows it to these skill IDs (a skill's own effects at frames: with the trigger's `delay`); `finisher`: only finishers, or none. */
-  | { readonly event: "cast"; readonly kinds?: readonly SkillType[]; readonly skills?: readonly string[]; readonly finisher?: boolean }
+  /**
+   * A skill is cast; `skills` narrows it to these skill IDs (a skill's own
+   * effects at frames: with the trigger's `delay`); `finisher`: only
+   * finishers, or none; `followUp`: only casts a skill made by itself
+   * (CastSkill), or only the player's.
+   */
+  | { readonly event: "cast"; readonly kinds?: readonly SkillType[]; readonly skills?: readonly string[]; readonly finisher?: boolean; readonly followUp?: boolean }
   | (StatusOn & {
       /** Only status events caused by hits of these kinds (CheckOriginSkillType); a trigger's applications and ticks are `none`. */
       readonly fromKinds?: readonly (SkillType | "none")[];
     })
   /** One of the trigger owner's own kit buffs is applied, ends, or ticks (KitBuff.every). */
   | { readonly event: "buffApplied" | "buffEnded" | "buffTick"; readonly buff: string }
-  /** Someone (`by`) applies a kit buff of any of these categories (its own, a weapon's or a gear set's). */
-  | { readonly event: "buffApplied"; readonly categories: readonly BuffCategory[] }
+  /** Someone (`by`) applies a kit buff of any of these categories (its own, a weapon's or a gear set's); `fromKinds`: only from skills of these kinds. */
+  | { readonly event: "buffApplied"; readonly categories: readonly BuffCategory[]; readonly fromKinds?: readonly (SkillType | "none")[] }
   /** Someone (`by`) heals someone; `toOthers`: only heals of someone other than the healer; `kinds`: only heals by these skill kinds (HealAction healTags). */
   | { readonly event: "heal"; readonly toOthers?: boolean; readonly kinds?: readonly (SkillType | "none")[] }
   | { readonly event: "staggered" }
@@ -129,8 +134,8 @@ export type TriggerActionKind =
   | { readonly kind: "buff"; readonly buff: string; readonly to?: "eventSubject" }
   /** Add seconds to the remaining time of one of the owner's active kit buffs (all its layers), e.g. a state a skill pauses. */
   | { readonly kind: "extendBuff"; readonly buff: string; readonly seconds: ValueExpr }
-  /** Heal (an event for heal triggers; amounts aren't modelled). */
-  | { readonly kind: "heal"; readonly target: HealTarget }
+  /** Heal (an event for heal triggers; amounts aren't modelled); `healKind`: the skill kind its heal tag names (HealAction healTags), default none. */
+  | { readonly kind: "heal"; readonly target: HealTarget; readonly healKind?: SkillType }
   /**
    * End the owner's current skill now (JumpToAction to its end, e.g. when a
    * stance it holds ends): its hits and delayed actions still to come are
@@ -144,9 +149,11 @@ export type TriggerActionKind =
   /**
    * Change the remaining cooldown of an operator's skills of a kind by
    * `seconds`, or by `fraction` of their full cooldown (SetSkillCdAtOnce
-   * isPercentage; assumed, in-game test 36); negative cuts it.
+   * isPercentage; assumed, in-game test 36); negative cuts it. `set` starts
+   * one of `set` seconds whether one is running or not (SetSkillCdAtOnce
+   * functionType 1: End Stance's lockout on Liino's battle skill).
    */
-  | ({ readonly kind: "cooldown"; readonly who: "self" | "eventOperator" | { readonly slot: number }; readonly skills: SkillType } & ({ readonly seconds: ValueExpr } | { readonly fraction: ValueExpr }))
+  | ({ readonly kind: "cooldown"; readonly who: "self" | "eventOperator" | { readonly slot: number }; readonly skills: SkillType } & ({ readonly seconds: ValueExpr } | { readonly fraction: ValueExpr } | { readonly set: ValueExpr }))
   /** The owner casts one of its kit skills by itself (SkillData CastSkill: a follow-up, e.g. Typhoeus's aerial shots off-field): no control, cost or cooldown. */
   | { readonly kind: "cast"; readonly skill: string }
   /** Land hits, as the owner, at frames counted from the event (values from the trigger's `skill`); each names its damage type. */
@@ -202,9 +209,9 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
         (!on.decorations || on.decorations.some((d) => (d === "finisher" ? e.finisher : e.finalStrike))) && (on.reaction === undefined || on.reaction === (e.reaction ?? false))
       );
     case "cast":
-      return e.type === "cast" && has(on.kinds, e.kind) && has(on.skills, e.skillId) && (on.finisher === undefined || on.finisher === e.finisher);
+      return e.type === "cast" && has(on.kinds, e.kind) && has(on.skills, e.skillId) && (on.finisher === undefined || on.finisher === e.finisher) && (on.followUp === undefined || on.followUp === (e.followUp ?? false));
     case "buffApplied":
-      if ("categories" in on) return e.type === "buffApplied" && e.categories.some((c) => on.categories.includes(c));
+      if ("categories" in on) return e.type === "buffApplied" && e.categories.some((c) => on.categories.includes(c)) && has(on.fromKinds, e.fromKind ?? "none");
       return e.type === on.event && e.operator === owner && e.buff === on.buff;
     case "buffEnded":
     case "buffTick":

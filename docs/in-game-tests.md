@@ -278,15 +278,16 @@ means it doesn't (data).
 
 **Why:** Twilight is her highest-damage state. The engine holds its timer
 for 1.9 s per combo cast (it reads the data's re-created buff as "add
-time"), and for the whole pause of an enhanced battle skill, even when a
-combo cuts that skill short. The data ends the pause with the skill, so a
-cut can give up to about 3 s too much Twilight each time.
+time"), and, once her new kit is in, for an enhanced battle skill's pause
+only until the skill ends: a combo that cuts the skill short ends the
+pause too, as the data says (otherwise up to about 3 s too much Twilight
+each time).
 **How:** time Twilight from her ultimate to its end (the icon, or when
 enhanced attacks stop): once with no battle skills or combos (15 s
 expected); once with one combo in it (about 16.9 s if the engine is
 right); once with an enhanced battle skill cancelled by her combo at once.
 If the last one is as long as the combo alone, the pause ends with the
-skill (data); if it's about 3 s longer, it doesn't (engine).
+skill (data, and the engine); if it's about 3 s longer, it doesn't.
 
 ### 22. Scorching Heart's 20 s (ready, if you have Laevatain)
 
@@ -309,10 +310,11 @@ the empowered one.
 ### 24. Heat absorption by Final Strike and Finisher (optional confirmation, if you have Laevatain)
 
 **Why:** her talent absorbs Heat Infliction from the enemy for Melting
-Flame when a Final Strike or a Finisher hits. The data agrees, but the
-engine can't tell a finisher from a basic attack yet, so it gives no
-Melting Flame from finishers: up to 4 per stagger (one empowered battle
-skill). The engine also takes only what's missing to reach 4.
+Flame when a Final Strike or a Finisher hits. The data agrees, and her
+new kit does both (a finisher's two landings 37 frames apart can both
+absorb, past the 1 s cooldown); worth up to 4 Melting Flame per stagger
+(one empowered battle skill). The engine takes only what's missing to
+reach 4.
 **How:** (1) with 3 Melting Flame and 3 Heat stacks on the dummy, land one
 Final Strike: 4 Melting Flame and 2 Heat stacks should be left. (2) On a
 Staggered enemy with Heat Infliction on it, use any operator's finisher:
@@ -358,7 +360,10 @@ ultimate.
 **How:** cast her ultimate without Vocalist Stance active, then let
 teammates cause a reaction: does her combo become available? Cast it a
 few seconds into Cosmovoice: does her ultimate gauge rise at once (block
-of about 1 s), or only after Cosmovoice ends (about 15 s)?
+of about 1 s), or only after Cosmovoice ends (about 15 s)? Also, right
+after that combo, can she basic attack or swap at once? The data runs the
+combo beside the ultimate's action, so the engine says no: she stays in
+the ultimate until it ends.
 
 ### 28. What Liino can do in Vocalist Stance (ready, if you have Liino; lower priority)
 
@@ -390,15 +395,21 @@ ultimate; see test 8), and Liino's talent-2 SP.
   used up?
 - Liino: with Link up, cast End Stance, then her battle skill: does the
   battle skill still get the Link bonus? And after her combo (talent 2
-  active), cast End Stance: is SP returned?
+  active), cast End Stance: is SP returned? And in Vocalist Stance, cast
+  her combo: when the stance's action resumes after it (the game casts it
+  by itself), is Starry Boost used up?
+- Typhoeus with Wild Wanderer (if you have it): cast only her ultimate and
+  let the hover end by itself (no input): does the weapon's Arts
+  Intensity buff appear again as the hover ends? Her hover's idle and end
+  steps are battle-type sub-skills too.
 
 ### 30. Arcane's talent-1 Susceptibility duration (ready, if you have Arcane)
 
-**Why:** in WILL mode her ultimates give the enemy Nature and Cryo
-Susceptibility (up to 12.8%, +7% at P5). The data takes its duration from
-the ultimate's 20 s or the talent's 10 s; which one wins is unknown, and
-one log has it still on 10.9 s after the hit. That's 10 s of team-wide
-Susceptibility per ultimate.
+**Why (optional confirmation):** in WILL mode her ultimates give the
+enemy Nature and Cryo Susceptibility (up to 12.8%, +7% at P5). A closer
+read of the data says 10 s: the ultimates take the talent buff's
+`duration` into their own `duration_vul`. One log has it still on 10.9 s
+after the hit, which fits 10 s plus the time stop.
 **How:** Will > Intellect, her ultimate on a dummy: time the Nature
 Susceptibility icon from the ultimate's hit. About 10 s or 20 s, plus the
 ultimate's 1.6 s time stop if it's frozen.
@@ -543,10 +554,10 @@ instead: they shouldn't.
 
 ### 42. Typhoeus's hover end and stack lifetime (ready, if you have Typhoeus)
 
-**Why:** the data ends her hover about 1.9 s after her last shot if you
-give no input. The engine can't end it by idling, so after a short hover
-her floating shots, floating combo and P1's ATK +18% stay on until
-something else ends it. Separately, her Signs and arrows may expire after
+**Why:** the data ends her hover about 1.9 s after shots 1–3 (1.5 s after
+shot 4) if you give no input, and her new kit does the same; until then
+the engine kept the floating shots, floating combo and P1's ATK +18% on
+after a short hover. Separately, her Signs and arrows may expire after
 24 s held.
 **How:** battle skill, one floating shot, then nothing: does she land about
 2 s after that shot? In a fight, hold Signs and arrows for 30 s without
@@ -627,6 +638,20 @@ counts re-Solidifying an already Solidified enemy too.
 Solidification: +5 means anyone's counts. Then re-Solidify an enemy that
 is already Solidified: +5 again means a refresh counts. Two within 1 s: +5
 once.
+
+### 51. Does an effect a hit triggers count on that same hit? (ready, if you have Arcane with Solemn Phalanx, or Hot Work)
+
+**Why:** some weapon and gear-set effects start from something a hit does
+(an Arts Infliction, a Susceptibility it applies). The data creates some
+of them before the hit's damage, so the engine lets them act on that same
+hit: Solemn Phalanx's INT Arts DMG on the battle skill that inflicts, Hot
+Work's bonus on Arcane's INT ultimate hit. If the game applies them only
+from the next hit, those hits are 10–25% too high in the engine.
+**How:** with Solemn Phalanx on Arcane in INT mode and its buff not yet
+up, cast her battle skill on a dummy: compare its damage with a second
+battle skill cast while the buff is up. Equal means the first hit already
+had the buff. Hot Work: compare her INT ultimate hit with and without the
+set's buff already up before it.
 
 ## Results
 

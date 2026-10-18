@@ -160,7 +160,7 @@ export interface TimelineState {
   readonly spPausedUntil: number;
   readonly controlled: string;
   /** Per operator: its current (last) action, which gates its next one (actionGate). */
-  readonly acting: Readonly<Record<string, { readonly skill: string; readonly frame: number; readonly speed?: number }>>;
+  readonly acting: Readonly<Record<string, { readonly skill: string; readonly frame: number; readonly speed?: number; readonly cast?: number }>>;
   /** Per operator: the basic-attack chain's next step and when an attack input resolves to it. */
   readonly chainNext: Readonly<Record<string, { readonly skill: string; readonly from: number; readonly until: number }>>;
   /** Per skill ID: frame from which it's off cooldown. */
@@ -632,7 +632,7 @@ function buffCategories(def: KitBuff): BuffCategory[] {
   return [...out];
 }
 
-const buffAppliedEvent = (frame: number, operator: string, def: KitBuff): BattleEvent => ({ type: "buffApplied", frame, operator, buff: def.id, categories: buffCategories(def) });
+const buffAppliedEvent = (frame: number, operator: string, def: KitBuff, fromKind: SkillType | "none"): BattleEvent => ({ type: "buffApplied", frame, operator, buff: def.id, categories: buffCategories(def), fromKind });
 
 /**
  * Applies one of an owner's kit buffs (values for `skillId`); a filtered
@@ -859,7 +859,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
           const r = applyToEnemy(expireStatus(st.enemy, frame), resolveApplication(app, (v) => evaluate(v, ec())), frame, owner, ai, (key) => skillValue(ctx.data, panel, build, triggerSkillId(owner, t), key), statusTweaks(ctx, st, owner, frame));
           st = recordStatus(ctx, { ...st, enemy: r.state }, r.events, r.state);
           for (const x of r.events) if (x.kind === "consumed") consumed += x.stacks;
-          events.push(...asEvents(r.events, "none"));
+          events.push(...asEvents(r.events, origin && origin.operator === owner ? origin.kind : "none"));
         }
         break;
       }
@@ -884,7 +884,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         const subject = a.to === "eventSubject" ? [e.type === "heal" ? e.target : e.operator] : undefined;
         const r = addBuff(ctx, st, owner, triggerSkillId(owner, t), def, frame, triggerSituation(ctx, owner, st, e, consumed), subject);
         st = r.state;
-        if (r.applied) events.push(buffAppliedEvent(frame, owner, def));
+        if (r.applied) events.push(buffAppliedEvent(frame, owner, def, origin && origin.operator === owner ? origin.kind : "none"));
         break;
       }
       case "extendBuff": {
@@ -893,7 +893,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         break;
       }
       case "heal":
-        events.push(...healEvents(ctx, st, owner, a.target === "eventOperator" ? [e.operator] : a.target, frame, "none"));
+        events.push(...healEvents(ctx, st, owner, a.target === "eventOperator" ? [e.operator] : a.target, frame, a.healKind ?? "none"));
         break;
       case "endBuff": {
         const r = endBuff(st.buffs, a.buff, owner, frame, a.layers);
@@ -915,10 +915,16 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
       case "cooldown": {
         const who = a.who === "self" ? owner : a.who === "eventOperator" ? e.operator : ctx.scenario.team[a.who.slot]?.operator;
         if (!who) break;
-        const v = evaluate("seconds" in a ? a.seconds : a.fraction, ec());
+        const v = evaluate("seconds" in a ? a.seconds : "fraction" in a ? a.fraction : a.set, ec());
         const readyAt = { ...st.readyAt };
         for (const s of ctx.kits.get(who)?.skills ?? []) {
-          if (s.kind !== a.skills || (readyAt[s.skillId] ?? 0) <= frame) continue;
+          if (s.kind !== a.skills) continue;
+          // Setting starts a cooldown whether one runs or not; changes apply only to a running one.
+          if ("set" in a) {
+            readyAt[s.skillId] = frame + Math.round(v * FPS);
+            continue;
+          }
+          if ((readyAt[s.skillId] ?? 0) <= frame) continue;
           // A fraction is of the skill's full cooldown (assumed; in-game test 36).
           const change = Math.round("seconds" in a ? v * FPS : v * skillCosts(ctx, who, s.skillId).cooldownFrames);
           readyAt[s.skillId] = Math.max(frame, (readyAt[s.skillId] ?? 0) + change);
@@ -1035,7 +1041,9 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     st = { ...st, stacks: gainStacks(ctx, st.stacks, hit.operator, kitHit.gains, evalContext(ctx.data, build, panel, hit.skillId, at(consumed))) };
   }
   const kitBuff = (id: string) => ctx.kits.get(hit.operator)?.buffs.find((b) => b.id === id);
+  // Buffs applied before the damage: their buffApplied triggers run before it too (what they apply acts on the hit).
   const applyBuffs = (beforeDamage: boolean) => {
+    const into = beforeDamage ? [] : events;
     for (const a of kitHit.buffs ?? []) {
       if ((a.beforeDamage ?? false) !== beforeDamage) continue;
       const def = kitBuff(a.buff);
@@ -1043,8 +1051,9 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
       if (a.if && !decide(a.if, evalContext(ctx.data, build, panel, hit.skillId, at(consumed)))) continue;
       const r = addBuff(ctx, st, hit.operator, hit.skillId, def, hit.frame, at(consumed));
       st = r.state;
-      if (r.applied) events.push(buffAppliedEvent(hit.frame, hit.operator, def));
+      if (r.applied) into.push(buffAppliedEvent(hit.frame, hit.operator, def, kind));
     }
+    if (beforeDamage && into.length) st = runTriggers(ctx, st, into, { operator: hit.operator, kind });
   };
   applyBuffs(true);
   // A finisher (skillSpecification 8) is multiplied by the enemy's finisher multiplier (attribute 27).
@@ -1273,7 +1282,8 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
  * `buffEnded` events are returned).
  */
 function endCurrentSkill(advanced: TimelineState, operator: string, frame: number): { state: TimelineState; events: BattleEvent[] } {
-  const prevCast = advanced.casts.findLastIndex((c) => c.operator === operator);
+  // The current skill's cast (a skill cast beside it isn't the current one).
+  const prevCast = advanced.acting[operator]?.cast ?? advanced.casts.findLastIndex((c) => c.operator === operator);
   const endsNow = advanced.buffs.filter((b) => b.owner === operator && b.endsWithCast !== undefined && b.endsWithCast === prevCast && b.expiresAt > frame);
   const state = {
     ...advanced,
@@ -1297,11 +1307,12 @@ function endCurrentSkill(advanced: TimelineState, operator: string, frame: numbe
  * starts no cooldown.
  */
 function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: string, skillId: string, frame: number, followUp: boolean): { state: TimelineState; events: BattleEvent[]; origin: Origin } {
-  // Starting a skill ends the operator's current one.
-  const ended = endCurrentSkill(advanced, operator, frame);
+  const skill = kitSkill(ctx, operator, skillId);
+  // Starting a skill ends the operator's current one, unless it runs beside it (KitSkill.beside).
+  const beside = skill.beside !== undefined && decide(skill.beside, evalContext(ctx.data, ctx.builds.get(operator) as Build, ctx.panels.get(operator) as StatPanel, skillId, situationAt(ctx, operator, advanced, frame)));
+  const ended = beside ? { state: advanced, events: [] } : endCurrentSkill(advanced, operator, frame);
   const s = ended.state;
   const endsNowEvents = ended.events;
-  const skill = kitSkill(ctx, operator, skillId);
   const full = skillCosts(ctx, operator, skillId);
   const costs = followUp ? { ...full, spCost: 0, energyCost: 0, cooldownFrames: 0 } : full;
   // Hits that need stacks happen only if the stacks are there at the cast; meeting a consuming requirement uses the stack up.
@@ -1388,9 +1399,9 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     ...next,
     sp: s.sp - costs.spCost,
     spPausedUntil: costs.spCost > 0 ? frame + SP.pauseAfterSpendFrames : s.spPausedUntil,
-    acting: { ...s.acting, [operator]: { skill: skillId, frame, ...(speed !== 1 ? { speed } : {}) } },
+    acting: beside ? s.acting : { ...s.acting, [operator]: { skill: skillId, frame, cast: castIndex, ...(speed !== 1 ? { speed } : {}) } },
     ...(full.timing.specification === 8 ? { stagger: { ...s.stagger, finisherUsed: true } } : {}),
-    chainNext: chainAfter(ctx, next, operator, skill, frame, speed),
+    chainNext: beside ? next.chainNext : chainAfter(ctx, next, operator, skill, frame, speed),
     readyAt: castCooldowns(ctx, next.readyAt, operator, skill, costs.cooldownFrames, frame),
     ...(skill.takesControl ? { controlled: operator } : {}),
     pending: [...s.pending, ...pending],
@@ -1399,7 +1410,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   };
   const castEvent: BattleEvent = {
     type: "cast", frame, operator, skillId, kind: costs.kind, finisher: full.timing.specification === 8, controlled: s.controlled === operator, cast: castIndex,
-    ...(windowCount !== undefined ? { count: windowCount } : {}),
+    ...(windowCount !== undefined ? { count: windowCount } : {}), ...(followUp ? { followUp: true } : {}),
   };
   const endedEvents: BattleEvent[] = [...new Map(consumedBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id, remaining: remainingOf([b], frame) }])).values()];
   return { state: slowDown(ctx, cast, operator, costs.timing, frame), events: [...endsNowEvents, castEvent, ...endedEvents], origin: { operator, kind: costs.kind } };

@@ -68,6 +68,7 @@ interface RawKit {
     teamEnergyFrame?: number;
     available?: Predicate;
     takesControl?: boolean;
+    beside?: Predicate;
     cooldownGroup?: string;
     chainStep?: boolean;
     hits: RawHit[];
@@ -319,10 +320,12 @@ function kitChecker(scope: KitScope) {
         case "cast":
           if (!scope.isSkill(a.skill)) throw new Error(`${where}: ${a.skill} isn't one of ${scope.owner}'s skills`);
           break;
-        case "cooldown":
-          if ("seconds" in a === "fraction" in a) throw new Error(`${where}: a cooldown change has seconds or a fraction`);
-          checkValue("seconds" in a ? a.seconds : a.fraction, skillId, `${where} cooldown change`);
+        case "cooldown": {
+          const given = (["seconds", "fraction", "set"] as const).filter((k) => k in a);
+          if (given.length !== 1) throw new Error(`${where}: a cooldown change has one of seconds, fraction or set`);
+          checkValue("seconds" in a ? a.seconds : "fraction" in a ? a.fraction : a.set, skillId, `${where} cooldown change`);
           break;
+        }
         case "apply":
           for (const x of a.applies) if (x.if) checkPredicate(x.if, where);
           break;
@@ -421,6 +424,7 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
     if (!skill) throw new Error(`${where}: unknown skill`);
     if (op.skillGroups[s.skillId] === undefined) throw new Error(`${where}: not one of ${kit.operator}'s skills`);
     if (s.available) c.checkPredicate(s.available, `${where} available`);
+    if (s.beside) c.checkPredicate(s.beside, `${where} beside`);
     return {
       skillId: s.skillId,
       label: s.label,
@@ -430,6 +434,7 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
       ...(s.teamEnergyFrame !== undefined ? { teamEnergyFrame: s.teamEnergyFrame } : {}),
       ...(s.available ? { available: s.available } : {}),
       ...(s.takesControl ? { takesControl: true } : {}),
+      ...(s.beside ? { beside: s.beside } : {}),
       ...(s.cooldownGroup ? { cooldownGroup: s.cooldownGroup } : {}),
       ...((s.chainStep ?? isChainStep(data, kit, s.skillId)) ? { chainStep: true } : {}),
       hits: c.normalizeHits(s.hits, { skillId: s.skillId, damageType: s.damageType, label: s.label, checkScale: (key, w) => checkKey(skill, key, w), defaultEvent: s.skillId, finalStrike: (h, events) => isFinalStrike(s.skillId, events, s.hits.length) }, where),
