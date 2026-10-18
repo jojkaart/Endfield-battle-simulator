@@ -1,4 +1,26 @@
 {
-  "$comment": "Game tables the data layer reads. scripts/fetch-data.sh fetches only these; readTable refuses any other.",
-  "tables": ["BattleConst", "CharacterTable", "SkillPatchTable"]
+  "$comment": "Game data the data layer reads. scripts/fetch-data.sh fetches only these; the loaders refuse anything else. `skillData` are file-name globs under rmxlinux's Json/SkillData (only rmxlinux has them).",
+  "tables": [
+    "BattleConst",
+    "CharGrowthTable",
+    "CharacterPotentialTable",
+    "CharacterTable",
+    "EnemyAttributeTemplateTable",
+    "EnemyDamageTakenLevelTable",
+    "EnemyTemplateDisplayInfoTable",
+    "EquipSuitTable",
+    "EquipTable",
+    "I18nTextTable_EN",
+    "ItemTable",
+    "PotentialTalentEffectTable",
+    "SkillPatchTable",
+    "WeaponBasicTable",
+    "WeaponUpgradeTemplateTable"
+  ],
+  "skillData": [
+    "wpn_*",
+    "sk_wpn_*",
+    "passive_equipsuit_*",
+    "chr_0016_laevat*"
+  ]
 }

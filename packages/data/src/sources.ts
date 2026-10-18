@@ -38,9 +38,11 @@ export function sourceDir(source: SourceName): string {
  * Tables the data layer may read. Kept in packages/data/tables.json so the
  * sparse data fetch (scripts/fetch-data.sh) and the loader can't drift apart.
  */
-export const TABLES: readonly string[] = (
-  JSON.parse(readFileSync(join(REPO_ROOT, "packages/data/tables.json"), "utf8")) as { tables: string[] }
-).tables;
+export const DATA_FILES = JSON.parse(readFileSync(join(REPO_ROOT, "packages/data/tables.json"), "utf8")) as {
+  readonly tables: readonly string[];
+  readonly skillData: readonly string[];
+};
+export const TABLES: readonly string[] = DATA_FILES.tables;
 
 export function readTable(source: SourceName, table: string): unknown {
   if (!TABLES.includes(table)) {
