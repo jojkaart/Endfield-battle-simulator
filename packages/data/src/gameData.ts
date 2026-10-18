@@ -20,6 +20,7 @@ import { at, get, obj, type Ctx } from "./fields.ts";
 import { loadKits } from "./kits.ts";
 import { Names } from "./names.ts";
 import { isSkillFileListed, readSkillFile } from "./skillData.ts";
+import { switchedSkills } from "./buffData.ts";
 import { PRIMARY, readTable, sourceCommit, SOURCES } from "./sources.ts";
 import { loadAttributeDefaults } from "./tables/attributeMeta.ts";
 import { loadBattleConst } from "./tables/battleConst.ts";
@@ -80,13 +81,17 @@ function build(): GameData {
       mainAttr: op.mainAttrType,
       subAttr: op.subAttrType,
       levelRows: op.levelRows.map((r) => ({ breakStage: r.breakStage, level: r.attrs[0] ?? Number.NaN, attrs: r.attrs })),
-      skillGroups: Object.fromEntries(
-        Object.entries(g.skillGroups).map(([skillId, type]) => {
-          const group = SKILL_GROUP_TYPES[type];
-          if (!group) throw new DataError(PRIMARY, `CharGrowthTable.${op.charId}.skillGroupMap`, `unknown skillGroupType ${type}`);
-          return [skillId, group];
-        }),
-      ),
+      skillGroups: {
+        // Skills a ChangeSkillAction puts in a skill slot belong to that slot's group (CharGrowthTable misses some, e.g. Si's Final Stroke).
+        ...Object.fromEntries(switchedSkills(op.charId)),
+        ...Object.fromEntries(
+          Object.entries(g.skillGroups).map(([skillId, type]) => {
+            const group = SKILL_GROUP_TYPES[type];
+            if (!group) throw new DataError(PRIMARY, `CharGrowthTable.${op.charId}.skillGroupMap`, `unknown skillGroupType ${type}`);
+            return [skillId, group];
+          }),
+        ),
+      },
       attributeNodes: g.attributeNodes.map((n) => ({ ...n, modifiers: n.modifiers.map(modifier) })),
       talentNodes: g.talentNodes.map((n) => ({
         nodeId: n.nodeId,

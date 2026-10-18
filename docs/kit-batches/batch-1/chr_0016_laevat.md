@@ -562,3 +562,158 @@ renumbered by what's still open):
 - **H. P1 SP** (row 17, needs P1): SP after a plain vs an empowered battle
   skill (0 vs 20 expected).
 - Projectile travel of attack 4 (row 2) only on video, low priority.
+
+## Re-analysis (pass 3, 2026-10-18)
+
+Against the engine and kit format at `cbc0991` (batch-1 "Pass 2 progress").
+Method: the plan below was written out as kit files (operator kit, the two
+weapons, both gear sets) in a scratch copy of the repo
+(`/tmp/claude-0/-home-user-Endfield-battle-simulator/cfb486ef-c396-564d-b928-8b0d87099e4f/scratchpad/p3laev/`,
+`plan-kit.json`) and run through `loadGameData` (schema + loader), `efsim
+simulate`, `efsim zmdlogs check` and the test suite. Data re-checked in
+rmxlinux SkillData / BuffData: power_attack (both damage units mask 132,
+`multiplier` 0.2 / 0.8, no `atb`), normal_skill_during_ult (`pause_ult`
+CreateBuff 0–115 with `autoFinishByAction`; BuffData duration 10 s, so the
+action range ends it), passive_teammate (CreateBuff `count` is a literal 1:
+one MF per Heat stack, confirmed), talent nodes (talent 0 attaches
+buff_chr_0016_laevat_passive with `ignore_fire_resist`,
+`ignore_fire_resist_duration`, `max_stack`).
+
+### (a) Pass-2 gaps now
+
+| Pass-2 gap | Status | Fields and semantics |
+|---|---|---|
+| R1 branch timing (JumpToAction) | still open: Ti3 on "what's still open" | interim rule: no skip, timeline frames are real frames (kit plan keeps them). Settled by in-game test 17. If jumps skip time, the alternatives no longer need two triggers: one ValueExpr `{"if": {"stack": "melting_flame", "atLeast": 4}, "then": 2.1333333333, "else": 1.3}` for the pause (judged at the cast, before `consumeAt: "hit"` uses MF) |
+| R2 Finisher as a hit filter | supported | `on: {event: "hit", decorations: ["finalStrike", "finisher"]}` (any of them). The event's `finisher` is a landing of a skillSpecification 8 skill's own hit (not a triggered one). Both power_attack landings (5, 42; mask 132 each) count; 37 frames > the 1 s `cooldown`, so both can absorb, as in the data (abilityEvent 302 per landing) |
+| R3 pause that ends with its skill | supported (S11) | kit buff `pause_ult` with `endsWithCast: true`, applied by the cast trigger; ending it at the owner's next cast emits `buffEnded` with the time left, a trigger on it reads `{eventRemaining: true}` (seconds) and gives it back with negative `extendBuff` / `cooldown`. Natural expiry emits 0 (a no-op). Checked in the scratch run: Twilight 15 s → 18.8 s with one enhanced battle skill, 19.9 s (not 22.7 s) with a second one cast at the window (frame 33) |
+| R4 compiler leftovers | still open: D2 on "what's still open" | interim rule: kits hand-write them (no effect on numbers). kit-draft at `cbc0991` still omits poise, finisher `factor`, own-stack `gains` / `requires`, the forced Combustion's `durationKey` / `scaleKey`, and emits `"energy": "usp_1"` on the combo, which **the loader rejects** (combo_skill has no `usp_1`; use `usp_1_display`) |
+| R5 triggered buffs in static checks | supported | fixture entries take `buffs` (an ID, or `{buff, layers}`), `efsim calc --buff <id>[:<n>]`, engine `kitBuffModifiers` (values from the skill or trigger that applies the buff). Operator-kit buff IDs are unprefixed (`scorching_heart`, not `chr_0016_laevat.scorching_heart`), equipment ones prefixed (`wpn_sword_0006.valid`). Checked: with the five `conditions` turned into `buffs`, every Forgeborn and Scorching Heart entry of zero-sanity-laevatain-p5.json matches exactly |
+| Row 37 ultimate cooldown workaround | unchanged, now exact | still no action that starts a cooldown (`cooldown` only changes a running one), so +16 s at the cast and the same seconds on every pause. Twilight and show_weapon are applied by the cast trigger after the cast's own slow-down shift, so her 61-frame time stop doesn't move them (the data's caster exemption) and the +16 s lines up with show_weapon's end |
+| Row 48 Scorching Heart guard | unchanged | `if: {not: {buffActive: "scorching_heart"}}`; test 22 |
+| Rows 14, 20 `ratio` / `extra_scaling` | unchanged | test 20 |
+
+New uses of shared features (not pass-2 gaps): both talent-0 effects (Heat
+absorption, Scorching Heart) are gated with `talentAtLeast: [0, 1]` and read
+their values with `{talent: 0, key}` (V8: 0 while unlearned), including
+`max_stack` for the room left.
+
+### (b) Kit plan: what changes from pass 2
+
+Everything not listed stays as in the pass-2 plan. Keep the current hit and
+trigger IDs (`explosion`, `dot`, `empowered_extra`, `hit1`, `hit2`, `extra`,
+`final_strike_absorb`): tests/timeline.test.ts, the fixture and the KNOWN
+list name them.
+
+**Buffs** (add `pause_ult`; Scorching Heart from the talent):
+```json
+{ "id": "pause_ult", "label": "Twilight paused (enhanced battle skill)", "target": "self",
+  "duration": 3.8333333333, "endsWithCast": true, "modifiers": [],
+  "gameBuff": "buff_chr_0016_laevat_pause_ult" },
+{ "id": "scorching_heart", "label": "Scorching Heart", "target": "self",
+  "duration": { "talent": 0, "key": "ignore_fire_resist_duration" },
+  "modifiers": [{ "zone": "ignoreResistance", "elements": ["fire"],
+    "value": { "product": [-1, { "talent": 0, "key": "ignore_fire_resist" }] } }],
+  "gameBuff": "buff_chr_0016_laevat_ignore_fire_resist" }
+```
+Drop the kit's `scorching_heart` condition and wpn_sword_0006's
+`after_ultimate` condition (R5 replaces them in the fixture).
+
+**Triggers** (2 and 4 change, 2b is new; 1, 3, 5 as pass 2):
+```json
+{ "id": "twilight_paused_by_battle_skill",
+  "on": { "event": "cast", "skills": ["chr_0016_laevat_normal_skill_during_ult"] }, "by": "self",
+  "do": [ { "kind": "buff", "buff": "pause_ult" },
+          { "kind": "extendBuff", "buff": "twilight", "seconds": 3.8333333333 },
+          { "kind": "extendBuff", "buff": "show_weapon", "seconds": 3.8333333333 },
+          { "kind": "cooldown", "who": "self", "skills": "ultimate", "seconds": 3.8333333333 } ] },
+{ "id": "twilight_pause_cut", "on": { "event": "buffEnded", "buff": "pause_ult" }, "by": "self",
+  "do": [ { "kind": "extendBuff", "buff": "twilight", "seconds": { "product": [-1, { "eventRemaining": true }] } },
+          { "kind": "extendBuff", "buff": "show_weapon", "seconds": { "product": [-1, { "eventRemaining": true }] } },
+          { "kind": "cooldown", "who": "self", "skills": "ultimate", "seconds": { "product": [-1, { "eventRemaining": true }] } } ] },
+{ "id": "final_strike_absorb", "on": { "event": "hit", "decorations": ["finalStrike", "finisher"] },
+  "by": "controlled", "cooldown": 1,
+  "if": { "all": [ { "talentAtLeast": [0, 1] }, { "stack": "melting_flame", "below": 4 } ] },
+  "do": [ { "kind": "apply", "applies": [ { "kind": "consumeInfliction", "elements": ["fire"],
+            "stacks": { "sum": [ { "talent": 0, "key": "max_stack" }, { "product": [-1, { "stackCount": "melting_flame" }] } ] } } ] },
+          { "kind": "gain", "gains": [ { "stack": "melting_flame", "amount": { "consumed": true } } ] } ] }
+```
+Trigger 6 (`scorching_heart`) as pass 2 but without `skill` and with
+`"if": {"all": [{"talentAtLeast": [0, 1]}, {"not": {"buffActive": "scorching_heart"}}]}`.
+Under skip semantics (test 17), only the pause length changes: `pause_ult`
+`duration` and the three 3.833 s become the R1-row ValueExpr (39 / 64
+frames).
+
+**Skills.** As pass 2, plus: every hit entry of a skill with more than one
+entry lists `events` explicitly (attack4, attack5, both battle skills,
+ult_attack4, power_attack). The loader gives the skill's own key only to a
+skill's single entry; without it the scratch log check reported
+`chr_0016_laevat_ult_attack4 ×2` as not covered (17/17 again with it).
+power_attack: `hit` 5 `factor: 0.2`, `sp: 0` (its ObtainCostAction has no
+value), `hit_2` 42 `factor: 0.8`; no `poise` (the finisher has no poise unit;
+`poise` there is rejected: no such key). The plunging attack can stay in the
+kit; the engine refuses to cast it (S10).
+
+**Equipment kits** as pass 2 (all four load). Tide Surge's `minStacks` is a
+literal `2` (the schema's integer; `stack_cond` can't be named), and its
+"applies ≥ 2 stacks" follows the open item "Arcane R3" (interim: a stack that
+forms a reaction doesn't count; test 35 asks the same of combo triggers).
+Hot Work and Tide Surge stay inactive in her builds (1 piece).
+
+**What the loader would reject**, checked one by one on the scratch kit:
+kit-draft's `"energy": "usp_1"`; `detached` on a trigger that isn't a delayed
+cast trigger; a value in a predicate's `atLeast` / `below` (literal counts
+only); `poise: "poise"` on power_attack. Nothing in the plan as written above.
+
+**Checks the kits phase will see change** (scratch run, all by design):
+- tests/damage.test.ts "Combo skill = 26908": the combo hit's `if` (enemy
+  Combustion / Corrosion) can't be decided by a static per-hit check: new
+  gap L3 below.
+- tests/timeline.test.ts "the fifth battle skill is empowered (57552)":
+  69063 (×1.2) with the plan, because the 4th cast's explosion reaches 4 MF
+  and starts Scorching Heart (20 Heat RES ignored vs Rhodagn's 0). The
+  fixture's 57552 is a hit without the RES ignore (static entry, still
+  matches); the timeline test must let Scorching Heart run out (20 s) before
+  the fifth cast, or expect 69063.
+- Tests that read the current kit's shape: energy at the cast (now at
+  `teamEnergyFrame` 22), the ultimate's cooldown (+16 s), who is controlled
+  after her ultimate (`takesControl`), the weapon's `after_ultimate` buff ID,
+  trigger list `[final_strike_absorb, hit, controlled]`. The example totals
+  change as pass 2 says; the zmdlogs-40d9 check stays 17/17.
+- docs/in-game-tests.md 21 and 24 describe the old engine (pause not ended
+  by a cut; finishers not told apart): reword them when the kit lands.
+
+### (c) New gaps
+
+**L3. A per-hit fixture can't decide a hit's own condition.**
+- family: log tooling (fixtures).
+- feature: tests/damage.test.ts calls `computeHit` without `assumeUnknown`,
+  and fixture entries have no situation, so a kit hit with `if` that reads
+  the enemy (`enemyStatus`, `enemyInfliction`, …) throws "a kit condition
+  can't be decided here". Either a fixture entry field for the situation it
+  was measured in (e.g. `"enemy": {"statuses": ["combustion"]}`, passed as
+  `DamageOptions.situation`), or `assumeUnknown: true` in the test as
+  `computeKit` and the log checker already do (simpler; the entry then
+  asserts the hit as written for its situation).
+- evidence: scratch run with the plan kit: zero-sanity-laevatain-p5.json
+  "Combo skill = 26908" → EngineError on
+  `{"any":[{"enemyStatus":"combustion"},{"enemyStatus":"corrosion"}]}`;
+  `packages/engine/src/damage.ts` `decide()` / `computeHit`. Shared: any
+  per-hit fixture entry for a hit whose `if` reads the enemy or stacks
+  (Estella's combo on a Solidified target); panel-only predicates (Arcane's
+  `attrAtLeast` modes) decide fine.
+- impact: none on simulations; without it the combo's in-game value can't
+  stay in the per-hit fixture once the kit has the (correct) `if`.
+
+Nothing else: the remaining files her kit reaches
+(buff_chr_0016_laevat_absorb_fire_inflict, _passive_notify,
+_combo_skill_hit_self_early, buff_wpn_sword_0010_real, …) are either only
+reached by kills (N1, deferred), unreferenced, or presentation.
+
+### (d) In-game tests the kit still depends on
+
+17 (jumps: R1, the lock and pause lengths), 18 (her own buffs under her
+time stop and combo slow-down), 20 (`ratio` vs `extra_scaling`), 21 (combo
+hold as "add time"; the cut-short pause, now modelled as the data says),
+22 (Scorching Heart refresh on a capped gain), 23 (P1 SP, optional), 24
+(partial and finisher absorption, optional), 47 (attack 4's projectile
+travel, low priority).

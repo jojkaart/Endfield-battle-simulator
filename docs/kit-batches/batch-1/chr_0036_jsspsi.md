@@ -613,3 +613,199 @@ Proposed additions and changes to docs/in-game-tests.md (not made here):
   enemy is immune.
 - #14 (slot-0 element) stays an optional confirmation; #19 (Haste) still
   decides Ti4's assumption for Si's talent 2.
+
+## Re-analysis (pass 3, 2026-10-18)
+
+Batch 1, phase 4, against the code at caf1a2b (`events.ts`, `model.ts`,
+`expr.ts`, `timeline.ts`, `buffs.ts`, `packages/data/src/kits.ts`, both
+kit schemas) and the data (CharGrowthTable, SkillPatchTable through
+`loadGameData`, I18nTextTable_EN). The plan below was written as kit files
+into a scratch copy of the repository and loaded with `loadGameData`; it
+loads only after the two fixes in R10 and R11. Three things were then
+simulated. First, the Si example with its conditions removed. Second, the
+same rotation with Initial Stroke and a late Final Stroke. Third, a solo
+Si battle skill.
+
+### (a) Pass-2 gaps now
+
+| Pass 2 | Now | Fields, semantics |
+|---|---|---|
+| R1 damage record and Fixed-DMG burst (N2) | **supported in the engine**; the hit doesn't load (R10) | Enemy buff `records: {rate}` (loader: enemy buffs only; rate resolved at application). `addHits` adds `rate × exact` of every landing that isn't Fixed DMG with `appliedAt ≤ frame < expiresAt`. That includes the applying hit when the buff is `beforeDamage`, reactions and ticks (`recordStatus`). `buffEnded` carries `recorded` from `endBuff` and from expiry. `{eventRecorded: true}` reads it. A `fixedDamage` hit's value is taken when its `hits` action runs: at the event, or after `delay`, since the pending action keeps the event. Scratch run: burst 148,454 = 0.2 × 742,271 (every hit from the battle-skill hit on), at Final Stroke + 12 + 13 frames. |
+| R2 hit scale as a value | **supported in the engine** (`scaleValue`, times the product of `scale`); the hit doesn't load (R10) | `scale: []` plus `scaleValue`. Scratch run: final hit = 13.75 × slash = (3.5 + 2 × 1.0) × 1.15 / 0.46, i.e. n = 1 consumed + potential5. |
+| R3 event counts in the log checker | supported (L2) | Hits whose JSON names `eventCount` are tried at counts 1–4 (`scaleValue` included). A Fixed DMG hit is reported as unquantified, so the burst is still checked by hand against `uncapped`. |
+| R4 talent values by level | supported | `{talent: 0, key: "coolDown"}` (talent 0 = Proxy's Patronage: buff_…_talent2_1 / _2, −10 / −20) and `{talent: 1, key: "ratio_speed" \| "duration_speedup"}` (talent 1 = Unsoiled Brush: talent1_1 / _2), checked in the loaded `talentNodes`. They read 0 while the talent isn't learned, so the cooldown change does nothing and the Haste (0 s) is skipped. No `talentAtLeast` needed. |
+| R5 the window count in cast triggers | supported (V9) | A combo's `cast` event carries `count`. The P2 buff moves to a cast trigger at frame 0 (entity frame 0). |
+| R6 do the strokes count as battle skills | **still open**: list item "Si R6" | Interim: yes (`kinds: ["battle"]` sees them; Initial Stroke also uses up Link). In-game test 29. |
+| R7 stackingType 11 across wielders | **still open**: B9 | Interim: layers per owner. With one wielder a reapply replaces it. Minor. |
+| R8 control immunity | supported per scenario (A7) | `target.controlImmune: true` stops the freeze. No enemy table says who is immune, so the scenario says it. Test 37. |
+| R9 compiler remainders | **still open**: D2 | Interim: the kit hand-writes them; no effect on the numbers. |
+
+### (b) Kit plan: what changed
+
+Unchanged from pass 2: basic attacks, attack5 (`sp: "atb"`, `poise`,
+`poiseControlledOnly`), the four finisher landings with `factor`, the dive,
+the battle skill's hit (`poise`, `applies`: slot-0 Heat / Cryo, then
+`control` immobilization `static_duration` `freezes`), its
+`available` / `teamEnergyFrame: 15`, both strokes' `available`, the
+`combo_window` trigger, and the weapon and gear-set buffs. Drop every
+`durationFrames` and the kit's `conditions`. Changes:
+
+1. **Every trigger that reads plain keys names its `skill`.** Without it,
+   plain keys are read from `<operator>.<trigger id>`, and the loader
+   rejects that ("isn't one of … value sources"). This applies to
+   `ultimate_effects` (ultimate_skill), `combo_p2` (combo_skill),
+   `artful_intent_end` (normal_skill) and every equipment trigger.
+2. **Buffs** (`artful_intent`, `inksoul`, `ultimate_amp` as pass 2):
+   ```json
+   {"id":"combo_p2_atk","label":"P2 ATK","target":"self","gameBuff":"buff_chr_0036_jsspsi_combo_potential2","duration":"potential2_duration","modifiers":[{"zone":"atk","value":{"sum":["potential2_base",{"product":["potential2_enhance",{"sum":[{"eventCount":true},"potential5"]}]}]}}]},
+   {"id":"talent_haste","label":"Unsoiled Brush: Haste","target":"team","gameBuff":"buff_chr_0036_jsspsi_talent1_speedup","duration":{"talent":1,"key":"duration_speedup"},"modifiers":[{"attr":92,"value":{"talent":1,"key":"ratio_speed"}}]}
+   ```
+3. **Triggers** (after `combo_window`):
+   ```json
+   {"id":"ultimate_effects","on":{"event":"cast","skills":["chr_0036_jsspsi_ultimate_skill"]},"by":"self","skill":"chr_0036_jsspsi_ultimate_skill","delay":62,"detached":true,
+    "do":[{"kind":"buff","buff":"ultimate_amp"},{"kind":"cooldown","who":{"slot":0},"skills":"combo","seconds":{"talent":0,"key":"coolDown"}}]},
+   {"id":"combo_p2","on":{"event":"cast","skills":["chr_0036_jsspsi_combo_skill"]},"by":"self","skill":"chr_0036_jsspsi_combo_skill","do":[{"kind":"buff","buff":"combo_p2_atk"}]},
+   {"id":"initial_stroke","on":{"event":"cast","skills":["chr_0036_jsspsi_normal_skill_1"]},"by":"self","delay":8,"do":[{"kind":"buff","buff":"inksoul"}]},
+   {"id":"final_stroke","on":{"event":"cast","skills":["chr_0036_jsspsi_normal_skill_2"]},"by":"self","delay":12,"do":[{"kind":"endBuff","buff":"artful_intent"}]},
+   {"id":"artful_intent_end","on":{"event":"buffEnded","buff":"artful_intent"},"by":"self","skill":"chr_0036_jsspsi_normal_skill","do":[
+     {"kind":"hits","if":{"buffActive":"inksoul"},"hits":[{"id":"burst_inksoul","scale":[],"damageType":"battle","fixedDamage":{"eventRecorded":true},"frames":[13],"poise":"ink_boom_poise","events":["chr_0036_jsspsi_normal_skill_inkmove_2"]}]},
+     {"kind":"hits","if":{"not":{"buffActive":"inksoul"}},"hits":[{"id":"burst_mark","scale":[],"damageType":"battle","fixedDamage":{"eventRecorded":true},"frames":[14],"poise":"ink_boom_poise","events":["chr_0036_jsspsi_normal_skill_inkmark_projhit","chr_0036_jsspsi_normal_skill_inboom_projhit"]}]},
+     {"kind":"endBuff","buff":"inksoul"}]},
+   {"id":"inksoul_haste","on":{"event":"buffEnded","buff":"inksoul"},"by":"self","do":[{"kind":"buff","buff":"talent_haste"}]}
+   ```
+   - The burst path follows the data and the description ("When Artful
+     Intent expires and no Inksouls are present, it bursts"; otherwise the
+     Inksoul returns: `inkmove_2`, 13 frames *(pass-2 claim)*; the mark
+     projectile lands after 14 frames *(claim)*).
+   - The two `hits` actions use action-level `if`. It is judged when the
+     action runs, at the `buffEnded` event and before the third action ends
+     the Inksoul. Pass 2's separate `burst` / `artful_intent_end` triggers
+     and the burst's trigger `delay` are merged into this one trigger.
+   - `detached` on a trigger is only allowed on delayed cast triggers
+     (loader). The burst hits need none: triggered hits have no cast to be
+     cut short with.
+   - `detached` on `ultimate_effects` matches the ability entity. It makes
+     no difference today: the ultimate's earliest cancel is frame 64.
+   - Final Stroke cut short before frame 12 drops the `endBuff` (scratch
+     run). Artful Intent then runs to expiry and bursts through the
+     Inksoul. That is the data's behaviour (CreateBuff `xianjing_inkboom`
+     at frame 12 of the skill).
+4. **Skills:**
+   - `chr_0036_jsspsi_normal_skill_2` (Final Stroke) is a kit skill as
+     planned, but the loader rejects it (R11).
+   - Combo `final`: `{"id":"final","scale":[],"scaleValue":{"sum":["atk_scale2",{"product":[{"sum":[{"eventCount":true},"potential5"]},"atk_scale2_1"]}]},"frames":[49],"poise":"poise","events":["chr_0036_jsspsi_combo_skill_abilityrange"]}`
+     replaces the three-entry split; it needs R10.
+   - No `buffs` on `slash_first` (P2 is now the trigger).
+   - Ultimate: one `slash` entry (count 8, frames 63–88) and `final`, both
+     with `events` `[…_ultimate_skill_abilityrange, …_ultimate_skill_abilityrange_1]`.
+     The amp leaves the first slash.
+   - **The combo and ultimate hits must list their entity `events`.** The
+     loader then makes them `detached` by default. The combo's window
+     allows the battle skill and Initial Stroke from frame 20 (SkillData
+     windows 20–81), and the ultimate's allows them from 64. The current
+     kit has `events: []` there, so a cancel would drop the remaining
+     slashes.
+5. **Weapon kit `equipment/wpn_claym_0018.json`**: pass 2's buffs and
+   triggers. Both triggers take `"skill":"sk_wpn_claym_0018"`. Drop both
+   legacy `conditions`. `si-laevatain.scenario.json` must then drop its
+   two `wpn_claym_0018.*` conditions, or it fails.
+6. **Gear-set kit `equipment/suit_atk02.json`** (new file): pass 2's
+   `suit_atk02.edge` buff and trigger, with `"skill":"passive_equipsuit_atk_02"`
+   (the gear set's only value source).
+
+With R10 and R11 patched in the scratch copy, all three files load.
+Without the patches the loader rejects the plan:
+- schema: `…/hits/0/scale must NOT have fewer than 1 items`, for both
+  bursts and the combo's final hit;
+- loader: `chr_0036_jsspsi_normal_skill_2: not one of chr_0036_jsspsi's
+  skills`, for the skill and for the `final_stroke` cast filter.
+
+### (c) New gaps
+
+#### R10. A hit's `scale` can't be empty, family: data compilation (kit format)
+- **Feature:** `schemas/kit.schema.json` `$defs.hit.scale` allows `[]`
+  (drop `minItems: 1`). The loader keeps its own rules: empty with
+  `fixedDamage` (it already throws otherwise), and preferably non-empty
+  unless `scaleValue` or `fixedDamage` is set.
+- **Evidence:** the schema has `minItems: 1`, while `normalizeHits` throws
+  unless a `fixedDamage` hit has `scale` empty. The schema's own
+  `fixedDamage` description says "scale is []". So no Fixed DMG hit can
+  load. tests/timeline.test.ts builds its recording test in TypeScript and
+  never meets the schema.
+- **Impact:** blocking. Si's burst (32–50% of her damage) and the one-hit
+  combo final can't be written. The only schema-legal workaround for the
+  final hit would be a dummy key equal to 1.
+
+#### R11. Final Stroke isn't in any skill group, family: data compilation
+- **Feature:** the data layer gives a skill outside CharGrowthTable's
+  `skillGroupMap` the group of the grouped skill whose ChangeSkillAction
+  reaches it. Here BD `normal_skill_check` switches `normal_skill_1` →
+  `normal_skill_2`, so it gets the battle group: the build's battle level,
+  and `isSkill` for cast filters.
+- **Evidence:** CharGrowthTable `chr_0036_jsspsi.skillGroupMap` lists
+  `normal_skill` and `normal_skill_1` but not `normal_skill_2`.
+  SkillPatchTable has `normal_skill_2` at every level (cost 0).
+  `loadOperatorKit` rejects kit skills and cast filters outside
+  `op.skillGroups`. Other levelled skills outside every group (each kit's
+  owner to check): `chr_0028_wulfa_combo_1_skill`,
+  `chr_0038_purrche_normal_skill_block_1`, `chr_0015_lifeng_attack4`,
+  `chr_0034_typhoea_ultimate_skill`, `chr_0017_yvonne_passive_0`, and every
+  `*_dash_attack`.
+- **Impact:** blocking. Without Final Stroke nothing can end Artful Intent
+  early and the Inksoul never disappears early. Search can't time the
+  burst, and the Haste never follows a Final Stroke.
+
+#### R12. Enemy buffs applied with a freezing control status miss the freeze, family: physical state (control)
+- **Feature:** an enemy-target buff applied while the enemy is frozen
+  (`enemyFrozenUntil > frame`) should start its timer when the freeze ends
+  (`expiresAt += enemyFrozenUntil − frame`). Today the freeze is applied
+  only to what is already on the enemy, when `runTriggers` takes the
+  `control` event, so the result depends on order.
+- **Evidence:** when any kit in the team has a trigger with `beforeDamage`,
+  `landHit` runs the hit's status events (the freeze included) before
+  `applyBuffs(true)` adds Artful Intent, so Artful Intent isn't extended.
+  Otherwise the freeze comes in the final `runTriggers` and Artful Intent
+  is extended. Scratch run, solo battle skill at P5: the expiry burst
+  lands at 22.47 s; with a no-op `beforeDamage` trigger added to the kit
+  it lands at 20.97 s. Gilberta's Pursuit (T5) will be such a trigger. Jade
+  Vessel's `enemy_vul` is added by a trigger on that same `control` event,
+  after the freeze, so it always lasts 30 s flat (attack hits at 30.1 s
+  have it, at 30.5 s don't). In-game test 37, however, states the engine's
+  expectation as 31–31.5 s. Correction 3 (bdf223db8e49: about 21.7 s)
+  supports freezing Artful Intent.
+- **Impact:** in teams with a `beforeDamage` trigger, Artful Intent ends
+  1–1.5 s early and records that much less team damage (about 7% of the
+  burst over a 21.5 s window). Jade Vessel's debuff is 1–1.5 s short if
+  test 37 confirms the freeze. Small but systematic; the fix is a few
+  lines.
+
+#### R13. Delayed cast-trigger actions don't follow Haste, family: timing (Ti4)
+- **Feature:** a cast trigger's `delay` should be scaled by the cast's
+  action speed, as its hits and `teamEnergyFrame` are
+  (`round(delay / speed)`, the speed taken at the cast).
+- **Evidence:** `castSkill` scales hit frames by `actionSpeed` (attribute
+  92), while `runTriggers` queues `e.frame + t.delay` unscaled. Scratch
+  run: Si's ultimate 0.93 s after Final Stroke, with her own 30% Haste up:
+  the slashes start at frame 48, the amp still comes at 62, and 5 of 8
+  slashes miss it (2,963 instead of 4,243). The ultimate deals about 12%
+  less.
+- **Impact:** every kit whose skill effects are delayed cast triggers
+  (Si's amp, talent cooldown, Inksoul and Final Stroke; Laevatain's,
+  Typhoeus's and Liino's follow-ups) runs out of step under Haste. In
+  batch 1 only Si's talent gives Haste (shared with Tangtang). It rests on
+  the Haste assumption of test 19.
+
+### (d) In-game tests the kit still depends on
+
+- **10:** the combo count, highest or latest; P5 +1.
+- **19:** what Haste speeds up (talent 2; also R13).
+- **29:** do the strokes count as battle skills, for Yinglung stacks and
+  Link (R6).
+- **37:** Artful Intent and Jade Vessel's debuff under Immobilization, and
+  on control-immune enemies (R8, R12). Its stated engine expectation for
+  Jade Vessel (31–31.5 s) should read 30 s until R12 is fixed.
+- **41:** Jade Vessel's combo bonus after the ultimate.
+- **18:** whether time stops freeze the enemy's timers. Artful Intent runs
+  on the enemy's clock, so this sets its length under teammates'
+  ultimates.
+- **14:** optional confirmation of the slot-0 element.

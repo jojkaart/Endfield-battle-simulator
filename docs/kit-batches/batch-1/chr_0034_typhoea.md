@@ -651,3 +651,174 @@ T3 (one stack consumed) is settled by the data (finishLayerCnt 1) and can be ski
 effects ending with it, R2 hit triggers by skill, R3 kit-draft poise and ObtainUspInNormalSkill,
 R4 projectile travel, R5 airborne for dive attacks) and 2 unknowns (stack lifetime T1, combo pulse
 at hover end T6).
+
+## Re-analysis (pass 3, 2026-10-18)
+
+Against the engine at 86a701f (events.ts, model.ts, expr.ts, timeline.ts, packages/data kits.ts,
+both schemas) and `efsim kit-draft chr_0034_typhoea` at that commit. Facts re-checked in rmxlinux
+SkillData (timeline actions by `_startFrame`) and the loaded SkillTiming (windows, durations).
+
+**Corrections and new facts**
+
+- **Shot 4 has no loop (pass 2 was wrong).** floating_attack4 casts floating_attack5 at frame 35
+  only when not controlled; when controlled, timeline action 40 (frame 45) is
+  CheckMainCharacterCondition → FinishBuffAdvanced floatingmode + index reset. Idle hover ends:
+  shots 1–2 loop at 22 → end at 49 → landed at 57 (1.9 s); shot 3 at 23 → 58; shot 4 at 45
+  (1.5 s); battle skill without a shot 37 → 72; floating combo 67 → 102; ultimate 89 → 124.
+- **The loop doesn't block the next shot.** floating_loop (30 frames, exclusive 30) has windows 0–30
+  for floating_attack1–5 and floating_end, so a shot cast after frame 22 starts from the loop. The
+  loop casts of the battle skill (37) and floating combo (67) are unconditional in the data; the
+  off-field branch's earlier cast (32 / 57) cuts them off.
+- **Floating combo index reset at frame 0** (combo_skillfloating timeline action 39), not later.
+- **floating_loop and floating_end are battle-type follow-ups**: skill group battle,
+  skillSpecification 3, normalSkillSubType 0 (same as the battle skill; Si's strokes have 1). The
+  weapon's W2 (abilityEvent 30, CheckSkillType [2]) may count them; floating attacks don't (d9e59).
+- kit-draft v2 still emits no `poise` and no `teamEnergyFrame` for her (checked at 86a701f).
+- **`stackAtLeast` fires on every `stacks` event of the owner**, whichever stack changed (the event
+  carries no stack ID; hit gains emit one even when their `if` fails). With Signs held at 8 while
+  the combo cools down, an `abatk` / `arrows` / `hail` gain would open the window, where the game
+  opens it only on a Sign added at 8 (plus the hover-end pulses, test 45). The plan below avoids it.
+
+### (a) Pass-2 gaps now
+
+| Pass 2 | Now | How (fields), or interim rule |
+|---|---|---|
+| R1 delayed effects end with the skill | **supported** | `delay` on an `on: cast` trigger with `skills`: its actions are the cast's own and are dropped when the operator starts another skill (endCurrentSkill drops `pendingActions` of the cut cast; `detached: true` opts out). A `cast` action (follow-up) ends the current skill the same way. floating_loop / floating_end become hitless kit skills. `endsWithCast` doesn't fit floatingmode (it survives the floating skills: inherit list), so the hover end stays trigger-driven |
+| R2 hit triggers by skill | **supported** | `on: {event: "hit", skills: [...], reaction: false}` (her `reaction: burst` hits carry `reaction: true` on their hit event) |
+| R3 kit-draft poise, ObtainUspInNormalSkill | still open: **D2** on the open list | interim: kits hand-write `poise`, `poiseControlledOnly`, `teamEnergyFrame` (below) |
+| R4 projectile travel, burst delay | still open: **Ti2** on the open list | interim: kits write landing frames. The logs have no cast times, so her travel can't be read; arrows keep launch frames and the burst stays on its shot's frame until test 47. R2's caveat is gone (`reaction: false`), so moving the burst later is a frame change plus a marker for its ×1.3 (a 0.5 s self buff applied by the consuming shot, read as `buffActive` in the burst's `extraScale`) |
+| R5 airborne for dive attacks | **supported** (S10) | earliestStart refuses skillSpecification 6 until rotations have jumps, so plunging_attack_end can stay in the kit |
+| Row 41 stack lifetime, combo pulse at hover end | still unknown | tests 42, 45 |
+
+### (b) Kit plan: what changes
+
+Pass 2's plan stands except as below. IDs in it are shorthand: every skill ID in a trigger
+(`on.skills`, `cast`) must be the full `chr_0034_typhoea_…` ID, and every equipment stack, buff
+and trigger ID must start with `<equipment ID>.` (the loader rejects anything else).
+
+1. **Stacks.** `signs` `initial: {"talent": 0, "key": "energy_enterfight"}` (0 while talent 1 isn't
+   learned) instead of `{key, skill}`; `hail` reset by the ultimate is one gain of +5 (gains clamp
+   at `max`).
+2. **Combo window** (replaces `combo_window` / `stackAtLeast`; trigger 2 gains the window and a
+   talent gate):
+
+   ```json
+   {"id": "talent_sign", "on": {"event": "burst", "elements": ["natural"]}, "by": "anyone",
+    "if": {"talentAtLeast": [0, 1]}, "cooldown": 0.2,
+    "do": [{"kind": "gain", "gains": [{"stack": "signs", "amount": 1}]},
+           {"kind": "openCombo", "if": {"stack": "signs", "atLeast": 8}}]},
+   {"id": "sign_window", "on": {"event": "inflictionConsumed", "elements": ["natural"]}, "by": "self",
+    "if": {"stack": "signs", "atLeast": 8}, "do": [{"kind": "openCombo"}]}
+   ```
+
+   Her only consumptions are the shots' (each gains its Sign before triggers run), so this opens
+   exactly when a Sign is added at 8.
+3. **Hail of Arrows** (trigger 6): `on` becomes
+   `{"event": "hit", "skills": ["chr_0034_typhoea_floating_attack1", …, "chr_0034_typhoea_floating_attack5"], "reaction": false}`;
+   `if` drops `buffActive: hovering`; `cooldown: 0.2` stays (the data's timer); `do` unchanged
+   (`detached` on its hits can go: triggered hits have no cast to be cut from).
+4. **Hover end and follow-ups** (replace triggers 8, 9 and 13). All `on: {event: "cast", skills:
+   [<source>]}`, `by: "self"`, not detached:
+
+   | Source | `delay` | `do` |
+   |---|---|---|
+   | floating_attack1 / 2 | 22 | `cast` floating_attack2 / 3 `if: {not: {controlled: true}}`; `cast` normal_skill_floating_loop `if: {controlled: true}` |
+   | floating_attack3 | 23 | the same with floating_attack4 |
+   | floating_attack4 | 35 | `cast` floating_attack5 `if: {not: {controlled: true}}` |
+   | floating_attack4 | 45 | `endBuff hovering` `if: {controlled: true}` |
+   | floating_attack5 | 15 | `endBuff hovering` |
+   | normal_skill_floating_start | 32 / 37 | `cast` floating_attack1 `if: {not: {controlled: true}}` / `cast` normal_skill_floating_loop |
+   | combo_skillfloating | 57 / 67 | the same |
+   | ultimate_skillfloating | 89 | `cast` floating_attack1 `if: {not: {controlled: true}}`; `cast` normal_skill_floating_loop `if: {all: [{controlled: true}, {buffActive: hovering}]}` |
+   | normal_skill_floating_loop | 27 | `cast` normal_skill_floating_end |
+   | normal_skill_floating_end | 8 | `endBuff hovering` |
+
+   Two delays on one source are two triggers. The two new skills (a `cast` target must be a kit
+   skill: the loader only checks skillGroups, the engine throws on a skill missing from the kit):
+
+   ```json
+   {"skillId": "chr_0034_typhoea_normal_skill_floating_loop", "label": "Hover idle", "damageType": "battle",
+    "available": {"not": {"potentialAtLeast": 0}}, "hits": []},
+   {"skillId": "chr_0034_typhoea_normal_skill_floating_end", "label": "Hover end", "damageType": "battle",
+    "available": {"not": {"potentialAtLeast": 0}}, "hits": []}
+   ```
+
+   (`available` never holds: follow-ups only. The shots' windows list floating_end, so some input
+   casts it in game; ending a hover early never adds damage, so it's left out of rotations.)
+   `damageType: "battle"` follows the interim rule of Si R6 (sub-skills count as battle skills,
+   test 29): each idle end then fires W2 twice (Arts Intensity refresh, 4 Windform). Trigger 11
+   (`hover_ended`) is unchanged and now also covers the idle end.
+5. **Floating combo reset:** `on: cast, skills: [combo_skillfloating]`, no delay → gain `abatk` −5.
+6. **Hand-written D2 values:** `poise: "poise"` on attack5's arrow (17, `poiseControlledOnly`),
+   floating_attack5's `power_shot` (20, `poiseControlledOnly`), both combos' first arrow (10) and
+   the ultimate's main hit (20); floating_attack1–4 and the battle skill have `poise` 0 (leave out);
+   `teamEnergyFrame: 12` on the battle skill.
+7. **plunging_attack_end** stays in the kit (kit-draft hits): S10 keeps it out of rotations.
+8. **Small loader-shape fixes in pass 2's prose:** `hovering_atk`'s modifier is
+   `{"zone": "atk", "value": {"key": "atk_up", "skill": "chr_0034_typhoea_normal_skill_floating_start"}}`
+   (the ultimate's `atk_up` is the same 0.18 from P1), applied by an action with
+   `if: {"potentialAtLeast": 1}`; `hovering` has no `duration` and `modifiers: []`.
+9. **Equipment kits** (new files; plain keys name the trigger's `skill`):
+
+   ```json
+   {"equipment": "wpn_funnel_0019", "sources": ["…"],
+    "stacks": [{"id": "wpn_funnel_0019.windform", "label": "Windform", "max": 4}],
+    "buffs": [
+     {"id": "wpn_funnel_0019.intensityup", "label": "Arts Intensity", "target": "self", "duration": 15,
+      "gameBuff": "buff_wpn_funnel_0019_intensityup", "modifiers": [{"attr": 87, "value": "phy_spell_up"}]},
+     {"id": "wpn_funnel_0019.windform_timer", "label": "Windform timer", "target": "self", "duration": 15, "modifiers": []},
+     {"id": "wpn_funnel_0019.spelldmgup", "label": "Arts DMG", "target": "self", "duration": 30, "maxStacks": 4,
+      "gameBuff": "buff_wpn_funnel_0019_spelldmgup",
+      "modifiers": [{"attr": 51, "value": "spell_dmg_up2"}, {"attr": 52, "value": "spell_dmg_up2"},
+                    {"attr": 53, "value": "spell_dmg_up2"}, {"attr": 54, "value": "spell_dmg_up2"}]}],
+    "triggers": [
+     {"id": "wpn_funnel_0019.battle_cast", "on": {"event": "cast", "kinds": ["battle"]}, "by": "self", "skill": "sk_wpn_funnel_0019",
+      "do": [{"kind": "buff", "buff": "wpn_funnel_0019.intensityup"},
+             {"kind": "gain", "gains": [{"stack": "wpn_funnel_0019.windform", "amount": "wind_grant"}]},
+             {"kind": "buff", "buff": "wpn_funnel_0019.windform_timer"}]},
+     {"id": "wpn_funnel_0019.windform_out", "on": {"event": "buffEnded", "buff": "wpn_funnel_0019.windform_timer"}, "by": "self",
+      "do": [{"kind": "gain", "gains": [{"stack": "wpn_funnel_0019.windform", "amount": -4}]}]},
+     {"id": "wpn_funnel_0019.burst", "on": {"event": "burst"}, "by": "self", "skill": "sk_wpn_funnel_0019",
+      "if": {"stack": "wpn_funnel_0019.windform", "atLeast": 1}, "cooldown": 0.1,
+      "do": [{"kind": "gain", "gains": [{"stack": "wpn_funnel_0019.windform", "amount": -1}]},
+             {"kind": "buff", "buff": "wpn_funnel_0019.spelldmgup"}]}]}
+   ```
+
+   ```json
+   {"equipment": "suit_spellburst", "sources": ["…"],
+    "buffs": [{"id": "suit_spellburst.physpellup", "label": "Arts Intensity (Deep Rampart)", "target": "self",
+               "duration": "duration", "maxStacks": "max_stack", "gameBuff": "buff_equipsuit_spellburst_01_physpellup",
+               "modifiers": [{"attr": 87, "value": "phy_spell_up"}]}],
+    "triggers": [{"id": "suit_spellburst.burst", "on": {"event": "burst", "elements": ["natural", "cryst"]}, "by": "self",
+                  "cooldown": 0.1, "skill": "passive_equipsuit_spellburst01",
+                  "do": [{"kind": "buff", "buff": "suit_spellburst.physpellup"}]}]}
+   ```
+
+   Re-applying a buff replaces it without a `buffEnded`, so the Windform timer only ends 15 s after
+   the last grant (exact: a grant of 4 replaces all 4 layers). All keys exist at every level of
+   their skills and the three `gameBuff`s are covered by tables.json (checked).
+
+**Would the loader reject anything?** Pass 2's plan as written: only the shorthand (unprefixed
+skill IDs, unprefixed equipment IDs, `atk` without `zone`), and trigger 13's `cast` targets would
+load but throw at runtime unless floating_loop / floating_end are kit skills. The snippets above
+follow the schema and kits.ts checks.
+
+### (c) New gaps
+
+None. Two notes for the merge, neither blocking (the plan avoids both):
+
+- `stackAtLeast` can't tell which stack changed (`stacks` events carry no stack ID). Only this kit
+  used it; with change 2 nobody does. A `stack` field on the event would make it exact.
+- Whether battle-type follow-ups (floating_loop / floating_end) count as battle-skill casts is
+  Si R6's open question (test 29, interim: yes). For Typhoeus it decides whether an idle hover end
+  refreshes Umbra of Frigid Eventide (W2) twice; test 29 should get a Typhoeus case: ultimate only
+  (no battle skill) with the weapon, let the hover end by itself, and look for the weapon's Arts
+  Intensity buff.
+
+### (d) In-game tests the kit depends on
+
+9 (burst ×1.3), 17 (jumps: only her off-field shots at 4 m or more), 18 (her ultimate's time stop),
+29 (follow-ups as battle skills, above), 36 (her shared combo cooldown), 42 (idle end: now from the
+data, 1.9 s after shots 1–3 and 1.5 s after shot 4; stack lifetime), 43 (off-field shots), 44
+(teammate burst Signs), 45 (combo pulse at hover end), 46 (Hail of Arrows count, optional), 47
+(burst delay). Test 42's "Why" still says the engine can't end the hover by idling; it can now.

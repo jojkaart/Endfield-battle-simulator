@@ -3,11 +3,11 @@
 // Forgeborn Scathe's buff), how it stacks, and which hits its damage
 // modifiers are limited to. Only rmxlinux has these files.
 
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { arr, at, get, int, num, obj, str, type Ctx } from "./fields.ts";
 import { parseJsonExact } from "./json.ts";
-import { globToRegExp } from "./skillData.ts";
+import { globToRegExp, isSkillFileListed as ALLOWED_SKILL_FILE } from "./skillData.ts";
 import { DATA_FILES, sourceDir } from "./sources.ts";
 
 export interface RawBuffFile {
@@ -90,4 +90,37 @@ export function readBuffFile(buffId: string): RawBuffFile | null {
       };
     }),
   };
+}
+
+const SKILL_SLOTS = ["battle", "combo", "ultimate"] as const;
+
+/**
+ * Skills an operator's own buff and skill files switch a skill slot to
+ * (ChangeSkillAction `targetSkillId`, `skillSlot` 0 battle, 1 combo, 2
+ * ultimate): Si's Final Stroke, which CharGrowthTable puts in no skill
+ * group. Only files tables.json covers are read.
+ */
+export function switchedSkills(charId: string): Map<string, (typeof SKILL_SLOTS)[number]> {
+  const out = new Map<string, (typeof SKILL_SLOTS)[number]>();
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (typeof node !== "object" || node === null) return;
+    const o = node as Record<string, unknown>;
+    if (typeof o["$type"] === "string" && o["$type"].includes("ChangeSkillAction") && typeof o["targetSkillId"] === "string") {
+      const slot = SKILL_SLOTS[Number(o["skillSlot"])];
+      if (slot) out.set(o["targetSkillId"], slot);
+    }
+    for (const v of Object.values(o)) walk(v);
+  };
+  for (const [dir, prefix, listed] of [["BuffData", `buff_${charId}`, isBuffFileListed], ["SkillData", charId, (id: string) => ALLOWED_SKILL_FILE(id)]] as const) {
+    const path = join(sourceDir("rmxlinux"), "Json", dir);
+    if (!existsSync(path)) continue;
+    for (const f of readdirSync(path)) {
+      const id = f.replace(/\.json$/, "");
+      if (!f.endsWith(".json") || !id.startsWith(prefix) || !listed(id)) continue;
+      const text = readFileSync(join(path, f), "utf8");
+      if (text.includes("ChangeSkillAction")) walk(JSON.parse(text));
+    }
+  }
+  return out;
 }

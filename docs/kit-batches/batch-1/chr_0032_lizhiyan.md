@@ -971,3 +971,265 @@ The first round's A–F still apply, extended as below; 7 and 13 too.
 - **K. Cluster Strike from a Finisher.** Inside the array, stagger the
   enemy and finish it with the controlled operator: do the four lasers
   come, and does a finisher plus a Final Strike within 0.4 s count once?
+
+## Re-analysis (pass 3, 2026-10-18)
+
+Against the engine at 59b80bd (batch-1.md "Pass 2 progress"): events.ts,
+model.ts, expr.ts, timeline.ts, the loader (packages/data/src/kits.ts) and
+both schemas. The plan below was written out as a full operator kit and four
+equipment kits in a scratch directory and loaded with a copy of the loader
+pointed there: it loads. Run on examples/arcane-will-solo and an INT variant
+(the d9e59d0fb737 build), it gives the expected effects on the expected hits
+(WILL solo total 54.0k → 102.1k: weapon debuffs, talent-1 Susceptibility,
+WILL bursts, two Cluster Strikes).
+
+### Facts re-checked (corrections to pass 2)
+
+- **Talent-1 Susceptibility lasts the talent's 10 s, not the ultimate's
+  20 s.** ultimate_skill and ultimate_skill2 read it with
+  GetTargetBuffBBAdvanced `{blackboardKey: duration_vul, desiredKey:
+  duration, buffIdList: [buff_chr_0032_lizhiyan_talent1]}`, then
+  CreateBuffAction assigns `duration ← duration_vul`. desiredKey is the
+  key on the buff: in Si's ultimate_skill_abilityrange the same action reads
+  `coolDown` (the only key of her talent2 buffs) into `talent_combo_reduce`.
+  The attached talent skill has `duration` 10 at both levels. Test 30 is
+  now only a confirmation.
+- **Both talent-1 buffs exist only when their value is above 0**
+  (CompareFloat compare 2 before the CreateBuff): talent1_vulnerable if
+  `spell_vul_rate + spell_vul_rate_potential > 0`, talent1_enhance (in
+  listener_owner) if `enhance_rate > 0`. Talent 1 level 1 has 0 for both
+  (data: `enhance_rate` 0, `spell_vul_rate` 0); P5 adds 0.16 / 0.07. A
+  0-value buff would still fire category triggers (Eternal Xiranite, the
+  weapon), so the kit guards them.
+- **Order at ultimate frame 47** (serverActionIndex): listener_owner 45,
+  forced Corrosion 51, same-element inflictions 55–64, talent1_vulnerable
+  79/81, DamageAction 82. So the array state (and INT Amp, its child) and
+  the WILL Susceptibility are in place before the ultimate's own hit.
+  dbaee23b801d's ultimate hit (2485 ms) matches only with
+  `buff_wpn_funnel_0016_will_dmg` and the Susceptibility applied
+  (`efsim zmdlogs check`: "boundary buffs applied:
+  buff_wpn_funnel_0016_will_dmg, buff_common_affixes_vulnerable_natural"),
+  so the weapon reacts to a buff in the same frame before the damage.
+- `poise_early_finish` and `poise_final` aren't keys of
+  chr_0032_lizhiyan_combo_skill (they're in the seal2 / seal_finisher_wisd
+  BuffData blackboards; seal_finisher_wisd's default `poise_final` is 10).
+- The weapon's abilityEvent 206 handlers (wisd_atkup, will_dmg) check
+  CheckOriginSkillType [2, 6, 7], like 126 and 127; Eternal Xiranite's 102
+  handler doesn't.
+- The combo can't be cut before frame 16 (exclusive 23, first window 16),
+  nor the ultimates before 48 / 63 (cantCastSkill channels).
+
+### (a) Pass-2 gaps now
+
+| Pass 2 | Now | Fields |
+|---|---|---|
+| R1 Finisher filter, once per cast | supported | `on: {event: "hit", decorations: ["finisher"]}` (true for landings of a skillSpecification 8 skill; triggered hits never), `maxPerCast: 1` (counted per cast index of the hit). `decorations: ["finalStrike"]` ≡ `finalStrike: true` |
+| R2 Buff-category events | supported | `on: {event: "buffApplied", categories: [...]}`, `by: "self"` = the wearer; categories from the kit buff's modifiers: zone `amp` / `susceptibility`, attr 62 / 63. Two leftovers: R12, R13 below |
+| R3 Source skill kind; reacting inflictions | supported (status events) / still open (reacting) | `fromKinds: ["battle", "combo", "ultimate"]` on `inflictionApplied` and `burst`. Reacting applications: open list "Arcane R3", interim: not counted (`inflictionApplied` excludes them), test 35. Buff applications have no source kind: R13 |
+| R4 Cooldown by a fraction | supported (assumed meaning) | cooldown action `fraction` (of the skill's full cooldown, added; negative cuts it). Open list "V7", interim: of the full cooldown, test 36 |
+| R5 Imprisonment slows the enemy's clock | still open | open list "Ti1b": entity-layer slow-downs not modelled; tests 18, 37 |
+| R6 Hit-stop | still open | open list "Ti1b": not modelled; tests 18, 37 |
+| R7 Finisher's unread `atb` 8 | still open (D2), kit-writable | open list "D2": kits hand-write it. Any hit with `sp` stops the skill's default `atb` (timeline: `skill.hits.some(h => h.sp !== undefined)`), so `sp: 0` on a finisher hit removes the 8 SP; the enemy's finisher SP stays. Test 31 |
+| R8 Poise and finisher factors in kit-draft | still open (D2), kit-writable | kits hand-write `poise` and `factor` |
+| R9 `buff_common_<element>_triggered` ×1.42 | still open | open list "L2": such hits stay unchecked |
+| R10 WILL combo element: the trigger's or the enemy's | still open | open list "A6": interim the enemy's current (`element: "enemy"`), test 33 |
+| R11 talent-1 paramType 4 half | unknown | still loaded as `{kind: "other", modifyType: 2}`; no test written for it yet |
+
+### (b) Kit plan: what changes
+
+Everything not listed stays as in pass 2's plan. INT = `{"attrAtLeast": [41,
+42]}`, WILL = `{"not": INT}`, and
+
+```json
+"T1_ON": {"all": [{"talentAtLeast": [0, 1]}, {"any": [{"talentAtLeast": [0, 2]}, {"potentialAtLeast": 5}]}]}
+```
+
+(talent-1 value above 0; written inline, the kit format has no macros).
+
+**Values from talents.** Use `{talent: 0, key}` (V8: 0 while unlearned,
+potentials applied) instead of `{key, skill: "chr_0032_lizhiyan_talent1"}`
+(both load):
+
+```json
+{"id": "t1_susceptibility", "label": "Talent 1 Susceptibility (WILL)", "target": "enemy",
+ "duration": {"talent": 0, "key": "duration"}, "gameBuff": "buff_chr_0032_lizhiyan_talent1_vulnerable",
+ "modifiers": [{"zone": "susceptibility", "elements": ["natural", "cryst"], "value": {"sum": [
+   {"min": [{"product": [{"talent": 0, "key": "spell_vul_rate_per_will"}, {"attr": 42}]}, {"talent": 0, "key": "spell_vul_rate"}]},
+   {"talent": 0, "key": "spell_vul_rate_potential"}]}}]}
+{"id": "int_amp", "label": "Talent 1 Arts Amp (INT)", "target": "self", "gameBuff": "buff_chr_0032_lizhiyan_talent1_enhance",
+ "modifiers": [{"zone": "amp", "value": {"talent": 0, "key": "enhance_rate"}, "elements": ["fire", "pulse", "cryst", "natural"]}]}
+```
+
+**Skills.**
+
+- power_attack: `poise` is one value per hit entry, so the pass-2 entry `a`
+  (count 5, poise 5/5/5/20/20) can't be written; split by poise, `sp: 0`
+  on the last entry (R7, until test 31):
+
+  ```json
+  "hits": [
+   {"id": "a", "scale": ["atk_scale"], "factor": 0.1, "count": 3, "frames": [7, 10, 13], "poise": 5, "events": ["chr_0032_lizhiyan_power_attack"]},
+   {"id": "b", "scale": ["atk_scale"], "factor": 0.1, "count": 2, "frames": [32, 34], "poise": 20, "events": ["chr_0032_lizhiyan_power_attack"]},
+   {"id": "c", "scale": ["atk_scale"], "factor": 0.5, "frames": [36], "poise": 10, "sp": 0, "events": ["chr_0032_lizhiyan_power_attack"]}]
+  ```
+- combo_skill: one `touch` hit whose WILL infliction has its own `if`
+  (`"applies": [{"kind": "infliction", "element": "enemy", "if": WILL}]`).
+- ultimate_skill: the hit keeps `applies` (WILL same-element infliction,
+  INT forced Corrosion) but loses `buffs`. The array and the WILL
+  Susceptibility go in a delayed cast trigger at 47: pending actions run
+  before hits of the same frame (timeline.ts `advance`), so `array_start`
+  (INT Amp) and the equipment's category triggers act on this hit, as in
+  the data (R12). With the pass-2 hit `buffs` (`beforeDamage` or not) they
+  run after the damage:
+
+  ```json
+  {"id": "ult_frame_47", "on": {"event": "cast", "skills": ["chr_0032_lizhiyan_ultimate_skill"]}, "by": "self", "delay": 47,
+   "skill": "chr_0032_lizhiyan_ultimate_skill",
+   "do": [{"kind": "buff", "buff": "gloompurger_array"},
+          {"kind": "buff", "buff": "t1_susceptibility", "if": {"all": [WILL, T1_ON]}}]}
+  ```
+  `skill` is required: the trigger's buffs read their plain keys from it
+  (`gloompurger_array`'s `duration`). Without it the loader refuses
+  ("chr_0032_lizhiyan.ult_frame_47 isn't one of chr_0032_lizhiyan's value
+  sources").
+- ultimate_skill2: no hit `buffs`. WILL Susceptibility the same way
+  (`"id": "t1_susceptibility_ult2"`, `skills: [ultimate_skill2]`, `delay:
+  58`, `if: {all: [WILL, T1_ON]}`). INT Amp is already on through
+  Gloompurge Arcana. Only if test 32 shows that casting ult 2 ends that
+  state: add an `endsWithCast: true` copy of `int_amp` (ult 2 frame 0,
+  autoFinishByAction), applied on the cast with `if: {not: {buffActive:
+  int_amp}}`. Kit buffs that stand for the same non-type-1 game buff add up.
+
+**Triggers.**
+
+- `imprison`: add `"detached": true` (seal_total exists from combo frame 9;
+  nothing can cut the combo before 16 anyway).
+- `int_early_end`: `on: {event: "hit", skills:
+  ["chr_0032_lizhiyan_normal_skill"]}` (more exact than `kinds`). Poise:
+  `"poise_boom"` on the early explosion and the literal `10` on the final
+  laser. The pass-2 keys `poise_early_finish` / `poise_final` are refused
+  ("chr_0032_lizhiyan_combo_skill has no value poise_final"). The early-end
+  marker stays: `eventRemaining` is a value, and there's no predicate on
+  values.
+- `array_start`: `{"kind": "buff", "buff": "int_amp", "if": {"all": [INT,
+  T1_ON]}}`.
+- `cluster_strike` (Final Strike) as pass 2. Its 0.4 s debounce is
+  `cooldown: 0.4` and doesn't apply to the finisher path.
+- `cluster_strike_finisher` (was blocked on R1):
+
+  ```json
+  {"id": "cluster_strike_finisher", "on": {"event": "hit", "decorations": ["finisher"]}, "by": "controlled", "maxPerCast": 1,
+   "if": {"all": [{"buffActive": "gloompurger_array"}, {"stack": "cluster_strikes", "below": 2}]},
+   "skill": "chr_0032_lizhiyan_ultimate_skill",
+   "do": [{"kind": "gain", "gains": [{"stack": "cluster_strikes"}]},
+          {"kind": "energy", "value": 0.5, "percentOfMax": true, "ignoreEfficiency": true, "ignoreBlock": true},
+          {"kind": "hits", "hits": [{"id": "laser", "scale": ["atk_scale_laser"], "count": 4, "frames": [12, 16, 20, 24], "damageType": "ultimate", "poise": 20, "events": ["chr_0032_lizhiyan_ultimate_skill_laser"]}]},
+          {"kind": "endBuff", "buff": "gloompurger_array", "if": {"stack": "cluster_strikes", "atLeast": 2}},
+          {"kind": "clearEnergy", "if": {"stack": "cluster_strikes", "atLeast": 2}},
+          {"kind": "buff", "buff": "gloompurge_arcana", "if": {"stack": "cluster_strikes", "atLeast": 2}},
+          {"kind": "energy", "value": 1, "percentOfMax": true, "ignoreBlock": true, "if": {"stack": "cluster_strikes", "atLeast": 2}}]}
+  ```
+- `p5_cooldown` (was blocked on R4). `cd_minus` is 0 below P5, so no
+  potential check is needed; `skills` is one kind, not a list:
+
+  ```json
+  {"id": "p5_cooldown", "on": {"event": "cast", "skills": ["chr_0032_lizhiyan_ultimate_skill2"]}, "by": "self", "if": WILL,
+   "skill": "chr_0032_lizhiyan_ultimate_skill2",
+   "do": [{"kind": "cooldown", "who": "self", "skills": "combo", "fraction": {"product": [-1, "cd_minus"]}}]}
+  ```
+
+**Equipment kits.** Pass 2's IDs are refused: equipment stack, buff and
+trigger IDs must start with `<equipment ID>.` (`wpn_funnel_0016.int_arts`,
+`suit_usp02.team_dmg`, …; references use the full ID). Every trigger that
+applies a buff with plain keys needs `skill` (the weapon skill or set skill),
+or the loader refuses the trigger's own name as a value source. Zones:
+weapon INT ATK `atk` (`atk_up2`), INT Arts DMG `damageBonus` on the four
+Arts elements, WILL debuffs `damageTaken` on the four Arts elements
+(priority-keyed game buffs: `stackGroup` from `gameBuff`), Xiranite
+`damageBonus`, Hot Work `damageBonus` `[fire]` / `[natural]` (game buffs
+`buff_equipsuit_fninflict_01_firedamageadd` / `_poisedamageadd`).
+
+```json
+"triggers": [
+ {"id": "wpn_funnel_0016.int_infliction", "on": {"event": "inflictionApplied", "fromKinds": ["battle", "combo", "ultimate"]}, "by": "self", "if": INT,
+  "beforeDamage": true, "skill": "sk_wpn_funnel_0016", "do": [{"kind": "buff", "buff": "wpn_funnel_0016.int_arts"}]},
+ {"id": "wpn_funnel_0016.int_susceptibility", "on": {"event": "buffApplied", "categories": ["susceptibility"]}, "by": "self", "if": INT,
+  "skill": "sk_wpn_funnel_0016", "do": [{"kind": "buff", "buff": "wpn_funnel_0016.int_atk"}]},
+ {"id": "wpn_funnel_0016.will_burst", "on": {"event": "burst", "fromKinds": ["battle", "combo", "ultimate"]}, "by": "self", "if": WILL,
+  "skill": "sk_wpn_funnel_0016", "do": [{"kind": "buff", "buff": "wpn_funnel_0016.will_burst"}]},
+ {"id": "wpn_funnel_0016.will_susceptibility", "on": {"event": "buffApplied", "categories": ["susceptibility"]}, "by": "self", "if": WILL,
+  "skill": "sk_wpn_funnel_0016", "do": [{"kind": "buff", "buff": "wpn_funnel_0016.will_susc"}]}]
+```
+
+- `suit_usp02`: `{"id": "suit_usp02.on_category", "on": {"event":
+  "buffApplied", "categories": ["amp", "protection", "susceptibility",
+  "weakness"]}, "by": "self", "skill": "passive_equipsuit_usp_02", "do":
+  [{"kind": "buff", "buff": "suit_usp02.team_dmg"}]}`, with buff `target:
+  "team"` and `recipients: {"not": {"isOwner": true}}`.
+- `suit_usp01`: `{"id": "suit_usp01.sp", "on": {"event": "cast", "kinds":
+  ["battle"]}, "by": "self", "maxCount": 1, "skill":
+  "passive_equipsuit_usp_01", "do": [{"kind": "sp", "value":
+  "atb_recover"}]}`.
+- `suit_fire_natr01`: the two `reaction` triggers (`statuses:
+  ["combustion"]` / `["corrosion"]`, `by: "self"`) with `"beforeDamage":
+  true` and `"skill": "passive_equipsuit_fninflict_01"`.
+- `beforeDamage` follows the data order: W3's battle-skill SpellInfliction
+  and the INT ultimate's forced Corrosion come before their DamageAction.
+  d9e59d0fb737 has both buffs only as boundary buffs on those hits and
+  matches nothing, so the logs can't decide. W5 (`will_burst`) is left
+  after the damage: the WILL logs show no `will_atk` on the touch, and
+  bursts credited to her come 1–1.5 s later (test 33). Expect the kit check
+  of b7b3762d5da8 (ult hit at 7150 ms without `will_atk`) to depend on
+  that.
+
+### (c) New gaps
+
+**R12. Category triggers on a buff a hit applies before its damage**
+- family: triggers
+- feature: a hit's `buffs` with `beforeDamage: true` add their
+  `buffApplied` events to the after-damage run (timeline.ts `landHit`:
+  `events` → `runTriggers` after `computeHit`), and the loader refuses
+  `beforeDamage` on non-status triggers ("only status-event triggers can
+  act before their hit's damage"). So a trigger on that buff (own
+  `buffApplied` or a category trigger: Solemn Phalanx W4/W6, Eternal
+  Xiranite) can't act on the hit. Needed: `buffApplied` events of
+  before-damage buffs are run before the damage, for triggers with
+  `beforeDamage: true` (allow it on `buffApplied`).
+- evidence: ultimate_skill frame 47 order (above); dbaee23b801d 2485 ms
+  matches only with `buff_wpn_funnel_0016_will_dmg` applied.
+- impact: for Arcane none with the plan's workaround (a delayed cast
+  trigger at the hit's frame, which runs before same-frame hits). Without
+  it, her WILL ultimate and ult-2 hits miss +9.6–16.8% Arts DMG Taken and
+  the INT ultimate hit misses Amp 0.24. The same applies to any kit that
+  writes a before-damage Susceptibility or Amp on a hit, with generic
+  equipment.
+
+**R13. Source skill kind of a buff application**
+- family: triggers
+- feature: `fromKinds` on `buffApplied` category triggers, and the
+  `buffApplied` event carries the kind of what applied the buff: a hit's
+  kind; for a trigger's buff, the kind of the cast it belongs to (a delayed
+  cast trigger: its cast; the game's inheritSourceSkillCastInfo); otherwise
+  `none`.
+- evidence: buff_wpn_funnel_0016_wisd and _will, abilityEvent 206:
+  CheckBuffIdInContextAdvanced, then CheckOriginSkillType skillTypeList
+  [2, 6, 7].
+- impact: none on Arcane (her Susceptibilities come from her combo and
+  ultimates). A wearer whose Susceptibility comes from a basic attack or a
+  talent trigger gets W4 / W6 (+ATK `atk_up2`, enemy +Arts DMG Taken) when
+  the game doesn't give them. Minor; it's R3's buff half, not on the open
+  list.
+
+### (d) In-game tests the kit still depends on
+
+7 (INT residual; Amp for the array's 20 s), 13 (WILL combo cooldown,
+confirmation), 18 (time stops; with 37 for Ti1b), 30 (now a confirmation of
+the data's 10 s), 31 (Cluster Strike from a finisher, finisher + Final
+Strike within 0.4 s, finisher SP), 32 (Gloompurge length; does ult 2 end
+it), 33 (WILL same-element stack: timing, attribution, element), 34
+(lasers after a natural INT end), 35 (combo window and W3 on a reacting
+application), 36 (`fraction` meaning), 37 (Imprisonment and enemy timers).
+Not yet in docs/in-game-tests.md: whether a same-hit equipment buff counts
+on its own hit (Hot Work on the INT ultimate's hit, W3 on the battle skill
+that inflicts): it settles the `beforeDamage` choices above. The first
+round's F (talent-2 Corrosion duration) is optional: the data sets it.

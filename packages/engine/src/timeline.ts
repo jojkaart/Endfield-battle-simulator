@@ -768,23 +768,28 @@ function eventCountOf(e: BattleEvent): number {
 /**
  * Runs every team member's triggers on a chain of events, in order; what
  * they do can add events to the chain. `only` limits which triggers the
- * initial events run (a hit's own status events: KitTrigger.beforeDamage).
+ * initial events run (a hit's own status events: KitTrigger.beforeDamage);
+ * `reactOnInitial: false` leaves the engine's own reactions to them
+ * (freezes, Lift stagger) to a later run.
  */
-function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readonly BattleEvent[], origin: Origin | null, only?: (t: KitTrigger) => boolean): TimelineState {
+function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readonly BattleEvent[], origin: Origin | null, only?: (t: KitTrigger) => boolean, reactOnInitial = true): TimelineState {
   let st = state;
   const queue = [...initial];
   const first = new Set(initial);
   for (let n = 0; queue.length > 0; n++) {
     if (n > MAX_CHAIN) throw new EngineError(`more than ${MAX_CHAIN} chained events at frame ${queue[0]?.frame}: a trigger loop in the kits?`);
     const e = queue.shift() as BattleEvent;
+    // The engine's own reactions to an event (freezes, Lift stagger) happen once: for a hit's own status events
+    // after its damage, not in the before-damage run, so buffs the hit applies are frozen with the enemy too.
+    const engine = reactOnInitial || !first.has(e);
     // A control status that freezes the enemy stops its clock (overlapping freezes count once).
-    if (e.type === "status" && e.event.kind === "control" && e.event.freezes && !ctx.scenario.target.controlImmune) {
+    if (engine && e.type === "status" && e.event.kind === "control" && e.event.freezes && !ctx.scenario.target.controlImmune) {
       const end = e.frame + e.event.frames;
       const lost = Math.max(0, end - Math.max(e.frame, st.enemyFrozenUntil));
       st = { ...shiftEnemy(st, e.frame, lost), enemyFrozenUntil: Math.max(st.enemyFrozenUntil, end) };
     }
     // Lift and Knock Down stagger: 10 × (1 + AI/200) of the applier.
-    if (e.type === "status" && e.event.kind === "physical" && (e.event.status === "lift" || e.event.status === "knockdown") && ctx.builds.has(e.operator)) {
+    if (engine && e.type === "status" && e.event.kind === "physical" && (e.event.status === "lift" || e.event.status === "knockdown") && ctx.builds.has(e.operator)) {
       const r = dealPoise(ctx, st, e.operator, 10 * (1 + artsIntensity(ctx, st, e.operator, e.frame) / 200), e.frame);
       st = r.state;
       queue.push(...r.events);
@@ -810,7 +815,10 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
         if (castKey) st = { ...st, triggerState: { ...st.triggerState, [castKey]: { readyAt: 0, count: (st.triggerState[castKey]?.count ?? 0) + 1 } } };
         if (t.delay) {
           const cast = e.type === "cast" && e.cast !== undefined && !t.detached ? { cast: { operator: e.operator, index: e.cast } } : {};
-          st = { ...st, pendingActions: [...st.pendingActions, { frame: e.frame + t.delay, owner, trigger: t.id, event: e, origin, ...cast }] };
+          // A cast's own effects at frames play at its speed, as its hits do (Haste).
+          const acting = e.type === "cast" ? st.acting[e.operator] : undefined;
+          const delay = acting && acting.frame === e.frame && acting.speed ? Math.round(t.delay / acting.speed) : t.delay;
+          st = { ...st, pendingActions: [...st.pendingActions, { frame: e.frame + delay, owner, trigger: t.id, event: e, origin, ...cast }] };
           continue;
         }
         const r = runActions(ctx, st, t, owner, e, origin);
@@ -1021,7 +1029,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     }
   }
   // Triggers that act before the hit's damage on its own status events (a buff they apply already counts for it).
-  if (statusEvents.length && ctx.beforeDamage) st = runTriggers(ctx, st, asEvents(statusEvents, kind, hit.cast), { operator: hit.operator, kind }, (t) => t.beforeDamage === true);
+  if (statusEvents.length && ctx.beforeDamage) st = runTriggers(ctx, st, asEvents(statusEvents, kind, hit.cast), { operator: hit.operator, kind }, (t) => t.beforeDamage === true, false);
   const events: BattleEvent[] = [];
   if (kitHit.gains?.length) {
     st = { ...st, stacks: gainStacks(ctx, st.stacks, hit.operator, kitHit.gains, evalContext(ctx.data, build, panel, hit.skillId, at(consumed))) };

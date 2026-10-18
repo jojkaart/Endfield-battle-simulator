@@ -1202,3 +1202,34 @@ describe("kit buffs in static checks", () => {
     expect(() => kitBuffModifiers(g, build, panel, "nope")).toThrow(EngineError);
   });
 });
+
+describe("timeline: delays under Haste, freezes with before-damage triggers", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  it("a delayed cast trigger plays at the cast's speed", () => {
+    const haste: KitBuff = { id: "haste", label: "haste", target: "self", duration: 10, modifiers: [{ attr: 92, value: 0.25 }] };
+    const mark: KitBuff = { id: "mark", label: "mark", target: "self", duration: 10, modifiers: [] };
+    const triggers: KitTrigger[] = [
+      { id: "h", on: { event: "cast", kinds: ["battle"] }, by: "self", maxCount: 1, do: [{ kind: "buff", buff: "haste" }] },
+      { id: "m", on: { event: "cast", skills: [L + "attack1"] }, by: "self", delay: 10, do: [{ kind: "buff", buff: "mark" }] },
+    ];
+    const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, buffs: [...kit.buffs, haste, mark], triggers: [...kit.triggers, ...triggers] } } } };
+    const ctx = createContext(g, scenario([]));
+    let s = apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" });
+    s = apply(ctx, s, { operator: op, skill: L + "attack1" });
+    const at = s.casts[1]?.frame ?? NaN;
+    expect(s.pendingActions.find((x) => x.trigger === "m")?.frame).toBe(at + 8);
+  });
+
+  it("a freeze from a hit's control status still freezes the buffs that hit applies when a kit has before-damage triggers", () => {
+    const debuff: KitBuff = { id: "debuff", label: "debuff", target: "enemy", duration: 5, modifiers: [] };
+    const skills = kit.skills.map((s) => (s.skillId === L + "attack1" ? { ...s, hits: s.hits.map((h) => ({ ...h, applies: [{ kind: "control" as const, status: "immobilization", seconds: 1, freezes: true }], buffs: [{ buff: "debuff", beforeDamage: true }] })) } : s));
+    const expiry = (extra: KitTrigger[]) => {
+      const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills, buffs: [...kit.buffs, debuff], triggers: [...kit.triggers, ...extra] } } } };
+      const ctx = createContext(g, scenario([]));
+      return advance(ctx, apply(ctx, init(ctx), { operator: op, skill: L + "attack1" }), 10).buffs.find((b) => b.id === "debuff")?.expiresAt;
+    };
+    const plain = expiry([]);
+    expect(plain).toBe(6 + 150 + 30);
+    expect(expiry([{ id: "bd", on: { event: "control" }, by: "self", beforeDamage: true, do: [] }])).toBe(plain);
+  });
+});

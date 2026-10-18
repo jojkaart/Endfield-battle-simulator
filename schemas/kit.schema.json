@@ -2345,7 +2345,7 @@
           "items": {
             "type": "string"
           },
-          "minItems": 1
+          "description": "Empty for a Fixed DMG hit, or when scaleValue alone gives the multiplier."
         },
         "count": {
           "type": "integer",

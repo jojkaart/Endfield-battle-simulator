@@ -21,6 +21,8 @@ describe.each(loadFixtures().filter(({ fixture }) => fixture.expected.damage?.le
         staggered: false,
         conditions: conditions ?? [],
         modifiers,
+        // A fixture lists hits that happened: what the kit can't judge without the fight (the enemy's statuses) counts as met.
+        assumeUnknown: true,
       });
       exact += result.exact * (times ?? 1);
     }
