@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, buffModifiers, causeMatches, eventMatches, evalContext, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
+import { advance, apply, buffModifiers, causeMatches, eventMatches, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -1130,5 +1130,42 @@ describe("timeline: what ends with a cast, cast blocks, mid-air, control immunit
     const window = s.comboWindow[op]?.count;
     expect(window).toBeGreaterThanOrEqual(1);
     expect(apply(ctx, s, a("combo_skill")).stacks[op]?.n).toBe(window);
+  });
+});
+
+describe("timeline: recording buffs and Fixed DMG; talent values", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const a = (s: string, at?: number): RotationAction => ({ operator: op, skill: L + s, ...(at !== undefined ? { at } : {}) });
+
+  it("a recording buff records rate × every hit on its target, from the hit that applies it; its end deals the total as Fixed DMG", () => {
+    const record: KitBuff = { id: "record", label: "record", target: "enemy", duration: 30, records: { rate: 0.5 }, modifiers: [] };
+    const skills = kit.skills.map((s) => (s.skillId === L + "attack1" ? { ...s, hits: s.hits.map((h) => ({ ...h, buffs: [{ buff: "record", beforeDamage: true }] })) } : s));
+    const burst: KitTrigger = {
+      id: "burst", on: { event: "buffEnded", buff: "record" }, by: "self", delay: 13,
+      do: [{ kind: "hits", hits: [{ id: "burst", label: "burst", scale: [], count: 1, frames: [0], events: [], damageType: "battle", element: "cryst", fixedDamage: { eventRecorded: true }, detached: true }] }],
+    };
+    const end: KitTrigger = { id: "end", on: { event: "cast", kinds: ["battle"] }, by: "self", do: [{ kind: "endBuff", buff: "record" }] };
+    const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills, buffs: [...kit.buffs, record], triggers: [...kit.triggers, burst, end] } } } };
+    const rotation = [a("attack1"), a("attack2"), a("attack3"), a("normal_skill")];
+    const ctx = createContext(g, scenario(rotation));
+    let s = init(ctx);
+    for (const x of rotation) s = apply(ctx, s, x);
+    // Hits up to the battle skill's cast frame land before it ends the record.
+    const endFrame = s.casts[3]?.frame ?? NaN;
+    const end2 = advance(ctx, s, ctx.scenario.durationFrames);
+    const fixed = end2.hits.filter((h) => h.hitId === "burst" && h.skillId === `${op}.burst`);
+    expect(fixed.length).toBe(1);
+    const recorded = end2.hits.filter((h) => !h.fixed && h.frame >= (s.casts[0]?.frame ?? 0) && h.frame <= endFrame).reduce((t, h) => t + h.exact, 0);
+    expect(recorded).toBeGreaterThan(0);
+    expect(fixed[0]?.exact).toBeCloseTo(0.5 * recorded, 6);
+    expect(fixed[0]?.frame).toBe(endFrame + 13);
+    expect(fixed[0]?.modifiers).toEqual([]);
+  });
+
+  it("a talent value reads the talent's buff at the build's level, 0 while unlearned", () => {
+    const ec = (b: Build) => evalContext(data, b, computeStats(data, b), "");
+    const v = { talent: 0, key: "ignore_fire_resist" } as const;
+    expect(evaluate(v, ec(build))).toBe(skillValue(data, computeStats(data, build), build, "buff_chr_0016_laevat_passive", "ignore_fire_resist"));
+    expect(evaluate(v, ec({ ...build, talents: [0, 2] }))).toBe(0);
   });
 });

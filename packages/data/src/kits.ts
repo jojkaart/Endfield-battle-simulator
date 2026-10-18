@@ -35,6 +35,7 @@ interface RawHit {
   reaction?: { kind: "burst" | "reaction"; element: "fire" | "pulse" | "cryst" | "natural"; level?: number };
   extraScale?: { value: ValueExpr; if: Predicate }[];
   scaleValue?: ValueExpr;
+  fixedDamage?: ValueExpr;
   if?: Predicate;
   branch?: string;
   buffs?: BuffApplication[];
@@ -111,7 +112,7 @@ function condition(owner: string, c: RawCondition): Condition {
 
 export interface KitData {
   readonly skills: Readonly<Record<string, SkillData>>;
-  readonly operators: Readonly<Record<string, { skillGroups: Readonly<Record<string, string>>; talentNodes?: readonly { effects: readonly Effect[] }[]; potentials?: readonly (readonly Effect[])[] }>>;
+  readonly operators: Readonly<Record<string, { skillGroups: Readonly<Record<string, string>>; talentNodes?: readonly { index: number; effects: readonly Effect[] }[]; potentials?: readonly (readonly Effect[])[] }>>;
   readonly weapons: Readonly<Record<string, { readonly skills: readonly string[] }>>;
   readonly gearSets: Readonly<Record<string, { readonly skillId: string }>>;
 }
@@ -153,6 +154,8 @@ interface KitScope {
   readonly isSource: (id: string) => boolean;
   /** Throws unless the source has the key (at every level, for skills). */
   readonly checkSourceKey: (id: string, key: string, where: string) => void;
+  /** The buffs and skills a talent (0-based) attaches at its levels, for `{talent, key}` values; none for equipment. */
+  readonly talentSources?: (talent: number) => readonly string[];
 }
 
 /** Checks and normalises the parts operator and equipment kits share: values, predicates, buffs, hits, triggers. */
@@ -160,7 +163,13 @@ function kitChecker(scope: KitScope) {
   const { stackIds, buffDefs } = scope;
   /** Every key a value names must exist in one of the kit's sources (a plain key names `skillId`). */
   const checkValue = (v: ValueExpr, skillId: string, where: string) => {
-    for (const { skill: sid, key } of valueKeys(v, skillId)) {
+    let keys;
+    try {
+      keys = valueKeys(v, skillId, scope.talentSources);
+    } catch (e) {
+      throw new Error(`${where}: ${e instanceof Error ? e.message : String(e)}`, { cause: e });
+    }
+    for (const { skill: sid, key } of keys) {
       if (!scope.isSource(sid)) throw new Error(`${where}: ${sid} isn't one of ${scope.owner}'s value sources`);
       scope.checkSourceKey(sid, key, where);
     }
@@ -172,7 +181,8 @@ function kitChecker(scope: KitScope) {
     for (const id of refs.buffs) if (!buffDefs.has(id)) throw new Error(`${where}: unknown buff ${id}`);
   };
   const checkBuff = (b: KitBuff, skillId: string, where: string) => {
-    for (const v of [b.duration, b.maxStacks, b.every, ...b.modifiers.map((m) => m.value)]) if (v !== undefined) checkValue(v, skillId, `${where}: buff ${b.id}`);
+    for (const v of [b.duration, b.maxStacks, b.every, b.records?.rate, ...b.modifiers.map((m) => m.value)]) if (v !== undefined) checkValue(v, skillId, `${where}: buff ${b.id}`);
+    if (b.records && b.target !== "enemy") throw new Error(`${where}: buff ${b.id}: only an enemy buff records the damage its target takes`);
     for (const m of b.modifiers) if ((m.zone === undefined) === (m.attr === undefined)) throw new Error(`${where}: buff ${b.id}: each modifier has a zone or an attribute`);
     if (b.recipients && b.target !== "team") throw new Error(`${where}: buff ${b.id}: only team buffs have recipients`);
     // Recipient filters judge the recipient; its own stacks and buffs aren't the kit's, so they aren't checked here.
@@ -207,6 +217,10 @@ function kitChecker(scope: KitScope) {
         checkPredicate(x.if, `${where} hit ${h.id} extraScale`);
       }
       if (h.scaleValue !== undefined) checkValue(h.scaleValue, src.skillId, `${where} hit ${h.id} scaleValue`);
+      if (h.fixedDamage !== undefined) {
+        checkValue(h.fixedDamage, src.skillId, `${where} hit ${h.id} fixedDamage`);
+        if (h.scale.length || h.scaleValue !== undefined || h.extraScale || h.factor !== undefined || h.reaction || h.bonuses) throw new Error(`${where} hit ${h.id}: a Fixed DMG hit has no scale, factor, reaction or bonuses`);
+      }
       if (h.if) checkPredicate(h.if, `${where} hit ${h.id}`);
       for (const x of [...(h.applies ?? []), ...(h.buffs ?? []), ...(h.gains ?? [])]) if (x.if) checkPredicate(x.if, `${where} hit ${h.id}`);
       for (const g of h.gains ?? []) if (g.amount !== undefined) checkValue(g.amount, src.skillId, `${where} hit ${h.id} gains`);
@@ -239,6 +253,7 @@ function kitChecker(scope: KitScope) {
         ...(h.reaction ? { reaction: h.reaction } : {}),
         ...(h.extraScale ? { extraScale: h.extraScale } : {}),
         ...(h.scaleValue !== undefined ? { scaleValue: h.scaleValue } : {}),
+        ...(h.fixedDamage !== undefined ? { fixedDamage: h.fixedDamage } : {}),
         ...(h.buffs ? { buffs: h.buffs } : {}),
         ...(h.energy ? { energy: h.energy } : {}),
         ...(h.sp !== undefined ? { sp: h.sp } : {}),
@@ -387,6 +402,10 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
     buffDefs: new Map((kit.buffs ?? []).map((b) => [b.id, b])),
     isSkill: ownSkill,
     isSource: (id) => attached.has(id) || ownSkill(id),
+    talentSources: (i) => {
+      const index = [...new Set((op.talentNodes ?? []).map((n) => n.index))].sort((a, b) => a - b)[i];
+      return [...new Set((op.talentNodes ?? []).filter((n) => n.index === index).flatMap((n) => n.effects.flatMap((e) => (e.kind === "buff" ? [e.buffId] : e.kind === "skill" ? [e.skillId] : []))))];
+    },
     checkSourceKey: (id, key, where) => {
       const keys = attached.get(id);
       if (keys) {

@@ -40,6 +40,8 @@ export interface ActiveBuff {
   readonly nextTick?: number;
   /** Ends with its owner's cast of this index (KitBuff.endsWithCast). */
   readonly endsWithCast?: number;
+  /** A recording buff (KitBuff.records): its rate, and the damage it has recorded. */
+  readonly records?: { readonly rate: number; readonly total: number };
 }
 
 /** A kit value for the applier, with `skillId` as the skill a plain key names. */
@@ -91,6 +93,7 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
     ...(buff.consumedBy ? { consumedBy: buff.consumedBy } : {}),
     ...(buff.blocksEnergy ? { blocksEnergy: true } : {}),
     ...(every !== undefined ? { every, nextTick: frame + (buff.tickOnApply ? 0 : every) } : {}),
+    ...(buff.records ? { records: { rate: resolveValue(data, build, panel, skillId, buff.records.rate, situation), total: 0 } } : {}),
   };
 }
 
@@ -111,10 +114,16 @@ export function withBuff(buffs: readonly ActiveBuff[], b: ActiveBuff | null): Ac
 }
 
 /** Ends a buff from an owner: all of it, or its oldest `layers`. Returns the buffs left and whether any ended. */
-export function endBuff(buffs: readonly ActiveBuff[], id: string, owner: string, frame: number, layers?: number): { buffs: ActiveBuff[]; ended: boolean; remaining: number } {
+export function endBuff(buffs: readonly ActiveBuff[], id: string, owner: string, frame: number, layers?: number): { buffs: ActiveBuff[]; ended: boolean; remaining: number; recorded?: number } {
   const active = buffs.filter((x) => x.id === id && x.owner === owner && x.cast === undefined && x.appliedAt <= frame && x.expiresAt > frame).sort((x, y) => x.appliedAt - y.appliedAt);
-  const gone = new Set(layers === undefined ? active : active.slice(0, layers));
-  return { buffs: buffs.filter((x) => !gone.has(x)), ended: gone.size > 0, remaining: remainingOf([...gone], frame) };
+  const gone = [...new Set(layers === undefined ? active : active.slice(0, layers))];
+  const recorded = recordedOf(gone);
+  return { buffs: buffs.filter((x) => !gone.includes(x)), ended: gone.length > 0, remaining: remainingOf(gone, frame), ...(recorded !== undefined ? { recorded } : {}) };
+}
+
+/** The damage some recording buffs recorded, or undefined when none records. */
+export function recordedOf(buffs: readonly ActiveBuff[]): number | undefined {
+  return buffs.some((b) => b.records) ? buffs.reduce((t, b) => t + (b.records?.total ?? 0), 0) : undefined;
 }
 
 /** Frames the longest of some buffs had left at a frame (0 for buffs without an end). */

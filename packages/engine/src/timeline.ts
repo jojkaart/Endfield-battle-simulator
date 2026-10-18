@@ -14,6 +14,7 @@ import type { Build } from "./build.ts";
 import {
   activeModifiers,
   computeHit,
+  fixedHit,
   decide,
   evalContext,
   hitAvailable,
@@ -32,7 +33,7 @@ import { resolveApplication, type GameData, type KitBuff, type KitHit, type KitS
 import { effectiveKit } from "./triggers.ts";
 import { causeMatches, eventMatches, triggerSkillId, type BattleEvent, type BuffCategory, type KitTrigger } from "./events.ts";
 import { evaluate, test, type EvalContext } from "./expr.ts";
-import { applyBuff, buffAttr, buffModifiers, endBuff, extendBuff, reaches, remainingOf, resolveValue, withBuff, type ActiveBuff } from "./buffs.ts";
+import { applyBuff, buffAttr, buffModifiers, endBuff, extendBuff, reaches, recordedOf, remainingOf, resolveValue, withBuff, type ActiveBuff } from "./buffs.ts";
 import { computeStats, skillLevel, skillParam, type StatPanel } from "./stats.ts";
 import { Attr } from "./attributes.ts";
 import { applyToEnemy, expireStatus, nextTick, NO_STATUS, statusModifiers, tickStatus, type EnemyStatus, type StatusEvent, type StatusTweaks } from "./status.ts";
@@ -120,6 +121,8 @@ interface PendingHit {
   readonly trigger?: { readonly id: string; readonly action: number };
   /** Alternatives of one landing (KitHit.branch): the same key for each, judged together when the first lands. */
   readonly branch?: string;
+  /** A triggered Fixed DMG hit's value, judged when its trigger fired. */
+  readonly fixed?: number;
 }
 
 export interface Cast {
@@ -134,6 +137,8 @@ export interface Cast {
 export interface LandedHit extends HitDamage {
   readonly frame: number;
   readonly operator: string;
+  /** Fixed DMG (KitHit.fixedDamage): recording buffs don't record it. */
+  readonly fixed?: true;
 }
 
 /** A status event with the frame it happened at; the record of what the enemy's arts state did. */
@@ -704,6 +709,20 @@ function gainStacks(ctx: TimelineContext, stacks: Stacks, owner: string, gains: 
   return out;
 }
 
+/** Landed hits, and what the recording buffs active at their frames record of them (KitBuff.records; not Fixed DMG). */
+function addHits(st: TimelineState, landed: readonly LandedHit[]): TimelineState {
+  if (landed.length === 0) return st;
+  const buffs = st.buffs.some((b) => b.records)
+    ? st.buffs.map((b) => {
+        if (!b.records) return b;
+        let total = b.records.total;
+        for (const h of landed) if (!h.fixed && b.appliedAt <= h.frame && h.frame < b.expiresAt) total += b.records.rate * h.exact;
+        return total === b.records.total ? b : { ...b, records: { ...b.records, total } };
+      })
+    : st.buffs;
+  return { ...st, buffs, hits: [...st.hits, ...landed] };
+}
+
 /** Status events: recorded, and the damage they deal (bursts, reactions, ticks) lands. */
 /** `enemy` is the state their damage sees: after a hit's own applications, before a tick's change. */
 function recordStatus(ctx: TimelineContext, st: TimelineState, events: readonly StatusEvent[], enemy: EnemyStatus): TimelineState {
@@ -715,7 +734,7 @@ function recordStatus(ctx: TimelineContext, st: TimelineState, events: readonly 
     const d = eventDamage(ctx, e, enemy, st);
     if (d) landed.push(d);
   }
-  return records.length ? { ...st, reactions: [...st.reactions, ...records], hits: [...st.hits, ...landed] } : st;
+  return records.length ? addHits({ ...st, reactions: [...st.reactions, ...records] }, landed) : st;
 }
 
 /** Status events as battle events, with the kind of the hit that caused them (and its cast). */
@@ -735,7 +754,7 @@ const MAX_CHAIN = 500;
 function triggerSituation(ctx: TimelineContext, owner: string, st: TimelineState, e: BattleEvent, consumed?: number): Situation {
   const cause = ctx.builds.get(e.operator);
   const eventOperator = cause ? evalContext(ctx.data, cause, ctx.panels.get(e.operator) as StatPanel, "", situationAt(ctx, e.operator, st, e.frame)) : undefined;
-  return { ...situationAt(ctx, owner, st, e.frame, consumed), eventCount: eventCountOf(e), ...(e.type === "buffEnded" ? { eventRemaining: e.remaining / FPS } : {}), ...(eventOperator ? { eventOperator } : {}) };
+  return { ...situationAt(ctx, owner, st, e.frame, consumed), eventCount: eventCountOf(e), ...(e.type === "buffEnded" ? { eventRemaining: e.remaining / FPS, ...(e.recorded !== undefined ? { eventRecorded: e.recorded } : {}) } : {}), ...(eventOperator ? { eventOperator } : {}) };
 }
 
 /** An event's count (ValueExpr `eventCount`): stacks inflicted or consumed, a reaction's level, a combo cast's window count, else 1. */
@@ -872,7 +891,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         const r = endBuff(st.buffs, a.buff, owner, frame, a.layers);
         if (r.ended) {
           st = { ...st, buffs: r.buffs };
-          events.push({ type: "buffEnded", frame, operator: owner, buff: a.buff, remaining: r.remaining });
+          events.push({ type: "buffEnded", frame, operator: owner, buff: a.buff, remaining: r.remaining, ...(r.recorded !== undefined ? { recorded: r.recorded } : {}) });
         }
         break;
       }
@@ -905,7 +924,10 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         const pending: PendingHit[] = [];
         for (const h of a.hits) {
           (h.frames ?? Array.from({ length: h.count }, () => 0)).forEach((f, i) => {
-            pending.push({ frame: frame + f, operator: owner, skillId: triggerSkillId(owner, t), hitId: h.id, sp: 0, trigger: { id: t.id, action: index }, ...(h.branch ? { branch: `${owner}:${t.id}:${frame}:${h.branch}:${i}` } : {}) });
+            pending.push({
+              frame: frame + f, operator: owner, skillId: triggerSkillId(owner, t), hitId: h.id, sp: 0, trigger: { id: t.id, action: index },
+              ...(h.branch ? { branch: `${owner}:${t.id}:${frame}:${h.branch}:${i}` } : {}), ...(h.fixedDamage !== undefined ? { fixed: evaluate(h.fixedDamage, ec()) } : {}),
+            });
           });
         }
         st = { ...st, pending: [...st.pending, ...pending] };
@@ -1013,12 +1035,12 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   applyBuffs(true);
   // A finisher (skillSpecification 8) is multiplied by the enemy's finisher multiplier (attribute 27).
   const finisher = !hit.trigger && ctx.data.skills[hit.skillId]?.timing?.specification === 8;
-  const result = computeHit(ctx.data, build, panel, ctx.scenario.target, skill, kitHit, {
+  const result = hit.fixed !== undefined ? fixedHit(skill.skillId, kitHit, hit.fixed) : computeHit(ctx.data, build, panel, ctx.scenario.target, skill, kitHit, {
     ...damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast),
     ...(finisher ? { modifiers: [...damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast).modifiers, { zone: "multiplicative" as const, value: enemyAttr(ctx, Attr.BreakingAttackDamageTakenScalar) - 1, source: "Finisher" }] } : {}),
     situation: { ...before, consumed },
   });
-  st = { ...st, hits: [...st.hits, { ...result, count: 1, frame: hit.frame, operator: hit.operator }] };
+  st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}) }]);
   applyBuffs(false);
   if (hit.usesUp) {
     const own = st.stacks[hit.operator] ?? {};
@@ -1080,7 +1102,7 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
       // A buff a cast consumed already ended when it was consumed.
       const ended = st.buffs.filter((b) => b.expiresAt === at && b.cast === undefined);
       st = { ...st, buffs: st.buffs.filter((b) => b.expiresAt !== at) };
-      st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: at, operator: b.owner, buff: b.id, remaining: 0 })), null);
+      st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: at, operator: b.owner, buff: b.id, remaining: 0, ...(b.records ? { recorded: b.records.total } : {}) })), null);
       continue;
     }
     const due = st.pendingActions.reduce<TimelineState["pendingActions"][number] | null>((a, x) => (x.frame <= frame && (!a || x.frame < a.frame) ? x : a), null);
@@ -1247,7 +1269,11 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     pendingActions: advanced.pendingActions.filter((x) => !(x.cast && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame)),
     buffs: advanced.buffs.filter((b) => !endsNow.includes(b)),
   };
-  const endsNowEvents: BattleEvent[] = [...new Map(endsNow.map((b) => [b.id, { type: "buffEnded" as const, frame, operator, buff: b.id, remaining: remainingOf(endsNow.filter((x) => x.id === b.id), frame) }])).values()];
+  const endsNowEvents: BattleEvent[] = [...new Map(endsNow.map((b) => {
+    const same = endsNow.filter((x) => x.id === b.id);
+    const recorded = recordedOf(same);
+    return [b.id, { type: "buffEnded" as const, frame, operator, buff: b.id, remaining: remainingOf(same, frame), ...(recorded !== undefined ? { recorded } : {}) }];
+  })).values()];
   const skill = kitSkill(ctx, operator, skillId);
   const full = skillCosts(ctx, operator, skillId);
   const costs = followUp ? { ...full, spCost: 0, energyCost: 0, cooldownFrames: 0 } : full;

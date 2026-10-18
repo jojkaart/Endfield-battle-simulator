@@ -159,6 +159,19 @@
           "blocksEnergy": {
             "type": "boolean",
             "description": "While active, its owner gains no ultimate energy (RefrainObtainUsp)."
+          },
+          "records": {
+            "type": "object",
+            "required": [
+              "rate"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "rate": {
+                "$ref": "#/$defs/valueExpr"
+              }
+            },
+            "description": "Enemy buffs only: records rate × the damage of every hit on its target while active (anyone's; reactions and ticks included, Fixed DMG not). buffEnded triggers read the total as {eventRecorded: true}."
           }
         }
       }
@@ -2236,6 +2249,38 @@
         {
           "type": "object",
           "required": [
+            "eventRecorded"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "eventRecorded": {
+              "const": true,
+              "description": "The damage the recording buff of a buffEnded event recorded (KitBuff records)."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "talent",
+            "key"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "talent": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "0-based, as in a build's talents."
+            },
+            "key": {
+              "type": "string",
+              "description": "A value of the buff or skill the talent attaches at the build's level of it (0 while not learned)."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
             "targetsHit"
           ],
           "additionalProperties": false,
@@ -2521,6 +2566,10 @@
         "branch": {
           "type": "string",
           "description": "Alternatives of one landing (an IfElse): hits sharing a branch are judged together on the situation before any of them lands; the first in kit order whose if holds lands."
+        },
+        "fixedDamage": {
+          "$ref": "#/$defs/valueExpr",
+          "description": "Fixed DMG (SkillData damageType 8): the hit deals exactly this value, no ATK, zones, crit, DEF, RES or Staggered multiplier; scale is []. A triggered hit's value is judged when its trigger fires (e.g. {eventRecorded: true})."
         }
       }
     }

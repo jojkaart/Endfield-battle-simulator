@@ -80,6 +80,10 @@ export type ValueExpr =
   | { readonly eventCount: true }
   /** Seconds the ended buff of a `buffEnded` event had left (0 when it ran out): an extension that follows a pause cut short. */
   | { readonly eventRemaining: true }
+  /** The damage a recording buff of a `buffEnded` event recorded (KitBuff.records): Si's Artful Intent. */
+  | { readonly eventRecorded: true }
+  /** A value of a talent's attached buff or skill at the build's talent level (0-based talent, as in Build.talents); 0 while not learned. */
+  | { readonly talent: number; readonly key: string }
   /** Targets the hit (or the triggering hit) reached: 1 until fights have several enemies. */
   | { readonly targetsHit: true }
   /** The operator's own stack count (e.g. the room left: max − count). */
@@ -94,6 +98,17 @@ export function talentLevel(data: GameData, build: Build, i: number): number {
   const index = [...new Set(op?.talentNodes.map((n) => n.index) ?? [])].sort((a, b) => a - b)[i];
   if (index === undefined) return 0;
   return build.talents?.[i] ?? Math.max(...(op?.talentNodes ?? []).filter((n) => n.index === index).map((n) => n.level));
+}
+
+/** The buff or skill a talent attaches at the build's level of it, or null while it isn't learned. */
+export function talentSource(data: GameData, build: Build, i: number): string | null {
+  const level = talentLevel(data, build, i);
+  if (level === 0) return null;
+  const op = data.operators[build.operator];
+  const index = [...new Set(op?.talentNodes.map((n) => n.index) ?? [])].sort((a, b) => a - b)[i];
+  const node = op?.talentNodes.find((n) => n.index === index && n.level === level);
+  const e = node?.effects.find((x) => x.kind === "buff" || x.kind === "skill");
+  return e?.kind === "buff" ? e.buffId : e?.kind === "skill" ? e.skillId : null;
 }
 
 /** What a predicate or value is evaluated against. Fields left out are unknown. */
@@ -112,6 +127,8 @@ export interface EvalContext {
   readonly eventCount?: number;
   /** ValueExpr `eventRemaining`, in seconds. */
   readonly eventRemaining?: number;
+  /** ValueExpr `eventRecorded`. */
+  readonly eventRecorded?: number;
   /** The controlled operator. */
   readonly controlled?: string;
   /** Whether the enemy is Staggered. */
@@ -186,6 +203,10 @@ function and3(v: readonly (boolean | undefined)[]): boolean | undefined {
 export function evaluate(v: ValueExpr, c: EvalContext): number {
   if (typeof v === "number") return v;
   if (typeof v === "string") return c.skillValue(c.skillId, v);
+  if ("talent" in v) {
+    const source = talentSource(c.data, c.build, v.talent);
+    return source === null ? 0 : c.skillValue(source, v.key);
+  }
   if ("key" in v) return c.skillValue(v.skill ?? c.skillId, v.key);
   if ("sum" in v) return v.sum.reduce((s: number, x) => s + evaluate(x, c), 0);
   if ("product" in v) return v.product.reduce((s: number, x) => s * evaluate(x, c), 1);
@@ -195,6 +216,10 @@ export function evaluate(v: ValueExpr, c: EvalContext): number {
   if ("consumed" in v) {
     if (c.consumed === undefined) throw new Error("value needs the consumed infliction stacks, which aren't known here");
     return c.consumed;
+  }
+  if ("eventRecorded" in v) {
+    if (c.eventRecorded === undefined) throw new Error("value needs the damage a buff recorded, which only a buffEnded trigger on a recording buff has");
+    return c.eventRecorded;
   }
   if ("eventRemaining" in v) {
     if (c.eventRemaining === undefined) throw new Error("value needs the time left of an ended buff, which only a buffEnded trigger has");
@@ -219,12 +244,22 @@ export function evaluate(v: ValueExpr, c: EvalContext): number {
 }
 
 /** Every skill key a value or predicate names, with its skill (default: the one in context), for the loader to check. */
-export function valueKeys(v: ValueExpr, skillId: string): { skill: string; key: string }[] {
+/**
+ * The value keys an expression reads, with their sources; a talent value
+ * reads its key from each source the talent attaches at some level
+ * (`talentSources`; none known: an error).
+ */
+export function valueKeys(v: ValueExpr, skillId: string, talentSources?: (talent: number) => readonly string[]): { skill: string; key: string }[] {
   if (typeof v === "number") return [];
   if (typeof v === "string") return [{ skill: skillId, key: v }];
+  if ("talent" in v) {
+    const sources = talentSources?.(v.talent) ?? [];
+    if (sources.length === 0) throw new Error(`no talent ${v.talent} to read ${v.key} from`);
+    return sources.map((skill) => ({ skill, key: v.key }));
+  }
   if ("key" in v) return [{ skill: v.skill ?? skillId, key: v.key }];
   const parts = "sum" in v ? v.sum : "product" in v ? v.product : "min" in v ? v.min : "max" in v ? v.max : "if" in v ? [v.then, ...(v.else !== undefined ? [v.else] : [])] : [];
-  return parts.flatMap((x) => valueKeys(x, skillId));
+  return parts.flatMap((x) => valueKeys(x, skillId, talentSources));
 }
 
 /** Own stacks and buffs a predicate names, for the loader to check. */

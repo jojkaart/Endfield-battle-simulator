@@ -28,7 +28,7 @@ export interface DamageOptions {
 }
 
 /** The parts of an EvalContext that describe the moment rather than the build. */
-export type Situation = Partial<Pick<EvalContext, "team" | "enemy" | "stacks" | "buffActive" | "consumed" | "eventCount" | "eventRemaining" | "controlled" | "staggered" | "enemyModifiers" | "owner" | "eventOperator">>;
+export type Situation = Partial<Pick<EvalContext, "team" | "enemy" | "stacks" | "buffActive" | "consumed" | "eventCount" | "eventRemaining" | "eventRecorded" | "controlled" | "staggered" | "enemyModifiers" | "owner" | "eventOperator">>;
 
 /** The context kit predicates and values are evaluated in, for a build's skill. */
 export function evalContext(data: GameData, build: Build, panel: StatPanel, skillId: string, situation: Situation = {}): EvalContext {
@@ -321,6 +321,12 @@ function reactionScaleParts(
   ];
 }
 
+/** A Fixed DMG hit (KitHit.fixedDamage): exactly its value, every zone ×1. */
+export function fixedHit(skillId: string, hit: KitHit, value: number): HitDamage {
+  const zones: Zones = { atk: 1, scale: 1, damageBonus: 1, crit: 1, amp: 1, susceptibility: 1, damageTaken: 1, multiplicative: 1, stagger: 1, defense: 1, resistance: 1 };
+  return { skillId, hitId: hit.id, label: hit.label, count: hit.count, element: hit.element, scaleParts: [{ key: "fixed", value }], zones, modifiers: [], exact: value, damage: roundDamage(value) };
+}
+
 /** A kit hit: its multiplier is the product of its skill's blackboard values (and its literal factor). */
 export function computeHit(
   data: GameData,
@@ -334,6 +340,7 @@ export function computeHit(
 ): HitDamage {
   const ec = evalContext(data, build, panel, skill.skillId, options.situation);
   if (hit.if && !decide(hit.if, ec, options.assumeUnknown)) throw new EngineError(`${skill.skillId} ${hit.id} doesn't happen in this situation (${JSON.stringify(hit.if)})`);
+  if (hit.fixedDamage !== undefined) return fixedHit(skill.skillId, hit, evaluate(hit.fixedDamage, ec));
   const extra = (hit.extraScale ?? []).filter((x) => decide(x.if, ec, options.assumeUnknown));
   const scaleParts = [
     ...(hit.reaction ? reactionScaleParts(data, build, panel, { kind: hit.reaction.kind, element: hit.reaction.element, stacks: hit.reaction.level ?? 1 }, options) : []),

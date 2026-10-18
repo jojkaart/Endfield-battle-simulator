@@ -337,6 +337,12 @@ Most first-round gaps are now expressible; what's left, by family:
   events carry the time left, `{eventRemaining: true}`, so an extension
   can follow a pause cut short. V9: a combo's cast event carries its
   window count. A7: `controlImmune` targets.
+- N2 (Si's damage record): an enemy buff with `records: {rate}` adds
+  rate × every hit on its target while active (anyone's, reactions and
+  ticks included, Fixed DMG not); `buffEnded` carries the total,
+  `{eventRecorded: true}` reads it, and a hit with `fixedDamage` deals a
+  value exactly (no zones). Si R4: `{talent: i, key}` reads a talent's
+  buff at the build's level (0 while unlearned).
 - Not done in this batch: A6 reacting inflictions for "applies Arts
   Infliction" (Arcane R3's open question) stay excluded from
   `inflictionApplied`.

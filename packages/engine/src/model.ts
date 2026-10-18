@@ -277,6 +277,12 @@ export interface KitHit {
   readonly poiseControlledOnly?: boolean;
   /** Lands even if the skill is interrupted before it: a projectile or ability entity already on its way. */
   readonly detached?: boolean;
+  /**
+   * Fixed DMG: the hit deals exactly this value (no ATK, zones, crit, DEF,
+   * RES or Staggered multiplier; SkillData damageType 8), and `scale` is
+   * empty. A triggered hit's value is judged when its trigger fires.
+   */
+  readonly fixedDamage?: ValueExpr;
   /** Whom the hit heals (an event for heal triggers; amounts aren't modelled). */
   readonly heals?: Exclude<HealTarget, "eventOperator">;
 }
@@ -361,6 +367,13 @@ export interface KitBuff {
    * Applied while its owner isn't in a skill, it isn't applied.
    */
   readonly endsWithCast?: boolean;
+  /**
+   * An enemy buff that records `rate` × the damage of every hit on its
+   * target while active, from anyone (reactions and ticks included, Fixed
+   * DMG hits not); `buffEnded` triggers read the total as
+   * `{eventRecorded: true}`. Si's Artful Intent (unique: kit-unique.md).
+   */
+  readonly records?: { readonly rate: ValueExpr };
   /**
    * Instances in the same group don't add up, whoever applied them: only the
    * strongest of each modifier counts. Set by the data loader from the game

@@ -34,8 +34,8 @@ export type BattleEvent =
   | { readonly type: "status"; readonly frame: number; readonly operator: string; readonly event: StatusEvent; readonly fromKind: SkillType | "none"; readonly cast?: number }
   /** `operator` applied one of its kit buffs; `categories`: what the buff is (BuffCategory). */
   | { readonly type: "buffApplied"; readonly frame: number; readonly operator: string; readonly buff: string; readonly categories: readonly BuffCategory[] }
-  /** `remaining`: frames it had left when it ended (0 when it ran out). */
-  | { readonly type: "buffEnded"; readonly frame: number; readonly operator: string; readonly buff: string; readonly remaining: number }
+  /** `remaining`: frames it had left when it ended (0 when it ran out); `recorded`: what a recording buff recorded. */
+  | { readonly type: "buffEnded"; readonly frame: number; readonly operator: string; readonly buff: string; readonly remaining: number; readonly recorded?: number }
   /** A periodic tick of one of the operator's kit buffs (KitBuff.every). */
   | { readonly type: "buffTick"; readonly frame: number; readonly operator: string; readonly buff: string }
   /** `operator` healed `target` (no amounts: what matters is who, and when). */
