@@ -1,0 +1,48 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Estella with Gilberta vs Rhodagn (both builds from fixtures/zmdlogs-4e5e1390085e.json). Gilberta's battle skill inflicts Nature; Estella's battle skill adds Cryo, which consumes it and Solidifies the enemy. That triggers her combo, which applies Physical Susceptibility before its Solidified-target hit and gives her 10 energy; her ultimate and a basic chain then land under the susceptibility.",
+  "team": [
+    {
+      "operator": "chr_0021_whiten",
+      "level": 90,
+      "promotion": 4,
+      "potential": 5,
+      "skillLevels": { "basic": 12, "battle": 12, "combo": 12, "ultimate": 12 },
+      "weapon": { "id": "wpn_lance_0010", "level": 90, "skillLevels": [3, 9, 6] },
+      "gear": [
+        { "id": "item_equip_t4_suit_phy01_hand_03", "artifice": [3, 3, 3] },
+        { "id": "item_equip_t4_suit_phy01_body_01", "artifice": [3, 3, 3] },
+        { "id": "item_equip_t4_suit_phy01_edc_02", "artifice": [2, 3, 3] },
+        { "id": "item_equip_t4_suit_fire_natr01_edc_03", "artifice": [3, 0, 3] }
+      ]
+    },
+    {
+      "operator": "chr_0013_aglina",
+      "level": 90,
+      "promotion": 4,
+      "potential": 0,
+      "skillLevels": { "basic": 9, "battle": 12, "combo": 12, "ultimate": 12 },
+      "weapon": { "id": "wpn_funnel_0011", "level": 90, "skillLevels": [9, 9, 4] },
+      "gear": [
+        { "id": "item_equip_t4_suit_usp02_hand_03", "artifice": [3, 0, 2] },
+        { "id": "item_equip_t4_suit_usp02_body_01", "artifice": [3, 2, 3] },
+        { "id": "item_equip_t4_suit_usp02_edc_03", "artifice": [3, 3, 3] },
+        { "id": "item_equip_t4_suit_fire_natr01_edc_03", "artifice": [3, 2, 3] }
+      ]
+    }
+  ],
+  "target": { "enemy": "eny_0051_rodin", "level": 90 },
+  "startEnergy": { "chr_0021_whiten": 40 },
+  "durationSeconds": 20,
+  "crit": "expected",
+  "rotation": [
+    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_normal_skill" },
+    { "operator": "chr_0021_whiten", "skill": "chr_0021_whiten_normal_skill", "at": 3.7 },
+    { "operator": "chr_0021_whiten", "skill": "chr_0021_whiten_combo_skill" },
+    { "operator": "chr_0021_whiten", "skill": "chr_0021_whiten_ultimate_skill" },
+    { "operator": "chr_0021_whiten", "skill": "chr_0021_whiten_attack1" },
+    { "operator": "chr_0021_whiten", "skill": "chr_0021_whiten_attack2" },
+    { "operator": "chr_0021_whiten", "skill": "chr_0021_whiten_attack3" },
+    { "operator": "chr_0021_whiten", "skill": "chr_0021_whiten_attack4" }
+  ]
+}
