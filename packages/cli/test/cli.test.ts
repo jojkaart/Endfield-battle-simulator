@@ -4,7 +4,8 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "../src/index.ts";
-import { boundarySubsets } from "../src/logcheck.ts";
+import { boundarySubsets, logModifiers, teamStackCaps } from "../src/logcheck.ts";
+import type { StatPanel } from "@efsim/engine";
 import { formatCensus, kitCensus } from "../src/census.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -73,5 +74,18 @@ describe("kit census", () => {
     expect(census.get("chr_0016_laevat")?.get("kit.stacks")).toBe(1);
     expect(census.get("chr_0013_aglina")?.get("applies.infliction")).toBeGreaterThan(0);
     expect(formatCensus(census)).toMatch(/hit\.frames \*/);
+  });
+});
+
+describe("log check: stack caps the applying skill sets", () => {
+  it("finds the cap in the team's sources and counts at most that many instances", () => {
+    const panel = { sources: { passive_equipsuit_spellburst01: { max_stack: 3 } } } as unknown as StatPanel;
+    const caps = teamStackCaps([panel]);
+    expect(caps("buff_equipsuit_spellburst_01_physpellup", "max_stack")).toBe(3);
+    expect(caps("buff_wpn_lance_0014_damageup", "max_stack")).toBeNull();
+    const e = { buff: "buff_equipsuit_spellburst_01_physpellup", zone: "artsIntensity", element: null, value: 16 };
+    const four = [e, e, e, e] as unknown as Parameters<typeof logModifiers>[0];
+    expect(logModifiers(four, null, caps).length).toBe(3);
+    expect(logModifiers(four).length).toBe(4);
   });
 });

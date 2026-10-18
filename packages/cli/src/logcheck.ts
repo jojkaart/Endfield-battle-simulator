@@ -83,7 +83,26 @@ function reaches(buffId: string, category: HitCategory | null): boolean {
  * strongest instance, and a buff with a literal maximum stack count counts at
  * most that many.
  */
-function countedInstances(effects: readonly LogEffect[]): LogEffect[] {
+/** A cap the applying skill sets (BuffData useMaxStackCntKey), when the checker can find that skill: null if not. */
+export type StackCap = (buffId: string, key: string) => number | null;
+
+/**
+ * Caps from the team's sources: the skill that applies a buff is taken to be
+ * the source whose ID, without its `sk_` / `passive_` prefix and
+ * underscores, starts the buff's ID without `buff_` (passive_equipsuit_spellburst01
+ * → buff_equipsuit_spellburst_01_physpellup; sk_wpn_lance_0014 →
+ * buff_wpn_lance_0014_damageup).
+ */
+export function teamStackCaps(panels: readonly StatPanel[]): StackCap {
+  const norm = (id: string) => id.replace(/^(sk_|passive_|buff_)/, "").replace(/_/g, "");
+  return (buffId, key) => {
+    const b = norm(buffId);
+    for (const p of panels) for (const [id, bb] of Object.entries(p.sources)) if (b.startsWith(norm(id)) && bb[key] !== undefined) return bb[key] as number;
+    return null;
+  };
+}
+
+function countedInstances(effects: readonly LogEffect[], cap: StackCap = () => null): LogEffect[] {
   const groups = new Map<string, LogEffect[]>();
   for (const e of effects) {
     // Strongest-only buffs of different files with one stacking key are one buff (BuffData stackingKey).
@@ -95,14 +114,15 @@ function countedInstances(effects: readonly LogEffect[]): LogEffect[] {
   for (const g of groups.values()) {
     const stacking = buffFile((g[0] as LogEffect).buff)?.stacking;
     const sorted = [...g].sort((a, b) => b.value - a.value);
-    const limit = stacking?.type === 1 ? 1 : (stacking?.maxStacks ?? sorted.length);
+    const keyed = stacking?.maxStacksKey ? cap((g[0] as LogEffect).buff, stacking.maxStacksKey) : null;
+    const limit = stacking?.type === 1 ? 1 : (stacking?.maxStacks ?? keyed ?? sorted.length);
     out.push(...sorted.slice(0, limit));
   }
   return out;
 }
 
-export function logModifiers(effects: readonly LogEffect[], category: HitCategory | null = null): Modifier[] {
-  return countedInstances(effects.filter((e) => reaches(e.buff, category))).map((e) => {
+export function logModifiers(effects: readonly LogEffect[], category: HitCategory | null = null, cap?: StackCap): Modifier[] {
+  return countedInstances(effects.filter((e) => reaches(e.buff, category)), cap).map((e) => {
     const skillType = buffSkillType(e.buff);
     return {
       zone: e.zone,
@@ -187,6 +207,7 @@ function candidates(hit: LogHit, panels: ReadonlyMap<string, { panel: StatPanel 
 export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
   const panels = new Map(fx.team.map((b) => [b.operator, { build: b, panel: computeStats(data, b) }]));
   const target = { enemy: fx.enemy.id, level: fx.enemy.level };
+  const caps = teamStackCaps([...panels.values()].map((m) => m.panel));
   return fx.hits.map((hit): HitVerdict => {
     const member = panels.get(hit.operator);
     const reaction = parseReactionEvent(hit.event);
@@ -197,7 +218,7 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
     const predicted: number[] = [];
     for (const c of candidates(hit, panels, stackOptions)) {
       const options = (category: HitCategory) => ({
-        crit: c.crit ? ("always" as const) : ("never" as const), staggered: false, conditions: [], modifiers: [...logModifiers(c.effects, category), ...c.extra],
+        crit: c.crit ? ("always" as const) : ("never" as const), staggered: false, conditions: [], modifiers: [...logModifiers(c.effects, category, caps), ...c.extra],
       });
       const results = reaction
         ? [{ label: null, r: computeReaction(data, member.build, member.panel, target, { ...reaction, stacks: c.stacks }, options(reaction.kind)) }]

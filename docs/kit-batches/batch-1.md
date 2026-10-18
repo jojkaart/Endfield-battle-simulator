@@ -231,3 +231,10 @@ Then re-analysis of all seven.
   with a `statusConsumed` event (Liino's combo trigger half). The schema
   now also lists the `eventCount` / `targetsHit` values the V2 commit
   added to the engine.
+- L1: the log checker caps buffs whose maximum the applying skill sets
+  (BuffData `useMaxStackCntKey`) from the team's sources (Typhoeus G18).
+  Event-key aliases and keys by branch need no tooling: a kit hit's
+  `events` lists every key it's logged under (Valiant's
+  `chr_0015_lifeng_ultimate_skill` goes in its equipment kit). Open: the
+  ×1.42 of reactions logged as `buff_common_<element>_triggered` (Arcane
+  G15) is unexplained.
