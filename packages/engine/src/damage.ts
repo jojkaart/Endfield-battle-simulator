@@ -8,7 +8,8 @@ import { STAGGER_DAMAGE_TAKEN } from "./constants.ts";
 import { applies, attrModifier, zoneProduct, zoneSum, type HitContext, type HitKind, type Modifier, type Zone } from "./effects.ts";
 import { EngineError } from "./errors.ts";
 import type { Condition, GameData, KitHit, KitSkill } from "./model.ts";
-import { artsIntensityDamage, artsLevelCoefficient, reactionBase, type ArtsElement, type ReactionKind } from "./reactions.ts";
+import { artsIntensityDamage, artsLevelCoefficient, reactionBase, type ReactionKind } from "./reactions.ts";
+import { evaluate, test, type EvalContext, type Predicate } from "./expr.ts";
 import { computeStats, skillLevel, type StatPanel } from "./stats.ts";
 
 export type CritMode = "never" | "always" | "expected";
@@ -20,8 +21,26 @@ export interface DamageOptions {
   readonly conditions: readonly string[];
   /** Further active buffs and debuffs, e.g. from a battle log or the timeline. */
   readonly modifiers?: readonly Modifier[];
-  /** The enemy's infliction when the hit lands, for hits whose scale depends on it (KitHit.scaleIf); unknown when absent. */
-  readonly enemyInfliction?: ArtsElement | null;
+  /** What's known about the moment of the hit, for kit predicates (KitHit.if, extraScale); unknown parts are left out. */
+  readonly situation?: Situation;
+  /** What a predicate the situation can't decide counts as (the log checker tries both); default: an error. */
+  readonly assumeUnknown?: boolean;
+}
+
+/** The parts of an EvalContext that describe the moment rather than the build. */
+export type Situation = Partial<Pick<EvalContext, "team" | "enemy" | "stacks" | "buffActive" | "consumed">>;
+
+/** The context kit predicates and values are evaluated in, for a build's skill. */
+export function evalContext(data: GameData, build: Build, panel: StatPanel, skillId: string, situation: Situation = {}): EvalContext {
+  return { data, build, panel, skillId, ...situation, skillValue: (s, k) => skillValue(data, panel, build, s, k) };
+}
+
+/** A predicate's verdict; `assume` decides what an unknown one counts as (undefined: error). */
+export function decide(p: Predicate, c: EvalContext, assume?: boolean): boolean {
+  const v = test(p, c);
+  if (v !== undefined) return v;
+  if (assume === undefined) throw new EngineError(`a kit condition can't be decided here: ${JSON.stringify(p)}`);
+  return assume;
 }
 
 export const DEFAULT_DAMAGE_OPTIONS: DamageOptions = { crit: "expected", staggered: false, conditions: [] };
@@ -243,16 +262,12 @@ export function computeDamage(
   };
 }
 
-/** Whether a panel meets a `when` condition (one attribute at least another), e.g. Arcane's INT mode. */
-export function whenAllows(when: KitHit["when"], panel: StatPanel): boolean {
-  if (!when) return true;
-  const [a, b] = when.attrAtLeast;
-  return (panel.attrs[a]?.total ?? 0) >= (panel.attrs[b]?.total ?? 0);
-}
-
-/** Whether a kit hit exists for this build (KitHit.when). */
-export function hitAvailable(hit: KitHit, panel: StatPanel): boolean {
-  return whenAllows(hit.when, panel);
+/**
+ * Whether a kit hit can happen (KitHit.if): false only when the situation
+ * rules it out; a condition the situation doesn't decide counts as possible.
+ */
+export function hitAvailable(data: GameData, build: Build, panel: StatPanel, skillId: string, hit: KitHit, situation: Situation = {}): boolean {
+  return !hit.if || test(hit.if, evalContext(data, build, panel, skillId, situation)) !== false;
 }
 
 /** A reaction's own multiplier parts: base by kind and level, operator level, Arts Intensity. */
@@ -282,11 +297,13 @@ export function computeHit(
   hit: KitHit,
   options: DamageOptions = DEFAULT_DAMAGE_OPTIONS,
 ): HitDamage {
-  if (!hitAvailable(hit, panel)) throw new EngineError(`${skill.skillId} ${hit.id} doesn't exist for this build (needs attribute ${hit.when?.attrAtLeast[0]} ≥ ${hit.when?.attrAtLeast[1]})`);
-  const keys = [...hit.scale, ...(hit.scaleIf && options.enemyInfliction === hit.scaleIf.enemyInfliction ? [hit.scaleIf.key] : [])];
+  const ec = evalContext(data, build, panel, skill.skillId, options.situation);
+  if (hit.if && !decide(hit.if, ec, options.assumeUnknown)) throw new EngineError(`${skill.skillId} ${hit.id} doesn't happen in this situation (${JSON.stringify(hit.if)})`);
+  const extra = (hit.extraScale ?? []).filter((x) => decide(x.if, ec, options.assumeUnknown));
   const scaleParts = [
     ...(hit.reaction ? reactionScaleParts(data, build, panel, { kind: hit.reaction.kind, element: hit.reaction.element, stacks: hit.reaction.level ?? 1 }, options) : []),
-    ...keys.map((key) => ({ key, value: skillValue(data, panel, build, skill.skillId, key) })),
+    ...hit.scale.map((key) => ({ key, value: skillValue(data, panel, build, skill.skillId, key) })),
+    ...extra.map((x) => ({ key: typeof x.value === "string" ? x.value : JSON.stringify(x.value), value: evaluate(x.value, ec) })),
     ...(hit.factor !== undefined ? [{ key: "factor", value: hit.factor }] : []),
   ];
   const bonuses = (hit.bonuses ?? []).map((b): Modifier => ({ zone: b.zone, value: skillValue(data, panel, build, skill.skillId, b.key), source: `${skill.skillId} ${b.key}` }));
@@ -330,5 +347,7 @@ export function computeReaction(
 export function computeKit(data: GameData, build: Build, panel: StatPanel, target: DamageTarget, options: DamageOptions = DEFAULT_DAMAGE_OPTIONS): HitDamage[] {
   const kit = data.kits.operators[build.operator];
   if (!kit) throw new EngineError(`no kit for ${build.operator} yet`);
-  return kit.skills.flatMap((s) => s.hits.filter((h) => hitAvailable(h, panel)).map((h) => computeHit(data, build, panel, target, s, h, options)));
+  // Every hit the build can have, each in the situation it's written for: conditions the options don't decide count as met.
+  const opts = { assumeUnknown: true, ...options };
+  return kit.skills.flatMap((s) => s.hits.filter((h) => hitAvailable(data, build, panel, s.skillId, h, opts.situation)).map((h) => computeHit(data, build, panel, target, s, h, opts)));
 }

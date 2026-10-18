@@ -3,7 +3,7 @@
 // the bursts and reactions it predicts with the ones the log records. Logs
 // don't record inflictions, so this is how a kit's `applies` gets verified.
 
-import { applyToEnemy, expireStatus, FPS, hitEffects, NO_STATUS, statusEventKey, type GameData, type KitHit, type StatusEvent } from "@efsim/engine";
+import { applyToEnemy, computeStats, expireStatus, FPS, hitAvailable, hitEffects, NO_STATUS, statusEventKey, type GameData, type KitHit, type StatusEvent } from "@efsim/engine";
 import type { LogFixture } from "@efsim/data";
 
 /**
@@ -35,8 +35,14 @@ function sameKey(logged: string, predicted: StatusEvent): boolean {
   return logged === key || (predicted.kind === "reaction" && logged === `buff_common_${predicted.element}_triggered`);
 }
 
-function kitHit(data: GameData, operator: string, event: string): KitHit | null {
-  for (const s of data.kits.operators[operator]?.skills ?? []) for (const h of s.hits) if (h.events.includes(event)) return h;
+/** The kit hit a logged event is, among those this build can have (modes: KitHit.if). */
+function kitHit(data: GameData, fixture: LogFixture, operator: string, event: string): KitHit | null {
+  const build = fixture.team.find((b) => b.operator === operator);
+  if (!build) return null;
+  const panel = computeStats(data, build);
+  for (const s of data.kits.operators[operator]?.skills ?? []) {
+    for (const h of s.hits) if (h.events.includes(event) && hitAvailable(data, build, panel, s.skillId, h, { team: fixture.team })) return h;
+  }
   return null;
 }
 
@@ -46,7 +52,7 @@ export function checkReactions(data: GameData, fixture: LogFixture): ReactionChe
   const team = fixture.team.map((b) => b.operator);
   const predicted: { predicted: StatusEvent; t: number }[] = [];
   for (const h of hits) {
-    const kh = kitHit(data, h.operator, h.event);
+    const kh = kitHit(data, fixture, h.operator, h.event);
     if (!kh) continue;
     const frame = (h.t * FPS) / 1000;
     // Only the controlled operator does basic attacks, so a logged Final Strike counts for Final Strike triggers.

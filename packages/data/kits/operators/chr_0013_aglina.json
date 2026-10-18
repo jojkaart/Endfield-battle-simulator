@@ -213,9 +213,7 @@
           "frames": [
             48
           ],
-          "energy": {
-            "key": "usp"
-          },
+          "energy": "usp",
           "note": "Ultimate energy: ObtainCostAction costType 0 `usp` (10 at every level) in the damage frame. Matches with the boundary buffs: the cast triggers her weapon's buff_wpn_funnel_0011_valid (logged as starting at the hit) before the damage. The physical hits logged at the same time (buff_physical_airborne: the Lift it applies; buff_equipsuit_physuit_01: a gear-set proc) aren't kit hits, and Lift isn't modelled."
         }
       ]

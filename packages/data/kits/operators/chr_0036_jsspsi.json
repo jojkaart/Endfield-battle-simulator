@@ -14,14 +14,31 @@
       "id": "ultimate_amp",
       "label": "Ultimate: Cryo and Heat Amp",
       "target": "team",
-      "duration": { "key": "enhance_duration" },
-      "modifiers": [{ "zone": "amp", "value": { "key": "enhance_final" }, "elements": ["cryst", "fire"] }],
+      "duration": "enhance_duration",
+      "modifiers": [
+        {
+          "zone": "amp",
+          "value": "enhance_final",
+          "elements": [
+            "cryst",
+            "fire"
+          ]
+        }
+      ],
       "note": "Description: Si \"grants temporary Cryo Amp and Heat Amp to the entire team.\" buff_chr_0036_jsspsi_atk_buff_2 (CreateBuffAction at ultimate entity frame 62 on every team member, assigning enhance_final and duration = enhance_duration): two enabled EnhancedActions of rate enhance_final, logged as buff_common_affixes_enhance_crystal and buff_common_affixes_enhance_fire (amp 0.432 at level 12 and P3 in zmdlogs-40d9a3c1da37, 0.36 at P1 in zmdlogs-b7b3762d5da8)."
     }
   ],
   "comboTriggers": [
     {
-      "any": [{ "on": "inflictionConsumed", "elements": ["cryst", "fire"] }],
+      "any": [
+        {
+          "on": "inflictionConsumed",
+          "elements": [
+            "cryst",
+            "fire"
+          ]
+        }
+      ],
       "note": "CharGrowthTable: \"COMBO TRIGGER: When an enemy's Cryo Infliction or Heat Infliction is consumed or absorbed.\" A reaction that consumes the infliction counts (zmdlogs-bdf223db8e49: Si's battle skill at 2140 ms, a Cryo burst at 7371 ms, Lizhiyan's Nature reaction on the Cryo, buff_common_natural_triggered, at 8152 ms, Si's combo at 11940 ms, inside the 6 s window), and so does Laevatain's Final Strike absorption of Heat (a consumption by her team trigger)."
     }
   ],
@@ -33,8 +50,34 @@
       "durationFrames": 170,
       "note": "durationFrame 170; the chain allows attack 2 from frame 20.",
       "hits": [
-        { "id": "hit1", "label": "Basic attack 1, hit 1", "scale": ["atk_scale1"], "frames": [6], "events": ["chr_0036_jsspsi_attack1"], "note": "Logged as chr_0036_jsspsi_attack1; matches in zmdlogs-40d9a3c1da37 (t=9147, 9334). Unmapped: see sources (Corrosion tick vs log timestamp in zmdlogs-0eef2474a26f t=4646)." },
-        { "id": "hit2", "label": "Basic attack 1, hit 2", "scale": ["atk_scale2"], "frames": [15], "events": ["chr_0036_jsspsi_attack1"], "note": "Same event key as hit 1 (atk_scale1 = atk_scale2 at every level)." }
+        {
+          "id": "hit1",
+          "label": "Basic attack 1, hit 1",
+          "scale": [
+            "atk_scale1"
+          ],
+          "frames": [
+            6
+          ],
+          "events": [
+            "chr_0036_jsspsi_attack1"
+          ],
+          "note": "Logged as chr_0036_jsspsi_attack1; matches in zmdlogs-40d9a3c1da37 (t=9147, 9334). Unmapped: see sources (Corrosion tick vs log timestamp in zmdlogs-0eef2474a26f t=4646)."
+        },
+        {
+          "id": "hit2",
+          "label": "Basic attack 1, hit 2",
+          "scale": [
+            "atk_scale2"
+          ],
+          "frames": [
+            15
+          ],
+          "events": [
+            "chr_0036_jsspsi_attack1"
+          ],
+          "note": "Same event key as hit 1 (atk_scale1 = atk_scale2 at every level)."
+        }
       ]
     },
     {
@@ -43,7 +86,20 @@
       "damageType": "basic",
       "durationFrames": 205,
       "note": "durationFrame 205; attack 3 allowed from frame 13.",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [5], "events": ["chr_0036_jsspsi_attack2"] }]
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            5
+          ],
+          "events": [
+            "chr_0036_jsspsi_attack2"
+          ]
+        }
+      ]
     },
     {
       "skillId": "chr_0036_jsspsi_attack3",
@@ -51,7 +107,21 @@
       "damageType": "basic",
       "durationFrames": 160,
       "note": "durationFrame 160; attack 4 allowed from frame 12.",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [9], "events": ["chr_0036_jsspsi_attack3"], "note": "Logged as chr_0036_jsspsi_attack3; zmdlogs-0eef2474a26f t=5659 (2.04 s into Corrosion) shows 1 tick, the floor-of-seconds model says 2. Unmapped until the log check allows for timestamp granularity." }]
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            9
+          ],
+          "events": [
+            "chr_0036_jsspsi_attack3"
+          ],
+          "note": "Logged as chr_0036_jsspsi_attack3; zmdlogs-0eef2474a26f t=5659 (2.04 s into Corrosion) shows 1 tick, the floor-of-seconds model says 2. Unmapped until the log check allows for timestamp granularity."
+        }
+      ]
     },
     {
       "skillId": "chr_0036_jsspsi_attack4",
@@ -62,10 +132,21 @@
       "hits": [
         {
           "id": "hit",
-          "scale": ["atk_scale"],
+          "scale": [
+            "atk_scale"
+          ],
           "count": 6,
-          "frames": [5, 8, 11, 14, 17, 20],
-          "events": ["chr_0036_jsspsi_attack4"],
+          "frames": [
+            5,
+            8,
+            11,
+            14,
+            17,
+            20
+          ],
+          "events": [
+            "chr_0036_jsspsi_attack4"
+          ],
           "note": "ChannelingAction frames 5–40, at most 6 hits per target, 0.1 s apart (display_atk_scale = 6 × atk_scale). Logged as chr_0036_jsspsi_attack4 (only 3 hits in zmdlogs-0eef2474a26f; the third is stamped at the following combo cast). chr_0036_jsspsi_attack4_abilityrange (same key, ≤6 hits 0.133 s apart) isn't spawned from any fetched file and was never logged."
         }
       ]
@@ -76,7 +157,17 @@
       "damageType": "basic",
       "durationFrames": 189,
       "note": "durationFrame 189; attack 1 allowed from frame 31. Two branches, one hit either way. Not yet logged.",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [25] }]
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            25
+          ]
+        }
+      ]
     },
     {
       "skillId": "chr_0036_jsspsi_power_attack",
@@ -87,8 +178,12 @@
       "hits": [
         {
           "id": "hit",
-          "scale": ["atk_scale"],
-          "frames": [37],
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            37
+          ],
           "note": "Four BreakingAttackCalculation landings at frames 3, 12, 21, 37 carrying 7%, 10%, 13% and 70% of atk_scale (sum exactly 100%, = the 900% shown); kits can't give a hit a literal fraction yet, so this is the total at the last landing. The finisher zone isn't modelled."
         }
       ]
@@ -99,7 +194,17 @@
       "damageType": "basic",
       "durationFrames": 175,
       "note": "durationFrame 175; attack 1 allowed from frame 9. Not yet logged.",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1] }]
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            1
+          ]
+        }
+      ]
     },
     {
       "skillId": "chr_0036_jsspsi_normal_skill",
@@ -110,10 +215,21 @@
       "hits": [
         {
           "id": "hit",
-          "scale": ["atk_scale"],
-          "frames": [15],
-          "events": ["chr_0036_jsspsi_normal_skill_abilityrange_1"],
-          "applies": [{ "kind": "infliction", "element": "cryst" }],
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            15
+          ],
+          "events": [
+            "chr_0036_jsspsi_normal_skill_abilityrange_1"
+          ],
+          "applies": [
+            {
+              "kind": "infliction",
+              "element": "cryst"
+            }
+          ],
           "note": "Entity abilityentity_chr_0036_jsspsi_normal_skill_1 spawned at frame 9, its DamageAction at entity frame 6. Description (I18nTextTable_EN): \"Si deals Cryo DMG and applies Artful Intent, Immobilization, and Cryo Infliction (or Heat Infliction if a Heat element operator is in Team Position 01) on the target.\" The kit can't condition on Team Position 01 yet, so it always inflicts Cryo: wrong when a Heat operator leads (zmdlogs-40d9a3c1da37, Laevatain first: the log's Heat bursts at 7550 and 7663 ms, 0.9 s after Laevatain's and Camille's Heat hits, show Si's 6565 ms hit inflicted Heat there). Immobilization (buff_chr_0036_jsspsi_normal_skill_hitstop) is what Jade Vessel's enemy_vulnerable condition keys on."
         }
       ]
@@ -128,42 +244,71 @@
         {
           "id": "slash_first",
           "label": "Combo slash 1",
-          "scale": ["atk_scale"],
-          "frames": [14],
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            14
+          ],
           "events": [],
-          "energy": { "key": "usp" },
+          "energy": "usp",
           "note": "Separate from the other slashes only because the energy grant comes with it."
         },
         {
           "id": "slash",
           "label": "Combo slashes 2–10",
-          "scale": ["atk_scale"],
+          "scale": [
+            "atk_scale"
+          ],
           "count": 9,
-          "frames": [17, 20, 23, 26, 29, 32, 35, 38, 41],
+          "frames": [
+            17,
+            20,
+            23,
+            26,
+            29,
+            32,
+            35,
+            38,
+            41
+          ],
           "events": [],
           "note": "Logged as chr_0036_jsspsi_combo_skill_abilityrange (with the final hit). Unmapped: needs the Jade Vessel and Yinglung-set combo DMG bonuses, which logs don't list (see sources)."
         },
         {
           "id": "final_base",
           "label": "Final hit (base)",
-          "scale": ["atk_scale2"],
-          "frames": [49],
+          "scale": [
+            "atk_scale2"
+          ],
+          "frames": [
+            49
+          ],
           "events": [],
           "note": "The final hit is one hit of atk_scale2 + n × atk_scale2_1; the kit sums it from three entries at the same frame (damage is linear in the multiplier). Unmapped: shares the slashes' event key."
         },
         {
           "id": "final_stack",
           "label": "Final hit (1 consumed stack)",
-          "scale": ["atk_scale2_1"],
-          "frames": [49],
+          "scale": [
+            "atk_scale2_1"
+          ],
+          "frames": [
+            49
+          ],
           "events": [],
           "note": "One stack: the least that triggers the combo. Lower bound until the engine passes the trigger's stack count (up to 4)."
         },
         {
           "id": "final_p5",
           "label": "Final hit (P5 extra stack)",
-          "scale": ["atk_scale2_1", "potential5"],
-          "frames": [49],
+          "scale": [
+            "atk_scale2_1",
+            "potential5"
+          ],
+          "frames": [
+            49
+          ],
           "events": [],
           "note": "potential5 is 0 below P5 and 1 at P5 (PotentialTalentEffectTable adds 1), so this entry deals nothing below P5."
         }
@@ -179,26 +324,49 @@
         {
           "id": "slash_first",
           "label": "Ultimate slash 1",
-          "scale": ["atk_scale"],
-          "frames": [63],
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            63
+          ],
           "events": [],
-          "buffs": [{ "buff": "ultimate_amp", "beforeDamage": true }],
+          "buffs": [
+            {
+              "buff": "ultimate_amp",
+              "beforeDamage": true
+            }
+          ],
           "note": "Separate from the other slashes only because it applies the amp buff."
         },
         {
           "id": "slash",
           "label": "Ultimate slashes 2–8",
-          "scale": ["atk_scale"],
+          "scale": [
+            "atk_scale"
+          ],
           "count": 7,
-          "frames": [66, 70, 73, 77, 80, 84, 88],
+          "frames": [
+            66,
+            70,
+            73,
+            77,
+            80,
+            84,
+            88
+          ],
           "events": [],
           "note": "Logged as chr_0036_jsspsi_ultimate_skill_abilityrange_1; unmapped, see sources."
         },
         {
           "id": "final",
           "label": "Ultimate final strike",
-          "scale": ["atk_scale_2"],
-          "frames": [100],
+          "scale": [
+            "atk_scale_2"
+          ],
+          "frames": [
+            100
+          ],
           "events": [],
           "note": "Same event key as the slashes; zmdlogs-40d9a3c1da37 t=14327 = 4.4999 × a slash (2.16 / 0.48)."
         }

@@ -1,6 +1,6 @@
 // Damage expectations from the fixtures.
 import { describe, expect, it } from "vitest";
-import { Attr, computeHit, computeReaction, resolveValue, computeStats, conditionModifiers, EngineError, hitAvailable, roundDamage, skillValue, type Condition, type KitHit, type OperatorKit } from "@efsim/engine";
+import { Attr, computeHit, computeReaction, NO_STATUS, resolveValue, computeStats, conditionModifiers, EngineError, hitAvailable, roundDamage, skillValue, type Condition, type KitHit, type OperatorKit } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { loadFixtures } from "./fixtures.ts";
 
@@ -95,27 +95,33 @@ describe("kit hit primitives: factor, reaction hits, scaleIf, when", () => {
     expect(r.element).toBe("natural");
   });
 
-  it("scaleIf applies only when the enemy has that infliction", () => {
+  it("an extra scale applies only in its situation; unknown situations follow assumeUnknown", () => {
     if (!s || !h) throw new Error("no kit");
-    const withIf = { ...h, scaleIf: { key: "atk_scale", enemyInfliction: "natural" as const } };
+    const withIf: KitHit = { ...h, extraScale: [{ value: "atk_scale", if: { enemyInfliction: "natural" } }] };
     const v = skillValue(data, panel, fixture.build, s.skillId, "atk_scale");
-    const none = computeHit(data, fixture.build, panel, target, s, withIf, { ...opts, enemyInfliction: "fire" });
-    const yes = computeHit(data, fixture.build, panel, target, s, withIf, { ...opts, enemyInfliction: "natural" });
+    const fire = { ...NO_STATUS, infliction: { element: "fire" as const, stacks: 1, expiresAt: 600 } };
+    const nature = { ...NO_STATUS, infliction: { element: "natural" as const, stacks: 1, expiresAt: 600 } };
+    const none = computeHit(data, fixture.build, panel, target, s, withIf, { ...opts, situation: { enemy: fire } });
+    const yes = computeHit(data, fixture.build, panel, target, s, withIf, { ...opts, situation: { enemy: nature } });
     expect(yes.exact).toBeCloseTo(none.exact * v, 6);
+    expect(() => computeHit(data, fixture.build, panel, target, s, withIf, opts)).toThrow(/can't be decided/);
+    expect(computeHit(data, fixture.build, panel, target, s, withIf, { ...opts, assumeUnknown: true }).exact).toBeCloseTo(yes.exact, 6);
   });
 
-  it("a `when` hit exists only if the panel attributes allow it", () => {
+  it("a hit with `if` exists only in its situation (a mode by panel attributes)", () => {
     const str = Attr.Str;
     const intel = Attr.Wisd;
     const a = panel.attrs[str]?.total ?? 0;
     const b = panel.attrs[intel]?.total ?? 0;
-    if (!h) throw new Error("no kit");
-    expect(hitAvailable({ ...h, when: { attrAtLeast: [str, intel] } }, panel)).toBe(a >= b);
-    expect(hitAvailable({ ...h, when: { attrAtLeast: [intel, str] } }, panel)).toBe(b >= a);
+    if (!h || !s) throw new Error("no kit");
+    expect(hitAvailable(data, fixture.build, panel, s.skillId, { ...h, if: { attrAtLeast: [str, intel] } })).toBe(a >= b);
+    expect(hitAvailable(data, fixture.build, panel, s.skillId, { ...h, if: { attrAtLeast: [intel, str] } })).toBe(b >= a);
+    // Unknown (no enemy given): possible.
+    expect(hitAvailable(data, fixture.build, panel, s.skillId, { ...h, if: { enemyStatus: "solidification" } })).toBe(true);
   });
 });
 
-describe("buff values (ValueSpec)", () => {
+describe("buff values (ValueExpr)", () => {
   const { fixture } = loadFixtures()[0] as ReturnType<typeof loadFixtures>[number];
   const panel = computeStats(data, fixture.build);
   const b = fixture.build;
@@ -123,9 +129,9 @@ describe("buff values (ValueSpec)", () => {
   const k = skillValue(data, panel, b, sid, "atk_scale");
   const will = panel.attrs[Attr.Will]?.total ?? 0;
   it("is a literal, a skill value, or a skill value times an attribute, capped by another key", () => {
-    expect(resolveValue(data, b, panel, sid, { literal: 0.25 })).toBe(0.25);
-    expect(resolveValue(data, b, panel, sid, { key: "atk_scale", scale: 3 })).toBeCloseTo(3 * k, 12);
-    expect(resolveValue(data, b, panel, sid, { key: "atk_scale", timesAttr: Attr.Will })).toBeCloseTo(k * will, 9);
-    expect(resolveValue(data, b, panel, sid, { key: "atk_scale", timesAttr: Attr.Will, capKey: "atk_scale" })).toBeCloseTo(Math.min(k * will, k), 12);
+    expect(resolveValue(data, b, panel, sid, 0.25)).toBe(0.25);
+    expect(resolveValue(data, b, panel, sid, { product: ["atk_scale", 3] })).toBeCloseTo(3 * k, 12);
+    expect(resolveValue(data, b, panel, sid, { product: ["atk_scale", { attr: Attr.Will }] })).toBeCloseTo(k * will, 9);
+    expect(resolveValue(data, b, panel, sid, { min: [{ product: ["atk_scale", { attr: Attr.Will }] }, "atk_scale"] })).toBeCloseTo(Math.min(k * will, k), 12);
   });
 });

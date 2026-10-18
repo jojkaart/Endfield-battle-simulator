@@ -4,6 +4,7 @@
 import type { AttrType, Element, SkillType } from "./attributes.ts";
 import type { HitKind, Zone } from "./effects.ts";
 import type { ArtsElement } from "./reactions.ts";
+import type { Predicate, ValueExpr } from "./expr.ts";
 import type { HitApplication, ReactionStatus } from "./status.ts";
 
 /**
@@ -209,14 +210,14 @@ export interface KitHit {
   readonly factor?: number;
   /** Damage computed as an arts reaction or burst (no skill-type bonus, level coefficient, Arts Intensity), times `scale`. */
   readonly reaction?: { readonly kind: "burst" | "reaction"; readonly element: ArtsElement; readonly level?: number };
-  /** An extra scale key that applies only while the enemy has an infliction of this element when the hit lands. */
-  readonly scaleIf?: { readonly key: string; readonly enemyInfliction: ArtsElement };
-  /** The hit exists only when the build's panel attribute `attrAtLeast[0]` ≥ `attrAtLeast[1]` (e.g. Arcane's INT mode). */
-  readonly when?: { readonly attrAtLeast: readonly [AttrType, AttrType] };
+  /** Extra multipliers that apply only in a situation (e.g. Typhoeus's burst ×1.3 when the enemy has a Nature infliction as the shot lands). */
+  readonly extraScale?: readonly { readonly value: ValueExpr; readonly if: Predicate }[];
+  /** The hit happens only in this situation, judged as it lands (before its own effects): a mode (Arcane), an enemy status (Estella's combo on a Solidified target)… */
+  readonly if?: Predicate;
   /** Kit buffs (OperatorKit.buffs) this hit applies when it lands. */
   readonly buffs?: readonly BuffApplication[];
-  /** Ultimate energy the operator gains when the hit lands (SkillData ObtainCostAction, e.g. a combo's `usp`). */
-  readonly energy?: ValueSpec;
+  /** Ultimate energy the operator gains when the hit lands (SkillData ObtainCostAction, e.g. a combo's `usp`), after its own effects. */
+  readonly energy?: ValueExpr;
 }
 
 export interface BuffApplication {
@@ -225,19 +226,12 @@ export interface BuffApplication {
   readonly beforeDamage?: boolean;
 }
 
-/**
- * A number from the game data: a literal, or a skill's blackboard value at
- * the applier's level after potentials (default: the applying hit's skill),
- * optionally times one of the applier's panel attributes and capped by
- * another key (e.g. Liino's Amp = min(Will × will_up, will_max)).
- */
-export type ValueSpec =
-  | { readonly literal: number }
-  | { readonly key: string; readonly skill?: string; readonly timesAttr?: AttrType; readonly capKey?: string; readonly scale?: number };
+/** Kept for the kit loader's error messages; values are ValueExprs (expr.ts). */
+export type ValueSpec = ValueExpr;
 
 export interface KitBuffModifier {
   readonly zone: Zone;
-  readonly value: ValueSpec;
+  readonly value: ValueExpr;
   /** One modifier per listed element; any element when absent. */
   readonly elements?: readonly Element[];
   readonly skillType?: SkillType;
@@ -251,7 +245,7 @@ export interface KitBuff {
   readonly label: string;
   readonly target: "self" | "team" | "enemy";
   /** Seconds. */
-  readonly duration: ValueSpec;
+  readonly duration: ValueExpr;
   /**
    * Instances in the same group don't add up, whoever applied them: only the
    * strongest of each modifier counts. Set by the data loader from the game
@@ -281,10 +275,8 @@ export type ComboCondition =
 export interface ComboTrigger {
   /** Any of these opens the combo window. */
   readonly any: readonly ComboCondition[];
-  /** Only while the operator's own kit buff is active (e.g. Liino's Vocalist Stance). */
-  readonly whileBuff?: string;
-  /** Only for builds whose panel allows it (e.g. one of Arcane's modes). */
-  readonly when?: { readonly attrAtLeast: readonly [AttrType, AttrType] };
+  /** Only in this situation (e.g. Liino's Vocalist Stance active, one of Arcane's modes). */
+  readonly if?: Predicate;
 }
 
 /** Something an operator's kit does when any teammate's hit of a kind lands, e.g. Laevatain's talent absorbing Heat on Final Strikes. */
@@ -317,8 +309,8 @@ export interface StackRequirement {
 
 export interface StackGain {
   readonly stack: string;
-  /** A fixed amount (default 1), or the number of infliction stacks this hit consumed. */
-  readonly amount: number | "consumedInflictions";
+  /** How many, e.g. 1, or `{ consumed: true }` for the infliction stacks this hit consumed. */
+  readonly amount: ValueExpr;
 }
 
 export interface KitSkill {

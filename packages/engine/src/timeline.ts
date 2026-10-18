@@ -14,8 +14,10 @@ import type { Build } from "./build.ts";
 import {
   activeModifiers,
   computeHit,
+  decide,
+  evalContext,
   hitAvailable,
-  whenAllows,
+  type Situation,
   computeReaction,
   conditionModifiers,
   roundDamage,
@@ -27,6 +29,7 @@ import {
 import { zoneSum, type Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
 import type { ComboCondition, GameData, KitHit, KitSkill, StackGain } from "./model.ts";
+import { evaluate, test, type EvalContext } from "./expr.ts";
 import { hitEffects } from "./triggers.ts";
 import { applyBuff, buffModifiers, resolveValue, withBuff, type ActiveBuff } from "./buffs.ts";
 import { computeStats, skillLevel, skillParam, type StatPanel } from "./stats.ts";
@@ -274,7 +277,17 @@ function damageOptions(ctx: TimelineContext, operator: string, enemy: EnemyStatu
     staggered: false,
     conditions: [],
     modifiers: [...(ctx.modifiers.get(operator) ?? []), ...statusModifiers(enemy, frame), ...buffModifiers(buffs, operator, frame)],
-    enemyInfliction: expireStatus(enemy, frame).infliction?.element ?? null,
+  };
+}
+
+/** Everything the timeline knows about a moment, for an operator's kit predicates and values. */
+function situationAt(ctx: TimelineContext, operator: string, enemy: EnemyStatus, stacks: Stacks, buffs: readonly ActiveBuff[], frame: number, consumed?: number): Situation {
+  return {
+    team: ctx.scenario.team,
+    enemy: expireStatus(enemy, frame),
+    stacks: stacks[operator] ?? {},
+    buffActive: (id) => buffs.some((b) => b.id === id && b.owner === operator && b.appliedAt <= frame && b.expiresAt > frame),
+    ...(consumed !== undefined ? { consumed } : {}),
   };
 }
 
@@ -328,6 +341,7 @@ function openComboWindows(
   ctx: TimelineContext,
   st: TimelineState,
   events: readonly StatusEvent[],
+  enemy: EnemyStatus,
   stacks: Stacks,
   buffs: readonly ActiveBuff[],
   frame: number,
@@ -344,8 +358,7 @@ function openComboWindows(
     const panel = ctx.panels.get(m) as StatPanel;
     const fires = kit.comboTriggers.some(
       (t) =>
-        (!t.when || whenAllows(t.when, panel)) &&
-        (!t.whileBuff || buffs.some((x) => x.id === t.whileBuff && x.owner === m && x.appliedAt <= frame && x.expiresAt > frame)) &&
+        (!t.if || decide(t.if, evalContext(ctx.data, b, panel, kit.skills[0]?.skillId ?? "", situationAt(ctx, m, enemy, stacks, buffs, frame)))) &&
         t.any.some((c) => conditionMet(c, events, stacks[m] ?? {})),
     );
     if (fires) out = { ...out, comboWindow: { ...out.comboWindow, [m]: { from: frame, until: frame + COMBO_WINDOW_FRAMES } } };
@@ -353,13 +366,13 @@ function openComboWindows(
   return out;
 }
 
-function gainStacks(ctx: TimelineContext, stacks: Stacks, owner: string, gains: readonly StackGain[], consumed: number): Stacks {
+function gainStacks(ctx: TimelineContext, stacks: Stacks, owner: string, gains: readonly StackGain[], ec: EvalContext): Stacks {
   let out = stacks;
   for (const g of gains) {
     const def = ctx.data.kits.operators[owner]?.stacks.find((x) => x.id === g.stack);
     if (!def) throw new EngineError(`${owner} has no stack ${g.stack}`);
     const own = out[owner] ?? {};
-    const amount = g.amount === "consumedInflictions" ? consumed : g.amount;
+    const amount = evaluate(g.amount, ec);
     out = { ...out, [owner]: { ...own, [g.stack]: Math.min(def.max, (own[g.stack] ?? 0) + amount) } };
   }
   return out;
@@ -405,10 +418,13 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
     const skill = kitSkill(ctx, hit.operator, hit.skillId);
     const kitHit = skill.hits.find((h) => h.id === hit.hitId) as KitHit;
     enemy = expireStatus(enemy, hit.frame);
+    const panel = ctx.panels.get(hit.operator) as StatPanel;
+    // Its situation as it lands, before its own effects: whether it happens (KitHit.if) and its extra scale.
+    const before = situationAt(ctx, hit.operator, enemy, stacks, buffs, hit.frame);
+    if (kitHit.if && !decide(kitHit.if, evalContext(ctx.data, build, panel, hit.skillId, before))) continue;
     // What the hit applies comes first: its own damage and a reaction's initial hit already see the new status.
     const events: StatusEvent[] = [];
-    // A hit's scale can depend on the infliction it lands on (KitHit.scaleIf), before it applies or consumes anything.
-    const inflictionBefore = enemy.infliction?.element ?? null;
+    let consumedByHit = 0;
     for (const effect of hitEffects(ctx.data.kits, ctx.scenario.team.map((b) => b.operator), hit.operator, kitHit)) {
       let consumed = 0;
       const ai = artsIntensity(ctx, hit.operator);
@@ -422,27 +438,32 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
         events.push(...r.events);
         for (const e of r.events) if (e.kind === "consumed") consumed += e.stacks;
       }
-      stacks = gainStacks(ctx, stacks, effect.owner, effect.gains, consumed);
+      if (effect.own) consumedByHit += consumed;
+      const owner = ctx.builds.get(effect.owner) as Build;
+      const ownerSituation = situationAt(ctx, effect.owner, enemy, stacks, buffs, hit.frame, consumed);
+      stacks = gainStacks(ctx, stacks, effect.owner, effect.gains, evalContext(ctx.data, owner, ctx.panels.get(effect.owner) as StatPanel, hit.skillId, ownerSituation));
     }
-    const panel = ctx.panels.get(hit.operator) as StatPanel;
     const kitBuff = (id: string) => ctx.data.kits.operators[hit.operator]?.buffs.find((b) => b.id === id);
     const applyBuffs = (before: boolean) => {
       for (const a of kitHit.buffs ?? []) {
         if ((a.beforeDamage ?? false) !== before) continue;
         const def = kitBuff(a.buff);
         if (!def) throw new EngineError(`${hit.operator} has no buff ${a.buff}`);
-        buffs = withBuff(buffs, applyBuff(ctx.data, build, panel, hit.skillId, def, hit.frame));
+        buffs = withBuff(buffs, applyBuff(ctx.data, build, panel, hit.skillId, def, hit.frame, situationAt(ctx, hit.operator, enemy, stacks, buffs, hit.frame, consumedByHit)));
       }
     };
     applyBuffs(true);
     const result = computeHit(ctx.data, build, panel, ctx.scenario.target, skill, kitHit, {
       ...damageOptions(ctx, hit.operator, enemy, buffs, hit.frame),
-      enemyInfliction: inflictionBefore,
+      situation: { ...before, consumed: consumedByHit },
     });
     landed.push({ ...result, count: 1, frame: hit.frame, operator: hit.operator });
     applyBuffs(false);
-    if (kitHit.energy) st = gainEnergy(ctx, st, hit.operator, resolveValue(ctx.data, build, panel, hit.skillId, kitHit.energy), hit.frame);
-    st = openComboWindows(ctx, st, events, stacks, buffs, hit.frame, hit.operator, kitSkill(ctx, hit.operator, hit.skillId).kind);
+    if (kitHit.energy) {
+      const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.energy, situationAt(ctx, hit.operator, enemy, stacks, buffs, hit.frame, consumedByHit));
+      st = gainEnergy(ctx, st, hit.operator, amount, hit.frame);
+    }
+    st = openComboWindows(ctx, st, events, enemy, stacks, buffs, hit.frame, hit.operator, kitSkill(ctx, hit.operator, hit.skillId).kind);
     record(events, enemy);
   }
   return {
@@ -516,7 +537,8 @@ export function earliestStart(ctx: TimelineContext, state: TimelineState, action
 
 function hasComboTrigger(ctx: TimelineContext, operator: string): boolean {
   const panel = ctx.panels.get(operator) as StatPanel;
-  return (ctx.data.kits.operators[operator]?.comboTriggers ?? []).some((t) => !t.when || whenAllows(t.when, panel));
+  const build = ctx.builds.get(operator) as Build;
+  return (ctx.data.kits.operators[operator]?.comboTriggers ?? []).some((t) => !t.if || test(t.if, evalContext(ctx.data, build, panel, "", { team: ctx.scenario.team })) !== false);
 }
 
 /** Applies one rotation action at its earliest legal frame. Throws if it can't happen. */
@@ -530,7 +552,8 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
   // Hits that need stacks happen only if the stacks are there at the cast; meeting a consuming requirement uses the stack up.
   const own = s.stacks[action.operator] ?? {};
   const panel = ctx.panels.get(action.operator) as StatPanel;
-  const met = (h: KitHit) => hitAvailable(h, panel) && (!h.requires || (own[h.requires.stack] ?? 0) >= h.requires.atLeast);
+  const castSituation: Situation = { team: ctx.scenario.team, stacks: own, buffActive: (id) => s.buffs.some((b) => b.id === id && b.owner === action.operator && b.appliedAt <= start.frame && b.expiresAt > start.frame) };
+  const met = (h: KitHit) => hitAvailable(ctx.data, ctx.builds.get(action.operator) as Build, panel, skill.skillId, h, castSituation) && (!h.requires || (own[h.requires.stack] ?? 0) >= h.requires.atLeast);
   const used = new Set(skill.hits.filter((h) => h.requires?.consume && met(h)).map((h) => h.requires?.stack as string));
   const stacks = used.size ? { ...s.stacks, [action.operator]: { ...own, ...Object.fromEntries([...used].map((id) => [id, 0])) } } : s.stacks;
   const pending: PendingHit[] = [];

@@ -14,15 +14,11 @@
       "id": "vocalist_stance",
       "label": "Vocalist Stance (battle skill): team ATK",
       "target": "team",
-      "duration": {
-        "key": "music_duration"
-      },
+      "duration": "music_duration",
       "modifiers": [
         {
           "zone": "atk",
-          "value": {
-            "key": "atk_up"
-          }
+          "value": "atk_up"
         }
       ],
       "note": "SkillData chr_0035_liino_normal_skill creates buff_chr_0035_liino_normalskill_music_tag at frame 15 (duration = music_duration, 60 s, until the skill's action ends at frame 1815); its aura gives teammates buff_chr_0035_liino_atkup and Liino buff_chr_0035_liino_atkup_owner (attributeType 2 formulaItem 6: ATK +atk_up). Applied by the projectiles (frames 12-16, before their damage: the logs show atkup_owner on all six). The stance's other effects (heal, the volley, enabling the combo trigger) are tied to it; it really ends early when End Stance or the ultimate is cast, which kits can't express yet."
@@ -31,9 +27,7 @@
       "id": "cosmovoice_stance",
       "label": "Cosmovoice Stance (ultimate): team Electric and Nature Amp",
       "target": "team",
-      "duration": {
-        "key": "ultmusic_duration"
-      },
+      "duration": "ultmusic_duration",
       "modifiers": [
         {
           "zone": "amp",
@@ -42,9 +36,17 @@
             "natural"
           ],
           "value": {
-            "key": "will_up",
-            "timesAttr": 42,
-            "capKey": "will_max"
+            "min": [
+              {
+                "product": [
+                  "will_up",
+                  {
+                    "attr": 42
+                  }
+                ]
+              },
+              "will_max"
+            ]
           }
         }
       ],
@@ -58,7 +60,9 @@
           "on": "reaction"
         }
       ],
-      "whileBuff": "vocalist_stance",
+      "if": {
+        "buffActive": "vocalist_stance"
+      },
       "note": "CharGrowthTable: \"COMBO TRIGGER: While Vocalist Stance is active, an Arts Reaction is consumed or is applied on an enemy.\" Modelled: any reaction (forced ones included) while vocalist_stance is active. Not modelled: a reaction status being consumed (no such event yet), and whether Cosmovoice Stance (which replaces Vocalist Stance) also enables it."
     }
   ],
@@ -73,10 +77,22 @@
         {
           "id": "projectiles",
           "label": "Projectiles",
-          "scale": ["atk_scale"],
+          "scale": [
+            "atk_scale"
+          ],
           "count": 6,
-          "frames": [12, 12, 14, 14, 16, 16],
-          "events": ["chr_0035_liino_normal_skill_projhit", "chr_0035_liino_normal_skill_projhit_02"],
+          "frames": [
+            12,
+            12,
+            14,
+            14,
+            16,
+            16
+          ],
+          "events": [
+            "chr_0035_liino_normal_skill_projhit",
+            "chr_0035_liino_normal_skill_projhit_02"
+          ],
           "buffs": [
             {
               "buff": "vocalist_stance",
@@ -88,10 +104,21 @@
         {
           "id": "followup",
           "label": "Follow-up volley (per trigger)",
-          "scale": ["atk_scale_2"],
+          "scale": [
+            "atk_scale_2"
+          ],
           "count": 6,
-          "frames": [45, 45, 45, 45, 45, 45],
-          "events": ["chr_0035_liino_normal_skill_projhit_hit"],
+          "frames": [
+            45,
+            45,
+            45,
+            45,
+            45,
+            45
+          ],
+          "events": [
+            "chr_0035_liino_normal_skill_projhit_hit"
+          ],
           "note": "Cast by buff_chr_0035_liino_normalskill_spelllnfliction_extraattack during the stance when a teammate's arts infliction lands, at most every atk_trigger (10) s; kits can't express that trigger yet, so the timeline lands one volley per cast at the earliest frame it could happen (frame 45, when the extraattack buff is created). A 60 s stance can give up to 6 volleys, so this undercounts in a long fight. Logged: zmdlogs-bdf223db8e49 t=3231-3465 6/6 without Corrosion; its other volleys and zmdlogs-0eef2474a26f's are under Corrosion."
         }
       ]
@@ -106,19 +133,29 @@
         {
           "id": "hit1",
           "label": "Hit 1",
-          "scale": ["atk_scale"],
-          "frames": [9],
-          "events": ["chr_0035_liino_combo_skill"]
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            9
+          ],
+          "events": [
+            "chr_0035_liino_combo_skill"
+          ]
         },
         {
           "id": "hit2",
           "label": "Hit 2",
-          "scale": ["atk_scale_2"],
-          "frames": [33],
-          "events": ["chr_0035_liino_combo_skill"],
-          "energy": {
-            "key": "usp"
-          },
+          "scale": [
+            "atk_scale_2"
+          ],
+          "frames": [
+            33
+          ],
+          "events": [
+            "chr_0035_liino_combo_skill"
+          ],
+          "energy": "usp",
           "note": "ObtainCostAction costType 0 with `usp` (20) at the same frame as the DamageAction."
         }
       ]
@@ -133,10 +170,19 @@
         {
           "id": "projectiles_first",
           "label": "Pyrotechnics (first pair)",
-          "scale": ["atk_scale"],
+          "scale": [
+            "atk_scale"
+          ],
           "count": 2,
-          "frames": [76, 76],
-          "events": ["chr_0035_liino_ultimate_skill_projhit", "chr_0035_liino_ultimate_skill_projhit_l", "chr_0035_liino_ultimate_skill_projhit_r"],
+          "frames": [
+            76,
+            76
+          ],
+          "events": [
+            "chr_0035_liino_ultimate_skill_projhit",
+            "chr_0035_liino_ultimate_skill_projhit_l",
+            "chr_0035_liino_ultimate_skill_projhit_r"
+          ],
           "buffs": [
             {
               "buff": "cosmovoice_stance",
@@ -148,18 +194,49 @@
         {
           "id": "projectiles",
           "label": "Pyrotechnics",
-          "scale": ["atk_scale"],
+          "scale": [
+            "atk_scale"
+          ],
           "count": 18,
-          "frames": [79, 79, 82, 82, 84, 84, 87, 87, 91, 91, 94, 94, 97, 97, 101, 101, 104, 104],
-          "events": ["chr_0035_liino_ultimate_skill_projhit", "chr_0035_liino_ultimate_skill_projhit_l", "chr_0035_liino_ultimate_skill_projhit_r"],
+          "frames": [
+            79,
+            79,
+            82,
+            82,
+            84,
+            84,
+            87,
+            87,
+            91,
+            91,
+            94,
+            94,
+            97,
+            97,
+            101,
+            101,
+            104,
+            104
+          ],
+          "events": [
+            "chr_0035_liino_ultimate_skill_projhit",
+            "chr_0035_liino_ultimate_skill_projhit_l",
+            "chr_0035_liino_ultimate_skill_projhit_r"
+          ],
           "note": "Logged per cast: 16 projhit, 2 projhit_l, 2 projhit_r, all atk_scale (zmdlogs-dbaee23b801d 20/20)."
         },
         {
           "id": "bomb",
           "label": "Electrifying Extravaganza",
-          "scale": ["atk_scale_2"],
-          "frames": [116],
-          "events": ["chr_0035_liino_ultimate_skill_projhit_damage_02"],
+          "scale": [
+            "atk_scale_2"
+          ],
+          "frames": [
+            116
+          ],
+          "events": [
+            "chr_0035_liino_ultimate_skill_projhit_damage_02"
+          ],
           "applies": [
             {
               "kind": "forcedReaction",
@@ -171,18 +248,39 @@
         {
           "id": "beats",
           "label": "Song beat",
-          "scale": ["atk_scale_3"],
+          "scale": [
+            "atk_scale_3"
+          ],
           "count": 9,
-          "frames": [77, 122, 167, 212, 257, 302, 347, 392, 437],
-          "events": ["chr_0035_liino_ultimate_skill_soundwave_projhit"],
+          "frames": [
+            77,
+            122,
+            167,
+            212,
+            257,
+            302,
+            347,
+            392,
+            437
+          ],
+          "events": [
+            "chr_0035_liino_ultimate_skill_soundwave_projhit"
+          ],
           "note": "buff_chr_0035_liino_ultskill_music_damage: a soundwave every ultmusic_trigger (1.5 s = 45 frames) from frame 77 until its CreateBuffAction ends at frame 477 (9 beats), assuming the first beat fires when the buff starts (the first logged beat precedes the first projectile). Only enemies in the AOE are hit: the logs have 4 beats in ~7.4 s (dbaee23, gaps 2.3/3.6/1.5 s) and 3 (d9e59), so a real fight can get fewer. Verified per beat: zmdlogs-dbaee23b801d 4/4."
         },
         {
           "id": "finale",
           "label": "Finale (3 × a beat)",
-          "scale": ["atk_scale_3", "final_value"],
-          "frames": [508],
-          "events": ["chr_0035_liino_ultimate_skill_soundwave_02_projhit"],
+          "scale": [
+            "atk_scale_3",
+            "final_value"
+          ],
+          "frames": [
+            508
+          ],
+          "events": [
+            "chr_0035_liino_ultimate_skill_soundwave_02_projhit"
+          ],
           "note": "SkillData frame 508: atk_scale_4 = atk_scale_3 × final_value (SimpleCalcBB operation 2; final_value 3), then the soundwave_02 projectile (DamageAction atk_scale_4). Not in any log (both logged fights end before the stance does); doesn't happen when the stance is ended early."
         }
       ]

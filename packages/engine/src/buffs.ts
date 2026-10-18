@@ -5,10 +5,11 @@
 // says which buffs act on a hit.
 
 import type { Build } from "./build.ts";
-import { skillValue } from "./damage.ts";
+import { evalContext, type Situation } from "./damage.ts";
+import { evaluate, type ValueExpr } from "./expr.ts";
 import type { Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
-import type { GameData, KitBuff, ValueSpec } from "./model.ts";
+import type { GameData, KitBuff } from "./model.ts";
 import type { StatPanel } from "./stats.ts";
 import { FPS } from "./units.ts";
 
@@ -22,23 +23,18 @@ export interface ActiveBuff {
   readonly modifiers: readonly Modifier[];
 }
 
-/** A ValueSpec's number for the applier, with `skillId` as the default skill. */
-export function resolveValue(data: GameData, build: Build, panel: StatPanel, skillId: string, v: ValueSpec): number {
-  if ("literal" in v) return v.literal;
-  const skill = v.skill ?? skillId;
-  let x = skillValue(data, panel, build, skill, v.key) * (v.scale ?? 1);
-  if (v.timesAttr !== undefined) x *= panel.attrs[v.timesAttr]?.total ?? 0;
-  if (v.capKey !== undefined) x = Math.min(x, skillValue(data, panel, build, skill, v.capKey));
-  return x;
+/** A kit value for the applier, with `skillId` as the skill a plain key names. */
+export function resolveValue(data: GameData, build: Build, panel: StatPanel, skillId: string, v: ValueExpr, situation: Situation = {}): number {
+  return evaluate(v, evalContext(data, build, panel, skillId, situation));
 }
 
 /** A kit buff applied at a frame by an operator's hit of `skillId`: values and duration fixed at application. */
-export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillId: string, buff: KitBuff, frame: number): ActiveBuff {
-  const seconds = resolveValue(data, build, panel, skillId, buff.duration);
+export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillId: string, buff: KitBuff, frame: number, situation: Situation = {}): ActiveBuff {
+  const seconds = resolveValue(data, build, panel, skillId, buff.duration, situation);
   if (!(seconds > 0)) throw new EngineError(`${build.operator} buff ${buff.id}: duration ${seconds} s`);
   const source = `${build.operator} ${buff.label}`;
   const modifiers: Modifier[] = buff.modifiers.flatMap((m) => {
-    const value = resolveValue(data, build, panel, skillId, m.value);
+    const value = resolveValue(data, build, panel, skillId, m.value, situation);
     const base = { zone: m.zone, value, source, ...(m.skillType ? { skillType: m.skillType } : {}), ...(m.onlyKinds ? { onlyKinds: m.onlyKinds } : {}) };
     return m.elements ? m.elements.map((element) => ({ ...base, element })) : [base];
   });

@@ -199,13 +199,17 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
       const results = reaction
         ? [{ label: null, r: computeReaction(data, member.build, member.panel, target, { ...reaction, stacks: c.stacks }, options(reaction.kind)) }]
         : found
-            .filter(([, h]) => hitAvailable(h, member.panel))
+            .filter(([s, h]) => hitAvailable(data, member.build, member.panel, s.skillId, h, { team: fx.team }))
             .flatMap(([s, h]) =>
-              // A scale that depends on the enemy's infliction: the log doesn't record inflictions, so try with and without.
-              (h.scaleIf ? [null, h.scaleIf.enemyInfliction] : [null]).map((inf) => ({
-                label: [found.length > 1 ? `kit hit ${h.id}` : null, inf ? `with ${h.scaleIf?.key}` : null].filter((x) => x).join(", ") || null,
-                r: computeHit(data, member.build, member.panel, target, s, h, { ...options(h.reaction?.kind ?? h.damageType), enemyInfliction: inf }),
-              })),
+              // A hit whose conditions or extra scale depend on what the log doesn't record (inflictions, stacks): try both outcomes.
+              (h.extraScale?.length || h.if ? [false, true] : [false]).flatMap((assume) => {
+                try {
+                  const r = computeHit(data, member.build, member.panel, target, s, h, { ...options(h.reaction?.kind ?? h.damageType), situation: { team: fx.team }, assumeUnknown: assume });
+                  return [{ label: [found.length > 1 ? `kit hit ${h.id}` : null, assume ? "situational parts assumed" : null].filter((x) => x).join(", ") || null, r }];
+                } catch {
+                  return []; // the hit doesn't happen under this assumption
+                }
+              }),
             );
       for (const { label, r } of results) {
         const p = roundDamage(r.exact);

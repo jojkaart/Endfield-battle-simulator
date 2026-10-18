@@ -20,9 +20,7 @@
       "id": "twilight",
       "label": "Twilight (ultimate)",
       "target": "self",
-      "duration": {
-        "key": "duration"
-      },
+      "duration": "duration",
       "modifiers": [],
       "note": "Her ultimate's state: enhanced basic attacks and battle skill for `duration` (15 s). Counted from the ultimate's hit (assumed)."
     }
@@ -41,7 +39,9 @@
       "gains": [
         {
           "stack": "melting_flame",
-          "amount": "consumedInflictions"
+          "amount": {
+            "consumed": true
+          }
         }
       ],
       "note": "Talent: with Laevatain in battle, Final Strikes by the controlled operator absorb Heat Infliction stacks and grant her 1 Melting Flame per stack absorbed (I18nTextTable_EN)."
@@ -220,9 +220,7 @@
             "atLeast": 4,
             "consume": true
           },
-          "energy": {
-            "key": "extra_usp"
-          }
+          "energy": "extra_usp"
         }
       ],
       "unavailableWhile": "twilight"
@@ -307,9 +305,7 @@
             }
           ],
           "note": "Against Combustion or Corrosion (its trigger) it grants 1 Melting Flame (Talos Wiki); the extra Heat DMG isn't modelled. Energy: 25 for one enemy hit (buff_chr_0016_laevat_combo_skill_usp usp_1; usp_1_display has the same value).",
-          "energy": {
-            "key": "usp_1_display"
-          }
+          "energy": "usp_1_display"
         }
       ]
     },

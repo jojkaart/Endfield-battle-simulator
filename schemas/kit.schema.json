@@ -4,43 +4,114 @@
   "title": "Operator kit",
   "description": "Hand-written hit structure of an operator's skills: which blackboard values multiply into each hit and how often it lands. Numbers come from the game tables; only structure is written here. Each kit lists its sources.",
   "type": "object",
-  "required": ["operator", "sources", "skills"],
+  "required": [
+    "operator",
+    "sources",
+    "skills"
+  ],
   "additionalProperties": false,
   "properties": {
-    "$schema": { "type": "string" },
-    "operator": { "type": "string" },
-    "sources": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
-    "element": { "$ref": "#/$defs/element", "description": "Default element of the operator's hits." },
+    "$schema": {
+      "type": "string"
+    },
+    "operator": {
+      "type": "string"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1
+    },
+    "element": {
+      "$ref": "#/$defs/element",
+      "description": "Default element of the operator's hits."
+    },
     "buffs": {
       "type": "array",
       "description": "Timed buffs and debuffs the operator's hits apply (engine buffs.ts): on themselves, the team, or the enemy (acting on every team member's hits). Values come from the game data (valueSpec).",
       "items": {
         "type": "object",
-        "required": ["id", "label", "target", "duration", "modifiers"],
+        "required": [
+          "id",
+          "label",
+          "target",
+          "duration",
+          "modifiers"
+        ],
         "additionalProperties": false,
         "properties": {
-          "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
-          "label": { "type": "string" },
-          "target": { "enum": ["self", "team", "enemy"] },
-          "gameBuff": { "type": "string", "description": "The BuffData buff this stands for; when it is priority-keyed (stackingType 1), instances from different operators don't add up (only the strongest counts)." },
-          "duration": { "$ref": "#/$defs/valueSpec", "description": "Seconds." },
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "label": {
+            "type": "string"
+          },
+          "target": {
+            "enum": [
+              "self",
+              "team",
+              "enemy"
+            ]
+          },
+          "gameBuff": {
+            "type": "string",
+            "description": "The BuffData buff this stands for; when it is priority-keyed (stackingType 1), instances from different operators don't add up (only the strongest counts)."
+          },
+          "duration": {
+            "$ref": "#/$defs/valueExpr",
+            "description": "Seconds."
+          },
           "modifiers": {
             "type": "array",
             "description": "Empty for a state that only gates skills (availableWhile).",
             "items": {
               "type": "object",
-              "required": ["zone", "value"],
+              "required": [
+                "zone",
+                "value"
+              ],
               "additionalProperties": false,
               "properties": {
-                "zone": { "$ref": "#/$defs/zone" },
-                "value": { "$ref": "#/$defs/valueSpec" },
-                "elements": { "type": "array", "items": { "$ref": "#/$defs/element" }, "minItems": 1 },
-                "skillType": { "$ref": "#/$defs/skillType" },
-                "onlyKinds": { "type": "array", "items": { "enum": ["basic", "battle", "combo", "ultimate", "burst", "reaction", "combustionTick"] }, "minItems": 1 }
+                "zone": {
+                  "$ref": "#/$defs/zone"
+                },
+                "value": {
+                  "$ref": "#/$defs/valueExpr"
+                },
+                "elements": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/element"
+                  },
+                  "minItems": 1
+                },
+                "skillType": {
+                  "$ref": "#/$defs/skillType"
+                },
+                "onlyKinds": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "basic",
+                      "battle",
+                      "combo",
+                      "ultimate",
+                      "burst",
+                      "reaction",
+                      "combustionTick"
+                    ]
+                  },
+                  "minItems": 1
+                }
               }
             }
           },
-          "note": { "type": "string" }
+          "note": {
+            "type": "string"
+          }
         }
       }
     },
@@ -49,7 +120,9 @@
       "description": "What makes the combo skill castable (CharGrowthTable COMBO TRIGGER text; quote it in the note). Any listed trigger opens the window. Without this the timeline allows the combo whenever it's off cooldown.",
       "items": {
         "type": "object",
-        "required": ["any"],
+        "required": [
+          "any"
+        ],
         "additionalProperties": false,
         "properties": {
           "any": {
@@ -57,22 +130,123 @@
             "minItems": 1,
             "items": {
               "oneOf": [
-                { "type": "object", "required": ["on"], "additionalProperties": false, "properties": { "on": { "const": "reaction" }, "statuses": { "type": "array", "items": { "enum": ["combustion", "electrification", "solidification", "corrosion"] }, "minItems": 1 } } },
-                { "type": "object", "required": ["on"], "additionalProperties": false, "properties": { "on": { "const": "inflictionConsumed" }, "elements": { "type": "array", "items": { "$ref": "#/$defs/artsElement" }, "minItems": 1 } } },
-                { "type": "object", "required": ["on"], "additionalProperties": false, "properties": { "on": { "const": "inflictionApplied" }, "elements": { "type": "array", "items": { "$ref": "#/$defs/artsElement" }, "minItems": 1 }, "minStacks": { "type": "integer", "minimum": 1, "maximum": 4 } } },
-                { "type": "object", "required": ["on"], "additionalProperties": false, "properties": { "on": { "const": "burst" }, "elements": { "type": "array", "items": { "$ref": "#/$defs/artsElement" }, "minItems": 1 } } },
-                { "type": "object", "required": ["on", "stack", "atLeast"], "additionalProperties": false, "properties": { "on": { "const": "stackAtLeast" }, "stack": { "type": "string" }, "atLeast": { "type": "integer", "minimum": 1 } } }
+                {
+                  "type": "object",
+                  "required": [
+                    "on"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "on": {
+                      "const": "reaction"
+                    },
+                    "statuses": {
+                      "type": "array",
+                      "items": {
+                        "enum": [
+                          "combustion",
+                          "electrification",
+                          "solidification",
+                          "corrosion"
+                        ]
+                      },
+                      "minItems": 1
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "on"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "on": {
+                      "const": "inflictionConsumed"
+                    },
+                    "elements": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/$defs/artsElement"
+                      },
+                      "minItems": 1
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "on"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "on": {
+                      "const": "inflictionApplied"
+                    },
+                    "elements": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/$defs/artsElement"
+                      },
+                      "minItems": 1
+                    },
+                    "minStacks": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 4
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "on"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "on": {
+                      "const": "burst"
+                    },
+                    "elements": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/$defs/artsElement"
+                      },
+                      "minItems": 1
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "on",
+                    "stack",
+                    "atLeast"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "on": {
+                      "const": "stackAtLeast"
+                    },
+                    "stack": {
+                      "type": "string"
+                    },
+                    "atLeast": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                }
               ]
             }
           },
-          "whileBuff": { "type": "string" },
-          "when": {
-            "type": "object",
-            "required": ["attrAtLeast"],
-            "additionalProperties": false,
-            "properties": { "attrAtLeast": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "minItems": 2, "maxItems": 2 } }
+          "note": {
+            "type": "string"
           },
-          "note": { "type": "string" }
+          "if": {
+            "$ref": "#/$defs/predicate",
+            "description": "Only in this situation (a stance active: buffActive; a mode: attrAtLeast)."
+          }
         }
       }
     },
@@ -81,21 +255,43 @@
       "description": "What the operator's kit does when any team member's hit of a kind lands (finalStrike: the controlled operator's Final Strikes, SkillData mask bit 2097152).",
       "items": {
         "type": "object",
-        "required": ["on", "applies"],
+        "required": [
+          "on",
+          "applies"
+        ],
         "additionalProperties": false,
         "properties": {
-          "on": { "const": "finalStrike" },
-          "applies": { "type": "array", "items": { "$ref": "#/$defs/application" } },
+          "on": {
+            "const": "finalStrike"
+          },
+          "applies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/application"
+            }
+          },
           "gains": {
             "type": "array",
             "items": {
               "type": "object",
-              "required": ["stack"],
+              "required": [
+                "stack"
+              ],
               "additionalProperties": false,
-              "properties": { "stack": { "type": "string" }, "amount": { "oneOf": [{ "type": "integer", "minimum": 1 }, { "const": "consumedInflictions" }] } }
+              "properties": {
+                "stack": {
+                  "type": "string"
+                },
+                "amount": {
+                  "$ref": "#/$defs/valueExpr",
+                  "description": "How many (default 1); {\"consumed\": true} for the infliction stacks the hit consumed."
+                }
+              }
             }
           },
-          "note": { "type": "string" }
+          "note": {
+            "type": "string"
+          }
         }
       }
     },
@@ -104,206 +300,500 @@
       "description": "The operator's own counters (e.g. Laevatain's Melting Flame) that hits gain and require.",
       "items": {
         "type": "object",
-        "required": ["id", "label", "max"],
+        "required": [
+          "id",
+          "label",
+          "max"
+        ],
         "additionalProperties": false,
-        "properties": { "id": { "type": "string", "pattern": "^[a-z0-9_]+$" }, "label": { "type": "string" }, "max": { "type": "integer", "minimum": 1 }, "note": { "type": "string" } }
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9_]+$"
+          },
+          "label": {
+            "type": "string"
+          },
+          "max": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "note": {
+            "type": "string"
+          }
+        }
       }
     },
     "skills": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["skillId", "label", "damageType", "hits"],
+        "required": [
+          "skillId",
+          "label",
+          "damageType",
+          "hits"
+        ],
         "additionalProperties": false,
         "properties": {
-          "skillId": { "type": "string" },
-          "label": { "type": "string" },
-          "damageType": { "$ref": "#/$defs/skillType" },
-          "availableWhile": { "type": "string", "description": "Castable only while this kit buff of the operator is active (e.g. enhanced attacks during the ultimate)." },
-          "unavailableWhile": { "type": "string", "description": "Not castable while this kit buff of the operator is active (the plain attacks an ultimate replaces)." },
-          "energyBlockSeconds": { "type": "number", "exclusiveMinimum": 0, "description": "The operator gains no ultimate energy for this long after the cast (SkillData RefrainObtainUsp buff duration)." },
-          "durationFrames": { "type": "integer", "minimum": 1, "description": "How long the skill locks the operator, in 30 FPS frames (SkillData durationFrame unless the skill can be cancelled earlier; say which in a note)." },
-          "note": { "type": "string" },
+          "skillId": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "damageType": {
+            "$ref": "#/$defs/skillType"
+          },
+          "availableWhile": {
+            "type": "string",
+            "description": "Castable only while this kit buff of the operator is active (e.g. enhanced attacks during the ultimate)."
+          },
+          "unavailableWhile": {
+            "type": "string",
+            "description": "Not castable while this kit buff of the operator is active (the plain attacks an ultimate replaces)."
+          },
+          "energyBlockSeconds": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "description": "The operator gains no ultimate energy for this long after the cast (SkillData RefrainObtainUsp buff duration)."
+          },
+          "durationFrames": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "How long the skill locks the operator, in 30 FPS frames (SkillData durationFrame unless the skill can be cancelled earlier; say which in a note)."
+          },
+          "note": {
+            "type": "string"
+          },
           "hits": {
             "type": "array",
             "minItems": 1,
             "items": {
               "type": "object",
-              "required": ["id", "scale"],
+              "required": [
+                "id",
+                "scale"
+              ],
               "additionalProperties": false,
               "properties": {
-                "id": { "type": "string" },
-                "label": { "type": "string" },
-                "scale": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
-                "count": { "type": "integer", "minimum": 1 },
-                "events": { "type": "array", "items": { "type": "string" }, "description": "Event keys battle logs (ZMDLogs) use for this hit. Default: the skill ID, when the skill has a single hit entry." },
-                "frames": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "description": "Frame (30 FPS, from the skill's start) at which each landing happens; one entry per count. Projectile travel time isn't in the data, so projectile hits use the launch frame." },
-                "element": { "$ref": "#/$defs/element" },
+                "id": {
+                  "type": "string"
+                },
+                "label": {
+                  "type": "string"
+                },
+                "scale": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "minItems": 1
+                },
+                "count": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "events": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Event keys battle logs (ZMDLogs) use for this hit. Default: the skill ID, when the skill has a single hit entry."
+                },
+                "frames": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "description": "Frame (30 FPS, from the skill's start) at which each landing happens; one entry per count. Projectile travel time isn't in the data, so projectile hits use the launch frame."
+                },
+                "element": {
+                  "$ref": "#/$defs/element"
+                },
                 "bonuses": {
                   "type": "array",
                   "description": "The hit's own zone bonuses from its skill's values (after potentials), e.g. a projectile's damage bonus on its first target.",
                   "items": {
                     "type": "object",
-                    "required": ["zone", "key"],
+                    "required": [
+                      "zone",
+                      "key"
+                    ],
                     "additionalProperties": false,
-                    "properties": { "zone": { "$ref": "#/$defs/zone" }, "key": { "type": "string" } }
+                    "properties": {
+                      "zone": {
+                        "$ref": "#/$defs/zone"
+                      },
+                      "key": {
+                        "type": "string"
+                      }
+                    }
                   }
                 },
-                "factor": { "type": "number", "exclusiveMinimum": 0, "description": "Literal multiplier from the skill graph (a SimpleCalcBB × or ÷ splitting a value, e.g. 0.5 for one of two arrows); cite it in the note." },
+                "factor": {
+                  "type": "number",
+                  "exclusiveMinimum": 0,
+                  "description": "Literal multiplier from the skill graph (a SimpleCalcBB × or ÷ splitting a value, e.g. 0.5 for one of two arrows); cite it in the note."
+                },
                 "reaction": {
                   "type": "object",
                   "description": "The hit's damage is an arts burst or reaction (no skill-type bonus; level coefficient and Arts Intensity apply), times its scale keys, e.g. Typhoeus's own Nature burst.",
-                  "required": ["kind", "element"],
+                  "required": [
+                    "kind",
+                    "element"
+                  ],
                   "additionalProperties": false,
-                  "properties": { "kind": { "enum": ["burst", "reaction"] }, "element": { "$ref": "#/$defs/artsElement" }, "level": { "type": "integer", "minimum": 1, "maximum": 4 } }
+                  "properties": {
+                    "kind": {
+                      "enum": [
+                        "burst",
+                        "reaction"
+                      ]
+                    },
+                    "element": {
+                      "$ref": "#/$defs/artsElement"
+                    },
+                    "level": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "maximum": 4
+                    }
+                  }
                 },
-                "scaleIf": {
-                  "type": "object",
-                  "description": "An extra scale key that applies only when the enemy has an infliction of this element as the hit lands (before the hit's own applies).",
-                  "required": ["key", "enemyInfliction"],
-                  "additionalProperties": false,
-                  "properties": { "key": { "type": "string" }, "enemyInfliction": { "$ref": "#/$defs/artsElement" } }
+                "energy": {
+                  "$ref": "#/$defs/valueExpr",
+                  "description": "Ultimate energy the operator gains when the hit lands (SkillData ObtainCostAction costType 0, e.g. a combo's usp)."
                 },
-                "when": {
-                  "type": "object",
-                  "description": "The hit exists only when the stat panel's attribute attrAtLeast[0] is at least attrAtLeast[1] (attribute IDs, e.g. Arcane's INT mode: Intellect ≥ Will).",
-                  "required": ["attrAtLeast"],
-                  "additionalProperties": false,
-                  "properties": { "attrAtLeast": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "minItems": 2, "maxItems": 2 } }
-                },
-                "energy": { "$ref": "#/$defs/valueSpec", "description": "Ultimate energy the operator gains when the hit lands (SkillData ObtainCostAction costType 0, e.g. a combo's usp)." },
                 "buffs": {
                   "type": "array",
                   "description": "Kit buffs this hit applies when it lands; beforeDamage: the buff already acts on this hit.",
                   "items": {
                     "type": "object",
-                    "required": ["buff"],
+                    "required": [
+                      "buff"
+                    ],
                     "additionalProperties": false,
-                    "properties": { "buff": { "type": "string" }, "beforeDamage": { "type": "boolean" } }
+                    "properties": {
+                      "buff": {
+                        "type": "string"
+                      },
+                      "beforeDamage": {
+                        "type": "boolean"
+                      }
+                    }
                   }
                 },
-                "finalStrike": { "type": "boolean", "description": "Override: whether the hit is a Final Strike. By default read from SkillData (decorate-mask bit 2097152) via the hit's events." },
+                "finalStrike": {
+                  "type": "boolean",
+                  "description": "Override: whether the hit is a Final Strike. By default read from SkillData (decorate-mask bit 2097152) via the hit's events."
+                },
                 "requires": {
                   "type": "object",
                   "description": "The hit only happens if the operator has at least this many stacks when the skill is cast; consume: all of the stack is used up by the cast.",
-                  "required": ["stack", "atLeast", "consume"],
+                  "required": [
+                    "stack",
+                    "atLeast",
+                    "consume"
+                  ],
                   "additionalProperties": false,
-                  "properties": { "stack": { "type": "string" }, "atLeast": { "type": "integer", "minimum": 1 }, "consume": { "type": "boolean" } }
+                  "properties": {
+                    "stack": {
+                      "type": "string"
+                    },
+                    "atLeast": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "consume": {
+                      "type": "boolean"
+                    }
+                  }
                 },
                 "gains": {
                   "type": "array",
                   "description": "Stacks gained when the hit lands: a fixed amount (default 1) or the infliction stacks the hit consumed.",
                   "items": {
                     "type": "object",
-                    "required": ["stack"],
+                    "required": [
+                      "stack"
+                    ],
                     "additionalProperties": false,
-                    "properties": { "stack": { "type": "string" }, "amount": { "oneOf": [{ "type": "integer", "minimum": 1 }, { "const": "consumedInflictions" }] } }
+                    "properties": {
+                      "stack": {
+                        "type": "string"
+                      },
+                      "amount": {
+                        "$ref": "#/$defs/valueExpr",
+                        "description": "How many (default 1); {\"consumed\": true} for the infliction stacks the hit consumed."
+                      }
+                    }
                   }
                 },
-                "applies": { "type": "array", "items": { "$ref": "#/$defs/application" }, "description": "What each landing does to the enemy's arts state, in order (packages/engine/src/status.ts). Skill descriptions say which hits inflict; the game data doesn't." },
-                "note": { "type": "string" }
+                "applies": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/application"
+                  },
+                  "description": "What each landing does to the enemy's arts state, in order (packages/engine/src/status.ts). Skill descriptions say which hits inflict; the game data doesn't."
+                },
+                "note": {
+                  "type": "string"
+                },
+                "if": {
+                  "$ref": "#/$defs/predicate",
+                  "description": "The hit happens only in this situation, judged as it lands, before its own effects (a mode, an enemy status…)."
+                },
+                "extraScale": {
+                  "type": "array",
+                  "description": "Extra multipliers that apply only in a situation.",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "value",
+                      "if"
+                    ],
+                    "additionalProperties": false,
+                    "properties": {
+                      "value": {
+                        "$ref": "#/$defs/valueExpr"
+                      },
+                      "if": {
+                        "$ref": "#/$defs/predicate"
+                      }
+                    }
+                  }
+                }
               }
             }
           }
         }
       }
     },
-    "conditions": { "type": "array", "items": { "$ref": "#/$defs/condition" } }
+    "conditions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/condition"
+      }
+    }
   },
   "$defs": {
-    "element": { "enum": ["physical", "fire", "pulse", "cryst", "natural", "ether"] },
-    "valueSpec": {
-      "description": "A literal, or a skill blackboard value at the applier's level after potentials (default skill: the applying hit's), optionally times a panel attribute (attribute ID) and capped by another key.",
-      "oneOf": [
-        { "type": "object", "required": ["literal"], "additionalProperties": false, "properties": { "literal": { "type": "number" } } },
-        {
-          "type": "object",
-          "required": ["key"],
-          "additionalProperties": false,
-          "properties": {
-            "key": { "type": "string" },
-            "skill": { "type": "string" },
-            "timesAttr": { "type": "integer", "minimum": 0 },
-            "capKey": { "type": "string" },
-            "scale": { "type": "number" }
-          }
-        }
+    "element": {
+      "enum": [
+        "physical",
+        "fire",
+        "pulse",
+        "cryst",
+        "natural",
+        "ether"
       ]
     },
-    "zone": { "enum": ["atk", "damageBonus", "amp", "susceptibility", "damageTaken", "multiplicative", "ignoreResistance", "critRate", "critDamage", "artsIntensity"] },
-    "artsElement": { "enum": ["fire", "pulse", "cryst", "natural"] },
+    "zone": {
+      "enum": [
+        "atk",
+        "damageBonus",
+        "amp",
+        "susceptibility",
+        "damageTaken",
+        "multiplicative",
+        "ignoreResistance",
+        "critRate",
+        "critDamage",
+        "artsIntensity"
+      ]
+    },
+    "artsElement": {
+      "enum": [
+        "fire",
+        "pulse",
+        "cryst",
+        "natural"
+      ]
+    },
     "application": {
       "oneOf": [
         {
           "type": "object",
-          "required": ["kind", "element"],
-          "additionalProperties": false,
-          "properties": { "kind": { "const": "infliction" }, "element": { "$ref": "#/$defs/artsElement" }, "stacks": { "type": "integer", "minimum": 1, "maximum": 4 } }
-        },
-        {
-          "type": "object",
-          "required": ["kind", "status"],
+          "required": [
+            "kind",
+            "element"
+          ],
           "additionalProperties": false,
           "properties": {
-            "kind": { "const": "forcedReaction" },
-            "status": { "enum": ["combustion", "electrification", "solidification", "corrosion"] },
-            "level": { "type": "integer", "minimum": 1, "maximum": 4 },
-            "durationKey": { "type": "string", "description": "Skill blackboard value giving the status duration in seconds, when the skill sets it." },
-            "scaleKey": { "type": "string", "description": "Skill blackboard value multiplying the status's damage over time." }
+            "kind": {
+              "const": "infliction"
+            },
+            "element": {
+              "$ref": "#/$defs/artsElement"
+            },
+            "stacks": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4
+            }
           }
         },
         {
           "type": "object",
-          "required": ["kind"],
+          "required": [
+            "kind",
+            "status"
+          ],
           "additionalProperties": false,
-          "properties": { "kind": { "const": "consumeInfliction" }, "elements": { "type": "array", "items": { "$ref": "#/$defs/artsElement" }, "minItems": 1 } }
+          "properties": {
+            "kind": {
+              "const": "forcedReaction"
+            },
+            "status": {
+              "enum": [
+                "combustion",
+                "electrification",
+                "solidification",
+                "corrosion"
+              ]
+            },
+            "level": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4
+            },
+            "durationKey": {
+              "type": "string",
+              "description": "Skill blackboard value giving the status duration in seconds, when the skill sets it."
+            },
+            "scaleKey": {
+              "type": "string",
+              "description": "Skill blackboard value multiplying the status's damage over time."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "consumeInfliction"
+            },
+            "elements": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/artsElement"
+              },
+              "minItems": 1
+            }
+          }
         }
       ]
     },
-    "skillType": { "enum": ["basic", "battle", "combo", "ultimate"] },
+    "skillType": {
+      "enum": [
+        "basic",
+        "battle",
+        "combo",
+        "ultimate"
+      ]
+    },
     "condition": {
       "type": "object",
-      "required": ["id", "label", "source", "effect"],
+      "required": [
+        "id",
+        "label",
+        "source",
+        "effect"
+      ],
       "additionalProperties": false,
       "properties": {
-        "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
-        "label": { "type": "string" },
-        "note": { "type": "string" },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9_]+$"
+        },
+        "label": {
+          "type": "string"
+        },
+        "note": {
+          "type": "string"
+        },
         "source": {
           "oneOf": [
             {
               "type": "object",
-              "required": ["kind", "index", "buffId", "key"],
+              "required": [
+                "kind",
+                "index",
+                "buffId",
+                "key"
+              ],
               "additionalProperties": false,
               "properties": {
-                "kind": { "const": "talent" },
-                "index": { "type": "integer", "minimum": 0 },
-                "buffId": { "type": "string" },
-                "key": { "type": "string" },
-                "scale": { "type": "number" }
+                "kind": {
+                  "const": "talent"
+                },
+                "index": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "buffId": {
+                  "type": "string"
+                },
+                "key": {
+                  "type": "string"
+                },
+                "scale": {
+                  "type": "number"
+                }
               }
             },
             {
               "type": "object",
-              "required": ["kind", "skill", "key"],
+              "required": [
+                "kind",
+                "skill",
+                "key"
+              ],
               "additionalProperties": false,
               "properties": {
-                "kind": { "const": "weaponSkill" },
-                "skill": { "type": "integer", "minimum": 0, "maximum": 2 },
-                "key": { "type": "string" },
-                "scale": { "type": "number" }
+                "kind": {
+                  "const": "weaponSkill"
+                },
+                "skill": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 2
+                },
+                "key": {
+                  "type": "string"
+                },
+                "scale": {
+                  "type": "number"
+                }
               }
             },
             {
               "type": "object",
               "description": "A value of one of the operator's own skills at the build's skill level, after potentials.",
-              "required": ["kind", "skillId", "key"],
+              "required": [
+                "kind",
+                "skillId",
+                "key"
+              ],
               "additionalProperties": false,
               "properties": {
-                "kind": { "const": "skill" },
-                "skillId": { "type": "string" },
-                "key": { "type": "string" },
-                "scale": { "type": "number" }
+                "kind": {
+                  "const": "skill"
+                },
+                "skillId": {
+                  "type": "string"
+                },
+                "key": {
+                  "type": "string"
+                },
+                "scale": {
+                  "type": "number"
+                }
               }
             }
           ]
@@ -312,24 +802,368 @@
           "oneOf": [
             {
               "type": "object",
-              "required": ["kind", "attr"],
+              "required": [
+                "kind",
+                "attr"
+              ],
               "additionalProperties": false,
-              "properties": { "kind": { "const": "attr" }, "attr": { "type": "integer", "minimum": 0 } }
+              "properties": {
+                "kind": {
+                  "const": "attr"
+                },
+                "attr": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
             },
             {
               "type": "object",
-              "required": ["kind", "zone"],
+              "required": [
+                "kind",
+                "zone"
+              ],
               "additionalProperties": false,
               "properties": {
-                "kind": { "const": "zone" },
-                "zone": { "$ref": "#/$defs/zone" },
-                "element": { "$ref": "#/$defs/element" },
-                "skillType": { "$ref": "#/$defs/skillType" }
+                "kind": {
+                  "const": "zone"
+                },
+                "zone": {
+                  "$ref": "#/$defs/zone"
+                },
+                "element": {
+                  "$ref": "#/$defs/element"
+                },
+                "skillType": {
+                  "$ref": "#/$defs/skillType"
+                }
               }
             }
           ]
         }
       }
+    },
+    "predicate": {
+      "description": "When something happens (engine expr.ts Predicate). Judged with what's known at that moment; the log checker tries both outcomes of what a log can't tell.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "all"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "all": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/predicate"
+              },
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "any"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "any": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/predicate"
+              },
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "not"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "not": {
+              "$ref": "#/$defs/predicate"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "attrAtLeast"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "attrAtLeast": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "minItems": 2,
+              "maxItems": 2
+            }
+          },
+          "description": "Panel attribute [0] ≥ [1] (attribute IDs; Arcane: Intellect 41 ≥ Will 42 is INT mode)."
+        },
+        {
+          "type": "object",
+          "required": [
+            "potentialAtLeast"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "potentialAtLeast": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 5
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "teamSlotElement"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "teamSlotElement": {
+              "type": "object",
+              "required": [
+                "slot",
+                "element"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "slot": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "maximum": 3
+                },
+                "element": {
+                  "$ref": "#/$defs/element"
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "enemyInfliction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "enemyInfliction": {
+              "$ref": "#/$defs/artsElement"
+            },
+            "minStacks": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 4
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "enemyStatus"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "enemyStatus": {
+              "enum": [
+                "combustion",
+                "electrification",
+                "solidification",
+                "corrosion"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "stack"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "stack": {
+              "type": "string"
+            },
+            "atLeast": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "below": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "buffActive"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "buffActive": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "consumedAtLeast"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "consumedAtLeast": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      ]
+    },
+    "valueExpr": {
+      "description": "A number from the game data (engine expr.ts ValueExpr): a literal; a string = a skill value of the skill in context (at the build's level, after potentials); or a combination.",
+      "oneOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "required": [
+            "key"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "key": {
+              "type": "string"
+            },
+            "skill": {
+              "type": "string"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "sum"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sum": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/valueExpr"
+              },
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "product"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "product": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/valueExpr"
+              },
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "min"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "min": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/valueExpr"
+              },
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "max"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "max": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/valueExpr"
+              },
+              "minItems": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "attr"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "attr": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "consumed"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "consumed": {
+              "const": true
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "if",
+            "then"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "if": {
+              "$ref": "#/$defs/predicate"
+            },
+            "then": {
+              "$ref": "#/$defs/valueExpr"
+            },
+            "else": {
+              "$ref": "#/$defs/valueExpr"
+            }
+          }
+        }
+      ]
     }
   }
 }

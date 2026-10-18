@@ -177,8 +177,8 @@ describe("timeline: timed buffs from kits", () => {
     id: "test_amp",
     label: "test amp",
     target: "team",
-    duration: { literal: 2 },
-    modifiers: [{ zone: "amp", value: { key: "atk_scale", scale: 2 }, elements: ["fire"] }],
+    duration: 2,
+    modifiers: [{ zone: "amp", value: { product: ["atk_scale", 2] }, elements: ["fire"] }],
   };
   const withBuffKit = (beforeDamage: boolean): GameData => ({
     ...data,

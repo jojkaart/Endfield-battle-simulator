@@ -16,14 +16,29 @@
       "id": "physical_susceptibility",
       "label": "Physical Susceptibility (combo skill)",
       "target": "enemy",
-      "duration": { "key": "duration" },
-      "modifiers": [{ "zone": "susceptibility", "value": { "key": "rate" }, "elements": ["physical"] }],
+      "duration": "duration",
+      "modifiers": [
+        {
+          "zone": "susceptibility",
+          "value": "rate",
+          "elements": [
+            "physical"
+          ]
+        }
+      ],
       "note": "buff_chr_0021_whiten_combo_skill_physical_vulnerable: VulnerableAction subType 2 (physical) with the combo's rate (0.15 at level 12) for its duration (6 s). Potential 1 (\"Physical Susceptibility duration +{rate_plus:0}s\") sets has_potential1 = 1 and rate_plus = 3, and the combo then adds rate_plus to duration (ModifyDynamicBlackboard operation 1) before creating the buff: 9 s. A ValueSpec names one key, so P1+ builds get 6 s here (3 s short); the log check is unaffected (it uses the logged buffs). Logged as buff_common_affixes_vulnerable_physical, starting at the combo hit."
     }
   ],
   "comboTriggers": [
     {
-      "any": [{ "on": "reaction", "statuses": ["solidification"] }],
+      "any": [
+        {
+          "on": "reaction",
+          "statuses": [
+            "solidification"
+          ]
+        }
+      ],
       "note": "CharGrowthTable: \"COMBO TRIGGER: When an enemy suffers Solidification.\""
     }
   ],
@@ -34,7 +49,18 @@
       "damageType": "basic",
       "durationFrames": 13,
       "note": "Chains into attack2 from frame 13; exclusiveFrame 18, full animation 105.",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [6], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e." }]
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            6
+          ],
+          "note": "Verified: 2 hits in zmdlogs-4e5e1390085e."
+        }
+      ]
     },
     {
       "skillId": "chr_0021_whiten_attack2",
@@ -42,7 +68,18 @@
       "damageType": "basic",
       "durationFrames": 16,
       "note": "Chains into attack3 from frame 16; exclusiveFrame 28, full animation 123.",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [6], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e." }]
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            6
+          ],
+          "note": "Verified: 2 hits in zmdlogs-4e5e1390085e."
+        }
+      ]
     },
     {
       "skillId": "chr_0021_whiten_attack3",
@@ -51,8 +88,34 @@
       "durationFrames": 28,
       "note": "Chains into attack4 from frame 28 (= exclusiveFrame); full animation 153. Both hits are logged under the event key chr_0021_whiten_attack3; the log checker tries both.",
       "hits": [
-        { "id": "hit1", "label": "Basic attack 3, first hit", "scale": ["atk_scale"], "events": ["chr_0021_whiten_attack3"], "frames": [7], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e (1429)." },
-        { "id": "hit2", "label": "Basic attack 3, second hit", "scale": ["atk_scale2"], "events": ["chr_0021_whiten_attack3"], "frames": [18], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e (1892)." }
+        {
+          "id": "hit1",
+          "label": "Basic attack 3, first hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "events": [
+            "chr_0021_whiten_attack3"
+          ],
+          "frames": [
+            7
+          ],
+          "note": "Verified: 2 hits in zmdlogs-4e5e1390085e (1429)."
+        },
+        {
+          "id": "hit2",
+          "label": "Basic attack 3, second hit",
+          "scale": [
+            "atk_scale2"
+          ],
+          "events": [
+            "chr_0021_whiten_attack3"
+          ],
+          "frames": [
+            18
+          ],
+          "note": "Verified: 2 hits in zmdlogs-4e5e1390085e (1892)."
+        }
       ]
     },
     {
@@ -61,7 +124,18 @@
       "damageType": "basic",
       "durationFrames": 46,
       "note": "Loops back to attack1 from frame 46 (= exclusiveFrame); full animation 134. Final Strike (decorate mask 2097280).",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [21], "note": "Verified: 1 hit in zmdlogs-4e5e1390085e." }]
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            21
+          ],
+          "note": "Verified: 1 hit in zmdlogs-4e5e1390085e."
+        }
+      ]
     },
     {
       "skillId": "chr_0021_whiten_power_attack",
@@ -72,9 +146,13 @@
       "hits": [
         {
           "id": "hit",
-          "scale": ["atk_scale"],
+          "scale": [
+            "atk_scale"
+          ],
           "events": [],
-          "frames": [30],
+          "frames": [
+            30
+          ],
           "note": "Uses BreakingAttackCalculation (the finisher on a staggered enemy), which the engine doesn't model, so it isn't log-checked. The one logged hit (btl_upload_39e3cddab245, t=71860) is ×1.215 of atk_scale 9 with the logged buffs and stagger."
         }
       ]
@@ -85,7 +163,18 @@
       "damageType": "basic",
       "durationFrames": 15,
       "note": "exclusiveFrame 15; full animation 175.",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "note": "Not logged yet." }]
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            1
+          ],
+          "note": "Not logged yet."
+        }
+      ]
     },
     {
       "skillId": "chr_0021_whiten_normal_skill",
@@ -96,12 +185,28 @@
       "hits": [
         {
           "id": "projectile",
-          "scale": ["atk_scale"],
+          "scale": [
+            "atk_scale"
+          ],
           "element": "cryst",
-          "events": ["chr_0021_whiten_normal_skill_projhit"],
-          "bonuses": [{ "zone": "damageBonus", "key": "dmg_up" }],
-          "applies": [{ "kind": "infliction", "element": "cryst" }],
-          "frames": [21],
+          "events": [
+            "chr_0021_whiten_normal_skill_projhit"
+          ],
+          "bonuses": [
+            {
+              "zone": "damageBonus",
+              "key": "dmg_up"
+            }
+          ],
+          "applies": [
+            {
+              "kind": "infliction",
+              "element": "cryst"
+            }
+          ],
+          "frames": [
+            21
+          ],
           "note": "Projectile launched at frame 21; it lands as chr_0021_whiten_normal_skill_projhit (SpellInfliction in that file; the description says Cryo Infliction). The first target each projectile hits (EntityBB_first_hit) takes up_atk_scale = atk_scale with +dmg_up in the damage-bonus zone (DamageScaleProcessor, NormalCalcZone); other targets take atk_scale alone. dmg_up is 0 unless potential 3 sets it to 0.4 (\"DMG Dealt +{dmg_up:0%} to the first enemy hit\"). Single target, so this is the first-target hit. Verified: 3 hits in zmdlogs-4e5e1390085e."
         }
       ]
@@ -116,11 +221,22 @@
         {
           "id": "solidified",
           "label": "Combo skill (Solidified target)",
-          "scale": ["atk_scale2"],
-          "events": ["chr_0021_whiten_combo_skill"],
-          "buffs": [{ "buff": "physical_susceptibility", "beforeDamage": true }],
-          "energy": { "key": "usp" },
-          "frames": [19],
+          "scale": [
+            "atk_scale2"
+          ],
+          "events": [
+            "chr_0021_whiten_combo_skill"
+          ],
+          "buffs": [
+            {
+              "buff": "physical_susceptibility",
+              "beforeDamage": true
+            }
+          ],
+          "energy": "usp",
+          "frames": [
+            19
+          ],
           "note": "Energy: usp 10 at frame 19 (ObtainCostAction costType 0 when at least one target is hit). Verified: the 2 combo hits before 49.4 s in zmdlogs-4e5e1390085e (23050, 27882) match with its own susceptibility (logged as a boundary buff, buff_common_affixes_vulnerable_physical) applied and the stagger that starts at the same instant at t=29524 not applied."
         }
       ]
@@ -134,8 +250,12 @@
       "hits": [
         {
           "id": "hit",
-          "scale": ["atk_scale"],
-          "frames": [54],
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            54
+          ],
           "note": "The DamageAction reads atk_scale_total = atk_scale + dmg_up_total, and nothing in the file ever writes dmg_up_total (the blackboard's dmg_up 0.5 is unused), so it is atk_scale. Verified: 1 hit in zmdlogs-4e5e1390085e (11.0 exactly)."
         }
       ]

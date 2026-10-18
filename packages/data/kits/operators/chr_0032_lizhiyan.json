@@ -16,18 +16,53 @@
       "id": "doubles_susceptibility_int",
       "label": "Tactical Doubles: Nature and Cryo Susceptibility (INT)",
       "target": "enemy",
-      "duration": { "key": "duration" },
-      "modifiers": [{ "zone": "susceptibility", "value": { "key": "rate_pre" }, "elements": ["natural", "cryst"] }],
+      "duration": "duration",
+      "modifiers": [
+        {
+          "zone": "susceptibility",
+          "value": "rate_pre",
+          "elements": [
+            "natural",
+            "cryst"
+          ]
+        }
+      ],
       "note": "chr_0032_lizhiyan_combo_skill frame 0–3: INT sets rate_final = rate_pre; seal_total gives it to buff_chr_0032_lizhiyan_combo_skill_seal (Imprisonment), whose start applies buff_chr_0032_lizhiyan_combo_skill_spell_vulnerable_pre (VulnerableAction subType 3 Nature and 5 Cryo, rate = rate_final) for the Imprisonment's duration_final = duration_pre (0.633 s, default only) + duration (4 s). The kit uses `duration` alone (a ValueSpec can't add two keys). Logged as buff_common_affixes_vulnerable_natural / _crystal 0.04 (P0, btl_upload_d9e59d0fb737). Potential 1 adds 0.06 to rate_pre."
     },
     {
       "id": "doubles_susceptibility_will",
       "label": "Tactical Doubles: Nature and Cryo Susceptibility (WILL)",
       "target": "enemy",
-      "duration": { "key": "duration_will" },
+      "duration": "duration_will",
       "modifiers": [
-        { "zone": "susceptibility", "value": { "key": "rate_pre" }, "elements": ["natural", "cryst"] },
-        { "zone": "susceptibility", "value": { "key": "spell_vul_per_will", "timesAttr": 42, "capKey": "max_spell_vul_will" }, "elements": ["natural", "cryst"] }
+        {
+          "zone": "susceptibility",
+          "value": "rate_pre",
+          "elements": [
+            "natural",
+            "cryst"
+          ]
+        },
+        {
+          "zone": "susceptibility",
+          "value": {
+            "min": [
+              {
+                "product": [
+                  "spell_vul_per_will",
+                  {
+                    "attr": 42
+                  }
+                ]
+              },
+              "max_spell_vul_will"
+            ]
+          },
+          "elements": [
+            "natural",
+            "cryst"
+          ]
+        }
       ],
       "note": "chr_0032_lizhiyan_combo_skill frame 0–3, WILL branch: rate_final = min(Will × spell_vul_per_will, max_spell_vul_will) + rate_pre, applied like the INT one for duration_pre + duration_will (the kit uses duration_will alone). Verified: btl_upload_b7b3762d5da8 (P4, Will 788) logs 0.18 = 0.08 cap + 0.04 + 0.06 (P1) on both elements, from the cast until shortly before the Tactical Doubles hit. That log keeps it about 2 s past the second Imprisonment's end (a post-Imprisonment instance, buff_chr_0032_lizhiyan_combo_skill_spell_vulnerable with duration_calc, not modelled)."
     },
@@ -35,7 +70,7 @@
       "id": "gloompurger_array",
       "label": "Gloompurger Array active",
       "target": "self",
-      "duration": { "key": "duration" },
+      "duration": "duration",
       "modifiers": [],
       "note": "State only: buff_chr_0032_lizhiyan_ultimate_skill_listener_owner, created at the ultimate's frame 47 with duration ← the ultimate's `duration` (20 s). While it lasts the ultimate slot shows Gloompurge Arcana (ChangeSkillAction to chr_0032_lizhiyan_ultimate_skill2)."
     }
@@ -43,15 +78,42 @@
   "comboTriggers": [
     {
       "any": [
-        { "on": "inflictionApplied", "elements": ["natural"] },
-        { "on": "inflictionApplied", "elements": ["fire", "pulse", "cryst"], "minStacks": 2 }
+        {
+          "on": "inflictionApplied",
+          "elements": [
+            "natural"
+          ]
+        },
+        {
+          "on": "inflictionApplied",
+          "elements": [
+            "fire",
+            "pulse",
+            "cryst"
+          ],
+          "minStacks": 2
+        }
       ],
-      "when": { "attrAtLeast": [41, 42] },
+      "if": {
+        "attrAtLeast": [
+          41,
+          42
+        ]
+      },
       "note": "Array Arcana: INT (CharGrowthTable conditionPostDesc1, conditionId1 lizhiyan_wisd): \"COMBO TRIGGER: When Nature Infliction or at least 2 stacks of non-Nature Arts Infliction are applied on an enemy.\""
     },
     {
-      "any": [{ "on": "inflictionApplied" }],
-      "when": { "attrAtLeast": [42, 41] },
+      "any": [
+        {
+          "on": "inflictionApplied"
+        }
+      ],
+      "if": {
+        "attrAtLeast": [
+          42,
+          41
+        ]
+      },
       "note": "Array Arcana: WILL (CharGrowthTable conditionPostDesc2, conditionId2 lizhiyan_will): \"COMBO TRIGGER: When an Arts Infliction is applied on an enemy.\""
     }
   ],
@@ -64,10 +126,18 @@
       "hits": [
         {
           "id": "hit",
-          "scale": ["atk_scale"],
+          "scale": [
+            "atk_scale"
+          ],
           "count": 3,
-          "frames": [10, 10, 10],
-          "events": ["chr_0032_lizhiyan_attack1"],
+          "frames": [
+            10,
+            10,
+            10
+          ],
+          "events": [
+            "chr_0032_lizhiyan_attack1"
+          ],
           "note": "Three ChannelingActions at frame 10, one hit per target each (display_atk_scale = 3 × atk_scale). Verified on btl_upload_b7b3762d5da8 (3 hits of 537, basic Lv11 0.129)."
         }
       ]
@@ -80,10 +150,18 @@
       "hits": [
         {
           "id": "hit",
-          "scale": ["atk_scale"],
+          "scale": [
+            "atk_scale"
+          ],
           "count": 3,
-          "frames": [11, 12, 13],
-          "events": ["chr_0032_lizhiyan_attack2"],
+          "frames": [
+            11,
+            12,
+            13
+          ],
+          "events": [
+            "chr_0032_lizhiyan_attack2"
+          ],
           "note": "Verified on btl_upload_b7b3762d5da8 (3 hits of 712, 0.147 at Lv11)."
         }
       ]
@@ -93,28 +171,82 @@
       "label": "Basic attack 3",
       "damageType": "basic",
       "durationFrames": 235,
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [5, 13], "note": "display_atk_scale 0.75 ≈ 2 × 0.38." }]
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "count": 2,
+          "frames": [
+            5,
+            13
+          ],
+          "note": "display_atk_scale 0.75 ≈ 2 × 0.38."
+        }
+      ]
     },
     {
       "skillId": "chr_0032_lizhiyan_attack4",
       "label": "Basic attack 4",
       "damageType": "basic",
       "durationFrames": 230,
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 8, "frames": [2, 2, 5, 5, 8, 8, 11, 11], "note": "Two damage actions at each of frames 2, 5, 8, 11 (display_atk_scale 0.8 = 8 × 0.1)." }]
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "count": 8,
+          "frames": [
+            2,
+            2,
+            5,
+            5,
+            8,
+            8,
+            11,
+            11
+          ],
+          "note": "Two damage actions at each of frames 2, 5, 8, 11 (display_atk_scale 0.8 = 8 × 0.1)."
+        }
+      ]
     },
     {
       "skillId": "chr_0032_lizhiyan_attack5",
       "label": "Basic attack 5 (final strike)",
       "damageType": "basic",
       "durationFrames": 300,
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [22], "note": "Final Strike (decorate mask 2097152 + basic); in game it also triggers the ultimate's Cluster Strike (not modelled)." }]
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            22
+          ],
+          "note": "Final Strike (decorate mask 2097152 + basic); in game it also triggers the ultimate's Cluster Strike (not modelled)."
+        }
+      ]
     },
     {
       "skillId": "chr_0032_lizhiyan_plunging_attack_end",
       "label": "Plunging attack",
       "damageType": "basic",
       "durationFrames": 120,
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "note": "Uses the basic attack level. Verified on btl_upload_b7b3762d5da8 (8037, 1.66 at Lv11)." }]
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            1
+          ],
+          "note": "Uses the basic attack level. Verified on btl_upload_b7b3762d5da8 (8037, 1.66 at Lv11)."
+        }
+      ]
     },
     {
       "skillId": "chr_0032_lizhiyan_normal_skill",
@@ -126,22 +258,54 @@
         {
           "id": "will",
           "label": "Battle skill (Array Arcana: WILL)",
-          "scale": ["atk_scale_will"],
-          "frames": [20],
-          "when": { "attrAtLeast": [42, 41] },
-          "applies": [{ "kind": "infliction", "element": "natural" }],
-          "events": ["chr_0032_lizhiyan_normal_skill_abilityrange2"],
-          "note": "Verified on btl_upload_0eef2474a26f (18470, crit, under Corrosion level 2)."
+          "scale": [
+            "atk_scale_will"
+          ],
+          "frames": [
+            20
+          ],
+          "applies": [
+            {
+              "kind": "infliction",
+              "element": "natural"
+            }
+          ],
+          "events": [
+            "chr_0032_lizhiyan_normal_skill_abilityrange2"
+          ],
+          "note": "Verified on btl_upload_0eef2474a26f (18470, crit, under Corrosion level 2).",
+          "if": {
+            "attrAtLeast": [
+              42,
+              41
+            ]
+          }
         },
         {
           "id": "int",
           "label": "Battle skill (Array Arcana: INT)",
-          "scale": ["atk_scale_wisd"],
-          "frames": [20],
-          "when": { "attrAtLeast": [41, 42] },
-          "applies": [{ "kind": "infliction", "element": "natural" }],
-          "events": ["chr_0032_lizhiyan_normal_skill_abilityrange2"],
-          "note": "conditionPostDesc1: \"Array Arcana: INT: - Deals more DMG.\" Only in btl_upload_d9e59d0fb737 (under Corrosion, ×2.23 unexplained)."
+          "scale": [
+            "atk_scale_wisd"
+          ],
+          "frames": [
+            20
+          ],
+          "applies": [
+            {
+              "kind": "infliction",
+              "element": "natural"
+            }
+          ],
+          "events": [
+            "chr_0032_lizhiyan_normal_skill_abilityrange2"
+          ],
+          "note": "conditionPostDesc1: \"Array Arcana: INT: - Deals more DMG.\" Only in btl_upload_d9e59d0fb737 (under Corrosion, ×2.23 unexplained).",
+          "if": {
+            "attrAtLeast": [
+              41,
+              42
+            ]
+          }
         }
       ]
     },
@@ -155,65 +319,143 @@
         {
           "id": "touch_will",
           "label": "Tactical Doubles hit (WILL)",
-          "scale": ["atk_scale_touch"],
-          "frames": [15],
-          "when": { "attrAtLeast": [42, 41] },
-          "buffs": [{ "buff": "doubles_susceptibility_will", "beforeDamage": true }],
-          "energy": { "key": "usp" },
-          "events": ["buff_chr_0032_lizhiyan_combo_skill_seal_total"],
-          "note": "One hit per target (four branches, one taken). Potential 1 multiplies atk_scale_touch by 1.3. Verified (0.8 × 1.3 = 1.04) on btl_upload_0eef2474a26f, btl_upload_e82d45c46040 ×2, btl_upload_b7b3762d5da8 ×2. Energy: ObtainCostAction costValue usp (10) when the hit finds a target."
+          "scale": [
+            "atk_scale_touch"
+          ],
+          "frames": [
+            15
+          ],
+          "buffs": [
+            {
+              "buff": "doubles_susceptibility_will",
+              "beforeDamage": true
+            }
+          ],
+          "energy": "usp",
+          "events": [
+            "buff_chr_0032_lizhiyan_combo_skill_seal_total"
+          ],
+          "note": "One hit per target (four branches, one taken). Potential 1 multiplies atk_scale_touch by 1.3. Verified (0.8 × 1.3 = 1.04) on btl_upload_0eef2474a26f, btl_upload_e82d45c46040 ×2, btl_upload_b7b3762d5da8 ×2. Energy: ObtainCostAction costValue usp (10) when the hit finds a target.",
+          "if": {
+            "attrAtLeast": [
+              42,
+              41
+            ]
+          }
         },
         {
           "id": "touch_int",
           "label": "Tactical Doubles hit (INT)",
-          "scale": ["atk_scale_touch"],
-          "frames": [15],
-          "when": { "attrAtLeast": [41, 42] },
-          "buffs": [{ "buff": "doubles_susceptibility_int", "beforeDamage": true }],
-          "energy": { "key": "usp" },
-          "events": ["buff_chr_0032_lizhiyan_combo_skill_seal_total"],
-          "note": "As the WILL hit; only the Susceptibility differs."
+          "scale": [
+            "atk_scale_touch"
+          ],
+          "frames": [
+            15
+          ],
+          "buffs": [
+            {
+              "buff": "doubles_susceptibility_int",
+              "beforeDamage": true
+            }
+          ],
+          "energy": "usp",
+          "events": [
+            "buff_chr_0032_lizhiyan_combo_skill_seal_total"
+          ],
+          "note": "As the WILL hit; only the Susceptibility differs.",
+          "if": {
+            "attrAtLeast": [
+              41,
+              42
+            ]
+          }
         },
         {
           "id": "explosion_will",
           "label": "Explosion when Imprisonment ends (WILL)",
-          "scale": ["atk_scale_boom"],
-          "frames": [222],
-          "when": { "attrAtLeast": [42, 41] },
+          "scale": [
+            "atk_scale_boom"
+          ],
+          "frames": [
+            222
+          ],
           "events": [
             "chr_0032_lizhiyan_combo_skill_abilityentity_end",
             "buff_chr_0032_lizhiyan_combo_skill_seal_listener",
             "buff_chr_0032_lizhiyan_combo_skill_seal_bunshin_end_listener"
           ],
-          "note": "Imprisonment from frame 9 for duration_pre + duration_will (6.633 s = 199 frames); its end casts combo_skill_abilityentity_end, which deals atk_scale_boom at its frame 14: 9 + 199 + 14 = 222. btl_upload_bdf223db8e49 logs it 7418 ms after the Tactical Doubles hit (model 6.9 s; the hits' hit-stops may pause the timer). Early ends (seal_listener, seal_bunshin_end_listener) deal the same atk_scale_boom."
+          "note": "Imprisonment from frame 9 for duration_pre + duration_will (6.633 s = 199 frames); its end casts combo_skill_abilityentity_end, which deals atk_scale_boom at its frame 14: 9 + 199 + 14 = 222. btl_upload_bdf223db8e49 logs it 7418 ms after the Tactical Doubles hit (model 6.9 s; the hits' hit-stops may pause the timer). Early ends (seal_listener, seal_bunshin_end_listener) deal the same atk_scale_boom.",
+          "if": {
+            "attrAtLeast": [
+              42,
+              41
+            ]
+          }
         },
         {
           "id": "explosion_int",
           "label": "Explosion when the INT battle skill ends Imprisonment",
-          "scale": ["atk_scale_boom"],
-          "frames": [36],
-          "when": { "attrAtLeast": [41, 42] },
-          "events": ["buff_chr_0032_lizhiyan_combo_skill_seal2", "chr_0032_lizhiyan_combo_skill_abilityentity_end"],
-          "note": "buff_chr_0032_lizhiyan_combo_skill_seal2, abilityEvent 101 (hit by Arcane's battle skill): ObtainCost atb_return_wisd (SP, not modelled), DamageAction atk_scale_early_finish ← atk_scale_boom, ends Imprisonment. Natural INT end (combo_skill_abilityentity_end, atk_scale_boom) shares the key."
+          "scale": [
+            "atk_scale_boom"
+          ],
+          "frames": [
+            36
+          ],
+          "events": [
+            "buff_chr_0032_lizhiyan_combo_skill_seal2",
+            "chr_0032_lizhiyan_combo_skill_abilityentity_end"
+          ],
+          "note": "buff_chr_0032_lizhiyan_combo_skill_seal2, abilityEvent 101 (hit by Arcane's battle skill): ObtainCost atb_return_wisd (SP, not modelled), DamageAction atk_scale_early_finish ← atk_scale_boom, ends Imprisonment. Natural INT end (combo_skill_abilityentity_end, atk_scale_boom) shares the key.",
+          "if": {
+            "attrAtLeast": [
+              41,
+              42
+            ]
+          }
         },
         {
           "id": "laser_int",
           "label": "Bonus hits after the INT battle skill (lasers 1–4)",
-          "scale": ["atk_scale_laser1"],
+          "scale": [
+            "atk_scale_laser1"
+          ],
           "count": 4,
-          "frames": [79, 82, 85, 88],
-          "when": { "attrAtLeast": [41, 42] },
-          "events": ["buff_chr_0032_lizhiyan_combo_skill_seal_finisher_wisd"],
-          "note": "buff_chr_0032_lizhiyan_combo_skill_seal_finisher_wisd DamageActions at buff frames 2, 5, 8, 11. 4 × laser1 + laser2 = display_atk_scale_laser_wisd (5.0 at Lv12)."
+          "frames": [
+            79,
+            82,
+            85,
+            88
+          ],
+          "events": [
+            "buff_chr_0032_lizhiyan_combo_skill_seal_finisher_wisd"
+          ],
+          "note": "buff_chr_0032_lizhiyan_combo_skill_seal_finisher_wisd DamageActions at buff frames 2, 5, 8, 11. 4 × laser1 + laser2 = display_atk_scale_laser_wisd (5.0 at Lv12).",
+          "if": {
+            "attrAtLeast": [
+              41,
+              42
+            ]
+          }
         },
         {
           "id": "laser_int_final",
           "label": "Bonus hits after the INT battle skill (final laser)",
-          "scale": ["atk_scale_laser2"],
-          "frames": [94],
-          "when": { "attrAtLeast": [41, 42] },
-          "events": ["buff_chr_0032_lizhiyan_combo_skill_seal_finisher_wisd"],
-          "note": "seal_finisher_wisd buff frame 17; it then finishes the combo's post-Imprisonment Susceptibility."
+          "scale": [
+            "atk_scale_laser2"
+          ],
+          "frames": [
+            94
+          ],
+          "events": [
+            "buff_chr_0032_lizhiyan_combo_skill_seal_finisher_wisd"
+          ],
+          "note": "seal_finisher_wisd buff frame 17; it then finishes the combo's post-Imprisonment Susceptibility.",
+          "if": {
+            "attrAtLeast": [
+              41,
+              42
+            ]
+          }
         }
       ]
     },
@@ -228,23 +470,60 @@
         {
           "id": "array_will",
           "label": "Array creation (WILL)",
-          "scale": ["atk_scale"],
-          "frames": [47],
-          "when": { "attrAtLeast": [42, 41] },
-          "buffs": [{ "buff": "gloompurger_array" }],
-          "events": ["chr_0032_lizhiyan_ultimate_skill"],
-          "note": "conditionPostDesc2: \"Array Arcana: WILL: - When created, the Gloompurger Array also targets enemies with Arts Infliction within its AOE, and applies another Arts Infliction stack of the same element to them\" (SpellInfliction by the enemy's infliction tag; not expressible). Talent 1's Susceptibility lands in the same frame before the hit (not modelled; logged 0.128 at Will 788 on btl_upload_b7b3762d5da8, where the hit matches with that boundary buff). Verified on btl_upload_b7b3762d5da8, btl_upload_e82d45c46040, btl_upload_dbaee23b801d."
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            47
+          ],
+          "buffs": [
+            {
+              "buff": "gloompurger_array"
+            }
+          ],
+          "events": [
+            "chr_0032_lizhiyan_ultimate_skill"
+          ],
+          "note": "conditionPostDesc2: \"Array Arcana: WILL: - When created, the Gloompurger Array also targets enemies with Arts Infliction within its AOE, and applies another Arts Infliction stack of the same element to them\" (SpellInfliction by the enemy's infliction tag; not expressible). Talent 1's Susceptibility lands in the same frame before the hit (not modelled; logged 0.128 at Will 788 on btl_upload_b7b3762d5da8, where the hit matches with that boundary buff). Verified on btl_upload_b7b3762d5da8, btl_upload_e82d45c46040, btl_upload_dbaee23b801d.",
+          "if": {
+            "attrAtLeast": [
+              42,
+              41
+            ]
+          }
         },
         {
           "id": "array_int",
           "label": "Array creation (INT)",
-          "scale": ["atk_scale"],
-          "frames": [47],
-          "when": { "attrAtLeast": [41, 42] },
-          "applies": [{ "kind": "forcedReaction", "status": "corrosion", "level": 1, "durationKey": "duration2" }],
-          "buffs": [{ "buff": "gloompurger_array" }],
-          "events": ["chr_0032_lizhiyan_ultimate_skill"],
-          "note": "conditionPostDesc1: \"Array Arcana: INT: - When created, the Gloompurger Array also forcibly applies Corrosion to enemies in the AOE.\" Frame 47 creates buff_common_natural_natural_corrupt_triggered with count ← `count` (1, default only: level 1) and duration ← duration2 (15 s), before the DamageAction. Talent 2 lengthens it and raises its cap (not modelled). Only in btl_upload_d9e59d0fb737 (under that Corrosion)."
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            47
+          ],
+          "applies": [
+            {
+              "kind": "forcedReaction",
+              "status": "corrosion",
+              "level": 1,
+              "durationKey": "duration2"
+            }
+          ],
+          "buffs": [
+            {
+              "buff": "gloompurger_array"
+            }
+          ],
+          "events": [
+            "chr_0032_lizhiyan_ultimate_skill"
+          ],
+          "note": "conditionPostDesc1: \"Array Arcana: INT: - When created, the Gloompurger Array also forcibly applies Corrosion to enemies in the AOE.\" Frame 47 creates buff_common_natural_natural_corrupt_triggered with count ← `count` (1, default only: level 1) and duration ← duration2 (15 s), before the DamageAction. Talent 2 lengthens it and raises its cap (not modelled). Only in btl_upload_d9e59d0fb737 (under that Corrosion).",
+          "if": {
+            "attrAtLeast": [
+              41,
+              42
+            ]
+          }
         }
       ]
     },
@@ -259,20 +538,42 @@
         {
           "id": "will",
           "label": "Gloompurge Arcana (WILL)",
-          "scale": ["atk_scale_will"],
-          "frames": [58],
-          "when": { "attrAtLeast": [42, 41] },
-          "events": ["chr_0032_lizhiyan_ultimate_skill2"],
-          "note": "Talent 1's WILL Susceptibility applies on this hit too (not modelled). Not in any log yet."
+          "scale": [
+            "atk_scale_will"
+          ],
+          "frames": [
+            58
+          ],
+          "events": [
+            "chr_0032_lizhiyan_ultimate_skill2"
+          ],
+          "note": "Talent 1's WILL Susceptibility applies on this hit too (not modelled). Not in any log yet.",
+          "if": {
+            "attrAtLeast": [
+              42,
+              41
+            ]
+          }
         },
         {
           "id": "int",
           "label": "Gloompurge Arcana (INT)",
-          "scale": ["atk_scale"],
-          "frames": [58],
-          "when": { "attrAtLeast": [41, 42] },
-          "events": ["chr_0032_lizhiyan_ultimate_skill2"],
-          "note": "Potential 5 multiplies atk_scale by 1.3. Talent 1's INT Arts Amp (enhance_rate) during the ultimate isn't modelled. Not in any log yet."
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            58
+          ],
+          "events": [
+            "chr_0032_lizhiyan_ultimate_skill2"
+          ],
+          "note": "Potential 5 multiplies atk_scale by 1.3. Talent 1's INT Arts Amp (enhance_rate) during the ultimate isn't modelled. Not in any log yet.",
+          "if": {
+            "attrAtLeast": [
+              41,
+              42
+            ]
+          }
         }
       ]
     }
