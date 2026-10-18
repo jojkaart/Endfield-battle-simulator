@@ -901,8 +901,8 @@ describe("timeline: haste", () => {
     const plain = simulate(data, scenario(rot));
     const fast = simulate(d, scenario(rot));
     // The battle skill was cast before the haste; attack1 after it, at speed 1.25: its hit at frame 6 / 1.25 → 5.
-    const a1 = (r: typeof plain) => [r.casts[1]?.frame ?? NaN, r.hits.find((h) => h.skillId === L + "attack1")?.frame ?? NaN];
-    expect(a1(plain)[1] - a1(plain)[0]).toBe(6);
-    expect(a1(fast)[1] - a1(fast)[0]).toBe(5);
+    const delay = (r: typeof plain) => (r.hits.find((h) => h.skillId === L + "attack1")?.frame ?? NaN) - (r.casts[1]?.frame ?? NaN);
+    expect(delay(plain)).toBe(6);
+    expect(delay(fast)).toBe(5);
   });
 });
