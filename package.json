@@ -13,7 +13,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:tools": "node --test tools/skport-capture/test/*.test.js",
-    "check": "npm run typecheck && npm run lint && npm test && npm run test:tools"
+    "check": "npm run typecheck && npm run lint && npm test && npm run test:tools",
+    "efsim": "node packages/cli/src/main.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -27,6 +28,7 @@
   },
   "dependencies": {
     "@efsim/data": "*",
-    "@efsim/engine": "*"
+    "@efsim/engine": "*",
+    "@efsim/cli": "*"
   }
 }

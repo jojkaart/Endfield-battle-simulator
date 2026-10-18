@@ -2,47 +2,28 @@
 
 ## Next steps
 
-1. **Review the design with the owner** ([design.md](design.md)), then
-   settle its open questions where data can (tie-break order, which action
-   types the first fixtures need). Keep [glossary.md](glossary.md) growing.
-2. **In-game tests:** the owner plays daily and may run simple tests;
-   list and status in [in-game-tests.md](in-game-tests.md). Stat panels
-   are ready now; the others wait on the engine.
-3. **Set up the TypeScript project** (*started 2026-10-18*: workspaces,
-   TypeScript, Vitest, ESLint, CI, session start hook, sparse data fetch,
-   loader for BattleConst / SkillPatchTable / CharacterTable. Still to do:
-   fixture format and loader, JSON Schemas, the enum map, `NOTICE` when MIT
-   code is first copied): package layout, test runner, lint and
-   typecheck, and a loader that reads tables from `data/` submodules
-   (watch for int64 text IDs and 555me's string-encoded numbers). Include:
-   - **language-neutral fixtures:** expected results as data files (setup,
-     rotation, expected values) that the TypeScript tests read now and the
-     Rust tests will read later;
-   - **fixture provenance:** each fixture records its source and the game
-     version / data submodule commit it was verified against;
-   - **CI** (GitHub Actions) running lint, typecheck and all tests on every
-     push, fetching only the needed data folders (sparse checkout) with
-     caching;
-   - **SessionStart hook** for cloud sessions: initialise submodules and
-     install dependencies so tests can run immediately;
-   - `NOTICE` file with copyright notices whenever MIT code from
-     `reference/` is copied;
-   - JSON Schemas for `DataBundle`, `Scenario`, `Result` (`schemas/`);
-   - the version-pinned enum map ([game-data-format.md](game-data-format.md#known-enum-values)).
-4. **Table cross-check test** (*in place* for the three tables loaded so
-   far; extend with each new table): compare the tables the engine uses
-   between the two `data/` submodules and fail on any difference.
-5. **First fixture: single-hit damage.** Reproduce the in-game verified
-   Laevatain hit table and stat-panel tests from
-   `reference/zero-sanity-timeline` (`src/tests/unit/laevatainDamageCalc.test.ts`,
-   `loadoutAggregator.test.ts`). Those values date from ~March 2026, so check
-   for balance changes in the data history first.
-6. **Second fixture:** ZMDLogs `btl_upload_40d9a3c1da37` (Rhodagn, 1.6,
-   19 s, Laevatain ultimate hits), matched hit by hit via `/api/battles/{id}`;
-   later `btl_upload_f239236b857f` as the full-kit Laevatain fixture
-   (needs 1.5 data). See [data-sources.md](data-sources.md#zmdlogs).
-7. **Rotation fixture:** the End-DPScope standard Endaxis scenario
-   (3,700,482 and its three variants), as a loose cross-simulator check.
+Done 2026-10-18: TypeScript project, CI, data loader with cross-checks, stat
+aggregation, single-hit damage, Laevatain's kit, the Zero Sanity fixture (35
+in-game values, all exact) and the `efsim` damage calculator.
+
+1. **More kits.** Hit structure for more operators, each verified against
+   something in-game (a fixture). ZMDLogs is the best source: real hits with
+   full loadouts for many operators.
+2. **ZMDLogs hit-by-hit fixture** (`btl_upload_40d9a3c1da37`, Rhodagn, 1.6,
+   19 s): import the loadout and the per-hit damage (`/api/battles/{id}`),
+   store only the extracted numbers with the battle ID (no names), and
+   match each hit. Needs buff zones from the log's buff events
+   ([data-sources.md](data-sources.md#zmdlogs)).
+3. **Conditional effects** from BuffData: weapon and gear set passives,
+   talent buffs, with the zones not yet modelled (susceptibility, link,
+   finisher, weakness, protection, multiplicative). Reactions and physical
+   statuses after that (Zero Sanity's combustion value 2608 is ready as a
+   fixture).
+4. **Rotation engine** on the stepping API ([design.md](design.md#stepping-api)):
+   timeline, SP, energy, cooldowns, buff durations; first check against the
+   End-DPScope standard scenario (3,700,482, loose tolerance).
+5. **Still open from setup:** JSON Schemas for `Scenario` / `Result` once
+   they exist, `NOTICE` when MIT code is first copied, the tie-break order.
 
 ## Later
 

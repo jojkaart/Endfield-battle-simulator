@@ -369,10 +369,13 @@ Each with the in-game test that would settle it:
    predicts +40% damage taken, not +24%.
 2. **Corrosion ramp timing:** Corrosion I from a 0-AI and a 300-AI operator;
    read Nature damage at 0, 5 and 15 s.
-3. **Final damage rounding** (half-up or floor): find a hit whose exact value
-   ends in .5–.99 and see what the game shows.
-4. **Attribute flooring** before the ATK bonus (strong consensus, but the
-   Talos Wiki and one measurement disagree).
+3. ~~**Final damage rounding**~~ *Settled 2026-10-18:* nearest whole number.
+   Zero Sanity's in-game hits show 1572.75 → 1573, 3253.97 → 3254,
+   1952.38 → 1952 (fixtures/zero-sanity-laevatain-p5.json). Only exact .5
+   (half-up vs half-even) is untested.
+4. ~~**Attribute flooring**~~ *Settled 2026-10-18:* the ATK bonus uses whole
+   attributes. In-game effective ATK 5871 needs it (exact attributes give
+   5878); End-DPScope's research notes state it.
 5. **Burst / reaction DMG bonuses** (attribute types 35–38, 49, 56–59): Endaxis
    treats them as a separate multiplicative group; Talos and 666bj don't
    mention them. Compare a Combustion hit with a "+Arts Reaction DMG" source,

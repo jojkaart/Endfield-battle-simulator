@@ -11,7 +11,11 @@ choosing a setup), **done**.
 
 ## Tests
 
-### 1. Stat panels (ready)
+### 1. Stat panels (ready; lower priority now)
+
+Laevatain's panel already matches Zero Sanity's in-game screenshot exactly,
+and attribute rounding is settled. Still useful for other operators and for
+gear with flat ATK (formula slot 7, not yet checked in game).
 
 **Why:** the first fixture checks stat aggregation (base stats + weapon +
 gear → ATK, attributes, crit, etc.) against patch 1.6 data. The Zero Sanity
@@ -31,11 +35,11 @@ Laevatain is the most useful if you have her (same operator as the Zero
 Sanity fixture), but any built operator helps. Builds with different gear
 are more useful than the same build twice.
 
-### 2. Final damage rounding (later: needs single-hit damage working)
+### 2. Final damage rounding (done, no test needed)
 
-**Why:** sources disagree whether final damage is rounded half-up or down.
-**How (planned):** one specific hit with a known loadout on a known enemy,
-picked so the exact value ends in .5–.99; read the damage number.
+Settled from Zero Sanity's in-game values: damage rounds to the nearest
+whole number (1572.75 → 1573, 1952.38 → 1952). See
+[data-sources.md](data-sources.md#open-questions).
 
 ### 3. Breach and Arts Intensity (later: needs a simple setup chosen)
 

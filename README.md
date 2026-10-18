@@ -3,8 +3,32 @@
 A utility for automatically evaluating team compositions and rotations in
 *Arknights: Endfield* and comparing them against each other.
 
-Status: early development: project tooling and the game-table loader exist,
-the engine doesn't yet. Next steps: [`docs/roadmap.md`](docs/roadmap.md).
+Status: early development. A **damage calculator** works: stat panel and
+damage per hit for an operator build, verified against in-game values
+(Laevatain: 10 stat panel values and 25 hits, all exact). Hit structure
+("kits") exists for Laevatain so far; stats work for every operator. No
+rotations or team search yet. Next steps: [`docs/roadmap.md`](docs/roadmap.md).
+
+## Damage calculator
+
+```sh
+npm run efsim -- find laevatain                       # look up IDs by name
+npm run efsim -- template chr_0016_laevat --weapon wpn_sword_0006 > my-build.json
+npm run efsim -- calc examples/laevatain-forgeborn.json
+npm run efsim -- calc examples/laevatain-forgeborn.json --crit never --condition wpn_sword_0006.after_ultimate
+npm run efsim -- compare examples/laevatain-forgeborn.json examples/laevatain-umbral-torch.json
+```
+
+Build files follow [`schemas/build.schema.json`](schemas/build.schema.json):
+operator, level, promotion, potential, skill levels, weapon (level and the
+levels of its three skills) and up to four gear pieces with the artificing
+level of each stat line. `calc --verbose` lists every contribution to every
+stat and the damage zones of a hit.
+
+Limits today: conditional effects (most weapon and gear set passives,
+talent buffs) are only included where a kit or weapon kit defines them as a
+`--condition`; susceptibility, link, finisher, weakness, protection and arts
+reactions aren't modelled yet. The output says so.
 
 ## Goals
 
