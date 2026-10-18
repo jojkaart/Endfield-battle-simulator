@@ -86,6 +86,16 @@ multiply separately.
 seconds. Screenshots of the damage numbers before and after, plus her stat
 panel (ATK, Intellect, Will, Arts Intensity) and skill levels.
 
+### 8. Link stack values (ready)
+
+**Why:** Link (a teammate's combo skill boosting the next battle skill or
+ultimate) is found in the data, but its per-stack values aren't in the
+tables we have. One log shows +20% for one stack on Gilberta's ultimate.
+**How:** on a training dummy, one operator's ultimate (Gilberta's is a
+single hit) cast: with no combo skill before it; after one teammate's
+combo; after two or three teammates' combos. Screenshots of the ultimate's
+damage number each time (no crits, same buffs otherwise).
+
 ## Results
 
 None yet.
