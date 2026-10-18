@@ -8,26 +8,18 @@ in-game values, all exact), the `efsim` damage calculator, ZMDLogs fixtures
 and checker, the timeline (v1) with arts reactions and stacks, and kits for
 the six favourites.
 
-1. **Kits for the six favourites (in):** Typhoeus, Arcane, Si, Gilberta,
-   Liino, Estella, each with notes on what's verified. To finish: add
-   `applies` (inflictions) to every kit and check them with `efsim zmdlogs
-   reactions`; restore the event keys the agents held back now that the
-   checker handles shared keys and BuffData stacking; a literal factor per
-   hit (Typhoeus's split arrows); a reaction-type kit hit (Typhoeus's own
-   burst); a mode requirement (Arcane: Intellect ≥ Will); Link
-   (`buff_common_affixes_combo_trigger` → skillimbue, ×1.2 at one stack);
-   importing zero-duration log buffs as unquantified (Liino's in d9e59).
-2. **Ultimate energy and combo triggers** in the timeline, so rotations
-   can't cast ultimates or combos they couldn't in game.
-3. **Team buffs from skills** on the timeline (BuffData modifiers with
-   durations), starting with the favourites' own: Liino's ATK and Amp,
-   Si's ultimate Amp, Typhoeus's combo debuff, Estella's Physical
-   Susceptibility, Arcane's Susceptibility.
-4. **Rotation search** for a team of favourites: policy-driven drivers on
-   the stepping API comparing rotations by total damage over a fixed time.
-5. **Corrosion model:** time dilation, the applier's talents (Arcane), and
+1. **Kit abstractions** ([kit-abstractions.md](kit-abstractions.md)), before
+   adding operators (owner's call, 2026-10-18): one `Condition` and one
+   `ValueExpr` replacing `when` / `requires` / `scaleIf` / `ValueSpec`; one
+   `triggers` list replacing `comboTriggers` / `teamTriggers`; buff
+   lifecycle; `kit-draft` v2 and loader defaults compiled from SkillData /
+   BuffData (frames, energy, blocks, factors, event keys, buffs).
+2. **Rotation search** (`efsim search`, beam search on the stepping API) is
+   in; next: a resource-aware evaluator, team runs for the favourites, and a
+   report of the best rotations found.
+3. **Corrosion model:** time dilation, the applier's talents (Arcane), and
    carry-over on reapplication; in-game test 4.
-6. **Still open from setup:** a `Result` schema, `NOTICE` when MIT code is
+4. **Still open from setup:** a `Result` schema, `NOTICE` when MIT code is
    first copied, the tie-break order.
 
 ## Later
