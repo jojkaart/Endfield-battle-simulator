@@ -39,6 +39,7 @@ interface RawHit {
   energy?: ValueExpr;
   sp?: ValueExpr;
   heals?: "self" | "controlled" | "team";
+  detached?: boolean;
   /** Triggered hits only: which skill-type bonus applies (`none`: no skill type). */
   damageType?: SkillType | "none";
 }
@@ -62,6 +63,7 @@ interface RawKit {
     available?: Predicate;
     takesControl?: boolean;
     cooldownGroup?: string;
+    chainStep?: boolean;
     hits: RawHit[];
   }[];
   conditions?: RawCondition[];
@@ -222,6 +224,8 @@ function kitChecker(scope: KitScope) {
         ...(h.energy ? { energy: h.energy } : {}),
         ...(h.sp !== undefined ? { sp: h.sp } : {}),
         ...(h.heals ? { heals: h.heals } : {}),
+        // A hit dealt from another SkillData file (a projectile or ability entity) is on its way and survives an interrupt.
+        ...((h.detached ?? (src.defaultEvent !== undefined && events.length > 0 && !events.includes(src.defaultEvent))) ? { detached: true } : {}),
         ...(h.if ? { if: h.if } : {}),
         ...((h.finalStrike ?? src.finalStrike?.(h, events) ?? false) ? { finalStrike: true } : {}),
         ...(h.gains ? { gains: h.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1, ...(g.if ? { if: g.if } : {}) })) } : {}),
@@ -301,6 +305,23 @@ function kitChecker(scope: KitScope) {
   return { checkValue, checkPredicate, checkBuff, normalizeHits, checkTrigger, normalizeBuffs };
 }
 
+/**
+ * Whether a basic attack is a chain step (attack2…): an earlier-numbered
+ * basic attack of the same chain lists it in a cancel window. The last step
+ * lists the first (attack5 → attack1); that's the chain looping, not a step.
+ */
+function isChainStep(data: KitData, kit: RawKit, skillId: string): boolean {
+  const own = kit.skills.find((s) => s.skillId === skillId);
+  const m = /^(.*?)(\d+)$/.exec(skillId);
+  if (!own || own.damageType !== "basic" || !m) return false;
+  const [, prefix, n] = m as unknown as [string, string, string];
+  return kit.skills.some((y) => {
+    const ym = /^(.*?)(\d+)$/.exec(y.skillId);
+    const t = data.skills[y.skillId]?.timing;
+    return y.damageType === "basic" && ym?.[1] === prefix && Number(ym[2]) < Number(n) && !!t && t.windows.some((w) => w.skills.includes(skillId));
+  });
+}
+
 function idsOf(file: string, what: string, items: readonly { id: string }[]): Set<string> {
   const ids = new Set(items.map((x) => x.id));
   if (ids.size !== items.length) throw new Error(`${file}: duplicate ${what} ID`);
@@ -352,6 +373,7 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
       ...(s.available ? { available: s.available } : {}),
       ...(s.takesControl ? { takesControl: true } : {}),
       ...(s.cooldownGroup ? { cooldownGroup: s.cooldownGroup } : {}),
+      ...((s.chainStep ?? isChainStep(data, kit, s.skillId)) ? { chainStep: true } : {}),
       hits: c.normalizeHits(s.hits, { skillId: s.skillId, damageType: s.damageType, label: s.label, checkScale: (key, w) => checkKey(skill, key, w), defaultEvent: s.skillId, finalStrike: (h, events) => isFinalStrike(s.skillId, events, s.hits.length) }, where),
     };
   });

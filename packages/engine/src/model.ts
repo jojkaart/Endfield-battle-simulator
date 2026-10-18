@@ -66,6 +66,25 @@ export interface SkillLevelData {
   readonly costValue: number;
 }
 
+/**
+ * When a skill lets its operator act again (SkillData; rules in
+ * docs/design.md "Skill timing"), 30 FPS frames from its start.
+ */
+export interface SkillTiming {
+  /** The whole action (durationFrame): after it, nothing is casting. */
+  readonly durationFrames: number;
+  /** Until here (exclusiveFrame) it can't be interrupted, except as `windows` and priorities allow. */
+  readonly exclusiveFrames: number;
+  /** AllowNextSkillAction: from `from` to `to` (inclusive) these skills may start. */
+  readonly windows: readonly { readonly from: number; readonly to: number; readonly skills: readonly string[] }[];
+  /** ChannelingCastingAction: the caster can't cast skills / can't be swapped out, from `from` to `to`. */
+  readonly channels: readonly { readonly from: number; readonly to: number; readonly cantCastSkill: boolean; readonly cantSwitch: boolean }[];
+  /** skillSpecification: 1 basic attack, 3 battle skill, 4 combo, 5 ultimate, 6 plunging, 8 finisher. */
+  readonly specification: number;
+  /** dontInterruptCombo: casting it keeps the basic-attack chain's next step. */
+  readonly keepsChain: boolean;
+}
+
 export interface SkillData {
   readonly id: string;
   readonly levels: readonly SkillLevelData[];
@@ -76,7 +95,7 @@ export interface SkillData {
    * the cancel window (AllowNextSkillAction), all at 30 FPS. Null when the
    * file isn't loaded.
    */
-  readonly timing: { readonly durationFrames: number; readonly exclusiveFrames: number; readonly cancelFrame: number | null } | null;
+  readonly timing: SkillTiming | null;
   /** Blackboard defaults from SkillData, for keys the level table doesn't set (e.g. `ratio`). */
   readonly defaults: Readonly<Record<string, number>>;
   /** Permanent stat effects (`cardAttributeModifier`), e.g. weapon and gear set stats. */
@@ -233,6 +252,8 @@ export interface KitHit {
   readonly energy?: ValueExpr;
   /** SP the hit returns when it lands (SkillData ObtainCostAction costType 1 at this hit); then the skill's `atb` isn't added to its first hit. */
   readonly sp?: ValueExpr;
+  /** Lands even if the skill is interrupted before it: a projectile or ability entity already on its way. */
+  readonly detached?: boolean;
   /** Whom the hit heals (an event for heal triggers; amounts aren't modelled). */
   readonly heals?: Exclude<HealTarget, "eventOperator">;
 }
@@ -344,6 +365,8 @@ export interface KitSkill {
   readonly available?: Predicate;
   /** The caster becomes the controlled operator at the cast (an ultimate's "becomes the controlled operator"). */
   readonly takesControl?: boolean;
+  /** A basic-attack chain step (attack2…): castable only while the chain points at it (the previous step's window lists it). The loader sets it from the data. */
+  readonly chainStep?: boolean;
   /** Skills of one group share a cooldown: casting one puts every member on its own cooldown (Typhoeus's two combos). */
   readonly cooldownGroup?: string;
   /** Hits may be none: a skill that only changes state (Laevatain's ultimate, Liino's End Stance) does it with triggers on its cast. */

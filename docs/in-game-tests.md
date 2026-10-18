@@ -153,6 +153,36 @@ slot); this would only confirm it.
 and look at the infliction icon on the enemy; repeat with a Cryo or Nature
 operator first.
 
+### 15. Swapping during a battle skill (ready, if you have Gilberta)
+
+**Why:** the data forbids switching for the first 3.7 s of Gilberta's
+battle skill (`cantSwitchPosition`); the engine now lets you swap at any
+other moment, even mid-skill, and the skill goes on. Whether the game
+agrees decides how fast swap-heavy rotations are.
+**How:** cast Gilberta's battle skill and press another operator's swap
+key at once, holding it: note roughly when the swap happens (about 3.7 s
+expected). Then try swapping during one of her basic attacks: it should
+swap at once, and the attack's hit should still land.
+
+### 16. Does a skill cancel the basic attack it interrupts? (ready)
+
+**Why:** the engine assumes a battle skill, combo or ultimate can start at
+any moment of a basic attack and cancels the attack's hits that haven't
+landed (except projectiles). If the hit lands anyway, the engine
+under-counts damage and SP for players who cancel early.
+**How:** with any operator whose 5th basic attack (Final Strike) is a
+melee hit, start the 5th attack and press the battle skill immediately:
+does the Final Strike's damage number (and its SP) appear?
+
+### 17. Basic attack after Laevatain's battle skill during Twilight (ready)
+
+**Why:** the data says her enhanced attacks may start only 115 frames
+(3.8 s) after the enhanced battle skill, and Twilight pauses for that
+time. The old engine let the attack start after 1.1 s.
+**How:** in Twilight, cast the battle skill and mash basic attack: time
+from the battle skill to the first enhanced attack (3.8 s expected), and
+whether Twilight's remaining time stays the same meanwhile.
+
 ## Results
 
 None yet.

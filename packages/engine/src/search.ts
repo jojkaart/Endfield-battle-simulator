@@ -25,30 +25,25 @@ export interface Candidate {
   readonly frame: number;
 }
 
-/** A basic attack chain: the kit's basic skills sharing a name with a trailing step number (attack1…5, ult_attack1…4). */
-interface Chain {
-  readonly steps: readonly string[];
-}
-
-function chains(data: GameData, operator: string): Chain[] {
-  const groups = new Map<string, { n: number; id: string }[]>();
-  for (const s of data.kits.operators[operator]?.skills ?? []) {
-    if (s.kind !== "basic") continue;
-    const m = /^(.*?)(\d+)$/.exec(s.skillId);
-    if (!m) continue; // heavy, plunging and dash attacks aren't chain steps
-    const [, prefix, n] = m as unknown as [string, string, string];
-    groups.set(prefix, [...(groups.get(prefix) ?? []), { n: Number(n), id: s.skillId }]);
-  }
-  return [...groups.values()].map((g) => ({ steps: g.sort((a, b) => a.n - b.n).map((x) => x.id) }));
-}
-
-/** The next step of each chain for an operator: after its last cast step, else the first (wrapping after the last). */
+/**
+ * The basic attacks an attack input can be for an operator: the chain's
+ * next step while it points at one, and the chain heads (basic attacks that
+ * aren't chain steps; not finishers or plunging attacks, which need states
+ * the timeline doesn't have yet).
+ */
 function nextBasics(data: GameData, state: TimelineState, operator: string): string[] {
-  const last = [...state.casts].reverse().find((c) => c.operator === operator);
-  return chains(data, operator).map((c) => {
-    const i = last ? c.steps.indexOf(last.skill) : -1;
-    return c.steps[i >= 0 ? (i + 1) % c.steps.length : 0] as string;
-  });
+  const out = new Set<string>();
+  const chain = state.chainNext[operator];
+  if (chain && chain.until >= state.frame) out.add(chain.skill);
+  for (const s of data.kits.operators[operator]?.skills ?? []) {
+    if (s.kind === "basic" && !s.chainStep && data.skills[s.skillId]?.timing?.specification === 1) out.add(s.skillId);
+  }
+  return [...out];
+}
+
+/** Whether an operator has basic attacks at all (so swapping to it can be worth it). */
+function hasBasics(data: GameData, operator: string): boolean {
+  return (data.kits.operators[operator]?.skills ?? []).some((s) => s.kind === "basic");
 }
 
 /** Every action that can still happen, with its earliest legal start (stepping API: legal actions). */
@@ -62,7 +57,7 @@ export function candidateActions(ctx: TimelineContext, state: TimelineState): Ca
     const op = b.operator;
     for (const s of ctx.data.kits.operators[op]?.skills ?? []) if (s.kind !== "basic") consider({ operator: op, skill: s.skillId });
     if (op === state.controlled) for (const skill of nextBasics(ctx.data, state, op)) consider({ operator: op, skill });
-    else if (chains(ctx.data, op).length > 0) consider({ operator: op, skill: "swap" });
+    else if (hasBasics(ctx.data, op)) consider({ operator: op, skill: "swap" });
   }
   return out;
 }
@@ -123,7 +118,8 @@ function stateKey(s: TimelineState): string {
     s.spPausedUntil,
     Object.entries(s.energy).map(([k, v]) => [k, r(v)]),
     s.energyBlockedUntil,
-    s.freeAt,
+    s.acting,
+    s.chainNext,
     s.readyAt,
     s.stacks,
     s.comboWindow,

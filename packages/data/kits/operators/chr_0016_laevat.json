@@ -75,6 +75,42 @@
         }
       ],
       "note": "CharGrowthTable: \"COMBO TRIGGER: When an enemy suffers Combustion or Corrosion.\""
+    },
+    {
+      "id": "twilight_paused_by_battle_skill",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0016_laevat_normal_skill_during_ult"
+        ]
+      },
+      "by": "self",
+      "do": [
+        {
+          "kind": "extendBuff",
+          "buff": "twilight",
+          "seconds": 3.8333333333
+        }
+      ],
+      "note": "SkillData normal_skill_during_ult creates buff_chr_0016_laevat_pause_ult for frames 0–115; while it exists buff_chr_0016_laevat_ult_end / _show_weapon run PauseBuffTime (abilityEventAction 9 / 203), so Twilight doesn't run down for those 115 frames (UltimateSkill text: the battle skill \"does not shorten the duration of the ultimate\"). Modelled as +115 frames (3.833 s) on Twilight at the cast; batch-1 report chr_0016_laevat gap 2."
+    },
+    {
+      "id": "twilight_paused_by_combo",
+      "on": {
+        "event": "cast",
+        "kinds": [
+          "combo"
+        ]
+      },
+      "by": "self",
+      "do": [
+        {
+          "kind": "extendBuff",
+          "buff": "twilight",
+          "seconds": 1.9
+        }
+      ],
+      "note": "SkillData combo_skill ChannelingAction (frames 0–57, every 0.1 s) re-creates show_weapon and ult_end with duration 0.1 (stacking type 5), holding Twilight for those 57 frames: +1.9 s. Only while Twilight is active (extendBuff does nothing otherwise). Batch-1 report chr_0016_laevat gap 2."
     }
   ],
   "skills": [

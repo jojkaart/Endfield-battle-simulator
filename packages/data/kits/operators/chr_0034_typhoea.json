@@ -417,6 +417,7 @@
       "available": {
         "buffActive": "hovering"
       },
+      "chainStep": false,
       "hits": [
         {
           "id": "power_shot",
@@ -495,6 +496,7 @@
       "available": {
         "buffActive": "hovering"
       },
+      "chainStep": false,
       "hits": [
         {
           "id": "power_shot",
@@ -573,6 +575,7 @@
       "available": {
         "buffActive": "hovering"
       },
+      "chainStep": false,
       "hits": [
         {
           "id": "power_shot",
@@ -651,6 +654,7 @@
       "available": {
         "buffActive": "hovering"
       },
+      "chainStep": false,
       "hits": [
         {
           "id": "power_shot",

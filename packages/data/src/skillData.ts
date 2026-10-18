@@ -7,10 +7,11 @@ import { join } from "node:path";
 import { arr, at, get, int, num, obj, str, type Ctx } from "./fields.ts";
 import { parseJsonExact } from "./json.ts";
 import { DATA_FILES, sourceDir } from "./sources.ts";
+import type { SkillTiming } from "@efsim/engine";
 
 export interface RawSkillFile {
-  /** Animation length (durationFrame), the uninterruptible part (exclusiveFrame) and the first cancel-window frame (AllowNextSkillAction), 30 FPS. */
-  readonly timing: { readonly durationFrames: number; readonly exclusiveFrames: number; readonly cancelFrame: number | null };
+  /** When the skill lets its operator act again (engine SkillTiming). */
+  readonly timing: SkillTiming;
   readonly defaults: Record<string, number>;
   readonly statModifiers: readonly { attr: number; slot: number; target: number; key: string | null; literal: number }[];
 }
@@ -65,20 +66,29 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
       });
     });
   }
-  let cancelFrame: number | null = null;
-  const findCancel = (node: unknown, frame: number) => {
-    if (Array.isArray(node)) return node.forEach((x) => findCancel(x, frame));
+  const windows: { from: number; to: number; skills: string[] }[] = [];
+  const channels: { from: number; to: number; cantCastSkill: boolean; cantSwitch: boolean }[] = [];
+  const find = (node: unknown, from: number, to: number) => {
+    if (Array.isArray(node)) return node.forEach((x) => find(x, from, to));
     if (typeof node !== "object" || node === null) return;
     const o = node as Record<string, unknown>;
-    if (typeof o["$type"] === "string" && o["$type"].includes("AllowNextSkillAction")) cancelFrame = cancelFrame === null ? frame : Math.min(cancelFrame, frame);
-    for (const v of Object.values(o)) findCancel(v, frame);
+    const type = typeof o["$type"] === "string" ? o["$type"] : "";
+    if (o["isEnable"] !== false && type.includes("AllowNextSkillAction")) windows.push({ from, to, skills: ((o["allowedSkillIdList"] ?? []) as unknown[]).filter((x): x is string => typeof x === "string") });
+    if (o["isEnable"] !== false && type.includes("ChannelingCastingAction")) channels.push({ from, to, cantCastSkill: o["cantCastSkill"] === true, cantSwitch: o["cantSwitchPosition"] === true });
+    for (const v of Object.values(o)) find(v, from, to);
   };
   const group = obj(j["actionGroupData"] ?? {}, at(ctx, "actionGroupData"));
-  for (const ta of (group["timelineActions"] ?? []) as Record<string, unknown>[]) findCancel(ta["_sequenceActionData"], Number(ta["_startFrame"]));
-  const timing = {
+  for (const ta of (group["timelineActions"] ?? []) as Record<string, unknown>[]) {
+    const from = Number(ta["_startFrame"]);
+    find(ta["_sequenceActionData"], from, ta["_endFrame"] === undefined ? from : Number(ta["_endFrame"]));
+  }
+  const timing: SkillTiming = {
     durationFrames: get(j, "durationFrame", ctx, int),
     exclusiveFrames: get(j, "exclusiveFrame", ctx, int),
-    cancelFrame,
+    windows: windows.sort((a, b) => a.from - b.from),
+    channels,
+    specification: get(j, "skillSpecification", ctx, int),
+    keepsChain: j["dontInterruptCombo"] === true,
   };
   return { timing, defaults, statModifiers };
 }

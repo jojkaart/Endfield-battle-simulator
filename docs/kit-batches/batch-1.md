@@ -203,5 +203,14 @@ Then re-analysis of all seven.
   effects at frames are its own delayed cast triggers; availability is a
   Predicate (`available`, replacing `availableWhile` / `unavailableWhile`,
   kits migrated); cooldown groups (`cooldownGroup`); `takesControl`; buffs
-  that block energy gain while they last (`blocksEnergy`). Cancel windows
-  (S3), chains (S5) and off-field follow-up casts (S6) next.
+  that block energy gain while they last (`blocksEnergy`).
+- S3, S5: when the next action may start (docs/design.md "Skill timing"):
+  SkillData windows, channels, `skillSpecification` priorities, exclusive
+  time; interrupts cancel hits still to land (detached ones excepted);
+  basic-attack chain steps from the data; swaps blocked only by
+  `cantSwitchPosition`. Typhoeus's aerial shots are an attempt counter, not
+  a window chain (kit `chainStep: false`; their order goes in the kit as
+  stacks). Laevatain's kit gains the Twilight pause (gap 2), so her example
+  total is unchanged; Liino's example reorders one action the chain no
+  longer allows; three examples change by up to 5% (same hits, different
+  buff windows). In-game tests 15–17.

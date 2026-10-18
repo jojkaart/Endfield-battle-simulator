@@ -314,6 +314,35 @@ ultimate or combo can freeze or slow it, which pauses ordinary buffs and SP
 regen), per-entity time, and unscaled time for cooldowns. Adding these later
 would touch everything.
 
+### Skill timing
+
+When an operator may act again after casting a skill (engine
+`actionGate`), from SkillData and the native rules Endaxis implements
+(read, not copied; research 2026-10-18):
+
+- After the skill's `durationFrame` nothing is casting: anything goes.
+- An `AllowNextSkillAction` window lets the skills it lists start from its
+  first to its last frame, even before `exclusiveFrame`.
+- A skill of higher priority may start at any frame (by
+  `skillSpecification`: basic attack 1 < battle skill, finisher 2 < combo 5
+  < ultimate 7; plunging attacks always). Others wait for `exclusiveFrame`.
+  Endaxis also lets anything through when a skill has no windows; its own
+  comment calls that a bypass, so the engine doesn't.
+- Basic-attack chains: a step (attack2…, set by the loader when an
+  earlier-numbered step's window lists it) starts only while the chain
+  points at it; an attack input during that window *is* the step, so
+  attack1 waits for the window to close. A skill with `dontInterruptCombo`
+  keeps the chain for 1 s after its exclusive time; other skills clear it.
+- Starting a skill ends the operator's current one: its hits still to land
+  are cancelled, except detached ones (dealt from a projectile or entity
+  file, by their log event keys). A recorded action without a time
+  therefore waits for the current skill's own hits; one with `at` may
+  interrupt.
+- Swapping doesn't wait for the controlled operator's action (which goes
+  on), except during a `ChannelingCastingAction` with `cantSwitchPosition`.
+  Endaxis ignores those channels; the data is explicit, so the engine
+  follows it (in-game test 15).
+
 ### Simulation model
 
 Two stages:

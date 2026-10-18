@@ -370,6 +370,8 @@ describe("timeline: kit triggers", () => {
     expect(kit.triggers.map((t) => [t.id, t.on.event, t.by])).toEqual([
       ["final_strike_absorb", "hit", "controlled"],
       ["combo_window", "reaction", "anyone"],
+      ["twilight_paused_by_battle_skill", "cast", "self"],
+      ["twilight_paused_by_combo", "cast", "self"],
     ]);
   });
 });
@@ -633,5 +635,62 @@ describe("timeline: skills", () => {
     const r = simulate(d, sc);
     expect(r.casts[1]?.energyAfter).toBe(0);
     expect(r.casts[2]?.energyAfter).toBeGreaterThan(0);
+  });
+});
+
+describe("timeline: when the next action may start (SkillData windows, priorities, exclusive time)", () => {
+  const skill = (s: string, at?: number): RotationAction => ({ operator: op, skill: L + s, ...(at !== undefined ? { at } : {}) });
+  const after = (rotation: RotationAction[]) => {
+    const ctx = createContext(data, { ...scenario(rotation), startEnergy: { [op]: "full" } });
+    let s = init(ctx);
+    for (const a of rotation) s = apply(ctx, s, a);
+    return { ctx, s };
+  };
+  const start = (rotation: RotationAction[], next: RotationAction) => {
+    const { ctx, s } = after(rotation);
+    return earliestStart(ctx, s, next);
+  };
+
+  it("a chain step starts in the previous step's window that lists it, and only there", () => {
+    // attack1: window 10–33 lists attack2.
+    expect(start([skill("attack1")], skill("attack2"))).toEqual({ frame: 10 });
+    expect(start([skill("attack1")], skill("attack3"))).toHaveProperty("error");
+    expect(start([skill("attack1")], skill("attack2", 40))).toHaveProperty("error");
+    expect(data.kits.operators[op]?.skills.find((s) => s.skillId === L + "attack2")?.chainStep).toBe(true);
+  });
+
+  it("an attack input in the chain's window is the chain's step, so attack1 again waits for the window to close", () => {
+    expect(start([skill("attack1")], skill("attack1"))).toEqual({ frame: 34 });
+  });
+
+  it("an unlisted skill of the same or lower priority waits for the exclusive time", () => {
+    // attack5: exclusive 42, its window lists only attack1; the battle skill outranks it but waits for its own hits (23, 26)…
+    const { s } = after(chain);
+    const a5 = s.casts.at(-1)?.frame ?? NaN;
+    expect(start(chain, skill("normal_skill"))).toEqual({ frame: a5 + 26 });
+    // …and a battle skill after a battle skill waits for its exclusive time (117).
+    const bs = after([skill("normal_skill")]).s.casts.at(-1)?.frame ?? NaN;
+    expect(start([skill("normal_skill")], skill("normal_skill"))).toEqual({ frame: bs + 117 });
+  });
+
+  it("a higher-priority skill given a time interrupts, cancelling the current skill's hits still to land", () => {
+    // The ultimate (priority 7) at frame 5 of the battle skill: the explosion (frame 22) and its burn never land.
+    const r = simulate(data, { ...scenario([skill("normal_skill"), skill("ultimate_skill", 5)]), startEnergy: { [op]: "full" } });
+    expect(r.casts.map((c) => c.frame)).toEqual([0, 5]);
+    expect(r.hits.filter((h) => h.skillId === L + "normal_skill")).toEqual([]);
+  });
+
+  it("swapping doesn't wait for the current action, except during a channel that forbids switching", () => {
+    const g = "chr_0013_aglina";
+    const fx = JSON.parse(readFileSync(new URL("../fixtures/zmdlogs-40d9a3c1da37.json", import.meta.url), "utf8")) as { team: Build[] };
+    const team = fx.team.filter((b) => b.operator === op || b.operator === g);
+    const swapAfter = (first: RotationAction, controlled: string) => {
+      const ctx = createContext(data, { ...scenario([first]), team, controlled });
+      const s = apply(ctx, init(ctx), first);
+      return earliestStart(ctx, s, { operator: controlled === op ? g : op, skill: "swap" });
+    };
+    expect(swapAfter(skill("attack1"), op)).toEqual({ frame: 0 });
+    // Gilberta's battle skill: ChannelingCastingAction frames 0–111 with cantSwitchPosition.
+    expect(swapAfter({ operator: g, skill: "chr_0013_aglina_normal_skill" }, g)).toEqual({ frame: 111 });
   });
 });

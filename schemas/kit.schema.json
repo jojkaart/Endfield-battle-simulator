@@ -839,6 +839,10 @@
           "cooldownGroup": {
             "type": "string",
             "description": "Skills sharing a group share one cooldown: casting one puts every member on its own cooldown (Typhoeus's two combos)."
+          },
+          "chainStep": {
+            "type": "boolean",
+            "description": "Override: a basic-attack chain step, castable only while the chain points at it (default from the data: an earlier step's cancel window lists it)."
           }
         }
       }
@@ -1786,6 +1790,10 @@
         "sp": {
           "$ref": "#/$defs/valueExpr",
           "description": "Returned SP when the hit lands (ObtainCostAction costType 1 at this hit); the skill's atb is then not added to its first hit."
+        },
+        "detached": {
+          "type": "boolean",
+          "description": "Lands even if the skill is interrupted before it (a projectile or ability entity already on its way); other hits still to land are cancelled when the operator starts another skill."
         }
       }
     }

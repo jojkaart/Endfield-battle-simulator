@@ -28,7 +28,7 @@ import {
 } from "./damage.ts";
 import { zoneSum, type Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
-import type { GameData, KitBuff, KitHit, KitSkill, OperatorKit, StackGain } from "./model.ts";
+import type { GameData, KitBuff, SkillTiming, KitHit, KitSkill, OperatorKit, StackGain } from "./model.ts";
 import { effectiveKit } from "./triggers.ts";
 import { causeMatches, eventMatches, triggerSkillId, type BattleEvent, type KitTrigger } from "./events.ts";
 import { evaluate, test, type EvalContext } from "./expr.ts";
@@ -108,6 +108,8 @@ interface PendingHit {
   readonly sp: number;
   /** A combo's hits: the count of the event that opened its window (ValueExpr `eventCount`). */
   readonly eventCount?: number;
+  /** Lands even if its skill is interrupted (a projectile or entity already on its way: KitHit.detached). */
+  readonly detached?: boolean;
   /** The index of the hit's cast (Cast list), for buffs that cast consumed. */
   readonly cast?: number;
   /** Who was controlled when the hit's skill was cast (predicates on the hit judge `controlled` by it). */
@@ -148,8 +150,10 @@ export interface TimelineState {
   /** Frame until which SP doesn't regenerate. */
   readonly spPausedUntil: number;
   readonly controlled: string;
-  /** Per operator: frame from which it can act again. */
-  readonly freeAt: Readonly<Record<string, number>>;
+  /** Per operator: its current (last) action, which gates its next one (actionGate). */
+  readonly acting: Readonly<Record<string, { readonly skill: string; readonly frame: number }>>;
+  /** Per operator: the basic-attack chain's next step and when an attack input resolves to it. */
+  readonly chainNext: Readonly<Record<string, { readonly skill: string; readonly from: number; readonly until: number }>>;
   /** Per skill ID: frame from which it's off cooldown. */
   readonly readyAt: Readonly<Record<string, number>>;
   readonly pending: readonly PendingHit[];
@@ -212,7 +216,8 @@ export function init(ctx: TimelineContext): TimelineState {
     comboWindow: {},
     spPausedUntil: 0,
     controlled,
-    freeAt: Object.fromEntries(ctx.scenario.team.map((b) => [b.operator, 0])),
+    acting: {},
+    chainNext: {},
     readyAt: {},
     pending: [],
     pendingEnergy: [],
@@ -261,7 +266,7 @@ function skillGroup(ctx: TimelineContext, operator: string, skillId: string): Sk
   return g;
 }
 
-/** SP cost, cooldown frames and lock frames of a skill at the operator's level. */
+/** SP cost and cooldown frames of a skill at the operator's level, and its timing. */
 function skillCosts(ctx: TimelineContext, operator: string, skillId: string) {
   const build = ctx.builds.get(operator) as Build;
   const skill = ctx.data.skills[skillId];
@@ -280,9 +285,86 @@ function skillCosts(ctx: TimelineContext, operator: string, skillId: string) {
     /** costType 0: ultimate energy. */
     energyCost: level.costType === 0 ? cost : 0,
     cooldownFrames: Math.round(skillParam(panel, skillId, "cooldown", level.coolDown) * FPS),
-    lockFrames: timing.cancelFrame ?? timing.exclusiveFrames,
+    timing,
   };
 }
+
+/**
+ * Who may interrupt whom (Endaxis's native-type priorities, docs/design.md
+ * "Skill timing"): a skill of higher priority may start at any frame of the
+ * current one; plunging attacks always. By SkillData skillSpecification.
+ */
+const PRIORITY: Readonly<Record<number, number>> = { 1: 1, 3: 2, 8: 2, 4: 5, 5: 7 };
+const priorityOf = (t: SkillTiming) => (t.specification === 6 ? Infinity : (PRIORITY[t.specification] ?? 2));
+
+function timingOf(ctx: TimelineContext, skillId: string): SkillTiming {
+  const t = ctx.data.skills[skillId]?.timing;
+  if (!t) throw new EngineError(`${skillId}: SkillData isn't loaded, so its timing is unknown`);
+  return t;
+}
+
+/**
+ * The earliest frame from `base` at which an operator may start a skill,
+ * given its current action: once that's over, inside a window of it that
+ * lists the skill, at once if it has no windows or the skill outranks it,
+ * else from its exclusive frame. A basic-attack chain step only while the
+ * chain points at it; another basic attack not while the chain points
+ * elsewhere (the input would resolve to the step).
+ */
+function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, skillId: string, base: number): { frame: number } | { error: string } {
+  const next = kitSkill(ctx, operator, skillId);
+  const nt = timingOf(ctx, skillId);
+  const chain = st.chainNext[operator];
+  let frame = base;
+  const cur = st.acting[operator];
+  if (cur) {
+    const ct = timingOf(ctx, cur.skill);
+    const at = (x: number) => cur.frame + x;
+    const options = [Math.max(frame, at(ct.durationFrames)), Math.max(frame, at(ct.exclusiveFrames))];
+    if (priorityOf(nt) > priorityOf(ct)) options.push(frame);
+    for (const w of ct.windows) if (w.skills.includes(skillId) && Math.max(frame, at(w.from)) <= at(w.to)) options.push(Math.max(frame, at(w.from)));
+    frame = Math.min(...options);
+  }
+  if (next.kind === "basic" && nt.specification === 1) {
+    if (next.chainStep) {
+      if (!chain || chain.skill !== skillId) return { error: `${skillId} is a basic-attack chain step, and the chain isn't at it` };
+      frame = Math.max(frame, chain.from);
+      if (frame > chain.until) return { error: `${skillId}: the chain's window for it closes at frame ${chain.until}` };
+    } else if (chain && chain.skill !== skillId && chain.from <= frame && frame <= chain.until) {
+      // An attack input in the chain's window becomes the chain's step.
+      return actionGate(ctx, st, operator, skillId, chain.until + 1);
+    }
+  }
+  return { frame };
+}
+
+/** The chain's next step after a cast: a basic attack's window that lists a basic attack; kept for a moment by skills that don't interrupt the chain, cleared by others. */
+function chainAfter(ctx: TimelineContext, st: TimelineState, operator: string, skill: KitSkill, frame: number): TimelineState["chainNext"] {
+  const t = timingOf(ctx, skill.skillId);
+  const { [operator]: prev, ...rest } = st.chainNext;
+  if (skill.kind === "basic" && t.specification === 1) {
+    const kit = ctx.kits.get(operator);
+    for (const w of t.windows) {
+      const step = w.skills.find((id) => kit?.skills.some((s) => s.skillId === id && s.kind === "basic"));
+      if (step) return { ...rest, [operator]: { skill: step, from: frame + w.from, until: frame + w.to } };
+    }
+    return rest;
+  }
+  // dontInterruptCombo: the next attack still continues the chain up to 1 s after this skill's exclusive time (Endaxis: OffsetCacheTime).
+  if (t.keepsChain && prev && prev.until >= frame) return { ...rest, [operator]: { skill: prev.skill, from: frame, until: frame + t.exclusiveFrames + CHAIN_CACHE_FRAMES } };
+  return rest;
+}
+
+/** The frame by which an operator's current cast has landed its hits that an interrupt would cancel. */
+function ownHitsLanded(st: TimelineState, operator: string): number {
+  const cast = st.casts.length - 1 - [...st.casts].reverse().findIndex((c) => c.operator === operator);
+  let last = 0;
+  for (const h of st.pending) if (h.operator === operator && h.cast === cast && !h.detached && h.frame > last) last = h.frame;
+  return last;
+}
+
+/** How long a chain survives a skill that doesn't interrupt it, after that skill's exclusive time. */
+const CHAIN_CACHE_FRAMES = 30;
 
 /** Most ultimate energy an operator can hold: its kit's ultimate cost (the highest, if it has several). */
 function maxEnergy(ctx: TimelineContext, operator: string): number {
@@ -291,7 +373,6 @@ function maxEnergy(ctx: TimelineContext, operator: string): number {
   return costs.length ? Math.max(...costs) : 0;
 }
 
-/** Ultimate energy gained, scaled by the recipient's Ultimate Gain Efficiency (attribute 44), unless blocked. */
 /** How an energy grant counts (SkillData ObtainCostAction flags). */
 export interface EnergyGrantOptions {
   /** ignoreUspGainScalar: not scaled by Ultimate Gain Efficiency. */
@@ -747,11 +828,13 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
 /** The earliest frame an action could start from the current state, or a reason it can't. */
 export function earliestStart(ctx: TimelineContext, state: TimelineState, action: RotationAction): { frame: number } | { error: string } {
   if (!ctx.builds.has(action.operator)) return { error: `${action.operator} isn't in the team` };
-  let frame = Math.max(state.frame, action.at ?? 0, state.freeAt[action.operator] ?? 0);
+  let frame = Math.max(state.frame, action.at ?? 0);
   if (action.skill === "swap") {
     if (action.operator === state.controlled) return { error: `${action.operator} is already the controlled operator` };
-    // The controlled operator finishes its current action first (no cancelling by swapping, assumed).
-    return { frame: Math.max(frame, state.freeAt[state.controlled] ?? 0) };
+    // Swapping doesn't stop the current action, but a channel that forbids switching does stop the swap.
+    const cur = state.acting[state.controlled];
+    if (cur) for (const c of timingOf(ctx, cur.skill).channels) if (c.cantSwitch && cur.frame + c.from <= frame && frame < cur.frame + c.to) frame = cur.frame + c.to;
+    return { frame };
   }
   let costs;
   try {
@@ -762,6 +845,11 @@ export function earliestStart(ctx: TimelineContext, state: TimelineState, action
   }
   if (costs.kind === "basic" && state.controlled !== action.operator) return { error: `${action.operator} isn't the controlled operator (swap first)` };
   frame = Math.max(frame, state.readyAt[action.skill] ?? 0);
+  // Without a time, an action waits for the current skill's own hits (interrupting would cancel them); with one, it may interrupt.
+  if (action.at === undefined) frame = Math.max(frame, ownHitsLanded(state, action.operator));
+  const gate = actionGate(ctx, state, action.operator, action.skill, frame);
+  if ("error" in gate) return gate;
+  frame = gate.frame;
   if (costs.spCost > SP.max) return { error: `${action.skill} costs ${costs.spCost} SP, more than the maximum` };
   // Wait for SP: regen is linear after any pause.
   const spThen = spAt(state, frame);
@@ -827,8 +915,11 @@ function castCooldowns(ctx: TimelineContext, readyAt: TimelineState["readyAt"], 
 export function apply(ctx: TimelineContext, state: TimelineState, action: RotationAction): TimelineState {
   const start = earliestStart(ctx, state, action);
   if ("error" in start) throw new EngineError(`frame ${state.frame}: ${action.operator} ${action.skill}: ${start.error}`);
-  const s = advance(ctx, state, start.frame);
-  if (action.skill === "swap") return { ...s, controlled: action.operator };
+  const advanced = advance(ctx, state, start.frame);
+  if (action.skill === "swap") return { ...advanced, controlled: action.operator };
+  // Starting a skill ends the operator's current one: its hits still to land are cancelled, unless already on their way.
+  const prevCast = advanced.casts.length - 1 - [...advanced.casts].reverse().findIndex((c) => c.operator === action.operator);
+  const s = { ...advanced, pending: advanced.pending.filter((h) => !(h.operator === action.operator && h.cast === prevCast && !h.detached && h.frame > start.frame)) };
   const skill = kitSkill(ctx, action.operator, action.skill);
   const costs = skillCosts(ctx, action.operator, action.skill);
   // Hits that need stacks happen only if the stacks are there at the cast; meeting a consuming requirement uses the stack up.
@@ -843,7 +934,7 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
   const pending: PendingHit[] = [];
   for (const h of skill.hits.filter(met)) {
     const frames = h.frames ?? Array.from({ length: h.count }, () => 0);
-    for (const f of frames) pending.push({ frame: start.frame + f, operator: action.operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castIndex, ...(windowCount !== undefined ? { eventCount: windowCount } : {}) });
+    for (const f of frames) pending.push({ frame: start.frame + f, operator: action.operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castIndex, ...(h.detached ? { detached: true } : {}), ...(windowCount !== undefined ? { eventCount: windowCount } : {}) });
   }
   // A skill whose kit names the hit that returns SP gets it there, not on its first hit.
   const spGain = skill.hits.some((h) => h.sp !== undefined) ? 0 : skillSpGain(ctx, action.operator, action.skill);
@@ -877,7 +968,8 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
     ...next,
     sp: s.sp - costs.spCost,
     spPausedUntil: costs.spCost > 0 ? start.frame + SP.pauseAfterSpendFrames : s.spPausedUntil,
-    freeAt: { ...s.freeAt, [action.operator]: start.frame + costs.lockFrames },
+    acting: { ...s.acting, [action.operator]: { skill: action.skill, frame: start.frame } },
+    chainNext: chainAfter(ctx, next, action.operator, skill, start.frame),
     readyAt: castCooldowns(ctx, next.readyAt, action.operator, skill, costs.cooldownFrames, start.frame),
     ...(skill.takesControl ? { controlled: action.operator } : {}),
     pending: [...s.pending, ...pending],
