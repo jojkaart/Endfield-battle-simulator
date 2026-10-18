@@ -1,0 +1,4 @@
+{
+  "$comment": "Game tables the data layer reads. scripts/fetch-data.sh fetches only these; readTable refuses any other.",
+  "tables": ["BattleConst", "CharacterTable", "SkillPatchTable"]
+}

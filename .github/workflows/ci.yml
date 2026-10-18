@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Data cache key
+        id: data
+        run: echo "key=data-$(git ls-tree HEAD data/ | sha256sum | cut -c1-16)-${{ hashFiles('packages/data/tables.json', 'scripts/fetch-data.sh') }}" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/cache@v4
+        with:
+          path: |
+            data/rmxlinux-EndfieldData
+            data/555me-beyondGameData
+          key: ${{ steps.data.outputs.key }}
+
+      - name: Fetch game tables (sparse, pinned commits)
+        run: ./scripts/fetch-data.sh
+
+      - run: npm ci
+
+      - name: Typecheck, lint, tests
+        run: npm run check

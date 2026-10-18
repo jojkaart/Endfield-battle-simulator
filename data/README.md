@@ -12,6 +12,17 @@ against. Evaluation of these and other sources: [`docs/data-sources.md`](../docs
 
 ## Fetching
 
+For development and tests, fetch only the tables the code reads (listed in
+[`packages/data/tables.json`](../packages/data/tables.json)), at the pinned
+commits:
+
+```sh
+./scripts/fetch-data.sh
+```
+
+This takes seconds and about 60 MB. The loader refuses tables not on that
+list, so add a table there before using it. For full checkouts:
+
 ```sh
 git submodule update --init data/555me-beyondGameData data/rmxlinux-EndfieldData
 ```

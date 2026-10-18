@@ -1,0 +1,5 @@
+{
+  "$comment": "The extension's scripts are classic browser scripts; this keeps Node from reading them as ES modules under the root package.json.",
+  "type": "commonjs",
+  "private": true
+}

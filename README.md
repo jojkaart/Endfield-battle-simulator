@@ -3,7 +3,8 @@
 A utility for automatically evaluating team compositions and rotations in
 *Arknights: Endfield* and comparing them against each other.
 
-Status: planning. No code yet. Next steps: [`docs/roadmap.md`](docs/roadmap.md).
+Status: early development: project tooling and the game-table loader exist,
+the engine doesn't yet. Next steps: [`docs/roadmap.md`](docs/roadmap.md).
 
 ## Goals
 
@@ -50,5 +51,22 @@ cross-checked. Existing simulators used as a starting point are linked under
 [`docs/data-sources.md`](docs/data-sources.md).
 
 ```sh
-git submodule update --init   # fetches data and reference repos (~3.5 GB)
+./scripts/fetch-data.sh       # only the tables the code reads (~60 MB, seconds)
+git submodule update --init   # or everything: data and reference repos (~3.5 GB)
 ```
+
+## Development
+
+Node 22 or newer.
+
+```sh
+./scripts/fetch-data.sh
+npm install
+npm run check                 # typecheck, lint, all tests
+```
+
+Packages: [`packages/data`](packages/data) (reads and cross-checks the game
+tables) and [`packages/engine`](packages/engine) (the simulator; no
+dependencies). Design: [`docs/design.md`](docs/design.md). CI runs
+`npm run check` on every push. Cloud sessions run
+`.claude/hooks/session-start.sh`, which does the first two steps.

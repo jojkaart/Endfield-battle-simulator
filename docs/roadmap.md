@@ -8,7 +8,11 @@
 2. **In-game tests:** the owner plays daily and may run simple tests;
    list and status in [in-game-tests.md](in-game-tests.md). Stat panels
    are ready now; the others wait on the engine.
-3. **Set up the TypeScript project:** package layout, test runner, lint and
+3. **Set up the TypeScript project** (*started 2026-10-18*: workspaces,
+   TypeScript, Vitest, ESLint, CI, session start hook, sparse data fetch,
+   loader for BattleConst / SkillPatchTable / CharacterTable. Still to do:
+   fixture format and loader, JSON Schemas, the enum map, `NOTICE` when MIT
+   code is first copied): package layout, test runner, lint and
    typecheck, and a loader that reads tables from `data/` submodules
    (watch for int64 text IDs and 555me's string-encoded numbers). Include:
    - **language-neutral fixtures:** expected results as data files (setup,
@@ -25,8 +29,9 @@
      `reference/` is copied;
    - JSON Schemas for `DataBundle`, `Scenario`, `Result` (`schemas/`);
    - the version-pinned enum map ([game-data-format.md](game-data-format.md#known-enum-values)).
-4. **Table cross-check test:** compare the tables the engine uses between the
-   two `data/` submodules and fail on any difference.
+4. **Table cross-check test** (*in place* for the three tables loaded so
+   far; extend with each new table): compare the tables the engine uses
+   between the two `data/` submodules and fail on any difference.
 5. **First fixture: single-hit damage.** Reproduce the in-game verified
    Laevatain hit table and stat-panel tests from
    `reference/zero-sanity-timeline` (`src/tests/unit/laevatainDamageCalc.test.ts`,
@@ -45,6 +50,10 @@
 - Interactive search: drivers on the engine's stepping API that generate
   the action list on the fly, with a battle policy / evaluator exploring the
   tree of choices ([design.md](design.md#stepping-api)).
+- **Account import** from the SKPORT capture extension
+  ([player-data.md](player-data.md)), only once the system is verified and
+  can find useful new team rotations (owner's call, 2026-10-18). Until then,
+  fixtures use published, fully specified setups.
 - Team-composition search with constraints (must-include / always-exclude
   operators, available weapons and gear).
 - Web interface for browsing and comparing results.

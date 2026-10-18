@@ -362,7 +362,23 @@ packages/cli
 packages/web      (later)
 fixtures/         language-neutral fixtures
 schemas/          JSON Schemas for DataBundle, Scenario, Result
+scripts/          fetch-data.sh: sparse fetch of the tables in packages/data/tables.json
 ```
+
+Tooling (set up 2026-10-18): TypeScript 5.9 (strict, `noUncheckedIndexedAccess`,
+`exactOptionalPropertyTypes`), Vitest, ESLint with typescript-eslint. The
+packages export their TypeScript sources directly; there's no build step
+yet. ESLint enforces two principles mechanically: the engine imports
+nothing outside itself, and game logic can't use `Math.random` or
+`Date.now`.
+
+**Number representation:** the two data sources write the same float32
+values differently (rmxlinux in full, `1.7799999713897705`; 555me as the
+shortest decimal, `1.78`), and a few fields are doubles, not float32. The
+loader keeps each source's values as written; the primary (rmxlinux) is
+used; the cross-check treats two numbers as equal when they're identical or
+the same float32 with one side exactly float32. 64-bit integers (text IDs)
+are kept exact as strings.
 
 `engine` depends on nothing but its own types, which keeps the Rust port's
 surface exactly the `DataBundle`, `Scenario` and `Result` schemas.
