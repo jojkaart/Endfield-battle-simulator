@@ -1,0 +1,16 @@
+[submodule "data/rmxlinux-EndfieldData"]
+	path = data/rmxlinux-EndfieldData
+	url = https://github.com/rmxlinux/EndfieldData
+	shallow = true
+[submodule "data/555me-beyondGameData"]
+	path = data/555me-beyondGameData
+	url = https://github.com/555me/beyondGameData
+[submodule "reference/zero-sanity-timeline"]
+	path = reference/zero-sanity-timeline
+	url = https://github.com/mitchell-ma/zero-sanity-timeline
+[submodule "reference/Endaxis"]
+	path = reference/Endaxis
+	url = https://github.com/Lieyuan621/Endaxis
+[submodule "reference/End-DPScope"]
+	path = reference/End-DPScope
+	url = https://github.com/Lex1slt/End-DPScope

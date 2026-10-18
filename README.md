@@ -42,6 +42,13 @@ of the project and must be kept up to date and passing:
 
 ## Data
 
-Game data (operators, skills, weapons, gear, enemies) will come from external
-sources, ideally more than one so they can be cross-checked against each other.
-Candidate sources are being evaluated in [`docs/data-sources.md`](docs/data-sources.md).
+Game data (operators, skills, weapons, gear, enemies) comes from community
+extractions of the game's data tables, linked as git submodules under
+[`data/`](data/README.md) so that two separately produced extractions can be
+cross-checked. Existing simulators used as a starting point are linked under
+[`reference/`](reference/README.md). The evaluation behind these choices is in
+[`docs/data-sources.md`](docs/data-sources.md).
+
+```sh
+git submodule update --init   # fetches data and reference repos (~3.5 GB)
+```

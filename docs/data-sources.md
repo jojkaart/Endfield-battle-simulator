@@ -4,8 +4,8 @@ Researched 2026-10-18. Game state then: patch 1.6 ("Sanctuary of Ink", live
 2026-10-15, new operator Si).
 
 This document lists candidate sources for game data, the damage formula and
-reference results, evaluates each, and recommends a set. **Nothing has been
-chosen yet:** the decisions at the end are for the project owner.
+reference results, evaluates each, and recommends a set. Decisions taken are
+recorded [at the end](#decisions).
 
 ## How this was checked
 
@@ -348,16 +348,18 @@ Example battles: `btl_upload_960a800ae840` (3,375,148 over ~75 s),
    3. The End-DPScope standard scenario and its variants, as a loose
       full-rotation cross-check.
 
-## Decisions for the project owner
+## Decisions
 
-1. **Which sources to adopt** (the recommendation above, or a different set).
-2. **How game data is stored.** None of the repos grant rights to the data,
-   which remains © Hypergryph/Gryphline. Options: fetch at build time and keep
-   it out of the repo (recommended), or vendor a trimmed extract.
-3. **Whether to use ZMDLogs** given that its logs come from packet capture.
-4. **Network access for development.** These hosts are blocked in the current
-   cloud environment and would need allowing to fetch data or verify the
-   unverified items: `endfield.wiki.gg`, `endfieldhub.org`, `end.wiki`,
-   `zmdlogs.com`, `www.end-axis.com`, `wiki.biligame.com`,
-   `endfield.huijiwiki.com`, `www.icy-veins.com`, `ngabbs.com`.
-   GitHub is already reachable.
+Decided 2026-10-18:
+
+1. **Sources:** the recommendation above is adopted.
+2. **Storage:** data repositories are linked as git submodules under
+   [`data/`](../data/README.md). This pins exact upstream commits without
+   republishing the data, and local clones still hold full copies.
+3. **Existing simulators** are a starting point, linked as submodules under
+   [`reference/`](../reference/README.md): Zero Sanity (MIT), Endaxis (no
+   licence: read and compare only, don't copy code) and End-DPScope (MIT for
+   its own code).
+4. **ZMDLogs:** using already-published logs through its public API is fine.
+5. **Network access:** a new cloud environment allows the hosts listed in the
+   *(unverified)* items, so those can now be checked.
