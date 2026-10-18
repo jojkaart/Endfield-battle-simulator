@@ -2,28 +2,87 @@
   "$schema": "../../../../schemas/kit.schema.json",
   "operator": "chr_0035_liino",
   "sources": [
-    "Hit structure: rmxlinux Json/SkillData chr_0035_liino_* (game 1.6). Battle skill: frames 10/10/12/12/16/16 launch six projhit_start projectiles, each relaunching one projhit on reach; their DamageActions (normal_skill_projhit, normal_skill_projhit_02) bind atk_scale. The follow-up volley (normal_skill_projhit_hit, atk_scale_2) is cast by buff_chr_0035_liino_normalskill_spelllnfliction_extraattack when a teammate's arts infliction lands, at most every atk_trigger (10) s while the skill's music lasts. Combo: DamageAction atk_scale at frame 9, atk_scale_2 at frame 33.",
-    "Verified (zmdlogs check, ±1): battle-skill projectiles = atk_scale, 6 per cast (5 logged as normal_skill_projhit_02, 1 as normal_skill_projhit): fixtures/zmdlogs-0eef2474a26f.json 6/6 and fixtures/zmdlogs-bdf223db8e49.json 6/6 (battle skill level 12, no Corrosion, buff_chr_0035_liino_atkup_owner +10% ATK logged).",
-    "Verified by hand, not enforced by the log test: the follow-up volley = atk_scale_2, 6 hits per trigger. fixtures/zmdlogs-bdf223db8e49.json t=3231-3465: implied multiplier 0.1999-0.2000 for all 6 hits (one crit) with no Corrosion. Its events are left empty because the volley's other logged hits are all under Corrosion and the engine's Corrosion model doesn't reproduce them (bdf223 t=14699-15033 logged 985, predicted 1062-1186 for levels 1-4; the hit needs 4.5 resistance points of shred 6.5 s after Corrosion started, the model gives at least 11.9). In fixtures/zmdlogs-0eef2474a26f.json t=4187 the six volley hits match only assuming Corrosion level 2.",
-    "Combo: both hits are logged only under Corrosion, so their events are left empty. Hit 1 (atk_scale) logged 5534 (0eef2474 t=7570) and 6355 (bdf223 t=11729), predicted 5472/5610 and 6274/6453 at Corrosion levels 1/2: both sit at the same point between levels 1 and 2 (+1.1% / +1.3% over level 1). Hit 2 (atk_scale_2) appears once (bdf223 t=12613, logged 10755) and only fits if Typhoea's logged combo debuff (+16% damage taken, which has a hit condition in its BuffData) didn't apply. 0eef2474 has hit 1 without hit 2.",
-    "Ultimate left out: its only log (fixtures/zmdlogs-d9e59d0fb737.json, parser v58) doesn't record Liino's own ultimate buffs (+atk_up ATK via buff_chr_0035_liino_atkup_owner; Amp for Electric and Cryo via buff_chr_0035_liino_spellenhance with rate min(Will x will_up, will_max)), and every hit is under Corrosion. Structure from SkillData: the ability entity chr_0035_liino_ultimate_skill_projhit_abilityentity launches 20 projectiles (16 projhit, 2 projhit_l, 2 projhit_r, all atk_scale) and one bomb (projhit_damage_02, atk_scale_2, forces an Electric infliction); buff_chr_0035_liino_ultskill_music_damage fires soundwave_projhit (atk_scale_3) every ultmusic_trigger s; the finale soundwave_02_projhit uses atk_scale_4 = atk_scale_3 x final_value (3). In d9e59 the 21 projectiles imply exactly 2.0 x atk_scale with no Corrosion and no unlogged buffs, the soundwaves 1.87-2.02 x atk_scale_3 and the bomb 2.02-2.26 x atk_scale_2: not explained yet; needs a parser v59 log.",
-    "Basic attacks (attack1-5, power_attack, plunging_attack_end) are left out: no fixture logs any (Liino is a support) and their hit counts depend on branches and channels in SkillData. chr_0035_liino_normal_skill_combo has no DamageAction of its own: it continues the battle skill's music after the combo (same atk_scale / atk_scale_2 values)."
+    "Hit structure and frames: rmxlinux Json/SkillData chr_0035_liino_* (game 1.6); values from SkillPatchTable. Battle skill: three timeline entries at frames 12, 14 and 16 each launch two projhit_start projectiles, each relaunching one projhit on reach; their DamageActions (normal_skill_projhit, normal_skill_projhit_02) bind atk_scale (6 × atk_scale = display_atk_scale). The follow-up volley (normal_skill_projhit_hit, atk_scale_2) is cast by buff_chr_0035_liino_normalskill_spelllnfliction_extraattack (created at frame 45, triggerInterval = atk_trigger = 10 s) when buff_chr_0035_liino_normalskill_spelllnfliction_hit is in its context. The battle skill's own soundwave (normal_skill_soundwave_projhit, launched every 3 s by buff_chr_0035_liino_normalskill_music_damage) only heals: its SkillData has no DamageAction. Combo: DamageAction atk_scale at frame 9, atk_scale_2 and ObtainCostAction costType 0 `usp` at frame 33.",
+    "Skill descriptions (CharGrowthTable + I18nTextTable_EN). Battle skill: \"Liino deals Electric DMG to enemies and then enters her Vocalist Stance. While this stance is active, if there are enemies nearby, Liino will perform an Additional ATK (that deals Electric DMG to enemies) on a regular basis. Vocalist Stance: While this stance is active, Liino grants the entire team an ATK Boost. [...] During Vocalist Stance, her battle skill is replaced with End Stance.\" Combo: \"COMBO TRIGGER: While Vocalist Stance is active, an Arts Reaction is consumed or is applied on an enemy. Liino deals Electric DMG to enemies, grants HP Treatment to the controlled operator, and gains additional Ultimate Energy. Casting the combo skill Delightful Harmonics does not interrupt Vocalist Stance.\" Ultimate: \"[...] unleashes a continuous display of Stage Pyrotechnics that deals Electric DMG, and then triggers an Electrifying Extravaganza that deals Electric DMG and forcibly applies Electrification to enemies in a large area of effect (AOE). Cosmovoice Stance: This stance replaces Liino's Vocalist Stance. While active, the stance grants the entire team Electric Amp and Nature Amp (effects are further increased by the attribute of Will) as well as an ATK Boost. The beats of Liino's song also deal Electric DMG to enemies in the AOE [...]. When the stance ends, Liino deals 3 times the DMG from a single beat to enemies in the AOE [...]. This effect does not trigger if the stance is ended early.\" No skill description mentions an Electric Infliction from her hits.",
+    "Verified (zmdlogs check, ±1): battle-skill projectiles = atk_scale, 6 per cast (5 logged as normal_skill_projhit_02, 1 as normal_skill_projhit): fixtures/zmdlogs-0eef2474a26f.json 6/6 and fixtures/zmdlogs-bdf223db8e49.json 6/6 (battle skill level 12, no Corrosion, buff_chr_0035_liino_atkup_owner +10% ATK logged). Ultimate (fixtures/zmdlogs-dbaee23b801d.json, parser v59, no Corrosion, her own buffs logged): 20 projectiles = atk_scale, bomb = atk_scale_2 (with the Electrification it forces), soundwave beats = atk_scale_3. That log records her Cosmovoice buffs as buff_chr_0035_liino_atkup_owner (+atk_up ATK; teammates get buff_chr_0035_liino_atkup) and buff_common_affixes_enhance_pulse / _natural (Amp 0.410537 = will_up 0.0004 × Will 1026.34 of the logged build, below will_max 0.6).",
+    "Not verified: fixtures/zmdlogs-d9e59d0fb737.json (parser v58) doesn't log her own ultimate buffs and every hit there is under Corrosion; that is where the earlier \"×2.0 unexplained\" came from. Combo hits and most follow-up volleys are logged only under Corrosion (the log test tolerates those); the volley at fixtures/zmdlogs-bdf223db8e49.json t=3231-3465 has no Corrosion and matches atk_scale_2 (6 hits).",
+    "Basic attacks (attack1-5, power_attack, plunging_attack_end) are left out: no fixture logs any (Liino is a support). The hit counts follow from display_atk_scale (attack1 2 × atk_scale, attack2 5 channel ticks, attack3 1 hit + 5 projectiles of atk_scale_2, attack4 10 projectiles, attack5 1), but SkillData launches more projectiles than that (attack4: 4 per frame at frames 5/7/10/13/16 for 10 hits), so which ones hit and when isn't known yet. chr_0035_liino_normal_skill_combo (the battle skill's state resumed after a combo) and chr_0035_liino_normal_skill_end (End Stance) have no DamageAction and aren't kit skills."
   ],
   "element": "pulse",
+  "buffs": [
+    {
+      "id": "vocalist_stance",
+      "label": "Vocalist Stance (battle skill): team ATK",
+      "target": "team",
+      "duration": {
+        "key": "music_duration"
+      },
+      "modifiers": [
+        {
+          "zone": "atk",
+          "value": {
+            "key": "atk_up"
+          }
+        }
+      ],
+      "note": "SkillData chr_0035_liino_normal_skill creates buff_chr_0035_liino_normalskill_music_tag at frame 15 (duration = music_duration, 60 s, until the skill's action ends at frame 1815); its aura gives teammates buff_chr_0035_liino_atkup and Liino buff_chr_0035_liino_atkup_owner (attributeType 2 formulaItem 6: ATK +atk_up). Applied by the projectiles (frames 12-16, before their damage: the logs show atkup_owner on all six). The stance's other effects (heal, the volley, enabling the combo trigger) are tied to it; it really ends early when End Stance or the ultimate is cast, which kits can't express yet."
+    },
+    {
+      "id": "cosmovoice_stance",
+      "label": "Cosmovoice Stance (ultimate): team Electric and Nature Amp",
+      "target": "team",
+      "duration": {
+        "key": "ultmusic_duration"
+      },
+      "modifiers": [
+        {
+          "zone": "amp",
+          "elements": [
+            "pulse",
+            "natural"
+          ],
+          "value": {
+            "key": "will_up",
+            "timesAttr": 42,
+            "capKey": "will_max"
+          }
+        }
+      ],
+      "note": "SkillData chr_0035_liino_ultimate_skill frame 77: fnlatk_up = min(will_up × Will (attribute 42), will_max), then buff_chr_0035_liino_ultskill_music_tag (duration = ultmusic_duration, 15 s) with spellenhance_rate = fnlatk_up and atk_up; its aura gives the team buff_chr_0035_liino_normalskill_buff_atkup (→ buff_chr_0035_liino_atkup / _atkup_owner, ATK +atk_up) and buff_chr_0035_liino_ultskill_buff_atkup (→ buff_chr_0035_liino_spellenhance, two EnhancedActions, logged as buff_common_affixes_enhance_pulse and _natural). finish_duration is 0 at every level, so nothing lingers after the stance. Applied by the first two projectiles (frame 76, before damage), so it ends at frame 526 (data: 527). Its ATK Boost (atk_up of the ultimate, 0.1) is left out on purpose: in the game this stance replaces Vocalist Stance and the two ATK buffs share stacking key liino_atk_up (highest only), but kits can't end or replace a buff yet, so modelling both would count the ATK Boost twice whenever the ultimate is cast during Vocalist Stance (the usual case). Until then the ATK during the ultimate comes from vocalist_stance; an ultimate cast without it is missing +atk_up ATK, and vocalist_stance wrongly outlasts the ultimate."
+    }
+  ],
+  "comboTriggers": [
+    {
+      "any": [
+        {
+          "on": "reaction"
+        }
+      ],
+      "whileBuff": "vocalist_stance",
+      "note": "CharGrowthTable: \"COMBO TRIGGER: While Vocalist Stance is active, an Arts Reaction is consumed or is applied on an enemy.\" Modelled: any reaction (forced ones included) while vocalist_stance is active. Not modelled: a reaction status being consumed (no such event yet), and whether Cosmovoice Stance (which replaces Vocalist Stance) also enables it."
+    }
+  ],
   "skills": [
     {
       "skillId": "chr_0035_liino_normal_skill",
       "label": "Battle skill",
       "damageType": "battle",
-      "note": "No durationFrames: SkillData durationFrame 2100 is the 60 s music state; the cancel windows (AllowNextSkillAction from frames 2 and 50) aren't verified yet.",
+      "unavailableWhile": "vocalist_stance",
+      "note": "No durationFrames: the timeline uses the cancel window (AllowNextSkillAction for combo / End Stance from frame 50); SkillData durationFrame 2100 is the stance's 60 s state, during which she can move. Re-casting during the stance is End Stance (no damage, ends the stance, SP cooldown set_cd), so the skill is unavailable while vocalist_stance lasts.",
       "hits": [
         {
           "id": "projectiles",
           "label": "Projectiles",
           "scale": ["atk_scale"],
           "count": 6,
-          "frames": [10, 10, 12, 12, 16, 16],
+          "frames": [12, 12, 14, 14, 16, 16],
           "events": ["chr_0035_liino_normal_skill_projhit", "chr_0035_liino_normal_skill_projhit_02"],
+          "buffs": [
+            {
+              "buff": "vocalist_stance",
+              "beforeDamage": true
+            }
+          ],
           "note": "Frames are the launch frames of the six projhit_start projectiles. Verified: zmdlogs-0eef2474a26f 6/6, zmdlogs-bdf223db8e49 6/6."
         },
         {
@@ -31,8 +90,9 @@
           "label": "Follow-up volley (per trigger)",
           "scale": ["atk_scale_2"],
           "count": 6,
-          "events": [],
-          "note": "Cast when a teammate's arts infliction lands, at most every atk_trigger s during the music; not at fixed frames. Matches zmdlogs-bdf223db8e49 t=3231-3465 (6 hits) by hand; event chr_0035_liino_normal_skill_projhit_hit left out of the log test until Corrosion is reproduced."
+          "frames": [45, 45, 45, 45, 45, 45],
+          "events": ["chr_0035_liino_normal_skill_projhit_hit"],
+          "note": "Cast by buff_chr_0035_liino_normalskill_spelllnfliction_extraattack during the stance when a teammate's arts infliction lands, at most every atk_trigger (10) s; kits can't express that trigger yet, so the timeline lands one volley per cast at the earliest frame it could happen (frame 45, when the extraattack buff is created). A 60 s stance can give up to 6 volleys, so this undercounts in a long fight. Logged: zmdlogs-bdf223db8e49 t=3231-3465 6/6 without Corrosion; its other volleys and zmdlogs-0eef2474a26f's are under Corrosion."
         }
       ]
     },
@@ -41,10 +101,90 @@
       "label": "Combo skill",
       "damageType": "combo",
       "durationFrames": 150,
-      "note": "durationFrames is SkillData durationFrame; AllowNextSkillAction opens at frame 68 (not verified). Both hits log as chr_0035_liino_combo_skill; events left empty until the Corrosion-affected log hits are reproduced (see sources).",
+      "note": "durationFrames is SkillData durationFrame; AllowNextSkillAction opens at frame 68 (not verified). The combo inherits the battle skill's stance buffs (InheritBuffAction) and doesn't end the stance. Both hits log as chr_0035_liino_combo_skill.",
       "hits": [
-        { "id": "hit1", "label": "Hit 1", "scale": ["atk_scale"], "frames": [9], "events": [] },
-        { "id": "hit2", "label": "Hit 2", "scale": ["atk_scale_2"], "frames": [33], "events": [] }
+        {
+          "id": "hit1",
+          "label": "Hit 1",
+          "scale": ["atk_scale"],
+          "frames": [9],
+          "events": ["chr_0035_liino_combo_skill"]
+        },
+        {
+          "id": "hit2",
+          "label": "Hit 2",
+          "scale": ["atk_scale_2"],
+          "frames": [33],
+          "events": ["chr_0035_liino_combo_skill"],
+          "energy": {
+            "key": "usp"
+          },
+          "note": "ObtainCostAction costType 0 with `usp` (20) at the same frame as the DamageAction."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0035_liino_ultimate_skill",
+      "label": "Ultimate",
+      "damageType": "ultimate",
+      "energyBlockSeconds": 3.5667,
+      "note": "Hits from the ability entity chr_0035_liino_ultimate_skill_projhit_abilityentity spawned at frame 76 (two projectiles at each of its frames 0/3/6/8/11/15/18/21/25/28, the bomb at 40), from buff_chr_0035_liino_ultskill_music_damage (created at frame 77, a beat every ultmusic_trigger s until the buff's action ends at frame 477) and from the finale launched at frame 508. energyBlockSeconds: buff_chr_0035_liino_ultskill_refrainobtainusp (RefrainObtainUsp, duration 1 s) is created at frame 77, so energy is blocked until frame 107 = 3.5667 s after the cast (the timeline blocks from the cast; frames 0-77 are the ultimate's cut-in).",
+      "hits": [
+        {
+          "id": "projectiles_first",
+          "label": "Pyrotechnics (first pair)",
+          "scale": ["atk_scale"],
+          "count": 2,
+          "frames": [76, 76],
+          "events": ["chr_0035_liino_ultimate_skill_projhit", "chr_0035_liino_ultimate_skill_projhit_l", "chr_0035_liino_ultimate_skill_projhit_r"],
+          "buffs": [
+            {
+              "buff": "cosmovoice_stance",
+              "beforeDamage": true
+            }
+          ],
+          "note": "Split from the other 18 only so the stance starts with the first landing (the log has the stance's buffs on every projectile). 20 × atk_scale = display_atk_scale."
+        },
+        {
+          "id": "projectiles",
+          "label": "Pyrotechnics",
+          "scale": ["atk_scale"],
+          "count": 18,
+          "frames": [79, 79, 82, 82, 84, 84, 87, 87, 91, 91, 94, 94, 97, 97, 101, 101, 104, 104],
+          "events": ["chr_0035_liino_ultimate_skill_projhit", "chr_0035_liino_ultimate_skill_projhit_l", "chr_0035_liino_ultimate_skill_projhit_r"],
+          "note": "Logged per cast: 16 projhit, 2 projhit_l, 2 projhit_r, all atk_scale (zmdlogs-dbaee23b801d 20/20)."
+        },
+        {
+          "id": "bomb",
+          "label": "Electrifying Extravaganza",
+          "scale": ["atk_scale_2"],
+          "frames": [116],
+          "events": ["chr_0035_liino_ultimate_skill_projhit_damage_02"],
+          "applies": [
+            {
+              "kind": "forcedReaction",
+              "status": "electrification"
+            }
+          ],
+          "note": "SkillData chr_0035_liino_ultimate_skill_projhit_damage_02: ForceSpellStatusAction (spellStatusType 1, count = blackboard count 1 → level I) before its DamageAction; the description says it \"forcibly applies Electrification\". The logged hit includes the Electrification it applies (buff_common_pulse_pulse_conduct_triggered_do, +12% Arts DMG taken, logged at its boundary)."
+        },
+        {
+          "id": "beats",
+          "label": "Song beat",
+          "scale": ["atk_scale_3"],
+          "count": 9,
+          "frames": [77, 122, 167, 212, 257, 302, 347, 392, 437],
+          "events": ["chr_0035_liino_ultimate_skill_soundwave_projhit"],
+          "note": "buff_chr_0035_liino_ultskill_music_damage: a soundwave every ultmusic_trigger (1.5 s = 45 frames) from frame 77 until its CreateBuffAction ends at frame 477 (9 beats), assuming the first beat fires when the buff starts (the first logged beat precedes the first projectile). Only enemies in the AOE are hit: the logs have 4 beats in ~7.4 s (dbaee23, gaps 2.3/3.6/1.5 s) and 3 (d9e59), so a real fight can get fewer. Verified per beat: zmdlogs-dbaee23b801d 4/4."
+        },
+        {
+          "id": "finale",
+          "label": "Finale (3 × a beat)",
+          "scale": ["atk_scale_3", "final_value"],
+          "frames": [508],
+          "events": ["chr_0035_liino_ultimate_skill_soundwave_02_projhit"],
+          "note": "SkillData frame 508: atk_scale_4 = atk_scale_3 × final_value (SimpleCalcBB operation 2; final_value 3), then the soundwave_02 projectile (DamageAction atk_scale_4). Not in any log (both logged fights end before the stance does); doesn't happen when the stance is ended early."
+        }
       ]
     }
   ]

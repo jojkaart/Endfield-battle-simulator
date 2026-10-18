@@ -1,0 +1,55 @@
+{
+  "operator": "chr_0035_liino",
+  "level": 90,
+  "promotion": 4,
+  "potential": 0,
+  "skillLevels": {
+    "basic": 12,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+  },
+  "weapon": {
+    "id": "wpn_lance_0014",
+    "level": 90,
+    "skillLevels": [
+      9,
+      9,
+      4
+    ]
+  },
+  "gear": [
+    {
+      "id": "item_equip_t4_suit_heal01_hand_03",
+      "artifice": [
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "id": "item_equip_t4_suit_heal01_body_03",
+      "artifice": [
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "id": "item_equip_t4_suit_usp02_edc_03",
+      "artifice": [
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "id": "item_equip_t4_suit_heal01_edc_03",
+      "artifice": [
+        3,
+        3,
+        3
+      ]
+    }
+  ]
+}

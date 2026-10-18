@@ -1,0 +1,34 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Liino supporting Laevatain vs Rhodagn, both ultimates charged: Liino's battle skill opens Vocalist Stance (team ATK), Laevatain's enhanced chain inflicts Heat, Liino's ultimate (Electric and Nature Amp for the team) ends with a bomb that forces Electrification, and that reaction during Vocalist Stance triggers Liino's combo (+20 ultimate energy).",
+  "team": [
+    "laevatain-forgeborn.json",
+    "liino-heal-usp.json"
+  ],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0016_laevat": "full",
+    "chr_0035_liino": "full"
+  },
+  "durationSeconds": 30,
+  "crit": "expected",
+  "rotation": [
+    { "operator": "chr_0035_liino", "skill": "chr_0035_liino_normal_skill" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ultimate_skill" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack1" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack2" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack3" },
+    { "operator": "chr_0035_liino", "skill": "chr_0035_liino_ultimate_skill" },
+    { "operator": "chr_0035_liino", "skill": "chr_0035_liino_combo_skill" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack4" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_normal_skill_during_ult" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack1" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack2" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack3" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack4" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_normal_skill_during_ult" }
+  ]
+}
