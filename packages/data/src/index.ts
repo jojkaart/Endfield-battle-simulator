@@ -18,3 +18,4 @@ export * from "./kits.ts";
 export * from "./buffData.ts";
 export * from "./zmdlogs.ts";
 export * from "./skillGraph.ts";
+export * from "./skillCompile.ts";

@@ -37,6 +37,38 @@ skill descriptions, and the loader should take frames, locks and energy from
 the data whenever a kit doesn't override them. A kit then holds only the
 hand-written parts plus verified overrides.
 
+### Compiled now (batch 1, D1)
+
+`compileSkill` ([packages/data/src/skillCompile.ts](../packages/data/src/skillCompile.ts))
+reads a skill's SkillData file and follows what it reaches: LaunchProjectile
+(on hit, reach, finish, launch; on block when that's its only route),
+SpawnAbilityEntity, CreateBuff (the buff's timeline, trigger interval, start
+and finish events) and helper CastSkills. Per damage landing it gives the
+frame from the skill's start (spawn and launch frames added), the event key
+(the file holding the DamageAction), detached, the scale as keys × a
+SimpleCalcBB factor, the decorate mask (kind, Final Strike). Next to the
+landings: SpellInfliction, forced reactions (ForceSpellStatusAction, or the
+shared `buff_common_<el>_<el>_<status>_triggered` buff a skill creates),
+bursts, FinishBuffAdvanced on an infliction tag (consumption, partial
+included); ObtainCostAction energy and SP with their frames; RefrainObtainUsp
+blocks (in the skill or a buff, with the buff's duration); the
+`buff_common_obtain_ultimate_sp` frame. Jumps, casts and branches it can't
+decide are reported, not interpreted. Timing values come from the skill's
+level table when given (file defaults can be placeholders).
+
+`efsim kit-draft <operator>` (v2) turns it into a kit skeleton in the current
+format (it validates against the schema): hits with frames, count, events,
+factor, applies, energy, sp, detached, finalStrike; `teamEnergyFrame`,
+`energyBlockSeconds`; notes for branches, jumps and event-driven hits. The
+loader doesn't use it yet: kits still hand-write these, and loader defaults
+from the compiler are the next step.
+
+`packages/data/test/skillCompile.test.ts` compares the seven batch-1 kits with
+it; every disagreement is listed there with its data evidence (kit errors
+such as Laevatain's combo frame and Liino's follow-up frame, and compiler
+limits: buffs a skill creates on the target, jumps, event handlers, which run
+once at their buff's start so their frames are lower bounds).
+
 ## 2. One mechanism each, not one field per request
 
 The requests below came from different agents in different words. Each
