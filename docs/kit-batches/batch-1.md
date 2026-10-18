@@ -190,3 +190,11 @@ Then re-analysis of all seven.
   and `extendBuff` (B2: a state a skill pauses is extended by the pause).
   The triggers, conditions and buff-lifecycle families are done; the energy
   block following a buff (B2's second half) belongs to the skills family.
+- V2–V5: `eventCount` (a trigger's event count; a combo's hits read the
+  count of the event that opened its window) and `targetsHit` (1 until
+  multi-enemy) in values; starting stacks (`stacks[].initial`, scenario
+  `startStacks`); SP on hits (`sp`, replacing the skill's `atb` default);
+  energy grants as a fraction of the maximum, past blocks or without
+  efficiency, and `clearEnergy`; a skill's team energy at its data frame
+  (`teamEnergyFrame`). The enemy's Vulnerability stacks in values (V2,
+  Gilberta) come with physical statuses (P1).

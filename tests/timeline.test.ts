@@ -251,7 +251,7 @@ describe("timeline: ultimate energy and combo windows", () => {
     const combustion = advance(ctx, s, ctx.scenario.durationFrames).reactions.find((e) => e.kind === "reaction");
     if (!combustion) throw new Error("no Combustion");
     s = advance(ctx, s, combustion.frame);
-    expect(s.comboWindow[op]).toEqual({ from: combustion.frame, until: combustion.frame + 180 });
+    expect(s.comboWindow[op]).toMatchObject({ from: combustion.frame, until: combustion.frame + 180 });
     // Too late: the window has closed.
     expect(earliestStart(ctx, s, { operator: op, skill: L + "combo_skill", at: combustion.frame + 181 })).toHaveProperty("error");
     const cast = apply(ctx, s, { operator: op, skill: L + "combo_skill" });
@@ -511,3 +511,76 @@ describe("timeline: buff lifecycle", () => {
   });
 });
 
+
+describe("timeline: values and resources", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const withKit = (patch: Partial<OperatorKit>): GameData => ({ ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, ...patch } } } });
+  const skill = (s: string) => ({ operator: op, skill: L + s });
+  const noEnergy = (rotation: RotationAction[]): TimelineScenario => {
+    const { startEnergy: _f, ...rest } = scenario(rotation);
+    return rest;
+  };
+  const stepTo = (d: GameData, sc: TimelineScenario, frame: number) => {
+    const ctx = createContext(d, sc);
+    let s = init(ctx);
+    for (const a of sc.rotation) s = apply(ctx, s, a);
+    return advance(ctx, s, frame);
+  };
+
+  it("eventCount is the triggering event's count: here 2 Heat stacks inflicted give 2 Melting Flame", () => {
+    const d = withKit({
+      triggers: [
+        ...kit.triggers,
+        { id: "inflict", on: { event: "cast", kinds: ["battle"] }, by: "self", do: [{ kind: "apply", applies: [{ kind: "infliction", element: "fire", stacks: 2 }] }] },
+        { id: "count", on: { event: "inflictionApplied", elements: ["fire"] }, by: "self", do: [{ kind: "gain", gains: [{ stack: "melting_flame", amount: { eventCount: true } }] }] },
+      ],
+    });
+    // Before the explosion (frame 22) adds its own.
+    expect(stepTo(d, noEnergy([skill("normal_skill")]), 5).stacks[op]?.["melting_flame"]).toBe(2);
+  });
+
+  it("a combo window keeps the count of the event that opened it", () => {
+    const five = Array.from({ length: 5 }, () => skill("normal_skill"));
+    const ctx = createContext(data, { ...noEnergy(five), durationFrames: 30 * 120 });
+    let s = init(ctx);
+    for (const a of five) s = apply(ctx, s, a);
+    const combustion = advance(ctx, s, ctx.scenario.durationFrames).reactions.find((e) => e.kind === "reaction");
+    if (combustion?.kind !== "reaction") throw new Error("no Combustion");
+    expect(advance(ctx, s, combustion.frame).comboWindow[op]?.count).toBe(combustion.level);
+  });
+
+  it("starting stacks: the scenario's, within the stack's maximum; unknown stacks are errors", () => {
+    expect(stepTo(data, { ...noEnergy([]), startStacks: { [op]: { melting_flame: 3 } } }, 0).stacks[op]?.["melting_flame"]).toBe(3);
+    expect(stepTo(data, { ...noEnergy([]), startStacks: { [op]: { melting_flame: 9 } } }, 0).stacks[op]?.["melting_flame"]).toBe(4);
+    expect(() => stepTo(data, { ...noEnergy([]), startStacks: { [op]: { arrows: 1 } } }, 0)).toThrow(/no stack arrows/);
+    const d = withKit({ stacks: kit.stacks.map((x) => ({ ...x, initial: 2 })) });
+    expect(stepTo(d, noEnergy([]), 0).stacks[op]?.["melting_flame"]).toBe(2);
+  });
+
+  it("a hit that names its SP returns it when it lands, instead of the skill's atb on its first hit", () => {
+    const plain = stepTo(data, noEnergy(chain), 30 * 3).sp;
+    const d = withKit({ skills: kit.skills.map((s) => (s.skillId === L + "attack5" ? { ...s, hits: s.hits.map((h) => ({ ...h, sp: 5 })) } : s)) });
+    const hits = kit.skills.find((s) => s.skillId === L + "attack5")?.hits.reduce((n, h) => n + h.count, 0) ?? 0;
+    // attack5's atb is 20; here each of its landings returns 5 instead.
+    expect(stepTo(d, noEnergy(chain), 30 * 3).sp).toBeCloseTo(plain - 20 + 5 * hits, 6);
+  });
+
+  it("energy grants: a fraction of the maximum, past a block, without efficiency; clearing energy", () => {
+    const grant = (d: KitTrigger["do"]) =>
+      stepTo(withKit({ triggers: [...kit.triggers, { id: "g", on: { event: "cast", kinds: ["basic"] }, by: "self", maxCount: 1, do: d }] }), noEnergy([skill("attack1")]), 1).energy[op] ?? NaN;
+    expect(grant([{ kind: "energy", value: 0.5, percentOfMax: true, ignoreEfficiency: true }])).toBeCloseTo(255 * 0.5, 3);
+    expect(grant([{ kind: "energy", value: 10, ignoreEfficiency: true }, { kind: "clearEnergy" }])).toBe(0);
+    // Her ultimate blocks energy for 16 s; ignoreBlock gets through.
+    const blocked = (opts: { ignoreBlock?: boolean }) =>
+      stepTo(withKit({ triggers: [...kit.triggers, { id: "g", on: { event: "cast", kinds: ["basic"] }, by: "self", maxCount: 1, do: [{ kind: "energy", value: 10, ignoreEfficiency: true, ...opts }] }] }), scenario([skill("ultimate_skill"), skill("ult_attack1")]), 30 * 3).energy[op] ?? NaN;
+    expect(blocked({})).toBe(0);
+    expect(blocked({ ignoreBlock: true })).toBe(10);
+  });
+
+  it("a battle skill's team energy can come at its data frame instead of the cast", () => {
+    const d = withKit({ skills: kit.skills.map((s) => (s.skillId === L + "normal_skill" ? { ...s, teamEnergyFrame: 29 } : s)) });
+    const efficiency = computeStats(data, build).attrs[44]?.total ?? data.attributeDefaults[44] ?? 1;
+    expect(stepTo(d, noEnergy([skill("normal_skill")]), 28).energy[op]).toBe(0);
+    expect(stepTo(d, noEnergy([skill("normal_skill")]), 29).energy[op]).toBeCloseTo(100 * 0.065 * efficiency, 9);
+  });
+});

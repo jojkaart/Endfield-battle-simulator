@@ -231,6 +231,8 @@ export interface KitHit {
   readonly buffs?: readonly BuffApplication[];
   /** Ultimate energy the operator gains when the hit lands (SkillData ObtainCostAction, e.g. a combo's `usp`), after its own effects. */
   readonly energy?: ValueExpr;
+  /** SP the hit returns when it lands (SkillData ObtainCostAction costType 1 at this hit); then the skill's `atb` isn't added to its first hit. */
+  readonly sp?: ValueExpr;
   /** Whom the hit heals (an event for heal triggers; amounts aren't modelled). */
   readonly heals?: Exclude<HealTarget, "eventOperator">;
 }
@@ -302,6 +304,8 @@ export interface StackDef {
   readonly id: string;
   readonly label: string;
   readonly max: number;
+  /** At the start of a fight (default 0), e.g. from a talent's attached buff: `{ key, skill }`. */
+  readonly initial?: ValueExpr;
 }
 
 export interface StackRequirement {
@@ -330,6 +334,8 @@ export interface KitSkill {
   readonly kind: SkillType;
   /** How long the skill locks the operator (30 FPS frames), when known. */
   readonly durationFrames?: number;
+  /** When the team's energy for the SP it spends comes (frames from the cast; SkillData CreateBuff buff_common_obtain_ultimate_sp); at the cast when absent. */
+  readonly teamEnergyFrame?: number;
   /** The operator gains no ultimate energy for this long after the cast (SkillData RefrainObtainUsp, e.g. Laevatain's ultimate). */
   readonly energyBlockSeconds?: number;
   /** Castable only while the operator's own kit buff is active (e.g. enhanced attacks during an ultimate)… */

@@ -18,6 +18,7 @@ interface RawScenario {
   crit?: CritMode;
   conditions?: Record<string, string[]>;
   startEnergy?: Record<string, number | "full">;
+  startStacks?: Record<string, Record<string, number>>;
   rotation: { operator: string; skill: string; at?: number; repeat?: number }[];
 }
 
@@ -40,6 +41,7 @@ export function readScenario(file: string): TimelineScenario {
     options: { crit: s.crit ?? "expected", ...(s.conditions ? { conditions: s.conditions } : {}) },
     ...(s.controlled ? { controlled: s.controlled } : {}),
     ...(s.startEnergy ? { startEnergy: s.startEnergy } : {}),
+    ...(s.startStacks ? { startStacks: s.startStacks } : {}),
   };
 }
 
@@ -66,6 +68,7 @@ export function searchCommand(data: GameData, scenario: TimelineScenario, option
       target: scenario.target,
       ...(scenario.controlled ? { controlled: scenario.controlled } : {}),
       ...(scenario.startEnergy ? { startEnergy: scenario.startEnergy } : {}),
+      ...(scenario.startStacks ? { startStacks: scenario.startStacks } : {}),
       durationSeconds: scenario.durationFrames / FPS,
       crit: scenario.options.crit,
       ...(scenario.options.conditions ? { conditions: scenario.options.conditions } : {}),

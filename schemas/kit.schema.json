@@ -498,6 +498,18 @@
                     "if": {
                       "$ref": "#/$defs/predicate",
                       "description": "This action only in this situation (judged for the owner when it runs)."
+                    },
+                    "percentOfMax": {
+                      "type": "boolean",
+                      "description": "value is a fraction of the owner's maximum energy (isPercentValue)."
+                    },
+                    "ignoreEfficiency": {
+                      "type": "boolean",
+                      "description": "Not scaled by Ultimate Gain Efficiency (ignoreUspGainScalar)."
+                    },
+                    "ignoreBlock": {
+                      "type": "boolean",
+                      "description": "Given even while energy gain is blocked (useUspRecoverTag)."
                     }
                   }
                 },
@@ -695,6 +707,22 @@
                       "description": "This action only in this situation (judged for the owner when it runs)."
                     }
                   }
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "clearEnergy"
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
+                    }
+                  }
                 }
               ]
             }
@@ -730,6 +758,10 @@
           },
           "note": {
             "type": "string"
+          },
+          "initial": {
+            "$ref": "#/$defs/valueExpr",
+            "description": "At the start of a fight (default 0); name sources explicitly ({key, skill}), e.g. a talent's attached buff. A scenario's startStacks overrides it."
           }
         }
       }
@@ -767,6 +799,11 @@
             "type": "number",
             "exclusiveMinimum": 0,
             "description": "The operator gains no ultimate energy for this long after the cast (SkillData RefrainObtainUsp buff duration)."
+          },
+          "teamEnergyFrame": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Frames from the cast to the team's energy for the SP it spends (SkillData CreateBuff buff_common_obtain_ultimate_sp); at the cast when absent."
           },
           "durationFrames": {
             "type": "integer",
@@ -1725,6 +1762,10 @@
             "team"
           ],
           "description": "Whom the hit heals: an event for heal triggers (amounts aren't modelled)."
+        },
+        "sp": {
+          "$ref": "#/$defs/valueExpr",
+          "description": "Returned SP when the hit lands (ObtainCostAction costType 1 at this hit); the skill's atb is then not added to its first hit."
         }
       }
     }

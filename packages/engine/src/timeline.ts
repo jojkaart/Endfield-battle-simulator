@@ -95,6 +95,8 @@ export interface TimelineScenario {
   readonly controlled?: string;
   /** Ultimate energy at the start, per operator ("full" = the ultimate's cost); default 0. */
   readonly startEnergy?: Readonly<Record<string, number | "full">>;
+  /** Stacks at the start, per operator and stack, overriding the kit's `initial` (e.g. arrows carried over). */
+  readonly startStacks?: Readonly<Record<string, Readonly<Record<string, number>>>>;
 }
 
 interface PendingHit {
@@ -104,6 +106,8 @@ interface PendingHit {
   readonly hitId: string;
   /** SP this hit returns when it lands (the skill's `atb`, on its first hit). */
   readonly sp: number;
+  /** A combo's hits: the count of the event that opened its window (ValueExpr `eventCount`). */
+  readonly eventCount?: number;
   /** The index of the hit's cast (Cast list), for buffs that cast consumed. */
   readonly cast?: number;
   /** Who was controlled when the hit's skill was cast (predicates on the hit judge `controlled` by it). */
@@ -140,7 +144,7 @@ export interface TimelineState {
   /** Per operator: frame until which it gains no energy (some ultimates block it). */
   readonly energyBlockedUntil: Readonly<Record<string, number>>;
   /** Per operator with a combo trigger: the open combo window, if any. */
-  readonly comboWindow: Readonly<Record<string, { readonly from: number; readonly until: number }>>;
+  readonly comboWindow: Readonly<Record<string, { readonly from: number; readonly until: number; readonly count: number }>>;
   /** Frame until which SP doesn't regenerate. */
   readonly spPausedUntil: number;
   readonly controlled: string;
@@ -149,6 +153,8 @@ export interface TimelineState {
   /** Per skill ID: frame from which it's off cooldown. */
   readonly readyAt: Readonly<Record<string, number>>;
   readonly pending: readonly PendingHit[];
+  /** Ultimate energy given later than the cast (a battle skill's team energy at its data frame, KitSkill.teamEnergyFrame). */
+  readonly pendingEnergy: readonly { readonly frame: number; readonly operator: string; readonly amount: number }[];
   readonly enemy: EnemyStatus;
   /** Timed buffs and debuffs from skills. */
   readonly buffs: readonly ActiveBuff[];
@@ -207,10 +213,11 @@ export function init(ctx: TimelineContext): TimelineState {
     freeAt: Object.fromEntries(ctx.scenario.team.map((b) => [b.operator, 0])),
     readyAt: {},
     pending: [],
+    pendingEnergy: [],
     enemy: NO_STATUS,
     buffs: [],
     triggerState: {},
-    stacks: Object.fromEntries(ctx.scenario.team.map((b) => [b.operator, Object.fromEntries((ctx.kits.get(b.operator)?.stacks ?? []).map((x) => [x.id, 0]))])),
+    stacks: Object.fromEntries(ctx.scenario.team.map((b) => [b.operator, startStacks(ctx, b)])),
     casts: [],
     hits: [],
     reactions: [],
@@ -222,6 +229,19 @@ function spAt(state: TimelineState, frame: number): number {
   const from = Math.max(state.frame, state.spPausedUntil);
   const regen = frame > from ? ((frame - from) * SP.perSecond) / FPS : 0;
   return Math.min(SP.max, state.sp + regen);
+}
+
+/** An operator's stacks at the start: the scenario's, else the kit's `initial` (0 when absent), within each stack's maximum. */
+function startStacks(ctx: TimelineContext, b: Build): Record<string, number> {
+  const panel = ctx.panels.get(b.operator) as StatPanel;
+  const given = ctx.scenario.startStacks?.[b.operator] ?? {};
+  const out: Record<string, number> = {};
+  for (const x of ctx.kits.get(b.operator)?.stacks ?? []) {
+    const v = given[x.id] ?? (x.initial === undefined ? 0 : evaluate(x.initial, evalContext(ctx.data, b, panel, "", { team: ctx.scenario.team })));
+    out[x.id] = Math.max(0, Math.min(x.max, v));
+  }
+  for (const id of Object.keys(given)) if (!(id in out)) throw new EngineError(`startStacks: ${b.operator} has no stack ${id}`);
+  return out;
 }
 
 function kitSkill(ctx: TimelineContext, operator: string, skillId: string): KitSkill {
@@ -269,12 +289,28 @@ function maxEnergy(ctx: TimelineContext, operator: string): number {
 }
 
 /** Ultimate energy gained, scaled by the recipient's Ultimate Gain Efficiency (attribute 44), unless blocked. */
-function gainEnergy(ctx: TimelineContext, st: TimelineState, operator: string, amount: number, frame: number): TimelineState {
-  if (amount <= 0 || (st.energyBlockedUntil[operator] ?? -1) > frame) return st;
+/** How an energy grant counts (SkillData ObtainCostAction flags). */
+export interface EnergyGrantOptions {
+  /** ignoreUspGainScalar: not scaled by Ultimate Gain Efficiency. */
+  readonly ignoreEfficiency?: boolean;
+  /** useUspRecoverTag: given even while the operator's energy gain is blocked. */
+  readonly ignoreBlock?: boolean;
+}
+
+function gainEnergy(ctx: TimelineContext, st: TimelineState, operator: string, amount: number, frame: number, opts: EnergyGrantOptions = {}): TimelineState {
+  if (amount <= 0 || (!opts.ignoreBlock && (st.energyBlockedUntil[operator] ?? -1) > frame)) return st;
   const panel = ctx.panels.get(operator) as StatPanel;
-  const efficiency = (panel.attrs[Attr.UltimateSpGainScalar]?.total ?? ctx.data.attributeDefaults[Attr.UltimateSpGainScalar] ?? 1) + buffAttr(st.buffs, operator, frame, Attr.UltimateSpGainScalar);
+  const efficiency = opts.ignoreEfficiency ? 1 : (panel.attrs[Attr.UltimateSpGainScalar]?.total ?? ctx.data.attributeDefaults[Attr.UltimateSpGainScalar] ?? 1) + buffAttr(st.buffs, operator, frame, Attr.UltimateSpGainScalar);
   const now = st.energy[operator] ?? 0;
   return { ...st, energy: { ...st.energy, [operator]: Math.min(maxEnergy(ctx, operator), now + amount * efficiency) } };
+}
+
+/** Returned SP (skills' `atb`, kit grants): it's spent first and gives no ultimate energy when spent. */
+function returnSp(st: TimelineState, amount: number, frame: number): TimelineState {
+  if (amount <= 0) return st;
+  const before = spAt(st, frame);
+  const after = Math.min(SP.max, before + amount);
+  return { ...st, sp: after, spReturned: Math.min(after, st.spReturned + (after - before)), frame: Math.max(st.frame, frame) };
 }
 
 /** SP a skill returns (its blackboard `atb` at the operator's level, after potentials). */
@@ -404,7 +440,14 @@ const MAX_CHAIN = 500;
 function triggerSituation(ctx: TimelineContext, owner: string, st: TimelineState, e: BattleEvent, consumed?: number): Situation {
   const cause = ctx.builds.get(e.operator);
   const eventOperator = cause ? evalContext(ctx.data, cause, ctx.panels.get(e.operator) as StatPanel, "", situationAt(ctx, e.operator, st, e.frame)) : undefined;
-  return { ...situationAt(ctx, owner, st, e.frame, consumed), ...(eventOperator ? { eventOperator } : {}) };
+  return { ...situationAt(ctx, owner, st, e.frame, consumed), eventCount: eventCountOf(e), ...(eventOperator ? { eventOperator } : {}) };
+}
+
+/** An event's count (ValueExpr `eventCount`): stacks inflicted or consumed, a reaction's level, else 1. */
+function eventCountOf(e: BattleEvent): number {
+  if (e.type !== "status") return 1;
+  const s = e.event;
+  return s.kind === "inflicted" || s.kind === "consumed" ? s.stacks : s.kind === "reaction" ? s.level : 1;
 }
 
 /** Runs every team member's triggers on a chain of events, in order; what they do can add events to the chain. */
@@ -451,7 +494,10 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         if (origin && origin.operator === owner && origin.kind === "combo") break;
         const combos = (ctx.kits.get(owner)?.skills ?? []).filter((s) => s.kind === "combo");
         if (combos.length > 0 && combos.every((s) => (st.readyAt[s.skillId] ?? 0) > frame)) break;
-        st = { ...st, comboWindow: { ...st.comboWindow, [owner]: { from: frame, until: frame + COMBO_WINDOW_FRAMES } } };
+        // The window keeps the largest count of the events that opened it (Si's finisher reads it).
+        const open = st.comboWindow[owner];
+        const count = Math.max(eventCountOf(e), open && open.until >= frame ? open.count : 0);
+        st = { ...st, comboWindow: { ...st.comboWindow, [owner]: { from: frame, until: frame + COMBO_WINDOW_FRAMES, count } } };
         break;
       }
       case "apply": {
@@ -469,15 +515,17 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         st = { ...st, stacks: gainStacks(ctx, st.stacks, owner, a.gains, ec()) };
         events.push({ type: "stacks", frame, operator: owner });
         break;
-      case "energy":
-        st = gainEnergy(ctx, st, owner, evaluate(a.value, ec()), frame);
-        break;
-      case "sp": {
-        const before = spAt(st, frame);
-        const after = Math.min(SP.max, before + evaluate(a.value, ec()));
-        st = { ...st, sp: after, spReturned: Math.min(after, st.spReturned + (after - before)), frame: Math.max(st.frame, frame) };
+      case "energy": {
+        const v = evaluate(a.value, ec());
+        st = gainEnergy(ctx, st, owner, a.percentOfMax ? v * maxEnergy(ctx, owner) : v, frame, a);
         break;
       }
+      case "clearEnergy":
+        st = { ...st, energy: { ...st.energy, [owner]: 0 } };
+        break;
+      case "sp":
+        st = returnSp(st, evaluate(a.value, ec()), frame);
+        break;
       case "buff": {
         const def = ctx.kits.get(owner)?.buffs.find((x) => x.id === a.buff);
         if (!def) throw new EngineError(`${owner} has no buff ${a.buff}`);
@@ -563,11 +611,7 @@ function pendingHitDef(ctx: TimelineContext, hit: PendingHit): { skill: Pick<Kit
 /** Lands one pending hit: its own effects, its damage, then the triggers its events start. */
 function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): TimelineState {
   let st = state;
-  if (hit.sp > 0) {
-    const before = spAt(st, hit.frame);
-    const after = Math.min(SP.max, before + hit.sp);
-    st = { ...st, sp: after, spReturned: Math.min(after, st.spReturned + (after - before)), frame: Math.max(st.frame, hit.frame) };
-  }
+  if (hit.sp > 0) st = returnSp(st, hit.sp, hit.frame);
   const build = ctx.builds.get(hit.operator) as Build;
   const { skill, kind, kitHit } = pendingHitDef(ctx, hit);
   st = { ...st, enemy: expireStatus(st.enemy, hit.frame) };
@@ -575,7 +619,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   // Its situation as it lands, before its own effects: whether it happens (KitHit.if) and its extra scale.
   // Who counts as controlled is who was when its skill was cast.
   const controlled = hit.controlledAtCast ?? st.controlled;
-  const at = (consumedSoFar?: number): Situation => ({ ...situationAt(ctx, hit.operator, st, hit.frame, consumedSoFar), controlled });
+  const at = (consumedSoFar?: number): Situation => ({ ...situationAt(ctx, hit.operator, st, hit.frame, consumedSoFar), controlled, ...(hit.eventCount !== undefined ? { eventCount: hit.eventCount } : {}) });
   const before = at();
   if (kitHit.if && !decide(kitHit.if, evalContext(ctx.data, build, panel, hit.skillId, before))) return st;
   // What the hit applies comes first: its own damage and a reaction's initial hit already see the new status.
@@ -614,6 +658,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   });
   st = { ...st, hits: [...st.hits, { ...result, count: 1, frame: hit.frame, operator: hit.operator }] };
   applyBuffs(false);
+  if (kitHit.sp !== undefined) st = returnSp(st, resolveValue(ctx.data, build, panel, hit.skillId, kitHit.sp, at(consumed)), hit.frame);
   if (kitHit.energy) {
     const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.energy, at(consumed));
     st = gainEnergy(ctx, st, hit.operator, amount, hit.frame);
@@ -656,6 +701,11 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
       const ended = st.buffs.filter((b) => b.expiresAt === at && b.cast === undefined);
       st = { ...st, buffs: st.buffs.filter((b) => b.expiresAt !== at) };
       st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: at, operator: b.owner, buff: b.id })), null);
+      continue;
+    }
+    const grant = st.pendingEnergy.reduce<TimelineState["pendingEnergy"][number] | null>((a, g) => (g.frame <= frame && (!a || g.frame < a.frame) ? g : a), null);
+    if (grant && first(grant.frame, buffTick?.frame ?? null, hitFrame)) {
+      st = gainEnergy(ctx, { ...st, pendingEnergy: st.pendingEnergy.filter((g) => g !== grant) }, grant.operator, grant.amount, grant.frame);
       continue;
     }
     if (buffTick && first(buffTick.frame, hitFrame)) {
@@ -755,15 +805,17 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
   const panel = ctx.panels.get(action.operator) as StatPanel;
   const castSituation: Situation = { team: ctx.scenario.team, controlled: s.controlled, stacks: own, buffActive: (id) => s.buffs.some((b) => b.id === id && b.owner === action.operator && b.cast === undefined && b.appliedAt <= start.frame && b.expiresAt > start.frame) };
   const castIndex = s.casts.length;
+  const windowCount = costs.kind === "combo" ? s.comboWindow[action.operator]?.count : undefined;
   const met = (h: KitHit) => hitAvailable(ctx.data, ctx.builds.get(action.operator) as Build, panel, skill.skillId, h, castSituation) && (!h.requires || (own[h.requires.stack] ?? 0) >= h.requires.atLeast);
   const used = new Set(skill.hits.filter((h) => h.requires?.consume && met(h)).map((h) => h.requires?.stack as string));
   const stacks = used.size ? { ...s.stacks, [action.operator]: { ...own, ...Object.fromEntries([...used].map((id) => [id, 0])) } } : s.stacks;
   const pending: PendingHit[] = [];
   for (const h of skill.hits.filter(met)) {
     const frames = h.frames ?? Array.from({ length: h.count }, () => 0);
-    for (const f of frames) pending.push({ frame: start.frame + f, operator: action.operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castIndex });
+    for (const f of frames) pending.push({ frame: start.frame + f, operator: action.operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castIndex, ...(windowCount !== undefined ? { eventCount: windowCount } : {}) });
   }
-  const spGain = skillSpGain(ctx, action.operator, action.skill);
+  // A skill whose kit names the hit that returns SP gets it there, not on its first hit.
+  const spGain = skill.hits.some((h) => h.sp !== undefined) ? 0 : skillSpGain(ctx, action.operator, action.skill);
   if (spGain > 0 && pending.length > 0) {
     const first = pending.reduce((a, b) => (b.frame < a.frame ? b : a));
     pending[pending.indexOf(first)] = { ...first, sp: spGain };
@@ -771,7 +823,13 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
   // Returned SP is spent first; only the natural part gives the team ultimate energy.
   const natural = Math.max(0, costs.spCost - s.spReturned);
   let next: TimelineState = { ...s, spReturned: Math.max(0, s.spReturned - costs.spCost) };
-  if (natural > 0) for (const b of ctx.scenario.team) next = gainEnergy(ctx, next, b.operator, natural * ENERGY.perNaturalSp, start.frame);
+  if (natural > 0) {
+    if (skill.teamEnergyFrame === undefined) for (const b of ctx.scenario.team) next = gainEnergy(ctx, next, b.operator, natural * ENERGY.perNaturalSp, start.frame);
+    else {
+      const at = start.frame + skill.teamEnergyFrame;
+      next = { ...next, pendingEnergy: [...next.pendingEnergy, ...ctx.scenario.team.map((b) => ({ frame: at, operator: b.operator, amount: natural * ENERGY.perNaturalSp }))] };
+    }
+  }
   if (costs.energyCost > 0) next = { ...next, energy: { ...next.energy, [action.operator]: Math.max(0, (next.energy[action.operator] ?? 0) - costs.energyCost) } };
   if (skill.energyBlockSeconds) next = { ...next, energyBlockedUntil: { ...next.energyBlockedUntil, [action.operator]: start.frame + Math.round(skill.energyBlockSeconds * FPS) } };
   if (costs.kind === "combo" && next.comboWindow[action.operator]) {

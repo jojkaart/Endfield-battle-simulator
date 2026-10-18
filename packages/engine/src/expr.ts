@@ -61,6 +61,15 @@ export type ValueExpr =
   | { readonly attr: AttrType }
   /** Infliction stacks consumed by this hit (or by the event that triggered it). */
   | { readonly consumed: true }
+  /**
+   * The count of the event behind this: for a trigger, its event's stacks
+   * (inflicted, consumed; a reaction's level; 1 otherwise); for a combo's
+   * hits and buffs, the count of the event that opened its window (Si's
+   * finisher n).
+   */
+  | { readonly eventCount: true }
+  /** Targets the hit (or the triggering hit) reached: 1 until fights have several enemies. */
+  | { readonly targetsHit: true }
   | { readonly if: Predicate; readonly then: ValueExpr; readonly else?: ValueExpr };
 
 /** What a predicate or value is evaluated against. Fields left out are unknown. */
@@ -75,6 +84,8 @@ export interface EvalContext {
   readonly stacks?: Readonly<Record<string, number>>;
   readonly buffActive?: (id: string) => boolean;
   readonly consumed?: number;
+  /** ValueExpr `eventCount`. */
+  readonly eventCount?: number;
   /** The controlled operator. */
   readonly controlled?: string;
   /** Modifiers of the buffs on the enemy, from anyone. */
@@ -152,6 +163,11 @@ export function evaluate(v: ValueExpr, c: EvalContext): number {
     if (c.consumed === undefined) throw new Error("value needs the consumed infliction stacks, which aren't known here");
     return c.consumed;
   }
+  if ("eventCount" in v) {
+    if (c.eventCount === undefined) throw new Error("value needs the count of the event behind it, which isn't known here");
+    return c.eventCount;
+  }
+  if ("targetsHit" in v) return 1;
   const t = test(v.if, c);
   if (t === undefined) throw new Error("value depends on a condition that isn't known here");
   return t ? evaluate(v.then, c) : v.else === undefined ? 0 : evaluate(v.else, c);

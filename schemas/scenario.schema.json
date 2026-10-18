@@ -21,6 +21,11 @@
       "description": "Ultimate energy at the start, per operator ID: a number or \"full\" (default 0).",
       "additionalProperties": { "oneOf": [{ "type": "number", "minimum": 0 }, { "const": "full" }] }
     },
+    "startStacks": {
+      "type": "object",
+      "description": "Kit stacks at the start, per operator ID and stack ID (default: the kit's initial value, else 0).",
+      "additionalProperties": { "type": "object", "additionalProperties": { "type": "number", "minimum": 0 } }
+    },
     "target": {
       "type": "object",
       "required": ["enemy", "level"],

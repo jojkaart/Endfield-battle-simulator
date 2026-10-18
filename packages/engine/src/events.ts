@@ -63,7 +63,14 @@ export type TriggerActionKind =
   /** Apply to the enemy, as the owner. */
   | { readonly kind: "apply"; readonly applies: readonly KitApplication[] }
   | { readonly kind: "gain"; readonly gains: readonly StackGain[] }
-  | { readonly kind: "energy"; readonly value: ValueExpr }
+  /**
+   * Ultimate energy for the owner: `value` points, or `value` × its maximum
+   * (`percentOfMax`); `ignoreEfficiency` and `ignoreBlock` as the game's
+   * ObtainCostAction flags.
+   */
+  | { readonly kind: "energy"; readonly value: ValueExpr; readonly percentOfMax?: boolean; readonly ignoreEfficiency?: boolean; readonly ignoreBlock?: boolean }
+  /** The owner's ultimate energy drops to 0 (a state ending with clearUspOnEnd). */
+  | { readonly kind: "clearEnergy" }
   /** Return SP to the team (returned SP: it gives no ultimate energy when spent). */
   | { readonly kind: "sp"; readonly value: ValueExpr }
   /**

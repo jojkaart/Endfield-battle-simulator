@@ -37,6 +37,8 @@ interface RawHit {
   if?: Predicate;
   buffs?: BuffApplication[];
   energy?: ValueExpr;
+  sp?: ValueExpr;
+  heals?: "self" | "controlled" | "team";
   /** Triggered hits only: which skill-type bonus applies (`none`: no skill type). */
   damageType?: SkillType | "none";
 }
@@ -56,6 +58,7 @@ interface RawKit {
     damageType: "basic" | "battle" | "combo" | "ultimate";
     durationFrames?: number;
     energyBlockSeconds?: number;
+    teamEnergyFrame?: number;
     availableWhile?: string;
     unavailableWhile?: string;
     hits: RawHit[];
@@ -196,6 +199,7 @@ function kitChecker(scope: KitScope) {
         if (id !== undefined && !stackIds.has(id)) throw new Error(`${where} hit ${h.id}: unknown stack ${id} (the kit's stacks: ${[...stackIds].join(", ") || "none"})`);
       }
       if (h.energy !== undefined) checkValue(h.energy, src.skillId, `${where} hit ${h.id} energy`);
+      if (h.sp !== undefined) checkValue(h.sp, src.skillId, `${where} hit ${h.id} sp`);
       for (const a of h.buffs ?? []) {
         const b = buffDefs.get(a.buff);
         if (!b) throw new Error(`${where} hit ${h.id}: unknown buff ${a.buff}`);
@@ -213,6 +217,8 @@ function kitChecker(scope: KitScope) {
         ...(h.extraScale ? { extraScale: h.extraScale } : {}),
         ...(h.buffs ? { buffs: h.buffs } : {}),
         ...(h.energy ? { energy: h.energy } : {}),
+        ...(h.sp !== undefined ? { sp: h.sp } : {}),
+        ...(h.heals ? { heals: h.heals } : {}),
         ...(h.if ? { if: h.if } : {}),
         ...((h.finalStrike ?? src.finalStrike?.(h, events) ?? false) ? { finalStrike: true } : {}),
         ...(h.gains ? { gains: h.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1, ...(g.if ? { if: g.if } : {}) })) } : {}),
@@ -257,6 +263,7 @@ function kitChecker(scope: KitScope) {
           checkValue(a.seconds, skillId, `${where} extendBuff`);
           break;
         case "heal":
+        case "clearEnergy":
           break;
         case "cooldown":
           checkValue(a.seconds, skillId, `${where} cooldown change`);
@@ -336,6 +343,7 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
       kind: s.damageType,
       ...(s.durationFrames !== undefined ? { durationFrames: s.durationFrames } : {}),
       ...(s.energyBlockSeconds !== undefined ? { energyBlockSeconds: s.energyBlockSeconds } : {}),
+      ...(s.teamEnergyFrame !== undefined ? { teamEnergyFrame: s.teamEnergyFrame } : {}),
       ...(s.availableWhile ? { availableWhile: s.availableWhile } : {}),
       ...(s.unavailableWhile ? { unavailableWhile: s.unavailableWhile } : {}),
       hits: c.normalizeHits(s.hits, { skillId: s.skillId, damageType: s.damageType, label: s.label, checkScale: (key, w) => checkKey(skill, key, w), defaultEvent: s.skillId, finalStrike: (h, events) => isFinalStrike(s.skillId, events, s.hits.length) }, where),
@@ -343,7 +351,10 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
   });
   return {
     operator: kit.operator,
-    stacks: (kit.stacks ?? []).map((x) => ({ id: x.id, label: x.label, max: x.max })),
+    stacks: (kit.stacks ?? []).map((x) => {
+      if (x.initial !== undefined) c.checkValue(x.initial, "", `${where0}: stack ${x.id} initial`);
+      return { id: x.id, label: x.label, max: x.max, ...(x.initial !== undefined ? { initial: x.initial } : {}) };
+    }),
     ...(kit.activeConditions ? { activeConditions: kit.activeConditions } : {}),
     buffs: c.normalizeBuffs(kit.buffs ?? []),
     triggers: (kit.triggers ?? []).map(({ note: _note, ...t }) => c.checkTrigger(t)),
@@ -387,7 +398,10 @@ function loadEquipmentKit(data: KitData, file: string, kit: RawEquipmentKit): Eq
   idsOf(where0, "buff", kit.buffs ?? []);
   return {
     id,
-    stacks: (kit.stacks ?? []).map((x) => ({ id: x.id, label: x.label, max: x.max })),
+    stacks: (kit.stacks ?? []).map((x) => {
+      if (x.initial !== undefined) c.checkValue(x.initial, "", `${where0}: stack ${x.id} initial`);
+      return { id: x.id, label: x.label, max: x.max, ...(x.initial !== undefined ? { initial: x.initial } : {}) };
+    }),
     buffs: c.normalizeBuffs(kit.buffs ?? []),
     triggers: (kit.triggers ?? []).map(({ note: _note, ...t }) => c.checkTrigger(t)),
     conditions: (kit.conditions ?? []).map((x) => {
