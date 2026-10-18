@@ -38,6 +38,8 @@ export interface ActiveBuff {
   /** Periodic: frames between ticks (KitBuff.every), and the next tick's frame. */
   readonly every?: number;
   readonly nextTick?: number;
+  /** Ends with its owner's cast of this index (KitBuff.endsWithCast). */
+  readonly endsWithCast?: number;
 }
 
 /** A kit value for the applier, with `skillId` as the skill a plain key names. */
@@ -109,10 +111,17 @@ export function withBuff(buffs: readonly ActiveBuff[], b: ActiveBuff | null): Ac
 }
 
 /** Ends a buff from an owner: all of it, or its oldest `layers`. Returns the buffs left and whether any ended. */
-export function endBuff(buffs: readonly ActiveBuff[], id: string, owner: string, frame: number, layers?: number): { buffs: ActiveBuff[]; ended: boolean } {
+export function endBuff(buffs: readonly ActiveBuff[], id: string, owner: string, frame: number, layers?: number): { buffs: ActiveBuff[]; ended: boolean; remaining: number } {
   const active = buffs.filter((x) => x.id === id && x.owner === owner && x.cast === undefined && x.appliedAt <= frame && x.expiresAt > frame).sort((x, y) => x.appliedAt - y.appliedAt);
   const gone = new Set(layers === undefined ? active : active.slice(0, layers));
-  return { buffs: buffs.filter((x) => !gone.has(x)), ended: gone.size > 0 };
+  return { buffs: buffs.filter((x) => !gone.has(x)), ended: gone.size > 0, remaining: remainingOf([...gone], frame) };
+}
+
+/** Frames the longest of some buffs had left at a frame (0 for buffs without an end). */
+export function remainingOf(buffs: readonly ActiveBuff[], frame: number): number {
+  let left = 0;
+  for (const b of buffs) if (Number.isFinite(b.expiresAt)) left = Math.max(left, b.expiresAt - frame);
+  return left;
 }
 
 /** Adds `frames` to the remaining time of an owner's active buff (every layer). Returns null when it isn't active. */

@@ -78,6 +78,8 @@ export type ValueExpr =
    * finisher n).
    */
   | { readonly eventCount: true }
+  /** Seconds the ended buff of a `buffEnded` event had left (0 when it ran out): an extension that follows a pause cut short. */
+  | { readonly eventRemaining: true }
   /** Targets the hit (or the triggering hit) reached: 1 until fights have several enemies. */
   | { readonly targetsHit: true }
   /** The operator's own stack count (e.g. the room left: max − count). */
@@ -86,7 +88,6 @@ export type ValueExpr =
   | { readonly enemyVulnerableStacks: true }
   | { readonly if: Predicate; readonly then: ValueExpr; readonly else?: ValueExpr };
 
-/** What a predicate or value is evaluated against. Fields left out are unknown. */
 /** A build's level of an operator's talent (0-based, in talent order): Build.talents, else the highest. */
 export function talentLevel(data: GameData, build: Build, i: number): number {
   const op = data.operators[build.operator];
@@ -95,6 +96,7 @@ export function talentLevel(data: GameData, build: Build, i: number): number {
   return build.talents?.[i] ?? Math.max(...(op?.talentNodes ?? []).filter((n) => n.index === index).map((n) => n.level));
 }
 
+/** What a predicate or value is evaluated against. Fields left out are unknown. */
 export interface EvalContext {
   readonly data: GameData;
   readonly build: Build;
@@ -108,6 +110,8 @@ export interface EvalContext {
   readonly consumed?: number;
   /** ValueExpr `eventCount`. */
   readonly eventCount?: number;
+  /** ValueExpr `eventRemaining`, in seconds. */
+  readonly eventRemaining?: number;
   /** The controlled operator. */
   readonly controlled?: string;
   /** Whether the enemy is Staggered. */
@@ -191,6 +195,10 @@ export function evaluate(v: ValueExpr, c: EvalContext): number {
   if ("consumed" in v) {
     if (c.consumed === undefined) throw new Error("value needs the consumed infliction stacks, which aren't known here");
     return c.consumed;
+  }
+  if ("eventRemaining" in v) {
+    if (c.eventRemaining === undefined) throw new Error("value needs the time left of an ended buff, which only a buffEnded trigger has");
+    return c.eventRemaining;
   }
   if ("eventCount" in v) {
     if (c.eventCount === undefined) throw new Error("value needs the count of the event behind it, which isn't known here");

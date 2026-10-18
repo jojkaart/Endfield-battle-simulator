@@ -267,6 +267,7 @@ function kitChecker(scope: KitScope) {
     if (t.on.event === "buffApplied" && "categories" in t.on && "buff" in t.on) throw new Error(`${where}: a buffApplied trigger names a buff or categories, not both`);
     if (t.beforeDamage && !(STATUS_EVENTS as readonly string[]).includes(t.on.event)) throw new Error(`${where}: only status-event triggers can act before their hit's damage`);
     if (t.maxPerCast !== undefined && !(t.maxPerCast >= 1)) throw new Error(`${where}: maxPerCast must be at least 1`);
+    if (t.detached && !(t.delay && t.on.event === "cast")) throw new Error(`${where}: only a delayed cast trigger can be detached from its cast`);
     if (t.if) checkPredicate(t.if, where);
     if (t.cooldown !== undefined) checkValue(t.cooldown, skillId, `${where} cooldown`);
     for (const a of t.do) {
@@ -297,6 +298,7 @@ function kitChecker(scope: KitScope) {
           break;
         case "heal":
         case "clearEnergy":
+        case "cancelHits":
           break;
         case "cast":
           if (!scope.isSkill(a.skill)) throw new Error(`${where}: ${a.skill} isn't one of ${scope.owner}'s skills`);
@@ -331,7 +333,14 @@ function kitChecker(scope: KitScope) {
       if (!raw) throw new Error(`${scope.file}: buff ${b.id}: no BuffData file ${gameBuff}`);
       return raw.stacking.type === 1 ? { ...b, stackGroup: raw.stacking.key ?? gameBuff } : b;
     });
-  return { checkValue, checkPredicate, checkBuff, normalizeHits, checkTrigger, normalizeBuffs, isSource: scope.isSource };
+  /** A kit's triggers, checked, with the triggers their actions name (cancelHits) among them. */
+  const checkTriggers = (list: readonly Omit<RawTrigger, "note">[]): KitTrigger[] => {
+    const out = list.map(checkTrigger);
+    const ids = new Set(out.map((t) => t.id));
+    for (const t of out) for (const a of t.do) if (a.kind === "cancelHits" && !ids.has(a.trigger)) throw new Error(`${scope.file}: trigger ${t.id}: cancelHits names no trigger of this kit (${a.trigger})`);
+    return out;
+  };
+  return { checkValue, checkPredicate, checkBuff, normalizeHits, checkTrigger, checkTriggers, normalizeBuffs, isSource: scope.isSource };
 }
 
 /**
@@ -414,7 +423,7 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
     }),
     ...(kit.activeConditions ? { activeConditions: kit.activeConditions } : {}),
     buffs: c.normalizeBuffs(kit.buffs ?? []),
-    triggers: (kit.triggers ?? []).map(({ note: _note, ...t }) => c.checkTrigger(t)),
+    triggers: c.checkTriggers((kit.triggers ?? []).map(({ note: _note, ...t }) => t)),
     ...(kit.statusTweaks
       ? {
           statusTweaks: kit.statusTweaks.map(({ note: _note, ...t }) => {
@@ -471,7 +480,7 @@ function loadEquipmentKit(data: KitData, file: string, kit: RawEquipmentKit): Eq
       return { id: x.id, label: x.label, max: x.max, ...(x.initial !== undefined ? { initial: x.initial } : {}) };
     }),
     buffs: c.normalizeBuffs(kit.buffs ?? []),
-    triggers: (kit.triggers ?? []).map(({ note: _note, ...t }) => c.checkTrigger(t)),
+    triggers: c.checkTriggers((kit.triggers ?? []).map(({ note: _note, ...t }) => t)),
     conditions: (kit.conditions ?? []).map((x) => {
       if (x.source.kind !== "weaponSkill" || !weapon) throw new Error(`${where0}: condition ${x.id}: equipment conditions use weaponSkill sources (weapons only)`);
       return condition(id, x);

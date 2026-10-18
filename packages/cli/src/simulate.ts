@@ -13,7 +13,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 interface RawScenario {
   team: (string | Build)[];
   controlled?: string;
-  target: { enemy: string; level: number };
+  target: { enemy: string; level: number; controlImmune?: boolean };
   durationSeconds: number;
   crit?: CritMode;
   conditions?: Record<string, string[]>;

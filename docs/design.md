@@ -351,9 +351,19 @@ When an operator may act again after casting a skill (engine
   keeps the chain for 1 s after its exclusive time; other skills clear it.
 - Starting a skill ends the operator's current one: its hits still to land
   are cancelled, except detached ones (dealt from a projectile or entity
-  file, by their log event keys). A recorded action without a time
-  therefore waits for the current skill's own hits; one with `at` may
-  interrupt.
+  file, by their log event keys), and so are its delayed cast-trigger
+  actions (a skill's own effects at frames, unless the trigger is
+  `detached`) and the buffs that end with it (`endsWithCast`:
+  CreateBuffAction `autoFinishByAction`, which also end at the skill's
+  `durationFrame`). A recorded action without a time therefore waits for
+  the current skill's own hits; one with `at` may interrupt.
+- During a `ChannelingCastingAction` with `cantCastSkill` (and a
+  finisher's `buff_common_power_attack_disable_cast_skill` frames) the
+  operator starts no skill, whatever its priority. Whether ultimates are
+  an exception isn't in the data (in-game test 15). Follow-up casts
+  (CastSkill) aren't held.
+- Dive attacks (`skillSpecification` 6) need mid-air; rotations have no
+  jumps yet, so they can't be cast.
 - Swapping doesn't wait for the controlled operator's action (which goes
   on), except during a `ChannelingCastingAction` with `cantSwitchPosition`.
   Endaxis ignores those channels; the data is explicit, so the engine

@@ -356,6 +356,12 @@ export interface KitBuff {
   /** The first tick comes when it's applied (default: one interval later). */
   readonly tickOnApply?: boolean;
   /**
+   * Ends with the action that applied it (CreateBuffAction autoFinishByAction):
+   * when its owner's current skill ends or the owner starts another one.
+   * Applied while its owner isn't in a skill, it isn't applied.
+   */
+  readonly endsWithCast?: boolean;
+  /**
    * Instances in the same group don't add up, whoever applied them: only the
    * strongest of each modifier counts. Set by the data loader from the game
    * buff the kit buff stands for (BuffData stackingType 1, "effects of the

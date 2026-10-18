@@ -1043,3 +1043,92 @@ describe("timeline: trigger filters, before-damage triggers and alternatives", (
     expect(dmg(g)).toBeCloseTo(2 * dmg(data), 6);
   });
 });
+
+describe("timeline: what ends with a cast, cast blocks, mid-air, control immunity", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const withKit = (k: Partial<OperatorKit>): GameData => ({ ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, ...k } } } });
+  const a = (s: string, at?: number): RotationAction => ({ operator: op, skill: L + s, ...(at !== undefined ? { at } : {}) });
+  const run = (g: GameData, rotation: RotationAction[], frames = 30 * 60) => {
+    const ctx = createContext(g, scenario(rotation));
+    let s = init(ctx);
+    for (const x of rotation) s = apply(ctx, s, x);
+    return advance(ctx, s, frames);
+  };
+  const mark: KitBuff = { id: "mark", label: "mark", target: "self", duration: 20, modifiers: [] };
+
+  it("a delayed cast trigger's actions are dropped when the cast is cut short, unless detached", () => {
+    const later = (detached: boolean): KitTrigger => ({ id: "later", on: { event: "cast", skills: [L + "attack1"] }, by: "self", delay: 8, ...(detached ? { detached } : {}), do: [{ kind: "buff", buff: "mark" }] });
+    const marked = (detached: boolean, rotation: RotationAction[]) => run(withKit({ buffs: [...kit.buffs, mark], triggers: [...kit.triggers, later(detached)] }), rotation, 40).buffs.some((b) => b.id === "mark");
+    expect(marked(false, [a("attack1")])).toBe(true);
+    // The battle skill at frame 5 cuts attack1 short (it outranks a basic attack).
+    expect(marked(false, [a("attack1"), a("normal_skill", 5)])).toBe(false);
+    expect(marked(true, [a("attack1"), a("normal_skill", 5)])).toBe(true);
+  });
+
+  it("cancelHits drops a trigger's hits on their way", () => {
+    const a1 = (kit.skills.find((s) => s.skillId === L + "attack1") as KitSkill).hits[0] as KitHit;
+    const volley: KitTrigger = { id: "volley", on: { event: "cast", skills: [L + "attack1"] }, by: "self", skill: L + "attack1", do: [{ kind: "hits", hits: [{ ...a1, id: "v", damageType: "basic", frames: [30], detached: true }] }] };
+    const stop: KitTrigger = { id: "stop", on: { event: "cast", kinds: ["battle"] }, by: "self", do: [{ kind: "cancelHits", trigger: "volley" }] };
+    const volleys = (triggers: KitTrigger[]) => run(withKit({ triggers: [...kit.triggers, ...triggers] }), [a("attack1"), a("normal_skill", 12)], 60).hits.filter((h) => h.hitId === "v").length;
+    expect(volleys([volley])).toBe(1);
+    expect(volleys([volley, stop])).toBe(0);
+  });
+
+  it("a buff that ends with its cast ends at the skill's end or the next cast; a buffEnded trigger reads the time it had left", () => {
+    const pause: KitBuff = { id: "pause", label: "pause", target: "self", duration: 10, endsWithCast: true, modifiers: [] };
+    const start: KitTrigger = { id: "start", on: { event: "cast", skills: [L + "normal_skill"] }, by: "self", do: [{ kind: "buff", buff: "pause" }] };
+    const g = withKit({ stacks: [...kit.stacks, { id: "left", label: "left", max: 9999 }], buffs: [...kit.buffs, pause], triggers: [...kit.triggers, start, { id: "ended", on: { event: "buffEnded", buff: "pause" }, by: "self", do: [{ kind: "gain", gains: [{ stack: "left", amount: { product: [{ eventRemaining: true }, 30] } }] }] }] });
+    const duration = data.skills[L + "normal_skill"]?.timing?.durationFrames ?? NaN;
+    const ctx = createContext(g, scenario([]));
+    const s = apply(ctx, init(ctx), a("normal_skill"));
+    expect(s.buffs.find((b) => b.id === "pause")?.expiresAt).toBe((s.casts[0]?.frame ?? NaN) + duration);
+    // Cut short by her ultimate (it outranks the battle skill): it ends there, with the rest of the skill left.
+    const after = apply(ctx, s, a("ultimate_skill", 40));
+    const at = after.casts[1]?.frame ?? NaN;
+    expect(at).toBeLessThan(duration);
+    const cut = advance(ctx, after, at + 1);
+    expect(cut.buffs.some((b) => b.id === "pause")).toBe(false);
+    expect(cut.stacks[op]?.left).toBeCloseTo(duration - at, 6);
+    // Run out: nothing left.
+    expect(advance(ctx, s, duration + 5).stacks[op]?.left ?? 0).toBe(0);
+  });
+
+  it("a cantCastSkill channel holds the operator's casts, even ones that outrank its skill", () => {
+    const gb = JSON.parse(readFileSync(new URL("../examples/gilberta-usp02.json", import.meta.url), "utf8")) as Build;
+    const G = "chr_0013_aglina_";
+    const channel = data.skills[G + "normal_skill"]?.timing?.channels.find((c) => c.cantCastSkill);
+    expect(channel).toMatchObject({ from: 0, to: 111 });
+    const ctx = createContext(data, { ...scenario([]), team: [gb], startEnergy: { [gb.operator]: "full" } });
+    const s = apply(ctx, init(ctx), { operator: gb.operator, skill: G + "normal_skill" });
+    expect(earliestStart(ctx, s, { operator: gb.operator, skill: G + "ultimate_skill", at: 10 })).toEqual({ frame: (s.casts[0]?.frame ?? NaN) + 111 });
+  });
+
+  it("dive attacks need mid-air; control statuses don't freeze a control-immune enemy", () => {
+    const dive = kit.skills.find((s) => data.skills[s.skillId]?.timing?.specification === 6);
+    if (dive) {
+      const ctx = createContext(data, scenario([]));
+      expect(earliestStart(ctx, init(ctx), { operator: op, skill: dive.skillId })).toHaveProperty("error");
+    }
+    const imm: KitTrigger = { id: "imm", on: { event: "cast", kinds: ["basic"] }, by: "self", maxCount: 1, do: [{ kind: "apply", applies: [{ kind: "infliction", element: "fire" }, { kind: "control", status: "immobilization", seconds: 1, freezes: true }] }] };
+    const g = withKit({ triggers: [...kit.triggers, imm] });
+    const heat = (controlImmune: boolean) => {
+      const ctx = createContext(g, { ...scenario([a("attack1")]), target: { enemy: "eny_0051_rodin", level: 90, ...(controlImmune ? { controlImmune } : {}) } });
+      return advance(ctx, apply(ctx, init(ctx), a("attack1")), 5).enemy.infliction?.expiresAt;
+    };
+    expect(heat(false)).toBe(630);
+    expect(heat(true)).toBe(600);
+  });
+
+  it("a combo's cast event carries its window's count", () => {
+    const counted: KitTrigger = { id: "c", on: { event: "cast", kinds: ["combo"] }, by: "self", do: [{ kind: "gain", gains: [{ stack: "n", amount: { eventCount: true } }] }] };
+    const g = withKit({ stacks: [...kit.stacks, { id: "n", label: "n", max: 99 }], triggers: [...kit.triggers, counted] });
+    const ctx = createContext(g, { ...scenario([]), durationFrames: 30 * 120 });
+    let s = init(ctx);
+    for (let i = 0; i < 5; i++) s = apply(ctx, s, a("normal_skill"));
+    const combustion = advance(ctx, s, ctx.scenario.durationFrames).reactions.find((e) => e.kind === "reaction");
+    s = advance(ctx, s, combustion?.frame ?? 0);
+    const window = s.comboWindow[op]?.count;
+    expect(window).toBeGreaterThanOrEqual(1);
+    expect(apply(ctx, s, a("combo_skill")).stacks[op]?.n).toBe(window);
+  });
+});

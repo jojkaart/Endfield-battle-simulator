@@ -30,7 +30,11 @@
       "type": "object",
       "required": ["enemy", "level"],
       "additionalProperties": false,
-      "properties": { "enemy": { "type": "string" }, "level": { "type": "integer", "minimum": 1 } }
+      "properties": {
+        "enemy": { "type": "string" },
+        "level": { "type": "integer", "minimum": 1 },
+        "controlImmune": { "type": "boolean", "description": "Control statuses don't freeze this enemy (bosses with the control-immune tag; the data has no list)." }
+      }
     },
     "durationSeconds": { "type": "number", "exclusiveMinimum": 0 },
     "crit": { "enum": ["never", "always", "expected"] },

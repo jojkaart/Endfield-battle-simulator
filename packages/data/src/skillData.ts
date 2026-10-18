@@ -141,6 +141,10 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
       if (d) slowdowns.push({ from, scales: d });
     }
     if (o["isEnable"] !== false && type.includes("ChannelingCastingAction")) channels.push({ from, to, cantCastSkill: o["cantCastSkill"] === true, cantSwitch: o["cantSwitchPosition"] === true });
+    // A finisher's disable-cast buff for the action's frames blocks casts as a cantCastSkill channel does.
+    if (o["isEnable"] !== false && type.includes("CreateBuffAction") && o["autoFinishByAction"] === true && ((o["buffs"] ?? []) as { buffId?: unknown }[]).some((b) => b.buffId === "buff_common_power_attack_disable_cast_skill")) {
+      channels.push({ from, to, cantCastSkill: true, cantSwitch: false });
+    }
     for (const v of Object.values(o)) find(v, from, to);
   };
   const group = obj(j["actionGroupData"] ?? {}, at(ctx, "actionGroupData"));

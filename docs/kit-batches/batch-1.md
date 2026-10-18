@@ -329,6 +329,14 @@ Most first-round gaps are now expressible; what's left, by family:
 - C4 `branch` on hits: alternatives of one landing are judged together on
   the situation before any of them; the first in kit order whose `if`
   holds lands (Estella's combo).
+- S8: delayed cast-trigger actions are dropped when the cast is cut short
+  (unless `detached`); a `cancelHits` action (Liino's combo ends a volley
+  on its way); `endsWithCast` buffs. S9: `cantCastSkill` channels and the
+  finisher's disable-cast buff hold the operator's casts. S10: dive
+  attacks can't be cast until rotations have jumps. S11: `buffEnded`
+  events carry the time left, `{eventRemaining: true}`, so an extension
+  can follow a pause cut short. V9: a combo's cast event carries its
+  window count. A7: `controlImmune` targets.
 - Not done in this batch: A6 reacting inflictions for "applies Arts
   Infliction" (Arcane R3's open question) stay excluded from
   `inflictionApplied`.

@@ -28,12 +28,14 @@ export type BattleEvent =
       readonly cast?: number;
     }
   /** A skill was cast. */
-  | { readonly type: "cast"; readonly frame: number; readonly operator: string; readonly skillId: string; readonly kind: SkillType; readonly finisher: boolean; readonly controlled: boolean }
+  /** A skill was cast; `cast` is its index, `count` a combo's window count (ValueExpr `eventCount`). */
+  | { readonly type: "cast"; readonly frame: number; readonly operator: string; readonly skillId: string; readonly kind: SkillType; readonly finisher: boolean; readonly controlled: boolean; readonly cast?: number; readonly count?: number }
   /** Something the enemy's arts state did (status.ts); `fromKind`: the kind of the hit that caused it (`none` for a trigger's or a tick's). */
   | { readonly type: "status"; readonly frame: number; readonly operator: string; readonly event: StatusEvent; readonly fromKind: SkillType | "none"; readonly cast?: number }
   /** `operator` applied one of its kit buffs; `categories`: what the buff is (BuffCategory). */
   | { readonly type: "buffApplied"; readonly frame: number; readonly operator: string; readonly buff: string; readonly categories: readonly BuffCategory[] }
-  | { readonly type: "buffEnded"; readonly frame: number; readonly operator: string; readonly buff: string }
+  /** `remaining`: frames it had left when it ended (0 when it ran out). */
+  | { readonly type: "buffEnded"; readonly frame: number; readonly operator: string; readonly buff: string; readonly remaining: number }
   /** A periodic tick of one of the operator's kit buffs (KitBuff.every). */
   | { readonly type: "buffTick"; readonly frame: number; readonly operator: string; readonly buff: string }
   /** `operator` healed `target` (no amounts: what matters is who, and when). */
@@ -127,6 +129,8 @@ export type TriggerActionKind =
   | { readonly kind: "extendBuff"; readonly buff: string; readonly seconds: ValueExpr }
   /** Heal (an event for heal triggers; amounts aren't modelled). */
   | { readonly kind: "heal"; readonly target: HealTarget }
+  /** Drop the owner's hits still to land from one of its triggers (a cast ending a volley on its way: FinishBuff of its launcher). */
+  | { readonly kind: "cancelHits"; readonly trigger: string }
   /** End one of the owner's kit buffs: all of it, or its oldest `layers`. */
   | { readonly kind: "endBuff"; readonly buff: string; readonly layers?: number }
   /**
@@ -161,8 +165,15 @@ export interface KitTrigger {
   readonly maxPerCast?: number;
   /** Status events only: run on a hit's own status events before that hit's damage, so a buff it applies acts on the hit (Pursuit's Lift). */
   readonly beforeDamage?: boolean;
-  /** Frames after the event when its actions run (its `if` is judged at the event; each action's own `if` when it runs). */
+  /**
+   * Frames after the event when its actions run (its `if` is judged at the
+   * event; each action's own `if` when it runs). Delayed actions of a cast
+   * event are the cast's own: dropped if the caster starts another skill
+   * first, unless `detached`.
+   */
   readonly delay?: number;
+  /** Delayed actions of a cast event happen even if the cast is cut short. */
+  readonly detached?: boolean;
   /** The skill a plain value key names (a skill of the owner, or a talent / weapon / gear-set source). */
   readonly skill?: string;
   readonly do: readonly TriggerAction[];

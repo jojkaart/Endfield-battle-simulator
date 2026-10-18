@@ -32,7 +32,7 @@ import { resolveApplication, type GameData, type KitBuff, type KitHit, type KitS
 import { effectiveKit } from "./triggers.ts";
 import { causeMatches, eventMatches, triggerSkillId, type BattleEvent, type BuffCategory, type KitTrigger } from "./events.ts";
 import { evaluate, test, type EvalContext } from "./expr.ts";
-import { applyBuff, buffAttr, buffModifiers, endBuff, extendBuff, reaches, resolveValue, withBuff, type ActiveBuff } from "./buffs.ts";
+import { applyBuff, buffAttr, buffModifiers, endBuff, extendBuff, reaches, remainingOf, resolveValue, withBuff, type ActiveBuff } from "./buffs.ts";
 import { computeStats, skillLevel, skillParam, type StatPanel } from "./stats.ts";
 import { Attr } from "./attributes.ts";
 import { applyToEnemy, expireStatus, nextTick, NO_STATUS, statusModifiers, tickStatus, type EnemyStatus, type StatusEvent, type StatusTweaks } from "./status.ts";
@@ -162,7 +162,8 @@ export interface TimelineState {
   readonly readyAt: Readonly<Record<string, number>>;
   readonly pending: readonly PendingHit[];
   /** Trigger actions due later (KitTrigger.delay), with the event that started them. */
-  readonly pendingActions: readonly { readonly frame: number; readonly owner: string; readonly trigger: string; readonly event: BattleEvent; readonly origin: Origin | null }[];
+  /** Delayed trigger actions; `cast`: the cast they belong to (a cast trigger's), dropped when it's cut short. */
+  readonly pendingActions: readonly { readonly frame: number; readonly owner: string; readonly trigger: string; readonly event: BattleEvent; readonly origin: Origin | null; readonly cast?: { readonly operator: string; readonly index: number } }[];
   /** The team's Link stacks (combo casts leave one each, 15 s): their expiry frames. */
   readonly link: readonly number[];
   /** Until when a control status (Si's Immobilization) freezes the enemy's own clock. */
@@ -645,7 +646,14 @@ function addBuff(ctx: TimelineContext, st: TimelineState, owner: string, skillId
       .filter((m) => decide(filter, evalContext(ctx.data, m, ctx.panels.get(m.operator) as StatPanel, skillId, { ...situationAt(ctx, m.operator, st, frame), owner })))
       .map((m) => m.operator);
   }
-  const b = applyBuff(ctx.data, build, panel, skillId, def, frame, situation, recipients);
+  let b = applyBuff(ctx.data, build, panel, skillId, def, frame, situation, recipients);
+  if (b && def.endsWithCast) {
+    // It ends with its owner's current skill: at the skill's end, or earlier if the owner starts another.
+    const cur = st.acting[owner];
+    const index = st.casts.findLastIndex((c) => c.operator === owner);
+    const end = cur ? cur.frame + Math.round(timingOf(ctx, cur.skill).durationFrames / (cur.speed ?? 1)) : -1;
+    b = cur && index >= 0 && end > frame ? { ...b, expiresAt: Math.min(b.expiresAt, end), endsWithCast: index } : null;
+  }
   return { state: b ? { ...st, buffs: withBuff(st.buffs, b) } : st, applied: b !== null };
 }
 
@@ -727,11 +735,12 @@ const MAX_CHAIN = 500;
 function triggerSituation(ctx: TimelineContext, owner: string, st: TimelineState, e: BattleEvent, consumed?: number): Situation {
   const cause = ctx.builds.get(e.operator);
   const eventOperator = cause ? evalContext(ctx.data, cause, ctx.panels.get(e.operator) as StatPanel, "", situationAt(ctx, e.operator, st, e.frame)) : undefined;
-  return { ...situationAt(ctx, owner, st, e.frame, consumed), eventCount: eventCountOf(e), ...(eventOperator ? { eventOperator } : {}) };
+  return { ...situationAt(ctx, owner, st, e.frame, consumed), eventCount: eventCountOf(e), ...(e.type === "buffEnded" ? { eventRemaining: e.remaining / FPS } : {}), ...(eventOperator ? { eventOperator } : {}) };
 }
 
-/** An event's count (ValueExpr `eventCount`): stacks inflicted or consumed, a reaction's level, else 1. */
+/** An event's count (ValueExpr `eventCount`): stacks inflicted or consumed, a reaction's level, a combo cast's window count, else 1. */
 function eventCountOf(e: BattleEvent): number {
+  if (e.type === "cast") return e.count ?? 1;
   if (e.type !== "status") return 1;
   const s = e.event;
   return s.kind === "inflicted" || s.kind === "consumed" || s.kind === "vulnerable" ? s.stacks : s.kind === "reaction" || s.kind === "statusConsumed" || s.kind === "physical" || s.kind === "shatter" ? s.level : 1;
@@ -750,7 +759,7 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
     if (n > MAX_CHAIN) throw new EngineError(`more than ${MAX_CHAIN} chained events at frame ${queue[0]?.frame}: a trigger loop in the kits?`);
     const e = queue.shift() as BattleEvent;
     // A control status that freezes the enemy stops its clock (overlapping freezes count once).
-    if (e.type === "status" && e.event.kind === "control" && e.event.freezes) {
+    if (e.type === "status" && e.event.kind === "control" && e.event.freezes && !ctx.scenario.target.controlImmune) {
       const end = e.frame + e.event.frames;
       const lost = Math.max(0, end - Math.max(e.frame, st.enemyFrozenUntil));
       st = { ...shiftEnemy(st, e.frame, lost), enemyFrozenUntil: Math.max(st.enemyFrozenUntil, end) };
@@ -781,7 +790,8 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
         st = { ...st, triggerState: { ...st.triggerState, [key]: { readyAt: e.frame + cooldown, count: (ts?.count ?? 0) + 1 } } };
         if (castKey) st = { ...st, triggerState: { ...st.triggerState, [castKey]: { readyAt: 0, count: (st.triggerState[castKey]?.count ?? 0) + 1 } } };
         if (t.delay) {
-          st = { ...st, pendingActions: [...st.pendingActions, { frame: e.frame + t.delay, owner, trigger: t.id, event: e, origin }] };
+          const cast = e.type === "cast" && e.cast !== undefined && !t.detached ? { cast: { operator: e.operator, index: e.cast } } : {};
+          st = { ...st, pendingActions: [...st.pendingActions, { frame: e.frame + t.delay, owner, trigger: t.id, event: e, origin, ...cast }] };
           continue;
         }
         const r = runActions(ctx, st, t, owner, e, origin);
@@ -862,10 +872,13 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         const r = endBuff(st.buffs, a.buff, owner, frame, a.layers);
         if (r.ended) {
           st = { ...st, buffs: r.buffs };
-          events.push({ type: "buffEnded", frame, operator: owner, buff: a.buff });
+          events.push({ type: "buffEnded", frame, operator: owner, buff: a.buff, remaining: r.remaining });
         }
         break;
       }
+      case "cancelHits":
+        st = { ...st, pending: st.pending.filter((h) => !(h.operator === owner && h.trigger?.id === a.trigger)) };
+        break;
       case "cooldown": {
         const who = a.who === "self" ? owner : a.who === "eventOperator" ? e.operator : ctx.scenario.team[a.who.slot]?.operator;
         if (!who) break;
@@ -1067,7 +1080,7 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
       // A buff a cast consumed already ended when it was consumed.
       const ended = st.buffs.filter((b) => b.expiresAt === at && b.cast === undefined);
       st = { ...st, buffs: st.buffs.filter((b) => b.expiresAt !== at) };
-      st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: at, operator: b.owner, buff: b.id })), null);
+      st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: at, operator: b.owner, buff: b.id, remaining: 0 })), null);
       continue;
     }
     const due = st.pendingActions.reduce<TimelineState["pendingActions"][number] | null>((a, x) => (x.frame <= frame && (!a || x.frame < a.frame) ? x : a), null);
@@ -1103,6 +1116,17 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
   };
 }
 
+/** The first frame at or after `frame` outside the operator's current skill's cantCastSkill channels. */
+function afterCantCast(ctx: TimelineContext, state: TimelineState, operator: string, frame: number): number {
+  const cur = state.acting[operator];
+  if (!cur) return frame;
+  let f = frame;
+  // Channels are in skill frames; a hasted cast plays them faster.
+  const at = (x: number) => cur.frame + (cur.speed ? Math.round(x / cur.speed) : x);
+  for (const c of [...timingOf(ctx, cur.skill).channels].sort((a, b) => a.from - b.from)) if (c.cantCastSkill && at(c.from) <= f && f < at(c.to)) f = at(c.to);
+  return f;
+}
+
 /** The earliest frame an action could start from the current state, or a reason it can't. */
 export function earliestStart(ctx: TimelineContext, state: TimelineState, action: RotationAction): { frame: number } | { error: string } {
   if (!ctx.builds.has(action.operator)) return { error: `${action.operator} isn't in the team` };
@@ -1122,12 +1146,16 @@ export function earliestStart(ctx: TimelineContext, state: TimelineState, action
     return { error: e instanceof Error ? e.message : String(e) };
   }
   if (costs.kind === "basic" && state.controlled !== action.operator) return { error: `${action.operator} isn't the controlled operator (swap first)` };
+  // A dive attack (skillSpecification 6) needs the operator in mid-air, and rotations have no jumps yet.
+  if (costs.timing.specification === 6) return { error: `${action.skill} is a dive attack: it needs mid-air, and rotations have no jumps` };
   frame = Math.max(frame, state.readyAt[action.skill] ?? 0);
   // Without a time, an action waits for the current skill's own hits (interrupting would cancel them); with one, it may interrupt.
   if (action.at === undefined) frame = Math.max(frame, ownHitsLanded(state, action.operator));
   const gate = actionGate(ctx, state, action.operator, action.skill, frame);
   if ("error" in gate) return gate;
   frame = gate.frame;
+  // A channel that forbids casting (cantCastSkill, a finisher's disable-cast buff) holds every cast of its operator, whatever its priority.
+  frame = afterCantCast(ctx, state, action.operator, frame);
   // A finisher only on a Staggered enemy, once per stagger.
   if (costs.timing.specification === 8 && ((then) => !isStaggered(then, frame) || then.stagger.finisherUsed)(advance(ctx, state, frame))) return { error: `${action.skill} is a finisher: the enemy isn't Staggered (or this stagger's finisher is used) at frame ${frame}` };
   if (costs.spCost > SP.max) return { error: `${action.skill} costs ${costs.spCost} SP, more than the maximum` };
@@ -1211,7 +1239,15 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
 function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: string, skillId: string, frame: number, followUp: boolean): { state: TimelineState; events: BattleEvent[]; origin: Origin } {
   // Starting a skill ends the operator's current one: its hits still to land are cancelled, unless already on their way.
   const prevCast = advanced.casts.length - 1 - [...advanced.casts].reverse().findIndex((c) => c.operator === operator);
-  const s = { ...advanced, pending: advanced.pending.filter((h) => !(h.operator === operator && h.cast === prevCast && !h.detached && h.frame > frame)) };
+  // So are its delayed cast-trigger actions, and the buffs that end with it.
+  const endsNow = advanced.buffs.filter((b) => b.owner === operator && b.endsWithCast !== undefined && b.endsWithCast === prevCast && b.expiresAt > frame);
+  const s = {
+    ...advanced,
+    pending: advanced.pending.filter((h) => !(h.operator === operator && h.cast === prevCast && !h.detached && h.frame > frame)),
+    pendingActions: advanced.pendingActions.filter((x) => !(x.cast && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame)),
+    buffs: advanced.buffs.filter((b) => !endsNow.includes(b)),
+  };
+  const endsNowEvents: BattleEvent[] = [...new Map(endsNow.map((b) => [b.id, { type: "buffEnded" as const, frame, operator, buff: b.id, remaining: remainingOf(endsNow.filter((x) => x.id === b.id), frame) }])).values()];
   const skill = kitSkill(ctx, operator, skillId);
   const full = skillCosts(ctx, operator, skillId);
   const costs = followUp ? { ...full, spCost: 0, energyCost: 0, cooldownFrames: 0 } : full;
@@ -1308,9 +1344,12 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     stacks,
     casts: [...s.casts, { frame, operator, skill: skillId, spAfter: s.sp - costs.spCost, energyAfter: next.energy[operator] ?? 0 }],
   };
-  const castEvent: BattleEvent = { type: "cast", frame, operator, skillId, kind: costs.kind, finisher: full.timing.specification === 8, controlled: s.controlled === operator };
-  const endedEvents: BattleEvent[] = [...new Map(consumedBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id }])).values()];
-  return { state: slowDown(ctx, cast, operator, costs.timing, frame), events: [castEvent, ...endedEvents], origin: { operator, kind: costs.kind } };
+  const castEvent: BattleEvent = {
+    type: "cast", frame, operator, skillId, kind: costs.kind, finisher: full.timing.specification === 8, controlled: s.controlled === operator, cast: castIndex,
+    ...(windowCount !== undefined ? { count: windowCount } : {}),
+  };
+  const endedEvents: BattleEvent[] = [...new Map(consumedBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id, remaining: remainingOf([b], frame) }])).values()];
+  return { state: slowDown(ctx, cast, operator, costs.timing, frame), events: [...endsNowEvents, castEvent, ...endedEvents], origin: { operator, kind: costs.kind } };
 }
 
 export interface TimelineResult {

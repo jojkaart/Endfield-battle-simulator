@@ -28,7 +28,7 @@ export interface DamageOptions {
 }
 
 /** The parts of an EvalContext that describe the moment rather than the build. */
-export type Situation = Partial<Pick<EvalContext, "team" | "enemy" | "stacks" | "buffActive" | "consumed" | "eventCount" | "controlled" | "staggered" | "enemyModifiers" | "owner" | "eventOperator">>;
+export type Situation = Partial<Pick<EvalContext, "team" | "enemy" | "stacks" | "buffActive" | "consumed" | "eventCount" | "eventRemaining" | "controlled" | "staggered" | "enemyModifiers" | "owner" | "eventOperator">>;
 
 /** The context kit predicates and values are evaluated in, for a build's skill. */
 export function evalContext(data: GameData, build: Build, panel: StatPanel, skillId: string, situation: Situation = {}): EvalContext {
@@ -48,6 +48,12 @@ export const DEFAULT_DAMAGE_OPTIONS: DamageOptions = { crit: "expected", stagger
 export interface DamageTarget {
   readonly enemy: string;
   readonly level: number;
+  /**
+   * The enemy is immune to control (the game's control-immune tag
+   * 188749032; no table says which enemies have it): control statuses are
+   * applied, but don't freeze it.
+   */
+  readonly controlImmune?: boolean;
 }
 
 export interface Zones {

@@ -152,6 +152,10 @@
             "type": "boolean",
             "description": "The first tick comes when it's applied (default: one interval later)."
           },
+          "endsWithCast": {
+            "type": "boolean",
+            "description": "Ends with the action that applied it (CreateBuffAction autoFinishByAction): when its owner's current skill ends or the owner starts another; not applied outside a skill."
+          },
           "blocksEnergy": {
             "type": "boolean",
             "description": "While active, its owner gains no ultimate energy (RefrainObtainUsp)."
@@ -749,6 +753,10 @@
             "minimum": 0,
             "description": "Frames after the event when the actions run (the trigger's if is judged at the event, each action's own if when it runs)."
           },
+          "detached": {
+            "type": "boolean",
+            "description": "A delayed cast trigger's actions happen even if the cast is cut short (by default they are the cast's own and are dropped with it)."
+          },
           "skill": {
             "type": "string",
             "description": "The skill (or talent / potential source) plain value keys name."
@@ -1099,6 +1107,27 @@
                     "skill": {
                       "type": "string",
                       "description": "One of the owner's kit skills, cast by itself (SkillData CastSkill): no control, cost or cooldown; it ends the owner's current skill."
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "required": [
+                    "kind",
+                    "trigger"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "cancelHits"
+                    },
+                    "trigger": {
+                      "type": "string",
+                      "description": "One of this kit's triggers: the owner's hits from it still to land are dropped."
                     },
                     "if": {
                       "$ref": "#/$defs/predicate",
@@ -2188,6 +2217,19 @@
           "properties": {
             "eventCount": {
               "const": true
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "eventRemaining"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "eventRemaining": {
+              "const": true,
+              "description": "Seconds the ended buff of a buffEnded event had left (0 when it ran out)."
             }
           }
         },
