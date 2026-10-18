@@ -8,7 +8,9 @@ in-game values, all exact) and the `efsim` damage calculator.
 
 1. **More kits.** Hit structure for more operators, each verified against
    something in-game (a fixture). ZMDLogs is the best source: real hits with
-   full loadouts for many operators.
+   full loadouts for many operators. Liino: battle skill and combo done;
+   her follow-up volley and combo wait on a Corrosion model that matches
+   the logs, her ultimate on a parser-v59 log (in-game tests 4 and 6).
 2. **ZMDLogs hit-by-hit fixture** (`btl_upload_40d9a3c1da37`, Rhodagn, 1.6,
    19 s): import the loadout and the per-hit damage (`/api/battles/{id}`),
    store only the extracted numbers with the battle ID (no names), and

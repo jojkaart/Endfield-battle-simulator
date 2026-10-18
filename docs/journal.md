@@ -4,6 +4,27 @@ A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 
+## 2026-10-18: Liino's kit
+
+**Goal:** Liino's (chr_0035_liino) hit structure, verified against logs.
+
+**Done:** kit with the battle skill (6 projectiles × `atk_scale`, verified
+12/12 in `zmdlogs-0eef2474a26f` and the new `zmdlogs-bdf223db8e49`; the
+follow-up volley 6 × `atk_scale_2`) and the combo (`atk_scale` at frame 9,
+`atk_scale_2` at frame 33). The kit-coverage test now takes known gaps per
+operator.
+
+**Decisions:** the follow-up volley and the combo keep empty `events`: all
+their logged hits but six are under Corrosion, which the engine's model
+doesn't reproduce (see in-game test 4), and a covered mismatch would fail
+the log test. Ultimate and basic attacks are left out (reasons in the
+kit's sources).
+
+**Problems:** two imports were wasted: `btl_upload_5d51a64dd089`'s enemy
+(`eny_0090_wgabyss_hdg011`) isn't in the tables, and level inference fails
+on stages with scaled HP. Liino's ultimate is only in a parser-v58 log that
+misses her own buffs; in-game test 6 asks for a clean one.
+
 ## 2026-10-18: damage calculator
 
 **Goal:** something usable: the stat panel and damage per hit of a build,
