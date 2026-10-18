@@ -269,3 +269,35 @@ Then re-analysis of all seven.
 - Ti4: haste as action speed (attribute 92 from buffs): a cast plays
   faster (hits, windows, locked part), cooldowns unchanged; assumed, in-game
   test 19.
+
+## Pass 2: remaining gaps (merged 2026-10-18)
+
+From the seven re-analyses (`## Re-analysis (pass 2)` in each report).
+Most first-round gaps are now expressible; what's left, by family:
+
+| ID | Feature | Needed by |
+|---|---|---|
+| T4 | Trigger filters: a hit or cast trigger limited to finishers or to given skills; a status event's causing skill kind ("Lift by a combo"); heal kind; "the wearer applied a buff of a category" (Amp, Susceptibility, Weakness, Protection); a once-per-cast limit | Laevatain R2, Arcane R1–R3, Typhoeus R2, Gilberta R2, Liino R7 |
+| T5 | Triggers on a hit's own status events act before that hit's damage | Gilberta R1 (Pursuit: +24.8–43.4% Arts DMG on every combo hit) |
+| T6 | Trigger cooldowns per event subject (per healed teammate) | Liino R2 |
+| T7 | A fight-start event (permanent auras) | Gilberta R8 |
+| B7 | Layers per recipient for a buff given to one operator (`to: eventSubject`): 4 per teammate, not 4 for the team | Liino R1 (her weapon: up to +39% ATK per teammate, about +13% today) |
+| B8 | Link: combo casts give the team Link stacks, the next battle skill / ultimate consumes them for that cast (+30/45/60/75%, +20/30/40/50%) | Gilberta R3, every team |
+| B9 | Stacking type 11 across wielders (strongest per stacking group, Jade Vessel's debuff) | Si R7 (minor) |
+| S8 | Interrupting a skill cancels what it scheduled (delayed actions, triggered hits on the way), and a buff can end with the action that made it (`autoFinishByAction`) | Typhoeus R1, Liino R3, R6, Estella (note) |
+| S9 | `cantCastSkill` channels and disable-cast buffs block casts | Liino R4, Gilberta R5 |
+| S10 | An airborne state for dive attacks | Estella R5, Gilberta R6, Typhoeus R5 |
+| S11 | An extension that follows a pause cut short (the pause ends with the skill) | Laevatain R3 |
+| V6 | A hit's scale as a value (sums: `atk_scale2 + n × atk_scale2_1`) | Si R2 |
+| V7 | Cooldown changes as a fraction of the remaining time | Arcane R4 (also Typhoeus, Wulfgard, Da Pan, Chen) |
+| V8 | Values from talents not unlocked are skipped, not errors; a talent-level predicate | Estella R2, Gilberta R9, Si R4 |
+| V9 | A cast trigger reads the combo window's count | Si R5 (minor) |
+| C4 | Alternative hits of one landing judged on the same situation (one's Shatter mustn't enable the other) | Estella R1 |
+| A6 | WILL combo's element: the triggering infliction's or the enemy's current | Arcane R10 (in-game test) |
+| A7 | Control-immune enemies | Si R8 (minor) |
+| Ti2 | Projectile travel | several (small) |
+| Ti3 | Jump branches in a skill's timeline (if jumps skip time) | Laevatain R1, Liino R5 |
+| Ti1b | Hit-stop; entity-level slow-down curves (Imprisonment) | Arcane R5–R6, Estella R4, Liino R9 |
+| D2 | Compiler leftovers: poise, finisher factors, forced Lift, per-hit element, created buffs, `autoFinishByAction`, the frame-12/15 team energy (`ObtainUspInNormalSkill`), the finisher's unread default `atb` (+8 SP) | all |
+| L2 | The log checker's `eventCount`; the ×1.42 of one-element reaction keys | Si R3, Arcane R9, Gilberta R10 |
+| N2 | Si's damage record and Fixed-DMG burst: **unique** in the game data (on kit-unique.md), 32–50% of her damage | Si R1 |

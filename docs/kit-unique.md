@@ -8,4 +8,4 @@ moves out of here.
 
 | Operator | Mechanism | Why unique | Where |
 |---|---|---|---|
-| | *(none yet)* | | |
+| Si (chr_0036_jsspsi) | Artful Intent's damage record: while the debuff lasts it records 0.20 × every hit on the target (from the battle-skill hit on, reactions and ticks included), then deals the total as Fixed DMG (damageType 8: no ATK, zones, crit or DEF) | SaveDamageContext and damageType 8 occur only in Si's files among operators (batch-1 Si G2, pass 2 R1); the rule is settled by the fixtures' `uncapped` values | to do (batch 1, N2) |
