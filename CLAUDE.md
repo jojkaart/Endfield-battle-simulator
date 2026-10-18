@@ -24,7 +24,8 @@ After that milestone, a `dev` branch takes over the role `main` has now.
 ## Correctness
 
 The tool is only useful if its numbers are right. Keep tests up to date and
-passing with every change.
+passing with every change. Follow the architectural principles in
+[docs/design.md](docs/design.md#architectural-principles).
 
 ## Data and reference code
 
