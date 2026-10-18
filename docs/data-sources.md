@@ -18,6 +18,31 @@ recorded [at the end](#decisions).
   **(unverified)**.
 - Numbers that agree exactly across several independent extracts are treated
   as reliable.
+- **Second pass (2026-10-18), with web access:** licences and terms were read
+  at the source; findings are marked **(verified)** with the date.
+  Reachability per host: [network-allowlist.md](network-allowlist.md).
+
+### Licences and terms in short
+
+The project reads these sources to check numbers and cites them; it doesn't
+copy their text, tables or code. Bare game numbers are facts from the client;
+the licences cover each site's own content. Not legal advice.
+
+| Source | Terms (verified 2026-10-18) | What it means for us |
+|---|---|---|
+| Talos Wiki | Text CC BY-SA 4.0 (`siteinfo` rightsinfo, Copyrights page). robots.txt disallows `/api.php` for all agents, asks for responsible automated traffic, `Content-Signal: use=reference, ai-train=no`. | Cite with a link; don't copy text or Lua modules (share-alike). Only a few targeted API lookups, descriptive user agent, no crawling. |
+| EndfieldHub | ToS (2026-01-25): own content "may be freely shared with attribution"; no scraping beyond "reasonable use". `/webmcp/` JSON asks to cite `canonical_url`. `/api/artificing-gears.json` is CC BY 4.0. | Read occasionally, cite `canonical_url`. **Not independent:** it credits the Talos Wiki, Prydwen, Game8 and others as its sources. |
+| ZMDLogs | No terms, privacy or robots pages. Site code MIT ([endfield-suite-open](https://github.com/medps16000/endfield-suite-open)); battle data has no licence. Uploader nicknames are public by design. | Cite battle IDs; don't commit whole payloads; drop names and IDs. |
+| BWIKI | No content licence set (`rightsinfo` empty); footer "BILIBILI ALL RIGHTS RESERVED". | Read and cite only. |
+| GameKee | No licence found. Formula article credits Bilibili users 吃我无痕 and 卡诺kan0. | Read and cite, crediting the authors. |
+| end.canmoe.com | The CEP planner, source [cmyyx/cep](https://github.com/cmyyx/cep), **AGPL-3.0**. | Compare only; don't copy code or data. |
+| arknightsendfield.gg | "© 2025", no terms page; robots allows all. Run figures come from Datafield. | Cite. |
+| Endaxis (end-axis.com) | No licence anywhere. | Compare outputs only (unchanged). |
+| Zero Sanity | MIT, © 2026 Mitchell Ma. | Reuse with attribution (unchanged). |
+
+Still unread (hosts not on the allowlist): wiki.gg network ToS, Bilibili user
+agreement, note.com terms, GameKee user agreement, and the publisher's
+(Gryphline/Hypergryph) fan-content policy and stance on datamined data.
 
 ## Summary
 
@@ -149,9 +174,11 @@ consistent with them deriving from the client tables.
   [Attribute](https://endfield.wiki.gg/wiki/Attribute)). One extract said the
   damage page was last edited ~231 days ago, so parts may be stale.
 - **Data origin:** not stated, but matches the tables exactly.
-- **Machine-readable:** MediaWiki, so `api.php` should exist; data appears to
-  live in Lua modules. **(unverified)**
-- **Licence:** wiki.gg wikis are usually CC BY-SA 4.0. **(unverified)**
+- **Machine-readable:** MediaWiki `api.php` works (verified 2026-10-18), but
+  robots.txt disallows it for automated agents; see
+  [Licences and terms](#licences-and-terms-in-short). Pages are behind a
+  Cloudflare check. Use a descriptive user agent: `Mozilla/5.0` is blocked.
+- **Licence:** text CC BY-SA 4.0. **(verified 2026-10-18)**
 - **Verdict:** primary formula reference and best human-readable cross-check.
 
 ### EndfieldHub (endfieldhub.org)
@@ -162,9 +189,14 @@ consistent with them deriving from the client tables.
   guides for damage formula, reactions and stagger.
 - **Data origin:** says it is pulled from the client tables; promises updates
   within 48 hours of a patch.
-- **Machine-readable:** static JSON endpoints under `/webmcp/`
-  (e.g. `/webmcp/find_operator.json`). **(unverified)** Terms of service not
-  read.
+- **Machine-readable:** static JSON under `/webmcp/`
+  (e.g. `/webmcp/find_operator.json`); the site says any script may read it.
+  Operator data there was dated 2026-08-09, i.e. before 1.6.
+  **(verified 2026-10-18)** Terms: see
+  [Licences and terms](#licences-and-terms-in-short).
+- **Not independent:** its `llms-full.txt` credits the Talos Wiki, Prydwen,
+  Game8, Mobalytics and datafield.cc, so agreement with the Talos Wiki
+  doesn't confirm a value.
 - **Quality problems:** inconsistent operator counts between pages; a blog post
   gives attribute coefficients 10× too high; its damage guide says Breach
   produces negative DEF, which contradicts the Talos Wiki. Its "71K team DPS"
@@ -175,11 +207,11 @@ consistent with them deriving from the client tables.
 
 | Source | Verdict |
 |---|---|
-| [end.wiki](https://end.wiki/en/database/) | Datamine-driven (automated pipeline), multilingual, uses internal IDs. No API found. Good extra cross-check. |
+| ~~end.wiki~~ | Was described as datamine-driven, multilingual, with internal IDs. Domain no longer resolves (2026-10-18). |
 | [Icy Veins](https://www.icy-veins.com/arknights-endfield/) | Skill tables at rank 12, weapons, gear. Matched the Talos Wiki exactly. HTML only, proprietary. Spot checks only. |
-| [BWIKI](https://wiki.biligame.com/zmd/) (CN) | Skill tables Lv1–9 + 专1–3. Front page once said data was incomplete. Probably CC BY-NC-SA. |
+| [BWIKI](https://wiki.biligame.com/zmd/) (CN) | Skill tables Lv1–9 + 专1–3. Front page once said data was incomplete. No content licence; all rights reserved (verified 2026-10-18). |
 | [Huiji wiki](https://endfield.huijiwiki.com/wiki/伤害), [GameKee](https://www.gamekee.com/zmd/691878.html) (CN) | Damage formula from community testing; agrees with the Talos Wiki. Some labelling errors. |
-| end.canmoe.com | Datamine-style IDs and full level tables. Extra cross-check. |
+| end.canmoe.com | The CEP planner ([cmyyx/cep](https://github.com/cmyyx/cep), AGPL-3.0). Datamine-style IDs and full level tables. Extra cross-check. |
 | Prydwen, Game8, GameWith, Fandom | Agree on spot checks. HTML only, proprietary. |
 | **GamerGuides, Fextralife** | **Stale closed-beta numbers** (e.g. Forgeborn Scathe 545 ATK at Lv90 instead of 510). Don't use. |
 | endfield.gg, talos2codex.com, arknightsendfield.wiki, Dexerto, qieyou.com | Stale, borrowed from mainline Arknights, or contradict everything else. Don't use. |
@@ -259,8 +291,10 @@ These are what the MVP should reproduce.
 ### ZMDLogs
 
 zmdlogs.com, source MIT:
-[medps16000/endfield-suite-open](https://github.com/medps16000/endfield-suite-open),
-[deepdarkssj/ZMDLogs](https://github.com/deepdarkssj/ZMDLogs). API documented in
+[medps16000/endfield-suite-open](https://github.com/medps16000/endfield-suite-open)
+(site and Windows client). [deepdarkssj/ZMDLogs](https://github.com/deepdarkssj/ZMDLogs)
+is a different project with the same name: a local overlay that stores
+nothing on a server. API documented in
 [Statrue/astrbot_plugin_zmdlog](https://github.com/Statrue/astrbot_plugin_zmdlog)
 (UPSTREAM.md).
 
@@ -329,7 +363,7 @@ Example battles: `btl_upload_960a800ae840` (3,375,148 over ~75 s),
 |---|---|
 | EndfieldHub calculator / tier list | Closed; "71K team DPS" claim lacks gear and rotation. Not usable as a fixture. |
 | EndSync, efsim.app, Essence Solver, ENDFIELD SIM (JP) | Closed source; no published reproducible numbers found. |
-| [arknightsendfield.gg](https://arknightsendfield.gg/character/typhoeus-build/) "Datafield runs" | In-game totals (e.g. Typhoeus/Perlica/Liino/Arcane, 66 s, 7,089,179) but only partly specified. **(unverified)** |
+| [arknightsendfield.gg](https://arknightsendfield.gg/character/typhoeus-build/) "Datafield runs" | In-game totals (e.g. Typhoeus/Perlica/Liino/Arcane, 66 s, 7,089,179; verified 2026-10-18, figures credited to Datafield) but only partly specified. |
 | [Taksumii/Arknights-Endfield-DPS-Calc](https://github.com/Taksumii/Arknights-Endfield-DPS-Calc) | Single-hit, January, outdated level coefficient. Low value. |
 | lakeofsky347/endfield_modeling, xinwenli/EndfieldDamageSimulator, wxhwwla/calc-framework (AGPL) | Smaller projects; useful for comparing approaches only. |
 
