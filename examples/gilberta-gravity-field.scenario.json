@@ -16,18 +16,65 @@
   "durationSeconds": 20,
   "crit": "expected",
   "rotation": [
-    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_ultimate_skill" },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ultimate_skill" },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack1" },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack2" },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack3" },
-    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_combo_skill" },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack4" },
-    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_normal_skill_during_ult" },
-    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_normal_skill" },
-    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_attack1" },
-    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_attack2" },
-    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_attack3" },
-    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_attack4" }
+    {
+      "operator": "chr_0013_aglina",
+      "skill": "chr_0013_aglina_ultimate_skill"
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ultimate_skill"
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "swap"
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack1"
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack2"
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack3"
+    },
+    {
+      "operator": "chr_0013_aglina",
+      "skill": "chr_0013_aglina_combo_skill"
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack4"
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_normal_skill_during_ult"
+    },
+    {
+      "operator": "chr_0013_aglina",
+      "skill": "chr_0013_aglina_normal_skill"
+    },
+    {
+      "operator": "chr_0013_aglina",
+      "skill": "swap"
+    },
+    {
+      "operator": "chr_0013_aglina",
+      "skill": "chr_0013_aglina_attack1"
+    },
+    {
+      "operator": "chr_0013_aglina",
+      "skill": "chr_0013_aglina_attack2"
+    },
+    {
+      "operator": "chr_0013_aglina",
+      "skill": "chr_0013_aglina_attack3"
+    },
+    {
+      "operator": "chr_0013_aglina",
+      "skill": "chr_0013_aglina_attack4"
+    }
   ]
 }
