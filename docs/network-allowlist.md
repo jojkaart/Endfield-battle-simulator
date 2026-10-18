@@ -43,6 +43,7 @@ used), **blocked by site** (allowed, but the site rejects our requests),
 | endfield.huijiwiki.com | CN wiki, damage formula | no: Cloudflare 403, also on `api.php` | blocked by site |
 | www.icy-veins.com | Guides, skill values | no: Cloudflare 403 | blocked by site |
 | ngabbs.com | CN forum, community testing | no: site 403 | blocked by site |
+| endfield.gryphline.com | Official site: news, notices | yes (found reachable 2026-10-18; not added deliberately?) | useful (security notice on unofficial tools read) |
 
 If the "blocked by site" hosts stay unreachable, remove them.
 
@@ -56,8 +57,13 @@ borderline (blocked after a few requests, behind on 1.6).
 Only needed to read the terms still unverified in
 [data-sources.md](data-sources.md#licences-and-terms-in-short):
 wiki.gg (wiki.gg network ToS), terms.help-note.com (note.com terms),
-yhxy.biligame.com (Bilibili user agreement), endfield.gryphline.com /
-www.gryphline.com (publisher fan-content policy).
+yhxy.biligame.com (Bilibili user agreement), www.gryphline.com /
+user.gryphline.com (publisher terms and fan-content policy).
+
+For reading the owner's account data ([player-data.md](player-data.md)):
+`enka.network` (showcased builds, no login). The SKPORT API hosts
+(`zonai.skport.com`, `as.gryphline.com`, `web-api.skport.com`) are **not**
+recommended.
 
 ## Not added, and why
 
