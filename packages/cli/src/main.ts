@@ -14,6 +14,7 @@ import { checkLog, findScales, formatLogCheck, impliedScales } from "./logcheck.
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 import { importBattle, readLogFixture } from "./logs.ts";
+import { checkReactions, formatReactionCheck } from "./reactioncheck.ts";
 
 const USAGE = `Usage:
   efsim find <text>                       Look up operator, weapon, gear and enemy IDs by name
@@ -25,6 +26,7 @@ const USAGE = `Usage:
                 [--enemy-level n]         (default: inferred from total damage on a clear)
                 [--note text]             Extra provenance note (repeatable)
   efsim zmdlogs check <fixture.json>      Predict every logged hit and compare
+  efsim zmdlogs reactions <fixture.json>  Replay the kits' inflictions; compare bursts and reactions
   efsim zmdlogs scales <fixture> <op>     Multiplier each logged hit of an operator implies
   efsim zmdlogs find-scales <fixture> <op> Skill values (keys) that explain each logged event
   efsim kit-draft <operator>              Draft a kit from SkillData (to verify against logs)
@@ -112,8 +114,10 @@ async function main(argv: string[]): Promise<number> {
         }
         break;
       }
-      if (args.length !== 2 || !arg || (sub !== "import" && sub !== "check")) throw new Error(`zmdlogs takes import <battle id>, check <file>, scales <file> <op> or find-scales <file> <op>\n\n${USAGE}`);
-      if (sub === "check") {
+      if (args.length !== 2 || !arg || (sub !== "import" && sub !== "check" && sub !== "reactions")) throw new Error(`zmdlogs takes import <battle id>, check <file>, reactions <file>, scales <file> <op> or find-scales <file> <op>\n\n${USAGE}`);
+      if (sub === "reactions") {
+        text = formatReactionCheck(checkReactions(data, readLogFixture(arg)));
+      } else if (sub === "check") {
         const fx = readLogFixture(arg);
         text = formatLogCheck(data, fx, checkLog(data, fx));
       } else {

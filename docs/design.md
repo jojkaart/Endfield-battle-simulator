@@ -168,6 +168,17 @@ trigger conditions, which come from data we don't have) goes in a small
 format. Each hand-written rule cites its source and has a test. Unknown
 action types or enum values fail the build, so coverage gaps are visible.
 
+**Arts state and stacks.** The game data doesn't mark which hits inflict
+(the `SpellInfliction` actions are disabled stubs; the logic is game code),
+so kits list per hit what it `applies` (inflictions, forced reactions,
+consumption), citing the skill description. One state machine
+(`packages/engine/src/status.ts`) turns those into bursts, reactions and
+statuses (Corrosion, Electrification, Combustion ticks, Solidification),
+and statuses act on hits as ordinary Modifiers. Operator counters such as
+Laevatain's Melting Flame are kit `stacks` that hits `gain` and `require`.
+`efsim zmdlogs reactions` replays a log through the state machine to check
+a kit's `applies` against the logged bursts and reactions.
+
 Numeric enums (attribute types, stacking types, buff events, formula slots)
 are decoded through **one version-pinned enum map**, each entry verified
 against a known effect. Starting points: End-DPScope's

@@ -5,7 +5,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { ELEMENTS, type Condition, type Element, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
+import { ELEMENTS, type Condition, type HitApplication, type StackDef, type StackRequirement, type Element, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
@@ -20,12 +20,16 @@ interface RawCondition {
 interface RawKit {
   operator: string;
   element?: Element;
+  stacks?: StackDef[];
   skills: {
     skillId: string;
     label: string;
     damageType: "basic" | "battle" | "combo" | "ultimate";
     durationFrames?: number;
-    hits: { id: string; label?: string; scale: string[]; count?: number; element?: Element; events?: string[]; frames?: number[] }[];
+    hits: {
+      id: string; label?: string; scale: string[]; count?: number; element?: Element; events?: string[]; frames?: number[];
+      applies?: HitApplication[]; requires?: StackRequirement; gains?: { stack: string; amount?: number | "consumedInflictions" }[];
+    }[];
   }[];
   conditions?: RawCondition[];
 }
@@ -85,6 +89,7 @@ export function loadKits(data: KitData): Kits {
     if (file !== `${kit.operator}.json`) throw new Error(`kits/operators/${file}: file name must be ${kit.operator}.json`);
     const op = data.operators[kit.operator];
     if (!op) throw new Error(`kits/operators/${file}: unknown operator ${kit.operator}`);
+    const stackIds = new Set((kit.stacks ?? []).map((x) => x.id));
     const skills = kit.skills.map((s) => {
       const where = `kits/operators/${file}: ${s.skillId}`;
       const skill = data.skills[s.skillId];
@@ -102,16 +107,23 @@ export function loadKits(data: KitData): Kits {
           const element = h.element ?? kit.element;
           if (!element || !ELEMENTS.includes(element)) throw new Error(`${where} hit ${h.id}: no element`);
           const events = h.events ?? (s.hits.length === 1 ? [s.skillId] : []);
+          for (const id of [h.requires?.stack, ...(h.gains ?? []).map((g) => g.stack)]) {
+            if (id !== undefined && !stackIds.has(id)) throw new Error(`${where} hit ${h.id}: unknown stack ${id} (the kit's stacks: ${[...stackIds].join(", ") || "none"})`);
+          }
           if (h.frames && h.frames.length !== (h.count ?? 1)) throw new Error(`${where} hit ${h.id}: ${h.frames.length} frames for count ${h.count ?? 1}`);
           return {
             id: h.id, label: h.label ?? s.label, scale: h.scale, count: h.count ?? 1, damageType: s.damageType, element, events,
             ...(h.frames ? { frames: h.frames } : {}),
+            ...(h.applies ? { applies: h.applies } : {}),
+            ...(h.requires ? { requires: h.requires } : {}),
+            ...(h.gains ? { gains: h.gains.map((g) => ({ stack: g.stack, amount: g.amount ?? 1 })) } : {}),
           };
         }),
       };
     });
     operators[kit.operator] = {
       operator: kit.operator,
+      stacks: (kit.stacks ?? []).map((x) => ({ id: x.id, label: x.label, max: x.max })),
       skills,
       conditions: (kit.conditions ?? []).map((c) => condition(kit.operator, c)),
     };

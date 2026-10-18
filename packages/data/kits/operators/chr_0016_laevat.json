@@ -7,6 +7,14 @@
     "Hit frames from SkillData timeline frames (rmxlinux, game 1.6): direct DamageActions at their frame; projectile hits (attack4 hits 2–3, combo) at their launch frame; battle skill explosion and burn ticks at the ability entity's damage frames offset by its spawn frame (4)."
   ],
   "element": "fire",
+  "stacks": [
+    {
+      "id": "melting_flame",
+      "label": "Melting Flame",
+      "max": 4,
+      "note": "Battle skill description: the cast consumes all stacks when she already has {count} (blackboard count = 4) stacks."
+    }
+  ],
   "skills": [
     {
       "skillId": "chr_0016_laevat_attack1",
@@ -91,7 +99,22 @@
           "frames": [
             23,
             26
-          ]
+          ],
+          "applies": [
+            {
+              "kind": "consumeInfliction",
+              "elements": [
+                "fire"
+              ]
+            }
+          ],
+          "gains": [
+            {
+              "stack": "melting_flame",
+              "amount": "consumedInflictions"
+            }
+          ],
+          "note": "Final strike: with Laevatain in the team, the controlled operator's final strike absorbs Heat Infliction for 1 Melting Flame per stack (talent description). Only her own final strike does so here."
         }
       ]
     },
@@ -108,7 +131,13 @@
           ],
           "frames": [
             22
-          ]
+          ],
+          "gains": [
+            {
+              "stack": "melting_flame"
+            }
+          ],
+          "note": "Description: \"Hitting the enemy grants 1 stack of Melting Flame\" (assumed once per cast, on the first hit)."
         },
         {
           "id": "dot",
@@ -137,10 +166,23 @@
             "atk_scale_3",
             "extra_scaling"
           ],
-          "note": "Only when the cast consumes 4 Melting Flame stacks.",
+          "note": "Only when the cast consumes 4 Melting Flame stacks. Skill description: with 4 Melting Flame stacks the cast \"forcibly trigger[s] temporary Combustion to all enemies\" (forced: Status Level I). Its duration is the skill's `duration` (5 s) and its damage over time scales with `extra_scaling`; potential 3 raises both by 50% (Talos Wiki: \"Increase the duration and Heat DMG of this Combustion by 50%\").",
           "frames": [
             104
-          ]
+          ],
+          "applies": [
+            {
+              "kind": "forcedReaction",
+              "status": "combustion",
+              "durationKey": "duration",
+              "scaleKey": "extra_scaling"
+            }
+          ],
+          "requires": {
+            "stack": "melting_flame",
+            "atLeast": 4,
+            "consume": true
+          }
         }
       ]
     },
@@ -158,7 +200,13 @@
           ],
           "frames": [
             13
-          ]
+          ],
+          "gains": [
+            {
+              "stack": "melting_flame"
+            }
+          ],
+          "note": "Description: \"Hitting the enemy grants 1 stack of Melting Flame\" (assumed once per cast, on the first hit)."
         },
         {
           "id": "hit2",
@@ -178,10 +226,23 @@
             "atk_scale_3",
             "ratio"
           ],
-          "note": "Only when the cast consumes 4 Melting Flame stacks.",
+          "note": "Only when the cast consumes 4 Melting Flame stacks. Skill description: with 4 Melting Flame stacks the cast \"forcibly trigger[s] temporary Combustion to all enemies\" (forced: Status Level I). Its duration is the skill's `duration` (5 s) and its damage over time scales with `extra_scaling`; potential 3 raises both by 50% (Talos Wiki: \"Increase the duration and Heat DMG of this Combustion by 50%\").",
           "frames": [
             98
-          ]
+          ],
+          "applies": [
+            {
+              "kind": "forcedReaction",
+              "status": "combustion",
+              "durationKey": "duration",
+              "scaleKey": "extra_scaling"
+            }
+          ],
+          "requires": {
+            "stack": "melting_flame",
+            "atLeast": 4,
+            "consume": true
+          }
         }
       ]
     },
@@ -197,7 +258,13 @@
           ],
           "frames": [
             20
-          ]
+          ],
+          "gains": [
+            {
+              "stack": "melting_flame"
+            }
+          ],
+          "note": "Against Combustion or Corrosion (its trigger) it grants 1 Melting Flame (Talos Wiki); the extra Heat DMG isn't modelled."
         }
       ]
     },
@@ -264,7 +331,14 @@
           ],
           "frames": [
             9
-          ]
+          ],
+          "applies": [
+            {
+              "kind": "infliction",
+              "element": "fire"
+            }
+          ],
+          "note": "Skill description (I18nTextTable_EN): during the ultimate, \"BATK sequence 3 also applies Heat Infliction\"."
         }
       ]
     },

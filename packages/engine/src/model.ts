@@ -3,6 +3,7 @@
 
 import type { AttrType, Element, SkillType } from "./attributes.ts";
 import type { Zone } from "./effects.ts";
+import type { HitApplication } from "./status.ts";
 
 /**
  * How a modifier combines with an attribute (the tables' `formulaItem` /
@@ -192,6 +193,32 @@ export interface KitHit {
   /** Which skill-type damage bonus applies (enhanced basic attacks during an ultimate are still "basic"). */
   readonly damageType: SkillType;
   readonly element: Element;
+  /** What each landing does to the enemy's arts state (inflictions, forced reactions), in order. */
+  readonly applies?: readonly HitApplication[];
+  /** The hit only happens if the operator has these stacks when the skill is cast. */
+  readonly requires?: StackRequirement;
+  /** Stacks the operator gains when the hit lands (after `applies`). */
+  readonly gains?: readonly StackGain[];
+}
+
+/** An operator's own counter, e.g. Laevatain's Melting Flame. */
+export interface StackDef {
+  readonly id: string;
+  readonly label: string;
+  readonly max: number;
+}
+
+export interface StackRequirement {
+  readonly stack: string;
+  readonly atLeast: number;
+  /** Consume all of the stack when the skill is cast with the requirement met. */
+  readonly consume: boolean;
+}
+
+export interface StackGain {
+  readonly stack: string;
+  /** A fixed amount (default 1), or the number of infliction stacks this hit consumed. */
+  readonly amount: number | "consumedInflictions";
 }
 
 export interface KitSkill {
@@ -227,6 +254,7 @@ export interface Condition {
 
 export interface OperatorKit {
   readonly operator: string;
+  readonly stacks: readonly StackDef[];
   readonly skills: readonly KitSkill[];
   readonly conditions: readonly Condition[];
 }

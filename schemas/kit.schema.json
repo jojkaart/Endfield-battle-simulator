@@ -11,6 +11,16 @@
     "operator": { "type": "string" },
     "sources": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
     "element": { "$ref": "#/$defs/element", "description": "Default element of the operator's hits." },
+    "stacks": {
+      "type": "array",
+      "description": "The operator's own counters (e.g. Laevatain's Melting Flame) that hits gain and require.",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "max"],
+        "additionalProperties": false,
+        "properties": { "id": { "type": "string", "pattern": "^[a-z0-9_]+$" }, "label": { "type": "string" }, "max": { "type": "integer", "minimum": 1 }, "note": { "type": "string" } }
+      }
+    },
     "skills": {
       "type": "array",
       "items": {
@@ -38,6 +48,24 @@
                 "events": { "type": "array", "items": { "type": "string" }, "description": "Event keys battle logs (ZMDLogs) use for this hit. Default: the skill ID, when the skill has a single hit entry." },
                 "frames": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "description": "Frame (30 FPS, from the skill's start) at which each landing happens; one entry per count. Projectile travel time isn't in the data, so projectile hits use the launch frame." },
                 "element": { "$ref": "#/$defs/element" },
+                "requires": {
+                  "type": "object",
+                  "description": "The hit only happens if the operator has at least this many stacks when the skill is cast; consume: all of the stack is used up by the cast.",
+                  "required": ["stack", "atLeast", "consume"],
+                  "additionalProperties": false,
+                  "properties": { "stack": { "type": "string" }, "atLeast": { "type": "integer", "minimum": 1 }, "consume": { "type": "boolean" } }
+                },
+                "gains": {
+                  "type": "array",
+                  "description": "Stacks gained when the hit lands: a fixed amount (default 1) or the infliction stacks the hit consumed.",
+                  "items": {
+                    "type": "object",
+                    "required": ["stack"],
+                    "additionalProperties": false,
+                    "properties": { "stack": { "type": "string" }, "amount": { "oneOf": [{ "type": "integer", "minimum": 1 }, { "const": "consumedInflictions" }] } }
+                  }
+                },
+                "applies": { "type": "array", "items": { "$ref": "#/$defs/application" }, "description": "What each landing does to the enemy's arts state, in order (packages/engine/src/status.ts). Skill descriptions say which hits inflict; the game data doesn't." },
                 "note": { "type": "string" }
               }
             }
@@ -49,6 +77,35 @@
   },
   "$defs": {
     "element": { "enum": ["physical", "fire", "pulse", "cryst", "natural", "ether"] },
+    "artsElement": { "enum": ["fire", "pulse", "cryst", "natural"] },
+    "application": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "element"],
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "infliction" }, "element": { "$ref": "#/$defs/artsElement" }, "stacks": { "type": "integer", "minimum": 1, "maximum": 4 } }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "status"],
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "forcedReaction" },
+            "status": { "enum": ["combustion", "electrification", "solidification", "corrosion"] },
+            "level": { "type": "integer", "minimum": 1, "maximum": 4 },
+            "durationKey": { "type": "string", "description": "Skill blackboard value giving the status duration in seconds, when the skill sets it." },
+            "scaleKey": { "type": "string", "description": "Skill blackboard value multiplying the status's damage over time." }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "additionalProperties": false,
+          "properties": { "kind": { "const": "consumeInfliction" }, "elements": { "type": "array", "items": { "$ref": "#/$defs/artsElement" }, "minItems": 1 } }
+        }
+      ]
+    },
     "skillType": { "enum": ["basic", "battle", "combo", "ultimate"] },
     "condition": {
       "type": "object",

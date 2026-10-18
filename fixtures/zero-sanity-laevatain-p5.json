@@ -17,7 +17,7 @@
     },
     "notes": [
       "Zero Sanity names gear artificing 'rank 4'; that is artificing level 3 on every line here.",
-      "Its forced combustion DoT (2608) is left out until reactions are modelled.",
+      "Its forced combustion DoT (2608) is checked through the timeline (tests/timeline.test.ts).",
       "Its bare-loadout block (Tarr 11 Lv1) is skipped in Zero Sanity itself and still 1 off there, so it isn't used."
     ]
   },

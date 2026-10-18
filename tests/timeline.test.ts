@@ -77,3 +77,60 @@ describe("timeline", () => {
     expect(() => simulate(data, scenario([{ operator: op, skill: "chr_0016_laevat_dodge" }]))).toThrow(/kit has no skill/);
   });
 });
+
+describe("timeline: stacks and arts reactions", () => {
+  const act = (skill: string): RotationAction => ({ operator: op, skill: L + skill });
+  const ult = ["ultimate_skill", "ult_attack1", "ult_attack2", "ult_attack3"].map(act);
+
+  it("a hit that needs stacks only happens with them, and the cast uses them up", () => {
+    // Without Melting Flame the battle skill has no empowered hit and forces nothing.
+    const plain = simulate(data, scenario([act("normal_skill")]));
+    expect(plain.hits.some((h) => h.hitId === "empowered_extra")).toBe(false);
+    expect(plain.reactions).toEqual([]);
+    // Four battle skills (+1 stack each) make the fifth empowered: its extra hit lands and forces Combustion.
+    const five = simulate(data, { ...scenario(Array.from({ length: 5 }, () => act("normal_skill"))), durationFrames: 30 * 120 });
+    const extras = five.hits.filter((h) => h.hitId === "empowered_extra");
+    expect(extras).toHaveLength(1);
+    expect(extras[0]?.frame).toBeGreaterThan(five.casts[4]?.frame ?? Infinity);
+    expect(five.reactions.filter((e) => e.kind === "reaction")).toEqual([
+      expect.objectContaining({ status: "combustion", level: 1, consumed: null, initialHit: false }),
+    ]);
+    // Combustion ticks once per second for the skill's `duration` (5 s, ×1.5 from potential 3), as reaction damage that can't crit.
+    const ticks = five.hits.filter((h) => h.skillId === "reaction:combustionTick");
+    expect(ticks).toHaveLength(build.potential >= 3 ? 7 : 5);
+    expect(ticks.every((h) => h.zones.crit === 1)).toBe(true);
+  });
+
+  it("ultimate attack 3 inflicts Heat: a second one bursts, a final strike absorbs it for Melting Flame", () => {
+    const twice = simulate(data, scenario([...ult, act("ult_attack4"), act("ult_attack1"), act("ult_attack2"), act("ult_attack3")]));
+    expect(twice.reactions.map((e) => e.kind)).toEqual(["burst"]);
+    const burst = twice.hits.filter((h) => h.skillId === "reaction:burst");
+    expect(burst).toHaveLength(1);
+    expect(burst[0]?.scaleParts[0]).toEqual({ key: "burst base", value: 1.6 });
+
+    const ctx = createContext(data, scenario([]));
+    let s = init(ctx);
+    for (const a of [...ult, ...chain]) s = apply(ctx, s, a);
+    s = advance(ctx, s, ctx.scenario.durationFrames);
+    expect(s.reactions).toEqual([expect.objectContaining({ kind: "consumed", element: "fire", stacks: 1 })]);
+    expect(s.enemy.infliction).toBeNull();
+    expect(s.stacks[op]).toEqual({ melting_flame: 1 });
+  });
+});
+
+describe("timeline: Zero Sanity's in-game forced Combustion (fixtures/zero-sanity-laevatain-p5.json)", () => {
+  const fx = JSON.parse(readFileSync(new URL("../fixtures/zero-sanity-laevatain-p5.json", import.meta.url), "utf8")) as { build: Build };
+  const r = simulate(data, {
+    team: [fx.build],
+    target: { enemy: "eny_0051_rodin", level: 90 },
+    durationFrames: 30 * 120,
+    rotation: Array.from({ length: 5 }, () => ({ operator: op, skill: L + "normal_skill" })),
+    options: { crit: "never" },
+  });
+
+  it("the fifth battle skill is empowered (57552) and its Combustion ticks for 2608, 7.5 s at P5", () => {
+    expect(r.hits.filter((h) => h.hitId === "empowered_extra").map((h) => h.damage)).toEqual([57552]);
+    const ticks = r.hits.filter((h) => h.skillId === "reaction:combustionTick");
+    expect(ticks.map((h) => h.damage)).toEqual(Array.from({ length: 7 }, () => 2608));
+  });
+});

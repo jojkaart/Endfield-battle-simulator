@@ -8,4 +8,5 @@ export * from "./effects.ts";
 export * from "./stats.ts";
 export * from "./damage.ts";
 export * from "./reactions.ts";
+export * from "./status.ts";
 export * from "./timeline.ts";

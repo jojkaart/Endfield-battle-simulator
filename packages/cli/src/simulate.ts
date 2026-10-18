@@ -60,6 +60,19 @@ export function formatSimulation(data: GameData, scenario: TimelineScenario, ver
       ["r", "l", "l", "r"],
     ),
   ];
+  const reactions = r.reactions.filter((e) => e.kind !== "combustionTick");
+  if (reactions.length) {
+    const what = (e: (typeof reactions)[number]) =>
+      e.kind === "burst" ? `${e.element} burst`
+      : e.kind === "reaction" ? `${e.status} level ${e.level}${e.consumed ? ` (consumed ${e.consumed})` : " (forced)"}`
+      : e.kind === "consumed" ? `consumed ${e.stacks} ${e.element}` : "";
+    const ticks = r.hits.filter((h) => h.skillId === "reaction:combustionTick");
+    out.push(
+      "",
+      table(["time", "operator", "arts reaction"], reactions.map((e) => [`${(e.frame / FPS).toFixed(2)} s`, name(e.operator), what(e)]), ["r", "l", "l"]),
+      ...(ticks.length ? [`Combustion ticks: ${ticks.length}, ${num(Math.round(ticks.reduce((t, h) => t + h.exact, 0)), 0)} damage`] : []),
+    );
+  }
   if (verbose) {
     out.push("", table(["time", "operator", "hit", "damage"], r.hits.map((h) => [`${(h.frame / FPS).toFixed(2)} s`, name(h.operator), `${h.skillId.replace(/^chr_\d+_[a-z]+_/, "")} ${h.hitId}`, num(h.damage, 0)]), ["r", "l", "l", "r"]));
   }
