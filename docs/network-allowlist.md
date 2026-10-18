@@ -30,7 +30,7 @@ used), **blocked by site** (allowed, but the site rejects our requests),
 
 | Host | Purpose | Reachable | Status |
 |---|---|---|---|
-| endfield.wiki.gg | Talos Wiki: formula pages, data | `api.php` only, with a descriptive user agent | useful (licence read; robots.txt disallows `/api.php`, so only a few targeted lookups) |
+| endfield.wiki.gg | Talos Wiki: formula pages, data | `api.php` only, with a descriptive user agent | useful (licence read; robots.txt disallows `/api.php`; owner allows lookups as needed, no scripted mass downloads) |
 | endfieldhub.org | Database, `/webmcp/*.json` | yes | useful, limited: light spot checks only (no skill values in JSON; derived from other sites) |
 | zmdlogs.com | Published battle logs (API) | yes | **most useful**: per-hit ground truth |
 | www.end-axis.com | Endaxis simulator site (bare `end-axis.com` not allowed) | yes | not useful (same data as `reference/Endaxis`; no API) |

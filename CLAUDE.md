@@ -35,3 +35,8 @@ passing with every change. Follow the architectural principles in
   [reference/README.md](reference/README.md) for what each licence allows.
   `reference/Endaxis` has no licence: read it and compare outputs, but never
   copy its code.
+- Web sources: follow the terms summarised in
+  [docs/data-sources.md](docs/data-sources.md#licences-and-terms-in-short).
+  Lookups are fine (including the Talos Wiki API); no scripted mass
+  downloads or anything that puts undue load on a site. Use a descriptive
+  user agent. Track hosts in [docs/network-allowlist.md](docs/network-allowlist.md).

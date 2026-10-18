@@ -40,8 +40,8 @@ entry first. Keep entries short; details belong in the docs they produced.
 - Sub-agents can't write report files to the scratchpad; they return text.
 - Talos Wiki: robots.txt disallows `/api.php` for automated agents. Two
   agents had sent ~60 targeted requests (≥1 s apart) before this was noticed;
-  further use is limited to a few targeted lookups, pending the owner's
-  decision. `Mozilla/5.0` user agent is blocked there; use a descriptive one.
+  the owner then decided API lookups are fine as long as they cause no undue
+  load: no scripted mass downloads. `Mozilla/5.0` user agent is blocked there; use a descriptive one.
 - BWIKI rate-limits after a few requests; Huiji, Icy Veins, NGA block
   automated requests; end.wiki's domain no longer exists.
 - In this session `555me-beyondGameData` was cloned with `--depth 1` (its

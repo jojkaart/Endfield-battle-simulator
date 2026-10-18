@@ -30,7 +30,7 @@ the licences cover each site's own content. Not legal advice.
 
 | Source | Terms (verified 2026-10-18) | What it means for us |
 |---|---|---|
-| Talos Wiki | Text CC BY-SA 4.0 (`siteinfo` rightsinfo, Copyrights page). robots.txt disallows `/api.php` for all agents, asks for responsible automated traffic, `Content-Signal: use=reference, ai-train=no`. | Cite with a link; don't copy text or Lua modules (share-alike). Only a few targeted API lookups, descriptive user agent, no crawling. |
+| Talos Wiki | Text CC BY-SA 4.0 (`siteinfo` rightsinfo, Copyrights page). robots.txt disallows `/api.php` for all agents, asks for responsible automated traffic, `Content-Signal: use=reference, ai-train=no`. | Cite with a link; don't copy text or Lua modules (share-alike). **Owner's decision (2026-10-18):** API use by Claude and sub-agents is fine for lookups as needed, without undue load; no scripted mass downloads. Descriptive user agent. |
 | EndfieldHub | ToS (2026-01-25): own content "may be freely shared with attribution"; no scraping beyond "reasonable use". `/webmcp/` JSON asks to cite `canonical_url`. `/api/artificing-gears.json` is CC BY 4.0. | Read occasionally, cite `canonical_url`. **Not independent:** it credits the Talos Wiki, Prydwen, Game8 and others as its sources. |
 | ZMDLogs | No terms, privacy or robots pages. Site code MIT ([endfield-suite-open](https://github.com/medps16000/endfield-suite-open)); battle data has no licence. Uploader nicknames are public by design. | Cite battle IDs; don't commit whole payloads; drop names and IDs. |
 | BWIKI | No content licence set (`rightsinfo` empty); footer "BILIBILI ALL RIGHTS RESERVED". | Read and cite only. |
