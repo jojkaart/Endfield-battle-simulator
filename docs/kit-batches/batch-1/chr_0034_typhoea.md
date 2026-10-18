@@ -308,3 +308,346 @@ time stop, projectile travel), G12 triggers (hits triggered by own hits under a 
 compilation (equipment triggers, gear-set kits), G16 buff lifecycle (layered buffs), G17 arts state
 (status strength with timed AI), G18 log tooling (SkillPatch stack caps). Nothing looks unique: the
 mechanisms are the shared families of kit-abstractions §2.
+
+## Re-analysis (pass 2, 2026-10-18)
+
+Against the engine and kit format at b33e2e7 (schemas/kit.schema.json, equipment-kit.schema.json,
+engine `events.ts`, `timeline.ts`, `buffs.ts`), `efsim kit-draft chr_0034_typhoea` (v2) and the
+`KNOWN` list in packages/data/test/skillCompile.test.ts. First-round facts were re-checked against
+rmxlinux SkillData / BuffData / SkillPatchTable / PotentialTalentEffectTable and the fixtures;
+corrections and new facts first.
+
+### Claims re-checked, and new facts
+
+- **Finisher scale (row 3, G1 corrected).** power_attack_projhit's damage unit has a literal
+  `atkScale` 4 (`useBlackboardKey` false), but its `atkCalculation` is BreakingAttackCalculation
+  `atk_scale` × multiplier 1.0, and that's the one that counts: every operator's finisher splits
+  `atk_scale` (9 at every level) over its units by multipliers summing to 1 (Endministrator
+  0.1 + 0.9, Chen 0.8 + 0.2, …). So 9 × ATK × the enemy's finisher multiplier; kit-draft's
+  `atk_scale` is right, the first round's "literal 4 × atk_scale" was wrong.
+- **Combo conversion (row 20) confirmed.** common_func_arrowreload: arrows = (Signs − 1) ÷ 2 =
+  3.5 at 8 Signs, then all Signs removed. fixtures/zmdlogs-bdf223db8e49.json: after the floating
+  combo (arrows 12171), shots 1–4 (12806, 13499, 14025, 14699) all burst (13143, 13813, 14487,
+  15033) and the 5th too (15597 → 16303), so the count rounds to 4. The first hover (8490–10464)
+  also has 4 bursts: 4 starting arrows (G14).
+- **Off-field 5th ABATK.** Not controlled, floating_attack5 launches floating_attack1_01_projhit
+  with `enhence_arrow` 0 whether or not she has arrows: a plain shot (`atk_scale_base`, mask 128:
+  no Final Strike, no burst, no SP), no arrow used; it still consumes 1 Nature stack for a Sign
+  and `usp_recover` (kit-draft branches of floating_attack5).
+- **New: the floating combo continues the chain off-field.** combo_skillfloating casts
+  floating_attack1 at frame 57 when she isn't controlled, and floating_loop at 67 (kit-draft
+  note).
+- **Off-field cadence** (kit-draft casts): first shot at 32 (battle skill), 57 (floating combo),
+  89 (ultimate); next shot cast at 22 of shots 1–2, 23 of shot 3, 35 of shot 4. Off-field shots
+  jump at frame 0 to another section (distance ≥ 12 m → 45, 4–12 m → 75; attack4 150 / 300); each
+  section keeps the same offsets (shot 1 frame after the jump, next cast 21–22 after it), so
+  section 0's frames are right as long as jumps are instant (Ti3).
+- **Hover end, from the data (G3).** Controlled with no next input, a shot casts floating_loop
+  at frame 22 (shots 1–3; shot 4 at 35); floating_loop (30 frames) casts floating_end at 27; its
+  frames 8–14 end floatingmode: about 57 frames (1.9 s) after the last shot's cast. Battle skill:
+  loop at 37; floating combo at 67; ultimate at 89 (if hovering). The 5th shot ends it at frame
+  15. floatingmode is created with `autoFinishByAction` / `finishWithNextSkillIfNotInherited` and
+  an inherit list of the floating skills and the floating combo, so casting anything else
+  (grounded attacks, finisher) ends it too. Its 10 s is the ChangeSkillAction's (lifeTimeType 2),
+  and that swap of the combo slot to combo_skillfloating happens only when she's controlled as the
+  hover starts (CheckMainCharacterCondition in floatingmode buffEvent 5).
+- **New: combo trigger pulses at hover end.** buff_chr_0034_typhoea_combo_trigger_combo (0.2 s,
+  no actions: a native trigger marker) is created by arrow_energy whenever a Sign is added at 8,
+  and also unconditionally at floating_attack5 frame 20, floating_attack4 frame 58 and
+  floating_end frame 21. Whether these re-open the window when Signs are at 8 (e.g. after the
+  combo came off cooldown) is unknown (test T6).
+- **Hail of Arrows logic** (buff_chr_0034_typhoea_ultimate_skill_cause_subarrowrain, 5 s; compare
+  codes 0 <, 3 ≥, 4 = as skillCompile decodes them). On her damage carrying an ABATK arrow tag
+  (1208750764 plain, 959424907 Power Shot) while `trigger_times` < 5: if the 0.2 s
+  `_timer` buff is off, +1, timer on, spawn sub1 (count < 5) or sub2 (count = 5); if the timer is
+  on, spawn without counting (another target of the same arrow). One enemy: one rain per shot, the
+  5th counted shot gives sub2. Rains are spawned at the hit: sub1 3 ticks at +6, +9, +12 (mask 512);
+  sub2 5 ticks at +6, +8, +10, +11, +13 and the blast at +30 (mask 4608). Bursts carry no arrow tag.
+- **Ultimate main hit** lands at frame 62 (spawn 61 + entity frame 1), logged as
+  `chr_0034_typhoea_ultimate_skill_arrowrain` (2× in the fixtures; kit: 61, no key; `KNOWN`).
+- **Battle-skill team energy (row 6).** It's `ObtainUspInNormalSkill` at frame 12 (window 12–18),
+  only if a volley arrow hit (buff normal_start_hittimes), not the buff_common_obtain_ultimate_sp
+  kit-draft looks for, so the draft has no `teamEnergyFrame`. The same action is in
+  chr_0028_wulfa_normal_skill.
+- **Sign sources** each have a 0.2 s adding cooldown (arrow_energy_buffer_1/2/3
+  `hasAddingCooldown`): buffer_2 is the consumption Sign, buffer_1/3 the talent's burst Sign
+  (which of the two depends on a tag; same effect).
+- **Gear set target.** physpellup's CreateBuff has a CharacterTeamFinder + ExcludeOwner selector,
+  but `targetSource` 4 (owner) and the text says "the wearer gains": wearer only, as the logs show.
+- **Weapon durations** are BuffData's (Windform 15 s, spelldmgup 30 s, max 4): the skill's
+  `wind_duration` / `spell_dmg_duration` / `spell_dmg_max_stack` aren't passed; `wind_grant` (4)
+  is the CreateBuff count, `phy_spell_up` and `spell_dmg_up2` are passed.
+- **Poise.** Damage units with `damageAttributeType` 1 (`poiseCalculation` key `poise`): attack5
+  (17, `onlyEnableForMainChar`), floating_attack5 (20, main character only), combo_01_projhit
+  (10), ultimate_skill_arrowrain (20). kit-draft skips them (skillCompile.ts: "1 = poise").
+- **Fight start** (passive_arrowrecover): Signs = `energy_enterfight` (talent 1 attachBuff 1/2/4;
+  the BuffData 6 is overridden); arrows = those held when the last fight ended
+  (passive_arrowrecover_exitfight layers), or 4 in the listed dungeon categories (boss rush,
+  resource, high difficulty, …). An ABATK with no arrow but an exitfight layer is still a Power
+  Shot; that only happens out of a fight.
+
+### 1. First-round rows now
+
+| First round | Now | How (fields), or what's missing |
+|---|---|---|
+| Row 2 (data): frames, factors, keys, energy hand-written | supported | kit-draft v2 compiles them (frames, `factor`, `events`, `energy` usp / usp_recover, `sp`, `detached`, `finalStrike`, `consumeInfliction stacks 1`); `KNOWN` covers attack3's gate (kit right: one arrow per wave) and the jump sections. Still hand-written: `poise`, the battle skill's `teamEnergyFrame` (R3) |
+| Row 3, G1 finisher | supported | P2: skillSpecification 8 → only on a Staggered enemy, once per stagger, × the enemy's finisher multiplier, finisher SP. Hit: power_attack_projhit at 38, `atk_scale` (see above). Stagger needs `poise` on her hits (R3) |
+| Row 4, G2 dive attack | gap | R5 |
+| Row 6 battle-skill team energy | supported | `teamEnergyFrame: 12`, hand-written (R3) |
+| Row 7 grounded combo while hovering (kit fix) | supported | `available` Predicate (below) |
+| Row 8, G3 hover ends | partly | 5th shot, grounded casts, until-ended buff, P1 ATK ending with it: cast triggers with `delay`, `endBuff`, `buffEnded`. The idle end (loop → end, 1.9 s) needs R1 |
+| Row 9, G4 attempt counter and resets | supported | stack `abatk` (0–5), `available: {stack, atLeast, below}`, `chainStep: false`, resets as gains of −5 (negative gains floor at 0) |
+| Row 10, G5 one arrow per Power Shot | supported | one `arrows` stack (max 4), `requires: {stack: arrows, atLeast: 1, consume: 1}` |
+| Row 11 plain ABATK | supported | a hit with `requires: {stack: arrows, below: 1}`, `consumeInfliction stacks 1`, Sign and energy `if: {consumedAtLeast: 1}` |
+| Row 13, G6 burst is an event | supported | A3: a `reaction: burst` hit emits a burst status event |
+| Row 14, G7 one Nature stack | supported | `consumeInfliction` `stacks: 1` (A2) |
+| Row 15 one Sign per consumption | supported | `gains: [{stack: signs, if: {consumedAtLeast: 1}}]` |
+| Row 16 `usp_recover` (kit error) | supported | `energy: {if: {consumedAtLeast: 1}, then: "usp_recover"}` |
+| Row 17, G8 controlled 5th | supported | hit `if: {controlled: true}` (judged at the cast) and its `not` |
+| Row 18, G9 off-field ABATKs | supported | trigger action `cast` on delayed cast triggers, `if: {not: {controlled: true}}` |
+| Row 20 conversion (claim) | supported, re-checked | gain arrows `{product: [{stackCount: signs}, 0.5]}` (= 4), signs −8 |
+| Row 24, G10 shared combo cooldown | supported | `cooldownGroup` |
+| Rows 25, 29, G11 combo slow-down, ultimate time stop | supported | Ti1 reads them from SkillData (combo 25 frames at 0.01, ultimate 62 frames stopped); nothing in the kit |
+| Row 30, G11 projectile travel | gap | R4 |
+| Row 27 ultimate: hover, reset, `arrow_num_given` | supported | gain `arrow_num_given` (P5 → 3), abatk −5, hovering buff |
+| Row 28, G12 Hail of Arrows | supported (caveat R2) | `on: hit` trigger with `hits`, a `hail` counter stack, `cooldown: 0.2` |
+| Row 31 P1 ATK ends with hovering | supported | no duration, `buffEnded hovering` → `endBuff` |
+| Row 36 P5 3rd arrow | supported | the gain's `amount` is the value |
+| Row 38, G13 Sign on anyone's Nature burst | supported | `on: burst, elements: [natural], by: anyone`, `cooldown: 0.2` |
+| Row 39, G14 starting Signs and arrows | supported | `stacks[].initial` with `{key, skill}`; scenario `startStacks` |
+| Row 41 Sign / arrow lifetime | unknown | still T1 (24 s duration with lifeType 1) |
+| Row 42 burst ~0.33 s after the arrow | unknown | T2; R4 |
+| W2 Arts Intensity on battle-skill cast | supported | equipment trigger `on: cast, kinds: [battle]` → buff (attr 87) |
+| W3 Windform layers | supported | equipment stack + timer buff (or layered buff) |
+| W4 Arts DMG layers on her bursts | supported | `on: burst, by: self`, `if` Windform, `cooldown: 0.1`, `maxStacks: 4` |
+| S2 Arts Intensity layers on Nature / Cryo bursts | supported | `on: burst, elements: [natural, cryst]`, `maxStacks` from `max_stack` (3) |
+| S3, G17 status strength with timed AI | supported | `artsIntensity()` now reads active buffs |
+| G18 log stack caps | supported | L1 (useMaxStackCntKey caps from the team's sources): the burst can take its event key |
+| New: off-field floating combo chain | supported | delayed cast trigger at 57 |
+| New: combo slot swap only if controlled at hover start | supported | a 10 s state buff applied `if: {controlled: true}`, gating the two combos |
+| New: combo pulses at hover end | unknown | T6; once known, delayed cast triggers `openCombo` `if: {stack: signs, atLeast: 8}` |
+| New: poise values | data | hand-written `poise` / `poiseControlledOnly` (R3) |
+
+### 2. Remaining gaps
+
+**R1 A skill's delayed effects end with the skill.** *family:* skills (timing). *feature:* the
+pending actions of a `delay`ed trigger on `on: cast` with `skills` are dropped when that cast
+ends early (the operator starts another skill, or a `cast` action ends it), as non-detached hits
+already are: either always, or opt-in (`endsWithCast: true`). Equivalent alternative: a Predicate
+`casting: <skillId>` (the operator's current skill is still that cast). *evidence:* SkillData
+timeline actions stop with their skill: floating_attack1–3 frame 22 / floating_attack4 frame 35
+CastSkill floating_loop (controlled) only run if the player gave no next input in the 18–25 /
+28–42 window; floating_loop frame 27 → floating_end; floating_start frame 37. timeline.ts keeps
+`pendingActions` through interrupts (castSkill filters only `pending` hits). The S1 pattern
+("a skill's effects at frames are its own delayed cast triggers") has the same problem for every
+kit that uses it. *impact:* hovering can't end by idling: after a hover cut short (no 5th shot),
+ABATKs and the floating combo stay castable, P1's ATK +18% stays on, and the attempt counter isn't
+reset, until something else ends it. Writing the loop anyway would cast floating_loop over the
+player's next shot. Illegal actions in recorded rotations and search; P1 builds' damage after a
+short hover.
+
+**R2 Hit triggers filtered by skill or hit.** *family:* triggers. *feature:* `on: hit` takes
+`skills` (skill IDs, as `on: cast` does) and/or `reaction: false` (only non-reaction hits), so a
+trigger can react to some skills' own damage. *evidence:* cause_subarrowrain reacts to the ABATK
+arrow damage tags only (1208750764, 959424907), not to the bursts (standard Nature-burst tag);
+timeline.ts emits a `hit` event of kind basic for her `reaction: burst` hits too. *impact:* none
+today: the burst lands with its arrow and the trigger's 0.2 s cooldown (the data's timer) drops
+the second event. Once bursts land later than their arrows (R4, T2: 0.29–0.46 s), each Power
+Shot would trigger two rains, and the 5-rain count would end after 3 shots: Hail of Arrows hits
+on the wrong shots, and the empowered rain early.
+
+**R3 kit-draft: poise and ObtainUspInNormalSkill.** *family:* data compilation. *feature:*
+compile damage units of `damageAttributeType` 1 into the landing's `poise` (`poiseCalculation`
+key) and `poiseControlledOnly` (`onlyEnableForMainChar`), and treat `ObtainUspInNormalSkill`
+(with its frame and gate) as the team-energy frame like buff_common_obtain_ultimate_sp.
+*evidence:* attack5_01/02_projhit, floating_attack5_01/02_projhit, combo_01_projhit,
+ultimate_skill_arrowrain poise units; normal_skill_floating_start frames 12–18 (also
+chr_0028_wulfa_normal_skill). *impact:* none once hand-written (values above); without them her
+kit deals no stagger (finishers never come from her hits) and the team's battle-skill energy
+comes 12 frames early. Every kit needs poise.
+
+**R4 Projectile travel (Ti2), burst delay.** *family:* timing. *feature:* as batch-1 Ti2: hits
+dealt by projectiles land after a travel time; for her, whether the forced burst's ~0.33 s is
+travel of the arrow or a delay of the burst buff (T2). *evidence:* every hit of hers is a
+LaunchProjectile / SpawnAbilityEntity; burst Δ 289–432 ms after the arrow in bdf223, 0eef, d9e59.
+*impact:* her hits land 0.1–0.4 s early: buff windows (Windform, physpellup, teammates' timed
+buffs) and the Hail of Arrows' 5 s are judged at the wrong moment; small damage effect, log
+checks tolerate it.
+
+**R5 Airborne state for dive attacks.** *family:* skills (states). *feature:* plunging attacks
+castable only mid-air (after a jump, which rotations don't have yet). *evidence:* CharGrowthTable
+"DIVE ATTACK: Basic attack performed in mid-air"; plunging_attack_start/end (skillSpecification
+6). *impact:* small: until then the kit should leave plunging_attack_end out, so it can't be cast
+at will (shared by every operator).
+
+Checked against [kit-unique.md](../../kit-unique.md): none is unique (R1, R2 are general
+trigger/skill mechanisms, R3–R5 apply to every operator).
+
+### 3. Kit plan
+
+IDs below drop the `chr_0034_typhoea_` prefix. Values are the skills' own keys unless named.
+
+**Stacks**
+
+- `signs` max 8 (arrow_energy), `initial: {key: "energy_enterfight", skill:
+  "buff_chr_0034_typhoea_passive_arrowrecover"}` (1 / 2 / 4).
+- `arrows` max 4 (arrow_num), `initial: 4` (listed dungeon categories, which is where
+  benchmarks and the fixtures are; a scenario's `startStacks` for other fights). Replaces
+  `arrow_1`–`arrow_4`.
+- `abatk` max 5: the attempt index (EntityBB_floating_attack_index).
+- `hail` max 5: Hail of Arrows left (5 − `trigger_times`).
+
+**Buffs**
+
+- `hovering` (floatingmode): self, no duration, no modifiers.
+- `hovering_atk` (potential_atkup): self, no duration, `atk` `{key: "atk_up", skill:
+  "normal_skill_floating_start"}` (0.18 from P1; the ultimate's is the same).
+- `combo_swap`: self, 10 s, no modifiers (the ChangeSkillAction).
+- `barrage_array`: as now (enemy, `persistent_time`, damageTaken `persistent_naturalburst_increase`,
+  `onlyKinds: [burst]`).
+- `hail_window`: self, 5 s (cause_subarrowrain).
+
+**Triggers** (all `by: self` unless said)
+
+1. `combo_window`: as now (`stackAtLeast signs 8` → `openCombo`).
+2. `talent_sign`: `on: {event: burst, elements: [natural]}`, `by: anyone`, `cooldown: 0.2` →
+   gain `signs` 1 (talent 1; passitive_enemy_listennaturalspellbrust).
+3. `hover_start`: `on: cast`, `skills: [normal_skill_floating_start, ultimate_skillfloating]` →
+   buff `hovering`; buff `hovering_atk` `if: {potentialAtLeast: 1}`; buff `combo_swap`
+   `if: {controlled: true}`; and for the battle skill only (a second trigger) gain `abatk` −5.
+4. `ult_rain`: `on: cast`, `skills: [ultimate_skillfloating]`, `delay: 61`,
+   `skill: ultimate_skillfloating` → gain `arrows` `arrow_num_given`; gain `abatk` −5; gain `hail`
+   −5 then +5; buff `hail_window`.
+5. `hail_end`: `on: {event: buffEnded, buff: hail_window}` → gain `hail` −5.
+6. `hail_of_arrows` (R2 caveat):
+
+   ```json
+   {"id": "hail_of_arrows", "on": {"event": "hit", "kinds": ["basic"]}, "by": "self",
+    "if": {"all": [{"buffActive": "hail_window"}, {"buffActive": "hovering"}, {"stack": "hail", "atLeast": 1}]},
+    "cooldown": 0.2, "skill": "chr_0034_typhoea_ultimate_skillfloating",
+    "do": [
+      {"kind": "hits", "if": {"stack": "hail", "atLeast": 2}, "hits": [
+        {"id": "sub_rain", "damageType": "ultimate", "scale": ["atk_scale_outer", "potential_damge_up"],
+         "factor": 0.3333333333333333, "count": 3, "frames": [6, 9, 12], "detached": true,
+         "events": ["chr_0034_typhoea_ultimate_skill_arrowrain_sub1"]}]},
+      {"kind": "hits", "if": {"stack": "hail", "below": 2}, "hits": [
+        {"id": "final_tick", "damageType": "ultimate", "scale": ["atk_scale_center", "potential_damge_up"],
+         "factor": 0.08, "count": 5, "frames": [6, 8, 10, 11, 13], "detached": true,
+         "events": ["chr_0034_typhoea_ultimate_skill_arrowrain_sub2"]},
+        {"id": "final_blast", "damageType": "ultimate", "scale": ["atk_scale_center", "potential_damge_up"],
+         "factor": 0.6, "frames": [30], "detached": true,
+         "events": ["chr_0034_typhoea_ultimate_skill_arrowrain_sub2"]}]},
+      {"kind": "gain", "gains": [{"stack": "hail", "amount": -1}]}]}
+   ```
+7. `abatk_step`: `on: cast`, `skills: [floating_attack1 … floating_attack5]` → gain `abatk` 1.
+8. Off-field chain, each `do: [{kind: "cast", skill: <next>, if: {not: {controlled: true}}}]`:
+   floating_start `delay: 32` → floating_attack1; combo_skillfloating 57 → floating_attack1;
+   ultimate_skillfloating 89 → floating_attack1; floating_attack1 22 → 2; floating_attack2 22 → 3;
+   floating_attack3 23 → 4; floating_attack4 35 → 5.
+9. `hover_end_fifth`: `on: cast`, `skills: [floating_attack5]`, `delay: 15` → `endBuff hovering`.
+10. `hover_end_grounded`: `on: cast`, `skills: [attack1, power_attack, combo_skill]` →
+    `endBuff hovering` (the inherit list).
+11. `hover_ended`: `on: {event: buffEnded, buff: hovering}` → `endBuff hovering_atk`,
+    `endBuff combo_swap`, gain `abatk` −5 (floating_end resets the index).
+12. `conversion` (or as gains on the combos' first arrow, frame 35): `on: cast`, `skills:
+    [combo_skill, combo_skillfloating]`, `delay: 35` → gain `arrows` `{product: [{stackCount:
+    "signs"}, 0.5]}`, then gain `signs` −8. The floating combo also gains `abatk` −5 at its cast
+    (SwitchAction; frame to read from SkillData).
+13. After R1: idle end. `cast floating_loop` `if: {controlled: true}` at floating_attack1–3 22,
+    floating_attack4 35, floating_start 37, combo_skillfloating 67, ultimate_skillfloating 89
+    (also `buffActive: hovering`); floating_loop 27 → `cast floating_end`; floating_end 8 →
+    `endBuff hovering`. floating_loop and floating_end become hitless kit skills.
+14. After T6, if confirmed: floating_attack5 20, floating_attack4 58, floating_end 21 →
+    `openCombo` `if: {stack: signs, atLeast: 8}`.
+
+**Skills, hit by hit** (frames, factors, keys from kit-draft v2; `detached` on every projectile
+or entity hit)
+
+- attack1: ×2 `atk_scale` × 0.5 at 5, 8 (attack1_01_projhit). attack2: `atk_scale` at 9
+  (attack1_01_projhit). attack3: × 0.5 at 5 (attack3_01_projhit) and at 14 (attack3_02_projhit),
+  one landing each (the damagetaken gate; `KNOWN`). attack4: × 0.35 at 5; ×5 × 0.13 at 15, 18,
+  21, 24, 27. attack5: `atk_scale` at 22, events [attack5_01_projhit, attack5_02_projhit], `sp:
+  "atb"` (21), Final Strike from the data, `poise: "poise"`, `poiseControlledOnly: true`.
+  attack1 `available: {not: {buffActive: hovering}}`.
+- power_attack (finisher, specification 8): power_attack_projhit `atk_scale` at 38 (on reach).
+- plunging_attack_end: leave out (R5).
+- normal_skill_floating_start (battle): ×0.5 at 2 (normal_skill_attack1_projhit), ×0.5 at 7
+  (normal_skill_attack2_projhit); `teamEnergyFrame: 12`; triggers 3, 8, 13.
+- floating_attack1–4 (basic, `chainStep: false`, `available: {all: [{buffActive: hovering},
+  {stack: abatk, atLeast: N−1, below: N}]}`), each with its own values (all equal):
+  - `power_shot` at 1: [`atk_scale_base`, `atk_scale_enhence`], events [floating_attack1_01_projhit],
+    `requires: {stack: arrows, atLeast: 1, consume: 1}`;
+  - `burst` at 1: `reaction: {kind: burst, element: natural}`, scale [`potential_damage_rate`],
+    events [buff_common_natural_natural_triggered_typhoea] (now checkable, G18), same `requires`,
+    `applies: [{kind: consumeInfliction, elements: [natural], stacks: 1}]`, `gains: [{stack: signs,
+    if: {consumedAtLeast: 1}}]`, `energy: {if: {consumedAtLeast: 1}, then: "usp_recover"}`,
+    `extraScale: [{value: "enchence_burst_damage_rate", if: {consumedAtLeast: 1}}]`, `finalStrike:
+    false`; the burst's own Sign comes from trigger 2;
+  - `plain_shot` at 1: [`atk_scale_base`], events [floating_attack1_01_projhit], `requires: {stack:
+    arrows, below: 1}`, the same consumption, Sign and energy.
+- floating_attack5 (basic, `available` as above with abatk 4–5): `power_shot` at 0
+  ([`atk_scale_base`, `atk_scale_enhence`], floating_attack5_01_projhit, `if: {controlled: true}`,
+  `sp: "atb"` (23), `poise: "poise"`, `poiseControlledOnly: true`); `burst` at 0 as above with `if:
+  {controlled: true}` and no `requires`; `plain_shot` at 0 ([`atk_scale_base`],
+  floating_attack1_01_projhit, `if: {not: {controlled: true}}`, consumption, Sign, energy,
+  `finalStrike: false`). Triggers 9, 14.
+- combo_skill (`available: {not: {all: [{buffActive: hovering}, {buffActive: combo_swap}]}}`) and
+  combo_skillfloating (`available: {all: [{buffActive: hovering}, {buffActive: combo_swap}]}`),
+  both `cooldownGroup: "combo"`: first arrow `atk_scale` ÷ 7 at 35 (combo_01_projhit), `energy:
+  "usp"`, `poise: "poise"`, buff `barrage_array`; ×6 ÷ 7 at 40, 43, 44, 45, 47, 49 (floating: 39,
+  …); array ×18 `atk_scale_persistent` ÷ 18 at 35, 45, … 205 (combo_persistentdamage). Floating
+  combo: triggers 8, 12, 13.
+- ultimate_skillfloating: main at 62, [`atk_scale_main`, `potential_damge_up`], events
+  [ultimate_skill_arrowrain], `poise: "poise"`; the Hail of Arrows hits move to trigger 6.
+  Triggers 3, 4, 8, 13.
+
+**wpn_funnel_0019.json** (values `{key, skill: "sk_wpn_funnel_0019"}` at the weapon's skill
+level)
+
+- stack `wpn_funnel_0019.windform` max 4; buffs `intensityup` (self, 15 s, attr 87
+  `phy_spell_up`, gameBuff buff_wpn_funnel_0019_intensityup), `windform_timer` (self, 15 s),
+  `spelldmgup` (self, 30 s, `maxStacks: 4`, attrs 51–54 `spell_dmg_up2`).
+- triggers (`by: self`, the wielder): `on: {event: cast, kinds: [battle]}` → buff `intensityup`, gain `windform`
+  `wind_grant`, buff `windform_timer` (all four layers are granted together and the 4th replaces
+  the oldest, so one timer is exact); `on: buffEnded windform_timer` → gain `windform` −4;
+  `on: {event: burst}`, `if: {stack: windform, atLeast: 1}`, `cooldown: 0.1` → gain `windform` −1,
+  buff `spelldmgup`.
+
+**suit_spellburst.json** (values `{key, skill: "passive_equipsuit_spellburst01"}`)
+
+- buff `physpellup` (self, duration `duration` (20), `maxStacks: max_stack` (3), attr 87
+  `phy_spell_up` (16), gameBuff buff_equipsuit_spellburst_01_physpellup).
+- trigger `on: {event: burst, elements: [natural, cryst]}`, `by: self`, `cooldown: 0.1` → buff
+  `physpellup`.
+
+Static parts (weapon Agility, ATK %, Arts DMG; set Arts DMG +16 %) stay in the stat panel.
+
+**Verification after the rewrite:** `efsim zmdlogs check` and `zmdlogs reactions` on dbaee23b801d
+(weapon W2/W4, set S2, a teammate's Nature burst at t=10341, ultimate main hit t=13975),
+bdf223db8e49 and 0eef2474a26f (starting arrows, conversion, off-field-free hovers), d9e59d0fb737
+(Hail of Arrows sub2 t=13829–14675; its unexplained ×1.54–1.9 and ×1.1585 remain).
+
+### 4. In-game tests for what's still unknown
+
+- **T1 Hover idle end and stack lifetime** (R1, row 41). Battle skill, one ABATK, then nothing:
+  does she land about 2 s after that shot (data: ~1.9 s)? In a fight, hold Signs and arrows for
+  30 s without using them: do they drop at 24 s?
+- **T2 Burst delay** (R4, R2). Slow-motion clip of one Power Shot: is the burst number ~0.3 s after
+  the arrow's, and does the delay change with distance (travel) or not (a burst delay)?
+- **T4 Off-field ABATKs** (extended). Battle skill, swap away at once: five shots on her own, shots
+  with arrows Power Shots, the 5th a plain shot (no burst number) even with arrows left? Same after
+  an off-field floating combo.
+- **T5 Teammate burst Signs.** With few Signs, a Nature teammate triggers a Nature Burst: +1 Sign?
+- **T6 Combo window at hover end** (new). Reach 8 Signs while the combo is on cooldown, keep
+  hovering until it's off cooldown, then let the hover end (5th shot): does the combo become
+  available without another Sign?
+- **T7 Hail of Arrows count** (optional). Ultimate, then five ABATKs within 5 s: four normal rains
+  and an empowered one on the 5th? Land early and attack on the ground within the 5 s: no rains?
+
+T3 (one stack consumed) is settled by the data (finishLayerCnt 1) and can be skipped.
+
+**Summary:** of the first round's 18 gaps, 15 are now expressible (G1, G4–G10, G12–G18); G3
+(idle end) and G11 (projectile travel) only partly; G2 not at all. Open: 5 gaps (R1 a skill's delayed
+effects ending with it, R2 hit triggers by skill, R3 kit-draft poise and ObtainUspInNormalSkill,
+R4 projectile travel, R5 airborne for dive attacks) and 2 unknowns (stack lifetime T1, combo pulse
+at hover end T6).
