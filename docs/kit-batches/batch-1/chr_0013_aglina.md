@@ -326,3 +326,345 @@ In-game tests (for docs/in-game-tests.md):
 6. **Messenger's Song** (row 31): a Guard / Caster / Supporter teammate's
    Ultimate Gain Efficiency in the stat panel with and without Gilberta in
    the team, and a Striker's or Vanguard's (expected unchanged).
+
+## Re-analysis (pass 2, 2026-10-18)
+
+Against the engine and kit format after the batch-1 implementation pass
+([batch-1.md "Progress"](../batch-1.md#progress)), `schemas/kit.schema.json`,
+`efsim kit-draft chr_0013_aglina` (v2) and the D1 comparison in
+`packages/data/test/skillCompile.test.ts`. Pass 1's facts were treated as
+claims and re-read in the data (files and keys below); where pass 1 was
+wrong it says so.
+
+**Compiler evidence.** `KNOWN` has one Gilberta entry:
+`chr_0013_aglina_normal_skill teamEnergyFrame: kit -, data 29` (a kit
+omission). Every other frame, count, event key, scale key, infliction and
+energy grant in her kit agrees with the data. kit-draft v2 also emits what
+the kit lacks: per-projectile `sp` (attack1 `atb`; attack2 `atb` × 0.5 per
+landing; attack3 × 0.333333; the three attack4 orbs × 0.3334 each),
+`detached` on all projectile hits, `finalStrike` only on the centre orb,
+`teamEnergyFrame: 29`, and the finisher's seven landings
+(frames 12, 15, 18, 21, 24, 29, 43). It still emits **no** `poise`, no
+finisher factors (BreakingAttackCalculation `multiplier` 0.05 ×6 and 0.7 is
+dropped: all seven landings come out as plain `atk_scale`), no forced Lift
+(AirborneAction isn't compiled) and no `durationFrames`. That last one is
+fine: the engine's action gate reads SkillData timing only, so kits'
+`durationFrames` don't affect anything. The logged keys not in the draft are
+`buff_physical_airborne` ×4 (Lift hits, status damage), `buff_equipsuit_physuit_01` ×1
+(gear-set hit) and `buff_common_natural_triggered` ×1 (a reaction hit, R10).
+
+**Current log checks** (`zmdlogs check`, today's kit): 4e5e 44 match / 0
+mismatch / 14 under unmodelled effects (79% of her damage covered), 40d9
+9 / 0 / 1 (the ultimate under Link), d9e5 0 / 0 / 8. d9e5 is the pre-1.6-table
+battle in which, per Arcane's kit, every hit after Arcane's ultimate is off
+by an unexplained factor. Gilberta's ultimate (×1.2689, pass-1 row 36) and
+the gear-set hit (implied 3.38 against 2.5) fall in that window, so d9e5 is
+good for **event order** only (the set hit with the Lift, the combo after a
+forced Corrosion, Arts Susceptibility 0.30 at P1, which is a value the game
+logged and not a damage number) and not for damage values.
+
+### 1. First-round rows against the current engine
+
+| First-round row / gap | Now supported? | How (fields), or what's still missing |
+|---|---|---|
+| 2, 12, 23, G14: frames, keys, locks, `usp`, inflictions hand-written | yes (data) | All are compiled by kit-draft v2 and agree with the kit (D1 test). The kit still has to carry them, because the loader doesn't default from the compiler yet. Still not compiled: `poise`, finisher factors, forced Lift (R4) |
+| 4: basic-attack SP 2–4 frames early | yes | per-hit `sp` from the draft (`{"product": ["atb", 0.3334]}` on each attack4 orb); the skill's `atb` is then no longer added at the first hit |
+| 5, G11: projectile travel | **no** | Ti2 still open: hits land at the launch frame (R7) |
+| 6, G10: stagger from hits | yes (engine) / data | `poise` and `poiseControlledOnly` on hits (P2). The values aren't compiled, and the poise units' semantics are partly unknown (R4) |
+| 7, G10: finisher | yes | skill `chr_0013_aglina_power_attack`: the engine treats skillSpecification 8 as Staggered-only, once per stagger, with the enemy's finisher multiplier and `finisherSp`. The kit writes `factor` 0.05 (×6) and 0.7 by hand (compiler gap R4) |
+| 8, G13: dive needs a jump | **no** | there is no mid-air state or predicate yet. Worse, plunging attacks (specification 6) may interrupt anything (priority ∞), so search can exploit them (R6) |
+| 9: dash attack | unknown, out of scope | `dash_attack(_projhit)` (atk_scale 0.38, poise 5, window → attack4) has SkillPatchTable levels but isn't in CharGrowthTable's skill groups, so it has no level source. No log has one. Leave it out |
+| 13: Corrosion before the explosion's damage | yes | applications run before the hit's damage (`landHit`) |
+| 14, G7: team energy at frame 29 | yes | `teamEnergyFrame: 29` (the only KNOWN entry) |
+| 15, G8: cancel windows | yes, partly | SkillData windows, exclusive frames and priorities (S3): after the battle skill, combo at 123 and the rest at 135; combo → battle / ultimate at 53, the rest at 72; ultimate → battle / combo at 64, the rest at 85. Swaps are blocked during the channel (`cantSwitch`, 0–111). **Not honoured:** the same channel's `cantCastSkill`, and the finisher's `buff_common_power_attack_disable_cast_skill` (0–43). Both are parsed or present but not used, so her ultimate or combo may start mid-channel (R5) |
+| 16: combo trigger on any reaction, forced included | yes | unchanged trigger `{on: {event: reaction}, by: anyone, do: [openCombo]}` |
+| 17: combo opened by her own non-combo reaction | unknown | the engine allows it (only her own combo's events are excluded, `origin.kind === "combo"`). In-game test T2 |
+| 20, G1: forced Lift and its hit | yes | combo hit `applies: [{kind: "physicalStatus", status: "lift", forced: true}]`. The engine adds the Lift hit (status damage, checked on 4e5e), +1 Vulnerable and Lift stagger 10 × (1 + AI/200). The order fits the data: AirborneAction is actionData[3] and DamageAction actionData[4] at frame 48 |
+| 21, 24, G9: combo slow-down, ultimate time stop | yes (Ti1 part) | read from SkillData: the combo's 0.6 s `ComboSkill` curve, the ultimate's 52-frame stop. The ultimate's 0–3 TimeDilation is a `RESETto1` reset with no effect. In-game test 18 is pending |
+| 25, 26, G2: Arts Susceptibility × Vulnerable stacks, P2 | yes | ValueExpr with `enemyVulnerableStacks`, evaluated when the buff is applied. That fits the data: the formula sits in `buff_chr_0013_aglina_ultimate_skill`'s start timeline and runs once on entering the field. **Correction to pass 1:** the P2 test is `CompareFloat compare 1` (≤ under the Endaxis enum codes the compiler uses), so n ≤ 3 → n + 1, then ×2 (literal 2). In-game test T1 confirms. Tag 1075718177 is `buff_physical_no_guard` (Vulnerable). Sketch in the kit plan |
+| 27: 5 s, after the hit's own damage | yes | hit `buffs: [{buff: "arts_susceptibility"}]` (after the damage by default), `duration: "duration"` |
+| 28: two sources of `buff_common_affixes_vulnerable_spell` | unknown | stackingType 0, so the engine adds them (no stack group). Only `buff_physical_*` evidence supports "type 0 adds" (buffData.ts). In-game test T3 |
+| 29: "Lifted persists until the field wears off" | unknown, no data | nothing in the field (`_abilityrange`: AuraAction only), its buff (CheckBuffStackNum, ModifyDynamicBlackboard, CreateBuff, SlowAction) or the files they reach extends `buff_physical_airborne`. The `_inair` / `_grounded` buffs are orphans. No damage effect is visible in the data, so don't model it; in-game test T7 is optional |
+| 30, 32, 33, 37 | yes | no effect against one enemy. Talent 2's heals need ≥ 2 targets (`CheckEntityNum minNum 2 compareType 3`), so the kit carries no `heals` until multi-enemy, which would also need an `if` on heals |
+| 31, G3: Messenger's Song | yes, with a workaround | the talent's attached skill is a value source: `{key: "add", skill: "chr_0013_aglina_talent_0"}` (4% / 7%, P3 +5% via skillValue). A team buff `{attr: 44}` with `recipients: {operatorProfession: [0, 4, 5]}` (CheckProfession mask 49 = bits 0, 4, 5; CharacterTable: Estella / Wulfgard 0, Gilberta / Liino / Si 4, Arcane 5). No duration. **Missing:** a fight-start event to apply it. Interim: the first cast by anyone, `maxCount: 1` (R8). It also throws for a build with talent 1 at level 0 (R9) |
+| 34, 19, 22, 10, 11, 18 | yes | loader (P5 ×1.3 and −2 s, P4 cost, SkillPatchTable) |
+| 35, G12: Link | **no** | `consumedBy` exists, but nobody gives Link: there's no common source, no value by stack count, and the values aren't in our tables (R3) |
+| 36: d9e5 ultimate ×1.2689 | not hers | the pre-1.6 anomaly window above. Don't use d9e5 for values |
+| W1, W2, W4, W5 | yes | stat panel. W4: `buff_wpn_lance_0003` keys aren't in sk_wpn_funnel_0011's blackboard, so it's inert |
+| W3, G4, G5: Pursuit | **partly** | expressible: an equipment trigger with `skill: "sk_wpn_funnel_0011"`, a team buff valued `spell_dmg_up + min(targetsHit, max_stack) × spell_dmg_up2` (V1, V2). **Missing:** (a) the trigger's buff must act on the combo hit that lifted. Logs show `buff_wpn_funnel_0011_valid` already on that hit, but triggers run after the hit's damage (R1). (b) a filter "Lift caused by a combo-type hit" (CheckOriginSkillType [6]) (R2) |
+| W6, G3, G4: Twilight | yes | equipment trigger `on: {event: cast, kinds: [ultimate]}, by: self`; team buff `recipients: {all: [{not: {isOwner: true}}, {not: {sameElementAsOwner: true}}]}`. CharacterTable `charTypeId` is the element (Natural, Fire, Cryst…), and that's what CompareString compares |
+| W7: `buff_wpn_passive_spirit_01` | inert | still not in the checkout; 40d9 logs nothing from it |
+| S1: Stagger Efficiency +20% | yes | attr 26 now acts on stagger (P2) |
+| S2, G6: Swordmancer hit | yes | gear-set kit `suit_phy01`: trigger `on: {event: physicalStatus}, by: self, cooldown: "duration"`, `hits` action (Physical, `damageType: none`, own event key, `poise`). Tag −6380412 isn't Vulnerable's (1075718177): `buff_dung_physicalstatus_enemy` lists the two side by side, and `buff_gambling_take_physical_abnormal` checks it for "physical abnormal". So Vulnerable alone doesn't proc. Whether Shatter counts, and the hit's scale, are unknown: d9e5 can't tell (T5) |
+
+### 2. Remaining gaps
+
+None of these is unique ([kit-unique.md](../../kit-unique.md) is empty, and
+each has another user named below).
+
+**R1. Triggers on a hit's own status events act before its damage** (W3).
+- family: triggers
+- feature: events caused by a hit's `applies` (status events: physicalStatus,
+  vulnerable, reaction, inflictionApplied / Consumed, statusConsumed,
+  control, shatter) run their triggers **before** that hit's `computeHit`,
+  so a buff they apply already acts on the hit. The hit event itself, poise,
+  `buffApplied` and heal events stay after the damage. This follows the
+  existing rule "what the hit applies comes first" in `landHit`. Today
+  `landHit` queues every event and runs triggers after the damage
+  (timeline.ts, `const all = [hitEvent, ...asEvents(statusEvents), …]`).
+  No current kit has a status-event trigger that applies a buff (all are
+  `openCombo`), so the change moves no example total. An alternative is a
+  per-trigger flag, `beforeDamage: true`, allowed only on status events.
+- evidence: combo_skill frame 48: AirborneAction (actionData[3]) before
+  DamageAction (actionData[4]). buff_wpn_funnel_0011 (created at the combo
+  cast) creates `_valid` on abilityEvent 402. In fixtures/zmdlogs-4e5e1390085e.json,
+  the combo hits at 7598, 30327 and 55403 carry `buff_wpn_funnel_0011_valid`
+  as a boundary buff and match only with it applied.
+- impact: every Pursuit combo hit misses the team Arts DMG it creates:
+  +24.8% at skill level 4 (0.192 + 0.056), +43.4% at level 9. Against the
+  hit's other DMG bonuses (Nature +25.6–44.8% from the same weapon) that is
+  roughly −16 to −23% on each combo hit. It's every combo, not just the
+  first: her cooldown (19 s, 17 s at P5) is longer than the buff (15 s).
+
+**R2. The causing hit's skill type on status-event triggers** (W3).
+- family: triggers
+- feature: `kinds` (skill types, plus `none` for triggered hits) on the
+  status-type `on` events (physicalStatus, inflictionApplied, reaction,
+  burst, vulnerable, …), matched against the kind of the hit or action that
+  caused the event. `runTriggers` already receives that as `origin.kind`.
+  Pursuit: `{event: "physicalStatus", statuses: ["lift"], kinds: ["combo"]}`.
+- evidence: buff_wpn_funnel_0011 abilityEvent 402: CheckPhysicalInflictionType
+  mask 1, CheckOriginSkillType [6]. Arcane's wpn_funnel_0016 has the same
+  check on inflictions (CheckOriginSkillType [2, 6, 7]; Arcane report W3).
+  12 BuffData files use CheckOriginSkillType (wpn_funnel_0006, _0011,
+  _0016 will / wisd, wpn_pistol_0008 among them).
+- impact: none for Gilberta, whose only Lift is her combo. Wrong for any
+  other wielder whose battle skill or ultimate Lifts, and for Arcane's
+  weapon (infliction by basic attacks counts today).
+
+**R3. Link** (row 35, pass-1 G12; batch-1 B4 left it without a source).
+- family: triggers + buff lifecycle + values (shared by every operator)
+- feature: a common mechanism, not a kit entry per operator. Every combo
+  cast adds a Link stack to the team (`buff_common_affixes_combo_trigger`).
+  The next battle skill or ultimate by anyone consumes all of them
+  (`consumedBy`) and gets a ComboCalcZone multiplier by stack count, acting
+  on that cast's hits only. Missing pieces: (1) where engine-wide common
+  mechanics live: built in, or a common kit added to every operator like
+  `effectiveKit` adds equipment; (2) a value by stack count, i.e. a
+  `buffLayers` ValueExpr or a lookup (ultimate 20 / 30 / 40 / 50%, battle
+  skill 1.5× that); (3) a zone for it (`multiplicative` suffices for a
+  single source); (4) the stack cap. The values aren't in our tables
+  (skill-setting key 连击增伤); Talos has them. In-game test 8.
+- evidence: fixtures/zmdlogs-40d9a3c1da37.json 12951 ms, her ultimate exactly
+  ×1.2000 with one stack (docs/data-sources.md "Consensus").
+- impact: ×1.2–1.5 on her ultimate and battle skill after teammates'
+  combos, in every team. 40d9's ultimate is the one unmodelled hit there.
+
+**R4. Compiler remainder: poise, finisher multipliers, forced Lift** (rows 6,
+7, 20; pass-1 G14).
+- family: data compilation (+ log tooling)
+- feature: compileSkill / kit-draft emit (a) `poise` per landing from the
+  `damageAttributeType` 1 unit (blackboard `poise` by convention, game-data-format.md)
+  and `poiseControlledOnly` from its `onlyEnableForMainChar`; (b) `factor`
+  from BreakingAttackCalculation `multiplier`; (c) `physicalStatus` from
+  AirborneAction `forceAirborne` (and the Knock Down / Crush / Fracture
+  actions). Two semantic unknowns: the ultimate's poise unit is a
+  DefiniteValueCalculation with value 1 (`applyScale` false), so is it 1 or
+  the table's 20? And the three attack4 orbs each carry a unit, so is it 16
+  per orb or 16 in all? ZMDLogs' `/api/battles/{id}` has `poiseDamage` per
+  hit; log fixtures don't store it, and storing it would settle both.
+- evidence: poise units in attack4_projhit, attack4_projhit_2 (controlled
+  only), combo_skill, the normal_skill explosion and ultimate_skill; none in
+  attack1–3_projhit or the pulls. SkillPatchTable `poise` is 16 (attack4),
+  10 (battle skill), 5 (combo), 20 (ultimate). power_attack: 6 × 0.05 and
+  1 × 0.7.
+- impact: until compiled, poise is hand-written with two open readings.
+  Ultimate 20 vs 1, and attack4 48 vs 16, move stagger breaks (Rhodagn 280)
+  and so the ×1.3 Staggered windows and finisher availability. Factors and
+  Lift are hand-written (no number error once written).
+
+**R5. Casting blocks inside a skill: `cantCastSkill` channels and
+disable-cast buffs** (row 15).
+- family: skills (timing)
+- feature: while a `ChannelingCastingAction` with `cantCastSkill` runs
+  (her battle skill, 0–111), or `buff_common_power_attack_disable_cast_skill`
+  is on (finisher, 0–43), the caster can't start another skill, even one
+  that outranks the current one by priority. It's unknown whether teammates'
+  casts are blocked too. skillData.ts parses `cantCastSkill` into
+  `channels`, but `actionGate` only uses `cantSwitch`.
+- evidence: chr_0013_aglina_normal_skill ChannelingCastingAction 0–111;
+  power_attack CreateBuff 0–43. 23 operator skills have `cantCastSkill`
+  channels, mostly ultimates (chr_0021_whiten, chr_0032_lizhiyan, chr_0028_wulfa,
+  chr_0023_antal…).
+- impact: illegal actions: her ultimate (priority 7) or combo (5) can start
+  during the battle skill's channel and cut its pulls and explosion. The
+  ultimate can also cut a finisher.
+
+**R6. Dive attack needs mid-air** (row 8, pass-1 G13; shared with Estella
+G10 and Typhoeus G2).
+- family: skills (states)
+- feature: an airborne state from `plunging_attack_start` (durationFrame
+  1500: falling until landing; `canCastInAir`), and plunging attacks
+  available only in it.
+- evidence: SkillData plunging_attack_start / _end; engine `priorityOf`
+  gives specification 6 an infinite priority.
+- impact: search may use a 1.8 × ATK dive at any frame, interrupting
+  anything. Until the state exists, leave the plunge out of the kit.
+
+**R7. Projectile travel** (row 5, Ti2).
+- family: timing
+- feature: a per-projectile delay (not in the data; from logs or tests).
+- evidence: LaunchProjectile in attack1–4.
+- impact: small; basic hits a few frames early.
+
+**R8. Fight-start event** (row 31).
+- family: triggers
+- feature: `on: {event: "fightStart"}`, fired once at frame 0 for every
+  team member, for permanent auras (talents with lifeType 1 auras).
+  Interim: `{on: {event: "cast"}, by: "anyone", maxCount: 1}`, exact as long
+  as no energy is gained before the first cast's trigger runs (team energy
+  comes at `teamEnergyFrame`, combo energy at its hit).
+- evidence: buff_chr_0013_aglina_talent_0 (AuraAction, lifeType 1) →
+  `_effectbuff_Add` (attr 44). Typhoeus's talent 1 ("on entering battle")
+  is the same moment.
+- impact: none with the interim; it's a clarity and robustness issue.
+
+**R9. Effects of a talent that isn't unlocked** (row 31).
+- family: conditions
+- feature: a predicate `talentAtLeast: [index, level]`, or value sources
+  that are absent below their unlock and skip the effect instead of
+  throwing. `skillValue` throws when `panel.sources` lacks the talent's
+  attached skill, and a build may set talent levels to 0.
+- evidence: stats.ts talents loop (`if (level === 0) return`); damage.ts
+  `skillValue` "isn't one of … sources".
+- impact: builds below promotion 1–2 can't simulate (no wrong numbers).
+  Shared: every talent-valued effect (Arcane talents 1–2, Laevatain's
+  Scorching Heart, Typhoeus's Signs).
+
+**R10. Reaction hits logged as `buff_common_<element>_triggered`** (carried:
+batch-1 L1 "open", Arcane G15).
+- family: log tooling / arts state
+- feature: explain the ×1.42 these reaction hits show, so they can be
+  checked.
+- evidence: 4e5e 68873 ms `buff_common_natural_triggered` 41406, credited
+  to her (her explosion's Nature onto a Heat infliction). It's the one
+  uncovered event in her 4e5e check. Camille has no kit, so the replay
+  can't place the Heat infliction yet.
+- impact: one of her largest single numbers in 4e5e is unverifiable.
+
+### 3. Kit plan
+
+**Operator kit `chr_0013_aglina`** (from the draft, plus the hand-written
+parts; drop `durationFrames` everywhere):
+
+- `element: natural`; no stacks, no activeConditions.
+- `buffs`:
+  - `arts_susceptibility` (enemy, `gameBuff: buff_common_affixes_vulnerable_spell`,
+    `duration: "duration"`; buff_chr_0013_aglina_ultimate_skill):
+    ```json
+    {"zone": "susceptibility", "elements": ["fire", "pulse", "cryst", "natural"],
+     "value": {"product": ["spell_vulnerable_rate", {"sum": [1, {"product": ["spell_vulnerable_perstack",
+       {"if": {"potentialAtLeast": 2},
+        "then": {"product": [2, {"min": [{"sum": [{"enemyVulnerableStacks": true}, 1]}, 4]}]},
+        "else": {"enemyVulnerableStacks": true}}]}]}]}}
+    ```
+    P2 is the only source of `potential2` (PotentialTalentEffectTable), and
+    min(n + 1, 4) equals "n ≤ 3 → n + 1" because Vulnerable stops at 4.
+    Expected: 0.30 at n 0 (d9e5 P1 logs 0.30); P2 n 0: 0.36 (40d9 P3 logs
+    0.36); P0 n 2: 0.36 (4e5e: Estella's Lift at 54882 ms plus hers at 55403
+    ms, once Estella's kit has its Lift); P2 n 4: 0.54.
+  - `messengers_song` (team, no duration, `recipients: {operatorProfession:
+    [0, 4, 5]}`, `modifiers: [{attr: 44, value: {key: "add", skill:
+    "chr_0013_aglina_talent_0"}}]`; talent 1, P3 +0.05 through skillValue).
+- `triggers`:
+  - `combo_window`: unchanged (CharGrowthTable "When an Arts Reaction is applied").
+  - `messengers_song`: `{on: {event: "cast"}, by: "anyone", maxCount: 1,
+    skill: "chr_0013_aglina_talent_0", do: [{kind: "buff", buff:
+    "messengers_song"}]}`; `fightStart` once R8 exists.
+- `skills` (frames, keys and energy from SkillData; values from
+  SkillPatchTable):
+  - attack1: `projhit` atk_scale, frame 7, `sp: "atb"`, detached.
+  - attack2: `projhit` ×2 at 4, 8, `sp: atb × 0.5`, detached.
+  - attack3: `projhit` ×3 at 7, 10, 14, `sp: atb × 0.333333`, detached.
+  - attack4: `projhit` (centre, Final Strike) at 23 and `projhit_2` ×2 at
+    25, 27; each `sp: atb × 0.3334`, `poise: "poise"`,
+    `poiseControlledOnly: true` (R4 decides per-orb vs split), detached.
+  - power_attack (finisher): `hit` ×6 at 12, 15, 18, 21, 24, 29 with
+    `factor: 0.05`, and `final` at 43 with `factor: 0.7`, event
+    `chr_0013_aglina_power_attack` (BreakingAttackCalculation; a scratch log
+    576da29ffa7a showed 2510 ×5 and 35135, five small hits against the
+    data's six: check the count when it's committed).
+  - normal_skill: `teamEnergyFrame: 29`; `pull` ×4 at 29, 46, 62, 78
+    (`atk_scale_pull`, no poise unit); `explosion` at 108
+    (`atk_scale_explosion`, `applies: [{kind: infliction, element:
+    natural}]`, `poise: "poise"`).
+  - combo_skill: `hit` at 48, `atk_scale`, `energy: "usp"`, `poise:
+    "poise"`, `applies: [{kind: "physicalStatus", status: "lift", forced:
+    true}]`.
+  - ultimate_skill: `hit` at 60, `atk_scale`, `applies: [{kind:
+    infliction, element: natural}]`, `buffs: [{buff:
+    "arts_susceptibility"}]` (after the damage), `poise` per R4.
+  - plunging_attack_end: leave out until R6.
+
+**Equipment kits** (`packages/data/kits/equipment/`):
+
+- `wpn_funnel_0011.json` (Pursuit; values from `sk_wpn_funnel_0011`):
+  buff `wpn_funnel_0011.arts_dmg` (team, `gameBuff:
+  buff_wpn_funnel_0011_valid`, `duration: "duration"`, `{zone: damageBonus,
+  elements: [fire, pulse, cryst, natural]}` for attrs 51–54, value
+  `{"sum": ["spell_dmg_up", {"product": [{"min": [{"targetsHit": true},
+  "max_stack"]}, "spell_dmg_up2"]}]}`). Trigger `{on: {event:
+  "physicalStatus", statuses: ["lift"], kinds: ["combo"] /* R2 */}, by:
+  "self", skill: "sk_wpn_funnel_0011", do: [{kind: "buff", buff:
+  "wpn_funnel_0011.arts_dmg"}]}`, running before the hit's damage (R1).
+  Nature DMG + stays in the stat panel. Check: 4e5e combos with 0.248.
+- `wpn_funnel_0005.json` (Twilight; `sk_wpn_funnel_0005`): buff
+  `wpn_funnel_0005.atk_up` (team, `gameBuff: buff_wpn_funnel_0005_atk_up`,
+  `duration: "duration"`, `recipients: {all: [{not: {isOwner: true}}, {not:
+  {sameElementAsOwner: true}}]}`, `{zone: "atk", value: "atk_up"}`: attr 2
+  formulaItem 6 = ATK%). Trigger `{on: {event: "cast", kinds:
+  ["ultimate"]}, by: "self", skill: "sk_wpn_funnel_0005", do: [{kind:
+  "buff", buff: "wpn_funnel_0005.atk_up"}]}`. Check: 40d9 +22.4% on
+  Laevatain's 11110 ms hit (before her 12951 ms ultimate hit), on Camille
+  and Si, and not on Gilberta.
+- `suit_phy01.json` (Swordmancer; `passive_equipsuit_physuit_01`): trigger
+  `{on: {event: "physicalStatus"}, by: "self", cooldown: "duration",
+  skill: "passive_equipsuit_physuit_01", do: [{kind: "hits", hits: [{id:
+  "proc", scale: ["atk_scale"], element: "physical", damageType: "none",
+  events: ["buff_equipsuit_physuit_01"], frames: [0], poise: "poise"}]}]}`.
+  The Stagger Efficiency +20% is already in the panel. Needs a clean log or
+  T5 to check the scale.
+
+### 4. In-game tests for the remaining unknowns
+
+For [docs/in-game-tests.md](../../in-game-tests.md) (12, 15 and 8 exist and
+are extended here):
+
+- **T1. Arts Susceptibility per Vulnerable stack** (extends test 12): on a
+  dummy, with a physical teammate's Lift / Knock Down, her ultimate at
+  0, 1, 2, 3 and 4 Vulnerable stacks. Expected at ultimate level 12 below
+  P2: 0.30, 0.33, 0.36, 0.39, 0.42. At P2+: 0.36, 0.42, 0.48, 0.54, 0.54.
+  A 0.48 at n = 3 would mean the check is "< 3", not "≤ 3".
+- **T2. Her own reaction opening her combo**: a teammate's Heat
+  infliction, then her battle skill's explosion causes Corrosion. Is her
+  combo button lit?
+- **T3. Two Arts Susceptibility sources**: her ultimate and another
+  `vulnerable_spell` source on one dummy: sum or larger?
+- **T4. Casting during her battle skill** (extends test 15): with energy
+  full (or a reaction just applied), press her ultimate (or combo) right
+  after the battle skill. Does it start at once, or only after about 3.7 s
+  (`cantCastSkill`)? Does a teammate's combo still fire meanwhile?
+- **T5. Swordmancer hit**: three phy01 pieces on her, one combo (Lift) on a
+  clean dummy. The extra Physical hit's number against her ATK gives the
+  scale (2.5 expected, no Arts Intensity term). Then a second combo less
+  than 15 s later (no hit expected). Optionally a teammate's Vulnerable-only
+  hit on her own wearer (no hit expected).
+- **T6. Messenger's Song** (pass-1 test 6): a Guard / Caster / Supporter
+  teammate's Ultimate Gain Efficiency with and without Gilberta, and a
+  Striker's or Vanguard's (unchanged).
+- **T7. Lift in the field** (optional): her combo, then her ultimate's
+  field over the Lifted dummy. Does the dummy stay up past 3 s while the
+  field lasts?
+
+Not in-game: re-import 4e5e / 40d9 with `poiseDamage` per hit (R4), and a
+committed log with a finisher (seven landings).
