@@ -1,6 +1,6 @@
 // Damage expectations from the fixtures.
 import { describe, expect, it } from "vitest";
-import { computeHit, computeStats, conditionModifiers, EngineError, roundDamage, skillValue, type Condition, type OperatorKit } from "@efsim/engine";
+import { Attr, computeHit, computeReaction, computeStats, conditionModifiers, EngineError, hitAvailable, roundDamage, skillValue, type Condition, type KitHit, type OperatorKit } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { loadFixtures } from "./fixtures.ts";
 
@@ -68,5 +68,49 @@ describe("skill values as bonuses and conditions", () => {
     const withKit = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [fixture.build.operator]: { ...(kit as OperatorKit), conditions: [c] } } } };
     // Potential 3 sets extra_scaling to 1.5.
     expect(conditionModifiers(withKit, fixture.build, ["test.skill"])).toEqual([{ zone: "amp", value: 3, source: "condition test.skill" }]);
+  });
+});
+
+describe("kit hit primitives: factor, reaction hits, scaleIf, when", () => {
+  const { fixture } = loadFixtures()[0] as ReturnType<typeof loadFixtures>[number];
+  const panel = computeStats(data, fixture.build);
+  const s = data.kits.operators[fixture.build.operator]?.skills.find((x) => x.skillId === "chr_0016_laevat_attack1");
+  const h = s?.hits[0];
+  const target = { enemy: "eny_0051_rodin", level: 90 };
+  const opts = { crit: "never" as const, staggered: false, conditions: [] };
+  const hit = (extra: Partial<KitHit>) => {
+    if (!s || !h) throw new Error("no kit");
+    return computeHit(data, fixture.build, panel, target, s, { ...h, ...extra }, opts);
+  };
+
+  it("a literal factor multiplies the hit", () => {
+    expect(hit({ factor: 0.5 }).exact).toBeCloseTo(hit({}).exact / 2, 9);
+  });
+
+  it("a reaction-type hit is the reaction's damage times its scale keys", () => {
+    const r = hit({ reaction: { kind: "burst", element: "natural" }, scale: ["atk_scale"] });
+    const burst = computeReaction(data, fixture.build, panel, target, { kind: "burst", element: "natural", stacks: 1 }, opts);
+    const v = skillValue(data, panel, fixture.build, "chr_0016_laevat_attack1", "atk_scale");
+    expect(r.exact).toBeCloseTo(burst.exact * v, 6);
+    expect(r.element).toBe("natural");
+  });
+
+  it("scaleIf applies only when the enemy has that infliction", () => {
+    if (!s || !h) throw new Error("no kit");
+    const withIf = { ...h, scaleIf: { key: "atk_scale", enemyInfliction: "natural" as const } };
+    const v = skillValue(data, panel, fixture.build, s.skillId, "atk_scale");
+    const none = computeHit(data, fixture.build, panel, target, s, withIf, { ...opts, enemyInfliction: "fire" });
+    const yes = computeHit(data, fixture.build, panel, target, s, withIf, { ...opts, enemyInfliction: "natural" });
+    expect(yes.exact).toBeCloseTo(none.exact * v, 6);
+  });
+
+  it("a `when` hit exists only if the panel attributes allow it", () => {
+    const str = Attr.Str;
+    const intel = Attr.Wisd;
+    const a = panel.attrs[str]?.total ?? 0;
+    const b = panel.attrs[intel]?.total ?? 0;
+    if (!h) throw new Error("no kit");
+    expect(hitAvailable({ ...h, when: { attrAtLeast: [str, intel] } }, panel)).toBe(a >= b);
+    expect(hitAvailable({ ...h, when: { attrAtLeast: [intel, str] } }, panel)).toBe(b >= a);
   });
 });

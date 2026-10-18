@@ -5,6 +5,7 @@ import {
   attrModifier,
   computeHit,
   computeReaction,
+  hitAvailable,
   computeStats,
   corrosionModifier,
   parseReactionEvent,
@@ -197,7 +198,15 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
       });
       const results = reaction
         ? [{ label: null, r: computeReaction(data, member.build, member.panel, target, { ...reaction, stacks: c.stacks }, options(reaction.kind)) }]
-        : found.map(([s, h]) => ({ label: found.length > 1 ? `kit hit ${h.id}` : null, r: computeHit(data, member.build, member.panel, target, s, h, options(h.damageType)) }));
+        : found
+            .filter(([, h]) => hitAvailable(h, member.panel))
+            .flatMap(([s, h]) =>
+              // A scale that depends on the enemy's infliction: the log doesn't record inflictions, so try with and without.
+              (h.scaleIf ? [null, h.scaleIf.enemyInfliction] : [null]).map((inf) => ({
+                label: [found.length > 1 ? `kit hit ${h.id}` : null, inf ? `with ${h.scaleIf?.key}` : null].filter((x) => x).join(", ") || null,
+                r: computeHit(data, member.build, member.panel, target, s, h, { ...options(h.reaction?.kind ?? h.damageType), enemyInfliction: inf }),
+              })),
+            );
       for (const { label, r } of results) {
         const p = roundDamage(r.exact);
         if (Math.abs(p - actual) <= 1) return { kind: "match", hit, predicted: p, assumed: label ? [...c.assumed, label] : c.assumed };

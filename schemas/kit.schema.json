@@ -81,6 +81,28 @@
                     "properties": { "zone": { "$ref": "#/$defs/zone" }, "key": { "type": "string" } }
                   }
                 },
+                "factor": { "type": "number", "exclusiveMinimum": 0, "description": "Literal multiplier from the skill graph (a SimpleCalcBB × or ÷ splitting a value, e.g. 0.5 for one of two arrows); cite it in the note." },
+                "reaction": {
+                  "type": "object",
+                  "description": "The hit's damage is an arts burst or reaction (no skill-type bonus; level coefficient and Arts Intensity apply), times its scale keys, e.g. Typhoeus's own Nature burst.",
+                  "required": ["kind", "element"],
+                  "additionalProperties": false,
+                  "properties": { "kind": { "enum": ["burst", "reaction"] }, "element": { "$ref": "#/$defs/artsElement" }, "level": { "type": "integer", "minimum": 1, "maximum": 4 } }
+                },
+                "scaleIf": {
+                  "type": "object",
+                  "description": "An extra scale key that applies only when the enemy has an infliction of this element as the hit lands (before the hit's own applies).",
+                  "required": ["key", "enemyInfliction"],
+                  "additionalProperties": false,
+                  "properties": { "key": { "type": "string" }, "enemyInfliction": { "$ref": "#/$defs/artsElement" } }
+                },
+                "when": {
+                  "type": "object",
+                  "description": "The hit exists only when the stat panel's attribute attrAtLeast[0] is at least attrAtLeast[1] (attribute IDs, e.g. Arcane's INT mode: Intellect ≥ Will).",
+                  "required": ["attrAtLeast"],
+                  "additionalProperties": false,
+                  "properties": { "attrAtLeast": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "minItems": 2, "maxItems": 2 } }
+                },
                 "finalStrike": { "type": "boolean", "description": "Override: whether the hit is a Final Strike. By default read from SkillData (decorate-mask bit 2097152) via the hit's events." },
                 "requires": {
                   "type": "object",

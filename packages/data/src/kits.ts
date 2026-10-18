@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
-import { ELEMENTS, type Condition, type HitApplication, type StackDef, type StackRequirement, type Element, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
+import { ELEMENTS, type AttrType, type Condition, type HitApplication, type StackDef, type StackRequirement, type Element, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
@@ -37,6 +37,10 @@ interface RawKit {
       applies?: HitApplication[]; requires?: StackRequirement; gains?: { stack: string; amount?: number | "consumedInflictions" }[];
       bonuses?: { zone: Zone; key: string }[];
       finalStrike?: boolean;
+      factor?: number;
+      reaction?: { kind: "burst" | "reaction"; element: "fire" | "pulse" | "cryst" | "natural"; level?: number };
+      scaleIf?: { key: string; enemyInfliction: "fire" | "pulse" | "cryst" | "natural" };
+      when?: { attrAtLeast: [number, number] };
     }[];
   }[];
   conditions?: RawCondition[];
@@ -124,7 +128,7 @@ export function loadKits(data: KitData): Kits {
         hits: s.hits.map((h) => {
           if (ids.has(h.id)) throw new Error(`${where}: duplicate hit ${h.id}`);
           ids.add(h.id);
-          for (const key of [...h.scale, ...(h.bonuses ?? []).map((b) => b.key)]) checkKey(skill, key, `${where} hit ${h.id}`);
+          for (const key of [...h.scale, ...(h.bonuses ?? []).map((b) => b.key), ...(h.scaleIf ? [h.scaleIf.key] : [])]) checkKey(skill, key, `${where} hit ${h.id}`);
           const element = h.element ?? kit.element;
           if (!element || !ELEMENTS.includes(element)) throw new Error(`${where} hit ${h.id}: no element`);
           const events = h.events ?? (s.hits.length === 1 ? [s.skillId] : []);
@@ -138,6 +142,10 @@ export function loadKits(data: KitData): Kits {
             ...(h.applies ? { applies: h.applies } : {}),
             ...(h.requires ? { requires: h.requires } : {}),
             ...(h.bonuses ? { bonuses: h.bonuses } : {}),
+            ...(h.factor !== undefined ? { factor: h.factor } : {}),
+            ...(h.reaction ? { reaction: h.reaction } : {}),
+            ...(h.scaleIf ? { scaleIf: h.scaleIf } : {}),
+            ...(h.when ? { when: { attrAtLeast: h.when.attrAtLeast as [AttrType, AttrType] } } : {}),
             ...((h.finalStrike ?? isFinalStrike(s.skillId, events, s.hits.length)) ? { finalStrike: true } : {}),
             ...(h.gains ? { gains: h.gains.map((g) => ({ stack: g.stack, amount: g.amount ?? 1 })) } : {}),
           };

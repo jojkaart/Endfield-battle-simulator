@@ -8,7 +8,7 @@ import { STAGGER_DAMAGE_TAKEN } from "./constants.ts";
 import { applies, attrModifier, zoneProduct, zoneSum, type HitContext, type Modifier, type Zone } from "./effects.ts";
 import { EngineError } from "./errors.ts";
 import type { Condition, GameData, KitHit, KitSkill } from "./model.ts";
-import { artsIntensityDamage, artsLevelCoefficient, reactionBase, type ReactionKind } from "./reactions.ts";
+import { artsIntensityDamage, artsLevelCoefficient, reactionBase, type ArtsElement, type ReactionKind } from "./reactions.ts";
 import { computeStats, skillLevel, type StatPanel } from "./stats.ts";
 
 export type CritMode = "never" | "always" | "expected";
@@ -20,6 +20,8 @@ export interface DamageOptions {
   readonly conditions: readonly string[];
   /** Further active buffs and debuffs, e.g. from a battle log or the timeline. */
   readonly modifiers?: readonly Modifier[];
+  /** The enemy's infliction when the hit lands, for hits whose scale depends on it (KitHit.scaleIf); unknown when absent. */
+  readonly enemyInfliction?: ArtsElement | null;
 }
 
 export const DEFAULT_DAMAGE_OPTIONS: DamageOptions = { crit: "expected", staggered: false, conditions: [] };
@@ -240,7 +242,31 @@ export function computeDamage(
   };
 }
 
-/** A kit hit: its multiplier is the product of its skill's blackboard values. */
+/** Whether a kit hit exists for this build (KitHit.when). */
+export function hitAvailable(hit: KitHit, panel: StatPanel): boolean {
+  if (!hit.when) return true;
+  const [a, b] = hit.when.attrAtLeast;
+  return (panel.attrs[a]?.total ?? 0) >= (panel.attrs[b]?.total ?? 0);
+}
+
+/** A reaction's own multiplier parts: base by kind and level, operator level, Arts Intensity. */
+function reactionScaleParts(
+  data: GameData,
+  build: Build,
+  panel: StatPanel,
+  reaction: { readonly kind: ReactionKind; readonly element: Element; readonly stacks: number },
+  options: DamageOptions,
+): { key: string; value: number }[] {
+  const ctx: HitContext = { element: reaction.element, skillType: null, staggered: options.staggered };
+  const ai = zoneSum(activeModifiers(data, build, panel, options), "artsIntensity", ctx);
+  return [
+    { key: `${reaction.kind} base`, value: reactionBase(reaction.kind, reaction.stacks) },
+    { key: "level coefficient", value: artsLevelCoefficient(build.level) },
+    { key: "arts intensity", value: artsIntensityDamage(ai) },
+  ];
+}
+
+/** A kit hit: its multiplier is the product of its skill's blackboard values (and its literal factor). */
 export function computeHit(
   data: GameData,
   build: Build,
@@ -250,7 +276,13 @@ export function computeHit(
   hit: KitHit,
   options: DamageOptions = DEFAULT_DAMAGE_OPTIONS,
 ): HitDamage {
-  const scaleParts = hit.scale.map((key) => ({ key, value: skillValue(data, panel, build, skill.skillId, key) }));
+  if (!hitAvailable(hit, panel)) throw new EngineError(`${skill.skillId} ${hit.id} doesn't exist for this build (needs attribute ${hit.when?.attrAtLeast[0]} ≥ ${hit.when?.attrAtLeast[1]})`);
+  const keys = [...hit.scale, ...(hit.scaleIf && options.enemyInfliction === hit.scaleIf.enemyInfliction ? [hit.scaleIf.key] : [])];
+  const scaleParts = [
+    ...(hit.reaction ? reactionScaleParts(data, build, panel, { kind: hit.reaction.kind, element: hit.reaction.element, stacks: hit.reaction.level ?? 1 }, options) : []),
+    ...keys.map((key) => ({ key, value: skillValue(data, panel, build, skill.skillId, key) })),
+    ...(hit.factor !== undefined ? [{ key: "factor", value: hit.factor }] : []),
+  ];
   const bonuses = (hit.bonuses ?? []).map((b): Modifier => ({ zone: b.zone, value: skillValue(data, panel, build, skill.skillId, b.key), source: `${skill.skillId} ${b.key}` }));
   if (bonuses.length) options = { ...options, modifiers: [...(options.modifiers ?? []), ...bonuses] };
   return computeDamage(data, build, panel, target, {
@@ -258,8 +290,8 @@ export function computeHit(
     hitId: hit.id,
     label: hit.label,
     count: hit.count,
-    element: hit.element,
-    skillType: hit.damageType,
+    element: hit.reaction?.element ?? hit.element,
+    skillType: hit.reaction ? null : hit.damageType,
     scaleParts,
     canCrit: true,
   }, options);
@@ -274,8 +306,6 @@ export function computeReaction(
   reaction: { readonly kind: ReactionKind; readonly element: Element; readonly stacks: number },
   options: DamageOptions = DEFAULT_DAMAGE_OPTIONS,
 ): HitDamage {
-  const ctx: HitContext = { element: reaction.element, skillType: null, staggered: options.staggered };
-  const ai = zoneSum(activeModifiers(data, build, panel, options), "artsIntensity", ctx);
   return computeDamage(data, build, panel, target, {
     skillId: `reaction:${reaction.kind}`,
     hitId: `${reaction.element}:${reaction.stacks}`,
@@ -283,11 +313,7 @@ export function computeReaction(
     count: 1,
     element: reaction.element,
     skillType: null,
-    scaleParts: [
-      { key: `${reaction.kind} base`, value: reactionBase(reaction.kind, reaction.stacks) },
-      { key: "level coefficient", value: artsLevelCoefficient(build.level) },
-      { key: "arts intensity", value: artsIntensityDamage(ai) },
-    ],
+    scaleParts: reactionScaleParts(data, build, panel, reaction, options),
     canCrit: reaction.kind !== "combustionTick",
   }, options);
 }
@@ -296,5 +322,5 @@ export function computeReaction(
 export function computeKit(data: GameData, build: Build, panel: StatPanel, target: DamageTarget, options: DamageOptions = DEFAULT_DAMAGE_OPTIONS): HitDamage[] {
   const kit = data.kits.operators[build.operator];
   if (!kit) throw new EngineError(`no kit for ${build.operator} yet`);
-  return kit.skills.flatMap((s) => s.hits.map((h) => computeHit(data, build, panel, target, s, h, options)));
+  return kit.skills.flatMap((s) => s.hits.filter((h) => hitAvailable(h, panel)).map((h) => computeHit(data, build, panel, target, s, h, options)));
 }

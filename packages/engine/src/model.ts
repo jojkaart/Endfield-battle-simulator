@@ -3,6 +3,7 @@
 
 import type { AttrType, Element, SkillType } from "./attributes.ts";
 import type { Zone } from "./effects.ts";
+import type { ArtsElement } from "./reactions.ts";
 import type { HitApplication } from "./status.ts";
 
 /**
@@ -203,6 +204,14 @@ export interface KitHit {
   readonly bonuses?: readonly HitBonus[];
   /** A Final Strike (SkillData decorate-mask bit 2097152, set by the data loader). */
   readonly finalStrike?: boolean;
+  /** A literal multiplier from the skill graph (e.g. a SimpleCalcBB ÷ 2 splitting a value over two arrows). */
+  readonly factor?: number;
+  /** Damage computed as an arts reaction or burst (no skill-type bonus, level coefficient, Arts Intensity), times `scale`. */
+  readonly reaction?: { readonly kind: "burst" | "reaction"; readonly element: ArtsElement; readonly level?: number };
+  /** An extra scale key that applies only while the enemy has an infliction of this element when the hit lands. */
+  readonly scaleIf?: { readonly key: string; readonly enemyInfliction: ArtsElement };
+  /** The hit exists only when the build's panel attribute `attrAtLeast[0]` ≥ `attrAtLeast[1]` (e.g. Arcane's INT mode). */
+  readonly when?: { readonly attrAtLeast: readonly [AttrType, AttrType] };
 }
 
 /** Something an operator's kit does when any teammate's hit of a kind lands, e.g. Laevatain's talent absorbing Heat on Final Strikes. */

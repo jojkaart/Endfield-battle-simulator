@@ -14,6 +14,7 @@ import type { Build } from "./build.ts";
 import {
   activeModifiers,
   computeHit,
+  hitAvailable,
   computeReaction,
   conditionModifiers,
   roundDamage,
@@ -217,6 +218,7 @@ function damageOptions(ctx: TimelineContext, operator: string, enemy: EnemyStatu
     staggered: false,
     conditions: [],
     modifiers: [...(ctx.modifiers.get(operator) ?? []), ...statusModifiers(enemy, frame)],
+    enemyInfliction: expireStatus(enemy, frame).infliction?.element ?? null,
   };
 }
 
@@ -292,6 +294,8 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
     enemy = expireStatus(enemy, hit.frame);
     // What the hit applies comes first: its own damage and a reaction's initial hit already see the new status.
     const events: StatusEvent[] = [];
+    // A hit's scale can depend on the infliction it lands on (KitHit.scaleIf), before it applies or consumes anything.
+    const inflictionBefore = enemy.infliction?.element ?? null;
     for (const effect of hitEffects(ctx.data.kits, ctx.scenario.team.map((b) => b.operator), hit.operator, kitHit)) {
       let consumed = 0;
       const ai = artsIntensity(ctx, hit.operator);
@@ -307,7 +311,10 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
       }
       stacks = gainStacks(ctx, stacks, effect.owner, effect.gains, consumed);
     }
-    const result = computeHit(ctx.data, build, ctx.panels.get(hit.operator) as StatPanel, ctx.scenario.target, skill, kitHit, damageOptions(ctx, hit.operator, enemy, hit.frame));
+    const result = computeHit(ctx.data, build, ctx.panels.get(hit.operator) as StatPanel, ctx.scenario.target, skill, kitHit, {
+      ...damageOptions(ctx, hit.operator, enemy, hit.frame),
+      enemyInfliction: inflictionBefore,
+    });
     landed.push({ ...result, count: 1, frame: hit.frame, operator: hit.operator });
     record(events, enemy);
   }
@@ -358,7 +365,8 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
   const costs = skillCosts(ctx, action.operator, action.skill);
   // Hits that need stacks happen only if the stacks are there at the cast; meeting a consuming requirement uses the stack up.
   const own = s.stacks[action.operator] ?? {};
-  const met = (h: KitHit) => !h.requires || (own[h.requires.stack] ?? 0) >= h.requires.atLeast;
+  const panel = ctx.panels.get(action.operator) as StatPanel;
+  const met = (h: KitHit) => hitAvailable(h, panel) && (!h.requires || (own[h.requires.stack] ?? 0) >= h.requires.atLeast);
   const used = new Set(skill.hits.filter((h) => h.requires?.consume && met(h)).map((h) => h.requires?.stack as string));
   const stacks = used.size ? { ...s.stacks, [action.operator]: { ...own, ...Object.fromEntries([...used].map((id) => [id, 0])) } } : s.stacks;
   const pending: PendingHit[] = [];
