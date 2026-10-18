@@ -77,6 +77,9 @@ describe("timeline", () => {
   it("illegal actions are errors", () => {
     expect(() => simulate(data, scenario([{ operator: "chr_0004_pelica", skill: "x" }]))).toThrow(EngineError);
     expect(() => simulate(data, scenario([{ operator: op, skill: "chr_0016_laevat_dodge" }]))).toThrow(/kit has no skill/);
+    // Plain attacks are replaced during her ultimate, and the enhanced ones need it.
+    expect(() => simulate(data, scenario([{ operator: op, skill: L + "ultimate_skill" }, { operator: op, skill: L + "attack1" }]))).toThrow(/isn't available during twilight/);
+    expect(() => simulate(data, scenario([{ operator: op, skill: L + "ult_attack1" }]))).toThrow(/needs twilight active/);
     // Her combo needs Combustion or Corrosion on the enemy first.
     expect(() => simulate(data, scenario([{ operator: op, skill: L + "combo_skill" }]))).toThrow(/combo trigger hasn't happened/);
   });
@@ -117,7 +120,7 @@ describe("timeline: stacks and arts reactions", () => {
 
     const ctx = createContext(data, scenario([]));
     let s = init(ctx);
-    for (const a of [...ult, ...chain]) s = apply(ctx, s, a);
+    for (const a of [...ult, act("ult_attack4")]) s = apply(ctx, s, a);
     s = advance(ctx, s, ctx.scenario.durationFrames);
     expect(s.reactions).toEqual([expect.objectContaining({ kind: "consumed", element: "fire", stacks: 1 })]);
     expect(s.enemy.infliction).toBeNull();
@@ -236,7 +239,7 @@ describe("timeline: ultimate energy and combo windows", () => {
   });
 
   it("her ultimate blocks her energy gain for 16 s", () => {
-    const r = simulate(data, scenario([{ operator: op, skill: L + "ultimate_skill" }, { operator: op, skill: L + "normal_skill" }]));
+    const r = simulate(data, scenario([{ operator: op, skill: L + "ultimate_skill" }, { operator: op, skill: L + "normal_skill_during_ult" }]));
     expect(r.casts[1]?.energyAfter).toBe(0);
   });
 

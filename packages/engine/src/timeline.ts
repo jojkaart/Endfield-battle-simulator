@@ -478,7 +478,14 @@ export function earliestStart(ctx: TimelineContext, state: TimelineState, action
     frame = from + Math.ceil(((costs.spCost - spAt(state, from)) * FPS) / SP.perSecond);
   }
   if (frame > ctx.scenario.durationFrames) return { error: `${action.skill} can't start before the fight ends` };
-  // Energy and combo windows change only as hits land, so check them as they'll be at the start frame.
+  // Energy, combo windows and states change only as hits land, so check them as they'll be at the start frame.
+  const skill = kitSkill(ctx, action.operator, action.skill);
+  if (skill.availableWhile || skill.unavailableWhile) {
+    const then = advance(ctx, state, frame);
+    const active = (id: string) => then.buffs.some((x) => x.id === id && x.owner === action.operator && x.appliedAt <= frame && x.expiresAt > frame);
+    if (skill.availableWhile && !active(skill.availableWhile)) return { error: `${action.skill} needs ${skill.availableWhile} active` };
+    if (skill.unavailableWhile && active(skill.unavailableWhile)) return { error: `${action.skill} isn't available during ${skill.unavailableWhile}` };
+  }
   if (costs.energyCost > 0 || (costs.group === "combo" && hasComboTrigger(ctx, action.operator))) {
     const then = advance(ctx, state, frame);
     if (costs.energyCost > 0 && (then.energy[action.operator] ?? 0) < costs.energyCost - 1e-9) {

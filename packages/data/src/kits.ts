@@ -35,6 +35,8 @@ interface RawKit {
     damageType: "basic" | "battle" | "combo" | "ultimate";
     durationFrames?: number;
     energyBlockSeconds?: number;
+    availableWhile?: string;
+    unavailableWhile?: string;
     hits: {
       id: string; label?: string; scale: string[]; count?: number; element?: Element; events?: string[]; frames?: number[];
       applies?: HitApplication[]; requires?: StackRequirement; gains?: { stack: string; amount?: number | "consumedInflictions" }[];
@@ -138,12 +140,15 @@ export function loadKits(data: KitData): Kits {
       const skill = data.skills[s.skillId];
       if (!skill) throw new Error(`${where}: unknown skill`);
       if (op.skillGroups[s.skillId] === undefined) throw new Error(`${where}: not one of ${kit.operator}'s skills`);
+      for (const b of [s.availableWhile, s.unavailableWhile]) if (b && !buffDefs.has(b)) throw new Error(`${where}: unknown buff ${b}`);
       const ids = new Set<string>();
       return {
         skillId: s.skillId,
         label: s.label,
         ...(s.durationFrames !== undefined ? { durationFrames: s.durationFrames } : {}),
         ...(s.energyBlockSeconds !== undefined ? { energyBlockSeconds: s.energyBlockSeconds } : {}),
+        ...(s.availableWhile ? { availableWhile: s.availableWhile } : {}),
+        ...(s.unavailableWhile ? { unavailableWhile: s.unavailableWhile } : {}),
         hits: s.hits.map((h) => {
           if (ids.has(h.id)) throw new Error(`${where}: duplicate hit ${h.id}`);
           ids.add(h.id);

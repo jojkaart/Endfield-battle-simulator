@@ -25,7 +25,7 @@
           "duration": { "$ref": "#/$defs/valueSpec", "description": "Seconds." },
           "modifiers": {
             "type": "array",
-            "minItems": 1,
+            "description": "Empty for a state that only gates skills (availableWhile).",
             "items": {
               "type": "object",
               "required": ["zone", "value"],
@@ -118,6 +118,8 @@
           "skillId": { "type": "string" },
           "label": { "type": "string" },
           "damageType": { "$ref": "#/$defs/skillType" },
+          "availableWhile": { "type": "string", "description": "Castable only while this kit buff of the operator is active (e.g. enhanced attacks during the ultimate)." },
+          "unavailableWhile": { "type": "string", "description": "Not castable while this kit buff of the operator is active (the plain attacks an ultimate replaces)." },
           "energyBlockSeconds": { "type": "number", "exclusiveMinimum": 0, "description": "The operator gains no ultimate energy for this long after the cast (SkillData RefrainObtainUsp buff duration)." },
           "durationFrames": { "type": "integer", "minimum": 1, "description": "How long the skill locks the operator, in 30 FPS frames (SkillData durationFrame unless the skill can be cancelled earlier; say which in a note)." },
           "note": { "type": "string" },

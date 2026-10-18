@@ -321,6 +321,10 @@ export interface KitSkill {
   readonly durationFrames?: number;
   /** The operator gains no ultimate energy for this long after the cast (SkillData RefrainObtainUsp, e.g. Laevatain's ultimate). */
   readonly energyBlockSeconds?: number;
+  /** Castable only while the operator's own kit buff is active (e.g. enhanced attacks during an ultimate)… */
+  readonly availableWhile?: string;
+  /** …or only while it isn't (the plain attacks they replace). */
+  readonly unavailableWhile?: string;
   readonly hits: readonly KitHit[];
 }
 
