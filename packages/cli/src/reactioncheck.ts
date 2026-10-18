@@ -26,7 +26,14 @@ export interface ReactionCheck {
   readonly withoutApplies: readonly string[];
 }
 
-const REACTION_KEY = /^buff_common_(fire|natural|pulse|cryst)_(fire|natural|pulse|cryst)_triggered$/;
+/** buff_common_<new>_<consumed>_triggered, or buff_common_<new>_triggered in newer logs (reactions only). */
+const REACTION_KEY = /^buff_common_(fire|natural|pulse|cryst)(_(fire|natural|pulse|cryst))?_triggered$/;
+
+/** Whether a logged key is what a predicted event would be logged as. */
+function sameKey(logged: string, predicted: StatusEvent): boolean {
+  const key = statusEventKey(predicted);
+  return logged === key || (predicted.kind === "reaction" && logged === `buff_common_${predicted.element}_triggered`);
+}
 
 function kitHit(data: GameData, operator: string, event: string): KitHit | null {
   for (const s of data.kits.operators[operator]?.skills ?? []) for (const h of s.hits) if (h.events.includes(event)) return h;
@@ -58,7 +65,7 @@ export function checkReactions(data: GameData, fixture: LogFixture): ReactionChe
       other.push(p);
       continue;
     }
-    const m = logged.find((l) => !l.used && l.event === key && l.operator === p.predicted.operator && l.t >= p.t && l.t - p.t <= REACTION_LOG_DELAY_MS);
+    const m = logged.find((l) => !l.used && sameKey(l.event, p.predicted) && l.operator === p.predicted.operator && l.t >= p.t && l.t - p.t <= REACTION_LOG_DELAY_MS);
     if (m) {
       m.used = true;
       matched.push({ ...p, loggedT: m.t });

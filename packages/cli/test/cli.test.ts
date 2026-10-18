@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "../src/index.ts";
+import { boundarySubsets } from "../src/logcheck.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const data = loadGameData();
@@ -50,5 +51,17 @@ describe("cli process", () => {
 
   it("reports errors and exits 1", () => {
     expect(() => execFileSync("node", [join(ROOT, "packages/cli/src/main.ts"), "calc"], { encoding: "utf8", stdio: "pipe" })).toThrow(/calc takes 1 argument/);
+  });
+});
+
+describe("log check: boundary buffs", () => {
+  const e = (buff: string, zone: "atk" | "damageBonus") => ({ buff, zone, element: null, value: 0.1 });
+  it("tries every subset of the buffs at the hit's instant, keeping each buff's effects together", () => {
+    const subsets = boundarySubsets([e("a", "atk"), e("a", "damageBonus"), e("b", "atk")]);
+    expect(subsets.map((s) => s.effects.map((x) => x.buff).join(""))).toEqual(["", "aa", "b", "aab"]);
+    expect(subsets.map((s) => s.label)).toEqual([null, "boundary buffs applied: a", "boundary buffs applied: b", "boundary buffs applied"]);
+  });
+  it("falls back to none or all above four buffs", () => {
+    expect(boundarySubsets(["a", "b", "c", "d", "e"].map((b) => e(b, "atk")))).toHaveLength(2);
   });
 });

@@ -60,11 +60,26 @@ export function logModifiers(effects: readonly LogEffect[]): Modifier[] {
   });
 }
 
-function findHit(data: GameData, operator: string, event: string): [KitSkill, KitHit] | null {
-  for (const s of data.kits.operators[operator]?.skills ?? []) {
-    for (const h of s.hits) if (h.events.includes(event)) return [s, h];
-  }
-  return null;
+/** Every kit hit a logged event key could be (a key can stand for several hits, e.g. two hits of one attack). */
+function findHits(data: GameData, operator: string, event: string): [KitSkill, KitHit][] {
+  const out: [KitSkill, KitHit][] = [];
+  for (const s of data.kits.operators[operator]?.skills ?? []) for (const h of s.hits) if (h.events.includes(event)) out.push([s, h]);
+  return out;
+}
+
+/** Above this many boundary buffs, only none or all are tried. */
+const MAX_BOUNDARY_SUBSET = 4;
+
+/** Subsets of the buffs starting or ending at the hit (grouped by buff, since a buff's effects go together). */
+export function boundarySubsets(effects: readonly LogEffect[]): { effects: LogEffect[]; label: string | null }[] {
+  const buffs = [...new Set(effects.map((e) => e.buff))];
+  if (buffs.length === 0) return [{ effects: [], label: null }];
+  const pick = (chosen: string[]) => ({
+    effects: effects.filter((e) => chosen.includes(e.buff)),
+    label: chosen.length === 0 ? null : chosen.length === buffs.length ? "boundary buffs applied" : `boundary buffs applied: ${chosen.join(", ")}`,
+  });
+  if (buffs.length > MAX_BOUNDARY_SUBSET) return [pick([]), pick(buffs)];
+  return Array.from({ length: 1 << buffs.length }, (_, mask) => pick(buffs.filter((_, i) => mask & (1 << i))));
 }
 
 /**
@@ -88,11 +103,11 @@ function candidates(hit: LogHit, panels: ReadonlyMap<string, { panel: StatPanel 
   const out: Candidate[] = [];
   const corrosion = hit.unquantified.find((u) => isCorrosionBuff(u.buff));
   const corrosionLevels = corrosion ? [1, 2, 3, 4] : [0];
-  for (const usedBoundary of hit.boundaryEffects.length ? [false, true] : [false]) {
-    const base = logModifiers(usedBoundary ? [...hit.effects, ...hit.boundaryEffects] : hit.effects);
+  for (const boundary of boundarySubsets(hit.boundaryEffects)) {
+    const base = logModifiers([...hit.effects, ...boundary.effects]);
     for (const level of corrosionLevels) {
       const extra: Modifier[] = [];
-      const assumed: string[] = usedBoundary ? ["boundary buffs applied"] : [];
+      const assumed: string[] = boundary.label ? [boundary.label] : [];
       if (corrosion && level > 0) {
         const applierAi = panels.get(corrosion.source)?.panel.attrs[87]?.total ?? 0;
         extra.push(corrosionModifier(level, hit.t - corrosion.since, applierAi));
@@ -119,19 +134,21 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
   return fx.hits.map((hit): HitVerdict => {
     const member = panels.get(hit.operator);
     const reaction = parseReactionEvent(hit.event);
-    const found = reaction ? null : findHit(data, hit.operator, hit.event);
-    if (!member || (!found && !reaction)) return { kind: "uncovered", hit };
+    const found = reaction ? [] : findHits(data, hit.operator, hit.event);
+    if (!member || (found.length === 0 && !reaction)) return { kind: "uncovered", hit };
     const actual = hit.uncapped ?? hit.value;
     const stackOptions = reaction && reaction.kind !== "burst" ? [1, 2, 3, 4] : [1];
     const predicted: number[] = [];
     for (const c of candidates(hit, panels, stackOptions)) {
       const options = { crit: c.crit ? ("always" as const) : ("never" as const), staggered: false, conditions: [], modifiers: c.modifiers };
-      const result = reaction
-        ? computeReaction(data, member.build, member.panel, target, { ...reaction, stacks: c.stacks }, options)
-        : computeHit(data, member.build, member.panel, target, (found as [KitSkill, KitHit])[0], (found as [KitSkill, KitHit])[1], options);
-      const p = roundDamage(result.exact);
-      if (Math.abs(p - actual) <= 1) return { kind: "match", hit, predicted: p, assumed: c.assumed };
-      predicted.push(p);
+      const results = reaction
+        ? [{ label: null, r: computeReaction(data, member.build, member.panel, target, { ...reaction, stacks: c.stacks }, options) }]
+        : found.map(([s, h]) => ({ label: found.length > 1 ? `kit hit ${h.id}` : null, r: computeHit(data, member.build, member.panel, target, s, h, options) }));
+      for (const { label, r } of results) {
+        const p = roundDamage(r.exact);
+        if (Math.abs(p - actual) <= 1) return { kind: "match", hit, predicted: p, assumed: label ? [...c.assumed, label] : c.assumed };
+        predicted.push(p);
+      }
     }
     if (hit.unquantified.some((u) => !isCorrosionBuff(u.buff))) return { kind: "unquantified", hit, predicted: predicted[0] ?? 0 };
     return { kind: "mismatch", hit, predicted: [...new Set(predicted)].slice(0, 6), ratio: actual / (predicted[0] ?? 1) };

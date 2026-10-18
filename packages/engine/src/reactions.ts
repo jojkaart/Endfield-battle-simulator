@@ -65,7 +65,13 @@ export function corrosionModifier(level: number, elapsedMs: number, applierAi: n
   return { zone: "ignoreResistance", value: corrosionShred(level, elapsedMs, applierAi), source: `Corrosion level ${level}` };
 }
 
-/** Reaction damage element and kind from a log event key like buff_common_fire_natural_triggered. */
+/**
+ * Reaction damage element and kind from a log event key like
+ * buff_common_fire_natural_triggered (burst when both are the same). Newer
+ * logs also have buff_common_<element>_triggered (Arcane's Nature onto Cryo,
+ * btl_upload_bdf223db8e49), but its damage is ×1.42–1.43 of a level I
+ * reaction in both logs seen, so it isn't treated as one until explained.
+ */
 export function parseReactionEvent(event: string): { kind: ReactionKind; element: ArtsElement } | null {
   if (event === "buff_common_burning_status") return { kind: "combustionTick", element: "fire" };
   const m = /^buff_common_(fire|natural|pulse|cryst)_(fire|natural|pulse|cryst)_triggered$/.exec(event);
