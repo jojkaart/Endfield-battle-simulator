@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, buffModifiers, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
+import { advance, apply, buffModifiers, causeMatches, eventMatches, evalContext, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -944,5 +944,102 @@ describe("timeline: Link and fight start", () => {
     buffs = withBuff(buffs, { ...base, id: "x", recipients: [g], appliedAt: 1 });
     buffs = withBuff(buffs, { ...base, id: "x", recipients: [g], appliedAt: 2 });
     expect(buffs.map((b) => [b.recipients?.[0], b.appliedAt])).toEqual([[op, 0], [g, 1], [g, 2]]);
+  });
+});
+
+describe("timeline: trigger filters, before-damage triggers and alternatives", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const counter = { id: "n", label: "count", max: 99 };
+  const withKit = (k: Partial<OperatorKit>): GameData => ({ ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, ...k, stacks: [...kit.stacks, counter, ...(k.stacks ?? [])] } } } });
+  const count = (t: Omit<KitTrigger, "id" | "by" | "do">): KitTrigger => ({ id: "count", by: "self", ...t, do: [{ kind: "gain", gains: [{ stack: "n", amount: 1 }] }] });
+  const run = (g: GameData, rotation: RotationAction[]) => {
+    const ctx = createContext(g, scenario(rotation));
+    let s = init(ctx);
+    for (const a of rotation) s = apply(ctx, s, a);
+    return advance(ctx, s, ctx.scenario.durationFrames);
+  };
+  const bs: RotationAction = { operator: op, skill: L + "normal_skill" };
+
+  it("event filters: a hit's skills and decorations, a cast's finisher, a status event's causing kind, buff categories, heal kinds", () => {
+    const hit = { type: "hit" as const, frame: 0, operator: op, skillId: L + "power_attack", kind: "basic" as const, element: "fire" as const, finalStrike: false, finisher: true, controlled: true };
+    expect(eventMatches({ event: "hit", decorations: ["finalStrike", "finisher"] }, hit, op, {})).toBe(true);
+    expect(eventMatches({ event: "hit", decorations: ["finalStrike"] }, hit, op, {})).toBe(false);
+    expect(eventMatches({ event: "hit", skills: [L + "attack1"] }, hit, op, {})).toBe(false);
+    const cast = { type: "cast" as const, frame: 0, operator: op, skillId: L + "power_attack", kind: "basic" as const, finisher: true, controlled: true };
+    expect(eventMatches({ event: "cast", finisher: false }, cast, op, {})).toBe(false);
+    expect(eventMatches({ event: "cast", finisher: true }, cast, op, {})).toBe(true);
+    const lift = { type: "status" as const, frame: 0, operator: op, fromKind: "battle" as const, event: { kind: "physical" as const, frame: 0, operator: op, status: "lift" as const, level: 1, forced: false } };
+    expect(eventMatches({ event: "physicalStatus", statuses: ["lift"], fromKinds: ["combo"] }, lift as never, op, {})).toBe(false);
+    expect(eventMatches({ event: "physicalStatus", statuses: ["lift"], fromKinds: ["battle"] }, lift as never, op, {})).toBe(true);
+    // A category trigger hears anyone's buffs (by `by`), a named-buff trigger only the owner's own.
+    const amp = { type: "buffApplied" as const, frame: 0, operator: "chr_0013_aglina", buff: "x", categories: ["amp" as const] };
+    expect(eventMatches({ event: "buffApplied", categories: ["susceptibility", "amp"] }, amp, op, {})).toBe(true);
+    expect(causeMatches("teammate", amp, op, { event: "buffApplied", categories: ["amp"] })).toBe(true);
+    expect(causeMatches("self", amp, op, { event: "buffApplied", categories: ["amp"] })).toBe(false);
+    expect(eventMatches({ event: "buffApplied", buff: "x" }, amp, op, {})).toBe(false);
+    const heal = { type: "heal" as const, frame: 0, operator: op, target: op, kind: "none" as const };
+    expect(eventMatches({ event: "heal", kinds: ["battle", "combo", "ultimate"] }, heal, op, {})).toBe(false);
+  });
+
+  it("maxPerCast limits a trigger per cast, not per fight", () => {
+    const every = run(withKit({ triggers: [...kit.triggers, count({ on: { event: "hit", skills: [L + "normal_skill"] } })] }), [bs, bs]);
+    const once = run(withKit({ triggers: [...kit.triggers, count({ on: { event: "hit", skills: [L + "normal_skill"] }, maxPerCast: 1 })] }), [bs, bs]);
+    const landed = every.hits.filter((h) => h.skillId === L + "normal_skill").length;
+    expect(landed).toBeGreaterThan(2);
+    expect(every.stacks[op]?.n).toBe(landed);
+    expect(once.stacks[op]?.n).toBe(2);
+  });
+
+  it("a beforeDamage trigger on a hit's own status event buffs that hit already", () => {
+    const amp: KitBuff = { id: "amp", label: "amp", target: "self", duration: 10, modifiers: [{ zone: "amp", value: 0.5 }] };
+    const trigger = (beforeDamage: boolean): KitTrigger => ({ id: "amp", on: { event: "inflictionApplied" }, by: "self", maxCount: 1, ...(beforeDamage ? { beforeDamage } : {}), do: [{ kind: "buff", buff: "amp" }] });
+    // attack1's hit inflicts Heat.
+    const skills = kit.skills.map((s) => (s.skillId === L + "attack1" ? { ...s, hits: s.hits.map((h) => ({ ...h, applies: [{ kind: "infliction" as const, element: "fire" as const }] })) } : s));
+    const first = (beforeDamage: boolean) => run(withKit({ skills, buffs: [...kit.buffs, amp], triggers: [...kit.triggers, trigger(beforeDamage)] }), [{ operator: op, skill: L + "attack1" }]).hits.find((h) => h.skillId === L + "attack1");
+    const ampOf = (h: ReturnType<typeof first>) => h?.modifiers.some((m) => m.zone === "amp" && m.value === 0.5);
+    expect(ampOf(first(false))).toBe(false);
+    expect(ampOf(first(true))).toBe(true);
+  });
+
+  it("alternatives sharing a branch are judged together: one's effects don't enable the other", () => {
+    const a1 = kit.skills.find((s) => s.skillId === L + "attack1") as KitSkill;
+    const h = a1.hits[0] as KitHit;
+    const hits = (branch?: string): KitHit[] => [
+      { ...h, id: "a", if: { not: { enemyInfliction: "fire" } }, applies: [{ kind: "infliction", element: "fire" }], ...(branch ? { branch } : {}) },
+      { ...h, id: "b", if: { enemyInfliction: "fire" }, ...(branch ? { branch } : {}) },
+    ];
+    const landed = (branch?: string) => run(withKit({ skills: kit.skills.map((s) => (s === a1 ? { ...s, hits: hits(branch) } : s)) }), [{ operator: op, skill: L + "attack1" }]).hits.filter((x) => x.skillId === L + "attack1").map((x) => x.hitId);
+    expect(landed()).toEqual(["a", "b"]);
+    expect(landed("x")).toEqual(["a"]);
+  });
+
+  it("a cooldown change by a fraction is of the skill's full cooldown", () => {
+    const ult: RotationAction = { operator: op, skill: L + "ultimate_skill" };
+    const cut: KitTrigger = { id: "cut", on: { event: "cast", kinds: ["ultimate"] }, by: "self", do: [{ kind: "cooldown", who: "self", skills: "ultimate", fraction: -0.5 }] };
+    const ctx0 = createContext(data, scenario([ult]));
+    const plain = apply(ctx0, init(ctx0), ult);
+    const ctx1 = createContext(withKit({ triggers: [...kit.triggers, cut] }), scenario([ult]));
+    const halved = apply(ctx1, init(ctx1), ult);
+    const full = (plain.readyAt[L + "ultimate_skill"] ?? 0) - (plain.casts[0]?.frame ?? 0);
+    expect(full).toBeGreaterThan(0);
+    expect((halved.readyAt[L + "ultimate_skill"] ?? 0) - (halved.casts[0]?.frame ?? 0)).toBe(full - Math.round(full / 2));
+  });
+
+  it("an unlearned talent's values are 0 and talentAtLeast reads the build's talent level", () => {
+    const unlearned: Build = { ...build, talents: [0, 2] };
+    expect(skillValue(data, computeStats(data, unlearned), unlearned, "buff_chr_0016_laevat_passive", "ignore_fire_resist")).toBe(0);
+    expect(skillValue(data, computeStats(data, build), build, "buff_chr_0016_laevat_passive", "ignore_fire_resist")).toBeLessThan(0);
+    const ec = (b: Build) => evalContext(data, b, computeStats(data, b), "");
+    expect(test({ talentAtLeast: [0, 1] }, ec(unlearned))).toBe(false);
+    expect(test({ talentAtLeast: [0, 3] }, ec(build))).toBe(true);
+    const { talents: _talents, ...untalented } = build;
+    expect(test({ talentAtLeast: [0, 3] }, ec(untalented))).toBe(true);
+  });
+
+  it("a hit's scaleValue multiplies its scale", () => {
+    const a1 = kit.skills.find((s) => s.skillId === L + "attack1") as KitSkill;
+    const g = withKit({ skills: kit.skills.map((s) => (s === a1 ? { ...s, hits: s.hits.map((x) => ({ ...x, scaleValue: { sum: [1, 1] } })) } : s)) });
+    const dmg = (d: GameData) => run(d, [{ operator: op, skill: L + "attack1" }]).hits.find((x) => x.skillId === L + "attack1")?.exact ?? NaN;
+    expect(dmg(g)).toBeCloseTo(2 * dmg(data), 6);
   });
 });

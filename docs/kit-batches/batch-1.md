@@ -312,3 +312,23 @@ Most first-round gaps are now expressible; what's left, by family:
   Liino +3.9%, Si +4.2%; Laevatain and Typhoeus unchanged.
 - B7 layers per recipient set; T6 `cooldownPer: "eventSubject"`; T7 a
   `fightStart` event.
+- T4 trigger filters: hits by `skills` and `decorations` (any of
+  `finalStrike`, `finisher`: Laevatain's "Final Strike or Finisher" in one
+  trigger); casts by `finisher`; status events by the causing hit's kind
+  (`fromKinds`, CheckOriginSkillType; a trigger's applications and ticks
+  are `none`); `buffApplied` by `categories` (amp, susceptibility,
+  weakness, protection: anyone's kit buffs, by `by`); heals by `kinds`;
+  `maxPerCast` (Arcane's once-per-finisher Cluster Strike).
+- T5 `beforeDamage` on status-event triggers: they run on the hit's own
+  status events before its damage (Pursuit's Lift buff counts for the
+  combo hit).
+- V6 `scaleValue` on hits; V7 `fraction` on the cooldown action (of the
+  full cooldown: assumed, in-game test 36); V8 values from talent or
+  potential sources the build hasn't unlocked are 0, and a
+  `talentAtLeast: [index, level]` predicate.
+- C4 `branch` on hits: alternatives of one landing are judged together on
+  the situation before any of them; the first in kit order whose `if`
+  holds lands (Estella's combo).
+- Not done in this batch: A6 reacting inflictions for "applies Arts
+  Infliction" (Arcane R3's open question) stay excluded from
+  `inflictionApplied`.

@@ -18,6 +18,8 @@ export type Predicate =
   /** One of the operator's panel attributes is at least another (Arcane: Intellect ≥ Will is INT mode). */
   | { readonly attrAtLeast: readonly [AttrType, AttrType] }
   | { readonly potentialAtLeast: number }
+  /** The build's talent (0-based, as in Build.talents) is at least this level: a talent's effects need it learned. */
+  | { readonly talentAtLeast: readonly [number, number] }
   /** The team member in a slot (0 = first) has this element (Si's battle skill). */
   | { readonly teamSlotElement: { readonly slot: number; readonly element: Element } }
   /** The enemy has this infliction, with at least `minStacks` (default 1). */
@@ -85,6 +87,14 @@ export type ValueExpr =
   | { readonly if: Predicate; readonly then: ValueExpr; readonly else?: ValueExpr };
 
 /** What a predicate or value is evaluated against. Fields left out are unknown. */
+/** A build's level of an operator's talent (0-based, in talent order): Build.talents, else the highest. */
+export function talentLevel(data: GameData, build: Build, i: number): number {
+  const op = data.operators[build.operator];
+  const index = [...new Set(op?.talentNodes.map((n) => n.index) ?? [])].sort((a, b) => a - b)[i];
+  if (index === undefined) return 0;
+  return build.talents?.[i] ?? Math.max(...(op?.talentNodes ?? []).filter((n) => n.index === index).map((n) => n.level));
+}
+
 export interface EvalContext {
   readonly data: GameData;
   readonly build: Build;
@@ -128,6 +138,7 @@ export function test(p: Predicate, c: EvalContext): boolean | undefined {
     return (c.panel.attrs[a]?.total ?? 0) >= (c.panel.attrs[b]?.total ?? 0);
   }
   if ("potentialAtLeast" in p) return c.build.potential >= p.potentialAtLeast;
+  if ("talentAtLeast" in p) return talentLevel(c.data, c.build, p.talentAtLeast[0]) >= p.talentAtLeast[1];
   if ("teamSlotElement" in p) {
     if (!c.team) return undefined;
     const member = c.team[p.teamSlotElement.slot];

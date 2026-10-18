@@ -99,6 +99,18 @@ export function roundDamage(exact: number): number {
   return Math.round(exact);
 }
 
+const attachableCache = new WeakMap<object, ReadonlySet<string>>();
+
+/** Every skill and buff an operator's talents and potentials can attach, at any level. */
+function attachable(op: GameData["operators"][string]): ReadonlySet<string> {
+  let set = attachableCache.get(op);
+  if (!set) {
+    set = new Set([...op.talentNodes.flatMap((n) => n.effects), ...op.potentials.flat()].flatMap((e) => (e.kind === "skill" ? [e.skillId] : e.kind === "buff" ? [e.buffId] : [])));
+    attachableCache.set(op, set);
+  }
+  return set;
+}
+
 /** A skill's blackboard value at the build's level, after potentials. */
 /**
  * A value from the game data at the build's level, after potentials: one of
@@ -119,6 +131,8 @@ export function skillValue(data: GameData, panel: StatPanel, build: Build, skill
     if (value === undefined) throw new EngineError(`${skillId} level ${level.level} has no value ${key}`);
   } else {
     const bb = panel.sources[skillId];
+    // A talent or potential source this build hasn't unlocked contributes nothing.
+    if (!bb && attachable(op).has(skillId)) return 0;
     if (!bb) throw new EngineError(`${skillId} isn't one of ${op.id}'s skills, nor a weapon, gear-set, talent or potential source of this build`);
     value = bb[key];
     if (value === undefined) throw new EngineError(`${skillId} has no value ${key} for this build`);
@@ -318,6 +332,7 @@ export function computeHit(
   const scaleParts = [
     ...(hit.reaction ? reactionScaleParts(data, build, panel, { kind: hit.reaction.kind, element: hit.reaction.element, stacks: hit.reaction.level ?? 1 }, options) : []),
     ...hit.scale.map((key) => ({ key, value: skillValue(data, panel, build, skill.skillId, key) })),
+    ...(hit.scaleValue !== undefined ? [{ key: "value", value: evaluate(hit.scaleValue, ec) }] : []),
     ...extra.map((x) => ({ key: typeof x.value === "string" ? x.value : JSON.stringify(x.value), value: evaluate(x.value, ec) })),
     ...(hit.factor !== undefined ? [{ key: "factor", value: hit.factor }] : []),
   ];

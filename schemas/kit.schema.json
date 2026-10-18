@@ -211,6 +211,25 @@
                   "finalStrike": {
                     "type": "boolean",
                     "description": "Only Final Strikes (true) or only other hits (false); SkillData mask bit 2097152."
+                  },
+                  "skills": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "description": "Only hits of these skill IDs (any operator's)."
+                  },
+                  "decorations": {
+                    "type": "array",
+                    "items": {
+                      "enum": [
+                        "finalStrike",
+                        "finisher"
+                      ]
+                    },
+                    "minItems": 1,
+                    "description": "Only landings with any of these decorations (SkillData decorate-mask bits 2097152, 4; a finisher is a skillSpecification 8 skill's)."
                   }
                 }
               },
@@ -238,6 +257,10 @@
                     },
                     "minItems": 1,
                     "description": "Only casts of these skill IDs (a skill's own effects at frames, with delay)."
+                  },
+                  "finisher": {
+                    "type": "boolean",
+                    "description": "Only finishers (true) or only other casts (false)."
                   }
                 }
               },
@@ -262,6 +285,21 @@
                       ]
                     },
                     "minItems": 1
+                  },
+                  "fromKinds": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/skillType"
+                        },
+                        {
+                          "const": "none"
+                        }
+                      ]
+                    },
+                    "minItems": 1,
+                    "description": "Only events caused by hits of these kinds (CheckOriginSkillType); a trigger's own applications and status ticks are none."
                   }
                 }
               },
@@ -281,6 +319,21 @@
                       "$ref": "#/$defs/artsElement"
                     },
                     "minItems": 1
+                  },
+                  "fromKinds": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/skillType"
+                        },
+                        {
+                          "const": "none"
+                        }
+                      ]
+                    },
+                    "minItems": 1,
+                    "description": "Only events caused by hits of these kinds (CheckOriginSkillType); a trigger's own applications and status ticks are none."
                   }
                 }
               },
@@ -305,6 +358,21 @@
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 4
+                  },
+                  "fromKinds": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/skillType"
+                        },
+                        {
+                          "const": "none"
+                        }
+                      ]
+                    },
+                    "minItems": 1,
+                    "description": "Only events caused by hits of these kinds (CheckOriginSkillType); a trigger's own applications and status ticks are none."
                   }
                 }
               },
@@ -324,6 +392,21 @@
                       "$ref": "#/$defs/artsElement"
                     },
                     "minItems": 1
+                  },
+                  "fromKinds": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/skillType"
+                        },
+                        {
+                          "const": "none"
+                        }
+                      ]
+                    },
+                    "minItems": 1,
+                    "description": "Only events caused by hits of these kinds (CheckOriginSkillType); a trigger's own applications and status ticks are none."
                   }
                 }
               },
@@ -382,6 +465,21 @@
                   "toOthers": {
                     "type": "boolean",
                     "description": "Only heals of someone other than the healer."
+                  },
+                  "kinds": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/skillType"
+                        },
+                        {
+                          "const": "none"
+                        }
+                      ]
+                    },
+                    "minItems": 1,
+                    "description": "Only heals by these skill kinds (HealAction healTags); none for untagged heals (triggers)."
                   }
                 }
               },
@@ -406,6 +504,21 @@
                       ]
                     },
                     "minItems": 1
+                  },
+                  "fromKinds": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/skillType"
+                        },
+                        {
+                          "const": "none"
+                        }
+                      ]
+                    },
+                    "minItems": 1,
+                    "description": "Only events caused by hits of these kinds (CheckOriginSkillType); a trigger's own applications and status ticks are none."
                   }
                 }
               },
@@ -433,6 +546,21 @@
                   },
                   "forced": {
                     "type": "boolean"
+                  },
+                  "fromKinds": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/skillType"
+                        },
+                        {
+                          "const": "none"
+                        }
+                      ]
+                    },
+                    "minItems": 1,
+                    "description": "Only events caused by hits of these kinds (CheckOriginSkillType); a trigger's own applications and status ticks are none."
                   }
                 }
               },
@@ -450,6 +578,21 @@
                     "type": "integer",
                     "minimum": 1,
                     "maximum": 4
+                  },
+                  "fromKinds": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/skillType"
+                        },
+                        {
+                          "const": "none"
+                        }
+                      ]
+                    },
+                    "minItems": 1,
+                    "description": "Only events caused by hits of these kinds (CheckOriginSkillType); a trigger's own applications and status ticks are none."
                   }
                 }
               },
@@ -462,6 +605,21 @@
                 "properties": {
                   "event": {
                     "const": "shatter"
+                  },
+                  "fromKinds": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/skillType"
+                        },
+                        {
+                          "const": "none"
+                        }
+                      ]
+                    },
+                    "minItems": 1,
+                    "description": "Only events caused by hits of these kinds (CheckOriginSkillType); a trigger's own applications and status ticks are none."
                   }
                 }
               },
@@ -493,6 +651,21 @@
                       "type": "string"
                     },
                     "minItems": 1
+                  },
+                  "fromKinds": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/skillType"
+                        },
+                        {
+                          "const": "none"
+                        }
+                      ]
+                    },
+                    "minItems": 1,
+                    "description": "Only events caused by hits of these kinds (CheckOriginSkillType); a trigger's own applications and status ticks are none."
                   }
                 }
               },
@@ -505,6 +678,32 @@
                 "properties": {
                   "event": {
                     "const": "fightStart"
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "event",
+                  "categories"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
+                    "const": "buffApplied"
+                  },
+                  "categories": {
+                    "type": "array",
+                    "items": {
+                      "enum": [
+                        "amp",
+                        "susceptibility",
+                        "weakness",
+                        "protection"
+                      ]
+                    },
+                    "minItems": 1,
+                    "description": "Any kit buff (own, weapon or gear set) of one of these categories, applied by whoever `by` names: Amp and Susceptibility by zone, Weakness and Protection by attribute 62, 63."
                   }
                 }
               }
@@ -535,6 +734,15 @@
             "type": "integer",
             "minimum": 1,
             "description": "At most this many times per fight."
+          },
+          "maxPerCast": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "At most this many times per cast whose hits cause the events (events of no cast aren't limited)."
+          },
+          "beforeDamage": {
+            "type": "boolean",
+            "description": "Status events only: runs on a hit's own status events before that hit's damage, so a buff it applies acts on the hit."
           },
           "delay": {
             "type": "integer",
@@ -737,8 +945,7 @@
                   "required": [
                     "kind",
                     "who",
-                    "skills",
-                    "seconds"
+                    "skills"
                   ],
                   "additionalProperties": false,
                   "properties": {
@@ -776,11 +983,16 @@
                       "$ref": "#/$defs/valueExpr",
                       "description": "Seconds added to the remaining cooldown (negative cuts it)."
                     },
+                    "fraction": {
+                      "$ref": "#/$defs/valueExpr",
+                      "description": "Instead of seconds: this fraction of the skill's full cooldown added to the remaining time (negative cuts it; SetSkillCdAtOnce isPercentage, assumed, in-game test 36)."
+                    },
                     "if": {
                       "$ref": "#/$defs/predicate",
                       "description": "This action only in this situation (judged for the owner when it runs)."
                     }
-                  }
+                  },
+                  "description": "Exactly one of seconds and fraction (the loader checks)."
                 },
                 {
                   "type": "object",
@@ -1528,6 +1740,25 @@
         {
           "type": "object",
           "required": [
+            "talentAtLeast"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "talentAtLeast": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "[talent index (0-based, as in a build's talents), level]: the talent is learned to at least this level."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
             "teamSlotElement"
           ],
           "additionalProperties": false,
@@ -2186,6 +2417,10 @@
           "$ref": "#/$defs/predicate",
           "description": "The hit happens only in this situation, judged as it lands, before its own effects (a mode, an enemy status…)."
         },
+        "scaleValue": {
+          "$ref": "#/$defs/valueExpr",
+          "description": "A multiplier computed from values (e.g. a sum of two value keys), times `scale`."
+        },
         "extraScale": {
           "type": "array",
           "description": "Extra multipliers that apply only in a situation.",
@@ -2240,6 +2475,10 @@
         "poiseControlledOnly": {
           "type": "boolean",
           "description": "Its stagger counts only while its operator is controlled (onlyEnableForMainChar: Final Strikes)."
+        },
+        "branch": {
+          "type": "string",
+          "description": "Alternatives of one landing (an IfElse): hits sharing a branch are judged together on the situation before any of them lands; the first in kit order whose if holds lands."
         }
       }
     }

@@ -11,7 +11,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { isBuffFileListed, readBuffFile } from "./buffData.ts";
-import { ELEMENTS, predicateRefs, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
+import { ELEMENTS, predicateRefs, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
@@ -34,7 +34,9 @@ interface RawHit {
   factor?: number;
   reaction?: { kind: "burst" | "reaction"; element: "fire" | "pulse" | "cryst" | "natural"; level?: number };
   extraScale?: { value: ValueExpr; if: Predicate }[];
+  scaleValue?: ValueExpr;
   if?: Predicate;
+  branch?: string;
   buffs?: BuffApplication[];
   energy?: ValueExpr;
   sp?: ValueExpr;
@@ -186,6 +188,14 @@ function kitChecker(scope: KitScope) {
     where: string,
   ): KitHit[] => {
     const ids = new Set<string>();
+    // Alternatives pair up landing by landing: a branch's hits land equally often.
+    const branches = new Map<string, number>();
+    for (const h of hits) {
+      if (!h.branch) continue;
+      const n = branches.get(h.branch);
+      if (n !== undefined && n !== (h.count ?? 1)) throw new Error(`${where} hit ${h.id}: the hits of branch ${h.branch} land a different number of times`);
+      branches.set(h.branch, h.count ?? 1);
+    }
     return hits.map((h) => {
       if (src.damageType && h.damageType) throw new Error(`${where} hit ${h.id}: a skill's hits take its damage type`);
       if (!src.damageType && !h.damageType) throw new Error(`${where} hit ${h.id}: a triggered hit needs a damageType`);
@@ -196,6 +206,7 @@ function kitChecker(scope: KitScope) {
         checkValue(x.value, src.skillId, `${where} hit ${h.id} extraScale`);
         checkPredicate(x.if, `${where} hit ${h.id} extraScale`);
       }
+      if (h.scaleValue !== undefined) checkValue(h.scaleValue, src.skillId, `${where} hit ${h.id} scaleValue`);
       if (h.if) checkPredicate(h.if, `${where} hit ${h.id}`);
       for (const x of [...(h.applies ?? []), ...(h.buffs ?? []), ...(h.gains ?? [])]) if (x.if) checkPredicate(x.if, `${where} hit ${h.id}`);
       for (const g of h.gains ?? []) if (g.amount !== undefined) checkValue(g.amount, src.skillId, `${where} hit ${h.id} gains`);
@@ -227,6 +238,7 @@ function kitChecker(scope: KitScope) {
         ...(h.factor !== undefined ? { factor: h.factor } : {}),
         ...(h.reaction ? { reaction: h.reaction } : {}),
         ...(h.extraScale ? { extraScale: h.extraScale } : {}),
+        ...(h.scaleValue !== undefined ? { scaleValue: h.scaleValue } : {}),
         ...(h.buffs ? { buffs: h.buffs } : {}),
         ...(h.energy ? { energy: h.energy } : {}),
         ...(h.sp !== undefined ? { sp: h.sp } : {}),
@@ -236,6 +248,7 @@ function kitChecker(scope: KitScope) {
         // A hit dealt from another SkillData file (a projectile or ability entity) is on its way and survives an interrupt.
         ...((h.detached ?? (src.defaultEvent !== undefined && events.length > 0 && !events.includes(src.defaultEvent))) ? { detached: true } : {}),
         ...(h.if ? { if: h.if } : {}),
+        ...(h.branch ? { branch: h.branch } : {}),
         ...((h.finalStrike ?? src.finalStrike?.(h, events) ?? false) ? { finalStrike: true } : {}),
         ...(h.gains ? { gains: h.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1, ...(g.if ? { if: g.if } : {}) })) } : {}),
       };
@@ -250,7 +263,10 @@ function kitChecker(scope: KitScope) {
     if (t.skill && !scope.isSource(t.skill)) throw new Error(`${where}: ${t.skill} isn't one of ${scope.owner}'s value sources`);
     if (t.on.event === "cast") for (const id of t.on.skills ?? []) if (!scope.isSkill(id)) throw new Error(`${where}: ${id} isn't a skill of ${scope.owner}`);
     if (t.on.event === "stackAtLeast" && !stackIds.has(t.on.stack)) throw new Error(`${where}: unknown stack ${t.on.stack}`);
-    if ((t.on.event === "buffApplied" || t.on.event === "buffEnded" || t.on.event === "buffTick") && !buffDefs.has(t.on.buff)) throw new Error(`${where}: unknown buff ${t.on.buff}`);
+    if ((t.on.event === "buffApplied" || t.on.event === "buffEnded" || t.on.event === "buffTick") && "buff" in t.on && !buffDefs.has(t.on.buff)) throw new Error(`${where}: unknown buff ${t.on.buff}`);
+    if (t.on.event === "buffApplied" && "categories" in t.on && "buff" in t.on) throw new Error(`${where}: a buffApplied trigger names a buff or categories, not both`);
+    if (t.beforeDamage && !(STATUS_EVENTS as readonly string[]).includes(t.on.event)) throw new Error(`${where}: only status-event triggers can act before their hit's damage`);
+    if (t.maxPerCast !== undefined && !(t.maxPerCast >= 1)) throw new Error(`${where}: maxPerCast must be at least 1`);
     if (t.if) checkPredicate(t.if, where);
     if (t.cooldown !== undefined) checkValue(t.cooldown, skillId, `${where} cooldown`);
     for (const a of t.do) {
@@ -286,7 +302,8 @@ function kitChecker(scope: KitScope) {
           if (!scope.isSkill(a.skill)) throw new Error(`${where}: ${a.skill} isn't one of ${scope.owner}'s skills`);
           break;
         case "cooldown":
-          checkValue(a.seconds, skillId, `${where} cooldown change`);
+          if ("seconds" in a === "fraction" in a) throw new Error(`${where}: a cooldown change has seconds or a fraction`);
+          checkValue("seconds" in a ? a.seconds : a.fraction, skillId, `${where} cooldown change`);
           break;
         case "apply":
           for (const x of a.applies) if (x.if) checkPredicate(x.if, where);

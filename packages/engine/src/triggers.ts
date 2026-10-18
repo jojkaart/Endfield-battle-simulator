@@ -28,14 +28,14 @@ export interface HitEffect {
  * (a replay has no situation to judge them in). Only the controlled operator
  * does basic attacks, so a basic hit counts as the controlled operator's.
  */
-export function hitEffects(teamKits: readonly OperatorKit[], hitter: string, hit: KitHit, skillId = "", kind: SkillType | "none" = hit.damageType): HitEffect[] {
+export function hitEffects(teamKits: readonly OperatorKit[], hitter: string, hit: KitHit, skillId = "", kind: SkillType | "none" = hit.damageType, finisher = false): HitEffect[] {
   const out: HitEffect[] = [];
   if (hit.applies?.length || hit.gains?.length) out.push({ owner: hitter, applies: hit.applies ?? [], gains: hit.gains ?? [], own: true });
-  const e: BattleEvent = { type: "hit", frame: 0, operator: hitter, skillId, kind, element: hit.element, finalStrike: hit.finalStrike === true, controlled: kind === "basic" };
+  const e: BattleEvent = { type: "hit", frame: 0, operator: hitter, skillId, kind, element: hit.element, finalStrike: hit.finalStrike === true, finisher, controlled: kind === "basic" };
   for (const kit of teamKits) {
     const member = kit.operator;
     for (const t of kit.triggers) {
-      if (!eventMatches(t.on, e, member, {}) || !causeMatches(t.by, e, member)) continue;
+      if (!eventMatches(t.on, e, member, {}) || !causeMatches(t.by, e, member, t.on)) continue;
       const applies = t.do.flatMap((a) => (a.kind === "apply" ? a.applies : []));
       const gains = t.do.flatMap((a) => (a.kind === "gain" ? a.gains : []));
       if (applies.length || gains.length) out.push({ owner: member, applies, gains, own: false });

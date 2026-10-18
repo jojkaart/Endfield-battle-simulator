@@ -254,8 +254,17 @@ export interface KitHit {
   readonly reaction?: { readonly kind: "burst" | "reaction"; readonly element: ArtsElement; readonly level?: number };
   /** Extra multipliers that apply only in a situation (e.g. Typhoeus's burst ×1.3 when the enemy has a Nature infliction as the shot lands). */
   readonly extraScale?: readonly { readonly value: ValueExpr; readonly if: Predicate }[];
+  /** A multiplier computed from values (e.g. `atk_scale2 + n × atk_scale2_1`), times `scale`. */
+  readonly scaleValue?: ValueExpr;
   /** The hit happens only in this situation, judged as it lands (before its own effects): a mode (Arcane), an enemy status (Estella's combo on a Solidified target)… */
   readonly if?: Predicate;
+  /**
+   * Alternatives of one landing (an IfElse in the skill graph): hits with the
+   * same branch are judged together on the situation before any of them
+   * lands, and only the first in kit order whose `if` holds lands, landing by
+   * landing.
+   */
+  readonly branch?: string;
   /** Kit buffs (OperatorKit.buffs) this hit applies when it lands. */
   readonly buffs?: readonly BuffApplication[];
   /** Ultimate energy the operator gains when the hit lands (SkillData ObtainCostAction, e.g. a combo's `usp`), after its own effects. */
