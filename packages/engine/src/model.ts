@@ -2,7 +2,7 @@
 // tables; the engine never reads tables itself (docs/design.md#layers).
 
 import type { AttrType, Element, SkillType } from "./attributes.ts";
-import type { Zone } from "./effects.ts";
+import type { HitKind, Zone } from "./effects.ts";
 import type { ArtsElement } from "./reactions.ts";
 import type { HitApplication } from "./status.ts";
 
@@ -212,6 +212,44 @@ export interface KitHit {
   readonly scaleIf?: { readonly key: string; readonly enemyInfliction: ArtsElement };
   /** The hit exists only when the build's panel attribute `attrAtLeast[0]` ≥ `attrAtLeast[1]` (e.g. Arcane's INT mode). */
   readonly when?: { readonly attrAtLeast: readonly [AttrType, AttrType] };
+  /** Kit buffs (OperatorKit.buffs) this hit applies when it lands. */
+  readonly buffs?: readonly BuffApplication[];
+}
+
+export interface BuffApplication {
+  readonly buff: string;
+  /** Whether the buff already acts on this hit (default: it doesn't; logs differ by skill). */
+  readonly beforeDamage?: boolean;
+}
+
+/**
+ * A number from the game data: a literal, or a skill's blackboard value at
+ * the applier's level after potentials (default: the applying hit's skill),
+ * optionally times one of the applier's panel attributes and capped by
+ * another key (e.g. Liino's Amp = min(Will × will_up, will_max)).
+ */
+export type ValueSpec =
+  | { readonly literal: number }
+  | { readonly key: string; readonly skill?: string; readonly timesAttr?: AttrType; readonly capKey?: string; readonly scale?: number };
+
+export interface KitBuffModifier {
+  readonly zone: Zone;
+  readonly value: ValueSpec;
+  /** One modifier per listed element; any element when absent. */
+  readonly elements?: readonly Element[];
+  readonly skillType?: SkillType;
+  readonly onlyKinds?: readonly HitKind[];
+}
+
+/** A timed buff or debuff an operator's hits apply: on themselves, the whole team, or the enemy (then it acts on every team member's hits). */
+export interface KitBuff {
+  /** Unique within the kit. Reapplying replaces the active instance and resets its duration. */
+  readonly id: string;
+  readonly label: string;
+  readonly target: "self" | "team" | "enemy";
+  /** Seconds. */
+  readonly duration: ValueSpec;
+  readonly modifiers: readonly KitBuffModifier[];
 }
 
 /** Something an operator's kit does when any teammate's hit of a kind lands, e.g. Laevatain's talent absorbing Heat on Final Strikes. */
@@ -285,6 +323,7 @@ export interface OperatorKit {
   readonly operator: string;
   readonly stacks: readonly StackDef[];
   readonly teamTriggers: readonly TeamTrigger[];
+  readonly buffs: readonly KitBuff[];
   readonly skills: readonly KitSkill[];
   readonly conditions: readonly Condition[];
 }

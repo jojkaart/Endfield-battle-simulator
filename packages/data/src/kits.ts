@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
-import { ELEMENTS, type AttrType, type Condition, type HitApplication, type StackDef, type StackRequirement, type Element, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
+import { ELEMENTS, type AttrType, type BuffApplication, type Condition, type KitBuff, type ValueSpec, type HitApplication, type StackDef, type StackRequirement, type Element, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
@@ -26,6 +26,7 @@ interface RawKit {
   operator: string;
   element?: Element;
   stacks?: StackDef[];
+  buffs?: (KitBuff & { note?: string })[];
   teamTriggers?: { on: "finalStrike"; applies: HitApplication[]; gains?: { stack: string; amount?: number | "consumedInflictions" }[] }[];
   skills: {
     skillId: string;
@@ -41,6 +42,7 @@ interface RawKit {
       reaction?: { kind: "burst" | "reaction"; element: "fire" | "pulse" | "cryst" | "natural"; level?: number };
       scaleIf?: { key: string; enemyInfliction: "fire" | "pulse" | "cryst" | "natural" };
       when?: { attrAtLeast: [number, number] };
+      buffs?: BuffApplication[];
     }[];
   }[];
   conditions?: RawCondition[];
@@ -115,6 +117,19 @@ export function loadKits(data: KitData): Kits {
     const op = data.operators[kit.operator];
     if (!op) throw new Error(`kits/operators/${file}: unknown operator ${kit.operator}`);
     const stackIds = new Set((kit.stacks ?? []).map((x) => x.id));
+    const buffDefs = new Map((kit.buffs ?? []).map((b) => [b.id, b]));
+    if (buffDefs.size !== (kit.buffs ?? []).length) throw new Error(`kits/operators/${file}: duplicate buff ID`);
+    /** Checks a buff's value keys against the skill whose hit applies it (or the skill each value names). */
+    const checkBuff = (b: KitBuff, skillId: string, where: string) => {
+      const specs: ValueSpec[] = [b.duration, ...b.modifiers.map((m) => m.value)];
+      for (const v of specs) {
+        if ("literal" in v) continue;
+        const sid = v.skill ?? skillId;
+        const sk = data.skills[sid];
+        if (!sk || op.skillGroups[sid] === undefined) throw new Error(`${where}: buff ${b.id} names ${sid}, not one of ${kit.operator}'s skills`);
+        for (const key of [v.key, ...(v.capKey ? [v.capKey] : [])]) checkKey(sk, key, `${where}: buff ${b.id}`);
+      }
+    };
     const skills = kit.skills.map((s) => {
       const where = `kits/operators/${file}: ${s.skillId}`;
       const skill = data.skills[s.skillId];
@@ -135,6 +150,11 @@ export function loadKits(data: KitData): Kits {
           for (const id of [h.requires?.stack, ...(h.gains ?? []).map((g) => g.stack)]) {
             if (id !== undefined && !stackIds.has(id)) throw new Error(`${where} hit ${h.id}: unknown stack ${id} (the kit's stacks: ${[...stackIds].join(", ") || "none"})`);
           }
+          for (const a of h.buffs ?? []) {
+            const b = buffDefs.get(a.buff);
+            if (!b) throw new Error(`${where} hit ${h.id}: unknown buff ${a.buff}`);
+            checkBuff(b, s.skillId, `${where} hit ${h.id}`);
+          }
           if (h.frames && h.frames.length !== (h.count ?? 1)) throw new Error(`${where} hit ${h.id}: ${h.frames.length} frames for count ${h.count ?? 1}`);
           return {
             id: h.id, label: h.label ?? s.label, scale: h.scale, count: h.count ?? 1, damageType: s.damageType, element, events,
@@ -145,6 +165,7 @@ export function loadKits(data: KitData): Kits {
             ...(h.factor !== undefined ? { factor: h.factor } : {}),
             ...(h.reaction ? { reaction: h.reaction } : {}),
             ...(h.scaleIf ? { scaleIf: h.scaleIf } : {}),
+            ...(h.buffs ? { buffs: h.buffs } : {}),
             ...(h.when ? { when: { attrAtLeast: h.when.attrAtLeast as [AttrType, AttrType] } } : {}),
             ...((h.finalStrike ?? isFinalStrike(s.skillId, events, s.hits.length)) ? { finalStrike: true } : {}),
             ...(h.gains ? { gains: h.gains.map((g) => ({ stack: g.stack, amount: g.amount ?? 1 })) } : {}),
@@ -155,6 +176,7 @@ export function loadKits(data: KitData): Kits {
     operators[kit.operator] = {
       operator: kit.operator,
       stacks: (kit.stacks ?? []).map((x) => ({ id: x.id, label: x.label, max: x.max })),
+      buffs: (kit.buffs ?? []).map(({ note: _note, ...b }) => b),
       teamTriggers: (kit.teamTriggers ?? []).map((t) => {
         for (const g of t.gains ?? []) if (!stackIds.has(g.stack)) throw new Error(`kits/operators/${file}: team trigger gains unknown stack ${g.stack}`);
         return { on: t.on, applies: t.applies, ...(t.gains ? { gains: t.gains.map((g) => ({ stack: g.stack, amount: g.amount ?? 1 })) } : {}) };

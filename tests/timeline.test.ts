@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, createContext, EngineError, init, simulate, SP, type Build, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { advance, apply, computeStats, createContext, EngineError, init, simulate, skillValue, SP, type Build, type GameData, type KitBuff, type OperatorKit, type RotationAction, type TimelineScenario } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -160,5 +160,50 @@ describe("timeline: a reaction applies before the hit that triggers it", () => {
     const initial = r.hits.find((h) => h.skillId === "reaction:reaction");
     expect(initial?.element).toBe("natural");
     expect(initial?.modifiers.some((m) => m.source === "Corrosion level 1")).toBe(true);
+  });
+});
+
+describe("timeline: timed buffs from kits", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const buff: KitBuff = {
+    id: "test_amp",
+    label: "test amp",
+    target: "team",
+    duration: { literal: 2 },
+    modifiers: [{ zone: "amp", value: { key: "atk_scale", scale: 2 }, elements: ["fire"] }],
+  };
+  const withBuffKit = (beforeDamage: boolean): GameData => ({
+    ...data,
+    kits: {
+      ...data.kits,
+      operators: {
+        ...data.kits.operators,
+        [op]: {
+          ...kit,
+          buffs: [buff],
+          skills: kit.skills.map((s) => (s.skillId === L + "attack1" ? { ...s, hits: s.hits.map((h) => ({ ...h, buffs: [{ buff: "test_amp", beforeDamage }] })) } : s)),
+        },
+      },
+    },
+  });
+  const rot = [...chain, { operator: op, skill: L + "attack1", at: 30 * 10 }];
+
+  it("a buff acts on later hits for its duration, with its value from the applying skill", () => {
+    const r = simulate(withBuffKit(false), scenario(rot));
+    const plain = simulate(data, scenario(rot));
+    const v = 2 * skillValue(data, computeStats(data, build), build, L + "attack1", "atk_scale");
+    const byIndex = (res: typeof r) => res.hits.filter((h) => !h.skillId.startsWith("reaction"));
+    const [a1, a2] = [byIndex(r), byIndex(plain)];
+    // attack1 itself: no buff yet (applied after its damage). attack2 (0.33 s later): +v Amp.
+    expect(a1[0]?.zones.amp).toBe(a2[0]?.zones.amp);
+    expect(a1[1]?.zones.amp).toBeCloseTo((a2[1]?.zones.amp ?? 0) + v, 12);
+    // The late attack1 at 10 s: the buff from the first one has expired.
+    expect(a1.at(-1)?.zones.amp).toBe(a2.at(-1)?.zones.amp);
+  });
+
+  it("beforeDamage makes the buff act on the applying hit too", () => {
+    const r = simulate(withBuffKit(true), scenario(rot));
+    const plain = simulate(data, scenario(rot));
+    expect(r.hits[0]?.zones.amp).toBeGreaterThan(plain.hits[0]?.zones.amp ?? Infinity);
   });
 });

@@ -27,6 +27,7 @@ import { zoneSum, type Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
 import type { GameData, KitHit, KitSkill, StackGain } from "./model.ts";
 import { hitEffects } from "./triggers.ts";
+import { applyBuff, buffModifiers, withBuff, type ActiveBuff } from "./buffs.ts";
 import { computeStats, skillLevel, type StatPanel } from "./stats.ts";
 import { applyToEnemy, expireStatus, nextTick, NO_STATUS, statusModifiers, tickStatus, type EnemyStatus, type StatusEvent } from "./status.ts";
 import { FPS } from "./units.ts";
@@ -46,7 +47,7 @@ export const TIMELINE_ASSUMPTIONS = [
   "Each operator has its own animation lock; basic attacks need the operator to be the controlled one, other skills don't.",
   "Projectile hits land at their launch frame (travel time isn't in the data).",
   "SP gain: a skill's blackboard value `atb` (e.g. a final strike's 20) is added when its first hit lands (unverified timing).",
-  "Team buffs and debuffs from skills aren't applied yet; only always-on conditions, given modifiers and the enemy's reaction statuses.",
+  "Buffs and debuffs from skills apply only where a kit declares them (OperatorKit.buffs); always-on conditions, given modifiers and the enemy's reaction statuses apply too.",
   "Inflictions and reactions follow the Talos Wiki rules (status.ts). What a hit applies takes effect before its own damage and the reaction's initial hit (logs: Gilberta's explosion and Arcane's battle skill include the Corrosion they trigger).",
   "Physical statuses (Vulnerable, Lift, Knockdown, Crush, Breach) and Shatter aren't modelled; Solidification only records its duration.",
   "One enemy; every hit lands on it.",
@@ -116,6 +117,8 @@ export interface TimelineState {
   readonly readyAt: Readonly<Record<string, number>>;
   readonly pending: readonly PendingHit[];
   readonly enemy: EnemyStatus;
+  /** Timed buffs and debuffs from skills. */
+  readonly buffs: readonly ActiveBuff[];
   /** Per operator: its kit's stacks (e.g. Melting Flame). */
   readonly stacks: Readonly<Record<string, Readonly<Record<string, number>>>>;
   readonly casts: readonly Cast[];
@@ -157,6 +160,7 @@ export function init(ctx: TimelineContext): TimelineState {
     readyAt: {},
     pending: [],
     enemy: NO_STATUS,
+    buffs: [],
     stacks: Object.fromEntries(ctx.scenario.team.map((b) => [b.operator, Object.fromEntries((ctx.data.kits.operators[b.operator]?.stacks ?? []).map((x) => [x.id, 0]))])),
     casts: [],
     hits: [],
@@ -212,12 +216,12 @@ function skillSpGain(ctx: TimelineContext, operator: string, skillId: string): n
   return skillValue(ctx.data, panel, build, skillId, "atb");
 }
 
-function damageOptions(ctx: TimelineContext, operator: string, enemy: EnemyStatus, frame: number) {
+function damageOptions(ctx: TimelineContext, operator: string, enemy: EnemyStatus, buffs: readonly ActiveBuff[], frame: number) {
   return {
     crit: ctx.scenario.options.crit,
     staggered: false,
     conditions: [],
-    modifiers: [...(ctx.modifiers.get(operator) ?? []), ...statusModifiers(enemy, frame)],
+    modifiers: [...(ctx.modifiers.get(operator) ?? []), ...statusModifiers(enemy, frame), ...buffModifiers(buffs, operator, frame)],
     enemyInfliction: expireStatus(enemy, frame).infliction?.element ?? null,
   };
 }
@@ -230,14 +234,14 @@ function artsIntensity(ctx: TimelineContext, operator: string): number {
 }
 
 /** The damage a status event deals, if any (bursts, reactions with an initial hit, Combustion ticks). */
-function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus): LandedHit | null {
+function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, buffs: readonly ActiveBuff[]): LandedHit | null {
   if (e.kind === "consumed" || (e.kind === "reaction" && !e.initialHit)) return null;
   const reaction =
     e.kind === "burst" ? { kind: "burst" as const, element: e.element, stacks: 1 }
     : e.kind === "reaction" ? { kind: "reaction" as const, element: e.element, stacks: e.level }
     : { kind: "combustionTick" as const, element: "fire" as const, stacks: e.level };
   const build = ctx.builds.get(e.operator) as Build;
-  const result = computeReaction(ctx.data, build, ctx.panels.get(e.operator) as StatPanel, ctx.scenario.target, reaction, damageOptions(ctx, e.operator, enemy, e.frame));
+  const result = computeReaction(ctx.data, build, ctx.panels.get(e.operator) as StatPanel, ctx.scenario.target, reaction, damageOptions(ctx, e.operator, enemy, buffs, e.frame));
   const scale = e.kind === "combustionTick" ? e.damageScale : undefined;
   if (!scale) return { ...result, frame: e.frame, operator: e.operator };
   const exact = result.exact * scale.value;
@@ -267,10 +271,11 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
   let st = state;
   let enemy = state.enemy;
   let stacks = state.stacks;
+  let buffs = state.buffs;
   const record = (events: readonly StatusEvent[], before: EnemyStatus) => {
     for (const e of events) {
       records.push(e);
-      const d = eventDamage(ctx, e, before);
+      const d = eventDamage(ctx, e, before, buffs);
       if (d) landed.push(d);
     }
   };
@@ -311,11 +316,23 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
       }
       stacks = gainStacks(ctx, stacks, effect.owner, effect.gains, consumed);
     }
-    const result = computeHit(ctx.data, build, ctx.panels.get(hit.operator) as StatPanel, ctx.scenario.target, skill, kitHit, {
-      ...damageOptions(ctx, hit.operator, enemy, hit.frame),
+    const panel = ctx.panels.get(hit.operator) as StatPanel;
+    const kitBuff = (id: string) => ctx.data.kits.operators[hit.operator]?.buffs.find((b) => b.id === id);
+    const applyBuffs = (before: boolean) => {
+      for (const a of kitHit.buffs ?? []) {
+        if ((a.beforeDamage ?? false) !== before) continue;
+        const def = kitBuff(a.buff);
+        if (!def) throw new EngineError(`${hit.operator} has no buff ${a.buff}`);
+        buffs = withBuff(buffs, applyBuff(ctx.data, build, panel, hit.skillId, def, hit.frame));
+      }
+    };
+    applyBuffs(true);
+    const result = computeHit(ctx.data, build, panel, ctx.scenario.target, skill, kitHit, {
+      ...damageOptions(ctx, hit.operator, enemy, buffs, hit.frame),
       enemyInfliction: inflictionBefore,
     });
     landed.push({ ...result, count: 1, frame: hit.frame, operator: hit.operator });
+    applyBuffs(false);
     record(events, enemy);
   }
   return {
@@ -324,6 +341,7 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
     frame,
     pending: st.pending.filter((h) => h.frame > frame),
     enemy: expireStatus(enemy, frame),
+    buffs: buffs.filter((b) => b.expiresAt > frame),
     stacks,
     hits: [...st.hits, ...landed],
     reactions: [...st.reactions, ...records],

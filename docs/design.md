@@ -179,6 +179,16 @@ Laevatain's Melting Flame are kit `stacks` that hits `gain` and `require`.
 `efsim zmdlogs reactions` replays a log through the state machine to check
 a kit's `applies` against the logged bursts and reactions.
 
+**Buffs from skills** are kit `buffs` (engine `buffs.ts`): target self,
+team or enemy, a duration and zone modifiers whose values are `ValueSpec`s
+(a literal, or a skill value at the applier's level, optionally times a
+panel attribute and capped by another key). Hits apply them, by default
+after their own damage. Modifiers can be limited to hit kinds (`onlyKinds`,
+the game's decorate-mask conditions, e.g. bursts only). Team-wide reactions
+to a hit (Laevatain's Heat absorption on any Final Strike) are kit
+`teamTriggers`; `triggers.ts` lists what a landing hit does for both the
+timeline and the log replay.
+
 Numeric enums (attribute types, stacking types, buff events, formula slots)
 are decoded through **one version-pinned enum map**, each entry verified
 against a known effect. Starting points: End-DPScope's

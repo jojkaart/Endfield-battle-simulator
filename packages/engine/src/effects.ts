@@ -34,6 +34,9 @@ export const ZONES = [
 ] as const;
 export type Zone = (typeof ZONES)[number];
 
+/** What kind of damage a hit is: its skill type, or a reaction kind for reaction damage. */
+export type HitKind = SkillType | "burst" | "reaction" | "combustionTick";
+
 export interface Modifier {
   readonly zone: Zone;
   readonly value: number;
@@ -43,6 +46,8 @@ export interface Modifier {
   readonly skillType?: SkillType;
   /** Only against a staggered target. */
   readonly staggeredOnly?: boolean;
+  /** Only hits of these kinds (the game's decorate-mask conditions, e.g. bursts only). */
+  readonly onlyKinds?: readonly HitKind[];
   readonly source: string;
 }
 
@@ -52,6 +57,8 @@ export interface HitContext {
   /** Null for damage that isn't a skill's, e.g. reactions: skill-type bonuses don't apply. */
   readonly skillType: SkillType | null;
   readonly staggered: boolean;
+  /** Unknown when absent: kind-limited modifiers then don't apply. */
+  readonly kind?: HitKind;
 }
 
 type Mapping = Omit<Modifier, "value" | "source">;
@@ -82,7 +89,8 @@ export function attrModifier(attr: AttrType, value: number, source: string): Mod
 export function applies(m: Modifier, hit: HitContext): boolean {
   return (m.element === undefined || m.element === hit.element) &&
     (m.skillType === undefined || m.skillType === hit.skillType) &&
-    (!m.staggeredOnly || hit.staggered);
+    (!m.staggeredOnly || hit.staggered) &&
+    (!m.onlyKinds || (hit.kind !== undefined && m.onlyKinds.includes(hit.kind)));
 }
 
 /** Sum of a zone's modifiers that apply to the hit. */

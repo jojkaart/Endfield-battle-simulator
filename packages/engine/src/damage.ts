@@ -5,7 +5,7 @@
 import { Attr, attrName, type Element, type SkillType } from "./attributes.ts";
 import type { Build } from "./build.ts";
 import { STAGGER_DAMAGE_TAKEN } from "./constants.ts";
-import { applies, attrModifier, zoneProduct, zoneSum, type HitContext, type Modifier, type Zone } from "./effects.ts";
+import { applies, attrModifier, zoneProduct, zoneSum, type HitContext, type HitKind, type Modifier, type Zone } from "./effects.ts";
 import { EngineError } from "./errors.ts";
 import type { Condition, GameData, KitHit, KitSkill } from "./model.ts";
 import { artsIntensityDamage, artsLevelCoefficient, reactionBase, type ArtsElement, type ReactionKind } from "./reactions.ts";
@@ -174,6 +174,7 @@ export interface DamageSpec {
   readonly scaleParts: readonly { readonly key: string; readonly value: number }[];
   /** Damage-over-time ticks can't crit. */
   readonly canCrit: boolean;
+  readonly kind: HitKind;
 }
 
 /** All modifiers acting on a build's hits: stat panel, active conditions, and external ones. */
@@ -195,7 +196,7 @@ export function computeDamage(
   const enemyLevel = enemy.levels[target.level - 1];
   if (!enemyLevel) throw new EngineError(`${enemy.id} has no level ${target.level}`);
 
-  const ctx: HitContext = { element: spec.element, skillType: spec.skillType, staggered: options.staggered };
+  const ctx: HitContext = { element: spec.element, skillType: spec.skillType, staggered: options.staggered, kind: spec.kind };
   const mods = activeModifiers(data, build, panel, options).filter((m) => applies(m, ctx));
   const sum = (zone: Zone) => zoneSum(mods, zone, ctx);
 
@@ -257,7 +258,7 @@ function reactionScaleParts(
   reaction: { readonly kind: ReactionKind; readonly element: Element; readonly stacks: number },
   options: DamageOptions,
 ): { key: string; value: number }[] {
-  const ctx: HitContext = { element: reaction.element, skillType: null, staggered: options.staggered };
+  const ctx: HitContext = { element: reaction.element, skillType: null, staggered: options.staggered, kind: reaction.kind };
   const ai = zoneSum(activeModifiers(data, build, panel, options), "artsIntensity", ctx);
   return [
     { key: `${reaction.kind} base`, value: reactionBase(reaction.kind, reaction.stacks) },
@@ -294,6 +295,7 @@ export function computeHit(
     skillType: hit.reaction ? null : hit.damageType,
     scaleParts,
     canCrit: true,
+    kind: hit.reaction?.kind ?? hit.damageType,
   }, options);
 }
 
@@ -315,6 +317,7 @@ export function computeReaction(
     skillType: null,
     scaleParts: reactionScaleParts(data, build, panel, reaction, options),
     canCrit: reaction.kind !== "combustionTick",
+    kind: reaction.kind,
   }, options);
 }
 

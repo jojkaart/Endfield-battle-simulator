@@ -1,6 +1,6 @@
 // Damage expectations from the fixtures.
 import { describe, expect, it } from "vitest";
-import { Attr, computeHit, computeReaction, computeStats, conditionModifiers, EngineError, hitAvailable, roundDamage, skillValue, type Condition, type KitHit, type OperatorKit } from "@efsim/engine";
+import { Attr, computeHit, computeReaction, resolveValue, computeStats, conditionModifiers, EngineError, hitAvailable, roundDamage, skillValue, type Condition, type KitHit, type OperatorKit } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { loadFixtures } from "./fixtures.ts";
 
@@ -112,5 +112,20 @@ describe("kit hit primitives: factor, reaction hits, scaleIf, when", () => {
     if (!h) throw new Error("no kit");
     expect(hitAvailable({ ...h, when: { attrAtLeast: [str, intel] } }, panel)).toBe(a >= b);
     expect(hitAvailable({ ...h, when: { attrAtLeast: [intel, str] } }, panel)).toBe(b >= a);
+  });
+});
+
+describe("buff values (ValueSpec)", () => {
+  const { fixture } = loadFixtures()[0] as ReturnType<typeof loadFixtures>[number];
+  const panel = computeStats(data, fixture.build);
+  const b = fixture.build;
+  const sid = "chr_0016_laevat_attack1";
+  const k = skillValue(data, panel, b, sid, "atk_scale");
+  const will = panel.attrs[Attr.Will]?.total ?? 0;
+  it("is a literal, a skill value, or a skill value times an attribute, capped by another key", () => {
+    expect(resolveValue(data, b, panel, sid, { literal: 0.25 })).toBe(0.25);
+    expect(resolveValue(data, b, panel, sid, { key: "atk_scale", scale: 3 })).toBeCloseTo(3 * k, 12);
+    expect(resolveValue(data, b, panel, sid, { key: "atk_scale", timesAttr: Attr.Will })).toBeCloseTo(k * will, 9);
+    expect(resolveValue(data, b, panel, sid, { key: "atk_scale", timesAttr: Attr.Will, capKey: "atk_scale" })).toBeCloseTo(Math.min(k * will, k), 12);
   });
 });

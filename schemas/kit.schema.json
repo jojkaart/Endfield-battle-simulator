@@ -11,6 +11,38 @@
     "operator": { "type": "string" },
     "sources": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
     "element": { "$ref": "#/$defs/element", "description": "Default element of the operator's hits." },
+    "buffs": {
+      "type": "array",
+      "description": "Timed buffs and debuffs the operator's hits apply (engine buffs.ts): on themselves, the team, or the enemy (acting on every team member's hits). Values come from the game data (valueSpec).",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "target", "duration", "modifiers"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9_]+$" },
+          "label": { "type": "string" },
+          "target": { "enum": ["self", "team", "enemy"] },
+          "duration": { "$ref": "#/$defs/valueSpec", "description": "Seconds." },
+          "modifiers": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["zone", "value"],
+              "additionalProperties": false,
+              "properties": {
+                "zone": { "$ref": "#/$defs/zone" },
+                "value": { "$ref": "#/$defs/valueSpec" },
+                "elements": { "type": "array", "items": { "$ref": "#/$defs/element" }, "minItems": 1 },
+                "skillType": { "$ref": "#/$defs/skillType" },
+                "onlyKinds": { "type": "array", "items": { "enum": ["basic", "battle", "combo", "ultimate", "burst", "reaction", "combustionTick"] }, "minItems": 1 }
+              }
+            }
+          },
+          "note": { "type": "string" }
+        }
+      }
+    },
     "teamTriggers": {
       "type": "array",
       "description": "What the operator's kit does when any team member's hit of a kind lands (finalStrike: the controlled operator's Final Strikes, SkillData mask bit 2097152).",
@@ -103,6 +135,16 @@
                   "additionalProperties": false,
                   "properties": { "attrAtLeast": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "minItems": 2, "maxItems": 2 } }
                 },
+                "buffs": {
+                  "type": "array",
+                  "description": "Kit buffs this hit applies when it lands; beforeDamage: the buff already acts on this hit.",
+                  "items": {
+                    "type": "object",
+                    "required": ["buff"],
+                    "additionalProperties": false,
+                    "properties": { "buff": { "type": "string" }, "beforeDamage": { "type": "boolean" } }
+                  }
+                },
                 "finalStrike": { "type": "boolean", "description": "Override: whether the hit is a Final Strike. By default read from SkillData (decorate-mask bit 2097152) via the hit's events." },
                 "requires": {
                   "type": "object",
@@ -133,6 +175,24 @@
   },
   "$defs": {
     "element": { "enum": ["physical", "fire", "pulse", "cryst", "natural", "ether"] },
+    "valueSpec": {
+      "description": "A literal, or a skill blackboard value at the applier's level after potentials (default skill: the applying hit's), optionally times a panel attribute (attribute ID) and capped by another key.",
+      "oneOf": [
+        { "type": "object", "required": ["literal"], "additionalProperties": false, "properties": { "literal": { "type": "number" } } },
+        {
+          "type": "object",
+          "required": ["key"],
+          "additionalProperties": false,
+          "properties": {
+            "key": { "type": "string" },
+            "skill": { "type": "string" },
+            "timesAttr": { "type": "integer", "minimum": 0 },
+            "capKey": { "type": "string" },
+            "scale": { "type": "number" }
+          }
+        }
+      ]
+    },
     "zone": { "enum": ["atk", "damageBonus", "amp", "susceptibility", "damageTaken", "multiplicative", "ignoreResistance", "critRate", "critDamage", "artsIntensity"] },
     "artsElement": { "enum": ["fire", "pulse", "cryst", "natural"] },
     "application": {
