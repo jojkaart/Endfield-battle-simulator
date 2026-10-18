@@ -74,5 +74,7 @@ first.
    chr_9000_endmin are the other entries), the 5-stars Perlica, Chen
    Qianyu, Wulfgard, Arclight, Xaihi, Avywenna, Snowshine, Da Pan, Alesh and
    Purrchena, and the 4-stars Akekuri, Catcher, Fluorite and Antal (Estella
-   is in batch 1). Fifteen operators: to confirm with the owner which of
-   the 5-stars count as ones everybody has.
+   is in batch 1): fifteen operators, all supported. Owner (2026-10-18):
+   after a few months of active play every player has every 5-star at P5,
+   so P5 is the default assumption for 4- and 5-star operators in team and
+   loadout searches (a player's own account data overrides it later).
