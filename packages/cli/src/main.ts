@@ -15,6 +15,7 @@ import { checkLog, findScales, formatLogCheck, impliedScales } from "./logcheck.
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 import { importBattle, readLogFixture } from "./logs.ts";
 import { checkReactions, formatReactionCheck } from "./reactioncheck.ts";
+import { formatCensus, kitCensus } from "./census.ts";
 
 const USAGE = `Usage:
   efsim find <text>                       Look up operator, weapon, gear and enemy IDs by name
@@ -32,6 +33,7 @@ const USAGE = `Usage:
   efsim zmdlogs scales <fixture> <op>     Multiplier each logged hit of an operator implies
   efsim zmdlogs find-scales <fixture> <op> Skill values (keys) that explain each logged event
   efsim kit-draft <operator>              Draft a kit from SkillData (to verify against logs)
+  efsim kit-census                        Kit features per operator, for the review after each new kit
 
 Options for calc and compare:
   --enemy <id>        Target (default eny_0051_rodin, Rhodagn)
@@ -137,6 +139,9 @@ async function main(argv: string[]): Promise<number> {
     case "search":
       need(1);
       text = searchCommand(data, readScenario(args[0] as string), { beam: Number(values.beam), ...(values.out ? { out: values.out } : {}), verbose: values.verbose });
+      break;
+    case "kit-census":
+      text = formatCensus(kitCensus());
       break;
     case "kit-draft": {
       need(1);

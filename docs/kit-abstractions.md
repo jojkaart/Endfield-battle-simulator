@@ -107,7 +107,55 @@ Typhoeus's bursts), Corrosion changed by the applier's talents (cap ×,
 duration +), time dilation pausing ticks. These extend `status.ts`; no new
 concept.
 
-## 3. Order of work
+## 3. What in the approach caused the one-offs
+
+The kits were written by six parallel agents, one per operator, twice.
+Several of the problems above come from that setup, not from the game:
+
+- **Agents couldn't touch the engine**, so each worked around a missing
+  primitive inside its kit and described the need in its own words: four
+  one-arrow stacks instead of a counter (Typhoeus), a final hit split into
+  three summed entries as a lower bound (Si), the non-Solidified combo
+  dropped (Estella), an energy block measured from the wrong frame (Liino).
+  The same mechanism then came back as three differently named requests.
+- **Primitives were added reactively, one per report, named after the first
+  operator that needed them** (`scaleIf`, `whileBuff`, `when`,
+  `teamTriggers`, `comboTriggers`), instead of being designed per family once
+  two reports overlapped.
+- **Slicing by operator, not by mechanism.** Each agent re-derived the same
+  SkillData facts by hand (frames, `usp` grants, `SimpleCalcBB` factors,
+  `RefrainObtainUsp` blocks) for its operator; nobody saw that all seven
+  kits needed the same extraction, which is a compiler's job.
+- **Briefs passed on unverified facts.** Earlier reports' claims went into
+  the next brief and were wrong three times: Arcane's two combo triggers
+  swapped, Liino's Amp elements (Electric and Nature, not Cryo), Liino's
+  energy-block frame. One agent's stacking claim (priority key = exclusive)
+  was contradicted by a log only after it reached the engine.
+- **Verification ran on the wrong code.** In worktrees the CLI and tests
+  resolved the main checkout's packages and found no data, so part of the
+  first round's "checks" weren't of the agent's own kit (now
+  `scripts/setup-worktree.sh`).
+- **Shared files edited in parallel** (the kits test's known-gap list) caused
+  merge conflicts every round.
+
+**How to work next time:**
+
+1. Compile first: run `kit-draft` (v2) so frames, energy, blocks, factors,
+   event keys and buff values come from the data, not from an agent.
+2. Slice by mechanism when a mechanism is new: one pass over *all* kits for
+   "energy grants" or "skill states" designs one primitive with every case
+   in view; per-operator passes then only fill in the hand-written parts.
+3. Let a kit agent propose engine changes as code on its branch, behind the
+   families in section 2, instead of working around them in data; the
+   review merges or rejects them.
+4. Briefs carry only facts with a source (file and key, or log and time);
+   anything taken from an earlier report is marked as a claim to check.
+5. Agents in worktrees `source scripts/setup-worktree.sh` before any check,
+   and report the check output, not a summary of it.
+6. Per-kit data that tests need (known gaps) lives in the kit file, not in a
+   shared test file.
+
+## 4. Order of work
 
 1. `Condition` and `ValueExpr`, replacing `when`, `requires`, `scaleIf` and
    `ValueSpec` (kits migrated mechanically).
@@ -121,3 +169,21 @@ concept.
 Each step keeps `npm run check` green and the verified log matches
 unchanged; the kits' behaviour may only change where a report showed it
 wrong.
+
+## Repeating the review
+
+Owner's rule (2026-10-18): repeat this review every time an operator kit is
+added or substantially changed (also in CLAUDE.md). Checklist:
+
+1. `efsim kit-census`: which kit features each kit uses, and the fields
+   kits still hand-write that section 1 says the data has. A new kit using a
+   field no other kit uses, or hand-writing what the loader could compile,
+   is a finding.
+2. Read the new kit's report (its "engine changes needed"): map each request
+   onto an existing family in section 2. Only a request that fits none is a
+   new primitive, and then it gets a family of its own here.
+3. Look for the same mechanism written two ways across kits (e.g. a state
+   buff in one kit, stacks in another, for the same game structure) and
+   unify it.
+4. Update this document's tables and the roadmap with what was found and
+   what changed.

@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "../src/index.ts";
 import { boundarySubsets } from "../src/logcheck.ts";
+import { formatCensus, kitCensus } from "../src/census.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const data = loadGameData();
@@ -63,5 +64,14 @@ describe("log check: boundary buffs", () => {
   });
   it("falls back to none or all above four buffs", () => {
     expect(boundarySubsets(["a", "b", "c", "d", "e"].map((b) => e(b, "atk")))).toHaveLength(2);
+  });
+});
+
+describe("kit census", () => {
+  it("counts each kit's hand-written features, flagging what the data has", () => {
+    const census = kitCensus();
+    expect(census.get("chr_0016_laevat")?.get("kit.stacks")).toBe(1);
+    expect(census.get("chr_0013_aglina")?.get("applies.infliction")).toBeGreaterThan(0);
+    expect(formatCensus(census)).toMatch(/hit\.frames \*/);
   });
 });

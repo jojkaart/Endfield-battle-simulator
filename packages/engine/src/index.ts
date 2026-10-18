@@ -12,4 +12,5 @@ export * from "./status.ts";
 export * from "./triggers.ts";
 export * from "./buffs.ts";
 export * from "./search.ts";
+export * from "./expr.ts";
 export * from "./timeline.ts";

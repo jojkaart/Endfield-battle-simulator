@@ -31,6 +31,20 @@ The owner plays daily and may run simple in-game tests. Keep
 [docs/in-game-tests.md](docs/in-game-tests.md) current and tell the owner
 when a new test becomes ready.
 
+## Operator kits
+
+Every time an operator kit is added (or substantially changed), repeat the
+pattern review in [docs/kit-abstractions.md](docs/kit-abstractions.md#repeating-the-review):
+run `efsim kit-census`, read the kit reports, and move anything the new kit
+hand-writes that the data has, or that another kit already does differently,
+into shared code before moving on.
+
+## Worktrees and sub-agents
+
+In a git worktree (sub-agents' `.claude/worktrees/…`), run
+`source scripts/setup-worktree.sh` first: otherwise the CLI and tests use
+the main checkout's packages and kits, and find no game data.
+
 ## Data and reference code
 
 - Game data comes from the submodules under `data/`; see
