@@ -84,3 +84,5 @@ first.
    after a few months of active play every player has every 5-star at P5,
    so P5 is the default assumption for 4- and 5-star operators in team and
    loadout searches (a player's own account data overrides it later).
+   With the 5-star weapons that have no kit yet and the last two gear sets
+   ([batch-3.md](kit-batches/batch-3.md)).
