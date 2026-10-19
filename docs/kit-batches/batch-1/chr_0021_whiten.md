@@ -831,3 +831,114 @@ says otherwise).
 - **48** (Valiant's skill-type bonus, `inheritFirstDamageMask`);
 - **49** (talent-1 SP, and that a teammate's Shatter doesn't count);
 - **50** (P5: anyone's Solidification, refreshes, 1 s cooldown).
+
+## Kit (2026-10-18)
+
+### What was written
+
+- `packages/data/kits/operators/chr_0021_whiten.json`, rewritten from the
+  pass-3 plan: stack `commiseration`; buff `physical_susceptibility` with
+  `gameBuff` and P1's `sum` duration; triggers `combo_window`,
+  `talent1_shatter` (`talentAtLeast: [0, 1]`), `talent1_sp` (delayed cast
+  trigger at 21: `sp` `{talent: 0, key: atb}` if the stack is held, then
+  −1), `p5_energy` (literal `cooldown: 1`); attack4's `poise` with
+  `poiseControlledOnly`; the projhit with `detached: false`,
+  `teamEnergyFrame: 21` and `poise`; the combo's two hits in branch
+  `target` (`solidified` first, with `if`; `not_solidified` second, the
+  else), both with a forced Lift, `usp` and `poise`; the ultimate's forced
+  Lift `if: {enemyModifier: physical susceptibility}` and `poise`. Gone:
+  every `durationFrames`, the stale notes (Lift, Shatter, P1, P5 and talent 1
+  "not modelled", "only the Solidified variant"). There were no legacy
+  `conditions`.
+- `packages/data/kits/equipment/wpn_lance_0010.json` (new), as planned:
+  `wpn_lance_0010.physical_status_hit` on her `physicalStatus` events, one
+  `atk_scale` physical hit, `damageType: none`, events
+  `chr_0015_lifeng_ultimate_skill` and `sk_wpn_lance_0010`.
+- `packages/data/test/skillCompile.test.ts`: one KNOWN line,
+  `chr_0021_whiten_normal_skill teamEnergyFrame: kit 21, data 0`, the one
+  the plan predicted (the first-target branch the compiler leaves open, D2).
+- `tests/kit-estella.test.ts` (new, 6 tests): the Solidified combo (one
+  combo hit, one Lift, one Shatter, one Valiant hit, all under ×1.15, +10
+  energy); a late combo (`not_solidified`, Lift and Valiant, no Shatter, no
+  Susceptibility, and then no Lift from the ultimate); the ultimate's Lift
+  and the Susceptibility's length (9 s at P5, 6 s at P0, each + 54 frames
+  of her own time stop); talent 1 (+15 SP on the next battle skill, 0 with
+  the talent unlearned); a battle skill cut short at frame 10 (no SP, stack
+  kept); P5 (+5 energy).
+- `examples/estella-solidification.scenario.json`: description only.
+- `docs/in-game-tests.md` test 11: no longer "the model assumes Solidified";
+  expected ratio of a late combo to an early one about 0.50 (3.6 against
+  6.3 × 1.15).
+- `packages/cli/src/simulate.ts`: the reactions table printed empty rows
+  for physical statuses, Vulnerable, Shatter and control statuses; now it
+  names them (display only).
+
+### Deviations from the plan
+
+- `power_attack` no longer has `events: []`: that was there because the
+  finisher wasn't modelled; the engine models it now (P2), so a future log
+  with her finisher checks it. No committed fixture has one.
+- Swordmancer (`suit_phy01`) is another operator's equipment: not written.
+  Without it the set's 3 hits stay uncovered (below).
+- Nothing else. All the pass-3 features named for the kits phase that her
+  kit could use were already in the plan (`branch`, `talentAtLeast`,
+  `{talent, key}`, delayed cast triggers that end with the cast,
+  `detached: false`); `beside`, cooldown `set`, `healKind`, `followUp`,
+  `fromKinds`, empty `scale` and the before-damage `buffApplied` order
+  don't apply to her kit.
+
+### Verification
+
+- `npm run check`: passes (385 tests).
+- `efsim zmdlogs check fixtures/zmdlogs-4e5e1390085e.json`, Estella:
+  before 41 hits, 21 match, 0 mismatch, 12 unquantified, 8 not covered
+  (83%); after **24 match, 0 mismatch, 14 unquantified, 3 not covered
+  (94%)**: Valiant's 5 hits are covered (3 match, 2 after 49.4 s are under
+  the ×1.08 refresh). The 3 left are `buff_equipsuit_physuit_01`. With the
+  plan's `suit_phy01` kit dropped in temporarily: 26 / 0 / 15 / 0, 100%, as
+  pass 3 found. Gilberta's numbers don't move (44 / 0 / 14 / 1).
+- `efsim simulate examples/estella-solidification.scenario.json`: 111,218
+  → **177,161** (Estella 102,043 → 167,987; Gilberta 9,174 unchanged). The
+  +65,944 is exactly the new hits: two forced Lifts (10,971 each), one
+  Shatter (26,001) and two Valiant hits (9,001 each); every other hit is
+  unchanged. Her energy after the battle skill reads 47.5 instead of 55.1
+  (the team energy now comes at frame 21), 60.9 at the combo (P5's +5,
+  ×1.16 efficiency); the ultimate still goes at 5.03 s. With `suit_phy01`:
+  186,537.
+- Spot checks (scratch rotations, each trigger, buff and stack): example +
+  a second battle skill fires `combo_window`, `p5_energy` (once),
+  `talent1_shatter` (stack 1 at the Shatter), `talent1_sp` (+15 SP on the
+  second battle skill, stack 0), Valiant twice (combo Lift, ultimate Lift),
+  `physical_susceptibility` 10.8 s (9 s + her 1.8 s stop); P0 with talent 1
+  unlearned: no P5, no stack, 0 SP, 7.8 s; a combo 5.9 s after the
+  Solidification: `not_solidified`, Lift and Valiant only, and the ultimate
+  doesn't Lift; a battle skill cut at its frame 10 by the ultimate: no SP,
+  stack kept.
+
+### Found on the way (for the merge)
+
+- **Engine:** team energy from `teamEnergyFrame` isn't tied to its cast.
+  `castSkill` queues it in `pendingEnergy` with no cast reference, so a
+  battle skill cut short before that frame still gives the team its energy
+  (spot check above: 7.5 energy after the cut). In game, her projectile
+  is never launched, so `buff_common_obtain_ultimate_sp` never comes. Fix:
+  give `pendingEnergy` entries the cast (`{operator, index}`) and drop them
+  in the interrupt filter as `pendingActions` are (timeline.ts, next to the
+  `pendingActions` filter in `apply`). Affects every kit with
+  `teamEnergyFrame` whose skill can be interrupted.
+- Still open from pass 3: D2 (P5's `cd` from the attached buff's BuffData;
+  the literal stays), Ti2 (her projectile's travel), Ti1b (hit-stop; whether
+  her own time stop freezes her Susceptibility).
+
+### Still unverified (in-game tests)
+
+- **11:** the `not_solidified` combo (about 0.50 of the Solidified one;
+  Lift number, Vulnerable stack, no Shatter).
+- **18:** her Susceptibility through her own ultimate (9 s or 10.8 s).
+- **38:** whether her Physical Susceptibility adds to another source's.
+- **39:** Swordmancer's hit (once its kit is in).
+- **47:** her battle skill's travel time.
+- **48:** Valiant's skill-type bonus (`damageType: none` for now).
+- **49:** talent 1's 15 SP, and that a teammate's Shatter doesn't count.
+- **50:** P5 on anyone's Solidification, on refreshes, 1 s cooldown.
+- Her finisher: no committed log.

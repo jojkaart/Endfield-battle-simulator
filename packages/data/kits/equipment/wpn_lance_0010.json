@@ -1,0 +1,35 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_lance_0010",
+  "sources": [
+    "Valiant. rmxlinux SkillData sk_wpn_lance_0010: passiveEventActions abilityEvent 402 (the wielder applies a physical status) → one DamageAction atk_scale, damageType 0 (physical), decorate mask 0 with hitEnvData.inheritFirstDamageMask, no poise unit, no cooldown; SkillPatchTable atk_scale 1.2 … 3.36 (2.4 at skill level 6). Description: \"After the wielder applies Physical Statuses, the wielder also deals another hit of Physical DMG equal to {atk_scale} of the wielder's ATK.\"",
+    "Logged as chr_0015_lifeng_ultimate_skill (fixtures/zmdlogs-4e5e1390085e.json: 5 hits at Estella's 5 Lifts, none extra at her Shatters; Lifeng isn't in the team).",
+    "The engine emits physicalStatus for Lift, Knock Down, Crush and Breach (not for Shatter or a Vulnerable-only application), which fits the log.",
+    "Skill 3's ATK +20% (cardAttributeModifier attributeType 2) and skills 1–2 (Agility, Physical DMG) are in the stat panel. buff_wpn_lance_0010 isn't created by the weapon skill (its toggleBuffs names buff_wpn_passive_spirit_01), so nothing else here.",
+    "Not known: which skill-type DMG bonus the hit takes (inheritFirstDamageMask may give it the type of the hit that applied the status); damageType none until in-game test 48."
+  ],
+  "triggers": [
+    {
+      "id": "wpn_lance_0010.physical_status_hit",
+      "on": { "event": "physicalStatus" },
+      "by": "self",
+      "skill": "sk_wpn_lance_0010",
+      "do": [
+        {
+          "kind": "hits",
+          "hits": [
+            {
+              "id": "hit",
+              "label": "Valiant: extra hit after a physical status",
+              "scale": ["atk_scale"],
+              "element": "physical",
+              "damageType": "none",
+              "frames": [0],
+              "events": ["chr_0015_lifeng_ultimate_skill", "sk_wpn_lance_0010"]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -2,49 +2,70 @@
   "$schema": "../../../../schemas/kit.schema.json",
   "operator": "chr_0021_whiten",
   "sources": [
-    "Hit structure, blackboard keys, elements (damageType 0 = physical, 4 = cryst) and frames: rmxlinux Json/SkillData chr_0021_whiten_* (game 1.6). Every DamageAction is a single hit per target; the battle skill's damage is its projectile-hit skill chr_0021_whiten_normal_skill_projhit, which inherits the battle skill's blackboard.",
-    "What inflicts and what the skills apply: skill descriptions (CharGrowthTable skillGroupMap, I18nTextTable_EN), quoted in the skill notes, and the SkillData/BuffData actions named there.",
-    "Values verified against ZMDLogs battle btl_upload_4e5e1390085e (fixtures/zmdlogs-4e5e1390085e.json; Rhodagn Lv90, Estella P5, skills 12/12/12/12, game 1.5): the log test checks 16 hits, all ±1: attack1 0.56, attack2 0.68, both attack3 hits (0.34, 0.45), attack4 0.90, the battle skill (3.5 with P3's dmg_up 0.4), the combo on a Solidified target (6.30 with its own 15% Physical Susceptibility) and the ultimate (11.0). Hits after 49.4 s are under a buff refresh the log missed (see the fixture's notes) and count as under unmodelled effects; by hand each is ×1.0800 (+9.6% ATK) of the kit's value.",
-    "Also checked, not committed: btl_upload_39e3cddab245 (Rhodagn Lv80, Estella P5, game 1.5; imported before the importer stopped applying ally-side damage-taken buffs). As imported, 10 of 62 covered hits match and 44 of the 52 mismatches are exactly ×0.8333 (1/1.2: buff_chr_0003_endminf_talent_0, physical damage +0.2, applied to Estella's hits). Without that buff, 54 match. Of the other 8, 2 basic hits are then exactly ×1.2000 (so the Endministrator buff really does apply to some hits: its damageModifier is conditional on the target carrying buff_common_originum_frozen, which the log doesn't show); 3 combos need the Type 50 Yinglung set's combo DMG stacks (not in the log), 1 is the finisher (not modelled), and the battle skill and its Solidification at t=76220 (×1.1988, ×1.2841, under stagger and Endministrator's talent_1 ATK buff) are unexplained.",
-    "durationFrames: the earliest frame the data lets the next action start (the first AllowNextSkillAction window, else exclusiveFrame); the basic-attack chain spacing in both logs agrees within the log's jitter (attack1→2 ≈ 12–14 frames, attack2→3 ≈ 15–17, attack3→4 ≈ 27–28).",
-    "Ultimate energy (docs/data-sources.md, Ultimate energy and combo windows): cost 70 (SkillPatchTable costType 0; potential 2 ×0.9 via skillParamModifier paramType 1), ultimate cooldown 10 s, combo cooldown 18 s (17 s at skill level 12), all read from the tables by the engine. The combo grants usp 10 at frame 19 (ObtainCostAction costType 0, when it hits at least one target). The battle skill's projectile applies buff_common_obtain_ultimate_sp (the team's energy from SP spent, modelled by the engine). The ultimate has no RefrainObtainUsp, so no energy block.",
-    "Not modelled (the engine has no primitive for them): potential 5 (\"After applying Solidification to an enemy, Estella gains {usp:0} Ultimate Energy. Effect can only trigger once every 1s.\": buff_chr_0021_whiten_potential_5 puts an aura buff on every enemy, buff_chr_0021_whiten_potential_5_inaura, which on any buff with the Solidified tag 1535684437 being added, from any source, grants her usp 5 with a 1 s marker cooldown); talent 1 (\"When triggering Shatter, the next battle skill Onomatopoeia cast returns {atb} SP\", 7.5 / 15: Shatter isn't modelled); talent 2 (Cryo damage taken −10% / −20%, defensive); Lift and Shatter (buff_physical_airborne, buff_common_cryst_triggered_physical_break) from the combo and ultimate; the finisher's BreakingAttackCalculation."
+    "Kit plan: docs/kit-batches/batch-1/chr_0021_whiten.md (pass 2 § 3 as amended by pass 3 § (b)). Hit structure, blackboard keys, elements (damageType 0 = physical, 4 = cryst), frames and poise units (poiseCalculation key poise): rmxlinux Json/SkillData chr_0021_whiten_* (game 1.6). Every DamageAction is a single hit per target; the battle skill's damage is its projectile-hit skill chr_0021_whiten_normal_skill_projhit, which inherits the battle skill's blackboard.",
+    "What inflicts and what the skills apply: skill descriptions (CharGrowthTable skillGroupMap, I18nTextTable_EN), quoted in the skill notes, and the SkillData/BuffData actions named there. Lift, Shatter, Vulnerable and stagger from forced Lifts are the engine's (status.ts).",
+    "Values verified against ZMDLogs battle btl_upload_4e5e1390085e (fixtures/zmdlogs-4e5e1390085e.json; Rhodagn Lv90, Estella P5, skills 12/12/12/12, game 1.5): attack1 0.56, attack2 0.68, both attack3 hits (0.34, 0.45), attack4 0.90, the battle skill (3.5 with P3's dmg_up 0.4), the combo on a Solidified target (6.30 with its own 15% Physical Susceptibility), the ultimate (11.0), and the Lift and Shatter hits her forced Lifts cause. Hits after 49.4 s are under a buff refresh the log missed (see the fixture's notes) and count as under unmodelled effects; by hand each is ×1.0800 (+9.6% ATK) of the kit's value.",
+    "Also checked, not committed: btl_upload_39e3cddab245 (Rhodagn Lv80, Estella P5, game 1.5; imported before the importer stopped applying ally-side damage-taken buffs). As imported, 10 of 62 covered hits match and 44 of the 52 mismatches are exactly ×0.8333 (1/1.2: buff_chr_0003_endminf_talent_0, physical damage +0.2, applied to Estella's hits). Without that buff, 54 match. Of the other 8, 2 basic hits are then exactly ×1.2000 (so the Endministrator buff really does apply to some hits: its damageModifier is conditional on the target carrying buff_common_originum_frozen, which the log doesn't show); 3 combos need the Type 50 Yinglung set's combo DMG stacks (not in the log), 1 is the finisher, and the battle skill and its Solidification at t=76220 (×1.1988, ×1.2841, under stagger and Endministrator's talent_1 ATK buff) are unexplained. (Checked against the kit before Lift, Shatter and branches were added.)",
+    "When the next action may start comes from SkillData (the engine's actionGate), so the kit has no durationFrames.",
+    "Ultimate energy (docs/data-sources.md, Ultimate energy and combo windows): cost 70 (SkillPatchTable costType 0; potential 2 ×0.9 via skillParamModifier paramType 1), ultimate cooldown 10 s, combo cooldown 18 s (17 s at skill level 12), all read from the tables by the engine. The combo grants usp 10 at frame 19 (ObtainCostAction costType 0, when it hits at least one target). The battle skill's projectile creates buff_common_obtain_ultimate_sp (the team's energy from SP spent) at its hit, frame 21 (teamEnergyFrame). The ultimate has no RefrainObtainUsp, so no energy block.",
+    "Not modelled: talent 2 (\"Laziness Pays Off Now\": ignores Cryo Infliction on herself and takes −10% / −20% Cryo DMG; defensive); P3's range +50% (one enemy); projectile travel of the battle skill (it lands at its launch frame 21); hit-stop. P4's attributes and P2's cost come from the tables."
   ],
   "element": "physical",
+  "stacks": [
+    {
+      "id": "commiseration",
+      "label": "Commiseration (talent 1: the next battle skill returns SP)",
+      "max": 1,
+      "note": "buff_chr_0021_whiten_talent_0_active (stackingType 7, max 1: \"This effect cannot stack\"; lifeType 1, no expiry). Gained by talent1_shatter, used by talent1_sp."
+    }
+  ],
   "buffs": [
     {
       "id": "physical_susceptibility",
       "label": "Physical Susceptibility (combo skill)",
       "target": "enemy",
-      "duration": "duration",
-      "modifiers": [
-        {
-          "zone": "susceptibility",
-          "value": "rate",
-          "elements": [
-            "physical"
-          ]
-        }
-      ],
-      "note": "buff_chr_0021_whiten_combo_skill_physical_vulnerable: VulnerableAction subType 2 (physical) with the combo's rate (0.15 at level 12) for its duration (6 s). Potential 1 (\"Physical Susceptibility duration +{rate_plus:0}s\") sets has_potential1 = 1 and rate_plus = 3, and the combo then adds rate_plus to duration (ModifyDynamicBlackboard operation 1) before creating the buff: 9 s. A ValueSpec names one key, so P1+ builds get 6 s here (3 s short); the log check is unaffected (it uses the logged buffs). Logged as buff_common_affixes_vulnerable_physical, starting at the combo hit."
+      "gameBuff": "buff_common_affixes_vulnerable_physical",
+      "duration": { "sum": ["duration", { "product": ["has_potential1", "rate_plus"] }] },
+      "modifiers": [{ "zone": "susceptibility", "value": "rate", "elements": ["physical"] }],
+      "note": "buff_chr_0021_whiten_combo_skill_physical_vulnerable: VulnerableAction subType 2 (physical) with the combo's rate (0.15 at level 12) for its duration (6 s). Potential 1 (\"Physical Susceptibility duration +{rate_plus:0}s\") sets has_potential1 = 1 and rate_plus = 3, and the combo then adds rate_plus to duration (CompareFloat has_potential1 = 1 → ModifyDynamicBlackboard operation 1) before creating the buff: 9 s. Below P1 has_potential1 is 0, so SkillData's default rate_plus (−0.1) drops out: 6 s. Logged as buff_common_affixes_vulnerable_physical (stackingType 0, no stack group), starting at the combo hit. Whether it adds to another source's Physical Susceptibility is open (in-game test 38); whether her own ultimate's time stop freezes it is open (test 18: the engine freezes it)."
     }
   ],
   "triggers": [
     {
       "id": "combo_window",
-      "on": {
-        "event": "reaction",
-        "statuses": [
-          "solidification"
-        ]
-      },
+      "on": { "event": "reaction", "statuses": ["solidification"] },
       "by": "anyone",
+      "do": [{ "kind": "openCombo" }],
+      "note": "CharGrowthTable: \"COMBO TRIGGER: When an enemy suffers Solidification.\" Forced Solidifications count."
+    },
+    {
+      "id": "talent1_shatter",
+      "on": { "event": "shatter" },
+      "by": "self",
+      "if": { "talentAtLeast": [0, 1] },
+      "do": [{ "kind": "gain", "gains": [{ "stack": "commiseration" }] }],
+      "note": "Talent 1 \"Commiseration\": \"When triggering Shatter, the next battle skill Onomatopoeia cast returns {atb} SP. This effect cannot stack.\" buff_chr_0021_whiten_talent_0 on her: abilityEvent 102 (the owner applies a buff) with CheckBuffIdInContext on the Shatter tag −615023885 → creates buff_chr_0021_whiten_talent_0_active. Only her own Shatters (in-game test 49)."
+    },
+    {
+      "id": "talent1_sp",
+      "on": { "event": "cast", "skills": ["chr_0021_whiten_normal_skill"] },
+      "by": "self",
+      "delay": 21,
       "do": [
-        {
-          "kind": "openCombo"
-        }
+        { "kind": "sp", "value": { "talent": 0, "key": "atb" }, "if": { "stack": "commiseration", "atLeast": 1 } },
+        { "kind": "gain", "gains": [{ "stack": "commiseration", "amount": -1 }] }
       ],
-      "note": "CharGrowthTable: \"COMBO TRIGGER: When an enemy suffers Solidification.\""
+      "note": "chr_0021_whiten_normal_skill frames 21–24: CheckBuffStackNumAdvanced ≥ 1 → GetTargetBuffBBAdvanced atb → ObtainCostAction costType 1 (SP) → FinishBuffAdvanced. atb 7.5 / 15 at talent levels 1 / 2 (buff_chr_0021_whiten_talent_0's attached blackboard; 0 while unlearned). Each action's if is judged when it runs (frame 21), so the trigger has none. A battle skill cut short before frame 21 returns nothing and keeps the stack. Returned SP: no team energy."
+    },
+    {
+      "id": "p5_energy",
+      "on": { "event": "reaction", "statuses": ["solidification"] },
+      "by": "anyone",
+      "if": { "potentialAtLeast": 5 },
+      "cooldown": 1,
+      "skill": "buff_chr_0021_whiten_potential_5",
+      "do": [{ "kind": "energy", "value": "usp" }],
+      "note": "P5: \"After applying Solidification to an enemy, Estella gains {usp:0} Ultimate Energy. Effect can only trigger once every 1s.\" buff_chr_0021_whiten_potential_5 auras buff_chr_0021_whiten_potential_5_inaura onto enemies; on abilityEvent 9 (a buff added, any source) with the Solidified tag 1535684437 and its timed marker, it grants her usp 5. The marker is hers (CreateTimedMarker targetSource 1), so the cooldown is hers, not per enemy. The 1 s is a literal: cd is in the _inaura BuffData, not the attached blackboard the loader reads. Anyone's Solidification counts as the data says; the text says \"after applying\" (in-game test 50)."
     }
   ],
   "skills": [
@@ -52,167 +73,63 @@
       "skillId": "chr_0021_whiten_attack1",
       "label": "Basic attack 1",
       "damageType": "basic",
-      "durationFrames": 13,
-      "note": "Chains into attack2 from frame 13; exclusiveFrame 18, full animation 105.",
-      "hits": [
-        {
-          "id": "hit",
-          "scale": [
-            "atk_scale"
-          ],
-          "frames": [
-            6
-          ],
-          "note": "Verified: 2 hits in zmdlogs-4e5e1390085e."
-        }
-      ]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [6], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e." }]
     },
     {
       "skillId": "chr_0021_whiten_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
-      "durationFrames": 16,
-      "note": "Chains into attack3 from frame 16; exclusiveFrame 28, full animation 123.",
-      "hits": [
-        {
-          "id": "hit",
-          "scale": [
-            "atk_scale"
-          ],
-          "frames": [
-            6
-          ],
-          "note": "Verified: 2 hits in zmdlogs-4e5e1390085e."
-        }
-      ]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [6], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e." }]
     },
     {
       "skillId": "chr_0021_whiten_attack3",
       "label": "Basic attack 3",
       "damageType": "basic",
-      "durationFrames": 28,
-      "note": "Chains into attack4 from frame 28 (= exclusiveFrame); full animation 153. Both hits are logged under the event key chr_0021_whiten_attack3; the log checker tries both.",
+      "note": "Two DamageActions, both logged under the event key chr_0021_whiten_attack3; the log checker tries both.",
       "hits": [
-        {
-          "id": "hit1",
-          "label": "Basic attack 3, first hit",
-          "scale": [
-            "atk_scale"
-          ],
-          "events": [
-            "chr_0021_whiten_attack3"
-          ],
-          "frames": [
-            7
-          ],
-          "note": "Verified: 2 hits in zmdlogs-4e5e1390085e (1429)."
-        },
-        {
-          "id": "hit2",
-          "label": "Basic attack 3, second hit",
-          "scale": [
-            "atk_scale2"
-          ],
-          "events": [
-            "chr_0021_whiten_attack3"
-          ],
-          "frames": [
-            18
-          ],
-          "note": "Verified: 2 hits in zmdlogs-4e5e1390085e (1892)."
-        }
+        { "id": "hit1", "label": "Basic attack 3, first hit", "scale": ["atk_scale"], "events": ["chr_0021_whiten_attack3"], "frames": [7], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e." },
+        { "id": "hit2", "label": "Basic attack 3, second hit", "scale": ["atk_scale2"], "events": ["chr_0021_whiten_attack3"], "frames": [18], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e." }
       ]
     },
     {
       "skillId": "chr_0021_whiten_attack4",
       "label": "Basic attack 4 (final strike)",
       "damageType": "basic",
-      "durationFrames": 46,
-      "note": "Loops back to attack1 from frame 46 (= exclusiveFrame); full animation 134. Final Strike (decorate mask 2097280).",
-      "hits": [
-        {
-          "id": "hit",
-          "scale": [
-            "atk_scale"
-          ],
-          "frames": [
-            21
-          ],
-          "note": "Verified: 1 hit in zmdlogs-4e5e1390085e."
-        }
-      ]
+      "note": "Final Strike (decorate mask 2097280) and its atb 19 come from the data. \"As the controlled operator, Final Strike also deals {poise:0} Stagger\": its poise unit has onlyEnableForMainChar.",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [21], "poise": "poise", "poiseControlledOnly": true, "note": "Verified: 1 hit in zmdlogs-4e5e1390085e." }]
     },
     {
       "skillId": "chr_0021_whiten_power_attack",
       "label": "Heavy attack (finisher)",
       "damageType": "basic",
-      "durationFrames": 30,
-      "note": "Battle or combo skill allowed from frame 30; exclusiveFrame 50, full animation 151.",
-      "hits": [
-        {
-          "id": "hit",
-          "scale": [
-            "atk_scale"
-          ],
-          "events": [],
-          "frames": [
-            30
-          ],
-          "note": "Uses BreakingAttackCalculation (the finisher on a staggered enemy), which the engine doesn't model, so it isn't log-checked. The one logged hit (btl_upload_39e3cddab245, t=71860) is ×1.215 of atk_scale 9 with the logged buffs and stagger."
-        }
-      ]
+      "note": "BreakingAttackCalculation (skillSpecification 8): the engine makes it castable only on a Staggered enemy, once per stagger, multiplies it by the enemy's finisher multiplier and adds the finisher SP at the cast.",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [30], "note": "Not in a committed log fixture. The one logged hit (btl_upload_39e3cddab245, t=71860) is ×1.215 of atk_scale 9 with the logged buffs and stagger, before the finisher multiplier." }]
     },
     {
       "skillId": "chr_0021_whiten_plunging_attack_end",
       "label": "Plunging attack",
       "damageType": "basic",
-      "durationFrames": 15,
-      "note": "exclusiveFrame 15; full animation 175.",
-      "hits": [
-        {
-          "id": "hit",
-          "scale": [
-            "atk_scale"
-          ],
-          "frames": [
-            1
-          ],
-          "note": "Not logged yet."
-        }
-      ]
+      "note": "canCastInAir (skillSpecification 6): the engine refuses it until rotations have jumps.",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "note": "Not logged yet." }]
     },
     {
       "skillId": "chr_0021_whiten_normal_skill",
       "label": "Battle skill",
       "damageType": "battle",
-      "durationFrames": 45,
-      "note": "exclusiveFrame 45; full animation 121. Description: \"A lance thrust that fires a stream of freezing sound waves that deal Cryo DMG and apply Cryo Infliction to all enemies along its straight path.\" The projectile hit also applies buff_common_obtain_ultimate_sp (team energy from the SP spent; the engine handles it for every battle skill).",
+      "teamEnergyFrame": 21,
+      "note": "Description: \"A lance thrust that fires a stream of freezing sound waves that deal Cryo DMG and apply Cryo Infliction to all enemies along its straight path.\" LaunchProjectile at frame 21; the projectile hit creates buff_common_obtain_ultimate_sp on its first target (team energy from the SP spent), hence teamEnergyFrame 21. Talent 1's SP return is the talent1_sp trigger.",
       "hits": [
         {
           "id": "projectile",
-          "scale": [
-            "atk_scale"
-          ],
+          "scale": ["atk_scale"],
           "element": "cryst",
-          "events": [
-            "chr_0021_whiten_normal_skill_projhit"
-          ],
-          "bonuses": [
-            {
-              "zone": "damageBonus",
-              "key": "dmg_up"
-            }
-          ],
-          "applies": [
-            {
-              "kind": "infliction",
-              "element": "cryst"
-            }
-          ],
-          "frames": [
-            21
-          ],
-          "note": "Projectile launched at frame 21; it lands as chr_0021_whiten_normal_skill_projhit (SpellInfliction in that file; the description says Cryo Infliction). The first target each projectile hits (EntityBB_first_hit) takes up_atk_scale = atk_scale with +dmg_up in the damage-bonus zone (DamageScaleProcessor, NormalCalcZone); other targets take atk_scale alone. dmg_up is 0 unless potential 3 sets it to 0.4 (\"DMG Dealt +{dmg_up:0%} to the first enemy hit\"). Single target, so this is the first-target hit. Verified: 3 hits in zmdlogs-4e5e1390085e."
+          "events": ["chr_0021_whiten_normal_skill_projhit"],
+          "detached": false,
+          "bonuses": [{ "zone": "damageBonus", "key": "dmg_up" }],
+          "applies": [{ "kind": "infliction", "element": "cryst" }],
+          "frames": [21],
+          "poise": "poise",
+          "note": "Lands as chr_0021_whiten_normal_skill_projhit (SpellInfliction type 2 in that file). The first target each projectile hits (EntityBB_first_hit) takes atk_scale with +dmg_up in the damage-bonus zone (DamageScaleProcessor, NormalCalcZone); dmg_up is 0 unless potential 3 sets it to 0.4 (\"DMG Dealt +{dmg_up:0%} to the first enemy hit\"). One enemy, so this is the first-target hit. detached false: the projectile isn't launched when her combo or ultimate cuts the cast before frame 21 (the loader would default a hit whose event names another file to detached). Travel time isn't in the data: it lands at its launch frame. Verified: 3 hits in zmdlogs-4e5e1390085e."
         }
       ]
     },
@@ -220,29 +137,33 @@
       "skillId": "chr_0021_whiten_combo_skill",
       "label": "Combo skill",
       "damageType": "combo",
-      "durationFrames": 20,
-      "note": "Battle skill allowed from frame 20; exclusiveFrame 33, full animation 154. Description: \"Quickly moves to the enemy's side to deal Physical DMG and forcibly Lift enemies in a small area. If the skill hits a target with Solidification, the skill deals additional DMG and applies Physical Susceptibility.\" Per target (ForEachAction > IfElseAction on tag 1535684437, Solidified): if Solidified, it first applies Physical Susceptibility and then hits for atk_scale2; otherwise it hits for atk_scale (3.6 at level 12) with no susceptibility. Both Lift. Only the Solidified variant is modelled, because kits can't yet condition a hit on an enemy status (scaleIf only checks inflictions): the combo is only castable after a Solidification (its trigger), Solidification lasts at least 5.75 s (level I) and the window is 6 s, so the target is normally still Solidified when it lands. A combo cast more than 5.75 s after a level-I Solidification (or after something consumed it) would really be the atk_scale variant: the model overstates that case (×1.75 at level 12, plus the susceptibility).",
+      "note": "Description: \"Quickly moves to the enemy's side to deal Physical DMG and forcibly Lift enemies in a small area. If the skill hits a target with Solidification, the skill deals additional DMG and applies Physical Susceptibility.\" Per target, ForEachAction > IfElseAction on tag 1535684437 (Solidified): true → (P1 blackboard) CreateBuff Physical Susceptibility → AirborneAction forceAirborne → DamageAction atk_scale2; false → AirborneAction forceAirborne → DamageAction atk_scale. Both share branch \"target\", judged together on the enemy before either lands; the Solidified one is listed first (the else has no if). The forced Lift on a Solidified enemy Shatters it (engine). usp 10 at frame 19 (ObtainCostAction when CheckEntityNum tar ≥ 1), poise 10 at level 12 on both.",
       "hits": [
         {
           "id": "solidified",
           "label": "Combo skill (Solidified target)",
-          "scale": [
-            "atk_scale2"
-          ],
-          "events": [
-            "chr_0021_whiten_combo_skill"
-          ],
-          "buffs": [
-            {
-              "buff": "physical_susceptibility",
-              "beforeDamage": true
-            }
-          ],
+          "branch": "target",
+          "if": { "enemyStatus": "solidification" },
+          "scale": ["atk_scale2"],
+          "events": ["chr_0021_whiten_combo_skill"],
+          "frames": [19],
+          "buffs": [{ "buff": "physical_susceptibility", "beforeDamage": true }],
+          "applies": [{ "kind": "physicalStatus", "status": "lift", "forced": true }],
           "energy": "usp",
-          "frames": [
-            19
-          ],
-          "note": "Energy: usp 10 at frame 19 (ObtainCostAction costType 0 when at least one target is hit). Verified: the 2 combo hits before 49.4 s in zmdlogs-4e5e1390085e (23050, 27882) match with its own susceptibility (logged as a boundary buff, buff_common_affixes_vulnerable_physical) applied and the stagger that starts at the same instant at t=29524 not applied."
+          "poise": "poise",
+          "note": "Verified in zmdlogs-4e5e1390085e with its own susceptibility applied (logged as a boundary buff); the Lift and Shatter it causes are under it too."
+        },
+        {
+          "id": "not_solidified",
+          "label": "Combo skill (target not Solidified)",
+          "branch": "target",
+          "scale": ["atk_scale"],
+          "events": ["chr_0021_whiten_combo_skill"],
+          "frames": [19],
+          "applies": [{ "kind": "physicalStatus", "status": "lift", "forced": true }],
+          "energy": "usp",
+          "poise": "poise",
+          "note": "Not in a log yet (in-game test 11): a Lift damage number and a Vulnerable stack, no Shatter, no Susceptibility. Lands when Solidification has run out or a teammate's physical status Shattered it first."
         }
       ]
     },
@@ -250,18 +171,15 @@
       "skillId": "chr_0021_whiten_ultimate_skill",
       "label": "Ultimate",
       "damageType": "ultimate",
-      "durationFrames": 60,
-      "note": "Basic attack, battle and combo skills allowed from frame 60; exclusiveFrame 77, full animation 168. Description: \"To enemies with Physical Susceptibility, the skill forcibly applies Lift to them\" (Lift isn't modelled).",
+      "note": "Description: \"To enemies with Physical Susceptibility, the skill forcibly applies Lift to them.\" ForEach > CheckTagMatch 1066759270 (on buff_common_affixes_vulnerable_physical and _vulnerable_all, any source) > AirborneAction forceAirborne, then the DamageAction. Time stop (UltimateTimeAction, frames 0–54) from the data.",
       "hits": [
         {
           "id": "hit",
-          "scale": [
-            "atk_scale"
-          ],
-          "frames": [
-            54
-          ],
-          "note": "The DamageAction reads atk_scale_total = atk_scale + dmg_up_total, and nothing in the file ever writes dmg_up_total (the blackboard's dmg_up 0.5 is unused), so it is atk_scale. Verified: 1 hit in zmdlogs-4e5e1390085e (11.0 exactly)."
+          "scale": ["atk_scale"],
+          "frames": [54],
+          "poise": "poise",
+          "applies": [{ "kind": "physicalStatus", "status": "lift", "forced": true, "if": { "enemyModifier": { "zone": "susceptibility", "element": "physical" } } }],
+          "note": "The DamageAction reads atk_scale_total = atk_scale + dmg_up_total, and nothing in the file ever writes dmg_up_total (the blackboard's dmg_up 0.5 is unused), so it is atk_scale. Verified: 2 hits in zmdlogs-4e5e1390085e (11.0 exactly), both Lifting under her Susceptibility."
         }
       ]
     }
