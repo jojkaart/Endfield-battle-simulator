@@ -496,10 +496,11 @@ export interface KitSkill {
    * When the team's energy for the SP it spends comes, in parts (SkillData
    * CreateBuff buff_common_obtain_ultimate_sp, each with its `ratio`): frames
    * from the cast; a part the cast is cut short before, or whose `if` (for
-   * the caster) doesn't hold at its frame, gives nothing. All at the cast
-   * when absent.
+   * the caster) doesn't hold at its frame, gives nothing; a `detached` part
+   * comes from something the skill left behind (an ability entity), so a cut
+   * or a jump doesn't drop it. All at the cast when absent.
    */
-  readonly teamEnergy?: readonly { readonly frame: number; readonly ratio: number; readonly if?: Predicate }[];
+  readonly teamEnergy?: readonly { readonly frame: number; readonly ratio: number; readonly if?: Predicate; readonly detached?: boolean }[];
   /**
    * When the skill's conditional jumps (SkillTiming.jumps, by their frame
    * `at`) are taken: `if` judged for the caster at the cast (the data's

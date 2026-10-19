@@ -68,7 +68,7 @@ interface RawKit {
     damageType: "basic" | "battle" | "combo" | "ultimate";
     energyBlockSeconds?: number;
     jumps?: { at: number; if: Predicate }[];
-    teamEnergy?: { frame: number; ratio: number; if?: Predicate }[];
+    teamEnergy?: { frame: number; ratio: number; if?: Predicate; detached?: boolean }[];
     available?: Predicate;
     followUpOnly?: boolean;
     takesControl?: boolean;

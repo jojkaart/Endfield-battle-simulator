@@ -62,12 +62,12 @@ describe("Fluorite's kit", () => {
     expect(mine(run(sc, [op("ultimate_skill")])).some((h) => h.skillId === P + "normal_skill")).toBe(false);
   });
 
-  it("the battle skill's team energy comes at the kick, even when her next action cuts the skill short", () => {
+  it("the battle skill's team energy comes at the explosion (cast frame 99), even when her next action cuts the skill short", () => {
     const sc = scenario({}, { startEnergy: {} });
     const at = (rotation: RotationAction[], frame: number) => run(sc, rotation, frame).energy[F] ?? 0;
-    expect(at([op("normal_skill")], 9)).toBe(0);
+    expect(at([op("normal_skill")], 98)).toBe(0);
     // 100 SP × 0.065 per natural SP spent, × Ultimate Gain Efficiency.
-    const whole = at([op("normal_skill")], 11);
+    const whole = at([op("normal_skill")], 100);
     expect(whole).toBeGreaterThan(0);
     expect(at([op("normal_skill"), op("attack1")], 120)).toBeCloseTo(whole, 9);
   });

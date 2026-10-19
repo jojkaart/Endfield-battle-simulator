@@ -322,9 +322,6 @@ const KNOWN: string[] = [
   // Finisher (BreakingAttackCalculation): multipliers 0.4 (frame 15) and 0.6 (35) of atk_scale, which the compiler doesn't read (D2/D3).
   "chr_0020_meurs_power_attack/hit factor: kit 0.4, data 1",
   "chr_0020_meurs_power_attack/hit_2 factor: kit 0.6, data 1",
-  // The explosive's buff_common_obtain_ultimate_sp is at its explosion (entity frame 89 = cast frame 99, or 149), but the entity outlives the cast
-  // and a teamEnergy part is dropped when the operator acts again first (exclusiveFrame 34): the kit gives it at the kick (frame 10), interim.
-  "chr_0022_bounda_normal_skill teamEnergy: kit 1@10, data 1@99",
   // The entity's JumpToAction to 149 (the ultimate's marker on the target) is the other branch of the one explosion, not a second one (open list D3):
   // the kit deals it from the trigger ultimate_detonates when an ultimate shot lands, and the frame-99 explosion then doesn't happen.
   "chr_0022_bounda_normal_skill applies at 159: kit [], data [infliction natural]",

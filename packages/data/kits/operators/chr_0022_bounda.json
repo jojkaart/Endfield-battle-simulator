@@ -446,8 +446,9 @@
       "damageType": "battle",
       "teamEnergy": [
         {
-          "frame": 10,
-          "ratio": 1
+          "frame": 99,
+          "ratio": 1,
+          "detached": true
         }
       ],
       "hits": [
@@ -485,7 +486,7 @@
           "note": "The explosive's explosion at entity frame 89 (cast frame 10 + 89): radius 3, Nature DMG atk_scale (mask 4352), Nature Infliction, stagger `poise`, InterruptAction 1 s (not Immobilization: no effect). Only while the explosive is still stuck (not detonated by the ultimate first). P3: \"After Improvised Explosive explodes, the slow effect is applied to all enemies hit and lasts {duration_potential}s\" (IfElse potential_lv ≥ 3; the key is 0 below P3)."
         }
       ],
-      "note": "Team energy: the explosion's CreateBuff buff_common_obtain_ultimate_sp (entity frame 89 or 149). INTERIM at the kick (frame 10): the entity outlives the cast, but a teamEnergy part is dropped when the operator starts another skill before its frame, which with exclusiveFrame 34 is the usual case (gap noted in the report); the energy comes up to 3 s early instead."
+      "note": "Team energy: the explosion's CreateBuff buff_common_obtain_ultimate_sp (entity frame 89, cast frame 99; or at entity frame 149 when an ultimate shot detonates it, still given at 99 here). The entity outlives the cast, so the part is detached: a later skill or a jump doesn't drop it."
     },
     {
       "skillId": "chr_0022_bounda_combo_skill",

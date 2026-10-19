@@ -227,7 +227,7 @@ export interface TimelineState {
   readonly slowdowns: readonly { readonly start: number; readonly scales: readonly number[]; readonly exempt: string }[];
   /** Ultimate energy given later than the cast (a battle skill's team energy at its data frames, KitSkill.teamEnergy); `if` judged for the caster at the frame. */
   /** Energy grants still to come; `cast`: the cast that grants it (a skill's team energy at its data frame), dropped if it's cut short first. */
-  readonly pendingEnergy: readonly { readonly frame: number; readonly operator: string; readonly amount: number; readonly cast?: { readonly operator: string; readonly index: number }; readonly if?: Predicate }[];
+  readonly pendingEnergy: readonly { readonly frame: number; readonly operator: string; readonly amount: number; readonly cast?: { readonly operator: string; readonly index: number }; readonly if?: Predicate; readonly detached?: boolean }[];
   readonly enemy: EnemyStatus;
   /** Timed buffs and debuffs from skills. */
   readonly buffs: readonly ActiveBuff[];
@@ -1372,7 +1372,7 @@ function takeJump(st: TimelineState, j: PendingJump): { state: TimelineState; ev
       ...st,
       pending: skip(st.pending, (h) => h.operator === j.operator && h.cast === j.cast && !h.detached),
       pendingActions: skip(st.pendingActions, (x) => mine(x.cast)),
-      pendingEnergy: skip(st.pendingEnergy, (x) => mine(x.cast)),
+      pendingEnergy: skip(st.pendingEnergy, (x) => mine(x.cast) && !x.detached),
       pendingJumps: skip(st.pendingJumps, (x) => x.operator === j.operator && x.cast === j.cast),
       buffs: st.buffs.flatMap((b) => (ending.includes(b) ? [] : b.owner === j.operator && b.endsWithCast === j.cast && b.expiresAt >= at + length ? [{ ...b, expiresAt: b.expiresAt - length, skipped: (b.skipped ?? 0) + length }] : [b])),
       acting: { ...st.acting, [j.operator]: { ...cur, skips: [...(cur.skips ?? []), { from: j.from, to: j.to, at, length }] } },
@@ -1674,7 +1674,7 @@ function endCurrentSkill(advanced: TimelineState, operator: string, frame: numbe
     ...advanced,
     pending: advanced.pending.filter((h) => !(h.operator === operator && h.cast === prevCast && !h.detached && h.frame > frame)),
     pendingActions: advanced.pendingActions.filter((x) => !(x.cast && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame)),
-    pendingEnergy: advanced.pendingEnergy.filter((x) => !(x.cast && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame)),
+    pendingEnergy: advanced.pendingEnergy.filter((x) => !(x.cast && !x.detached && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame)),
     pendingJumps: advanced.pendingJumps.filter((x) => !(x.operator === operator && x.cast === prevCast)),
     buffs: advanced.buffs.filter((b) => !endsNow.includes(b)),
   };
@@ -1757,7 +1757,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     else
       for (const part of skill.teamEnergy) {
         const at = frame + scaled(part.frame);
-        const grants = ctx.scenario.team.map((b) => ({ frame: at, operator: b.operator, amount: natural * ENERGY.perNaturalSp * part.ratio, cast: { operator, index: castIndex }, ...(part.if ? { if: part.if } : {}) }));
+        const grants = ctx.scenario.team.map((b) => ({ frame: at, operator: b.operator, amount: natural * ENERGY.perNaturalSp * part.ratio, cast: { operator, index: castIndex }, ...(part.detached ? { detached: true } : {}), ...(part.if ? { if: part.if } : {}) }));
         next = { ...next, pendingEnergy: [...next.pendingEnergy, ...grants] };
       }
   }

@@ -1506,7 +1506,8 @@
               "properties": {
                 "frame": { "type": "integer", "minimum": 0 },
                 "ratio": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
-                "if": { "$ref": "#/$defs/predicate" }
+                "if": { "$ref": "#/$defs/predicate" },
+                "detached": { "type": "boolean", "description": "It comes from something the skill left behind (an ability entity): not dropped when the cast is cut short or jumps." }
               }
             }
           },

@@ -1336,6 +1336,11 @@ describe("timeline: team energy at a skill's frames", () => {
     const s = apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" });
     expect(s.pendingEnergy.length).toBe(1);
     expect(apply(ctx, s, { operator: op, skill: L + "ultimate_skill", at: 10 }).pendingEnergy.length).toBe(0);
+    // A detached part (from an entity the skill left) stays.
+    const d: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills: kit.skills.map((x) => (x.skillId === L + "normal_skill" ? { ...x, teamEnergy: [{ frame: 50, ratio: 1, detached: true }] } : x)) } } } };
+    const dctx = createContext(d, scenario([]));
+    const ds = apply(dctx, init(dctx), { operator: op, skill: L + "normal_skill" });
+    expect(apply(dctx, ds, { operator: op, skill: L + "ultimate_skill", at: 10 }).pendingEnergy.length).toBe(1);
   });
 
   it("comes in parts, each its ratio of the whole; a part whose condition fails at its frame gives nothing", () => {

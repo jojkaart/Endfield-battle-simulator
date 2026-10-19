@@ -47,13 +47,13 @@ Open after the kits, each with an interim in the kits:
 | ID | Feature | Needed by |
 |---|---|---|
 | K1 | **Done** (`KitTrigger.chance`): a trigger that fires with a chance (BuffData `Probablity`), rolled on its own seeded stream | Antal and Fluorite talent 2, `buff_equipsuit_magicinfdb_01/_02`, Laevatain's combo knock-back |
-| K2 | A buff a trigger applies takes its values from the situation at the event | Endministrator (Grizzled Edge) |
+| K2 | **Done** (7c7d00e): a buff a trigger applies takes its values from the situation at the event | Endministrator (Grizzled Edge) |
 | K3 | A physical status's own damage where the game deals it (Lift, Knock Down, Crush before the applying hit's damage; Breach after) | Endministrator (Crush: 12–17%) |
-| K4 | A team-energy part that outlives its cast (`detached`) | Fluorite (explosion at frame 99) |
+| K4 | **Done** (`teamEnergy[].detached`; Fluorite's at frame 99): a team-energy part that outlives its cast | Fluorite (explosion at frame 99) |
 | K5 | The `sp` event says natural or refund (V3), with a `natural` filter | Akekuri P1, Frontiers |
 | K6 | Log tooling: the finisher multiplier in `zmdlogs check`; `zmdlogs reactions` and conditions on the enemy's state; enemy-side team auras tried with and without | Fluorite's and the Endministrator's logs |
 | K7 | Unknown: +180 flat ATK on the Endministrator in 7e19489ae503 | in-game test (her stat panel vs `efsim calc`) |
-| K8 | Being attacked mid-dash (no `attacked` event while dashing) | Antal and Fluorite talent 2 |
+| K8 | Covered by the dodge model: a missed dodge is an ordinary hit with no dash, and a perfect dodge replaces the attack (no `attacked` event) | Antal and Fluorite talent 2 |
 Reports: [batch-2/](batch-2/), one per operator, each ending with a kit
 plan whose draft kits were loaded with the real loader.
 
