@@ -148,9 +148,22 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     for (const v of Object.values(o)) find(v, from, to);
   };
   const group = obj(j["actionGroupData"] ?? {}, at(ctx, "actionGroupData"));
+  const jumps: { at: number; to: number; conditional: boolean }[] = [];
+  const ends: number[] = [];
   for (const ta of (group["timelineActions"] ?? []) as Record<string, unknown>[]) {
     const from = Number(ta["_startFrame"]);
     find(ta["_sequenceActionData"], from, ta["_endFrame"] === undefined ? from : Number(ta["_endFrame"]));
+    // Jumps and ends on the timeline itself; those inside conditions or event handlers are the kit's to say.
+    for (const a of ((ta["_sequenceActionData"] as Record<string, unknown> | undefined)?.["actionData"] ?? []) as Record<string, unknown>[]) {
+      const type = typeof a["$type"] === "string" ? a["$type"] : "";
+      if (a["isEnable"] === false) continue;
+      // Only forward jumps: a backward one repeats frames, which nothing here uses.
+      if (type.includes("JumpToAction") && Number(a["destFrame"]) > from) {
+        const cond = ((a["conditionAction"] as Record<string, unknown> | undefined)?.["actionData"] ?? []) as unknown[];
+        jumps.push({ at: from, to: Number(a["destFrame"]), conditional: cond.length > 0 });
+      }
+      if (type.includes("InterruptCurSkillAction")) ends.push(from);
+    }
   }
   const timing: SkillTiming = {
     durationFrames: get(j, "durationFrame", ctx, int),
@@ -160,6 +173,8 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     specification: get(j, "skillSpecification", ctx, int),
     keepsChain: j["dontInterruptCombo"] === true,
     slowdowns,
+    jumps: jumps.sort((a, b) => a.at - b.at),
+    ends: ends.sort((a, b) => a - b),
   };
   return { timing, defaults, statModifiers };
 }

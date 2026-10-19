@@ -89,6 +89,16 @@ export interface SkillTiming {
    * `from`, the world's time scale for each following frame.
    */
   readonly slowdowns: readonly { readonly from: number; readonly scales: readonly number[] }[];
+  /**
+   * JumpToAction on the skill's own timeline (not inside a condition or an
+   * event handler): at frame `at` the playhead moves forward to `to`, and the
+   * frames between are skipped (their hits, windows, delayed actions; what's
+   * after comes `to − at` frames sooner). `conditional`: its conditionAction
+   * isn't empty; the kit says when it's taken (KitSkill.jumps).
+   */
+  readonly jumps: readonly { readonly at: number; readonly to: number; readonly conditional: boolean }[];
+  /** InterruptCurSkillAction on its own timeline: the action ends at these frames, unless a jump skips them. */
+  readonly ends: readonly number[];
 }
 
 export interface SkillData {
@@ -474,6 +484,13 @@ export interface KitSkill {
    * when absent.
    */
   readonly teamEnergy?: readonly { readonly frame: number; readonly ratio: number; readonly if?: Predicate }[];
+  /**
+   * When the skill's conditional jumps (SkillTiming.jumps, by their frame
+   * `at`) are taken: `if` judged for the caster at the cast (the data's
+   * conditions read state the skill sets up as it starts, e.g. Laevatain's
+   * has_max_energy at frame 3). A conditional jump not listed isn't taken.
+   */
+  readonly jumps?: readonly { readonly at: number; readonly if: Predicate }[];
   /** The operator gains no ultimate energy for this long after the cast (SkillData RefrainObtainUsp, e.g. Laevatain's ultimate). */
   readonly energyBlockSeconds?: number;
   /** Castable only when this holds for the operator at the start frame (a state: `buffActive`; replaced by a stance: `not`). */

@@ -192,8 +192,8 @@ export interface TimelineState {
   /** Frame until which SP doesn't regenerate. */
   readonly spPausedUntil: number;
   readonly controlled: string;
-  /** Per operator: its current (last) action, which gates its next one (actionGate). */
-  readonly acting: Readonly<Record<string, { readonly skill: string; readonly frame: number; readonly speed?: number; readonly cast?: number }>>;
+  /** Per operator: its current (last) action, which gates its next one (actionGate); `skips`: the jumps it took (actionFrame). */
+  readonly acting: Readonly<Record<string, Acting>>;
   /**
    * Per operator: the basic-attack chain's next step and when an attack input
    * resolves to it; `alternatives`, other steps by timing in later windows
@@ -206,6 +206,8 @@ export interface TimelineState {
   /** Trigger actions due later (KitTrigger.delay), with the event that started them. */
   /** Delayed trigger actions; `cast`: the cast they belong to (a cast trigger's), dropped when it's cut short. */
   readonly pendingActions: readonly { readonly frame: number; readonly owner: string; readonly trigger: string; readonly event: BattleEvent; readonly origin: Origin | null; readonly cast?: { readonly operator: string; readonly index: number }; readonly awaited?: boolean }[];
+  /** Jumps and ends on casts' timelines still to come (SkillTiming.jumps and ends; a conditional jump only if the kit's condition held at the cast). */
+  readonly pendingJumps: readonly PendingJump[];
   /** The team's Link stacks (combo casts leave one each, 15 s): their expiry frames. */
   readonly link: readonly number[];
   /** Until when a control status (Si's Immobilization) freezes the enemy's own clock. */
@@ -285,6 +287,7 @@ function initialState(ctx: TimelineContext): TimelineState {
     controlled,
     acting: {},
     chainNext: {},
+    pendingJumps: [],
     readyAt: {},
     pending: [],
     pendingEnergy: [],
@@ -386,6 +389,37 @@ function timingOf(ctx: TimelineContext, skillId: string): SkillTiming {
  * chain points at it; another basic attack not while the chain points
  * elsewhere (the input would resolve to the step).
  */
+/** An operator's current action. */
+export interface Acting {
+  readonly skill: string;
+  readonly frame: number;
+  readonly speed?: number;
+  readonly cast?: number;
+  /** Jumps it took: from skill frame `from` to `to`, at real frame `at`, `length` real frames skipped. */
+  readonly skips?: readonly { readonly from: number; readonly to: number; readonly at: number; readonly length: number }[];
+}
+
+/** A jump (or, with `end`, the action's own end) at a real frame of an operator's cast, in its skill frames. */
+interface PendingJump {
+  readonly frame: number;
+  readonly operator: string;
+  readonly cast: number;
+  readonly from: number;
+  readonly to: number;
+  readonly end?: true;
+}
+
+/** The real frame of an action's skill frame `x`: from its start at its speed, less what its jumps skipped (a skipped frame is its jump's). */
+function actionFrame(cur: Acting, x: number): number {
+  let f = cur.frame + (cur.speed ? Math.round(x / cur.speed) : x);
+  for (const j of cur.skips ?? []) {
+    if (x <= j.from) continue;
+    if (x < j.to) return j.at;
+    f -= j.length;
+  }
+  return f;
+}
+
 /** A basic-attack chain step and the frames in which an attack input resolves to it. */
 export interface ChainStep {
   readonly skill: string;
@@ -407,8 +441,7 @@ function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, s
   const cur = st.acting[operator];
   if (cur) {
     const ct = timingOf(ctx, cur.skill);
-    const speed = cur.speed ?? 1;
-    const at = (x: number) => cur.frame + Math.round(x / speed);
+    const at = (x: number) => actionFrame(cur, x);
     const options = [Math.max(frame, at(ct.durationFrames)), Math.max(frame, at(ct.exclusiveFrames))];
     if (priorityOf(nt) > priorityOf(ct)) options.push(frame);
     for (const w of ct.windows) if (w.skills.includes(skillId) && Math.max(frame, at(w.from)) <= at(w.to)) options.push(Math.max(frame, at(w.from)));
@@ -566,7 +599,8 @@ function shiftOperator(st: TimelineState, operator: string, start: number, n: nu
     ...st,
     pending: st.pending.map((h) => (h.operator === operator && h.frame > start ? { ...h, frame: h.frame + n } : h)),
     pendingActions: st.pendingActions.map((a) => (a.owner === operator && a.frame > start ? { ...a, frame: a.frame + n } : a)),
-    ...(cur ? { acting: { ...st.acting, [operator]: { ...cur, frame: cur.frame + n } } } : {}),
+    pendingJumps: st.pendingJumps.map((j) => (j.operator === operator && j.frame > start ? { ...j, frame: j.frame + n } : j)),
+    ...(cur ? { acting: { ...st.acting, [operator]: { ...cur, frame: cur.frame + n, ...(cur.skips ? { skips: cur.skips.map((k) => ({ ...k, at: k.at + n })) } : {}) } } } : {}),
     ...(chain ? { chainNext: { ...st.chainNext, [operator]: { ...shift(chain), ...(chain.alternatives ? { alternatives: chain.alternatives.map(shift) } : {}) } } } : {}),
   };
 }
@@ -747,7 +781,7 @@ function addBuff(ctx: TimelineContext, st: TimelineState, owner: string, skillId
     // It ends with its owner's current skill: at the skill's end, or earlier if the owner starts another.
     const cur = st.acting[owner];
     const index = st.casts.findLastIndex((c) => c.operator === owner);
-    const end = cur ? cur.frame + Math.round(timingOf(ctx, cur.skill).durationFrames / (cur.speed ?? 1)) : -1;
+    const end = cur ? actionFrame(cur, timingOf(ctx, cur.skill).durationFrames) : -1;
     b = cur && index >= 0 && end > frame ? { ...b, expiresAt: Math.min(b.expiresAt, end), endsWithCast: index } : null;
   }
   return { state: b ? { ...st, buffs: withBuff(st.buffs, b) } : st, applied: b !== null };
@@ -1062,6 +1096,17 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         events.push(...r.events);
         break;
       }
+      case "jump": {
+        const cur = st.acting[owner];
+        if (!cur || cur.skill !== a.skill || cur.cast === undefined) break;
+        // The playhead: real frames since the start, plus what jumps skipped, in skill frames.
+        const playhead = Math.round((frame - cur.frame + (cur.skips ?? []).filter((k) => k.at <= frame).reduce((t, k) => t + k.length, 0)) * (cur.speed ?? 1));
+        if (playhead < a.from || playhead >= a.until || a.to <= playhead) break;
+        const r = takeJump(st, { frame, operator: owner, cast: cur.cast, from: playhead, to: a.to });
+        st = r.state;
+        events.push(...r.events);
+        break;
+      }
       case "cancelHits":
         st = { ...st, pending: st.pending.filter((h) => !(h.operator === owner && h.trigger?.id === a.trigger)) };
         break;
@@ -1271,6 +1316,46 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   return runTriggers(ctx, st, all, { operator: hit.operator, kind }, ctx.beforeDamage ? (t) => !t.beforeDamage : undefined);
 }
 
+/** A cast's jumps and ends: the unconditional ones, and conditional ones whose kit condition holds at the cast. */
+function castJumps(timing: SkillTiming, skill: KitSkill, ec: EvalContext, operator: string, cast: number, frame: number, scaled: (f: number) => number): PendingJump[] {
+  const taken = timing.jumps.filter((j) => !j.conditional || skill.jumps?.some((k) => k.at === j.at && decide(k.if, ec)));
+  return [
+    ...taken.map((j) => ({ frame: frame + scaled(j.at), operator, cast, from: j.at, to: j.to })),
+    ...timing.ends.map((e) => ({ frame: frame + scaled(e), operator, cast, from: e, to: e, end: true as const })),
+  ];
+}
+
+/**
+ * A jump on an operator's current cast at its frame: what the cast has
+ * still to do in the skipped frames doesn't happen (its own hits, delayed
+ * actions, team energy, jumps; detached hits go on), what's after comes
+ * that much sooner, and a buff that ends with the cast and would end in the
+ * skipped frames ends now.
+ */
+function takeJump(st: TimelineState, j: PendingJump): { state: TimelineState; events: BattleEvent[] } {
+  const cur = st.acting[j.operator] as Acting;
+  const at = j.frame;
+  const length = cur.speed ? Math.round((j.to - j.from) / cur.speed) : j.to - j.from;
+  const mine = (x: { readonly operator: string; readonly index: number } | undefined) => x !== undefined && x.operator === j.operator && x.index === j.cast;
+  // Each list: drop what falls in the skipped frames, pull the rest in.
+  const skip = <T extends { readonly frame: number }>(list: readonly T[], ownedBy: (x: T) => boolean): T[] =>
+    list.flatMap((x) => (!ownedBy(x) || x.frame <= at ? [x] : x.frame < at + length ? [] : [{ ...x, frame: x.frame - length }]));
+  const ending = st.buffs.filter((b) => b.owner === j.operator && b.endsWithCast === j.cast && b.expiresAt > at && b.expiresAt < at + length);
+  const events: BattleEvent[] = [...new Map(ending.map((b) => [b.id, { type: "buffEnded" as const, frame: at, operator: j.operator, buff: b.id, remaining: remainingOf(ending.filter((x) => x.id === b.id), at) }])).values()];
+  return {
+    state: {
+      ...st,
+      pending: skip(st.pending, (h) => h.operator === j.operator && h.cast === j.cast && !h.detached),
+      pendingActions: skip(st.pendingActions, (x) => mine(x.cast)),
+      pendingEnergy: skip(st.pendingEnergy, (x) => mine(x.cast)),
+      pendingJumps: skip(st.pendingJumps, (x) => x.operator === j.operator && x.cast === j.cast),
+      buffs: st.buffs.flatMap((b) => (ending.includes(b) ? [] : b.owner === j.operator && b.endsWithCast === j.cast && b.expiresAt >= at + length ? [{ ...b, expiresAt: b.expiresAt - length, skipped: (b.skipped ?? 0) + length }] : [b])),
+      acting: { ...st.acting, [j.operator]: { ...cur, skips: [...(cur.skips ?? []), { from: j.from, to: j.to, at, length }] } },
+    },
+    events,
+  };
+}
+
 /** The events an enemy action makes: an attack on each operator it hits, or the start of a charge. */
 function enemyActionEvents(ctx: TimelineContext, st: TimelineState, a: EnemyAction): BattleEvent[] {
   if (a.kind === "charge") return [{ type: "enemyCharge", frame: a.frame, operator: st.controlled }];
@@ -1300,7 +1385,10 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
     const dueFrame = due?.frame ?? null;
     const grantFrame = grant?.frame ?? null;
     const enemyFrame = enemyAction?.frame ?? null;
-    if (first(tickDue, expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame)) {
+    // A jump comes after everything else at its frame (what's at its skill frame still happens).
+    const jump = st.pendingJumps.reduce<PendingJump | null>((a, x) => (x.frame <= frame && (!a || x.frame < a.frame) ? x : a), null);
+    const jumpFrame = jump?.frame ?? null;
+    if (first(tickDue, expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame)) {
       const tickFrame = tickDue as number;
       const before = st.enemy;
       const t = tickStatus(st.enemy, tickFrame);
@@ -1308,15 +1396,16 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
       st = runTriggers(ctx, st, asEvents(t.events, "none"), null);
       continue;
     }
-    if (first(expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame)) {
+    if (first(expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame)) {
       const at = expiry as number;
       // A buff a cast consumed already ended when it was consumed.
       const ended = st.buffs.filter((b) => b.expiresAt === at && b.cast === undefined);
       st = { ...st, buffs: st.buffs.filter((b) => b.expiresAt !== at) };
-      st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: at, operator: b.owner, buff: b.id, remaining: 0, ...(b.records ? { recorded: b.records.total } : {}) })), null);
+      // Run out: nothing left, but what its cast's jumps took from it.
+      st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: at, operator: b.owner, buff: b.id, remaining: b.skipped ?? 0, ...(b.records ? { recorded: b.records.total } : {}) })), null);
       continue;
     }
-    if (due && first(due.frame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame)) {
+    if (due && first(due.frame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame)) {
       const t = ctx.kits.get(due.owner)?.triggers.find((x) => x.id === due.trigger);
       if (!t) throw new EngineError(`${due.owner} has no trigger ${due.trigger}`);
       st = { ...st, pendingActions: st.pendingActions.filter((x) => x !== due) };
@@ -1324,23 +1413,37 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
       st = runTriggers(ctx, r.state, r.events, due.origin);
       continue;
     }
-    if (grant && first(grant.frame, enemyFrame, buffTick?.frame ?? null, hitFrame)) {
+    if (grant && first(grant.frame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame)) {
       st = { ...st, pendingEnergy: st.pendingEnergy.filter((g) => g !== grant) };
       const caster = grant.cast?.operator ?? grant.operator;
       const holds = !grant.if || decide(grant.if, evalContext(ctx.data, ctx.builds.get(caster) as Build, ctx.panels.get(caster) as StatPanel, "", situationAt(ctx, caster, st, grant.frame)));
       if (holds) st = gainEnergy(ctx, st, grant.operator, grant.amount, grant.frame);
       continue;
     }
-    if (enemyAction && first(enemyAction.frame, buffTick?.frame ?? null, hitFrame)) {
+    if (enemyAction && first(enemyAction.frame, buffTick?.frame ?? null, hitFrame, jumpFrame)) {
       st = { ...st, enemyActions: st.enemyActions.slice(1) };
       st = runTriggers(ctx, st, enemyActionEvents(ctx, st, enemyAction), null);
       continue;
     }
-    if (buffTick && first(buffTick.frame, hitFrame)) {
+    if (buffTick && first(buffTick.frame, hitFrame, jumpFrame)) {
       const { b, frame: at } = buffTick;
       const every = b.every as number;
       st = { ...st, buffs: st.buffs.map((x) => (x === b ? { ...b, nextTick: at + every } : x)) };
       st = runTriggers(ctx, st, [{ type: "buffTick", frame: at, operator: b.owner, buff: b.id }], null);
+      continue;
+    }
+    if (jump && (hitFrame === null || jump.frame < hitFrame)) {
+      st = { ...st, pendingJumps: st.pendingJumps.filter((x) => x !== jump) };
+      // Only while that cast is still the operator's current action.
+      if (st.acting[jump.operator]?.cast !== jump.cast) continue;
+      if (jump.end) {
+        const r = endCurrentSkill(st, jump.operator, jump.frame);
+        st = { ...r.state, acting: Object.fromEntries(Object.entries(r.state.acting).filter(([k]) => k !== jump.operator)) };
+        st = runTriggers(ctx, st, r.events, null);
+      } else {
+        const r = takeJump(st, jump);
+        st = runTriggers(ctx, r.state, r.events, null);
+      }
       continue;
     }
     if (!hit) break;
@@ -1361,7 +1464,7 @@ function afterCantCast(ctx: TimelineContext, state: TimelineState, operator: str
   if (!cur) return frame;
   let f = frame;
   // Channels are in skill frames; a hasted cast plays them faster.
-  const at = (x: number) => cur.frame + (cur.speed ? Math.round(x / cur.speed) : x);
+  const at = (x: number) => actionFrame(cur, x);
   for (const c of [...timingOf(ctx, cur.skill).channels].sort((a, b) => a.from - b.from)) if (c.cantCastSkill && at(c.from) <= f && f < at(c.to)) f = at(c.to);
   return f;
 }
@@ -1375,10 +1478,12 @@ function afterCantCast(ctx: TimelineContext, state: TimelineState, operator: str
 export function earliestStart(ctx: TimelineContext, state: TimelineState, action: RotationAction): { frame: number } | { error: string } {
   const r = startFrom(ctx, state, action);
   const cur = state.acting[action.operator];
-  if (!cur || ("frame" in r && r.frame <= state.frame) || !ctx.kits.get(action.operator)?.triggers.some((t) => t.do.some((a) => a.kind === "endAction"))) return r;
+  const ends = ctx.kits.get(action.operator)?.triggers.some((t) => t.do.some((a) => a.kind === "endAction")) || state.pendingJumps.some((j) => j.operator === action.operator);
+  if (!cur || ("frame" in r && r.frame <= state.frame) || !ends) return r;
   const t = timingOf(ctx, cur.skill);
-  const horizon = Math.min(ctx.scenario.durationFrames, "frame" in r ? r.frame : cur.frame + Math.round(t.durationFrames / (cur.speed ?? 1)));
-  const same = (x: TimelineState) => x.acting[action.operator]?.frame === cur.frame && x.acting[action.operator]?.skill === cur.skill;
+  const horizon = Math.min(ctx.scenario.durationFrames, "frame" in r ? r.frame : actionFrame(cur, t.durationFrames));
+  // Over, replaced, or moved on by a jump.
+  const same = (x: TimelineState) => x.acting[action.operator]?.frame === cur.frame && x.acting[action.operator]?.skill === cur.skill && (x.acting[action.operator]?.skips?.length ?? 0) === (cur.skips?.length ?? 0);
   if (horizon <= state.frame || same(advance(ctx, state, horizon))) return r;
   // The first frame its action is over or replaced: everything before it is as the plain judgement saw it.
   let lo = state.frame;
@@ -1398,7 +1503,7 @@ function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
     if (action.operator === state.controlled) return { error: `${action.operator} is already the controlled operator` };
     // Swapping doesn't stop the current action, but a channel that forbids switching does stop the swap.
     const cur = state.acting[state.controlled];
-    if (cur) for (const c of timingOf(ctx, cur.skill).channels) if (c.cantSwitch && cur.frame + c.from <= frame && frame < cur.frame + c.to) frame = cur.frame + c.to;
+    if (cur) for (const c of timingOf(ctx, cur.skill).channels) if (c.cantSwitch && actionFrame(cur, c.from) <= frame && frame < actionFrame(cur, c.to)) frame = actionFrame(cur, c.to);
     return { frame };
   }
   let costs;
@@ -1509,6 +1614,7 @@ function endCurrentSkill(advanced: TimelineState, operator: string, frame: numbe
     pending: advanced.pending.filter((h) => !(h.operator === operator && h.cast === prevCast && !h.detached && h.frame > frame)),
     pendingActions: advanced.pendingActions.filter((x) => !(x.cast && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame)),
     pendingEnergy: advanced.pendingEnergy.filter((x) => !(x.cast && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame)),
+    pendingJumps: advanced.pendingJumps.filter((x) => !(x.operator === operator && x.cast === prevCast)),
     buffs: advanced.buffs.filter((b) => !endsNow.includes(b)),
   };
   const events: BattleEvent[] = [...new Map(endsNow.map((b) => {
@@ -1631,6 +1737,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     sp: s.sp - costs.spCost,
     spPausedUntil: costs.spCost > 0 ? frame + SP.pauseAfterSpendFrames : s.spPausedUntil,
     acting: beside ? s.acting : { ...s.acting, [operator]: { skill: skillId, frame, cast: castIndex, ...(speed !== 1 ? { speed } : {}) } },
+    pendingJumps: beside ? next.pendingJumps : [...next.pendingJumps, ...castJumps(full.timing, skill, castEc, operator, castIndex, frame, scaled)],
     ...(full.timing.specification === 8 ? { stagger: { ...s.stagger, finisherUsed: true } } : {}),
     chainNext: beside ? next.chainNext : chainAfter(ctx, next, operator, skill, frame, speed),
     readyAt: castCooldowns(ctx, next.readyAt, operator, skill, costs.cooldownFrames, frame),

@@ -67,6 +67,7 @@ interface RawKit {
     label: string;
     damageType: "basic" | "battle" | "combo" | "ultimate";
     energyBlockSeconds?: number;
+    jumps?: { at: number; if: Predicate }[];
     teamEnergy?: { frame: number; ratio: number; if?: Predicate }[];
     available?: Predicate;
     followUpOnly?: boolean;
@@ -329,6 +330,10 @@ function kitChecker(scope: KitScope) {
         case "cast":
           if (!scope.isSkill(a.skill)) throw new Error(`${where}: ${a.skill} isn't one of ${scope.owner}'s skills`);
           break;
+        case "jump":
+          if (!scope.isSkill(a.skill)) throw new Error(`${where}: ${a.skill} isn't one of ${scope.owner}'s skills`);
+          if (!(a.from < a.until && a.from < a.to)) throw new Error(`${where}: a jump moves forward from inside [from, until)`);
+          break;
         case "cooldown": {
           const given = (["seconds", "fraction", "set"] as const).filter((k) => k in a);
           if (given.length !== 1) throw new Error(`${where}: a cooldown change has one of seconds, fraction or set`);
@@ -443,11 +448,16 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
     for (const part of s.teamEnergy ?? []) if (part.if) c.checkPredicate(part.if, `${where} teamEnergy`);
     if ((s.teamEnergy ?? []).reduce((x, p) => x + p.ratio, 0) > 1 + 1e-9) throw new Error(`${where}: the team energy's parts add up to more than the whole`);
     if (s.beside) c.checkPredicate(s.beside, `${where} beside`);
+    for (const j of s.jumps ?? []) {
+      if (!skill.timing?.jumps.some((x) => x.conditional && x.at === j.at)) throw new Error(`${where}: jumps: the skill has no conditional jump at frame ${j.at} (its jumps: ${(skill.timing?.jumps ?? []).map((x) => `${x.at}→${x.to}${x.conditional ? "?" : ""}`).join(", ") || "none"})`);
+      c.checkPredicate(j.if, `${where} jump at ${j.at}`);
+    }
     return {
       skillId: s.skillId,
       label: s.label,
       kind: s.damageType,
       ...(s.energyBlockSeconds !== undefined ? { energyBlockSeconds: s.energyBlockSeconds } : {}),
+      ...(s.jumps ? { jumps: s.jumps } : {}),
       ...(s.teamEnergy !== undefined ? { teamEnergy: s.teamEnergy } : {}),
       ...(s.available ? { available: s.available } : {}),
       ...(s.followUpOnly ? { followUpOnly: true } : {}),

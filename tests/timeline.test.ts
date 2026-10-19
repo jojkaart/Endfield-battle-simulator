@@ -334,15 +334,15 @@ describe("timeline: kit triggers", () => {
 
   it("a cooldown action cuts a skill's remaining cooldown, not below now", () => {
     const d = withTriggers([{ id: "c", on: { event: "cast", kinds: ["battle"] }, by: "self", do: [{ kind: "cooldown", who: "self", skills: "combo", seconds: -2 }] }]);
-    const ctx = createContext(d, { ...scenario([]), durationFrames: 30 * 120 });
-    const five = Array.from({ length: 5 }, () => skill("normal_skill"));
-    let s = init(ctx);
-    for (const a of five) s = apply(ctx, s, a);
+    // With 4 Melting Flame the battle skill is empowered and forces Combustion, leaving SP for the next one.
+    const ctx = createContext(d, { ...scenario([]), durationFrames: 30 * 120, startStacks: { [op]: { melting_flame: 4 } } });
+    let s = apply(ctx, init(ctx), skill("normal_skill"));
     const combustion = advance(ctx, s, ctx.scenario.durationFrames).reactions.find((e) => e.kind === "reaction");
     if (!combustion) throw new Error("no Combustion");
     s = apply(ctx, advance(ctx, s, combustion.frame), skill("combo_skill"));
     const ready = s.readyAt[L + "combo_skill"] ?? 0;
     const after = apply(ctx, s, skill("normal_skill"));
+    expect(after.casts.at(-1)?.frame ?? NaN).toBeLessThan(ready);
     expect(after.readyAt[L + "combo_skill"]).toBe(Math.max(after.casts.at(-1)?.frame ?? NaN, ready - 60));
   });
 
@@ -696,9 +696,9 @@ describe("timeline: when the next action may start (SkillData windows, prioritie
     const { s } = after(chain);
     const a5 = s.casts.at(-1)?.frame ?? NaN;
     expect(start(chain, skill("normal_skill"))).toEqual({ frame: a5 + 26 });
-    // …and a battle skill after a battle skill waits for its exclusive time (117).
+    // …and a battle skill after a battle skill waits for its exclusive time (117), which its jump at 37 (→ 215) skips: the gate opens there.
     const bs = after([skill("normal_skill")]).s.casts.at(-1)?.frame ?? NaN;
-    expect(start([skill("normal_skill")], skill("normal_skill"))).toEqual({ frame: bs + 117 });
+    expect(start([skill("normal_skill")], skill("normal_skill"))).toEqual({ frame: bs + 37 });
   });
 
   it("a higher-priority skill given a time interrupts, cancelling the current skill's hits still to land", () => {
@@ -1113,15 +1113,19 @@ describe("timeline: what ends with a cast, cast blocks, mid-air, control immunit
     const ctx = createContext(g, scenario([]));
     const s = apply(ctx, init(ctx), a("normal_skill"));
     expect(s.buffs.find((b) => b.id === "pause")?.expiresAt).toBe((s.casts[0]?.frame ?? NaN) + duration);
+    // The plain path jumps 37 → 215: the skill, and the buff, end 178 frames sooner.
+    const end = duration - (215 - 37);
+    expect(advance(ctx, s, 38).buffs.find((b) => b.id === "pause")?.expiresAt).toBe((s.casts[0]?.frame ?? NaN) + end);
     // Cut short by her ultimate (it outranks the battle skill): it ends there, with the rest of the skill left.
     const after = apply(ctx, s, a("ultimate_skill", 40));
     const at = after.casts[1]?.frame ?? NaN;
-    expect(at).toBeLessThan(duration);
+    expect(at).toBeLessThan(end);
     const cut = advance(ctx, after, at + 1);
     expect(cut.buffs.some((b) => b.id === "pause")).toBe(false);
+    // What it had left counts the frames the jump took from it: the rest of the skill's own 282.
     expect(cut.stacks[op]?.left).toBeCloseTo(duration - at, 6);
-    // Run out: nothing left.
-    expect(advance(ctx, s, duration + 5).stacks[op]?.left ?? 0).toBe(0);
+    // Run out: nothing left but the skipped frames.
+    expect(advance(ctx, s, duration + 5).stacks[op]?.left ?? 0).toBeCloseTo(215 - 37, 6);
   });
 
   it("a cantCastSkill channel holds the operator's casts, even ones that outrank its skill", () => {
@@ -1342,7 +1346,8 @@ describe("timeline: team energy at a skill's frames", () => {
       const ctx = createContext(g, { ...scenario([]), startEnergy: { [op]: 0 } });
       return advance(ctx, apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" }), 100).energy[op] ?? 0;
     };
-    const halves = [{ frame: 0, ratio: 0.5 }, { frame: 60, ratio: 0.5, if: { buffActive: "mark" } }];
+    // The second part before the plain battle skill's jump at 37 (frames 38–214 are skipped).
+    const halves = [{ frame: 0, ratio: 0.5 }, { frame: 30, ratio: 0.5, if: { buffActive: "mark" } }];
     const whole = energyWith([{ frame: 0, ratio: 1 }], false);
     const none = energyWith([{ frame: 0, ratio: 1e-9 }], false);
     expect(energyWith(halves, true)).toBeCloseTo(whole, 6);
@@ -1361,15 +1366,19 @@ describe("Laevatain's kit: Twilight, its pauses and cooldown; Scorching Heart; a
   };
   const until = (s: ReturnType<typeof run>, id: string) => s.buffs.find((b) => b.id === id)?.expiresAt;
 
-  it("Twilight lasts 15 s, show_weapon 16 s; an enhanced battle skill pauses both 115 frames, given back when it's cut short", () => {
+  it("Twilight lasts 15 s, show_weapon 16 s; an enhanced battle skill pauses both while it runs (frames 0–115 less what its jumps skip), given back when it's cut short", () => {
     const ult = run([a("ultimate_skill")], 30 * 3);
     expect([until(ult, "twilight"), until(ult, "show_weapon")]).toEqual([450, 480]);
-    const one = run([a("ultimate_skill"), a("normal_skill_during_ult")], 30 * 3);
-    expect([until(one, "twilight"), until(one, "show_weapon")]).toEqual([450 + 115, 480 + 115]);
+    // Plain, it jumps 39 → 196: the pause lasts 39 frames.
+    const one = run([a("ultimate_skill"), a("normal_skill_during_ult")], 30 * 6);
+    expect([until(one, "twilight"), until(one, "show_weapon")]).toEqual([450 + 39, 480 + 39]);
+    // Empowered (4 Melting Flame), it jumps 24 → 75, then 195 → 270: 24 + 40 = 64.
+    const empowered = run([a("ultimate_skill"), a("normal_skill_during_ult")], 30 * 6, { startStacks: { [op]: { melting_flame: 4 } } });
+    expect([until(empowered, "twilight"), until(empowered, "show_weapon")]).toEqual([450 + 64, 480 + 64]);
     // A second one in the first's window (its frame 33) ends the first pause after 33 frames.
-    const two = run([a("ultimate_skill"), a("normal_skill_during_ult"), a("normal_skill_during_ult")], 30 * 5);
+    const two = run([a("ultimate_skill"), a("normal_skill_during_ult"), a("normal_skill_during_ult")], 30 * 6);
     expect((two.casts[2]?.frame ?? NaN) - (two.casts[1]?.frame ?? NaN)).toBe(33);
-    expect([until(two, "twilight"), until(two, "show_weapon")]).toEqual([450 + 33 + 115, 480 + 33 + 115]);
+    expect([until(two, "twilight"), until(two, "show_weapon")]).toEqual([450 + 33 + 39, 480 + 33 + 39]);
   });
 
   it("her ultimate's 10 s cooldown starts when show_weapon ends (SetSkillCdAtOnce)", () => {
@@ -1457,13 +1466,13 @@ describe("batch 2 group 1: values, layers, awaited actions, log keys", () => {
 
   it("a step without a time waits for its cast's awaited delayed actions, not for others", () => {
     const mark: KitBuff = { id: "m", label: "m", target: "self", duration: 10, modifiers: [] };
-    const t = (awaited: boolean): KitTrigger => ({ id: "m", on: { event: "cast", skills: [L + "normal_skill"] }, by: "self", delay: 40, ...(awaited ? { awaited } : {}), do: [{ kind: "buff", buff: "m" }] });
+    const t = (awaited: boolean): KitTrigger => ({ id: "m", on: { event: "cast", skills: [L + "normal_skill"] }, by: "self", delay: 30, ...(awaited ? { awaited } : {}), do: [{ kind: "buff", buff: "m" }] });
     const next = (awaited: boolean) => {
       const ctx = createContext(withKit({ buffs: [...kit.buffs, mark], triggers: [...kit.triggers, t(awaited)] }), { ...scenario([]), startEnergy: { [op]: "full" } });
       const s = apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" });
       return earliestStart(ctx, s, { operator: op, skill: L + "ultimate_skill" });
     };
-    expect((next(true) as { frame: number }).frame).toBeGreaterThanOrEqual(40);
+    expect((next(true) as { frame: number }).frame).toBeGreaterThanOrEqual(30);
     expect((next(false) as { frame: number }).frame).toBeLessThan((next(true) as { frame: number }).frame);
   });
 
@@ -1733,5 +1742,44 @@ describe("enemy actions from the scenario", () => {
     const at = (rotation: RotationAction[]) => run(g, [{ kind: "attack", at: [20] }], rotation).buffs.find((b) => b.id === "hitme")?.appliedAt;
     expect(at([])).toBe(20);
     expect(at([{ operator: op, skill: L + "ultimate_skill" }])).toBeGreaterThan(20);
+  });
+});
+
+describe("jumps in a skill's timeline", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const extraAt = (g: GameData) => {
+    const ctx = createContext(g, { ...scenario([]), startStacks: { [op]: { melting_flame: 4 } } });
+    return advance(ctx, apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" }), 200).hits.find((h) => h.hitId === "empowered_extra")?.frame;
+  };
+
+  it("a taken jump skips its frames: the empowered battle skill jumps 30 → 80, so its extra hit (frame 104) lands at 54", () => {
+    expect(data.skills[L + "normal_skill"]?.timing?.jumps).toEqual([{ at: 30, to: 80, conditional: true }, { at: 37, to: 215, conditional: false }, { at: 214, to: 231, conditional: false }]);
+    expect(extraAt(data)).toBe(54);
+    // A conditional jump the kit doesn't list isn't taken; the unconditional one at 37 then skips the extra hit.
+    const noJumps: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills: kit.skills.map((s) => (s.skillId === L + "normal_skill" ? (({ jumps: _j, ...rest }) => rest)(s) : s)) } } } };
+    expect(extraAt(noJumps)).toBeUndefined();
+  });
+
+  it("a trigger's jump moves the current skill's playhead when an event comes in its range (Catcher's counter when attacked)", () => {
+    const counter: KitTrigger = { id: "counter", on: { event: "attacked" }, by: "self", do: [{ kind: "jump", skill: L + "normal_skill", from: 0, until: 30, to: 215 }] };
+    const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, triggers: [...kit.triggers, counter] } } } };
+    const next = (attackAt: number) => {
+      const ctx = createContext(g, { ...scenario([]), enemyActions: [{ kind: "attack", at: [attackAt] }] });
+      const s = advance(ctx, apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" }), 12);
+      return earliestStart(ctx, s, { operator: op, skill: L + "normal_skill" });
+    };
+    // Attacked at 10 (playhead 10): it skips to 215, past the exclusive time, so the next battle skill may start at once.
+    expect(next(10)).toEqual({ frame: 12 });
+    // Attacked at 31: outside the range, so the skill's own jump at 37 decides.
+    expect(next(31)).toEqual({ frame: 37 });
+  });
+
+  it("an end on the skill's own timeline ends the action there", () => {
+    const a1 = data.skills[L + "attack1"];
+    const g: GameData = { ...data, skills: { ...data.skills, [L + "attack1"]: { ...a1, timing: { ...a1?.timing, ends: [8] } } } as GameData["skills"] };
+    const ctx = createContext(g, scenario([]));
+    const s = apply(ctx, init(ctx), { operator: op, skill: L + "attack1" });
+    expect(advance(ctx, s, 7).acting[op]).toBeDefined();
+    expect(advance(ctx, s, 8).acting[op]).toBeUndefined();
   });
 });

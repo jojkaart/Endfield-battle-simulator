@@ -168,6 +168,13 @@ export type TriggerActionKind =
    * dropped as if another skill had started, and the operator is free.
    */
   | { readonly kind: "endAction" }
+  /**
+   * Move the owner's current skill's playhead to frame `to` (an event-driven
+   * JumpToAction: Catcher's counter when attacked), if that skill is `skill`
+   * and the playhead is in `[from, until)`: the frames between are skipped
+   * as for the data's own jumps (SkillTiming.jumps).
+   */
+  | { readonly kind: "jump"; readonly skill: string; readonly from: number; readonly until: number; readonly to: number }
   /** Drop the owner's hits still to land from one of its triggers (a cast ending a volley on its way: FinishBuff of its launcher). */
   | { readonly kind: "cancelHits"; readonly trigger: string }
   /** End one of the owner's kit buffs: all of it, or its oldest `layers`. */

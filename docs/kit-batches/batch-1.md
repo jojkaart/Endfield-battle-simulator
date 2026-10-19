@@ -357,7 +357,7 @@ engine uses, and what settles it.
 
 | Item | Interim rule | Settled by |
 |---|---|---|
-| Ti3 jumps in a skill's timeline (Laevatain R1, Liino R5) | no skip: timeline frames are real frames | in-game test 17 |
+| Ti3 jumps in a skill's timeline (Laevatain R1, Liino R5) | since batch 2 (S1): jumps skip time, as Catcher's data requires | in-game test 17 |
 | Ti1b hit-stop; entity-layer slow-downs (Imprisonment) | not modelled | in-game tests 18, 37 |
 | A6 WILL combo's element: the triggering infliction's or the enemy's | the enemy's current | in-game test 33 |
 | Arcane R3: does "applies Arts Infliction" include one that forms a reaction | no (`inflictionApplied` excludes it) | in-game test 35 asks the same of combo triggers |

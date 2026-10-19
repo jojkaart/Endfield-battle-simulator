@@ -1339,6 +1339,23 @@
                     }
                   },
                   "description": "End the owner's current skill now (JumpToAction to its end): its hits and delayed actions still to come are dropped, and the operator is free."
+                },
+                {
+                  "type": "object",
+                  "required": ["kind", "skill", "from", "until", "to"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": { "const": "jump" },
+                    "skill": { "type": "string" },
+                    "from": { "type": "integer", "minimum": 0 },
+                    "until": { "type": "integer", "minimum": 1 },
+                    "to": { "type": "integer", "minimum": 1 },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
+                    }
+                  },
+                  "description": "An event-driven JumpToAction: if the owner's current skill is `skill` and its playhead (skill frames) is in [from, until), it moves to `to`; the frames between are skipped as for the data's own jumps."
                 }
               ]
             }
@@ -1446,6 +1463,20 @@
             "type": "number",
             "exclusiveMinimum": 0,
             "description": "The operator gains no ultimate energy for this long after the cast (SkillData RefrainObtainUsp buff duration)."
+          },
+          "jumps": {
+            "type": "array",
+            "minItems": 1,
+            "description": "When the skill's conditional jumps (SkillData JumpToAction with a condition, on its own timeline; by frame) are taken: `if`, judged for the caster at the cast. A conditional jump not listed isn't taken; unconditional ones always are (the frames between are skipped).",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["at", "if"],
+              "properties": {
+                "at": { "type": "integer", "minimum": 0 },
+                "if": { "$ref": "#/$defs/predicate" }
+              }
+            }
           },
           "teamEnergy": {
             "type": "array",

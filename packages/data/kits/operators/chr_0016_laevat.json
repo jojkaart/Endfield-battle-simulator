@@ -45,7 +45,7 @@
       "endsWithCast": true,
       "modifiers": [],
       "gameBuff": "buff_chr_0016_laevat_pause_ult",
-      "note": "normal_skill_during_ult CreateBuff for frames 0–115 (autoFinishByAction, finishWithNextSkillIfNotInherited): ends at 115 frames or when the skill is cut short. Under skip semantics (in-game test 17) it would be 39 / 64 frames (plain / empowered)."
+      "note": "normal_skill_during_ult CreateBuff for frames 0–115 (autoFinishByAction, finishWithNextSkillIfNotInherited): ends at 115 skill frames or when the skill is cut short; its jumps make that 39 / 64 real frames (plain / empowered), the skipped frames counting as time it had left (in-game test 17)."
     },
     {
       "id": "scorching_heart",
@@ -469,6 +469,7 @@
     },
     {
       "skillId": "chr_0016_laevat_normal_skill",
+      "jumps": [{ "at": 30, "if": { "stack": "melting_flame", "atLeast": 4 } }],
       "label": "Battle skill",
       "damageType": "battle",
       "teamEnergy": [{ "frame": 22, "ratio": 1 }],
@@ -559,6 +560,7 @@
     },
     {
       "skillId": "chr_0016_laevat_normal_skill_during_ult",
+      "jumps": [{ "at": 24, "if": { "stack": "melting_flame", "atLeast": 4 } }],
       "label": "Battle skill (Twilight)",
       "damageType": "battle",
       "teamEnergy": [{ "frame": 13, "ratio": 1 }],

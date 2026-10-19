@@ -40,6 +40,8 @@ export interface ActiveBuff {
   readonly nextTick?: number;
   /** Ends with its owner's cast of this index (KitBuff.endsWithCast). */
   readonly endsWithCast?: number;
+  /** Frames its cast's jumps took from it (it ends that much sooner): counted as time it had left when it ends. */
+  readonly skipped?: number;
   /** The BuffData buff it stands for (KitBuff.gameBuff). */
   readonly gameBuff?: string;
   /** Its layers share one timer each new layer refreshes (KitBuff.sharedTimer). */
@@ -139,7 +141,7 @@ export function recordedOf(buffs: readonly ActiveBuff[]): number | undefined {
 /** Frames the longest of some buffs had left at a frame (0 for buffs without an end). */
 export function remainingOf(buffs: readonly ActiveBuff[], frame: number): number {
   let left = 0;
-  for (const b of buffs) if (Number.isFinite(b.expiresAt)) left = Math.max(left, b.expiresAt - frame);
+  for (const b of buffs) if (Number.isFinite(b.expiresAt)) left = Math.max(left, b.expiresAt - frame + (b.skipped ?? 0));
   return left;
 }
 

@@ -211,12 +211,14 @@ does the Final Strike's damage number (and its SP) appear?
 
 **Why:** her battle skill's data has jumps: the timeline skips ahead, on
 one path when she has 4 Melting Flame (empowered) and on another when
-not. The engine plays every frame, so her enhanced battle skill locks her
-and pauses Twilight for 115 frames (3.8 s). If the jumps skip time, it's
-39 frames (1.3 s) plain and 64 (2.1 s) empowered; outside Twilight, the
-plain battle skill locks her 37 frames, not 117, and the empowered extra
-hit lands at frame 54, not 104. That's 1.7–2.5 s of rotation time per
-battle skill, and every buff window after it moves.
+not. Since batch 2 (S1) the engine takes jumps as skipping time, because
+Catcher's battle-skill data only makes sense that way: her enhanced battle
+skill locks her and pauses Twilight 39 frames (1.3 s) plain and 64 (2.1 s)
+empowered; outside Twilight, the plain battle skill locks her 37 frames,
+and the empowered extra hit lands at frame 54. If jumps didn't skip time,
+it would be 115 frames (3.8 s), 117 and 104: 1.7–2.5 s of rotation time per
+battle skill, and every buff window after it would move (laevatain-solo:
+22.4 s with skips, 29.2 s without).
 **How:** a 30 FPS video is easiest. In Twilight, cast the battle skill and
 mash basic attack: time from the battle skill to the first enhanced
 attack, plain and with 4 Melting Flame. 1.3 s / 2.1 s means the jumps skip
