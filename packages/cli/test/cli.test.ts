@@ -65,8 +65,9 @@ describe("log check: boundary buffs", () => {
     expect(subsets.map((s) => s.effects.map((x) => x.buff).join(""))).toEqual(["", "aa", "b", "aab"]);
     expect(subsets.map((s) => s.label)).toEqual([null, "boundary buffs applied: a", "boundary buffs applied: b", "boundary buffs applied"]);
   });
-  it("falls back to none or all above four buffs", () => {
-    expect(boundarySubsets(["a", "b", "c", "d", "e"].map((b) => e(b, "atk")))).toHaveLength(2);
+  it("falls back to none or all above six buffs", () => {
+    expect(boundarySubsets(["a", "b", "c", "d", "e", "f"].map((b) => e(b, "atk")))).toHaveLength(64);
+    expect(boundarySubsets(["a", "b", "c", "d", "e", "f", "g"].map((b) => e(b, "atk")))).toHaveLength(2);
   });
   it("also counts a buff listed twice with the same effects once (an instance ending as its refresh starts)", () => {
     const subsets = boundarySubsets([e("a", "atk"), e("a", "atk")]);

@@ -408,7 +408,7 @@ ultimate; see test 8), and Liino's talent-2 SP.
   active), cast End Stance: is SP returned? And in Vocalist Stance, cast
   her combo: when the stance's action resumes after it (the game casts it
   by itself), is Starry Boost used up?
-- Typhoeus with Wild Wanderer (if you have it): cast only her ultimate and
+- Typhoeus with Umbra of Frigid Eventide (if you have it): cast only her ultimate and
   let the hover end by itself (no input): does the weapon's Arts
   Intensity buff appear again as the hover ends? Her hover's idle and end
   steps are battle-type sub-skills too.
@@ -620,8 +620,8 @@ the 5 s: no rains expected.
 **Why:** the engine lands projectile hits at their launch frame; the data
 has no travel time. Typhoeus's Power Shot burst shows up about 0.3 s after
 the arrow in the logs: travel, or a delay of the burst itself? Small for
-damage (0.1–0.4 s), but once bursts land later than arrows, her Hail of
-Arrows count must ignore them.
+damage (0.1–0.4 s); her Hail of Arrows count already ignores the bursts,
+so moving them later is safe.
 **How:** a slow-motion clip of one Power Shot: is the burst number about
 0.3 s after the arrow's, and does the gap change with distance (travel) or
 not (a burst delay)? The same kind of clip of Laevatain's 4th basic attack

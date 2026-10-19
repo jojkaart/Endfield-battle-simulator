@@ -28,8 +28,6 @@ describe.each(Object.values(data.kits.operators))("kit $operator", (kit) => {
     // Known gaps, kept explicit so new ones show up (reasons in each kit's sources).
     const knownGaps: Record<string, string[]> = {
       // Finisher: BreakingAttackCalculation, not ATK × key.
-      // Floating-stance loop and end: atk_scale in the table but no DamageAction (they only cast the floating shots).
-      chr_0034_typhoea: ["chr_0034_typhoea_normal_skill_floating_end", "chr_0034_typhoea_normal_skill_floating_loop"],
     };
     expect(missing.sort()).toEqual(knownGaps[kit.operator] ?? []);
   });

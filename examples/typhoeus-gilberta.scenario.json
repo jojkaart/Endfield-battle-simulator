@@ -1,6 +1,7 @@
 {
   "$schema": "../schemas/scenario.schema.json",
-  "description": "Typhoeus (P5, the build of fixtures/zmdlogs-bdf223db8e49.json) with Gilberta (the build of fixtures/zmdlogs-d9e59d0fb737.json) applying Nature Infliction, vs Rhodagn. Typhoeus starts with her ultimate charged: it gives 2 Hunting Arrows and the Hovering state, so aerial shots 1–2 are Power Shots (the first consumes Gilberta's infliction for the stronger burst) and shot 5 always is. Bursts and consumptions give Signs; battle-skill hovers (no arrows left: only the 5th shot hits) add more until 8 Signs open the combo, which converts them to 4 arrows for a full Power-Shot hover.",
+  "description": "Typhoeus (P5, the build of fixtures/zmdlogs-bdf223db8e49.json) with Gilberta (the build of fixtures/zmdlogs-d9e59d0fb737.json) applying Nature Infliction, vs Rhodagn. Typhoeus starts with 4 Signs and 4 Hunting Arrows (talent 1, dungeon fight start) and her ultimate charged: it adds 3 arrows (P5, capped at 4) and the Hovering state, so aerial shots 1–4 are Power Shots (shot 2 consumes Gilberta's infliction for the stronger burst), each with a Hail of Arrows, and shot 5 always is one. Bursts and consumptions give Signs; the battle-skill hovers have no arrows left (shots 1–4 plain, the 5th a Power Shot). The floating combo is cast at the 5th shot of the third hover (it keeps the hover), converting 8 Signs to 4 arrows for a full Power-Shot hover. Shot 2 waits until frame 63 of shot 1: the timeline's chain gate (engine change pending; see docs/kit-batches/batch-1/chr_0034_typhoea.md, Kit).",
+
   "team": [
     "typhoeus-p5.json",
     {

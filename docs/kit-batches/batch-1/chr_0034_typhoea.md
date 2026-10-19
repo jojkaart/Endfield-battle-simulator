@@ -822,3 +822,118 @@ None. Two notes for the merge, neither blocking (the plan avoids both):
 data, 1.9 s after shots 1–3 and 1.5 s after shot 4; stack lifetime), 43 (off-field shots), 44
 (teammate burst Signs), 45 (combo pulse at hover end), 46 (Hail of Arrows count, optional), 47
 (burst delay). Test 42's "Why" still says the engine can't end the hover by idling; it can now.
+
+## Kit (2026-10-18)
+
+Phase 5. Written from the pass-2 plan as pass 3 amended it, against the engine at 1273a00 (pass-3
+features: `followUp`, cooldown `set`, buffs before damage, empty `scale`, …).
+
+### What was written
+
+- **packages/data/kits/operators/chr_0034_typhoea.json**, rewritten. Stacks `signs` (initial
+  `{talent: 0, key: energy_enterfight}`), `arrows` (initial 4), `abatk`, `hail`; buffs `hovering`,
+  `hovering_atk` (P1), `combo_swap`, `barrage_array`, `hail_window`; 26 triggers: the combo window
+  (`talent_sign` on anyone's Nature burst, `sign_window` on her consumption at 8 Signs; no
+  `stackAtLeast`), hover start and resets (`hover_start`, `battle_reset`, `combo_reset`,
+  `abatk_step`, `hover_ended`), the ultimate (`ult_rain` at 61, `hail_end`, `hail_of_arrows` on
+  her shots' non-reaction hits), `conversion` at 35 of either combo, and the follow-up table of
+  pass 3 (b) 4 (`chain_*`, `loop_*`, `end_4`, `end_5`, `loop_end`, `land`, `hover_end_grounded`).
+  Skills: attack1–5, the finisher, the battle skill (`teamEnergyFrame: 12`), the hitless follow-ups
+  floating_loop / floating_end (`available` never holds), floating_attack1–5 (Power Shot, burst and
+  plain-shot hits; attempt-gated, `chainStep: false`), both combos (`cooldownGroup`), the ultimate's
+  main hit, the dive attack. Hand-written poise: attack5 17 and the 5th shot 20 (controlled only),
+  the combos' first arrow 10, the ultimate 20. The four one-arrow slots, the legacy fixed 10 s
+  hover and the ultimate's frameless rain hits are gone; the kit had no legacy `conditions`.
+- **packages/data/kits/equipment/wpn_funnel_0019.json** (W2–W4) and **suit_spellburst.json** (S2), as
+  pass 3 (b) 9.
+- Tests: kits.test.ts (no known gap left for her: the loop and end are kit skills);
+  skillCompile.test.ts (a conditional grant `{if, then}` is compared by its value, since the data
+  has it on a branch; KNOWN: the ultimate's four frameless and unclaimed entries go, its hits being
+  trigger hits now and the main hit at 62; `teamEnergyFrame: kit 12, data 0` comes, D2);
+  logcheck.ts tries every subset of up to 6 boundary buffs (was 4), cli.test.ts with it. Only one
+  logged hit in all fixtures has more than 4: dbaee t=8391 (below).
+- examples/typhoeus-gilberta.scenario.json: description updated; rotation unchanged (see
+  deviations). examples/typhoeus-p5.json needs no change.
+- docs/in-game-tests.md: test 29's Typhoeus case names her weapon right (Umbra of Frigid Eventide,
+  not Wild Wanderer); test 47 no longer says the Hail of Arrows count still has to ignore bursts.
+
+### Deviations from the plan
+
+1. **Shot 1's idle loop at frame 64, not 22** (trigger `loop_1`; the off-field cast stays at 22 in
+   `chain_1`). The timeline's `chainAfter` takes the first SkillData window that lists a basic kit
+   skill as the chain's next step: floating_attack1's first window lists floating_attack1 itself, so
+   shot 2 is held until frame 63 of shot 1 (actionGate: an input in the chain's window becomes the
+   chain's step). A loop at 22 would land her at 57, before shot 2 could start, and every rotation
+   with shots 1 → 2 would fail. Interim cost: an idle hover after shot 1 lands at 99 instead of 57,
+   and shot 2 starts at 63 instead of 18 (as before this kit). Engine change E1 below.
+2. **The ultimate's main hit has no event key.** With `chr_0034_typhoea_ultimate_skill_arrowrain` it
+   matches dbaee t=13975 (103923, crit) but d9e59 t=4415 (15716, no logged buff, the log's first
+   hit) is ×1.1585 above it at any potential (P0–P5 tried), and the log tests allow no mismatch.
+3. **The weapon's and the set's burst triggers act after the burst's damage.** dbaee t=8391 (her
+   first burst) matches exactly only with one layer each of spelldmgup and physpellup (plus
+   usp_02's boundary buff): the burst triggers them before its own damage. `beforeDamage` can't say
+   that yet for a kit hit's own burst (E2). Each burst in the timeline misses the layers it adds
+   (+0.064–0.112 Arts DMG and +16 Arts Intensity).
+4. **Example rotation kept as it was** (the floating combo at shot 5's first frame, which cuts the
+   hover's end). A floating combo after shot 3 or 4, where Signs reach 8 now, hits E1 as well:
+   combo_skillfloating keeps the chain (dontInterruptCombo), which still points at shot 4 or 5, so
+   floating_attack1 after it is held for 1000+ frames.
+
+### Verification
+
+`npm run check` passes (380 tests). `efsim zmdlogs check`, Typhoeus (hits: matched / mismatch /
+unquantified / not covered, share of her damage covered), before → after:
+
+| Fixture | Before | After |
+|---|---|---|
+| dbaee23b801d (P1, weapon, Deep Rampart) | 43: 35 / 0 / 0 / 8 (16 %) | 42 / 0 / 0 / 1 (94 %) |
+| 0eef2474a26f (P5) | 31: 11 / 0 / 14 / 6 (18 %) | 14 / 0 / 17 / 0 (100 %) |
+| bdf223db8e49 (P5) | 62: 24 / 0 / 29 / 9 (16 %) | 27 / 0 / 35 / 0 (100 %) |
+| d9e59d0fb737 (P0, v58) | 49: 0 / 0 / 35 / 14 (17 %) | 0 / 0 / 48 / 1 (99 %) |
+
+The bursts are keyed now: all 7 in dbaee match (t=8391 through the 6-buff subsets), the 3 before
+Corrosion in 0eef and bdf223 match, the rest are under Corrosion; the Hail of Arrows sub2 ticks
+and blast of d9e59 are under Corrosion too (its ×1.54–1.9 stays unexplained). Not covered: only the
+ultimate's main hit (deviation 2). Every other operator's line is unchanged in all four. `zmdlogs
+reactions`: nothing about Typhoeus logged but not predicted.
+
+`efsim simulate examples/typhoeus-gilberta.scenario.json`: 623,303 → 1,023,406 (Typhoeus 603,701 →
+1,003,804; Gilberta unchanged). Bursts 434,589 → 761,375: two more Power Shots (the 4 starting
+arrows; the ultimate's 3rd arrow is capped), and each burst ~45 % higher from the weapon (Arts
+Intensity +98, Arts DMG layers) and the set (Arts Intensity layers), which had no kit; plain shots
+add 39,240 (the old kit couldn't land them); Hail of Arrows now at the shots' hits.
+
+Spot checks (scratch rotations, a frame-by-frame trace of stacks, buffs, casts and hits): every
+trigger, buff and stack fired as planned: shot chain and loop/end/land after shots 1–3 (2.4 s
+after a battle skill without shots), shot 4's end at 45, shot 5's at 15; off-field chains after
+the battle skill (32), the floating combo (57) and the ultimate (89), with 4 Power Shots and a plain
+5th; the floating combo's reset and conversion (8 Signs → arrows +4), its loop at 67; the grounded
+combo ending an off-field hover; a teammate's Nature burst and a plain shot's consumption each
+opening the window at 8 Signs; the ultimate's 3 arrows (P5), rains on shots 1–4, the empowered rain
+on the 5th, the window ending after 5 s; Windform 4 → layers → out after 15 s; Deep Rampart's
+layers capped at 3.
+
+### Engine changes needed
+
+- **E1 Chains of floating shots.** `chainAfter` (timeline.ts) should take as the chain's next step
+  only a kit skill that is a chain step (`KitSkill.chainStep`), so skills with `chainStep: false`
+  (her shots) and a skill's own ID never become one; the actionGate rule "an attack input in the
+  chain's window becomes the chain's step" then never holds a floating shot. Grounded chains keep
+  working (attack2–5 are chain steps; after attack5 there is no chain, and attack1 starts one).
+  Then: merge `loop_1` back into `chain_1` at delay 22, and the example's shot 2 moves from frame 63
+  to 18 of shot 1.
+- **E2 A kit burst's own triggers before its damage.** In `landHit`, a hit with `reaction.kind:
+  burst` should put its burst status event into the before-damage trigger run (as a hit's own
+  `statusEvents` are), so `beforeDamage: true` triggers on `burst` act on it. Then set `beforeDamage:
+  true` on `wpn_funnel_0019.burst` and `suit_spellburst.burst` (not before: the after-damage run
+  skips `beforeDamage` triggers for a hit's own events, so they would never fire on her bursts).
+- Notes, not blocking: the ultimate re-applies `combo_swap` when cast while already hovering (the
+  data inherits floatingmode then); the combo pulse at hover end is still out (test 45).
+
+### Still unverified
+
+In-game tests 9 (burst ×1.3), 17 (jumps of off-field shots), 18 (time stop), 29 (W2 on the loop and
+end steps: an idle hover end refreshes Arts Intensity and gives 4 Windform), 36 (shared combo
+cooldown), 42 (idle end; Signs and arrows lifetime), 43 (off-field shots), 44 (teammate burst
+Signs), 45 (combo at hover end, not modelled), 46 (Hail of Arrows count), 47 (burst delay). The
+finisher and the dive attack have no logged hit.

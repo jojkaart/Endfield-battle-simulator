@@ -140,8 +140,8 @@ function findHits(data: GameData, build: Build, event: string): [{ skillId: stri
   return kitHitEntries(effectiveKit(data, build)).filter((e) => e.hit.events.includes(event)).map((e) => [{ skillId: e.skillId }, e.hit]);
 }
 
-/** Above this many boundary buffs, only none or all are tried. */
-const MAX_BOUNDARY_SUBSET = 4;
+/** Above this many boundary buffs (64 subsets), only none or all are tried. A burst that triggers its wearer's weapon and gear-set buffs has six (fixtures/zmdlogs-dbaee23b801d.json t=8391). */
+const MAX_BOUNDARY_SUBSET = 6;
 
 /** Effects with repeats of the same buff, zone, element and value kept once. */
 function collapseRepeats(effects: readonly LogEffect[]): LogEffect[] {
