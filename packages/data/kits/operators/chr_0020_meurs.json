@@ -1,0 +1,191 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0020_meurs",
+  "sources": [
+    "Hits, frames, keys and events: rmxlinux Json/SkillData chr_0020_meurs_* and Json/BuffData buff_chr_0020_meurs_* (game 1.6), as compiled by efsim kit-draft, plus what it leaves out (stagger, finisher factors, physical statuses, created buffs). Batch-2 report docs/kit-batches/batch-2/chr_0020_meurs.md, § Kit plan and § Kit (2026-10-19).",
+    "Battle skill timing from SkillData (the loader): the unconditional JumpToAction 45 → 255 (not attacked: the skill ends 30 frames later at its exclusive frame 285), the counter's JumpToAction 60 (trigger counter below, on an enemy attack during the listener's frames 0–60), and InterruptCurSkillAction at 194, which ends the counter path.",
+    "Not modelled: the shield points and the damage Catcher and the team take (Protection, Weakness and the combo shield are kept as buffs, with their game buffs, for P5's condition and buffApplied triggers by game buff); the layer-1 TimeDilationAction at the counter's frame 60 (0.7 s on Catcher and the attacker, like the hit-stops design.md lists); the enemy being interrupted (InterruptAction); the combo's second trigger (the controlled operator attacked below 40% HP: HP isn't simulated, N1); the combo's TakeDownAction (in-game test C of the report)."
+  ],
+  "element": "physical",
+  "buffs": [
+    {
+      "id": "protection",
+      "label": "Rigid Interdiction: Protection (self and nearby operators)",
+      "target": "team",
+      "duration": 2,
+      "modifiers": [],
+      "gameBuff": "buff_chr_0020_meurs_reduce_damage",
+      "note": "AuraAction [0–83] of buff_chr_0020_meurs_reduce_damage (ShelterAction taken_dmg), cut at frame 45 by the jump to 255 when not attacked, then buff_chr_0020_meurs_reduce_damage_remain 0.5 s: 1.5 + 0.5 s (on the counter path a little longer, plus buff_chr_0014_aurora_reduce_damage_remain 1 s at frame 60). Damage taken isn't simulated. Its modifier {attr: 63, value: taken_dmg} would make it a Protection-category buff for buffApplied triggers (Eternal Xiranite, suit_usp02), but the loader refuses attribute 63 (B4: not in READ_ATTRS although buffCategories reads it), so it has none: a gap in the report's § Kit."
+    },
+    {
+      "id": "combo_shield",
+      "label": "Timely Suppression: Shield (self)",
+      "target": "self",
+      "duration": { "sum": [{ "key": "shield_duration", "skill": "chr_0020_meurs_combo_skill" }, { "key": "potential3_duration", "skill": "chr_0020_meurs_combo_skill" }] },
+      "modifiers": [],
+      "gameBuff": "buff_chr_0020_meurs_combo_skill_shield",
+      "note": "buff_chr_0020_meurs_combo_skill_shield (applyTags −1757502026, the tag P5's SP checks): shield_duration 10 s + potential3_duration (5 s from P3, 0 below). Shield points (shield_base + DEF × shield_def_rate), its breaking when absorbed and the teammate's shield aren't modelled."
+    },
+    {
+      "id": "weakness",
+      "label": "Textbook Assault: Weakness",
+      "target": "enemy",
+      "duration": { "key": "weak_duration", "skill": "chr_0020_meurs_ultimate_skill" },
+      "modifiers": [],
+      "gameBuff": "buff_chr_0020_meurs_ult_weak",
+      "note": "buff_chr_0020_meurs_ult_weak (WeakAction weak_scale, weak_duration 8 s), created at the ultimate's first hit. Lowers only the enemy's damage. Its modifier {attr: 62, value: weak_scale} would make it a Weakness-category buff for buffApplied triggers, but the loader refuses attribute 62 (as for protection), so it has none."
+    },
+    {
+      "id": "resilient_defense",
+      "label": "Resilient Defense: DEF per 10 Will",
+      "target": "self",
+      "modifiers": [{ "attr": 3, "value": { "product": [{ "talent": 0, "key": "rate" }, { "floor": { "div": [{ "attr": 42 }, 10] } }] } }],
+      "gameBuff": "buff_chr_0020_meurs_talent_0",
+      "note": "Talent 1: \"For every 10 Will, DEF +{rate}\" (1.0 / 1.2). buff_chr_0020_meurs_talent_0 StoreAttributeValue (attribute 42 Will ÷ 10, useFloor, × rate) → attributeModifier DEF, recomputed every 0.1 s; Will doesn't change in a fight, so it's judged once at the start. 0 while the talent isn't learned. It acts on P1's strike (DEF-based)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "resilient_defense",
+      "on": { "event": "fightStart" },
+      "by": "self",
+      "if": { "talentAtLeast": [0, 1] },
+      "do": [{ "kind": "buff", "buff": "resilient_defense" }],
+      "note": "Talent 1's permanent buff (lifeType 1)."
+    },
+    {
+      "id": "battle_sp",
+      "on": { "event": "cast", "skills": ["chr_0020_meurs_normal_skill"] },
+      "by": "self",
+      "skill": "chr_0020_meurs_normal_skill",
+      "do": [{ "kind": "sp", "value": "atb_return_base" }, { "kind": "buff", "buff": "protection" }],
+      "note": "Frame 0: ObtainCostAction costType 1 atb_return_base (atbGainMethod 1: returned SP, \"immediately returns some SP\"), and the Protection aura."
+    },
+    {
+      "id": "counter",
+      "on": { "event": "attacked" },
+      "by": "self",
+      "do": [{ "kind": "jump", "skill": "chr_0020_meurs_normal_skill", "from": 0, "until": 60, "to": 60 }],
+      "note": "\"When attacked while the said shield is raised, perform a retaliation bash\": EventListenerAction [0–60] abilityEvent 101 (Catcher is hit; CheckDamageDecorateMask checkType 3, mask 805306368, assumed to pass every enemy attack) → JumpToAction 60. The skill's own jump at 45 → 255 makes frames 46–59 unreachable, so the range is effectively frames 0–45. The bash (hit at 83) and the second team-energy half (frame 60) are then on the path; the action ends at 194 (InterruptCurSkillAction). The abilityEvent 9 branch (one enemy's grab, buff_eny_0018_lbtough_pre_catch) isn't modelled."
+    },
+    {
+      "id": "combo_window",
+      "on": { "event": "enemyCharge" },
+      "by": "anyone",
+      "do": [{ "kind": "openCombo" }],
+      "note": "CharGrowthTable chr_0020_meurs_ComboSkill: \"When an enemy starts charging up a skill (buff_chr_0020_meurs_signal_weakness_trigger_combo, applied by game code), or when the controlled operator is attacked and falls below {trigger_hp_ratio} HP\". The second half needs HP (N1, deferred)."
+    },
+    {
+      "id": "p1_strike",
+      "on": { "event": "hit", "kinds": ["battle", "ultimate"] },
+      "by": "self",
+      "if": { "potentialAtLeast": 1 },
+      "skill": "buff_chr_0020_meurs_potential_1",
+      "do": [
+        {
+          "kind": "hits",
+          "hits": [
+            {
+              "id": "strike",
+              "label": "P1: extra strike",
+              "scale": [],
+              "base": { "sum": ["dmg_base", { "product": [{ "attr": 3 }, "def_scale"] }] },
+              "element": "physical",
+              "damageType": "none",
+              "events": ["buff_chr_0020_meurs_potential_1"],
+              "frames": [0]
+            }
+          ]
+        }
+      ],
+      "note": "P1: \"After hitting the enemy, deals another strike that deals [{dmg_base} + DEF×{def_scale}] of Physical DMG\" (300 + 5 × DEF). buff_chr_0020_meurs_potential_1: abilityEvent 13 with CheckDamageDecorateMask checkType 1 mask 768 (any landing with the battle-skill 256 or ultimate 512 bit: the bash, the ultimate's 3 hits and each shockwave), DamageAction MultiplyAttributeCalculation (DEF × def_scale + dmg_base), decorate mask 0 (no skill-type bonus; it doesn't trigger itself). How many per ultimate: in-game test B of the report."
+    }
+  ],
+  "skills": [
+    { "skillId": "chr_0020_meurs_attack1", "label": "Basic attack 1", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [12] }] },
+    { "skillId": "chr_0020_meurs_attack2", "label": "Basic attack 2", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [10] }] },
+    { "skillId": "chr_0020_meurs_attack3", "label": "Basic attack 3", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [16] }] },
+    {
+      "skillId": "chr_0020_meurs_attack4",
+      "label": "Basic attack 4 (Final Strike)",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [23], "poise": "poise", "poiseControlledOnly": true, "note": "Mask 2097280 (Final Strike); \"As the controlled operator, Final Strike also deals {poise} Stagger\" (onlyEnableForMainChar)." }]
+    },
+    {
+      "skillId": "chr_0020_meurs_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [15], "factor": 0.4, "events": ["chr_0020_meurs_power_attack"], "note": "BreakingAttackCalculation atk_scale × multiplier 0.4 (the compiler doesn't read the multiplier, D2)." },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [35], "factor": 0.6, "events": ["chr_0020_meurs_power_attack"], "note": "BreakingAttackCalculation atk_scale × multiplier 0.6." }
+      ]
+    },
+    { "skillId": "chr_0020_meurs_plunging_attack_end", "label": "Dive attack", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1] }] },
+    {
+      "skillId": "chr_0020_meurs_normal_skill",
+      "label": "Battle skill",
+      "damageType": "battle",
+      "teamEnergy": [{ "frame": 0, "ratio": 0.5 }, { "frame": 60, "ratio": 0.5 }],
+      "hits": [
+        {
+          "id": "bash",
+          "label": "Retaliation bash",
+          "scale": ["atk_scale"],
+          "frames": [83],
+          "poise": "poise",
+          "applies": [{ "kind": "vulnerable" }],
+          "sp": { "if": { "buffActive": "combo_shield" }, "then": "potential5_atb" },
+          "note": "Reached only through the counter's jump to 60 (not attacked, the jump 45 → 255 skips it). ChannelingAction [83–85]: CreateBuff buff_physical_no_guard (1 Vulnerable, before the DamageAction, as the engine applies it), DoOnce ObtainCostAction potential5_atb (P5: 10 returned SP while the combo shield, tag −1757502026, is on Catcher; 0 below P5), DamageAction atk_scale with poise."
+        }
+      ],
+      "note": "Team energy: CreateBuff buff_common_obtain_ultimate_sp ratio 0.5 at frame 0 and at frame 60; the second is skipped by the jump 45 → 255 unless the counter jumped to 60."
+    },
+    {
+      "skillId": "chr_0020_meurs_combo_skill",
+      "label": "Combo skill",
+      "damageType": "combo",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [17], "energy": "usp", "events": ["chr_0020_meurs_combo_skill"] },
+        { "id": "hit_2", "scale": ["atk_scale_1"], "frames": [20], "poise": "poise", "events": ["chr_0020_meurs_combo_skill"], "buffs": [{ "buff": "combo_shield" }] }
+      ],
+      "note": "Its window opens on an enemy's skill charge (trigger combo_window)."
+    },
+    {
+      "skillId": "chr_0020_meurs_ultimate_skill",
+      "label": "Ultimate",
+      "damageType": "ultimate",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [46], "poise": "poise", "events": ["chr_0020_meurs_ultimate_skill"], "buffs": [{ "buff": "weakness" }] },
+        { "id": "hit_2", "scale": ["atk_scale_1"], "frames": [64], "poise": "poise", "events": ["chr_0020_meurs_ultimate_skill"] },
+        {
+          "id": "hit_3",
+          "scale": ["atk_scale_2"],
+          "frames": [85],
+          "poise": "poise1",
+          "events": ["chr_0020_meurs_ultimate_skill"],
+          "applies": [{ "kind": "physicalStatus", "status": "knockdown" }],
+          "note": "KnockDownAction (knockdown_time 2, not forced) before the DamageAction: on an enemy without Vulnerable it only adds a stack."
+        },
+        {
+          "id": "shockwave",
+          "scale": ["atk_scale_shockwave"],
+          "count": 2,
+          "frames": [105, 120],
+          "events": ["chr_0020_meurs_talent_shockwave"],
+          "detached": true,
+          "if": { "talentAtLeast": [1, 1] },
+          "note": "Talent 2: SpawnAbilityEntity at 102 if talent_1 ≥ 1; its waves at its frames 3 / 18 / 33."
+        },
+        {
+          "id": "shockwave_3",
+          "scale": ["atk_scale_shockwave"],
+          "frames": [135],
+          "events": ["chr_0020_meurs_talent_shockwave"],
+          "detached": true,
+          "if": { "talentAtLeast": [1, 2] },
+          "note": "The entity's InterruptCurSkillAction at its frame 29 stops the third wave if talent_1 < 2 (\"{talent_1+1} shockwave(s)\")."
+        }
+      ]
+    }
+  ]
+}

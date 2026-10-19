@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_claym_0003",
+  "sources": [
+    "Industry 0.1 (WeaponBasicTable wpn_claym_0003): Strength and ATK% lines are on the stat panel. rmxlinux SkillData sk_wpn_claym_0003: passiveEventActions abilityEvent 302 (the wielder deals damage) + CheckDamageDecorateMask checkType 2 mask 256 (a battle-skill hit) → CreateBuff buff_wpn_claym_0003 (attr 2, formulaItem 6: ATK + atk_up; `duration` 20 s at every level; stackingType 4: a new one refreshes it). Description: \"When the wielder's battle skill hits the enemy, the wielder gains ATK +{atk_up} for {duration}s. Effects of the same name cannot stack.\"",
+    "Wielder-relative: any battle-skill hit by the wielder. A trigger's own hits (damageType none, decorate mask 0, e.g. Catcher's P1 strike) don't count."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_claym_0003.atk",
+      "label": "Suppression: Emergency Boost (ATK up)",
+      "target": "self",
+      "gameBuff": "buff_wpn_claym_0003",
+      "duration": "duration",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_claym_0003.on_battle_hit",
+      "on": { "event": "hit", "kinds": ["battle"] },
+      "by": "self",
+      "skill": "sk_wpn_claym_0003",
+      "do": [{ "kind": "buff", "buff": "wpn_claym_0003.atk" }]
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_poise01",
+  "sources": [
+    "Æthertech 3-piece (EquipSuitTable suit_poise01): rmxlinux SkillData passive_equipsuit_poisebreak_01 (\"Wearer's ATK +{atk_up}\", cardAttributeModifier, on the stat panel) → BuffData buff_equipsuit_poisedmg_01: on abilityEvent 102 with CheckBuffIdInContext tag 1075718177 (the wearer applies Vulnerable) → CreateBuff buff_equipsuit_poisedmg_01_damagebuff (attr 50 Physical DMG + phy_dmg_up 0.08 per layer, `duration` 15 s, stackingType 8 max max_stack 4: layers on one timer each new layer refreshes; the loader sets sharedTimer from it); then CheckBuffStackNumAdvanced (the target's Vulnerable stacks ≥ stack_cond 4) → CreateBuff buff_equipsuit_poisedmg_01_attackbuff (Physical DMG + phy_dmg_up2 0.16, duration2 10 s, stackingType 4: refreshed).",
+    "Description: \"After the wearer applies Vulnerability, the wearer gains Physical DMG Dealt +{phy_dmg_up} for {duration}s. This effect can reach {max_stack} stacks. If the target has {stack_cond} stacks of Vulnerability, the wearer gains an additional Physical DMG Dealt +{phy_dmg_up2} for {duration2}s. This effect cannot stack.\" stack_cond (4 at every level) is a literal in enemyVulnerable, which takes a number. The wearer's Lifts and Knock Downs add Vulnerable too, so they emit the vulnerable event (status.ts addVulnerable). beforeDamage: the game's abilityEvent 102 runs inside the Vulnerable's CreateBuff / KnockDown / Airborne action, which skills put before their DamageAction (Catcher's bash, her ultimate's third hit), so the new layer already acts on the hit that applied it."
+  ],
+  "buffs": [
+    {
+      "id": "suit_poise01.dmg",
+      "label": "Æthertech: Physical DMG per layer",
+      "target": "self",
+      "gameBuff": "buff_equipsuit_poisedmg_01_damagebuff",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [{ "attr": 50, "value": "phy_dmg_up" }]
+    },
+    {
+      "id": "suit_poise01.dmg2",
+      "label": "Æthertech: Physical DMG at 4 Vulnerable",
+      "target": "self",
+      "gameBuff": "buff_equipsuit_poisedmg_01_attackbuff",
+      "duration": "duration2",
+      "modifiers": [{ "attr": 50, "value": "phy_dmg_up2" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "suit_poise01.on_vulnerable",
+      "on": { "event": "vulnerable" },
+      "by": "self",
+      "beforeDamage": true,
+      "skill": "passive_equipsuit_poisebreak_01",
+      "do": [
+        { "kind": "buff", "buff": "suit_poise01.dmg" },
+        { "kind": "buff", "buff": "suit_poise01.dmg2", "if": { "enemyVulnerable": 4 } }
+      ]
+    }
+  ]
+}

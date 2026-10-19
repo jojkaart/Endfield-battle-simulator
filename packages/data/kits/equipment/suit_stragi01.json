@@ -1,0 +1,7 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_stragi01",
+  "sources": [
+    "AIC Heavy 3-piece (EquipSuitTable suit_stragi01; rmxlinux SkillData passive_equipsuit_stragi_01, BuffData buff_equipsuit_stragi_01). Nothing here acts on damage dealt, so this kit declares nothing: (1) \"Wearer's HP +{hp_up}\" (500, flat; cardAttributeModifier, in the stat panel); (2) \"After the wearer defeats an enemy, the wearer restores {hp_add} HP. Effect trigger cooldown: {cd}s\" (abilityEvent 222, objectTypeMask 16): kills and HP aren't simulated (N1, deferred with multi-enemy support). buff_equipsuit_will_01 in the skill's buffs has only a blackboard (no effect)."
+  ]
+}
