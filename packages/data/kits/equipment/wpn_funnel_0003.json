@@ -1,0 +1,28 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_funnel_0003",
+  "sources": [
+    "Fluorescent Roc (4-star Arts Unit). Skill 3 sk_wpn_funnel_0003 (\"When the wielder's battle skill hits the enemy, the wielder gains ATK +{atk_up:0.0%} for {duration:0}s. Effects of the same name cannot stack.\"): passiveEventActions abilityEvent 302 (the wielder's damage) + CheckDamageDecorateMask (checkType 2, mask 256: battle skill) → CreateBuffAction buff_wpn_funnel_0003 on the wielder (attribute 2 formulaItem 6 = ATK %, atk_up; duration from the skill; stackingType 4: one instance, refreshed). SkillPatchTable sk_wpn_funnel_0003: atk_up 0.12 (L1) to 0.336 (L9), duration 20.",
+    "Its other effects (Will +, ATK +: cardAttributeModifier) are in the stat panel. Docs: docs/kit-batches/batch-2/chr_0023_antal.md."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_funnel_0003.atk_up",
+      "label": "Fluorescent Roc: ATK up (after a battle-skill hit)",
+      "target": "self",
+      "gameBuff": "buff_wpn_funnel_0003",
+      "duration": "duration",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }],
+      "note": "A plain buff: a new battle-skill hit refreshes it. Created after the hit, so the hit that triggers it doesn't have it."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_funnel_0003.battle_hit",
+      "on": { "event": "hit", "kinds": ["battle"] },
+      "by": "self",
+      "skill": "sk_wpn_funnel_0003",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0003.atk_up" }]
+    }
+  ]
+}

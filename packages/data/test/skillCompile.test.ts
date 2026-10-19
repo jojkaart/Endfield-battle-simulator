@@ -9,7 +9,7 @@ import type { KitHit } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill } from "../src/index.ts";
 
 const data = loadGameData();
-const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten"];
+const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
   const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
@@ -305,6 +305,17 @@ const KNOWN: string[] = [
   "chr_0035_liino_power_attack/final factor: kit 0.7, data 1",
   // Compiler limitation (D2), kit right: CreateBuff buff_common_obtain_ultimate_sp is in chr_0021_whiten_normal_skill_projhit (launched at 21) on the first-target branch (EntityBB_first_hit), which the compiler leaves undecided.
   "chr_0021_whiten_normal_skill teamEnergy: kit 1@21, data 1@0",
+  // Compiler limitation (D3), kit right: both projectiles launched at 27 run attack4_powerattack_projhit's IfElse on the timed marker have_recovered,
+  // which the first landing creates; the first takes the Final Strike branch (atb, poise), the second the plain one. The compiler counts both branches for each.
+  "chr_0023_antal_attack4/first count: kit 1, data 2 landings at its frames (chr_0023_antal_attack4_powerattack_projhit)",
+  "chr_0023_antal_attack4/second count: kit 1, data 2 landings at its frames (chr_0023_antal_attack4_powerattack_projhit)",
+  "chr_0023_antal_attack4/second finalStrike: kit none, data at [27, 27]",
+  // Finisher (BreakingAttackCalculation, mask 132): multipliers 0.06 (five power_attack02_projhit) and 0.7 (power_attack_projhit), which the compiler drops (D3).
+  "chr_0023_antal_power_attack/small factor: kit 0.06, data 1",
+  "chr_0023_antal_power_attack/final factor: kit 0.7, data 1",
+  // The combo's SwitchAction on EntityBB_combo_type / _index (set natively from the event that opened the window) picks one infliction or one physical status;
+  // the kit repeats the window's event (element: event, status: event). The compiler lists the inflictions as conditional and doesn't compile the physical ones (D3).
+  "chr_0023_antal_combo_skill applies at 21: kit [infliction event], data [], conditionally [infliction fire, infliction cryst, infliction pulse, infliction natural]",
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {

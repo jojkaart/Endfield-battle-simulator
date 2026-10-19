@@ -1,0 +1,7 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_will01",
+  "sources": [
+    "Mordvolt Resistant 3-piece (EquipSuitTable suit_will01; rmxlinux SkillData passive_equipsuit_will_01, BuffData buff_equipsuit_will_*; SkillPatchTable will_up 50, hp_ratio 0.5, heal_up 0.3). Neither effect acts on damage dealt, so this kit has nothing to declare: (1) Will +will_up (cardAttributeModifier attribute 42; the SkillData default 70 is overridden by the table) is in the stat panel; (2) \"When the wearer's HP is below 50%, Treatment Effect +30%\": toggleBuffs buff_equipsuit_will_healrt_01 (attribute 29) while CheckCurHpRatio (compareType 1) < hp_ratio; HP and heal amounts aren't modelled (N1). buff_equipsuit_will_01 (will 200) is passed a key the skill doesn't have and has no modifiers: inert. Docs: docs/kit-batches/batch-2/chr_0023_antal.md."
+  ]
+}

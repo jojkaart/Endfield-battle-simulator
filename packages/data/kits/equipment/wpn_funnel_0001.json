@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_funnel_0001",
+  "sources": [
+    "Hypernova Auto (4-star Arts Unit). Skill 3 sk_wpn_funnel_0001 (\"When the wielder's HP is above {hp_ratio_c:0%}, ATK +{atk_up:0.0%}.\"): toggleBuffs buff_wpn_funnel_0001 (attribute 2 formulaItem 6 = ATK %, atk_up) while CheckCurHpRatio (compareType 3) ≥ hp_ratio_c. SkillPatchTable sk_wpn_funnel_0001: atk_up 0.15 (L1) to 0.42 (L9), hp_ratio_c 0.8.",
+    "Interim: HP isn't modelled (enemy attacks are events without damage; N1, deferred), so the wielder is at full HP and the buff is on from the start of the fight. Its other effects (Intellect +, Arts DMG +: cardAttributeModifier) are in the stat panel. Docs: docs/kit-batches/batch-2/chr_0023_antal.md."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_funnel_0001.atk_up",
+      "label": "Hypernova Auto: ATK up (HP above 80%)",
+      "target": "self",
+      "gameBuff": "buff_wpn_funnel_0001",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }],
+      "note": "No duration: on while the wielder's HP is above hp_ratio_c, i.e. always until HP is modelled."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_funnel_0001.full_hp",
+      "on": { "event": "fightStart" },
+      "by": "self",
+      "skill": "sk_wpn_funnel_0001",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0001.atk_up" }]
+    }
+  ]
+}

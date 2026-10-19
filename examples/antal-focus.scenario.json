@@ -1,0 +1,45 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Antal (P5, Fluorescent Roc, Pulser Labs) with Gilberta and Laevatain vs Rhodagn, all ultimates charged; the enemy hits Antal with a Physical attack every 8 s.",
+  "team": [
+    "antal-p5-roc.json",
+    "gilberta-usp02.json",
+    "laevatain-forgeborn.json"
+  ],
+  "controlled": "chr_0023_antal",
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0023_antal": "full",
+    "chr_0013_aglina": "full",
+    "chr_0016_laevat": "full"
+  },
+  "enemyActions": [
+    { "kind": "attack", "every": 8, "target": "chr_0023_antal", "element": "physical" }
+  ],
+  "durationSeconds": 50,
+  "crit": "expected",
+  "rotation": [
+    { "operator": "chr_0023_antal", "skill": "chr_0023_antal_normal_skill" },
+    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_ultimate_skill" },
+    { "operator": "chr_0023_antal", "skill": "chr_0023_antal_ultimate_skill" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ultimate_skill" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack1" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack2" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack3" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack4" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_normal_skill_during_ult" },
+    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_combo_skill" },
+    { "operator": "chr_0023_antal", "skill": "chr_0023_antal_combo_skill" },
+    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_normal_skill", "at": 33 },
+    { "operator": "chr_0023_antal", "skill": "chr_0023_antal_combo_skill" },
+    { "operator": "chr_0023_antal", "skill": "swap" },
+    { "operator": "chr_0023_antal", "skill": "chr_0023_antal_attack1" },
+    { "operator": "chr_0023_antal", "skill": "chr_0023_antal_attack2" },
+    { "operator": "chr_0023_antal", "skill": "chr_0023_antal_attack3" },
+    { "operator": "chr_0023_antal", "skill": "chr_0023_antal_attack4" },
+    { "operator": "chr_0023_antal", "skill": "chr_0023_antal_normal_skill", "at": 42 }
+  ]
+}

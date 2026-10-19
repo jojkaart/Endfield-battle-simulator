@@ -1,0 +1,7 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_funnel_0002",
+  "sources": [
+    "Jiminy 12 (3-star Arts Unit, two skills). Both effects are in the stat panel, so this kit has nothing to declare: Main Attribute + (wpn_attr_main_low) and sk_wpn_funnel_0002's cardAttributeModifier attribute 2 formulaItem 7, flat ATK +atk_up (SkillPatchTable 12 at L1 to 33.6 at L9). buff_wpn_funnel_0002 (formulaItem 5) is never created: the skill's toggleBuffs names buff_wpn_passive_spirit_01, which has no BuffData file. The flat formula slot 7 isn't verified in game (packages/engine/src/model.ts, Slot). Docs: docs/kit-batches/batch-2/chr_0023_antal.md."
+  ]
+}
