@@ -417,3 +417,180 @@ apply).
   layered `consumedBy` buff adds per layer and is used up whole.
 - `suit_str01.json`: sources only (Strength in the panel; the HP-based
   damage reduction isn't modelled).
+
+## Kit (2026-10-19)
+
+### Re-analysis (phase A)
+
+The report's gaps against the engine as of 455a0ca:
+
+| Gap | Now | How the kit uses it |
+|---|---|---|
+| G1 talents from chr_9000_endmin | covered (D1) | `{talent: 0/1, key}` load for both gendered IDs; values verified on 7e19 (0.30 ATK; +0.20 Physical DMG taken, below) |
+| G2 crystal hit before the trigger's later actions | covered (T4) | `hits` with `now: true` in the three consumption triggers |
+| G3 enemy buff by game ID | covered (T6) | Grizzled Edge: `{enemyBuff: buff_common_originum_frozen}` |
+| G4 every trigger on one event judged at the event | partly (T5): a trigger's `if` is judged at the event, the values its actions apply are not | interim: Grizzled Edge's sealed case is its own trigger and buff, chosen by `if` (new gap K2) |
+| G5 Crush logged as `buff_physical_crushed` | covered (L1) | the Crush hit in 7e19 is now checked |
+| G6 the seal on weak enemies | deferred (batch file) | not modelled; no effect on bosses |
+| G7 one kit for two IDs | covered (D2) | `variants: [{operator: chr_0002_endminm, skills: {power_attack2 → power_attack}}]` |
+| `teamEnergyFrame` | replaced (S5) | `teamEnergy: [{frame: 11, ratio: 1}]` (matches the compiler) |
+| Unknowns 13, 21, 40, 43 | still unknown | in-game tests below |
+| D3 / V3 | open | D3: the KNOWN lines (finisher factors, the combo's 0-damage DamageAction, the ultimate's ignite DamageAction). V3 doesn't bite: P1's SP is returned SP in the data itself (atbSourceType 3), which is what the `sp` action gives |
+
+New gaps (no engine code written; interims in the kit):
+
+- **K1. Where a physical status's own damage falls** (family: physical
+  state / triggers). **Feature:** a hit's status damage computed where the
+  game computes it, inside the status's handler and before the applying
+  skill's DamageAction, with status-event triggers able to run before it
+  (Breach's order) or between it and the skill hit (Lift, Knock Down,
+  Crush). Today the engine runs before-damage triggers, then the skill hit's
+  damage, then the status's damage (`recordStatus`), then the other
+  triggers. **Evidence:** BuffData `buff_physical_airborne`, `_knockdown`
+  and `_do_crushed` buffEvent 0 run their DamageAction before IgniteAction 1;
+  `_do_fracture` runs IgniteAction 1 before its DamageAction. 7e19 t=33734:
+  the Crush hit (413,543) and the crystal hit carry talent 2's +0.2, the
+  battle skill hit doesn't; t=14984 (Pogranichnik's Breach): the crystal
+  hit has neither talent 1 nor Breach's DMG taken. **Interim:** two
+  consumption triggers: `crystals_breach` before damage; `crystals_status`
+  (Lift, Knock Down, Crush) after damage, so the status hit sees the
+  crystals. **Impact of the interim:** the skill hit that applies Lift /
+  Knock Down / Crush to a sealed enemy gets +20% Physical DMG taken it
+  shouldn't and misses the new talent 1 (+30% ATK; P2's 15% on a teammate)
+  it should have, roughly even; a buff a hit trigger gives on that skill hit
+  reaches the crystal hit (Prominent Edge's first proc: about +15% on it).
+  With every consumption before damage (the plan), the Crush hit would lose
+  12–17%, the largest hit she has.
+- **K2. Trigger values at the event** (family: triggers; the rest of T5).
+  **Feature:** a buff a trigger applies takes its values on the situation
+  at the event, like the trigger's `if` (`triggerSituation(…, atEvent, …)`
+  for its modifiers, duration and layers), not after the triggers before it
+  on the same event acted. **Evidence:** `buff_equipsuit_crush_fracture`
+  event 401 sees the crystals its owner's Crush consumes (7e19 t=33734: 0.36
+  = 4 × 0.06 × 1.5). **Interim:** `suit_crush_fracture.on_status` (`if: not
+  enemyBuff`) and `.on_status_sealed` (`if: enemyBuff`), each ending the
+  other's buff; both buffs stand for the one game buff, so only the stronger
+  counts. **Impact:** none with the interim; the format needs the doubling
+  for any value that depends on what the same event consumes.
+- **K3. Kit debuffs the log doesn't list** (family: log tooling).
+  **Feature:** the log checker tries enemy-side kit buffs that ZMDLogs
+  can't show (talent 2 is a team aura, `buff_chr_0003_endminf_talent_0`, and
+  the crystals aren't listed either) with and without, as it does for
+  cast-consumed buffs, or infers the crystals' window from the log (combo
+  hit to the consuming hit). **Evidence:** 7e19: every hit on the sealed
+  enemy (12296–14984 and 29823–33734, with the crystal hits and the Crush
+  hit at the consuming moments) is off by exactly ×1.2 (×1.139 under
+  Breach's +0.437). **Impact:** those 8 hits can't match.
+- **K4. +180 ATK on the Endministrator in 7e19** (family: data or build;
+  unknown source). Every one of her hits is short by the same additive ATK:
+  +21.98% in the ATK% sum, i.e. exactly +180 flat ATK before the attribute
+  multiplier (180 / 819 = 0.2198), the same with and without talent 1 and
+  Pogranichnik's ATK buffs. A lower weapon level can't do it (that scales
+  base ATK, a factor that doesn't depend on the ATK buffs; 90 is already
+  the maximum). With +0.2198 ATK and talent 2 added to the fixture (scratch
+  copy), **33 of 34 of her hits match** within 1 point and the Crush hit is
+  within 0.003% (413,530 for 413,543). Nothing in her CharacterTable, talent
+  or potential rows, Grand Vision's skills (skill 3 at level 5 = the logged
+  0.648) or her gear lines gives it. To settle: her ATK in the in-game stat
+  panel against `efsim calc` for the same loadout (test K4 below).
+
+Also open: when a Lift lands on a Vulnerable enemy the engine emits the
+Vulnerable stack before the Lift, so `crystals_vulnerable` consumes the
+crystals before the Lift's damage; in the game the order inside LiftAction
+(no_guard's buffEvent 7 against airborne's buffEvent 0) is native code.
+
+### What was written
+
+- `packages/data/kits/operators/chr_0003_endminf.json`: the plan's kit with
+  `variants` for chr_0002_endminm; buffs `originium_crystals` (enemy,
+  talent 2 as `damageTaken` physical), `essence_disintegration` (self),
+  `essence_disintegration_team` (P2, `recipients: not isOwner`); triggers
+  `combo_window`, `crystals_status` and `crystals_breach` (split by K1),
+  `crystals_vulnerable`, `crystals_ultimate` (delay 51, `awaited`),
+  `p1_sp` (delay 11), `p5_cooldown`; skills as planned, `teamEnergy`, the
+  combo hit under both log keys, the ultimate's `break` and `shatter` on
+  sealed targets.
+- Equipment: `wpn_sword_0003` (sources only), `wpn_sword_0008` (ATK on a
+  battle-skill hit), `suit_crush_fracture` (two buffs and triggers, K2),
+  `suit_attri01` (layered `consumedBy` buff), `suit_str01` (sources only).
+- `examples/endministrator-crystals.scenario.json` (with Estella and
+  Gilberta) and the build `examples/endministrator-p5.json`.
+- `tests/kit-endministrator.test.ts` (9 tests): the variant (renamed IDs,
+  same hits and damage when the male takes her place in the example); the
+  example (Crush on the sealed enemy: Crush, crystal hit and battle skill
+  hit with talent 2, none with talent 1; atk_scale_trigger 4.0; Grizzled
+  Edge 0.09 from the sealed trigger; P1's 50 SP; talent 1 and P2 after;
+  P5 twice: combo ready 11 s after it; Prominent Edge from the hit on); a
+  teammate's Lift consuming through Vulnerable; a Breach consuming before
+  its damage; the ultimate on the sealed enemy (three hits, P4's ×1.2, P3's
+  15 energy, talent 1 at frame 51; one hit and no energy unsealed); P0 and
+  talent 1 unlearned; Grizzled Edge unsealed (0.12 at 2 stacks); Bonekrusha
+  (0.3 per layer, 2 at most, used up whole, battle skill only); Tarr 11's
+  flat ATK 33.6 and the two sources-only kits.
+- `packages/data/test/skillCompile.test.ts`: both IDs added to the
+  comparison, with 8 KNOWN lines (4 per ID, all D3: the finisher's 0.1 /
+  0.9 factors, the combo's 0-damage DamageAction, the ultimate's crystal
+  hit from the ignite handler).
+- `fixtures/pending/README.md`: the 7e19 entry.
+
+### Deviations from the plan
+
+- The plan's single `crystals_physical` (before damage) is two triggers by
+  status (K1), found from the log and BuffData's order.
+- Grizzled Edge's sealed ×1.5 is a second trigger and buff instead of an
+  `enemyBuff` term in the value (K2).
+- `crystals_ultimate` is `awaited` (the skill's own effect).
+- The ultimate's `shatter` has no `detached: false` (the default).
+
+### Verification
+
+- `npm run check`: passes (480 tests).
+- `efsim zmdlogs check fixtures/pending/zmdlogs-7e19489ae503.json`, the
+  Endministrator: before 34 hits, 0 match, 0 mismatch, 1 unmodelled, 33 not
+  covered (53% covered); after **0 match, 34 mismatch, 0 not covered (100%
+  covered)**, every mismatch explained by K3 and K4 (33 of 34 match with
+  both added; the Crush to 0.003%). The log's ×1.38 / ×1.11 were these two:
+  ×1.2 talent 2 × 1.149 (the +180 ATK at ATK% 1.47) before the first
+  consumption, 1.113 (the same ATK at 1.95, no crystals) after it. The
+  other three operators' lines don't change. No other fixture names
+  either ID; `zmdlogs-b7b3762d5da8` has Bonekrusha on Tangtang (no kit):
+  unchanged. `zmdlogs reactions`: 7 statuses by the kit-less teammates
+  logged but not predicted, as before.
+- `efsim simulate examples/endministrator-crystals.scenario.json`:
+  **233,088** in 11.07 s (Endministrator 109,589, Estella 72,271, Gilberta
+  51,228). Every trigger, buff and both Grizzled Edge variants fire at
+  least once in the example or the tests; the kit has no stacks and no
+  conditional jumps.
+- Other examples, with and without the new files: arcane-will-solo
+  102,144, estella-solidification 186,540, gilberta-gravity-field 375,387,
+  laevatain-solo 739,228, liino-laevatain 619,389, si-laevatain 1,017,035,
+  typhoeus-gilberta 1,058,494 (sums of rounded hits), unchanged; none wears
+  the new equipment.
+
+### Open questions
+
+- K4's +180 ATK: what gives it (her stat panel will tell whether it's in
+  the panel at all).
+- Row 21: the ultimate's third (crystal) hit.
+- Row 40: a weaker Grizzled Edge reapplication (the engine replaces).
+- Row 43: Bonekrusha's layers without a duration.
+- The Lift / Vulnerable order inside LiftAction (above).
+
+### Proposed in-game tests
+
+- **K4** Her ATK in the stat panel, with any loadout the owner has, against
+  `efsim calc` of that build: a gap of about 180 × her attribute
+  multiplier (about 860 with this log's Agility) would confirm it.
+- **E1** Ultimate on a sealed enemy: two or three damage numbers (row 21).
+- **E7** Crush on a sealed enemy vs unsealed, same Vulnerable stacks (four,
+  e.g. after Lifts or Breaches), not staggered: the Crush number is about
+  1.2× when sealed (K1: Crush's damage sees the crystals). Status hits can
+  crit (3 of the 18 in the fixtures did): take a few of each and compare
+  the smaller numbers.
+- **E8** P5 (if the owner has it): combo, then battle skill and ultimate
+  right away: the combo becomes castable about 11 s after it instead of
+  15 s (stopwatch).
+- **E4** Grizzled Edge: Crush with 4 stacks, then Breach with 1: does the
+  buff icon's value stay or drop (row 40)?
+- **E5** Bonekrusha: combo, wait 30 s, battle skill: still about 1.3× the
+  battle skill's damage number (row 43)?

@@ -1,0 +1,231 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0003_endminf",
+  "variants": [
+    {
+      "operator": "chr_0002_endminm",
+      "skills": { "chr_0003_endminf_power_attack2": "chr_0002_endminm_power_attack" }
+    }
+  ],
+  "sources": [
+    "Hits, frames, keys and events: rmxlinux Json/SkillData chr_0003_endminf_* (game 1.6) as compiled by efsim kit-draft, and Json/BuffData buff_common_originum_frozen, buff_chr_0003_endminf_*; values SkillPatchTable. Batch-2 report docs/kit-batches/batch-2/chr_0003_endminf.md (mechanics table, kit plan, section Kit).",
+    "One kit for both playable IDs: chr_0002_endminm (male) has the same SkillPatchTable values, hit frames, masks and keys (all 11 skill pairs compared); its finisher is chr_0002_endminm_power_attack (the female's power_attack2); its windows and durationFrame are read from its own SkillData. BuffData is shared by both (buff_chr_0003_endminf_*). chr_9000_endmin, the virtual character (GlobalConst endminVirtualCharId), holds the talents and potentials: the loader gives both IDs its talent nodes (chr_9000_endmin_talent_*: atk_up 0.15 / 0.30 and duration 15 for talent 1; dmg 0.10 / 0.20 for talent 2).",
+    "Talent indices: 0 is Essence Disintegration (buff_chr_0003_endminf_talent_1: ATK up after a consumption), 1 is Realspace Stasis (buff_chr_0003_endminf_talent_0: Physical DMG taken on sealed enemies), in CharGrowthTable order.",
+    "Stagger (poise): damage units with damageAttributeType 1 (the skills' poise keys), hand-written. Finisher factors 0.1 / 0.9: BreakingAttackCalculation multiplier of its two DamageActions (frames 9 and 27).",
+    "Log keys: fixtures/pending/zmdlogs-7e19489ae503.json logs the female combo under chr_0002_endminm_combo_skill and the crystal hits under buff_common_originum_frozen."
+  ],
+  "element": "physical",
+  "buffs": [
+    {
+      "id": "originium_crystals",
+      "label": "Originium Crystals (combo skill; talent 2 Realspace Stasis: Physical DMG taken)",
+      "target": "enemy",
+      "gameBuff": "buff_common_originum_frozen",
+      "duration": "duration",
+      "modifiers": [{ "zone": "damageTaken", "value": { "talent": 1, "key": "dmg" }, "elements": ["physical"] }],
+      "note": "Combo frame 23 CreateBuff buff_common_originum_frozen between its two DamageActions (duration = the combo's `duration`, 4 / 4.5 / 5 s at L1-9 / 10-11 / 12; max 1, stackingType 2; atk_scale_trigger and originum_ult_break_scale assigned from the combo). Talent 2 is buff_chr_0003_endminf_talent_0, an aura on the team: DamageScaleProcessor side 1 (defender) NormalCalcZone +dmg on physical hits (CheckDamageType 0) while the target carries buff_common_originum_frozen; written on the crystals so it lasts exactly as long. The seal on enemies with super armor below 20 (buff_common_originum_frozen_inner, time dilation 0) isn't modelled: no super armor in EnemyData, bosses unaffected (report G6, deferred)."
+    },
+    {
+      "id": "essence_disintegration",
+      "label": "Essence Disintegration (talent 1): ATK up",
+      "target": "self",
+      "gameBuff": "buff_chr_0003_endminf_talent_1_tirgger",
+      "duration": { "talent": 0, "key": "duration" },
+      "modifiers": [{ "zone": "atk", "value": { "talent": 0, "key": "atk_up" } }],
+      "note": "\"When the Originium Crystals attached to the enemy are consumed, the Endministrator gains ATK +{atk_up} for {duration}s. This effect cannot stack.\" Created by every ignite handler of buff_common_originum_frozen (stackingType 2, max 1: a new one refreshes it). Logged as 0.30 at talent level 2 in 7e19."
+    },
+    {
+      "id": "essence_disintegration_team",
+      "label": "Reflection of Authority (P2): half of talent 1's ATK for the other operators",
+      "target": "team",
+      "recipients": { "not": { "isOwner": true } },
+      "gameBuff": "buff_chr_0003_endminf_talent_1_tirgger",
+      "duration": { "talent": 0, "key": "duration" },
+      "modifiers": [{ "zone": "atk", "value": { "product": [{ "talent": 0, "key": "atk_up" }, { "key": "ratio", "skill": "buff_chr_0003_endminf_potential2" }] } }],
+      "note": "P2: the other operators get `ratio` (0.5) of talent 1's ATK for the same duration, in the same ignite handlers. Logged as 0.15 on three teammates in 7e19."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_window",
+      "on": { "event": "hit", "kinds": ["combo"] },
+      "by": "teammate",
+      "do": [{ "kind": "openCombo" }],
+      "note": "COMBO TRIGGER: When another operator in the team deals DMG with combo skills."
+    },
+    {
+      "id": "crystals_status",
+      "on": { "event": "physicalStatus", "statuses": ["lift", "knockdown", "crush"] },
+      "by": "anyone",
+      "if": { "buffActive": "originium_crystals" },
+      "skill": "chr_0003_endminf_combo_skill",
+      "do": [
+        {
+          "kind": "hits",
+          "now": true,
+          "hits": [
+            { "id": "shatter", "label": "Originium Crystals shattered (physical status)", "scale": ["atk_scale_trigger"], "element": "physical", "damageType": "combo", "events": ["buff_common_originum_frozen"], "frames": [0] }
+          ]
+        },
+        { "kind": "buff", "buff": "essence_disintegration", "if": { "talentAtLeast": [0, 1] } },
+        { "kind": "buff", "buff": "essence_disintegration_team", "if": { "all": [{ "talentAtLeast": [0, 1] }, { "potentialAtLeast": 2 }] } },
+        { "kind": "endBuff", "buff": "originium_crystals" }
+      ],
+      "note": "buff_common_originum_frozen igniteEventAction igniteType 1: DamageAction atk_scale_trigger (the combo's, mask 12288: combo kind; damage source the Endministrator), then talent 1 on her and P2's half on the teammates, then finishAfterIgnited. `now`: the crystal hit lands inside the handler and still sees the crystals (talent 2). buff_physical_airborne, _knockdown and _do_crushed run their own DamageAction before their IgniteAction, so the status hit sees the crystals too: after damage here (fixtures/pending/zmdlogs-7e19489ae503.json t=33734: the Crush hit 413,543 and the crystal hit both carry talent 2's +0.2; the battle skill hit, whose DamageAction comes after the CrushAction, doesn't). Interim: the engine computes a status hit's damage after its skill hit's, so the skill hit that applied the status sees the crystals too, and talent 1 comes only after both (in the game the skill hit has talent 1 and not talent 2: about even); report gap K1."
+    },
+    {
+      "id": "crystals_breach",
+      "on": { "event": "physicalStatus", "statuses": ["breach"] },
+      "by": "anyone",
+      "beforeDamage": true,
+      "if": { "buffActive": "originium_crystals" },
+      "skill": "chr_0003_endminf_combo_skill",
+      "do": [
+        {
+          "kind": "hits",
+          "now": true,
+          "hits": [
+            { "id": "shatter", "label": "Originium Crystals shattered (Breach)", "scale": ["atk_scale_trigger"], "element": "physical", "damageType": "combo", "events": ["buff_common_originum_frozen"], "frames": [0] }
+          ]
+        },
+        { "kind": "buff", "buff": "essence_disintegration", "if": { "talentAtLeast": [0, 1] } },
+        { "kind": "buff", "buff": "essence_disintegration_team", "if": { "all": [{ "talentAtLeast": [0, 1] }, { "potentialAtLeast": 2 }] } },
+        { "kind": "endBuff", "buff": "originium_crystals" }
+      ],
+      "note": "igniteType 1 from buff_physical_do_fracture, whose IgniteAction comes before its DamageAction: Breach's hit and the skill hit that applied it no longer see the crystals, and talent 1's ATK acts on both (before damage). 7e19 t=14984 (a teammate's Breach): the crystal hit has talent 2 and neither talent 1 nor Breach's Physical DMG taken."
+    },
+    {
+      "id": "crystals_vulnerable",
+      "on": { "event": "vulnerable" },
+      "by": "anyone",
+      "beforeDamage": true,
+      "if": { "buffActive": "originium_crystals" },
+      "skill": "chr_0003_endminf_combo_skill",
+      "do": [
+        {
+          "kind": "hits",
+          "now": true,
+          "hits": [
+            { "id": "shatter", "label": "Originium Crystals shattered (Vulnerable)", "scale": ["atk_scale_trigger"], "element": "physical", "damageType": "combo", "events": ["buff_common_originum_frozen"], "frames": [0] }
+          ]
+        },
+        { "kind": "buff", "buff": "essence_disintegration", "if": { "talentAtLeast": [0, 1] } },
+        { "kind": "buff", "buff": "essence_disintegration_team", "if": { "all": [{ "talentAtLeast": [0, 1] }, { "potentialAtLeast": 2 }] } },
+        { "kind": "endBuff", "buff": "originium_crystals" }
+      ],
+      "note": "igniteType 7: buff_physical_no_guard buffEvent 7 IgniteAction, on every Vulnerable stack added (its >= 2 check guards only Shatter's handler). A Crush or Breach on an enemy without Vulnerable only adds a stack, so it consumes the crystals through this trigger."
+    },
+    {
+      "id": "crystals_ultimate",
+      "on": { "event": "cast", "skills": ["chr_0003_endminf_ultimate_skill"] },
+      "by": "self",
+      "delay": 51,
+      "awaited": true,
+      "do": [
+        { "kind": "buff", "buff": "essence_disintegration", "if": { "all": [{ "buffActive": "originium_crystals" }, { "talentAtLeast": [0, 1] }] } },
+        { "kind": "buff", "buff": "essence_disintegration_team", "if": { "all": [{ "buffActive": "originium_crystals" }, { "talentAtLeast": [0, 1] }, { "potentialAtLeast": 2 }] } },
+        { "kind": "energy", "value": { "key": "usp", "skill": "buff_chr_0003_endminf_potential3" }, "ignoreEfficiency": true, "if": { "all": [{ "buffActive": "originium_crystals" }, { "potentialAtLeast": 3 }] } },
+        { "kind": "endBuff", "buff": "originium_crystals" }
+      ],
+      "note": "igniteType 6 (the ultimate's IgniteAction at frame 50, after its break hit): talent 1, P2, P3's usp 15 (\"After consuming Originium Crystals, the Endministrator gains {usp} Ultimate Energy. This effect does not benefit from other bonuses.\": ignoreUspGainScalar, only in this handler), then the crystals end. One frame after the hits, so all three see the crystals and none gets talent 1's ATK."
+    },
+    {
+      "id": "p1_sp",
+      "on": { "event": "cast", "skills": ["chr_0003_endminf_normal_skill"] },
+      "by": "self",
+      "delay": 11,
+      "do": [{ "kind": "sp", "value": { "key": "atb_return", "skill": "buff_chr_0003_endminf_potential1" }, "if": { "all": [{ "potentialAtLeast": 1 }, { "buffActive": "originium_crystals" }] } }],
+      "note": "P1 Final Awakening, \"Consuming Originium Crystals returns {atb_return} SP\": normal_skill frame 11 ChannelingAction, with the P1 buff and the target sealed and not has_returned, ObtainCostAction costType 1 atb_return (50), atbSourceType 3 (returned SP: no ultimate energy when spent), once per cast; before the hit's Crush consumes the crystals."
+    },
+    {
+      "id": "p5_cooldown",
+      "on": { "event": "hit", "skills": ["chr_0003_endminf_normal_skill", "chr_0003_endminf_ultimate_skill"] },
+      "by": "self",
+      "if": { "potentialAtLeast": 5 },
+      "cooldown": 0.1,
+      "maxPerCast": 1,
+      "do": [{ "kind": "cooldown", "who": "self", "skills": "combo", "seconds": { "product": [-1, { "key": "cd_minus", "skill": "buff_chr_0003_endminf_potential5" }] } }],
+      "note": "P5 (its description is ??? in every language): normal_skill frames 11-14 and ultimate 50-53 create potential5_trigger (0.1 s) once when they hit; buff_chr_0003_endminf_potential5 abilityEvent 9 on it runs SetSkillCdAtOnce on both combo IDs by cd_minus (2 s, functionType 0: a running cooldown is cut)."
+    }
+  ],
+  "skills": [
+    { "skillId": "chr_0003_endminf_attack1", "label": "Basic attack 1", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [6] }] },
+    { "skillId": "chr_0003_endminf_attack2", "label": "Basic attack 2", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [5] }] },
+    { "skillId": "chr_0003_endminf_attack3", "label": "Basic attack 3", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [5, 12], "events": ["chr_0003_endminf_attack3"] }] },
+    { "skillId": "chr_0003_endminf_attack4", "label": "Basic attack 4", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 4, "frames": [7, 9, 18, 19], "events": ["chr_0003_endminf_attack4"] }] },
+    {
+      "skillId": "chr_0003_endminf_attack5",
+      "label": "Basic attack 5 (Final Strike)",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [18], "finalStrike": true, "poise": "poise", "poiseControlledOnly": true, "note": "\"As the controlled operator, Final Strike also deals {poise} Stagger\" (mask 2097280); its atb (20) is the skill's SP." }]
+    },
+    {
+      "skillId": "chr_0003_endminf_power_attack2",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit1", "scale": ["atk_scale"], "factor": 0.1, "frames": [9], "events": ["chr_0003_endminf_power_attack2"], "note": "BreakingAttackCalculation multiplier 0.1." },
+        { "id": "hit2", "scale": ["atk_scale"], "factor": 0.9, "frames": [27], "events": ["chr_0003_endminf_power_attack2"], "note": "BreakingAttackCalculation multiplier 0.9." }
+      ]
+    },
+    { "skillId": "chr_0003_endminf_plunging_attack_end", "label": "Dive attack", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1] }] },
+    {
+      "skillId": "chr_0003_endminf_normal_skill",
+      "label": "Constructive Sequence (battle skill)",
+      "damageType": "battle",
+      "teamEnergy": [{ "frame": 11, "ratio": 1 }],
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [11],
+          "poise": "poise",
+          "applies": [{ "kind": "physicalStatus", "status": "crush" }],
+          "note": "\"Deals Physical DMG and applies Crush\": ChannelingAction at frame 11, one hit per target (maxCountPerTarget 1); its CrushAction runs before the DamageAction. The data's two branches (with P1 on a sealed target, without) deal the same hit; P1's SP is the p1_sp trigger."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0003_endminf_combo_skill",
+      "label": "Sealing Sequence (combo skill)",
+      "damageType": "combo",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [23],
+          "poise": "poise",
+          "energy": "usp",
+          "buffs": [{ "buff": "originium_crystals", "beforeDamage": true }],
+          "events": ["chr_0003_endminf_combo_skill", "chr_0002_endminm_combo_skill"],
+          "note": "The second DamageAction at frame 23 (the first names atk_scale without useBlackboardKey: a literal 0, left out; the log has one combo hit per cast). The crystals are created between the two, so talent 2 counts for this hit. Logged under chr_0002_endminm_combo_skill for the female too (7e19)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0003_endminf_ultimate_skill",
+      "label": "Bombardment Sequence (ultimate)",
+      "damageType": "ultimate",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [50], "poise": "poise", "events": ["chr_0003_endminf_ultimate_skill"] },
+        {
+          "id": "break",
+          "scale": ["originum_ult_break_scale"],
+          "frames": [50],
+          "if": { "buffActive": "originium_crystals" },
+          "events": ["chr_0003_endminf_ultimate_skill"],
+          "note": "\"deals one more hit\" on a sealed enemy: ForEach target with buff_common_originum_frozen → DamageAction originum_ult_break_scale (mask 512), then IgniteAction 6."
+        },
+        {
+          "id": "shatter",
+          "scale": [],
+          "scaleValue": { "key": "atk_scale_trigger", "skill": "chr_0003_endminf_combo_skill" },
+          "frames": [50],
+          "if": { "buffActive": "originium_crystals" },
+          "events": ["buff_common_originum_frozen"],
+          "note": "igniteType 6 also runs the crystals' own DamageAction: atk_scale_trigger (the combo's level) with mask 4608 (ultimate kind). The description names only one extra hit: in-game test proposed in the report (E1)."
+        }
+      ]
+    }
+  ]
+}

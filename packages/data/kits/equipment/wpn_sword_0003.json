@@ -1,0 +1,7 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0003",
+  "sources": [
+    "Tarr 11 (3-star sword): rmxlinux Json/SkillData (game 1.6) wpn_attr_main_low (main attribute +mainattr) and sk_wpn_sword_0003 (cardAttributeModifier attr 2 formulaItem 7: flat ATK +atk_up, 12 to 33.6 by skill level), both permanent and in the stat panel; values SkillPatchTable. No triggers. BuffData buff_wpn_sword_0003 (attr 2 formulaItem 5) is referenced by no skill file. Batch-2 report docs/kit-batches/batch-2/chr_0003_endminf.md row 34."
+  ]
+}
