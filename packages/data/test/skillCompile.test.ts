@@ -304,6 +304,8 @@ const KNOWN: string[] = [
   // buff ultskill_music_damage (created at 77) lasts ultmusic_duration (15 s at every level) and triggers every ultmusic_trigger (1.5 s): 11 beats 77–527, kit 9 to 437. Each beat launches two projectiles (soundwave, soundwave_heal) into the same projhit, whose damage is gated to non-character targets; which one hits the enemy isn't decided.
   "chr_0035_liino_ultimate_skill/beats count: kit 9, data 18 landings at its frames (chr_0035_liino_ultimate_skill_soundwave_projhit)",
   "chr_0035_liino_ultimate_skill: data lands chr_0035_liino_ultimate_skill_soundwave_projhit atk_scale_3 at [482, 482, 527, 527], no kit hit",
+  // Compiler limitation (D2), kit right: CreateBuff buff_common_obtain_ultimate_sp is in chr_0021_whiten_normal_skill_projhit (launched at 21) on the first-target branch (EntityBB_first_hit), which the compiler leaves undecided.
+  "chr_0021_whiten_normal_skill teamEnergyFrame: kit 21, data 0",
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {

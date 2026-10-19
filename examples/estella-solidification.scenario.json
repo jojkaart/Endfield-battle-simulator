@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/scenario.schema.json",
-  "description": "Estella with Gilberta vs Rhodagn (both builds from fixtures/zmdlogs-4e5e1390085e.json). Gilberta's battle skill inflicts Nature; Estella's battle skill adds Cryo, which consumes it and Solidifies the enemy. That triggers her combo, which applies Physical Susceptibility before its Solidified-target hit and gives her 10 energy; her ultimate and a basic chain then land under the susceptibility.",
+  "description": "Estella with Gilberta vs Rhodagn (both builds from fixtures/zmdlogs-4e5e1390085e.json). Gilberta's battle skill inflicts Nature; Estella's battle skill adds Cryo, which consumes it and Solidifies the enemy. That triggers her combo (and, at P5, 5 energy). The combo applies Physical Susceptibility before its Solidified-target hit, forcibly Lifts the enemy, which Shatters it (talent 1 stack for her next battle skill), and gives her 10 energy; Valiant adds a hit for the Lift. Her ultimate Lifts the Susceptible enemy again (another Valiant hit), and a basic chain lands under the Susceptibility too. Swordmancer's set hit (suit_phy01) counts only once its kit exists.",
   "team": [
     {
       "operator": "chr_0021_whiten",

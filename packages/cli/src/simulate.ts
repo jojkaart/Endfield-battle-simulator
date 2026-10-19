@@ -103,7 +103,11 @@ export function formatResult(data: GameData, scenario: TimelineScenario, r: Time
     const what = (e: (typeof reactions)[number]) =>
       e.kind === "burst" ? `${e.element} burst`
       : e.kind === "reaction" ? `${e.status} level ${e.level}${e.consumed ? ` (consumed ${e.consumed})` : " (forced)"}`
-      : e.kind === "consumed" ? `consumed ${e.stacks} ${e.element}` : "";
+      : e.kind === "consumed" ? `consumed ${e.stacks} ${e.element}`
+      : e.kind === "physical" ? `${e.status} level ${e.level}${e.forced ? " (forced)" : ""}`
+      : e.kind === "vulnerable" ? `vulnerable ${e.stacks} stack${e.stacks === 1 ? "" : "s"}`
+      : e.kind === "shatter" ? `shatter (solidification level ${e.level})`
+      : e.kind === "control" ? `${e.status} (${(e.frames / FPS).toFixed(2)} s)` : "";
     const ticks = r.hits.filter((h) => h.skillId === "reaction:combustionTick");
     out.push(
       "",

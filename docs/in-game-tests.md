@@ -133,7 +133,10 @@ means the latest.
 
 **Why:** on a Solidified target it uses the larger `atk_scale2` and applies
 Physical Susceptibility; otherwise the smaller `atk_scale`, without
-Susceptibility. The model assumes the target is still Solidified.
+Susceptibility. The kit now models both (the data's IfElse per target); no
+log has the second one yet. Expected at combo level 12, with no other
+Susceptibility on the enemy: the late combo's number is about 0.50 of the
+early one's (3.6 against 6.3 × 1.15).
 **How:** with her combo window open, wait until Solidification ends (about
 6 s after a level I Solidification), then cast the combo; compare its
 damage with a cast right after Solidification, and check for the Physical
