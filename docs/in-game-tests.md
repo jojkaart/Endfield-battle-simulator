@@ -323,11 +323,12 @@ does Laevatain's Melting Flame go up?
 ### 25. Liino's weapon stacks on each teammate (ready, if you have Liino with Bedazzling Night Debut)
 
 **Why:** when her skills heal a teammate, that teammate gets ATK +9.8%
-(weapon level 9) for 20 s, up to 4 stacks. The engine shares one pool of 4
-stacks across the team, so with three teammates each gets about +13%
-instead of up to +39%. One log already shows 9 stacks on three teammates
-at once, so "4 each" is likely; what's left is how they build up. This is
-her loadout's largest damage effect.
+(weapon level 9) for 20 s, up to 4 stacks. The engine gives each teammate
+its own 4 (up to +39% each), one per heal of hers that reaches them (her
+3 s soundwave in Vocalist Stance, her combo's heal of the controlled
+operator, her ultimate's heals), overheals included. One log already shows
+9 stacks on three teammates at once, so "4 each" is likely; what's left is
+how they build up. This is her loadout's largest damage effect.
 **How:** Liino and three teammates at full HP. Cast her battle skill and
 watch for 15 s: does each teammate's ATK icon count up on its own, to 4
 each? Does it count up while they're at full HP (does an overheal count)?
@@ -368,10 +369,12 @@ the ultimate until it ends.
 ### 28. What Liino can do in Vocalist Stance (ready, if you have Liino; lower priority)
 
 **Why:** the data blocks her skills for the first 3 s after her battle
-skill (and 2 s at Cosmovoice's start), but the engine ignores that block,
-as with Gilberta (test 15), and lets her End Stance or combo 1.3 s early.
-The stance's action also holds her in ways the engine only partly
-follows. Small for damage; it's about which rotations are legal.
+skill (and 2 s at Cosmovoice's start); the engine follows that block (as
+with Gilberta, test 15) and holds her ultimate too. In the stance's action
+(and after a combo in it) the engine lets her cast only End Stance, her
+combo and her ultimate until the stance ends. After End Stance from
+Vocalist it puts her battle skill on a 3 s cooldown. Small for damage;
+it's about which rotations are legal.
 **How:** with Liino controlled in Vocalist Stance: (a) does a basic attack
 come out? (b) In the first 3 s after the battle skill, can you cast End
 Stance or her combo, or does it wait until about 3 s? (c) Right after her
