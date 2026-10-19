@@ -80,6 +80,8 @@ export interface RotationAction {
 
 export interface TimelineOptions {
   readonly crit: CritMode;
+  /** Seed of the battle's random draws (rolled crits); default 1. The same seed gives the same battle. */
+  readonly seed?: number;
   /** Conditions treated as always on (kit or weapon condition IDs, per operator). */
   readonly conditions?: Readonly<Record<string, readonly string[]>>;
   /** Extra modifiers on every hit (e.g. a fixed external buff). */
@@ -149,6 +151,8 @@ export type ReactionRecord = StatusEvent;
 /** The whole simulation state: plain data, cheap to copy for branching. */
 export interface TimelineState {
   readonly frame: number;
+  /** The random streams' states, one per source (`crit`…), all from TimelineOptions.seed: a draw advances its own stream only. */
+  readonly rng: Readonly<Record<string, number>>;
   readonly sp: number;
   /** The part of `sp` that was returned by skills; it's spent first and gives no ultimate energy. */
   readonly spReturned: number;
@@ -239,6 +243,7 @@ function initialState(ctx: TimelineContext): TimelineState {
   if (!ctx.builds.has(controlled)) throw new EngineError(`controlled operator ${controlled} isn't in the team`);
   return {
     frame: 0,
+    rng: {},
     sp: SP.start,
     spReturned: 0,
     energy: Object.fromEntries(ctx.scenario.team.map((b) => {
@@ -720,8 +725,11 @@ function statusTweaks(ctx: TimelineContext, st: TimelineState, operator: string,
 }
 
 /** The damage a status event deals, if any (bursts, reactions with an initial hit, Combustion ticks). */
-function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, st: TimelineState): LandedHit | null {
-  if (e.kind === "consumed" || e.kind === "inflicted" || e.kind === "statusConsumed" || e.kind === "vulnerable" || e.kind === "control" || (e.kind === "reaction" && !e.initialHit)) return null;
+/** Whether a status event deals damage (bursts, reactions with an initial hit, physical statuses, Shatter, Combustion ticks). */
+const dealsDamage = (e: StatusEvent): e is Extract<StatusEvent, { kind: "burst" | "reaction" | "physical" | "shatter" | "combustionTick" }> => !(e.kind === "consumed" || e.kind === "inflicted" || e.kind === "statusConsumed" || e.kind === "vulnerable" || e.kind === "control" || (e.kind === "reaction" && !e.initialHit));
+
+function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, st: TimelineState, critRoll?: number): LandedHit | null {
+  if (!dealsDamage(e)) return null;
   const reaction =
     e.kind === "burst" ? { kind: "burst" as const, element: e.element, stacks: 1 }
     : e.kind === "reaction" ? { kind: "reaction" as const, element: e.element, stacks: e.level }
@@ -729,7 +737,7 @@ function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, s
     : e.kind === "shatter" ? { kind: "shatter" as const, element: "physical" as const, stacks: e.level }
     : { kind: "combustionTick" as const, element: "fire" as const, stacks: e.level };
   const build = ctx.builds.get(e.operator) as Build;
-  const result = computeReaction(ctx.data, build, ctx.panels.get(e.operator) as StatPanel, ctx.scenario.target, reaction, damageOptions(ctx, st, e.operator, enemy, e.frame));
+  const result = computeReaction(ctx.data, build, ctx.panels.get(e.operator) as StatPanel, ctx.scenario.target, reaction, { ...damageOptions(ctx, st, e.operator, enemy, e.frame), ...(critRoll !== undefined ? { critRoll } : {}) });
   const scale = e.kind === "combustionTick" ? e.damageScale : e.kind === "physical" && e.multiplier !== undefined ? { key: "multiplier", value: e.multiplier } : undefined;
   if (!scale) return { ...result, frame: e.frame, operator: e.operator };
   const exact = result.exact * scale.value;
@@ -776,13 +784,38 @@ function addHits(st: TimelineState, landed: readonly LandedHit[]): TimelineState
 function recordStatus(ctx: TimelineContext, st: TimelineState, events: readonly StatusEvent[], enemy: EnemyStatus): TimelineState {
   const records: ReactionRecord[] = [];
   const landed: LandedHit[] = [];
+  let next = st;
   for (const e of events) {
     if (e.kind === "inflicted") continue;
     records.push(e);
-    const d = eventDamage(ctx, e, enemy, st);
+    // Every damaging event draws its crit roll (a tick that can't crit too: the stream doesn't depend on what crits).
+    let roll: number | undefined;
+    if (ctx.scenario.options.crit === "rolled" && dealsDamage(e)) ({ value: roll, state: next } = draw(ctx, next, "crit"));
+    const d = eventDamage(ctx, e, enemy, st, roll);
     if (d) landed.push(d);
   }
-  return records.length ? addHits({ ...st, reactions: [...st.reactions, ...records] }, landed) : st;
+  return records.length ? addHits({ ...next, reactions: [...next.reactions, ...records] }, landed) : st;
+}
+
+/** The next draw of the battle's random stream (mulberry32): a uniform value in [0, 1) and the stream's new state. */
+export function nextRandom(seed: number): { readonly value: number; readonly seed: number } {
+  const s = (seed + 0x6d2b79f5) >>> 0;
+  let t = Math.imul(s ^ (s >>> 15), s | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return { value: ((t ^ (t >>> 14)) >>> 0) / 4294967296, seed: s };
+}
+
+/** A draw from one of the battle's random streams; each starts from the scenario's seed mixed with the stream's name. */
+function draw(ctx: TimelineContext, st: TimelineState, stream: string): { value: number; state: TimelineState } {
+  let start = st.rng[stream];
+  if (start === undefined) {
+    // FNV-1a of the name, mixed into the seed.
+    let h = 0x811c9dc5;
+    for (const c of stream) h = Math.imul(h ^ c.charCodeAt(0), 0x01000193) >>> 0;
+    start = ((ctx.scenario.options.seed ?? 1) ^ h) >>> 0;
+  }
+  const r = nextRandom(start);
+  return { value: r.value, state: { ...st, rng: { ...st.rng, [stream]: r.seed } } };
 }
 
 /** Status events as battle events, with the kind of the hit that caused them (and its cast). */
@@ -1149,8 +1182,11 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   applyBuffs(true);
   // A finisher (skillSpecification 8) is multiplied by the enemy's finisher multiplier (attribute 27).
   const finisher = !hit.trigger && ctx.data.skills[hit.skillId]?.timing?.specification === 8;
+  let roll: number | undefined;
+  if (ctx.scenario.options.crit === "rolled" && hit.fixed === undefined) ({ value: roll, state: st } = draw(ctx, st, "crit"));
   const result = hit.fixed !== undefined ? fixedHit(skill.skillId, kitHit, hit.fixed) : computeHit(ctx.data, build, panel, ctx.scenario.target, skill, kitHit, {
     ...damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast),
+    ...(roll !== undefined ? { critRoll: roll } : {}),
     ...(finisher ? { modifiers: [...damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast).modifiers, { zone: "multiplicative" as const, value: enemyAttr(ctx, Attr.BreakingAttackDamageTakenScalar) - 1, source: "Finisher" }] } : {}),
     situation: { ...before, consumed },
   });
@@ -1182,6 +1218,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     element: kitHit.reaction?.element ?? kitHit.element, finalStrike: kitHit.finalStrike ?? false, finisher, controlled: st.controlled === hit.operator,
     ...(kitHit.reaction ? { reaction: true } : {}),
     ...(hit.cast !== undefined ? { cast: hit.cast } : {}),
+    ...((ctx.scenario.options.crit === "always" && hit.fixed === undefined) || result.crit ? { crit: true } : {}),
   };
   const all: BattleEvent[] = [
     hitEvent, ...asEvents(statusEvents, kind, hit.cast), ...asEvents(burst, kind, hit.cast), ...poiseEvents, ...events, ...spEvents,
@@ -1591,5 +1628,37 @@ export function simulate(data: GameData, scenario: TimelineScenario): TimelineRe
     hits: state.hits,
     reactions: state.reactions,
     assumptions: [...TIMELINE_ASSUMPTIONS, ...(missingFrames ? ["Some hits have no frames in their kit and land at the skill's start."] : [])],
+  };
+}
+
+/** How a rotation's total damage varies over battles with rolled crits. */
+export interface RunSpread {
+  readonly runs: number;
+  /** The first run's seed; run i has seed + i. */
+  readonly seed: number;
+  readonly totals: readonly number[];
+  readonly mean: number;
+  /** Standard deviation of the totals (over the runs, not an estimate of the population's). */
+  readonly sd: number;
+  readonly min: number;
+  readonly max: number;
+  /** Nearest-rank percentiles of the totals. */
+  readonly p5: number;
+  readonly p50: number;
+  readonly p95: number;
+}
+
+/** Runs a recorded rotation `runs` times with rolled crits, each with its own seed, for the spread of its damage. */
+export function simulateRuns(data: GameData, scenario: TimelineScenario, runs: number, seed = scenario.options.seed ?? 1): RunSpread {
+  if (!Number.isInteger(runs) || runs < 1) throw new EngineError(`runs must be a whole number ≥ 1, not ${runs}`);
+  const totals = Array.from({ length: runs }, (_, i) => simulate(data, { ...scenario, options: { ...scenario.options, crit: "rolled", seed: (seed + i) >>> 0 } }).total);
+  const mean = totals.reduce((a, b) => a + b, 0) / runs;
+  const sorted = [...totals].sort((a, b) => a - b);
+  const rank = (p: number) => sorted[Math.max(0, Math.ceil(p * runs) - 1)] as number;
+  return {
+    runs, seed, totals, mean,
+    sd: Math.sqrt(totals.reduce((a, t) => a + (t - mean) ** 2, 0) / runs),
+    min: sorted[0] as number, max: sorted[runs - 1] as number,
+    p5: rank(0.05), p50: rank(0.5), p95: rank(0.95),
   };
 }

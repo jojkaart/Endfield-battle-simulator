@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { FPS, searchRotation, simulate, type TimelineResult, type Build, type CritMode, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { FPS, searchRotation, simulate, simulateRuns, type TimelineResult, type Build, type CritMode, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
 import { readBuild } from "./commands.ts";
 import { num, table } from "./format.ts";
 
@@ -16,6 +16,7 @@ interface RawScenario {
   target: { enemy: string; level: number; controlImmune?: boolean };
   durationSeconds: number;
   crit?: CritMode;
+  seed?: number;
   conditions?: Record<string, string[]>;
   startEnergy?: Record<string, number | "full">;
   startStacks?: Record<string, Record<string, number>>;
@@ -38,7 +39,7 @@ export function readScenario(file: string): TimelineScenario {
     target: s.target,
     durationFrames: Math.round(s.durationSeconds * FPS),
     rotation,
-    options: { crit: s.crit ?? "expected", ...(s.conditions ? { conditions: s.conditions } : {}) },
+    options: { crit: s.crit ?? "expected", ...(s.seed !== undefined ? { seed: s.seed } : {}), ...(s.conditions ? { conditions: s.conditions } : {}) },
     ...(s.controlled ? { controlled: s.controlled } : {}),
     ...(s.startEnergy ? { startEnergy: s.startEnergy } : {}),
     ...(s.startStacks ? { startStacks: s.startStacks } : {}),
@@ -47,6 +48,31 @@ export function readScenario(file: string): TimelineScenario {
 
 export function formatSimulation(data: GameData, scenario: TimelineScenario, verbose: boolean): string {
   return formatResult(data, scenario, simulate(data, scenario), verbose);
+}
+
+/** The spread of a rotation's damage over many battles with rolled crits, beside its expected-crit total. */
+export function formatRuns(data: GameData, scenario: TimelineScenario, runs: number): string {
+  const r = simulateRuns(data, scenario, runs);
+  const expected = simulate(data, { ...scenario, options: { ...scenario.options, crit: "expected" } }).total;
+  const n = (x: number) => num(Math.round(x), 0);
+  return [
+    `${runs} battles with rolled crits (seeds ${r.seed}–${r.seed + runs - 1}) vs ${data.enemies[scenario.target.enemy]?.name ?? scenario.target.enemy} Lv${scenario.target.level}:`,
+    "",
+    table(
+      ["", "total damage"],
+      [
+        ["mean", n(r.mean)],
+        ["standard deviation", `${n(r.sd)} (${r.mean ? ((r.sd / r.mean) * 100).toFixed(1) : "0.0"}%)`],
+        ["min", n(r.min)],
+        ["5th percentile", n(r.p5)],
+        ["median", n(r.p50)],
+        ["95th percentile", n(r.p95)],
+        ["max", n(r.max)],
+        ["expected crits", n(expected)],
+      ],
+      ["l", "r"],
+    ),
+  ].join("\n");
 }
 
 /** Search a rotation for the scenario's team (its own rotation is ignored); optionally save it as a scenario that `simulate` replays. */
@@ -71,6 +97,7 @@ export function searchCommand(data: GameData, scenario: TimelineScenario, option
       ...(scenario.startStacks ? { startStacks: scenario.startStacks } : {}),
       durationSeconds: scenario.durationFrames / FPS,
       crit: scenario.options.crit,
+      ...(scenario.options.seed !== undefined ? { seed: scenario.options.seed } : {}),
       ...(scenario.options.conditions ? { conditions: scenario.options.conditions } : {}),
       rotation: found.rotation.map((a) => ({ operator: a.operator, skill: a.skill, ...(a.at !== undefined ? { at: a.at / FPS } : {}) })),
     };
@@ -84,7 +111,8 @@ export function formatResult(data: GameData, scenario: TimelineScenario, r: Time
   const name = (op: string) => data.operators[op]?.name ?? op;
   const out = [
     `Total ${num(Math.round(r.total), 0)} damage in ${(r.lastHitFrame / FPS).toFixed(2)} s (last hit) → ${num(Math.round(r.dps), 0)} DPS` +
-      ` vs ${data.enemies[scenario.target.enemy]?.name ?? scenario.target.enemy} Lv${scenario.target.level}, crit: ${scenario.options.crit}`,
+      ` vs ${data.enemies[scenario.target.enemy]?.name ?? scenario.target.enemy} Lv${scenario.target.level}, crit: ${scenario.options.crit}` +
+      (scenario.options.crit === "rolled" ? ` (seed ${scenario.options.seed ?? 1}: ${r.hits.filter((h) => h.crit).length} of ${r.hits.filter((h) => h.crit !== undefined).length} hits crit)` : ""),
     "",
     table(
       ["operator", "damage", "share"],

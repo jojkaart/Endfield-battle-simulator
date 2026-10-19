@@ -12,10 +12,13 @@ import { artsIntensityDamage, levelCoefficientOf, reactionBase, type ReactionKin
 import { evaluate, test, type EvalContext, type Predicate } from "./expr.ts";
 import { computeStats, skillLevel, wornEquipment, type StatPanel } from "./stats.ts";
 
-export type CritMode = "never" | "always" | "expected";
+/** `expected`: the crit zone at its average; `rolled`: each hit crits or not, by a roll the caller makes (DamageOptions.critRoll). */
+export type CritMode = "never" | "always" | "expected" | "rolled";
 
 export interface DamageOptions {
   readonly crit: CritMode;
+  /** With rolled crits: a uniform draw in [0, 1); the hit crits when it's below its crit rate. */
+  readonly critRoll?: number;
   readonly staggered: boolean;
   /** Active condition IDs (kit or weapon conditions). */
   readonly conditions: readonly string[];
@@ -93,6 +96,8 @@ export interface HitDamage {
   readonly exact: number;
   /** Damage of one hit as the game shows it: rounded to the nearest whole number. */
   readonly damage: number;
+  /** With rolled crits, whether it crit (absent for hits that can't). */
+  readonly crit?: boolean;
 }
 
 /**
@@ -263,7 +268,9 @@ export function computeDamage(
 
   const critRate = Math.min(1, Math.max(0, sum("critRate")));
   const critDamage = sum("critDamage");
-  const crit = !spec.canCrit || options.crit === "never" ? 1 : options.crit === "always" ? 1 + critDamage : 1 + critRate * critDamage;
+  if (options.crit === "rolled" && options.critRoll === undefined) throw new EngineError("rolled crits need a roll for each hit (the timeline rolls them)");
+  const rolled = options.crit === "rolled" && spec.canCrit ? (options.critRoll as number) < critRate : undefined;
+  const crit = !spec.canCrit || options.crit === "never" ? 1 : options.crit === "always" || rolled ? 1 + critDamage : rolled === false ? 1 : 1 + critRate * critDamage;
 
   const def = enemyLevel[Attr.Def] ?? 0;
   // 2 − 0.99^(−DEF) below zero per the Talos Wiki; negative DEF isn't reachable in the game today.
@@ -299,6 +306,7 @@ export function computeDamage(
     modifiers: mods,
     exact,
     damage: roundDamage(exact),
+    ...(rolled !== undefined ? { crit: rolled } : {}),
   };
 }
 

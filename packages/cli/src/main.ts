@@ -9,7 +9,7 @@ import { loadGameData } from "@efsim/data";
 import type { CritMode } from "@efsim/engine";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "./commands.ts";
 import { kitDraft } from "./kitdraft.ts";
-import { formatSimulation, readScenario, searchCommand } from "./simulate.ts";
+import { formatRuns, formatSimulation, readScenario, searchCommand } from "./simulate.ts";
 import { checkLog, findScales, formatLogCheck, impliedScales } from "./logcheck.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -23,6 +23,8 @@ const USAGE = `Usage:
   efsim calc <build.json> [options]       Stat panel and damage per hit
   efsim compare <a.json> <b.json> [opts]  Two builds of one operator side by side
   efsim simulate <scenario.json>          Run a team rotation on the timeline (--verbose: every hit)
+                [--seed n]                Seed of the battle's rolls (scenario crit "rolled")
+                [--runs n]                n battles with rolled crits: the spread of the damage
   efsim search <scenario.json>            Find a rotation for the scenario's team (its rotation is ignored)
                 [--beam n] [--out file]   Beam width (default 24); save the rotation as a scenario
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
@@ -61,6 +63,8 @@ async function main(argv: string[]): Promise<number> {
       note: { type: "string", multiple: true, default: [] },
       verbose: { type: "boolean", default: false },
       beam: { type: "string", default: "24" },
+      seed: { type: "string" },
+      runs: { type: "string" },
       out: { type: "string" },
       help: { type: "boolean", short: "h", default: false },
     },
@@ -142,7 +146,15 @@ async function main(argv: string[]): Promise<number> {
     }
     case "simulate":
       need(1);
-      text = formatSimulation(data, readScenario(args[0] as string), values.verbose);
+      {
+        const scenario = readScenario(args[0] as string);
+        const seed = values.seed === undefined ? undefined : Number(values.seed);
+        if (seed !== undefined && !(Number.isInteger(seed) && seed >= 0)) throw new Error(`--seed must be a whole number ≥ 0`);
+        const seeded = seed === undefined ? scenario : { ...scenario, options: { ...scenario.options, seed } };
+        const runs = values.runs === undefined ? undefined : Number(values.runs);
+        if (runs !== undefined && !(Number.isInteger(runs) && runs >= 1)) throw new Error(`--runs must be a whole number ≥ 1`);
+        text = runs === undefined ? formatSimulation(data, seeded, values.verbose) : formatRuns(data, seeded, runs);
+      }
       break;
     case "search":
       need(1);

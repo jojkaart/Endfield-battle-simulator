@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, parseReactionEvent, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
+import { advance, apply, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, parseReactionEvent, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, simulateRuns, nextRandom, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -1644,5 +1644,60 @@ describe("batch 2 group 3: chain steps by timing", () => {
   it("a chain head input waits out every step's window", () => {
     const { ctx, s, at3 } = after3();
     expect((earliestStart(ctx, s, { operator: op, skill: L + "attack1" }) as { frame: number }).frame).toBeGreaterThan(at3 + 32);
+  });
+});
+
+describe("rolled crits", () => {
+  const rotation = [...chain, { operator: op, skill: L + "normal_skill" }, ...chain];
+  const run = (crit: TimelineScenario["options"]["crit"], extra: Partial<TimelineScenario["options"]> = {}) => simulate(data, { ...scenario(rotation), options: { crit, ...extra } });
+  const sure = (rate: number) => ({ modifiers: [{ zone: "critRate" as const, value: rate, source: "test" }] });
+
+  it("a battle with rolled crits is fixed by its seed; another seed rolls differently", () => {
+    expect(run("rolled", { seed: 7 }).total).toBe(run("rolled", { seed: 7 }).total);
+    const totals = new Set([1, 2, 3, 4, 5].map((seed) => run("rolled", { seed, ...sure(0.5) }).total));
+    expect(totals.size).toBeGreaterThan(1);
+  });
+
+  it("every hit crits at a crit rate of 100%, none at 0%", () => {
+    expect(run("rolled", sure(1)).total).toBeCloseTo(run("always", sure(1)).total, 6);
+    expect(run("rolled", sure(-1)).total).toBeCloseTo(run("never").total, 6);
+    const r = run("rolled", sure(0.5));
+    const crits = r.hits.filter((h) => h.crit).length;
+    expect(crits).toBeGreaterThan(0);
+    expect(crits).toBeLessThan(r.hits.filter((h) => h.crit !== undefined).length);
+  });
+
+  it("hit triggers can take only crits", () => {
+    const kit = data.kits.operators[op] as OperatorKit;
+    const count: KitTrigger = { id: "crits", on: { event: "hit", crit: true }, by: "self", do: [{ kind: "gain", gains: [{ stack: "n", amount: 1 }] }] };
+    const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, stacks: [...kit.stacks, { id: "n", label: "n", max: 999 }], triggers: [...kit.triggers, count] } } } };
+    const stacks = (crit: TimelineScenario["options"]["crit"], extra = {}) => {
+      const ctx = createContext(g, { ...scenario(chain), options: { crit, ...extra } });
+      let s = init(ctx);
+      for (const a of chain) s = apply(ctx, s, a);
+      s = advance(ctx, s, 300);
+      return { n: s.stacks[op]?.n ?? 0, crits: s.hits.filter((h) => h.crit).length };
+    };
+    expect(stacks("expected").n).toBe(0);
+    const rolled = stacks("rolled", sure(0.5));
+    expect(rolled.n).toBe(rolled.crits);
+    expect(rolled.n).toBeGreaterThan(0);
+  });
+
+  it("many battles give the spread of the damage, centred on the expected total", () => {
+    const spread = simulateRuns(data, { ...scenario(rotation), options: { crit: "expected", ...sure(0.5) } }, 40);
+    expect(spread.totals).toHaveLength(40);
+    expect(spread.min).toBeLessThanOrEqual(spread.p50);
+    expect(spread.p50).toBeLessThanOrEqual(spread.max);
+    expect(spread.sd).toBeGreaterThan(0);
+    const expected = run("expected", sure(0.5)).total;
+    // Within four standard errors of the mean.
+    expect(Math.abs(spread.mean - expected)).toBeLessThan((4 * spread.sd) / Math.sqrt(40));
+    for (let i = 0, x = 1; i < 1000; i++) {
+      const r = nextRandom(x);
+      expect(r.value).toBeGreaterThanOrEqual(0);
+      expect(r.value).toBeLessThan(1);
+      x = r.seed;
+    }
   });
 });

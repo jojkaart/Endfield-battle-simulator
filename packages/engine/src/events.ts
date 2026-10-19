@@ -28,6 +28,8 @@ export type BattleEvent =
       readonly controlled: boolean;
       /** The index of the hit's cast (a triggered hit has none). */
       readonly cast?: number;
+      /** It crit: with rolled crits, by its roll; every hit that can with `always`; none with `never` or `expected`. */
+      readonly crit?: boolean;
     }
   /** A skill was cast. */
   /** A skill was cast; `cast` is its index, `count` a combo's window count (ValueExpr `eventCount`). */
@@ -65,8 +67,13 @@ export type HitDecoration = "finalStrike" | "finisher";
 
 /** Which events a trigger listens to (and filters on them). */
 export type TriggerOn =
-  /** `skills`: only these skills' hits; `decorations`: only landings with any of these; `reaction`: only hits computed as a reaction or burst, or only others. */
-  | { readonly event: "hit"; readonly kinds?: readonly (SkillType | "none")[]; readonly elements?: readonly Element[]; readonly finalStrike?: boolean; readonly skills?: readonly string[]; readonly decorations?: readonly HitDecoration[]; readonly reaction?: boolean }
+  /**
+   * `skills`: only these skills' hits; `decorations`: only landings with any
+   * of these; `reaction`: only hits computed as a reaction or burst, or only
+   * others; `crit`: only hits that crit, or only others (with expected crits
+   * no hit counts as one: crit effects need rolled crits).
+   */
+  | { readonly event: "hit"; readonly kinds?: readonly (SkillType | "none")[]; readonly elements?: readonly Element[]; readonly finalStrike?: boolean; readonly skills?: readonly string[]; readonly decorations?: readonly HitDecoration[]; readonly reaction?: boolean; readonly crit?: boolean }
   /**
    * A skill is cast; `skills` narrows it to these skill IDs (a skill's own
    * effects at frames: with the trigger's `delay`); `finisher`: only
@@ -229,7 +236,8 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
     case "hit":
       return (
         e.type === "hit" && has(on.kinds, e.kind) && has(on.elements, e.element) && has(on.skills, e.skillId) && (on.finalStrike === undefined || on.finalStrike === e.finalStrike) &&
-        (!on.decorations || on.decorations.some((d) => (d === "finisher" ? e.finisher : e.finalStrike))) && (on.reaction === undefined || on.reaction === (e.reaction ?? false))
+        (!on.decorations || on.decorations.some((d) => (d === "finisher" ? e.finisher : e.finalStrike))) && (on.reaction === undefined || on.reaction === (e.reaction ?? false)) &&
+        (on.crit === undefined || on.crit === (e.crit ?? false))
       );
     case "cast":
       return e.type === "cast" && has(on.kinds, e.kind) && has(on.skills, e.skillId) && (on.finisher === undefined || on.finisher === e.finisher) && (on.followUp === undefined || on.followUp === (e.followUp ?? false));

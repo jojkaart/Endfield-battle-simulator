@@ -113,6 +113,7 @@ function stateKey(s: TimelineState): string {
   for (const c of s.casts) last[c.operator] = c.skill;
   return JSON.stringify([
     s.frame,
+    s.rng,
     s.controlled,
     last,
     r(s.sp),

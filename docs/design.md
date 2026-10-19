@@ -238,7 +238,7 @@ Scenario {
   enemy: { id, level, count?: 1 }
   duration: Frames
   rotation: Rotation
-  options: { crit: "expected" | "never" | "always" | { seed }, rounding: … }
+  options: { crit: "expected" | "never" | "always" | "rolled", seed?, rounding: … }
 }
 Loadout {
   operator: CharId, level, promotion, potential,
@@ -413,11 +413,18 @@ Each hit keeps its full breakdown (zone values and the buffs that fed them),
 so it can be compared with a ZMDLogs hit and its buff events.
 
 **Crit modes:** `expected` (each hit × (1 + rate × crit DMG); deterministic,
-for search), `never` / `always` (in-game tests), seeded sampling. *Open:*
-what `expected` means for crit-triggered effects. Endaxis fires them on
-every crit-capable hit (overstates them); Zero Sanity tracks expected stack
-counts. Pick one and document it. Other probabilities use a named PRNG with
-one seeded stream per source; never `Math.random`.
+for search), `never` / `always` (in-game tests), `rolled` (each hit crits
+or not by a seeded roll: one battle as it could go). Owner (2026-10-19):
+crits make damage variable, so the simulator gives both one battle with
+rolled crits and the spread over many (`simulateRuns`, `efsim simulate
+--runs n`: mean, standard deviation, percentiles). With `expected`, no hit
+counts as a crit for triggers (`on: {event: "hit", crit: true}`):
+crit-triggered effects need `rolled` (Endaxis fires them on every
+crit-capable hit, which overstates them; Zero Sanity tracks expected stack
+counts). Randomness comes from mulberry32 streams in the timeline state, one
+per source (`crit`, later dodges), each seeded from the scenario's `seed`
+mixed with the stream's name, so adding one kind of roll doesn't reshuffle
+another; never `Math.random`.
 
 **Numerics:** game tables are float32, and the game may compute in float32.
 Where that matters, emulate it explicitly (`Math.fround` ↔ `f32`) behind one
@@ -518,7 +525,6 @@ Details: [reference-simulators.md](reference-simulators.md).
 
 - Tie-break rules within a frame.
 - Rounding and float32 (see [data-sources.md](data-sources.md#rounding)).
-- Meaning of `expected` crit for crit-triggered effects.
 - Which SkillData/BuffData action types the compiler must understand for
   the first fixtures.
 - How combo trigger conditions are expressed without CharacterData.

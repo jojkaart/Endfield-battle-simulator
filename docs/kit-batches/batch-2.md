@@ -26,7 +26,7 @@ eight).
 
 Phase: **analysis 1 done (2026-10-19)**; merge below; shared features in
 progress. Done: L1, B4, D4, S2, S4, V2, B2, D1, D2 (group 1); T1–T6, C1, C2
-(group 2); V1, B1, B3, S3, S5, S6 (group 3). Open: E1, E2, S1, D3, V3.
+(group 2); V1, B1, B3, S3, S5, S6 (group 3); E2. Open: E1, S1, D3, V3.
 Reports: [batch-2/](batch-2/), one per operator, each ending with a kit
 plan whose draft kits were loaded with the real loader.
 
