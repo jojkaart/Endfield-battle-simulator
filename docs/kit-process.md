@@ -72,13 +72,15 @@ first.
 
 1. The current seven: Laevatain and the six favourites (Typhoeus, Arcane,
    Si, Gilberta, Liino, Estella), with their weapons and gear sets.
-2. The Endministrator and the 4- and 5-star operators nearly every player
-   has (owner's request, 2026-10-18). From CharacterTable: the
+2. The Endministrator and the 4-stars (owner, 2026-10-19: these before the
+   5-stars, as complexity seems to rise with power level): the
    Endministrator (chr_0003_endminf in the logs; chr_0002_endminm and
-   chr_9000_endmin are the other entries), the 5-stars Perlica, Chen
-   Qianyu, Wulfgard, Arclight, Xaihi, Avywenna, Snowshine, Da Pan, Alesh and
-   Purrchena, and the 4-stars Akekuri, Catcher, Fluorite and Antal (Estella
-   is in batch 1): fifteen operators, all supported. Owner (2026-10-18):
+   chr_9000_endmin are the other entries) and Akekuri, Catcher, Fluorite
+   and Antal (Estella is in batch 1), with the 3- and 4-star weapons and
+   the remaining gear sets ([batch-2.md](kit-batches/batch-2.md)).
+3. The 5-stars nearly every player has (owner's request, 2026-10-18):
+   Perlica, Chen Qianyu, Wulfgard, Arclight, Xaihi, Avywenna, Snowshine,
+   Da Pan, Alesh and Purrchena. Owner (2026-10-18):
    after a few months of active play every player has every 5-star at P5,
    so P5 is the default assumption for 4- and 5-star operators in team and
    loadout searches (a player's own account data overrides it later).

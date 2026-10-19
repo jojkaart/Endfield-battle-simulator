@@ -31,7 +31,13 @@
       "chr_0013_aglina*",
       "chr_0035_liino*",
       "chr_0021_whiten*",
-      "chr_0033_camille*"
+      "chr_0033_camille*",
+      "chr_0002_endminm*",
+      "chr_0003_endminf*",
+      "chr_0019_karin*",
+      "chr_0020_meurs*",
+      "chr_0022_bounda*",
+      "chr_0023_antal*"
     ],
     "BuffData": [
       "buff_wpn_*",
@@ -46,7 +52,13 @@
       "buff_chr_0013_aglina*",
       "buff_chr_0035_liino*",
       "buff_chr_0021_whiten*",
-      "buff_chr_0033_camille*"
+      "buff_chr_0033_camille*",
+      "buff_chr_0002_endminm*",
+      "buff_chr_0003_endmin*",
+      "buff_chr_0019_karin*",
+      "buff_chr_0020_meurs*",
+      "buff_chr_0022_bounda*",
+      "buff_chr_0023_antal*"
     ]
   }
 }
