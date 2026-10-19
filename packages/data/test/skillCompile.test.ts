@@ -146,6 +146,8 @@ type KitApplication = NonNullable<KitHit["applies"]>[number];
 const kitAppText = (a: KitApplication) => (a.kind === "infliction" ? `infliction ${a.element}` : a.kind === "forcedReaction" ? `forced ${a.status}` : a.kind === "consumeInfliction" ? `consume ${(a.elements ?? []).join("+")}` : null);
 const dataAppText = (e: CompiledEffect) => (e.kind === "infliction" ? `infliction ${e.element}` : e.kind === "forcedReaction" ? `forced ${e.status ?? "?"}` : e.kind === "consumeInfliction" ? `consume ${e.element ?? "?"}` : null);
 const valueText = (v: unknown) => (typeof v === "string" ? v : JSON.stringify(v));
+/** A grant the kit gives only in a situation (`{if, then}`, no `else`): its value, which the data has on a branch of its own. */
+const grantText = (v: unknown) => (v !== null && typeof v === "object" && "then" in v && !("else" in v) ? valueText(v.then) : valueText(v));
 /** The first two undecided conditions on the way, for a readable line. */
 const branchText = (b: readonly string[] | undefined) => (b?.length ? ` (${b.slice(0, 2).join(", ")}${b.length > 2 ? ", …" : ""})` : "");
 
@@ -179,7 +181,7 @@ function kitDisagreements(): string[] {
         }
         if (h.energy !== undefined) {
           const dataE = c.energy.filter((e) => (h.frames ?? []).includes(e.frame)).map((e) => formatCompiledValue(e.value));
-          if (!dataE.includes(valueText(h.energy))) out.push(`${tag} energy: kit ${valueText(h.energy)} at [${(h.frames ?? []).join(", ")}], data ${c.energy.map((e) => `${formatCompiledValue(e.value)}@${e.frame}${branchText(e.branch)}`).join(", ") || "none"}`);
+          if (!dataE.includes(grantText(h.energy))) out.push(`${tag} energy: kit ${valueText(h.energy)} at [${(h.frames ?? []).join(", ")}], data ${c.energy.map((e) => `${formatCompiledValue(e.value)}@${e.frame}${branchText(e.branch)}`).join(", ") || "none"}`);
         }
         if (h.reaction) {
           // Damage computed as a reaction: the data creates the reaction's buff (no DamageAction of its own).
@@ -266,18 +268,13 @@ const KNOWN: string[] = [
   // Compiler limitation, kit right: each of the three arrows' projhit deals damage only while buff attack_3_1/3_2_damagetaken is absent and then creates it, so one enemy takes one arrow; the compiler doesn't track buffs it creates.
   "chr_0034_typhoea_attack3/wave1 count: kit 1, data 3 landings at its frames (chr_0034_typhoea_attack3_01_projhit)",
   "chr_0034_typhoea_attack3/wave2 count: kit 1, data 3 landings at its frames (chr_0034_typhoea_attack3_02_projhit)",
+  // ObtainUspInNormalSkill at 12 (window 12–18, only if a volley arrow hit), not the buff_common_obtain_ultimate_sp the compiler reads (D2); hand-written in the kit.
+  "chr_0034_typhoea_normal_skill_floating_start teamEnergyFrame: kit 12, data 0",
   // Timeline sections reached through JumpToAction (destinations 45/75/105/135; 150/300/450/600 in attack4): jumps are reported, not followed, so every section is listed. Which one a cast plays depends on the jump conditions; the kit has the first.
   "chr_0034_typhoea_floating_attack1: data lands chr_0034_typhoea_floating_attack1_01_projhit atk_scale_base × atk_scale_enhence at [46, 76, 106, 136], no kit hit",
   "chr_0034_typhoea_floating_attack2: data lands chr_0034_typhoea_floating_attack1_01_projhit atk_scale_base × atk_scale_enhence at [46, 76, 106, 136], no kit hit",
   "chr_0034_typhoea_floating_attack3: data lands chr_0034_typhoea_floating_attack1_01_projhit atk_scale_base × atk_scale_enhence at [46, 76, 106, 136], no kit hit",
   "chr_0034_typhoea_floating_attack4: data lands chr_0034_typhoea_floating_attack1_01_projhit atk_scale_base × atk_scale_enhence at [151, 301, 451, 601], no kit hit",
-  // SpawnAbilityEntity at 61 → chr_0034_typhoea_ultimate_skill_arrowrain, whose DamageAction is at its frame 1: 62. The kit's hit has no events, so the landing also shows as unclaimed below.
-  "chr_0034_typhoea_ultimate_skillfloating/main frames: kit [61], data [62]",
-  // Event-driven: buff cause_subarrowrain reacts to ability event 302 (each rain's damage tag), sub2 on the 5th; the compiler has no time for events, the kit no frames.
-  "chr_0034_typhoea_ultimate_skillfloating/sub_rain frames: kit none (count 12), data [67, 70, 73] (on ability event 302, if damage tag(tag 1208750764|tag 959424907), …)",
-  "chr_0034_typhoea_ultimate_skillfloating/final_rain_tick frames: kit none (count 5), data [67, 69, 71, 72, 74, 91] (on ability event 302, if damage tag(tag 1208750764|tag 959424907), …)",
-  "chr_0034_typhoea_ultimate_skillfloating/final_rain_blast frames: kit none (count 1), data [67, 69, 71, 72, 74, 91] (on ability event 302, if damage tag(tag 1208750764|tag 959424907), …)",
-  "chr_0034_typhoea_ultimate_skillfloating: data lands chr_0034_typhoea_ultimate_skill_arrowrain atk_scale_main × potential_damge_up at [62], no kit hit",
   // CreateBuff buff_common_obtain_ultimate_sp in normal_skill_abilityrange2 at 20; the kit gives the team energy at the cast.
   "chr_0032_lizhiyan_normal_skill teamEnergyFrame: kit -, data 20",
   // Event-driven: the explosion and lasers come from listener buffs' ability events (8, 101, 204) and CastSkill helpers; compiled frames are only the listeners' creation frames. The kit's frames come from logs. Also SpawnAbilityEntity at 9 names chr_032_lizhiyan_combo_skill_abilityentity_seal (game typo "chr_032"), which tables.json's chr_0032_lizhiyan* glob doesn't cover.
