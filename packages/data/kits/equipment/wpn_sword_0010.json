@@ -1,0 +1,49 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0010",
+  "sources": [
+    "rmxlinux Json/SkillData/sk_wpn_sword_0010 (game 1.6): buff_wpn_sword_0010 puts the aura buff_wpn_sword_0010_inaura on enemies; when a buff tagged Combustion or Corrosion is added to an enemy (abilityEvent 205, by anyone; forced ones carry the tag), at most once per 0.1 s (CreateTimedMarker on the wielder), the wielder gets buff_wpn_sword_0010_valid: attributes 51 and 54 (Heat and Nature DMG) + dmg_up for `duration` (20 s), stacking type 2 with max `max_stack` (2), each layer with its own duration (description: \"Duration of each stack is counted separately\"). Values: SkillPatchTable sk_wpn_sword_0010. ATK + atk_up is on the stat panel.",
+    "Not in any log or fixture yet."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_sword_0010.valid",
+      "label": "Umbral Torch: Heat and Nature DMG up",
+      "target": "self",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [
+        {
+          "attr": 51,
+          "value": "dmg_up"
+        },
+        {
+          "attr": 54,
+          "value": "dmg_up"
+        }
+      ],
+      "gameBuff": "buff_wpn_sword_0010_valid"
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_sword_0010.on_reaction",
+      "on": {
+        "event": "reaction",
+        "statuses": [
+          "combustion",
+          "corrosion"
+        ]
+      },
+      "by": "anyone",
+      "cooldown": 0.1,
+      "skill": "sk_wpn_sword_0010",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "wpn_sword_0010.valid"
+        }
+      ]
+    }
+  ]
+}

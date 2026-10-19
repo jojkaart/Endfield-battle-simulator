@@ -394,8 +394,8 @@
             "hit": "hit"
           }
         ],
-        "conditions": [
-          "wpn_sword_0006.after_ultimate"
+        "buffs": [
+          "wpn_sword_0006.valid"
         ],
         "crit": "never",
         "expected": 20304
@@ -408,8 +408,8 @@
             "hit": "hit"
           }
         ],
-        "conditions": [
-          "wpn_sword_0006.after_ultimate"
+        "buffs": [
+          "wpn_sword_0006.valid"
         ],
         "crit": "never",
         "expected": 12655
@@ -422,8 +422,8 @@
             "hit": "hit"
           }
         ],
-        "conditions": [
-          "wpn_sword_0006.after_ultimate"
+        "buffs": [
+          "wpn_sword_0006.valid"
         ],
         "crit": "never",
         "expected": 36157
@@ -436,8 +436,8 @@
             "hit": "hit"
           }
         ],
-        "conditions": [
-          "wpn_sword_0006.after_ultimate"
+        "buffs": [
+          "wpn_sword_0006.valid"
         ],
         "crit": "never",
         "expected": 31707
@@ -472,8 +472,8 @@
             "hit": "extra"
           }
         ],
-        "conditions": [
-          "chr_0016_laevat.scorching_heart"
+        "buffs": [
+          "scorching_heart"
         ],
         "crit": "never",
         "expected": 64578

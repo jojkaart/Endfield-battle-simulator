@@ -25,7 +25,6 @@
     { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_ultimate_skill" },
     { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_normal_skill" },
     { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ultimate_skill" },
-    { "operator": "chr_0016_laevat", "skill": "swap" },
     { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack1" },
     { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack2" },
     { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack3" },

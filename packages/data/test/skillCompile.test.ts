@@ -164,7 +164,10 @@ function kitDisagreements(): string[] {
       const where = s.skillId;
       const blocks = c.energyBlocks.filter((b) => b.branch.length === 0 && b.until !== null);
       const block = blocks.length ? round(Math.max(...blocks.map((b) => b.until as number)) / 30, 3) : null;
-      const kitBlock = s.energyBlockSeconds === undefined ? null : round(s.energyBlockSeconds, 3);
+      // The kit's block: the skill's energyBlockSeconds, or an energy-blocking buff its own cast trigger applies (Laevatain's show_weapon).
+      const castBuffs = kit.triggers.filter((t) => t.on.event === "cast" && "skills" in t.on && t.on.skills?.includes(s.skillId)).flatMap((t) => t.do.flatMap((a) => (a.kind === "buff" ? [a.buff] : [])));
+      const blockBuff = kit.buffs.find((b) => b.blocksEnergy && castBuffs.includes(b.id) && typeof b.duration === "number");
+      const kitBlock = s.energyBlockSeconds !== undefined ? round(s.energyBlockSeconds, 3) : blockBuff ? round(blockBuff.duration as number, 3) : null;
       if (block !== kitBlock) out.push(`${where} energyBlockSeconds: kit ${kitBlock ?? "-"}, data ${block ?? "-"}`);
       const team = c.teamEnergy.filter((t) => t.branch.length === 0).map((t) => t.frame);
       const teamFrame = team.length ? Math.min(...team) : 0;
@@ -239,30 +242,16 @@ function kitDisagreements(): string[] {
 
 /** Every disagreement found, with what the data says (rmxlinux Json/SkillData and BuffData). */
 const KNOWN: string[] = [
-  // Landings 2–3 are projectile hits (LaunchProjectile@12 and @19 → chr_0016_laevat_attack_5_projhit): the kit's hit names no events, so it's taken as attack4's own and not detached.
-  "chr_0016_laevat_attack4/hit frames: kit [6, 12, 19], data [6]",
-  "chr_0016_laevat_attack4: data lands chr_0016_laevat_attack_5_projhit atk_scale at [12, 19], no kit hit",
-  // Only the second DamageAction (frame 26) has mask bit 2097152; the loader marks the whole hit (batch-1 kit errors).
-  "chr_0016_laevat_attack5/hit finalStrike: kit all 2 landings, data only at [26]",
-  // CreateBuff buff_common_obtain_ultimate_sp in the ability entity (spawned at 4, its frame 18); the kit gives the team energy at the cast.
-  "chr_0016_laevat_normal_skill teamEnergyFrame: kit -, data 22",
-  // ModifyDynamicBlackboard atk_scale_3 ×= ratio at frame 104; extra_scaling only goes to the forced Combustion buff. Open question in batch-1 (in-game test).
+  // ModifyDynamicBlackboard atk_scale_3 ×= ratio at frame 104; extra_scaling only goes to the forced Combustion buff. Open question in batch-1 (in-game test 20).
   "chr_0016_laevat_normal_skill/empowered_extra scale: kit atk_scale_3 × extra_scaling, data atk_scale_3 × ratio",
-  // CreateBuff buff_common_obtain_ultimate_sp at 13; the kit gives the team energy at the cast.
-  "chr_0016_laevat_normal_skill_during_ult teamEnergyFrame: kit -, data 13",
-  // Only atk_scale_3 is multiplied by ratio (frame 98); the hits at 13 and 23 use atk_scale and atk_scale_2 as they are. The kit's ratio on them comes from Zero Sanity's table.
+  // Only atk_scale_3 is multiplied by ratio (frame 98); the hits at 13 and 23 use atk_scale and atk_scale_2 as they are. The kit's ratio on them comes from Zero Sanity's table (in-game test 20).
   "chr_0016_laevat_normal_skill_during_ult/hit1 scale: kit atk_scale × ratio, data atk_scale",
   "chr_0016_laevat_normal_skill_during_ult/hit2 scale: kit atk_scale_2 × ratio, data atk_scale_2",
-  // buff_chr_0016_laevat_combo_skill_usp (at 41) grants usp_1…usp_4 by a Switch on a saved stack count; its usp_1 (25) equals the skill's usp_1_display.
-  "chr_0016_laevat_combo_skill/hit energy: kit usp_1_display at [20], data usp_1@41 (switch SaveBuffStackNumAdvanced→count = 0), usp_2@41 (switch SaveBuffStackNumAdvanced→count = 1), usp_3@41 (switch SaveBuffStackNumAdvanced→count = 2), usp_4@41 (switch SaveBuffStackNumAdvanced→count = 3)",
-  // Damage comes from buff_chr_0016_laevat_combo_skill_hit, created by combo_skill_start's first trigger: CreateBuff at 20, triggerInterval 0.7 s for one target (Switch on the target count), waitFirstTriggerInterval → 41.
-  "chr_0016_laevat_combo_skill/hit events: kit [chr_0016_laevat_combo_skill], data [buff_chr_0016_laevat_combo_skill_hit]",
-  "chr_0016_laevat_combo_skill/hit frames: kit [20], data [41]",
-  "chr_0016_laevat_combo_skill: data lands buff_chr_0016_laevat_combo_skill_hit atk_scale at [41], no kit hit",
-  // The ultimate has no DamageAction (phantom hit, batch-1 kit errors).
-  "chr_0016_laevat_ultimate_skill/hit: no landing scaled by atk_scale (data: no landings)",
-  // As attack5: only the landing at 26 is a Final Strike.
-  "chr_0016_laevat_ult_attack4/hit finalStrike: kit all 2 landings, data only at [26]",
+  // buff_chr_0016_laevat_combo_skill_usp (at 41) grants usp_1…usp_4 by a Switch on a saved stack count; its usp_1 (25) equals the skill's usp_1_display (the buff's keys aren't the skill's).
+  "chr_0016_laevat_combo_skill/hit energy: kit usp_1_display at [41], data usp_1@41 (switch SaveBuffStackNumAdvanced→count = 0), usp_2@41 (switch SaveBuffStackNumAdvanced→count = 1), usp_3@41 (switch SaveBuffStackNumAdvanced→count = 2), usp_4@41 (switch SaveBuffStackNumAdvanced→count = 3)",
+  // Compiler limitation (D2), kit right: BreakingAttackCalculation's multiplier (0.2 / 0.8 of atk_scale) isn't compiled.
+  "chr_0016_laevat_power_attack/hit factor: kit 0.2, data 1",
+  "chr_0016_laevat_power_attack/hit_2 factor: kit 0.8, data 1",
   // Compiler limitation, kit right: each of the three arrows' projhit deals damage only while buff attack_3_1/3_2_damagetaken is absent and then creates it, so one enemy takes one arrow; the compiler doesn't track buffs it creates.
   "chr_0034_typhoea_attack3/wave1 count: kit 1, data 3 landings at its frames (chr_0034_typhoea_attack3_01_projhit)",
   "chr_0034_typhoea_attack3/wave2 count: kit 1, data 3 landings at its frames (chr_0034_typhoea_attack3_02_projhit)",

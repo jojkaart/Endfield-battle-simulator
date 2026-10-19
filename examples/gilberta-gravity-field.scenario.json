@@ -26,10 +26,6 @@
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "swap"
-    },
-    {
-      "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_ult_attack1"
     },
     {

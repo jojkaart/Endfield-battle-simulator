@@ -2,22 +2,42 @@
   "$schema": "../../../../schemas/equipment-kit.schema.json",
   "equipment": "wpn_sword_0006",
   "sources": [
-    "rmxlinux Json/SkillData/sk_wpn_sword_0006 creates buff_wpn_sword_0006_valid (attribute 17, basic attack DMG) for `duration` (20 s); value key normal_atk_up in SkillPatchTable.",
-    "Zero Sanity's in-game hit table applies +210% (skill level 9) to Laevatain's enhanced basic attacks."
+    "rmxlinux Json/SkillData/sk_wpn_sword_0006 (game 1.6): on the wielder's cast (abilityEvent 143) of skill type 7 (ultimate; CheckSkillType) it creates buff_wpn_sword_0006_valid (attribute 17, basic attack DMG, value normal_atk_up via normal_atk_up_valid) for `duration` (20 s); stacking type 4: a recast refreshes it. Values: SkillPatchTable sk_wpn_sword_0006. Heat DMG + fire_dmg_up is on the stat panel (cardAttributeModifier attr 51).",
+    "Zero Sanity's in-game hit table applies +210% (skill level 9) to Laevatain's enhanced basic attacks (fixtures/zero-sanity-laevatain-p5.json, buffs wpn_sword_0006.valid); ZMDLogs logs buff_wpn_sword_0006_valid on her hits in fixtures/zmdlogs-40d9a3c1da37.json.",
+    "The skill's toggleBuffs entry for buff_wpn_lance_0003 (CheckCurHpRatio with no hp_ratio key) is a copy leftover with no effect: left out."
   ],
-  "conditions": [
+  "buffs": [
     {
-      "id": "after_ultimate",
-      "label": "Forgeborn Scathe: after casting the ultimate, basic attack DMG up (20 s)",
-      "source": {
-        "kind": "weaponSkill",
-        "skill": 2,
-        "key": "normal_atk_up"
+      "id": "wpn_sword_0006.valid",
+      "label": "Forgeborn Scathe: basic attack DMG up",
+      "target": "self",
+      "duration": "duration",
+      "modifiers": [
+        {
+          "attr": 17,
+          "value": "normal_atk_up"
+        }
+      ],
+      "gameBuff": "buff_wpn_sword_0006_valid"
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_sword_0006.on_ultimate",
+      "on": {
+        "event": "cast",
+        "kinds": [
+          "ultimate"
+        ]
       },
-      "effect": {
-        "kind": "attr",
-        "attr": 17
-      }
+      "by": "self",
+      "skill": "sk_wpn_sword_0006",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "wpn_sword_0006.valid"
+        }
+      ]
     }
   ]
 }

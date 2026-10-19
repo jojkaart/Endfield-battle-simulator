@@ -1,0 +1,53 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_burst01",
+  "sources": [
+    "Tide Surge 3-piece, rmxlinux Json/SkillData/passive_equipsuit_burst_01 (game 1.6): Skill DMG + skill_dmg_up on the stat panel; buff_equipsuit_burst_01: when the wearer applies an Arts Infliction (abilityEvent 102 with each element's infliction tag) and the target then has at least stack_cond (2) stacks of it, it creates buff_equipsuit_burst_01_spelldmgup (attributes 51–54, Arts DMG + spell_dmg_up, `duration` 15 s), stacking type 2, max 1: a new one refreshes. Values: SkillPatchTable passive_equipsuit_burst_01 (the BuffData defaults, 3 stacks and 10 s, aren't the set's).",
+    "minStacks is the literal 2 (stack_cond can't be named there). Whether an infliction that forms a reaction counts follows the open item Arcane R3 (interim: it doesn't; in-game test 35).",
+    "Not in any log or fixture with 3 pieces yet."
+  ],
+  "buffs": [
+    {
+      "id": "suit_burst01.arts",
+      "label": "Tide Surge: Arts DMG up",
+      "target": "self",
+      "duration": "duration",
+      "modifiers": [
+        {
+          "attr": 51,
+          "value": "spell_dmg_up"
+        },
+        {
+          "attr": 52,
+          "value": "spell_dmg_up"
+        },
+        {
+          "attr": 53,
+          "value": "spell_dmg_up"
+        },
+        {
+          "attr": 54,
+          "value": "spell_dmg_up"
+        }
+      ],
+      "gameBuff": "buff_equipsuit_burst_01_spelldmgup"
+    }
+  ],
+  "triggers": [
+    {
+      "id": "suit_burst01.on_infliction",
+      "on": {
+        "event": "inflictionApplied",
+        "minStacks": 2
+      },
+      "by": "self",
+      "skill": "passive_equipsuit_burst_01",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "suit_burst01.arts"
+        }
+      ]
+    }
+  ]
+}
