@@ -29,8 +29,28 @@ enemy's clock. Example totals and log verdicts unchanged throughout.
   triggers (design.md).
 - Enemy actions run on the enemy's clock, so time stops delay them.
 
+Later the same day: S1 (jumps skip time; conditional jumps by
+`KitSkill.jumps`, event-driven ones by a trigger's `jump`;
+InterruptCurSkillAction ends the action) and E1's dodges (`dodge:
+{chance}`, perfect dodges from BuffData: SP, the world's slow-down, the
+dodger's freeze). Laevatain's battle skill now locks her 37 frames;
+laevatain-solo does the same damage in 22.4 s instead of 29.2 s.
+
+- Jumps skip time because Catcher's data is inconsistent otherwise; test 17
+  confirms on Laevatain. A buff bound to its cast counts the frames a jump
+  took from it as time it had left, so Twilight gets back the skipped part
+  of its pause.
+- Dodges are automatic at each attack on the controlled operator (the
+  owner's with/without/chance comparison), not rotation steps; the dash
+  ends the current action, so a rotation recorded without dodges may
+  become invalid (search plans around the attacks).
+
 **Problems:** Ajv's strict mode refuses `anyOf: [{required: [at]}, …]`
 in the scenario schema; dropped (an action with neither does nothing).
+The dodge-research agent's `git show` calls fetched about 200 files from
+GitHub into the data submodule (a blobless clone), and it briefly ran a
+repo-wide `git grep HEAD`, which would fetch everything; stopped. Never
+`git grep HEAD` there.
 
 ## 2026-10-19: batch 1 — kits
 

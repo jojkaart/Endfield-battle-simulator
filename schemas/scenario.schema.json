@@ -44,6 +44,15 @@
       "description": "Always-on conditions per operator ID.",
       "additionalProperties": { "type": "array", "items": { "type": "string" } }
     },
+    "dodge": {
+      "type": "object",
+      "required": ["chance"],
+      "additionalProperties": false,
+      "properties": {
+        "chance": { "type": "number", "minimum": 0, "maximum": 1, "description": "Chance that a dash is a perfect dodge (1: a skilled player; less for a less skilled one; 0: dashes that never succeed)." }
+      },
+      "description": "The controlled operator dashes at every enemy attack on it (enemyActions); a perfect dodge ends its action, gives SP and slows the world, cooldowns excepted. Absent: no dodges."
+    },
     "enemyActions": {
       "type": "array",
       "description": "What the enemy does (default nothing): attacks on the team and skill charges, at listed times or every n seconds. Times are on the enemy's clock: time stops and freezes delay what comes after them.",

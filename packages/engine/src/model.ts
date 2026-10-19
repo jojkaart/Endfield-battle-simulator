@@ -216,6 +216,22 @@ export interface BattleConstants {
   readonly atkRateOfSub: number;
   readonly efficiencyOfDEF: number;
   readonly maxUltimateSp: number;
+  /** What a perfect dodge does (BuffData buff_common_dash, buff_common_dash_behit_listener); absent when not fetched. */
+  readonly perfectDodge?: PerfectDodge;
+}
+
+/** A perfect dodge (BuffData; docs/kit-batches/batch-2.md, E1). */
+export interface PerfectDodge {
+  /** The dash's immunity: an enemy hit landing within this many frames of its start is perfectly dodged. */
+  readonly windowFrames: number;
+  /** SP gained (natural: it gives ultimate energy when spent). */
+  readonly sp: number;
+  /** The world's time scale per frame after it, the dodger exempt; cooldowns run on. */
+  readonly slowdown: readonly number[];
+  /** The dodger's own time scale per frame after it (it freezes in its pose). */
+  readonly dodgerSlowdown: readonly number[];
+  /** Frames the perfect-dodge skill holds the dodger. */
+  readonly busyFrames: number;
 }
 
 export interface GameData {

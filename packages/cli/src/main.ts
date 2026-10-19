@@ -25,6 +25,8 @@ const USAGE = `Usage:
   efsim simulate <scenario.json>          Run a team rotation on the timeline (--verbose: every hit)
                 [--seed n]                Seed of the battle's rolls (scenario crit "rolled")
                 [--runs n]                n battles with rolled crits: the spread of the damage
+                [--attack-every s]        The enemy attacks the controlled operator every s seconds
+                [--dodge p]               Dash at every enemy attack, perfect with chance p (0–1)
   efsim search <scenario.json>            Find a rotation for the scenario's team (its rotation is ignored)
                 [--beam n] [--out file]   Beam width (default 24); save the rotation as a scenario
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
@@ -65,6 +67,8 @@ async function main(argv: string[]): Promise<number> {
       beam: { type: "string", default: "24" },
       seed: { type: "string" },
       runs: { type: "string" },
+      dodge: { type: "string" },
+      "attack-every": { type: "string" },
       out: { type: "string" },
       help: { type: "boolean", short: "h", default: false },
     },
@@ -150,7 +154,15 @@ async function main(argv: string[]): Promise<number> {
         const scenario = readScenario(args[0] as string);
         const seed = values.seed === undefined ? undefined : Number(values.seed);
         if (seed !== undefined && !(Number.isInteger(seed) && seed >= 0)) throw new Error(`--seed must be a whole number ≥ 0`);
-        const seeded = seed === undefined ? scenario : { ...scenario, options: { ...scenario.options, seed } };
+        const chance = values.dodge === undefined ? undefined : Number(values.dodge);
+        if (chance !== undefined && !(chance >= 0 && chance <= 1)) throw new Error(`--dodge must be a chance from 0 to 1`);
+        const every = values["attack-every"] === undefined ? undefined : Number(values["attack-every"]);
+        if (every !== undefined && !(every > 0)) throw new Error(`--attack-every must be a positive number of seconds`);
+        const seeded = {
+          ...scenario,
+          options: { ...scenario.options, ...(seed !== undefined ? { seed } : {}), ...(chance !== undefined ? { dodge: { chance } } : {}) },
+          ...(every !== undefined ? { enemyActions: [...(scenario.enemyActions ?? []), { kind: "attack" as const, every: every * 30 }] } : {}),
+        };
         const runs = values.runs === undefined ? undefined : Number(values.runs);
         if (runs !== undefined && !(Number.isInteger(runs) && runs >= 1)) throw new Error(`--runs must be a whole number ≥ 1`);
         text = runs === undefined ? formatSimulation(data, seeded, values.verbose) : formatRuns(data, seeded, runs);

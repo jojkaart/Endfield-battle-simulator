@@ -7,7 +7,8 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { arr, at, get, int, num, obj, str, type Ctx } from "./fields.ts";
 import { parseJsonExact } from "./json.ts";
-import { globToRegExp, isSkillFileListed as ALLOWED_SKILL_FILE } from "./skillData.ts";
+import type { PerfectDodge } from "@efsim/engine";
+import { globToRegExp, isSkillFileListed as ALLOWED_SKILL_FILE, slowdownOf } from "./skillData.ts";
 import { DATA_FILES, sourceDir } from "./sources.ts";
 
 export interface RawBuffFile {
@@ -123,4 +124,50 @@ export function switchedSkills(charId: string): Map<string, (typeof SKILL_SLOTS)
     }
   }
   return out;
+}
+
+/** Frames the perfect-dodge skill holds the dodger (common_character_perfect_dodge: durationFrame 15, exclusiveFrame 15; its SkillData isn't fetched). */
+const PERFECT_DODGE_SKILL_FRAMES = 15;
+
+/**
+ * A perfect dodge, from the game's own buffs: the dash (buff_common_dash)
+ * makes the dodger immune for its duration, and an enemy hit landing on it
+ * then (buff_common_dash_behit_listener, abilityEvent 101) is perfectly
+ * dodged: SP (`atb`), a global slow-down the dodger is exempt from
+ * (TimeDilationAction layer 0, cooldowns untouched), and the dodger's own
+ * freeze (layer 1). Null when the files aren't fetched.
+ */
+export function perfectDodgeData(): PerfectDodge | null {
+  const read = (id: string) => {
+    const file = join(sourceDir("rmxlinux"), "Json", "BuffData", `${id}.json`);
+    return existsSync(file) ? (JSON.parse(readFileSync(file, "utf8")) as Record<string, unknown>) : null;
+  };
+  const dash = read("buff_common_dash");
+  const listener = read("buff_common_dash_behit_listener");
+  if (!dash || !listener) return null;
+  const seconds = (v: unknown) => Number((v as { value?: unknown } | undefined)?.value ?? 0);
+  const sp = ((listener["blackboard"] ?? []) as { key?: unknown; valueDouble?: unknown }[]).find((b) => b.key === "atb")?.valueDouble;
+  // The melee listener (the first: abilityEvent 101); the projectile one (161) differs only in its slow-downs' lengths.
+  const melee = ((listener["abilityEventAction"] ?? []) as Record<string, unknown>[])[0];
+  const dilations: Record<string, unknown>[] = [];
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (typeof node !== "object" || node === null) return;
+    const o = node as Record<string, unknown>;
+    if (typeof o["$type"] === "string" && o["$type"].includes("TimeDilationAction") && o["isEnable"] !== false) dilations.push(o);
+    for (const v of Object.values(o)) walk(v);
+  };
+  walk(melee);
+  const layer = (n: number) => {
+    const o = dilations.find((d) => d["layer"] === n);
+    return o ? (slowdownOf(o, Infinity) ?? []) : [];
+  };
+  if (typeof sp !== "number") throw new Error("buff_common_dash_behit_listener: no atb in its blackboard");
+  return {
+    windowFrames: Math.round(seconds(dash["duration"]) * 30),
+    sp,
+    slowdown: layer(0),
+    dodgerSlowdown: layer(1),
+    busyFrames: PERFECT_DODGE_SKILL_FRAMES,
+  };
 }

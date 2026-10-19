@@ -671,6 +671,38 @@ battle skill cast while the buff is up. Equal means the first hit already
 had the buff. Hot Work: compare her INT ultimate hit with and without the
 set's buff already up before it.
 
+### 52. SP from one perfect dodge (ready)
+
+**Why:** the data gives a perfect dodge 7 SP
+(`buff_common_dash_behit_listener`, blackboard `atb`); the Talos Wiki and
+other simulators say about 7.5. The engine uses 7. It's one perfect dodge
+per enemy attack in every scenario with dodging on.
+**How:** with full SP minus some (e.g. right after a battle skill, once
+regen has resumed), perfectly dodge one attack and read the SP bar just
+before and about 1 s after; subtract the regen over that second (8 SP/s,
+paused about 0.5 s by the dodge's slow-down). 7 or 7.5?
+
+### 53. Does a perfectly dodged hit count as "attacked"? (ready, if you have Catcher, Ember or Snowshine)
+
+**Why:** combo triggers like Catcher's "when the controlled operator is
+attacked" listen to damage taken; the dash makes the dodger immune, so a
+perfectly dodged hit probably doesn't count. The engine assumes it
+doesn't: a perfect dodge replaces the attack on the dodger with a
+perfect-dodge event.
+**How:** with Catcher in the team, perfectly dodge an enemy attack with
+another operator controlled: does Catcher's combo become castable?
+
+### 54. Can a dash cancel a battle skill or combo at any frame? (ready)
+
+**Why:** the engine lets a dash (the perfect dodge at an enemy attack) end
+any current action except an ultimate before its exclusive frames
+(Endaxis's rule from the game's code), dropping that skill's hits still to
+come. If some skills can't be dashed out of, dodges cost less damage than
+the engine says.
+**How:** start a long battle skill (Laevatain's empowered one: its extra
+hit comes about 1.8 s in) and dash right after the cast: does the extra
+hit still happen? Same with a combo.
+
 ## Results
 
 None yet.

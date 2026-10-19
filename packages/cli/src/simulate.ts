@@ -17,6 +17,7 @@ interface RawScenario {
   durationSeconds: number;
   crit?: CritMode;
   seed?: number;
+  dodge?: { chance: number };
   conditions?: Record<string, string[]>;
   startEnergy?: Record<string, number | "full">;
   startStacks?: Record<string, Record<string, number>>;
@@ -40,7 +41,7 @@ export function readScenario(file: string): TimelineScenario {
     target: s.target,
     durationFrames: Math.round(s.durationSeconds * FPS),
     rotation,
-    options: { crit: s.crit ?? "expected", ...(s.seed !== undefined ? { seed: s.seed } : {}), ...(s.conditions ? { conditions: s.conditions } : {}) },
+    options: { crit: s.crit ?? "expected", ...(s.seed !== undefined ? { seed: s.seed } : {}), ...(s.dodge ? { dodge: s.dodge } : {}), ...(s.conditions ? { conditions: s.conditions } : {}) },
     ...(s.controlled ? { controlled: s.controlled } : {}),
     ...(s.startEnergy ? { startEnergy: s.startEnergy } : {}),
     ...(s.startStacks ? { startStacks: s.startStacks } : {}),
@@ -107,6 +108,7 @@ export function searchCommand(data: GameData, scenario: TimelineScenario, option
       durationSeconds: scenario.durationFrames / FPS,
       crit: scenario.options.crit,
       ...(scenario.options.seed !== undefined ? { seed: scenario.options.seed } : {}),
+      ...(scenario.options.dodge ? { dodge: scenario.options.dodge } : {}),
       ...(scenario.enemyActions ? { enemyActions: scenario.enemyActions.map((a) => ({ ...a, ...(a.at ? { at: a.at.map((f) => f / FPS) } : {}), ...(a.every !== undefined ? { every: a.every / FPS } : {}), ...(a.from !== undefined ? { from: a.from / FPS } : {}) })) } : {}),
       ...(scenario.options.conditions ? { conditions: scenario.options.conditions } : {}),
       rotation: found.rotation.map((a) => ({ operator: a.operator, skill: a.skill, ...(a.at !== undefined ? { at: a.at / FPS } : {}) })),
@@ -122,7 +124,8 @@ export function formatResult(data: GameData, scenario: TimelineScenario, r: Time
   const out = [
     `Total ${num(Math.round(r.total), 0)} damage in ${(r.lastHitFrame / FPS).toFixed(2)} s (last hit) → ${num(Math.round(r.dps), 0)} DPS` +
       ` vs ${data.enemies[scenario.target.enemy]?.name ?? scenario.target.enemy} Lv${scenario.target.level}, crit: ${scenario.options.crit}` +
-      (scenario.options.crit === "rolled" ? ` (seed ${scenario.options.seed ?? 1}: ${r.hits.filter((h) => h.crit).length} of ${r.hits.filter((h) => h.crit !== undefined).length} hits crit)` : ""),
+      (scenario.options.crit === "rolled" ? ` (seed ${scenario.options.seed ?? 1}: ${r.hits.filter((h) => h.crit).length} of ${r.hits.filter((h) => h.crit !== undefined).length} hits crit)` : "") +
+      (scenario.options.dodge ? `, perfect dodges ${r.casts.filter((c) => c.skill === "dodge").length} (chance ${scenario.options.dodge.chance})` : ""),
     "",
     table(
       ["operator", "damage", "share"],

@@ -56,7 +56,7 @@ const NAMED_CURVES: Readonly<Record<string, (t: number) => number>> = {
 };
 
 /** A global TimeDilationAction as per-frame scales (its curve over its duration, sampled mid-frame), or null when its curve is unknown. */
-function slowdownOf(o: Record<string, unknown>, intervalFrames: number): number[] | null {
+export function slowdownOf(o: Record<string, unknown>, intervalFrames: number): number[] | null {
   const dur = o["duration"] as { value?: number } | undefined;
   let frames = Math.round((typeof dur?.value === "number" ? dur.value : 0) * 30);
   if (o["finishByAction"] === true) frames = Math.min(frames, intervalFrames);

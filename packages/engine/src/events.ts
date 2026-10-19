@@ -54,6 +54,8 @@ export type BattleEvent =
   | { readonly type: "staggered"; readonly frame: number; readonly operator: string }
   /** The enemy attacked `operator` (TimelineScenario.enemyActions); `controlled`: whether it was the controlled operator. */
   | { readonly type: "attacked"; readonly frame: number; readonly operator: string; readonly element: Element; readonly controlled: boolean }
+  /** `operator` perfectly dodged an enemy attack (abilityEvent 145, OnPerfectDodge). */
+  | { readonly type: "perfectDodge"; readonly frame: number; readonly operator: string }
   /** The enemy started charging a skill; `operator` is the controlled one. */
   | { readonly type: "enemyCharge"; readonly frame: number; readonly operator: string }
   /** An operator's own stacks were gained or used; `changed`: those whose count changed (a gain capped at the maximum changes none). */
@@ -107,6 +109,8 @@ export type TriggerOn =
   | { readonly event: "attacked"; readonly elements?: readonly Element[] }
   /** The enemy starts charging a skill. */
   | { readonly event: "enemyCharge" }
+  /** Someone (`by`) perfectly dodges an enemy attack. */
+  | { readonly event: "perfectDodge" }
   /** The owner's own stack reaches a count. */
   | { readonly event: "stackAtLeast"; readonly stack: string; readonly atLeast: number };
 
@@ -279,6 +283,8 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
       return e.type === "attacked" && has(on.elements, e.element);
     case "enemyCharge":
       return e.type === "enemyCharge";
+    case "perfectDodge":
+      return e.type === "perfectDodge";
   }
   if (e.type !== "status" || !has(on.fromKinds, e.fromKind)) return false;
   const s = e.event;

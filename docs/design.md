@@ -426,6 +426,20 @@ per source (`crit`, later dodges), each seeded from the scenario's `seed`
 mixed with the stream's name, so adding one kind of roll doesn't reshuffle
 another; never `Math.random`.
 
+**Enemy attacks and dodges** (owner, 2026-10-19): the scenario lists the
+enemy's attacks and skill charges (times or every n seconds, on the
+enemy's clock; default none) as `attacked` / `enemyCharge` events.
+With `dodge: {chance}` the controlled operator dashes at every attack on
+it, and the dash is a perfect dodge with that chance (the `dodge` stream);
+a missed one is an ordinary hit. A perfect dodge (from BuffData
+`buff_common_dash_behit_listener`): ends the current action (not an
+ultimate before its exclusive frames), +7 SP, the world slowed by the
+data's curve (about 15 frames lost; the dodger exempt; cooldowns run on),
+the dodger frozen by its own curve, the perfect-dodge skill's 15 frames,
+and a `perfectDodge` event instead of the attack on it. Not modelled: dash
+stamina, the 0.5 s no-dash after a perfect dodge, the dash attack, dodges
+by choice in a rotation.
+
 **Numerics:** game tables are float32, and the game may compute in float32.
 Where that matters, emulate it explicitly (`Math.fround` ↔ `f32`) behind one
 switch, decided by fixtures. Rounding steps (attribute floor, final damage)

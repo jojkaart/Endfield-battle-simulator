@@ -1783,3 +1783,69 @@ describe("jumps in a skill's timeline", () => {
     expect(advance(ctx, s, 8).acting[op]).toBeUndefined();
   });
 });
+
+describe("dodges and perfect dodges", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const counting = (...ons: [string, KitTrigger["on"]][]): GameData => ({
+    ...data,
+    kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, stacks: [...kit.stacks, ...ons.map(([id]) => ({ id, label: id, max: 999 }))], triggers: [...kit.triggers, ...ons.map(([id, on]): KitTrigger => ({ id: `count_${id}`, on, by: "self", do: [{ kind: "gain", gains: [{ stack: id, amount: 1 }] }] }))] } } },
+  });
+  const g = counting(["dodged", { event: "perfectDodge" }], ["hit", { event: "attacked" }]);
+  const run = (chance: number | null, rotation: RotationAction[] = [], frames = 400, extra: Partial<TimelineScenario> = {}) => {
+    const ctx = createContext(g, { ...scenario(rotation), enemyActions: [{ kind: "attack", every: 60 }], options: { crit: "never", ...(chance !== null ? { dodge: { chance } } : {}) }, ...extra });
+    let s = init(ctx);
+    for (const x of rotation) s = apply(ctx, s, x);
+    return advance(ctx, s, frames);
+  };
+  const pd = data.constants.perfectDodge;
+
+  it("come from the game's buffs: a 10-frame window, 7 SP, the world slowed about 15 frames and the dodger about 9", () => {
+    expect(pd?.windowFrames).toBe(10);
+    expect(pd?.sp).toBe(7);
+    expect(pd?.slowdown.reduce((t, x) => t + (1 - x), 0)).toBeGreaterThan(13);
+    expect(pd?.dodgerSlowdown.reduce((t, x) => t + (1 - x), 0)).toBeGreaterThan(8);
+  });
+
+  it("with chance 1 every attack on the controlled operator is perfectly dodged; with 0, none; without dodging it's attacked", () => {
+    const always = run(1);
+    expect(always.stacks[op]?.dodged ?? 0).toBeGreaterThan(0);
+    expect(always.stacks[op]?.hit ?? 0).toBe(0);
+    const never = run(0);
+    expect(never.stacks[op]?.dodged ?? 0).toBe(0);
+    expect(never.stacks[op]?.hit ?? 0).toBeGreaterThan(0);
+    expect(run(null).stacks[op]?.hit).toBe(never.stacks[op]?.hit);
+    // A chance in between dodges some, by the seed's rolls.
+    const some = run(0.5, [], 30 * 60, { durationFrames: 30 * 60 });
+    expect(some.stacks[op]?.dodged ?? 0).toBeGreaterThan(0);
+    expect(some.stacks[op]?.hit ?? 0).toBeGreaterThan(0);
+  });
+
+  it("a perfect dodge gives SP and slows the world, not cooldowns", () => {
+    // Battle skill at 0 (100 SP left, regen paused), attack at 60: dodged, the SP is 7 more than without.
+    const bs = [{ operator: op, skill: L + "normal_skill" }];
+    const spAt70 = (chance: number | null) => {
+      const s = run(chance, bs, 70);
+      return s.casts.find((c) => c.skill === "dodge")?.spAfter ?? null;
+    };
+    // 200 − 100, regen paused after the spend, then regenerating until the attack at 60; plus the dodge's 7.
+    expect(spAt70(1)).toBeCloseTo(100 + ((60 - SP.pauseAfterSpendFrames) * SP.perSecond) / 30 + 7, 6);
+    // The world's buffs run later; the battle skill's cooldown doesn't.
+    const ready = (chance: number | null) => run(chance, bs, 70).readyAt[L + "normal_skill"];
+    expect(ready(1)).toBe(ready(null));
+    const ends = (chance: number | null) => run(chance, [{ operator: op, skill: L + "ultimate_skill" }], 200, { startEnergy: { [op]: "full" } }).buffs.find((b) => b.id === "twilight")?.expiresAt ?? NaN;
+    expect(ends(1)).toBeGreaterThan(ends(null));
+  });
+
+  it("a perfect dodge ends the current action: the empowered battle skill's extra hit (at 54) never lands when an attack at 40 is dodged", () => {
+    const sc = (dodge: boolean): TimelineScenario => ({ ...scenario([{ operator: op, skill: L + "normal_skill" }]), startStacks: { [op]: { melting_flame: 4 } }, enemyActions: [{ kind: "attack", at: [40] }], options: { crit: "never", ...(dodge ? { dodge: { chance: 1 } } : {}) } });
+    expect(simulate(data, sc(false)).hits.some((h) => h.hitId === "empowered_extra")).toBe(true);
+    expect(simulate(data, sc(true)).hits.some((h) => h.hitId === "empowered_extra")).toBe(false);
+  });
+
+  it("there's no dash during an ultimate's exclusive frames", () => {
+    // Her ultimate stops time for frames 0–61 (the enemy's clock too) and is exclusive to 73: an attack at the enemy's frame 5 comes at 66.
+    const s = run(1, [{ operator: op, skill: L + "ultimate_skill" }], 80, { startEnergy: { [op]: "full" }, enemyActions: [{ kind: "attack", at: [5] }] });
+    expect(s.stacks[op]?.dodged ?? 0).toBe(0);
+    expect(s.stacks[op]?.hit).toBe(1);
+  });
+});

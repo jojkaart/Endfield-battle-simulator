@@ -779,6 +779,19 @@
               {
                 "type": "object",
                 "required": [
+                  "event"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
+                    "const": "perfectDodge"
+                  }
+                },
+                "description": "Someone (`by`) perfectly dodges an enemy attack (abilityEvent 145; the scenario's dodge option)."
+              },
+              {
+                "type": "object",
+                "required": [
                   "event",
                   "categories"
                 ],

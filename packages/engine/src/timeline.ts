@@ -80,8 +80,15 @@ export interface RotationAction {
 
 export interface TimelineOptions {
   readonly crit: CritMode;
-  /** Seed of the battle's random draws (rolled crits); default 1. The same seed gives the same battle. */
+  /** Seed of the battle's random draws (rolled crits, dodges); default 1. The same seed gives the same battle. */
   readonly seed?: number;
+  /**
+   * Dodging (owner, 2026-10-19): the controlled operator dashes at every
+   * enemy attack on it, and the dash is a perfect dodge with this chance
+   * (rolled on its own stream; 1: always, as a skilled player; less for a
+   * less skilled one). A missed one is an ordinary hit. Absent: no dodges.
+   */
+  readonly dodge?: { readonly chance: number };
   /** Conditions treated as always on (kit or weapon condition IDs, per operator). */
   readonly conditions?: Readonly<Record<string, readonly string[]>>;
   /** Extra modifiers on every hit (e.g. a fixed external buff). */
@@ -375,7 +382,14 @@ function skillCosts(ctx: TimelineContext, operator: string, skillId: string) {
 const PRIORITY: Readonly<Record<number, number>> = { 1: 1, 3: 2, 8: 2, 4: 5, 5: 7 };
 const priorityOf = (t: SkillTiming) => (t.specification === 6 ? Infinity : (PRIORITY[t.specification] ?? 2));
 
+/** The current action of an operator that perfectly dodged: the perfect-dodge skill (skillSpecification 2). */
+export const DODGE = "dodge";
+
 function timingOf(ctx: TimelineContext, skillId: string): SkillTiming {
+  if (skillId === DODGE) {
+    const n = ctx.data.constants.perfectDodge?.busyFrames ?? 0;
+    return { durationFrames: n, exclusiveFrames: n, windows: [], channels: [], specification: 2, keepsChain: true, slowdowns: [], jumps: [], ends: [] };
+  }
   const t = ctx.data.skills[skillId]?.timing;
   if (!t) throw new EngineError(`${skillId}: SkillData isn't loaded, so its timing is unknown`);
   return t;
@@ -1356,6 +1370,38 @@ function takeJump(st: TimelineState, j: PendingJump): { state: TimelineState; ev
   };
 }
 
+/**
+ * An enemy action and what it sets off. With dodging on, the controlled
+ * operator dashes at an attack on it (not during an ultimate's exclusive
+ * frames): perfect with the scenario's chance. A perfect dodge ends its
+ * current action, gives SP, slows the world (not cooldowns) while the
+ * dodger is exempt, freezes the dodger for its own while, and replaces the
+ * attack on it with a perfectDodge event.
+ */
+function enemyAct(ctx: TimelineContext, state: TimelineState, a: EnemyAction): TimelineState {
+  const events = enemyActionEvents(ctx, state, a);
+  const dodge = ctx.scenario.options.dodge;
+  const pd = ctx.data.constants.perfectDodge;
+  const op = state.controlled;
+  if (!dodge || !pd || !events.some((e) => e.type === "attacked" && e.operator === op)) return runTriggers(ctx, state, events, null);
+  const cur = state.acting[op];
+  if (cur) {
+    const t = timingOf(ctx, cur.skill);
+    if (t.specification === 5 && a.frame < actionFrame(cur, t.exclusiveFrames)) return runTriggers(ctx, state, events, null);
+  }
+  const roll = draw(ctx, state, "dodge");
+  if (roll.value >= dodge.chance) return runTriggers(ctx, roll.state, events, null);
+  const ended = endCurrentSkill(roll.state, op, a.frame);
+  // It's in the cast list as the skill "dodge" (no cast event: nothing listens to the perfect-dodge skill's cast).
+  const sp = Math.min(SP.max, spAt(ended.state, a.frame) + pd.sp);
+  const cast: Cast = { frame: a.frame, operator: op, skill: DODGE, spAfter: sp, energyAfter: ended.state.energy[op] ?? 0 };
+  let st: TimelineState = { ...ended.state, sp, frame: Math.max(ended.state.frame, a.frame), acting: { ...ended.state.acting, [op]: { skill: DODGE, frame: a.frame, cast: ended.state.casts.length } }, casts: [...ended.state.casts, cast] };
+  st = slowDown(ctx, st, op, { ...timingOf(ctx, DODGE), slowdowns: [{ from: 0, scales: pd.slowdown }] }, a.frame);
+  st = shiftOperator(st, op, a.frame, Math.round(pd.dodgerSlowdown.reduce((t, x) => t + (1 - x), 0)));
+  const others = events.filter((e) => !(e.type === "attacked" && e.operator === op));
+  return runTriggers(ctx, st, [...ended.events, { type: "perfectDodge", frame: a.frame, operator: op }, ...others], null);
+}
+
 /** The events an enemy action makes: an attack on each operator it hits, or the start of a charge. */
 function enemyActionEvents(ctx: TimelineContext, st: TimelineState, a: EnemyAction): BattleEvent[] {
   if (a.kind === "charge") return [{ type: "enemyCharge", frame: a.frame, operator: st.controlled }];
@@ -1421,8 +1467,7 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
       continue;
     }
     if (enemyAction && first(enemyAction.frame, buffTick?.frame ?? null, hitFrame, jumpFrame)) {
-      st = { ...st, enemyActions: st.enemyActions.slice(1) };
-      st = runTriggers(ctx, st, enemyActionEvents(ctx, st, enemyAction), null);
+      st = enemyAct(ctx, { ...st, enemyActions: st.enemyActions.slice(1) }, enemyAction);
       continue;
     }
     if (buffTick && first(buffTick.frame, hitFrame, jumpFrame)) {
@@ -1478,7 +1523,11 @@ function afterCantCast(ctx: TimelineContext, state: TimelineState, operator: str
 export function earliestStart(ctx: TimelineContext, state: TimelineState, action: RotationAction): { frame: number } | { error: string } {
   const r = startFrom(ctx, state, action);
   const cur = state.acting[action.operator];
-  const ends = ctx.kits.get(action.operator)?.triggers.some((t) => t.do.some((a) => a.kind === "endAction")) || state.pendingJumps.some((j) => j.operator === action.operator);
+  // Its action may end sooner: a kit's endAction, a jump or end on its timeline, a perfect dodge.
+  const ends =
+    ctx.kits.get(action.operator)?.triggers.some((t) => t.do.some((a) => a.kind === "endAction")) ||
+    state.pendingJumps.some((j) => j.operator === action.operator) ||
+    (ctx.scenario.options.dodge !== undefined && state.enemyActions.some((a) => a.kind === "attack"));
   if (!cur || ("frame" in r && r.frame <= state.frame) || !ends) return r;
   const t = timingOf(ctx, cur.skill);
   const horizon = Math.min(ctx.scenario.durationFrames, "frame" in r ? r.frame : actionFrame(cur, t.durationFrames));

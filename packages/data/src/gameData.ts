@@ -20,7 +20,7 @@ import { at, get, obj, type Ctx } from "./fields.ts";
 import { loadKits } from "./kits.ts";
 import { Names } from "./names.ts";
 import { isSkillFileListed, readSkillFile } from "./skillData.ts";
-import { switchedSkills } from "./buffData.ts";
+import { perfectDodgeData, switchedSkills } from "./buffData.ts";
 import { PRIMARY, readTable, sourceCommit, SOURCES } from "./sources.ts";
 import { loadAttributeDefaults } from "./tables/attributeMeta.ts";
 import { loadBattleConst } from "./tables/battleConst.ts";
@@ -185,6 +185,7 @@ function build(): GameData {
       atkRateOfSub: c.atkRateOfSub,
       efficiencyOfDEF: c.efficiencyOfDEF,
       maxUltimateSp: c.maxUltimateSp,
+      ...((p) => (p ? { perfectDodge: p } : {}))(perfectDodgeData()),
     },
     attributeDefaults: loadAttributeDefaults(PRIMARY),
     operators,
