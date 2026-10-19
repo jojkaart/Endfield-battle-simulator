@@ -13,8 +13,13 @@ yet, because something outside the kits doesn't match. Move a file up to
   match (docs/data-sources.md).
 - `zmdlogs-7e19489ae503.json` (Rhodagn, game 1.6, imported 2026-10-19 for
   batch 2): the Endministrator (34% of the damage, P3) with Ember, Chen
-  Qianyu and Pogranichnik; none of them has a kit yet. Waits for the
-  Endministrator's kit; no mismatch so far.
+  Qianyu and Pogranichnik; the other three have no kit yet. With her kit
+  all 34 of her hits are covered and mismatch, for two reasons outside
+  the kit (docs/kit-batches/batch-2/chr_0003_endminf.md, section Kit): the
+  log doesn't list talent 2's +20% Physical DMG taken on the sealed enemy,
+  and her ATK is short by what +180 flat ATK (+21.98% ATK) gives, from a
+  source the log's build doesn't show. With both added, 33 of 34 match
+  and the Crush hit is within 0.003%.
 - `zmdlogs-abfd4b7478ec.json` (Rhodagn, imported 2026-10-19 for batch 2):
   Fluorite (P5) with Si, Yvonne and Seraph. Every Si hit was ×0.965 of the
   prediction and every Fluorite hit ×0.544: build corrections from the

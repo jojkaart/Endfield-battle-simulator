@@ -1,0 +1,66 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "The Endministrator (P5, examples/endministrator-p5.json: Prominent Edge, Grizzled Edge) with Estella and Gilberta (builds as in estella-solidification) vs Rhodagn. Gilberta's ultimate inflicts Nature and Estella's battle skill adds Cryo: Solidification opens both their combo windows. Gilberta's combo Lifts (one Vulnerable stack, Shattering the Solidification); its hit, a teammate's combo damage, opens the Endministrator's. Her combo seals the enemy in Originium Crystals (talent 2: +20% Physical DMG taken while they last). Her battle skill on the sealed enemy returns 50 SP (P1) and Crushes (Grizzled Edge with the crystals' ×1.5); the Crush consumes the crystals: a crystal hit, then talent 1's +30% ATK for her and P2's +15% for the others; P5 cuts her combo cooldown by 2 s; Prominent Edge's ATK from its hit. Estella's combo then Lifts again, the ultimate (no crystals left) cuts the combo cooldown again, and a basic chain ends in a Final Strike.",
+  "team": [
+    {
+      "operator": "chr_0003_endminf",
+      "level": 90,
+      "promotion": 4,
+      "potential": 5,
+      "skillLevels": { "basic": 12, "battle": 12, "combo": 12, "ultimate": 12 },
+      "weapon": { "id": "wpn_sword_0008", "level": 90, "skillLevels": [9, 9, 9] },
+      "gear": [
+        { "id": "item_equip_t4_suit_crush_fracture_body_01", "artifice": [3, 3, 3] },
+        { "id": "item_equip_t4_suit_crush_fracture_hand_01", "artifice": [3, 3, 3] },
+        { "id": "item_equip_t4_suit_crush_fracture_edc_01", "artifice": [3, 3, 3] },
+        { "id": "item_equip_t4_suit_attri01_edc_03", "artifice": [3, 3, 3] }
+      ]
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "level": 90,
+      "promotion": 4,
+      "potential": 5,
+      "skillLevels": { "basic": 12, "battle": 12, "combo": 12, "ultimate": 12 },
+      "weapon": { "id": "wpn_lance_0010", "level": 90, "skillLevels": [3, 9, 6] },
+      "gear": [
+        { "id": "item_equip_t4_suit_phy01_hand_03", "artifice": [3, 3, 3] },
+        { "id": "item_equip_t4_suit_phy01_body_01", "artifice": [3, 3, 3] },
+        { "id": "item_equip_t4_suit_phy01_edc_02", "artifice": [2, 3, 3] },
+        { "id": "item_equip_t4_suit_fire_natr01_edc_03", "artifice": [3, 0, 3] }
+      ]
+    },
+    {
+      "operator": "chr_0013_aglina",
+      "level": 90,
+      "promotion": 4,
+      "potential": 0,
+      "skillLevels": { "basic": 9, "battle": 12, "combo": 12, "ultimate": 12 },
+      "weapon": { "id": "wpn_funnel_0011", "level": 90, "skillLevels": [9, 9, 4] },
+      "gear": [
+        { "id": "item_equip_t4_suit_usp02_hand_03", "artifice": [3, 0, 2] },
+        { "id": "item_equip_t4_suit_usp02_body_01", "artifice": [3, 2, 3] },
+        { "id": "item_equip_t4_suit_usp02_edc_03", "artifice": [3, 3, 3] },
+        { "id": "item_equip_t4_suit_fire_natr01_edc_03", "artifice": [3, 2, 3] }
+      ]
+    }
+  ],
+  "target": { "enemy": "eny_0051_rodin", "level": 90 },
+  "startEnergy": { "chr_0013_aglina": "full", "chr_0003_endminf": "full" },
+  "durationSeconds": 30,
+  "crit": "expected",
+  "rotation": [
+    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_ultimate_skill" },
+    { "operator": "chr_0021_whiten", "skill": "chr_0021_whiten_normal_skill", "at": 2.1 },
+    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_combo_skill" },
+    { "operator": "chr_0003_endminf", "skill": "chr_0003_endminf_combo_skill" },
+    { "operator": "chr_0003_endminf", "skill": "chr_0003_endminf_normal_skill" },
+    { "operator": "chr_0021_whiten", "skill": "chr_0021_whiten_combo_skill", "at": 6.3 },
+    { "operator": "chr_0003_endminf", "skill": "chr_0003_endminf_ultimate_skill" },
+    { "operator": "chr_0003_endminf", "skill": "chr_0003_endminf_attack1" },
+    { "operator": "chr_0003_endminf", "skill": "chr_0003_endminf_attack2" },
+    { "operator": "chr_0003_endminf", "skill": "chr_0003_endminf_attack3" },
+    { "operator": "chr_0003_endminf", "skill": "chr_0003_endminf_attack4" },
+    { "operator": "chr_0003_endminf", "skill": "chr_0003_endminf_attack5" }
+  ]
+}

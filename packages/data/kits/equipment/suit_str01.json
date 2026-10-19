@@ -1,0 +1,7 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_str01",
+  "sources": [
+    "Armored MSGR (3 pieces): rmxlinux Json/SkillData/passive_equipsuit_str_01 (game 1.6) Strength +str_up (50; stat panel); buff_equipsuit_str_01: below hp_ratio (0.5) HP the wearer takes dmg_taken_down × the damage. Defensive and HP-based: HP isn't modelled, and it doesn't change damage dealt, so no triggers. Batch-2 report docs/kit-batches/batch-2/chr_0003_endminf.md row 44."
+  ]
+}

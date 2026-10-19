@@ -1,0 +1,29 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_attri01",
+  "sources": [
+    "Bonekrusha (3 pieces): rmxlinux Json/SkillData/passive_equipsuit_attrisuit_01 (game 1.6): ATK +atk_up (stat panel) and BuffData buff_equipsuit_attrisuit_01: on the wearer's cast (abilityEvent 30) of a combo skill (CheckSkillType [6]) a layer of buff_equipsuit_attrisuitup_01 (stackingType 2, max max_stack 2). attrisuitup_01 on the wearer's battle-skill cast (CheckSkillType [2]) saves its layer count, creates buff_equipsuit_attrisuitup_02 (DamageScaleProcessor NormalCalcZone +dmg_up × layers on hits of mask 256 of that cast only: CheckSkillCastId) and ends all its layers. Description: \"When the wearer casts a combo skill, the wearer gains 1 stack of Bonekrushing Smash that grants the wearer's next battle skill DMG Dealt +{dmg_up}. … can stack {max_stack} time(s)\". Batch-2 report docs/kit-batches/batch-2/chr_0003_endminf.md row 42.",
+    "Layer lifetime: attrisuitup_01's duration names a `duration` key nobody assigns (BuffData default 20 s) with lifeType 1 (until ended): written without a duration, until used (report row 43, in-game test proposed). buff_equipsuit_attrisuitup_03 (attributes 39-42 +attriup, 20 s) is referenced by no file: left out. Not in any log fixture yet."
+  ],
+  "buffs": [
+    {
+      "id": "suit_attri01.smash",
+      "label": "Bonekrushing Smash (next battle skill DMG)",
+      "target": "self",
+      "gameBuff": "buff_equipsuit_attrisuitup_01",
+      "maxStacks": "max_stack",
+      "consumedBy": ["battle"],
+      "modifiers": [{ "zone": "damageBonus", "value": "dmg_up", "skillType": "battle" }],
+      "note": "One layer per combo cast, at most max_stack; the next battle skill uses every layer (attrisuitup_02: dmg_up × layers on that cast's battle-skill hits)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "suit_attri01.on_combo",
+      "on": { "event": "cast", "kinds": ["combo"] },
+      "by": "self",
+      "skill": "passive_equipsuit_attrisuit_01",
+      "do": [{ "kind": "buff", "buff": "suit_attri01.smash" }]
+    }
+  ]
+}

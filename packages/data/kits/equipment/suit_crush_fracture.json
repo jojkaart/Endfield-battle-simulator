@@ -1,0 +1,58 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_crush_fracture",
+  "sources": [
+    "Grizzled Edge (3 pieces): rmxlinux Json/SkillData/passive_equipsuit_crush_fracture (game 1.6): ATK +atk_up (stat panel) and BuffData buff_equipsuit_crush_fracture: abilityEvent 401 (the wearer applies a physical status) with CheckPhysicalInflictionType mask 12 (Crush, Breach) and the target's Vulnerable (tag 1075718177) >= 1, SaveBuffStackNum: phy_dmg_up = Vulnerable stacks × phy_dmg_up_perstack, × special_multi if the target has Physical Susceptibility (tag 1066759270), buff_common_originum_frozen (anyone's) or no poise left (Staggered) → buff_equipsuit_crush_fracture_physicdamage (attr 50 Physical DMG +phy_dmg_up for `duration` 20 s; stackingType 1 with priority = the value). Description: \"When the wearer applies Crush or Breach, the wearer gains Physical DMG Dealt +[{phy_dmg_up_perstack} × Vulnerability stacks consumed] for {duration}s\". Batch-2 report docs/kit-batches/batch-2/chr_0003_endminf.md rows 36-40.",
+    "Event 401 comes before the status buff's own handlers (which consume Vulnerable and the crystals): the stacks are the event's level, and the crystals check must see the situation at the event. The engine judges a trigger's `if` there but a buff's values when the action runs, after other triggers on the event (the Endministrator's own crystal triggers, team order first) may have ended the crystals; so the sealed case is its own trigger and buff, chosen by `if` at the event (both stand for the one game buff: only the stronger counts, and each ends the other, as a reapplication would replace it). Verified on fixtures/pending/zmdlogs-7e19489ae503.json t=33734: 0.36 = 4 × 0.06 × 1.5 on her own Crush of a sealed, unstaggered enemy without Physical Susceptibility. A Crush or Breach on an enemy without Vulnerable only adds a stack (no physicalStatus event), as the set's Vulnerable >= 1 check requires."
+  ],
+  "buffs": [
+    {
+      "id": "suit_crush_fracture.phys",
+      "label": "Grizzled Edge: Physical DMG",
+      "target": "self",
+      "gameBuff": "buff_equipsuit_crush_fracture_physicdamage",
+      "duration": "duration",
+      "modifiers": [
+        {
+          "attr": 50,
+          "value": { "product": [{ "eventCount": true }, "phy_dmg_up_perstack", { "if": { "any": [{ "enemyModifier": { "zone": "susceptibility", "element": "physical" } }, { "enemyStaggered": true }] }, "then": "special_multi", "else": 1 }] }
+        }
+      ]
+    },
+    {
+      "id": "suit_crush_fracture.phys_sealed",
+      "label": "Grizzled Edge: Physical DMG (Originium Crystals)",
+      "target": "self",
+      "gameBuff": "buff_equipsuit_crush_fracture_physicdamage",
+      "duration": "duration",
+      "modifiers": [{ "attr": 50, "value": { "product": [{ "eventCount": true }, "phy_dmg_up_perstack", "special_multi"] } }],
+      "note": "The same game buff when the target carried buff_common_originum_frozen at the event: always × special_multi."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "suit_crush_fracture.on_status",
+      "on": { "event": "physicalStatus", "statuses": ["crush", "breach"] },
+      "by": "self",
+      "beforeDamage": true,
+      "if": { "not": { "enemyBuff": "buff_common_originum_frozen" } },
+      "skill": "passive_equipsuit_crush_fracture",
+      "do": [
+        { "kind": "endBuff", "buff": "suit_crush_fracture.phys_sealed" },
+        { "kind": "buff", "buff": "suit_crush_fracture.phys" }
+      ]
+    },
+    {
+      "id": "suit_crush_fracture.on_status_sealed",
+      "on": { "event": "physicalStatus", "statuses": ["crush", "breach"] },
+      "by": "self",
+      "beforeDamage": true,
+      "if": { "enemyBuff": "buff_common_originum_frozen" },
+      "skill": "passive_equipsuit_crush_fracture",
+      "do": [
+        { "kind": "endBuff", "buff": "suit_crush_fracture.phys" },
+        { "kind": "buff", "buff": "suit_crush_fracture.phys_sealed" }
+      ]
+    }
+  ]
+}

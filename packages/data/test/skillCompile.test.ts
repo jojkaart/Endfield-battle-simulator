@@ -9,7 +9,7 @@ import type { KitHit } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill } from "../src/index.ts";
 
 const data = loadGameData();
-const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda"];
+const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
   const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
@@ -331,6 +331,17 @@ const KNOWN: string[] = [
   "chr_0022_bounda_normal_skill: data lands chr_0022_bounda_normal_skill_abilityrange atk_scale at [159], no kit hit",
   // SwitchAction on EntityBB_combo_index (2 → Cryo, 3 → Nature), set natively when the window opens: the window's element (`element: event`).
   "chr_0022_bounda_combo_skill applies at 15: kit [infliction event], data [], conditionally [infliction cryst, infliction natural]",
+  // Batch 2, the Endministrator (both IDs: chr_0002_endminm is the kit's variant). Finisher: BreakingAttackCalculation multipliers 0.1 (frame 9) and 0.9 (27), which the compiler doesn't read (D3).
+  "chr_0003_endminf_power_attack2/hit1 factor: kit 0.1, data 1",
+  "chr_0003_endminf_power_attack2/hit2 factor: kit 0.9, data 1",
+  // The combo's first DamageAction at 23 names atk_scale without useBlackboardKey (a literal 0): a hit of no damage, left out of the kit (the log has one combo hit per cast).
+  "chr_0003_endminf_combo_skill: data lands chr_0003_endminf_combo_skill  at [23], no kit hit",
+  // The ultimate's IgniteAction 6 runs buff_common_originum_frozen's own DamageAction (atk_scale_trigger from the combo), which the compiler doesn't follow (an ignite handler of a buff on the target); the kit's third hit on sealed targets.
+  "chr_0003_endminf_ultimate_skill/shatter: no landing scaled by atk_scale_trigger (data: atk_scale | originum_ult_break_scale)",
+  "chr_0002_endminm_power_attack/hit1 factor: kit 0.1, data 1",
+  "chr_0002_endminm_power_attack/hit2 factor: kit 0.9, data 1",
+  "chr_0002_endminm_combo_skill: data lands chr_0002_endminm_combo_skill  at [23], no kit hit",
+  "chr_0002_endminm_ultimate_skill/shatter: no landing scaled by atk_scale_trigger (data: atk_scale | originum_ult_break_scale)",
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {
