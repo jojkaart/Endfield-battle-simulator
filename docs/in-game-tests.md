@@ -870,14 +870,14 @@ same infliction.
 combo: does a second Lift damage number appear? Report's other tests:
 docs/kit-batches/batch-2/chr_0023_antal.md.
 
-### 59. Fluorite's talent-2 chance (later, if you have Fluorite)
+### 59. Fluorite's talent-2 chance (ready, if you have Fluorite; tedious)
 
 **Why:** "when hit by Arts DMG, 20% chance (30% from P2)" of ATK +20%: the
-engine can't roll trigger chances yet (batch 2, K1), so it gives her the
-average all the time.
+engine rolls that chance from the data (batch 2, K1); this checks the
+chance itself.
 **How:** take 20 or more Arts hits at least 10 s apart and count how often
 the ATK-up icon appears: about 1 in 5 below P2, 3 in 10 from P2. Tedious;
-worth it only once K1 is in. Catcher's tests (low priority): § Kit of
+low priority. Catcher's tests (low priority): § Kit of
 docs/kit-batches/batch-2/chr_0020_meurs.md.
 
 ## Results

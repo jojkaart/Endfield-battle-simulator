@@ -46,7 +46,7 @@ Open after the kits, each with an interim in the kits:
 
 | ID | Feature | Needed by |
 |---|---|---|
-| K1 | A trigger that fires with a chance (BuffData `Probablity`), rolled on its own seeded stream | Antal and Fluorite talent 2, `buff_equipsuit_magicinfdb_01/_02`, Laevatain's combo knock-back |
+| K1 | **Done** (`KitTrigger.chance`): a trigger that fires with a chance (BuffData `Probablity`), rolled on its own seeded stream | Antal and Fluorite talent 2, `buff_equipsuit_magicinfdb_01/_02`, Laevatain's combo knock-back |
 | K2 | A buff a trigger applies takes its values from the situation at the event | Endministrator (Grizzled Edge) |
 | K3 | A physical status's own damage where the game deals it (Lift, Knock Down, Crush before the applying hit's damage; Breach after) | Endministrator (Crush: 12–17%) |
 | K4 | A team-energy part that outlives its cast (`detached`) | Fluorite (explosion at frame 99) |
