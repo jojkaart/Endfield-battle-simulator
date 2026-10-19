@@ -18,10 +18,13 @@ the six favourites.
      log mismatches ([kits](kit-batches/batch-1.md#kits-2026-10-19)); what's
      left waits on in-game tests
      ([open](kit-batches/batch-1.md#pass-2-whats-still-open)).
-   - Next: batch 2 (the Endministrator and the 4- and 5-star operators),
-     starting with its analysis phase. Before or alongside it: loader
-     defaults from the SkillData compiler (D1/D2: frames, event keys,
-     energy, finisher factors), so new kits hand-write less.
+   - Batch 2 (the Endministrator and the 4-stars; the 5-stars are batch 3):
+     analysis done, shared features in progress
+     ([status](kit-batches/batch-2.md)). Done: groups 1–3, rolled crits
+     with the spread over many battles (E2), the scenario's enemy attacks
+     and charges (E1 part 1). Next: dodges and the perfect-dodge freeze
+     with a success chance (E1 part 2), jumps in a skill's timeline (S1),
+     compiler leftovers (D3), then the five kits and their equipment.
 2. **Rotation search** (`efsim search`, beam search on the stepping API) is
    in; with batch 1's kits complete, next: team runs for the favourites, a
    resource-aware evaluator, and a report of the best rotations found.

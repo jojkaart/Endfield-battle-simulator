@@ -4,6 +4,34 @@ A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 
+## 2026-10-19: batch 2 — shared features, rolled crits, enemy attacks
+
+**Goal:** implement batch 2's merged gaps
+([batch-2.md](kit-batches/batch-2.md#merged-gaps)), with the owner's
+decisions on enemy attacks, crits and perfect dodges.
+
+**Done:** group 1 (L1, B4, D4, S2, S4, V2, B2, D1, D2), group 2 (T1–T6,
+C1, C2), group 3 (V1 hit base values, B1 Link buffs, B3 shared timers, S3
+chain steps by timing, S5 team energy in parts, S6 the gate seeing an
+action's end); E2: crit mode `rolled` with seeded streams, crit events
+for triggers, `simulateRuns` / `efsim simulate --runs n` for the spread;
+E1 part 1: the scenario's enemy attacks and charges as events on the
+enemy's clock. Example totals and log verdicts unchanged throughout.
+
+**Decisions and why:**
+- `teamEnergy` parts replace `teamEnergyFrame` (one mechanism; kits
+  migrated), with kit-draft reading each CreateBuff's `ratio`.
+- S6 finds when an action ends by advancing and bisecting, only for kits
+  that can end their own action: generic (any trigger path) and cheap.
+- One random stream per source (`crit`, later dodges), seeded from the
+  scenario's seed and the stream's name, so adding dodge rolls doesn't
+  reshuffle crits. With `expected` crits no hit counts as a crit for
+  triggers (design.md).
+- Enemy actions run on the enemy's clock, so time stops delay them.
+
+**Problems:** Ajv's strict mode refuses `anyOf: [{required: [at]}, …]`
+in the scenario schema; dropped (an action with neither does nothing).
+
 ## 2026-10-19: batch 1 — kits
 
 **Goal:** the batch-1 kits phase: re-analysis (pass 3), the seven kits with
