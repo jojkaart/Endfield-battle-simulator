@@ -6,7 +6,7 @@ import type { HitKind, Zone } from "./effects.ts";
 import type { ArtsElement } from "./reactions.ts";
 import type { HealTarget, KitTrigger } from "./events.ts";
 import type { Predicate, ValueExpr } from "./expr.ts";
-import type { HitApplication, ReactionStatus } from "./status.ts";
+import type { HitApplication, PhysicalStatus, ReactionStatus } from "./status.ts";
 
 /**
  * How a modifier combines with an attribute (the tables' `formulaItem` /
@@ -293,13 +293,31 @@ export interface KitHit {
  * its stacks can be values (e.g. up to the room left in a stack).
  */
 export type KitApplication = (
-  | Exclude<HitApplication, { readonly kind: "infliction" | "consumeInfliction" }>
-  | (Omit<Extract<HitApplication, { readonly kind: "infliction" }>, "stacks"> & { readonly stacks?: ValueExpr })
+  | Exclude<HitApplication, { readonly kind: "infliction" | "consumeInfliction" | "physicalStatus" }>
+  /** `status: "event"`: the physical status of the event behind it (a combo's: the one that opened its window). */
+  | (Omit<Extract<HitApplication, { readonly kind: "physicalStatus" }>, "status"> & { readonly status: Extract<HitApplication, { readonly kind: "physicalStatus" }>["status"] | "event" })
+  /** `element: "event"`: the infliction element of the event behind it (a combo's: the one that opened its window). */
+  | (Omit<Extract<HitApplication, { readonly kind: "infliction" }>, "stacks" | "element"> & { readonly element: Extract<HitApplication, { readonly kind: "infliction" }>["element"] | "event"; readonly stacks?: ValueExpr })
   | (Omit<Extract<HitApplication, { readonly kind: "consumeInfliction" }>, "stacks"> & { readonly stacks?: ValueExpr })
 ) & { readonly if?: Predicate };
 
-/** The arts-state application a kit application amounts to, with its values resolved. */
-export function resolveApplication(app: KitApplication, value: (v: ValueExpr) => number): HitApplication {
+/** What an event behind an effect was, for applications that repeat it (`element: "event"`, `status: "event"`): Antal's combo. */
+export type EventSource = { readonly kind: "infliction"; readonly element: ArtsElement } | { readonly kind: "physical"; readonly status: PhysicalStatus };
+
+/**
+ * The arts-state application a kit application amounts to, with its values
+ * resolved; null when it repeats the event behind it and that event isn't
+ * of its kind (an infliction-opened combo window and a `status: "event"`).
+ */
+export function resolveApplication(app: KitApplication, value: (v: ValueExpr) => number, source?: EventSource): HitApplication | null {
+  if (app.kind === "infliction" && app.element === "event") {
+    if (source?.kind !== "infliction") return null;
+    return resolveApplication({ ...app, element: source.element }, value);
+  }
+  if (app.kind === "physicalStatus" && app.status === "event") {
+    if (source?.kind !== "physical") return null;
+    return resolveApplication({ ...app, status: source.status }, value);
+  }
   const { if: _if, ...rest } = app;
   if ((rest.kind === "infliction" || rest.kind === "consumeInfliction") && rest.stacks !== undefined) return { ...rest, stacks: value(rest.stacks) } as HitApplication;
   return rest as HitApplication;
@@ -337,6 +355,8 @@ export interface KitBuffModifier {
   readonly elements?: readonly Element[];
   readonly skillType?: SkillType;
   readonly onlyKinds?: readonly HitKind[];
+  /** Only while this holds at each hit (judged per hit for the hitter: `enemyControl`, `enemyStatus`, …). */
+  readonly if?: Predicate;
 }
 export interface KitBuff {
   /** Unique within the kit. Reapplying replaces the active instance and resets its duration. */
@@ -381,6 +401,8 @@ export interface KitBuff {
    * same name don't stack"), e.g. Arts Susceptibility from two operators.
    */
   readonly stackGroup?: string;
+  /** The BuffData buff it stands for (kits name it; predicates and triggers by game buff read it). */
+  readonly gameBuff?: string;
   readonly modifiers: readonly KitBuffModifier[];
 }
 

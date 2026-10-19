@@ -35,7 +35,7 @@ export type BattleEvent =
   /** Something the enemy's arts state did (status.ts); `fromKind`: the kind of the hit that caused it (`none` for a trigger's or a tick's). */
   | { readonly type: "status"; readonly frame: number; readonly operator: string; readonly event: StatusEvent; readonly fromKind: SkillType | "none"; readonly cast?: number }
   /** `operator` applied one of its kit buffs; `categories`: what the buff is (BuffCategory); `fromKind`: the kind of the skill behind it. */
-  | { readonly type: "buffApplied"; readonly frame: number; readonly operator: string; readonly buff: string; readonly categories: readonly BuffCategory[]; readonly fromKind?: SkillType | "none" }
+  | { readonly type: "buffApplied"; readonly frame: number; readonly operator: string; readonly buff: string; readonly categories: readonly BuffCategory[]; readonly fromKind?: SkillType | "none"; readonly gameBuff?: string }
   /** `remaining`: frames it had left when it ended (0 when it ran out); `recorded`: what a recording buff recorded. */
   | { readonly type: "buffEnded"; readonly frame: number; readonly operator: string; readonly buff: string; readonly remaining: number; readonly recorded?: number }
   /** A periodic tick of one of the operator's kit buffs (KitBuff.every). */
@@ -44,6 +44,10 @@ export type BattleEvent =
   | { readonly type: "heal"; readonly frame: number; readonly operator: string; readonly target: string; readonly kind: SkillType | "none" }
   /** The fight starts (permanent auras, start-of-fight effects); `operator` is the controlled one. */
   | { readonly type: "fightStart"; readonly frame: number; readonly operator: string }
+  /** The enemy's stagger bar passed one of its Stagger Nodes (a fraction of its stagger HP; `operator` dealt the stagger). */
+  | { readonly type: "staggerNode"; readonly frame: number; readonly operator: string; readonly node: number }
+  /** An operator's hit or trigger granted SP; `kind`: the skill kind behind it (a hit's, or its owner's skill behind a trigger chain; else none). */
+  | { readonly type: "sp"; readonly frame: number; readonly operator: string; readonly amount: number; readonly kind: SkillType | "none" }
   /** The enemy became Staggered (`operator` dealt the last stagger). */
   | { readonly type: "staggered"; readonly frame: number; readonly operator: string }
   /** An operator's own stacks were gained or used; `changed`: those whose count changed (a gain capped at the maximum changes none). */
@@ -78,9 +82,15 @@ export type TriggerOn =
   | { readonly event: "buffApplied" | "buffEnded" | "buffTick"; readonly buff: string }
   /** Someone (`by`) applies a kit buff of any of these categories (its own, a weapon's or a gear set's); `fromKinds`: only from skills of these kinds. */
   | { readonly event: "buffApplied"; readonly categories: readonly BuffCategory[]; readonly fromKinds?: readonly (SkillType | "none")[] }
+  /** Someone (`by`) applies a kit buff standing for one of these BuffData buffs (Grand Vision: "applies Originium Crystals"). */
+  | { readonly event: "buffApplied"; readonly gameBuffs: readonly string[] }
   /** Someone (`by`) heals someone; `toOthers`: only heals of someone other than the healer; `kinds`: only heals by these skill kinds (HealAction healTags). */
   | { readonly event: "heal"; readonly toOthers?: boolean; readonly kinds?: readonly (SkillType | "none")[] }
   | { readonly event: "staggered" }
+  /** The enemy's stagger bar passes a Stagger Node. */
+  | { readonly event: "staggerNode" }
+  /** Someone (`by`) recovers SP for the team by a hit or a trigger (not regeneration); `kinds`: from skills of these kinds. */
+  | { readonly event: "sp"; readonly kinds?: readonly (SkillType | "none")[] }
   | { readonly event: "fightStart" }
   /** The owner's own stack reaches a count. */
   | { readonly event: "stackAtLeast"; readonly stack: string; readonly atLeast: number };
@@ -157,8 +167,13 @@ export type TriggerActionKind =
   | ({ readonly kind: "cooldown"; readonly who: "self" | "eventOperator" | { readonly slot: number }; readonly skills: SkillType } & ({ readonly seconds: ValueExpr } | { readonly fraction: ValueExpr } | { readonly set: ValueExpr }))
   /** The owner casts one of its kit skills by itself (SkillData CastSkill: a follow-up, e.g. Typhoeus's aerial shots off-field): no control, cost or cooldown. */
   | { readonly kind: "cast"; readonly skill: string }
-  /** Land hits, as the owner, at frames counted from the event (values from the trigger's `skill`); each names its damage type. */
-  | { readonly kind: "hits"; readonly hits: readonly KitHit[] };
+  /**
+   * Land hits, as the owner, at frames counted from the event (values from
+   * the trigger's `skill`); each names its damage type. `now`: its frame-0
+   * hits land as the action runs, before the trigger's next action (a
+   * DamageAction inside the game's event handler).
+   */
+  | { readonly kind: "hits"; readonly hits: readonly KitHit[]; readonly now?: boolean };
 
 /** Whom a heal reaches: the healer, the controlled operator, the whole team, or the operator who caused the event. */
 export type HealTarget = "self" | "controlled" | "team" | "eventOperator";
@@ -220,6 +235,7 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
       return e.type === "cast" && has(on.kinds, e.kind) && has(on.skills, e.skillId) && (on.finisher === undefined || on.finisher === e.finisher) && (on.followUp === undefined || on.followUp === (e.followUp ?? false));
     case "buffApplied":
       if ("categories" in on) return e.type === "buffApplied" && e.categories.some((c) => on.categories.includes(c)) && has(on.fromKinds, e.fromKind ?? "none");
+      if ("gameBuffs" in on) return e.type === "buffApplied" && e.gameBuff !== undefined && on.gameBuffs.includes(e.gameBuff);
       return e.type === on.event && e.operator === owner && e.buff === on.buff;
     case "buffEnded":
     case "buffTick":
@@ -230,6 +246,10 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
       return e.type === "stacks" && e.operator === owner && (e.changed === undefined || e.changed.includes(on.stack)) && (ownStacks[on.stack] ?? 0) >= on.atLeast;
     case "staggered":
       return e.type === "staggered";
+    case "staggerNode":
+      return e.type === "staggerNode";
+    case "sp":
+      return e.type === "sp" && has(on.kinds, e.kind);
     case "fightStart":
       return e.type === "fightStart";
   }
@@ -259,7 +279,7 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
 
 /** Whether the event's cause counts for a trigger (`by`). Stack and own-buff events are the owner's (a buff category's aren't). */
 export function causeMatches(by: KitTrigger["by"], e: BattleEvent, owner: string, on?: TriggerOn): boolean {
-  const ownBuff = (e.type === "buffApplied" && !(on && "categories" in on)) || e.type === "buffEnded" || e.type === "buffTick";
+  const ownBuff = (e.type === "buffApplied" && !(on && ("categories" in on || "gameBuffs" in on))) || e.type === "buffEnded" || e.type === "buffTick";
   if (e.type === "stacks" || ownBuff || e.type === "fightStart") return true;
   if (by === "anyone") return true;
   if (by === "self") return e.operator === owner;

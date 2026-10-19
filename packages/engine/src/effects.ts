@@ -5,6 +5,7 @@
 // (design principle 15).
 
 import { Attr, ELEMENTS, SKILL_TYPES, type AttrType, type Element, type SkillType } from "./attributes.ts";
+import type { Predicate } from "./expr.ts";
 
 /**
  * Damage zones. Semantics verified against ZMDLogs, which logs every buff by
@@ -49,6 +50,8 @@ export interface Modifier {
   readonly staggeredOnly?: boolean;
   /** Only hits of these kinds (the game's decorate-mask conditions, e.g. bursts only). */
   readonly onlyKinds?: readonly HitKind[];
+  /** Only while this holds at the hit, for the hitter (its target's state: Fluorite's DMG against Slowed enemies); judged by the damage pipeline. */
+  readonly when?: Predicate;
   readonly source: string;
 }
 

@@ -40,6 +40,8 @@ export interface ActiveBuff {
   readonly nextTick?: number;
   /** Ends with its owner's cast of this index (KitBuff.endsWithCast). */
   readonly endsWithCast?: number;
+  /** The BuffData buff it stands for (KitBuff.gameBuff). */
+  readonly gameBuff?: string;
   /** A recording buff (KitBuff.records): its rate, and the damage it has recorded. */
   readonly records?: { readonly rate: number; readonly total: number };
 }
@@ -64,7 +66,7 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
   const attrs: { attr: AttrType; value: number }[] = [];
   for (const m of buff.modifiers) {
     const value = resolveValue(data, build, panel, skillId, m.value, situation);
-    const filters = { ...(m.skillType ? { skillType: m.skillType } : {}), ...(m.onlyKinds ? { onlyKinds: m.onlyKinds } : {}) };
+    const filters = { ...(m.skillType ? { skillType: m.skillType } : {}), ...(m.onlyKinds ? { onlyKinds: m.onlyKinds } : {}), ...(m.if ? { when: m.if } : {}) };
     if (m.attr !== undefined) {
       const mapped = attrModifier(m.attr, value, source);
       if (mapped) modifiers.push({ ...mapped, ...filters });
@@ -82,6 +84,7 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
   return {
     id: buff.id,
     ...(buff.stackGroup ? { stackGroup: buff.stackGroup } : {}),
+    ...(buff.gameBuff ? { gameBuff: buff.gameBuff } : {}),
     owner: build.operator,
     target: buff.target,
     appliedAt: frame,

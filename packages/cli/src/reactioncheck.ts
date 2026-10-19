@@ -73,7 +73,10 @@ export function checkReactions(data: GameData, fixture: LogFixture): ReactionChe
         if (app.if && !possible(data, fixture, effect.owner, h.event, app.if)) continue;
         // Arts Intensity only scales status strength, and skill values only a forced status's duration and damage, which this check doesn't compare.
         // A replay doesn't know stack counts: a stack amount that's a value counts as all (4).
-        const r = applyToEnemy(expireStatus(enemy, frame), resolveApplication(app, (v) => (typeof v === "number" ? v : 4)), frame, h.operator, 0, () => 1);
+        // An application repeating the event behind it (a combo's window) can't be replayed from a log.
+        const resolved = resolveApplication(app, (v) => (typeof v === "number" ? v : 4));
+        if (!resolved) continue;
+        const r = applyToEnemy(expireStatus(enemy, frame), resolved, frame, h.operator, 0, () => 1);
         enemy = r.state;
         for (const e of r.events) predicted.push({ predicted: e, t: h.t });
       }

@@ -29,7 +29,7 @@ import {
 } from "./damage.ts";
 import { zoneSum, type Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
-import { resolveApplication, type GameData, type KitBuff, type KitHit, type KitSkill, type OperatorKit, type SkillTiming, type StackGain, type StackRequirement } from "./model.ts";
+import { resolveApplication, type EventSource, type GameData, type KitBuff, type KitHit, type KitSkill, type OperatorKit, type SkillTiming, type StackGain, type StackRequirement } from "./model.ts";
 import { effectiveKit } from "./triggers.ts";
 import { causeMatches, eventMatches, triggerSkillId, type BattleEvent, type BuffCategory, type KitTrigger } from "./events.ts";
 import { evaluate, test, type EvalContext } from "./expr.ts";
@@ -109,8 +109,10 @@ interface PendingHit {
   readonly sp: number;
   /** Stacks this landing uses up (StackRequirement.consumeAt "hit"; Infinity: all). */
   readonly usesUp?: readonly { readonly stack: string; readonly amount: number }[];
-  /** A combo's hits: the count of the event that opened its window (ValueExpr `eventCount`). */
+  /** A combo's hits: the count of the event that opened its window (ValueExpr `eventCount`)… */
   readonly eventCount?: number;
+  /** …and what it was (applications with `element: "event"` / `status: "event"`). */
+  readonly eventSource?: EventSource;
   /** Lands even if its skill is interrupted (a projectile or entity already on its way: KitHit.detached). */
   readonly detached?: boolean;
   /** The index of the hit's cast (Cast list), for buffs that cast consumed. */
@@ -155,7 +157,7 @@ export interface TimelineState {
   /** Per operator: frame until which it gains no energy (some ultimates block it). */
   readonly energyBlockedUntil: Readonly<Record<string, number>>;
   /** Per operator with a combo trigger: the open combo window, if any. */
-  readonly comboWindow: Readonly<Record<string, { readonly from: number; readonly until: number; readonly count: number }>>;
+  readonly comboWindow: Readonly<Record<string, { readonly from: number; readonly until: number; readonly count: number; readonly source?: EventSource }>>;
   /** Frame until which SP doesn't regenerate. */
   readonly spPausedUntil: number;
   readonly controlled: string;
@@ -558,6 +560,8 @@ function damageOptions(ctx: TimelineContext, st: TimelineState, operator: string
     crit: ctx.scenario.options.crit,
     staggered,
     conditions: [],
+    // What modifiers that hold only in a situation judge (KitBuffModifier.if); a hit passes its own.
+    situation: situationAt(ctx, operator, { ...st, enemy }, frame),
     modifiers: [
       ...(ctx.modifiers.get(operator) ?? []),
       ...statusModifiers(enemy, frame),
@@ -594,9 +598,14 @@ function dealPoise(ctx: TimelineContext, st: TimelineState, operator: string, va
   // A stagger that has ended refilled the bar.
   const before = st.stagger.until !== null ? maxPoise(ctx) : st.stagger.poise;
   const poise = before - dealt;
-  if (poise > 0) return { state: { ...st, stagger: { poise, until: null, finisherUsed: false } }, events: [] };
+  // Stagger Nodes (EnemyData poiseKnotPctList): the bar passing one, from above (once per cycle: the bar only falls until it refills).
+  const max = maxPoise(ctx);
+  const nodes: BattleEvent[] = (ctx.data.enemies[ctx.scenario.target.enemy]?.staggerNodes ?? [])
+    .filter((n) => before > n * max && poise <= n * max)
+    .map((node) => ({ type: "staggerNode", frame, operator, node }));
+  if (poise > 0) return { state: { ...st, stagger: { poise, until: null, finisherUsed: false } }, events: nodes };
   const until = frame + Math.round(enemyAttr(ctx, Attr.PoiseRecTime) * enemyAttr(ctx, Attr.PoiseRecTimeScalar) * FPS);
-  return { state: { ...st, stagger: { poise: 0, until, finisherUsed: false } }, events: [{ type: "staggered", frame, operator }] };
+  return { state: { ...st, stagger: { poise: 0, until, finisherUsed: false } }, events: [...nodes, { type: "staggered", frame, operator }] };
 }
 
 /** What kit predicates and values see for an operator at a frame. */
@@ -611,6 +620,8 @@ function situationAt(ctx: TimelineContext, operator: string, st: TimelineState, 
     staggered: isStaggered(st, frame),
     enemyModifiers: st.buffs.filter((b) => b.target === "enemy" && active(b)).flatMap((b) => b.modifiers),
     attrBonus: (attr) => buffAttr(st.buffs, operator, frame, attr),
+    enemyGameBuffs: new Set(st.buffs.filter((b) => b.target === "enemy" && b.gameBuff && active(b)).map((b) => b.gameBuff as string)),
+    operatorModifiers: st.buffs.filter((b) => b.target !== "enemy" && b.cast === undefined && reaches(b, operator) && active(b)).flatMap((b) => b.modifiers),
     ...(consumed !== undefined ? { consumed } : {}),
   };
 }
@@ -639,7 +650,7 @@ function buffCategories(def: KitBuff): BuffCategory[] {
   return [...out];
 }
 
-const buffAppliedEvent = (frame: number, operator: string, def: KitBuff, fromKind: SkillType | "none"): BattleEvent => ({ type: "buffApplied", frame, operator, buff: def.id, categories: buffCategories(def), fromKind });
+const buffAppliedEvent = (frame: number, operator: string, def: KitBuff, fromKind: SkillType | "none"): BattleEvent => ({ type: "buffApplied", frame, operator, buff: def.id, categories: buffCategories(def), fromKind, ...(def.gameBuff ? { gameBuff: def.gameBuff } : {}) });
 
 /**
  * Applies one of an owner's kit buffs (values for `skillId`); a filtered
@@ -769,6 +780,16 @@ function triggerSituation(ctx: TimelineContext, owner: string, st: TimelineState
   return { ...situationAt(ctx, owner, st, e.frame, consumed), eventCount: eventCountOf(e), ...(e.type === "buffEnded" ? { eventRemaining: e.remaining / FPS, ...(e.recorded !== undefined ? { eventRecorded: e.recorded } : {}) } : {}), ...(eventOperator ? { eventOperator } : {}) };
 }
 
+/** What an event was, for applications that repeat it: an infliction applied, consumed or burst, or a physical status. */
+function eventSourceOf(e: BattleEvent): EventSource | undefined {
+  if (e.type !== "status") return undefined;
+  const s = e.event;
+  if (s.kind === "inflicted" || s.kind === "consumed" || s.kind === "burst") return { kind: "infliction", element: s.element };
+  if (s.kind === "reaction" && s.consumed) return { kind: "infliction", element: s.consumed };
+  if (s.kind === "physical") return { kind: "physical", status: s.status };
+  return undefined;
+}
+
 /** An event's count (ValueExpr `eventCount`): stacks inflicted or consumed, a reaction's level, a combo cast's window count, else 1. */
 function eventCountOf(e: BattleEvent): number {
   if (e.type === "cast") return e.count ?? 1;
@@ -806,6 +827,9 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
       st = r.state;
       queue.push(...r.events);
     }
+    // Every trigger on this event judges its condition on the situation at the event, before any of them acts
+    // (the game raises the event for all its listeners at once: an equipment set still sees what its owner's trigger consumes).
+    const atEvent = st;
     for (const b of ctx.scenario.team) {
       const owner = b.operator;
       for (const t of ctx.kits.get(owner)?.triggers ?? []) {
@@ -820,7 +844,7 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
         const castKey = t.maxPerCast !== undefined && cast !== undefined ? `${owner}:${t.id}@${cast}` : undefined;
         if (castKey && (st.triggerState[castKey]?.count ?? 0) >= (t.maxPerCast as number)) continue;
         const panel = ctx.panels.get(owner) as StatPanel;
-        const ec = evalContext(ctx.data, b, panel, triggerSkillId(owner, t), triggerSituation(ctx, owner, st, e));
+        const ec = evalContext(ctx.data, b, panel, triggerSkillId(owner, t), triggerSituation(ctx, owner, atEvent, e));
         if (t.if && !decide(t.if, ec)) continue;
         const cooldown = t.cooldown === undefined ? 0 : Math.round(evaluate(t.cooldown, ec) * FPS);
         st = { ...st, triggerState: { ...st.triggerState, [key]: { readyAt: e.frame + cooldown, count: (ts?.count ?? 0) + 1 } } };
@@ -861,14 +885,18 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         // The window keeps the largest count of the events that opened it (Si's finisher reads it).
         const open = st.comboWindow[owner];
         const count = Math.max(eventCountOf(e), open && open.until >= frame ? open.count : 0);
-        st = { ...st, comboWindow: { ...st.comboWindow, [owner]: { from: frame, until: frame + COMBO_WINDOW_FRAMES, count } } };
+        // …and what the latest event that opened or refreshed it was (Antal's combo repeats it: assumed, the data overwrites it).
+        const source = eventSourceOf(e) ?? (open && open.until >= frame ? open.source : undefined);
+        st = { ...st, comboWindow: { ...st.comboWindow, [owner]: { from: frame, until: frame + COMBO_WINDOW_FRAMES, count, ...(source ? { source } : {}) } } };
         break;
       }
       case "apply": {
         const ai = artsIntensity(ctx, st, owner, frame);
         for (const app of a.applies) {
           if (app.if && !decide(app.if, ec())) continue;
-          const r = applyToEnemy(expireStatus(st.enemy, frame), resolveApplication(app, (v) => evaluate(v, ec())), frame, owner, ai, (key) => skillValue(ctx.data, panel, build, triggerSkillId(owner, t), key), statusTweaks(ctx, st, owner, frame));
+          const resolved = resolveApplication(app, (v) => evaluate(v, ec()), eventSourceOf(e));
+          if (!resolved) continue;
+          const r = applyToEnemy(expireStatus(st.enemy, frame), resolved, frame, owner, ai, (key) => skillValue(ctx.data, panel, build, triggerSkillId(owner, t), key), statusTweaks(ctx, st, owner, frame));
           st = recordStatus(ctx, { ...st, enemy: r.state }, r.events, r.state);
           for (const x of r.events) if (x.kind === "consumed") consumed += x.stacks;
           events.push(...asEvents(r.events, origin && origin.operator === owner ? origin.kind : "none"));
@@ -891,7 +919,11 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         st = { ...st, energy: { ...st.energy, [owner]: 0 } };
         break;
       case "sp":
-        st = returnSp(st, evaluate(a.value, ec()), frame);
+        {
+          const amount = evaluate(a.value, ec());
+          st = returnSp(st, amount, frame);
+          if (amount > 0) events.push({ type: "sp", frame, operator: owner, amount, kind: origin && origin.operator === owner ? origin.kind : "none" });
+        }
         break;
       case "buff": {
         const def = ctx.kits.get(owner)?.buffs.find((x) => x.id === a.buff);
@@ -962,15 +994,19 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
       case "hits": {
         const index = t.do.indexOf(a);
         const pending: PendingHit[] = [];
+        // `now`: its frame-0 hits land as the action runs, before the trigger's next action (a DamageAction inside an event handler).
+        const landNow: PendingHit[] = [];
         for (const h of a.hits) {
           (h.frames ?? Array.from({ length: h.count }, () => 0)).forEach((f, i) => {
-            pending.push({
+            const p: PendingHit = {
               frame: frame + f, operator: owner, skillId: triggerSkillId(owner, t), hitId: h.id, sp: 0, trigger: { id: t.id, action: index },
               ...(h.branch ? { branch: `${owner}:${t.id}:${frame}:${h.branch}:${i}` } : {}), ...(h.fixedDamage !== undefined ? { fixed: evaluate(h.fixedDamage, ec()) } : {}),
-            });
+            };
+            (a.now && f === 0 ? landNow : pending).push(p);
           });
         }
         st = { ...st, pending: [...st.pending, ...pending] };
+        for (const p of landNow) st = landHit(ctx, st, p);
         break;
       }
     }
@@ -1019,9 +1055,13 @@ function hitOrder(ctx: TimelineContext, hit: PendingHit): number {
 /** Lands one pending hit: its own effects, its damage, then the triggers its events start. */
 function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): TimelineState {
   let st = state;
-  if (hit.sp > 0) st = returnSp(st, hit.sp, hit.frame);
-  const build = ctx.builds.get(hit.operator) as Build;
   const { skill, kind, kitHit } = pendingHitDef(ctx, hit);
+  const spEvents: BattleEvent[] = [];
+  if (hit.sp > 0) {
+    st = returnSp(st, hit.sp, hit.frame);
+    spEvents.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount: hit.sp, kind });
+  }
+  const build = ctx.builds.get(hit.operator) as Build;
   st = { ...st, enemy: expireStatus(st.enemy, hit.frame) };
   const panel = ctx.panels.get(hit.operator) as StatPanel;
   // Its situation as it lands, before its own effects: whether it happens (KitHit.if) and its extra scale.
@@ -1047,7 +1087,8 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     const ai = artsIntensity(ctx, st, hit.operator, hit.frame);
     for (const app of kitHit.applies) {
       if (app.if && !decide(app.if, evalContext(ctx.data, build, panel, hit.skillId, at(consumed)))) continue;
-      const resolved = resolveApplication(app, (v) => evaluate(v, evalContext(ctx.data, build, panel, hit.skillId, at(consumed))));
+      const resolved = resolveApplication(app, (v) => evaluate(v, evalContext(ctx.data, build, panel, hit.skillId, at(consumed))), hit.eventSource);
+      if (!resolved) continue;
       const r = applyToEnemy(st.enemy, resolved, hit.frame, hit.operator, ai, (key) => skillValue(ctx.data, panel, build, hit.skillId, key), statusTweaks(ctx, st, hit.operator, hit.frame));
       st = { ...st, enemy: r.state };
       statusEvents.push(...r.events);
@@ -1094,7 +1135,11 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     const own = st.stacks[hit.operator] ?? {};
     st = { ...st, stacks: { ...st.stacks, [hit.operator]: { ...own, ...Object.fromEntries(hit.usesUp.map((u) => [u.stack, Math.max(0, (own[u.stack] ?? 0) - u.amount)])) } } };
   }
-  if (kitHit.sp !== undefined) st = returnSp(st, resolveValue(ctx.data, build, panel, hit.skillId, kitHit.sp, at(consumed)), hit.frame);
+  if (kitHit.sp !== undefined) {
+    const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.sp, at(consumed));
+    st = returnSp(st, amount, hit.frame);
+    if (amount > 0) spEvents.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount, kind });
+  }
   if (kitHit.energy) {
     const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.energy, at(consumed));
     st = gainEnergy(ctx, st, hit.operator, amount, hit.frame);
@@ -1114,7 +1159,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     ...(hit.cast !== undefined ? { cast: hit.cast } : {}),
   };
   const all: BattleEvent[] = [
-    hitEvent, ...asEvents(statusEvents, kind, hit.cast), ...asEvents(burst, kind, hit.cast), ...poiseEvents, ...events,
+    hitEvent, ...asEvents(statusEvents, kind, hit.cast), ...asEvents(burst, kind, hit.cast), ...poiseEvents, ...events, ...spEvents,
     ...(kitHit.heals ? healEvents(ctx, st, hit.operator, kitHit.heals, hit.frame, kind) : []),
     ...(kitHit.gains?.length ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator, changed: stacksChanged }] : []),
   ];
@@ -1353,6 +1398,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   const speed = actionSpeed(ctx, s, operator, frame);
   const scaled = (f: number) => (speed === 1 ? f : Math.round(f / speed));
   const windowCount = costs.kind === "combo" ? s.comboWindow[operator]?.count : undefined;
+  const windowSource = costs.kind === "combo" ? s.comboWindow[operator]?.source : undefined;
   const inRange = (r: StackRequirement) => {
     const n = own[r.stack] ?? 0;
     return (r.atLeast === undefined || n >= r.atLeast) && (r.below === undefined || n < r.below);
@@ -1379,7 +1425,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
       pending.push({
         frame: frame + scaled(f), operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castIndex,
         ...(usesAtHit(h.id).length && i === 0 ? { usesUp: usesAtHit(h.id) } : {}), ...(h.detached ? { detached: true } : {}),
-        ...(windowCount !== undefined ? { eventCount: windowCount } : {}), ...(h.branch ? { branch: `${castIndex}:${h.branch}:${i}` } : {}),
+        ...(windowCount !== undefined ? { eventCount: windowCount } : {}), ...(windowSource ? { eventSource: windowSource } : {}), ...(h.branch ? { branch: `${castIndex}:${h.branch}:${i}` } : {}),
       }),
     );
   }

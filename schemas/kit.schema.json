@@ -143,6 +143,10 @@
                 "attr": {
                   "type": "integer",
                   "description": "An attribute instead of a zone (mapped to its zone like any stat; one that doesn't act on hits, e.g. Ultimate Gain Efficiency 44, is read where the game reads it)."
+                },
+                "if": {
+                  "$ref": "#/$defs/predicate",
+                  "description": "Only while this holds at each hit, for the hitter (its target's state, e.g. enemyControl slow)."
                 }
               },
               "description": "A zone or an attribute (exactly one; the loader checks)."
@@ -769,6 +773,68 @@
                     "description": "Only buffs applied by skills of these kinds (a hit's, or a trigger's run by its owner's own skill); none otherwise."
                   }
                 }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "event"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
+                    "const": "staggerNode"
+                  }
+                },
+                "description": "The enemy's stagger bar passes one of its Stagger Nodes (EnemyData poiseKnotPctList)."
+              },
+              {
+                "type": "object",
+                "required": [
+                  "event"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
+                    "const": "sp"
+                  },
+                  "kinds": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/skillType"
+                        },
+                        {
+                          "const": "none"
+                        }
+                      ]
+                    },
+                    "minItems": 1,
+                    "description": "Only SP from skills of these kinds (a hit's damage type; a trigger's owner skill)."
+                  }
+                },
+                "description": "Someone (by) recovers SP for the team by a hit or a trigger (not regeneration)."
+              },
+              {
+                "type": "object",
+                "required": [
+                  "event",
+                  "gameBuffs"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
+                    "const": "buffApplied"
+                  },
+                  "gameBuffs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "description": "Any kit buff standing for one of these BuffData buffs, applied by whoever `by` names."
+                  }
+                }
               }
             ]
           },
@@ -1095,6 +1161,10 @@
                     "if": {
                       "$ref": "#/$defs/predicate",
                       "description": "This action only in this situation (judged for the owner when it runs)."
+                    },
+                    "now": {
+                      "type": "boolean",
+                      "description": "Its frame-0 hits land as the action runs, before the trigger's next action (a DamageAction inside the game's event handler)."
                     }
                   }
                 },
@@ -1432,6 +1502,10 @@
                 {
                   "const": "enemy",
                   "description": "The element the enemy already has (none: nothing happens)."
+                },
+                {
+                  "const": "event",
+                  "description": "The element of the event behind it (a combo's: the infliction that opened its window); none: nothing happens."
                 }
               ]
             },
@@ -1571,11 +1645,19 @@
               "const": "physicalStatus"
             },
             "status": {
-              "enum": [
-                "lift",
-                "knockdown",
-                "crush",
-                "breach"
+              "anyOf": [
+                {
+                  "enum": [
+                    "lift",
+                    "knockdown",
+                    "crush",
+                    "breach"
+                  ]
+                },
+                {
+                  "const": "event",
+                  "description": "The physical status of the event behind it (a combo's: the one that opened its window); none: nothing happens."
+                }
               ]
             },
             "forced": {
@@ -2153,6 +2235,44 @@
             "enemyControl": {
               "type": "string",
               "description": "The enemy has this control status."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "enemyBuff"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "enemyBuff": {
+              "type": "string",
+              "description": "A buff from anyone that stands for this BuffData buff (its gameBuff) is on the enemy."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "operatorModifier"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "operatorModifier": {
+              "type": "object",
+              "required": [
+                "zone"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "zone": {
+                  "$ref": "#/$defs/zone"
+                },
+                "element": {
+                  "$ref": "#/$defs/element"
+                }
+              },
+              "description": "A buff from anyone that reaches the operator has a modifier in this zone (an Amped teammate)."
             }
           }
         }

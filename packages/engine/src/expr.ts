@@ -44,6 +44,10 @@ export type Predicate =
   | { readonly controlled: true }
   /** The enemy has a buff from anyone with a modifier in this zone that reaches this element (an all-element one counts). */
   | { readonly enemyModifier: { readonly zone: Zone; readonly element?: Element } }
+  /** A buff from anyone that stands for this BuffData buff is on the enemy (Grizzled Edge: Originium Crystals). */
+  | { readonly enemyBuff: string }
+  /** A buff from anyone that reaches the operator has a modifier in this zone ("an Amped teammate"): the twin of `enemyModifier`. */
+  | { readonly operatorModifier: { readonly zone: Zone; readonly element?: Element } }
   /** The operator's element is one of these. */
   | { readonly operatorElement: readonly Element[] }
   /** The operator's profession (CharacterTable `profession`) is one of these. */
@@ -146,6 +150,10 @@ export interface EvalContext {
   readonly staggered?: boolean;
   /** Modifiers of the buffs on the enemy, from anyone. */
   readonly enemyModifiers?: readonly Modifier[];
+  /** BuffData IDs of the buffs from anyone on the enemy. */
+  readonly enemyGameBuffs?: ReadonlySet<string>;
+  /** Modifiers of the buffs from anyone that reach the operator. */
+  readonly operatorModifiers?: readonly Modifier[];
   /** Whose effect is judged, when `build` is someone else (a team buff's recipient); default: `build`'s operator. */
   readonly owner?: string;
   /** The context of the operator who caused the event a trigger reacts to. */
@@ -194,6 +202,12 @@ export function test(p: Predicate, c: EvalContext): boolean | undefined {
   if ("buffActive" in p) return c.buffActive ? c.buffActive(p.buffActive) : undefined;
   if ("consumedAtLeast" in p) return c.consumed === undefined ? undefined : c.consumed >= p.consumedAtLeast;
   if ("controlled" in p) return c.controlled === undefined ? undefined : c.controlled === c.build.operator;
+  if ("enemyBuff" in p) return c.enemyGameBuffs ? c.enemyGameBuffs.has(p.enemyBuff) : undefined;
+  if ("operatorModifier" in p) {
+    if (!c.operatorModifiers) return undefined;
+    const { zone, element } = p.operatorModifier;
+    return c.operatorModifiers.some((m) => m.zone === zone && (element === undefined || m.element === undefined || m.element === element));
+  }
   if ("enemyModifier" in p) {
     if (!c.enemyModifiers) return undefined;
     const { zone, element } = p.enemyModifier;

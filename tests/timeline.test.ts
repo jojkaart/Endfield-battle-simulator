@@ -1449,3 +1449,104 @@ describe("batch 2 group 1: values, layers, awaited actions, log keys", () => {
     expect(parseReactionEvent("buff_physical_crushed")).toEqual({ kind: "crush", element: "physical" });
   });
 });
+
+const withoutIf = (h: KitHit): KitHit => {
+  const { if: _if, ...rest } = h;
+  return rest;
+};
+
+describe("batch 2 group 2: stagger nodes, SP events, combos repeating their trigger", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const withKit = (k: Partial<OperatorKit>): GameData => ({ ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, ...k, stacks: [...kit.stacks, { id: "n", label: "n", max: 99 }, ...(k.stacks ?? [])] } } } });
+  const count = (on: KitTrigger["on"]): KitTrigger => ({ id: "count", on, by: "anyone", do: [{ kind: "gain", gains: [{ stack: "n", amount: 1 }] }] });
+  const run = (g: GameData, rotation: RotationAction[], frames = 200) => {
+    const ctx = createContext(g, scenario(rotation));
+    let s = init(ctx);
+    for (const x of rotation) s = apply(ctx, s, x);
+    return advance(ctx, s, frames);
+  };
+
+  it("a Stagger Node event fires once as the bar passes Rhodagn's 50% node", () => {
+    // attack1 deals 150 stagger here: 280 → 130 passes the node at 140.
+    const skills = kit.skills.map((s) => (s.skillId === L + "attack1" ? { ...s, hits: s.hits.map((h) => ({ ...h, poise: 150 })) } : s));
+    expect(data.enemies["eny_0051_rodin"]?.staggerNodes).toEqual([0.5]);
+    const s = run(withKit({ skills, triggers: [...kit.triggers, count({ event: "staggerNode" })] }), [{ operator: op, skill: L + "attack1" }]);
+    expect(s.stacks[op]?.n).toBe(1);
+  });
+
+  it("an SP event for SP a hit grants, with its skill's kind", () => {
+    const s = run(withKit({ triggers: [...kit.triggers, count({ event: "sp", kinds: ["basic"] })] }), [{ operator: op, skill: L + "attack1" }, { operator: op, skill: L + "attack2" }, { operator: op, skill: L + "attack3" }, { operator: op, skill: L + "attack4" }, { operator: op, skill: L + "attack5" }]);
+    expect(s.stacks[op]?.n ?? 0).toBeGreaterThanOrEqual(1);
+  });
+
+  it("a combo can repeat the infliction that opened its window", () => {
+    // Laevatain's combo, its first hit without its own condition (Combustion or Corrosion on the enemy).
+    const combo = kit.skills.find((s) => s.kind === "combo") as KitSkill;
+    const skills = kit.skills.map((s) => (s === combo ? { ...s, hits: s.hits.map((h, i) => (i === 0 ? { ...withoutIf(h), applies: [{ kind: "infliction" as const, element: "event" as const }, { kind: "physicalStatus" as const, status: "event" as const }] } : h)) } : s));
+    const open: KitTrigger = { id: "open_cryo", on: { event: "inflictionApplied", elements: ["cryst"] }, by: "anyone", do: [{ kind: "openCombo" }] };
+    const cryo: KitTrigger = { id: "cryo", on: { event: "cast", skills: [L + "attack1"] }, by: "self", maxCount: 1, do: [{ kind: "apply", applies: [{ kind: "infliction", element: "cryst" }] }] };
+    const g = withKit({ skills, triggers: [...kit.triggers.filter((t) => t.do.every((x) => x.kind !== "openCombo")), open, cryo] });
+    const ctx = createContext(g, scenario([]));
+    let s = apply(ctx, init(ctx), { operator: op, skill: L + "attack1" });
+    s = advance(ctx, s, 20);
+    expect(s.comboWindow[op]?.source).toEqual({ kind: "infliction", element: "cryst" });
+    s = advance(ctx, apply(ctx, s, { operator: op, skill: combo.skillId }), 200);
+    // The combo's Cryo on the Cryo already there: a second stack (or a burst), never a physical status.
+    expect(s.reactions.some((r) => r.kind === "burst" && r.element === "cryst") || (s.enemy.infliction?.element === "cryst" && (s.enemy.infliction?.stacks ?? 0) >= 2)).toBe(true);
+    expect(s.reactions.some((r) => r.kind === "physical")).toBe(false);
+  });
+});
+
+describe("batch 2 group 2: triggers on one event, hits now, enemy buffs by game buff, conditions per hit", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const withKit = (k: Partial<OperatorKit>): GameData => ({ ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, ...k, stacks: [...kit.stacks, { id: "n", label: "n", max: 99 }, ...(k.stacks ?? [])] } } } });
+  const a1: RotationAction = { operator: op, skill: L + "attack1" };
+  const run = (g: GameData, rotation: RotationAction[], frames = 60) => {
+    const ctx = createContext(g, scenario(rotation));
+    let s = init(ctx);
+    for (const x of rotation) s = apply(ctx, s, x);
+    return advance(ctx, s, frames);
+  };
+  const mark: KitBuff = { id: "mark", label: "mark", target: "enemy", duration: 10, modifiers: [], gameBuff: "buff_common_originum_frozen" };
+
+  it("every trigger on one event judges its condition at the event, before any of them acts", () => {
+    const triggers: KitTrigger[] = [
+      { id: "take", on: { event: "cast", skills: [L + "attack1"] }, by: "self", do: [{ kind: "buff", buff: "mark" }] },
+      { id: "end", on: { event: "hit", skills: [L + "attack1"] }, by: "self", do: [{ kind: "endBuff", buff: "mark" }] },
+      { id: "see", on: { event: "hit", skills: [L + "attack1"] }, by: "self", if: { buffActive: "mark" }, do: [{ kind: "gain", gains: [{ stack: "n", amount: 1 }] }] },
+    ];
+    expect(run(withKit({ buffs: [...kit.buffs, mark], triggers: [...kit.triggers, ...triggers] }), [a1]).stacks[op]?.n).toBe(1);
+  });
+
+  it("a hits action with `now` lands its frame-0 hits before the trigger's next action", () => {
+    const h = (kit.skills.find((s) => s.skillId === L + "attack1") as KitSkill).hits[0] as KitHit;
+    const t = (now: boolean): KitTrigger => ({
+      id: "t", on: { event: "cast", skills: [L + "attack1"] }, by: "self", skill: L + "attack1",
+      do: [{ kind: "hits", ...(now ? { now } : {}), hits: [{ ...withoutIf(h), id: "x", damageType: "basic", frames: [0], if: { buffActive: "mark" } }] }, { kind: "endBuff", buff: "mark" }],
+    });
+    const g = (now: boolean) => withKit({ buffs: [...kit.buffs, { ...mark, target: "self" }], triggers: [{ id: "m", on: { event: "fightStart" }, by: "self", do: [{ kind: "buff", buff: "mark" }] }, ...kit.triggers, t(now)] });
+    const landed = (now: boolean) => run(g(now), [a1]).hits.some((x) => x.hitId === "x");
+    expect(landed(true)).toBe(true);
+    expect(landed(false)).toBe(false);
+  });
+
+  it("an enemy buff from anyone by game buff ID; a buffApplied trigger by game buff", () => {
+    const triggers: KitTrigger[] = [
+      { id: "take", on: { event: "cast", skills: [L + "attack1"] }, by: "self", do: [{ kind: "buff", buff: "mark" }] },
+      { id: "seen", on: { event: "buffApplied", gameBuffs: ["buff_common_originum_frozen"] }, by: "self", if: { enemyBuff: "buff_common_originum_frozen" }, do: [{ kind: "gain", gains: [{ stack: "n", amount: 1 }] }] },
+    ];
+    expect(run(withKit({ buffs: [...kit.buffs, mark], triggers: [...kit.triggers, ...triggers] }), [a1]).stacks[op]?.n).toBe(1);
+  });
+
+  it("a buff modifier with `if` holds only for hits where it's true; operatorModifier sees buffs reaching the operator", () => {
+    const amp: KitBuff = { id: "a", label: "a", target: "self", modifiers: [{ zone: "amp", value: 0.5, if: { enemyControl: "slow" } }] };
+    const g = withKit({ buffs: [...kit.buffs, amp], triggers: [...kit.triggers, { id: "a", on: { event: "fightStart" }, by: "self", do: [{ kind: "buff", buff: "a" }] }] });
+    const plain = run(g, [a1]).hits.find((x) => x.skillId === L + "attack1");
+    expect(plain?.modifiers.some((m) => m.zone === "amp" && m.value === 0.5)).toBe(false);
+    const slowed: KitTrigger = { id: "slow", on: { event: "cast", skills: [L + "attack1"] }, by: "self", do: [{ kind: "apply", applies: [{ kind: "control", status: "slow", seconds: 3 }] }] };
+    const g2 = withKit({ buffs: [...kit.buffs, amp], triggers: [...kit.triggers, { id: "a", on: { event: "fightStart" }, by: "self", do: [{ kind: "buff", buff: "a" }] }, slowed] });
+    expect(run(g2, [a1]).hits.find((x) => x.skillId === L + "attack1")?.modifiers.some((m) => m.zone === "amp" && m.value === 0.5)).toBe(true);
+    const ec = evalContext(data, build, computeStats(data, build), "", { operatorModifiers: [{ zone: "amp", value: 0.1, source: "x" }] });
+    expect(test({ operatorModifier: { zone: "amp" } }, ec)).toBe(true);
+  });
+});

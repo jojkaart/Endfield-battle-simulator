@@ -28,7 +28,7 @@ export interface DamageOptions {
 }
 
 /** The parts of an EvalContext that describe the moment rather than the build. */
-export type Situation = Partial<Pick<EvalContext, "team" | "enemy" | "stacks" | "buffActive" | "consumed" | "eventCount" | "eventRemaining" | "eventRecorded" | "attrBonus" | "controlled" | "staggered" | "enemyModifiers" | "owner" | "eventOperator">>;
+export type Situation = Partial<Pick<EvalContext, "team" | "enemy" | "stacks" | "buffActive" | "consumed" | "eventCount" | "eventRemaining" | "eventRecorded" | "attrBonus" | "enemyGameBuffs" | "operatorModifiers" | "controlled" | "staggered" | "enemyModifiers" | "owner" | "eventOperator">>;
 
 /** The context kit predicates and values are evaluated in, for a build's skill. */
 export function evalContext(data: GameData, build: Build, panel: StatPanel, skillId: string, situation: Situation = {}): EvalContext {
@@ -232,7 +232,11 @@ export interface DamageSpec {
 
 /** All modifiers acting on a build's hits: stat panel, active conditions, and external ones. */
 export function activeModifiers(data: GameData, build: Build, panel: StatPanel, options: DamageOptions): Modifier[] {
-  return [...panelModifiers(data, panel), ...conditionModifiers(data, build, options.conditions, panel), ...(options.modifiers ?? [])];
+  const all = [...panelModifiers(data, panel), ...conditionModifiers(data, build, options.conditions, panel), ...(options.modifiers ?? [])];
+  if (!all.some((m) => m.when)) return all;
+  // A modifier that holds only in a situation (KitBuffModifier.if): judged on the hit's situation; one it can't decide counts as assumeUnknown says (default: not).
+  const ec = evalContext(data, build, panel, "", options.situation);
+  return all.filter((m) => !m.when || (test(m.when, ec) ?? options.assumeUnknown ?? false));
 }
 
 /** The shared damage pipeline: ATK × multiplier × zones (docs/data-sources.md#3-damage-formula). */

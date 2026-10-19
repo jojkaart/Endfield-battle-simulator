@@ -49,7 +49,7 @@ interface RawHit {
   damageType?: SkillType | "none";
 }
 
-type RawTrigger = Omit<KitTrigger, "do"> & { note?: string; do: (Exclude<KitTrigger["do"][number], { kind: "hits" }> | { kind: "hits"; hits: RawHit[]; if?: Predicate })[] };
+type RawTrigger = Omit<KitTrigger, "do"> & { note?: string; do: (Exclude<KitTrigger["do"][number], { kind: "hits" }> | { kind: "hits"; hits: RawHit[]; if?: Predicate; now?: boolean })[] };
 
 interface RawKit {
   operator: string;
@@ -87,7 +87,7 @@ interface RawEquipmentKit {
   conditions?: RawCondition[];
 }
 
-type RawBuff = KitBuff & { note?: string; gameBuff?: string };
+type RawBuff = KitBuff & { note?: string };
 
 function validator() {
   const ajv = new Ajv2020({ allErrors: true, strict: true });
@@ -343,7 +343,7 @@ function kitChecker(scope: KitScope) {
       ...t,
       do: t.do.map((a) =>
         a.kind === "gain" ? { ...a, gains: a.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1, ...(g.if ? { if: g.if } : {}) })) }
-        : a.kind === "hits" ? { ...(a.if ? { if: a.if } : {}), kind: "hits", hits: normalizeHits(a.hits, { skillId, label: t.id, checkScale: (key, w) => checkValue(key, skillId, w) }, where) }
+        : a.kind === "hits" ? { ...(a.if ? { if: a.if } : {}), ...(a.now ? { now: true } : {}), kind: "hits", hits: normalizeHits(a.hits, { skillId, label: t.id, checkScale: (key, w) => checkValue(key, skillId, w) }, where) }
         : a,
       ),
     };
@@ -355,7 +355,7 @@ function kitChecker(scope: KitScope) {
       if (!isBuffFileListed(gameBuff)) throw new Error(`${scope.file}: buff ${b.id}: ${gameBuff} isn't covered by tables.json json.BuffData`);
       const raw = readBuffFile(gameBuff);
       if (!raw) throw new Error(`${scope.file}: buff ${b.id}: no BuffData file ${gameBuff}`);
-      return raw.stacking.type === 1 ? { ...b, stackGroup: raw.stacking.key ?? gameBuff } : b;
+      return raw.stacking.type === 1 ? { ...b, gameBuff, stackGroup: raw.stacking.key ?? gameBuff } : { ...b, gameBuff };
     });
   /** A kit's triggers, checked, with the triggers their actions name (cancelHits) among them. */
   const checkTriggers = (list: readonly Omit<RawTrigger, "note">[]): KitTrigger[] => {
