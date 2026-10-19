@@ -24,5 +24,69 @@ whose report covers it):
 With these, every gear set in the game has a kit (batch 1 wrote the other
 eight).
 
-Phase: **analysis 1** (2026-10-19). Reports: [batch-2/](batch-2/), one per
-operator, in the format of [kit-process.md](../kit-process.md).
+Phase: **analysis 1 done (2026-10-19)**; merge below; implementation next.
+Reports: [batch-2/](batch-2/), one per operator, each ending with a kit
+plan whose draft kits were loaded with the real loader.
+
+| Operator | Rows | Supported | Gap | Data | Unknown | Unique? |
+|---|---|---|---|---|---|---|
+| Endministrator | 44 | 35 | 3 (+4 format) | 2 | 4 | 0 |
+| Akekuri | 42 | 28 | 5 | 5 | 2 | 0 |
+| Catcher | 38 | 22 | 9 | 4 | 3 | 0 |
+| Fluorite | 44 | 32 | 7 | 1 | 4 | 0 |
+| Antal | 35 | 24 | 5 | 1 | 1 (+3) | 0 |
+
+Nothing is unique. The Endministrator: chr_0003_endminf and chr_0002_endminm
+are one kit under two IDs (same values and frames); chr_9000_endmin is the
+virtual character that holds their talents and potentials, not playable.
+
+## Owner's decisions (2026-10-19)
+
+- **Enemy attacks come from the scenario.** A scenario lists when the enemy
+  attacks the team (times, or every N seconds; default none), and "when
+  attacked" effects fire then: Catcher's counter-bash, combo trigger and
+  P5 SP, Fluorite's talent 2 (and in batch 3 Snowshine, Ember, Purrchena).
+  Real boss patterns can come per enemy later.
+- **Crits are rolled, and the spread is reported.** Damage with crits is
+  variable, so the simulator needs both a single battle with rolled crits
+  (crit-triggered effects such as MI Security's fire on real crits) and the
+  variance of a rotation's damage, not only its expected value.
+
+## Merged gaps
+
+Report references are `operator Gn`.
+
+| ID | Feature | Needed by |
+|---|---|---|
+| E1 | Enemy attacks from the scenario: an `attacked` event (whom, when), also an enemy charging a skill | Catcher G1, Fluorite G5 |
+| E2 | Rolled crits with a seed, crit events for triggers, and many runs for the damage's mean and spread | Catcher G6 (MI Security) |
+| T1 | A Stagger Node event (the enemy's `staggerNodes`) | Akekuri G1 |
+| T2 | An "SP recovered" event | Akekuri G5 (Frontiers) |
+| T3 | A combo's application taken from the event that opened its window (`element: "event"`, `status: "event"`) | Antal G1, Fluorite (combo), Arcane A6 |
+| T4 | A triggered hit lands before the trigger's later actions | Endministrator G2 |
+| T5 | Every trigger on one event is judged on the situation at the event | Endministrator G4 |
+| T6 | An enemy buff from anyone by game buff ID: predicate and `buffApplied` filter | Endministrator G3 (Grizzled Edge; batch 3: Grand Vision, Glorious Memory) |
+| C1 | A buff modifier that holds only against a target in a state (`if` judged per hit) | Fluorite G1 (talent 1, Slow), Typhoeus's combo debuff |
+| C2 | "The operator has a buff of a zone" (the operator-side twin of `enemyModifier`) | Antal G2 |
+| V1 | A hit whose base isn't ATK (300 + 5 × DEF) | Catcher G3 (P1) |
+| V2 | `floor` and division in values; attributes including buffs | Catcher G4, Akekuri G6 |
+| V3 | Natural vs returned SP for kit SP grants | Akekuri G3 (every kit; in-game test first) |
+| B1 | Link stacks from a kit buff | Akekuri G2 (talent 2) |
+| B2 | A buff action that adds several layers (`layers`) | Fluorite G4 (Xiranflow) |
+| B3 | Layered buffs with one shared, refreshed timer (BuffData stackingType 8) | Catcher (Æthertech, MI Security), Akekuri P1 (U3) |
+| B4 | ATK as a kit-buff attribute is silently ignored: map it or refuse it | Fluorite G7 |
+| S1 | Jumps in a skill's timeline (Ti3) and a skill ending itself | Catcher G2 (her data only makes sense if jumps skip time), Laevatain R1, Liino R5 |
+| S2 | Cooldown attributes (attribute 47, cooldown ×) | Akekuri G4 (Frontiers, Qingbo) |
+| S3 | Alternative chain steps by timing (attack4 / attack4_1) | Fluorite G2 |
+| S4 | A step without `at` waits for the current cast's delayed actions too | Fluorite G3 |
+| S5 | A skill's team energy in parts, one conditional | Catcher G5 |
+| S6 | The action gate sees an `endAction` that's due (batch 1's open item) | Catcher, Liino |
+| D1 | The gendered Endministrators' talent values come from the virtual character | Endministrator G1 |
+| D2 | One kit for two operator IDs (`variants`), and chr_9000_endmin hidden | Endministrator G7 |
+| D3 | Compiler leftovers: per-hit element, projectile routes and jump branches as alternatives, poise, finisher factors, SP keys | Akekuri G7, Antal G3, Fluorite G6 |
+| D4 | The build format allows weapons with two skills | Fluorite G8 (Peco 5) |
+| L1 | Crush hits are logged as `buff_physical_crushed` | Endministrator G5 (53% of her logged damage) |
+
+Proposed to defer (no effect on bosses or on damage): the Endministrator's
+seal freezing enemies with super armor below 20 (G6); kills and HP (N1:
+AIC Heavy's heal on kill, Catcher's combo below 40% HP).
