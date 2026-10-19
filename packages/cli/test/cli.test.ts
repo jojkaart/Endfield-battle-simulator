@@ -31,7 +31,9 @@ describe("cli commands", () => {
     expect(text).toContain("ATK 5,871");
     expect(text).toMatch(/Basic attack 1 .* 1,952/);
     expect(text).toMatch(/Combo skill .* 26,908/);
-    expect(text).toContain("wpn_sword_0006.after_ultimate");
+    // Forgeborn's after-ultimate buff is a triggered kit buff now (no condition): --buff counts it.
+    const buffed = calc(data, forgeborn, { ...options, buffs: [{ buff: "wpn_sword_0006.valid", layers: 1 }] });
+    expect(buffed).toMatch(/Enhanced basic attack 1 \(Twilight\) .* 20,304/);
   });
 
   it("compare of a build with itself shows no difference", () => {

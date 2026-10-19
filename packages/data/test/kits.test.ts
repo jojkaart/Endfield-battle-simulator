@@ -27,8 +27,6 @@ describe.each(Object.values(data.kits.operators))("kit $operator", (kit) => {
     const missing = Object.keys(groups).filter((id) => !covered.has(id) && data.skills[id]?.levels[0]?.blackboard["atk_scale"] !== undefined);
     // Known gaps, kept explicit so new ones show up (reasons in each kit's sources).
     const knownGaps: Record<string, string[]> = {
-      // Heavy and plunging attacks.
-      chr_0016_laevat: ["chr_0016_laevat_plunging_attack_end", "chr_0016_laevat_power_attack"],
       // Finisher: BreakingAttackCalculation, not ATK × key.
       // Floating-stance loop and end: atk_scale in the table but no DamageAction (they only cast the floating shots).
       chr_0034_typhoea: ["chr_0034_typhoea_normal_skill_floating_end", "chr_0034_typhoea_normal_skill_floating_loop"],

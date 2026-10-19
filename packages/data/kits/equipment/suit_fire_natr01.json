@@ -1,0 +1,72 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_fire_natr01",
+  "sources": [
+    "Hot Work 3-piece, rmxlinux Json/SkillData/passive_equipsuit_fninflict_01 (game 1.6): Arts Intensity + phy_spell_up on the stat panel; buff_equipsuit_fninflict_01: when the wearer applies a buff tagged Combustion (abilityEvent 102) it creates buff_equipsuit_fninflict_01_firedamageadd (attribute 51, Heat DMG + fire_dmg_up, `duration` 10 s); Corrosion → _poisedamageadd (attribute 54, Nature DMG + nature_dmg_up, `duration2` 10 s). Both stacking type 2, max 1: a new one refreshes. Values: SkillPatchTable passive_equipsuit_fninflict_01 (the BuffData defaults aren't the set's).",
+    "Not in any log or fixture with 3 pieces yet."
+  ],
+  "buffs": [
+    {
+      "id": "suit_fire_natr01.heat",
+      "label": "Hot Work: Heat DMG up",
+      "target": "self",
+      "duration": "duration",
+      "modifiers": [
+        {
+          "attr": 51,
+          "value": "fire_dmg_up"
+        }
+      ],
+      "gameBuff": "buff_equipsuit_fninflict_01_firedamageadd"
+    },
+    {
+      "id": "suit_fire_natr01.nature",
+      "label": "Hot Work: Nature DMG up",
+      "target": "self",
+      "duration": "duration2",
+      "modifiers": [
+        {
+          "attr": 54,
+          "value": "nature_dmg_up"
+        }
+      ],
+      "gameBuff": "buff_equipsuit_fninflict_01_poisedamageadd"
+    }
+  ],
+  "triggers": [
+    {
+      "id": "suit_fire_natr01.combustion",
+      "on": {
+        "event": "reaction",
+        "statuses": [
+          "combustion"
+        ]
+      },
+      "by": "self",
+      "skill": "passive_equipsuit_fninflict_01",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "suit_fire_natr01.heat"
+        }
+      ]
+    },
+    {
+      "id": "suit_fire_natr01.corrosion",
+      "on": {
+        "event": "reaction",
+        "statuses": [
+          "corrosion"
+        ]
+      },
+      "by": "self",
+      "skill": "passive_equipsuit_fninflict_01",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "suit_fire_natr01.nature"
+        }
+      ]
+    }
+  ]
+}

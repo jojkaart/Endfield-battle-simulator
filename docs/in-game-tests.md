@@ -281,8 +281,8 @@ means it doesn't (data).
 
 **Why:** Twilight is her highest-damage state. The engine holds its timer
 for 1.9 s per combo cast (it reads the data's re-created buff as "add
-time"), and, once her new kit is in, for an enhanced battle skill's pause
-only until the skill ends: a combo that cuts the skill short ends the
+time"), and for an enhanced battle skill's pause only until the skill
+ends (her kit since 2026-10-18): a combo that cuts the skill short ends the
 pause too, as the data says (otherwise up to about 3 s too much Twilight
 each time).
 **How:** time Twilight from her ultimate to its end (the icon, or when
@@ -295,12 +295,16 @@ skill (data, and the engine); if it's about 3 s longer, it doesn't.
 ### 22. Scorching Heart's 20 s (ready, if you have Laevatain)
 
 **Why:** on reaching 4 Melting Flame her damage ignores 20 Heat RES (talent
-level 2) for 20 s. The engine starts the window only when she reaches 4.
-Whether a gain while already at 4 (her empowered cast's own explosion)
-restarts it is unknown: up to 15 s more of the RES ignore per cast.
+level 2) for 20 s. The engine starts the window only when she reaches 4,
+and again when she reaches 4 anew after spending them; a gain while
+already at 4 (her empowered cast's own explosion) doesn't restart it.
+That fits Zero Sanity's in-game extra hit (57,552, no RES ignore), but
+the data only says "on a stack change": up to 20 s more of the RES ignore
+per empowered cast if a capped gain counts.
 **How:** reach 4 Melting Flame, wait 15 s, then cast the empowered battle
 skill. Watch the Scorching Heart icon: does its 20 s start again, or does
-it end about 5 s later as before?
+it end about 5 s later as before? (Or: reach 4, wait 25 s, cast the
+empowered battle skill: does the icon come back?)
 
 ### 23. Laevatain's P1 SP (optional confirmation, if you have Laevatain at P1+)
 

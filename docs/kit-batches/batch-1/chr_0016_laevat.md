@@ -717,3 +717,152 @@ hold as "add time"; the cut-short pause, now modelled as the data says),
 22 (Scorching Heart refresh on a capped gain), 23 (P1 SP, optional), 24
 (partial and finisher absorption, optional), 47 (attack 4's projectile
 travel, low priority).
+
+## Kit (2026-10-18)
+
+### What was written
+
+- `packages/data/kits/operators/chr_0016_laevat.json`: the pass-3 plan.
+  Stack `melting_flame`; buffs `twilight`, `show_weapon` (blocks energy),
+  `pause_ult` (`endsWithCast`), `melting_flame_full` (new, see below),
+  `scorching_heart` (talent-0 values); triggers `ultimate_state`,
+  `ultimate_cooldown` (new), `twilight_paused_by_battle_skill`,
+  `twilight_pause_cut`, `twilight_paused_by_combo`, `final_strike_absorb`
+  (Final Strike or Finisher, only below 4 MF, room-limited, 1 s cooldown),
+  `combo_window`, `scorching_heart`, `melting_flame_spent` (new). Skills as
+  planned: split Final Strike landings with controlled-only SP and poise,
+  attack4's projectiles as their own detached entry, battle-skill hits
+  from the Magma Fragment's file (detached), `teamEnergyFrame` 22 / 13,
+  MF consumed at the extra hit, P1 SP on the extra hits only, combo at 41
+  from its buff with the Combustion / Corrosion `if`, hitless ultimate with
+  `takesControl`, finisher (0.2 / 0.8), dive attack. The legacy
+  `scorching_heart` condition is gone.
+- Equipment: `wpn_sword_0006.json` (Forgeborn: trigger on the wielder's
+  ultimate → attr 17 for 20 s; the `after_ultimate` condition is gone),
+  `wpn_sword_0010.json` (Umbral Torch: anyone's Combustion / Corrosion,
+  0.1 s cooldown, 2 layers), `suit_fire_natr01.json` (Hot Work),
+  `suit_burst01.json` (Tide Surge). None needs a kit owned by another
+  operator.
+- `fixtures/zero-sanity-laevatain-p5.json`: the five `conditions` became
+  `buffs` (`wpn_sword_0006.valid`, `scorching_heart`); all entries match as
+  before.
+- Examples: the explicit `swap` after her ultimate in
+  `si-laevatain.scenario.json` and `gilberta-gravity-field.scenario.json`
+  was dropped (the ultimate takes control now, so the swap was refused).
+  The builds and `laevatain-solo` are unchanged.
+- Tests: `tests/timeline.test.ts` expectations that pinned the old kit
+  (each with a comment): energy at the team-energy frame instead of the
+  cast; the trigger list; Forgeborn's own kit now in the data (the weapon
+  test compares with it removed, and checks the real kit gives the same
+  +210%); the "consumed by the next cast" buff uses battle skills (her
+  ultimate has no hits); `takesControl` comes from the kit; the energy
+  block reads energy at frame 22; the interrupt test uses the empowered
+  extra hit (the Magma Fragment's hits are detached and land, as the
+  spawned entity would); the follow-up gets no SP back from a plain battle
+  skill; the "beside" test counts non-detached hits; the 57,552 test casts
+  the fifth battle skill after Scorching Heart ran out. New describe
+  "Laevatain's kit": Twilight / show_weapon lengths with a pause and a cut
+  pause, the cooldown at show_weapon's end, Scorching Heart's start and no
+  restart on a capped gain, absorption only below 4 MF.
+  `packages/data/test/skillCompile.test.ts`: the KNOWN entries the kit
+  fixed are gone (attack4, both Final Strikes, both team-energy frames,
+  combo events / frames, the phantom ultimate hit); left: `ratio` /
+  `extra_scaling` (test 20), the combo's energy key (usp_1 of the buff =
+  usp_1_display), and new: power_attack `factor` 0.2 / 0.8 (D2: the
+  compiler doesn't read BreakingAttackCalculation's multiplier). The
+  checker now accepts an energy-blocking buff applied by the skill's own
+  cast trigger as the skill's block. `packages/data/test/kits.test.ts`: her
+  finisher and dive attack are covered. `packages/cli/test/cli.test.ts`:
+  `--buff wpn_sword_0006.valid` gives the in-game 20,304 instead of
+  listing the old condition.
+- docs/in-game-tests.md 21 and 22 brought up to date.
+
+### Deviations from the plan
+
+1. **Ultimate cooldown with `set`.** The plan's +16 s at the cast and the
+   same seconds on every pause, hold and cut was a workaround for a missing
+   "start a cooldown" action. With P3-6 the kit does what the data does:
+   `ultimate_cooldown` on `buffEnded show_weapon` → `cooldown set 10`
+   (SetSkillCdAtOnce functionType 1, value 10, on show_weapon's buffEvent
+   2). The pause / hold / cut triggers no longer touch the cooldown. Checked:
+   readyAt = show_weapon's end (480, or later with pauses) + 300.
+2. **Scorching Heart's guard.** The plan's `if: not buffActive
+   scorching_heart` lets a gain capped at 4 restart the window once it has
+   run out: `stackAtLeast` fires on every gain at ≥ 4. The empowered cast's
+   own explosion is such a gain, so every empowered extra hit cast more
+   than 20 s after reaching 4 got the RES ignore (69,063 instead of
+   Zero Sanity's in-game 57,552 in the timeline test, which had waited
+   60 s). The kit now models energy_icon_5, which the data uses as exactly
+   this gate: `melting_flame_full` (no duration) is applied with Scorching
+   Heart when MF reaches 4 and the gate is off, and ended by
+   `melting_flame_spent` (any battle-skill hit that finds MF < 4, i.e. the
+   consuming extra hit). So Scorching Heart starts on reaching 4, again
+   (refresh) on reaching 4 anew after spending, and not on a capped gain.
+   Assumes a capped gain is no stack change (buffEvent 6); Zero Sanity's
+   57,552 fits that; still in-game test 22.
+3. Labels: attack5 / ult_attack4 skills no longer say "Final Strike" (only
+   their `hit_2` is one).
+
+### Verification
+
+- `npm run check`: passes (typecheck, lint, 387 tests, tools).
+- `zmdlogs check fixtures/zmdlogs-40d9a3c1da37.json`, Laevatain: before 17
+  hits, 17 match, 0 mismatch, 0 unquantified, 0 not covered (100% of her
+  damage covered); after the same (the split ult_attack4 landings show as
+  "kit hit hit ×2"). Other operators unchanged.
+- `zero-sanity-laevatain-p5.json` per hit: every entry matches (Forgeborn
+  entries through `buffs: wpn_sword_0006.valid`, the enhanced extra hit
+  through `buffs: scorching_heart`); the timeline's empowered extra hit
+  57,552 and its 7 Combustion ticks of 2,608 still match.
+- Example totals (`efsim simulate`), before → after:
+
+  | Scenario | Before | After | Why |
+  |---|---|---|---|
+  | laevatain-solo | 469,684 | 739,231 | Forgeborn +210% on enhanced attacks for 20 s from the ultimate (its condition was off in the example; now triggered): +253k; Scorching Heart from the second enhanced battle skill (12.3 s): +47k; the phantom 6.08 × ATK ultimate hit gone: −31k; combo at 23.1 s (frame 41) instead of 22.4 s |
+  | liino-laevatain | 413,283 | 567,599 | Forgeborn +180k; Scorching Heart +5k; phantom ultimate hit −31k (Liino unchanged) |
+  | si-laevatain | 683,239 | 850,585 | Forgeborn +212k; phantom ultimate hit −44k (Si unchanged) |
+  | gilberta-gravity-field | 271,088 | 335,498 | Forgeborn +95k; phantom ultimate hit −31k (Gilberta unchanged) |
+
+  Cast times are unchanged in all four.
+- Spot checks (scratch script, Forgeborn and Umbral Torch builds; Hot Work
+  and Tide Surge with 3 pieces): Twilight 0–450, show_weapon 0–480,
+  Forgeborn 0–600 from the ultimate; an enhanced battle skill +115 frames
+  on both, `pause_ult` 73–188; a second one at its frame 33 → 450 + 33 +
+  115; ultimate ready at show_weapon's end + 300; MF reaches 4 at the 4th
+  explosion → Scorching Heart for 600 frames and the gate; the 5th cast 60 s
+  later: no restart, MF 0, gate ended, forced Combustion at its frame 104;
+  at 4 MF a Final Strike leaves the Heat on the enemy (talent: only below
+  4), at 3 MF it absorbs it (MF 4, Scorching Heart starts); in the solo
+  rotation the combo at 21.77 s holds Twilight +57 frames and its hit at
+  frame 41 lands on the forced Combustion; Umbral Torch's layer on her
+  forced Combustion (20 s); Hot Work's Heat buff on Combustion (10 s);
+  Tide Surge's Arts buff on the second Heat stack (15 s).
+
+### Still unverified
+
+- In-game tests 17 (jumps: the lock and the pause length; interim no
+  skip), 18 (her own buffs under her combo's slow-down: the engine shifts
+  Twilight and Scorching Heart by the combo's 12-frame slow-down, the data
+  exempts the caster), 20 (`ratio` vs `extra_scaling`: 46,040 vs 57,552),
+  21 (combo hold as "add time"), 22 (Scorching Heart on a capped gain), 23
+  (P1 SP, optional), 24 (partial and finisher absorption, optional), 47
+  (attack 4's projectile travel).
+- Not exercised by any log or rotation: Umbral Torch's second layer (two
+  Combustions within 20 s need a teammate), the Corrosion halves of Umbral
+  Torch and Hot Work, the finisher's absorption.
+
+### Engine changes this kit would want
+
+1. **`stackAtLeast` only on a change.** The `stacks` event fires on every
+   gain, also one capped at the maximum, so `stackAtLeast` can't tell
+   "reached 4" from "gained at 4" (the data's buffEvent 6 is a stack
+   change). Proposal: the event carries whether the count changed (or the
+   count before), and `stackAtLeast` matches only when it changed and the
+   new count is ≥ atLeast. The kit's `melting_flame_full` /
+   `melting_flame_spent` pair can then go.
+2. **Detached from a frame.** `detached` hits land even when the cast is
+   cut before the entity or buff that deals them exists (the Magma Fragment
+   spawns at frame 4, the combo's hit buff is created at 20). A
+   `detachedAt: <frame>` (dropped if the cast ends before it) would make
+   an ultimate at frames 0–3 of the battle skill cancel the explosion and
+   burn, as in the data. Small: casts are rarely cut that early.

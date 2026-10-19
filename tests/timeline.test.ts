@@ -51,7 +51,7 @@ describe("timeline", () => {
     const r = simulate(data, scenario([{ operator: op, skill: L + "normal_skill" }, { operator: op, skill: L + "normal_skill" }, { operator: op, skill: L + "normal_skill" }]));
     const [a, b, c] = r.casts;
     expect(a?.spAfter).toBe(100);
-    // The first cast's P1 SP return (+20) and regeneration leave less than 100 after the second, so the third waits.
+    // Regeneration (paused after each spend) leaves less than 100 after the second, so the third waits. (The plain cast returns no SP: its P1 `atb` is on the empowered extra hit.)
     expect(b?.spAfter).toBeLessThan(100);
     expect((c?.frame ?? 0) - (b?.frame ?? 0)).toBeGreaterThan(SP.pauseAfterSpendFrames);
   });
@@ -130,15 +130,18 @@ describe("timeline: stacks and arts reactions", () => {
 
 describe("timeline: Zero Sanity's in-game forced Combustion (fixtures/zero-sanity-laevatain-p5.json)", () => {
   const fx = JSON.parse(readFileSync(new URL("../fixtures/zero-sanity-laevatain-p5.json", import.meta.url), "utf8")) as { build: Build };
+  // The fourth cast's explosion reaches 4 Melting Flame and starts Scorching Heart (20 Heat RES ignored for 20 s);
+  // Zero Sanity's values are without it, so the fifth cast waits until it has run out (60 s).
   const r = simulate(data, {
     team: [fx.build],
     target: { enemy: "eny_0051_rodin", level: 90 },
     durationFrames: 30 * 120,
-    rotation: Array.from({ length: 5 }, () => ({ operator: op, skill: L + "normal_skill" })),
+    rotation: [...Array.from({ length: 4 }, () => ({ operator: op, skill: L + "normal_skill" })), { operator: op, skill: L + "normal_skill", at: 30 * 60 }],
     options: { crit: "never" },
   });
 
   it("the fifth battle skill is empowered (57552) and its Combustion ticks for 2608, 7.5 s at P5", () => {
+    expect(r.casts[3]?.frame ?? Infinity).toBeLessThan(30 * 40);
     expect(r.hits.filter((h) => h.hitId === "empowered_extra").map((h) => h.damage)).toEqual([57552]);
     const ticks = r.hits.filter((h) => h.skillId === "reaction:combustionTick");
     expect(ticks.map((h) => h.damage)).toEqual(Array.from({ length: 7 }, () => 2608));
@@ -231,11 +234,19 @@ describe("timeline: ultimate energy and combo windows", () => {
   });
 
   it("a battle skill gives 0.065 energy per natural SP; SP returned by skills is spent first and gives none", () => {
-    const one = simulate(data, noEnergy([{ operator: op, skill: L + "normal_skill" }]));
-    expect(one.casts[0]?.energyAfter).toBeCloseTo(100 * 0.065 * efficiency, 9);
+    // The team energy comes at the kit's teamEnergyFrame (22: the explosion's buff_common_obtain_ultimate_sp), not at the cast.
+    const energyAt = (rotation: RotationAction[], after: number) => {
+      const ctx = createContext(data, noEnergy(rotation));
+      let s = init(ctx);
+      for (const a of rotation) s = apply(ctx, s, a);
+      return advance(ctx, s, (s.casts.at(-1)?.frame ?? NaN) + after).energy[op] ?? 0;
+    };
+    const bs = { operator: op, skill: L + "normal_skill" };
+    expect(simulate(data, noEnergy([bs])).casts[0]?.energyAfter).toBe(0);
+    expect(energyAt([bs], 21)).toBe(0);
+    expect(energyAt([bs], 22)).toBeCloseTo(100 * 0.065 * efficiency, 9);
     // The final strike returns 20 SP (atb); the battle skill after it spends those 20 first.
-    const after = simulate(data, noEnergy([...chain, { operator: op, skill: L + "normal_skill" }]));
-    expect(after.casts.at(-1)?.energyAfter).toBeCloseTo(80 * 0.065 * efficiency, 9);
+    expect(energyAt([...chain, bs], 22)).toBeCloseTo(80 * 0.065 * efficiency, 9);
   });
 
   it("her ultimate blocks her energy gain for 16 s", () => {
@@ -366,12 +377,18 @@ describe("timeline: kit triggers", () => {
     expect(s.reactions.some((e) => e.kind === "burst" && e.frame === cast + 40)).toBe(true);
   });
 
-  it("the loader migrated combo windows and Laevatain's absorption into triggers", () => {
+  it("Laevatain's kit triggers: Twilight, its pauses and cooldown, the absorption, the combo window, Scorching Heart", () => {
+    // Kit order (chr_0016_laevat.json, batch-1 pass-3 plan); the pauses, the cooldown at show_weapon's end and Scorching Heart are triggered now.
     expect(kit.triggers.map((t) => [t.id, t.on.event, t.by])).toEqual([
+      ["ultimate_state", "cast", "self"],
+      ["ultimate_cooldown", "buffEnded", "self"],
+      ["twilight_paused_by_battle_skill", "cast", "self"],
+      ["twilight_pause_cut", "buffEnded", "self"],
+      ["twilight_paused_by_combo", "cast", "self"],
       ["final_strike_absorb", "hit", "controlled"],
       ["combo_window", "reaction", "anyone"],
-      ["twilight_paused_by_battle_skill", "cast", "self"],
-      ["twilight_paused_by_combo", "cast", "self"],
+      ["scorching_heart", "stackAtLeast", "self"],
+      ["melting_flame_spent", "hit", "self"],
     ]);
   });
 });
@@ -385,18 +402,23 @@ describe("timeline: equipment kits act for the wearer", () => {
     triggers: [{ id: `${W}.on_ultimate`, on: { event: "cast", kinds: ["ultimate"] }, by: "self", skill: "sk_wpn_sword_0006", do: [{ kind: "buff", buff: `${W}.after_ultimate` }] }],
     conditions: [],
   };
-  const withKit = (id: string): GameData => ({ ...data, kits: { ...data.kits, equipment: { ...data.kits.equipment, [id]: { ...forgeborn, id } } } });
+  // The data has Forgeborn's own kit now (wpn_sword_0006.json): compare with no kit for it.
+  const { [W]: _real, ...otherKits } = data.kits.equipment;
+  const bare: GameData = { ...data, kits: { ...data.kits, equipment: otherKits } };
+  const withKit = (id: string): GameData => ({ ...bare, kits: { ...bare.kits, equipment: { ...bare.kits.equipment, [id]: { ...forgeborn, id } } } });
   const rot = [{ operator: op, skill: L + "ultimate_skill" }, { operator: op, skill: L + "ult_attack1" }];
   const attack = (d: GameData) => simulate(d, scenario(rot)).hits.find((h) => h.skillId === L + "ult_attack1");
 
   it("a weapon's trigger and buff are its wearer's, with values from the weapon's skill at its level", () => {
     const v = skillValue(data, computeStats(data, build), build, "sk_wpn_sword_0006", "normal_atk_up");
     expect(v).toBeGreaterThan(0);
-    expect(attack(withKit(W))?.zones.damageBonus).toBeCloseTo((attack(data)?.zones.damageBonus ?? NaN) + v, 9);
+    expect(attack(withKit(W))?.zones.damageBonus).toBeCloseTo((attack(bare)?.zones.damageBonus ?? NaN) + v, 9);
+    // The real kit (attribute 17, basic attack DMG) gives the same.
+    expect(attack(data)?.zones.damageBonus).toBeCloseTo((attack(bare)?.zones.damageBonus ?? NaN) + v, 9);
   });
 
   it("a kit of equipment the operator doesn't wear does nothing", () => {
-    expect(attack(withKit("wpn_sword_0001"))?.zones.damageBonus).toBe(attack(data)?.zones.damageBonus);
+    expect(attack(withKit("wpn_sword_0001"))?.zones.damageBonus).toBe(attack(bare)?.zones.damageBonus);
   });
 
   it("what a build wears: its weapon, then its active gear sets", () => {
@@ -443,16 +465,14 @@ describe("timeline: buff lifecycle", () => {
   });
 
   it("a buff consumed by the next cast of a kind acts on that cast's hits only", () => {
-    const link = amp("link", { consumedBy: ["ultimate"], modifiers: [{ zone: "amp", value: 0.5 }] });
-    const d = withKit([onBattle([{ kind: "buff", buff: "link" }])], [link]);
-    const rot = [skill("normal_skill"), skill("ultimate_skill"), skill("ult_attack1")];
-    const r = simulate(d, { ...scenario(rot), startEnergy: { [op]: "full" } });
-    const base = simulate(data, { ...scenario(rot), startEnergy: { [op]: "full" } });
-    const ult = (x: typeof r) => x.hits.find((h) => h.skillId === L + "ultimate_skill")?.zones.amp ?? NaN;
-    // The ultimate's hit has it; the enhanced attack after it doesn't: the cast used it up.
-    expect(ult(r) - ult(base)).toBeCloseTo(0.5, 9);
-    const after = (x: typeof r) => x.hits.find((h) => h.skillId === L + "ult_attack1")?.zones.amp;
-    expect(after(r)).toBe(after(base));
+    // (Her ultimate has no hits, so a battle skill consumes it here.)
+    const link = amp("link", { consumedBy: ["battle"], modifiers: [{ zone: "amp", value: 0.5 }] });
+    const d = withKit([{ id: "t", on: { event: "cast", kinds: ["basic"] }, by: "self", maxCount: 1, do: [{ kind: "buff", buff: "link" }] }], [link]);
+    const rot = [skill("attack1"), skill("normal_skill"), { ...skill("normal_skill"), at: 30 * 8 }];
+    const [r, base] = [simulate(d, scenario(rot)), simulate(data, scenario(rot))];
+    // The first battle skill's hits have it; the second's don't: the first cast used it up.
+    const plainExplosions = ampOf(base, "explosion");
+    expect(ampOf(r, "explosion").map((a, i) => Math.round((a - (plainExplosions[i] ?? 0)) * 10) / 10)).toEqual([0.5, 0]);
   });
 
   it("a team buff with a recipient filter reaches only the members it holds for", () => {
@@ -507,7 +527,11 @@ describe("timeline: buff lifecycle", () => {
     const rot = [skill("attack1"), skill("normal_skill")];
     const { startEnergy: _f, ...sc } = scenario(rot);
     const efficiency = computeStats(data, build).attrs[44]?.total ?? data.attributeDefaults[44] ?? 1;
-    const energy = simulate(d, sc).casts[1]?.energyAfter ?? NaN;
+    // The battle skill's team energy comes at its teamEnergyFrame (22).
+    const ctx = createContext(d, sc);
+    let s = init(ctx);
+    for (const a of rot) s = apply(ctx, s, a);
+    const energy = advance(ctx, s, (s.casts[1]?.frame ?? NaN) + 22).energy[op] ?? NaN;
     expect(energy).toBeCloseTo(100 * 0.065 * (efficiency + 0.5), 9);
     expect(kit.buffs.length).toBeGreaterThan(0);
   });
@@ -624,17 +648,22 @@ describe("timeline: skills", () => {
     const fx = JSON.parse(readFileSync(new URL("../fixtures/zmdlogs-40d9a3c1da37.json", import.meta.url), "utf8")) as { team: Build[] };
     const team = fx.team.filter((b) => b.operator === op || b.operator === g);
     const sc: TimelineScenario = { ...scenario([skill("ultimate_skill")]), team, controlled: g };
-    expect(run(data, sc, 1).controlled).toBe(g);
-    const d = withKit({ skills: kit.skills.map((s) => (s.skillId === L + "ultimate_skill" ? { ...s, takesControl: true } : s)) });
-    expect(run(d, sc, 1).controlled).toBe(op);
+    // Her kit's ultimate takes control (its description); without the flag Gilberta stays controlled.
+    expect(kit.skills.find((s) => s.skillId === L + "ultimate_skill")?.takesControl).toBe(true);
+    expect(run(data, sc, 1).controlled).toBe(op);
+    const d = withKit({ skills: kit.skills.map((s) => (s.skillId === L + "ultimate_skill" ? (({ takesControl: _t, ...rest }) => rest)(s) : s)) });
+    expect(run(d, sc, 1).controlled).toBe(g);
   });
 
   it("a buff can block its owner's energy gain while it lasts", () => {
     const d = withKit({ buffs: [...kit.buffs, { ...state, blocksEnergy: true }], triggers: [...kit.triggers, { id: "b", on: { event: "cast", kinds: ["basic"] }, by: "self", do: [{ kind: "buff", buff: "state" }] }] });
     const { startEnergy: _f, ...sc } = scenario([skill("attack1"), skill("normal_skill"), { ...skill("normal_skill"), at: 30 * 8 }]);
-    const r = simulate(d, sc);
-    expect(r.casts[1]?.energyAfter).toBe(0);
-    expect(r.casts[2]?.energyAfter).toBeGreaterThan(0);
+    // The battle skills' team energy comes at frame 22 of each: the first's inside the 5 s block, the second's after it.
+    const ctx = createContext(d, sc);
+    let s = init(ctx);
+    for (const a of sc.rotation) s = apply(ctx, s, a);
+    expect(s.energy[op] ?? 0).toBe(0);
+    expect(advance(ctx, s, (s.casts[2]?.frame ?? NaN) + 22).energy[op]).toBeGreaterThan(0);
   });
 });
 
@@ -674,10 +703,13 @@ describe("timeline: when the next action may start (SkillData windows, prioritie
   });
 
   it("a higher-priority skill given a time interrupts, cancelling the current skill's hits still to land", () => {
-    // The ultimate (priority 7) at frame 5 of the battle skill: the explosion (frame 22) and its burn never land.
-    const r = simulate(data, { ...scenario([skill("normal_skill"), skill("ultimate_skill", 5)]), startEnergy: { [op]: "full" } });
+    // The ultimate (priority 7) at frame 5 of the empowered battle skill: its extra hit (frame 104) never lands…
+    const sc = { ...scenario([skill("normal_skill"), skill("ultimate_skill", 5)]), startEnergy: { [op]: "full" as const }, startStacks: { [op]: { melting_flame: 4 } } };
+    const r = simulate(data, sc);
     expect(r.casts.map((c) => c.frame)).toEqual([0, 5]);
-    expect(r.hits.filter((h) => h.skillId === L + "normal_skill")).toEqual([]);
+    expect(r.hits.filter((h) => h.hitId === "empowered_extra")).toEqual([]);
+    // …but the Magma Fragment, spawned at frame 4, is on its way (detached): its explosion and burn land.
+    expect(r.hits.filter((h) => h.skillId === L + "normal_skill").map((h) => h.hitId)).toEqual(["explosion", ...Array.from({ length: 10 }, () => "dot")]);
   });
 
   it("swapping doesn't wait for the current action, except during a channel that forbids switching", () => {
@@ -710,8 +742,8 @@ describe("timeline: follow-up casts", () => {
     const r = simulate(d, { ...sc, team, controlled: g });
     expect(r.casts.map((c) => [c.frame, c.skill])).toEqual([[0, L + "normal_skill"], [30, L + "attack1"]]);
     expect(r.hits.some((h) => h.skillId === L + "attack1" && h.frame === 36)).toBe(true);
-    // Free: no SP spent (the explosion at frame 22 returned 20).
-    expect(r.casts[1]?.spAfter).toBe((r.casts[0]?.spAfter ?? NaN) + 20);
+    // Free: no SP spent (and none regenerated yet: regen pauses 1.5 s after the battle skill's spend; its P1 SP return is on the empowered extra hit only).
+    expect(r.casts[1]?.spAfter).toBe(r.casts[0]?.spAfter);
   });
 });
 
@@ -1274,10 +1306,11 @@ describe("timeline: pass-3 gaps (set cooldowns, heal kinds, follow-ups, buffs be
 
   it("a skill cast beside the current action leaves it running: its hits, its lock", () => {
     const ultBeside = (beside: boolean) => withKit({ skills: kit.skills.map((s) => (s.skillId === L + "ultimate_skill" && beside ? { ...s, beside: { potentialAtLeast: 0 } } : s)) });
+    // With 4 Melting Flame the battle skill has its own (not detached) extra hit at 104; the Magma Fragment's hits are detached and land either way.
     const left = (beside: boolean) => {
-      const ctx = createContext(ultBeside(beside), scenario([]));
+      const ctx = createContext(ultBeside(beside), { ...scenario([]), startStacks: { [op]: { melting_flame: 4 } } });
       const s = apply(ctx, apply(ctx, init(ctx), a("normal_skill")), a("ultimate_skill", 10));
-      return { acting: s.acting[op]?.skill, battleHits: s.pending.filter((h) => h.skillId === L + "normal_skill").length };
+      return { acting: s.acting[op]?.skill, battleHits: s.pending.filter((h) => h.skillId === L + "normal_skill" && !h.detached).length };
     };
     expect(left(false)).toMatchObject({ acting: L + "ultimate_skill" });
     const kept = left(true);
@@ -1294,5 +1327,51 @@ describe("timeline: team energy at a skill's frame", () => {
     const s = apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" });
     expect(s.pendingEnergy.length).toBe(1);
     expect(apply(ctx, s, { operator: op, skill: L + "ultimate_skill", at: 10 }).pendingEnergy.length).toBe(0);
+  });
+});
+
+describe("Laevatain's kit: Twilight, its pauses and cooldown; Scorching Heart; absorption", () => {
+  const a = (s: string, at?: number): RotationAction => ({ operator: op, skill: L + s, ...(at !== undefined ? { at } : {}) });
+  const run = (rotation: RotationAction[], frame: number, extra: Partial<TimelineScenario> = {}) => {
+    const ctx = createContext(data, { ...scenario(rotation), durationFrames: 30 * 200, ...extra });
+    let s = init(ctx);
+    for (const x of rotation) s = apply(ctx, s, x);
+    return advance(ctx, s, frame);
+  };
+  const until = (s: ReturnType<typeof run>, id: string) => s.buffs.find((b) => b.id === id)?.expiresAt;
+
+  it("Twilight lasts 15 s, show_weapon 16 s; an enhanced battle skill pauses both 115 frames, given back when it's cut short", () => {
+    const ult = run([a("ultimate_skill")], 30 * 3);
+    expect([until(ult, "twilight"), until(ult, "show_weapon")]).toEqual([450, 480]);
+    const one = run([a("ultimate_skill"), a("normal_skill_during_ult")], 30 * 3);
+    expect([until(one, "twilight"), until(one, "show_weapon")]).toEqual([450 + 115, 480 + 115]);
+    // A second one in the first's window (its frame 33) ends the first pause after 33 frames.
+    const two = run([a("ultimate_skill"), a("normal_skill_during_ult"), a("normal_skill_during_ult")], 30 * 5);
+    expect((two.casts[2]?.frame ?? NaN) - (two.casts[1]?.frame ?? NaN)).toBe(33);
+    expect([until(two, "twilight"), until(two, "show_weapon")]).toEqual([450 + 33 + 115, 480 + 33 + 115]);
+  });
+
+  it("her ultimate's 10 s cooldown starts when show_weapon ends (SetSkillCdAtOnce)", () => {
+    expect(run([a("ultimate_skill")], 30 * 17).readyAt[L + "ultimate_skill"]).toBe(480 + 300);
+  });
+
+  it("Scorching Heart starts on reaching 4 Melting Flame, not again on a gain capped at 4", () => {
+    const four = Array.from({ length: 4 }, () => a("normal_skill"));
+    const s4 = run(four, 30 * 40);
+    const reached = (s4.casts[3]?.frame ?? NaN) + 22;
+    expect(s4.buffs.find((b) => b.id === "scorching_heart")).toMatchObject({ appliedAt: reached, expiresAt: reached + 600 });
+    // The fifth (empowered) cast after it ran out: its explosion's +1 at 4 doesn't restart it; its extra hit consumes all 4.
+    const s5 = run([...four, a("normal_skill", 30 * 60)], 30 * 70);
+    expect(s5.buffs.some((b) => b.id === "scorching_heart" || b.id === "melting_flame_full")).toBe(false);
+    expect(s5.stacks[op]?.["melting_flame"]).toBe(0);
+  });
+
+  it("a Final Strike absorbs Heat only while she has fewer than 4 Melting Flame", () => {
+    const chain4 = ["ultimate_skill", "ult_attack1", "ult_attack2", "ult_attack3", "ult_attack4"].map((s) => a(s));
+    const at3 = run(chain4, 30 * 8, { startStacks: { [op]: { melting_flame: 3 } } });
+    expect(at3.stacks[op]?.["melting_flame"]).toBe(4);
+    expect(at3.enemy.infliction).toBeNull();
+    const at4 = run(chain4, 30 * 8, { startStacks: { [op]: { melting_flame: 4 } } });
+    expect(at4.enemy.infliction).toMatchObject({ element: "fire", stacks: 1 });
   });
 });
