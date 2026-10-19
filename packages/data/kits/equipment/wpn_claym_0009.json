@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_claym_0009",
+  "sources": [
+    "Quencher (WeaponBasicTable wpn_claym_0009): Will and HP% lines are on the stat panel. rmxlinux SkillData sk_wpn_claym_0009: abilityEvent 302 (the wielder deals damage) + CheckDamageDecorateMask checkType 2 mask 2097152 (a Final Strike) → CreateBuff buff_wpn_claym_0009 (ATK + atk_up, `duration` 10 s, stackingType 4: refreshed). Description: \"When the wielder performs a Final Strike on the enemy, the wielder gains ATK +{atk_up} for {duration}s.\""
+  ],
+  "buffs": [
+    {
+      "id": "wpn_claym_0009.atk",
+      "label": "Crusher: Honed into Legion (ATK up)",
+      "target": "self",
+      "gameBuff": "buff_wpn_claym_0009",
+      "duration": "duration",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_claym_0009.on_final_strike",
+      "on": { "event": "hit", "finalStrike": true },
+      "by": "self",
+      "skill": "sk_wpn_claym_0009",
+      "do": [{ "kind": "buff", "buff": "wpn_claym_0009.atk" }]
+    }
+  ]
+}

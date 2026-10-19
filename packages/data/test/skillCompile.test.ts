@@ -9,7 +9,7 @@ import type { KitHit } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill } from "../src/index.ts";
 
 const data = loadGameData();
-const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten"];
+const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0020_meurs"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
   const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
@@ -305,6 +305,9 @@ const KNOWN: string[] = [
   "chr_0035_liino_power_attack/final factor: kit 0.7, data 1",
   // Compiler limitation (D2), kit right: CreateBuff buff_common_obtain_ultimate_sp is in chr_0021_whiten_normal_skill_projhit (launched at 21) on the first-target branch (EntityBB_first_hit), which the compiler leaves undecided.
   "chr_0021_whiten_normal_skill teamEnergy: kit 1@21, data 1@0",
+  // Finisher (BreakingAttackCalculation): multipliers 0.4 (frame 15) and 0.6 (35) of atk_scale, which the compiler doesn't read (D2/D3).
+  "chr_0020_meurs_power_attack/hit factor: kit 0.4, data 1",
+  "chr_0020_meurs_power_attack/hit_2 factor: kit 0.6, data 1",
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {

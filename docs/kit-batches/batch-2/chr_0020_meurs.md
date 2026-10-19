@@ -440,3 +440,160 @@ trigger applying a permanent self buff `{attr: 3, value: {product:
   hit as a placeholder) → gain 1, apply `.atk`; `stackAtLeast` 5 → apply
   `.crit`; `buffEnded .atk` → gain −5, `endBuff .crit`. Loads; not to be
   shipped before G6.
+
+## Kit (2026-10-19)
+
+Written against the engine after batch 2's shared features (S1 jumps, S5
+team energy, S6 gate, V1 `base`, V2 floor/div, B3 shared timers, E1 enemy
+actions, E2 rolled crits).
+
+### Re-analysis of the gaps
+
+| Gap | Now | How |
+|---|---|---|
+| G1 enemy attacks and charges | covered (one half deferred) | scenario `enemyActions`; trigger `counter` on `{event: attacked}`, `by: self`; trigger `combo_window` on `{event: enemyCharge}` → `openCombo`. Still open: the combo's "controlled operator attacked below 40% HP" half (HP, N1, deferred); the listener's abilityEvent 9 branch (one enemy's grab, `buff_eny_0018_lbtough_pre_catch`); which attacks pass CheckDamageDecorateMask checkType 3 (all are assumed to; row 28) |
+| G2 jumps, the skill's own end | covered | SkillData: the unconditional 45 → 255 and InterruptCurSkillAction at 194 are read by the loader (`timing.jumps`, `timing.ends`); the counter is a trigger action `{kind: jump, skill: normal_skill, from: 0, until: 60, to: 60}` (frames 46–59 are unreachable anyway). See K2 |
+| G3 hit base not ATK | covered | P1's strike: `base: {sum: [dmg_base, {product: [{attr: 3}, def_scale]}]}`, `scale: []`, `damageType: none` |
+| G4 floor, attributes with buffs | covered | talent 1: permanent self buff `resilient_defense` on `fightStart`, `{attr: 3, value: rate × floor(Will ÷ 10)}`; DEF is a read attribute, and `{attr: 3}` in P1's base includes it |
+| G5 team energy in parts | covered | `teamEnergy: [{frame: 0, ratio: 0.5}, {frame: 60, ratio: 0.5}]`; the jump 45 → 255 skips the second part, so it needs no condition |
+| G6 crit events | covered | MI Security's trigger `on: {event: hit, crit: true}`; it acts only with `crit: rolled` (or `always`) |
+| Row 8 (exclusive 285) | covered | not attacked, the next action may start 75 frames after the cast (2.5 s) |
+| Æthertech / MI Security layers (B3) | covered | `maxStacks` with the loader's `sharedTimer` from stackingType 8 |
+| Data rows (poise, finisher factors, Knock Down, shockwaves) | hand-written | D3 (compiler leftovers) still open; the finisher factors are new KNOWN entries in skillCompile.test.ts |
+
+New gaps (not implemented; engine and loader code untouched):
+
+- **K1. Weakness and Protection buffs can't be written** (family: buff
+  lifecycle / loader check). B4's check refuses a kit-buff attribute that
+  `buffAttrHasEffect` doesn't list, and `READ_ATTRS`
+  (packages/engine/src/effects.ts) lacks 62 (WeaknessDmgScalar) and 63
+  (ShelterDmgScalar), although `buffCategories` (timeline.ts) reads exactly
+  those to give a buff its Weakness / Protection category for `buffApplied`
+  triggers. Evidence: loading `{attr: 62, value: weak_scale}` fails with
+  "attribute 62 feeds no damage zone and nothing reads it". Fix: add both
+  to `READ_ATTRS` (read by buffCategories). Impact: Catcher's Protection
+  (battle skill) and Weakness (ultimate) have no modifiers, so Eternal
+  Xiranite (`suit_usp02`: team DMG when its wearer applies Amp,
+  Protection, Susceptibility or Weakness) never fires from them when she
+  wears it; no other damage effect (damage taken isn't simulated).
+  Snowshine's Protection (batch 3) has the same need. Interim: the buffs
+  keep their `gameBuff` but have empty modifiers; once fixed, put back
+  `{attr: 63, value: taken_dmg}` and `{attr: 62, value: weak_scale}` (as
+  their notes say).
+- **K2. A rotation step judged before an event-driven jump misses the
+  skill's later end** (family: timing; follow-up of S1 / S6).
+  `earliestStart` binary-searches for the first frame the current action
+  changes, then judges the start plainly from there. For a battle skill
+  cast before the attack, the first change is the counter's jump (at the
+  attack), and the plain judgement from there maps the exclusive frame 285
+  through the jump (255 real frames after the cast for an attack at frame
+  30) instead of seeing the end at 194 (164). Evidence: debug run, attack
+  at frame 30: `earliestStart` for attack1 gives 255 from frame 0 and 164
+  from frame 60 (the test "attacked in frames 0–45" pins the latter).
+  Fix: repeat the search from the frame it found while the action keeps
+  changing before the plain result (call `earliestStart` instead of
+  `startFrom` on the advanced state, bounded by the horizon). Impact: the
+  step after an attacked battle skill starts about 3 s late (in a first
+  draft of the example, attack1 at 8.5 s instead of 5.47 s); higher-priority
+  steps with an explicit `at`, and the battle skill's own recast window,
+  are judged right. Interim: the example uses the recast window after the
+  first counter and gives the ultimate after the second an explicit time.
+- Not new, noted: the counter's TimeDilationAction at frame 60 (layer 1,
+  0.7 s, on Catcher and the attacker) is an entity-layer slow-down, which
+  design.md lists as not modelled; the bash may land about 0.3 s later in
+  the game than here. The enemy's InterruptAction (2 s at the bash, 1 s
+  per ultimate hit) has no effect on scripted enemy actions.
+
+A layer-count predicate (BuffData CheckBuffStackNum) would let MI
+Security's Crit Rate check read the layered buff itself; the counter stack
+it uses instead is exact (the layers share one timer), so it isn't a gap.
+
+### What was written
+
+- `packages/data/kits/operators/chr_0020_meurs.json`: the plan's kit, with
+  the battle skill's bash (frame 83: `atk_scale`, `poise`, 1 Vulnerable,
+  P5's `sp: {if: {buffActive: combo_shield}, then: potential5_atb}`),
+  `teamEnergy` in halves, triggers `resilient_defense` (fightStart),
+  `battle_sp` (30 returned SP, Protection), `counter` (jump), `combo_window`
+  (enemyCharge), `p1_strike` (on battle and ultimate hits, P1+); buffs
+  `protection`, `combo_shield`, `weakness`, `resilient_defense`. The
+  scratch interim `battle_end_unattacked` is gone (jumps do it).
+- Equipment: `wpn_claym_0003` (Industry 0.1: ATK up on a battle-skill hit),
+  `wpn_claym_0009` (Quencher: on a Final Strike), `suit_poise01`
+  (Æthertech: a layered shared-timer buff per Vulnerable, `beforeDamage`,
+  and the extra buff at 4 Vulnerable), `suit_criti01` (MI Security:
+  layered shared-timer ATK per crit, a counter stack, Crit Rate at 5 until
+  the layers end), and sources-only `wpn_claym_0010` (Darhoff 7, stats
+  only) and `suit_stragi01` (AIC Heavy: HP in the panel; the kill heal is
+  N1).
+- `examples/catcher-p5.json` (P5, Quencher 9/9/9, Æthertech ×4 at artifice
+  3) and `examples/catcher-counter.scenario.json` (solo vs Rhodagn; attacks
+  at 1, 12 and 23 s, a charge at 7 s).
+- `tests/kit-catcher.test.ts` (11 tests: both battle-skill paths and their
+  timing, team energy, the counter's range, P5's SP, the combo window, the
+  ultimate's shockwaves and P1 strikes by talent and potential, P1's value
+  with talent 1's DEF, each equipment kit); Catcher added to the compiler
+  comparison (skillCompile.test.ts) with its two finisher factors in
+  KNOWN.
+
+### Deviations from the plan
+
+- Æthertech and MI Security use `maxStacks` with the loader's shared timer
+  (B3) instead of the counter-plus-`stackCount` composite; MI Security
+  keeps a counter only for its max-layers check.
+- Æthertech's trigger is `beforeDamage` (the data creates the Vulnerable
+  before the DamageAction, and the abilityEvent runs inside it), so the
+  bash that applies a Vulnerable already has its layer.
+- Protection and Weakness have no modifiers (K1).
+- The counter's range is `until: 60` (the listener's frames); the skill's
+  own jump at 45 makes it equivalent to 45.
+
+### Verification
+
+- `npm run check`: typecheck, lint, all tests and the tool tests pass.
+- Example `catcher-counter`: 100,366 damage in 25.40 s. Counter bashes at
+  1.77, 13.13 and 25.40 s (each with a P1 strike and a Vulnerable; the
+  second with the combo's Link and P5's SP), the recast at 2.17 s held
+  2.5 s (no attack), combo at 7.77 s after the charge (shield), ultimate at
+  17 s (Weakness, Knock Down, 3 shockwaves, 6 P1 strikes), Æthertech from 1
+  to 4 layers on one timer with its 4-Vulnerable bonus at 25.40 s, Quencher
+  after each Final Strike. Every trigger, buff, stack and jump of the kits
+  fires in the example or in kit-catcher.test.ts (MI Security with crits
+  `always`; Industry 0.1 after a bash).
+- Other examples unchanged (none wears this equipment): arcane-will-solo
+  102,141; estella-solidification 186,537; gilberta-gravity-field 375,390;
+  laevatain-solo 739,231; liino-laevatain 619,381; si-laevatain 1,017,030;
+  typhoeus-gilberta 1,058,494.
+- Log fixtures: none has Catcher. Every committed and pending fixture's
+  `zmdlogs check` output is identical before and after these kits
+  (diffed): the equipment is worn only by operators without kits
+  (Æthertech 3-piece on Ember in pending 7e19489ae503, with 11 / 14 logged
+  damagebuff / attackbuff entries; MI Security on Rossi in 4e5e1390085e and
+  Yvonne in pending abfd4b7478ec; single pieces elsewhere). Logs list the
+  per-layer value only (0.05 on every critsuitatk entry) and no crit-rate
+  zones, so MI Security's layer count and Crit Rate can't be read from
+  them. Ember's kit (batch 3) will make 7e19 check Æthertech.
+- Logs that would check Catcher: as in § Verification (a ZMDLogs battle
+  with Catcher at P1+, talent 2 at level 2, against a boss that attacks and
+  charges: `chr_0020_meurs_normal_skill` bashes, the
+  `buff_chr_0020_meurs_potential_1` strikes per ultimate, the combo after a
+  charge, cast times for the battle skill's two lengths), plus Industry 0.1
+  or Quencher on her, and MI Security on any operator with a kit.
+
+### Open questions and proposed in-game tests
+
+Tests A–D above stand (A asks for Catcher what in-game test 17 settled for
+Laevatain; the engine assumes jumps skip time). New:
+
+- **E. The counter's recast** (ready). Let an enemy hit Catcher's raised
+  shield, then press the battle skill again as soon as the bash lands:
+  does she start a second battle skill about 1–2 s after the hit (the
+  data's window), well before the counter would end (about 4.5 s after
+  it)?
+- **F. Which attacks trigger the counter** (ready). Raise the shield
+  against a ranged or area attack, not only a melee swing: does the bash
+  come every time? (CheckDamageDecorateMask checkType 3, row 28.)
+- **G. Does a dodged attack count?** (with in-game test 53) Cast the battle
+  skill, then dash through the enemy's hit: bash or not?
+
+Ready now, for anyone with Catcher: A, B, C, E and F.

@@ -1,0 +1,7 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_claym_0010",
+  "sources": [
+    "Darhoff 7 (WeaponBasicTable wpn_claym_0010): stats only, all on the stat panel, so this kit declares nothing: wpn_attr_main_low (main attribute +) and rmxlinux SkillData sk_wpn_claym_0010 \"ATK +{atk_up}\" (cardAttributeModifier attr 2, formulaItem 7: flat, 33.6 at skill level 9)."
+  ]
+}
