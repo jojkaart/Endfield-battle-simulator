@@ -9,7 +9,7 @@ import type { KitHit } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill } from "../src/index.ts";
 
 const data = loadGameData();
-const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal"];
+const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
   const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
@@ -316,6 +316,9 @@ const KNOWN: string[] = [
   // The combo's SwitchAction on EntityBB_combo_type / _index (set natively from the event that opened the window) picks one infliction or one physical status;
   // the kit repeats the window's event (element: event, status: event). The compiler lists the inflictions as conditional and doesn't compile the physical ones (D3).
   "chr_0023_antal_combo_skill applies at 21: kit [infliction event], data [], conditionally [infliction fire, infliction cryst, infliction pulse, infliction natural]",
+  // Finisher (BreakingAttackCalculation, mask 132): multipliers 0.2 at frame 13 and 0.8 at 36 of atk_scale; the compiler doesn't read them (batch-2 D3).
+  "chr_0019_karin_power_attack/hit factor: kit 0.2, data 1",
+  "chr_0019_karin_power_attack/hit_2 factor: kit 0.8, data 1",
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {

@@ -1,0 +1,244 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0019_karin",
+  "sources": [
+    "Hits, frames, keys, events and the Final Strike: rmxlinux Json/SkillData chr_0019_karin_* (game 1.6), as compiled by efsim kit-draft; values from SkillPatchTable. Batch-2 report docs/kit-batches/batch-2/chr_0019_karin.md (kit plan and § Kit). Not checked against a log (no fixture has Akekuri).",
+    "Hand-written where the compiler doesn't emit it (batch-2 D3): the per-hit element (DamageAction damageType 0 physical, 2 Heat on the battle skill), stagger (poise; attack4's onlyEnableForMainChar), the finisher's BreakingAttackCalculation multipliers 0.2 / 0.8, the combo's dynamic SP, the hitless ultimate's three SP grants, and the buffs the ultimate creates.",
+    "Talents and potentials: PotentialTalentEffectTable chr_0019_karin_talent_1_1/_2 (skillBbModifier sets the combo's sub_ratio, max_ratio, rate), talent 2 (the ultimate's combo = 1, imbue_scale), CharacterPotentialTable and BuffData buff_chr_0019_karin_potential_1 / _1_1 / _3 / _5 / _5_combo, _talent_2 / _talent_2_combo.",
+    "SP: every ObtainCostAction costType 1 of hers has atbGainMethod 0 (natural SP); the engine counts all kit SP as returned (open item V3), so her SP gives no team energy when spent until V3 (in-game test: report § Kit)."
+  ],
+  "element": "physical",
+  "buffs": [
+    {
+      "id": "positive_feedback",
+      "label": "Positive Feedback (P1: ATK per layer)",
+      "target": "self",
+      "gameBuff": "buff_chr_0019_karin_potential_1_1",
+      "duration": { "key": "duration", "skill": "buff_chr_0019_karin_potential_1" },
+      "maxStacks": { "key": "max_stack", "skill": "buff_chr_0019_karin_potential_1" },
+      "modifiers": [{ "zone": "atk", "value": { "key": "atk_up", "skill": "buff_chr_0019_karin_potential_1" } }],
+      "note": "P1: buff_chr_0019_karin_potential_1 (abilityEvent 142 + CheckObtainAtbType method [0] type [3]: she recovers SP with a skill) creates _potential_1_1: attr 2 formulaItem 6 atk_up (0.1) per layer, duration 10 s, max_stack 5, stackingType 8 (the loader makes it sharedTimer: one timer for all layers, refreshed by each new one; in-game test). Duration 0 below P1 (the source isn't unlocked)."
+    },
+    {
+      "id": "squad_atk",
+      "label": "SQUAD! ON ME! team ATK (P3)",
+      "target": "team",
+      "gameBuff": "buff_chr_0019_karin_potential_3",
+      "endsWithCast": true,
+      "modifiers": [{ "zone": "atk", "value": "atk" }],
+      "note": "buff_chr_0019_karin_potential_3 (attr 2 formulaItem 6 atk; lifeType 1), CreateBuff autoFinishByAction on the team at ultimate frame 0 when potential_3 > 0: lasts while her ultimate does."
+    },
+    {
+      "id": "zone_hold",
+      "label": "Staying in the Zone (while the ultimate lasts)",
+      "target": "self",
+      "gameBuff": "buff_chr_0019_karin_talent_2",
+      "endsWithCast": true,
+      "modifiers": [],
+      "note": "buff_chr_0019_karin_talent_2 (autoFinishByAction, lifeType 1): its end (buffEvent 2) starts the P5 tail, or below P5 ends the Link (trigger zone_end)."
+    },
+    {
+      "id": "zone_link",
+      "label": "Staying in the Zone Link (talent 2)",
+      "target": "team",
+      "duration": "duration",
+      "link": true,
+      "modifiers": [],
+      "note": "buff_chr_0019_karin_talent_2_combo → CreateGlobalBuffAction global_buff_combo_trigger (imbue_scale 0.2, duration 10 from the ultimate's blackboard): one team Link stack (link: true), used and ended by the next battle skill or ultimate of anyone. Whether it is a Link stack (+30% / +20%, added to combo stacks) or a fixed imbue_scale +20%, and whether the 10 s caps P5's tail: in-game test (report U2)."
+    },
+    {
+      "id": "zone_tail",
+      "label": "Tempo of Awareness (P5: Link 5 s past the ultimate)",
+      "target": "self",
+      "gameBuff": "buff_chr_0019_karin_potential_5_combo",
+      "duration": "potential_5_duration",
+      "modifiers": [],
+      "note": "buff_chr_0019_karin_potential_5_combo, duration potential_5_duration (5 at P5; 0 below, so not applied). Its end finishes talent_2_combo (the Link)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_window_staggered",
+      "on": { "event": "staggered" },
+      "by": "anyone",
+      "do": [{ "kind": "openCombo" }],
+      "note": "COMBO TRIGGER: \"When an enemy becomes Staggered or hits a Stagger Node.\" (CharGrowthTable chr_0019_karin_ComboSkill)"
+    },
+    {
+      "id": "combo_window_node",
+      "on": { "event": "staggerNode" },
+      "by": "anyone",
+      "do": [{ "kind": "openCombo" }],
+      "note": "The Stagger Node half of the COMBO TRIGGER (EnemyData poiseKnotPctList; Rhodagn: 0.5)."
+    },
+    {
+      "id": "combo_sp_1",
+      "on": { "event": "cast", "skills": ["chr_0019_karin_combo_skill"] },
+      "by": "self",
+      "delay": 22,
+      "awaited": true,
+      "skill": "chr_0019_karin_combo_skill",
+      "do": [
+        { "kind": "sp", "value": { "product": ["atb", { "min": [{ "sum": [1, { "product": [{ "attr": 41 }, { "div": ["sub_ratio", "rate"] }] }] }, { "sum": [1, "max_ratio"] }] }] } }
+      ],
+      "note": "Combo frame 22 (if a target), before its DamageAction: sub_ratio /= rate (ModifyDynamicBlackboard op 3), atb_up = 1 + INT × sub_ratio (StoreAttributeValue primaryAttributeType 2, useFloor false), max_ratio += 1, atb ×= min(atb_up, max_ratio) (CompareFloat), ObtainCostAction costType 1 atbGainMethod 0 atbSourceType 3. Talent 1 sets sub_ratio 0.01 / 0.015, max_ratio 0.5 / 0.75, rate 10; unlearned sub_ratio and max_ratio are 0, so the factor is 1."
+    },
+    {
+      "id": "combo_sp_2",
+      "on": { "event": "cast", "skills": ["chr_0019_karin_combo_skill"] },
+      "by": "self",
+      "delay": 31,
+      "awaited": true,
+      "skill": "chr_0019_karin_combo_skill",
+      "do": [
+        { "kind": "sp", "value": { "product": ["atb", { "min": [{ "sum": [1, { "product": [{ "attr": 41 }, { "div": ["sub_ratio", "rate"] }] }] }, { "sum": [1, "max_ratio"] }] }] } }
+      ],
+      "note": "Combo frame 31: the second ObtainCostAction uses the same (already scaled) atb."
+    },
+    {
+      "id": "ult_sp_1",
+      "on": { "event": "cast", "skills": ["chr_0019_karin_ultimate_skill"] },
+      "by": "self",
+      "delay": 59,
+      "awaited": true,
+      "skill": "chr_0019_karin_ultimate_skill",
+      "do": [{ "kind": "sp", "value": "atb_1" }],
+      "note": "First Rallying Flare: ObtainCostAction atb_1 (26 at L12) at frame 59 (atbGainMethod 0, atbSourceType 3). The ultimate scales atb_n by its own atb_up, which is 1 (its sub_ratio is never set)."
+    },
+    {
+      "id": "ult_sp_2",
+      "on": { "event": "cast", "skills": ["chr_0019_karin_ultimate_skill"] },
+      "by": "self",
+      "delay": 86,
+      "awaited": true,
+      "skill": "chr_0019_karin_ultimate_skill",
+      "do": [{ "kind": "sp", "value": "atb_2" }],
+      "note": "Second flare: atb_2 (27) at frame 86."
+    },
+    {
+      "id": "ult_sp_3",
+      "on": { "event": "cast", "skills": ["chr_0019_karin_ultimate_skill"] },
+      "by": "self",
+      "delay": 119,
+      "awaited": true,
+      "skill": "chr_0019_karin_ultimate_skill",
+      "do": [{ "kind": "sp", "value": "atb_3" }],
+      "note": "Third flare: atb_3 (27) at frame 119."
+    },
+    {
+      "id": "p1_layer",
+      "on": { "event": "sp", "kinds": ["combo", "ultimate"] },
+      "by": "self",
+      "if": { "potentialAtLeast": 1 },
+      "do": [{ "kind": "buff", "buff": "positive_feedback" }],
+      "note": "abilityEvent 142 + CheckObtainAtbType method [0] (natural) type [3] (skills). Her own skill SP is all combo and ultimate; battle skills' SP in the data is all method 1 (refunds), so kinds leave battle out until the sp event carries the gain method (V3)."
+    },
+    {
+      "id": "ult_p3",
+      "on": { "event": "cast", "skills": ["chr_0019_karin_ultimate_skill"] },
+      "by": "self",
+      "if": { "potentialAtLeast": 3 },
+      "skill": "chr_0019_karin_ultimate_skill",
+      "do": [{ "kind": "buff", "buff": "squad_atk" }],
+      "note": "Ultimate frame 0: CreateBuff buff_chr_0019_karin_potential_3 on the team (CompareFloat potential_3 > 0)."
+    },
+    {
+      "id": "ult_talent2",
+      "on": { "event": "cast", "skills": ["chr_0019_karin_ultimate_skill"] },
+      "by": "self",
+      "delay": 1,
+      "if": { "talentAtLeast": [1, 1] },
+      "skill": "chr_0019_karin_ultimate_skill",
+      "do": [
+        { "kind": "buff", "buff": "zone_hold" },
+        { "kind": "buff", "buff": "zone_link" }
+      ],
+      "note": "Ultimate frame 1: CompareFloat combo ≥ 1 (talent 2 sets combo = 1) → buff_chr_0019_karin_talent_2 and _talent_2_combo."
+    },
+    {
+      "id": "zone_end",
+      "on": { "event": "buffEnded", "buff": "zone_hold" },
+      "by": "self",
+      "skill": "chr_0019_karin_ultimate_skill",
+      "do": [
+        { "kind": "buff", "buff": "zone_tail" },
+        { "kind": "endBuff", "buff": "zone_link", "if": { "not": { "potentialAtLeast": 5 } } }
+      ],
+      "note": "buff_chr_0019_karin_talent_2 buffEvent 2: with buff_chr_0019_karin_potential_5 (P5's permanent marker) start potential_5_combo, else finish talent_2_combo."
+    },
+    {
+      "id": "zone_tail_end",
+      "on": { "event": "buffEnded", "buff": "zone_tail" },
+      "by": "self",
+      "do": [{ "kind": "endBuff", "buff": "zone_link" }],
+      "note": "buff_chr_0019_karin_potential_5_combo buffEvent 2: FinishBuffAction _talent_2_combo."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0019_karin_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [9] }]
+    },
+    {
+      "skillId": "chr_0019_karin_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [8], "events": ["chr_0019_karin_attack2"], "sp": "atb" },
+        { "id": "hit_2", "scale": ["atk_scale_2"], "frames": [16], "events": ["chr_0019_karin_attack2"], "sp": "atb" }
+      ]
+    },
+    {
+      "skillId": "chr_0019_karin_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [10], "sp": "atb" }]
+    },
+    {
+      "skillId": "chr_0019_karin_attack4",
+      "label": "Basic attack 4 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [19, 20], "events": ["chr_0019_karin_attack4"], "finalStrike": false },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [21], "events": ["chr_0019_karin_attack4"], "sp": "atb", "poise": "poise", "poiseControlledOnly": true, "finalStrike": true }
+      ]
+    },
+    {
+      "skillId": "chr_0019_karin_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [13], "factor": 0.2, "events": ["chr_0019_karin_power_attack"] },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [36], "factor": 0.8, "events": ["chr_0019_karin_power_attack"] }
+      ]
+    },
+    {
+      "skillId": "chr_0019_karin_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "sp": "atb" }]
+    },
+    {
+      "skillId": "chr_0019_karin_normal_skill",
+      "label": "Battle skill",
+      "damageType": "battle",
+      "teamEnergy": [{ "frame": 20, "ratio": 1 }],
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "element": "fire", "frames": [20], "poise": "poise", "applies": [{ "kind": "infliction", "element": "fire" }] }]
+    },
+    {
+      "skillId": "chr_0019_karin_combo_skill",
+      "label": "Combo skill",
+      "damageType": "combo",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [22, 31], "energy": "usp", "poise": "poise", "sp": 0 }]
+    },
+    {
+      "skillId": "chr_0019_karin_ultimate_skill",
+      "label": "Ultimate",
+      "damageType": "ultimate",
+      "note": "No DamageAction: three SP grants (cast triggers ult_sp_1–3), P3's team ATK and talent 2's Link (ult_p3, ult_talent2).",
+      "hits": []
+    }
+  ]
+}

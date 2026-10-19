@@ -535,3 +535,177 @@ The two gear sets' combo cooldown ×0.85 needs no kit field once G4 reads
 attr 47 from the panel. Pathfinder's Beacon and Roving MSGR assume full HP
 (N1). Buff durations come from the skills' `duration` (20 s for both
 weapons; the SkillData defaults 15 are overridden by SkillPatchTable).
+
+## Kit (2026-10-19)
+
+### Re-analysis
+
+| Gap | Now | How the kit uses it |
+|---|---|---|
+| G1 Stagger Node | covered (T1) | trigger `combo_window_node`, `on: {event: staggerNode}, by: anyone` |
+| G2 Link from a kit buff | covered (B1) | `zone_link` has `link: true` |
+| G3 natural vs returned SP | open (V3) | interim as proposed: all kit SP is returned (no team energy when spent) |
+| G4 cooldown attributes | covered (S2) | nothing in the kit: attr 47 from Frontiers / Qingbo makes her combo cooldown 230 frames (9 s × 0.85 = 229.5) |
+| G5 "SP recovered" event | covered (T2), without the gain method | P1 is one trigger `p1_layer` (`on: {event: sp, kinds: [combo, ultimate]}`); Frontiers the same (below) |
+| G6 division | covered (V2) | the combo SP reads `{div: [sub_ratio, rate]}` (`rate` is in the combo's SkillData blackboard and set by talent 1); the literal 0.1 is gone |
+| G7 compiler leftovers | open (D3) | hand-written as before: per-hit element, poise, finisher factors, the ultimate's SP, the ultimate's buffs |
+| U3 stackingType 8 | covered (B3) | P1 is a layered buff (`maxStacks` from buff_chr_0019_karin_potential_1, `gameBuff` buff_chr_0019_karin_potential_1_1, so the loader sets `sharedTimer`); the counter stack and the `p1_out` trigger are gone |
+| O8 battle-skill team energy | migrated | `teamEnergy: [{frame: 20, ratio: 1}]` (kit-draft gives the same) |
+| U1 floor | no change | `floor` exists now, but the data says `useFloor: false`; kept continuous (≤ 0.07 SP per thrust) |
+
+Her SkillData has no JumpToAction or InterruptCurSkillAction, and she
+doesn't react to enemy attacks or charges, so jumps, `enemyActions` and
+dodges don't apply to her.
+
+New, a precision limit of T2 that belongs with V3: the `sp` event carries
+no gain method. P1 and Frontiers check atbGainMethod 0 (natural) and
+atbSourceType 3 (skills). A survey of every costType-1 ObtainCostAction in
+SkillData / BuffData: every battle-skill SP grant is a refund (method 1:
+both Endministrators, Laevatain, Catcher, Typhoeus, Liino; Estella's is
+method 1, type 0), and natural skill SP comes only from combos and
+ultimates (Akekuri's combo and ultimate, Antal's combo projectile,
+Camille's combo and ultimate; Laevatain's on-kill buff). So `kinds: [combo,
+ultimate]` is exact for every grant in the data except Liino's combo refund
+(buff_chr_0035_liino_combo_atb_return, method 1), which a Liino wearing
+Frontiers would wrongly count. The fix, with V3: the `sp` event carries the
+grant's kind (natural / returned), the trigger filters on it (`natural:
+true`), and `battle` goes back into the kinds.
+
+### What was written
+
+- `packages/data/kits/operators/chr_0019_karin.json`: the plan's kit with
+  the changes above; `gameBuff` on the P1, P3, talent-2 and P5 buffs;
+  `awaited` on the five SP cast triggers (they are the skills' own
+  ObtainCostActions).
+- `packages/data/kits/equipment/`: `wpn_sword_0009` (Wave Tide),
+  `wpn_lance_0003` (Pathfinder's Beacon), `wpn_lance_0008` (Aggeloslayer),
+  `suit_atb01` (Frontiers, now with its trigger), `suit_combo_cd01`
+  (Qingbo), `suit_agi01` (Roving MSGR). Opero 77 (`wpn_lance_0009`) needs no
+  file: stat panel only (`buff_wpn_lance_0009` is created by nothing).
+- `examples/akekuri-frontiers.json` (P5, talents 2 / 1, Wave Tide 9/9/9,
+  four Frontiers pieces) and `examples/akekuri-laevatain.scenario.json`
+  (with `laevatain-forgeborn.json`, 45 s): her ultimate, Laevatain's battle
+  skill on the Link and P3, her battle skill cutting the ultimate, chains
+  until a Final Strike passes the Stagger Node (36.2 s) and opens her combo.
+- `tests/kit-akekuri.test.ts` (14 tests): the flares (26 / 27 / 27 SP at
+  frames 59 / 86 / 119, three P1 layers ending together at 419, Frontiers
+  on the team refreshed to 569); P3 and the Link on a teammate's battle
+  skill (×1.3; nothing at P2 or with talent 2 unlearned); P3 and the Link
+  holder ending at 233, or when a basic attack cuts the ultimate at 129,
+  with the P5 tail to 279 and the Link's own 10 s cap at 301; her own battle
+  skill cutting the ultimate uses the Link (P5 and P4); a teammate 4 s after
+  the cut gets the Link at P5, not at P4; the example's combo (window from
+  the Stagger Node, SP 7.5 × 1.75 per thrust at INT 730, two P1 layers on
+  one timer, Wave Tide +33.6% for 20 s, 10 energy × efficiency, cooldown
+  230 frames); a full stagger opening the combo (Ram: 60 stagger HP, no
+  nodes); P0 with no talents (80 SP, no buffs); talent 1 unlearned (7.5 SP
+  per thrust); Qingbo (a layer of battle / combo / ultimate DMG +20%, 15 s,
+  max 2; cooldown ×0.85, 9 s without the set); Frontiers not triggered by
+  basic-attack SP; Roving MSGR (Physical DMG +20% from frame 0); the lances
+  on Estella (Aggeloslayer: ATK +33.6% from her battle-skill hit for 20 s,
+  none before; Pathfinder's Beacon: +42% from frame 0).
+- `packages/data/test/skillCompile.test.ts`: her kit in `OPERATORS`; KNOWN
+  gains exactly the two finisher factors the report predicted
+  (`chr_0019_karin_power_attack/hit` 0.2, `/hit_2` 0.8:
+  BreakingAttackCalculation's multiplier, D3).
+
+### Deviations from the plan
+
+- P1: a layered buff with a shared timer instead of a counter plus a timer
+  buff, and one `sp` trigger instead of a gain next to each SP grant (the
+  plan's own "with G5 / U3" notes).
+- Frontiers and P1 use `kinds: [combo, ultimate]`, not `[battle, combo,
+  ultimate]` with `natural: true` (no `natural` filter; above).
+- The example wears Frontiers, not Qingbo: it shows the `sp` trigger and
+  the team buff; Qingbo is in the tests.
+- Found while testing, not in the plan: her own battle skill cutting her
+  ultimate uses talent 2's Link (the engine judges Link at the cast, before
+  the ultimate's end ends `zone_hold`, and with it the Link below P5). In
+  the game the Link buff (buff_common_affixes_combo_trigger) is also read
+  at the cast; which comes first is unknown (test 2 below). Below P5 it's
+  the only way she gets her own Link when she cuts the ultimate with her
+  battle skill, so it matters (+30% on a 3.2× hit).
+
+### Verification
+
+- `npm run check`: passes (468 tests).
+- Log fixtures: no committed or pending fixture has Akekuri. All 11
+  (8 committed, 3 pending) checked before and after with `zmdlogs check`
+  and `zmdlogs reactions`: output identical. Frontiers (3 pieces) is worn
+  by Camille in zmdlogs-40d9a3c1da37 and zmdlogs-4e5e1390085e and by Xaihi
+  in zmdlogs-dbaee23b801d (Xaihi has 2 pieces in pending
+  zmdlogs-e82d45c46040); neither wearer has a kit, so the trigger isn't
+  checked there, and the logged buff_equipsuit_combosuit_01_adddamage
+  (0.16) on teammates' hits already matched through the logged buffs. By
+  eye in zmdlogs-4e5e1390085e, the buff appears on the team's hits right
+  after Camille's combo (hits 7.1–8.0 s → from 8.3 s; 29.3–30.8 s → 31.0 s)
+  and ultimate (50.9–52.3 s → 52.4 s), not after her battle skill (46.9 s),
+  and lasts about 15 s: consistent with `kinds: [combo, ultimate]`.
+- `simulate examples/akekuri-laevatain.scenario.json`: 211,470 (Akekuri
+  63,783, Laevatain 147,688), last hit at 39.8 s. The flares refill 80 SP;
+  Laevatain's battle skill at 2.5 s lands under ×1.3 (Link) and ATK +10%
+  (P3); her battle skill at 4.30 s cuts the ultimate and inflicts Heat
+  (absorbed by Laevatain at 8.2 s); the Stagger Node opens the combo at
+  36.2 s, cast at 38.0 s. The team is SP-starved between 11 and 19 s (two
+  operators, battle skills only).
+- Other examples: totals unchanged (none wears this equipment).
+- Spot checks: every trigger (`combo_window_staggered`, `combo_window_node`,
+  `combo_sp_1/2`, `ult_sp_1/2/3`, `p1_layer`, `ult_p3`, `ult_talent2`,
+  `zone_end`, `zone_tail_end`), every buff and every equipment trigger fire
+  in the tests above.
+
+### Logs that would check her
+
+As in § Verification above: a ZMDLogs Rhodagn fight with Akekuri at P5
+(skills 12, talents 2 / 1) whose teammates cast battle skills and
+ultimates during and just after her ultimate (the Link as
+buff_common_affixes_skillimbue, P3's ATK), her combos at the Stagger Node
+and at full staggers (combo hits 1.8, her ATK under P1 layers and Wave
+Tide), with Frontiers or Qingbo worn (the +16% / +20% and the 7.65 s combo
+interval). A lance user's log (Estella, Liino) with Aggeloslayer or
+Pathfinder's Beacon checks those two.
+
+### Open
+
+- V3 (natural vs returned SP, and the `sp` event's gain method).
+- D3 (the compiler leftovers above).
+- U2 (Link value and length), U3 (one timer or separate), U4 (how long P3
+  lasts without a cut), U6 (nodes after a full stagger: the engine re-arms
+  them when the bar refills), and the Link order above.
+
+### Proposed in-game tests
+
+All by eye or on a phone video; no frame counts, no SP values.
+
+1. **Her Link on a teammate** (U2): no combo for 15 s, then her ultimate
+   (talent 2 learned) and a teammate's battle skill during it; compare its
+   damage number with the same battle skill without her ultimate (below P3,
+   or allow for P3's ATK +10%). About ×1.30: a Link stack; ×1.20: a fixed
+   `imbue_scale`. Once more with a combo just before her ultimate: ×1.45 if
+   it adds to the combo's stack.
+2. **Her own battle skill cutting her ultimate** (Link order): cast her
+   ultimate and, as soon as allowed, her battle skill; compare its damage
+   number with one cast with no Link and no ultimate. ×1.30: it used her
+   Link. Then a teammate's battle skill right after: no Link expected if
+   hers used it.
+3. **The P5 tail and the 10 s cap**: cast her ultimate and cut it at once
+   with a basic attack; 4 s later a teammate's battle skill: higher damage
+   (Link) at P5, none at P4. Then cast her ultimate and do nothing (it
+   ends after about 7.8 s); a teammate's battle skill 11 s after the cast:
+   Link or not (the kit says not: capped at 10 s).
+4. **Positive Feedback timer** (U3, P1+): two combos about 8 s apart, then
+   wait: does the ATK buff icon (4 layers) disappear all at once about 10 s
+   after the second combo, or drop to 2 layers about 8 s earlier?
+5. **Combo at a Stagger Node** (G1): against Rhodagn, battle skills and
+   chains only; does her combo prompt light up when the stagger bar passes
+   half, and again at the full stagger?
+6. **Combo cooldown with Frontiers or Qingbo** (S2): phone video of her
+   combo icon with three pieces and without: about 7.7 s vs 9 s.
+7. **Frontiers on a refund** (the `kinds` interim): Laevatain wearing
+   Frontiers, no combo or ultimate: does the team get the Frontiers DMG
+   icon after her battle skill returns SP? Expected: no.
+8. **SP from her ultimate and team energy** (V3): watch a teammate's
+   ultimate gauge when a battle skill spends SP that came from her flares,
+   and when it spends regenerated SP: does the gauge rise both times?
+9. **P3's length** (U4): cast her ultimate and do nothing; time the team
+   ATK buff icon (about 7.8 s expected).

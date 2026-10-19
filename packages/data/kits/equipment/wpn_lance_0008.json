@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_lance_0008",
+  "sources": [
+    "Aggeloslayer, skill 3: rmxlinux Json/SkillData sk_wpn_lance_0008 (game 1.6): passiveEventActions abilityEvent 302 (the wielder deals damage) + CheckDamageDecorateMask checkType 2 mask 256 (a battle-skill hit) → CreateBuff buff_wpn_lance_0008 (attr 2 formulaItem 6 atk_up; stackingType 4: refreshed). SkillPatchTable L1–L9 atk_up 0.12–0.336, duration 20. Reactions and bursts the battle skill causes aren't its hits (reaction: false). Skills 1–2 (Will, Arts DMG) are stat-panel modifiers.",
+    "Not in any log or fixture yet."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_lance_0008.atk",
+      "label": "ATK (Aggeloslayer)",
+      "target": "self",
+      "duration": "duration",
+      "gameBuff": "buff_wpn_lance_0008",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_lance_0008.battle_hit",
+      "on": { "event": "hit", "kinds": ["battle"], "reaction": false },
+      "by": "self",
+      "skill": "sk_wpn_lance_0008",
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0008.atk" }]
+    }
+  ]
+}
