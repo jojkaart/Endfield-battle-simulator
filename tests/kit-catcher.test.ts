@@ -154,3 +154,18 @@ describe("Catcher's equipment", () => {
     expect(run(scenario({ gear: MI }), chain, 220).buffs.some((b) => b.id.startsWith("suit_criti01."))).toBe(false);
   });
 });
+
+describe("Catcher: what the batch-2 merge added", () => {
+  it("a step judged before the attack sees the counter path's end (jump 10 → 60, end at 194: real 144)", () => {
+    const sc = scenario({}, attackAt(10 / 30));
+    const ctx = createContext(data, sc);
+    const cast = apply(ctx, init(ctx), op("normal_skill"));
+    expect(earliestStart(ctx, cast, op("attack1"))).toEqual({ frame: (cast.casts.at(-1)?.frame ?? NaN) + 194 - 50 });
+  });
+
+  it("her Protection and Weakness are buffs of those categories (attributes 63, 62)", () => {
+    const kit = data.kits.operators[C];
+    expect(kit?.buffs.find((b) => b.id === "protection")?.modifiers.map((m) => m.attr)).toEqual([63]);
+    expect(kit?.buffs.find((b) => b.id === "weakness")?.modifiers.map((m) => m.attr)).toEqual([62]);
+  });
+});

@@ -98,6 +98,9 @@ export const READ_ATTRS: ReadonlySet<AttrType> = new Set([
   Attr.Agi,
   Attr.Wisd,
   Attr.Will,
+  // Read by the timeline's buff categories (Weakness, Protection) for buffApplied triggers; no damage effect (enemy damage isn't simulated).
+  Attr.WeaknessDmgScalar,
+  Attr.ShelterDmgScalar,
 ]);
 
 /** Whether a kit buff's attribute does something: it feeds a damage zone, or the engine reads it. */

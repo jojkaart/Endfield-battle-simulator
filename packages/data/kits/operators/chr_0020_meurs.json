@@ -13,9 +13,9 @@
       "label": "Rigid Interdiction: Protection (self and nearby operators)",
       "target": "team",
       "duration": 2,
-      "modifiers": [],
+      "modifiers": [{ "attr": 63, "value": { "key": "taken_dmg", "skill": "chr_0020_meurs_normal_skill" } }],
       "gameBuff": "buff_chr_0020_meurs_reduce_damage",
-      "note": "AuraAction [0–83] of buff_chr_0020_meurs_reduce_damage (ShelterAction taken_dmg), cut at frame 45 by the jump to 255 when not attacked, then buff_chr_0020_meurs_reduce_damage_remain 0.5 s: 1.5 + 0.5 s (on the counter path a little longer, plus buff_chr_0014_aurora_reduce_damage_remain 1 s at frame 60). Damage taken isn't simulated. Its modifier {attr: 63, value: taken_dmg} would make it a Protection-category buff for buffApplied triggers (Eternal Xiranite, suit_usp02), but the loader refuses attribute 63 (B4: not in READ_ATTRS although buffCategories reads it), so it has none: a gap in the report's § Kit."
+      "note": "AuraAction [0–83] of buff_chr_0020_meurs_reduce_damage (ShelterAction taken_dmg), cut at frame 45 by the jump to 255 when not attacked, then buff_chr_0020_meurs_reduce_damage_remain 0.5 s: 1.5 + 0.5 s (on the counter path a little longer, plus buff_chr_0014_aurora_reduce_damage_remain 1 s at frame 60). Damage taken isn't simulated. Its modifier (attribute 63, ShelterAction taken_dmg) makes it a Protection-category buff for buffApplied triggers (Eternal Xiranite, suit_usp02); damage taken isn't simulated, so it has no other effect."
     },
     {
       "id": "combo_shield",
@@ -31,9 +31,9 @@
       "label": "Textbook Assault: Weakness",
       "target": "enemy",
       "duration": { "key": "weak_duration", "skill": "chr_0020_meurs_ultimate_skill" },
-      "modifiers": [],
+      "modifiers": [{ "attr": 62, "value": { "key": "weak_scale", "skill": "chr_0020_meurs_ultimate_skill" } }],
       "gameBuff": "buff_chr_0020_meurs_ult_weak",
-      "note": "buff_chr_0020_meurs_ult_weak (WeakAction weak_scale, weak_duration 8 s), created at the ultimate's first hit. Lowers only the enemy's damage. Its modifier {attr: 62, value: weak_scale} would make it a Weakness-category buff for buffApplied triggers, but the loader refuses attribute 62 (as for protection), so it has none."
+      "note": "buff_chr_0020_meurs_ult_weak (WeakAction weak_scale, weak_duration 8 s), created at the ultimate's first hit. Lowers only the enemy's damage. Its modifier (attribute 62, weak_scale) makes it a Weakness-category buff for buffApplied triggers; the enemy's damage isn't simulated, so it has no other effect."
     },
     {
       "id": "resilient_defense",

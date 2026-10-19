@@ -1542,7 +1542,8 @@ export function earliestStart(ctx: TimelineContext, state: TimelineState, action
     if (same(advance(ctx, state, mid))) lo = mid;
     else hi = mid;
   }
-  return startFrom(ctx, advance(ctx, state, hi), action);
+  // Judged again from there: the action that follows may end sooner too (Catcher's counter jumps, then ends at 194). Each round moves forward.
+  return earliestStart(ctx, advance(ctx, state, hi), action);
 }
 
 function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationAction): { frame: number } | { error: string } {
