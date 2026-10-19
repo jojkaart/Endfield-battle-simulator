@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/scenario.schema.json",
-  "description": "Si (Team Position 01, so her battle skill inflicts Cryo) with Laevatain vs Rhodagn, both ultimates charged. Si's ultimate gives the team Cryo and Heat Amp; her battle skill inflicts Cryo, Laevatain's enhanced sequence 3 adds Heat, and the Combustion that consumes the Cryo opens both combo windows (Si's: Cryo consumed; Laevatain's: Combustion). Si's build is the one in fixtures/zmdlogs-40d9a3c1da37.json with all attribute nodes; Jade Vessel's conditions are on.",
+  "description": "Si (Team Position 01, so her battle skill inflicts Cryo) with Laevatain vs Rhodagn, both ultimates charged. Si's ultimate gives the team Cryo and Heat Amp; her battle skill inflicts Cryo, Laevatain's enhanced sequence 3 adds Heat, and the Combustion that consumes the Cryo opens both combo windows (Si's: Cryo consumed; Laevatain's: Combustion). Si's build is the one in fixtures/zmdlogs-40d9a3c1da37.json with all attribute nodes; Jade Vessel's and the Type 50 Yinglung set's effects come from their kits.",
   "team": [
     "si-jade-vessel.json",
     "laevatain-forgeborn.json"
@@ -12,12 +12,6 @@
   "startEnergy": {
     "chr_0036_jsspsi": "full",
     "chr_0016_laevat": "full"
-  },
-  "conditions": {
-    "chr_0036_jsspsi": [
-      "wpn_claym_0018.enemy_vulnerable",
-      "wpn_claym_0018.combo_after_battle_skill"
-    ]
   },
   "durationSeconds": 20,
   "crit": "expected",

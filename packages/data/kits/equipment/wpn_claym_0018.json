@@ -2,37 +2,84 @@
   "$schema": "../../../../schemas/equipment-kit.schema.json",
   "equipment": "wpn_claym_0018",
   "sources": [
-    "rmxlinux Json/SkillData/sk_wpn_claym_0018: when buff_chr_0036_jsspsi_normal_skill_hitstop (Si's battle-skill Immobilization) is applied, it creates buff_wpn_claym_0018_enemyvul on the target (dmg_taken_up, defender-side NormalCalcZone, `duration` 30 s) and buff_wpn_claym_0018_normal_skill_trigger (max_stack 1); the wearer's next combo cast turns that into buff_wpn_claym_0018_normal_skill_comboimbue_atk, + combo_dmg_up × stacks to damage with decorate mask 8192 (combo) in NormalCalcZone. Values: SkillPatchTable sk_wpn_claym_0018.",
-    "enemy_vulnerable: ZMDLogs logs it (buff_wpn_claym_0018_enemyvul, vuln_taken 0.18 at skill level 8, 0.21 at 9); Si's ultimate hits in fixtures/zmdlogs-40d9a3c1da37.json match exactly with it as DMG taken.",
-    "combo_after_battle_skill: not in logs. Si's 10 combo slashes match exactly with +1.0 DMG bonus in fixtures/zmdlogs-40d9a3c1da37.json (skill level 8: 0.6, plus 2 Type 50 Yinglung stacks of 0.2) and +1.3 in fixtures/zmdlogs-0eef2474a26f.json (level 9: 0.7, plus 3 stacks), both found by hand (see Si's kit). The set's part isn't a condition yet: gear sets aren't a condition source."
+    "rmxlinux Json/SkillData/sk_wpn_claym_0018 passiveEventActions. On the wielder applying a status tagged Immobilization (ability event 102, CheckBuffIdInContext checkType 1 on tag −1065936627: Si's buff_chr_0036_jsspsi_normal_skill_hitstop; buff_chr_0027_tangtang_ultskill_debuff has the same tag): the target gets buff_wpn_claym_0018_enemyvul (dmg_taken_up, defender-side NormalCalcZone, `duration` 30 s), and the wielder gets buff_wpn_claym_0018_normal_skill_trigger (duration_combo 20 s, max_stack 1). The latter also comes when the wielder casts an ultimate (ability event 30, CheckSkillType [7]). The wielder's next combo cast (ability event 30, [6]) turns it into buff_wpn_claym_0018_normal_skill_comboimbue_atk: + combo_dmg_up × stacks to that cast's hits with decorate mask 8192 (CheckSkillCastId), and the trigger ends. Values: SkillPatchTable sk_wpn_claym_0018 (level 1 → 9: dmg_taken_up 0.075 → 0.21, combo_dmg_up 0.25 → 0.70). Description: \"The two effects apply separately and do not stack with themselves.\"",
+    "enemy_vul: ZMDLogs logs it (buff_wpn_claym_0018_enemyvul, vuln_taken 0.18 at skill level 8, 0.21 at 9); Si's ultimate hits in fixtures/zmdlogs-40d9a3c1da37.json match exactly with it as DMG taken.",
+    "combo_ready: not in logs. Si's 10 combo slashes match exactly with +1.0 DMG bonus in fixtures/zmdlogs-40d9a3c1da37.json (skill level 8: 0.6, plus 2 Type 50 Yinglung stacks of 0.2) and +1.3 in fixtures/zmdlogs-0eef2474a26f.json (level 9: 0.7, plus 3 stacks), both found by hand (see Si's kit)."
   ],
-  "conditions": [
+  "buffs": [
     {
-      "id": "enemy_vulnerable",
-      "label": "Jade Vessel: target hit by Si's battle skill takes more DMG (30 s)",
-      "source": {
-        "kind": "weaponSkill",
-        "skill": 2,
-        "key": "dmg_taken_up"
-      },
-      "effect": {
-        "kind": "zone",
-        "zone": "damageTaken"
-      }
+      "id": "wpn_claym_0018.enemy_vul",
+      "label": "Jade Vessel: DMG taken after Immobilization",
+      "target": "enemy",
+      "gameBuff": "buff_wpn_claym_0018_enemyvul",
+      "duration": "duration",
+      "modifiers": [
+        {
+          "zone": "damageTaken",
+          "value": "dmg_taken_up"
+        }
+      ],
+      "note": "BuffData stackingType 11, max 1, priority key dmg_taken_up: a reapplication by the same wielder replaces it. Two wielders' copies would add up here (batch-1 B9, minor)."
     },
     {
-      "id": "combo_after_battle_skill",
-      "label": "Jade Vessel: combo skill after Si's battle skill deals more DMG",
-      "source": {
-        "kind": "weaponSkill",
-        "skill": 2,
-        "key": "combo_dmg_up"
+      "id": "wpn_claym_0018.combo_ready",
+      "label": "Jade Vessel: next combo DMG",
+      "target": "self",
+      "gameBuff": "buff_wpn_claym_0018_normal_skill_trigger",
+      "duration": "duration_combo",
+      "consumedBy": [
+        "combo"
+      ],
+      "modifiers": [
+        {
+          "zone": "damageBonus",
+          "value": "combo_dmg_up",
+          "skillType": "combo"
+        }
+      ],
+      "note": "max_stack 1, so a plain buff; consumed by the wielder's next combo cast, whose hits it then acts on (buff_wpn_claym_0018_normal_skill_comboimbue_atk)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_claym_0018.on_immobilize",
+      "on": {
+        "event": "control",
+        "statuses": [
+          "immobilization"
+        ]
       },
-      "effect": {
-        "kind": "zone",
-        "zone": "damageBonus",
-        "skillType": "combo"
-      }
+      "by": "self",
+      "skill": "sk_wpn_claym_0018",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "wpn_claym_0018.enemy_vul"
+        },
+        {
+          "kind": "buff",
+          "buff": "wpn_claym_0018.combo_ready"
+        }
+      ],
+      "note": "Ability event 102 (the wielder applies a buff), CheckBuffIdInContext checkType 1 on the Immobilization tag. After the hit's damage: the applying hit itself doesn't get the DMG taken."
+    },
+    {
+      "id": "wpn_claym_0018.on_ultimate",
+      "on": {
+        "event": "cast",
+        "kinds": [
+          "ultimate"
+        ]
+      },
+      "by": "self",
+      "skill": "sk_wpn_claym_0018",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "wpn_claym_0018.combo_ready"
+        }
+      ],
+      "note": "Ability event 30, CheckSkillType [7] (ultimate). In-game test 41."
     }
   ]
 }

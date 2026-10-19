@@ -7,6 +7,7 @@ import {
   computeReaction,
   effectiveKit,
   hitAvailable,
+  kitBuffModifiers,
   kitHitEntries,
   type Build,
   computeStats,
@@ -142,16 +143,35 @@ function findHits(data: GameData, build: Build, event: string): [{ skillId: stri
 /** Above this many boundary buffs, only none or all are tried. */
 const MAX_BOUNDARY_SUBSET = 4;
 
-/** Subsets of the buffs starting or ending at the hit (grouped by buff, since a buff's effects go together). */
+/** Effects with repeats of the same buff, zone, element and value kept once. */
+function collapseRepeats(effects: readonly LogEffect[]): LogEffect[] {
+  const seen = new Set<string>();
+  return effects.filter((e) => {
+    const k = `${e.buff}|${e.zone}|${e.element}|${e.value}`;
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+}
+
+/**
+ * Subsets of the buffs starting or ending at the hit (grouped by buff, since
+ * a buff's effects go together). A buff listed twice with the same effects
+ * may be one instance ending as its refresh starts (zmdlogs-b7b3762d5da8
+ * t=5688: the Vulnerable susceptibilities), so each subset with such repeats
+ * is also tried with them counted once.
+ */
 export function boundarySubsets(effects: readonly LogEffect[]): { effects: LogEffect[]; label: string | null }[] {
   const buffs = [...new Set(effects.map((e) => e.buff))];
   if (buffs.length === 0) return [{ effects: [], label: null }];
-  const pick = (chosen: string[]) => ({
-    effects: effects.filter((e) => chosen.includes(e.buff)),
-    label: chosen.length === 0 ? null : chosen.length === buffs.length ? "boundary buffs applied" : `boundary buffs applied: ${chosen.join(", ")}`,
-  });
-  if (buffs.length > MAX_BOUNDARY_SUBSET) return [pick([]), pick(buffs)];
-  return Array.from({ length: 1 << buffs.length }, (_, mask) => pick(buffs.filter((_, i) => mask & (1 << i))));
+  const pick = (chosen: string[]) => {
+    const picked = effects.filter((e) => chosen.includes(e.buff));
+    const label = chosen.length === 0 ? null : chosen.length === buffs.length ? "boundary buffs applied" : `boundary buffs applied: ${chosen.join(", ")}`;
+    const once = collapseRepeats(picked);
+    return once.length < picked.length ? [{ effects: picked, label }, { effects: once, label: `${label} (refreshed instances once)` }] : [{ effects: picked, label }];
+  };
+  if (buffs.length > MAX_BOUNDARY_SUBSET) return [...pick([]), ...pick(buffs)];
+  return Array.from({ length: 1 << buffs.length }, (_, mask) => pick(buffs.filter((_, i) => mask & (1 << i)))).flat();
 }
 
 /**
@@ -204,6 +224,30 @@ function candidates(hit: LogHit, panels: ReadonlyMap<string, { panel: StatPanel 
   return out;
 }
 
+/**
+ * ZMDLogs doesn't log the buffs a cast consumes and then carries on its own
+ * hits (KitBuff.consumedBy: Jade Vessel's buff_wpn_claym_0018_normal_skill_comboimbue_atk,
+ * Type 50 Yinglung's buff_equipsuit_atk_02_addcombodamage_buff), so for a
+ * hit of a kind such buffs act on, every combination of them is tried: each
+ * absent or with 1 up to its maximum layers. The first option is none.
+ */
+function unloggedCastBuffs(data: GameData, build: Build, panel: StatPanel, kind: SkillType | "none"): { label: string | null; modifiers: Modifier[] }[] {
+  const defs = (effectiveKit(data, build)?.buffs ?? []).filter((b) => kind !== "none" && b.consumedBy?.includes(kind));
+  let out: { label: string | null; modifiers: Modifier[] }[] = [{ label: null, modifiers: [] }];
+  for (const def of defs) {
+    const layers: { n: number; modifiers: Modifier[]; total: number }[] = [];
+    for (let n = 1; n <= 8; n++) {
+      const modifiers = kitBuffModifiers(data, build, panel, def.id, n);
+      const total = modifiers.reduce((sum, m) => sum + m.value, 0);
+      // Past its maximum, more layers change nothing.
+      if (modifiers.length === 0 || (layers.length && total === (layers.at(-1) as { total: number }).total)) break;
+      layers.push({ n, modifiers, total });
+    }
+    out = out.flatMap((o) => [o, ...layers.map((l) => ({ label: [o.label, `${def.id}${l.n > 1 ? ` ×${l.n}` : ""}`].filter((x) => x).join(", "), modifiers: [...o.modifiers, ...l.modifiers] }))]);
+  }
+  return out.map((o) => (o.label ? { ...o, label: `unlogged ${o.label}` } : o));
+}
+
 export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
   const panels = new Map(fx.team.map((b) => [b.operator, { build: b, panel: computeStats(data, b) }]));
   const target = { enemy: fx.enemy.id, level: fx.enemy.level };
@@ -226,18 +270,21 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
             .filter(([s, h]) => hitAvailable(data, member.build, member.panel, s.skillId, h, { team: fx.team }))
             .flatMap(([s, h]) =>
               // A hit whose conditions or extra scale depend on what the log doesn't record (inflictions, stacks): try both outcomes;
-              // one whose values read the count of the event behind it (Si's combo): try counts 1-4.
-              (h.extraScale?.length || h.if ? [false, true] : [false]).flatMap((assume) =>
-                (JSON.stringify(h).includes('"eventCount"') ? [1, 2, 3, 4] : [undefined]).flatMap((eventCount) => {
-                  try {
-                    const situation = { team: fx.team, ...(eventCount !== undefined ? { eventCount } : {}) };
-                    const r = computeHit(data, member.build, member.panel, target, s, h, { ...options(h.reaction?.kind ?? h.damageType), situation, assumeUnknown: assume });
-                    const label = [found.length > 1 ? `kit hit ${h.id}` : null, assume ? "situational parts assumed" : null, eventCount !== undefined ? `event count ${eventCount}` : null].filter((x) => x).join(", ");
-                    return [{ label: label || null, r }];
-                  } catch {
-                    return []; // the hit doesn't happen under this assumption
-                  }
-                }),
+              // one whose values read the count of the event behind it (Si's combo): try counts 1-4; buffs its cast would carry unlogged: try them.
+              unloggedCastBuffs(data, member.build, member.panel, h.damageType).flatMap((unlogged) =>
+                (h.extraScale?.length || h.if ? [false, true] : [false]).flatMap((assume) =>
+                  (JSON.stringify(h).includes('"eventCount"') ? [1, 2, 3, 4] : [undefined]).flatMap((eventCount) => {
+                    try {
+                      const situation = { team: fx.team, ...(eventCount !== undefined ? { eventCount } : {}) };
+                      const base = options(h.reaction?.kind ?? h.damageType);
+                      const r = computeHit(data, member.build, member.panel, target, s, h, { ...base, modifiers: [...base.modifiers, ...unlogged.modifiers], situation, assumeUnknown: assume });
+                      const label = [found.length > 1 ? `kit hit ${h.id}` : null, assume ? "situational parts assumed" : null, eventCount !== undefined ? `event count ${eventCount}` : null, unlogged.label].filter((x) => x).join(", ");
+                      return [{ label: label || null, r }];
+                    } catch {
+                      return []; // the hit doesn't happen under this assumption
+                    }
+                  }),
+                ),
               ),
             );
       for (const { label, r } of results) {

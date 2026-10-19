@@ -1,0 +1,49 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_atk02",
+  "sources": [
+    "Type 50 Yinglung, 3 pieces: EquipSuitTable suit_atk02 → passive_equipsuit_atk_02 (equipCnt 3); SkillPatchTable atk_up 0.15 (in the panel), dmg_up 0.2, max_stack 3. Description: \"Wearer's ATK +15%. When any operator in the team casts a battle skill, the wearer gains 1 stack of Yinglung's Edge that gives DMG +20% to the wearer's next combo skill. Yinglung's Edge can stack 3 time(s).\"",
+    "rmxlinux Json/BuffData: buff_equipsuit_atk_02 is an AuraAction on the team → buff_equipsuit_atk_02_aruadetect (ability event 30, CheckSkillType [2]: a battle skill cast) → buff_equipsuit_atk_02_addcombodamage on the wearer (stackingType 2, max max_stack, no duration). The wearer's next combo cast ([6]) turns the stacks into buff_equipsuit_atk_02_addcombodamage_buff: DMG + dmg_up × stacks (NormalCalcZone, decorate mask 8192, CheckSkillCastId: that cast only), and clears them.",
+    "Not logged by ZMDLogs. Si's combo slashes match with 2 stacks in fixtures/zmdlogs-40d9a3c1da37.json (Si's and Camille's battle skills before the combo) and 3 stacks in fixtures/zmdlogs-0eef2474a26f.json, with Jade Vessel's combo bonus (see Si's kit)."
+  ],
+  "buffs": [
+    {
+      "id": "suit_atk02.edge",
+      "label": "Yinglung's Edge",
+      "target": "self",
+      "gameBuff": "buff_equipsuit_atk_02_addcombodamage",
+      "maxStacks": "max_stack",
+      "consumedBy": [
+        "combo"
+      ],
+      "modifiers": [
+        {
+          "zone": "damageBonus",
+          "value": "dmg_up",
+          "skillType": "combo"
+        }
+      ],
+      "note": "Layered: one layer per team battle-skill cast, up to max_stack (3), no duration; the wearer's next combo cast consumes every layer and they act on its hits (dmg_up each)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "suit_atk02.on_battle_skill",
+      "on": {
+        "event": "cast",
+        "kinds": [
+          "battle"
+        ]
+      },
+      "by": "anyone",
+      "skill": "passive_equipsuit_atk_02",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "suit_atk02.edge"
+        }
+      ],
+      "note": "Any team member's battle-skill cast. Battle-skill sub-skills (Si's Initial and Final Stroke, normalSkillSubType 1) count here too: whether CheckSkillType [2] sees them is open (in-game test 29)."
+    }
+  ]
+}

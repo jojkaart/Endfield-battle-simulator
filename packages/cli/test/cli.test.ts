@@ -66,6 +66,22 @@ describe("log check: boundary buffs", () => {
   it("falls back to none or all above four buffs", () => {
     expect(boundarySubsets(["a", "b", "c", "d", "e"].map((b) => e(b, "atk")))).toHaveLength(2);
   });
+  it("also counts a buff listed twice with the same effects once (an instance ending as its refresh starts)", () => {
+    const subsets = boundarySubsets([e("a", "atk"), e("a", "atk")]);
+    expect(subsets.map((s) => [s.effects.length, s.label])).toEqual([
+      [0, null],
+      [2, "boundary buffs applied"],
+      [1, "boundary buffs applied (refreshed instances once)"],
+    ]);
+  });
+});
+
+describe("calc with a count-dependent hit", () => {
+  it("shows Si's combo final hit at one consumed stack (+1 at P5)", () => {
+    const text = calc(data, readBuild(join(ROOT, "examples/si-jade-vessel.json")), options);
+    expect(text).toMatch(/Combo final hit\s+value 6\.325/);
+    expect(text).toContain("shown at a count of 1");
+  });
 });
 
 describe("kit census", () => {

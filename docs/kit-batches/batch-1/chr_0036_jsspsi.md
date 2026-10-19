@@ -809,3 +809,181 @@ Without the patches the loader rejects the plan:
   on the enemy's clock, so this sets its length under teammates'
   ultimates.
 - **14:** optional confirmation of the slot-0 element.
+
+## Kit (2026-10-18)
+
+Batch 1, phase 5. Written from the pass-3 plan, with the pass-3 engine
+features (empty `scale`, Final Stroke's battle group, cast-speed delays,
+freezes after the damage).
+
+### What was written
+
+- `packages/data/kits/operators/chr_0036_jsspsi.json`, the full kit:
+  - buffs `artful_intent` (enemy, records `ink_damage_rate`), `inksoul`
+    (no duration), `ultimate_amp`, `combo_p2_atk` (P2, n = eventCount +
+    potential5) and `talent_haste` (talent 1 values; 0 s while not
+    learned);
+  - triggers `combo_window`, `ultimate_effects` (amp and the slot-0 combo
+    cooldown by talent 0's coolDown, at frame 62, detached), `combo_p2`,
+    `initial_stroke` (+8), `final_stroke` (+12), `artful_intent_end` (the
+    two Fixed DMG bursts by Inksoul presence, then the Inksoul ends) and
+    `inksoul_haste`;
+  - skills: the basic attacks (attack5 with `sp`, `poise`,
+    `poiseControlledOnly`), the four finisher landings with `factor`, the
+    dive with `sp`, the battle skill (`available`, `teamEnergyFrame: 15`,
+    `poise`, Artful Intent before the damage, slot-0 Heat / Cryo, then
+    Immobilization), Initial and Final Stroke (hitless, `available`), the
+    combo (one `final` hit with `scaleValue`) and the ultimate (one
+    `slash` entry ×8 and `final`, both entity keys). Every
+    `durationFrames` and the legacy `conditions` are gone.
+- `packages/data/kits/equipment/wpn_claym_0018.json`: buffs
+  `wpn_claym_0018.enemy_vul` and `.combo_ready` (`consumedBy` combo),
+  triggers on Immobilization (`control`) and on the wielder's ultimate.
+  The two legacy conditions are gone.
+- `packages/data/kits/equipment/suit_atk02.json` (new): `suit_atk02.edge`
+  (layered, `max_stack`, `consumedBy` combo), on anyone's battle-skill
+  cast.
+- `examples/si-laevatain.scenario.json`: its two `wpn_claym_0018.*`
+  conditions are dropped.
+- Tooling, so the logs can check the kit:
+  - `zmdlogs check` (packages/cli/src/logcheck.ts) also tries the hitter's
+    kit buffs that a cast consumes (`consumedBy` its kind, 0 to max
+    layers), which ZMDLogs never logs, and counts a boundary buff listed
+    twice with the same effects once (an instance ending as its refresh
+    starts);
+  - `efsim calc` / `compare` show hits that read `eventCount` at a count of
+    1 (they threw before), with a note;
+  - `simulate` names control statuses in its arts table.
+- Tests: the KNOWN list in packages/data/test/skillCompile.test.ts (Si's
+  five lines replaced by six, below), its helper now matches a
+  `scaleValue`-only hit by its first key; two cli tests (refreshed
+  boundary instances; calc with Si's count-dependent hit).
+- docs/kit-unique.md (where Artful Intent lives) and in-game test 37 (the
+  engine's expectation for Jade Vessel's debuff is a flat 30 s).
+
+KNOWN changes, each with its reason:
+- `power_attack/hit1–4 factor: kit 0.07 / 0.1 / 0.13 / 0.7, data 1`: the
+  compiler doesn't read BreakingAttackCalculation's `multiplier` (D2). The
+  old line (landings at 3, 12, 21 without a kit hit) is gone.
+- `normal_skill teamEnergyFrame: kit 15, data 0`: both infliction branches
+  create the energy buff at 15; the compiler doesn't merge exhaustive
+  branches (D2).
+- `combo_skill/final scale: kit {sum…}, data (…)`: the same expression
+  with `EntityBB_combo_count` = eventCount (+ potential5); the test
+  compares key products only. The three old `final_*` lines are gone.
+- The old `normal_skill applies at 15` line is gone: the kit now has both
+  branches.
+
+### Deviations from the plan
+
+- None in the kit's mechanics. The plan's triggers that read no plain
+  keys (`initial_stroke`, `final_stroke`, `inksoul_haste`) have no
+  `skill`; equipment trigger IDs carry the `<equipment>.` prefix.
+- The log checker changes above weren't in the plan. Without them the
+  combo hits (now mapped, as the plan asks, so they are detached) are 22
+  mismatches across two fixtures, and one ultimate slash in
+  zmdlogs-b7b3762d5da8 is another.
+- `si-laevatain.scenario.json` keeps its rotation (no strokes), so its
+  Artful Intent doesn't end inside the 20 s and there's no burst in it.
+
+### Verification
+
+`npm run check` passes (typecheck, lint, 380 + 8 tests).
+
+Log coverage, `zmdlogs check` (Si only; the other operators' lines are
+unchanged):
+
+| Fixture | Before: match / mismatch / unmodelled / uncovered (covered) | After |
+|---|---|---|
+| zmdlogs-0eef2474a26f | 5 / 0 / 3 / 12 (3%) | 5 / 0 / 15 / 0 (100%) |
+| zmdlogs-40d9a3c1da37 | 3 / 0 / 0 / 21 (1%) | 23 / 0 / 1 / 0 (100%) |
+| zmdlogs-b7b3762d5da8 | 1 / 0 / 0 / 20 (1%) | 21 / 0 / 0 / 0 (100%) |
+| zmdlogs-bdf223db8e49 | 3 / 0 / 12 / 12 (8%) | 3 / 0 / 24 / 0 (100%) |
+
+- 40d9a3c1da37: the 10 combo slashes match with Jade Vessel's bonus
+  (level 8) and 2 Yinglung stacks, the final hit with event count 3 (+1
+  at P5) and a crit; all 9 ultimate hits match.
+- b7b3762d5da8 (P1): the slashes match with Jade Vessel (level 4) and 3
+  stacks, the final hit with event count 4. The slash at t=5688 now
+  matches with its refreshed boundary buffs counted once.
+- The rest is "unmodelled": hits under Corrosion that match no level
+  (0eef2474a26f, bdf223db8e49; G7's time dilation, test 4) and the bursts
+  (Fixed DMG isn't judged from one logged hit). The bursts' rule was
+  checked by hand in pass 2 (uncapped 301679 / 432652 / 530319).
+- fixtures/pending/zmdlogs-e82d45c46040: Si's hits are now mapped and are
+  all ×1.139 off, the factor already listed for that fixture (something
+  unlogged), so it stays pending.
+
+Example, `simulate examples/si-laevatain.scenario.json`: 683,239 →
+793,930 (Si 283,466 → 313,809; Laevatain 399,773 → 480,120). Why:
+- the rotation runs 1.2 s earlier, since the ultimate's lock now comes
+  from the data (64 frames) instead of `durationFrames` 214;
+- Jade Vessel's DMG taken is an enemy debuff from the battle-skill hit
+  on, so Laevatain's hits get +0.18 too. Si's first five ultimate slashes
+  and her battle-skill hit lose it (4,243 → 3,596; 8,839 → 7,491);
+- the combo slashes gain a Yinglung stack and P2's ATK (9,330 → 10,801);
+  the final hit is unchanged in multiplier (6.325).
+
+Spot check (Si P5 with Laevatain; each mechanic seen at least once):
+- the battle skill inflicts Cryo with Si in slot 0, Immobilization 1.5 s,
+  Artful Intent from its own hit;
+- Combustion on the Cryo opens the combo window, and the final hit is
+  6.325 × at one consumed stack;
+- Initial Stroke costs 15 SP; Final Stroke ends Artful Intent at +12, the
+  Inksoul burst lands 13 frames later, then the Haste (30%) shortens the
+  next ultimate's frames (first slash at 48 instead of 63; the amp still
+  covers all 8);
+- the ultimate's talent cut lets the combo come back 6.8 s after the
+  first (cooldown 13 s); with both talents at 0 that combo can't be cast;
+- Artful Intent left to expire bursts through the mark 14 frames after
+  21.5 s, = 0.2 × every hit in it (75,790);
+- Jade Vessel's debuff lasts 30 s flat after the battle-skill hit.
+
+Engine problems found (packages/engine/src; not changed here):
+1. **A `consumedBy` buff acts before it is consumed.** `buffModifiers`
+   (buffs.ts) applies a buff with `consumedBy` and `cast === undefined`
+   to every hit it reaches. In the game the waiting buff
+   (normal_skill_trigger, addcombodamage) has no damage modifier; only
+   the consumed form does, and only on its cast (CheckSkillCastId). So a
+   battle skill cast during Si's combo adds its Yinglung stack to the
+   combo's remaining hits (spot check: final hit 101,180 → 112,779).
+   Fix: skip such buffs in `buffModifiers` (and `buffAttr`), and let
+   `kitBuffModifiers` (triggers.ts) build them as consumed, so `calc
+   --buff` and the log checker still see them.
+2. **Status ticks and buff expiries run ahead of delayed trigger
+   actions.** In `advance` (timeline.ts) the tick and expiry branches
+   compare only with the next buff tick and hit, not with the next
+   pending action (`due`) or energy grant. A Combustion tick after Final
+   Stroke's frame 12 is processed before the `endBuff`, so Artful Intent
+   records it (spot check: 5 ticks after the end, burst 15,660 instead of
+   13,608). Fix: compute `due` first and add `due.frame` (and the grant's)
+   to the `later` lists of both branches (ticks still first at equal
+   frames). Every delayed cast trigger has the same problem (Si's amp,
+   Laevatain's, Typhoeus's and Liino's follow-ups).
+3. Optional, depends on in-game test 37: enemy buffs applied while the
+   enemy is frozen aren't stretched by the freeze (Jade Vessel's debuff,
+   added by the `control` trigger, lasts a flat 30 s; Artful Intent,
+   added before the damage, gets 21.5 s). If the icon lasts 31–31.5 s,
+   start such buffs' timers when the freeze ends.
+4. Minor: `computeKit` and `kitBuffModifiers` throw on `eventCount`
+   without a count. The CLI passes 1 to `computeKit` now; `calc --buff
+   combo_p2_atk` still fails.
+
+### Still unverified
+
+- **Test 10:** the highest or latest count when several consumptions
+  open the window (the logs fit the highest: 3 + 1 in 40d9a3c1da37, 4 at
+  P1 in b7b3762d5da8).
+- **Test 19:** what Haste speeds up (the engine speeds up hits, windows
+  and delayed actions).
+- **Test 29:** whether the strokes count as battle skills (they do here:
+  up to 2 extra Yinglung stacks per Si cycle, and Link spent on Initial
+  Stroke).
+- **Test 37:** Artful Intent and Jade Vessel's debuff under Immobilization,
+  and on control-immune enemies (`target.controlImmune`).
+- **Test 41:** Jade Vessel's combo bonus after the ultimate alone.
+- **Test 18:** whether time stops freeze Artful Intent's clock.
+- **Test 14:** optional, the slot-0 element.
+- *(claims)* the burst lands 13 frames after the end through the Inksoul
+  (20 at distance 2, not modelled) and 14 through the mark; the P2 buff
+  and the talent cut are at their data frames, neither logged.
