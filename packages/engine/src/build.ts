@@ -12,8 +12,8 @@ export interface GearPiece {
 export interface WeaponBuild {
   readonly id: string;
   readonly level: number;
-  /** Levels of the weapon's three skills (1–9 for the stat skills). */
-  readonly skillLevels: readonly [number, number, number];
+  /** Levels of the weapon's skills in order (three; two for 3-star weapons; 1–9 for the stat skills). */
+  readonly skillLevels: readonly number[];
 }
 
 export interface Build {

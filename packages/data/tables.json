@@ -11,6 +11,7 @@
     "EnemyTemplateDisplayInfoTable",
     "EquipSuitTable",
     "EquipTable",
+    "GlobalConst",
     "I18nTextTable_EN",
     "ItemTable",
     "PotentialTalentEffectTable",

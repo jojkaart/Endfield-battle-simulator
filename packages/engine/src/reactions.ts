@@ -94,6 +94,8 @@ const PHYSICAL_EVENT_KINDS: Readonly<Record<string, ReactionKind>> = {
   buff_physical_airborne: "lift",
   buff_physical_knockdown: "knockdown",
   buff_physical_do_crushed: "crush",
+  // Logs name Crush's hits after the status buff (the Endministrator's log 7e19489ae503).
+  buff_physical_crushed: "crush",
   buff_physical_do_fracture: "breach",
   buff_common_cryst_triggered_physical_break: "shatter",
 };

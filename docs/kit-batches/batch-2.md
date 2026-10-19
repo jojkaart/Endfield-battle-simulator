@@ -47,6 +47,11 @@ virtual character that holds their talents and potentials, not playable.
   attacked" effects fire then: Catcher's counter-bash, combo trigger and
   P5 SP, Fluorite's talent 2 (and in batch 3 Snowshine, Ember, Purrchena).
   Real boss patterns can come per enemy later.
+- **Perfect dodges** (2026-10-19): they can only be done against an enemy
+  attack, and they freeze the battle's time except some timers such as
+  skill cooldowns. The simulator runs with and without them, and with a
+  chance that a dodge succeeds, to simulate a less skilled player (rolled
+  with the same seed as crits, so many runs show its effect on the spread).
 - **Crits are rolled, and the spread is reported.** Damage with crits is
   variable, so the simulator needs both a single battle with rolled crits
   (crit-triggered effects such as MI Security's fire on real crits) and the
@@ -58,7 +63,7 @@ Report references are `operator Gn`.
 
 | ID | Feature | Needed by |
 |---|---|---|
-| E1 | Enemy attacks from the scenario: an `attacked` event (whom, when), also an enemy charging a skill | Catcher G1, Fluorite G5 |
+| E1 | Enemy attacks from the scenario: an `attacked` event (whom, when), also an enemy charging a skill; a dodge action possible only against an attack, and a perfect dodge's time freeze (owner, 2026-10-19: it freezes the battle but not some timers, such as skill cooldowns, as the engine's time stops do) | Catcher G1, Fluorite G5, every operator's dodge |
 | E2 | Rolled crits with a seed, crit events for triggers, and many runs for the damage's mean and spread | Catcher G6 (MI Security) |
 | T1 | A Stagger Node event (the enemy's `staggerNodes`) | Akekuri G1 |
 | T2 | An "SP recovered" event | Akekuri G5 (Frontiers) |

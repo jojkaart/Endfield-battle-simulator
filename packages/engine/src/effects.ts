@@ -81,6 +81,27 @@ const ATTR_ZONES = new Map<AttrType, Mapping>([
   ]),
 ]);
 
+/**
+ * Attributes a kit buff may carry that don't act on hits directly: the
+ * engine reads them where the game does (Haste 92, Ultimate Gain Efficiency
+ * 44). Anything else would load and do nothing (ATK 2 is the `atk` zone).
+ */
+export const READ_ATTRS: ReadonlySet<AttrType> = new Set([
+  Attr.KeywordSpeedUpScalar,
+  Attr.UltimateSpGainScalar,
+  // Read by `attr` values and `attrAtLeast` (a buff's main attribute doesn't raise ATK through the attribute bonus: not modelled).
+  Attr.Def,
+  Attr.Str,
+  Attr.Agi,
+  Attr.Wisd,
+  Attr.Will,
+]);
+
+/** Whether a kit buff's attribute does something: it feeds a damage zone, or the engine reads it. */
+export function buffAttrHasEffect(attr: AttrType): boolean {
+  return ATTR_ZONES.has(attr) || READ_ATTRS.has(attr);
+}
+
 /** The modifier an attribute value amounts to, or null when the attribute doesn't act on hits directly. */
 export function attrModifier(attr: AttrType, value: number, source: string): Modifier | null {
   const m = ATTR_ZONES.get(attr);

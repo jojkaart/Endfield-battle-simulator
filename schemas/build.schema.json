@@ -34,7 +34,7 @@
           "properties": {
             "id": { "type": "string" },
             "level": { "type": "integer", "minimum": 1 },
-            "skillLevels": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "minItems": 3, "maxItems": 3 }
+            "skillLevels": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "minItems": 1, "maxItems": 3, "description": "One level per weapon skill, in order (3-star weapons have two)." }
           }
         }
       ]

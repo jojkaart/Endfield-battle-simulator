@@ -11,7 +11,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { isBuffFileListed, readBuffFile } from "./buffData.ts";
-import { ELEMENTS, predicateRefs, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
+import { buffAttrHasEffect, ELEMENTS, predicateRefs, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
@@ -53,6 +53,8 @@ type RawTrigger = Omit<KitTrigger, "do"> & { note?: string; do: (Exclude<KitTrig
 
 interface RawKit {
   operator: string;
+  /** The same kit under other operator IDs (the Endministrator's two): skill IDs and log keys renamed. */
+  variants?: { operator: string; skills?: Record<string, string> }[];
   element?: Element;
   stacks?: StackDef[];
   buffs?: RawBuff[];
@@ -185,6 +187,7 @@ function kitChecker(scope: KitScope) {
     for (const v of [b.duration, b.maxStacks, b.every, b.records?.rate, ...b.modifiers.map((m) => m.value)]) if (v !== undefined) checkValue(v, skillId, `${where}: buff ${b.id}`);
     if (b.records && b.target !== "enemy") throw new Error(`${where}: buff ${b.id}: only an enemy buff records the damage its target takes`);
     for (const m of b.modifiers) if ((m.zone === undefined) === (m.attr === undefined)) throw new Error(`${where}: buff ${b.id}: each modifier has a zone or an attribute`);
+    for (const m of b.modifiers) if (m.attr !== undefined && !buffAttrHasEffect(m.attr)) throw new Error(`${where}: buff ${b.id}: attribute ${m.attr} feeds no damage zone and nothing reads it (ATK is the atk zone)`);
     if (b.recipients && b.target !== "team") throw new Error(`${where}: buff ${b.id}: only team buffs have recipients`);
     // Recipient filters judge the recipient; its own stacks and buffs aren't the kit's, so they aren't checked here.
   };
@@ -284,6 +287,7 @@ function kitChecker(scope: KitScope) {
     if (t.beforeDamage && !(STATUS_EVENTS as readonly string[]).includes(t.on.event)) throw new Error(`${where}: only status-event triggers can act before their hit's damage`);
     if (t.maxPerCast !== undefined && !(t.maxPerCast >= 1)) throw new Error(`${where}: maxPerCast must be at least 1`);
     if (t.detached && !(t.delay && t.on.event === "cast")) throw new Error(`${where}: only a delayed cast trigger can be detached from its cast`);
+    if (t.awaited && !(t.delay && t.on.event === "cast" && !t.detached)) throw new Error(`${where}: only a delayed cast trigger that belongs to its cast can be awaited`);
     if (t.if) checkPredicate(t.if, where);
     if (t.cooldown !== undefined) checkValue(t.cooldown, skillId, `${where} cooldown`);
     for (const a of t.do) {
@@ -306,6 +310,7 @@ function kitChecker(scope: KitScope) {
           if (!b) throw new Error(`${where}: unknown buff ${a.buff}`);
           if (a.kind === "buff") checkBuff(b, skillId, where);
           if (a.kind === "buff" && a.to && b.target !== "team") throw new Error(`${where}: buff ${a.buff} goes to the event's subject, so it must target the team`);
+          if (a.kind === "buff" && a.layers !== undefined) checkValue(a.layers, skillId, `${where} buff layers`);
           break;
         }
         case "extendBuff":
@@ -513,6 +518,24 @@ function loadEquipmentKit(data: KitData, file: string, kit: RawEquipmentKit): Eq
   };
 }
 
+/**
+ * A kit under another operator ID: every string naming the operator's skills
+ * or log keys (`<operator>_…`) is renamed to the other ID's, after the
+ * explicit `skills` renames; game-buff IDs (`buff_…`, shared by both) stay.
+ */
+function variantOf(kit: RawKit, variant: { operator: string; skills?: Record<string, string> }): RawKit {
+  const from = `${kit.operator}_`;
+  const to = `${variant.operator}_`;
+  const rename = (x: unknown): unknown => {
+    if (typeof x === "string") return variant.skills?.[x] ?? (x.startsWith(from) ? to + x.slice(from.length) : x);
+    if (Array.isArray(x)) return x.map(rename);
+    if (x && typeof x === "object") return Object.fromEntries(Object.entries(x).map(([k, v]) => [k, k === "note" || k === "label" ? v : rename(v)]));
+    return x;
+  };
+  const { variants: _variants, ...rest } = kit;
+  return { ...(rename(rest) as RawKit), operator: variant.operator };
+}
+
 export function loadKits(data: KitData): Kits {
   const v = validator();
   if (!v.kit) throw new Error("kit schema not registered");
@@ -523,6 +546,11 @@ export function loadKits(data: KitData): Kits {
     if (!v.kit(raw)) throw new Error(`kits/operators/${file}: ${v.ajv.errorsText(v.kit.errors)}`);
     const kit = loadOperatorKit(data, file, raw as RawKit);
     operators[kit.operator] = kit;
+    for (const variant of (raw as RawKit).variants ?? []) {
+      const other = loadOperatorKit(data, `${variant.operator}.json`, variantOf(raw as RawKit, variant));
+      if (operators[other.operator]) throw new Error(`kits/operators/${file}: ${other.operator} has a kit of its own too`);
+      operators[other.operator] = other;
+    }
   }
   const equipment: Record<string, EquipmentKit> = {};
   const edir = join(KITS, "equipment");

@@ -67,9 +67,16 @@ function build(): GameData {
     if (!(ELEMENTS as readonly string[]).includes(e)) throw new DataError(PRIMARY, `CharacterTable.${id}.charTypeId`, `unknown element ${charType}`);
     return e as Element;
   };
+  // The Endministrator: a virtual character holds the talents of the two playable IDs (GlobalConst), and isn't playable itself.
+  const globals = obj(readTable(PRIMARY, "GlobalConst"), { source: PRIMARY, path: "GlobalConst" });
+  const virtualId = typeof globals["endminVirtualCharId"] === "string" ? globals["endminVirtualCharId"] : null;
+  const playsVirtual = new Set([globals["maleCharID"], globals["femaleCharID"]].filter((x): x is string => typeof x === "string"));
   const operators: Record<string, OperatorData> = {};
   for (const op of Object.values(loadOperators(PRIMARY))) {
+    if (op.charId === virtualId) continue;
     const g = growth[op.charId];
+    // Their own talent nodes point at stale, empty effects; the virtual character's carry the values.
+    const talentGrowth = virtualId && playsVirtual.has(op.charId) ? (growth[virtualId] ?? g) : g;
     if (!g) throw new DataError(PRIMARY, `CharGrowthTable.${op.charId}`, "operator has no growth entry");
     operators[op.charId] = {
       id: op.charId,
@@ -93,7 +100,7 @@ function build(): GameData {
         ),
       },
       attributeNodes: g.attributeNodes.map((n) => ({ ...n, modifiers: n.modifiers.map(modifier) })),
-      talentNodes: g.talentNodes.map((n) => ({
+      talentNodes: (talentGrowth ?? g).talentNodes.map((n) => ({
         nodeId: n.nodeId,
         index: n.index,
         level: n.level,

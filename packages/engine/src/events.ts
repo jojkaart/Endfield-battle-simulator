@@ -129,9 +129,10 @@ export type TriggerActionKind =
   /**
    * Apply one of the owner's kit buffs; `to: "eventSubject"` gives a team
    * buff to the event's subject only (the healed operator of a heal, else
-   * the operator who caused the event).
+   * the operator who caused the event); `layers`: this many layers at once
+   * (default 1; 0 applies none), e.g. one per Status Level consumed.
    */
-  | { readonly kind: "buff"; readonly buff: string; readonly to?: "eventSubject" }
+  | { readonly kind: "buff"; readonly buff: string; readonly to?: "eventSubject"; readonly layers?: ValueExpr }
   /** Add seconds to the remaining time of one of the owner's active kit buffs (all its layers), e.g. a state a skill pauses. */
   | { readonly kind: "extendBuff"; readonly buff: string; readonly seconds: ValueExpr }
   /** Heal (an event for heal triggers; amounts aren't modelled); `healKind`: the skill kind its heal tag names (HealAction healTags), default none. */
@@ -189,6 +190,13 @@ export interface KitTrigger {
   readonly delay?: number;
   /** Delayed actions of a cast event happen even if the cast is cut short. */
   readonly detached?: boolean;
+  /**
+   * A delayed cast trigger whose actions are the skill's own effect (Fluorite's
+   * kick planting her explosive): a rotation step without `at` waits for it,
+   * as for the cast's own hits. Others (follow-ups the next input cuts) don't
+   * hold the next step.
+   */
+  readonly awaited?: boolean;
   /** The skill a plain value key names (a skill of the owner, or a talent / weapon / gear-set source). */
   readonly skill?: string;
   readonly do: readonly TriggerAction[];

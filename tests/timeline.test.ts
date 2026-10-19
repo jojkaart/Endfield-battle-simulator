@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
+import { advance, apply, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, parseReactionEvent, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -1412,5 +1412,40 @@ describe("timeline: cast-consumed buffs, stack changes, hit conditions at landin
     const skills = kit.skills.map((s) => (s.skillId === L + "attack1" ? { ...s, hits: s.hits.map((h) => ({ ...h, if: { buffActive: "mark" } })) } : s));
     const g = withKit({ skills, buffs: [...kit.buffs, mark], triggers: [...kit.triggers, { id: "m", on: { event: "cast", skills: [L + "attack1"] }, by: "self", do: [{ kind: "buff", buff: "mark" }] }] });
     expect(run(g, [a1]).hits.some((h) => h.skillId === L + "attack1")).toBe(true);
+  });
+});
+
+describe("batch 2 group 1: values, layers, awaited actions, log keys", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const withKit = (k: Partial<OperatorKit>): GameData => ({ ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, ...k } } } });
+
+  it("floor and div in values; attr values include buffs", () => {
+    const ec = evalContext(data, build, computeStats(data, build), "", { attrBonus: (a) => (a === 42 ? 10 : 0) });
+    const will = (computeStats(data, build).attrs[42]?.total ?? 0) + 10;
+    expect(evaluate({ floor: { product: [{ attr: 42 }, 0.1] } }, ec)).toBe(Math.floor(will * 0.1 + 1e-9));
+    expect(evaluate({ div: [1, 4] }, ec)).toBe(0.25);
+  });
+
+  it("a buff action can add several layers at once", () => {
+    const layered: KitBuff = { id: "l", label: "l", target: "self", duration: 10, maxStacks: 5, modifiers: [{ zone: "amp", value: 0.1 }] };
+    const g = withKit({ buffs: [...kit.buffs, layered], triggers: [...kit.triggers, { id: "l", on: { event: "cast", skills: [L + "attack1"] }, by: "self", do: [{ kind: "buff", buff: "l", layers: 3 }] }] });
+    const ctx = createContext(g, scenario([]));
+    expect(apply(ctx, init(ctx), { operator: op, skill: L + "attack1" }).buffs.filter((b) => b.id === "l")).toHaveLength(3);
+  });
+
+  it("a step without a time waits for its cast's awaited delayed actions, not for others", () => {
+    const mark: KitBuff = { id: "m", label: "m", target: "self", duration: 10, modifiers: [] };
+    const t = (awaited: boolean): KitTrigger => ({ id: "m", on: { event: "cast", skills: [L + "normal_skill"] }, by: "self", delay: 40, ...(awaited ? { awaited } : {}), do: [{ kind: "buff", buff: "m" }] });
+    const next = (awaited: boolean) => {
+      const ctx = createContext(withKit({ buffs: [...kit.buffs, mark], triggers: [...kit.triggers, t(awaited)] }), { ...scenario([]), startEnergy: { [op]: "full" } });
+      const s = apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" });
+      return earliestStart(ctx, s, { operator: op, skill: L + "ultimate_skill" });
+    };
+    expect((next(true) as { frame: number }).frame).toBeGreaterThanOrEqual(40);
+    expect((next(false) as { frame: number }).frame).toBeLessThan((next(true) as { frame: number }).frame);
+  });
+
+  it("Crush hits logged under the status buff's name are Crush", () => {
+    expect(parseReactionEvent("buff_physical_crushed")).toEqual({ kind: "crush", element: "physical" });
   });
 });

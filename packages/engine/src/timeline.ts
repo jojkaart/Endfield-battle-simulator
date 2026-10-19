@@ -168,7 +168,7 @@ export interface TimelineState {
   readonly pending: readonly PendingHit[];
   /** Trigger actions due later (KitTrigger.delay), with the event that started them. */
   /** Delayed trigger actions; `cast`: the cast they belong to (a cast trigger's), dropped when it's cut short. */
-  readonly pendingActions: readonly { readonly frame: number; readonly owner: string; readonly trigger: string; readonly event: BattleEvent; readonly origin: Origin | null; readonly cast?: { readonly operator: string; readonly index: number } }[];
+  readonly pendingActions: readonly { readonly frame: number; readonly owner: string; readonly trigger: string; readonly event: BattleEvent; readonly origin: Origin | null; readonly cast?: { readonly operator: string; readonly index: number }; readonly awaited?: boolean }[];
   /** The team's Link stacks (combo casts leave one each, 15 s): their expiry frames. */
   readonly link: readonly number[];
   /** Until when a control status (Si's Immobilization) freezes the enemy's own clock. */
@@ -308,14 +308,17 @@ function skillCosts(ctx: TimelineContext, operator: string, skillId: string) {
   if (!timing) throw new EngineError(`${skillId}: SkillData isn't loaded, so its timing is unknown`);
   const panel = ctx.panels.get(operator) as StatPanel;
   const cost = skillParam(panel, skillId, "cost", level.costValue);
+  const kind = kitSkill(ctx, operator, skillId).kind;
+  // Combo cooldowns scale with attribute 47 (ComboSkillCooldownScalar: Frontiers, Qingbo ×0.85).
+  const scalar = kind === "combo" ? (panel.attrs[Attr.ComboSkillCooldownScalar]?.total ?? ctx.data.attributeDefaults[Attr.ComboSkillCooldownScalar] ?? 1) : 1;
   return {
     group,
     /** The action's kind (KitSkill.kind), which basic-attack control and combo windows go by. */
-    kind: kitSkill(ctx, operator, skillId).kind,
+    kind,
     spCost: level.costType === 1 ? cost : 0,
     /** costType 0: ultimate energy. */
     energyCost: level.costType === 0 ? cost : 0,
-    cooldownFrames: Math.round(skillParam(panel, skillId, "cooldown", level.coolDown) * FPS),
+    cooldownFrames: Math.round(skillParam(panel, skillId, "cooldown", level.coolDown) * scalar * FPS),
     timing,
   };
 }
@@ -389,11 +392,12 @@ function chainAfter(ctx: TimelineContext, st: TimelineState, operator: string, s
   return rest;
 }
 
-/** The frame by which an operator's current cast has landed its hits that an interrupt would cancel. */
+/** The frame by which an operator's current cast has landed its hits, and run its awaited delayed actions, that an interrupt would cancel. */
 function ownHitsLanded(st: TimelineState, operator: string): number {
-  const cast = st.casts.length - 1 - [...st.casts].reverse().findIndex((c) => c.operator === operator);
+  const cast = st.acting[operator]?.cast ?? st.casts.findLastIndex((c) => c.operator === operator);
   let last = 0;
   for (const h of st.pending) if (h.operator === operator && h.cast === cast && !h.detached && h.frame > last) last = h.frame;
+  for (const a of st.pendingActions) if (a.awaited && a.cast && a.cast.operator === operator && a.cast.index === cast && a.frame > last) last = a.frame;
   return last;
 }
 
@@ -606,6 +610,7 @@ function situationAt(ctx: TimelineContext, operator: string, st: TimelineState, 
     controlled: st.controlled,
     staggered: isStaggered(st, frame),
     enemyModifiers: st.buffs.filter((b) => b.target === "enemy" && active(b)).flatMap((b) => b.modifiers),
+    attrBonus: (attr) => buffAttr(st.buffs, operator, frame, attr),
     ...(consumed !== undefined ? { consumed } : {}),
   };
 }
@@ -825,7 +830,7 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
           // A cast's own effects at frames play at its speed, as its hits do (Haste).
           const acting = e.type === "cast" ? st.acting[e.operator] : undefined;
           const delay = acting && acting.frame === e.frame && acting.speed ? Math.round(t.delay / acting.speed) : t.delay;
-          st = { ...st, pendingActions: [...st.pendingActions, { frame: e.frame + delay, owner, trigger: t.id, event: e, origin, ...cast }] };
+          st = { ...st, pendingActions: [...st.pendingActions, { frame: e.frame + delay, owner, trigger: t.id, event: e, origin, ...cast, ...(t.awaited ? { awaited: true } : {}) }] };
           continue;
         }
         const r = runActions(ctx, st, t, owner, e, origin);
@@ -892,9 +897,14 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         const def = ctx.kits.get(owner)?.buffs.find((x) => x.id === a.buff);
         if (!def) throw new EngineError(`${owner} has no buff ${a.buff}`);
         const subject = a.to === "eventSubject" ? [e.type === "heal" ? e.target : e.operator] : undefined;
-        const r = addBuff(ctx, st, owner, triggerSkillId(owner, t), def, frame, triggerSituation(ctx, owner, st, e, consumed), subject);
-        st = r.state;
-        if (r.applied) events.push(buffAppliedEvent(frame, owner, def, origin && origin.operator === owner ? origin.kind : "none"));
+        const layers = a.layers === undefined ? 1 : Math.max(0, Math.round(evaluate(a.layers, ec())));
+        let applied = false;
+        for (let i = 0; i < layers; i++) {
+          const r = addBuff(ctx, st, owner, triggerSkillId(owner, t), def, frame, triggerSituation(ctx, owner, st, e, consumed), subject);
+          st = r.state;
+          applied ||= r.applied;
+        }
+        if (applied) events.push(buffAppliedEvent(frame, owner, def, origin && origin.operator === owner ? origin.kind : "none"));
         break;
       }
       case "extendBuff": {

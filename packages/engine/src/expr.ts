@@ -90,7 +90,16 @@ export type ValueExpr =
   | { readonly stackCount: string }
   /** The enemy's Vulnerable stacks (Gilberta's Arts Susceptibility per stack). */
   | { readonly enemyVulnerableStacks: true }
-  | { readonly if: Predicate; readonly then: ValueExpr; readonly else?: ValueExpr };
+  | { readonly if: Predicate; readonly then: ValueExpr; readonly else?: ValueExpr }
+  /** Rounded down (the data's "per full 10 points": `{floor: {product: [{attr: 42}, 0.1]}}`). */
+  | { readonly floor: ValueExpr }
+  /** The first divided by the second (1 / rate). */
+  | { readonly div: readonly [ValueExpr, ValueExpr] };
+
+/** An operator's attribute: its panel's, plus what active buffs add. */
+function attrValue(c: EvalContext, attr: AttrType): number {
+  return (c.panel.attrs[attr]?.total ?? c.data.attributeDefaults[attr] ?? 0) + (c.attrBonus?.(attr) ?? 0);
+}
 
 /** A build's level of an operator's talent (0-based, in talent order): Build.talents, else the highest. */
 export function talentLevel(data: GameData, build: Build, i: number): number {
@@ -129,6 +138,8 @@ export interface EvalContext {
   readonly eventRemaining?: number;
   /** ValueExpr `eventRecorded`. */
   readonly eventRecorded?: number;
+  /** What active buffs add to an attribute of the operator (read by `attr` values and `attrAtLeast`); none when absent. */
+  readonly attrBonus?: (attr: AttrType) => number;
   /** The controlled operator. */
   readonly controlled?: string;
   /** Whether the enemy is Staggered. */
@@ -156,7 +167,7 @@ export function test(p: Predicate, c: EvalContext): boolean | undefined {
   }
   if ("attrAtLeast" in p) {
     const [a, b] = p.attrAtLeast;
-    return (c.panel.attrs[a]?.total ?? 0) >= (c.panel.attrs[b]?.total ?? 0);
+    return attrValue(c, a) >= attrValue(c, b);
   }
   if ("potentialAtLeast" in p) return c.build.potential >= p.potentialAtLeast;
   if ("talentAtLeast" in p) return talentLevel(c.data, c.build, p.talentAtLeast[0]) >= p.talentAtLeast[1];
@@ -212,7 +223,13 @@ export function evaluate(v: ValueExpr, c: EvalContext): number {
   if ("product" in v) return v.product.reduce((s: number, x) => s * evaluate(x, c), 1);
   if ("min" in v) return Math.min(...v.min.map((x) => evaluate(x, c)));
   if ("max" in v) return Math.max(...v.max.map((x) => evaluate(x, c)));
-  if ("attr" in v) return c.panel.attrs[v.attr]?.total ?? c.data.attributeDefaults[v.attr] ?? 0;
+  if ("attr" in v) return attrValue(c, v.attr);
+  if ("floor" in v) return Math.floor(evaluate(v.floor, c) + 1e-9);
+  if ("div" in v) {
+    const d = evaluate(v.div[1], c);
+    if (d === 0) throw new Error("value divides by 0");
+    return evaluate(v.div[0], c) / d;
+  }
   if ("consumed" in v) {
     if (c.consumed === undefined) throw new Error("value needs the consumed infliction stacks, which aren't known here");
     return c.consumed;
@@ -258,7 +275,7 @@ export function valueKeys(v: ValueExpr, skillId: string, talentSources?: (talent
     return sources.map((skill) => ({ skill, key: v.key }));
   }
   if ("key" in v) return [{ skill: v.skill ?? skillId, key: v.key }];
-  const parts = "sum" in v ? v.sum : "product" in v ? v.product : "min" in v ? v.min : "max" in v ? v.max : "if" in v ? [v.then, ...(v.else !== undefined ? [v.else] : [])] : [];
+  const parts = "sum" in v ? v.sum : "product" in v ? v.product : "min" in v ? v.min : "max" in v ? v.max : "if" in v ? [v.then, ...(v.else !== undefined ? [v.else] : [])] : "floor" in v ? [v.floor] : "div" in v ? v.div : [];
   return parts.flatMap((x) => valueKeys(x, skillId, talentSources));
 }
 

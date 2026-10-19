@@ -17,6 +17,29 @@
     "operator": {
       "type": "string"
     },
+    "variants": {
+      "type": "array",
+      "description": "The same kit under other operator IDs (the Endministrator's two): strings starting with this kit's operator ID are renamed to the variant's, after the explicit `skills` renames; game-buff IDs (buff_…) stay.",
+      "items": {
+        "type": "object",
+        "required": [
+          "operator"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "operator": {
+            "type": "string"
+          },
+          "skills": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Skill IDs that don't follow the rename (chr_0003_endminf_power_attack2 → chr_0002_endminm_power_attack)."
+          }
+        }
+      }
+    },
     "sources": {
       "type": "array",
       "items": {
@@ -793,6 +816,10 @@
             "type": "boolean",
             "description": "A delayed cast trigger's actions happen even if the cast is cut short (by default they are the cast's own and are dropped with it)."
           },
+          "awaited": {
+            "type": "boolean",
+            "description": "A delayed cast trigger whose actions are the skill's own effect: a rotation step without `at` waits for it, as for the cast's own hits."
+          },
           "skill": {
             "type": "string",
             "description": "The skill (or talent / potential source) plain value keys name."
@@ -956,6 +983,10 @@
                     "to": {
                       "const": "eventSubject",
                       "description": "A team buff for the event's subject only: the healed operator of a heal, else the operator who caused the event."
+                    },
+                    "layers": {
+                      "$ref": "#/$defs/valueExpr",
+                      "description": "This many layers at once (default 1; 0 applies none), e.g. one per Status Level consumed ({eventCount: true})."
                     }
                   }
                 },
@@ -2351,6 +2382,37 @@
             "enemyVulnerableStacks": {
               "const": true,
               "description": "The enemy's Vulnerable stacks."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "floor"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "floor": {
+              "$ref": "#/$defs/valueExpr",
+              "description": "Rounded down (the data's 'per full 10 points')."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "div"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "div": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/valueExpr"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "description": "The first divided by the second."
             }
           }
         }
