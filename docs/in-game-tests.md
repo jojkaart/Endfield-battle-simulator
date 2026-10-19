@@ -827,6 +827,59 @@ If the operator doesn't dash until the skill ends, or the hit still
 lands, that skill can't be dashed out of (or its hit is already on its
 way).
 
+### 55. The Endministrator's ATK: stat panel vs the engine (ready)
+
+**Why:** in a ZMDLogs fight (fixtures/pending/zmdlogs-7e19489ae503.json)
+every Endministrator hit implies +180 flat ATK that no game table gives
+(batch 2, K7). If the panel shows it too, something in her build or the
+game adds ATK the engine doesn't know.
+**How:** open her character panel and note ATK, with her weapon, gear and
+level as they are. Send the build (or a screenshot of the panel with
+weapon and gear) so it can be compared with `efsim calc` on the same
+build: equal, or about 180 × her attribute bonus (≈ 860 with that log's
+Agility) higher?
+
+### 56. Where the Endministrator's Crush gets its damage bonuses (ready)
+
+**Why:** the game deals a Crush's own damage before the hit that causes it
+(BuffData: Lift, Knock Down, Crush before their handlers, Breach after;
+batch 2, K3), so the Crush sees talent 2's +20% damage taken on sealed
+enemies while the battle-skill hit that caused it doesn't. The engine
+deals it after, so it's off by 12–17% on her biggest hit.
+**How:** on a dummy with 4 Vulnerable stacks, Crush it twice while it's
+sealed (her crystals on it) and twice while it isn't. Is the Crush number
+about ×1.2 when sealed? (Status hits can crit: take the two lowest of
+each.)
+
+### 57. Akekuri's Link during her ultimate (ready, if you have Akekuri)
+
+**Why:** her talent 2 gives the team a Link stack during her ultimate
+(batch 2, B1): a teammate's battle skill then deals ×1.30 (one Link), ×1.45
+with a combo just before (two). A fixed +20% bonus instead would show
+×1.20.
+**How:** a teammate's battle skill on a dummy without Akekuri's ultimate,
+then the same during it: compare the numbers (no crits: take the lower of
+two each). Report's other tests: docs/kit-batches/batch-2/chr_0019_karin.md.
+
+### 58. Antal's combo repeats a Lift (ready, if you have Antal)
+
+**Why:** his combo repeats what opened its window (batch 2, T3): after a
+teammate's Lift, his combo adds a second Lift; after an infliction, the
+same infliction.
+**How:** a teammate's Lift on a dummy (Estella, Gilberta), then Antal's
+combo: does a second Lift damage number appear? Report's other tests:
+docs/kit-batches/batch-2/chr_0023_antal.md.
+
+### 59. Fluorite's talent-2 chance (later, if you have Fluorite)
+
+**Why:** "when hit by Arts DMG, 20% chance (30% from P2)" of ATK +20%: the
+engine can't roll trigger chances yet (batch 2, K1), so it gives her the
+average all the time.
+**How:** take 20 or more Arts hits at least 10 s apart and count how often
+the ATK-up icon appears: about 1 in 5 below P2, 3 in 10 from P2. Tedious;
+worth it only once K1 is in. Catcher's tests (low priority): § Kit of
+docs/kit-batches/batch-2/chr_0020_meurs.md.
+
 ## Results
 
 None yet.

@@ -253,3 +253,45 @@ added or substantially changed (also in CLAUDE.md). Checklist:
      (`{not: {potentialAtLeast: 0}}`) in Typhoeus's and Liino's kits: now
      `followUpOnly` on the skill.
 
+
+### Review after batch 2's kits (2026-10-19)
+
+1. **Census** (12 kits). Still hand-written although the data has it, in
+   every kit: hit frames, log event keys, energy grants, finisher factors
+   (now ten kits: the compiler still doesn't read BreakingAttackCalculation's
+   `multiplier`). Loader defaults from the compiler (D3) remain the way to
+   remove them. New fields each used by one kit so far are mechanisms other
+   operators share in data: `skill.jumps` (Laevatain; Catcher's jumps are
+   unconditional and read from SkillData), `trigger.do.jump` (Catcher;
+   Snowshine's battle skill has the same listener), `trigger.on.enemyCharge`
+   (Catcher), `trigger.on.staggerNode` and `trigger.on.sp` (Akekuri;
+   Frontiers too). `trigger.on.attacked` is already shared by three kits.
+2. **Requests from the kit agents**, each in an existing family:
+   - Triggers: a trigger that fires with a chance (BuffData `Probablity`:
+     Antal's and Fluorite's talent 2, `buff_equipsuit_magicinfdb_01/_02`,
+     Laevatain's combo knock-back), rolled on its own seeded stream like
+     crits and dodges; a buff a trigger applies takes its values from the
+     situation at the event, as its `if` does (Endministrator, Grizzled
+     Edge; extends T5).
+   - Resources (V3): the `sp` event says whether the SP is natural or a
+     refund, with a `natural` filter (Akekuri's P1, Frontiers).
+   - Skills: a team-energy part that outlives its cast (`detached`, like a
+     hit's: Fluorite's explosion at frame 99, the skill cancellable from 34).
+   - Physical state / timing: a physical status's own damage where the game
+     deals it (Lift, Knock Down, Crush before their ignite handler, Breach
+     after; Endministrator, 12–17% on her Crush).
+   - Log tooling, not the engine: the finisher multiplier in `zmdlogs
+     check`; `zmdlogs reactions` dropping applications whose condition reads
+     the enemy's state; trying enemy-side team auras (Endministrator's
+     talent 2, her crystals) with and without, as cast-consumed buffs are.
+   - Done at the merge: attributes 62/63 allowed on kit buffs (buff
+     categories read them; Catcher's Protection and Weakness), and the
+     action gate looking again after an action changes (Catcher's counter
+     ends at 194).
+3. **One mechanism written two ways:** Antal's and Fluorite's talent 2 are
+   the same "when hit, with a chance" structure, written as "always" (Antal)
+   and as an expected-value buff (Fluorite) until triggers get a chance;
+   both move to `chance` then. Layered buffs on a shared timer replaced a
+   counter stack plus expiry trigger in Akekuri's P1, Æthertech and MI
+   Security (MI Security keeps a counter only for its 5-layer check, exact
+   since all layers share one timer).

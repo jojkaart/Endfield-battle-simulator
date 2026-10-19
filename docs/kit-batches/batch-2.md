@@ -24,13 +24,36 @@ whose report covers it):
 With these, every gear set in the game has a kit (batch 1 wrote the other
 eight).
 
-Phase: **analysis 1 done (2026-10-19)**; merge below; shared features in
-progress. Done: L1, B4, D4, S2, S4, V2, B2, D1, D2 (group 1); T1–T6, C1, C2
+Phase: **kits done (2026-10-19)**; open items below. Shared features done: L1, B4, D4, S2, S4, V2, B2, D1, D2 (group 1); T1–T6, C1, C2
 (group 2); V1, B1, B3, S3, S5, S6 (group 3); E2; S1 (jumps skip time: the
 data's unconditional ones, conditional ones by `KitSkill.jumps`, event-driven
 ones by a trigger's `jump`; InterruptCurSkillAction ends the action); E1
 (enemy attacks and charges; dodges with a success chance, perfect dodges
 from BuffData; [design.md](../design.md#damage)). Open: D3, V3.
+
+**Kits done (2026-10-19):** the Endministrator (one kit for chr_0003_endminf
+and chr_0002_endminm), Akekuri, Catcher, Fluorite and Antal, with all 27
+equipment kits of the table above; each report ends with a "Kit
+(2026-10-19)" section (re-analysis per gap, verification, proposed in-game
+tests). Fluorite's 56 logged hits all match (fixtures/pending/
+zmdlogs-abfd4b7478ec.json, whose builds were corrected from the log's own
+data); the Endministrator's 34 are covered but off by an unlisted team aura
+and +180 flat ATK of unknown source (pending/zmdlogs-7e19489ae503.json).
+Akekuri, Catcher and Antal have no log yet. Pattern review:
+[kit-abstractions.md](../kit-abstractions.md#review-after-batch-2s-kits-2026-10-19).
+
+Open after the kits, each with an interim in the kits:
+
+| ID | Feature | Needed by |
+|---|---|---|
+| K1 | A trigger that fires with a chance (BuffData `Probablity`), rolled on its own seeded stream | Antal and Fluorite talent 2, `buff_equipsuit_magicinfdb_01/_02`, Laevatain's combo knock-back |
+| K2 | A buff a trigger applies takes its values from the situation at the event | Endministrator (Grizzled Edge) |
+| K3 | A physical status's own damage where the game deals it (Lift, Knock Down, Crush before the applying hit's damage; Breach after) | Endministrator (Crush: 12–17%) |
+| K4 | A team-energy part that outlives its cast (`detached`) | Fluorite (explosion at frame 99) |
+| K5 | The `sp` event says natural or refund (V3), with a `natural` filter | Akekuri P1, Frontiers |
+| K6 | Log tooling: the finisher multiplier in `zmdlogs check`; `zmdlogs reactions` and conditions on the enemy's state; enemy-side team auras tried with and without | Fluorite's and the Endministrator's logs |
+| K7 | Unknown: +180 flat ATK on the Endministrator in 7e19489ae503 | in-game test (her stat panel vs `efsim calc`) |
+| K8 | Being attacked mid-dash (no `attacked` event while dashing) | Antal and Fluorite talent 2 |
 Reports: [batch-2/](batch-2/), one per operator, each ending with a kit
 plan whose draft kits were loaded with the real loader.
 
