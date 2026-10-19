@@ -7,7 +7,31 @@ the "Results" section with the date and game version, then into fixtures or
 [data-sources.md](data-sources.md).
 
 Status: **ready** (worth doing now), **later** (waits on the engine or on
-choosing a setup), **done**.
+choosing a setup), **done**, **not testable by hand** (kept so the question
+and the engine's interim stay recorded; don't ask the owner for it).
+
+**What a test may ask for** (the owner's feedback, 2026-10-19). Every test
+must be something a person can do by hand while playing:
+
+- **Observable by eye only:** whether something happens (a damage number
+  appears, an infliction or status icon shows, a skill becomes castable, a
+  bar visibly jumps), the damage numbers shown on screen, buff and stack
+  counters the game displays, and time differences of a couple of seconds
+  or more, measured with a stopwatch or by counting seconds in an ordinary
+  phone video. Never frame counts or sub-second timings, never exact SP
+  (the game shows only an SP bar, no number), never exact energy or other
+  values the game doesn't display.
+- **Prefer a relative comparison:** do A, then do B, and compare, so a
+  baseline cancels reaction time and other errors.
+- **Predict each outcome in observable terms** under each hypothesis
+  (e.g. "Twilight lasts about 17.6 s vs 22.7 s"), worked out with the
+  engine where it can.
+- **If it can't be made observable,** say so, keep the engine's interim,
+  note how small the impact is, and mark the test **not testable by hand**
+  instead of asking for it.
+- **Honest priorities:** say what a test needs. The owner doesn't use
+  Catcher, Ember, Snowshine or Purrchena, so tests that need them are low
+  priority; tests that affect every operator come first.
 
 ## Tests
 
@@ -154,12 +178,17 @@ engine follows the data's formula, untested). It boosts the whole team's
 Arts damage, so a wrong step is 3–6 points of Susceptibility on every
 Arts hit for 5 s.
 **How:** her ultimate on a training dummy with no physical teammates; read
-the Arts Susceptibility value on the enemy and time how long it stays.
+the Arts Susceptibility value on the enemy, if the game shows it, and time
+how long the icon stays (5 s expected). If the value isn't shown, compare a
+teammate's Arts hit (same skill, no crits) just before her ultimate and
+during the Susceptibility: the second number divided by the first is about
+1 + the value (e.g. 1.30 or 1.36).
 Then repeat with 1, 2, 3 and 4 Vulnerable stacks on the dummy (from Lift or
-Knock Down; her own combo's Lift gives one). Expected at ultimate level 12
-below P2: 0.30, 0.33, 0.36, 0.39, 0.42 for 0–4 stacks. From P2: 0.36, 0.42,
-0.48, 0.54, 0.54. A 0.48 at 3 stacks from P2 would mean the data's check is
-"fewer than 3", not "3 or fewer".
+Knock Down; her own combo's Lift gives one), comparing the before and
+during hits with the same Vulnerable stacks each time. Expected at ultimate
+level 12 below P2: 0.30, 0.33, 0.36, 0.39, 0.42 for 0–4 stacks (hits ×1.30
+… ×1.42). From P2: 0.36, 0.42, 0.48, 0.54, 0.54. A 0.48 at 3 stacks from
+P2 would mean the data's check is "fewer than 3", not "3 or fewer".
 
 ### 13. Arcane's combo cooldown in WILL mode (ready, if you have Arcane)
 
@@ -205,28 +234,51 @@ landed (except projectiles). If the hit lands anyway, the engine
 under-counts damage and SP for players who cancel early.
 **How:** with any operator whose 5th basic attack (Final Strike) is a
 melee hit, start the 5th attack and press the battle skill immediately:
-does the Final Strike's damage number (and its SP) appear?
+does the Final Strike's damage number appear? (Its SP isn't visible on the
+bar; the damage number answers both.)
 
-### 17. How long Laevatain's battle skill holds her (ready, if you have Laevatain)
+### 17. Do the jumps in Laevatain's battle skill skip time? (ready, if you have Laevatain)
 
 **Why:** her battle skill's data has jumps: the timeline skips ahead, on
 one path when she has 4 Melting Flame (empowered) and on another when
 not. Since batch 2 (S1) the engine takes jumps as skipping time, because
-Catcher's battle-skill data only makes sense that way: her enhanced battle
-skill locks her and pauses Twilight 39 frames (1.3 s) plain and 64 (2.1 s)
-empowered; outside Twilight, the plain battle skill locks her 37 frames,
-and the empowered extra hit lands at frame 54. If jumps didn't skip time,
-it would be 115 frames (3.8 s), 117 and 104: 1.7–2.5 s of rotation time per
-battle skill, and every buff window after it would move (laevatain-solo:
-22.4 s with skips, 29.2 s without).
-**How:** a 30 FPS video is easiest. In Twilight, cast the battle skill and
-mash basic attack: time from the battle skill to the first enhanced
-attack, plain and with 4 Melting Flame. 1.3 s / 2.1 s means the jumps skip
-time; 3.8 s both times means they don't. Also note whether Twilight's
-remaining time stays the same meanwhile. Outside Twilight: plain battle
-skill, then mash basic attack: about 1.2 s or 3.9 s to the next action?
-And with 4 Melting Flame, the time from the cast to the extra hit: about
-54 frames (1.8 s) or 104 (3.5 s)?
+Catcher's battle-skill data only makes sense that way. In Twilight her
+enhanced battle skill pauses Twilight's timer (it "does not shorten the
+duration of the ultimate") for as long as the skill holds her: with skips
+about 1.3 s plain and 2.1 s empowered; without, about 3.8 s either way.
+That's 1.7–2.5 s of rotation time per battle skill, and every buff window
+after it moves (laevatain-solo: 22.4 s with skips, 29.2 s without).
+**How:** compare Twilight's total length, timed from pressing the ultimate
+to Twilight's end (its icon disappears, or her attacks turn back to normal
+ones), with a stopwatch or a phone video. SP bar at least two-thirds full
+(each battle skill costs a third), no combo and no teammates' skills during
+Twilight (a combo adds about 1.9 s, test 21).
+1. Baseline: ultimate, then only basic attacks until Twilight ends.
+   Expected: about 15.0 s in both models.
+2. Ultimate, basic attacks, one battle skill about 4 s in, basic attacks
+   again, a second battle skill about 10 s in, then basic attacks to the
+   end. Space the battle skills: keep pressing basic attack for a few
+   seconds between them. (Pressing the battle skill twice in a row cuts
+   the first one's pause short in both models, so it would hide the
+   difference.) Note whether each cast was plain or empowered (the big
+   extra hit with forced Combustion; the second may reach 4 Melting Flame
+   from the first one and the Final Strikes).
+   Expected: two plain casts **about 17.6 s** with skips, **about 22.7 s**
+   without; one plain and one empowered about 18.4 s with skips, 22.7 s
+   without. (One plain cast only: 16.3 s vs 18.8 s.) If the baseline
+   isn't 15 s (test 18), compare the differences instead: about +2.6 s
+   (skips) vs +7.7 s (no skips) for two plain casts.
+
+A supporting sign in the same run: after each plain battle skill, while
+you keep pressing basic attack, she attacks again about 1.3 s after the
+cast with skips, but stands about 3.8 s without.
+
+Outside Twilight (optional): a plain battle skill on a dummy, then keep
+pressing basic attack. From the explosion's damage number to the next
+basic attack's number: under 1 s (about 0.7 s) with skips, about 3.4 s
+without. With 4 Melting Flame, from the explosion's number to the big
+extra hit: about 1.1 s vs 2.7 s (closer to the limit of what a video shows;
+the Twilight run above is the clearer test).
 
 ### 18. What an ultimate's time stop freezes (ready)
 
@@ -234,22 +286,32 @@ And with 4 Melting Flame, the time from the cast to the extra hit: about
 time stop (Laevatain's first 2 s, Gilberta's 1.7 s): the enemy's statuses
 and Combustion ticks, all buffs, combo windows and SP regen, but **not**
 skill cooldowns (Endaxis's rule, from its unit tests only).
-**How:** put a teammate's battle skill on cooldown, note the remaining
-seconds, cast an ultimate with a long animation, and read the teammate's
-cooldown right after: did it go down by the animation's length (cooldowns
-run) or not (frozen)? Also: does the team SP bar move during the
-animation?
+**How:** time a teammate's combo cooldown with a stopwatch, from the combo
+cast until its button is ready again: once with nothing else happening,
+once with an ultimate with a long time stop cast during it (Laevatain's
+2 s or Gilberta's 1.7 s; two operators' ultimates in the same cooldown
+make the difference clearer). The same length means cooldowns run during
+the time stop (engine); about 2 s (or 3.7 s with both) longer means they're
+frozen. Also, in a video: is the SP bar (not full) visibly higher at the
+animation's end than at its start (regen runs: about a twentieth of the
+bar over 2 s), or unchanged (frozen, engine)?
 
-The caster's own buffs are a second question. The engine freezes them too,
-but the data exempts the caster from its own time stops and slow-downs,
-and one Estella log fits neither rule cleanly. It decides up to 2 s of
-Twilight per ultimate and up to 1.8 s of Estella's team-wide Physical
-Susceptibility (+15%) per ultimate:
-- Laevatain: does Twilight's timer stop during her ultimate's 2 s
-  animation, and during her combo's 0.6 s slow-down?
+The caster's own buffs are a second question. The engine freezes them too
+(only the caster's hits and action are exempt), but the data exempts the
+caster from its own time stops and slow-downs, and one Estella log fits
+neither rule cleanly. (Laevatain's Twilight is created after her
+ultimate's time stop is taken into account, so the engine runs it 15 s
+from the press.) It decides up to 2 s of Twilight per ultimate and up to
+1.8 s of Estella's team-wide Physical Susceptibility (+15%) per ultimate:
+- Laevatain: time Twilight from pressing the ultimate to its end, with
+  only basic attacks (test 17's baseline): about 15 s means her own time
+  stop doesn't freeze Twilight (her kit), about 17 s means it does. Her
+  combo's 0.6 s slow-down is too short to see on its own; test 21 covers
+  the combo.
 - Estella (P1+): combo on a Solidified enemy, her ultimate right after,
   and time the Physical Susceptibility icon from the combo hit: about 9 s
-  means her own time stop doesn't freeze it, about 10.8 s means it does.
+  means her own time stop doesn't freeze it, about 10.8 s means it does
+  (1.8 s apart: a video is safer than a stopwatch).
 
 ### 19. What Haste speeds up (ready, if you have Si)
 
@@ -257,9 +319,15 @@ Susceptibility (+15%) per ultimate:
 5 s after her Inksoul ends. The data says only "speed +x" (attribute 92);
 the engine assumes it plays skills faster (hits, cancel windows, the
 locked part) but not cooldowns. Nobody's simulator models it yet.
-**How:** with the Haste up, record a teammate's basic attack chain (or
-time five basic attacks) and compare with the same chain without it: is
-it about 15% / 30% faster? Does a skill's cooldown run faster too?
+**How:** a phone video. While the Haste icon is up (5 s), keep pressing a
+teammate's basic attack, and count its damage numbers; then count them in
+5 s of the same chain without Haste. About 15% / 30% more numbers (e.g. 13
+instead of 10 at 30%) means Haste speeds up skills; the same count means it
+doesn't. (Timing one chain wouldn't work: 15% of a chain is under a
+second.) Cooldowns: at 30% only, start a teammate's combo cooldown just as
+the Haste begins and time it with a stopwatch against one without Haste:
+about 1.5 s shorter if Haste speeds up cooldowns too (the engine says no);
+at 15% the difference (0.75 s) is too small to see.
 
 ### 20. Laevatain's battle-skill multipliers (ready, if you have Laevatain at P1+)
 
@@ -312,9 +380,13 @@ empowered battle skill: does the icon come back?)
 
 **Why:** the data gives P1's +20 SP only on the empowered extra hit, so a
 plain battle skill gives none. The engine follows the data.
-**How:** note the team SP, cast a plain battle skill, read SP again; then
-the same with 4 Melting Flame. Expected: 0 back for the plain one, 20 for
-the empowered one.
+**How:** the game shows no SP number, so look for a jump instead, in a
+phone video with the SP bar not full. After a battle skill the bar drops a
+third and SP regen pauses (about 1.5 s, unverified), then fills smoothly.
+With 4 Melting Flame: does the bar jump up by about a fifteenth (20 of
+300) at the moment the big extra hit lands? Then a plain battle skill: no
+jump expected anywhere. If the jump is too small to see, leave this one:
+the data settles it.
 
 ### 24. Heat absorption by Final Strike and Finisher (optional confirmation, if you have Laevatain)
 
@@ -407,7 +479,9 @@ ultimate; see test 8), and Liino's talent-2 SP.
   used up?
 - Liino: with Link up, cast End Stance, then her battle skill: does the
   battle skill still get the Link bonus? And after her combo (talent 2
-  active), cast End Stance: is SP returned? And in Vocalist Stance, cast
+  active), cast End Stance: is Starry Boost used up (its icon gone)? Its
+  SP (5 in the data) is too small to see on the SP bar, so the icon is
+  the sign. And in Vocalist Stance, cast
   her combo: when the stance's action resumes after it (the game casts it
   by itself), is Starry Boost used up?
 - Typhoeus with Umbra of Frigid Eventide (if you have it): cast only her ultimate and
@@ -432,13 +506,15 @@ ultimate's 1.6 s time stop if it's frozen.
 comes from a Final Strike by the controlled operator or from a finisher.
 The engine has only the Final Strike half, so rotations that stagger and
 finish inside the array lose lasers and the route to her second ultimate
-(14.4 × ATK in INT). Separately, the engine adds 8 SP to each of her
-finishers from a data default that may not be real.
+(14.4 × ATK in INT).
 **How:** inside her array, stagger the enemy and finish it with the
-controlled operator: do the four lasers come? Does a finisher plus a Final
-Strike within 0.4 s count once or twice? And with Arcane controlled, her
-finisher on a Staggered enemy: note the team SP before and after. Is it
-the enemy's finisher SP alone, or 8 more?
+controlled operator: do the four lasers come?
+**Not testable by hand:** whether a finisher and a Final Strike within
+0.4 s count once or twice (the inputs can't be timed that closely; at most
+four lasers once per stagger), and whether her own finisher gives 8 SP
+beyond the enemy's finisher SP (a data default no action reads; her kit
+now gives none). 8 SP is a fortieth of the bar, about 1 s of regen per
+stagger, too small to see.
 
 ### 32. Gloompurge Arcana window (ready, if you have Arcane)
 
@@ -460,8 +536,10 @@ current infliction, but the data probably takes it from the infliction
 that opened the combo window: when the enemy's infliction changes before
 the combo, that's one burst (1.6 × her ATK) more or less.
 **How:** Will > Intellect. (1) A teammate applies Cryo; Arcane's combo at
-once: is a Cryo burst shown at the touch, and whose damage number is it
-(hers, or later on a teammate's hit)? (2) A teammate applies Cryo (opening
+once, and then nobody attacks for a few seconds: does a Cryo burst number
+appear at the touch? Then the same, but with a teammate's hit 2–3 s after
+the touch: does the burst number appear only with that hit (the log
+credits it to the hit), or at the touch? (2) A teammate applies Cryo (opening
 the window), then a Heat hit consumes it (Solidification), then Arcane's
 combo: does the touch apply Cryo (the trigger's element), nothing, or
 Heat?
@@ -473,8 +551,9 @@ next battle skill on that enemy gives SP and a second explosion. The data
 suggests no lasers then (the clone that fires them is gone); the engine
 gives none.
 **How:** Intellect ≥ Will. Combo, let Imprisonment end (one explosion),
-then her battle skill on the same enemy within a few seconds: does it give
-SP, a second explosion, and lasers?
+then her battle skill on the same enemy within a few seconds: does a
+second explosion appear, and lasers? Does the SP bar jump up by about a
+tenth (30 SP) at its hit, after the third the battle skill spent?
 
 ### 35. Combo windows opened by a reaction (ready, if you have Gilberta or Arcane)
 
@@ -499,11 +578,14 @@ That's about one earlier Arcane combo per second ultimate.
 **How:**
 - Typhoeus: cast one of her combos, then look at the other: is it on the
   full cooldown too (engine)?
-- Arcane at P5, Will > Intellect: note the combo's remaining cooldown, cast
-  the second ultimate, read it again. 5.4 s off, 30% off what was left, or
-  5.4 s left? Repeat with Intellect ≥ Will (data: no cut).
+- Arcane at P5, Will > Intellect: cast her combo and start a stopwatch;
+  cast the second ultimate about 5–6 s later; stop when the combo is ready
+  again. About 12.6 s means 5.4 s off; about 14.3 s, 30% off what was left;
+  about 11 s, set to 5.4 s left; 18 s, no cut. (Casting the ultimate at
+  5–6 s keeps the four readings at least 1.5 s apart.) Repeat with
+  Intellect ≥ Will (data: no cut, 18 s).
 
-### 37. Enemy timers while Imprisoned or Immobilized (ready, if you have Si or Arcane)
+### 37. Enemy timers while Imprisoned or Immobilized (ready, if you have Arcane; the Si part is not testable by hand)
 
 **Why:** the engine freezes every status on the enemy while Si's
 Immobilization freezes it (1 s, 1.5 s at P1), which fits one log for
@@ -515,16 +597,16 @@ it, each combo adds about 2.5 s to every status on the enemy (Corrosion's
 ramp and duration, Electrification, teammates' Susceptibility). The
 engine doesn't do that yet. This may also explain part of test 4.
 **How:**
-- Si, on a normal enemy and then on a boss: cast her battle skill and time
-  Artful Intent's icon and Jade Vessel's DMG-taken icon. The engine
-  gives Artful Intent 20 s plus the Immobilization (21–21.5 s) where the
-  freeze works, and Jade Vessel's debuff a flat 30 s (it is applied as
-  the freeze starts, and the freeze only stretches what is already on the
-  enemy); flat 20 s and 30 s where the enemy is immune. A Jade Vessel icon
-  lasting 31–31.5 s means debuffs applied during the freeze wait for it.
 - Arcane: a teammate applies a timed status to a dummy (Electrification,
   or her own Corrosion), then Arcane's WILL combo: does the status run out
   later than without the combo, by about 2–3 s?
+- Si: **not testable by hand.** The engine gives Artful Intent 20 s plus
+  the Immobilization (21–21.5 s) where the freeze works, and Jade Vessel's
+  debuff a flat 30 s (applied as the freeze starts; the freeze only
+  stretches what is already on the enemy); flat 20 s and 30 s on an immune
+  enemy. Each reading differs from the next by only 1–1.5 s on a 20–30 s
+  timer, too close for a stopwatch or a phone video. Impact: 1–1.5 s of
+  Artful Intent or Jade Vessel's debuff per battle skill, on bosses only.
 
 ### 38. Two Arts Susceptibility sources (ready, if you have Gilberta and Ardelia)
 
@@ -617,17 +699,17 @@ rain per shot.
 empowered one on the 5th? Then land early and attack on the ground within
 the 5 s: no rains expected.
 
-### 47. Projectile travel and Typhoeus's burst delay (ready; lower priority)
+### 47. Projectile travel and Typhoeus's burst delay (not testable by hand)
 
 **Why:** the engine lands projectile hits at their launch frame; the data
 has no travel time. Typhoeus's Power Shot burst shows up about 0.3 s after
 the arrow in the logs: travel, or a delay of the burst itself? Small for
 damage (0.1–0.4 s); her Hail of Arrows count already ignores the bursts,
 so moving them later is safe.
-**How:** a slow-motion clip of one Power Shot: is the burst number about
-0.3 s after the arrow's, and does the gap change with distance (travel) or
-not (a burst delay)? The same kind of clip of Laevatain's 4th basic attack
-or Estella's battle skill would show their travel too.
+**Not testable by hand:** the gaps are 0.1–0.4 s, below what a stopwatch
+or a phone video can tell. The engine keeps launch-frame landings (kits
+take travel time from logs where they can); ZMDLogs timestamps are the
+way to settle it.
 
 ### 48. Valiant's hit and skill-type bonuses (ready, if you have Estella with Valiant)
 
@@ -642,20 +724,30 @@ compare Valiant's hit after her combo with the one after her ultimate
 
 **Why:** after she causes a Shatter, her next battle skill returns 15 SP
 (talent level 2). The data says a teammate's Shatter doesn't count.
-**How:** note team SP; her combo on a Solidified enemy (Shatter), then her
-battle skill: SP should end at before − 100 + 15. A second battle skill
-without a Shatter: −100 only. Then a teammate's Shatter (their Lift on a
-Solidified enemy), then her battle skill: −100 only, if the data is right.
+**How:** the game shows no SP number, so look for a jump in a phone video,
+with the SP bar not full. After a battle skill the bar drops a third and
+regen pauses (about 1.5 s, unverified), so a return shows as a small jump
+on a still bar, about 0.7 s after the cast (15 of 300: a twentieth of the
+bar). Her combo on a Solidified enemy (Shatter), then her battle skill: a
+jump expected. A second battle skill without a Shatter: no jump. Then a
+teammate's Shatter (their Lift on a Solidified enemy), then her battle
+skill: no jump, if the data is right. If a twentieth of the bar is too
+small to see, this one is not testable by hand; the impact is 15 SP per
+Shatter-then-battle-skill (about 2 s of SP regen).
 
 ### 50. Estella's P5 energy (ready, if you have Estella at P5)
 
 **Why:** at P5 she gains 5 energy whenever an enemy is Solidified, at most
 once per 1 s. The data says anyone's Solidification counts, and the engine
 counts re-Solidifying an already Solidified enemy too.
-**How:** with nothing else giving her energy, let a teammate cause
-Solidification: +5 means anyone's counts. Then re-Solidify an enemy that
-is already Solidified: +5 again means a refresh counts. Two within 1 s: +5
-once.
+**How:** with nothing else giving her energy (her gauge not full), watch
+her ultimate gauge in a phone video: 5 energy is about a fourteenth of her
+70-energy gauge, so look for a small step. Let a teammate cause
+Solidification: a step means anyone's counts. Then re-Solidify an enemy
+that is already Solidified: another step means a refresh counts. (Two
+Solidifications within 1 s should give one step, not two, but they can't
+be timed by hand reliably; skip that part.) If the gauge doesn't show such
+a small step, this one is not testable by hand.
 
 ### 51. Does an effect a hit triggers count on that same hit? (ready, if you have Arcane with Solemn Phalanx, or Hot Work)
 
@@ -671,37 +763,69 @@ battle skill cast while the buff is up. Equal means the first hit already
 had the buff. Hot Work: compare her INT ultimate hit with and without the
 set's buff already up before it.
 
-### 52. SP from one perfect dodge (ready)
+### 52. SP from one perfect dodge (not testable by hand)
 
 **Why:** the data gives a perfect dodge 7 SP
 (`buff_common_dash_behit_listener`, blackboard `atb`); the Talos Wiki and
-other simulators say about 7.5. The engine uses 7. It's one perfect dodge
-per enemy attack in every scenario with dodging on.
-**How:** with full SP minus some (e.g. right after a battle skill, once
-regen has resumed), perfectly dodge one attack and read the SP bar just
-before and about 1 s after; subtract the regen over that second (8 SP/s,
-paused about 0.5 s by the dodge's slow-down). 7 or 7.5?
+other simulators say about 7.5. The engine uses 7 (the data).
+**Not testable by hand:** the game shows only an SP bar, no number, and
+the two readings differ by 0.5 SP, a six-hundredth of the bar. The impact
+is tiny: 0.5 SP per perfect dodge, while a battle skill costs 100 and SP
+regenerates 8/s, so each dodge is off by about 0.06 s of regen.
 
-### 53. Does a perfectly dodged hit count as "attacked"? (ready, if you have Catcher, Ember or Snowshine)
+### 53. Does a perfectly dodged hit count as "attacked"? (ready, if you have Snowshine, Catcher, Ember or Purrchena; low priority)
 
-**Why:** combo triggers like Catcher's "when the controlled operator is
-attacked" listen to damage taken; the dash makes the dodger immune, so a
-perfectly dodged hit probably doesn't count. The engine assumes it
-doesn't: a perfect dodge replaces the attack on the dodger with a
-perfect-dodge event.
-**How:** with Catcher in the team, perfectly dodge an enemy attack with
-another operator controlled: does Catcher's combo become castable?
+**Why:** effects like Catcher's combo trigger ("when the controlled
+operator is attacked") and Snowshine's and Catcher's battle-skill
+retaliation listen for the operator being hit (the same listener in all
+four operators' data); the dash makes the dodger immune, so a perfectly
+dodged hit probably doesn't count. The engine assumes it doesn't: a
+perfect dodge replaces the attack on the dodger with a perfect-dodge
+event. Low priority: the owner doesn't use these operators, and their kits
+aren't in yet.
+**How (the owner's method):** with Snowshine, dodge an enemy attack
+perfectly and see whether the enemy gets a Cryo Infliction anyway. Her
+battle skill (Saturated Defense) raises a shield; when she's attacked while
+it's up, she performs a retaliation bash that deals Cryo DMG and applies
+Cryo Infliction to the attacker. First, as a control, raise the shield
+and let an attack hit it: the bash's Cryo damage number and the Cryo
+Infliction icon on the enemy should appear. Then raise the shield again
+and perfectly dodge the enemy's next attack. Both appearing means a
+perfectly dodged hit counts as "attacked"; neither means it doesn't, as
+the engine assumes. If nothing appears, the dash may also have ended the
+shield (test 54), which looks the same.
+(With Catcher instead: perfectly dodge an enemy attack with another
+operator controlled; does Catcher's combo become castable?)
 
-### 54. Can a dash cancel a battle skill or combo at any frame? (ready)
+### 54. Can a dash cancel a battle skill or combo at any moment? (ready; higher priority: affects every operator)
 
 **Why:** the engine lets a dash (the perfect dodge at an enemy attack) end
 any current action except an ultimate before its exclusive frames
 (Endaxis's rule from the game's code), dropping that skill's hits still to
 come. If some skills can't be dashed out of, dodges cost less damage than
-the engine says.
-**How:** start a long battle skill (Laevatain's empowered one: its extra
-hit comes about 1.8 s in) and dash right after the cast: does the extra
-hit still happen? Same with a combo.
+the engine says. Every operator dodges, so this affects every scenario with
+dodging on.
+**How:** no enemy attack is needed; press dodge on a training dummy.
+1. Laevatain with 4 Melting Flame: cast the battle skill (the empowered
+   one) and press dodge right after, within the first second. Does she
+   dash at once? Does the big extra hit still appear (its large damage
+   number and the forced Combustion on the dummy)? Without the dash it
+   comes about 1.8 s after the cast. Engine: she dashes at once and the
+   extra hit never comes. (Her explosion and its burning ticks land
+   anyway: the engine treats them as already on their way.)
+2. The same with a combo: Gilberta's (its hit comes about 1.6 s in) or
+   Si's (the big final hit, about 1.6 s in). Cast it and press dodge right
+   away: does the hit's damage number still appear? Engine: no.
+   (Laevatain's combo isn't a test of this: the engine already lets its
+   hit land after a dash, as a projectile on its way.)
+3. Optionally Gilberta's battle skill, whose explosion comes about 3.6 s
+   in: dodge right after the cast. Does she dash (the data forbids her
+   swapping and casting for 3.7 s, test 15; the engine still lets her
+   dash), and does the explosion still come? Engine: she dashes and it
+   doesn't.
+If the operator doesn't dash until the skill ends, or the hit still
+lands, that skill can't be dashed out of (or its hit is already on its
+way).
 
 ## Results
 
