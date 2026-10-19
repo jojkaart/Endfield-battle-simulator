@@ -278,15 +278,16 @@ const KNOWN: string[] = [
   "chr_0034_typhoea_ultimate_skillfloating/final_rain_tick frames: kit none (count 5), data [67, 69, 71, 72, 74, 91] (on ability event 302, if damage tag(tag 1208750764|tag 959424907), …)",
   "chr_0034_typhoea_ultimate_skillfloating/final_rain_blast frames: kit none (count 1), data [67, 69, 71, 72, 74, 91] (on ability event 302, if damage tag(tag 1208750764|tag 959424907), …)",
   "chr_0034_typhoea_ultimate_skillfloating: data lands chr_0034_typhoea_ultimate_skill_arrowrain atk_scale_main × potential_damge_up at [62], no kit hit",
-  // CreateBuff buff_common_obtain_ultimate_sp in normal_skill_abilityrange2 at 20; the kit gives the team energy at the cast.
-  "chr_0032_lizhiyan_normal_skill teamEnergyFrame: kit -, data 20",
-  // Event-driven: the explosion and lasers come from listener buffs' ability events (8, 101, 204) and CastSkill helpers; compiled frames are only the listeners' creation frames. The kit's frames come from logs. Also SpawnAbilityEntity at 9 names chr_032_lizhiyan_combo_skill_abilityentity_seal (game typo "chr_032"), which tables.json's chr_0032_lizhiyan* glob doesn't cover.
-  "chr_0032_lizhiyan_combo_skill/explosion_will frames: kit [222], data [0, 9] (on ability event 8, if CheckTimedMarkerCondition(id=lizhiyan_combo_end_not_finish), …)",
-  "chr_0032_lizhiyan_combo_skill/explosion_int frames: kit [36], data [14, 23] (on ability event 8, if CheckTimedMarkerCondition(id=lizhiyan_combo_hit))",
-  "chr_0032_lizhiyan_combo_skill/laser_int frames: kit [79, 82, 85, 88], data [54, 57, 60, 63] (on ability event 204, if buff in context(buff_chr_0032_lizhiyan_combo_skill_seal|buff_chr_0032_lizhiyan_combo_skill_seal_bunshin_end_listener), …)",
-  "chr_0032_lizhiyan_combo_skill/laser_int_final frames: kit [94], data [69] (on ability event 204, if buff in context(buff_chr_0032_lizhiyan_combo_skill_seal|buff_chr_0032_lizhiyan_combo_skill_seal_bunshin_end_listener), …)",
-  // Under WILL (EntityBB_wisd_greater_will < 1) the ultimate inflicts the enemy's current element (stack checks natural → cryst → pulse → fire); the kit's array_will has none (A1 `element: enemy` exists; kits phase).
-  "chr_0032_lizhiyan_ultimate_skill applies at 47: kit [forced corrosion], data [], conditionally [infliction natural, infliction cryst, infliction pulse, infliction fire]",
+  // Finisher: BreakingAttackCalculation multipliers 0.1 (×5) and 0.5, which the compiler doesn't read (it takes atk_scale × 1; open list D2).
+  "chr_0032_lizhiyan_power_attack/a factor: kit 0.1, data 1",
+  "chr_0032_lizhiyan_power_attack/b factor: kit 0.1, data 1",
+  "chr_0032_lizhiyan_power_attack/c factor: kit 0.5, data 1",
+  // WILL: seal_total switches on EntityBB_consumed_type (set natively) for the element; the kit applies the enemy's current one (`element: enemy`, if WILL; open list A6).
+  "chr_0032_lizhiyan_combo_skill applies at 15: kit [infliction enemy], data [], conditionally [infliction natural, infliction cryst, infliction pulse, infliction fire]",
+  // RefrainObtainUsp 0–47 is the skill's; the array's own block (listener_owner, 20 s) is the kit buff gloompurger_array's blocksEnergy, which ends early with two Cluster Strikes.
+  "chr_0032_lizhiyan_ultimate_skill energyBlockSeconds: kit 1.567, data 21.567",
+  // WILL (EntityBB_wisd_greater_will < 1): an infliction of the enemy's current element (stack checks natural → cryst → pulse → fire), `element: enemy` in the kit; INT: the forced Corrosion.
+  "chr_0032_lizhiyan_ultimate_skill applies at 47: kit [infliction enemy, forced corrosion], data [], conditionally [infliction natural, infliction cryst, infliction pulse, infliction fire]",
   // Finisher (BreakingAttackCalculation, mask 132): four DamageActions at 3, 12, 21, 37; the kit has one at 37.
   "chr_0036_jsspsi_power_attack: data lands chr_0036_jsspsi_power_attack atk_scale at [3, 12, 21], no kit hit",
   // Heat when SaveCharTypeIdToIntBySquadSlot (team slot 1's element) = 0, else Cryo; the kit always applies Cryo (batch-1 kit errors).

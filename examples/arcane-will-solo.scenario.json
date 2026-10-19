@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/scenario.schema.json",
-  "description": "Arcane (Array Arcana: WILL, the P4 build of btl_upload_b7b3762d5da8) alone vs Rhodagn, ultimate charged: her battle skill's Nature Infliction opens the WILL combo window, the Tactical Doubles apply Nature and Cryo Susceptibility and explode when Imprisonment ends, the ultimate blocks her energy for 21.6 s, and a basic chain fills the gaps.",
+  "description": "Arcane (Array Arcana: WILL, the P4 build of btl_upload_b7b3762d5da8) alone vs Rhodagn, ultimate charged: her battle skill's Nature Infliction opens the WILL combo window, the Tactical Doubles apply Nature and Cryo Susceptibility (and Solemn Phalanx its Arts DMG Taken) and explode when Imprisonment ends, the ultimate opens the Gloompurger Array with talent 1's Susceptibility, and each basic chain's Final Strike inside it calls a Cluster Strike: the second switches to Gloompurge Arcana.",
   "team": ["arcane-will.json"],
   "target": { "enemy": "eny_0051_rodin", "level": 90 },
   "startEnergy": { "chr_0032_lizhiyan": "full" },

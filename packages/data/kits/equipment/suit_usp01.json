@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_usp01",
+  "sources": [
+    "Catastrophe, 3-piece set skill passive_equipsuit_usp_01 (rmxlinux Json/SkillData, values from SkillPatchTable): the wearer's first battle skill (CheckSkillType [2]; has_gain_atb resets on abilityEvent 6, taken as the fight start) returns atb_recover SP once."
+  ],
+  "triggers": [
+    {
+      "id": "suit_usp01.sp",
+      "on": {
+        "event": "cast",
+        "kinds": [
+          "battle"
+        ]
+      },
+      "by": "self",
+      "maxCount": 1,
+      "skill": "passive_equipsuit_usp_01",
+      "do": [
+        {
+          "kind": "sp",
+          "value": "atb_recover"
+        }
+      ]
+    }
+  ]
+}

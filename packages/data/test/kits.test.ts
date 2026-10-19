@@ -30,7 +30,6 @@ describe.each(Object.values(data.kits.operators))("kit $operator", (kit) => {
       // Heavy and plunging attacks.
       chr_0016_laevat: ["chr_0016_laevat_plunging_attack_end", "chr_0016_laevat_power_attack"],
       // Finisher: BreakingAttackCalculation, not ATK × key.
-      chr_0032_lizhiyan: ["chr_0032_lizhiyan_power_attack"],
       // Floating-stance loop and end: atk_scale in the table but no DamageAction (they only cast the floating shots).
       chr_0034_typhoea: ["chr_0034_typhoea_normal_skill_floating_end", "chr_0034_typhoea_normal_skill_floating_loop"],
       // Basic attacks: never logged, branchy SkillData.

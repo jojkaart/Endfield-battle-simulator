@@ -3,7 +3,7 @@
 // the bursts and reactions it predicts with the ones the log records. Logs
 // don't record inflictions, so this is how a kit's `applies` gets verified.
 
-import { applyToEnemy, computeStats, expireStatus, FPS, effectiveKit, hitAvailable, hitEffects, kitHitEntries, NO_STATUS, resolveApplication, statusEventKey, type GameData, type KitHit, type StatusEvent } from "@efsim/engine";
+import { applyToEnemy, computeStats, expireStatus, FPS, effectiveKit, hitAvailable, hitEffects, kitHitEntries, NO_STATUS, resolveApplication, statusEventKey, type GameData, type KitHit, type Predicate, type StatusEvent } from "@efsim/engine";
 import type { LogFixture } from "@efsim/data";
 
 /**
@@ -44,6 +44,19 @@ function kitHit(data: GameData, fixture: LogFixture, operator: string, event: st
   return null;
 }
 
+/** Whether a predicate can hold for an operator of the fixture (false only when its build decides it is false). */
+function possible(data: GameData, fixture: LogFixture, operator: string, event: string, p: Predicate): boolean {
+  const build = fixture.team.find((b) => b.operator === operator);
+  if (!build) return true;
+  const hit: KitHit = { id: "x", label: "", scale: [], count: 1, events: [event], damageType: "basic", element: "physical", if: p };
+  try {
+    return hitAvailable(data, build, computeStats(data, build), "", hit, { team: fixture.team });
+  } catch {
+    // It reads a skill value the replay doesn't know: undecided.
+    return true;
+  }
+}
+
 export function checkReactions(data: GameData, fixture: LogFixture): ReactionCheck {
   const hits = [...fixture.hits].sort((a, b) => a.t - b.t);
   let enemy = NO_STATUS;
@@ -56,6 +69,8 @@ export function checkReactions(data: GameData, fixture: LogFixture): ReactionChe
     // Only the controlled operator does basic attacks, so a logged Final Strike counts for Final Strike triggers.
     for (const effect of hitEffects(teamKits, h.operator, kh, h.event)) {
       for (const app of effect.applies) {
+        // An application that can't happen for this build (a mode: KitApplication.if) is left out; one the log can't decide stays.
+        if (app.if && !possible(data, fixture, effect.owner, h.event, app.if)) continue;
         // Arts Intensity only scales status strength, and skill values only a forced status's duration and damage, which this check doesn't compare.
         // A replay doesn't know stack counts: a stack amount that's a value counts as all (4).
         const r = applyToEnemy(expireStatus(enemy, frame), resolveApplication(app, (v) => (typeof v === "number" ? v : 4)), frame, h.operator, 0, () => 1);

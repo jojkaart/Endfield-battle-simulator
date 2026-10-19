@@ -1233,3 +1233,132 @@ Not yet in docs/in-game-tests.md: whether a same-hit equipment buff counts
 on its own hit (Hot Work on the INT ultimate's hit, W3 on the battle skill
 that inflicts): it settles the `beforeDamage` choices above. The first
 round's F (talent-2 Corrosion duration) is optional: the data sets it.
+
+## Kit (2026-10-18)
+
+### Written
+
+- `packages/data/kits/operators/chr_0032_lizhiyan.json`: the pass-3 plan
+  (pass 2 where pass 3 left it). Stack `cluster_strikes`; talent-2
+  `statusTweaks`; buffs `imprisonment`, `doubles_susceptibility`,
+  `post_susceptibility_int`, `early_end_marker`, `int_after_end`,
+  `gloompurger_array`, `gloompurge_arcana`, `int_amp`, `t1_susceptibility`;
+  triggers for the combo windows, `imprison` (cast + 11, detached),
+  `int_early_end`, `explosion`, `int_late_hit`, `array_start`,
+  `cluster_strike` (Final Strike, 0.4 s), `cluster_strike_finisher`
+  (`decorations: ["finisher"]`, `maxPerCast: 1`), `array_end`,
+  `gloompurge_end`, `p5_cooldown` (`fraction`); skills with the new
+  finisher (`power_attack`, `factor`, `poise`, `sp: 0` on its last
+  landing), one combo hit `touch` and one ultimate hit `array` whose WILL /
+  INT effects carry their own `if`. The old per-mode combo hits (touch,
+  explosion and lasers at assumed frames) and the not-modelled list in
+  `sources` are gone; notes say where each value comes from.
+- Equipment: `wpn_funnel_0016` (Solemn Phalanx: W3–W6), `suit_usp02`
+  (Eternal Xiranite), `suit_usp01` (Catastrophe), as planned.
+- `examples/arcane-will-solo.scenario.json`: description only.
+- Tests: `kits.test.ts` drops the power_attack gap; `skillCompile.test.ts`
+  KNOWN: the six old Arcane rows went with the hits they described
+  (explosion and laser frames are trigger hits now, the ultimate's applies
+  changed), six new ones: the finisher's three `factor`s (the compiler
+  reads no BreakingAttackCalculation multiplier, D2), the combo's and the
+  ultimate's `element: "enemy"` infliction (the data's Switch on
+  EntityBB_consumed_type / the enemy's tags, A6), and the ultimate's
+  `energyBlockSeconds` 1.567 against the compiled 21.567 (the array's 20 s
+  block is `gloompurger_array`'s `blocksEnergy`, which two Cluster Strikes
+  end early).
+- `packages/cli/src/reactioncheck.ts`: the reaction replay now leaves out an
+  application whose own `if` is false for the build (it ignored it, so the
+  WILL logs got the INT forced Corrosion once the ultimate's two effects
+  became one hit).
+
+### Deviations from the plan
+
+- **The ultimate's array and talent-1 Susceptibility are hit `buffs` with
+  `beforeDamage`, not the delayed cast triggers `ult_frame_47` /
+  `t1_susceptibility_ult2`.** The plan used those only because a
+  before-damage buff's `buffApplied` triggers ran after the damage (R12);
+  P3-10 runs them before it, so `array_start` (INT Amp) and the weapon's
+  and Eternal Xiranite's category triggers act on the hit either way. The
+  WILL solo total is the same as the pass-3 scratch run (102,141).
+- **Solemn Phalanx W4 / W6 have `fromKinds: ["battle", "combo",
+  "ultimate"]`** (P3-11, R13; abilityEvent 206's CheckOriginSkillType
+  [2, 6, 7]). Arcane's Susceptibilities come from her combo (the `imprison`
+  trigger carries the combo's kind, `int_early_end` the battle skill's)
+  and ultimates, so nothing changes for her.
+- `suit_fire_natr01` (Hot Work) isn't written here: another operator owns
+  it. The INT build of d9e59d0fb737 needs it; the plan's version (two
+  `reaction` triggers with `beforeDamage`) is in the pass-3 scratch kits.
+
+### Verification
+
+`npm run check` passes (375 tests).
+
+`efsim zmdlogs check`, Arcane, before → after (identical counts; only the
+"kit hit touch_will / array_will" labels are gone, those keys now have one
+kit hit each):
+
+| Fixture | Hits | Match | Mismatch | Unquantified | Uncovered | Covered |
+|---|---|---|---|---|---|---|
+| 0eef2474a26f | 4 | 3 | 0 | 0 | 1 (`buff_common_natural_triggered`, L2) | 67% |
+| b7b3762d5da8 | 13 | 13 | 0 | 0 | 0 | 100% |
+| bdf223db8e49 | 59 | 32 | 0 | 26 | 1 (L2) | 78% |
+| d9e59d0fb737 | 16 | 0 | 0 | 16 (forced Corrosion, pre-1.6 tables) | 0 | 100% |
+| dbaee23b801d | 4 | 4 | 0 | 0 | 0 | 100% |
+
+The other operators' lines are unchanged. `efsim zmdlogs reactions`
+(Arcane's): 0eef2474a26f and bdf223db8e49 go from 1 matched + 1 unexpected
+Cryo burst to 2 matched (the WILL touch's same-element Cryo, logged 1.0 s
+later, and the battle skill's Corrosion now at level 2, as the hit checks
+assume); b7b3762d5da8 predicts Cryo bursts at 4953 and 7150 ms (×2) that
+the log has at 10340 / 10910 ms, outside the 1.2 s window; dbaee23b801d's
+predicted Nature burst at 8501 ms is logged at 10341 ms (both test 33);
+d9e59d0fb737 unchanged.
+
+Example totals (`efsim simulate`):
+
+- arcane-will-solo: 54,023 → 102,141. New hits: two Cluster Strikes from
+  the chain's Final Strikes (8 lasers, 13,016) and the bursts of the touch's
+  and the ultimate's same-element Nature (8,613 + 10,477); the rest
+  (+16.0k) is talent 1's Susceptibility (0.128, 10 s from the ultimate),
+  Solemn Phalanx's two Arts DMG Taken debuffs (0.108 each, from the
+  combo's Susceptibility and the touch's burst) on every later hit, and the
+  combo explosion 2 frames later (Imprisonment from seal_total frame 2).
+- gilberta-gravity-field: 271,088 → 286,594: Gilberta wears Eternal
+  Xiranite; her Susceptibility now gives Laevatain +16% DMG for 15 s
+  (222,452 → 237,958, Combustion ticks included).
+- The others are unchanged (estella-solidification: Estella is alone;
+  liino-laevatain: Liino has one usp02 piece).
+
+Spot checks (scratch scenarios, a stepping trace of buffs, stacks, energy,
+SP and hit modifiers):
+
+- INT (d9e59d0fb737 build, P0): battle-skill infliction → W3 Arts DMG on
+  that hit; combo at +11 → Imprisonment, Susceptibility 0.04, W4 ATK; the
+  battle skill hitting the Imprisoned enemy ends it early: SP +30, early
+  explosion, post-Imprisonment Susceptibility until the final laser, lasers
+  at +43/46/49/52/58; ultimate: forced Corrosion, array and INT Amp 0.24 on
+  its own hit; Final Strikes → Cluster Strikes (+50 energy past the block,
+  lasers at +15…27), the second → Gloompurge Arcana (energy 100) and ult 2
+  (Amp still on); Gloompurge's end clears Amp and the strikes; a second
+  combo (12 s cooldown: talent 1's −6 s in INT) ends naturally: explosion at
+  +14, then the next battle-skill hit gives SP and the late explosion.
+- WILL (P5, Eternal Xiranite, Laevatain): touch with the enemy's element
+  (burst) and W6; W5 after the burst; Eternal Xiranite +16% on Laevatain
+  only; talent-1 Susceptibility 0.198 (0.128 + P5 0.07) before the
+  ultimate's hit, 10 s; a Finisher (enemy staggered by hand) gives one
+  Cluster Strike (lasers at +12…24, not one per landing), SP without the
+  unread 8; the Final Strike gives the second; ult 2 (Susceptibility
+  before its hit) cuts the combo's cooldown by 5.4 s (30% of 18 s).
+- Catastrophe: the first battle skill returns 50 SP, the second nothing.
+
+### Still unverified
+
+In-game tests 7 (INT Amp for the array's 20 s), 13, 18 and 37 (time stops,
+Imprisonment's slow-down, Ti1b), 30 (10 s, a confirmation), 31 (Finisher
+Cluster Strike, Finisher + Final Strike within 0.4 s, finisher SP), 32
+(Gloompurge length; does ult 2 end it), 33 (WILL same-element stack:
+timing, attribution, element; the reaction check above), 34 (lasers after a
+natural INT end), 35 (combo window and W3 on a reacting application), 36
+(`fraction` meaning), 51 (whether a same-hit equipment buff counts on its
+own hit: W3's and Hot Work's `beforeDamage`). No log has a Cluster Strike,
+ult 2, a finisher or a late INT explosion.

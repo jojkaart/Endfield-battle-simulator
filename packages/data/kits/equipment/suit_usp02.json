@@ -1,0 +1,50 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_usp02",
+  "sources": [
+    "Eternal Xiranite, 3-piece set skill passive_equipsuit_usp_02 (rmxlinux Json/SkillData, values from SkillPatchTable): buff_equipsuit_usp_02 abilityEvent 102 + CheckBuffIdInContext with four tags (Amp, Protection, Susceptibility, Weakness): when the wearer applies a buff of those kinds, buff_equipsuit_usp_02_AddAttack gives every other teammate DMG Dealt +dmg_up for `duration`. No source-skill check. Logged: equipsuit_usp_02_AddAttack 0.16 on Arcane from Liino's set (btl_upload_d9e59d0fb737).",
+    "Categories come from the kit buffs' modifiers (zone amp / susceptibility, attributes 62 / 63), so only effects written as kit buffs trigger it."
+  ],
+  "buffs": [
+    {
+      "id": "suit_usp02.team_dmg",
+      "label": "DMG Dealt (teammates)",
+      "target": "team",
+      "recipients": {
+        "not": {
+          "isOwner": true
+        }
+      },
+      "duration": "duration",
+      "modifiers": [
+        {
+          "zone": "damageBonus",
+          "value": "dmg_up"
+        }
+      ],
+      "gameBuff": "buff_equipsuit_usp_02_AddAttack"
+    }
+  ],
+  "triggers": [
+    {
+      "id": "suit_usp02.on_category",
+      "on": {
+        "event": "buffApplied",
+        "categories": [
+          "amp",
+          "protection",
+          "susceptibility",
+          "weakness"
+        ]
+      },
+      "by": "self",
+      "skill": "passive_equipsuit_usp_02",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "suit_usp02.team_dmg"
+        }
+      ]
+    }
+  ]
+}

@@ -2,14 +2,16 @@
   "$schema": "../../../../schemas/kit.schema.json",
   "operator": "chr_0032_lizhiyan",
   "sources": [
-    "Hit structure: rmxlinux Json/SkillData chr_0032_lizhiyan_* and Json/BuffData buff_chr_0032_lizhiyan_* (game 1.6). Every damage unit is plain ATK × blackboard key (no atkCalculation), including the combo skill's 'seal' buffs, which take their keys from the combo skill by assignBlackboard: seal_total ← atk_scale_touch; seal2 / seal_listener / seal_bunshin_end_listener ← atk_scale_boom (as atk_scale_early_finish); seal_finisher_wisd ← atk_scale_laser1 ×4 then atk_scale_laser2; seal_finisher ← atk_scale_laser2. Their decorate mask 12288 is the combo skill's (combo_skill_abilityentity_end has the same).",
-    "Array Arcana (skill type) is chosen by the passive buff_chr_0032_lizhiyan_passive: Intellect ≥ Will → INT, else WILL, from operator level, talents, potentials, gear and weapon attributes only (talent 1 text, I18nTextTable_EN: 'Attribute requirements for the 2 types of Array Arcana only include effects from operator levels, talents, potentials, and attribute bonuses provided by equipped gear and weapons'). Kit hits and combo triggers select the mode with `when` (INT: attribute 41 ≥ 42; WILL: 42 ≥ 41). A build with exactly equal Intellect and Will is INT in game but gets both modes here (`when` has no strict comparison).",
-    "Mode texts: CharGrowthTable skillGroupMap chr_0032_lizhiyan_ComboSkill pairs conditionId1 'lizhiyan_wisd' (INT) with conditionPostDesc1 and conditionId2 'lizhiyan_will' (WILL) with conditionPostDesc2; the battle skill and ultimate use the same order (postDesc1 lists 'Array Arcana: INT', postDesc2 'Array Arcana: WILL').",
-    "Verified against logs (Rhodagn / Lv90 challenge, game 1.6) with the log checker counting stackingType-1 buffs once: btl_upload_b7b3762d5da8 (P4, WILL) all 13 Arcane hits ±1 (seal_total ×2 = atk_scale_touch, ultimate = atk_scale with its boundary talent-1 Susceptibility, attack1 ×3, attack2 ×3, plunge, cryst bursts ×3); btl_upload_0eef2474a26f (P5, WILL) seal_total and battle skill (atk_scale_will, under Corrosion level 2 from its own Nature-onto-Cryo reaction); btl_upload_bdf223db8e49, btl_upload_dbaee23b801d and btl_upload_e82d45c46040 (fixtures/pending) — see the hits' notes. btl_upload_d9e59d0fb737 (the only INT battle, 2026-10-15 01:55 +08:00, parser v58, before 555me's 1.6 table commit 371c743) has every Arcane, Gilberta and Typhoeus hit after Arcane's ultimate about 1.7–2.2× the 1.6 model; all of them are under the ultimate's forced Corrosion, so the checker counts them as under an unmodelled effect. Inside it the INT hits are mutually consistent: seal_finisher_wisd lasers 1–4 / atk_scale_laser1, the final laser / atk_scale_laser2 and attack1 / atk_scale all give the same residual ×1.9617, and seal2 / atk_scale_boom equals battle skill / atk_scale_wisd (×2.2340 at t=12450).",
-    "Not modelled (engine or data loader can't express it yet): the WILL combo's and WILL ultimate's 'another stack of Arts Infliction of the same element' (the element is whatever the enemy has); talent 1 (both modes: values are attachSkill blackboards of PotentialTalentEffectTable chr_0032_lizhiyan_talent_1_*, which skill values can't reach): WILL ultimate Susceptibility min(Will × spell_vul_rate_per_will, spell_vul_rate) + spell_vul_rate_potential for `duration` s, INT Arts Amp enhance_rate during the ultimate; talent 2 (every Corrosion Arcane applies lasts duration_add s longer and its maximum resistance reduction is × (1 + corrupt_rate)); talent 1's combo cooldown −6 s, which PotentialTalentEffectTable limits to activeCondition 'lizhiyan_wisd' (INT) but the loader applies to every build; the INT early end's SP return (atb_return_wisd) and its second Susceptibility instance (it lasts until seal_finisher_wisd's final laser finishes it); Cluster Strike (needs hits triggered by the controlled operator's Finisher or Final Strike inside the array); the ultimate's array aura buff_chr_0032_lizhiyan_ultimate_skill_inaura_attack (atk_scale_laser default 3.0; no log shows it).",
-    "Left out: power_attack (finisher, BreakingAttackCalculation, not ATK × key; the engine has no finisher zone), attack1_projhit and normal_skill_abilityrange (no skill spawns them in 1.6).",
-    "durationFrames are SkillData durationFrame (whole animation including recovery); the timeline locks the operator for SkillData's cancel frame.",
-    "activeConditions: lizhiyan_wisd / lizhiyan_will are INT / WILL mode, set by buff_chr_0032_lizhiyan_passive from Intellect ≥ Will (ties go to INT)."
+    "Hit structure: rmxlinux Json/SkillData chr_0032_lizhiyan_* and Json/BuffData buff_chr_0032_lizhiyan_* (game 1.6). Every damage unit is plain ATK × blackboard key (no atkCalculation), including the combo skill's 'seal' buffs, which take their keys from the combo skill by assignBlackboard: seal_total ← atk_scale_touch; seal2 / seal_listener / seal_bunshin_end_listener ← atk_scale_boom (as atk_scale_early_finish); seal_finisher_wisd ← atk_scale_laser1 ×4 then atk_scale_laser2. Their decorate mask 12288 is the combo skill's (combo_skill_abilityentity_end has the same). Mechanics and their evidence: docs/kit-batches/batch-1/chr_0032_lizhiyan.md (pass-2 and pass-3 plans).",
+    "Array Arcana is chosen by the passive buff_chr_0032_lizhiyan_passive: Intellect ≥ Will → INT, else WILL, from operator level, talents, potentials, gear and weapon attributes only (talent 1 text). The kit writes INT as {attrAtLeast: [41, 42]} and WILL as its negation, so ties go to INT as in the game. activeConditions lizhiyan_wisd / lizhiyan_will are the same two (PotentialTalentEffectTable limits P1's and talent 1's effects by them).",
+    "Mode texts: CharGrowthTable skillGroupMap chr_0032_lizhiyan_ComboSkill pairs conditionId1 'lizhiyan_wisd' (INT) with conditionPostDesc1 and conditionId2 'lizhiyan_will' (WILL) with conditionPostDesc2; the battle skill and ultimate use the same order.",
+    "Combo skill: seal_total (frame 9) starts Imprisonment (buff_…_combo_skill_seal) and its Susceptibility (…_spell_vulnerable_pre, its child) at once: trigger imprison at cast + 11 (seal_total frame 2), detached (nothing cuts the combo before 16). The touch (frame 15) gives `usp` energy; in WILL it adds an Arts Infliction of the enemy's current element (seal_total switches on EntityBB_consumed_type, set natively: open list A6, in-game test 33). Natural end → explosion at +14 (abilityentity_end); in INT also the bunshin_end_listener (int_after_end), whose next battle-skill hit returns SP and explodes again (int_late_hit; lasers after it: test 34). INT early end (the battle skill hits an Imprisoned enemy: seal2 abilityEvent 101 → seal_listener 204 → seal_again): SP atb_return_wisd, explosion, Imprisonment and its Susceptibility end, the post-Imprisonment Susceptibility (rate_pre, ended by the final laser 58 frames later) and lasers at +43/46/49/52/58 (btl_upload_d9e59d0fb737 has them ~1.5 frames earlier). In WILL nothing ends Imprisonment early (seal2's 101 handler checks isWisd), so WILL has no post-Imprisonment Susceptibility and no seal_finisher (unreachable).",
+    "Ultimate: frame 47 creates the array (listener_owner, `duration` 20 s, energy blocked, ult slot → Gloompurge Arcana) and, in WILL, talent 1's Susceptibility, both before the hit's DamageAction (serverActionIndex 45 / 79 vs 82): hit buffs with beforeDamage, so INT Amp (array_start) and the equipment's category triggers act on the hit (btl_upload_dbaee23b801d's ultimate matches only with buff_wpn_funnel_0016_will_dmg on it). Cluster Strike (inaura abilityEvent 101): a Final Strike by the controlled operator (lasers at +15/19/23/27, 0.4 s debounce) or a Finisher (once per finisher, lasers at +12/16/20/24), each +50% max energy (usp_step, ignoreUspGainScalar) past the block; the second ends the array and starts Gloompurge Arcana (listener: energy cleared, then +100%, 10 s; its length and whether casting ult 2 ends it: test 32). The array ending with fewer than 2 strikes, and Gloompurge ending, clear energy (−999). buff_…_ultimate_skill_inaura_attack is referenced by nothing; a third strike (laser3) can't happen (the second ends the array entity).",
+    "Talent 1 (values from chr_0032_lizhiyan_talent1 by {talent: 0}): WILL Susceptibility min(Will × spell_vul_rate_per_will, spell_vul_rate) + spell_vul_rate_potential on Nature and Cryo for the talent's `duration` 10 s (the ultimates read it with GetTargetBuffBBAdvanced desiredKey duration; test 30 confirms), on both ultimates; INT Arts Amp enhance_rate while the array or Gloompurge Arcana lasts (listener_owner / listener children; test 7). Both exist only when their value is above 0 (CompareFloat before the CreateBuff): talent 1 level 1 has 0 for both, so the kit guards them with talent 1 level 2 or P5. Talent 2: statusTweaks on every Corrosion she applies (duration_add, max resistance reduction × (1 + corrupt_rate)). P5 (WILL only): casting ult 2 cuts the combo's cooldown by cd_minus of its full cooldown (SetSkillCdAtOnce isPercentage; the meaning is assumed: open list V7, test 36).",
+    "Finisher (power_attack, BreakingAttackCalculation, mask 132): six landings at 7, 10, 13, 32, 34, 36 of atk_scale × multiplier 0.1 (×5) and 0.5; poise 5/5/5/20/20/10 (DefiniteValueCalculation literals). It has no ObtainCostAction: the file default `atb` 8 isn't read by any action, so `sp: 0` (open list D2, test 31); the enemy's finisher SP stays.",
+    "Not modelled: Imprisonment's slow-down of the enemy's clock (SealAction curve 0.3 → 0.2 → 1.0) and hit-stops (open list Ti1b; tests 18, 37); whether an application that forms a reaction opens the combo window (inflictionApplied excludes it; open list 'Arcane R3', test 35); the paramType 4 half of talent 1 level 2 (R11, undecoded); buff_common_<element>_triggered's ×1.42 (open list L2).",
+    "Verified against logs (Rhodagn / Lv90 challenge, game 1.6): btl_upload_b7b3762d5da8 (P4, WILL) all 13 Arcane hits ±1 (touch ×2 = atk_scale_touch, ultimate with its talent-1 Susceptibility, attack1 ×3, attack2 ×3, plunge, cryst bursts ×3); btl_upload_0eef2474a26f (P5, WILL) touch and battle skill (atk_scale_will, under Corrosion level 2 from its own Nature-onto-Cryo reaction); btl_upload_bdf223db8e49, btl_upload_dbaee23b801d and btl_upload_e82d45c46040 (fixtures/pending). btl_upload_d9e59d0fb737 (the only INT battle, before 555me's 1.6 table commit 371c743) has every hit after her ultimate ×1.7–2.2 the 1.6 model, all under the ultimate's forced Corrosion; inside it the INT hits are mutually consistent (lasers / atk_scale_laser1, final laser / atk_scale_laser2 and attack1 / atk_scale give the same ×1.9617; seal2 / atk_scale_boom equals battle skill / atk_scale_wisd).",
+    "durationFrames are SkillData durationFrame (whole animation including recovery); the timeline takes timing from the data."
   ],
   "element": "natural",
   "activeConditions": {
@@ -28,51 +30,112 @@
       }
     }
   },
+  "stacks": [
+    {
+      "id": "cluster_strikes",
+      "label": "Cluster Strikes",
+      "max": 2,
+      "note": "buff_chr_0032_lizhiyan_ultimate_skill_layer: strikes inside the current array; reset when an array starts and when Gloompurge Arcana ends."
+    }
+  ],
+  "statusTweaks": [
+    {
+      "status": "corrosion",
+      "skill": "chr_0032_lizhiyan_talent2",
+      "extraSeconds": "duration_add",
+      "capScale": {
+        "sum": [
+          1,
+          "corrupt_rate"
+        ]
+      },
+      "note": "Talent 2 (abilityEvent 202 on a Corrosion-tagged buff she applies): duration + duration_add (only if above 0), max_def_decrease × (1 + corrupt_rate). Forced and reaction Corrosion alike."
+    }
+  ],
   "buffs": [
     {
-      "id": "doubles_susceptibility_int",
-      "label": "Tactical Doubles: Nature and Cryo Susceptibility (INT)",
+      "id": "imprisonment",
+      "label": "Imprisonment",
       "target": "enemy",
-      "duration": "duration",
-      "modifiers": [
-        {
-          "zone": "susceptibility",
-          "value": "rate_pre",
-          "elements": [
-            "natural",
-            "cryst"
-          ]
-        }
-      ],
-      "note": "chr_0032_lizhiyan_combo_skill frame 0–3: INT sets rate_final = rate_pre; seal_total gives it to buff_chr_0032_lizhiyan_combo_skill_seal (Imprisonment), whose start applies buff_chr_0032_lizhiyan_combo_skill_spell_vulnerable_pre (VulnerableAction subType 3 Nature and 5 Cryo, rate = rate_final) for the Imprisonment's duration_final = duration_pre (0.633 s, default only) + duration (4 s). The kit uses `duration` alone (a ValueSpec can't add two keys). Logged as buff_common_affixes_vulnerable_natural / _crystal 0.04 (P0, btl_upload_d9e59d0fb737). Potential 1 adds 0.06 to rate_pre."
-    },
-    {
-      "id": "doubles_susceptibility_will",
-      "label": "Tactical Doubles: Nature and Cryo Susceptibility (WILL)",
-      "target": "enemy",
-      "duration": "duration_will",
-      "modifiers": [
-        {
-          "zone": "susceptibility",
-          "value": "rate_pre",
-          "elements": [
-            "natural",
-            "cryst"
+      "duration": {
+        "if": {
+          "attrAtLeast": [
+            41,
+            42
           ]
         },
+        "then": {
+          "sum": [
+            "duration_pre",
+            "duration"
+          ]
+        },
+        "else": {
+          "sum": [
+            "duration_pre",
+            "duration_will"
+          ]
+        }
+      },
+      "modifiers": [],
+      "gameBuff": "buff_chr_0032_lizhiyan_combo_skill_seal",
+      "note": "buff_chr_0032_lizhiyan_combo_skill_seal from seal_total frame 9: INT duration_pre + duration (4.633 s), WILL duration_pre + duration_will (6.633 s). Its slow-down of the enemy's clock isn't modelled (open list Ti1b, test 37)."
+    },
+    {
+      "id": "doubles_susceptibility",
+      "label": "Tactical Doubles Susceptibility",
+      "target": "enemy",
+      "duration": {
+        "if": {
+          "attrAtLeast": [
+            41,
+            42
+          ]
+        },
+        "then": {
+          "sum": [
+            "duration_pre",
+            "duration"
+          ]
+        },
+        "else": {
+          "sum": [
+            "duration_pre",
+            "duration_will"
+          ]
+        }
+      },
+      "gameBuff": "buff_chr_0032_lizhiyan_combo_skill_spell_vulnerable_pre",
+      "modifiers": [
         {
           "zone": "susceptibility",
           "value": {
-            "min": [
+            "sum": [
+              "rate_pre",
               {
-                "product": [
-                  "spell_vul_per_will",
-                  {
-                    "attr": 42
+                "if": {
+                  "not": {
+                    "attrAtLeast": [
+                      41,
+                      42
+                    ]
                   }
-                ]
-              },
-              "max_spell_vul_will"
+                },
+                "then": {
+                  "min": [
+                    {
+                      "product": [
+                        "spell_vul_per_will",
+                        {
+                          "attr": 42
+                        }
+                      ]
+                    },
+                    "max_spell_vul_will"
+                  ]
+                },
+                "else": 0
+              }
             ]
           },
           "elements": [
@@ -81,15 +144,131 @@
           ]
         }
       ],
-      "note": "chr_0032_lizhiyan_combo_skill frame 0–3, WILL branch: rate_final = min(Will × spell_vul_per_will, max_spell_vul_will) + rate_pre, applied like the INT one for duration_pre + duration_will (the kit uses duration_will alone). Verified: btl_upload_b7b3762d5da8 (P4, Will 788) logs 0.18 = 0.08 cap + 0.04 + 0.06 (P1) on both elements, from the cast until shortly before the Tactical Doubles hit. That log keeps it about 2 s past the second Imprisonment's end (a post-Imprisonment instance, buff_chr_0032_lizhiyan_combo_skill_spell_vulnerable with duration_calc, not modelled)."
+      "note": "…_spell_vulnerable_pre, asChildBuff of the seal: rate_pre (P1 +0.06 in WILL), plus in WILL min(spell_vul_per_will × Will, max_spell_vul_will)."
+    },
+    {
+      "id": "post_susceptibility_int",
+      "label": "Post-Imprisonment Susceptibility (INT)",
+      "target": "enemy",
+      "duration": 1.933,
+      "modifiers": [
+        {
+          "zone": "susceptibility",
+          "value": "rate_pre",
+          "elements": [
+            "natural",
+            "cryst"
+          ]
+        }
+      ],
+      "gameBuff": "buff_chr_0032_lizhiyan_combo_skill_spell_vulnerable",
+      "note": "…_combo_skill_spell_vulnerable from seal_again (INT early end only): rate_final = rate_pre in INT; its duration_vul has no blackboard, so the default 12 s, ended by seal_finisher_wisd's final laser 58 frames after the early end."
+    },
+    {
+      "id": "early_end_marker",
+      "label": "Imprisonment ended early",
+      "target": "self",
+      "duration": 0.1,
+      "modifiers": [],
+      "note": "Keeps the natural-end explosion quiet when Imprisonment was ended by the INT battle skill (the game's timed markers)."
+    },
+    {
+      "id": "int_after_end",
+      "label": "After a natural INT end",
+      "target": "enemy",
+      "duration": 99,
+      "modifiers": [],
+      "gameBuff": "buff_chr_0032_lizhiyan_combo_skill_seal_bunshin_end_listener",
+      "note": "buff_…_combo_skill_seal_bunshin_end_listener (99 s, INT only, abilityentity_end frame 10): the next battle-skill hit returns SP and explodes again."
     },
     {
       "id": "gloompurger_array",
-      "label": "Gloompurger Array active",
+      "label": "Gloompurger Array",
       "target": "self",
       "duration": "duration",
+      "blocksEnergy": true,
       "modifiers": [],
-      "note": "State only: buff_chr_0032_lizhiyan_ultimate_skill_listener_owner, created at the ultimate's frame 47 with duration ← the ultimate's `duration` (20 s). While it lasts the ultimate slot shows Gloompurge Arcana (ChangeSkillAction to chr_0032_lizhiyan_ultimate_skill2)."
+      "gameBuff": "buff_chr_0032_lizhiyan_ultimate_skill_listener_owner",
+      "note": "buff_…_ultimate_skill_listener_owner: RefrainObtainUsp with clearUspOnEnd, ChangeSkillAction to ult 2 (castable only after two Cluster Strikes here: ult 2's `available`)."
+    },
+    {
+      "id": "gloompurge_arcana",
+      "label": "Gloompurge Arcana",
+      "target": "self",
+      "duration": 10,
+      "blocksEnergy": true,
+      "modifiers": [],
+      "gameBuff": "buff_chr_0032_lizhiyan_ultimate_skill_listener",
+      "note": "buff_…_ultimate_skill_listener: ChangeSkillAction 10 s (lifeTimeType 2; the buff's own default 30 s isn't assigned). Whether casting ult 2 ends it: test 32."
+    },
+    {
+      "id": "int_amp",
+      "label": "Talent 1 Arts Amp (INT)",
+      "target": "self",
+      "modifiers": [
+        {
+          "zone": "amp",
+          "value": {
+            "talent": 0,
+            "key": "enhance_rate"
+          },
+          "elements": [
+            "fire",
+            "pulse",
+            "cryst",
+            "natural"
+          ]
+        }
+      ],
+      "gameBuff": "buff_chr_0032_lizhiyan_talent1_enhance",
+      "note": "Child of listener_owner and then of listener: lasts the array and Gloompurge Arcana (ended by array_end / gloompurge_end). Test 7."
+    },
+    {
+      "id": "t1_susceptibility",
+      "label": "Talent 1 Susceptibility (WILL)",
+      "target": "enemy",
+      "duration": {
+        "talent": 0,
+        "key": "duration"
+      },
+      "gameBuff": "buff_chr_0032_lizhiyan_talent1_vulnerable",
+      "modifiers": [
+        {
+          "zone": "susceptibility",
+          "value": {
+            "sum": [
+              {
+                "min": [
+                  {
+                    "product": [
+                      {
+                        "talent": 0,
+                        "key": "spell_vul_rate_per_will"
+                      },
+                      {
+                        "attr": 42
+                      }
+                    ]
+                  },
+                  {
+                    "talent": 0,
+                    "key": "spell_vul_rate"
+                  }
+                ]
+              },
+              {
+                "talent": 0,
+                "key": "spell_vul_rate_potential"
+              }
+            ]
+          },
+          "elements": [
+            "natural",
+            "cryst"
+          ]
+        }
+      ],
+      "note": "Applied by both ultimates before their hit, WILL only, when talent 1's value is above 0. Test 30 (10 s, a confirmation)."
     }
   ],
   "triggers": [
@@ -113,7 +292,7 @@
           "kind": "openCombo"
         }
       ],
-      "note": "Array Arcana: INT (CharGrowthTable conditionPostDesc1, conditionId1 lizhiyan_wisd): \"COMBO TRIGGER: When Nature Infliction or at least 2 stacks of non-Nature Arts Infliction are applied on an enemy.\""
+      "note": "INT: a Nature Infliction by anyone opens the window."
     },
     {
       "id": "combo_window_1_b",
@@ -138,7 +317,7 @@
           "kind": "openCombo"
         }
       ],
-      "note": "Array Arcana: INT (CharGrowthTable conditionPostDesc1, conditionId1 lizhiyan_wisd): \"COMBO TRIGGER: When Nature Infliction or at least 2 stacks of non-Nature Arts Infliction are applied on an enemy.\""
+      "note": "INT: two or more stacks of Heat, Electric or Cryo by anyone."
     },
     {
       "id": "combo_window_2",
@@ -147,17 +326,578 @@
       },
       "by": "anyone",
       "if": {
-        "attrAtLeast": [
-          42,
-          41
-        ]
+        "not": {
+          "attrAtLeast": [
+            41,
+            42
+          ]
+        }
       },
       "do": [
         {
           "kind": "openCombo"
         }
       ],
-      "note": "Array Arcana: WILL (CharGrowthTable conditionPostDesc2, conditionId2 lizhiyan_will): \"COMBO TRIGGER: When an Arts Infliction is applied on an enemy.\""
+      "note": "WILL: any Arts Infliction by anyone."
+    },
+    {
+      "id": "imprison",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0032_lizhiyan_combo_skill"
+        ]
+      },
+      "by": "self",
+      "delay": 11,
+      "detached": true,
+      "skill": "chr_0032_lizhiyan_combo_skill",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "imprisonment"
+        },
+        {
+          "kind": "buff",
+          "buff": "doubles_susceptibility"
+        }
+      ],
+      "note": "seal_total frame 2 (cast + 11): teammates' hits from then see the Susceptibility."
+    },
+    {
+      "id": "int_early_end",
+      "on": {
+        "event": "hit",
+        "skills": [
+          "chr_0032_lizhiyan_normal_skill"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "all": [
+          {
+            "attrAtLeast": [
+              41,
+              42
+            ]
+          },
+          {
+            "buffActive": "imprisonment"
+          }
+        ]
+      },
+      "skill": "chr_0032_lizhiyan_combo_skill",
+      "do": [
+        {
+          "kind": "sp",
+          "value": "atb_return_wisd"
+        },
+        {
+          "kind": "buff",
+          "buff": "early_end_marker"
+        },
+        {
+          "kind": "endBuff",
+          "buff": "imprisonment"
+        },
+        {
+          "kind": "endBuff",
+          "buff": "doubles_susceptibility"
+        },
+        {
+          "kind": "buff",
+          "buff": "post_susceptibility_int"
+        },
+        {
+          "kind": "hits",
+          "hits": [
+            {
+              "id": "early_boom",
+              "scale": [
+                "atk_scale_boom"
+              ],
+              "frames": [
+                0
+              ],
+              "damageType": "combo",
+              "poise": "poise_boom",
+              "events": [
+                "buff_chr_0032_lizhiyan_combo_skill_seal2"
+              ]
+            },
+            {
+              "id": "laser",
+              "scale": [
+                "atk_scale_laser1"
+              ],
+              "count": 4,
+              "frames": [
+                43,
+                46,
+                49,
+                52
+              ],
+              "damageType": "combo",
+              "events": [
+                "buff_chr_0032_lizhiyan_combo_skill_seal_finisher_wisd"
+              ]
+            },
+            {
+              "id": "laser_final",
+              "scale": [
+                "atk_scale_laser2"
+              ],
+              "frames": [
+                58
+              ],
+              "damageType": "combo",
+              "poise": 10,
+              "events": [
+                "buff_chr_0032_lizhiyan_combo_skill_seal_finisher_wisd"
+              ]
+            }
+          ]
+        }
+      ],
+      "note": "seal2 abilityEvent 101 → seal_listener 204 → combo_skill_abilityentity_seal_again → seal_finisher_wisd. Frames from the battle-skill hit."
+    },
+    {
+      "id": "explosion",
+      "on": {
+        "event": "buffEnded",
+        "buff": "imprisonment"
+      },
+      "by": "self",
+      "if": {
+        "not": {
+          "buffActive": "early_end_marker"
+        }
+      },
+      "skill": "chr_0032_lizhiyan_combo_skill",
+      "do": [
+        {
+          "kind": "hits",
+          "hits": [
+            {
+              "id": "boom",
+              "scale": [
+                "atk_scale_boom"
+              ],
+              "frames": [
+                14
+              ],
+              "damageType": "combo",
+              "poise": "poise_boom",
+              "events": [
+                "chr_0032_lizhiyan_combo_skill_abilityentity_end"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "buff",
+          "buff": "int_after_end",
+          "if": {
+            "attrAtLeast": [
+              41,
+              42
+            ]
+          }
+        }
+      ],
+      "note": "combo_skill_abilityentity_end: explosion at its frame 14; under INT also the bunshin_end_listener (frame 10)."
+    },
+    {
+      "id": "int_late_hit",
+      "on": {
+        "event": "hit",
+        "skills": [
+          "chr_0032_lizhiyan_normal_skill"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "all": [
+          {
+            "attrAtLeast": [
+              41,
+              42
+            ]
+          },
+          {
+            "buffActive": "int_after_end"
+          },
+          {
+            "not": {
+              "buffActive": "imprisonment"
+            }
+          }
+        ]
+      },
+      "skill": "chr_0032_lizhiyan_combo_skill",
+      "do": [
+        {
+          "kind": "sp",
+          "value": "atb_return_wisd"
+        },
+        {
+          "kind": "endBuff",
+          "buff": "int_after_end"
+        },
+        {
+          "kind": "hits",
+          "hits": [
+            {
+              "id": "late_boom",
+              "scale": [
+                "atk_scale_boom"
+              ],
+              "frames": [
+                0
+              ],
+              "damageType": "combo",
+              "poise": "poise_boom",
+              "events": [
+                "buff_chr_0032_lizhiyan_combo_skill_seal_bunshin_end_listener"
+              ]
+            }
+          ]
+        }
+      ],
+      "note": "bunshin_end_listener's handler: SP, explosion (atk_scale_early_finish ← atk_scale_boom), then it finishes itself. Lasers after it are unknown (test 34)."
+    },
+    {
+      "id": "array_start",
+      "on": {
+        "event": "buffApplied",
+        "buff": "gloompurger_array"
+      },
+      "by": "self",
+      "do": [
+        {
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "cluster_strikes",
+              "amount": -2
+            }
+          ]
+        },
+        {
+          "kind": "buff",
+          "buff": "int_amp",
+          "if": {
+            "all": [
+              {
+                "attrAtLeast": [
+                  41,
+                  42
+                ]
+              },
+              {
+                "all": [
+                  {
+                    "talentAtLeast": [
+                      0,
+                      1
+                    ]
+                  },
+                  {
+                    "any": [
+                      {
+                        "talentAtLeast": [
+                          0,
+                          2
+                        ]
+                      },
+                      {
+                        "potentialAtLeast": 5
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "note": "A new array: strikes reset; INT Amp when talent 1's value is above 0."
+    },
+    {
+      "id": "cluster_strike",
+      "on": {
+        "event": "hit",
+        "decorations": [
+          "finalStrike"
+        ]
+      },
+      "by": "controlled",
+      "if": {
+        "all": [
+          {
+            "buffActive": "gloompurger_array"
+          },
+          {
+            "stack": "cluster_strikes",
+            "below": 2
+          }
+        ]
+      },
+      "cooldown": 0.4,
+      "skill": "chr_0032_lizhiyan_ultimate_skill",
+      "do": [
+        {
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "cluster_strikes"
+            }
+          ]
+        },
+        {
+          "kind": "energy",
+          "value": 0.5,
+          "percentOfMax": true,
+          "ignoreEfficiency": true,
+          "ignoreBlock": true
+        },
+        {
+          "kind": "hits",
+          "hits": [
+            {
+              "id": "laser",
+              "scale": [
+                "atk_scale_laser"
+              ],
+              "count": 4,
+              "frames": [
+                15,
+                19,
+                23,
+                27
+              ],
+              "damageType": "ultimate",
+              "poise": 20,
+              "events": [
+                "chr_0032_lizhiyan_ultimate_skill_laser"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "endBuff",
+          "buff": "gloompurger_array",
+          "if": {
+            "stack": "cluster_strikes",
+            "atLeast": 2
+          }
+        },
+        {
+          "kind": "clearEnergy",
+          "if": {
+            "stack": "cluster_strikes",
+            "atLeast": 2
+          }
+        },
+        {
+          "kind": "buff",
+          "buff": "gloompurge_arcana",
+          "if": {
+            "stack": "cluster_strikes",
+            "atLeast": 2
+          }
+        },
+        {
+          "kind": "energy",
+          "value": 1,
+          "percentOfMax": true,
+          "ignoreBlock": true,
+          "if": {
+            "stack": "cluster_strikes",
+            "atLeast": 2
+          }
+        }
+      ],
+      "note": "inaura abilityEvent 101, Final Strike path: target_mark 0.1 s, then if the array is up and no 0.4 s marker: laser buff by layer, energy usp_step (max energy / 2), layer +1. The second strike switches to Gloompurge Arcana (listener)."
+    },
+    {
+      "id": "cluster_strike_finisher",
+      "on": {
+        "event": "hit",
+        "decorations": [
+          "finisher"
+        ]
+      },
+      "by": "controlled",
+      "if": {
+        "all": [
+          {
+            "buffActive": "gloompurger_array"
+          },
+          {
+            "stack": "cluster_strikes",
+            "below": 2
+          }
+        ]
+      },
+      "maxPerCast": 1,
+      "skill": "chr_0032_lizhiyan_ultimate_skill",
+      "do": [
+        {
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "cluster_strikes"
+            }
+          ]
+        },
+        {
+          "kind": "energy",
+          "value": 0.5,
+          "percentOfMax": true,
+          "ignoreEfficiency": true,
+          "ignoreBlock": true
+        },
+        {
+          "kind": "hits",
+          "hits": [
+            {
+              "id": "laser",
+              "scale": [
+                "atk_scale_laser"
+              ],
+              "count": 4,
+              "frames": [
+                12,
+                16,
+                20,
+                24
+              ],
+              "damageType": "ultimate",
+              "poise": 20,
+              "events": [
+                "chr_0032_lizhiyan_ultimate_skill_laser"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "endBuff",
+          "buff": "gloompurger_array",
+          "if": {
+            "stack": "cluster_strikes",
+            "atLeast": 2
+          }
+        },
+        {
+          "kind": "clearEnergy",
+          "if": {
+            "stack": "cluster_strikes",
+            "atLeast": 2
+          }
+        },
+        {
+          "kind": "buff",
+          "buff": "gloompurge_arcana",
+          "if": {
+            "stack": "cluster_strikes",
+            "atLeast": 2
+          }
+        },
+        {
+          "kind": "energy",
+          "value": 1,
+          "percentOfMax": true,
+          "ignoreBlock": true,
+          "if": {
+            "stack": "cluster_strikes",
+            "atLeast": 2
+          }
+        }
+      ],
+      "note": "inaura abilityEvent 101, Finisher path (mask 4, is_power_attacked: once per finisher, no 0.4 s marker). Test 31."
+    },
+    {
+      "id": "array_end",
+      "on": {
+        "event": "buffEnded",
+        "buff": "gloompurger_array"
+      },
+      "by": "self",
+      "if": {
+        "stack": "cluster_strikes",
+        "below": 2
+      },
+      "do": [
+        {
+          "kind": "clearEnergy"
+        },
+        {
+          "kind": "endBuff",
+          "buff": "int_amp"
+        }
+      ],
+      "note": "listener_owner ends with fewer than 2 strikes: energy −999."
+    },
+    {
+      "id": "gloompurge_end",
+      "on": {
+        "event": "buffEnded",
+        "buff": "gloompurge_arcana"
+      },
+      "by": "self",
+      "do": [
+        {
+          "kind": "clearEnergy"
+        },
+        {
+          "kind": "endBuff",
+          "buff": "int_amp"
+        },
+        {
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "cluster_strikes",
+              "amount": -2
+            }
+          ]
+        }
+      ],
+      "note": "listener ends: layer counter reset, energy −999."
+    },
+    {
+      "id": "p5_cooldown",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0032_lizhiyan_ultimate_skill2"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "not": {
+          "attrAtLeast": [
+            41,
+            42
+          ]
+        }
+      },
+      "skill": "chr_0032_lizhiyan_ultimate_skill2",
+      "do": [
+        {
+          "kind": "cooldown",
+          "who": "self",
+          "skills": "combo",
+          "fraction": {
+            "product": [
+              -1,
+              "cd_minus"
+            ]
+          }
+        }
+      ],
+      "note": "ultimate_skill2 frame 0 (WILL: EntityBB_wisd_greater_will = 0; cd_minus is 0 below P5). Meaning of isPercentage: test 36."
     }
   ],
   "skills": [
@@ -256,24 +996,6 @@
       ]
     },
     {
-      "skillId": "chr_0032_lizhiyan_attack5",
-      "label": "Basic attack 5 (final strike)",
-      "damageType": "basic",
-      "durationFrames": 300,
-      "hits": [
-        {
-          "id": "hit",
-          "scale": [
-            "atk_scale"
-          ],
-          "frames": [
-            22
-          ],
-          "note": "Final Strike (decorate mask 2097152 + basic); in game it also triggers the ultimate's Cluster Strike (not modelled)."
-        }
-      ]
-    },
-    {
       "skillId": "chr_0032_lizhiyan_plunging_attack_end",
       "label": "Plunging attack",
       "damageType": "basic",
@@ -292,11 +1014,95 @@
       ]
     },
     {
+      "skillId": "chr_0032_lizhiyan_attack5",
+      "label": "Basic attack 5 (final strike)",
+      "damageType": "basic",
+      "durationFrames": 300,
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            22
+          ],
+          "sp": {
+            "if": {
+              "controlled": true
+            },
+            "then": "atb"
+          },
+          "note": "Final Strike (decorate mask 2097152 + basic): triggers Cluster Strike inside the array when Arcane is controlled. SP atb only if controlled."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0032_lizhiyan_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "note": "Finisher (skillSpecification 8): castable on a Staggered enemy; the enemy's finisher multiplier applies. Its landings trigger Cluster Strike once per finisher inside the array.",
+      "hits": [
+        {
+          "id": "a",
+          "scale": [
+            "atk_scale"
+          ],
+          "factor": 0.1,
+          "count": 3,
+          "frames": [
+            7,
+            10,
+            13
+          ],
+          "poise": 5,
+          "events": [
+            "chr_0032_lizhiyan_power_attack"
+          ],
+          "note": "BreakingAttackCalculation multiplier 0.1, poise 5 each."
+        },
+        {
+          "id": "b",
+          "scale": [
+            "atk_scale"
+          ],
+          "factor": 0.1,
+          "count": 2,
+          "frames": [
+            32,
+            34
+          ],
+          "poise": 20,
+          "events": [
+            "chr_0032_lizhiyan_power_attack"
+          ],
+          "note": "Multiplier 0.1, poise 20 each (the two share one action, to verify)."
+        },
+        {
+          "id": "c",
+          "scale": [
+            "atk_scale"
+          ],
+          "factor": 0.5,
+          "frames": [
+            36
+          ],
+          "poise": 10,
+          "sp": 0,
+          "events": [
+            "chr_0032_lizhiyan_power_attack"
+          ],
+          "note": "Multiplier 0.5, poise 10; GainBreakingAttackAtb here. sp 0: the skill's unread `atb` 8 isn't SP (open list D2, test 31)."
+        }
+      ]
+    },
+    {
       "skillId": "chr_0032_lizhiyan_normal_skill",
       "label": "Battle skill",
       "damageType": "battle",
       "durationFrames": 225,
-      "note": "Description: \"Creates a Jadecrushing Grid that deals Nature DMG and applies Nature Infliction to enemies within the area of effect.\" The skill spawns normal_skill_abilityrange2 at frame 0; its single hit lands at the entity's frame 20, after its Nature infliction in the same frame (so a Corrosion it causes already applies: btl_upload_0eef2474a26f). Mask 4352 = battle. Under INT, hitting an Imprisoned enemy also ends the Imprisonment early (see the combo skill's INT hits).",
+      "teamEnergyFrame": 20,
+      "note": "Description: \"Creates a Jadecrushing Grid that deals Nature DMG and applies Nature Infliction to enemies within the area of effect.\" The skill spawns normal_skill_abilityrange2 at frame 0; its single hit lands at the entity's frame 20, after its Nature infliction in the same frame (so a Corrosion it causes already applies: btl_upload_0eef2474a26f). Mask 4352 = battle. The team's energy comes at 20 (buff_common_obtain_ultimate_sp). Under INT, hitting an Imprisoned enemy ends the Imprisonment early (trigger int_early_end).",
       "hits": [
         {
           "id": "will",
@@ -307,22 +1113,25 @@
           "frames": [
             20
           ],
+          "if": {
+            "not": {
+              "attrAtLeast": [
+                41,
+                42
+              ]
+            }
+          },
           "applies": [
             {
               "kind": "infliction",
               "element": "natural"
             }
           ],
+          "poise": "poise",
           "events": [
             "chr_0032_lizhiyan_normal_skill_abilityrange2"
           ],
-          "note": "Verified on btl_upload_0eef2474a26f (18470, crit, under Corrosion level 2).",
-          "if": {
-            "attrAtLeast": [
-              42,
-              41
-            ]
-          }
+          "note": "Verified on btl_upload_0eef2474a26f (18470, crit, under Corrosion level 2)."
         },
         {
           "id": "int",
@@ -333,22 +1142,23 @@
           "frames": [
             20
           ],
+          "if": {
+            "attrAtLeast": [
+              41,
+              42
+            ]
+          },
           "applies": [
             {
               "kind": "infliction",
               "element": "natural"
             }
           ],
+          "poise": "poise",
           "events": [
             "chr_0032_lizhiyan_normal_skill_abilityrange2"
           ],
-          "note": "conditionPostDesc1: \"Array Arcana: INT: - Deals more DMG.\" Only in btl_upload_d9e59d0fb737 (under Corrosion, ×2.23 unexplained).",
-          "if": {
-            "attrAtLeast": [
-              41,
-              42
-            ]
-          }
+          "note": "conditionPostDesc1: \"Array Arcana: INT: - Deals more DMG.\" Only in btl_upload_d9e59d0fb737 (under Corrosion, ×2.23 unexplained)."
         }
       ]
     },
@@ -357,148 +1167,37 @@
       "label": "Combo skill",
       "damageType": "combo",
       "durationFrames": 122,
-      "note": "The cast creates buff_chr_0032_lizhiyan_combo_skill_seal_total at frame 9: Imprisonment (buff_chr_0032_lizhiyan_combo_skill_seal) and its Susceptibility start at once, the Tactical Doubles hit at the buff's frame 6 (frame 15 of the skill) and give `usp` ultimate energy. The explosion lands when Imprisonment ends (WILL: duration_pre + duration_will = 6.633 s), or under INT when the battle skill hits the Imprisoned enemy. INT hits here assume that battle skill follows the combo at once (its cancel frame 16 + the battle skill's hit frame 20): its explosion (buff_chr_0032_lizhiyan_combo_skill_seal2) at frame 36 and the bonus lasers (buff_chr_0032_lizhiyan_combo_skill_seal_finisher_wisd, created at frame 41 of combo_skill_abilityentity_seal_again) at 36 + 41 + buff frames 2, 5, 8, 11, 17. btl_upload_d9e59d0fb737 measures 41.4 frames from the battle skill hit to the first laser (model 43). An INT combo without that battle skill ends Imprisonment naturally after 4.633 s with one explosion instead; the kit can't branch on it.",
+      "note": "The cast creates buff_chr_0032_lizhiyan_combo_skill_seal_total at frame 9: Imprisonment and its Susceptibility (trigger imprison), the Tactical Doubles hit at the buff's frame 6 (frame 15 of the skill). Explosions and lasers come from triggers (explosion, int_early_end, int_late_hit). Can't be cut before frame 16.",
       "hits": [
         {
-          "id": "touch_will",
-          "label": "Tactical Doubles hit (WILL)",
+          "id": "touch",
+          "label": "Tactical Doubles hit",
           "scale": [
             "atk_scale_touch"
           ],
           "frames": [
             15
           ],
-          "buffs": [
-            {
-              "buff": "doubles_susceptibility_will",
-              "beforeDamage": true
-            }
-          ],
           "energy": "usp",
+          "poise": "poise_touch",
           "events": [
             "buff_chr_0032_lizhiyan_combo_skill_seal_total"
           ],
-          "note": "One hit per target (four branches, one taken). Potential 1 multiplies atk_scale_touch by 1.3. Verified (0.8 × 1.3 = 1.04) on btl_upload_0eef2474a26f, btl_upload_e82d45c46040 ×2, btl_upload_b7b3762d5da8 ×2. Energy: ObtainCostAction costValue usp (10) when the hit finds a target.",
-          "if": {
-            "attrAtLeast": [
-              42,
-              41
-            ]
-          }
-        },
-        {
-          "id": "touch_int",
-          "label": "Tactical Doubles hit (INT)",
-          "scale": [
-            "atk_scale_touch"
-          ],
-          "frames": [
-            15
-          ],
-          "buffs": [
+          "applies": [
             {
-              "buff": "doubles_susceptibility_int",
-              "beforeDamage": true
+              "kind": "infliction",
+              "element": "enemy",
+              "if": {
+                "not": {
+                  "attrAtLeast": [
+                    41,
+                    42
+                  ]
+                }
+              }
             }
           ],
-          "energy": "usp",
-          "events": [
-            "buff_chr_0032_lizhiyan_combo_skill_seal_total"
-          ],
-          "note": "As the WILL hit; only the Susceptibility differs.",
-          "if": {
-            "attrAtLeast": [
-              41,
-              42
-            ]
-          }
-        },
-        {
-          "id": "explosion_will",
-          "label": "Explosion when Imprisonment ends (WILL)",
-          "scale": [
-            "atk_scale_boom"
-          ],
-          "frames": [
-            222
-          ],
-          "events": [
-            "chr_0032_lizhiyan_combo_skill_abilityentity_end",
-            "buff_chr_0032_lizhiyan_combo_skill_seal_listener",
-            "buff_chr_0032_lizhiyan_combo_skill_seal_bunshin_end_listener"
-          ],
-          "note": "Imprisonment from frame 9 for duration_pre + duration_will (6.633 s = 199 frames); its end casts combo_skill_abilityentity_end, which deals atk_scale_boom at its frame 14: 9 + 199 + 14 = 222. btl_upload_bdf223db8e49 logs it 7418 ms after the Tactical Doubles hit (model 6.9 s; the hits' hit-stops may pause the timer). Early ends (seal_listener, seal_bunshin_end_listener) deal the same atk_scale_boom.",
-          "if": {
-            "attrAtLeast": [
-              42,
-              41
-            ]
-          }
-        },
-        {
-          "id": "explosion_int",
-          "label": "Explosion when the INT battle skill ends Imprisonment",
-          "scale": [
-            "atk_scale_boom"
-          ],
-          "frames": [
-            36
-          ],
-          "events": [
-            "buff_chr_0032_lizhiyan_combo_skill_seal2",
-            "chr_0032_lizhiyan_combo_skill_abilityentity_end"
-          ],
-          "note": "buff_chr_0032_lizhiyan_combo_skill_seal2, abilityEvent 101 (hit by Arcane's battle skill): ObtainCost atb_return_wisd (SP, not modelled), DamageAction atk_scale_early_finish ← atk_scale_boom, ends Imprisonment. Natural INT end (combo_skill_abilityentity_end, atk_scale_boom) shares the key.",
-          "if": {
-            "attrAtLeast": [
-              41,
-              42
-            ]
-          }
-        },
-        {
-          "id": "laser_int",
-          "label": "Bonus hits after the INT battle skill (lasers 1–4)",
-          "scale": [
-            "atk_scale_laser1"
-          ],
-          "count": 4,
-          "frames": [
-            79,
-            82,
-            85,
-            88
-          ],
-          "events": [
-            "buff_chr_0032_lizhiyan_combo_skill_seal_finisher_wisd"
-          ],
-          "note": "buff_chr_0032_lizhiyan_combo_skill_seal_finisher_wisd DamageActions at buff frames 2, 5, 8, 11. 4 × laser1 + laser2 = display_atk_scale_laser_wisd (5.0 at Lv12).",
-          "if": {
-            "attrAtLeast": [
-              41,
-              42
-            ]
-          }
-        },
-        {
-          "id": "laser_int_final",
-          "label": "Bonus hits after the INT battle skill (final laser)",
-          "scale": [
-            "atk_scale_laser2"
-          ],
-          "frames": [
-            94
-          ],
-          "events": [
-            "buff_chr_0032_lizhiyan_combo_skill_seal_finisher_wisd"
-          ],
-          "note": "seal_finisher_wisd buff frame 17; it then finishes the combo's post-Imprisonment Susceptibility.",
-          "if": {
-            "attrAtLeast": [
-              41,
-              42
-            ]
-          }
+          "note": "One hit per target (four branches, one taken). Potential 1 multiplies atk_scale_touch by 1.3. Verified (0.8 × 1.3 = 1.04) on btl_upload_0eef2474a26f, btl_upload_e82d45c46040 ×2, btl_upload_b7b3762d5da8 ×2. Energy: ObtainCostAction costValue usp (10) when the hit finds a target. WILL: another Arts Infliction of the enemy's current element (seal_total frame 6, before the damage; open list A6, test 33)."
         }
       ]
     },
@@ -507,66 +1206,106 @@
       "label": "Ultimate (Gloompurger Array)",
       "damageType": "ultimate",
       "durationFrames": 308,
-      "energyBlockSeconds": 21.567,
-      "note": "Energy: RefrainObtainUsp from the cast to frame 47, then buff_chr_0032_lizhiyan_ultimate_skill_listener_owner (RefrainObtainUsp with clearUspOnEnd) for the ultimate's `duration` (20 s at every level): 47/30 + 20 = 21.567 s from the cast. Two Cluster Strikes end it early and start buff_chr_0032_lizhiyan_ultimate_skill_listener (10 s, ultimate slot = Gloompurge Arcana), which grants 100% energy (ObtainCostAction costValue 1.0 isPercentValue, uspRecoverTag) and keeps blocking until it ends, clearing energy (−999) if sequence 2 wasn't cast; not modelled. Cluster Strike (atk_scale_laser, laser_count 8 = 2 strikes × 4 lasers) needs a Finisher or Final Strike by the controlled operator on an enemy in the array, which the kit can't express, so it's left out; its log key would be chr_0032_lizhiyan_ultimate_skill_laser.",
+      "energyBlockSeconds": 1.567,
+      "available": {
+        "not": {
+          "any": [
+            {
+              "buffActive": "gloompurger_array"
+            },
+            {
+              "buffActive": "gloompurge_arcana"
+            }
+          ]
+        }
+      },
+      "note": "Energy: RefrainObtainUsp from the cast to frame 47 (energyBlockSeconds), then the array's block (gloompurger_array, blocksEnergy). Castable when neither the array nor Gloompurge Arcana is up. Doesn't take control (switchToCenterBeforeCast false). Can't be cut before 48.",
       "hits": [
         {
-          "id": "array_will",
-          "label": "Array creation (WILL)",
+          "id": "array",
+          "label": "Array creation",
           "scale": [
             "atk_scale"
           ],
           "frames": [
             47
           ],
-          "buffs": [
-            {
-              "buff": "gloompurger_array"
-            }
-          ],
+          "poise": "poise",
           "events": [
             "chr_0032_lizhiyan_ultimate_skill"
           ],
-          "note": "conditionPostDesc2: \"Array Arcana: WILL: - When created, the Gloompurger Array also targets enemies with Arts Infliction within its AOE, and applies another Arts Infliction stack of the same element to them\" (SpellInfliction by the enemy's infliction tag; not expressible). Talent 1's Susceptibility lands in the same frame before the hit (not modelled; logged 0.128 at Will 788 on btl_upload_b7b3762d5da8, where the hit matches with that boundary buff). Verified on btl_upload_b7b3762d5da8, btl_upload_e82d45c46040, btl_upload_dbaee23b801d.",
-          "if": {
-            "attrAtLeast": [
-              42,
-              41
-            ]
-          }
-        },
-        {
-          "id": "array_int",
-          "label": "Array creation (INT)",
-          "scale": [
-            "atk_scale"
-          ],
-          "frames": [
-            47
-          ],
           "applies": [
+            {
+              "kind": "infliction",
+              "element": "enemy",
+              "if": {
+                "not": {
+                  "attrAtLeast": [
+                    41,
+                    42
+                  ]
+                }
+              }
+            },
             {
               "kind": "forcedReaction",
               "status": "corrosion",
               "level": 1,
-              "durationKey": "duration2"
+              "durationKey": "duration2",
+              "if": {
+                "attrAtLeast": [
+                  41,
+                  42
+                ]
+              }
             }
           ],
           "buffs": [
             {
-              "buff": "gloompurger_array"
+              "buff": "gloompurger_array",
+              "beforeDamage": true
+            },
+            {
+              "buff": "t1_susceptibility",
+              "beforeDamage": true,
+              "if": {
+                "all": [
+                  {
+                    "not": {
+                      "attrAtLeast": [
+                        41,
+                        42
+                      ]
+                    }
+                  },
+                  {
+                    "all": [
+                      {
+                        "talentAtLeast": [
+                          0,
+                          1
+                        ]
+                      },
+                      {
+                        "any": [
+                          {
+                            "talentAtLeast": [
+                              0,
+                              2
+                            ]
+                          },
+                          {
+                            "potentialAtLeast": 5
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
             }
           ],
-          "events": [
-            "chr_0032_lizhiyan_ultimate_skill"
-          ],
-          "note": "conditionPostDesc1: \"Array Arcana: INT: - When created, the Gloompurger Array also forcibly applies Corrosion to enemies in the AOE.\" Frame 47 creates buff_common_natural_natural_corrupt_triggered with count ← `count` (1, default only: level 1) and duration ← duration2 (15 s), before the DamageAction. Talent 2 lengthens it and raises its cap (not modelled). Only in btl_upload_d9e59d0fb737 (under that Corrosion).",
-          "if": {
-            "attrAtLeast": [
-              41,
-              42
-            ]
-          }
+          "note": "WILL (conditionPostDesc2): another Arts Infliction stack of the element the enemy has (Nature → Cryo → Electric → Heat), and talent 1's Susceptibility (logged 0.128 at Will 788 on btl_upload_b7b3762d5da8). INT (conditionPostDesc1): forced Corrosion (buff_common_natural_natural_corrupt_triggered, level `count` 1, duration2 15 s; talent 2 lengthens it). All before the DamageAction, with the array. Verified on btl_upload_b7b3762d5da8, btl_upload_e82d45c46040, btl_upload_dbaee23b801d."
         }
       ]
     },
@@ -575,10 +1314,10 @@
       "label": "Ultimate sequence 2 (Gloompurge Arcana)",
       "damageType": "ultimate",
       "durationFrames": 287,
-      "note": "In game it's castable for 10 s after the second Cluster Strike (buff_chr_0032_lizhiyan_ultimate_skill_listener), paid by that buff's 100% energy grant. The kit only requires the array; its 100 energy can't come in while the array blocks gain, so the timeline never casts it until Cluster Strikes and energy grants that bypass a block exist.",
       "available": {
-        "buffActive": "gloompurger_array"
+        "buffActive": "gloompurge_arcana"
       },
+      "note": "Castable while Gloompurge Arcana lasts (after the second Cluster Strike), paid by its 100% energy grant. In INT, talent 1's Amp is already on (int_amp lasts Gloompurge Arcana). Can't be cut before 63.",
       "hits": [
         {
           "id": "will",
@@ -589,16 +1328,48 @@
           "frames": [
             58
           ],
+          "if": {
+            "not": {
+              "attrAtLeast": [
+                41,
+                42
+              ]
+            }
+          },
+          "poise": "poise",
           "events": [
             "chr_0032_lizhiyan_ultimate_skill2"
           ],
-          "note": "Talent 1's WILL Susceptibility applies on this hit too (not modelled). Not in any log yet.",
-          "if": {
-            "attrAtLeast": [
-              42,
-              41
-            ]
-          }
+          "buffs": [
+            {
+              "buff": "t1_susceptibility",
+              "beforeDamage": true,
+              "if": {
+                "all": [
+                  {
+                    "talentAtLeast": [
+                      0,
+                      1
+                    ]
+                  },
+                  {
+                    "any": [
+                      {
+                        "talentAtLeast": [
+                          0,
+                          2
+                        ]
+                      },
+                      {
+                        "potentialAtLeast": 5
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          ],
+          "note": "Talent 1's WILL Susceptibility applies before this hit (frame 58). Not in any log yet."
         },
         {
           "id": "int",
@@ -609,16 +1380,17 @@
           "frames": [
             58
           ],
-          "events": [
-            "chr_0032_lizhiyan_ultimate_skill2"
-          ],
-          "note": "Potential 5 multiplies atk_scale by 1.3. Talent 1's INT Arts Amp (enhance_rate) during the ultimate isn't modelled. Not in any log yet.",
           "if": {
             "attrAtLeast": [
               41,
               42
             ]
-          }
+          },
+          "poise": "poise",
+          "events": [
+            "chr_0032_lizhiyan_ultimate_skill2"
+          ],
+          "note": "Potential 5 multiplies atk_scale by 1.3. Not in any log yet."
         }
       ]
     }
