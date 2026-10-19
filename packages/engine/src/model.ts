@@ -256,6 +256,11 @@ export interface KitHit {
   readonly extraScale?: readonly { readonly value: ValueExpr; readonly if: Predicate }[];
   /** A multiplier computed from values (e.g. `atk_scale2 + n × atk_scale2_1`), times `scale`. */
   readonly scaleValue?: ValueExpr;
+  /**
+   * What the hit's multiplier multiplies instead of ATK (MultiplyAttributeCalculation
+   * on another attribute, e.g. 300 + 5 × DEF: Catcher's P1); every other zone as usual.
+   */
+  readonly base?: ValueExpr;
   /** The hit happens only in this situation, judged as it lands (before its own effects): a mode (Arcane), an enemy status (Estella's combo on a Solidified target)… */
   readonly if?: Predicate;
   /**
@@ -367,6 +372,14 @@ export interface KitBuff {
   readonly duration?: ValueExpr;
   /** Layered: up to this many instances from one owner, each with its own duration (BuffData stackingType 2 / 11); at the maximum a new one replaces the oldest. */
   readonly maxStacks?: ValueExpr;
+  /** Layers share one timer that each new layer refreshes (BuffData stackingType 8; the loader sets it from the game buff). */
+  readonly sharedTimer?: boolean;
+  /**
+   * A team buff that counts as one Link stack while active: the next battle
+   * skill or ultimate that uses Link uses it too, and that ends it
+   * (Akekuri's talent 2: global_buff_combo_trigger).
+   */
+  readonly link?: boolean;
   /** A team buff reaches only the members this holds for (judged per member at application, the applier as owner: `isOwner`, `operatorProfession`, …). */
   readonly recipients?: Predicate;
   /**

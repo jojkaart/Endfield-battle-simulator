@@ -1550,3 +1550,41 @@ describe("batch 2 group 2: triggers on one event, hits now, enemy buffs by game 
     expect(test({ operatorModifier: { zone: "amp" } }, ec)).toBe(true);
   });
 });
+
+describe("batch 2 group 3: hit base values, shared timers, Link buffs", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const withKit = (k: Partial<OperatorKit>): GameData => ({ ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, ...k } } } });
+  const run = (g: GameData, rotation: RotationAction[], frames = 200) => {
+    const ctx = createContext(g, scenario(rotation));
+    let s = init(ctx);
+    for (const x of rotation) s = apply(ctx, s, x);
+    return advance(ctx, s, frames);
+  };
+  const a1: RotationAction = { operator: op, skill: L + "attack1" };
+
+  it("a hit with a base multiplies it in place of ATK", () => {
+    const withBase = (base: number) => withKit({ skills: kit.skills.map((s) => (s.skillId === L + "attack1" ? { ...s, hits: s.hits.map((h) => ({ ...h, base })) } : s)) });
+    const exact = (g: GameData) => run(g, [a1]).hits.filter((h) => h.skillId === L + "attack1").reduce((t, h) => t + h.exact, 0);
+    expect(exact(withBase(2000)) / exact(withBase(1000))).toBeCloseTo(2, 9);
+  });
+
+  it("layers on a shared timer all end with the newest", () => {
+    const layer = (at: number) => ({ id: "s", owner: op, target: "self" as const, appliedAt: at, expiresAt: at + 100, modifiers: [], maxLayers: 3, sharedTimer: true });
+    const buffs = withBuff(withBuff([], layer(0)), layer(30));
+    expect(buffs.map((b) => b.expiresAt)).toEqual([130, 130]);
+    const plain = (at: number) => {
+      const { sharedTimer: _shared, ...rest } = layer(at);
+      return rest;
+    };
+    const own = withBuff(withBuff([], plain(0)), plain(30));
+    expect(own.map((b) => b.expiresAt)).toEqual([100, 130]);
+  });
+
+  it("a Link buff counts as a Link stack for the next battle skill, which ends it", () => {
+    const link: KitBuff = { id: "lk", label: "lk", target: "team", duration: 15, modifiers: [], link: true };
+    const g = withKit({ buffs: [...kit.buffs, link], triggers: [...kit.triggers, { id: "lk", on: { event: "fightStart" }, by: "self", do: [{ kind: "buff", buff: "lk" }] }] });
+    const s = run(g, [{ operator: op, skill: L + "normal_skill" }]);
+    expect(s.hits.filter((h) => h.skillId === L + "normal_skill").every((h) => h.modifiers.some((m) => m.source === "Link (1)"))).toBe(true);
+    expect(s.buffs.some((b) => b.id === "lk")).toBe(false);
+  });
+});

@@ -42,6 +42,10 @@ export interface ActiveBuff {
   readonly endsWithCast?: number;
   /** The BuffData buff it stands for (KitBuff.gameBuff). */
   readonly gameBuff?: string;
+  /** Its layers share one timer each new layer refreshes (KitBuff.sharedTimer). */
+  readonly sharedTimer?: boolean;
+  /** Counts as a Link stack (KitBuff.link). */
+  readonly link?: boolean;
   /** A recording buff (KitBuff.records): its rate, and the damage it has recorded. */
   readonly records?: { readonly rate: number; readonly total: number };
 }
@@ -85,6 +89,8 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
     id: buff.id,
     ...(buff.stackGroup ? { stackGroup: buff.stackGroup } : {}),
     ...(buff.gameBuff ? { gameBuff: buff.gameBuff } : {}),
+    ...(buff.sharedTimer ? { sharedTimer: true } : {}),
+    ...(buff.link ? { link: true } : {}),
     owner: build.operator,
     target: buff.target,
     appliedAt: frame,
@@ -113,7 +119,8 @@ export function withBuff(buffs: readonly ActiveBuff[], b: ActiveBuff | null): Ac
   if (b.maxLayers === undefined) return [...buffs.filter((x) => !same(x)), b];
   const layers = buffs.filter(same).sort((x, y) => x.appliedAt - y.appliedAt);
   const drop = new Set(layers.slice(0, Math.max(0, layers.length - b.maxLayers + 1)));
-  return [...buffs.filter((x) => !drop.has(x)), b];
+  // Layers on one shared timer: the new layer refreshes the others' end.
+  return [...buffs.filter((x) => !drop.has(x)).map((x) => (b.sharedTimer && same(x) ? { ...x, expiresAt: b.expiresAt } : x)), b];
 }
 
 /** Ends a buff from an owner: all of it, or its oldest `layers`. Returns the buffs left and whether any ended. */

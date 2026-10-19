@@ -228,6 +228,8 @@ export interface DamageSpec {
   /** Damage-over-time ticks can't crit. */
   readonly canCrit: boolean;
   readonly kind: HitKind;
+  /** The value the multiplier multiplies in place of ATK (KitHit.base). */
+  readonly base?: number;
 }
 
 /** All modifiers acting on a build's hits: stat panel, active conditions, and external ones. */
@@ -270,7 +272,7 @@ export function computeDamage(
   // ATK% from buffs joins the panel's ATK% before the attribute bonus.
   const a = panel.atk;
   const atkBuff = sum("atk");
-  const atk = atkBuff === 0 ? a.total : ((a.operatorBase + a.weaponBase) * (1 + a.percent + atkBuff) + a.flat) * a.attributeBonus;
+  const atk = spec.base !== undefined ? spec.base : atkBuff === 0 ? a.total : ((a.operatorBase + a.weaponBase) * (1 + a.percent + atkBuff) + a.flat) * a.attributeBonus;
 
   const zones: Zones = {
     atk,
@@ -365,6 +367,7 @@ export function computeHit(
     scaleParts,
     canCrit: true,
     kind: hit.reaction?.kind ?? hit.damageType,
+    ...(hit.base !== undefined ? { base: evaluate(hit.base, ec) } : {}),
   }, options);
 }
 

@@ -199,6 +199,14 @@
               }
             },
             "description": "Enemy buffs only: records rate × the damage of every hit on its target while active (anyone's; reactions and ticks included, Fixed DMG not). buffEnded triggers read the total as {eventRecorded: true}."
+          },
+          "sharedTimer": {
+            "type": "boolean",
+            "description": "Layers share one timer each new layer refreshes (BuffData stackingType 8; the loader sets it from the game buff)."
+          },
+          "link": {
+            "type": "boolean",
+            "description": "A team buff that counts as one Link stack while active; the next battle skill or ultimate that uses Link uses it and ends it."
           }
         }
       }
@@ -2803,6 +2811,10 @@
         "fixedDamage": {
           "$ref": "#/$defs/valueExpr",
           "description": "Fixed DMG (SkillData damageType 8): the hit deals exactly this value, no ATK, zones, crit, DEF, RES or Staggered multiplier; scale is []. A triggered hit's value is judged when its trigger fires (e.g. {eventRecorded: true})."
+        },
+        "base": {
+          "$ref": "#/$defs/valueExpr",
+          "description": "What the multiplier multiplies instead of ATK (MultiplyAttributeCalculation: e.g. 300 + 5 × DEF); every other zone as usual."
         }
       }
     }

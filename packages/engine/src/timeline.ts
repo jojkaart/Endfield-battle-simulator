@@ -1454,11 +1454,18 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   }
   // Link (buff_common_affixes_combo_trigger → skillimbue_atk): a combo leaves the team a stack for 15 s; the next battle
   // skill or ultimate, by anyone, uses all of them (at most 4) for its own hits: +30/45/60/75% / +20/30/40/50%.
+  const linkEnded: BattleEvent[] = [];
   if (!followUp) {
     const live = next.link.filter((f) => f > frame);
+    // Kit buffs that count as a Link stack (KitBuff.link) for the caster, used up with the combo stacks.
+    const linkBuffs = next.buffs.filter((b) => b.link && b.cast === undefined && reaches(b, operator) && b.appliedAt <= frame && b.expiresAt > frame);
     if (costs.kind === "combo") next = { ...next, link: [...live, frame + LINK_FRAMES] };
-    else if ((costs.kind === "battle" || costs.kind === "ultimate") && live.length > 0) {
-      const n = Math.min(4, live.length);
+    else if ((costs.kind === "battle" || costs.kind === "ultimate") && live.length + linkBuffs.length > 0) {
+      const n = Math.min(4, live.length + linkBuffs.length);
+      if (linkBuffs.length) {
+        next = { ...next, buffs: next.buffs.filter((b) => !linkBuffs.includes(b)) };
+        linkEnded.push(...new Map(linkBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id, remaining: remainingOf([b], frame) }])).values());
+      }
       const value = costs.kind === "battle" ? 0.15 + 0.15 * n : 0.1 + 0.1 * n;
       const lastHit = Math.max(frame, ...pending.map((h) => h.frame));
       const link: ActiveBuff = { id: "link", owner: operator, target: "self", appliedAt: frame, expiresAt: lastHit + 1, cast: castIndex, modifiers: [{ zone: "multiplicative", value, source: `Link (${n})` }] };
@@ -1489,7 +1496,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     ...(windowCount !== undefined ? { count: windowCount } : {}), ...(followUp ? { followUp: true } : {}),
   };
   const endedEvents: BattleEvent[] = [...new Map(consumedBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id, remaining: remainingOf([b], frame) }])).values()];
-  return { state: slowDown(ctx, cast, operator, costs.timing, frame), events: [...endsNowEvents, castEvent, ...endedEvents], origin: { operator, kind: costs.kind } };
+  return { state: slowDown(ctx, cast, operator, costs.timing, frame), events: [...endsNowEvents, castEvent, ...endedEvents, ...linkEnded], origin: { operator, kind: costs.kind } };
 }
 
 export interface TimelineResult {

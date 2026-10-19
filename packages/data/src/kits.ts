@@ -36,6 +36,7 @@ interface RawHit {
   extraScale?: { value: ValueExpr; if: Predicate }[];
   scaleValue?: ValueExpr;
   fixedDamage?: ValueExpr;
+  base?: ValueExpr;
   if?: Predicate;
   branch?: string;
   buffs?: BuffApplication[];
@@ -186,6 +187,7 @@ function kitChecker(scope: KitScope) {
   const checkBuff = (b: KitBuff, skillId: string, where: string) => {
     for (const v of [b.duration, b.maxStacks, b.every, b.records?.rate, ...b.modifiers.map((m) => m.value)]) if (v !== undefined) checkValue(v, skillId, `${where}: buff ${b.id}`);
     if (b.records && b.target !== "enemy") throw new Error(`${where}: buff ${b.id}: only an enemy buff records the damage its target takes`);
+    if (b.link && b.target !== "team") throw new Error(`${where}: buff ${b.id}: a Link stack is a team buff`);
     for (const m of b.modifiers) if ((m.zone === undefined) === (m.attr === undefined)) throw new Error(`${where}: buff ${b.id}: each modifier has a zone or an attribute`);
     for (const m of b.modifiers) if (m.attr !== undefined && !buffAttrHasEffect(m.attr)) throw new Error(`${where}: buff ${b.id}: attribute ${m.attr} feeds no damage zone and nothing reads it (ATK is the atk zone)`);
     if (b.recipients && b.target !== "team") throw new Error(`${where}: buff ${b.id}: only team buffs have recipients`);
@@ -221,6 +223,7 @@ function kitChecker(scope: KitScope) {
         checkPredicate(x.if, `${where} hit ${h.id} extraScale`);
       }
       if (h.scaleValue !== undefined) checkValue(h.scaleValue, src.skillId, `${where} hit ${h.id} scaleValue`);
+      if (h.base !== undefined) checkValue(h.base, src.skillId, `${where} hit ${h.id} base`);
       if (h.fixedDamage !== undefined) {
         checkValue(h.fixedDamage, src.skillId, `${where} hit ${h.id} fixedDamage`);
         if (h.scale.length || h.scaleValue !== undefined || h.extraScale || h.factor !== undefined || h.reaction || h.bonuses) throw new Error(`${where} hit ${h.id}: a Fixed DMG hit has no scale, factor, reaction or bonuses`);
@@ -258,6 +261,7 @@ function kitChecker(scope: KitScope) {
         ...(h.extraScale ? { extraScale: h.extraScale } : {}),
         ...(h.scaleValue !== undefined ? { scaleValue: h.scaleValue } : {}),
         ...(h.fixedDamage !== undefined ? { fixedDamage: h.fixedDamage } : {}),
+        ...(h.base !== undefined ? { base: h.base } : {}),
         ...(h.buffs ? { buffs: h.buffs } : {}),
         ...(h.energy ? { energy: h.energy } : {}),
         ...(h.sp !== undefined ? { sp: h.sp } : {}),
@@ -355,7 +359,9 @@ function kitChecker(scope: KitScope) {
       if (!isBuffFileListed(gameBuff)) throw new Error(`${scope.file}: buff ${b.id}: ${gameBuff} isn't covered by tables.json json.BuffData`);
       const raw = readBuffFile(gameBuff);
       if (!raw) throw new Error(`${scope.file}: buff ${b.id}: no BuffData file ${gameBuff}`);
-      return raw.stacking.type === 1 ? { ...b, gameBuff, stackGroup: raw.stacking.key ?? gameBuff } : { ...b, gameBuff };
+      // stackingType 1: one strongest instance per group; 8: layers on one refreshed timer.
+      if (raw.stacking.type === 1) return { ...b, gameBuff, stackGroup: raw.stacking.key ?? gameBuff };
+      return raw.stacking.type === 8 && b.maxStacks !== undefined && b.sharedTimer === undefined ? { ...b, gameBuff, sharedTimer: true } : { ...b, gameBuff };
     });
   /** A kit's triggers, checked, with the triggers their actions name (cancelHits) among them. */
   const checkTriggers = (list: readonly Omit<RawTrigger, "note">[]): KitTrigger[] => {
