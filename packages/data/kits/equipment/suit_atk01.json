@@ -1,0 +1,17 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_atk01",
+  "sources": [
+    "Aburrey's Legacy (3 pieces). rmxlinux Json/SkillData/passive_equipsuit_atk_01 (SkillPatchTable level 1: dmg_up 0.24, atk_up 0.05, duration 15): cardAttributeModifier attrs 32/33/28 +dmg_up (battle, combo, ultimate DMG) are stat-panel modifiers. Its `buffs` give the wearer buff_equipsuit_atk_01: abilityEvent 30 + CheckSkillType [2] / [6] / [7] → buff_equipsuit_atk_01_normalskill / _comboskill / _ultimateskill (ATK, attr 2 formulaItem 6 +atk_up, `duration`, stackingType 4 each). \"When the wearer casts a battle skill, combo skill, or ultimate, the wearer gains ATK +{atk_up} for {duration}s. The buff from each of the three skill types is unique and does not stack with itself.\" Batch-2 report docs/kit-batches/batch-2/chr_0022_bounda.md rows S3, S4."
+  ],
+  "buffs": [
+    { "id": "suit_atk01.battle", "label": "ATK (Aburrey's Legacy, battle skill)", "target": "self", "gameBuff": "buff_equipsuit_atk_01_normalskill", "duration": "duration", "modifiers": [{ "zone": "atk", "value": "atk_up" }] },
+    { "id": "suit_atk01.combo", "label": "ATK (Aburrey's Legacy, combo skill)", "target": "self", "gameBuff": "buff_equipsuit_atk_01_comboskill", "duration": "duration", "modifiers": [{ "zone": "atk", "value": "atk_up" }] },
+    { "id": "suit_atk01.ultimate", "label": "ATK (Aburrey's Legacy, ultimate)", "target": "self", "gameBuff": "buff_equipsuit_atk_01_ultimateskill", "duration": "duration", "modifiers": [{ "zone": "atk", "value": "atk_up" }] }
+  ],
+  "triggers": [
+    { "id": "suit_atk01.battle_cast", "on": { "event": "cast", "kinds": ["battle"] }, "by": "self", "skill": "passive_equipsuit_atk_01", "do": [{ "kind": "buff", "buff": "suit_atk01.battle" }] },
+    { "id": "suit_atk01.combo_cast", "on": { "event": "cast", "kinds": ["combo"] }, "by": "self", "skill": "passive_equipsuit_atk_01", "do": [{ "kind": "buff", "buff": "suit_atk01.combo" }] },
+    { "id": "suit_atk01.ultimate_cast", "on": { "event": "cast", "kinds": ["ultimate"] }, "by": "self", "skill": "passive_equipsuit_atk_01", "do": [{ "kind": "buff", "buff": "suit_atk01.ultimate" }] }
+  ]
+}

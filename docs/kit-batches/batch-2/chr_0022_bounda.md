@@ -424,3 +424,177 @@ every ATK buff as `zone: atk`, not `attr: 2`, G7):
   {event: statusConsumed, statuses: [electrification, corrosion]}, by:
   self, skill: passive_equipsuit_expend_spell01}` → the buff, with `layers:
   {eventCount: true}` once G4 exists (one layer until then).
+
+## Kit (2026-10-19)
+
+Phase A (re-analysis against the engine at 455a0ca) and phase B (the kit).
+
+### Re-analysis per gap
+
+| Gap / row | Now | How |
+|---|---|---|
+| G1 talent 1 (row 26) | covered (C1) | `love_the_stab_and_twist`: a permanent self buff from a `fightStart` trigger (`talentAtLeast [0, 1]`), modifier `{zone: damageBonus, value: {talent: 0, key: dmg_up}, if: {enemyControl: "slow"}}`, judged per hit |
+| G2 attack4_1 (row 4) | covered (S3) | the loader marks attack4_1 a chain step from attack3's window 24–30; no `chainStep` override needed; the example casts it |
+| G3 step after the battle skill (row 13) | covered (S4, `awaited`) | `explosive_stuck` (delay 10) is `awaited`: "battle skill, ultimate" now starts the ultimate at the kick (frame 10), and its first shot detonates |
+| G4 layers (S6) | covered (B2, `layers`) | Xiranflow: `{kind: buff, layers: {eventCount: true}}` (a statusConsumed event's count is its Status Level) |
+| G5 talent 2 (row 28) | partly covered (E1) | trigger `on: {event: attacked, elements: [fire, pulse, cryst, natural]}`, `by: self` (CheckDamageType 2 / 3 / 4 / 6; 6 is Nature, as in her own damage units). The chance is new gap N1 below |
+| G6 compiler alternatives (row 5) | open (D3) | written by hand: one landing per projectile; the frame-149 branch is the trigger `ultimate_detonates`. `branch` doesn't fit: when the detonation happens depends on when an ultimate shot lands, not on a frame of the battle skill. Three KNOWN entries in skillCompile.test.ts |
+| G7 ATK as `attr: 2` (K1) | covered (B4) | the kits use `zone: atk` |
+| G8 two weapon skills (W2) | covered (D4) | a Peco 5 build with `skillLevels: [9, 9]` loads (flat ATK +33.6) |
+| Row 19, the combo's element | covered (T3) | `{kind: infliction, element: "event"}`: the window's element, as the data's EntityBB_combo_index; no longer an interim |
+| Rows 12, 15, S7 | unknown | in-game tests F1, F3; S7 needs a log with a wearer that consumes Electrification or Corrosion (no kit does yet) |
+
+**New gaps** (not implemented; the kit has the closest interim):
+
+- **N1. A trigger with a chance (BuffData `Probablity`).** *Feature:*
+  `KitTrigger.chance: ValueExpr` (0–1), rolled per event from its own
+  seeded stream (`chance`, as `dodge` has its own), so one battle shows it
+  happening or not and `--runs` gives the spread. *Evidence:*
+  `buff_chr_0022_bounda_talent_2` (Probablity `probability`, 0.2, P2 +0.1,
+  before the CreateBuff of `_talent_2_atkup`); `buff_chr_0023_antal_talent_2`
+  (Antal's heal, no damage effect). *Impact:* talent 2 is ATK +20% for 10 s
+  after 20–30% of the Arts attacks she takes. *Interim:* the buff carries
+  the expected value `probability × atk_up` (+6% at P5) and every Arts
+  attack refreshes it: right on average for attacks more than 10 s apart,
+  low for denser ones (with n attacks in 10 s the buff is up with chance
+  1 − (1 − p)ⁿ, more than p).
+- **N2. A team-energy part that outlives the cast.** *Feature:*
+  `KitSkill.teamEnergy[].detached: true` (as for a detached hit): kept when
+  the operator starts another skill before its frame. *Evidence:* the
+  battle skill's `buff_common_obtain_ultimate_sp` is created by the
+  explosion (normal_skill_abilityrange, entity frame 89 → cast frame 99, or
+  149 after the ultimate's jump), while the skill's exclusiveFrame is 34;
+  `endCurrentSkill` (timeline.ts) drops a cast's pending energy parts.
+  *Impact:* with `{frame: 99}` her battle skill would give the team no
+  energy whenever she acts again within 3.3 s, the usual case. *Interim:*
+  `{frame: 10, ratio: 1}`, the kick: lost only if the cast is cut before
+  the projectile launches (as in the game); otherwise ~3 s early.
+- **N3 (log tooling; Si's, found here).** `zmdlogs check` doesn't apply the
+  finisher multiplier (damage.ts `NOT_MODELLED` "finisher"; the timeline
+  does): Si's four `chr_0036_jsspsi_power_attack` hits in the pending
+  fixture are exactly ×1.75 of the prediction, Rhodagn's finisher
+  multiplier (attribute 27). Needs a CLI change: logcheck applies the
+  enemy's attribute 27 to skillSpecification-8 hits.
+- **N4 (log tooling).** `zmdlogs reactions` keeps an application whose `if`
+  reads the enemy's state (undecidable from a log), so it predicts a
+  Corrosion at 62772 ms from the 4th ultimate shot's Nature branch, which
+  the log doesn't have (it has the Cryo branch's burst at 64225; the replay
+  doesn't know Seraph's Cryo, as she has no kit).
+
+D3 and V3 are untouched otherwise (no SP grant of hers is non-zero: `atb`
+is 0 at every level).
+
+### What was written
+
+- `packages/data/kits/operators/chr_0022_bounda.json`: 11 skills, 3 buffs
+  (`improvised_explosive` on the enemy, `love_the_stab_and_twist`,
+  `unpredictable`), 7 triggers (`combo_window`, `explosive_stuck`,
+  `explosive_done`, `ultimate_detonates`, `unpredictable`,
+  `love_the_stab_and_twist`, `p5_combo_cooldown`).
+- Equipment: `wpn_pistol_0002` (Howling Guard: battle-skill hit → ATK),
+  `wpn_pistol_0003` (Long Road: combo cast → ATK), `suit_atk01` (Aburrey's
+  Legacy: three cast buffs), `suit_expend_spell01` (Xiranflow: layers by
+  Status Level); `wpn_pistol_0001` (Peco 5) and `suit_generaltype` (AIC
+  Fieldwork) have only `sources`: all their effects are on the stat panel
+  or act on damage taken.
+- `examples/fluorite-gilberta.scenario.json` + `examples/fluorite-p5.json`
+  (P5, Howling Guard, 4 × Aburrey's Legacy): Gilberta's battle skill,
+  Fluorite's battle skill at 3 s and her ultimate at once (detonation ×1.3
+  at 5.30 s; Gilberta's explosion makes 2 Nature stacks, so shot 4 adds a
+  third), the combo, attack4_1, a second battle skill (the plain explosion
+  at frame 99), and a Nature attack by the enemy every 6 s. Total 111,778
+  (Fluorite 92,998).
+- `tests/kit-fluorite.test.ts` (11 tests): the kick's and explosion's frames
+  and Slows (P3 and below), the awaited ultimate and the detonation (×1.3,
+  no frame-99 explosion), team energy at the kick surviving a cut, talent 1
+  only under Slow and only when learned, talent 2's value at P5 / P1, not
+  from Physical attacks, gone after 10 s, the combo's window element and
+  P5's cuts with their 1 s limit, shot 4's branch at 2 stacks only,
+  attack4_1's window; Howling Guard, Aburrey's Legacy, Long Road, and
+  Xiranflow's layers (on a patched kit, as no kit consumes Electrification
+  or Corrosion).
+- `packages/data/test/skillCompile.test.ts`: Fluorite added to the
+  comparison; four KNOWN entries (team energy at 10, the 149 branch's
+  landing and infliction, the combo's `event` element).
+- `fixtures/pending/zmdlogs-abfd4b7478ec.json`: two build corrections, each
+  from the log's own data (provenance notes added); README updated:
+  - **Fluorite: promotion 3, weapon level 20** (was 2 and 90). The log shows
+    `buff_chr_0022_bounda_talent_2_atkup` at atk 0.2, talent 2 level 2, a
+    breakStage-3 node (CharGrowthTable `chr_0022_bounda_passive_skill_1_2`),
+    so she is at promotion 3 (the highest at level 60, the fixture's own
+    rule). Then her ATK depends only on the weapon level, and level 20 (ATK
+    1,395.6 against the 1,395.5 her hits imply) makes all 56 hits match;
+    19 and 21 are 1.2% off.
+  - **Si: `attributeNodes: 2`.** Every Si hit was ×0.9648; nodes
+    chr_0036_jsspsi_5 and _7 (+15, +20 Intellect, which also need trust
+    300) explain it exactly, the same correction as in
+    fixtures/zmdlogs-40d9a3c1da37.json (2026-10-18). No other one-value
+    change of her build fits (weapon level 84 / 85: 0.963 / 0.969).
+
+### Deviations from the plan
+
+- Team energy at frame 10, not 99 (N2).
+- Talent 2 as an expected value (N1); the plan's interim (a user-switched
+  condition) isn't needed now that E1 has `attacked`.
+- Basic-attack and ultimate projectile hits are `detached` (as kit-draft
+  and Laevatain's projectiles); attack3's and attack4's SP only as the
+  controlled operator (atbOnlyMainChar), as kit-draft reads it.
+- The detonated explosion lands at frame 0 of its trigger (the shot's
+  frame), not 1.
+- No `chainStep` override on attack4_1 (the loader infers it now).
+- Gilberta's and Typhoeus's kits still don't apply their Slow (row 27);
+  they aren't mine, so talent 1 under a teammate's Slow isn't modelled yet.
+
+### Verification
+
+- `npm run check` passes (20 files, 468 tests).
+- `zmdlogs check fixtures/pending/zmdlogs-abfd4b7478ec.json` (the only
+  fixture with Fluorite). Before: Fluorite 0 match, 0 mismatch, 4
+  unquantified, 52 not covered (23% of her damage covered); Si 0 match,
+  190 mismatch. After: **Fluorite 56 of 56 match** (100% covered); Si 186
+  match, 4 mismatch (N3: ×1.75 exactly), 3 under unmodelled effects.
+  Yvonne and Xaihi have no kits, so the fixture doesn't pass fully yet.
+- `zmdlogs reactions`: before 0 matched, 8 logged but not predicted; after
+  0 matched, 1 predicted but not logged (N4), 8 logged but not predicted
+  (Seraph's and Yvonne's Cryo isn't replayed; the combo's `event` element
+  can't be replayed from a log).
+- Every trigger and buff fired at least once in the example (a scratch
+  spot check, and the tests): combo_window 4×, explosive_stuck 2×,
+  explosive_done 2×, ultimate_detonates 1×, unpredictable 6×,
+  love_the_stab_and_twist 1×, p5_combo_cooldown 3×, Howling Guard 2×,
+  Aburrey's battle 2× / combo 1× / ultimate 1×; Long Road and Xiranflow in
+  the tests.
+- Example totals unchanged (arcane-will-solo 102,141;
+  estella-solidification 186,537; gilberta-gravity-field 375,390;
+  laevatain-solo 739,231; liino-laevatain 619,381; si-laevatain 1,017,030;
+  typhoeus-gilberta 1,058,494): none wears this equipment (AIC Fieldwork is
+  a single piece in two fixtures, and its kit is sources only).
+
+### Open questions
+
+- Does Link boost the detonated explosion? The kit: no (a trigger hit); the
+  battle skill that used the Link loses its own explosion. F1.
+- Two kicks within 3.1 s: the kit refreshes one marker and lets one
+  explosion happen. F3.
+- Projectile travel (test 47): the log's ultimate shots are 467 / 224 /
+  123 ms apart against 133 / 133 / 167 ms in the data.
+
+### Proposed in-game tests
+
+- **F1. Link on the detonated explosion.** Cast any combo (one Link stack),
+  then Fluorite's battle skill and at once her ultimate; compare the big
+  explosion's number with the same sequence without the combo first:
+  about ×1.3 larger means Link applies to it.
+- **F2. Talent 1 under a teammate's Slow.** With Gilberta, compare
+  Fluorite's basic-attack numbers inside and outside Gilberta's ultimate
+  field (no kick of her own): +10% / +20% inside means anyone's Slow counts.
+- **F3. Two explosives.** With 200 SP, cast her battle skill twice in a row
+  on one enemy and count the explosions: one, two, or does the second
+  replace the first?
+- **F4. Talent 2's chance.** Let an enemy with Arts attacks hit Fluorite 20
+  times or more, at least 10 s apart, and count how often the ATK-up buff
+  icon appears: about 1 in 5 below P2, about 3 in 10 from P2.
+- **F5. When the battle skill's team energy comes.** Watch a teammate's
+  ultimate gauge after Fluorite's battle skill: does it rise at the kick or
+  about 3 s later at the explosion? Does it still rise when Fluorite
+  attacks or swaps out right after the kick?
