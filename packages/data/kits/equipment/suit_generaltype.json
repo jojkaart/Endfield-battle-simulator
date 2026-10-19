@@ -1,0 +1,7 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_generaltype",
+  "sources": [
+    "AIC Fieldwork (EquipSuitTable suit_generaltype; rmxlinux Json/SkillData/passive_equipsuit_generaltype): DMG +20% for every element (cardAttributeModifier attrs 50-55) and Ultimate Gain Efficiency +10% (attr 44) are stat-panel modifiers (efsim calc shows them); DMG Reduction ×0.9 (attrs 4-7, 48, 60) and the HP-ratio toggle buff_equipsuit_str_reducedmg_01 act on damage taken, which isn't modelled. So the kit has no buffs or triggers. Batch-2 report docs/kit-batches/batch-2/chr_0022_bounda.md rows S1, S2."
+  ]
+}

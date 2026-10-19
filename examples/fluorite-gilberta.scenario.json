@@ -1,0 +1,45 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Fluorite (P5, Howling Guard, Aburrey's Legacy) with Gilberta (the build of fixtures/zmdlogs-d9e59d0fb737.json) vs Rhodagn, which hits the controlled operator with a Nature attack every 6 s (talent 2's ATK, as its expected value). Fluorite starts with her ultimate charged: battle skill, then at once her ultimate (the step waits for the kick at frame 10): the first shot detonates the Improvised Explosive (×1.3, P3 Slow 6 s, Nature), and the 4th shot sees 2 Nature stacks and adds a third. Then a basic-attack chain under the Slow (talent 1), Gilberta's battle skill and Fluorite's for the plain explosion at frame 99; their Nature Infliction opens her combo window (2 stacks), whose hit adds the window's element. Every Nature infliction cuts her combo cooldown by 1 s (P5).",
+  "team": [
+    "fluorite-p5.json",
+    {
+      "operator": "chr_0013_aglina",
+      "level": 90,
+      "promotion": 4,
+      "potential": 1,
+      "skillLevels": { "basic": 9, "battle": 9, "combo": 9, "ultimate": 12 },
+      "weapon": { "id": "wpn_funnel_0011", "level": 90, "skillLevels": [9, 9, 4] },
+      "gear": [
+        { "id": "item_equip_t4_suit_phy01_hand_03", "artifice": [3, 3, 3] },
+        { "id": "item_equip_t4_suit_phy01_body_02", "artifice": [3, 3, 3] },
+        { "id": "item_equip_t4_suit_phy01_edc_01", "artifice": [3, 3, 0] },
+        { "id": "item_equip_t4_suit_heal01_edc_03", "artifice": [3, 3, 3] }
+      ]
+    }
+  ],
+  "target": { "enemy": "eny_0051_rodin", "level": 90 },
+  "startEnergy": { "chr_0022_bounda": "full" },
+  "durationSeconds": 40,
+  "crit": "expected",
+  "enemyActions": [{ "kind": "attack", "every": 6, "element": "natural" }],
+  "rotation": [
+    { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_normal_skill" },
+    { "operator": "chr_0022_bounda", "skill": "chr_0022_bounda_normal_skill", "at": 3 },
+    { "operator": "chr_0022_bounda", "skill": "chr_0022_bounda_ultimate_skill" },
+    { "operator": "chr_0022_bounda", "skill": "chr_0022_bounda_combo_skill" },
+    { "operator": "chr_0022_bounda", "skill": "chr_0022_bounda_attack1" },
+    { "operator": "chr_0022_bounda", "skill": "chr_0022_bounda_attack2" },
+    { "operator": "chr_0022_bounda", "skill": "chr_0022_bounda_attack3" },
+    { "operator": "chr_0022_bounda", "skill": "chr_0022_bounda_attack4_1" },
+    { "operator": "chr_0022_bounda", "skill": "chr_0022_bounda_normal_skill" },
+    { "operator": "chr_0022_bounda", "skill": "chr_0022_bounda_attack1" },
+    { "operator": "chr_0022_bounda", "skill": "chr_0022_bounda_attack2" },
+    { "operator": "chr_0022_bounda", "skill": "chr_0022_bounda_attack3" },
+    { "operator": "chr_0022_bounda", "skill": "chr_0022_bounda_attack4" },
+    { "operator": "chr_0022_bounda", "skill": "chr_0022_bounda_attack1" },
+    { "operator": "chr_0022_bounda", "skill": "chr_0022_bounda_attack2" },
+    { "operator": "chr_0022_bounda", "skill": "chr_0022_bounda_attack3" },
+    { "operator": "chr_0022_bounda", "skill": "chr_0022_bounda_attack4" }
+  ]
+}

@@ -15,7 +15,9 @@
   },
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
-   "Enemy level 90 is assumed, not logged."
+   "Enemy level 90 is assumed, not logged.",
+   "Si (chr_0036_jsspsi) has attributeNodes 2, not all 4 (inferred 2026-10-19, as in fixtures/zmdlogs-40d9a3c1da37.json): nodes chr_0036_jsspsi_5 and _7 (+15 and +20 Wisd) also need trust 300, which the log doesn't record. With all 4 every Si hit was predicted ×1/0.9648 (190 hits at one ratio); no other one-value change of her build gives that ratio (weapon level 84 or 85: 0.963 / 0.969).",
+   "Fluorite (chr_0022_bounda) is at promotion 3 with OBJ Velocitous at weapon level 20 (inferred 2026-10-19). Promotion: the log shows buff_chr_0022_bounda_talent_2_atkup at atk 0.2, talent 2 level 2 (CharGrowthTable chr_0022_bounda_passive_skill_1_2, breakStage 3). Weapon level: with promotion 3 her ATK only depends on it, and every one of her 56 hits (attacks, combo, ultimate, Cryo bursts) matches at 20 (ATK 1,396); 19 and 21 are 1.2% off. The fixture had promotion 2 and weapon level 90 (all her hits ×0.5438)."
   ]
  },
  "enemy": {
@@ -28,6 +30,7 @@
    "level": 90,
    "promotion": 4,
    "potential": 0,
+   "attributeNodes": 2,
    "skillLevels": {
     "basic": 9,
     "battle": 10,
@@ -191,7 +194,7 @@
   {
    "operator": "chr_0022_bounda",
    "level": 60,
-   "promotion": 2,
+   "promotion": 3,
    "potential": 5,
    "skillLevels": {
     "basic": 1,
@@ -201,7 +204,7 @@
    },
    "weapon": {
     "id": "wpn_pistol_0012",
-    "level": 90,
+    "level": 20,
     "skillLevels": [
      1,
      1,

@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_expend_spell01",
+  "sources": [
+    "Xiranflow (3 pieces). rmxlinux Json/SkillData/passive_equipsuit_expend_spell01 (SkillPatchTable level 1: atk_up 0.1, spell_dmg_up 0.15, duration 25, max_stack 3): cardAttributeModifier ATK +atk_up is a stat-panel modifier. Its `buffs` give the wearer buff_equipsuit_expend_spell01: abilityEvent 208 (a buff removed by the wearer) + CheckBuffIdInContextAdvanced tags 1466867135 / -421286163 (Electrification, Corrosion) → GetTargetBuffBBAdvanced `count` of the consumed status (its Status Level) → CreateBuffAction buff_equipsuit_expend_spelldamage with that count (stackingType 2, max max_stack, each layer its own `duration`): Electric (attr 52) and Nature (attr 54) DMG +spell_dmg_up per layer. \"Whenever the wearer consumes Electrification or Corrosion, the wearer gains a number of buff stacks equal to the Status Level of the Arts Reaction consumed … Max {max_stack}. Duration of each stack is counted separately.\" Batch-2 report docs/kit-batches/batch-2/chr_0022_bounda.md rows S5-S7.",
+    "What \"consumes\" covers (a hit removing the status, or also one replaced or running out) is open: the engine's statusConsumed is a hit removing it before it runs out (report row S7); no log has a wearer that consumes Electrification or Corrosion yet."
+  ],
+  "buffs": [
+    {
+      "id": "suit_expend_spell01.spell_dmg",
+      "label": "Electric and Nature DMG (Xiranflow)",
+      "target": "self",
+      "gameBuff": "buff_equipsuit_expend_spelldamage",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [{ "attr": 52, "value": "spell_dmg_up" }, { "attr": 54, "value": "spell_dmg_up" }],
+      "note": "Layered (stackingType 2): each layer has its own 25 s; at max_stack a new one replaces the oldest."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "suit_expend_spell01.consume",
+      "on": { "event": "statusConsumed", "statuses": ["electrification", "corrosion"] },
+      "by": "self",
+      "skill": "passive_equipsuit_expend_spell01",
+      "do": [{ "kind": "buff", "buff": "suit_expend_spell01.spell_dmg", "layers": { "eventCount": true } }],
+      "note": "One layer per Status Level of the consumed status (the event's count)."
+    }
+  ]
+}

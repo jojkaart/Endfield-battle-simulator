@@ -16,6 +16,10 @@ yet, because something outside the kits doesn't match. Move a file up to
   Qianyu and Pogranichnik; none of them has a kit yet. Waits for the
   Endministrator's kit; no mismatch so far.
 - `zmdlogs-abfd4b7478ec.json` (Rhodagn, imported 2026-10-19 for batch 2):
-  Fluorite (P5) with Si, Yvonne and Seraph. Every Si hit is ×0.965 of the
-  prediction (190 hits, all the same factor), so something in this team or
-  loadout isn't modelled yet; waits for Fluorite's kit and that factor.
+  Fluorite (P5) with Si, Yvonne and Seraph. Every Si hit was ×0.965 of the
+  prediction and every Fluorite hit ×0.544: build corrections from the
+  log's own data (2026-10-19, provenance notes: Si attributeNodes 2,
+  Fluorite promotion 3 with weapon level 20) make all 56 of Fluorite's hits
+  and 186 of Si's match. Left: Si's four finisher hits are ×1.75, Rhodagn's
+  finisher multiplier, which `zmdlogs check` doesn't apply yet; Yvonne and
+  Seraph have no kits.

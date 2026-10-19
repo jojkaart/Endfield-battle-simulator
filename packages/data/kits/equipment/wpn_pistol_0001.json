@@ -1,0 +1,7 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_pistol_0001",
+  "sources": [
+    "Peco 5 (3-star; two weapon skills, WeaponBasicTable weaponSkillList). Skill 1: main attribute +mainattr; skill 2 (rmxlinux Json/SkillData/sk_wpn_pistol_0001): flat ATK +atk_up (attr 2 formulaItem 7, cardAttributeModifier). Both are stat-panel modifiers (efsim calc shows them), so the kit has no buffs or triggers. buff_wpn_pistol_0001 (stackingType 7, a `cd` key, no modifier) is referenced by nothing: an orphan; the skill's toggleBuffs entry buff_wpn_passive_spirit_01 has no BuffData file (as for batch-1 weapons). Batch-2 report docs/kit-batches/batch-2/chr_0022_bounda.md row W1."
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_pistol_0003",
+  "sources": [
+    "Long Road. rmxlinux Json/SkillData/sk_wpn_pistol_0003 (weapon skill 3, SkillPatchTable: atk_up, duration): passiveEventActions abilityEvent 30 (the wielder casts a skill) + CheckSkillType skillTypeList [6] (combo) → CreateBuffAction buff_wpn_pistol_0003 on the wielder (ATK, attr 2 formulaItem 6 +atk_up, duration `duration`, stackingType 4: refreshed). \"When the wielder casts a combo skill, the wielder gains ATK +{atk_up} for {duration}s. Effects of the same name cannot stack.\" Skills 1 and 2 (Strength, Arts DMG) are stat-panel modifiers. Batch-2 report docs/kit-batches/batch-2/chr_0022_bounda.md row W4."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_pistol_0003.atk_up",
+      "label": "ATK (Long Road)",
+      "target": "self",
+      "gameBuff": "buff_wpn_pistol_0003",
+      "duration": "duration",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_pistol_0003.combo_cast",
+      "on": { "event": "cast", "kinds": ["combo"] },
+      "by": "self",
+      "skill": "sk_wpn_pistol_0003",
+      "do": [{ "kind": "buff", "buff": "wpn_pistol_0003.atk_up" }],
+      "note": "At the cast, so the combo's own hits already have it."
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 // The SkillData compiler (src/skillCompile.ts) against the data it reads and
-// against the seven batch-1 kits, whose hand-written frames, counts, keys,
+// against the kits in OPERATORS (batch 1, and batch 2 as they come), whose hand-written frames, counts, keys,
 // factors, energy and inflictions are claims to check (docs/kit-abstractions.md
 // section 3). Every disagreement is listed in KNOWN with a short reason; a
 // new one, or one that goes away, fails the test so it gets looked at.
@@ -9,7 +9,7 @@ import type { KitHit } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill } from "../src/index.ts";
 
 const data = loadGameData();
-const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten"];
+const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0022_bounda"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
   const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
@@ -305,6 +305,15 @@ const KNOWN: string[] = [
   "chr_0035_liino_power_attack/final factor: kit 0.7, data 1",
   // Compiler limitation (D2), kit right: CreateBuff buff_common_obtain_ultimate_sp is in chr_0021_whiten_normal_skill_projhit (launched at 21) on the first-target branch (EntityBB_first_hit), which the compiler leaves undecided.
   "chr_0021_whiten_normal_skill teamEnergy: kit 1@21, data 1@0",
+  // The explosive's buff_common_obtain_ultimate_sp is at its explosion (entity frame 89 = cast frame 99, or 149), but the entity outlives the cast
+  // and a teamEnergy part is dropped when the operator acts again first (exclusiveFrame 34): the kit gives it at the kick (frame 10), interim.
+  "chr_0022_bounda_normal_skill teamEnergy: kit 1@10, data 1@99",
+  // The entity's JumpToAction to 149 (the ultimate's marker on the target) is the other branch of the one explosion, not a second one (open list D3):
+  // the kit deals it from the trigger ultimate_detonates when an ultimate shot lands, and the frame-99 explosion then doesn't happen.
+  "chr_0022_bounda_normal_skill applies at 159: kit [], data [infliction natural]",
+  "chr_0022_bounda_normal_skill: data lands chr_0022_bounda_normal_skill_abilityrange atk_scale at [159], no kit hit",
+  // SwitchAction on EntityBB_combo_index (2 → Cryo, 3 → Nature), set natively when the window opens: the window's element (`element: event`).
+  "chr_0022_bounda_combo_skill applies at 15: kit [infliction event], data [], conditionally [infliction cryst, infliction natural]",
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {

@@ -1,0 +1,28 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_pistol_0002",
+  "sources": [
+    "Howling Guard. rmxlinux Json/SkillData/sk_wpn_pistol_0002 (weapon skill 3, SkillPatchTable: atk_up, duration): passiveEventActions abilityEvent 302 (the wielder deals damage) + CheckDamageDecorateMask checkType 2 mask 256 (battle-skill damage) → CreateBuffAction buff_wpn_pistol_0002 on the wielder (ATK, attr 2 formulaItem 6 +atk_up, duration `duration`, stackingType 4: reapplying refreshes). \"When the wielder's battle skill hits the enemy, the wielder gains ATK +{atk_up} for {duration}s. Effects of the same name cannot stack.\" Skills 1 and 2 (Intellect, ATK%) are stat-panel modifiers. Batch-2 report docs/kit-batches/batch-2/chr_0022_bounda.md row W3."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_pistol_0002.atk_up",
+      "label": "ATK (Howling Guard)",
+      "target": "self",
+      "gameBuff": "buff_wpn_pistol_0002",
+      "duration": "duration",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }],
+      "note": "ATK% (formulaItem 6) is the kit's atk zone; each battle-skill hit refreshes it."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_pistol_0002.battle_hit",
+      "on": { "event": "hit", "kinds": ["battle"] },
+      "by": "self",
+      "skill": "sk_wpn_pistol_0002",
+      "do": [{ "kind": "buff", "buff": "wpn_pistol_0002.atk_up" }],
+      "note": "Any of the wielder's battle-skill hits (decorate mask 256), triggered ones too (Fluorite's detonated explosion)."
+    }
+  ]
+}

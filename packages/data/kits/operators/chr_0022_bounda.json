@@ -1,0 +1,607 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0022_bounda",
+  "sources": [
+    "Hits, frames, keys and events: rmxlinux Json/SkillData chr_0022_bounda_* and Json/BuffData buff_chr_0022_bounda_* (game 1.6), as compiled by efsim kit-draft and corrected by hand where the compiler lists alternatives as extra landings (open list D3): a projectile with castSkillOnHit and castSkillOnBlock naming one skill is one landing; the battle skill's explosion at entity frame 89 and the one at 149 are JumpToAction branches of one explosion. Frames are SkillData frames; projectile hits use the launch frame (travel isn't in the data, in-game test 47). Batch-2 report docs/kit-batches/batch-2/chr_0022_bounda.md (gap report, kit plan and the section \"Kit\").",
+    "Values: SkillPatchTable chr_0022_bounda_*; talents (PotentialTalentEffectTable): talent 1 attaches skill chr_0022_bounda_talent_1 (dmg_up 0.1 / 0.2), talent 2 attaches chr_0022_bounda_talent_2 (atk_up 0.1 / 0.2, probability 0.2, duration 10; P2 probability +0.1). P3 sets the battle skill's duration_potential (6) and potential_lv (3); P4 ultimate cost ×0.9 (data); P5 attaches buff_chr_0022_bounda_potential_5_auro (CD 1, reduce 1).",
+    "Log check: fixtures/pending/zmdlogs-abfd4b7478ec.json (Fluorite P5, skills level 1): attacks 1-4 one landing each, attack4 at atk_scale (not display_atk_scale), the combo one atk_scale hit followed by her Cryo burst (the infliction of the window's element), the ultimate four equal atk_scaleN hits and the 4th shot's Cryo branch. She never casts her battle skill there, so the explosive, talent 1 and the detonation are unverified by logs."
+  ],
+  "element": "natural",
+  "buffs": [
+    {
+      "id": "improvised_explosive",
+      "label": "Improvised Explosive (stuck to the target)",
+      "target": "enemy",
+      "duration": 3.1,
+      "modifiers": [],
+      "note": "State only: the ability entity abilityentity_chr_0022_bounda_normal_skill from its spawn (normal_skill_projhit, cast frame 10) to its explosion (entity frame 89, or at once when an ultimate shot's buff_chr_0022_bounda_ultimate_skill reaches the target: JumpToAction to 149). 3.1 s = the projhit's SlowAction literal, so it outlasts the explosion at cast frame 99. Whether a second kick replaces the first (\"only 1 Improvised Explosive can be present\") isn't in the data: here the second refreshes this marker and only one explosion follows (in-game test F3)."
+    },
+    {
+      "id": "love_the_stab_and_twist",
+      "label": "Love the Stab and Twist: DMG against Slowed targets",
+      "target": "self",
+      "modifiers": [
+        {
+          "zone": "damageBonus",
+          "value": {
+            "talent": 0,
+            "key": "dmg_up"
+          },
+          "if": {
+            "enemyControl": "slow"
+          }
+        }
+      ],
+      "gameBuff": "buff_chr_0022_bounda_talent_1",
+      "note": "Talent 1: \"Fluorite gains DMG Dealt +{dmg_up} against Slowed targets.\" buff_chr_0022_bounda_talent_1 (lifeType 1): damageModifier with CheckTagMatch 1925762097 (the Slow tag of buff_common_affixes_slow) on the target → NormalCalcZone + dmg_up. Any Slow counts, a teammate's too (the condition is the tag only; in-game test F2). No duration: the whole fight."
+    },
+    {
+      "id": "unpredictable",
+      "label": "Unpredictable: ATK (expected value)",
+      "target": "self",
+      "duration": {
+        "talent": 1,
+        "key": "duration"
+      },
+      "modifiers": [
+        {
+          "zone": "atk",
+          "value": {
+            "product": [
+              {
+                "talent": 1,
+                "key": "probability"
+              },
+              {
+                "talent": 1,
+                "key": "atk_up"
+              }
+            ]
+          }
+        }
+      ],
+      "gameBuff": "buff_chr_0022_bounda_talent_2_atkup",
+      "note": "Talent 2: on taking Arts DMG, a `probability` chance (0.2; P2 +0.1) of Arts DMG immunity (buff_common_damage_immune_talent, 0.01 s: damage taken isn't modelled) and ATK +atk_up (0.1 / 0.2) for `duration` (10 s; stackingType 4: refreshed). INTERIM: the engine has no trigger chance (Probablity), so the buff carries the expected value probability × atk_up and every Arts attack refreshes it; exact on average for attacks more than 10 s apart, low for denser ones (gap noted in the report)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_window",
+      "on": {
+        "event": "inflictionApplied",
+        "elements": [
+          "cryst",
+          "natural"
+        ],
+        "minStacks": 2
+      },
+      "by": "anyone",
+      "do": [
+        {
+          "kind": "openCombo"
+        }
+      ],
+      "note": "CharGrowthTable: \"COMBO TRIGGER: When an enemy has 2 or more stacks of Cryo Infliction or Nature Infliction.\""
+    },
+    {
+      "id": "explosive_stuck",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0022_bounda_normal_skill"
+        ]
+      },
+      "by": "self",
+      "delay": 10,
+      "awaited": true,
+      "skill": "chr_0022_bounda_normal_skill",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "improvised_explosive"
+        },
+        {
+          "kind": "apply",
+          "applies": [
+            {
+              "kind": "control",
+              "status": "slow",
+              "seconds": 3.1
+            }
+          ]
+        }
+      ],
+      "note": "The kick: LaunchProjectile at frame 10 (castSkillOnHit and castSkillOnBlock both → chr_0022_bounda_normal_skill_projhit: SpawnAbilityEntity abilityentity_chr_0022_bounda_normal_skill on the target + SlowAction, duration literal 3.1 s, rate move_speed_scalar). The skill's own effect: dropped if the cast is cut short before frame 10, and a rotation step without `at` waits for it (awaited)."
+    },
+    {
+      "id": "explosive_done",
+      "on": {
+        "event": "hit",
+        "skills": [
+          "chr_0022_bounda_normal_skill"
+        ]
+      },
+      "by": "self",
+      "do": [
+        {
+          "kind": "endBuff",
+          "buff": "improvised_explosive"
+        }
+      ],
+      "note": "The entity ends itself after exploding (FinishOwnerAction at entity frame 90 / 150)."
+    },
+    {
+      "id": "ultimate_detonates",
+      "on": {
+        "event": "hit",
+        "skills": [
+          "chr_0022_bounda_ultimate_skill"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "buffActive": "improvised_explosive"
+      },
+      "skill": "chr_0022_bounda_normal_skill",
+      "do": [
+        {
+          "kind": "endBuff",
+          "buff": "improvised_explosive"
+        },
+        {
+          "kind": "hits",
+          "hits": [
+            {
+              "id": "enhanced_explosion",
+              "label": "Detonated explosion",
+              "damageType": "battle",
+              "scale": [
+                "atk_scale"
+              ],
+              "bonuses": [
+                {
+                  "zone": "multiplicative",
+                  "key": "boom_up"
+                }
+              ],
+              "events": [
+                "chr_0022_bounda_normal_skill_abilityrange"
+              ],
+              "frames": [
+                0
+              ],
+              "poise": "poise",
+              "applies": [
+                {
+                  "kind": "infliction",
+                  "element": "natural"
+                },
+                {
+                  "kind": "control",
+                  "status": "slow",
+                  "durationKey": "duration_potential",
+                  "if": {
+                    "potentialAtLeast": 3
+                  }
+                }
+              ],
+              "note": "Ultimate text: \"If an Improvised Explosive has been stuck to the target, [it] detonates it immediately and increases the DMG and size of the explosion.\" Each ultimate projhit creates buff_chr_0022_bounda_ultimate_skill on the target; the entity's JumpToAction (frames 0–89, CheckBuffStackNum ≥ 1) jumps to 149: radius 4, DamageScaleProcessor ProdCalcZone +0.3 (the literal; boom_up is 0.3 at every level). A trigger hit, so Link isn't applied to it (in-game test F1)."
+            }
+          ]
+        }
+      ],
+      "note": "The first ultimate shot that lands on a target with the explosive detonates it; the frame-99 explosion then finds no explosive and doesn't happen."
+    },
+    {
+      "id": "unpredictable",
+      "on": {
+        "event": "attacked",
+        "elements": [
+          "fire",
+          "pulse",
+          "cryst",
+          "natural"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "talentAtLeast": [
+          1,
+          1
+        ]
+      },
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "unpredictable"
+        }
+      ],
+      "note": "buff_chr_0022_bounda_talent_2: abilityEvent 101 (she takes damage) × 4 branches, CheckTagMatch on the attacker (an enemy), CheckDamageType 2 / 3 / 4 / 6 (Heat, Electric, Cryo, Nature: Arts DMG), Probablity `probability` → the immunity and the ATK buff. The enemy's attacks come from the scenario (enemyActions); the chance is the buff's expected value (see the buff)."
+    },
+    {
+      "id": "love_the_stab_and_twist",
+      "on": {
+        "event": "fightStart"
+      },
+      "by": "self",
+      "if": {
+        "talentAtLeast": [
+          0,
+          1
+        ]
+      },
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "love_the_stab_and_twist"
+        }
+      ],
+      "note": "Talent 1's buff is on from the start of the fight (lifeType 1)."
+    },
+    {
+      "id": "p5_combo_cooldown",
+      "on": {
+        "event": "inflictionApplied",
+        "elements": [
+          "cryst",
+          "natural"
+        ]
+      },
+      "by": "anyone",
+      "if": {
+        "potentialAtLeast": 5
+      },
+      "cooldown": "CD",
+      "skill": "buff_chr_0022_bounda_potential_5_auro",
+      "do": [
+        {
+          "kind": "cooldown",
+          "who": "self",
+          "skills": "combo",
+          "seconds": {
+            "product": [
+              -1,
+              "reduce"
+            ]
+          }
+        }
+      ],
+      "note": "P5: \"Whenever Cryo Infliction or Nature Infliction is applied to the enemy, [combo] cooldown is shortened by {reduce}s. Effect can only trigger once every 1s.\" buff_chr_0022_bounda_potential_5_auro auras buff_chr_0022_bounda_potential_5_cd onto enemies: abilityEvent 121 + CheckSpellInflictionType mask 12 (Cryo, Nature) + her timed marker (CD 1 s) → SetSkillCdAtOnce combo −reduce. Whether an infliction that forms a reaction counts is open (in-game test 35)."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0022_bounda_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            13
+          ],
+          "events": [
+            "chr_0022_bounda_attack1_projhit"
+          ],
+          "detached": true
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0022_bounda_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            9
+          ],
+          "events": [
+            "chr_0022_bounda_attack2_projhit"
+          ],
+          "detached": true
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0022_bounda_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            9
+          ],
+          "events": [
+            "chr_0022_bounda_attack3_projhit"
+          ],
+          "detached": true,
+          "sp": {
+            "if": {
+              "controlled": true
+            },
+            "then": {
+              "product": [
+                "atb",
+                0.333333313
+              ]
+            },
+            "else": 0
+          },
+          "note": "attack3_projhit ObtainCostAction costType 1: atb × 0.333 (SimpleCalcBB), main character only; atb is 0 at every level."
+        }
+      ],
+      "note": "Its windows: attack4 in frames 18–24, attack4_1 in 24–30 (the chain step by timing)."
+    },
+    {
+      "skillId": "chr_0022_bounda_attack4",
+      "label": "Basic attack 4 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "label": "Final Strike",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            29
+          ],
+          "events": [
+            "chr_0022_bounda_attack4_projhit"
+          ],
+          "detached": true,
+          "sp": {
+            "if": {
+              "controlled": true
+            },
+            "then": "atb",
+            "else": 0
+          },
+          "poise": "attack_poise",
+          "poiseControlledOnly": true,
+          "note": "One projectile (its hit and block routes are one landing). Final Strike (mask 2097280); `atb` SP (atbOnlyMainChar) and stagger `attack_poise` only as the controlled operator. display_atk_scale (3 × atk_scale) is the tooltip only: the log's attack4 hits are one atk_scale landing."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0022_bounda_attack4_1",
+      "label": "Basic attack 4, late input (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "label": "Final Strike",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            26
+          ],
+          "events": [
+            "chr_0022_bounda_attack4_projhit"
+          ],
+          "detached": true,
+          "sp": {
+            "if": {
+              "controlled": true
+            },
+            "then": "atb",
+            "else": 0
+          },
+          "poise": "attack_poise",
+          "poiseControlledOnly": true,
+          "note": "attack4 from an input in attack3's later window (24–30): the same projectile and values, launched at 26."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0022_bounda_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            20
+          ],
+          "events": [
+            "chr_0022_bounda_power_attack"
+          ]
+        }
+      ],
+      "note": "BreakingAttackCalculation at frame 20, multiplier 1 (mask 132); the engine adds the finisher multiplier and SP and gates it on a Staggered enemy."
+    },
+    {
+      "skillId": "chr_0022_bounda_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            1
+          ],
+          "sp": "atb"
+        }
+      ],
+      "note": "Not castable in rotations yet (S10: dive attacks need jumps)."
+    },
+    {
+      "skillId": "chr_0022_bounda_normal_skill",
+      "label": "Battle skill (Tiny Surprise)",
+      "damageType": "battle",
+      "teamEnergy": [
+        {
+          "frame": 10,
+          "ratio": 1
+        }
+      ],
+      "hits": [
+        {
+          "id": "explosion",
+          "label": "Explosion",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            99
+          ],
+          "events": [
+            "chr_0022_bounda_normal_skill_abilityrange"
+          ],
+          "detached": true,
+          "if": {
+            "buffActive": "improvised_explosive"
+          },
+          "poise": "poise",
+          "applies": [
+            {
+              "kind": "infliction",
+              "element": "natural"
+            },
+            {
+              "kind": "control",
+              "status": "slow",
+              "durationKey": "duration_potential",
+              "if": {
+                "potentialAtLeast": 3
+              }
+            }
+          ],
+          "note": "The explosive's explosion at entity frame 89 (cast frame 10 + 89): radius 3, Nature DMG atk_scale (mask 4352), Nature Infliction, stagger `poise`, InterruptAction 1 s (not Immobilization: no effect). Only while the explosive is still stuck (not detonated by the ultimate first). P3: \"After Improvised Explosive explodes, the slow effect is applied to all enemies hit and lasts {duration_potential}s\" (IfElse potential_lv ≥ 3; the key is 0 below P3)."
+        }
+      ],
+      "note": "Team energy: the explosion's CreateBuff buff_common_obtain_ultimate_sp (entity frame 89 or 149). INTERIM at the kick (frame 10): the entity outlives the cast, but a teamEnergy part is dropped when the operator starts another skill before its frame, which with exclusiveFrame 34 is the usual case (gap noted in the report); the energy comes up to 3 s early instead."
+    },
+    {
+      "skillId": "chr_0022_bounda_combo_skill",
+      "label": "Combo skill (Free Giveaway)",
+      "damageType": "combo",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            15
+          ],
+          "events": [
+            "chr_0022_bounda_combo_skill"
+          ],
+          "energy": "usp",
+          "poise": "poise",
+          "applies": [
+            {
+              "kind": "infliction",
+              "element": "event"
+            }
+          ],
+          "note": "\"Applies another Arts Infliction of the element already on the enemy\": SwitchAction on EntityBB_combo_index (2 → Cryo, 3 → Nature), set when the window opens, so the window's element (`event`). usp only with a target (ObtainCostAction in the DamageAction's succeedActions)."
+        }
+      ],
+      "note": "The combo's EventListener → buff_chr_0022_bounda_potential_4 needs atk_up_potential_4 > 0, which nothing sets (P4 is the ultimate cost cut): left out, like the orphan combo_skill_projhit and the unused atk_scale_add keys."
+    },
+    {
+      "skillId": "chr_0022_bounda_ultimate_skill",
+      "label": "Ultimate (Apex Prankster)",
+      "damageType": "ultimate",
+      "hits": [
+        {
+          "id": "shot1",
+          "scale": [
+            "atk_scale1"
+          ],
+          "frames": [
+            59
+          ],
+          "events": [
+            "chr_0022_bounda_ultimate_skill_1_projhit"
+          ],
+          "detached": true,
+          "poise": "poise"
+        },
+        {
+          "id": "shot2",
+          "scale": [
+            "atk_scale2"
+          ],
+          "frames": [
+            63
+          ],
+          "events": [
+            "chr_0022_bounda_ultimate_skill_2_projhit"
+          ],
+          "detached": true,
+          "poise": "poise"
+        },
+        {
+          "id": "shot3",
+          "scale": [
+            "atk_scale3"
+          ],
+          "frames": [
+            67
+          ],
+          "events": [
+            "chr_0022_bounda_ultimate_skill_3_projhit"
+          ],
+          "detached": true,
+          "poise": "poise"
+        },
+        {
+          "id": "shot4",
+          "scale": [
+            "atk_scale4"
+          ],
+          "frames": [
+            72
+          ],
+          "events": [
+            "chr_0022_bounda_ultimate_skill_4_projhit"
+          ],
+          "detached": true,
+          "poise": "poise",
+          "applies": [
+            {
+              "kind": "infliction",
+              "element": "natural",
+              "if": {
+                "enemyInfliction": "natural",
+                "minStacks": 2
+              }
+            },
+            {
+              "kind": "infliction",
+              "element": "cryst",
+              "if": {
+                "enemyInfliction": "cryst",
+                "minStacks": 2
+              }
+            }
+          ],
+          "note": "\"If the final DMG sequence hits a target with at least 2 stacks of Cryo Infliction or Nature Infliction, then apply the same Arts Infliction again\": IfElse CheckBuffStackNumAdvanced ≥ 2 Nature first, else ≥ 2 Cryo (an enemy holds one element's infliction at a time, so they don't overlap)."
+        }
+      ],
+      "note": "Four projectiles launched at 59 / 63 / 67 / 72 (the log's gaps are longer: travel, in-game test 47); each puts buff_chr_0022_bounda_ultimate_skill (0.2 s) on the target, which detonates a stuck explosive (trigger ultimate_detonates). Time stop 0–56, cantCastSkill and cantSwitchPosition 0–77 and the damage immunity come from SkillData."
+    }
+  ]
+}
