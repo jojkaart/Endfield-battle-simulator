@@ -12,10 +12,13 @@ const G = "chr_0013_aglina";
 const example = readScenario(new URL("../examples/estella-solidification.scenario.json", import.meta.url).pathname);
 const op = (skill: string, at?: number): RotationAction => ({ operator: E, skill: P + skill, ...(at !== undefined ? { at } : {}) });
 
-/** The example's team with Estella changed; no gear on her, so energy grants are unscaled (Ultimate Gain Efficiency 1). */
+/**
+ * The example's team with Estella changed; no gear on her, and Gilberta's talent 1 (Messenger's Song, +Ultimate Gain
+ * Efficiency for the team) off, so energy grants are unscaled (Ultimate Gain Efficiency 1).
+ */
 const scenario = (b: Partial<Build>, extra: Partial<TimelineScenario> = {}): TimelineScenario => ({
   ...example,
-  team: example.team.map((m) => (m.operator === E ? { ...m, gear: [], ...b } : m)),
+  team: example.team.map((m) => (m.operator === E ? { ...m, gear: [], ...b } : m.operator === G ? { ...m, talents: [0, ...(m.talents ?? [1, 1]).slice(1)] } : m)),
   durationFrames: 30 * 30,
   ...extra,
 });

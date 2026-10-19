@@ -1285,3 +1285,14 @@ describe("timeline: pass-3 gaps (set cooldowns, heal kinds, follow-ups, buffs be
     expect(kept.battleHits).toBeGreaterThan(left(false).battleHits);
   });
 });
+
+describe("timeline: team energy at a skill's frame", () => {
+  it("is dropped when the skill is cut short before it", () => {
+    const kit = data.kits.operators[op] as OperatorKit;
+    const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills: kit.skills.map((s) => (s.skillId === L + "normal_skill" ? { ...s, teamEnergyFrame: 50 } : s)) } } } };
+    const ctx = createContext(g, scenario([]));
+    const s = apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" });
+    expect(s.pendingEnergy.length).toBe(1);
+    expect(apply(ctx, s, { operator: op, skill: L + "ultimate_skill", at: 10 }).pendingEnergy.length).toBe(0);
+  });
+});

@@ -178,7 +178,8 @@ export interface TimelineState {
   /** Global time slow-downs (an ultimate's time stop, a combo's slow-down) still running or to come: per frame from `start`, all but `exempt` (the caster). */
   readonly slowdowns: readonly { readonly start: number; readonly scales: readonly number[]; readonly exempt: string }[];
   /** Ultimate energy given later than the cast (a battle skill's team energy at its data frame, KitSkill.teamEnergyFrame). */
-  readonly pendingEnergy: readonly { readonly frame: number; readonly operator: string; readonly amount: number }[];
+  /** Energy grants still to come; `cast`: the cast that grants it (a skill's team energy at its data frame), dropped if it's cut short first. */
+  readonly pendingEnergy: readonly { readonly frame: number; readonly operator: string; readonly amount: number; readonly cast?: { readonly operator: string; readonly index: number } }[];
   readonly enemy: EnemyStatus;
   /** Timed buffs and debuffs from skills. */
   readonly buffs: readonly ActiveBuff[];
@@ -1289,6 +1290,7 @@ function endCurrentSkill(advanced: TimelineState, operator: string, frame: numbe
     ...advanced,
     pending: advanced.pending.filter((h) => !(h.operator === operator && h.cast === prevCast && !h.detached && h.frame > frame)),
     pendingActions: advanced.pendingActions.filter((x) => !(x.cast && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame)),
+    pendingEnergy: advanced.pendingEnergy.filter((x) => !(x.cast && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame)),
     buffs: advanced.buffs.filter((b) => !endsNow.includes(b)),
   };
   const events: BattleEvent[] = [...new Map(endsNow.map((b) => {
@@ -1367,7 +1369,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     if (skill.teamEnergyFrame === undefined) for (const b of ctx.scenario.team) next = gainEnergy(ctx, next, b.operator, natural * ENERGY.perNaturalSp, frame);
     else {
       const at = frame + scaled(skill.teamEnergyFrame);
-      next = { ...next, pendingEnergy: [...next.pendingEnergy, ...ctx.scenario.team.map((b) => ({ frame: at, operator: b.operator, amount: natural * ENERGY.perNaturalSp }))] };
+      next = { ...next, pendingEnergy: [...next.pendingEnergy, ...ctx.scenario.team.map((b) => ({ frame: at, operator: b.operator, amount: natural * ENERGY.perNaturalSp, cast: { operator, index: castIndex } }))] };
     }
   }
   if (costs.energyCost > 0) next = { ...next, energy: { ...next.energy, [operator]: Math.max(0, (next.energy[operator] ?? 0) - costs.energyCost) } };
