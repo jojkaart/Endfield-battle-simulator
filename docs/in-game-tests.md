@@ -529,9 +529,12 @@ assumed, with no Arts Intensity term) and what counts (Vulnerable alone
 shouldn't) are unchecked.
 **How:** three Swordmancer pieces on Gilberta (or any operator with a
 Lift), one combo on a clean dummy. The extra Physical hit's number against
-her ATK gives the scale (2.5 expected). A second combo within 15 s: no hit
-expected. Optionally: a Vulnerable-only hit (no hit expected), and a
-Shatter by the wearer (unknown).
+her ATK gives the scale (2.5 expected). Her combo's cooldown (17–20 s) is
+longer than the set's 15 s, so each of her combos should proc; the "not
+again within 15 s" part needs a wearer with two Physical statuses less
+than 15 s apart (no hit expected on the second). Optionally: a
+Vulnerable-only hit (no hit expected), and a Shatter by the wearer
+(unknown).
 
 ### 40. Messenger's Song (ready, if you have Gilberta; lower priority)
 

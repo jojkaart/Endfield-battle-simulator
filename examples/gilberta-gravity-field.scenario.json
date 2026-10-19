@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/scenario.schema.json",
-  "description": "Gilberta (build from btl_upload_4e5e1390085e, P0) with Laevatain vs Rhodagn, both ultimates charged. Gilberta's ultimate applies Nature Infliction and its field's Arts Susceptibility for 5 s; Laevatain's enhanced sequence 3 lands Heat on the Nature Infliction, and that Combustion opens Gilberta's combo window (Arts Reaction trigger); the combo grants her 10 ultimate energy. Her battle skill's explosion then applies Nature again.",
+  "description": "Gilberta (build from btl_upload_4e5e1390085e, P0) with Laevatain vs Rhodagn, both ultimates charged. Gilberta's ultimate applies Nature Infliction and its field's Arts Susceptibility for 5 s; Laevatain's enhanced sequence 3 lands Heat on the Nature Infliction, and that Combustion opens Gilberta's combo window (Arts Reaction trigger); the combo grants her 10 ultimate energy and forcibly Lifts Rhodagn (a Lift hit and 1 Vulnerable), and that Lift gives the team her weapon's (Delivery Guaranteed) Arts DMG Dealt +24.8% for 15 s, already on the combo hit itself. Her battle skill's explosion then applies Nature again. Messenger's Song (+7% Ultimate Gain Efficiency) reaches only Gilberta: Laevatain isn't a Guard, Caster or Supporter.",
   "team": [
     "gilberta-usp02.json",
     "laevatain-forgeborn.json"

@@ -295,8 +295,9 @@ const KNOWN: string[] = [
   "chr_0036_jsspsi_combo_skill/final_base scale: kit atk_scale2, data ((($EntityBB_combo_count + 1) × atk_scale2_1) + atk_scale2) | (($EntityBB_combo_count × atk_scale2_1) + atk_scale2)",
   "chr_0036_jsspsi_combo_skill/final_stack scale: kit atk_scale2_1, data ((($EntityBB_combo_count + 1) × atk_scale2_1) + atk_scale2) | (($EntityBB_combo_count × atk_scale2_1) + atk_scale2)",
   "chr_0036_jsspsi_combo_skill/final_p5 scale: kit atk_scale2_1 × potential5, data ((($EntityBB_combo_count + 1) × atk_scale2_1) + atk_scale2) | (($EntityBB_combo_count × atk_scale2_1) + atk_scale2)",
-  // CreateBuff buff_common_obtain_ultimate_sp at 29; the kit gives the team energy at the cast.
-  "chr_0013_aglina_normal_skill teamEnergyFrame: kit -, data 29",
+  // Finisher (BreakingAttackCalculation, mask 132): the compiler drops its `multiplier` (D2), 0.05 on the first six DamageActions and 0.7 on the seventh; the kit writes them as factors.
+  "chr_0013_aglina_power_attack/hit factor: kit 0.05, data 1",
+  "chr_0013_aglina_power_attack/final factor: kit 0.7, data 1",
   // CreateBuff buff_common_obtain_ultimate_sp at 15; the kit gives the team energy at the cast.
   "chr_0035_liino_normal_skill teamEnergyFrame: kit -, data 15",
   // Launched by buff normalskill_music_animation_hitl (created at 45) from its frames 24–33; the kit uses the buff's creation frame. Log bdf223db8e49: first projhit_02 at 1485 ms, followup at 3231 ms (52 frames; data 57, kit 33).

@@ -1,0 +1,73 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_funnel_0011",
+  "sources": [
+    "Delivery Guaranteed (\"Pursuit\" in docs/kit-batches/batch-1/chr_0013_aglina.md). rmxlinux Json/SkillData sk_wpn_funnel_0011: passiveEventActions (abilityEvent 30, CheckSkillType [6]) create buff_wpn_funnel_0011 at the wielder's combo cast. BuffData buff_wpn_funnel_0011 (maxTriggerCnt 1: once per combo cast) on abilityEvent 402 checks CheckPhysicalInflictionType mask 1 (Lift) and CheckOriginSkillType [6] (the causing hit is a combo's), counts the targets (≤ max_stack 3), computes spell_dmg_up + count × spell_dmg_up2 (SimpleCalcBBAction) and creates buff_wpn_funnel_0011_valid on the whole team (CharacterTeamFinder, wielder included): attributes 51–54 (Heat/Electric/Cryo/Nature DMG) formulaItem 5, `duration` 15 s, stackingType 1 priority spell_dmg_up (two wielders don't add up). Values from SkillPatchTable sk_wpn_funnel_0011 at the weapon's skill-3 level.",
+    "Order: before the lifting hit's damage. fixtures/zmdlogs-4e5e1390085e.json: the combo hits at 7598, 30327 and 55403 ms carry buff_wpn_funnel_0011_valid as a boundary buff and match only with it applied (0.248 = 0.192 + 1 × 0.056 at skill level 4). The buff then lasts its 15 s (7598 to about 23.7 s), through later basic attacks, although its CreateBuff says finishWithNextSkillIfNotInherited.",
+    "The weapon's Nature DMG + (cardAttributeModifier attr 54, nature_dmg_up) is in the stat panel. Its toggleBuffs buff_wpn_lance_0003 (CheckCurHpRatio, ATK%) is inert: neither key is in sk_wpn_funnel_0011's blackboard and no fixture logs it."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_funnel_0011.arts_dmg",
+      "label": "Delivery Guaranteed: Arts DMG Dealt",
+      "target": "team",
+      "gameBuff": "buff_wpn_funnel_0011_valid",
+      "duration": "duration",
+      "modifiers": [
+        {
+          "zone": "damageBonus",
+          "elements": [
+            "fire",
+            "pulse",
+            "cryst",
+            "natural"
+          ],
+          "value": {
+            "sum": [
+              "spell_dmg_up",
+              {
+                "product": [
+                  {
+                    "min": [
+                      {
+                        "targetsHit": true
+                      },
+                      "max_stack"
+                    ]
+                  },
+                  "spell_dmg_up2"
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "note": "spell_dmg_up + min(targets, max_stack) × spell_dmg_up2; one enemy: 1 target."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_funnel_0011.lift",
+      "on": {
+        "event": "physicalStatus",
+        "statuses": [
+          "lift"
+        ],
+        "fromKinds": [
+          "combo"
+        ]
+      },
+      "by": "self",
+      "beforeDamage": true,
+      "maxPerCast": 1,
+      "skill": "sk_wpn_funnel_0011",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "wpn_funnel_0011.arts_dmg"
+        }
+      ],
+      "note": "\"After the wielder's combo skill applies Lifted, the team gains Arts DMG Dealt +{spell_dmg_up} for {duration}s. For every enemy Lifted, ... +{spell_dmg_up2}\". maxPerCast 1: the buff's maxTriggerCnt 1, one buff_wpn_funnel_0011 per combo cast."
+    }
+  ]
+}

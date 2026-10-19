@@ -849,3 +849,123 @@ From [docs/in-game-tests.md](../../in-game-tests.md):
 
 Not in-game: a committed finisher log, to check its seven landings.
 Optional, not in the file: pass 2's T7, whether Lift persists in her field.
+
+## Kit (2026-10-18)
+
+**Written.**
+- `packages/data/kits/operators/chr_0013_aglina.json`, from the pass-3
+  plan: Arts Susceptibility as the Vulnerable-stack formula (P2 included);
+  Messenger's Song as a team attribute-44 buff for professions 0 / 4 / 5,
+  applied on `fightStart` when talent 0 is learned (the legacy "can't be
+  expressed" note is gone); per-hit `sp` on attack1–4 and the plunge;
+  `poise` (attack4 0.34 / 0.33 / 0.33 of 16, controlled only; explosion
+  10; combo 5; ultimate 20); the finisher (`power_attack`, six hits ×0.05
+  and one ×0.7); `teamEnergyFrame: 29`; the combo's forced Lift. No
+  `durationFrames` (timing comes from SkillData). Sources and notes
+  rewritten.
+- `packages/data/kits/equipment/wpn_funnel_0011.json` (Delivery
+  Guaranteed): team Arts DMG Dealt `spell_dmg_up + min(targets, max_stack)
+  × spell_dmg_up2`, 15 s. Its trigger is the wielder's Lift from a combo
+  hit, `beforeDamage`, once per cast.
+- `packages/data/kits/equipment/wpn_funnel_0005.json` (Stanza of
+  Memorials): ATK +`atk_up` for 20 s on the wielder's ultimate cast, for
+  teammates of another element.
+- `packages/data/kits/equipment/suit_phy01.json` (Swordmancer): a Physical
+  hit, `atk_scale` 2.5, no skill type, `poise` 10, on the wearer's Physical
+  status, once per 15 s.
+- Tests: `packages/data/test/skillCompile.test.ts` KNOWN loses
+  "normal_skill teamEnergyFrame: kit -, data 29" (the kit has it now). It
+  gains "power_attack/hit factor: kit 0.05, data 1" and "/final factor:
+  kit 0.7, data 1", because the compiler drops BreakingAttackCalculation's
+  `multiplier` (D2). `packages/data/test/kits.test.ts` drops her
+  `power_attack` known gap (it's in the kit now). No other test pinned
+  her kit's shape or numbers. No per-hit fixture names her.
+- `examples/gilberta-gravity-field.scenario.json`: the description now
+  covers the Lift, Delivery Guaranteed's buff and Messenger's Song. Builds
+  and rotations are unchanged, and the other examples needed no change.
+- `docs/in-game-tests.md` test 39: her combo's cooldown (17–20 s) is
+  longer than the set's 15 s, so "a second combo within 15 s" can't be
+  done with her. The cooldown half needs another wearer.
+
+**Deviations from the plan.** None in substance.
+- `detached` and `finalStrike` are left to the loader's defaults:
+  projectile events name another file, so those hits are detached, and
+  the Final Strike is read from the mask. Both give the same as the draft.
+- Labels use the data's item names.
+
+**Verification.**
+- `npm run check`: passes (380 tests).
+- `zmdlogs check`, before → after:
+
+  | Fixture | Gilberta: hits, match / mismatch / unmodelled / not covered, coverage | Others |
+  |---|---|---|
+  | 40d9a3c1da37 | 10: 9 / 0 / 1 / 0, 100% → unchanged | unchanged |
+  | 4e5e1390085e | 59: 44 / 0 / 14 / 1, 79% → unchanged | Estella (wears phy01): 21 / 0 / 12 / 8, 83% → 23 / 0 / 13 / 5, 89% |
+  | d9e59d0fb737 | 9: 0 / 0 / 8 / 1, 90% → 0 / 0 / 9 / 0, 100% | unchanged |
+
+  - The checker uses logged buffs, not triggers, so her own numbers don't
+    move.
+  - Two of Estella's three Swordmancer hits in 4e5e now match exactly at
+    `atk_scale` 2.5, with the logged Physical Susceptibility. This is the
+    first evidence for the set's scale. The third has an unmodelled
+    `buff_wpn_lance_0015_atkup`.
+  - Gilberta's d9e5 set hit (implied 3.38) is in that log's pre-1.6
+    anomaly window, so it stays unquantified.
+- `simulate`, before → after:
+  - `gilberta-gravity-field`: 271,088 → 295,474 (+9.0%, as pass 3
+    predicted). Gilberta 48,636 → 59,911; Laevatain 222,452 → 235,562;
+    Combustion ticks 19,476 → 21,992. Why:
+    - Delivery Guaranteed's +24.8% Arts DMG for the team, from her combo's
+      Lift at 5.80 s. It's on the combo hit itself (×1.197) and on every
+      later Heat and Nature hit. It lasts 16.7 s because of the time stops.
+    - The new Lift hit (5,554).
+  - Her energy moved but no cast did. The battle skill's team energy now
+    comes at frame 29, not at the cast. Messenger's Song adds +7% Ultimate
+    Gain Efficiency to her (45.3 against 43.8 after the chain).
+  - `typhoeus-gilberta`: 623,303 → 623,303. That rotation has no combo of
+    hers, so only the energy display moves (frame 29).
+  - `estella-solidification`: 111,218 → 111,218. Same reason. Estella's
+    current kit applies no Physical status, so her phy01 doesn't proc.
+- Spot check (gravity-field builds with three phy01 pieces: battle skill →
+  Laevatain's ultimate chain → Corrosion → combo → ultimate; then
+  Stanza of Memorials; then talent 0 at 0; then basic chains to a
+  stagger):
+  - Messenger's Song is on from frame 0 and reaches only Gilberta
+    (Laevatain's profession isn't 0 / 4 / 5). The value is 0.07. With
+    talents [0, 0] there's no buff.
+  - The combo's Lift gives the engine's Lift hit and 1 Vulnerable.
+    Delivery Guaranteed's buff (0.248) is already on that combo hit.
+  - The Swordmancer hit lands with the Lift (4,973).
+  - The ultimate after that Lift: Arts Susceptibility 0.33 at P0 and 0.42
+    at P2, as the formula gives for n = 1.
+  - Stanza of Memorials: from the ultimate's cast, Laevatain gets
+    +0.224 ATK, also on her ultimate hit 1 frame later. Gilberta doesn't.
+  - The finisher is refused on an un-Staggered enemy. When Staggered, it
+    lands six hits of 2,485 and one of 34,783 (ratio 0.0714, as in scratch
+    log 576da29ffa7a), then is refused again for the same stagger.
+  - Not exercised: the set's 15 s cooldown (no second Physical status of
+    hers within 15 s) and Delivery Guaranteed's target count above 1 (one
+    enemy).
+
+**Still unverified** (in-game tests in docs/in-game-tests.md):
+- **12**: Arts Susceptibility per Vulnerable stack, and P2's "≤ 3".
+- **35**: her own reaction opening her combo.
+- **38**: two Arts Susceptibility sources (summed today).
+- **39**: the Swordmancer scale (4e5e now supports 2.5), its cooldown and
+  Shatter.
+- **40**: Messenger's Song.
+- **15**: cantCastSkill holds her casts; are teammates held?
+- **8**: Link above 1 stack.
+- **18**: what time stops freeze (this sets the lengths of her field's
+  and the weapons' buffs).
+- **47**: projectile travel.
+
+Not in-game: a committed log with a finisher (its seven landings), and D2
+(compiling `poise`, finisher factors and the forced Lift, all hand-written
+here).
+
+**Found on the way, not kit work:** `efsim simulate`'s arts-reaction table
+prints an empty row for every `physical` and `vulnerable` status record
+(the two blank "5.80 s Gilberta" rows in gravity-field). Its `what()` in
+`packages/cli/src/simulate.ts` only names bursts, reactions and
+consumptions.

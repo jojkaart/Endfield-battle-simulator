@@ -1,0 +1,42 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_phy01",
+  "sources": [
+    "Swordmancer set (3 pieces): rmxlinux Json/SkillData passive_equipsuit_physuit_01 (cardAttributeModifier attr 26 poise_up: Stagger Efficiency +20%, in the stat panel; buffs: buff_equipsuit_physuit_01). BuffData buff_equipsuit_physuit_01: on abilityEvent 102 with CheckBuffIdInContext tag −6380412 (a physical status: buff_dung_physicalstatus_enemy lists it beside Vulnerable's 1075718177, buff_gambling_take_physical_abnormal checks it for \"physical abnormal\"), CheckGlobalCDTimerAction, then DamageAction `atk_scale` (2.5) damageType 0 (Physical), skill mask 0 (no skill-type bonus), with `poise` 10, and AddGlobalCDTimer `duration` (15 s, per wearer). Description: \"After the wearer applies a Physical Status, the wearer also performs 1 hit that deals {atk_scale} ATK of Physical DMG and [{poise} Stagger]. Effect trigger cooldown: {duration}s\".",
+    "A Vulnerable-only application emits a vulnerable event, not physicalStatus, so it doesn't proc. Whether Shatter procs, and the hit's scale, are unverified: fixtures/zmdlogs-d9e59d0fb737.json logs the hit (7907 at 11727 ms, with Gilberta's combo Lift) but that battle is in a pre-1.6 anomaly window (implied scale 3.38). In-game test 39."
+  ],
+  "triggers": [
+    {
+      "id": "suit_phy01.proc",
+      "on": {
+        "event": "physicalStatus"
+      },
+      "by": "self",
+      "cooldown": "duration",
+      "skill": "passive_equipsuit_physuit_01",
+      "do": [
+        {
+          "kind": "hits",
+          "hits": [
+            {
+              "id": "proc",
+              "label": "Swordmancer hit",
+              "scale": [
+                "atk_scale"
+              ],
+              "element": "physical",
+              "damageType": "none",
+              "events": [
+                "buff_equipsuit_physuit_01"
+              ],
+              "frames": [
+                0
+              ],
+              "poise": "poise"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

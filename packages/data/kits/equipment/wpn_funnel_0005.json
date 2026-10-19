@@ -1,0 +1,58 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_funnel_0005",
+  "sources": [
+    "Stanza of Memorials (\"Twilight\" in docs/kit-batches/batch-1/chr_0013_aglina.md; not Laevatain's state of that name). rmxlinux Json/SkillData sk_wpn_funnel_0005: passiveEventActions (abilityEvent 30, CheckSkillType [7]: the wielder casts an ultimate) → SaveCharTypeId, ForEach team ExcludeOwner, CompareString (NotNext: element differs from the wielder's; CharacterTable charTypeId is the element) → CreateBuffAction buff_wpn_funnel_0005_atk_up: attribute 2 formulaItem 6 (ATK%) `atk_up`, `duration` 20 s, stackingType 1 priority `lv` (two wielders don't add up). Values from SkillPatchTable sk_wpn_funnel_0005 at the weapon's skill-3 level.",
+    "At the cast: fixtures/zmdlogs-40d9a3c1da37.json Laevatain's hit at 11110 ms already has +22.4% (skill level 9), before Gilberta's ultimate hit at 12951 ms; Laevatain, Camille and Si (Heat, Heat, Cryo) all get it, Gilberta (Nature) doesn't.",
+    "The weapon's Max HP + (cardAttributeModifier attr 1) is in the stat panel. Its toggleBuffs buff_wpn_passive_spirit_01 isn't in the checkout and nothing logs it: treated as inert."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_funnel_0005.atk_up",
+      "label": "Stanza of Memorials: ATK up",
+      "target": "team",
+      "gameBuff": "buff_wpn_funnel_0005_atk_up",
+      "duration": "duration",
+      "recipients": {
+        "all": [
+          {
+            "not": {
+              "isOwner": true
+            }
+          },
+          {
+            "not": {
+              "sameElementAsOwner": true
+            }
+          }
+        ]
+      },
+      "modifiers": [
+        {
+          "zone": "atk",
+          "value": "atk_up"
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_funnel_0005.ultimate",
+      "on": {
+        "event": "cast",
+        "kinds": [
+          "ultimate"
+        ]
+      },
+      "by": "self",
+      "skill": "sk_wpn_funnel_0005",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "wpn_funnel_0005.atk_up"
+        }
+      ],
+      "note": "\"When the wielder casts an ultimate, operators whose elements differ from the wielder gain ATK +{atk_up} for {duration}s.\""
+    }
+  ]
+}
