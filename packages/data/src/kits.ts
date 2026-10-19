@@ -449,7 +449,7 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
     if (op.skillGroups[s.skillId] === undefined) throw new Error(`${where}: not one of ${kit.operator}'s skills`);
     if (s.available) c.checkPredicate(s.available, `${where} available`);
     for (const part of s.teamEnergy ?? []) if (part.if) c.checkPredicate(part.if, `${where} teamEnergy`);
-    if ((s.teamEnergy ?? []).reduce((x, p) => x + p.ratio, 0) > 1 + 1e-9) throw new Error(`${where}: the team energy's parts add up to more than the whole`);
+    // Parts may add up to more than the whole when jumps make them exclusive (Arclight's battle skill: frame 24 on one path, 136 on the other).
     if (s.beside) c.checkPredicate(s.beside, `${where} beside`);
     for (const j of s.jumps ?? []) {
       if (!skill.timing?.jumps.some((x) => x.conditional && x.at === j.at)) throw new Error(`${where}: jumps: the skill has no conditional jump at frame ${j.at} (its jumps: ${(skill.timing?.jumps ?? []).map((x) => `${x.at}→${x.to}${x.conditional ? "?" : ""}`).join(", ") || "none"})`);

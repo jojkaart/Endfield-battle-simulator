@@ -1787,6 +1787,19 @@ describe("jumps in a skill's timeline", () => {
     expect(next(31)).toEqual({ frame: 37 });
   });
 
+  it("a conditional jump's condition can read the enemy's state at the cast", () => {
+    // Her empowered jump (30 → 80) taken on an enemy with Heat instead of at 4 Melting Flame: the extra hit then lands at 54.
+    const onHeat: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills: kit.skills.map((s) => (s.skillId === L + "normal_skill" ? { ...s, jumps: [{ at: 30, if: { enemyInfliction: "fire" as const } }] } : s)) } } } };
+    const heat: KitTrigger = { id: "heat", on: { event: "fightStart" }, by: "self", do: [{ kind: "apply", applies: [{ kind: "infliction", element: "fire" }] }] };
+    const withHeat: GameData = { ...onHeat, kits: { ...onHeat.kits, operators: { ...onHeat.kits.operators, [op]: { ...(onHeat.kits.operators[op] as OperatorKit), triggers: [...kit.triggers, heat] } } } };
+    const jumped = (g: GameData) => {
+      const ctx = createContext(g, { ...scenario([]), startStacks: { [op]: { melting_flame: 4 } } });
+      return advance(ctx, apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" }), 200).acting[op]?.skips?.[0]?.from;
+    };
+    expect(jumped(withHeat)).toBe(30);
+    expect(jumped(onHeat)).toBe(37);
+  });
+
   it("an end on the skill's own timeline ends the action there", () => {
     const a1 = data.skills[L + "attack1"];
     const g: GameData = { ...data, skills: { ...data.skills, [L + "attack1"]: { ...a1, timing: { ...a1?.timing, ends: [8] } } } as GameData["skills"] };

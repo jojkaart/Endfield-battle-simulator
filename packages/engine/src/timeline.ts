@@ -1821,7 +1821,8 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     sp: s.sp - costs.spCost,
     spPausedUntil: costs.spCost > 0 ? frame + SP.pauseAfterSpendFrames : s.spPausedUntil,
     acting: beside ? s.acting : { ...s.acting, [operator]: { skill: skillId, frame, cast: castIndex, ...(speed !== 1 ? { speed } : {}) } },
-    pendingJumps: beside ? next.pendingJumps : [...next.pendingJumps, ...castJumps(full.timing, skill, castEc, operator, castIndex, frame, scaled)],
+    // A conditional jump reads the situation at the cast, the enemy's state included (Arclight's battle skill on an Electrified target).
+    pendingJumps: beside ? next.pendingJumps : [...next.pendingJumps, ...castJumps(full.timing, skill, evalContext(ctx.data, ctx.builds.get(operator) as Build, panel, skill.skillId, { ...situationAt(ctx, operator, s, frame), ...castSituation }), operator, castIndex, frame, scaled)],
     ...(full.timing.specification === 8 ? { stagger: { ...s.stagger, finisherUsed: true } } : {}),
     chainNext: beside ? next.chainNext : chainAfter(ctx, next, operator, skill, frame, speed),
     readyAt: castCooldowns(ctx, next.readyAt, operator, skill, costs.cooldownFrames, frame),
