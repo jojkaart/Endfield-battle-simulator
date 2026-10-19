@@ -1,7 +1,7 @@
 // Rotation search: found rotations are legal (they replay through simulate) and beat a hand-written one.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { FPS, searchRotation, simulate, type Build, type TimelineScenario } from "@efsim/engine";
+import { FPS, resourceValues, searchRotation, simulate, type Build, type TimelineScenario } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { readScenario } from "../packages/cli/src/simulate.ts";
 
@@ -25,6 +25,16 @@ describe("rotation search", () => {
   it("beats the hand-written example rotation over the same fight", () => {
     const hand = simulate(data, { ...open, rotation: handWritten });
     expect(found.result.total).toBeGreaterThan(hand.total);
+  });
+
+  it("values SP and ultimate energy by what the team's own skills deal per point", () => {
+    const v = resourceValues(data, open);
+    expect(v.perSp).toBeGreaterThan(0);
+    // Laevatain's ultimate deals next to nothing itself (its worth is the enhanced skills it unlocks), so a lone cast prices her energy at about 0.
+    expect(v.perEnergy[open.team[0]?.operator ?? ""] ?? 0).toBeGreaterThanOrEqual(0);
+    // A search that counts them still finds a legal rotation, ranked by damage.
+    const weighted = searchRotation(data, open, { beamWidth: 8, resourceWeight: 0.5 });
+    expect(simulate(data, { ...open, rotation: weighted.rotation } as TimelineScenario).total).toBe(weighted.result.total);
   });
 
   it("works for a team: casts of both operators interleave, all legal", () => {

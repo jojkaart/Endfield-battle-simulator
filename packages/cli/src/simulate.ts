@@ -86,10 +86,10 @@ export function formatRuns(data: GameData, scenario: TimelineScenario, runs: num
 }
 
 /** Search a rotation for the scenario's team (its own rotation is ignored); optionally save it as a scenario that `simulate` replays. */
-export function searchCommand(data: GameData, scenario: TimelineScenario, options: { beam: number; out?: string; verbose: boolean }): string {
+export function searchCommand(data: GameData, scenario: TimelineScenario, options: { beam: number; out?: string; resourceWeight?: number; verbose: boolean }): string {
   const { rotation: _ignored, ...rest } = scenario;
   const t0 = Date.now();
-  const found = searchRotation(data, rest, { beamWidth: options.beam });
+  const found = searchRotation(data, rest, { beamWidth: options.beam, ...(options.resourceWeight !== undefined ? { resourceWeight: options.resourceWeight } : {}) });
   const seconds = ((Date.now() - t0) / 1000).toFixed(1);
   const lines = [
     `Searched ${found.expanded} states (beam ${options.beam}) in ${seconds} s.`,

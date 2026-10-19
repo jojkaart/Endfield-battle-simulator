@@ -29,6 +29,7 @@ const USAGE = `Usage:
                 [--dodge p]               Dash at every enemy attack, perfect with chance p (0–1)
   efsim search <scenario.json>            Find a rotation for the scenario's team (its rotation is ignored)
                 [--beam n] [--out file]   Beam width (default 24); save the rotation as a scenario
+                [--resource-weight w]     How much unspent SP and energy count while searching (default 0)
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
                 [--enemy-level n]         (default: inferred from total damage on a clear)
                 [--note text]             Extra provenance note (repeatable)
@@ -65,6 +66,7 @@ async function main(argv: string[]): Promise<number> {
       note: { type: "string", multiple: true, default: [] },
       verbose: { type: "boolean", default: false },
       beam: { type: "string", default: "24" },
+      "resource-weight": { type: "string" },
       seed: { type: "string" },
       runs: { type: "string" },
       dodge: { type: "string" },
@@ -170,7 +172,7 @@ async function main(argv: string[]): Promise<number> {
       break;
     case "search":
       need(1);
-      text = searchCommand(data, readScenario(args[0] as string), { beam: Number(values.beam), ...(values.out ? { out: values.out } : {}), verbose: values.verbose });
+      text = searchCommand(data, readScenario(args[0] as string), { beam: Number(values.beam), ...(values.out ? { out: values.out } : {}), ...(values["resource-weight"] !== undefined ? { resourceWeight: Number(values["resource-weight"]) } : {}), verbose: values.verbose });
       break;
     case "kit-census":
       text = formatCensus(kitCensus());
