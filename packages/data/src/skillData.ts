@@ -7,13 +7,14 @@ import { join } from "node:path";
 import { arr, at, get, int, num, obj, str, type Ctx } from "./fields.ts";
 import { parseJsonExact } from "./json.ts";
 import { DATA_FILES, sourceDir } from "./sources.ts";
-import type { SkillTiming } from "@efsim/engine";
+import type { SkillTiming, SpKind } from "@efsim/engine";
 
 export interface RawSkillFile {
   /** When the skill lets its operator act again (engine SkillTiming). */
   readonly timing: SkillTiming;
   readonly defaults: Record<string, number>;
   readonly statModifiers: readonly { attr: number; slot: number; target: number; key: string | null; literal: number }[];
+  readonly spKinds: Readonly<Record<string, SpKind>>;
 }
 
 /** A Unity AnimationCurve key (TimeDilationAction timeScaleCurve). */
@@ -176,5 +177,27 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     jumps: jumps.sort((a, b) => a.at - b.at),
     ends: ends.sort((a, b) => a - b),
   };
-  return { timing, defaults, statModifiers };
+  return { timing, defaults, statModifiers, spKinds: spKindsOf(j) };
+}
+
+/**
+ * What kind of SP each blackboard key grants (ObtainCostAction costType 1):
+ * atbGainMethod 0 gains natural SP (spent, it gives the team ultimate
+ * energy), 1 returns SP (spent first, gives none). A key granted both ways
+ * keeps the first.
+ */
+export function spKindsOf(file: unknown): Record<string, SpKind> {
+  const out: Record<string, SpKind> = {};
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (typeof node !== "object" || node === null) return;
+    const o = node as Record<string, unknown>;
+    if (typeof o["$type"] === "string" && o["$type"].includes("ObtainCostAction") && o["costType"] === 1 && o["isEnable"] !== false) {
+      const v = o["costValue"] as { blackboardKey?: unknown; useBlackboardKey?: unknown } | undefined;
+      if (v?.useBlackboardKey === true && typeof v.blackboardKey === "string" && !(v.blackboardKey in out)) out[v.blackboardKey] = o["atbGainMethod"] === 1 ? "returned" : "natural";
+    }
+    for (const x of Object.values(o)) walk(x);
+  };
+  walk(file);
+  return out;
 }

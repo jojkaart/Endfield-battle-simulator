@@ -78,9 +78,9 @@ describe("the Endministrator's kit", () => {
     expect(fired(s, M, "suit_crush_fracture.on_status_sealed")).toBe(1);
     expect(fired(s, M, "suit_crush_fracture.on_status")).toBe(0);
     for (const h of there) expect(mod(h, "Grizzled Edge")).toBeCloseTo(0.09, 6);
-    // P1: 50 returned SP at frame 11, before the Crush consumed the crystals (plus the Final Strike's 20).
+    // P1: 50 returned SP at frame 11, before the Crush consumed the crystals (the Final Strike's 20 is natural SP).
     expect(fired(s, M, "p1_sp")).toBe(1);
-    expect(s.spReturned).toBeCloseTo(70, 6);
+    expect(s.spReturned).toBeCloseTo(50, 6);
     // Afterwards: talent 1 on her, P2's half on the teammates, the crystals gone.
     expect(mod(mine(s).find((h) => h.skillId === P + "ultimate_skill"), TALENT_1)).toBeCloseTo(0.3, 6);
     expect(mod(s.hits.find((h) => h.operator === E && h.skillId === E + "_combo_skill"), P2)).toBeCloseTo(0.15, 6);

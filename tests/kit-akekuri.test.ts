@@ -32,8 +32,16 @@ const gear = (set: string, tier = 4): GearPiece[] => ["hand_01", "body_01", "edc
 const ult = [K("ultimate_skill")];
 
 describe("Akekuri's kit", () => {
-  it("the ultimate: three flares return 26 / 27 / 27 SP at frames 59 / 86 / 119, each a P1 layer on one shared 10 s timer and a Frontiers refresh", () => {
-    expect([58, 59, 86, 119].map((f) => run(example, ult, f).spReturned)).toEqual([0, 26, 53, 80]);
+  it("the ultimate: three flares give 26 / 27 / 27 natural SP at frames 59 / 86 / 119, each a P1 layer on one shared 10 s timer and a Frontiers refresh", () => {
+    // Natural (atbGainMethod 0): it gives the team ultimate energy when spent, so none of it is returned SP.
+    const at = [58, 59, 86, 119].map((f) => run(example, ult, f));
+    expect(at.map((s) => s.spReturned)).toEqual([0, 0, 0, 0]);
+    const sp = at.map((s) => s.sp);
+    // Each flare's SP, plus the regeneration between them.
+    const steps = sp.slice(1).map((x, i) => x - (sp[i] ?? 0));
+    expect(Math.floor(steps[0] ?? 0)).toBe(26);
+    expect(steps[1]).toBeGreaterThanOrEqual(27);
+    expect(steps[2]).toBeGreaterThanOrEqual(27);
     const at119 = run(example, ult, 119);
     const layers = active(at119, "positive_feedback");
     expect(layers.map((b) => b.expiresAt)).toEqual([419, 419, 419]);
@@ -105,8 +113,9 @@ describe("Akekuri's kit", () => {
     expect(wisd).toBeGreaterThan(500);
     const thrust = 7.5 * Math.min(1 + wisd * 0.0015, 1.75);
     const at = (f: number) => run(example, example.rotation, combo + f);
-    expect(at(22).spReturned - at(21).spReturned).toBeCloseTo(thrust, 6);
-    expect(at(31).spReturned - at(30).spReturned).toBeCloseTo(thrust, 6);
+    // Natural SP (atbGainMethod 0): the step at each thrust (regeneration is paused here).
+    for (const f of [22, 31]) expect(at(f).sp - at(f - 1).sp).toBeCloseTo(thrust, 6);
+    expect(at(31).spReturned).toBe(at(0).spReturned);
     const after = at(31);
     expect(active(after, "positive_feedback").map((b) => b.expiresAt)).toEqual([combo + 331, combo + 331]);
     expect(active(after, "wpn_sword_0009.atk").map((b) => [b.appliedAt, b.expiresAt])).toEqual([[combo, combo + 600]]);
@@ -129,7 +138,10 @@ describe("Akekuri's kit", () => {
 
   it("P0 with no talents: 80 SP from the ultimate, nothing else", () => {
     const s = run(scenario({ potential: 0, talents: [0, 0] }), ult, 240);
-    expect(s.spReturned).toBe(80);
+    // 80 natural SP: none returned, all of it on top of what the team regenerates.
+    expect(s.spReturned).toBe(0);
+    const base = run(scenario({ potential: 0, talents: [0, 0] }), [], 240).sp;
+    expect(s.sp - base).toBeCloseTo(Math.min(80, 300 - base), 0);
     expect(s.buffs.filter((b) => b.owner === A && !b.id.startsWith("suit_atb01")).map((b) => b.id)).toEqual([]);
   });
 
@@ -137,7 +149,7 @@ describe("Akekuri's kit", () => {
     const sc = scenario({ talents: [0, 1] });
     const s = run(sc, example.rotation);
     const combo = s.casts.find((c) => c.skill === `${A}_combo_skill`)?.frame ?? NaN;
-    expect(run(sc, example.rotation, combo + 22).spReturned - run(sc, example.rotation, combo + 21).spReturned).toBeCloseTo(7.5, 6);
+    expect(run(sc, example.rotation, combo + 22).sp - run(sc, example.rotation, combo + 21).sp).toBeCloseTo(7.5, 6);
   });
 });
 
@@ -159,7 +171,8 @@ describe("Akekuri's equipment", () => {
 
   it("Frontiers: SP from basic attacks (the Final Strike's) doesn't count, only skills'", () => {
     const s = run(example, [K("attack1"), K("attack2"), K("attack3"), K("attack4")], 200);
-    expect(s.spReturned).toBeGreaterThan(0);
+    // The Final Strike's SP is natural (atbGainMethod 0, atbSourceType 1), not a skill's: no Frontiers.
+    expect(s.spReturned).toBe(0);
     expect(s.buffs.filter((b) => b.id === "suit_atb01.dmg")).toHaveLength(0);
   });
 

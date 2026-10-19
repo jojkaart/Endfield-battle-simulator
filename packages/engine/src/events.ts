@@ -6,7 +6,7 @@
 
 import type { Element, SkillType } from "./attributes.ts";
 import type { Predicate, ValueExpr } from "./expr.ts";
-import type { KitApplication, KitHit, StackGain } from "./model.ts";
+import type { KitApplication, KitHit, SpKind, StackGain } from "./model.ts";
 import type { ArtsElement } from "./reactions.ts";
 import type { PhysicalStatus, ReactionStatus, StatusEvent } from "./status.ts";
 
@@ -49,7 +49,7 @@ export type BattleEvent =
   /** The enemy's stagger bar passed one of its Stagger Nodes (a fraction of its stagger HP; `operator` dealt the stagger). */
   | { readonly type: "staggerNode"; readonly frame: number; readonly operator: string; readonly node: number }
   /** An operator's hit or trigger granted SP; `kind`: the skill kind behind it (a hit's, or its owner's skill behind a trigger chain; else none). */
-  | { readonly type: "sp"; readonly frame: number; readonly operator: string; readonly amount: number; readonly kind: SkillType | "none" }
+  | { readonly type: "sp"; readonly frame: number; readonly operator: string; readonly amount: number; readonly kind: SkillType | "none"; readonly natural: boolean }
   /** The enemy became Staggered (`operator` dealt the last stagger). */
   | { readonly type: "staggered"; readonly frame: number; readonly operator: string }
   /** The enemy attacked `operator` (TimelineScenario.enemyActions); `controlled`: whether it was the controlled operator. */
@@ -103,7 +103,7 @@ export type TriggerOn =
   /** The enemy's stagger bar passes a Stagger Node. */
   | { readonly event: "staggerNode" }
   /** Someone (`by`) recovers SP for the team by a hit or a trigger (not regeneration); `kinds`: from skills of these kinds. */
-  | { readonly event: "sp"; readonly kinds?: readonly (SkillType | "none")[] }
+  | { readonly event: "sp"; readonly kinds?: readonly (SkillType | "none")[]; readonly natural?: boolean }
   | { readonly event: "fightStart" }
   /** The enemy attacks someone (`by`: the one attacked; `controlled` as for hits); `elements`: only attacks of these elements. */
   | { readonly event: "attacked"; readonly elements?: readonly Element[] }
@@ -153,8 +153,8 @@ export type TriggerActionKind =
   | { readonly kind: "energy"; readonly value: ValueExpr; readonly percentOfMax?: boolean; readonly ignoreEfficiency?: boolean; readonly ignoreBlock?: boolean }
   /** The owner's ultimate energy drops to 0 (a state ending with clearUspOnEnd). */
   | { readonly kind: "clearEnergy" }
-  /** Return SP to the team (returned SP: it gives no ultimate energy when spent). */
-  | { readonly kind: "sp"; readonly value: ValueExpr }
+  /** SP for the team: `spKind` natural or returned (by default the trigger's skill's data for a plain key, else returned: no ultimate energy when spent). */
+  | { readonly kind: "sp"; readonly value: ValueExpr; readonly spKind?: SpKind }
   /**
    * Apply one of the owner's kit buffs; `to: "eventSubject"` gives a team
    * buff to the event's subject only (the healed operator of a heal, else
@@ -282,7 +282,7 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
     case "staggerNode":
       return e.type === "staggerNode";
     case "sp":
-      return e.type === "sp" && has(on.kinds, e.kind);
+      return e.type === "sp" && has(on.kinds, e.kind) && (on.natural === undefined || on.natural === e.natural);
     case "fightStart":
       return e.type === "fightStart";
     case "attacked":

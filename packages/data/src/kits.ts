@@ -37,6 +37,7 @@ interface RawHit {
   scaleValue?: ValueExpr;
   fixedDamage?: ValueExpr;
   base?: ValueExpr;
+  spKind?: "natural" | "returned";
   if?: Predicate;
   branch?: string;
   buffs?: BuffApplication[];
@@ -266,6 +267,7 @@ function kitChecker(scope: KitScope) {
         ...(h.buffs ? { buffs: h.buffs } : {}),
         ...(h.energy ? { energy: h.energy } : {}),
         ...(h.sp !== undefined ? { sp: h.sp } : {}),
+        ...(h.spKind !== undefined ? { spKind: h.spKind } : {}),
         ...(h.poise !== undefined ? { poise: h.poise } : {}),
         ...(h.poiseControlledOnly ? { poiseControlledOnly: true } : {}),
         ...(h.heals ? { heals: h.heals } : {}),

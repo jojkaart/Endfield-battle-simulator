@@ -29,10 +29,10 @@ import {
 } from "./damage.ts";
 import { zoneSum, type Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
-import { resolveApplication, type EventSource, type GameData, type KitBuff, type KitHit, type KitSkill, type OperatorKit, type SkillTiming, type StackGain, type StackRequirement } from "./model.ts";
+import { resolveApplication, type EventSource, type GameData, type KitBuff, type KitHit, type KitSkill, type OperatorKit, type SkillTiming, type SpKind, type StackGain, type StackRequirement } from "./model.ts";
 import { effectiveKit } from "./triggers.ts";
 import { causeMatches, eventMatches, triggerSkillId, type BattleEvent, type BuffCategory, type KitTrigger } from "./events.ts";
-import { evaluate, test, type EvalContext, type Predicate } from "./expr.ts";
+import { evaluate, test, valueKeys, type EvalContext, type Predicate, type ValueExpr } from "./expr.ts";
 import { applyBuff, buffAttr, buffModifiers, endBuff, extendBuff, reaches, recordedOf, remainingOf, resolveValue, withBuff, type ActiveBuff } from "./buffs.ts";
 import { computeStats, skillLevel, skillParam, type StatPanel } from "./stats.ts";
 import { Attr } from "./attributes.ts";
@@ -141,8 +141,9 @@ interface PendingHit {
   readonly operator: string;
   readonly skillId: string;
   readonly hitId: string;
-  /** SP this hit returns when it lands (the skill's `atb`, on its first hit). */
+  /** SP this hit gives when it lands (the skill's `atb`, on its first hit), and its kind. */
   readonly sp: number;
+  readonly spKind?: SpKind;
   /** Stacks this landing uses up (StackRequirement.consumeAt "hit"; Infinity: all). */
   readonly usesUp?: readonly { readonly stack: string; readonly amount: number }[];
   /** A combo's hits: the count of the event that opened its window (ValueExpr `eventCount`)… */
@@ -656,12 +657,28 @@ function gainEnergy(ctx: TimelineContext, st: TimelineState, operator: string, a
   return { ...st, energy: { ...st.energy, [operator]: Math.min(maxEnergy(ctx, operator), now + amount * efficiency) } };
 }
 
-/** Returned SP (skills' `atb`, kit grants): it's spent first and gives no ultimate energy when spent. */
-function returnSp(st: TimelineState, amount: number, frame: number): TimelineState {
+/** SP for the team: returned SP is spent first and gives no ultimate energy when spent; natural SP does, as regenerated SP. */
+function gainSp(st: TimelineState, amount: number, frame: number, kind: SpKind): TimelineState {
   if (amount <= 0) return st;
   const before = spAt(st, frame);
   const after = Math.min(SP.max, before + amount);
-  return { ...st, sp: after, spReturned: Math.min(after, st.spReturned + (after - before)), frame: Math.max(st.frame, frame) };
+  return { ...st, sp: after, spReturned: Math.min(after, st.spReturned + (kind === "returned" ? after - before : 0)), frame: Math.max(st.frame, frame) };
+}
+
+/** A grant's SP kind: the kit's, else what the data says for the first skill key its value reads (talent keys aside), else returned. */
+function spKindOf(ctx: TimelineContext, skillId: string, value: ValueExpr, given?: SpKind): SpKind {
+  if (given) return given;
+  let keys: { skill: string; key: string }[] = [];
+  try {
+    keys = valueKeys(value, skillId);
+  } catch {
+    // A talent value: no skill file to say.
+  }
+  for (const k of keys) {
+    const kind = ctx.data.skills[k.skill]?.spKinds[k.key];
+    if (kind) return kind;
+  }
+  return "returned";
 }
 
 /** SP a skill returns (its blackboard `atb` at the operator's level, after potentials). */
@@ -1081,8 +1098,9 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
       case "sp":
         {
           const amount = evaluate(a.value, ec());
-          st = returnSp(st, amount, frame);
-          if (amount > 0) events.push({ type: "sp", frame, operator: owner, amount, kind: origin && origin.operator === owner ? origin.kind : "none" });
+          const spKind = spKindOf(ctx, triggerSkillId(owner, t), a.value, a.spKind);
+          st = gainSp(st, amount, frame, spKind);
+          if (amount > 0) events.push({ type: "sp", frame, operator: owner, amount, kind: origin && origin.operator === owner ? origin.kind : "none", natural: spKind === "natural" });
         }
         break;
       case "buff": {
@@ -1229,8 +1247,9 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   const { skill, kind, kitHit } = pendingHitDef(ctx, hit);
   const spEvents: BattleEvent[] = [];
   if (hit.sp > 0) {
-    st = returnSp(st, hit.sp, hit.frame);
-    spEvents.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount: hit.sp, kind });
+    const spKind = hit.spKind ?? "returned";
+    st = gainSp(st, hit.sp, hit.frame, spKind);
+    spEvents.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount: hit.sp, kind, natural: spKind === "natural" });
   }
   const build = ctx.builds.get(hit.operator) as Build;
   st = { ...st, enemy: expireStatus(st.enemy, hit.frame) };
@@ -1311,8 +1330,9 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   }
   if (kitHit.sp !== undefined) {
     const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.sp, at(consumed));
-    st = returnSp(st, amount, hit.frame);
-    if (amount > 0) spEvents.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount, kind });
+    const spKind = spKindOf(ctx, hit.skillId, kitHit.sp, kitHit.spKind);
+    st = gainSp(st, amount, hit.frame, spKind);
+    if (amount > 0) spEvents.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount, kind, natural: spKind === "natural" });
   }
   if (kitHit.energy) {
     const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.energy, at(consumed));
@@ -1744,10 +1764,13 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   }
   // A skill whose kit names the hit that returns SP gets it there, not on its first hit; a finisher also gets the enemy's finisher SP (GainBreakingAttackAtb).
   const finisherSp = full.timing.specification === 8 && !followUp ? (ctx.data.enemies[ctx.scenario.target.enemy]?.finisherSp ?? 0) : 0;
-  const spGain = (skill.hits.some((h) => h.sp !== undefined) ? 0 : skillSpGain(ctx, operator, skillId)) + finisherSp;
+  const ownGain = skill.hits.some((h) => h.sp !== undefined) ? 0 : skillSpGain(ctx, operator, skillId);
+  const spGain = ownGain + finisherSp;
   if (spGain > 0 && pending.length > 0) {
     const first = pending.reduce((a, b) => (b.frame < a.frame ? b : a));
-    pending[pending.indexOf(first)] = { ...first, sp: spGain };
+    // The skill's `atb` is of the kind its data gives; a finisher's SP (GainBreakingAttackAtb, atbGainMethod 0) is natural.
+    const spKind = ownGain > 0 ? spKindOf(ctx, skillId, "atb") : "natural";
+    pending[pending.indexOf(first)] = { ...first, sp: spGain, spKind };
   }
   // Returned SP is spent first; only the natural part gives the team ultimate energy.
   const natural = Math.max(0, costs.spCost - s.spReturned);

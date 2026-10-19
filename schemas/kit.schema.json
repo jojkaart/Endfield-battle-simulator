@@ -867,6 +867,10 @@
                     },
                     "minItems": 1,
                     "description": "Only SP from skills of these kinds (a hit's damage type; a trigger's owner skill)."
+                  },
+                  "natural": {
+                    "type": "boolean",
+                    "description": "Only natural SP (true: ObtainCostAction atbGainMethod 0, which gives ultimate energy when spent), or only returned SP (false)."
                   }
                 },
                 "description": "Someone (by) recovers SP for the team by a hit or a trigger (not regeneration)."
@@ -1080,7 +1084,11 @@
                     },
                     "value": {
                       "$ref": "#/$defs/valueExpr",
-                      "description": "Returned SP (gives no ultimate energy when spent)."
+                      "description": "SP for the team."
+                    },
+                    "spKind": {
+                      "enum": ["natural", "returned"],
+                      "description": "Natural SP gives ultimate energy when spent; returned SP is spent first and gives none. Default: what the trigger's skill's data says for a plain key (atbGainMethod), else returned."
                     },
                     "if": {
                       "$ref": "#/$defs/predicate",
@@ -2884,7 +2892,11 @@
         },
         "sp": {
           "$ref": "#/$defs/valueExpr",
-          "description": "Returned SP when the hit lands (ObtainCostAction costType 1 at this hit); the skill's atb is then not added to its first hit."
+          "description": "SP when the hit lands (ObtainCostAction costType 1 at this hit); the skill's atb is then not added to its first hit."
+        },
+        "spKind": {
+          "enum": ["natural", "returned"],
+          "description": "The SP's kind; default: what the skill's data says for a plain key (atbGainMethod 0 natural, 1 returned), else returned."
         },
         "detached": {
           "type": "boolean",

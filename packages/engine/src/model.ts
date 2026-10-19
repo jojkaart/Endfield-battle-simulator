@@ -101,6 +101,9 @@ export interface SkillTiming {
   readonly ends: readonly number[];
 }
 
+/** SP a grant gives: natural (spent, it gives the team ultimate energy, as regenerated SP does) or returned (spent first, gives none). */
+export type SpKind = "natural" | "returned";
+
 export interface SkillData {
   readonly id: string;
   readonly levels: readonly SkillLevelData[];
@@ -114,6 +117,8 @@ export interface SkillData {
   readonly timing: SkillTiming | null;
   /** Blackboard defaults from SkillData, for keys the level table doesn't set (e.g. `ratio`). */
   readonly defaults: Readonly<Record<string, number>>;
+  /** The kind of SP each blackboard key grants in this skill's file (ObtainCostAction atbGainMethod); empty when not loaded. */
+  readonly spKinds: Readonly<Record<string, SpKind>>;
   /** Permanent stat effects (`cardAttributeModifier`), e.g. weapon and gear set stats. */
   readonly statModifiers: readonly SkillAttrModifier[];
 }
@@ -300,8 +305,10 @@ export interface KitHit {
   readonly buffs?: readonly BuffApplication[];
   /** Ultimate energy the operator gains when the hit lands (SkillData ObtainCostAction, e.g. a combo's `usp`), after its own effects. */
   readonly energy?: ValueExpr;
-  /** SP the hit returns when it lands (SkillData ObtainCostAction costType 1 at this hit); then the skill's `atb` isn't added to its first hit. */
+  /** SP the hit gives when it lands (SkillData ObtainCostAction costType 1 at this hit); then the skill's `atb` isn't added to its first hit. */
   readonly sp?: ValueExpr;
+  /** Its kind; by default the skill's data says (SkillData.spKinds for a plain key), else returned. */
+  readonly spKind?: SpKind;
   /** Stagger damage the hit deals (SkillData damage units of damageAttributeType 1, e.g. the skill's `poise`). */
   readonly poise?: ValueExpr;
   /** Its stagger counts only while its operator is controlled (onlyEnableForMainChar, Final Strikes). */

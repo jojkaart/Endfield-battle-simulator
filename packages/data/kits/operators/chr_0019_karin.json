@@ -127,11 +127,11 @@
     },
     {
       "id": "p1_layer",
-      "on": { "event": "sp", "kinds": ["combo", "ultimate"] },
+      "on": { "event": "sp", "kinds": ["battle", "combo", "ultimate"], "natural": true },
       "by": "self",
       "if": { "potentialAtLeast": 1 },
       "do": [{ "kind": "buff", "buff": "positive_feedback" }],
-      "note": "abilityEvent 142 + CheckObtainAtbType method [0] (natural) type [3] (skills). Her own skill SP is all combo and ultimate; battle skills' SP in the data is all method 1 (refunds), so kinds leave battle out until the sp event carries the gain method (V3)."
+      "note": "abilityEvent 142 + CheckObtainAtbType method [0] (natural) type [3] (skills): natural SP from her skills (the sp event's gain method comes from the data's atbGainMethod)."
     },
     {
       "id": "ult_p3",

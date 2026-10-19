@@ -245,8 +245,16 @@ describe("timeline: ultimate energy and combo windows", () => {
     expect(simulate(data, noEnergy([bs])).casts[0]?.energyAfter).toBe(0);
     expect(energyAt([bs], 21)).toBe(0);
     expect(energyAt([bs], 22)).toBeCloseTo(100 * 0.065 * efficiency, 9);
-    // The final strike returns 20 SP (atb); the battle skill after it spends those 20 first.
-    expect(energyAt([...chain, bs], 22)).toBeCloseTo(80 * 0.065 * efficiency, 9);
+    // The Final Strike's 20 SP (atb, atbGainMethod 0) is natural: spent, it gives energy like the rest.
+    expect(energyAt([...chain, bs], 22)).toBeCloseTo(100 * 0.065 * efficiency, 9);
+    // 20 returned SP (a refund) is spent first and gives none.
+    const kit = data.kits.operators[op] as OperatorKit;
+    const refund: KitTrigger = { id: "refund", on: { event: "cast", skills: [L + "attack1"] }, by: "self", do: [{ kind: "sp", value: 20, spKind: "returned" }] };
+    const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, triggers: [...kit.triggers, refund] } } } };
+    const ctx = createContext(g, noEnergy([chain[0] as RotationAction, bs]));
+    let s = init(ctx);
+    for (const a of [chain[0] as RotationAction, bs]) s = apply(ctx, s, a);
+    expect(advance(ctx, s, (s.casts.at(-1)?.frame ?? NaN) + 22).energy[op] ?? 0).toBeCloseTo(80 * 0.065 * efficiency, 9);
   });
 
   it("her ultimate blocks her energy gain for 16 s", () => {

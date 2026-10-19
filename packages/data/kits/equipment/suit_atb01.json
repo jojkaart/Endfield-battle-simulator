@@ -3,7 +3,7 @@
   "equipment": "suit_atb01",
   "sources": [
     "Frontiers, 3-piece set skill passive_equipsuit_combosuit_01 (rmxlinux Json/SkillData, game 1.6; SkillPatchTable L1: comboskill_cooldown 0.85, dmg_up 0.16, duration 15): cardAttributeModifier attr 47 (ComboSkillCooldownScalar) formulaItem 8 comboskill_cooldown is on the stat panel, and combo cooldowns read it (batch-2 S2). buff_equipsuit_combosuit_01: abilityEvent 142 + CheckObtainAtbType method [0] (natural SP) type [3] (from a skill): when the wearer's skill recovers SP, the team (CharacterTeamFinder) gets buff_equipsuit_combosuit_01_adddamage: DamageScaleProcessor NormalCalcZone dmg_up (all DMG) for `duration`, stackingType 2 max 1 (refreshed: \"This effect cannot stack\").",
-    "Interim until the sp event carries the gain method (batch-2 V3): kinds combo and ultimate only. Every battle-skill SP grant in SkillData / BuffData is a refund (atbGainMethod 1: the Endministrators', Laevatain's, Catcher's, Typhoeus's, Liino's, Estella's), which doesn't trigger it; natural skill SP (method 0, type 3) comes from combos and ultimates (Akekuri's, Antal's combo, Camille's combo and ultimate). Still counted by mistake under this interim: Liino's combo refund (buff_chr_0035_liino_combo_atb_return, method 1).",
+    "The sp event carries the grant's kind from the data (atbGainMethod; batch-2 V3), so the trigger takes natural SP from the wearer's skills of any kind: battle-skill refunds (method 1: the Endministrators', Laevatain's, Catcher's, Typhoeus's, Liino's, Estella's, Liino's combo refund) don't trigger it; Akekuri's, Antal's and Camille's combo and ultimate SP (method 0, type 3) do. Basic attacks' SP is natural too but not from a skill: the kinds leave basic out.",
     "Logged as buff_equipsuit_combosuit_01_adddamage (0.16) in fixtures zmdlogs-40d9a3c1da37 and zmdlogs-4e5e1390085e, worn by Camille (no kit yet); Xaihi wears it in zmdlogs-dbaee23b801d (no kit yet)."
   ],
   "buffs": [
@@ -19,7 +19,7 @@
   "triggers": [
     {
       "id": "suit_atb01.skill_sp",
-      "on": { "event": "sp", "kinds": ["combo", "ultimate"] },
+      "on": { "event": "sp", "kinds": ["battle", "combo", "ultimate"], "natural": true },
       "by": "self",
       "skill": "passive_equipsuit_combosuit_01",
       "do": [{ "kind": "buff", "buff": "suit_atb01.dmg" }]
