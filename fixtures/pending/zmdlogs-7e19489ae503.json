@@ -1,0 +1,7151 @@
+{
+ "$schema": "../schemas/log-fixture.schema.json",
+ "id": "zmdlogs-7e19489ae503",
+ "description": "ZMDLogs battle btl_upload_7e19489ae503 vs eny_0051_rodin: chr_0009_azrila, chr_0003_endminf, chr_0005_chen, chr_0029_pograni; per-hit damage with the logged buff effects.",
+ "provenance": {
+  "source": "ZMDLogs (zmdlogs.com) battle log, captured in game by its client",
+  "url": "https://zmdlogs.com/battles/btl_upload_7e19489ae503",
+  "battleId": "btl_upload_7e19489ae503",
+  "parserVersion": "raw-log-parser-v58",
+  "inGame": true,
+  "measured": "2026-10-12T16:27:06+08:00",
+  "verifiedAgainst": {
+   "rmxlinux": "8b955ea78c6f04b6e5164b75f63f46b503c5f6f2",
+   "555me": "2737bc099e4848517eed01a19614ef88932c18a0"
+  },
+  "notes": [
+   "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
+   "Enemy level 90 is assumed, not logged."
+  ]
+ },
+ "enemy": {
+  "id": "eny_0051_rodin",
+  "level": 90
+ },
+ "team": [
+  {
+   "operator": "chr_0009_azrila",
+   "level": 90,
+   "promotion": 4,
+   "potential": 1,
+   "skillLevels": {
+    "basic": 12,
+    "battle": 9,
+    "combo": 12,
+    "ultimate": 9
+   },
+   "weapon": {
+    "id": "wpn_claym_0004",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     6
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_poise01_body_01",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_poise01_edc_01",
+     "artifice": [
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_poise01_edc_01",
+     "artifice": [
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0003_endminf",
+   "level": 90,
+   "promotion": 4,
+   "potential": 3,
+   "skillLevels": {
+    "basic": 12,
+    "battle": 9,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_sword_0021",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     5
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_crush_fracture_hand_02",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_crush_fracture_body_02",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_crush_fracture_edc_02",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_poise01_edc_02",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0005_chen",
+   "level": 90,
+   "promotion": 4,
+   "potential": 5,
+   "skillLevels": {
+    "basic": 12,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_sword_0017",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     9
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_parts_wuling01_hand_01",
+     "artifice": [
+      3,
+      3,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atk02_body_02",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atk02_edc_02",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atk02_edc_02",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0029_pograni",
+   "level": 90,
+   "promotion": 4,
+   "potential": 4,
+   "skillLevels": {
+    "basic": 9,
+    "battle": 10,
+    "combo": 12,
+    "ultimate": 10
+   },
+   "weapon": {
+    "id": "wpn_sword_0012",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     5
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_fire_natr01_hand_01",
+     "artifice": [
+      0,
+      0,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_usp02_body_01",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_fire_natr01_edc_03",
+     "artifice": [
+      3,
+      0,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_fire_natr01_edc_03",
+     "artifice": [
+      0,
+      0,
+      3
+     ]
+    }
+   ]
+  }
+ ],
+ "hits": [
+  {
+   "t": 5330,
+   "operator": "chr_0009_azrila",
+   "event": "chr_0009_azrila_normal_skill",
+   "value": 1563,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_chr_0009_azrila_talent_2_buff",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 5435,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_normal_skill",
+   "value": 14015,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 6324,
+   "operator": "chr_0009_azrila",
+   "event": "buff_physical_knockdown",
+   "value": 7700,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0009_azrila_talent_2_buff",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_poisedmg_01_damagebuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 6324,
+   "operator": "chr_0009_azrila",
+   "event": "chr_0009_azrila_normal_skill",
+   "value": 6847,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_chr_0009_azrila_talent_2_buff",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_poisedmg_01_damagebuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 7335,
+   "operator": "chr_0005_chen",
+   "event": "buff_physical_airborne",
+   "value": 7781,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 7335,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_combo_skill",
+   "value": 14339,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8077,
+   "operator": "chr_0009_azrila",
+   "event": "buff_physical_knockdown",
+   "value": 9446,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0009_azrila_talent_2_buff",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_damagebuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_poisedmg_01_attackbuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.16
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 8077,
+   "operator": "chr_0009_azrila",
+   "event": "chr_0009_azrila_combo_skill",
+   "value": 14755,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0009_azrila_talent_2_buff",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_damagebuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_poisedmg_01_attackbuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.16
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 9196,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack1",
+   "value": 1274,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 9279,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack1",
+   "value": 1274,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 9382,
+   "operator": "chr_0009_azrila",
+   "event": "chr_0009_azrila_attack4",
+   "value": 11804,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0009_azrila_talent_2_buff",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_damagebuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_attackbuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 9714,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_attack1",
+   "value": 1266,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 9714,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack2",
+   "value": 1994,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 10046,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_attack2",
+   "value": 772,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 10149,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack3",
+   "value": 1662,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 10252,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_attack2",
+   "value": 772,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 10252,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack3",
+   "value": 1662,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 10377,
+   "operator": "chr_0009_azrila",
+   "event": "chr_0009_azrila_attack1",
+   "value": 5517,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0009_azrila_talent_2_buff",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_damagebuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_attackbuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 10584,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack4",
+   "value": 1256,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 10708,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack4",
+   "value": 1884,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 10812,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_attack3",
+   "value": 926,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 11019,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_attack3",
+   "value": 926,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 11245,
+   "operator": "chr_0009_azrila",
+   "event": "chr_0009_azrila_attack2",
+   "value": 7698,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0009_azrila_talent_2_buff",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_damagebuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_attackbuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 12296,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0002_endminm_combo_skill",
+   "value": 5166,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 12440,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack5",
+   "value": 3989,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 12542,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_attack1",
+   "value": 1519,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 12891,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_attack2",
+   "value": 926,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 13118,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_attack2",
+   "value": 1390,
+   "crit": true,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 13222,
+   "operator": "chr_0009_azrila",
+   "event": "chr_0009_azrila_attack3",
+   "value": 11471,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0009_azrila_talent_2_buff",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_damagebuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_attackbuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 14260,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack1",
+   "value": 2634,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 14487,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_normal_skill",
+   "value": 6115,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 14591,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack2",
+   "value": 3151,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 14879,
+   "operator": "chr_0009_azrila",
+   "event": "chr_0009_azrila_attack4",
+   "value": 13348,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_damagebuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_attackbuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 14984,
+   "operator": "chr_0003_endminf",
+   "event": "buff_common_originum_frozen",
+   "value": 21763,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 14984,
+   "operator": "chr_0029_pograni",
+   "event": "buff_physical_do_fracture",
+   "value": 33792,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 14984,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack3",
+   "value": 2589,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 14984,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_normal_skill",
+   "value": 10388,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 15191,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack3",
+   "value": 2589,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 15646,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack4",
+   "value": 1447,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 15751,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack4",
+   "value": 1447,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 16020,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack4",
+   "value": 1447,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 16020,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack4",
+   "value": 1447,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 18815,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_ultimate_skill",
+   "value": 13101,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 19022,
+   "operator": "chr_0009_azrila",
+   "event": "chr_0009_azrila_attack1",
+   "value": 8692,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_damagebuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_attackbuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.16
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 20300,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_combo_skill",
+   "value": 5103,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 20424,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack5",
+   "value": 10725,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 20630,
+   "operator": "chr_0009_azrila",
+   "event": "chr_0009_azrila_attack2",
+   "value": 19151,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_damagebuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_attackbuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.16
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 20837,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_ultimate_skill_abilityentity_attack2",
+   "value": 5009,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 20837,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack1",
+   "value": 4052,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 20837,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_combo_skill",
+   "value": 10244,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 21063,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack2",
+   "value": 4846,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 21521,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_ultimate_skill_abilityentity_attack2",
+   "value": 5203,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 21521,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack3",
+   "value": 2701,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 21706,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack3",
+   "value": 2701,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 21811,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_combo_skill",
+   "value": 17970,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 21935,
+   "operator": "chr_0009_azrila",
+   "event": "chr_0009_azrila_attack3",
+   "value": 15853,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_attackbuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.16
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 22141,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack4",
+   "value": 1509,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 22246,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack4",
+   "value": 1509,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 22455,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_ultimate_skill_abilityentity_attack2",
+   "value": 5398,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 22559,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack4",
+   "value": 1509,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 22559,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack4",
+   "value": 1509,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 23570,
+   "operator": "chr_0009_azrila",
+   "event": "chr_0009_azrila_attack4",
+   "value": 18260,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 23673,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack5",
+   "value": 10725,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 24523,
+   "operator": "chr_0009_azrila",
+   "event": "chr_0009_azrila_normal_skill",
+   "value": 1804,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 24957,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_attack1",
+   "value": 2573,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 25165,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack1",
+   "value": 4052,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 25395,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_attack2",
+   "value": 1569,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 25479,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_normal_skill",
+   "value": 24365,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 25479,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack2",
+   "value": 4846,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 25582,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_attack2",
+   "value": 1569,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 25812,
+   "operator": "chr_0009_azrila",
+   "event": "buff_physical_knockdown",
+   "value": 19451,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0009_azrila_talent_2_buff",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 25812,
+   "operator": "chr_0009_azrila",
+   "event": "chr_0009_azrila_normal_skill",
+   "value": 8646,
+   "crit": false,
+   "element": "fire",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0009_azrila_talent_2_buff",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 25916,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack3",
+   "value": 2701,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 26124,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_attack3",
+   "value": 1883,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 26124,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack3",
+   "value": 2701,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 27753,
+   "operator": "chr_0005_chen",
+   "event": "buff_physical_airborne",
+   "value": 10048,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 27753,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_ultimate_skill_abilityentity_attack2",
+   "value": 5398,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 27753,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_attack3",
+   "value": 1883,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 27753,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_combo_skill",
+   "value": 43788,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 28190,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_ultimate_skill_abilityentity_finish4",
+   "value": 25036,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 28190,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_attack4",
+   "value": 715,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 28190,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack4",
+   "value": 1509,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 28292,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_attack4",
+   "value": 715,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 28292,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_attack4",
+   "value": 715,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 28292,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack4",
+   "value": 1509,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 28397,
+   "operator": "chr_0029_pograni",
+   "event": "chr_0029_pograni_attack4",
+   "value": 715,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 28603,
+   "operator": "chr_0009_azrila",
+   "event": "buff_physical_knockdown",
+   "value": 22292,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0009_azrila_talent_2_buff",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_poisedmg_01_attackbuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.16
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 28603,
+   "operator": "chr_0009_azrila",
+   "event": "chr_0009_azrila_combo_skill",
+   "value": 32241,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0009_azrila_talent_2_buff",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_poisedmg_01_attackbuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.16
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 28603,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack4",
+   "value": 1509,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 28603,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack4",
+   "value": 1509,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 29823,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0002_endminm_combo_skill",
+   "value": 13575,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 30861,
+   "operator": "chr_0009_azrila",
+   "event": "chr_0009_azrila_power_attack",
+   "value": 35907,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0009_azrila_talent_2_buff",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_attackbuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 33152,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_ultimate_skill",
+   "value": 37181,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 1.008
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 33152,
+   "operator": "chr_0009_azrila",
+   "event": "chr_0009_azrila_power_attack",
+   "value": 323160,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_wpn_claym_0004_phy_damage_up",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_equipsuit_poisedmg_01_attackbuff",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 33255,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack1",
+   "value": 4616,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 33359,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_ultimate_skill",
+   "value": 38568,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 1.008
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 33483,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_ultimate_skill",
+   "value": 26636,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 1.008
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 33627,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_ultimate_skill",
+   "value": 27561,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 1.008
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 33734,
+   "operator": "chr_0003_endminf",
+   "event": "buff_common_originum_frozen",
+   "value": 64292,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0021_valid",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.648
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 33734,
+   "operator": "chr_0003_endminf",
+   "event": "buff_physical_crushed",
+   "value": 413543,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0021_valid",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.648
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 33734,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_normal_skill",
+   "value": 59260,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0021_valid",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.648
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 33839,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_ultimate_skill",
+   "value": 25398,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 33963,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_ultimate_skill",
+   "value": 25398,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 35661,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_ultimate_skill",
+   "value": 121757,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.36
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 36117,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_ultimate_skill",
+   "value": 440783,
+   "uncapped": 481159,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_chr_0005_chen_potential_1",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.2
+    },
+    {
+     "buff": "buff_physical_do_fracture",
+     "zone": "damageTaken",
+     "element": "physical",
+     "value": 0.437314
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0029_pograni_talent1",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 8
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.09
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_wpn_sword_0017_valid",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 1.008
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  }
+ ]
+}
