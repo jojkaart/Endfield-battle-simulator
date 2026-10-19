@@ -1308,11 +1308,6 @@
             "minimum": 0,
             "description": "Frames from the cast to the team's energy for the SP it spends (SkillData CreateBuff buff_common_obtain_ultimate_sp); at the cast when absent."
           },
-          "durationFrames": {
-            "type": "integer",
-            "minimum": 1,
-            "description": "How long the skill locks the operator, in 30 FPS frames (SkillData durationFrame unless the skill can be cancelled earlier; say which in a note)."
-          },
           "note": {
             "type": "string"
           },
@@ -1337,6 +1332,10 @@
           "beside": {
             "$ref": "#/$defs/predicate",
             "description": "When this holds at the cast, the skill runs beside the operator's current action instead of ending it (SkillData switchToBuffConfig, asSkillCast): the current skill keeps its hits, lock and chain."
+          },
+          "followUpOnly": {
+            "type": "boolean",
+            "description": "Only a skill's own cast action (CastSkill, a trigger's cast) starts it; rotations can't."
           }
         }
       }

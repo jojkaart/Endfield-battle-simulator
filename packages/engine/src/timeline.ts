@@ -1202,7 +1202,7 @@ export function earliestStart(ctx: TimelineContext, state: TimelineState, action
   }
   let costs;
   try {
-    kitSkill(ctx, action.operator, action.skill);
+    if (kitSkill(ctx, action.operator, action.skill).followUpOnly) return { error: `${action.skill} is cast only by its own skill (a follow-up), not by a rotation` };
     costs = skillCosts(ctx, action.operator, action.skill);
   } catch (e) {
     return { error: e instanceof Error ? e.message : String(e) };

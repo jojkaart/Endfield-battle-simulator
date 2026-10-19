@@ -401,7 +401,7 @@
           ]
         }
       ],
-      "note": "The ultimate's beats and finale, at frames from the cast. Interim for a skill hit with if: buffActive cosmovoice_amp: the engine judges skill hits' if at the cast too (castSkill's hitAvailable on the cast's situation), when the stance doesn't exist yet, so those hits would never land. As trigger hits they're judged as they land: End Stance ends cosmovoice_amp and with it the beats still to come and the finale (the game's JumpTo 540); a combo during Cosmovoice runs beside the ultimate and doesn't touch them."
+      "note": "The ultimate's beats and finale, at frames from the cast. Written as trigger hits when the engine still judged skill hits' if at the cast; it now judges it as they land, so they could be skill hits with if: buffActive cosmovoice_amp again (same result). As trigger hits they're judged as they land: End Stance ends cosmovoice_amp and with it the beats still to come and the finale (the game's JumpTo 540); a combo during Cosmovoice runs beside the ultimate and doesn't touch them."
     },
     {
       "id": "ult_heal_start",
@@ -654,12 +654,8 @@
       "skillId": "chr_0035_liino_normal_skill_combo",
       "label": "Vocalist Stance (resumed after the combo)",
       "damageType": "battle",
-      "available": {
-        "not": {
-          "potentialAtLeast": 0
-        }
-      },
-      "note": "Cast only by the stance_resumes trigger (follow-ups skip `available`); the never-true predicate keeps rotations and search from casting it by hand. No DamageAction; timing from SkillData (exclusive 1954, windows 0–1800 [End Stance, combo]).",
+      "followUpOnly": true,
+      "note": "Cast only by the stance_resumes trigger (`followUpOnly`: rotations and search can't cast it by hand). No DamageAction; timing from SkillData (exclusive 1954, windows 0–1800 [End Stance, combo]).",
       "hits": []
     },
     {

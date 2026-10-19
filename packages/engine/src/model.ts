@@ -431,14 +431,14 @@ export interface KitSkill {
    * Laevatain's enhanced attacks level with her ultimate but are basic attacks.
    */
   readonly kind: SkillType;
-  /** How long the skill locks the operator (30 FPS frames), when known. */
-  readonly durationFrames?: number;
   /** When the team's energy for the SP it spends comes (frames from the cast; SkillData CreateBuff buff_common_obtain_ultimate_sp); at the cast when absent. */
   readonly teamEnergyFrame?: number;
   /** The operator gains no ultimate energy for this long after the cast (SkillData RefrainObtainUsp, e.g. Laevatain's ultimate). */
   readonly energyBlockSeconds?: number;
   /** Castable only when this holds for the operator at the start frame (a state: `buffActive`; replaced by a stance: `not`). */
   readonly available?: Predicate;
+  /** Only a skill's own cast action (CastSkill, a trigger's `cast`) starts it; rotations can't (Typhoeus's hover idle and end, Liino's resumed stance). */
+  readonly followUpOnly?: boolean;
   /** The caster becomes the controlled operator at the cast (an ultimate's "becomes the controlled operator"). */
   readonly takesControl?: boolean;
   /**

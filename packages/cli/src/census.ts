@@ -16,7 +16,6 @@ const KITS = join(ROOT, "packages/data/kits/operators");
  */
 export const DATA_DERIVABLE: ReadonlySet<string> = new Set([
   "hit.frames",
-  "skill.durationFrames",
   "hit.energy",
   "skill.energyBlockSeconds",
   "hit.factor",

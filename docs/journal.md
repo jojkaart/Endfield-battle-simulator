@@ -4,6 +4,36 @@ A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 
+## 2026-10-19: batch 1 — kits
+
+**Goal:** the batch-1 kits phase: re-analysis (pass 3), the seven kits with
+their equipment, verification against the logs, the pattern review.
+
+**Done:** pass 3 by seven agents (each plan loaded and run from a scratch
+copy) found 11 small gaps, all implemented. Seven kit agents then wrote the
+kits in parallel worktrees, one owner per equipment kit; I merged them one
+at a time, re-running every check and log comparison after each. No log
+mismatches anywhere; Typhoeus, Si and Estella now have 94–100% of their
+logged damage checked (from 1–83%). Engine fixes the kit agents found are
+in, and the pattern review removed a dead field (`durationFrames` on kit
+skills), a marker-buff workaround (Laevatain) and a never-true predicate
+hack (`followUpOnly`).
+
+**Decisions and why:**
+- Parallel kit agents in worktrees with explicit equipment ownership:
+  shared equipment (Swordmancer, Eternal Xiranite, the heal set) gets one
+  writer, so merges only conflict in test lists.
+- Agents may not change engine code; they describe the change and use an
+  interim in the kit, and the merge step makes it once for everyone.
+- A fixture lists hits that happened, so the per-hit test assumes the
+  situational parts it can't record.
+
+**Problems:** merging squashed one branch (Arcane's) because I stashed
+during a merge; the content is the same. The KNOWN list of compiler
+disagreements is order-sensitive and conflicted at every merge. Two of
+Estella's tests assumed unscaled energy until Gilberta's Messenger's Song
+arrived.
+
 ## 2026-10-18: batch 1 — pass-2 gaps implemented
 
 **Goal:** implement the gaps the seven pass-2 re-analyses left

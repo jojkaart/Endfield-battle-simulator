@@ -388,7 +388,6 @@ describe("timeline: kit triggers", () => {
       ["final_strike_absorb", "hit", "controlled"],
       ["combo_window", "reaction", "anyone"],
       ["scorching_heart", "stackAtLeast", "self"],
-      ["melting_flame_spent", "hit", "self"],
     ]);
   });
 });
@@ -1362,7 +1361,7 @@ describe("Laevatain's kit: Twilight, its pauses and cooldown; Scorching Heart; a
     expect(s4.buffs.find((b) => b.id === "scorching_heart")).toMatchObject({ appliedAt: reached, expiresAt: reached + 600 });
     // The fifth (empowered) cast after it ran out: its explosion's +1 at 4 doesn't restart it; its extra hit consumes all 4.
     const s5 = run([...four, a("normal_skill", 30 * 60)], 30 * 70);
-    expect(s5.buffs.some((b) => b.id === "scorching_heart" || b.id === "melting_flame_full")).toBe(false);
+    expect(s5.buffs.some((b) => b.id === "scorching_heart")).toBe(false);
     expect(s5.stacks[op]?.["melting_flame"]).toBe(0);
   });
 

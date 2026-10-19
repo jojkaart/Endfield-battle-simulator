@@ -63,10 +63,10 @@ interface RawKit {
     skillId: string;
     label: string;
     damageType: "basic" | "battle" | "combo" | "ultimate";
-    durationFrames?: number;
     energyBlockSeconds?: number;
     teamEnergyFrame?: number;
     available?: Predicate;
+    followUpOnly?: boolean;
     takesControl?: boolean;
     beside?: Predicate;
     cooldownGroup?: string;
@@ -429,10 +429,10 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
       skillId: s.skillId,
       label: s.label,
       kind: s.damageType,
-      ...(s.durationFrames !== undefined ? { durationFrames: s.durationFrames } : {}),
       ...(s.energyBlockSeconds !== undefined ? { energyBlockSeconds: s.energyBlockSeconds } : {}),
       ...(s.teamEnergyFrame !== undefined ? { teamEnergyFrame: s.teamEnergyFrame } : {}),
       ...(s.available ? { available: s.available } : {}),
+      ...(s.followUpOnly ? { followUpOnly: true } : {}),
       ...(s.takesControl ? { takesControl: true } : {}),
       ...(s.beside ? { beside: s.beside } : {}),
       ...(s.cooldownGroup ? { cooldownGroup: s.cooldownGroup } : {}),

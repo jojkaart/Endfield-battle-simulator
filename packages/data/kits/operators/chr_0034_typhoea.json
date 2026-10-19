@@ -824,8 +824,7 @@
       "skillId": "chr_0034_typhoea_attack1",
       "label": "Basic attack 1",
       "damageType": "basic",
-      "durationFrames": 9,
-      "note": "durationFrames: attack2 is allowed from frame 9 (AllowNextSkillAction; SkillData durationFrame 150). Not while hovering (the attack input is an ABATK then).",
+      "note": "Timing (from SkillData): attack2 is allowed from frame 9 (AllowNextSkillAction; SkillData durationFrame 150). Not while hovering (the attack input is an ABATK then).",
       "available": {
         "not": {
           "buffActive": "hovering"
@@ -855,8 +854,7 @@
       "skillId": "chr_0034_typhoea_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
-      "durationFrames": 12,
-      "note": "durationFrames: attack3 is allowed from frame 12 (SkillData durationFrame 182).",
+      "note": "Timing (from SkillData): attack3 is allowed from frame 12 (SkillData durationFrame 182).",
       "hits": [
         {
           "id": "arrow",
@@ -877,8 +875,7 @@
       "skillId": "chr_0034_typhoea_attack3",
       "label": "Basic attack 3",
       "damageType": "basic",
-      "durationFrames": 20,
-      "note": "durationFrames: attack4 is allowed from frame 20 (SkillData durationFrame 185).",
+      "note": "Timing (from SkillData): attack4 is allowed from frame 20 (SkillData durationFrame 185).",
       "hits": [
         {
           "id": "wave1",
@@ -916,8 +913,7 @@
       "skillId": "chr_0034_typhoea_attack4",
       "label": "Basic attack 4",
       "damageType": "basic",
-      "durationFrames": 27,
-      "note": "durationFrames: attack5 is allowed from frame 27 (SkillData durationFrame 170).",
+      "note": "Timing (from SkillData): attack5 is allowed from frame 27 (SkillData durationFrame 170).",
       "hits": [
         {
           "id": "first",
@@ -960,8 +956,7 @@
       "skillId": "chr_0034_typhoea_attack5",
       "label": "Basic attack 5 (final strike)",
       "damageType": "basic",
-      "durationFrames": 46,
-      "note": "durationFrames: attack1 is allowed from frame 46 (SkillData durationFrame 150).",
+      "note": "Timing (from SkillData): attack1 is allowed from frame 46 (SkillData durationFrame 150).",
       "hits": [
         {
           "id": "arrow",
@@ -986,7 +981,6 @@
       "skillId": "chr_0034_typhoea_power_attack",
       "label": "Finisher",
       "damageType": "basic",
-      "durationFrames": 40,
       "note": "skillSpecification 8: only on a Staggered enemy, once per stagger, × its finisher multiplier, with its finisher SP. durationFrames: battle and combo skills are allowed from frame 40 (SkillData durationFrame 180). Not yet seen in a log.",
       "hits": [
         {
@@ -1008,7 +1002,6 @@
       "skillId": "chr_0034_typhoea_normal_skill_floating_start",
       "label": "Battle skill: take flight (opening volley)",
       "damageType": "battle",
-      "durationFrames": 26,
       "teamEnergyFrame": 12,
       "note": "Starts a hover (triggers hover_start, battle_reset; follow-ups chain_start at 32 off-field, loop_start at 37). Team energy at frame 12 (ObtainUspInNormalSkill, window 12–18, only if a volley arrow hit; kit-draft doesn't compile it, D2). durationFrames: floating_attack1 is allowed from frame 26 (SkillData window 26–40).",
       "hits": [
@@ -1048,31 +1041,22 @@
       "skillId": "chr_0034_typhoea_normal_skill_floating_loop",
       "label": "Hover idle",
       "damageType": "battle",
-      "note": "A follow-up only (CastSkill by the shots, the battle skill, the floating combo and the ultimate when she's controlled and idle): `available` never holds. It has windows 0–30 for every shot and floating_end, so the next shot starts from it; at frame 27 it casts floating_end (trigger loop_end). Skill group battle, skillSpecification 3: counted as a battle-skill cast for equipment (interim rule of Si R6, in-game test 29). atk_scale in its table but no DamageAction.",
-      "available": {
-        "not": {
-          "potentialAtLeast": 0
-        }
-      },
+      "note": "A follow-up only (CastSkill by the shots, the battle skill, the floating combo and the ultimate when she's controlled and idle): `followUpOnly`. It has windows 0–30 for every shot and floating_end, so the next shot starts from it; at frame 27 it casts floating_end (trigger loop_end). Skill group battle, skillSpecification 3: counted as a battle-skill cast for equipment (interim rule of Si R6, in-game test 29). atk_scale in its table but no DamageAction.",
+      "followUpOnly": true,
       "hits": []
     },
     {
       "skillId": "chr_0034_typhoea_normal_skill_floating_end",
       "label": "Hover end",
       "damageType": "battle",
-      "note": "A follow-up only (cast by floating_loop at its frame 27): its frames 8–14 end floatingmode (trigger land). The shots' windows list it, so some input casts it in game; ending a hover early never adds damage, so it's left out of rotations (`available` never holds). Battle-type as floating_loop. atk_scale in its table but no DamageAction.",
-      "available": {
-        "not": {
-          "potentialAtLeast": 0
-        }
-      },
+      "note": "A follow-up only (cast by floating_loop at its frame 27): its frames 8–14 end floatingmode (trigger land). The shots' windows list it, so some input casts it in game; ending a hover early never adds damage, so it's left out of rotations (`followUpOnly`). Battle-type as floating_loop. atk_scale in its table but no DamageAction.",
+      "followUpOnly": true,
       "hits": []
     },
     {
       "skillId": "chr_0034_typhoea_floating_attack1",
       "label": "Aerial basic attack 1",
       "damageType": "basic",
-      "durationFrames": 18,
       "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). Castable while hovering as the 1st attempt (stack abatk 0); not a chain step (the attempt index, not the chain, picks the shot). durationFrames: the next shot's window opens at frame 18 (SkillData; the timeline reads it there).",
       "available": {
         "all": [
@@ -1211,7 +1195,6 @@
       "skillId": "chr_0034_typhoea_floating_attack2",
       "label": "Aerial basic attack 2",
       "damageType": "basic",
-      "durationFrames": 18,
       "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). Castable while hovering as the 2nd attempt (stack abatk 1); not a chain step (the attempt index, not the chain, picks the shot). durationFrames: the next shot's window opens at frame 18 (SkillData; the timeline reads it there).",
       "available": {
         "all": [
@@ -1350,7 +1333,6 @@
       "skillId": "chr_0034_typhoea_floating_attack3",
       "label": "Aerial basic attack 3",
       "damageType": "basic",
-      "durationFrames": 18,
       "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). Castable while hovering as the 3rd attempt (stack abatk 2); not a chain step (the attempt index, not the chain, picks the shot). durationFrames: the next shot's window opens at frame 18 (SkillData; the timeline reads it there).",
       "available": {
         "all": [
@@ -1489,7 +1471,6 @@
       "skillId": "chr_0034_typhoea_floating_attack4",
       "label": "Aerial basic attack 4",
       "damageType": "basic",
-      "durationFrames": 28,
       "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). Castable while hovering as the 4th attempt (stack abatk 3); not a chain step (the attempt index, not the chain, picks the shot). durationFrames: the next shot's window opens at frame 28 (SkillData; the timeline reads it there).",
       "available": {
         "all": [
@@ -1628,7 +1609,6 @@
       "skillId": "chr_0034_typhoea_floating_attack5",
       "label": "Aerial basic attack 5 (final strike)",
       "damageType": "basic",
-      "durationFrames": 35,
       "note": "The 5th shot of a hover. Controlled: always a Power Shot that doesn't use a Hunting Arrow (its FinishBuff of arrow_num is disabled) and a Final Strike (mask 2101376) with SP atb (23) and stagger. Not controlled: floating_attack1_01_projhit with enhence_arrow 0, a plain shot whether or not she has arrows (no arrow used, no burst, no SP). It ends the hover at frame 15. durationFrames: SkillData exclusiveFrame 35 (no cancel window).",
       "available": {
         "all": [
@@ -1767,7 +1747,6 @@
       "skillId": "chr_0034_typhoea_combo_skill",
       "label": "Combo skill",
       "damageType": "combo",
-      "durationFrames": 48,
       "note": "The grounded combo, in the combo slot except while hovering with the slot swapped. durationFrames: the battle skill is allowed from frame 48 (SkillData window 48–99). At frame 35: usp energy and the Sign conversion (trigger conversion). Casting it ends a hover (floatingmode's inherit list).",
       "available": {
         "not": {
@@ -1865,7 +1844,6 @@
       "skillId": "chr_0034_typhoea_combo_skillfloating",
       "label": "Combo skill (hovering)",
       "damageType": "combo",
-      "durationFrames": 57,
       "note": "The combo cast while hovering (floatingmode's ChangeSkillAction puts it in the combo slot when she's controlled as the hover starts): same arrows; it keeps the hover (InheritBuff floatingmode) and resets the ABATK attempts at frame 0; floating_attack1 is allowed from frame 57 (SkillData window 57–74). Off-field it continues with floating_attack1 at 57; controlled and idle, floating_loop at 67. At frame 35: usp energy and the Sign conversion (trigger conversion).",
       "available": {
         "all": [
@@ -1961,7 +1939,6 @@
       "skillId": "chr_0034_typhoea_ultimate_skillfloating",
       "label": "Ultimate",
       "damageType": "ultimate",
-      "durationFrames": 83,
       "note": "Enters the hover (trigger hover_start); at frame 61 Hunting Arrows, the attempt reset and the Hail of Arrows window (trigger ult_rain), whose rains come from trigger hail_of_arrows; off-field shots from frame 89 (chain_ult). Time stop frames 0–62 (UltimateTimeAction, from SkillData). durationFrames: floating shots are allowed from frame 83 (SkillData window 83–92).",
       "hits": [
         {
@@ -1985,7 +1962,6 @@
       "skillId": "chr_0034_typhoea_plunging_attack_end",
       "label": "Dive attack (landing)",
       "damageType": "basic",
-      "durationFrames": 120,
       "note": "skillSpecification 6: needs mid-air, which rotations don't have (S10), so it isn't cast yet. SkillData durationFrame (no earlier cancel window found). Not yet seen in a log.",
       "hits": [
         {

@@ -48,14 +48,6 @@
       "note": "normal_skill_during_ult CreateBuff for frames 0–115 (autoFinishByAction, finishWithNextSkillIfNotInherited): ends at 115 frames or when the skill is cut short. Under skip semantics (in-game test 17) it would be 39 / 64 frames (plain / empowered)."
     },
     {
-      "id": "melting_flame_full",
-      "label": "Melting Flame at 4 (Scorching Heart started)",
-      "target": "self",
-      "modifiers": [],
-      "gameBuff": "buff_chr_0016_laevat_energy_icon_5",
-      "note": "buff_chr_0016_laevat_energy creates energy_icon_5 when its count becomes max_stack (buffEvent 6, Switch) and finishes it when the stacks end (buffEvent 2: the consumption); icon_5's start creates ignore_fire_resist. So Scorching Heart starts once per reaching 4, not again on a gain capped at 4 (assumed: a capped gain is no stack change; Zero Sanity's in-game 57552 for the empowered extra hit has no RES ignore; in-game test 22). No duration: ended by trigger melting_flame_spent."
-    },
-    {
       "id": "scorching_heart",
       "label": "Scorching Heart",
       "target": "self",
@@ -305,53 +297,18 @@
       },
       "by": "self",
       "if": {
-        "all": [
-          {
-            "talentAtLeast": [
-              0,
-              1
-            ]
-          },
-          {
-            "not": {
-              "buffActive": "melting_flame_full"
-            }
-          }
+        "talentAtLeast": [
+          0,
+          1
         ]
       },
       "do": [
-        {
-          "kind": "buff",
-          "buff": "melting_flame_full"
-        },
         {
           "kind": "buff",
           "buff": "scorching_heart"
         }
       ],
-      "note": "buff_chr_0016_laevat_energy on a stack change (buffEvent 6), Switch count == max_stack → energy_icon_5 → ignore_fire_resist (stacking type 2, max 1: reaching 4 again refreshes it). stackAtLeast also fires on a gain capped at 4 (the empowered cast's own +1), so the melting_flame_full guard stands for 'the count changed to 4': in-game test 22."
-    },
-    {
-      "id": "melting_flame_spent",
-      "on": {
-        "event": "hit",
-        "skills": [
-          "chr_0016_laevat_normal_skill",
-          "chr_0016_laevat_normal_skill_during_ult"
-        ]
-      },
-      "by": "self",
-      "if": {
-        "stack": "melting_flame",
-        "below": 4
-      },
-      "do": [
-        {
-          "kind": "endBuff",
-          "buff": "melting_flame_full"
-        }
-      ],
-      "note": "energy's end (buffEvent 2) finishes energy_icon_5. Melting Flame only goes down at the empowered extra hits (FinishBuffAction finishAll), so a battle-skill hit that finds fewer than 4 ends the guard."
+      "note": "Talent 1 (buff_chr_0016_laevat_passive): Scorching Heart when Melting Flame reaches 4 (the data's energy_icon_5 gate: it starts on reaching 4, refreshes on reaching 4 again after spending, and a gain capped at 4 doesn't restart it; stackAtLeast fires only when the count changes)."
     }
   ],
   "skills": [

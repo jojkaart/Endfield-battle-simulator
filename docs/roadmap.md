@@ -14,18 +14,17 @@ the six favourites.
    sets (absorbs the remaining steps of
    [kit-abstractions.md](kit-abstractions.md#4-order-of-work)). Batch 2: the
    Endministrator and the 4- and 5-star operators nearly every player has.
-   - Batch 1: both implementation passes are in
-     ([progress](kit-batches/batch-1.md#progress),
-     [pass 2](kit-batches/batch-1.md#pass-2-progress)); what's left waits
-     on in-game tests or is hand-written in kits
-     ([open](kit-batches/batch-1.md#pass-2-whats-still-open)). Next: the
-     pass-3 re-analysis, then the seven kits and their equipment kits,
-     verified against the logs, then the pattern review. Loader defaults
-     from the SkillData compiler (D1/D2) can follow; kits hand-write those
-     values meanwhile.
+   - Batch 1 is done: the seven kits and 17 equipment kits are in, with no
+     log mismatches ([kits](kit-batches/batch-1.md#kits-2026-10-19)); what's
+     left waits on in-game tests
+     ([open](kit-batches/batch-1.md#pass-2-whats-still-open)).
+   - Next: batch 2 (the Endministrator and the 4- and 5-star operators),
+     starting with its analysis phase. Before or alongside it: loader
+     defaults from the SkillData compiler (D1/D2: frames, event keys,
+     energy, finisher factors), so new kits hand-write less.
 2. **Rotation search** (`efsim search`, beam search on the stepping API) is
-   in; next: a resource-aware evaluator, team runs for the favourites, and a
-   report of the best rotations found.
+   in; with batch 1's kits complete, next: team runs for the favourites, a
+   resource-aware evaluator, and a report of the best rotations found.
 3. **Corrosion model:** time dilation, the applier's talents (Arcane), and
    carry-over on reapplication; in-game test 4.
 4. **Still open from setup:** a `Result` schema, `NOTICE` when MIT code is

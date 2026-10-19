@@ -15,7 +15,7 @@ Feature counts per kit (hits or skills using it) from the current files:
 | What | Kits writing it by hand | Where the data has it |
 |---|---|---|
 | Hit frames | 7 of 7 (108 entries) | DamageAction frame on the skill timeline + the spawn frame of the projectile / ability entity that deals it |
-| Lock (`durationFrames`) | 6 of 7 | SkillData `exclusiveFrame` / first AllowNextSkillAction (the engine already reads it; the kit copy is redundant) |
+| Lock (`durationFrames`) | removed (2026-10-19) | SkillData `exclusiveFrame` / windows / channels: the engine reads them; the kit field was dead and is gone |
 | Ultimate energy grants | 7 of 7 | `ObtainCostAction` costType 0, its key and frame (`usp`, `extra_usp`, `usp_recover`) |
 | Energy blocks | 3 of 7 | `RefrainObtainUsp` in a buff the skill creates, and that buff's duration |
 | Literal factors | 1 (16 hits; others need them too) | `SimpleCalcBBAction` ×/÷ on the scale before the DamageAction |
@@ -218,3 +218,38 @@ added or substantially changed (also in CLAUDE.md). Checklist:
    unify it.
 4. Update this document's tables and the roadmap with what was found and
    what changed.
+
+### Review after batch 1's kits (2026-10-19)
+
+1. **Census.** Still hand-written although the data has them: hit frames
+   (all seven kits), log event keys (all), energy grants (all), literal
+   factors (finishers in five kits: the compiler doesn't read
+   BreakingAttackCalculation's `multiplier`), energy blocks (Arcane), team
+   energy frames (all seven; the compiler finds most). Loader defaults from
+   the compiler (D1 follow-up) remain the way to remove them. The kit skill
+   field `durationFrames` was dead (the engine reads lock times from
+   SkillData) and is removed from the format, the loader and two kits.
+   Features used by one kit only are each that operator's mechanism
+   (`branch`, `scaleValue`, `beside`, `cancelHits`, `endAction`,
+   `extendBuff`, `clearEnergy`, …) or a filter only one kit needs yet;
+   none duplicates another field.
+2. **Requests from the kit agents**, each in an existing family:
+   chain steps only continue a chain (skills/timing); delayed actions and
+   energy grants before later ticks and expiries (timing); a hit's `if`
+   judged only as it lands (conditions); cast-consumed buffs act only on
+   the consuming cast (buff lifecycle); stack events name the stacks that
+   changed (triggers); a burst hit's own burst before its damage
+   (triggers, `beforeDamage`); team energy tied to its cast and a `beside`
+   cast not waiting (skills). All done. Left open, small: a detached hit
+   dropped if its cast is cut before its entity exists (Laevatain: frames
+   0–3 of her battle skill), the action gate read before the state is
+   advanced (Liino: 5 frames at a stance's end), `calc` on values that
+   read an event count.
+3. **One mechanism written two ways**, now unified:
+   - Laevatain's Scorching Heart gate (a marker buff set at 4 Melting Flame
+     and a trigger ending it) and `stackAtLeast` did the same once stack
+     events say what changed: the marker pair is gone.
+   - "Cast only by its own skill" was written as a never-true `available`
+     (`{not: {potentialAtLeast: 0}}`) in Typhoeus's and Liino's kits: now
+     `followUpOnly` on the skill.
+

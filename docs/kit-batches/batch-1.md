@@ -404,3 +404,43 @@ event names another file is `detached` unless it says `detached: false`;
 Si's example drops its two `wpn_claym_0018.*` conditions; a few timeline
 tests are written against the current kits' shape and move with them.
 
+## Kits (2026-10-19)
+
+The seven kits and their equipment kits are written from the pass-3 plans
+(each report's `## Kit (2026-10-18)` has the details and deviations), then
+merged and checked together. Equipment kits: wpn_sword_0006, wpn_sword_0010,
+suit_burst01, suit_fire_natr01 (Laevatain); wpn_funnel_0019, suit_spellburst
+(Typhoeus); wpn_funnel_0016, suit_usp02, suit_usp01 (Arcane); wpn_claym_0018,
+suit_atk02 (Si); wpn_funnel_0011, wpn_funnel_0005, suit_phy01 (Gilberta);
+wpn_lance_0014, suit_heal01 (Liino); wpn_lance_0010 (Estella).
+
+**Log checks:** no mismatch in any fixture. Share of each operator's logged
+damage covered by a kit:
+
+| Operator | Before | After |
+|---|---|---|
+| Laevatain (40d9) | 100% | 100% (17 of 17 match) |
+| Typhoeus | 16–18% | 94–100% |
+| Arcane | 67–100% | unchanged (the uncovered ones are L2's one-element keys) |
+| Si | 1–8% | 100% (40d9: 23 of 24 match; b7b3: 21 of 21) |
+| Gilberta | 79–100% | 79–100% (d9e5 now 100%) |
+| Liino | 100% | 100% |
+| Estella (4e5e) | 83% | 100% (26 match, 0 mismatch) |
+
+"Under unmodelled effects" counts are mostly hits under Corrosion (its
+ramp under time dilation isn't settled) and Fixed DMG bursts, which only a
+fight computes.
+
+**Example totals**, with every kit merged: arcane-will-solo 54,023 →
+102,141; estella-solidification 111,218 → 186,537; gilberta-gravity-field
+271,088 → 375,390; laevatain-solo 469,684 → 739,231 (Forgeborn now
+triggered by her ultimate, Scorching Heart; a hit the data doesn't have
+removed); liino-laevatain 413,283 → 619,381; si-laevatain 683,239 →
+1,017,030; typhoeus-gilberta 623,303 → 1,058,494.
+
+Engine fixes the kits phase asked for are in (chain steps, event order,
+hit conditions at landing, cast-consumed buffs, stack changes, bursts
+before damage, team energy tied to its cast, casts beside the current
+action); the pattern review is in
+[kit-abstractions.md](../kit-abstractions.md#review-after-batch-1s-kits-2026-10-19).
+
