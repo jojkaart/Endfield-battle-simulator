@@ -1,0 +1,27 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0009",
+  "sources": [
+    "Wave Tide, skill 3: rmxlinux Json/SkillData sk_wpn_sword_0009 (game 1.6): passiveEventActions abilityEvent 30 (the wielder casts a skill) + CheckSkillType [6] (combo) → CreateBuff buff_wpn_sword_0009 (attr 2 formulaItem 6 atk_up; duration from the skill's `duration`; stackingType 4: refreshed, \"Effects of the same name cannot stack\"). SkillPatchTable L1–L9 atk_up 0.12–0.336, duration 20 (the SkillData default 15 is overridden). Skills 1–2 (Intellect, ATK%) are stat-panel modifiers.",
+    "Not in any log or fixture yet."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_sword_0009.atk",
+      "label": "ATK (Wave Tide)",
+      "target": "self",
+      "duration": "duration",
+      "gameBuff": "buff_wpn_sword_0009",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_sword_0009.combo_cast",
+      "on": { "event": "cast", "kinds": ["combo"] },
+      "by": "self",
+      "skill": "sk_wpn_sword_0009",
+      "do": [{ "kind": "buff", "buff": "wpn_sword_0009.atk" }]
+    }
+  ]
+}

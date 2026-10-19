@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_lance_0003",
+  "sources": [
+    "Pathfinder's Beacon, skill 3: rmxlinux Json/SkillData sk_wpn_lance_0003 (game 1.6): toggleBuffs buff_wpn_lance_0003 (attr 2 formulaItem 6 atk_up; lifeType 1) while CheckCurHpRatio ≥ hp_ratio_c (0.8). SkillPatchTable L1–L9 atk_up 0.15–0.42. HP isn't modelled (N1): the wielder is at full HP, so it is on from the start. Skills 1–2 (Agility, ATK%) are stat-panel modifiers.",
+    "Not in any log or fixture yet."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_lance_0003.atk",
+      "label": "ATK (Pathfinder's Beacon, HP above 80%)",
+      "target": "self",
+      "gameBuff": "buff_wpn_lance_0003",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_lance_0003.start",
+      "on": { "event": "fightStart" },
+      "by": "self",
+      "skill": "sk_wpn_lance_0003",
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0003.atk" }]
+    }
+  ]
+}

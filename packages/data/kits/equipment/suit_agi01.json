@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_agi01",
+  "sources": [
+    "Roving MSGR, 3-piece set skill passive_equipsuit_agi_01 (rmxlinux Json/SkillData, game 1.6; SkillPatchTable L1: agi_up 50, hp_ratio 0.8, phy_dmg_up 0.2): cardAttributeModifier Agility + agi_up (stat panel); toggleBuffs buff_equipsuit_agi_phydmg_01 (attr 50 Physical DMG, formulaItem 5, phy_dmg_up) while CheckCurHpRatio ≥ hp_ratio. HP isn't modelled (N1): the wearer is at full HP, so it is on from the start.",
+    "Not in any log or fixture yet."
+  ],
+  "buffs": [
+    {
+      "id": "suit_agi01.phydmg",
+      "label": "Physical DMG (Roving MSGR, HP above 80%)",
+      "target": "self",
+      "gameBuff": "buff_equipsuit_agi_phydmg_01",
+      "modifiers": [{ "attr": 50, "value": "phy_dmg_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "suit_agi01.start",
+      "on": { "event": "fightStart" },
+      "by": "self",
+      "skill": "passive_equipsuit_agi_01",
+      "do": [{ "kind": "buff", "buff": "suit_agi01.phydmg" }]
+    }
+  ]
+}

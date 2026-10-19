@@ -1,0 +1,47 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Akekuri (P5, Wave Tide, Frontiers) supporting Laevatain vs Rhodagn. Her ultimate's three flares return 26 / 27 / 27 SP, each giving a Positive Feedback layer (P1, one shared 10 s timer) and refreshing Frontiers' team DMG +16%; during it the team has ATK +10% (P3) and one Link stack (talent 2), which Laevatain's battle skill uses (+30%). Akekuri's battle skill cuts the ultimate short (the Link would last 5 s more at P5) and inflicts Heat. Basic chains and battle skills bring Rhodagn's stagger bar to its Stagger Node (half of 280), which opens her combo: two thrusts, 10 energy, SP scaled by Intellect (talent 1, capped at ×1.75), two more P1 layers, Wave Tide's ATK +33.6%, and a combo cooldown of 7.65 s (Frontiers ×0.85).",
+  "team": [
+    "akekuri-frontiers.json",
+    "laevatain-forgeborn.json"
+  ],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0019_karin": "full"
+  },
+  "durationSeconds": 45,
+  "crit": "expected",
+  "rotation": [
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_ultimate_skill" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_normal_skill", "at": 2.5 },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_normal_skill" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack1" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack2" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack3" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack4" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_normal_skill" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack1" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack2" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack3" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack4" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_normal_skill" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack1" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack2" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack3" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack4" },
+    { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_normal_skill" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack1" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack2" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack3" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack4" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack1" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack2" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack3" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_attack4" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_normal_skill" },
+    { "operator": "chr_0019_karin", "skill": "chr_0019_karin_combo_skill" }
+  ]
+}

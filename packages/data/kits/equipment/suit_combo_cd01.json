@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_combo_cd01",
+  "sources": [
+    "Qingbo, 3-piece set skill passive_equipsuit_combo_cd01 (rmxlinux Json/SkillData, game 1.6; SkillPatchTable L1: comboskill_cooldown 0.85, spell_up 0.2, duration 15, max_stack 2): cardAttributeModifier attr 47 (ComboSkillCooldownScalar) formulaItem 8 comboskill_cooldown is on the stat panel, and combo cooldowns read it (batch-2 S2). buff_equipsuit_combo_cd01: abilityEvent 30 + CheckSkillType [6] (the wearer casts a combo) → buff_equipsuit_combo_cd01_spellup: attrs 32, 33, 28 (battle, combo, ultimate DMG) + spell_up, stackingType 2 with max max_stack, each layer its own duration (\"Duration of each stack is counted separately\").",
+    "Not in any log or fixture yet."
+  ],
+  "buffs": [
+    {
+      "id": "suit_combo_cd01.spellup",
+      "label": "Skill DMG (Qingbo)",
+      "target": "self",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "gameBuff": "buff_equipsuit_combo_cd01_spellup",
+      "modifiers": [
+        { "attr": 32, "value": "spell_up" },
+        { "attr": 33, "value": "spell_up" },
+        { "attr": 28, "value": "spell_up" }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "suit_combo_cd01.combo_cast",
+      "on": { "event": "cast", "kinds": ["combo"] },
+      "by": "self",
+      "skill": "passive_equipsuit_combo_cd01",
+      "do": [{ "kind": "buff", "buff": "suit_combo_cd01.spellup" }]
+    }
+  ]
+}
