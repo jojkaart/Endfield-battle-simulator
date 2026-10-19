@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, parseReactionEvent, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, simulateRuns, nextRandom, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
+import { advance, apply, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, parseReactionEvent, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, simulateRuns, enemyActionsOf, nextRandom, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -1699,5 +1699,39 @@ describe("rolled crits", () => {
       expect(r.value).toBeLessThan(1);
       x = r.seed;
     }
+  });
+});
+
+describe("enemy actions from the scenario", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const mark: KitBuff = { id: "hitme", label: "hitme", target: "self", duration: 100, modifiers: [] };
+  const withTriggers = (...triggers: KitTrigger[]): GameData => ({ ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, buffs: [...kit.buffs, mark], stacks: [...kit.stacks, { id: "n", label: "n", max: 99 }], triggers: [...kit.triggers, ...triggers] } } } });
+  const count = (on: KitTrigger["on"], by: KitTrigger["by"] = "self"): KitTrigger => ({ id: "count", on, by, do: [{ kind: "gain", gains: [{ stack: "n", amount: 1 }] }] });
+  const run = (g: GameData, enemyActions: NonNullable<TimelineScenario["enemyActions"]>, rotation: RotationAction[] = [], frames = 300) => {
+    const ctx = createContext(g, { ...scenario(rotation), enemyActions });
+    let s = init(ctx);
+    for (const x of rotation) s = apply(ctx, s, x);
+    return advance(ctx, s, frames);
+  };
+
+  it("come at listed frames or every n frames, to the fight's end", () => {
+    expect(enemyActionsOf({ ...scenario([]), durationFrames: 300, enemyActions: [{ kind: "attack", every: 90 }, { kind: "charge", at: [10, 400] }] }).map((a) => [a.frame, a.kind])).toEqual([[10, "charge"], [90, "attack"], [180, "attack"], [270, "attack"]]);
+    expect(enemyActionsOf({ ...scenario([]), durationFrames: 300, enemyActions: [{ kind: "attack", every: 100, from: 0 }] }).map((a) => a.frame)).toEqual([0, 100, 200, 300]);
+  });
+
+  it("an attack is an event for the one attacked; triggers filter by element and by whether it was the controlled operator", () => {
+    const attacks: NonNullable<TimelineScenario["enemyActions"]> = [{ kind: "attack", every: 60 }, { kind: "attack", at: [30], element: "fire" }];
+    expect(run(withTriggers(count({ event: "attacked" })), attacks).stacks[op]?.n).toBe(6);
+    expect(run(withTriggers(count({ event: "attacked", elements: ["fire"] })), attacks).stacks[op]?.n).toBe(1);
+    expect(run(withTriggers(count({ event: "attacked" }, "controlled")), attacks).stacks[op]?.n).toBe(6);
+    expect(run(withTriggers(count({ event: "attacked" }, "teammate")), attacks).stacks[op]?.n ?? 0).toBe(0);
+    expect(run(withTriggers(count({ event: "enemyCharge" }, "anyone")), [{ kind: "charge", at: [5, 50] }]).stacks[op]?.n).toBe(2);
+  });
+
+  it("are on the enemy's clock: a time stop delays them", () => {
+    const g = withTriggers({ id: "m", on: { event: "attacked" }, by: "self", do: [{ kind: "buff", buff: "hitme" }] });
+    const at = (rotation: RotationAction[]) => run(g, [{ kind: "attack", at: [20] }], rotation).buffs.find((b) => b.id === "hitme")?.appliedAt;
+    expect(at([])).toBe(20);
+    expect(at([{ operator: op, skill: L + "ultimate_skill" }])).toBeGreaterThan(20);
   });
 });

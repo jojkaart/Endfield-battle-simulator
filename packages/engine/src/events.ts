@@ -52,6 +52,10 @@ export type BattleEvent =
   | { readonly type: "sp"; readonly frame: number; readonly operator: string; readonly amount: number; readonly kind: SkillType | "none" }
   /** The enemy became Staggered (`operator` dealt the last stagger). */
   | { readonly type: "staggered"; readonly frame: number; readonly operator: string }
+  /** The enemy attacked `operator` (TimelineScenario.enemyActions); `controlled`: whether it was the controlled operator. */
+  | { readonly type: "attacked"; readonly frame: number; readonly operator: string; readonly element: Element; readonly controlled: boolean }
+  /** The enemy started charging a skill; `operator` is the controlled one. */
+  | { readonly type: "enemyCharge"; readonly frame: number; readonly operator: string }
   /** An operator's own stacks were gained or used; `changed`: those whose count changed (a gain capped at the maximum changes none). */
   | { readonly type: "stacks"; readonly frame: number; readonly operator: string; readonly changed?: readonly string[] };
 
@@ -99,6 +103,10 @@ export type TriggerOn =
   /** Someone (`by`) recovers SP for the team by a hit or a trigger (not regeneration); `kinds`: from skills of these kinds. */
   | { readonly event: "sp"; readonly kinds?: readonly (SkillType | "none")[] }
   | { readonly event: "fightStart" }
+  /** The enemy attacks someone (`by`: the one attacked; `controlled` as for hits); `elements`: only attacks of these elements. */
+  | { readonly event: "attacked"; readonly elements?: readonly Element[] }
+  /** The enemy starts charging a skill. */
+  | { readonly event: "enemyCharge" }
   /** The owner's own stack reaches a count. */
   | { readonly event: "stackAtLeast"; readonly stack: string; readonly atLeast: number };
 
@@ -260,6 +268,10 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
       return e.type === "sp" && has(on.kinds, e.kind);
     case "fightStart":
       return e.type === "fightStart";
+    case "attacked":
+      return e.type === "attacked" && has(on.elements, e.element);
+    case "enemyCharge":
+      return e.type === "enemyCharge";
   }
   if (e.type !== "status" || !has(on.fromKinds, e.fromKind)) return false;
   const s = e.event;
@@ -288,10 +300,10 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
 /** Whether the event's cause counts for a trigger (`by`). Stack and own-buff events are the owner's (a buff category's aren't). */
 export function causeMatches(by: KitTrigger["by"], e: BattleEvent, owner: string, on?: TriggerOn): boolean {
   const ownBuff = (e.type === "buffApplied" && !(on && ("categories" in on || "gameBuffs" in on))) || e.type === "buffEnded" || e.type === "buffTick";
-  if (e.type === "stacks" || ownBuff || e.type === "fightStart") return true;
+  if (e.type === "stacks" || ownBuff || e.type === "fightStart" || e.type === "enemyCharge") return true;
   if (by === "anyone") return true;
   if (by === "self") return e.operator === owner;
   if (by === "teammate") return e.operator !== owner;
-  if (e.type === "hit" || e.type === "cast") return e.controlled;
+  if (e.type === "hit" || e.type === "cast" || e.type === "attacked") return e.controlled;
   return false;
 }

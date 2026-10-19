@@ -114,6 +114,8 @@ function stateKey(s: TimelineState): string {
   return JSON.stringify([
     s.frame,
     s.rng,
+    s.enemyActions.length,
+    s.enemyActions[0]?.frame,
     s.controlled,
     last,
     r(s.sp),

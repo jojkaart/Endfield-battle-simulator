@@ -9,7 +9,7 @@
 // reactions and their statuses. What it doesn't model yet is listed in TIMELINE_ASSUMPTIONS
 // and returned with every result.
 
-import type { SkillType } from "./attributes.ts";
+import type { Element, SkillType } from "./attributes.ts";
 import type { Build } from "./build.ts";
 import {
   activeModifiers,
@@ -100,6 +100,33 @@ export interface TimelineScenario {
   readonly startEnergy?: Readonly<Record<string, number | "full">>;
   /** Stacks at the start, per operator and stack, overriding the kit's `initial` (e.g. arrows carried over). */
   readonly startStacks?: Readonly<Record<string, Readonly<Record<string, number>>>>;
+  /** What the enemy does (owner, 2026-10-19: the scenario says when it attacks; default nothing). */
+  readonly enemyActions?: readonly EnemyActionSpec[];
+}
+
+/**
+ * Enemy actions of one kind: at listed frames, or every `every` frames from
+ * `from` (default `every`) to the fight's end. Frames are on the enemy's
+ * clock: a time stop or a freeze delays what comes after it.
+ */
+export interface EnemyActionSpec {
+  /** `attack`: it hits `target`; `charge`: it starts charging a skill (Catcher's combo trigger). */
+  readonly kind: "attack" | "charge";
+  readonly at?: readonly number[];
+  readonly every?: number;
+  readonly from?: number;
+  /** Whom an attack hits: the controlled operator (default), the whole team, or one operator by ID. */
+  readonly target?: string;
+  /** An attack's damage element (default physical), for "when taking Arts DMG" effects. */
+  readonly element?: Element;
+}
+
+/** One enemy action still to come. */
+export interface EnemyAction {
+  readonly frame: number;
+  readonly kind: EnemyActionSpec["kind"];
+  readonly target: string;
+  readonly element: Element;
 }
 
 interface PendingHit {
@@ -183,6 +210,8 @@ export interface TimelineState {
   readonly link: readonly number[];
   /** Until when a control status (Si's Immobilization) freezes the enemy's own clock. */
   readonly enemyFrozenUntil: number;
+  /** The enemy's actions still to come (TimelineScenario.enemyActions), in frame order, on its clock. */
+  readonly enemyActions: readonly EnemyAction[];
   /** The enemy's stagger: its stagger HP left, until when it's Staggered, and whether this stagger's finisher is used. */
   readonly stagger: { readonly poise: number; readonly until: number | null; readonly finisherUsed: boolean };
   /** Global time slow-downs (an ultimate's time stop, a combo's slow-down) still running or to come: per frame from `start`, all but `exempt` (the caster). */
@@ -263,6 +292,7 @@ function initialState(ctx: TimelineContext): TimelineState {
     slowdowns: [],
     stagger: { poise: maxPoise(ctx), until: null, finisherUsed: false },
     enemyFrozenUntil: 0,
+    enemyActions: enemyActionsOf(ctx.scenario),
     link: [],
     enemy: NO_STATUS,
     buffs: [],
@@ -465,7 +495,19 @@ function slowDown(ctx: TimelineContext, st: TimelineState, caster: string, timin
   return s;
 }
 
-/** The enemy's own clock after `start` (its statuses, inflictions, Vulnerable, physical and control statuses, debuffs on it, its stagger) runs `n` frames later. */
+/** A scenario's enemy actions, in frame order (attacks before charges at one frame), up to the fight's end. */
+export function enemyActionsOf(scenario: TimelineScenario): EnemyAction[] {
+  const out: EnemyAction[] = [];
+  for (const spec of scenario.enemyActions ?? []) {
+    if (spec.every !== undefined && !(spec.every > 0)) throw new EngineError(`an enemy action's interval must be positive, not ${spec.every}`);
+    const frames = spec.at ?? [];
+    const every = spec.every !== undefined ? Array.from({ length: Math.max(0, Math.floor((scenario.durationFrames - (spec.from ?? spec.every)) / spec.every) + 1) }, (_, i) => Math.round((spec.from ?? spec.every as number) + i * (spec.every as number))) : [];
+    for (const frame of [...frames, ...every]) if (frame >= 0 && frame <= scenario.durationFrames) out.push({ frame, kind: spec.kind, target: spec.target ?? "controlled", element: spec.element ?? "physical" });
+  }
+  return out.sort((a, b) => a.frame - b.frame || (a.kind === b.kind ? 0 : a.kind === "attack" ? -1 : 1));
+}
+
+/** The enemy's own clock after `start` (its statuses, inflictions, Vulnerable, physical and control statuses, debuffs on it, its stagger, its actions) runs `n` frames later. */
 function shiftEnemy(st: TimelineState, start: number, n: number): TimelineState {
   if (n <= 0) return st;
   const later = (f: number) => (f > start ? f + n : f);
@@ -487,6 +529,7 @@ function shiftEnemy(st: TimelineState, start: number, n: number): TimelineState 
     },
     buffs: st.buffs.map((b) => (b.target === "enemy" ? shiftBuff(b, start, n) : b)),
     stagger: st.stagger.until !== null ? { ...st.stagger, until: later(st.stagger.until) } : st.stagger,
+    enemyActions: st.enemyActions.map((a) => (a.frame > start ? { ...a, frame: a.frame + n } : a)),
   };
 }
 
@@ -1228,6 +1271,13 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   return runTriggers(ctx, st, all, { operator: hit.operator, kind }, ctx.beforeDamage ? (t) => !t.beforeDamage : undefined);
 }
 
+/** The events an enemy action makes: an attack on each operator it hits, or the start of a charge. */
+function enemyActionEvents(ctx: TimelineContext, st: TimelineState, a: EnemyAction): BattleEvent[] {
+  if (a.kind === "charge") return [{ type: "enemyCharge", frame: a.frame, operator: st.controlled }];
+  const targets = a.target === "controlled" ? [st.controlled] : a.target === "team" ? ctx.scenario.team.map((b) => b.operator) : [a.target];
+  return targets.map((operator) => ({ type: "attacked", frame: a.frame, operator, element: a.element, controlled: operator === st.controlled }));
+}
+
 /** Processes every pending hit, status tick and buff expiry up to (and including) a frame, in frame order. */
 export function advance(ctx: TimelineContext, state: TimelineState, frame: number): TimelineState {
   if (frame < state.frame) throw new EngineError(`can't go back from frame ${state.frame} to ${frame}`);
@@ -1242,13 +1292,15 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
     const buffTick = nextBuffTick(st.buffs, frame);
     const due = st.pendingActions.reduce<TimelineState["pendingActions"][number] | null>((a, x) => (x.frame <= frame && (!a || x.frame < a.frame) ? x : a), null);
     const grant = st.pendingEnergy.reduce<TimelineState["pendingEnergy"][number] | null>((a, g) => (g.frame <= frame && (!a || g.frame < a.frame) ? g : a), null);
+    const enemyAction = st.enemyActions[0] !== undefined && st.enemyActions[0].frame <= frame ? st.enemyActions[0] : null;
     // At one frame: ticks of a status already on the enemy, then buffs ending, then delayed trigger actions, energy grants,
-    // buffs' periodic ticks, then hits. Each kind waits for everything earlier.
+    // the enemy's actions, buffs' periodic ticks, then hits. Each kind waits for everything earlier.
     const first = (x: number | null, ...later: (number | null)[]) => x !== null && later.every((y) => y === null || x <= y);
     const hitFrame = hit ? hit.frame : null;
     const dueFrame = due?.frame ?? null;
     const grantFrame = grant?.frame ?? null;
-    if (first(tickDue, expiry, dueFrame, grantFrame, buffTick?.frame ?? null, hitFrame)) {
+    const enemyFrame = enemyAction?.frame ?? null;
+    if (first(tickDue, expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame)) {
       const tickFrame = tickDue as number;
       const before = st.enemy;
       const t = tickStatus(st.enemy, tickFrame);
@@ -1256,7 +1308,7 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
       st = runTriggers(ctx, st, asEvents(t.events, "none"), null);
       continue;
     }
-    if (first(expiry, dueFrame, grantFrame, buffTick?.frame ?? null, hitFrame)) {
+    if (first(expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame)) {
       const at = expiry as number;
       // A buff a cast consumed already ended when it was consumed.
       const ended = st.buffs.filter((b) => b.expiresAt === at && b.cast === undefined);
@@ -1264,7 +1316,7 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
       st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: at, operator: b.owner, buff: b.id, remaining: 0, ...(b.records ? { recorded: b.records.total } : {}) })), null);
       continue;
     }
-    if (due && first(due.frame, grant?.frame ?? null, buffTick?.frame ?? null, hitFrame)) {
+    if (due && first(due.frame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame)) {
       const t = ctx.kits.get(due.owner)?.triggers.find((x) => x.id === due.trigger);
       if (!t) throw new EngineError(`${due.owner} has no trigger ${due.trigger}`);
       st = { ...st, pendingActions: st.pendingActions.filter((x) => x !== due) };
@@ -1272,11 +1324,16 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
       st = runTriggers(ctx, r.state, r.events, due.origin);
       continue;
     }
-    if (grant && first(grant.frame, buffTick?.frame ?? null, hitFrame)) {
+    if (grant && first(grant.frame, enemyFrame, buffTick?.frame ?? null, hitFrame)) {
       st = { ...st, pendingEnergy: st.pendingEnergy.filter((g) => g !== grant) };
       const caster = grant.cast?.operator ?? grant.operator;
       const holds = !grant.if || decide(grant.if, evalContext(ctx.data, ctx.builds.get(caster) as Build, ctx.panels.get(caster) as StatPanel, "", situationAt(ctx, caster, st, grant.frame)));
       if (holds) st = gainEnergy(ctx, st, grant.operator, grant.amount, grant.frame);
+      continue;
+    }
+    if (enemyAction && first(enemyAction.frame, buffTick?.frame ?? null, hitFrame)) {
+      st = { ...st, enemyActions: st.enemyActions.slice(1) };
+      st = runTriggers(ctx, st, enemyActionEvents(ctx, st, enemyAction), null);
       continue;
     }
     if (buffTick && first(buffTick.frame, hitFrame)) {

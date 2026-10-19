@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { FPS, searchRotation, simulate, simulateRuns, type TimelineResult, type Build, type CritMode, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { FPS, searchRotation, simulate, simulateRuns, type TimelineResult, type Build, type CritMode, type Element, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
 import { readBuild } from "./commands.ts";
 import { num, table } from "./format.ts";
 
@@ -21,6 +21,7 @@ interface RawScenario {
   startEnergy?: Record<string, number | "full">;
   startStacks?: Record<string, Record<string, number>>;
   rotation: { operator: string; skill: string; at?: number; repeat?: number }[];
+  enemyActions?: { kind: "attack" | "charge"; at?: number[]; every?: number; from?: number; target?: string; element?: Element }[];
 }
 
 export function readScenario(file: string): TimelineScenario {
@@ -43,6 +44,14 @@ export function readScenario(file: string): TimelineScenario {
     ...(s.controlled ? { controlled: s.controlled } : {}),
     ...(s.startEnergy ? { startEnergy: s.startEnergy } : {}),
     ...(s.startStacks ? { startStacks: s.startStacks } : {}),
+    ...(s.enemyActions ? { enemyActions: s.enemyActions.map((a) => ({
+      kind: a.kind,
+      ...(a.at ? { at: a.at.map((t) => Math.round(t * FPS)) } : {}),
+      ...(a.every !== undefined ? { every: a.every * FPS } : {}),
+      ...(a.from !== undefined ? { from: Math.round(a.from * FPS) } : {}),
+      ...(a.target ? { target: a.target } : {}),
+      ...(a.element ? { element: a.element } : {}),
+    })) } : {}),
   };
 }
 
@@ -98,6 +107,7 @@ export function searchCommand(data: GameData, scenario: TimelineScenario, option
       durationSeconds: scenario.durationFrames / FPS,
       crit: scenario.options.crit,
       ...(scenario.options.seed !== undefined ? { seed: scenario.options.seed } : {}),
+      ...(scenario.enemyActions ? { enemyActions: scenario.enemyActions.map((a) => ({ ...a, ...(a.at ? { at: a.at.map((f) => f / FPS) } : {}), ...(a.every !== undefined ? { every: a.every / FPS } : {}), ...(a.from !== undefined ? { from: a.from / FPS } : {}) })) } : {}),
       ...(scenario.options.conditions ? { conditions: scenario.options.conditions } : {}),
       rotation: found.rotation.map((a) => ({ operator: a.operator, skill: a.skill, ...(a.at !== undefined ? { at: a.at / FPS } : {}) })),
     };

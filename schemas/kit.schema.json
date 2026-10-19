@@ -286,6 +286,10 @@
                   "reaction": {
                     "type": "boolean",
                     "description": "Only hits computed as a reaction or burst (true), or only others (false)."
+                  },
+                  "crit": {
+                    "type": "boolean",
+                    "description": "Only hits that crit (true), or only others (false). With expected crits no hit counts as one: crit effects need rolled crits."
                   }
                 }
               },
@@ -740,6 +744,37 @@
                     "const": "fightStart"
                   }
                 }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "event"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
+                    "const": "attacked"
+                  },
+                  "elements": {
+                    "type": "array",
+                    "items": { "$ref": "#/$defs/element" },
+                    "minItems": 1
+                  }
+                },
+                "description": "The enemy attacks someone (the scenario's enemyActions); `by` is the one attacked (`controlled`: the controlled operator). `elements`: only attacks of these elements."
+              },
+              {
+                "type": "object",
+                "required": [
+                  "event"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
+                    "const": "enemyCharge"
+                  }
+                },
+                "description": "The enemy starts charging a skill (the scenario's enemyActions)."
               },
               {
                 "type": "object",
