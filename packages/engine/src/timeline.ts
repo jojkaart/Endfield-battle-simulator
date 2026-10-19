@@ -1011,7 +1011,7 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
           st = { ...st, pendingActions: [...st.pendingActions, { frame: e.frame + delay, owner, trigger: t.id, event: e, origin, ...cast, ...(t.awaited ? { awaited: true } : {}) }] };
           continue;
         }
-        const r = runActions(ctx, st, t, owner, e, origin);
+        const r = runActions(ctx, st, t, owner, e, origin, atEvent);
         st = r.state;
         queue.push(...r.events);
       }
@@ -1021,7 +1021,13 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
 }
 
 /** Does what a trigger says, as its owner, at the event's frame. Returns the events it caused. */
-function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, owner: string, e: BattleEvent, origin: Origin | null): { state: TimelineState; events: BattleEvent[] } {
+/**
+ * A trigger's actions, in order. `atEvent`: the state at its event, before
+ * any trigger on it acted: a buff takes its values from it, as the
+ * trigger's `if` does (Grizzled Edge sees the crystals its owner's Crush
+ * consumes); delayed actions read the state when they run.
+ */
+function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, owner: string, e: BattleEvent, origin: Origin | null, atEvent?: TimelineState): { state: TimelineState; events: BattleEvent[] } {
   let st = state;
   const events: BattleEvent[] = [];
   const frame = e.frame;
@@ -1086,7 +1092,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         const layers = a.layers === undefined ? 1 : Math.max(0, Math.round(evaluate(a.layers, ec())));
         let applied = false;
         for (let i = 0; i < layers; i++) {
-          const r = addBuff(ctx, st, owner, triggerSkillId(owner, t), def, frame, triggerSituation(ctx, owner, st, e, consumed), subject);
+          const r = addBuff(ctx, st, owner, triggerSkillId(owner, t), def, frame, triggerSituation(ctx, owner, atEvent ?? st, e, consumed), subject);
           st = r.state;
           applied ||= r.applied;
         }
