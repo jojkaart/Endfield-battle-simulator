@@ -1,0 +1,42 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_pulse_cryst01",
+  "sources": [
+    "Pulser Labs, 3-piece set skill passive_equipsuit_cpinflict_01 (SkillPatchTable: phy_spell_up 30, pulse_dmg_up 0.5, duration 10, cryst_dmg_up 0.5, duration2 10; the BuffData default durations of 8 s are overridden). Arts Intensity +phy_spell_up (cardAttributeModifier attribute 87) is in the stat panel.",
+    "buff_equipsuit_cpinflict_01 on the wearer: abilityEvent 102 (the wearer applies a buff) + CheckBuffIdInContext tag 1466867135 (Electrification) → buff_equipsuit_cpinflict_01_elecdamageadd (attribute 52 Electric DMG +pulse_dmg_up for duration); tag 1535684437 (Solidification) → buff_equipsuit_cpinflict_01_crystdamageadd (attribute 53 Cryo DMG +cryst_dmg_up for duration2). Both stackingType 2, max 1 (one instance, refreshed). Description: \"After the wearer applies Electrification, the wearer gains Electric DMG +50% for 10s; after the wearer applies Solidification, Cryo DMG +50% for 10s.\" Forced reactions count (the tag is on the status buff itself). Docs: docs/kit-batches/batch-2/chr_0023_antal.md."
+  ],
+  "buffs": [
+    {
+      "id": "suit_pulse_cryst01.electric_dmg",
+      "label": "Pulser Labs: Electric DMG up (after applying Electrification)",
+      "target": "self",
+      "gameBuff": "buff_equipsuit_cpinflict_01_elecdamageadd",
+      "duration": "duration",
+      "modifiers": [{ "attr": 52, "value": "pulse_dmg_up" }]
+    },
+    {
+      "id": "suit_pulse_cryst01.cryo_dmg",
+      "label": "Pulser Labs: Cryo DMG up (after applying Solidification)",
+      "target": "self",
+      "gameBuff": "buff_equipsuit_cpinflict_01_crystdamageadd",
+      "duration": "duration2",
+      "modifiers": [{ "attr": 53, "value": "cryst_dmg_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "suit_pulse_cryst01.electrification",
+      "on": { "event": "reaction", "statuses": ["electrification"] },
+      "by": "self",
+      "skill": "passive_equipsuit_cpinflict_01",
+      "do": [{ "kind": "buff", "buff": "suit_pulse_cryst01.electric_dmg" }]
+    },
+    {
+      "id": "suit_pulse_cryst01.solidification",
+      "on": { "event": "reaction", "statuses": ["solidification"] },
+      "by": "self",
+      "skill": "passive_equipsuit_cpinflict_01",
+      "do": [{ "kind": "buff", "buff": "suit_pulse_cryst01.cryo_dmg" }]
+    }
+  ]
+}

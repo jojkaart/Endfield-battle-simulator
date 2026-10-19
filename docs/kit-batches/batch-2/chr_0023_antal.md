@@ -430,3 +430,135 @@ Notes:
   the Treatment Effect below 50% HP isn't modelled). A kit file can be
   added for completeness of "every gear set has a kit" with only its
   `sources`, if the batch wants one.
+
+## Kit (2026-10-19)
+
+### Re-analysis against the engine
+
+| Row / gap | Now | How |
+|---|---|---|
+| 1–2, 4, 7, 15, 18 | covered | as planned (hand-written factors and poise; D3 leftovers below) |
+| 3 (attack4, G3.2) | covered (hand-written) | two count-1 hits `first` (Final Strike, `atb`, `poise`, `poiseControlledOnly`) / `second` (`finalStrike: false`). Not a `branch`: the two projectiles each run the IfElse, the first sets the marker the second sees |
+| 5 dive attack | open (S10, batch 1) | kept for `calc`, not castable |
+| 8 team energy | covered | `teamEnergy: [{frame: 20, ratio: 1}]` (replaces `teamEnergyFrame`); the compiler agrees |
+| 9 Focus before its own hit | covered | hit `buffs: [{buff: focus, beforeDamage: true}]`; a test pins the hit's Susceptibility 1.10 |
+| 11 hit-stop | open (Ti1b, batch 1) | not modelled |
+| 12–14 combo triggers | covered | `inflictionApplied` / `physicalStatus` + `buffActive: focus`; U1, U2 stay unknowns |
+| 16–17 (G1 = T3) | **covered** | combo hit `applies: [{infliction, element: event}, {physicalStatus, status: event}]`; the window records its latest opening event. Simulated: a Lift after Gilberta's forced Lift, a Nature burst after her Nature explosion, nothing from the other entry |
+| 19–20 ultimate | covered | hitless skill + delayed cast trigger `ultimate_amp` (`delay: 49`, now `awaited: true`: the buff is the skill's own effect) |
+| 23 P3 (kills) | open (N1, deferred) | no effect against one enemy |
+| 25 P5 | covered | `focus_p5_timer` → `p5_bonus` → `focus_p5`, ended by `p5_reset`; U3 stays |
+| 26 talent 1 (G2 = C2) | **covered** | `if: {eventOperator: {operatorModifier: {zone: "amp"}}}`: any kit Amp on the hitter (Liino's Cosmovoice too), `cooldownPer: eventSubject`. Re-checked: `buff_chr_0023_antal_talent_1`'s AuraAction has `excludeOwner: false`, so he heals himself too (half of U4 settled: `by: anyone` is right). Still unknown: whether his own Electric / Heat Amp carries the Amp tag −1748167886 (U4) |
+| 27 talent 2 | **covered, with a new gap** | was n/a; with E1 a trigger `on: {event: attacked, elements: [physical]}`, `by: self` → `heal` self. The data (`buff_chr_0023_antal_talent_2`: abilityEvent 101, not dashing, CheckDamageType 0, **Probablity** `probability` 0.30) needs a chance: new gap K1 below. Interim: every Physical attack on him heals |
+| 28 / G3 (= D3) | open (batch-2 open list) | the six disagreements are in `skillCompile.test.ts` KNOWN (Antal added to its OPERATORS): attack4 count / finalStrike ×3, finisher factors ×2, the combo's conditional inflictions |
+| 29–35 equipment | covered | below |
+
+No V3 question: his only SP grants are `atb` on hits (natural) and P3 (not modelled).
+
+### New gap
+
+**K1. A trigger that fires with a chance** (family: triggers).
+- *feature:* a trigger (or action) field `chance: ValueExpr` (0–1), rolled
+  from its own seeded stream (`trigger`, beside `crit` and `dodge`), judged
+  after `if`; with expected crits either the expected count is needed (a
+  heal or a buff with probability p) or the roll anyway. Also a predicate
+  "the operator is dashing" (CheckBuffStackNumAdvanced `buff_common_dash` = 0),
+  or `attacked` not firing for an operator mid-dash (a failed dodge).
+- *evidence:* SkillData/BuffData `Probablity` in `buff_chr_0023_antal_talent_2`
+  (0.30: immunity + self-heal), `buff_chr_0022_bounda_talent_2` (Fluorite:
+  0.2, P2 +0.1: Arts immunity + ATK +20% for 10 s, which acts on damage),
+  `buff_equipsuit_magicinfdb_01/_02`, `buff_chr_0016_laevat_combo_skill_hit`
+  (0.5 knock-back directions only), `buff_common_enemy_numshield_zero`.
+- *impact:* for Antal heal events only (×1/0.3 too many talent-2 heals;
+  nothing in any kit reacts to an untagged self-heal today). Shared with
+  Fluorite's talent 2, where it changes damage; whichever interim her kit
+  takes, the two should agree.
+
+### What was written
+
+- `packages/data/kits/operators/chr_0023_antal.json`: the plan's kit with
+  `teamEnergy`, the combo's `element: event` / `status: event`, talent 1 on
+  `operatorModifier`, `ultimate_amp` awaited, and `talent2_heal`.
+- Equipment: `wpn_funnel_0001` (Hypernova Auto: ATK + from `fightStart`,
+  full HP assumed), `wpn_funnel_0003` (Fluorescent Roc: ATK + after a
+  battle-skill hit), `suit_pulse_cryst01` (Pulser Labs: Electric / Cryo
+  DMG + after the wearer's Electrification / Solidification), and
+  sources-only kits for `wpn_funnel_0002` (Jiminy 12: stat panel only) and
+  `suit_will01` (Mordvolt Resistant: stat panel, HP-gated heal effect), as
+  `suit_heal01` does.
+- `examples/antal-p5-roc.json` (P5, Fluorescent Roc, 4 × Pulser Labs) and
+  `examples/antal-focus.scenario.json` (with Gilberta and Laevatain; the
+  enemy attacks Antal every 8 s): total 490,720.
+- `tests/kit-antal.test.ts` (9 tests): Focus on its own hit; the combo's
+  Lift and Nature burst; Amp 1.22 at P5 / 1.20 at P0 on Laevatain's hits;
+  P5's 1.14 after 20 s and 1.10 after a re-cast (1.10 throughout at P4);
+  talent 1 once per operator, talent 2 on Physical attacks only, neither
+  unlearned; Fluorescent Roc (0.336, not on the triggering hit); Hypernova
+  (0.42 from the start); Pulser Labs on Estella (Solidification → Cryo DMG
+  +0.5 for 300 frames) and on Liino (forced Electrification → Electric DMG
+  +0.5 on her next Electric hits). Antal himself rarely triggers Pulser
+  Labs: his combo repeats the window's element (a burst on the same
+  element), and nothing else of his inflicts.
+
+### Deviations from the plan
+
+- Talent 2 got a trigger (E1 exists now); the chance is the new gap K1.
+- `ultimate_amp` is `awaited` (a step without `at` after the ultimate
+  waits for the Amp; no effect in practice: the channel runs to 56).
+- Sources-only kits for Jiminy 12 and Mordvolt Resistant.
+
+### Verification
+
+- `npm run check` passes (463 vitest tests, typecheck, lint, tools).
+- Logs: no fixture has Antal (before → after: none). The only fixture with
+  his equipment is `fixtures/pending/zmdlogs-e82d45c46040.json` (Perlica,
+  3 × Pulser Labs): `zmdlogs check` unchanged before → after (the checker
+  reads logged buffs; Perlica has no kit). Her Electrification at t=7544
+  and her battle-skill hit both carry `buff_equipsuit_cpinflict_01_elecdamageadd`
+  (+0.5 Electric) as a boundary effect, which supports the kit's
+  trigger-on-reaction reading. The checker already tries that hit with
+  and without the buff, so the kit doesn't change that file's ×1.209.
+- Spot check (scratch script over the example, `triggerState` and hit
+  modifiers): every Antal trigger fires (`combo_infliction`,
+  `combo_physical`, `ultimate_amp`, `p5_bonus`, `p5_reset` ×2,
+  `talent1_heal` for all three operators, `talent2_heal` ×5,
+  `wpn_funnel_0003.battle_hit` ×2), every buff acts on a hit (`focus`,
+  `focus_p5`, `overclocked_moment`, `wpn_funnel_0003.atk_up`;
+  `focus_p5_timer` has no modifiers). Pulser Labs and Hypernova are
+  covered by the tests above.
+- Example totals unchanged: arcane-will-solo 102,141, estella-solidification
+  186,537, gilberta-gravity-field 375,390, laevatain-solo 739,231,
+  liino-laevatain 619,381, si-laevatain 1,017,030, typhoeus-gilberta
+  1,058,494.
+
+Logs that would check him (unchanged from "Verification" above, in order):
+Antal with an infliction teammate (Focus on the battle-skill hit, the
+combo's key and burst, the Amp on a Heat teammate), with a Lift / Knock
+Down teammate (the combo's `buff_physical_airborne` / `_knockdown` under
+him), a P5 Antal holding Focus over 20 s, and his weapons.
+
+### Open questions
+
+U1 (Vulnerable-only physical status), U2 (instant reaction), U3 (P5
+duration), U4 (his own Amp's tag), U5 (latest event wins), K1 (chance);
+whether two Electric / Heat Amp sources add (as in-game test 38 asks for
+Susceptibility).
+
+### Proposed in-game tests
+
+1. *Antal's combo after a physical status* (G1 confirmation, ready if you
+   have Antal and a Lift operator such as Gilberta or Estella): battle
+   skill on a dummy, then the teammate's Lift, then Antal's combo. Does a
+   second Lift damage number appear when the combo lands?
+2. *Antal's combo on a Vulnerable-only status* (U1): on a dummy with
+   Focus and no Vulnerable, a teammate's non-forced Lift or Knock Down
+   (it only adds Vulnerable). Does Antal's combo icon light up?
+3. *Antal's P5* (U3, P5 only): Focus a dummy, then the same teammate
+   Electric or Heat hit at about 10 s, 25 s and 45 s without re-casting.
+   Is the number at 25 s about 4% higher than at 10 s, and still at 45 s?
+4. *Talent 1 under his own ultimate* (U4): a teammate's battle skill
+   under Overclocked Moment, no other Amp in the team. Does a green heal
+   number appear on the teammate?
+5. *Talent 2's chance* (K1, low priority): let a dummy or enemy hit Antal
+   with Physical attacks ten times without dodging. Do heal numbers
+   appear on roughly 3 of them, or on every one?

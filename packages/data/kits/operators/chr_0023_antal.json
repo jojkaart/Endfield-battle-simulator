@@ -1,0 +1,243 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0023_antal",
+  "sources": [
+    "Kit plan: docs/kit-batches/batch-2/chr_0023_antal.md (analysis 1 kit plan, re-analysed in its \"Kit (2026-10-19)\" section). Hit structure and frames: rmxlinux Json/SkillData chr_0023_antal_* and Json/BuffData buff_chr_0023_antal_* (game 1.6), as compiled by efsim kit-draft v2 and corrected by hand where noted; values from SkillPatchTable (level 12: attack1–4 atk_scale 0.52 / 0.63 / 0.77 / 1.15, attack4 poise 15 and atb 15, finisher 9.0, dive 1.8, battle skill atk_scale 2.0, rate 0.10, duration 60, cost 100 SP; combo atk_scale 3.4, poise 10, usp 10, cooldown 24 s; ultimate rate 0.20, duration 12, cost 100, cooldown 20 s).",
+    "Basic attacks launch projectiles (LaunchProjectile with assignBlackboard): their damage is in the *_projhit files and logged under those keys, and they land even if the attack is cancelled (detached). attack3: two launches at 14 and 18 after one ModifyDynamicBlackboard atk_scale ×0.5. attack4: ×0.5, two launches at frame 27 of chr_0023_antal_attack4_powerattack_projhit, whose IfElse on the timed marker have_recovered (returnTrueIfNotExists) makes the first landing the Final Strike (mask 2097280, ObtainCostAction atb, poise onlyEnableForMainChar, CreateTimedMarker have_recovered 0.5 s) and the second a plain mask-128 hit without SP or stagger (hand-written: kit-draft gives each branch count 2). Finisher (power_attack, skillSpecification 8): BreakingAttackCalculation atk_scale × multiplier 0.06 at frames 10, 12, 14, 15, 16 (power_attack02_projhit) and × 0.7 at 25 (power_attack_projhit), hand-written factors; finisher SP is the engine's (GainBreakingAttackAtb).",
+    "Skill descriptions (CharGrowthTable + I18nTextTable_EN). Battle skill \"Specified Research Subject\": \"Applies Focus with a long duration on the enemy and deals Electric DMG. An enemy with an active Focus also suffers Electric Susceptibility and Heat Susceptibility. Focus can only be applied to 1 enemy at any given time.\" Combo \"EMP Test Site\": \"COMBO TRIGGER: When an enemy with active Focus suffers a Physical Status or Arts Infliction. Triggers 1 energy explosion on the enemy that deals Electric DMG and applies another stack of the same Physical Status or Arts Infliction.\" Ultimate \"Overclocked Moment\": \"Applies temporary Electric Amp and Heat Amp to the entire team.\"",
+    "Combo application: chr_0023_antal_combo_skill frame 21, before its DamageAction, SwitchAction EntityBB_combo_type {0: by EntityBB_combo_index SpellInfliction Heat / Electric / Cryo / Nature; 1: AirborneAction (not forced) / KnockDownAction / FractureAction (Breach) / CrushAction damageMultiplier 1.0; 2: nothing}: the infliction or physical status of the event that opened the window (applications element: event / status: event; the latest event that opened or refreshed the window counts, assumed).",
+    "Talents and potentials. Talent 1 \"Improviser\" (buff_chr_0023_antal_talent_1: AuraAction, excludeOwner false, gives the team buff_chr_0023_antal_talent_1_heal_trigger): abilityEvent 13, CheckGlobalCDTimer, CheckTagMatch −1748167886 (Amp) on the ally, CheckDamageDecorateMask checkType 1 mask 8960 (battle, combo, ultimate), untagged HealAction, AddGlobalCDTimer cd (30 s, per operator). Talent 2 \"Subconscious Act\" (buff_chr_0023_antal_talent_2): abilityEvent 101 (Antal takes damage), CheckBuffStackNumAdvanced buff_common_dash = 0 (not dashing), CheckDamageType 0 (Physical), Probablity probability (0.30), then buff_common_damage_immune_talent 0.01 s and an untagged self-heal. P1 Amp rate ×1.1, P2 ultimate cost ×0.9, P4 Intellect +10 and Max HP +10% come through the stat panel and skill values. P3 (15 SP when an enemy with Focus is defeated, tageffect abilityEvent 8) isn't modelled: kills aren't (N1, deferred). P5: see the focus_p5 buffs.",
+    "Ultimate energy: max 100 (90 at P2); the combo's ObtainCostAction costType 0 gives himself usp 10 at frame 21; the battle skill gives the team its SP energy at frame 20 (buff_common_obtain_ultimate_sp). No RefrainObtainUsp in his files. Not modelled: the battle skill's HitStopAction (char_hard_stop 0.1 s; Ti1b), the dive attack in rotations (S10), the dash attack (SkillPatchTable only, no SkillData file).",
+    "Not verified against a log: no committed fixture has Antal. Unknowns (in-game tests proposed in the report): whether a physical status that only adds Vulnerable opens the combo (U1, here: no), whether an infliction that reacts at once opens it (U2, here: no), whether P5's +4% holds for the rest of Focus (U3, here: yes), whether his own Electric / Heat Amp carries the Amp tag talent 1 checks (U4, here: yes)."
+  ],
+  "element": "pulse",
+  "buffs": [
+    {
+      "id": "focus",
+      "label": "Focus: Electric and Heat Susceptibility",
+      "target": "enemy",
+      "gameBuff": "buff_chr_0023_antal_tageffect",
+      "duration": "duration",
+      "modifiers": [{ "zone": "susceptibility", "elements": ["pulse", "fire"], "value": "rate" }],
+      "note": "Battle skill frame 20: FinishBuffAction (the old Focus), CreateBuffAction buff_chr_0023_antal_normal_skill (rate, duration 60 s, P3/P5 keys) before the DamageAction; its start creates buff_chr_0023_antal_tageffect on the enemy: VulnerableAction subType 6 (Electric) and 4 (Heat) with rate (0.10 at level 12). A re-cast replaces it."
+    },
+    {
+      "id": "focus_p5_timer",
+      "label": "Focus: 20 s on the same target (P5 timer)",
+      "target": "enemy",
+      "duration": "delay_time",
+      "modifiers": [],
+      "note": "tageffect buffEvent 1: triggerInterval delay_time (0 below P5: not applied; 20 at P5), waitFirstTriggerInterval, maxTriggerCnt 1. A re-cast replaces it (the timer restarts without a buffEnded), so it only ends by running out 20 s after the latest Focus."
+    },
+    {
+      "id": "focus_p5",
+      "label": "Focus held 20 s (P5): Electric and Heat Susceptibility +",
+      "target": "enemy",
+      "duration": { "sum": ["duration", { "product": [-1, "delay_time"] }] },
+      "modifiers": [{ "zone": "susceptibility", "elements": ["pulse", "fire"], "value": "potential_5_rate" }],
+      "note": "tageffect's interval tick at P5 creates buff_chr_0023_antal_talent_1_combotrigger (0.1 s) on the enemy, which the VulnerableActions' enhancingList (operationType 1, + potential_5_rate 0.04) names. Assumed: the bonus holds for the rest of that Focus (U3). Lasts what Focus has left (60 − 20 s); the next battle skill ends it at its frame 20 (p5_reset)."
+    },
+    {
+      "id": "overclocked_moment",
+      "label": "Overclocked Moment: team Electric and Heat Amp",
+      "target": "team",
+      "gameBuff": "buff_chr_0023_antal_utimate_skill",
+      "duration": "duration",
+      "modifiers": [{ "zone": "amp", "elements": ["pulse", "fire"], "value": "rate" }],
+      "note": "Ultimate frame 49: CreateBuffAction buff_chr_0023_antal_utimate_skill on every team member (CharacterTeamFinder) with duration (12 s) and rate (0.20 at level 12; P1 ×1.1): EnhancedAction subType 6 (Electric, icon_battle_affix_pulse_enhance) and 4 (Heat, icon_battle_affix_fire_enhance); stackingType 2 max 1."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_infliction",
+      "on": { "event": "inflictionApplied" },
+      "by": "anyone",
+      "if": { "buffActive": "focus" },
+      "do": [{ "kind": "openCombo" }],
+      "note": "CharGrowthTable: \"COMBO TRIGGER: When an enemy with active Focus suffers a Physical Status or Arts Infliction.\" (infliction half). An infliction that reacts at once isn't an inflictionApplied (U2, in-game test 35 asks it for Arcane). The window records the element for the combo's element: event."
+    },
+    {
+      "id": "combo_physical",
+      "on": { "event": "physicalStatus" },
+      "by": "anyone",
+      "if": { "buffActive": "focus" },
+      "do": [{ "kind": "openCombo" }],
+      "note": "Physical Status half: Lift, Knock Down, Crush, Breach (the combo's switch has these four). A non-forced Lift / Knock Down on an enemy without Vulnerable only adds Vulnerable (a vulnerable event, not this one): assumed not to open the window (U1). The window records the status for the combo's status: event."
+    },
+    {
+      "id": "ultimate_amp",
+      "on": { "event": "cast", "skills": ["chr_0023_antal_ultimate_skill"] },
+      "by": "self",
+      "delay": 49,
+      "awaited": true,
+      "skill": "chr_0023_antal_ultimate_skill",
+      "do": [{ "kind": "buff", "buff": "overclocked_moment" }],
+      "note": "The ultimate has no DamageAction: its effect is the team buff at frame 49 (inside its cantCastSkill / cantSwitchPosition channel 0–56)."
+    },
+    {
+      "id": "p5_bonus",
+      "on": { "event": "buffEnded", "buff": "focus_p5_timer" },
+      "by": "self",
+      "skill": "chr_0023_antal_normal_skill",
+      "do": [{ "kind": "buff", "buff": "focus_p5" }],
+      "note": "P5: Focus held delay_time (20 s) on the same target."
+    },
+    {
+      "id": "p5_reset",
+      "on": { "event": "cast", "skills": ["chr_0023_antal_normal_skill"] },
+      "by": "self",
+      "delay": 20,
+      "do": [{ "kind": "endBuff", "buff": "focus_p5" }],
+      "note": "A new Focus (FinishBuffAction finishAll at frame 20) ends the P5 bonus of the old one. Not detached: a battle skill cut before frame 20 keeps it, as the game's FinishBuff would."
+    },
+    {
+      "id": "talent1_heal",
+      "on": { "event": "hit", "kinds": ["battle", "combo", "ultimate"] },
+      "by": "anyone",
+      "if": { "all": [{ "talentAtLeast": [0, 1] }, { "eventOperator": { "operatorModifier": { "zone": "amp" } } }] },
+      "cooldown": { "talent": 0, "key": "cd" },
+      "cooldownPer": "eventSubject",
+      "do": [{ "kind": "heal", "target": "eventOperator" }],
+      "note": "Talent 1: \"After an Amped teammate's skill deals DMG, Antal restores the said teammate's HP [...] 1 time every {cd}s for each operator.\" Amped: any kit buff with an Amp modifier reaching the hitter (his own Overclocked Moment counts: U4). The aura doesn't exclude its owner, so Antal heals himself too. Heal amounts aren't modelled; the heal is an event for heal triggers."
+    },
+    {
+      "id": "talent2_heal",
+      "on": { "event": "attacked", "elements": ["physical"] },
+      "by": "self",
+      "if": { "talentAtLeast": [1, 1] },
+      "do": [{ "kind": "heal", "target": "self" }],
+      "note": "Talent 2: \"Gains {probability:0%} chance of Physical DMG immunity and restores HP of self.\" Interim: the 30% chance isn't modelled (triggers have no seeded chance), so every Physical enemy attack on him that isn't perfectly dodged heals him; the game also skips it while he dashes (a failed dodge). The immunity is defensive (incoming damage isn't modelled). Heal amounts aren't modelled; the heal is an event for heal triggers."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0023_antal_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [{ "id": "projhit", "scale": ["atk_scale"], "frames": [8], "events": ["chr_0023_antal_attack1_projhit"], "sp": "atb", "detached": true }]
+    },
+    {
+      "skillId": "chr_0023_antal_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [{ "id": "projhit", "scale": ["atk_scale"], "frames": [12], "events": ["chr_0023_antal_attack2_projhit"], "sp": "atb", "detached": true }]
+    },
+    {
+      "skillId": "chr_0023_antal_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": ["atk_scale"],
+          "count": 2,
+          "frames": [14, 18],
+          "events": ["chr_0023_antal_attack3_projhit"],
+          "factor": 0.5,
+          "sp": "atb",
+          "detached": true,
+          "note": "ModifyDynamicBlackboard atk_scale ×0.5 once, before both launches."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0023_antal_attack4",
+      "label": "Basic attack 4 (final strike)",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "first",
+          "label": "Final strike, first orb",
+          "scale": ["atk_scale"],
+          "frames": [27],
+          "events": ["chr_0023_antal_attack4_powerattack_projhit"],
+          "factor": 0.5,
+          "sp": "atb",
+          "poise": "poise",
+          "poiseControlledOnly": true,
+          "finalStrike": true,
+          "detached": true,
+          "note": "No have_recovered marker yet: the Final Strike branch (mask 2097280, atb, poise for the controlled operator), which sets the marker for 0.5 s."
+        },
+        {
+          "id": "second",
+          "label": "Final strike, second orb",
+          "scale": ["atk_scale"],
+          "frames": [27],
+          "events": ["chr_0023_antal_attack4_powerattack_projhit"],
+          "factor": 0.5,
+          "finalStrike": false,
+          "detached": true,
+          "note": "Marker present: the plain branch (mask 128), no SP, no stagger."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0023_antal_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        { "id": "small", "scale": ["atk_scale"], "count": 5, "frames": [10, 12, 14, 15, 16], "events": ["chr_0023_antal_power_attack02_projhit"], "factor": 0.06, "detached": true },
+        { "id": "final", "scale": ["atk_scale"], "frames": [25], "events": ["chr_0023_antal_power_attack_projhit"], "factor": 0.7, "detached": true }
+      ]
+    },
+    {
+      "skillId": "chr_0023_antal_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [1],
+          "sp": "atb",
+          "note": "Needs mid-air, so the engine won't schedule it (rotations have no jumps, S10); kept for calc."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0023_antal_normal_skill",
+      "label": "Battle skill: Specified Research Subject",
+      "damageType": "battle",
+      "teamEnergy": [{ "frame": 20, "ratio": 1 }],
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [20],
+          "buffs": [
+            { "buff": "focus", "beforeDamage": true },
+            { "buff": "focus_p5_timer", "beforeDamage": true }
+          ],
+          "note": "Focus is created before the DamageAction, so this hit already has its Susceptibility. No poise (the key isn't in SkillPatchTable; SkillData default 0). The ObtainCostAction potential_3_atb belongs to Focus's enemy-defeated event (P3), not to this hit."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0023_antal_combo_skill",
+      "label": "Combo skill: EMP Test Site",
+      "damageType": "combo",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [21],
+          "energy": "usp",
+          "poise": "poise",
+          "applies": [
+            { "kind": "infliction", "element": "event" },
+            { "kind": "physicalStatus", "status": "event" }
+          ],
+          "note": "Exactly one of the two acts: the infliction of an infliction-opened window, or the (non-forced) physical status of a physical-opened one."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0023_antal_ultimate_skill",
+      "label": "Ultimate: Overclocked Moment",
+      "damageType": "ultimate",
+      "hits": [],
+      "note": "No damage: the team Amp at frame 49 (trigger ultimate_amp)."
+    }
+  ]
+}
