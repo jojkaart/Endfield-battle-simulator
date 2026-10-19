@@ -146,6 +146,13 @@ type KitApplication = NonNullable<KitHit["applies"]>[number];
 const kitAppText = (a: KitApplication) => (a.kind === "infliction" ? `infliction ${a.element}` : a.kind === "forcedReaction" ? `forced ${a.status}` : a.kind === "consumeInfliction" ? `consume ${(a.elements ?? []).join("+")}` : null);
 const dataAppText = (e: CompiledEffect) => (e.kind === "infliction" ? `infliction ${e.element}` : e.kind === "forcedReaction" ? `forced ${e.status ?? "?"}` : e.kind === "consumeInfliction" ? `consume ${e.element ?? "?"}` : null);
 const valueText = (v: unknown) => (typeof v === "string" ? v : JSON.stringify(v));
+/** The first plain value key a ValueExpr names (a string anywhere in it), if any. */
+function firstValueKey(v: unknown): string | undefined {
+  if (typeof v === "string") return v;
+  if (Array.isArray(v)) return v.map(firstValueKey).find((k) => k !== undefined);
+  if (v && typeof v === "object") return Object.values(v).map(firstValueKey).find((k) => k !== undefined);
+  return undefined;
+}
 /** The first two undecided conditions on the way, for a readable line. */
 const branchText = (b: readonly string[] | undefined) => (b?.length ? ` (${b.slice(0, 2).join(", ")}${b.length > 2 ? ", …" : ""})` : "");
 
@@ -190,7 +197,8 @@ function kitDisagreements(): string[] {
           if (!found.length) out.push(`${tag}: kit ${h.reaction.kind} at [${(h.frames ?? []).join(", ")}], data none there (${c.effects.filter((e) => e.kind === "burst").map((e) => e.frame).join(", ") || "no bursts"})`);
           continue;
         }
-        const key = h.scale[0] as string;
+        // A hit whose multiplier is all scaleValue (Si's combo final hit) is matched by the first value key it names.
+        const key = (h.scale[0] ?? firstValueKey(h.scaleValue)) as string;
         const byKey = c.landings.filter((l) => l.scale.keys.includes(key) || (l.scale.expr ?? "").includes(key));
         if (byKey.length === 0) {
           out.push(`${tag}: no landing scaled by ${key} (data: ${keysText(c.landings) || "no landings"})`);
@@ -200,7 +208,7 @@ function kitDisagreements(): string[] {
         if (byEvent.length === 0) out.push(`${tag} events: kit [${h.events.join(", ")}], data [${[...new Set(byKey.map((l) => l.file))].join(", ")}]`);
         const cand = byEvent.length ? byEvent : byKey;
         const kitKeys = [...h.scale].sort().join(" × ");
-        if (!cand.some((l) => !l.scale.expr && [...l.scale.keys].sort().join(" × ") === kitKeys)) out.push(`${tag} scale: kit ${h.scale.join(" × ")}, data ${keysText(cand)}`);
+        if (!cand.some((l) => !l.scale.expr && [...l.scale.keys].sort().join(" × ") === kitKeys)) out.push(`${tag} scale: kit ${[...h.scale, ...(h.scaleValue !== undefined ? [valueText(h.scaleValue)] : [])].join(" × ")}, data ${keysText(cand)}`);
         const kitFactor = round(h.factor ?? 1);
         const factors = [...new Set(cand.map((l) => round(l.scale.factor)))];
         if (!factors.includes(kitFactor)) out.push(`${tag} factor: kit ${kitFactor}, data ${factors.join(" | ")}`);
@@ -277,14 +285,15 @@ const KNOWN: string[] = [
   "chr_0032_lizhiyan_ultimate_skill energyBlockSeconds: kit 1.567, data 21.567",
   // WILL (EntityBB_wisd_greater_will < 1): an infliction of the enemy's current element (stack checks natural → cryst → pulse → fire), `element: enemy` in the kit; INT: the forced Corrosion.
   "chr_0032_lizhiyan_ultimate_skill applies at 47: kit [infliction enemy, forced corrosion], data [], conditionally [infliction natural, infliction cryst, infliction pulse, infliction fire]",
-  // Finisher (BreakingAttackCalculation, mask 132): four DamageActions at 3, 12, 21, 37; the kit has one at 37.
-  "chr_0036_jsspsi_power_attack: data lands chr_0036_jsspsi_power_attack atk_scale at [3, 12, 21], no kit hit",
-  // Heat when SaveCharTypeIdToIntBySquadSlot (team slot 1's element) = 0, else Cryo; the kit always applies Cryo (batch-1 kit errors).
-  "chr_0036_jsspsi_normal_skill applies at 15: kit [infliction cryst], data [], conditionally [infliction fire]",
-  // The finisher's scale is atk_scale2 + (EntityBB_combo_count, +1 with P5) × atk_scale2_1 (SimpleCalcBB); the kit splits it into three hits as a lower bound.
-  "chr_0036_jsspsi_combo_skill/final_base scale: kit atk_scale2, data ((($EntityBB_combo_count + 1) × atk_scale2_1) + atk_scale2) | (($EntityBB_combo_count × atk_scale2_1) + atk_scale2)",
-  "chr_0036_jsspsi_combo_skill/final_stack scale: kit atk_scale2_1, data ((($EntityBB_combo_count + 1) × atk_scale2_1) + atk_scale2) | (($EntityBB_combo_count × atk_scale2_1) + atk_scale2)",
-  "chr_0036_jsspsi_combo_skill/final_p5 scale: kit atk_scale2_1 × potential5, data ((($EntityBB_combo_count + 1) × atk_scale2_1) + atk_scale2) | (($EntityBB_combo_count × atk_scale2_1) + atk_scale2)",
+  // The finisher's landings (BreakingAttackCalculation, mask 132) carry multiplier 0.07 / 0.10 / 0.13 / 0.70 of atk_scale; the compiler doesn't read BreakingAttackCalculation's multiplier (batch-1 D2).
+  "chr_0036_jsspsi_power_attack/hit1 factor: kit 0.07, data 1",
+  "chr_0036_jsspsi_power_attack/hit2 factor: kit 0.1, data 1",
+  "chr_0036_jsspsi_power_attack/hit3 factor: kit 0.13, data 1",
+  "chr_0036_jsspsi_power_attack/hit4 factor: kit 0.7, data 1",
+  // Both infliction branches create buff_common_obtain_ultimate_sp at 15 (after CheckEntityNum); the compiler doesn't merge exhaustive branches, so it finds none unconditional (batch-1 D2).
+  "chr_0036_jsspsi_normal_skill teamEnergyFrame: kit 15, data 0",
+  // The kit's scaleValue is the data's expression with EntityBB_combo_count = the window's eventCount, +1 through potential5 (IfElse on potential5 ≥ 1); the test compares key products only.
+  'chr_0036_jsspsi_combo_skill/final scale: kit {"sum":["atk_scale2",{"product":[{"sum":[{"eventCount":true},"potential5"]},"atk_scale2_1"]}]}, data ((($EntityBB_combo_count + 1) × atk_scale2_1) + atk_scale2) | (($EntityBB_combo_count × atk_scale2_1) + atk_scale2)',
   // Finisher (BreakingAttackCalculation, mask 132): the compiler drops its `multiplier` (D2), 0.05 on the first six DamageActions and 0.7 on the seventh; the kit writes them as factors.
   "chr_0013_aglina_power_attack/hit factor: kit 0.05, data 1",
   "chr_0013_aglina_power_attack/final factor: kit 0.7, data 1",

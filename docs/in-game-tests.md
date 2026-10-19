@@ -514,9 +514,12 @@ ramp and duration, Electrification, teammates' Susceptibility). The
 engine doesn't do that yet. This may also explain part of test 4.
 **How:**
 - Si, on a normal enemy and then on a boss: cast her battle skill and time
-  Artful Intent's icon and Jade Vessel's DMG-taken icon. 20 s and 30 s plus
-  the Immobilization (31–31.5 s) where the freeze works; flat 20 s and
-  30 s where the enemy is immune.
+  Artful Intent's icon and Jade Vessel's DMG-taken icon. The engine
+  gives Artful Intent 20 s plus the Immobilization (21–21.5 s) where the
+  freeze works, and Jade Vessel's debuff a flat 30 s (it is applied as
+  the freeze starts, and the freeze only stretches what is already on the
+  enemy); flat 20 s and 30 s where the enemy is immune. A Jade Vessel icon
+  lasting 31–31.5 s means debuffs applied during the freeze wait for it.
 - Arcane: a teammate applies a timed status to a dummy (Electrification,
   or her own Corrosion), then Arcane's WILL combo: does the status run out
   later than without the combo, by about 2–3 s?

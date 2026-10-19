@@ -123,6 +123,15 @@ export interface CalcOptions extends DamageOptions {
   readonly buffs?: readonly { readonly buff: string; readonly layers: number }[];
 }
 
+/** Hits that read the count of the event behind them (ValueExpr eventCount: Si's combo final hit, the stacks its trigger consumed) are shown at the smallest count. */
+function withEventCount<T extends DamageOptions>(options: T): T {
+  return { ...options, situation: { eventCount: 1, ...(options.situation ?? {}) } };
+}
+const EVENT_COUNT_NOTE = "  (hits that depend on the count of the event behind them, e.g. infliction stacks a combo's trigger consumed, are shown at a count of 1)";
+function readsEventCount(data: GameData, build: Build): boolean {
+  return (data.kits.operators[build.operator]?.skills ?? []).some((s) => JSON.stringify(s.hits).includes('"eventCount"'));
+}
+
 export function calc(data: GameData, build: Build, options: CalcOptions): string {
   const panel = computeStats(data, build);
   const out = [formatPanel(data, panel, options.verbose)];
@@ -138,8 +147,9 @@ export function calc(data: GameData, build: Build, options: CalcOptions): string
     out.push("  No kit for this operator yet, so no hit damage (stats above are complete).");
   } else {
     const buffMods = (options.buffs ?? []).flatMap((b) => kitBuffModifiers(data, build, panel, b.buff, b.layers));
-    const hits = computeKit(data, build, panel, options.target, { ...options, modifiers: [...(options.modifiers ?? []), ...buffMods] });
+    const hits = computeKit(data, build, panel, options.target, { ...withEventCount(options), modifiers: [...(options.modifiers ?? []), ...buffMods] });
     out.push(table(["skill", "hit", "count", "multiplier", "damage"], hitRows(hits), ["l", "l", "l", "l", "r"]));
+    if (readsEventCount(data, build)) out.push(EVENT_COUNT_NOTE);
     if (options.verbose) {
       const z = hits[0]?.zones;
       if (z) out.push("", `Zones of the first hit: ${Object.entries(z).map(([k, v]) => `${k} ${num(v, 4)}`).join(", ")}`);
@@ -167,8 +177,8 @@ export function compare(data: GameData, a: Build, b: Build, options: CalcOptions
   }
   out.push(table(["stat", "A", "B", "B vs A"], statRows, ["l", "r", "r", "r"]));
   if (data.kits.operators[a.operator]) {
-    const ha = computeKit(data, a, pa, options.target, options);
-    const hb = computeKit(data, b, pb, options.target, options);
+    const ha = computeKit(data, a, pa, options.target, withEventCount(options));
+    const hb = computeKit(data, b, pb, options.target, withEventCount(options));
     const rows = ha.map((h, i) => {
       const other = hb[i] as HitDamage;
       return [h.skillId.replace(/^chr_\d+_[a-z]+_/, ""), h.label, num(h.damage, 0), num(other.damage, 0), signedPct(other.exact / h.exact - 1)];
