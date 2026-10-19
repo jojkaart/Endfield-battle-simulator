@@ -67,7 +67,7 @@ interface RawKit {
     label: string;
     damageType: "basic" | "battle" | "combo" | "ultimate";
     energyBlockSeconds?: number;
-    teamEnergyFrame?: number;
+    teamEnergy?: { frame: number; ratio: number; if?: Predicate }[];
     available?: Predicate;
     followUpOnly?: boolean;
     takesControl?: boolean;
@@ -374,19 +374,24 @@ function kitChecker(scope: KitScope) {
 }
 
 /**
- * Whether a basic attack is a chain step (attack2…): an earlier-numbered
- * basic attack of the same chain lists it in a cancel window. The last step
- * lists the first (attack5 → attack1); that's the chain looping, not a step.
+ * Whether a basic attack is a chain step (attack2…, or attack4_1 beside
+ * attack4): an earlier basic attack of the same chain lists it in a cancel
+ * window. The last step lists the first (attack5 → attack1); that's the
+ * chain looping, not a step.
  */
 function isChainStep(data: KitData, kit: RawKit, skillId: string): boolean {
   const own = kit.skills.find((s) => s.skillId === skillId);
-  const m = /^(.*?)(\d+)$/.exec(skillId);
-  if (!own || own.damageType !== "basic" || !m) return false;
-  const [, prefix, n] = m as unknown as [string, string, string];
+  // attack4_1: step 4, alternative 1 (comes after attack4).
+  const order = (id: string) => {
+    const m = /^(.*?)(\d+)(?:_(\d+))?$/.exec(id);
+    return m ? { prefix: m[1] as string, n: Number(m[2]) + Number(m[3] ?? 0) / 100 } : null;
+  };
+  const me = order(skillId);
+  if (!own || own.damageType !== "basic" || !me) return false;
   return kit.skills.some((y) => {
-    const ym = /^(.*?)(\d+)$/.exec(y.skillId);
+    const o = order(y.skillId);
     const t = data.skills[y.skillId]?.timing;
-    return y.damageType === "basic" && ym?.[1] === prefix && Number(ym[2]) < Number(n) && !!t && t.windows.some((w) => w.skills.includes(skillId));
+    return y.damageType === "basic" && o?.prefix === me.prefix && o.n < me.n && !!t && t.windows.some((w) => w.skills.includes(skillId));
   });
 }
 
@@ -435,13 +440,15 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
     if (!skill) throw new Error(`${where}: unknown skill`);
     if (op.skillGroups[s.skillId] === undefined) throw new Error(`${where}: not one of ${kit.operator}'s skills`);
     if (s.available) c.checkPredicate(s.available, `${where} available`);
+    for (const part of s.teamEnergy ?? []) if (part.if) c.checkPredicate(part.if, `${where} teamEnergy`);
+    if ((s.teamEnergy ?? []).reduce((x, p) => x + p.ratio, 0) > 1 + 1e-9) throw new Error(`${where}: the team energy's parts add up to more than the whole`);
     if (s.beside) c.checkPredicate(s.beside, `${where} beside`);
     return {
       skillId: s.skillId,
       label: s.label,
       kind: s.damageType,
       ...(s.energyBlockSeconds !== undefined ? { energyBlockSeconds: s.energyBlockSeconds } : {}),
-      ...(s.teamEnergyFrame !== undefined ? { teamEnergyFrame: s.teamEnergyFrame } : {}),
+      ...(s.teamEnergy !== undefined ? { teamEnergy: s.teamEnergy } : {}),
       ...(s.available ? { available: s.available } : {}),
       ...(s.followUpOnly ? { followUpOnly: true } : {}),
       ...(s.takesControl ? { takesControl: true } : {}),

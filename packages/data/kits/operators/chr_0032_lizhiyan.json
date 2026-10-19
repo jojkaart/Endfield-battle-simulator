@@ -1094,7 +1094,7 @@
       "skillId": "chr_0032_lizhiyan_normal_skill",
       "label": "Battle skill",
       "damageType": "battle",
-      "teamEnergyFrame": 20,
+      "teamEnergy": [{ "frame": 20, "ratio": 1 }],
       "note": "Description: \"Creates a Jadecrushing Grid that deals Nature DMG and applies Nature Infliction to enemies within the area of effect.\" The skill spawns normal_skill_abilityrange2 at frame 0; its single hit lands at the entity's frame 20, after its Nature infliction in the same frame (so a Corrosion it causes already applies: btl_upload_0eef2474a26f). Mask 4352 = battle. The team's energy comes at 20 (buff_common_obtain_ultimate_sp). Under INT, hitting an Imprisoned enemy ends the Imprisonment early (trigger int_early_end).",
       "hits": [
         {

@@ -574,7 +574,7 @@
       "skillId": "chr_0035_liino_normal_skill",
       "label": "Battle skill",
       "damageType": "battle",
-      "teamEnergyFrame": 15,
+      "teamEnergy": [{ "frame": 15, "ratio": 1 }],
       "available": {
         "not": {
           "any": [

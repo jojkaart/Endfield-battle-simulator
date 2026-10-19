@@ -471,7 +471,7 @@
       "skillId": "chr_0016_laevat_normal_skill",
       "label": "Battle skill",
       "damageType": "battle",
-      "teamEnergyFrame": 22,
+      "teamEnergy": [{ "frame": 22, "ratio": 1 }],
       "available": {
         "not": {
           "buffActive": "twilight"
@@ -497,7 +497,7 @@
             }
           ],
           "poise": "poise",
-          "note": "The Magma Fragment (SpawnAbilityEntity at 4, its DamageAction at 18). Its first hit that lands grants 1 Melting Flame (CreateBuff buff_chr_0016_laevat_energy) and the team's ultimate energy (buff_common_obtain_ultimate_sp, teamEnergyFrame)."
+          "note": "The Magma Fragment (SpawnAbilityEntity at 4, its DamageAction at 18). Its first hit that lands grants 1 Melting Flame (CreateBuff buff_chr_0016_laevat_energy) and the team's ultimate energy (buff_common_obtain_ultimate_sp, teamEnergy)."
         },
         {
           "id": "dot",
@@ -561,7 +561,7 @@
       "skillId": "chr_0016_laevat_normal_skill_during_ult",
       "label": "Battle skill (Twilight)",
       "damageType": "battle",
-      "teamEnergyFrame": 13,
+      "teamEnergy": [{ "frame": 13, "ratio": 1 }],
       "available": {
         "buffActive": "twilight"
       },

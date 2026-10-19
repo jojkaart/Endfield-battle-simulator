@@ -178,9 +178,11 @@ function kitDisagreements(): string[] {
       const blockBuff = kit.buffs.find((b) => b.blocksEnergy && castBuffs.includes(b.id) && typeof b.duration === "number");
       const kitBlock = s.energyBlockSeconds !== undefined ? round(s.energyBlockSeconds, 3) : blockBuff ? round(blockBuff.duration as number, 3) : null;
       if (block !== kitBlock) out.push(`${where} energyBlockSeconds: kit ${kitBlock ?? "-"}, data ${block ?? "-"}`);
-      const team = c.teamEnergy.filter((t) => t.branch.length === 0).map((t) => t.frame);
-      const teamFrame = team.length ? Math.min(...team) : 0;
-      if (teamFrame !== (s.teamEnergyFrame ?? 0)) out.push(`${where} teamEnergyFrame: kit ${s.teamEnergyFrame ?? "-"}, data ${teamFrame}`);
+      // Team energy parts as kit-draft reads them: unconditional ones, the first alone when they add up to more than the whole; all at the cast when none.
+      let team = c.teamEnergy.filter((t) => t.branch.length === 0).map((t) => ({ frame: t.frame, ratio: t.ratio ?? 1 }));
+      if (team.reduce((x, t) => x + t.ratio, 0) > 1 + 1e-9) team = team.slice(0, 1).map((t) => ({ ...t, ratio: 1 }));
+      const partsText = (parts: readonly { frame: number; ratio: number }[]) => (parts.length ? parts : [{ frame: 0, ratio: 1 }]).map((t) => `${t.ratio}@${t.frame}`).join(", ");
+      if (partsText(team) !== partsText(s.teamEnergy ?? [])) out.push(`${where} teamEnergy: kit ${partsText(s.teamEnergy ?? [])}, data ${partsText(team)}`);
       const claimed = new Set<CompiledLanding>();
       const kitApps = new Map<number, Set<string>>();
       for (const h of s.hits) {
@@ -266,7 +268,7 @@ const KNOWN: string[] = [
   "chr_0034_typhoea_attack3/wave1 count: kit 1, data 3 landings at its frames (chr_0034_typhoea_attack3_01_projhit)",
   "chr_0034_typhoea_attack3/wave2 count: kit 1, data 3 landings at its frames (chr_0034_typhoea_attack3_02_projhit)",
   // ObtainUspInNormalSkill at 12 (window 12–18, only if a volley arrow hit), not the buff_common_obtain_ultimate_sp the compiler reads (D2); hand-written in the kit.
-  "chr_0034_typhoea_normal_skill_floating_start teamEnergyFrame: kit 12, data 0",
+  "chr_0034_typhoea_normal_skill_floating_start teamEnergy: kit 1@12, data 1@0",
   // Timeline sections reached through JumpToAction (destinations 45/75/105/135; 150/300/450/600 in attack4): jumps are reported, not followed, so every section is listed. Which one a cast plays depends on the jump conditions; the kit has the first.
   "chr_0034_typhoea_floating_attack1: data lands chr_0034_typhoea_floating_attack1_01_projhit atk_scale_base × atk_scale_enhence at [46, 76, 106, 136], no kit hit",
   "chr_0034_typhoea_floating_attack2: data lands chr_0034_typhoea_floating_attack1_01_projhit atk_scale_base × atk_scale_enhence at [46, 76, 106, 136], no kit hit",
@@ -288,7 +290,7 @@ const KNOWN: string[] = [
   "chr_0036_jsspsi_power_attack/hit3 factor: kit 0.13, data 1",
   "chr_0036_jsspsi_power_attack/hit4 factor: kit 0.7, data 1",
   // Both infliction branches create buff_common_obtain_ultimate_sp at 15 (after CheckEntityNum); the compiler doesn't merge exhaustive branches, so it finds none unconditional (batch-1 D2).
-  "chr_0036_jsspsi_normal_skill teamEnergyFrame: kit 15, data 0",
+  "chr_0036_jsspsi_normal_skill teamEnergy: kit 1@15, data 1@0",
   // The kit's scaleValue is the data's expression with EntityBB_combo_count = the window's eventCount, +1 through potential5 (IfElse on potential5 ≥ 1); the test compares key products only.
   'chr_0036_jsspsi_combo_skill/final scale: kit {"sum":["atk_scale2",{"product":[{"sum":[{"eventCount":true},"potential5"]},"atk_scale2_1"]}]}, data ((($EntityBB_combo_count + 1) × atk_scale2_1) + atk_scale2) | (($EntityBB_combo_count × atk_scale2_1) + atk_scale2)',
   // Finisher (BreakingAttackCalculation, mask 132): the compiler drops its `multiplier` (D2), 0.05 on the first six DamageActions and 0.7 on the seventh; the kit writes them as factors.
@@ -302,7 +304,7 @@ const KNOWN: string[] = [
   "chr_0035_liino_power_attack/ticks factor: kit 0.1, data 1",
   "chr_0035_liino_power_attack/final factor: kit 0.7, data 1",
   // Compiler limitation (D2), kit right: CreateBuff buff_common_obtain_ultimate_sp is in chr_0021_whiten_normal_skill_projhit (launched at 21) on the first-target branch (EntityBB_first_hit), which the compiler leaves undecided.
-  "chr_0021_whiten_normal_skill teamEnergyFrame: kit 21, data 0",
+  "chr_0021_whiten_normal_skill teamEnergy: kit 1@21, data 1@0",
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {

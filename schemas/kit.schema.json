@@ -1412,10 +1412,20 @@
             "exclusiveMinimum": 0,
             "description": "The operator gains no ultimate energy for this long after the cast (SkillData RefrainObtainUsp buff duration)."
           },
-          "teamEnergyFrame": {
-            "type": "integer",
-            "minimum": 0,
-            "description": "Frames from the cast to the team's energy for the SP it spends (SkillData CreateBuff buff_common_obtain_ultimate_sp); at the cast when absent."
+          "teamEnergy": {
+            "type": "array",
+            "minItems": 1,
+            "description": "The team's energy for the SP it spends, in parts (SkillData CreateBuff buff_common_obtain_ultimate_sp, each with its ratio): frames from the cast. A part the cast is cut short before, or whose `if` (for the caster) doesn't hold at its frame, gives nothing. All at the cast when absent.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["frame", "ratio"],
+              "properties": {
+                "frame": { "type": "integer", "minimum": 0 },
+                "ratio": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+                "if": { "$ref": "#/$defs/predicate" }
+              }
+            }
           },
           "note": {
             "type": "string"

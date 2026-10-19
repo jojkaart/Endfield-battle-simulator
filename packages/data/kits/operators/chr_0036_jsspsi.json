@@ -501,7 +501,7 @@
           "buffActive": "artful_intent"
         }
       },
-      "teamEnergyFrame": 15,
+      "teamEnergy": [{ "frame": 15, "ratio": 1 }],
       "note": "While Artful Intent lasts the battle skill slot holds Initial Stroke (normal_skill_1), then Final Stroke (normal_skill_2) while the Inksoul lasts (BuffData normal_skill_check Switch on EntityBB_normal_skill_id). Team energy (buff_common_obtain_ultimate_sp) at the hit, frame 15, on both infliction branches.",
       "hits": [
         {

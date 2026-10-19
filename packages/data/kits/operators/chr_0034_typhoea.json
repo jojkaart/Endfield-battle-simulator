@@ -1002,7 +1002,7 @@
       "skillId": "chr_0034_typhoea_normal_skill_floating_start",
       "label": "Battle skill: take flight (opening volley)",
       "damageType": "battle",
-      "teamEnergyFrame": 12,
+      "teamEnergy": [{ "frame": 12, "ratio": 1 }],
       "note": "Starts a hover (triggers hover_start, battle_reset; follow-ups chain_start at 32 off-field, loop_start at 37). Team energy at frame 12 (ObtainUspInNormalSkill, window 12–18, only if a volley arrow hit; kit-draft doesn't compile it, D2). durationFrames: floating_attack1 is allowed from frame 26 (SkillData window 26–40).",
       "hits": [
         {

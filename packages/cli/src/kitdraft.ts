@@ -141,10 +141,16 @@ function draftSkill(c: CompiledSkill, groupType: string, logged: ReadonlyMap<str
   const notes: string[] = [];
   if (only && only !== groupType) notes.push(`damageType ${only} from the decorate masks; the skill's group is ${groupType}`);
   const team = c.teamEnergy.filter((t) => t.branch.length === 0);
-  let teamEnergyFrame: number | undefined;
-  if (team.length) teamEnergyFrame = Math.min(...team.map((t) => t.frame));
-  else if (c.teamEnergy.length) notes.push(`team energy (buff_common_obtain_ultimate_sp) only conditionally: ${c.teamEnergy.map(placeText).join("; ")}`);
-  if (team.length > 1) notes.push(`team energy created ${team.length}× (frames ${team.map((t) => t.frame).join(", ")}); the first is used`);
+  // Each unconditional part at its frame, its ratio of the energy (the whole when the parts don't say).
+  let parts = team.map((t) => ({ frame: t.frame, ratio: t.ratio ?? 1 }));
+  if (parts.reduce((x, t) => x + t.ratio, 0) > 1 + 1e-9) {
+    notes.push(`team energy created ${team.length}× (frames ${team.map((t) => t.frame).join(", ")}), more than the whole; the first is used`);
+    parts = parts.slice(0, 1).map((t) => ({ ...t, ratio: 1 }));
+  }
+  const teamEnergy = parts.length && !(parts.length === 1 && parts[0]?.frame === 0 && parts[0].ratio === 1) ? parts : undefined;
+  if (team.some((t) => t.ratio === null)) notes.push(`team energy ratio not a literal at ${team.filter((t) => t.ratio === null).map(placeText).join("; ")} (1 assumed)`);
+  const conditional = c.teamEnergy.filter((t) => t.branch.length > 0);
+  if (conditional.length) notes.push(`team energy (buff_common_obtain_ultimate_sp) also conditionally: ${conditional.map((t) => `${placeText(t)} ratio ${t.ratio ?? "?"}`).join("; ")}`);
   const blocks = c.energyBlocks.filter((b) => b.branch.length === 0 && b.until !== null);
   const energyBlockSeconds = blocks.length ? round(Math.max(...blocks.map((b) => b.until as number)) / FPS) : undefined;
   if (blocks.length) notes.push(`energy blocked by ${blocks.map((b) => `${b.buff ?? "the skill's RefrainObtainUsp"} f${b.frame}–${b.until}`).join(", ")}`);
@@ -158,7 +164,7 @@ function draftSkill(c: CompiledSkill, groupType: string, logged: ReadonlyMap<str
     skillId: c.skillId,
     label: c.skillId.replace(`${operator}_`, ""),
     damageType,
-    ...(teamEnergyFrame ? { teamEnergyFrame } : {}),
+    ...(teamEnergy ? { teamEnergy } : {}),
     ...(energyBlockSeconds ? { energyBlockSeconds } : {}),
     ...(notes.length ? { note: notes.join(" | ") } : {}),
     hits,

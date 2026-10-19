@@ -34,7 +34,7 @@ export interface Candidate {
 function nextBasics(data: GameData, state: TimelineState, operator: string): string[] {
   const out = new Set<string>();
   const chain = state.chainNext[operator];
-  if (chain && chain.until >= state.frame) out.add(chain.skill);
+  for (const c of chain ? [chain, ...(chain.alternatives ?? [])] : []) if (c.until >= state.frame) out.add(c.skill);
   for (const s of data.kits.operators[operator]?.skills ?? []) {
     // Basic attacks that start a chain, and finishers (castable only on a Staggered enemy).
     const spec = data.skills[s.skillId]?.timing?.specification;

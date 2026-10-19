@@ -466,8 +466,14 @@ export interface KitSkill {
    * Laevatain's enhanced attacks level with her ultimate but are basic attacks.
    */
   readonly kind: SkillType;
-  /** When the team's energy for the SP it spends comes (frames from the cast; SkillData CreateBuff buff_common_obtain_ultimate_sp); at the cast when absent. */
-  readonly teamEnergyFrame?: number;
+  /**
+   * When the team's energy for the SP it spends comes, in parts (SkillData
+   * CreateBuff buff_common_obtain_ultimate_sp, each with its `ratio`): frames
+   * from the cast; a part the cast is cut short before, or whose `if` (for
+   * the caster) doesn't hold at its frame, gives nothing. All at the cast
+   * when absent.
+   */
+  readonly teamEnergy?: readonly { readonly frame: number; readonly ratio: number; readonly if?: Predicate }[];
   /** The operator gains no ultimate energy for this long after the cast (SkillData RefrainObtainUsp, e.g. Laevatain's ultimate). */
   readonly energyBlockSeconds?: number;
   /** Castable only when this holds for the operator at the start frame (a state: `buffActive`; replaced by a stance: `not`). */

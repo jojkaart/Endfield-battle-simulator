@@ -234,7 +234,7 @@ describe("timeline: ultimate energy and combo windows", () => {
   });
 
   it("a battle skill gives 0.065 energy per natural SP; SP returned by skills is spent first and gives none", () => {
-    // The team energy comes at the kit's teamEnergyFrame (22: the explosion's buff_common_obtain_ultimate_sp), not at the cast.
+    // The team energy comes at the kit's teamEnergy frame (22: the explosion's buff_common_obtain_ultimate_sp), not at the cast.
     const energyAt = (rotation: RotationAction[], after: number) => {
       const ctx = createContext(data, noEnergy(rotation));
       let s = init(ctx);
@@ -526,7 +526,7 @@ describe("timeline: buff lifecycle", () => {
     const rot = [skill("attack1"), skill("normal_skill")];
     const { startEnergy: _f, ...sc } = scenario(rot);
     const efficiency = computeStats(data, build).attrs[44]?.total ?? data.attributeDefaults[44] ?? 1;
-    // The battle skill's team energy comes at its teamEnergyFrame (22).
+    // The battle skill's team energy comes at its teamEnergy frame (22).
     const ctx = createContext(d, sc);
     let s = init(ctx);
     for (const a of rot) s = apply(ctx, s, a);
@@ -603,7 +603,7 @@ describe("timeline: values and resources", () => {
   });
 
   it("a battle skill's team energy can come at its data frame instead of the cast", () => {
-    const d = withKit({ skills: kit.skills.map((s) => (s.skillId === L + "normal_skill" ? { ...s, teamEnergyFrame: 29 } : s)) });
+    const d = withKit({ skills: kit.skills.map((s) => (s.skillId === L + "normal_skill" ? { ...s, teamEnergy: [{ frame: 29, ratio: 1 }] } : s)) });
     const efficiency = computeStats(data, build).attrs[44]?.total ?? data.attributeDefaults[44] ?? 1;
     expect(stepTo(d, noEnergy([skill("normal_skill")]), 28).energy[op]).toBe(0);
     expect(stepTo(d, noEnergy([skill("normal_skill")]), 29).energy[op]).toBeCloseTo(100 * 0.065 * efficiency, 9);
@@ -1211,6 +1211,12 @@ describe("timeline: ending an action; reaction hit filter", () => {
     expect(s.acting[op]).toBeUndefined();
     expect(s.pending.some((h) => h.skillId === L + "normal_skill" && !h.detached)).toBe(false);
     expect(earliestStart(ctx, s, { operator: op, skill: L + "attack1" })).toEqual({ frame: 10 });
+    // The gate sees the end coming: from the cast itself, the next action may start when it's due.
+    const cast = apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" });
+    expect(earliestStart(ctx, cast, { operator: op, skill: L + "attack1" })).toEqual({ frame: 10 });
+    expect(apply(ctx, cast, { operator: op, skill: L + "attack1" }).casts.at(-1)?.frame).toBe(10);
+    const plain = createContext(data, scenario([]));
+    expect((earliestStart(plain, apply(plain, init(plain), { operator: op, skill: L + "normal_skill" }), { operator: op, skill: L + "attack1" }) as { frame: number }).frame).toBeGreaterThan(10);
   });
 
   it("hit triggers can take only hits computed as reactions, or only others", () => {
@@ -1318,14 +1324,30 @@ describe("timeline: pass-3 gaps (set cooldowns, heal kinds, follow-ups, buffs be
   });
 });
 
-describe("timeline: team energy at a skill's frame", () => {
+describe("timeline: team energy at a skill's frames", () => {
   it("is dropped when the skill is cut short before it", () => {
     const kit = data.kits.operators[op] as OperatorKit;
-    const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills: kit.skills.map((s) => (s.skillId === L + "normal_skill" ? { ...s, teamEnergyFrame: 50 } : s)) } } } };
+    const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills: kit.skills.map((s) => (s.skillId === L + "normal_skill" ? { ...s, teamEnergy: [{ frame: 50, ratio: 1 }] } : s)) } } } };
     const ctx = createContext(g, scenario([]));
     const s = apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" });
     expect(s.pendingEnergy.length).toBe(1);
     expect(apply(ctx, s, { operator: op, skill: L + "ultimate_skill", at: 10 }).pendingEnergy.length).toBe(0);
+  });
+
+  it("comes in parts, each its ratio of the whole; a part whose condition fails at its frame gives nothing", () => {
+    const kit = data.kits.operators[op] as OperatorKit;
+    const mark: KitBuff = { id: "mark", label: "mark", target: "self", modifiers: [] };
+    const energyWith = (parts: NonNullable<KitSkill["teamEnergy"]>, marked: boolean) => {
+      const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, buffs: [...kit.buffs, mark], triggers: [...kit.triggers, ...(marked ? [{ id: "mark", on: { event: "fightStart" as const }, by: "self" as const, do: [{ kind: "buff" as const, buff: "mark" }] }] : [])], skills: kit.skills.map((s) => (s.skillId === L + "normal_skill" ? { ...s, teamEnergy: parts } : s)) } } } };
+      const ctx = createContext(g, { ...scenario([]), startEnergy: { [op]: 0 } });
+      return advance(ctx, apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" }), 100).energy[op] ?? 0;
+    };
+    const halves = [{ frame: 0, ratio: 0.5 }, { frame: 60, ratio: 0.5, if: { buffActive: "mark" } }];
+    const whole = energyWith([{ frame: 0, ratio: 1 }], false);
+    const none = energyWith([{ frame: 0, ratio: 1e-9 }], false);
+    expect(energyWith(halves, true)).toBeCloseTo(whole, 6);
+    expect(whole - none).toBeGreaterThan(0);
+    expect(whole - energyWith(halves, false)).toBeCloseTo((whole - none) / 2, 6);
   });
 });
 
@@ -1586,5 +1608,41 @@ describe("batch 2 group 3: hit base values, shared timers, Link buffs", () => {
     const s = run(g, [{ operator: op, skill: L + "normal_skill" }]);
     expect(s.hits.filter((h) => h.skillId === L + "normal_skill").every((h) => h.modifiers.some((m) => m.source === "Link (1)"))).toBe(true);
     expect(s.buffs.some((b) => b.id === "lk")).toBe(false);
+  });
+});
+
+describe("batch 2 group 3: chain steps by timing", () => {
+  // Laevatain's attack3 given Fluorite's pattern: attack4 in its first window, attack4_1 (attack4's copy) in a later one.
+  const kit = data.kits.operators[op] as OperatorKit;
+  const a3 = data.skills[L + "attack3"];
+  const a4 = data.skills[L + "attack4"];
+  const step4 = kit.skills.find((s) => s.skillId === L + "attack4") as KitSkill;
+  const laev = data.operators[op] as GameData["operators"][string];
+  const g: GameData = {
+    ...data,
+    operators: { ...data.operators, [op]: { ...laev, skillGroups: { ...laev.skillGroups, [L + "attack4_1"]: "basic" } } },
+    skills: { ...data.skills, [L + "attack3"]: { ...a3, timing: { ...a3?.timing, windows: [{ from: 12, to: 20, skills: [L + "attack4"] }, { from: 21, to: 32, skills: [L + "attack4_1"] }] } }, [L + "attack4_1"]: a4 } as GameData["skills"],
+    kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills: [...kit.skills, { ...step4, skillId: L + "attack4_1", chainStep: true }] } } },
+  };
+  const after3 = () => {
+    const ctx = createContext(g, scenario([]));
+    let s = init(ctx);
+    for (const x of chain.slice(0, 3)) s = apply(ctx, s, x);
+    return { ctx, s, at3: s.casts[2]?.frame ?? 0 };
+  };
+
+  it("each step starts in its own window; the earlier one's closes", () => {
+    const { ctx, s, at3 } = after3();
+    expect(s.chainNext[op]?.alternatives?.map((c) => c.skill)).toEqual([L + "attack4_1"]);
+    expect(earliestStart(ctx, s, { operator: op, skill: L + "attack4_1" })).toEqual({ frame: at3 + 21 });
+    expect(earliestStart(ctx, s, { operator: op, skill: L + "attack4" })).toEqual({ frame: at3 + 12 });
+    const late = advance(ctx, s, at3 + 21);
+    expect(earliestStart(ctx, late, { operator: op, skill: L + "attack4" })).toHaveProperty("error");
+    expect(apply(ctx, late, { operator: op, skill: L + "attack4_1" }).casts.at(-1)?.skill).toBe(L + "attack4_1");
+  });
+
+  it("a chain head input waits out every step's window", () => {
+    const { ctx, s, at3 } = after3();
+    expect((earliestStart(ctx, s, { operator: op, skill: L + "attack1" }) as { frame: number }).frame).toBeGreaterThan(at3 + 32);
   });
 });

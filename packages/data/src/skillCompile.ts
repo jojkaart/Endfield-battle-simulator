@@ -62,6 +62,10 @@ export interface CompiledValue {
 }
 
 /** Where a fact happens. */
+export interface TeamEnergyPart extends Placement {
+  readonly ratio: number | null;
+}
+
 export interface Placement {
   /** Frame from the compiled skill's start. */
   readonly frame: number;
@@ -131,8 +135,8 @@ export interface CompiledSkill {
   /** ObtainCostAction costType 1. */
   readonly sp: readonly CompiledCost[];
   readonly energyBlocks: readonly EnergyBlock[];
-  /** Frames of CreateBuff buff_common_obtain_ultimate_sp (the team's energy for the SP spent). */
-  readonly teamEnergy: readonly Placement[];
+  /** CreateBuff buff_common_obtain_ultimate_sp (the team's energy for the SP spent): where, and its `ratio` of it (1 unassigned, null unknown). */
+  readonly teamEnergy: readonly TeamEnergyPart[];
   readonly jumps: readonly CompiledJump[];
   readonly casts: readonly CompiledCast[];
   /** Assumptions made and things not followed. */
@@ -232,7 +236,7 @@ class Compiler {
   readonly effects: CompiledEffect[] = [];
   readonly costs: CompiledCost[] = [];
   readonly blocks: EnergyBlock[] = [];
-  readonly teamEnergy: Placement[] = [];
+  readonly teamEnergy: TeamEnergyPart[] = [];
   readonly jumps: CompiledJump[] = [];
   readonly casts: CompiledCast[] = [];
   readonly notes = new Set<string>();
@@ -784,7 +788,8 @@ class Compiler {
         }
       }
       if (id === "buff_common_obtain_ultimate_sp") {
-        this.teamEnergy.push(this.place(ctx, frame));
+        const ratio = assigned.get("ratio");
+        this.teamEnergy.push({ ...this.place(ctx, frame), ratio: ratio === undefined ? 1 : isLiteral(ratio) ? ratio.value : null });
         continue;
       }
       const reaction = /^buff_common_([a-z]+)_([a-z]+)_(?:([a-z]+)_)?triggered/.exec(id);

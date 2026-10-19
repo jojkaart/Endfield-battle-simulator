@@ -26,7 +26,7 @@ interface DraftHit {
 interface DraftSkill {
   skillId: string;
   damageType: string;
-  teamEnergyFrame?: number;
+  teamEnergy?: { frame: number; ratio: number }[];
   energyBlockSeconds?: number;
   hits: DraftHit[];
 }
@@ -64,7 +64,9 @@ describe("kit-draft v2", () => {
 
   it("carries the team-energy frame, energy blocks, energy and inflictions", () => {
     const laevat = draft("chr_0016_laevat").skills;
-    expect(skill(laevat, "chr_0016_laevat_normal_skill").teamEnergyFrame).toBe(22);
+    expect(skill(laevat, "chr_0016_laevat_normal_skill").teamEnergy).toEqual([{ frame: 22, ratio: 1 }]);
+    // Catcher's battle skill: half at the cast, half at frame 60 (each CreateBuff's ratio).
+    expect(skill(draft("chr_0020_meurs").skills, "chr_0020_meurs_normal_skill").teamEnergy).toEqual([{ frame: 0, ratio: 0.5 }, { frame: 60, ratio: 0.5 }]);
     expect(skill(laevat, "chr_0016_laevat_ultimate_skill").energyBlockSeconds).toBe(16);
     const extra = skill(laevat, "chr_0016_laevat_normal_skill").hits.find((h) => h.frames.includes(104));
     expect(extra?.energy).toBe("extra_usp");

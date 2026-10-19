@@ -325,7 +325,7 @@
       "skillId": "chr_0013_aglina_normal_skill",
       "label": "Battle skill",
       "damageType": "battle",
-      "teamEnergyFrame": 29,
+      "teamEnergy": [{ "frame": 29, "ratio": 1 }],
       "note": "btl_upload_4e5e1390085e (level 12, one cast): pulls 2777, 2777, 3611, 3611 are atk_scale_pull (0.55) ×1.0960 (the fixture's annotated ATK buff), the last two under the logged stagger ×1.3. The explosion 8972 is atk_scale_explosion (1.30) ×1.0960 ×1.0513: its own Nature infliction triggered Corrosion on the logged Heat infliction first (buff_common_natural_triggered at the same time), and Corrosion level 1's initial shred at her Arts Intensity 80.7 is 3.6 × 1.424 = 5.13 points, ×1.0513. So the infliction, and the reaction it causes, come before the hit's damage.",
       "hits": [
         {

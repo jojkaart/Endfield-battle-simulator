@@ -32,7 +32,7 @@ import { EngineError } from "./errors.ts";
 import { resolveApplication, type EventSource, type GameData, type KitBuff, type KitHit, type KitSkill, type OperatorKit, type SkillTiming, type StackGain, type StackRequirement } from "./model.ts";
 import { effectiveKit } from "./triggers.ts";
 import { causeMatches, eventMatches, triggerSkillId, type BattleEvent, type BuffCategory, type KitTrigger } from "./events.ts";
-import { evaluate, test, type EvalContext } from "./expr.ts";
+import { evaluate, test, type EvalContext, type Predicate } from "./expr.ts";
 import { applyBuff, buffAttr, buffModifiers, endBuff, extendBuff, reaches, recordedOf, remainingOf, resolveValue, withBuff, type ActiveBuff } from "./buffs.ts";
 import { computeStats, skillLevel, skillParam, type StatPanel } from "./stats.ts";
 import { Attr } from "./attributes.ts";
@@ -163,8 +163,12 @@ export interface TimelineState {
   readonly controlled: string;
   /** Per operator: its current (last) action, which gates its next one (actionGate). */
   readonly acting: Readonly<Record<string, { readonly skill: string; readonly frame: number; readonly speed?: number; readonly cast?: number }>>;
-  /** Per operator: the basic-attack chain's next step and when an attack input resolves to it. */
-  readonly chainNext: Readonly<Record<string, { readonly skill: string; readonly from: number; readonly until: number }>>;
+  /**
+   * Per operator: the basic-attack chain's next step and when an attack input
+   * resolves to it; `alternatives`, other steps by timing in later windows
+   * (Fluorite's attack3: attack4 in 18–24, attack4_1 in 24–30).
+   */
+  readonly chainNext: Readonly<Record<string, ChainStep & { readonly alternatives?: readonly ChainStep[] }>>;
   /** Per skill ID: frame from which it's off cooldown. */
   readonly readyAt: Readonly<Record<string, number>>;
   readonly pending: readonly PendingHit[];
@@ -179,9 +183,9 @@ export interface TimelineState {
   readonly stagger: { readonly poise: number; readonly until: number | null; readonly finisherUsed: boolean };
   /** Global time slow-downs (an ultimate's time stop, a combo's slow-down) still running or to come: per frame from `start`, all but `exempt` (the caster). */
   readonly slowdowns: readonly { readonly start: number; readonly scales: readonly number[]; readonly exempt: string }[];
-  /** Ultimate energy given later than the cast (a battle skill's team energy at its data frame, KitSkill.teamEnergyFrame). */
+  /** Ultimate energy given later than the cast (a battle skill's team energy at its data frames, KitSkill.teamEnergy); `if` judged for the caster at the frame. */
   /** Energy grants still to come; `cast`: the cast that grants it (a skill's team energy at its data frame), dropped if it's cut short first. */
-  readonly pendingEnergy: readonly { readonly frame: number; readonly operator: string; readonly amount: number; readonly cast?: { readonly operator: string; readonly index: number } }[];
+  readonly pendingEnergy: readonly { readonly frame: number; readonly operator: string; readonly amount: number; readonly cast?: { readonly operator: string; readonly index: number }; readonly if?: Predicate }[];
   readonly enemy: EnemyStatus;
   /** Timed buffs and debuffs from skills. */
   readonly buffs: readonly ActiveBuff[];
@@ -347,10 +351,23 @@ function timingOf(ctx: TimelineContext, skillId: string): SkillTiming {
  * chain points at it; another basic attack not while the chain points
  * elsewhere (the input would resolve to the step).
  */
+/** A basic-attack chain step and the frames in which an attack input resolves to it. */
+export interface ChainStep {
+  readonly skill: string;
+  readonly from: number;
+  readonly until: number;
+}
+
+/** The chain's steps for an operator: the next one, then its alternatives. */
+function chainSteps(st: TimelineState, operator: string): readonly ChainStep[] {
+  const c = st.chainNext[operator];
+  return c ? [c, ...(c.alternatives ?? [])] : [];
+}
+
 function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, skillId: string, base: number): { frame: number } | { error: string } {
   const next = kitSkill(ctx, operator, skillId);
   const nt = timingOf(ctx, skillId);
-  const chain = st.chainNext[operator];
+  const steps = chainSteps(st, operator);
   let frame = base;
   const cur = st.acting[operator];
   if (cur) {
@@ -364,12 +381,16 @@ function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, s
   }
   if (next.kind === "basic" && nt.specification === 1) {
     if (next.chainStep) {
-      if (!chain || chain.skill !== skillId) return { error: `${skillId} is a basic-attack chain step, and the chain isn't at it` };
-      frame = Math.max(frame, chain.from);
-      if (frame > chain.until) return { error: `${skillId}: the chain's window for it closes at frame ${chain.until}` };
-    } else if (chain && chain.skill !== skillId && chain.from <= frame && frame <= chain.until) {
-      // An attack input in the chain's window becomes the chain's step.
-      return actionGate(ctx, st, operator, skillId, chain.until + 1);
+      const own = steps.filter((c) => c.skill === skillId);
+      if (!own.length) return { error: `${skillId} is a basic-attack chain step, and the chain isn't at it` };
+      // The first of its windows still open.
+      const open = own.find((c) => Math.max(frame, c.from) <= c.until);
+      if (!open) return { error: `${skillId}: the chain's window for it closes at frame ${Math.max(...own.map((c) => c.until))}` };
+      frame = Math.max(frame, open.from);
+    } else {
+      // An attack input in one of the chain's windows becomes that window's step.
+      const inWindow = steps.find((c) => c.skill !== skillId && c.from <= frame && frame <= c.until);
+      if (inWindow) return actionGate(ctx, st, operator, skillId, inWindow.until + 1);
     }
   }
   return { frame };
@@ -382,14 +403,17 @@ function chainAfter(ctx: TimelineContext, st: TimelineState, operator: string, s
   const { [operator]: prev, ...rest } = st.chainNext;
   if (skill.kind === "basic" && t.specification === 1) {
     const kit = ctx.kits.get(operator);
+    const steps: ChainStep[] = [];
     for (const w of t.windows) {
       // Only a chain step (attack2…) continues the chain; a window listing the skill itself or another chain head doesn't.
       const step = w.skills.find((id) => kit?.skills.some((s) => s.skillId === id && s.kind === "basic" && s.chainStep));
-      if (step) return { ...rest, [operator]: { skill: step, from: at(w.from), until: at(w.to) } };
+      if (step) steps.push({ skill: step, from: at(w.from), until: at(w.to) });
     }
-    return rest;
+    const [first, ...alternatives] = steps;
+    return first ? { ...rest, [operator]: { ...first, ...(alternatives.length ? { alternatives } : {}) } } : rest;
   }
   // dontInterruptCombo: the next attack still continues the chain up to 1 s after this skill's exclusive time (Endaxis: OffsetCacheTime).
+  // The step that was next is kept (not its alternatives by timing: the timing is gone).
   if (t.keepsChain && prev && prev.until >= frame) return { ...rest, [operator]: { skill: prev.skill, from: frame, until: at(t.exclusiveFrames) + CHAIN_CACHE_FRAMES } };
   return rest;
 }
@@ -487,6 +511,7 @@ function shiftWorld(st: TimelineState, start: number, n: number): TimelineState 
 function shiftOperator(st: TimelineState, operator: string, start: number, n: number): TimelineState {
   if (n <= 0) return st;
   const later = (f: number) => (f > start ? f + n : f);
+  const shift = (c: ChainStep): ChainStep => ({ skill: c.skill, from: later(c.from), until: later(c.until) });
   const cur = st.acting[operator];
   const chain = st.chainNext[operator];
   return {
@@ -494,7 +519,7 @@ function shiftOperator(st: TimelineState, operator: string, start: number, n: nu
     pending: st.pending.map((h) => (h.operator === operator && h.frame > start ? { ...h, frame: h.frame + n } : h)),
     pendingActions: st.pendingActions.map((a) => (a.owner === operator && a.frame > start ? { ...a, frame: a.frame + n } : a)),
     ...(cur ? { acting: { ...st.acting, [operator]: { ...cur, frame: cur.frame + n } } } : {}),
-    ...(chain ? { chainNext: { ...st.chainNext, [operator]: { ...chain, from: later(chain.from), until: later(chain.until) } } } : {}),
+    ...(chain ? { chainNext: { ...st.chainNext, [operator]: { ...shift(chain), ...(chain.alternatives ? { alternatives: chain.alternatives.map(shift) } : {}) } } } : {}),
   };
 }
 
@@ -1211,7 +1236,10 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
       continue;
     }
     if (grant && first(grant.frame, buffTick?.frame ?? null, hitFrame)) {
-      st = gainEnergy(ctx, { ...st, pendingEnergy: st.pendingEnergy.filter((g) => g !== grant) }, grant.operator, grant.amount, grant.frame);
+      st = { ...st, pendingEnergy: st.pendingEnergy.filter((g) => g !== grant) };
+      const caster = grant.cast?.operator ?? grant.operator;
+      const holds = !grant.if || decide(grant.if, evalContext(ctx.data, ctx.builds.get(caster) as Build, ctx.panels.get(caster) as StatPanel, "", situationAt(ctx, caster, st, grant.frame)));
+      if (holds) st = gainEnergy(ctx, st, grant.operator, grant.amount, grant.frame);
       continue;
     }
     if (buffTick && first(buffTick.frame, hitFrame)) {
@@ -1244,8 +1272,32 @@ function afterCantCast(ctx: TimelineContext, state: TimelineState, operator: str
   return f;
 }
 
-/** The earliest frame an action could start from the current state, or a reason it can't. */
+/**
+ * The earliest frame an action could start from the current state, or a
+ * reason it can't. When the operator's kit can end its own action
+ * (`endAction`), the action the gate waits on may end sooner: then it's
+ * judged from the frame that happens.
+ */
 export function earliestStart(ctx: TimelineContext, state: TimelineState, action: RotationAction): { frame: number } | { error: string } {
+  const r = startFrom(ctx, state, action);
+  const cur = state.acting[action.operator];
+  if (!cur || ("frame" in r && r.frame <= state.frame) || !ctx.kits.get(action.operator)?.triggers.some((t) => t.do.some((a) => a.kind === "endAction"))) return r;
+  const t = timingOf(ctx, cur.skill);
+  const horizon = Math.min(ctx.scenario.durationFrames, "frame" in r ? r.frame : cur.frame + Math.round(t.durationFrames / (cur.speed ?? 1)));
+  const same = (x: TimelineState) => x.acting[action.operator]?.frame === cur.frame && x.acting[action.operator]?.skill === cur.skill;
+  if (horizon <= state.frame || same(advance(ctx, state, horizon))) return r;
+  // The first frame its action is over or replaced: everything before it is as the plain judgement saw it.
+  let lo = state.frame;
+  let hi = horizon;
+  while (hi - lo > 1) {
+    const mid = Math.floor((lo + hi) / 2);
+    if (same(advance(ctx, state, mid))) lo = mid;
+    else hi = mid;
+  }
+  return startFrom(ctx, advance(ctx, state, hi), action);
+}
+
+function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationAction): { frame: number } | { error: string } {
   if (!ctx.builds.has(action.operator)) return { error: `${action.operator} isn't in the team` };
   let frame = Math.max(state.frame, action.at ?? 0);
   if (action.skill === "swap") {
@@ -1440,11 +1492,13 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   const natural = Math.max(0, costs.spCost - s.spReturned);
   let next: TimelineState = { ...s, spReturned: Math.max(0, s.spReturned - costs.spCost) };
   if (natural > 0) {
-    if (skill.teamEnergyFrame === undefined) for (const b of ctx.scenario.team) next = gainEnergy(ctx, next, b.operator, natural * ENERGY.perNaturalSp, frame);
-    else {
-      const at = frame + scaled(skill.teamEnergyFrame);
-      next = { ...next, pendingEnergy: [...next.pendingEnergy, ...ctx.scenario.team.map((b) => ({ frame: at, operator: b.operator, amount: natural * ENERGY.perNaturalSp, cast: { operator, index: castIndex } }))] };
-    }
+    if (skill.teamEnergy === undefined) for (const b of ctx.scenario.team) next = gainEnergy(ctx, next, b.operator, natural * ENERGY.perNaturalSp, frame);
+    else
+      for (const part of skill.teamEnergy) {
+        const at = frame + scaled(part.frame);
+        const grants = ctx.scenario.team.map((b) => ({ frame: at, operator: b.operator, amount: natural * ENERGY.perNaturalSp * part.ratio, cast: { operator, index: castIndex }, ...(part.if ? { if: part.if } : {}) }));
+        next = { ...next, pendingEnergy: [...next.pendingEnergy, ...grants] };
+      }
   }
   if (costs.energyCost > 0) next = { ...next, energy: { ...next.energy, [operator]: Math.max(0, (next.energy[operator] ?? 0) - costs.energyCost) } };
   if (skill.energyBlockSeconds) next = { ...next, energyBlockedUntil: { ...next.energyBlockedUntil, [operator]: frame + Math.round(skill.energyBlockSeconds * FPS) } };
