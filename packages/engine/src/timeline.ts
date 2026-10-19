@@ -995,6 +995,11 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
         const panel = ctx.panels.get(owner) as StatPanel;
         const ec = evalContext(ctx.data, b, panel, triggerSkillId(owner, t), triggerSituation(ctx, owner, atEvent, e));
         if (t.if && !decide(t.if, ec)) continue;
+        if (t.chance !== undefined) {
+          const roll = draw(ctx, st, "chance");
+          st = roll.state;
+          if (roll.value >= evaluate(t.chance, ec)) continue;
+        }
         const cooldown = t.cooldown === undefined ? 0 : Math.round(evaluate(t.cooldown, ec) * FPS);
         st = { ...st, triggerState: { ...st.triggerState, [key]: { readyAt: e.frame + cooldown, count: (ts?.count ?? 0) + 1 } } };
         if (castKey) st = { ...st, triggerState: { ...st.triggerState, [castKey]: { readyAt: 0, count: (st.triggerState[castKey]?.count ?? 0) + 1 } } };

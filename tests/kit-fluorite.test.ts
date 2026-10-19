@@ -82,15 +82,22 @@ describe("Fluorite's kit", () => {
     expect(from(unlearned ?? { modifiers: [] }, "Love the Stab and Twist")).toEqual([]);
   });
 
-  it("talent 2: an Arts attack on her gives ATK probability × atk_up (0.3 × 0.2 at P5, 0.2 × 0.2 below P2) for 10 s; a Physical one doesn't", () => {
+  it("talent 2: an Arts attack on her gives ATK +atk_up (0.2) for 10 s with a chance (0.3 at P5, 0.2 below P2), rolled per seed; a Physical one doesn't", () => {
     const attacks = (element: "natural" | "physical"): Partial<TimelineScenario> => ({ enemyActions: [{ kind: "attack", at: [30], element }] });
-    const atk = (b: Partial<Build>, element: "natural" | "physical", at: number) =>
-      from(mine(run(scenario(b, attacks(element)), [op("attack1", at)])).find((h) => h.skillId === P + "attack1") ?? { modifiers: [] }, "Unpredictable").map((m) => m.value);
-    expect(atk({}, "natural", 40)).toEqual([expect.closeTo(0.06, 6)]);
-    expect(atk({ potential: 1 }, "natural", 40)).toEqual([expect.closeTo(0.04, 6)]);
-    expect(atk({}, "physical", 40)).toEqual([]);
+    const atk = (b: Partial<Build>, element: "natural" | "physical", at: number, seed = 1) => {
+      const sc = scenario(b, attacks(element));
+      return from(mine(run({ ...sc, options: { ...sc.options, seed } }, [op("attack1", at)])).find((h) => h.skillId === P + "attack1") ?? { modifiers: [] }, "Unpredictable").map((m) => m.value);
+    };
+    const seeds = Array.from({ length: 60 }, (_, i) => i + 1);
+    const procs = (b: Partial<Build>) => seeds.filter((seed) => atk(b, "natural", 40, seed).length > 0).length / seeds.length;
+    const lucky = seeds.find((seed) => atk({}, "natural", 40, seed).length > 0) as number;
+    expect(atk({}, "natural", 40, lucky)).toEqual([expect.closeTo(0.2, 6)]);
+    expect(procs({})).toBeGreaterThan(0.15);
+    expect(procs({})).toBeLessThan(0.45);
+    expect(procs({ potential: 1 })).toBeLessThan(procs({}) + 0.15);
+    expect(seeds.some((seed) => atk({}, "physical", 40, seed).length > 0)).toBe(false);
     // 10 s from the attack at 1 s: gone by 11 s.
-    expect(atk({}, "natural", 11 * 30)).toEqual([]);
+    expect(atk({}, "natural", 11 * 30, lucky)).toEqual([]);
   });
 
   it("combo: opened by 2 Nature stacks, inflicts the window's element; P5 cuts its cooldown 1 s per Cryo / Nature infliction, at most once a second", () => {

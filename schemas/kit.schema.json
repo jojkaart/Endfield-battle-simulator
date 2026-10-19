@@ -925,6 +925,10 @@
             "minimum": 1,
             "description": "At most this many times per cast whose hits cause the events (events of no cast aren't limited)."
           },
+          "chance": {
+            "$ref": "#/$defs/valueExpr",
+            "description": "It fires with this chance (BuffData Probablity), judged for the owner after `if`, rolled on the battle's `chance` stream (the scenario's seed); a miss starts no cooldown and counts for nothing."
+          },
           "beforeDamage": {
             "type": "boolean",
             "description": "Status events only: runs on a hit's own status events before that hit's damage, so a buff it applies acts on the hit."

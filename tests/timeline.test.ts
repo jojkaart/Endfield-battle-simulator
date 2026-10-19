@@ -1849,3 +1849,27 @@ describe("dodges and perfect dodges", () => {
     expect(s.stacks[op]?.hit).toBe(1);
   });
 });
+
+describe("trigger chances", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const count = (chance: number, seed = 1) => {
+    const t: KitTrigger = { id: "lucky", on: { event: "hit", skills: [L + "attack1"] }, by: "self", chance, do: [{ kind: "gain", gains: [{ stack: "n", amount: 1 }] }] };
+    const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, stacks: [...kit.stacks, { id: "n", label: "n", max: 999 }], triggers: [...kit.triggers, t] } } } };
+    const rotation = Array.from({ length: 6 }, () => chain).flat();
+    const ctx = createContext(g, { ...scenario(rotation), options: { crit: "never", seed } });
+    let s = init(ctx);
+    for (const a of rotation) s = apply(ctx, s, a);
+    s = advance(ctx, s, ctx.scenario.durationFrames);
+    return { n: s.stacks[op]?.n ?? 0, hits: s.hits.filter((h) => h.skillId === L + "attack1").length };
+  };
+
+  it("fires with its chance, rolled per seed: never at 0, every time at 1, some of the time between", () => {
+    const all = count(1);
+    expect(all.n).toBe(all.hits);
+    expect(count(0).n).toBe(0);
+    const half = count(0.5);
+    expect(half.n).toBeGreaterThan(0);
+    expect(half.n).toBeLessThan(half.hits);
+    expect(count(0.5, 1).n).toBe(half.n);
+  });
+});

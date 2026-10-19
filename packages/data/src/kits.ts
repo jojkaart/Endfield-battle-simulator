@@ -295,6 +295,7 @@ function kitChecker(scope: KitScope) {
     if (t.awaited && !(t.delay && t.on.event === "cast" && !t.detached)) throw new Error(`${where}: only a delayed cast trigger that belongs to its cast can be awaited`);
     if (t.if) checkPredicate(t.if, where);
     if (t.cooldown !== undefined) checkValue(t.cooldown, skillId, `${where} cooldown`);
+    if (t.chance !== undefined) checkValue(t.chance, skillId, `${where} chance`);
     for (const a of t.do) {
       if (a.if) checkPredicate(a.if, where);
       switch (a.kind) {

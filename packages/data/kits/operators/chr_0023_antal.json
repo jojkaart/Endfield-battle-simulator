@@ -105,8 +105,9 @@
       "on": { "event": "attacked", "elements": ["physical"] },
       "by": "self",
       "if": { "talentAtLeast": [1, 1] },
+      "chance": { "talent": 1, "key": "probability" },
       "do": [{ "kind": "heal", "target": "self" }],
-      "note": "Talent 2: \"Gains {probability:0%} chance of Physical DMG immunity and restores HP of self.\" Interim: the 30% chance isn't modelled (triggers have no seeded chance), so every Physical enemy attack on him that isn't perfectly dodged heals him; the game also skips it while he dashes (a failed dodge). The immunity is defensive (incoming damage isn't modelled). Heal amounts aren't modelled; the heal is an event for heal triggers."
+      "note": "Talent 2: \"Gains {probability:0%} chance of Physical DMG immunity and restores HP of self.\" The chance is rolled (trigger `chance`, batch 2 K1) on every Physical enemy attack on him that isn't perfectly dodged; the game also skips it while he dashes (a failed dodge; K8). The immunity is defensive (incoming damage isn't modelled). Heal amounts aren't modelled; the heal is an event for heal triggers."
     }
   ],
   "skills": [

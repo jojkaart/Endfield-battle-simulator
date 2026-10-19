@@ -37,7 +37,7 @@
     },
     {
       "id": "unpredictable",
-      "label": "Unpredictable: ATK (expected value)",
+      "label": "Unpredictable: ATK",
       "target": "self",
       "duration": {
         "talent": 1,
@@ -47,21 +47,13 @@
         {
           "zone": "atk",
           "value": {
-            "product": [
-              {
-                "talent": 1,
-                "key": "probability"
-              },
-              {
-                "talent": 1,
-                "key": "atk_up"
-              }
-            ]
+            "talent": 1,
+            "key": "atk_up"
           }
         }
       ],
       "gameBuff": "buff_chr_0022_bounda_talent_2_atkup",
-      "note": "Talent 2: on taking Arts DMG, a `probability` chance (0.2; P2 +0.1) of Arts DMG immunity (buff_common_damage_immune_talent, 0.01 s: damage taken isn't modelled) and ATK +atk_up (0.1 / 0.2) for `duration` (10 s; stackingType 4: refreshed). INTERIM: the engine has no trigger chance (Probablity), so the buff carries the expected value probability × atk_up and every Arts attack refreshes it; exact on average for attacks more than 10 s apart, low for denser ones (gap noted in the report)."
+      "note": "Talent 2: on taking Arts DMG, a `probability` chance (0.2; P2 +0.1) of Arts DMG immunity (buff_common_damage_immune_talent, 0.01 s: damage taken isn't modelled) and ATK +atk_up (0.1 / 0.2) for `duration` (10 s; stackingType 4: refreshed). The chance is the trigger's (rolled; batch 2 K1)."
     }
   ],
   "triggers": [
@@ -210,13 +202,17 @@
           1
         ]
       },
+      "chance": {
+        "talent": 1,
+        "key": "probability"
+      },
       "do": [
         {
           "kind": "buff",
           "buff": "unpredictable"
         }
       ],
-      "note": "buff_chr_0022_bounda_talent_2: abilityEvent 101 (she takes damage) × 4 branches, CheckTagMatch on the attacker (an enemy), CheckDamageType 2 / 3 / 4 / 6 (Heat, Electric, Cryo, Nature: Arts DMG), Probablity `probability` → the immunity and the ATK buff. The enemy's attacks come from the scenario (enemyActions); the chance is the buff's expected value (see the buff)."
+      "note": "buff_chr_0022_bounda_talent_2: abilityEvent 101 (she takes damage) × 4 branches, CheckTagMatch on the attacker (an enemy), CheckDamageType 2 / 3 / 4 / 6 (Heat, Electric, Cryo, Nature: Arts DMG), Probablity `probability` → the immunity and the ATK buff. The enemy's attacks come from the scenario (enemyActions); the chance is rolled on the battle's `chance` stream."
     },
     {
       "id": "love_the_stab_and_twist",

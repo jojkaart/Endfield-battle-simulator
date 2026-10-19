@@ -220,6 +220,12 @@ export interface KitTrigger {
   readonly maxCount?: number;
   /** At most this many times per cast whose hits cause the events (the game's per-cast flags, e.g. is_power_attacked); events of no cast don't count. */
   readonly maxPerCast?: number;
+  /**
+   * It fires with this chance (BuffData `Probablity`), judged for the owner
+   * at the event after `if`, rolled on the battle's `chance` stream (the
+   * scenario's seed): a miss starts no cooldown and counts for nothing.
+   */
+  readonly chance?: ValueExpr;
   /** Status events only: run on a hit's own status events before that hit's damage, so a buff it applies acts on the hit (Pursuit's Lift). */
   readonly beforeDamage?: boolean;
   /**
