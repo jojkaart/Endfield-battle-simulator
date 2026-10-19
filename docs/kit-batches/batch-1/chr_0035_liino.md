@@ -817,3 +817,117 @@ travel; lower priority).
 Worth adding there (not edited in this pass): to 27, "(c) after her combo in Cosmovoice, can she basic attack or swap
 before Cosmovoice ends?" (N2); to 29, "after her combo in Vocalist, wait 3 s, then have an Electric or Nature teammate
 cast a battle skill: are SP returned?" (whether her stance's CastSkill follow-up uses up Starry Boost; N4).
+
+## Kit (2026-10-18)
+
+Phase 5. Written from the pass-3 plan with the pass-3 features (batch-1.md "Pass 3: re-analysis"). Scratch scripts:
+`/tmp/claude-0/-home-user-Endfield-battle-simulator/cfb486ef-c396-564d-b928-8b0d87099e4f/scratchpad/liino/` (spot.ts, spot3.ts,
+decomp.ts; before/after outputs).
+
+### What was written
+
+- **packages/data/kits/operators/chr_0035_liino.json**, replacing the old kit. Buffs vocalist_stance (team ATK, gameBuff
+  buff_chr_0035_liino_atkup, ticks every `music_trigger` from the start), stance_action (`endsWithCast` marker),
+  volley_window, cosmovoice_atk (same gameBuff: one stack group with Vocalist), cosmovoice_amp (gameBuff
+  buff_chr_0035_liino_spellenhance), cosmovoice_block (`blocksEnergy`, `ultmusic_duration`), starry_boost; stack p1_ready.
+  Skills: battle skill (2 projectile entries, `teamEnergyFrame` 15, poise), End Stance and normal_skill_combo (hitless),
+  combo (`beside: {buffActive: cosmovoice_amp}`, hit 2 heals the controlled operator), ultimate (20 projectiles in 4
+  entries, bomb with forced Electrification and poise; no `energyBlockSeconds`), attack1–5, plunging attack, finisher
+  (factors 0.1 × 3 and 0.7). 18 triggers: the plan's list plus ult_song (below), with End Stance's cooldown as
+  `{kind: cooldown, set: set_cd}`, healKind on the three trigger heals, and one Starry Boost trigger with
+  `followUp: false`.
+- **packages/data/kits/equipment/wpn_lance_0014.json**: team buff with `maxStacks: max_stack`, given `to: eventSubject`
+  by `on: {event: heal, toOthers: true, kinds: [battle, combo, ultimate]}`, `cooldown: 0.1`, `cooldownPer: eventSubject`.
+- **packages/data/kits/equipment/suit_heal01.json**: sources only. Both LYNX effects act on healing and damage taken, which
+  aren't simulated; the file says so, and how effect (2) would be written.
+- Tests: KNOWN in packages/data/test/skillCompile.test.ts loses the four old Liino entries (follow-up frames, beat count,
+  beats at 482/527, teamEnergyFrame) and gains four, each with its reason: energyBlockSeconds (the block is a buff for the
+  whole stance; the compiler reads the 1 s duration), the finale landing no skill hit claims (it's ult_song's hit), and the
+  finisher's two factors (the compiler doesn't read BreakingAttackCalculation yet, D2). packages/data/test/kits.test.ts:
+  Liino's known gaps are gone (basic attacks, plunging attack, finisher and normal_skill_combo are in the kit).
+- examples/liino-laevatain.scenario.json: description only (its combo now opens in Cosmovoice and runs beside the
+  ultimate). examples/liino-heal-usp.json is unchanged.
+- docs/in-game-tests.md tests 25 and 28: the "why" brought up to date (4 stacks per teammate; the cantCastSkill hold and
+  the 3 s cooldown are modelled).
+
+### Deviations from the plan, and why
+
+1. **Beats and finale are hits of a cast trigger (ult_song), not of the ultimate.** As skill hits with `if: {buffActive:
+   cosmovoice_amp}` they never land: castSkill also judges every hit's `if` on the cast's situation (`met` →
+   hitAvailable(castSituation)), and at the cast the stance doesn't exist yet. Trigger hits are judged only as they land,
+   so End Stance (which ends cosmovoice_amp) still stops the beats to come and the finale, and the combo in Cosmovoice
+   (beside the ultimate) doesn't touch them. Same frames, keys, events and heals; damageType ultimate. Engine change E1
+   below would let them move back.
+2. **ult_heal_finale is a plain delayed cast action (not detached, no `if`).** advance() runs a buff's expiry before an
+   earlier delayed action when one step covers both (E2), so `if: buffActive cosmovoice_amp` at 513 failed against the
+   expiry at 526 whenever the fight jumped past both (seen: 10 weapon heals instead of 11 after an ultimate alone). End
+   Stance ends the ultimate's action, which drops the delayed action; nothing else can (the combo runs beside), so this is
+   exact.
+3. Pass-3 interims replaced by the new features: end_stance_lockout → cooldown `set` (a battle skill asked for early now
+   waits instead of failing); starry_boost_self / starry_boost_team → one `by: anyone`, `kinds: [battle]`,
+   `followUp: false` trigger (Liino is Electric, so her own battle skill and End Stance count; her normal_skill_combo
+   doesn't); trigger heals carry healKind (soundwave battle, ultimate start and finale ultimate), so the weapon trigger has
+   `kinds`; the combo has `beside`.
+4. normal_skill_combo's "never" predicate is `{not: {potentialAtLeast: 0}}`: the schema caps potentialAtLeast at 5.
+5. Poise from each DamageAction's poiseCalculation: battle projectiles (0.5 each), combo hit 2 (5), bomb (20), attack5 (19,
+   `poiseControlledOnly`: onlyEnableForMainChar). The volley, beats, finale, other basic attacks and the finisher have none.
+6. Combo hit IDs stay hit1 / hit2 (plan: hit / hit_2); the ultimate's side shots are their own entries (projectiles_l / _r).
+
+### Verification
+
+`npm run check`: typecheck, lint, 388 tests pass.
+
+Log fixtures (`efsim zmdlogs check`), Liino, before → after: identical.
+
+| Fixture | Hits | Match | Mismatch | Unmodelled | Not covered | Coverage |
+|---|---|---|---|---|---|---|
+| zmdlogs-0eef2474a26f | 13 | 12 → 12 | 0 | 1 | 0 | 100% → 100% |
+| zmdlogs-bdf223db8e49 | 20 | 12 → 12 | 0 | 8 | 0 | 100% → 100% |
+| zmdlogs-d9e59d0fb737 | 24 | 0 → 0 | 0 | 24 | 0 | 100% → 100% |
+| zmdlogs-dbaee23b801d | 25 | 25 → 25 | 0 | 0 | 0 | 100% → 100% |
+
+The volleys (now trigger hits) are found by their event key as before. dbaee23 now reports "situational parts assumed ×4"
+(the beats' `if`, which a log can't record). Teammates' lines are unchanged (the checker reads their logged weapon buffs).
+
+examples/liino-laevatain.scenario.json: 413,283 → 444,677 (last hit 21.97 s both). Laevatain 307,782 → 342,806: +35,024 is
+the weapon's ATK layers on her (without the weapon kit she's at 307,782 exactly: Cosmovoice's ATK takes over from
+Vocalist's at the same +10%). Liino 105,501 → 101,871: −3,630 is the old kit's fixed volley at frame 45; in this rotation no
+reaction happens in Vocalist Stance (her ultimate ends it before anything reacts), so no volley fires. All her other hits
+are equal.
+
+Spot checks (scratch spot.ts, spot3.ts; team Si, Liino at P1, Laevatain, Arcane): P1 returns 25 SP on the first battle
+skill only; vocalist_stance ticks at 0, 3 s, … heal the team and give each teammate its own lance layer per tick, 4 each by
+9 s; the first reaction (Corrosion) fires the volley at +24…33 and opens the combo; a second reaction 2 s later gives no
+volley, one 10.5 s later does; consumeStatus on Corrosion (a test trigger) opens the combo through combo_on_consumed; a combo
+cast at the reaction drops the volley (combo_cancels_volley); after a combo in Vocalist, normal_skill_combo is cast at +67
+and stance_action follows it; starry_boost appears at combo +33 and Arcane's next battle skill uses it up (End Stance in
+Cosmovoice does too, returning 10 SP); End Stance from Vocalist ends the stance and the listener and makes the battle skill
+ready 90 frames later; the stance running out ends her action (stance_end); the ultimate ends Vocalist and gives
+cosmovoice_atk / _amp / _block from frame 76, 9 beats and the finale at 508 when left alone; in Cosmovoice her own bomb's
+Electrification opens the combo, which runs beside the ultimate (her action stays the ultimate); End Stance at ultimate
++410 ends the three buffs, and no later beat nor the finale lands.
+
+### Still unverified
+
+In-game tests: 25 (weapon layers per teammate), 26 (volley reading B as modelled), 27 (combo and energy block in
+Cosmovoice), 28 (actions in the stance; End Stance's 3 s), 29 (End Stance as a battle skill for Starry Boost and Link), 17
+(JumpTo tails not played), 15 / 18 (holds and the time stop), 6, 47 (projectile travel). No log has the finale, a combo in
+Cosmovoice (its log key buff_chr_0035_liino_comboskill_ultskill_hit is assumed), End Stance, P1 or talent-2 SP, or any basic
+attack, plunge or finisher.
+
+### Engine changes this kit would use
+
+- **E1. A skill hit's `if` is judged at the cast as well as at landing.** timeline.ts castSkill: `met` filters
+  `skill.hits` with hitAvailable(…, castSituation) (buffActive, stacks and controlled known), so a hit gated on a buff its
+  own skill applies earlier never lands. The schema says the `if` is "judged as it lands". Fix: drop `if` from the
+  cast-time filter (keep `requires`); landHit already judges it. Then ult_song's two hits go back to the ultimate skill
+  (KNOWN loses the finale line).
+- **E2. advance() runs status ticks and buff expiries before earlier delayed actions and energy grants.** The tick
+  branch's `first(tickDue, expiry, buffTick, hitFrame)` and the expiry branch's `first(expiry, buffTick, hitFrame)` leave
+  out `due.frame` (pendingActions) and `grant.frame` (pendingEnergy). Fix: compute `due` and `grant` first and include
+  them in both comparisons. Repro: Liino's ultimate alone with ult_heal_finale given `if: {buffActive: cosmovoice_amp}`:
+  advancing 0 → 530 in one step runs the expiry at 526 before the action at 513 (weapon heal count 10); stepwise, 11.
+- E3 (minor). earliestStart applies ownHitsLanded to a cast that runs `beside`: it waits for the current skill's
+  non-detached hits though it won't cancel them. The kit avoids it (every ultimate hit is detached or a trigger hit).
+- E4 (minor). earliestStart reads the action gate from the state before advancing: when the stance runs out at 1812
+  (stance_end ends her action), a battle skill without `at` starts at 1817 (the ended action's window) instead of 1812.

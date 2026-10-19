@@ -1,0 +1,52 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_lance_0014",
+  "sources": [
+    "rmxlinux Json/SkillData sk_wpn_lance_0014 passiveEventActions: abilityEvent 50 (a heal by the wielder), CheckHealTag (the battle −320297214, combo −1517158118 and ultimate −1499119779 skill heal tags), NotNext CheckTargetsEqual (the healed operator isn't the wielder), CheckTimedMarkerCondition / CreateTimedMarker sk_wpn_lance_0014 0.1 s on the receiver, then CreateBuff buff_wpn_lance_0014_damageup on the healed operator. BuffData buff_wpn_lance_0014_damageup: attributeType 2 formulaItem 6 (ATK +atk_up), stackingType 11 (independent layers, each with its own duration), maximum from max_stack. SkillPatchTable sk_wpn_lance_0014: atk_up 0.035 (L1) to 0.098 (L9), duration 20, max_stack 4.",
+    "Description (Medicant: Shimmering Curtain): when the wielder's skill heals another operator, that operator gains ATK for 20 s, up to 4 stacks, each operator at most once every 0.1 s. Logs: teammates' hits carry 1–4 layers of buff_wpn_lance_0014_damageup (0.098 at L9 in zmdlogs-bdf223db8e49 and -0eef2474a26f, 0.056 at L4 in -dbaee23b801d and -d9e59d0fb737); the wielder's own hits none.",
+    "The weapon's other effects (Will +156 at L9, Treatment Efficiency, main attribute +44.8%: cardAttributeModifier) are in the stat panel; Treatment Efficiency doesn't act on damage."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_lance_0014.atk",
+      "label": "Medicant: Shimmering Curtain (ATK)",
+      "target": "team",
+      "gameBuff": "buff_wpn_lance_0014_damageup",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [
+        {
+          "zone": "atk",
+          "value": "atk_up"
+        }
+      ],
+      "note": "Given to the healed operator only (to: eventSubject); layers are kept per recipient, so each teammate has up to max_stack of its own."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_lance_0014.healed",
+      "on": {
+        "event": "heal",
+        "toOthers": true,
+        "kinds": [
+          "battle",
+          "combo",
+          "ultimate"
+        ]
+      },
+      "by": "self",
+      "skill": "sk_wpn_lance_0014",
+      "cooldown": 0.1,
+      "cooldownPer": "eventSubject",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "wpn_lance_0014.atk",
+          "to": "eventSubject"
+        }
+      ],
+      "note": "Heals the wielder's kit declares (hit heals, trigger heals with their healKind); untagged heals (talents, potentials, gear) don't count. The 0.1 s limit is per healed operator."
+    }
+  ]
+}

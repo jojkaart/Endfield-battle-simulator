@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/scenario.schema.json",
-  "description": "Liino supporting Laevatain vs Rhodagn, both ultimates charged: Liino's battle skill opens Vocalist Stance (team ATK), Laevatain's enhanced chain inflicts Heat, Liino's ultimate (Electric and Nature Amp for the team) ends with a bomb that forces Electrification, and that reaction during Vocalist Stance triggers Liino's combo (+20 ultimate energy).",
+  "description": "Liino supporting Laevatain vs Rhodagn, both ultimates charged: Liino's battle skill opens Vocalist Stance (team ATK; its soundwave heals give Laevatain Bedazzling Night Debut's ATK stacks), Laevatain's enhanced chain inflicts Heat, Liino's ultimate replaces Vocalist with Cosmovoice Stance (team ATK, Electric and Nature Amp, song beats and a finale) and its bomb forces Electrification; that reaction during Cosmovoice opens Liino's combo, which runs beside the ultimate (its 20 energy is blocked during Cosmovoice).",
   "team": [
     "laevatain-forgeborn.json",
     "liino-heal-usp.json"

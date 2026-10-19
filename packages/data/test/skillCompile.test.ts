@@ -299,13 +299,13 @@ const KNOWN: string[] = [
   // Finisher (BreakingAttackCalculation, mask 132): the compiler drops its `multiplier` (D2), 0.05 on the first six DamageActions and 0.7 on the seventh; the kit writes them as factors.
   "chr_0013_aglina_power_attack/hit factor: kit 0.05, data 1",
   "chr_0013_aglina_power_attack/final factor: kit 0.7, data 1",
-  // CreateBuff buff_common_obtain_ultimate_sp at 15; the kit gives the team energy at the cast.
-  "chr_0035_liino_normal_skill teamEnergyFrame: kit -, data 15",
-  // Launched by buff normalskill_music_animation_hitl (created at 45) from its frames 24–33; the kit uses the buff's creation frame. Log bdf223db8e49: first projhit_02 at 1485 ms, followup at 3231 ms (52 frames; data 57, kit 33).
-  "chr_0035_liino_normal_skill/followup frames: kit [45, 45, 45, 45, 45, 45], data [69, 70, 73, 74, 77, 78, 369, 370, 373, 374, 377, 378] (if CheckDistanceCondition(distance=20), if CheckTimedMarkerCondition(id=liino_normalskill_hit))",
-  // buff ultskill_music_damage (created at 77) lasts ultmusic_duration (15 s at every level) and triggers every ultmusic_trigger (1.5 s): 11 beats 77–527, kit 9 to 437. Each beat launches two projectiles (soundwave, soundwave_heal) into the same projhit, whose damage is gated to non-character targets; which one hits the enemy isn't decided.
-  "chr_0035_liino_ultimate_skill/beats count: kit 9, data 18 landings at its frames (chr_0035_liino_ultimate_skill_soundwave_projhit)",
-  "chr_0035_liino_ultimate_skill: data lands chr_0035_liino_ultimate_skill_soundwave_projhit atk_scale_3 at [482, 482, 527, 527], no kit hit",
+  // buff_chr_0035_liino_ultskill_refrainobtainusp has duration 1 s but lifeType 1 (until ended) and is created by a 77–527 autoFinishByAction clip: the kit blocks energy with the cosmovoice_block buff for the whole stance (in-game test 27). The compiler reads the 1 s.
+  "chr_0035_liino_ultimate_skill energyBlockSeconds: kit -, data 3.567",
+  // The finale (and the beats, whose landings are on a branch) are hits of the kit's ult_song cast trigger, not of the skill: the engine judges a skill hit's `if` (buffActive cosmovoice_amp) at the cast, before the stance exists.
+  "chr_0035_liino_ultimate_skill: data lands chr_0035_liino_ultimate_skill_soundwave_02_projhit atk_scale_3 × final_value at [508], no kit hit",
+  // BreakingAttackCalculation multipliers 0.1 (frames 12, 15, 18) and 0.7 (34): 1 × atk_scale in all. The compiler doesn't read them (D2) and lands 4 × atk_scale.
+  "chr_0035_liino_power_attack/ticks factor: kit 0.1, data 1",
+  "chr_0035_liino_power_attack/final factor: kit 0.7, data 1",
   // Compiler limitation (D2), kit right: CreateBuff buff_common_obtain_ultimate_sp is in chr_0021_whiten_normal_skill_projhit (launched at 21) on the first-target branch (EntityBB_first_hit), which the compiler leaves undecided.
   "chr_0021_whiten_normal_skill teamEnergyFrame: kit 21, data 0",
 ];

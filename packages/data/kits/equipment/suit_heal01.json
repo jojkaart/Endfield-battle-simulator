@@ -1,0 +1,7 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_heal01",
+  "sources": [
+    "LYNX 3-piece (EquipSuitTable suit_heal01; rmxlinux SkillData passive_equipsuit_healup_01, BuffData buff_equipsuit_healup_01). Its two effects don't act on damage dealt, so this kit has nothing to declare: (1) the wearer's Treatment Efficiency +20% (cardAttributeModifier attribute 29, in the stat panel); (2) after the wearer heals an ally (abilityEvent 50), the ally gets buff_common_dmgtk_down_equip_1: 15% DMG Reduction for 10 s, 30% if the heal exceeds its Max HP, not stacking. Damage taken by the team isn't simulated. If it ever is, (2) is a heal trigger like wpn_lance_0014's giving a plain team buff to: eventSubject (one instance per recipient)."
+  ]
+}
