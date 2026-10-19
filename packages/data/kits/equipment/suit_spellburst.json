@@ -21,6 +21,7 @@
       "id": "suit_spellburst.burst",
       "on": { "event": "burst", "elements": ["natural", "cryst"] },
       "by": "self",
+      "beforeDamage": true,
       "cooldown": 0.1,
       "skill": "passive_equipsuit_spellburst01",
       "do": [{ "kind": "buff", "buff": "suit_spellburst.physpellup" }],

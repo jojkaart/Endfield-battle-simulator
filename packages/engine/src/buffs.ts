@@ -162,6 +162,8 @@ export function buffModifiers(buffs: readonly ActiveBuff[], operator: string, fr
   for (const b of buffs) {
     if (!(b.expiresAt > frame && b.appliedAt <= frame && reaches(b, operator))) continue;
     if (b.cast !== undefined && b.cast !== cast) continue;
+    // A buff a cast consumes acts only on that cast's hits: not before it's consumed.
+    if (b.cast === undefined && b.consumedBy) continue;
     for (const m of b.modifiers) {
       if (!b.stackGroup) {
         out.push(m);
@@ -180,7 +182,7 @@ export function buffAttr(buffs: readonly ActiveBuff[], operator: string, frame: 
   let sum = 0;
   const strongest = new Map<string, number>();
   for (const b of buffs) {
-    if (!(b.expiresAt > frame && b.appliedAt <= frame && reaches(b, operator) && b.cast === undefined)) continue;
+    if (!(b.expiresAt > frame && b.appliedAt <= frame && reaches(b, operator) && b.cast === undefined && !b.consumedBy)) continue;
     for (const a of b.attrs ?? []) {
       if (a.attr !== attr) continue;
       if (b.stackGroup) strongest.set(b.stackGroup, Math.max(strongest.get(b.stackGroup) ?? -Infinity, a.value));

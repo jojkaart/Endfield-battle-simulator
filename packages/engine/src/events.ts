@@ -46,8 +46,8 @@ export type BattleEvent =
   | { readonly type: "fightStart"; readonly frame: number; readonly operator: string }
   /** The enemy became Staggered (`operator` dealt the last stagger). */
   | { readonly type: "staggered"; readonly frame: number; readonly operator: string }
-  /** An operator's own stacks changed. */
-  | { readonly type: "stacks"; readonly frame: number; readonly operator: string };
+  /** An operator's own stacks were gained or used; `changed`: those whose count changed (a gain capped at the maximum changes none). */
+  | { readonly type: "stacks"; readonly frame: number; readonly operator: string; readonly changed?: readonly string[] };
 
 /**
  * What a buff is, for triggers on buffs of a kind (the game's buff tags):
@@ -219,7 +219,7 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
     case "heal":
       return e.type === "heal" && (!on.toOthers || e.target !== e.operator) && has(on.kinds, e.kind);
     case "stackAtLeast":
-      return e.type === "stacks" && e.operator === owner && (ownStacks[on.stack] ?? 0) >= on.atLeast;
+      return e.type === "stacks" && e.operator === owner && (e.changed === undefined || e.changed.includes(on.stack)) && (ownStacks[on.stack] ?? 0) >= on.atLeast;
     case "staggered":
       return e.type === "staggered";
     case "fightStart":

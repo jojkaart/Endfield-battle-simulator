@@ -71,6 +71,7 @@
       "id": "wpn_funnel_0019.burst",
       "on": { "event": "burst" },
       "by": "self",
+      "beforeDamage": true,
       "if": { "stack": "wpn_funnel_0019.windform", "atLeast": 1 },
       "cooldown": 0.1,
       "skill": "sk_wpn_funnel_0019",
@@ -78,7 +79,7 @@
         { "kind": "gain", "gains": [{ "stack": "wpn_funnel_0019.windform", "amount": -1 }] },
         { "kind": "buff", "buff": "wpn_funnel_0019.spelldmgup" }
       ],
-      "note": "Each of the wielder's Arts Bursts uses a Windform layer for an Arts DMG layer."
+      "note": "Each of the wielder's Arts Bursts uses a Windform layer for an Arts DMG layer, before that burst's damage (the data; log dbaee23b801d t=8391)."
     }
   ]
 }

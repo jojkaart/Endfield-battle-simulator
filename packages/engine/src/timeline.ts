@@ -378,7 +378,8 @@ function chainAfter(ctx: TimelineContext, st: TimelineState, operator: string, s
   if (skill.kind === "basic" && t.specification === 1) {
     const kit = ctx.kits.get(operator);
     for (const w of t.windows) {
-      const step = w.skills.find((id) => kit?.skills.some((s) => s.skillId === id && s.kind === "basic"));
+      // Only a chain step (attack2…) continues the chain; a window listing the skill itself or another chain head doesn't.
+      const step = w.skills.find((id) => kit?.skills.some((s) => s.skillId === id && s.kind === "basic" && s.chainStep));
       if (step) return { ...rest, [operator]: { skill: step, from: at(w.from), until: at(w.to) } };
     }
     return rest;
@@ -696,6 +697,11 @@ function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, s
 
 type Stacks = TimelineState["stacks"];
 
+/** The stacks whose count differs between two snapshots of an operator's stacks. */
+function changedStacks(was: Readonly<Record<string, number>>, now: Readonly<Record<string, number>>): string[] {
+  return [...new Set([...Object.keys(was), ...Object.keys(now)])].filter((k) => (was[k] ?? 0) !== (now[k] ?? 0));
+}
+
 function gainStacks(ctx: TimelineContext, stacks: Stacks, owner: string, gains: readonly StackGain[], ec: EvalContext): Stacks {
   let out = stacks;
   for (const g of gains) {
@@ -865,8 +871,11 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         break;
       }
       case "gain":
+      {
+        const was = st.stacks[owner] ?? {};
         st = { ...st, stacks: gainStacks(ctx, st.stacks, owner, a.gains, ec()) };
-        events.push({ type: "stacks", frame, operator: owner });
+        events.push({ type: "stacks", frame, operator: owner, changed: changedStacks(was, st.stacks[owner] ?? {}) });
+      }
         break;
       case "energy": {
         const v = evaluate(a.value, ec());
@@ -1035,11 +1044,16 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
       for (const x of r.events) if (x.kind === "consumed") consumed += x.stacks;
     }
   }
+  // A hit computed as a burst is one for triggers too (its damage is the hit's own).
+  const burst: StatusEvent[] = kitHit.reaction?.kind === "burst" ? [{ kind: "burst", frame: hit.frame, operator: hit.operator, element: kitHit.reaction.element }] : [];
   // Triggers that act before the hit's damage on its own status events (a buff they apply already counts for it).
-  if (statusEvents.length && ctx.beforeDamage) st = runTriggers(ctx, st, asEvents(statusEvents, kind, hit.cast), { operator: hit.operator, kind }, (t) => t.beforeDamage === true, false);
+  if ((statusEvents.length || burst.length) && ctx.beforeDamage) st = runTriggers(ctx, st, asEvents([...statusEvents, ...burst], kind, hit.cast), { operator: hit.operator, kind }, (t) => t.beforeDamage === true, false);
+  let stacksChanged: string[] = [];
   const events: BattleEvent[] = [];
   if (kitHit.gains?.length) {
+    const was = st.stacks[hit.operator] ?? {};
     st = { ...st, stacks: gainStacks(ctx, st.stacks, hit.operator, kitHit.gains, evalContext(ctx.data, build, panel, hit.skillId, at(consumed))) };
+    stacksChanged = changedStacks(was, st.stacks[hit.operator] ?? {});
   }
   const kitBuff = (id: string) => ctx.kits.get(hit.operator)?.buffs.find((b) => b.id === id);
   // Buffs applied before the damage: their buffApplied triggers run before it too (what they apply acts on the hit).
@@ -1089,12 +1103,10 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     ...(kitHit.reaction ? { reaction: true } : {}),
     ...(hit.cast !== undefined ? { cast: hit.cast } : {}),
   };
-  // A hit computed as a burst is one for triggers too (its damage is the hit's own).
-  const burst: StatusEvent[] = kitHit.reaction?.kind === "burst" ? [{ kind: "burst", frame: hit.frame, operator: hit.operator, element: kitHit.reaction.element }] : [];
   const all: BattleEvent[] = [
     hitEvent, ...asEvents(statusEvents, kind, hit.cast), ...asEvents(burst, kind, hit.cast), ...poiseEvents, ...events,
     ...(kitHit.heals ? healEvents(ctx, st, hit.operator, kitHit.heals, hit.frame, kind) : []),
-    ...(kitHit.gains?.length ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator }] : []),
+    ...(kitHit.gains?.length ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator, changed: stacksChanged }] : []),
   ];
   return runTriggers(ctx, st, all, { operator: hit.operator, kind }, ctx.beforeDamage ? (t) => !t.beforeDamage : undefined);
 }
@@ -1111,10 +1123,15 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
     const expiry = nextExpiry(st.buffs, frame);
     const tickDue = tick !== null && tick <= frame ? tick : null;
     const buffTick = nextBuffTick(st.buffs, frame);
-    // At one frame: ticks of a status already on the enemy, then buffs ending, then buffs' periodic ticks, then hits.
+    const due = st.pendingActions.reduce<TimelineState["pendingActions"][number] | null>((a, x) => (x.frame <= frame && (!a || x.frame < a.frame) ? x : a), null);
+    const grant = st.pendingEnergy.reduce<TimelineState["pendingEnergy"][number] | null>((a, g) => (g.frame <= frame && (!a || g.frame < a.frame) ? g : a), null);
+    // At one frame: ticks of a status already on the enemy, then buffs ending, then delayed trigger actions, energy grants,
+    // buffs' periodic ticks, then hits. Each kind waits for everything earlier.
     const first = (x: number | null, ...later: (number | null)[]) => x !== null && later.every((y) => y === null || x <= y);
     const hitFrame = hit ? hit.frame : null;
-    if (first(tickDue, expiry, buffTick?.frame ?? null, hitFrame)) {
+    const dueFrame = due?.frame ?? null;
+    const grantFrame = grant?.frame ?? null;
+    if (first(tickDue, expiry, dueFrame, grantFrame, buffTick?.frame ?? null, hitFrame)) {
       const tickFrame = tickDue as number;
       const before = st.enemy;
       const t = tickStatus(st.enemy, tickFrame);
@@ -1122,7 +1139,7 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
       st = runTriggers(ctx, st, asEvents(t.events, "none"), null);
       continue;
     }
-    if (first(expiry, buffTick?.frame ?? null, hitFrame)) {
+    if (first(expiry, dueFrame, grantFrame, buffTick?.frame ?? null, hitFrame)) {
       const at = expiry as number;
       // A buff a cast consumed already ended when it was consumed.
       const ended = st.buffs.filter((b) => b.expiresAt === at && b.cast === undefined);
@@ -1130,8 +1147,6 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
       st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: at, operator: b.owner, buff: b.id, remaining: 0, ...(b.records ? { recorded: b.records.total } : {}) })), null);
       continue;
     }
-    const due = st.pendingActions.reduce<TimelineState["pendingActions"][number] | null>((a, x) => (x.frame <= frame && (!a || x.frame < a.frame) ? x : a), null);
-    const grant = st.pendingEnergy.reduce<TimelineState["pendingEnergy"][number] | null>((a, g) => (g.frame <= frame && (!a || g.frame < a.frame) ? g : a), null);
     if (due && first(due.frame, grant?.frame ?? null, buffTick?.frame ?? null, hitFrame)) {
       const t = ctx.kits.get(due.owner)?.triggers.find((x) => x.id === due.trigger);
       if (!t) throw new EngineError(`${due.owner} has no trigger ${due.trigger}`);
@@ -1196,8 +1211,10 @@ export function earliestStart(ctx: TimelineContext, state: TimelineState, action
   // A dive attack (skillSpecification 6) needs the operator in mid-air, and rotations have no jumps yet.
   if (costs.timing.specification === 6) return { error: `${action.skill} is a dive attack: it needs mid-air, and rotations have no jumps` };
   frame = Math.max(frame, state.readyAt[action.skill] ?? 0);
-  // Without a time, an action waits for the current skill's own hits (interrupting would cancel them); with one, it may interrupt.
-  if (action.at === undefined) frame = Math.max(frame, ownHitsLanded(state, action.operator));
+  // Without a time, an action waits for the current skill's own hits (interrupting would cancel them); with one, it may
+  // interrupt. A skill that runs beside the current one cancels nothing, so it doesn't wait.
+  const beside = ((s) => s.beside !== undefined && decide(s.beside, evalContext(ctx.data, ctx.builds.get(action.operator) as Build, ctx.panels.get(action.operator) as StatPanel, s.skillId, situationAt(ctx, action.operator, state, frame))))(kitSkill(ctx, action.operator, action.skill));
+  if (action.at === undefined && !beside) frame = Math.max(frame, ownHitsLanded(state, action.operator));
   const gate = actionGate(ctx, state, action.operator, action.skill, frame);
   if ("error" in gate) return gate;
   frame = gate.frame;
@@ -1345,7 +1362,8 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   const stacks = atCast.length ? { ...s.stacks, [operator]: { ...own, ...Object.fromEntries(atCast.map(([id, u]) => [id, Math.max(0, (own[id] ?? 0) - u.amount)])) } } : s.stacks;
   const usesAtHit = (hitId: string) => [...usage].filter(([, u]) => u.atHit === hitId).map(([stack, u]) => ({ stack, amount: u.amount }));
   const pending: PendingHit[] = [];
-  for (const h of skill.hits.filter(met)) {
+  // A hit's `if` is judged as it lands (it may depend on what the skill itself does first); only its stack requirement is the cast's.
+  for (const h of skill.hits.filter((x) => !x.requires || inRange(x.requires))) {
     const frames = h.frames ?? Array.from({ length: h.count }, () => 0);
     frames.forEach((f, i) =>
       pending.push({

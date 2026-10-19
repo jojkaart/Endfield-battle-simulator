@@ -483,21 +483,7 @@
               "controlled": true
             }
           }
-        }
-      ],
-      "note": "Frame 22: CastSkill floating_attack2 when not controlled, else floating_loop (idle; the player's next shot from frame 18 cuts it): the loop is trigger loop_1."
-    },
-    {
-      "id": "loop_1",
-      "on": {
-        "event": "cast",
-        "skills": [
-          "chr_0034_typhoea_floating_attack1"
-        ]
-      },
-      "by": "self",
-      "delay": 64,
-      "do": [
+        },
         {
           "kind": "cast",
           "skill": "chr_0034_typhoea_normal_skill_floating_loop",
@@ -506,7 +492,7 @@
           }
         }
       ],
-      "note": "Interim: the data casts floating_loop at frame 22 (controlled, idle). Here at 64, because the timeline's chain gate holds the player's shot 2 until frame 63 of shot 1 (floating_attack1's first SkillData window lists floating_attack1 itself, which the engine takes as the chain's next step): a loop at 22 would end the hover before shot 2 could start. Back to 22 once the engine skips a skill's own ID as its chain step. An idle hover after shot 1 lands at 99 instead of 57."
+      "note": "Frame 22: CastSkill floating_attack2 when not controlled, else floating_loop (idle; the player's next shot from frame 18 cuts it)."
     },
     {
       "id": "chain_2",

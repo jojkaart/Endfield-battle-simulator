@@ -1375,3 +1375,43 @@ describe("Laevatain's kit: Twilight, its pauses and cooldown; Scorching Heart; a
     expect(at4.enemy.infliction).toMatchObject({ element: "fire", stacks: 1 });
   });
 });
+
+describe("timeline: cast-consumed buffs, stack changes, hit conditions at landing", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const withKit = (k: Partial<OperatorKit>): GameData => ({ ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, ...k } } } });
+  const run = (g: GameData, rotation: RotationAction[], frames = 120) => {
+    const ctx = createContext(g, scenario(rotation));
+    let s = init(ctx);
+    for (const x of rotation) s = apply(ctx, s, x);
+    return advance(ctx, s, frames);
+  };
+  const a1: RotationAction = { operator: op, skill: L + "attack1" };
+
+  it("a buff a cast consumes doesn't act on other hits before it's consumed", () => {
+    const ready: KitBuff = { id: "ready", label: "ready", target: "self", duration: 20, consumedBy: ["ultimate"], modifiers: [{ zone: "amp", value: 0.5 }] };
+    const g = withKit({ buffs: [...kit.buffs, ready], triggers: [...kit.triggers, { id: "r", on: { event: "fightStart" }, by: "self", do: [{ kind: "buff", buff: "ready" }] }] });
+    const hit = run(g, [a1]).hits.find((h) => h.skillId === L + "attack1");
+    expect(hit?.modifiers.some((m) => m.zone === "amp" && m.value === 0.5)).toBe(false);
+  });
+
+  it("stackAtLeast fires when the stack's count changes, not on a gain capped at the maximum", () => {
+    const g = withKit({
+      stacks: [...kit.stacks, { id: "s", label: "s", max: 1 }, { id: "n", label: "n", max: 9 }],
+      triggers: [
+        ...kit.triggers,
+        { id: "gain", on: { event: "cast", kinds: ["basic"] }, by: "self", do: [{ kind: "gain", gains: [{ stack: "s", amount: 1 }] }] },
+        { id: "full", on: { event: "stackAtLeast", stack: "s", atLeast: 1 }, by: "self", do: [{ kind: "gain", gains: [{ stack: "n", amount: 1 }] }] },
+      ],
+    });
+    const s = run(g, [a1, { operator: op, skill: L + "attack2" }, { operator: op, skill: L + "attack3" }]);
+    expect(s.stacks[op]?.s).toBe(1);
+    expect(s.stacks[op]?.n).toBe(1);
+  });
+
+  it("a hit's `if` is judged as it lands, after what its own skill did first", () => {
+    const mark: KitBuff = { id: "mark", label: "mark", target: "self", duration: 5, modifiers: [] };
+    const skills = kit.skills.map((s) => (s.skillId === L + "attack1" ? { ...s, hits: s.hits.map((h) => ({ ...h, if: { buffActive: "mark" } })) } : s));
+    const g = withKit({ skills, buffs: [...kit.buffs, mark], triggers: [...kit.triggers, { id: "m", on: { event: "cast", skills: [L + "attack1"] }, by: "self", do: [{ kind: "buff", buff: "mark" }] }] });
+    expect(run(g, [a1]).hits.some((h) => h.skillId === L + "attack1")).toBe(true);
+  });
+});

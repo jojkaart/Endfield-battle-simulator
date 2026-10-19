@@ -91,5 +91,7 @@ export function kitBuffModifiers(data: GameData, build: Build, panel: StatPanel,
   const b = applyBuff(data, build, panel, source, def, 0);
   if (!b) return [];
   const n = Math.min(layers, b.maxLayers ?? 1);
-  return buffModifiers(Array.from({ length: n }, (_, i) => ({ ...b, appliedAt: -i })), build.operator, 0);
+  // A buff a cast consumes counts as consumed by the hit's cast.
+  const cast = b.consumedBy ? { cast: 0 } : {};
+  return buffModifiers(Array.from({ length: n }, (_, i) => ({ ...b, appliedAt: -i, ...cast })), build.operator, 0, b.consumedBy ? 0 : undefined);
 }
