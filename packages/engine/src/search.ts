@@ -245,9 +245,10 @@ export function searchRotation(data: GameData, scenario: Omit<TimelineScenario, 
         const choices = legalActions(ctx, n.state).filter((c) => !(lastSwap && c.action.skill === "swap"));
         if (choices.length === 0 && n.damage > best.damage) best = n;
         for (const c of choices) {
-          const state = apply(ctx, n.state, c.action);
-          // `at` is the frame it started, so the rotation replays exactly.
-          const child = node(state, [...n.rotation, { ...c.action, at: c.frame }]);
+          // Applied as recorded, with `at` the frame it starts, so the rotation replays to exactly this state.
+          const step = { ...c.action, at: c.frame };
+          const state = apply(ctx, n.state, step);
+          const child = node(state, [...n.rotation, step]);
           if (child.damage > best.damage) best = child;
           if (Math.floor(state.frame / bucketFrames) === k) layer.push(child);
           else push(child);
