@@ -17,7 +17,8 @@
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
    "Enemy level 90 is assumed, not logged.",
    "Challenge stage: total damage 1,994,821 = Lv90 HP 1,329,887 × 1.5 (stage HP scaling, inferred). DEF is 100 at every level of this enemy, so hit damage doesn't depend on the level.",
-   "Pending (kept out of fixtures/ so tests/logs.test.ts doesn't run it yet): the log checker counts the two logged buff_wpn_funnel_0016_will_dmg instances twice, but that buff's stackingType is 1 (only the highest applies). With one instance, Lizhiyan's burst at t=10341 (24335) matches exactly with the boundary buffs; Typhoeus's hits also need a mask filter for buff_chr_0034_typhoea_combo_enemy_debuff (bursts only) and per-buff boundary choices. Move it to fixtures/ once the checker does these."
+   "Pending (kept out of fixtures/ so tests/logs.test.ts doesn't run it yet): the log checker counts the two logged buff_wpn_funnel_0016_will_dmg instances twice, but that buff's stackingType is 1 (only the highest applies). With one instance, Lizhiyan's burst at t=10341 (24335) matches exactly with the boundary buffs; Typhoeus's hits also need a mask filter for buff_chr_0034_typhoea_combo_enemy_debuff (bursts only) and per-buff boundary choices. Move it to fixtures/ once the checker does these.",
+   "Xaihi (chr_0011_seraph) has Stanza of Memorials (wpn_funnel_0005) at weapon level 85, not 90 (inferred 2026-10-20, batch 3, docs/kit-batches/batch-3/chr_0011_seraph.md): with 90 all 7 of her hits (attacks 1-5) were predicted at one ratio (logged / predicted 0.970; one hit with boundary buffs), and her ultimate's logged Amp, which reads her Intellect, already matched; her ATK only depends on the weapon level here. At 85 (ATK 3,691.8) all 7 match; 84 and 86 leave all 7 mismatched. Weapon level 89 with attributeNodes 3 fits as well (the log can't tell them apart)."
   ]
  },
  "enemy": {
@@ -203,7 +204,7 @@
    },
    "weapon": {
     "id": "wpn_funnel_0005",
-    "level": 90,
+    "level": 85,
     "skillLevels": [
      9,
      9,

@@ -358,3 +358,115 @@ plan waits on a gap: G1 changes burst timing in the engine, not the kit.
 `fixtures/zmdlogs-dbaee23b801d.json` (weapon level 85, with a provenance
 note: the 7-hit fit, and that 89 with 3 attribute nodes fits as well), and
 in `fixtures/pending/zmdlogs-abfd4b7478ec.json` (weapon level 60, 75 of 75).
+
+## Kit (2026-10-20)
+
+Re-analysis against the engine at 182f22b (batch 3's shared features
+merged), then the kit: `packages/data/kits/operators/chr_0011_seraph.json`,
+`packages/data/kits/equipment/{wpn_funnel_0012,wpn_funnel_0014,suit_wisdwill01}.json`,
+tests `tests/kit-xaihi.test.ts`, example `examples/xaihi-si.scenario.json`
+(build `examples/xaihi-p5.json`). No engine, loader or compiler change.
+
+### Re-analysis per gap
+
+| Gap / row | Now | How |
+|---|---|---|
+| G1 bursts 1 s after the infliction (row 34) | **done** (A5) | `BattleConstants.burstDelayFrames` from `buff_common_cryst_cryst_triggered`; her combo's burst lands 30 frames after its hit (test), and OBJ Arts Identifier's buff starts then |
+| G2 the replay's burst window (row 35) | **done** (L2) | 4 s window: all three of her abfd bursts match (+1.52 / +1.41 / +3.53 s) |
+| E5 / B9 OBJ Arts Identifier across wielders | **done** (B2) | the loader gives `wpn_funnel_0014.heat_electric` `stackGroup: buff_wpn_funnel_0014_up` from its game buff (type 11, priority key `lv`, one instance); test |
+| D3 poise on attack5 and the combo (rows 3, 19) | **done** (D2) | kit-draft now compiles `poise` and `poiseControlledOnly`; the kit uses them as compiled |
+| D3 the talent-1 branch (row 22) | interim (hand-written) | kit-draft reports the CreateBuff with its condition in a note only; the kit's two `branch: target` hits (`vs_cryo`, `plain`), no KNOWN entry needed |
+| D3 the ultimate's Amp chain (row 24) | interim (hand-written) | kit-draft still compiles nothing for the ultimate; trigger `ultimate_amp` with the `{sum, min, product, attr}` value |
+| D4 the unreachable frame-6 SP (row 9) | open (D4: no note for unreachable branches) | kit-draft still reports it; left out of the kit, said in its sources |
+| Ti1b the combo's 0.2 s hit-stop (row 21) | open (shared) | not modelled |
+| Ti2 projectile travel (rows 1, 19) | open (shared) | hits at their launch frames (test 47) |
+| U1 the crystal Amp at Max HP (row 17) | interim (N2 deferred) | every treatment Amps (operators count as topped up); test 70 part 1 |
+| U2 / B4 the 10 s count (row 15) | interim | the count doesn't expire (test); test 70 part 3 |
+| U3 a second crystal (row 16) | interim | replaced, count reset (test); test 70 part 2 |
+| E2 Freedom to Proselytize's extra heal | interim (N2) | never (the controlled operator is never below 99%); kit declares nothing |
+| E7 AIC Light's kill ATK | interim (N2, kills) | never; kit declares nothing |
+| E4 OBJ Arts Identifier on a Lift that only adds Vulnerable | unknown (P1) | engine: no; test 39's Vulnerable-only part |
+
+Every other row of the mechanics table is as it says (supported), checked
+against the engine: Final-Strike triggers by the controlled operator with a
+per-member 0.3 s cooldown, `stackAtLeast` opening the combo, `to:
+eventSubject` buffs, `heal` with `healKind`, `awaited` cast triggers, team
+energy at frame 37, `talentAtLeast`, and `{attr: 41}` read when the buff is
+applied.
+
+### What the kit models
+
+- **Basic attacks** as compiled: projectile landings at 10 / 7 / 8 /
+  [7, 12] (attack4 two equal `atk_scale` landings), attack5 the Final
+  Strike at 19 (SP 15 and Stagger 15 only when controlled), finisher at
+  32 (factor 1), dive kept for calc.
+- **Battle skill:** no damage; at frame 37 (spawnball's first tick) the
+  crystal (`crystal`, 20 s, count reset) and the team energy, both
+  dropped if her next skill starts first (e.g. her ultimate at frame 10).
+- **Crystal:** each controlled operator's Final Strike while it's out and
+  under 2 treatments is a treatment (`crystal_heal`, 8 frames later: the
+  0.25 s tick) giving that operator the Arts Amp `atk_up` (0.15, P1
+  +0.05) on all four Arts elements for 25 s; the second treatment opens
+  the combo and ends the crystal. Judged at the Final Strike, so the
+  delayed second treatment still lands after the crystal ends.
+- **Combo:** one hit at 24 (Cryo Infliction before its damage, `usp`,
+  poise 10), as `vs_cryo` (talent 1 learned and the enemy Cryo-inflicted
+  or Solidified before the hit: Cryo DMG Taken `cryst_up` 0.07 / 0.10 for
+  5 s, counting on this hit) or `plain`.
+- **Ultimate:** at frame 58 the team Cryo and Nature Amp `atk_up` +
+  min(Intellect × `wisd_up`, `wisd_max`) for 12 s (P5 ×1.1 on all three;
+  P2 cost 72).
+- **OBJ Arts Identifier:** her combo's burst or physical status gives the
+  team Heat and Electric DMG +`dmg_up` (0.224 at level 9) for 15 s.
+- **Left out:** heal amounts, operator HP (U1, E2), kills (E7), the
+  combo's hit-stop and InterruptAction, P3's bounce (one enemy), talent 2's
+  dispel (statuses on operators), dash and extra attacks (S5).
+
+### Verification
+
+- **fixtures/zmdlogs-dbaee23b801d.json** (committed): Xaihi's weapon level
+  corrected to **85** (provenance note): her 7 hits go from 0 match / 7
+  not covered (no kit) to **7 of 7 match**. With 90 all 7 mismatch
+  (logged / predicted 0.970); 84 and 86 leave all 7 mismatched; 89 with
+  attribute nodes 3 matches too (in the note). Other operators unchanged.
+  `zmdlogs reactions`: unchanged except that the "no inflictions in the
+  kit" line no longer names her (she has no Cryo hit in this log).
+- **fixtures/pending/zmdlogs-e82d45c46040.json** (Perlica's; Xaihi is on
+  the team with no logged hits): only that `zmdlogs reactions` line
+  changes the same way.
+- **fixtures/pending/zmdlogs-abfd4b7478ec.json:** weapon level corrected
+  to **60** (provenance note): **75 of 75 match** (attacks, both combo
+  branches, her three Cryo bursts). The fit is from her hits only: her
+  Intellect (351.64, which her ultimate's logged Amp reads) doesn't depend
+  on the weapon level; 59 and 61 leave 60 and 65 mismatched, 63 with 2
+  attribute nodes 13, 68 with none 10. `zmdlogs reactions`: 0 matched / 8
+  unexpected → **5 matched, 0 predicted but not logged, 3 unexpected**:
+  her three Cryo bursts match, and Fluorite's (62772 → 64225) and Si's
+  (85643 → 86626) now that her combos' Cryo is in the replay. The three
+  left are Fluorite's at 21573, 61856 and 104011 (0.5–2.5 s after one of
+  Xaihi's), unexpected before the kit too: the replay predicts no burst
+  from Fluorite there (her kit's, not this one's).
+- **Example totals:** every existing `examples/*.scenario.json` total and
+  every other `zmdlogs check` / `reactions` line unchanged.
+- **Example** `xaihi-si.scenario.json` (Xaihi P5 with OBJ Arts Identifier,
+  Si): 289,662 damage in 34.47 s (Xaihi 12.6%). Crystal at 1.23 s; her
+  Final Strike (4.03 s) and Si's (7.40 s) are the treatments, the combo
+  window opens at Si's, the first combo (7.70 s) is plain with her own
+  Amp 0.20; the ultimate's Amp is 0.568 (0.264 + 921.4 × 0.00033, as
+  dbaee23b801d logs); the second crystal's combo (22.60 s) takes
+  `vs_cryo` (Cryo DMG Taken 0.10 on its hit) and bursts 30 frames later,
+  giving the team OBJ Arts Identifier's buff. As the report's scratch run.
+  Global slow-downs (the combos' 0.9 s) stretch buffs' world time a
+  little: the ultimate's 12 s Amp covers a hit at 702 that 58 + 360 frames
+  from its cast at 270 wouldn't (engine-wide, not this kit).
+
+### In-game tests the kit depends on
+
+- **70** (all three parts: U1 Amp below Max HP, U3 two crystals, U2 the
+  10 s count).
+- **39** (its Vulnerable-only part: OBJ Arts Identifier on a combo's
+  Vulnerable-only Lift; P1).
+- **47** (projectile travel: every hit of hers lands at its launch frame).
+- Test 38's Amp question: abfd4b7478ec has her ultimate's Cryo Amp and
+  another 0.32 adding on the same hits (all matching); the kit relies on
+  Amp sources adding.

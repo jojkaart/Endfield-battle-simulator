@@ -1,0 +1,292 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0011_seraph",
+  "sources": [
+    "Hits, frames, keys and events: rmxlinux Json/SkillData chr_0011_seraph_* and Json/BuffData buff_chr_0011_seraph_* (game 1.6, commit 535e88f), as compiled by efsim kit-draft (skillCompile.ts) and completed by hand where noted: the Auxiliary Crystal (a buff → ability entity → aura → per-member listener chain the compiler reports only as notes), the talent-1 branch of the combo, and the ultimate's Amp. Frames are SkillData frames (30 FPS) from the cast; projectile hits land at their launch frame (travel isn't in the data: Ti2, in-game test 47). Batch-3 report docs/kit-batches/batch-3/chr_0011_seraph.md (gap report, kit plan and the section \"Kit\").",
+    "Values: SkillPatchTable chr_0011_seraph_* at the build's skill levels (level 12: attacks 1-5 atk_scale 0.34 / 0.36 / 0.47 / 0.37 per landing / 1.24, attack5 poise 15 and atb 15; finisher 9.0; dive 1.8; battle skill cost 100 SP, atk_up 0.15, buff_duration 25, duration 20; combo atk_scale 4.5, poise 10, usp 10, cooldown 7 s; ultimate atk_up 0.24, wisd_up 0.0003, wisd_max 0.36, duration 12, cost 80, cooldown 20 s). Talents (PotentialTalentEffectTable chr_0011_seraph_talent_1_1..2_2) only set blackboard keys: talent 1 the combo's cryst_up (0.07 / 0.10) and duration (5) and exist_talent_1, talent 2 the ultimate's exist_talent_2. Potentials: P1 battle skill atk_up +0.05; P2 ultimate cost ×0.9; P3 the combo's bounce to a second enemy (no effect against one); P4 Intellect +15 and Treatment Efficiency +10% (stat panel); P5 ultimate atk_up, wisd_up and wisd_max ×1.1.",
+    "Not kit skills: chr_0011_seraph_dash_attack (+ _projhit, _projhit02) and chr_0011_seraph_extra_attack (+ _projhit) (dash attacks aren't modelled: S5, deferred), chr_0011_seraph_dodge, chr_0011_seraph_tactic_skill and buff_chr_0011_seraph_tactic_atb (not in CharGrowthTable skillGroupMap nor SkillPatchTable: not castable), chr_0011_seraph_talent_0/1/2 and buff_chr_0011_seraph_talent_0/1/1_atb/2/2_phydown (no talent node attaches them), so the battle skill's frame-6 SP (IfElse CheckBuffStackNum buff_chr_0011_seraph_talent_1_atb ≥ 1, which kit-draft reports) never happens. The listeners normal_skill_listener(_02), normal_skill_trigger(_02), combo_skill_trigger(_02), ultimate_skill_ontarget_listener, finishball, finishball_03, train_lastcombo_with_ball, atk_buff_normal_skill and combo_skill_listener are created only by each other, the unused abentity_onfield02 or a training stage: no effect.",
+    "Operator HP isn't simulated (N2, deferred; owner 2026-10-20: operators count as topped up by auto-heals), so the controlled operator is taken to be at Max HP when the crystal treats it and every treatment gives the crystal's Arts Amp (U1, in-game test 70). Heal amounts aren't modelled (heal events only)."
+  ],
+  "element": "cryst",
+  "stacks": [
+    {
+      "id": "crystal_heals",
+      "label": "Auxiliary Crystal: HP treatments used (of 2)",
+      "max": 2,
+      "note": "buff_chr_0011_seraph_combo_count on the crystal (stackingType 3, max 2, 10 s): whether a layer expires before the second treatment is U2 / B4 (in-game test 70); interim: it doesn't. Reset when a new crystal comes out (crystal_out)."
+    }
+  ],
+  "buffs": [
+    {
+      "id": "crystal",
+      "label": "Auxiliary Crystal out (until its 2 treatments or 20 s)",
+      "target": "self",
+      "duration": "duration",
+      "modifiers": [],
+      "note": "chr_0011_seraph_normal_skill_abentity_onfield, spawned at the controlled operator by buff_chr_0011_seraph_spawnball's first 1 s tick (cast frame 7 + 30). Its AuraAction (entity frames 1-901, radius 99, characters) gives every team member buff_chr_0011_seraph_normal_skill_heal; at entity frame 600 it ends unless its treatments are used up (finishball_02 → FinishOwnerAction), then finishball_04 ends it 6 s later (the engine's combo window; nothing else reads the lingering crystal, so the kit ends this marker when the treatments are used up). A state only; no modifiers."
+    },
+    {
+      "id": "crystal_amp",
+      "label": "Auxiliary Crystal: Arts Amp on the treated controlled operator",
+      "target": "team",
+      "gameBuff": "buff_chr_0011_seraph_potential_1_atkup",
+      "duration": "buff_duration",
+      "modifiers": [{ "zone": "amp", "elements": ["fire", "pulse", "cryst", "natural"], "value": "atk_up" }],
+      "note": "buff_chr_0011_seraph_mainchr_heal, after its HealAction: CheckHp (compare 3, ratio 1.0: at Max HP) on the controlled operator → buff_chr_0011_seraph_potential_1_atkup (stackingType 2 max 1: refreshed, \"cannot stack\") → EnhancedAction subType 1 (all four Arts elements) rate atk_up (0.15 at level 12, P1 +0.05) for buff_duration (25 s). Logged as buff_common_affixes_enhance_spell 0.16 on Si in zmdlogs-abfd4b7478ec (0.11 at level 7 + 0.05). HP isn't simulated: the treated operator counts as at Max HP, so every treatment gives it (N2 interim, U1). Given to the treated operator only (to: eventSubject)."
+    },
+    {
+      "id": "cryo_fragility",
+      "label": "Execute Process: Cryo DMG Taken (talent 1)",
+      "target": "enemy",
+      "gameBuff": "buff_chr_0011_seraph_talent_1_crystup",
+      "duration": "duration",
+      "modifiers": [{ "zone": "damageTaken", "elements": ["cryst"], "value": "cryst_up" }],
+      "note": "Talent 1: \"Hitting an enemy with Cryo Infliction or Solidification also causes the enemy to suffer Cryo DMG Taken +{cryst_up} for {duration}s. This effect cannot stack.\" buff_chr_0011_seraph_talent_1_crystup: DamageScaleProcessor side 1 NormalCalcZone + cryst_up on CheckDamageType 4 (Cryo); stackingType 2 max 1 (refreshed). cryst_up (0.07 / 0.10) and duration (5) are the combo's keys after the talent's skillBbModifier; created only on the combo's vs_cryo branch, which needs the talent."
+    },
+    {
+      "id": "stack_overflow",
+      "label": "Stack Overflow: team Cryo and Nature Amp",
+      "target": "team",
+      "gameBuff": "buff_chr_0011_seraph_atk_buff",
+      "duration": "duration",
+      "modifiers": [
+        {
+          "zone": "amp",
+          "elements": ["cryst", "natural"],
+          "value": { "sum": ["atk_up", { "min": [{ "product": [{ "attr": 41 }, "wisd_up"] }, "wisd_max"] }] }
+        }
+      ],
+      "note": "buff_chr_0011_seraph_atk_buff (per recipient, stackingType 2 max 1): StoreAttributeValue attribute 41 (Intellect of the source, Xaihi) × wisd_up (its baseValue names atk_up without useBlackboardKey: 0), CompareFloat ≥ wisd_max → wisd_max, then SimpleCalcBB + atk_up; EnhancedAction subType 5 (Cryo) and 3 (Nature) for duration (12 s). The cap is on the Intellect part only: zmdlogs-dbaee23b801d logs 0.568052 = 0.264 + 921.37 × 0.00033 (P5 ×1.1 on all three keys; above the 0.396 cap), zmdlogs-abfd4b7478ec 0.301833 = 0.209 + 351.64 × 0.000264. Intellect is read when the buff is applied (frame 58), buffs included."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "crystal_out",
+      "on": { "event": "cast", "skills": ["chr_0011_seraph_normal_skill"] },
+      "by": "self",
+      "delay": 37,
+      "awaited": true,
+      "skill": "chr_0011_seraph_normal_skill",
+      "do": [
+        { "kind": "gain", "gains": [{ "stack": "crystal_heals", "amount": -2 }] },
+        { "kind": "buff", "buff": "crystal" }
+      ],
+      "note": "CreateBuffAction buff_chr_0011_seraph_spawnball at frame 7 (finishWithNextSkillIfNotInherited: a skill Xaihi starts before its tick ends it); its first tick (triggerInterval 1 s, waitFirstTriggerInterval) at frame 37 spawns the crystal (and creates buff_common_obtain_ultimate_sp: the skill's teamEnergy at 37). Not detached: dropped if the cast is cut before frame 37; a rotation step without `at` waits for it. A crystal still out is replaced and its count reset (U3, in-game test 70)."
+    },
+    {
+      "id": "crystal_count",
+      "on": { "event": "hit", "finalStrike": true },
+      "by": "controlled",
+      "if": { "all": [{ "buffActive": "crystal" }, { "stack": "crystal_heals", "below": 2 }] },
+      "cooldown": 0.3,
+      "cooldownPer": "eventSubject",
+      "do": [{ "kind": "gain", "gains": [{ "stack": "crystal_heals", "amount": 1 }] }],
+      "note": "buff_chr_0011_seraph_normal_skill_heal (on each team member, from the crystal's aura) abilityEvent 302 (the member deals damage): CheckTimedMarkerCondition (its 0.3 s marker, per member: a Final Strike with two landings counts once), no finishball_04 yet, CheckMainCharacterCondition (the member is controlled), CheckDamageDecorateMask 2097152 (Final Strike) → buff_chr_0011_seraph_combo_count on the crystal (this gain) and buff_chr_0011_seraph_mainchr_heal on the member (crystal_heal)."
+    },
+    {
+      "id": "crystal_heal",
+      "on": { "event": "hit", "finalStrike": true },
+      "by": "controlled",
+      "if": { "all": [{ "buffActive": "crystal" }, { "stack": "crystal_heals", "below": 2 }] },
+      "cooldown": 0.3,
+      "cooldownPer": "eventSubject",
+      "delay": 8,
+      "skill": "chr_0011_seraph_normal_skill",
+      "do": [
+        { "kind": "heal", "target": "eventOperator", "healKind": "battle" },
+        { "kind": "buff", "buff": "crystal_amp", "to": "eventSubject" }
+      ],
+      "note": "Skill description: \"After the controlled operator performs a Final Strike on the enemy, the Auxiliary Crystal will restore the said operator's HP. This effect can trigger 2 times.\" buff_chr_0011_seraph_mainchr_heal: first tick after 0.25 s (7.5 frames, taken as 8; waitFirstTriggerInterval): HealAction heal_value + will_up × Xaihi's Will (amounts aren't modelled) with heal tag -320297214 (the battle-skill tag Freedom to Proselytize checks), then the Max-HP Amp (always: N2 interim). Judged on the situation at the Final Strike, together with crystal_count (so its `if` sees the count before that gain)."
+    },
+    {
+      "id": "crystal_used_up",
+      "on": { "event": "stackAtLeast", "stack": "crystal_heals", "atLeast": 2 },
+      "by": "self",
+      "do": [{ "kind": "openCombo" }, { "kind": "endBuff", "buff": "crystal" }],
+      "note": "COMBO TRIGGER (CharGrowthTable): \"When the Auxiliary Crystal uses up its HP treatments.\" buff_chr_0011_seraph_combo_count buffEvent 6 at 2 layers: CreateBuff finishball_04 on the crystal (it lingers 6 s, no more treatments) and TriggerComboSkillAction for Xaihi. The engine's combo window is 6 s, as long as the crystal lingers."
+    },
+    {
+      "id": "combo_takes_crystal",
+      "on": { "event": "cast", "skills": ["chr_0011_seraph_combo_skill"] },
+      "by": "self",
+      "delay": 24,
+      "do": [{ "kind": "endBuff", "buff": "crystal" }],
+      "note": "The combo launches the crystal at frame 24 (CreateBuff finishball_02 on it: FinishOwnerAction). Matters only if a newer crystal is out by then."
+    },
+    {
+      "id": "ultimate_amp",
+      "on": { "event": "cast", "skills": ["chr_0011_seraph_ultimate_skill"] },
+      "by": "self",
+      "delay": 58,
+      "awaited": true,
+      "skill": "chr_0011_seraph_ultimate_skill",
+      "do": [{ "kind": "buff", "buff": "stack_overflow" }],
+      "note": "Ultimate frame 58: CreateBuffAction buff_chr_0011_seraph_atk_buff and _atk_buff_2 (0.2 s, empty) on the team, inside its cantCastSkill / cantSwitchPosition channel 0-75, after the time stop 0-45. Talent 2's DispelAction (Cryo Infliction and Solidification on the team, if exist_talent_2) has no effect here: statuses on operators aren't simulated."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0011_seraph_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": ["atk_scale"],
+          "frames": [10],
+          "events": ["chr_0011_seraph_attack1_projhit"],
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "detached": true,
+          "note": "LaunchProjectile at 10 → chr_0011_seraph_attack1_projhit: DamageAction atk_scale (mask 128, Cryo); ObtainCostAction atb (0 in SkillPatchTable) if controlled. Travel not counted (Ti2)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0011_seraph_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": ["atk_scale"],
+          "frames": [7],
+          "events": ["chr_0011_seraph_attack2_projhit"],
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "detached": true,
+          "note": "LaunchProjectile at 7 → chr_0011_seraph_attack2_projhit."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0011_seraph_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": ["atk_scale"],
+          "frames": [8],
+          "events": ["chr_0011_seraph_attack3_projhit"],
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "detached": true,
+          "note": "LaunchProjectile at 8 → chr_0011_seraph_attack3_projhit."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0011_seraph_attack4",
+      "label": "Basic attack 4",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": ["atk_scale"],
+          "count": 2,
+          "frames": [7, 12],
+          "events": ["chr_0011_seraph_attack4_projhit"],
+          "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } },
+          "detached": true,
+          "note": "Two launches (7, 12), each one atk_scale landing (0.37 at level 12; display_atk_scale 0.74 is the sum; both logs have two equal hits per attack4); SP atb × 0.5 per landing (the projhit's ObtainCostAction literal 0.5)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0011_seraph_attack5",
+      "label": "Basic attack 5 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [19],
+          "events": ["chr_0011_seraph_attack5"],
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "poise": "poise",
+          "poiseControlledOnly": true,
+          "finalStrike": true,
+          "note": "DamageAction at 19, mask 2097280 (Final Strike: the crystal's treatment trigger); ObtainCostAction atb (15) if controlled; stagger poise (15) onlyEnableForMainChar."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0011_seraph_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [32],
+          "events": ["chr_0011_seraph_power_attack"],
+          "note": "DamageAction at 32, mask 132; BreakingAttackCalculation multiplier 1.0 (no factor)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0011_seraph_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [1],
+          "events": ["chr_0011_seraph_plunging_attack_end"],
+          "sp": "atb",
+          "note": "Needs mid-air (S10); kept for calc. DamageAction at 1, mask 1152."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0011_seraph_normal_skill",
+      "label": "Battle skill: Distributed DoS",
+      "damageType": "battle",
+      "teamEnergy": [{ "frame": 37, "ratio": 1 }],
+      "hits": [],
+      "note": "No damage: summons the Auxiliary Crystal at frame 37 (trigger crystal_out) with the team energy (buff_common_obtain_ultimate_sp in the same spawnball tick; cut with the cast before 37). Frame 6's SP (if buff_chr_0011_seraph_talent_1_atb) is unreachable: no talent attaches that buff."
+    },
+    {
+      "skillId": "chr_0011_seraph_combo_skill",
+      "label": "Combo skill: Stress Testing",
+      "damageType": "combo",
+      "note": "The crystal (or Xaihi without one) launches at frame 24 → chr_0011_seraph_combo_skill_projhit; TimeDilationAction 0-24 and the window 25-60 from SkillData timing. HitStopAction 0.2 s (Ti1b) and InterruptAction 1 s on the enemy aren't modelled. P3's bounce (LaunchProjectile at one other enemy within 15 m) needs a second enemy. buff_chr_0011_seraph_combo_skill_tutorial_marker: tutorial only.",
+      "hits": [
+        {
+          "id": "vs_cryo",
+          "label": "On a Cryo-inflicted or Solidified enemy (talent 1 learned)",
+          "branch": "target",
+          "if": { "all": [{ "talentAtLeast": [0, 1] }, { "any": [{ "enemyInfliction": "cryst" }, { "enemyStatus": "solidification" }] }] },
+          "scale": ["atk_scale"],
+          "frames": [24],
+          "events": ["chr_0011_seraph_combo_skill_projhit"],
+          "applies": [{ "kind": "infliction", "element": "cryst" }],
+          "buffs": [{ "buff": "cryo_fragility", "beforeDamage": true }],
+          "energy": "usp",
+          "poise": "poise",
+          "detached": true,
+          "note": "combo_skill_projhit, first action: IfElse exist_talent_1 ≥ 1 and CheckTagMatch on the target (1570888476 Cryo Infliction, 1535684437 Solidified) → CreateBuff buff_chr_0011_seraph_talent_1_crystup on the target. It runs before this hit's own SpellInfliction, so it reads the enemy before the hit (a hit's `if`), and the debuff counts for this hit: zmdlogs-abfd4b7478ec combos at 19487, 57934, 99947 ms are ×1.089 = (1.12 + 0.10) / 1.12 over the one at 85032."
+        },
+        {
+          "id": "plain",
+          "label": "Otherwise",
+          "branch": "target",
+          "scale": ["atk_scale"],
+          "frames": [24],
+          "events": ["chr_0011_seraph_combo_skill_projhit"],
+          "applies": [{ "kind": "infliction", "element": "cryst" }],
+          "energy": "usp",
+          "poise": "poise",
+          "detached": true,
+          "note": "SpellInfliction type 2 (Cryo) before the DamageAction atk_scale (mask 12288, Cryo); poise unit poise (10); ObtainCostAction usp (10) if it hit. On a Cryo-inflicted enemy the infliction is an Arts Burst (a second later on the enemy's clock: A5)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0011_seraph_ultimate_skill",
+      "label": "Ultimate: Stack Overflow",
+      "damageType": "ultimate",
+      "hits": [],
+      "note": "No damage: the team Cryo and Nature Amp at frame 58 (trigger ultimate_amp). UltimateTimeAction 0-45, ChannelingCastingAction 0-75 and the window 67-100 from SkillData timing; buff_common_damage_immune_ult_skill (0-80) has no effect here."
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_wisdwill01",
+  "sources": [
+    "AIC Light 3-piece (EquipSuitTable suit_wisdwill01; rmxlinux SkillData passive_equipsuit_wisdwill_01, BuffData buff_equipsuit_wisdwill_01 / _02). Nothing here can act in a one-enemy fight, so this kit declares nothing: (1) \"Wearer's HP +{hp_up}\" (500, flat; cardAttributeModifier attribute 1 formulaItem 7, in the stat panel); (2) \"After the wearer defeats an enemy, the wearer gains ATK +{atk_up} for {duration}s\" (abilityEvent 222 + CheckObjectTypeMatch objectTypeMask 16 → buff_equipsuit_wisdwill_02: attribute 2 formulaItem 7, flat ATK +20 for 5 s, stackingType 2 max 1): kills aren't simulated (N2, deferred with multi-enemy support), as for AIC Heavy (suit_stragi01). buff_equipsuit_will_01 in the skill's buffs has only a blackboard (no effect). Docs: docs/kit-batches/batch-3/chr_0011_seraph.md (E6-E7)."
+  ]
+}
