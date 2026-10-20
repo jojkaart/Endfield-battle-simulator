@@ -1,0 +1,33 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0015",
+  "sources": [
+    "Aspirant. rmxlinux Json/SkillData/sk_wpn_sword_0015 (game 1.6); values SkillPatchTable sk_wpn_sword_0015 (level 1 → 9: dmg_up 0.16 →, phy_dmg_up 0.12 →; duration 30, max_stack 3 at every level). Skill 1 (Agility) and skill 2 (Physical DMG) and skill 3's cardAttributeModifier attribute 28 (Ultimate DMG + dmg_up) are on the stat panel.",
+    "passiveEventActions: abilityEvent 402 (the wielder applies a physical status) + CheckPhysicalInflictionType mask 1 (Lift) + CheckTimedMarker / CreateTimedMarker sk_wpn_sword_0015 0.5 s → CreateBuffAttachingSkill buff_wpn_sword_0015_exist (no modifier; `duration`; stackingType 2, max max_stack: each layer its own duration). abilityEvent 30 + CheckSkillType [7] (the wielder casts an ultimate) → SaveBuffStackNumAdvanced count of _exist, SimpleCalcBB phy_dmg = phy_dmg_up × count → buff_wpn_sword_0015_pdi_up (attribute 50 Physical DMG, formulaItem 5, lifeType 1, with the cast); its finish (buffEvent 2) ends every _exist layer. Description: \"After the wielder applies Lift ... Effect only triggers once every 0.5s\"; \"during the next ultimate cast within {duration}s, the wielder gains Physical DMG Dealt +{phy_dmg_up}\" per stack.",
+    "Modelled as one layered buff whose layers each carry phy_dmg_up and are consumed by the wielder's next ultimate (consumedBy: it then acts on that cast's hits only): the same total as _pdi_up. Left out: layers added during the consuming ultimate end with it in the game (_pdi_up's finish), here they wait for the next ultimate (only for a wielder whose own ultimate Lifts). Not in any log or fixture yet; Arclight applies no Lift (only the stat-panel part acts on her)."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_sword_0015.lift",
+      "label": "Aspirant: Physical DMG during the next ultimate, per Lift",
+      "target": "self",
+      "gameBuff": "buff_wpn_sword_0015_exist",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "consumedBy": ["ultimate"],
+      "modifiers": [{ "attr": 50, "value": "phy_dmg_up" }],
+      "note": "Each layer carries phy_dmg_up, so the consuming ultimate gets phy_dmg_up × layers (buff_wpn_sword_0015_pdi_up), on its own hits; it uses up every layer."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_sword_0015.on_lift",
+      "on": { "event": "physicalStatus", "statuses": ["lift"] },
+      "by": "self",
+      "cooldown": 0.5,
+      "skill": "sk_wpn_sword_0015",
+      "do": [{ "kind": "buff", "buff": "wpn_sword_0015.lift" }],
+      "note": "abilityEvent 402 + CheckPhysicalInflictionType mask 1, once per 0.5 s (the timed marker). A forced Lift counts; a Lift that only adds Vulnerable isn't a physicalStatus event here (batch-3 P1, open)."
+    }
+  ]
+}
