@@ -35,6 +35,23 @@ export const ZONES = [
 ] as const;
 export type Zone = (typeof ZONES)[number];
 
+/**
+ * The attacker's side of the pipeline, which periodic damage with an ATK
+ * snapshot (DamageAction `takeAtkSnapshot`: Combustion, Rossi's bleed) keeps
+ * from when it was applied; the defender's side (Susceptibility, DMG Taken,
+ * the multiplicative zone, resistance) is read at each tick. Evidence:
+ * fixtures/zmdlogs-4e5e1390085e.json, Camille's Combustion (65097 ms): its
+ * ticks at 66004, 67447 and 68449 ms match only with her DMG bonuses at the
+ * reaction (Lustrous Carmine's Heat DMG, logged at the reaction, gone from
+ * the ticks; a talent-1 layer gone by the last), while the third is ×1.3
+ * the first by the Stagger that started between them;
+ * fixtures/zmdlogs-40d9a3c1da37.json 18684 ms: a tick after the Arts
+ * Susceptibility ended is lower by exactly that. ATK and Amp are on the same
+ * side (not in those logs: in-game test 77 decides ATK); crit doesn't act on
+ * ticks.
+ */
+export const SNAPSHOT_ZONES: ReadonlySet<Zone> = new Set(["atk", "damageBonus", "amp", "critRate", "critDamage", "artsIntensity"]);
+
 /** What kind of damage a hit is: its skill type, or a reaction kind for reaction damage. */
 /** `none`: a hit of no skill type (some triggered hits, e.g. from weapons or gear sets). */
 export type HitKind = SkillType | "none" | "burst" | "reaction" | "combustionTick" | "lift" | "knockdown" | "crush" | "breach" | "shatter";

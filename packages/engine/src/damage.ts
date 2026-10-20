@@ -242,6 +242,17 @@ export interface DamageSpec {
   readonly kind: HitKind;
   /** The value the multiplier multiplies in place of ATK (KitHit.base). */
   readonly base?: number;
+  /** Each modifier of these zones that reaches the hit × the value (KitHit.zoneScale, resolved). */
+  readonly zoneScale?: readonly { readonly zone: Zone; readonly value: number }[];
+}
+
+/** A hit's modifiers with its zone scales applied (KitHit.zoneScale): each modifier of a scaled zone × the zone's factors. */
+function scaleZones(mods: readonly Modifier[], scales: DamageSpec["zoneScale"]): Modifier[] {
+  if (!scales?.length) return [...mods];
+  return mods.map((m) => {
+    const f = scales.filter((s) => s.zone === m.zone).reduce((p, s) => p * s.value, 1);
+    return f === 1 ? m : { ...m, value: m.value * f, source: `${m.source} × ${f} (the hit's zoneScale)` };
+  });
 }
 
 /** All modifiers acting on a build's hits: stat panel, active conditions, and external ones. */
@@ -268,7 +279,7 @@ export function computeDamage(
   if (!enemyLevel) throw new EngineError(`${enemy.id} has no level ${target.level}`);
 
   const ctx: HitContext = { element: spec.element, skillType: spec.skillType, staggered: options.staggered, kind: spec.kind };
-  const mods = activeModifiers(data, build, panel, options).filter((m) => applies(m, ctx));
+  const mods = scaleZones(activeModifiers(data, build, panel, options).filter((m) => applies(m, ctx)), spec.zoneScale);
   const sum = (zone: Zone) => zoneSum(mods, zone, ctx);
 
   const scale = spec.scaleParts.reduce((p, s) => p * s.value, 1);
@@ -386,6 +397,7 @@ export function computeHit(
     canCrit: true,
     kind: hit.reaction?.kind ?? hit.damageType,
     ...(hit.base !== undefined ? { base: evaluate(hit.base, ec) } : {}),
+    ...(hit.zoneScale?.length ? { zoneScale: hit.zoneScale.map((z) => ({ zone: z.zone, value: evaluate(z.value, ec) })) } : {}),
   }, options);
 }
 

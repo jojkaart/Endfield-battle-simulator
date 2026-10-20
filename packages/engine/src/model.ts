@@ -293,6 +293,26 @@ export interface KitHit {
   readonly gains?: readonly StackGain[];
   /** The hit's own bonuses from its skill's values, e.g. a projectile's extra damage bonus on its first target. */
   readonly bonuses?: readonly HitBonus[];
+  /**
+   * For this hit only, every modifier of a zone that reaches it (anyone's:
+   * the panel's, buffs, the enemy's debuffs and statuses, only those reaching
+   * the hit's element; an all-element one counts) × `value`, judged as it
+   * lands: a damage unit's target-side InstantModifyAttribute with
+   * formulaItem 8 on the zone's attribute (Last Rite's ultimate: attribute 73,
+   * Cryo Susceptibility × `rate`; fixtures/zmdlogs-b7b3762d5da8.json, both
+   * slashes ×1.1811 = (1 + 1.5 × 0.568) / 1.568: the whole zone, not her own
+   * part).
+   */
+  readonly zoneScale?: readonly { readonly zone: Zone; readonly value: ValueExpr }[];
+  /**
+   * A periodic hit with the applier's side snapshotted (DamageAction
+   * `takeAtkSnapshot`): a `buffTick` trigger's hit takes the attacker-side
+   * modifiers (SNAPSHOT_ZONES: ATK, DMG bonus, Amp, crit, Arts Intensity) its
+   * owner had when the ticking buff was applied, not at the tick; the
+   * enemy's side is read at the tick. Combustion does the same by itself
+   * (status.ts).
+   */
+  readonly atkSnapshot?: boolean;
   /** A Final Strike (SkillData decorate-mask bit 2097152, set by the data loader). */
   readonly finalStrike?: boolean;
   /** A literal multiplier from the skill graph (e.g. a SimpleCalcBB ÷ 2 splitting a value over two arrows). */
@@ -438,6 +458,8 @@ export interface BuffApplication {
   readonly if?: Predicate;
   /** Whether the buff already acts on this hit (default: it doesn't; logs differ by skill). */
   readonly beforeDamage?: boolean;
+  /** This application's seconds instead of the buff's (the CreateBuffAction's assigned duration; trigger action `buff` has it too). */
+  readonly duration?: ValueExpr;
 }
 
 /** Kept for the kit loader's error messages; values are ValueExprs (expr.ts). */
@@ -475,7 +497,7 @@ export interface KitBuff {
   readonly duration?: ValueExpr;
   /** Layered: up to this many instances from one owner, each with its own duration (BuffData stackingType 2 / 11); at the maximum a new one replaces the oldest. */
   readonly maxStacks?: ValueExpr;
-  /** Layers share one timer that each new layer refreshes (BuffData stackingType 8; the loader sets it from the game buff). */
+  /** Layers share one timer that each new layer refreshes (BuffData stackingType 8 or 10; the loader sets it from the game buff). */
   readonly sharedTimer?: boolean;
   /**
    * A team buff that counts as one Link stack while active: the next battle
@@ -488,9 +510,20 @@ export interface KitBuff {
   /**
    * Consumed by the next cast of these kinds by someone it reaches (Link,
    * Jade Vessel's combo bonus): it then acts on that cast's hits only, and
-   * on no others.
+   * on no others (or as `consumedScope` says).
    */
   readonly consumedBy?: readonly SkillType[];
+  /**
+   * What a consumed buff acts on: `cast` (default), the consuming cast's own
+   * hits only (a damage modifier that checks the cast ID, CheckSkillCastId:
+   * Jade Vessel, Bonekrusha, Type 50 Yinglung); `whileCasting`, every hit of
+   * the consuming caster from the cast until it ends (cut short or run out)
+   * and the cast's own hits after (a buff the game attaches to the cast,
+   * CreateBuffAttachingSkill: Grand Vision's Physical DMG also on the
+   * Endministrator's Crush and crystal hit, fixtures/pending/zmdlogs-7e19489ae503.json
+   * t=33734). The loader sets it from the data where it can tell.
+   */
+  readonly consumedScope?: "cast" | "whileCasting";
   /** While active, its owner gains no ultimate energy (SkillData / BuffData RefrainObtainUsp, e.g. for as long as an ultimate's state lasts). */
   readonly blocksEnergy?: boolean;
   /** Periodic: a `buffTick` event every this many seconds while active (Liino's soundwave every 3 s), for triggers. */

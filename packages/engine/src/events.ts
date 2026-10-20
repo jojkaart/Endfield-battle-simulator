@@ -5,6 +5,7 @@
 // events count, when (a Predicate), how often, and what it does.
 
 import type { Element, SkillType } from "./attributes.ts";
+import type { Modifier } from "./effects.ts";
 import type { Predicate, ValueExpr } from "./expr.ts";
 import type { KitApplication, KitHit, SpKind, StackGain } from "./model.ts";
 import type { ArtsElement } from "./reactions.ts";
@@ -44,8 +45,8 @@ export type BattleEvent =
    * `gameBuff`: the BuffData buff it stands for.
    */
   | { readonly type: "buffEnded"; readonly frame: number; readonly operator: string; readonly buff: string; readonly remaining: number; readonly recorded?: number; readonly consumed?: boolean; readonly gameBuff?: string }
-  /** A periodic tick of one of the operator's kit buffs (KitBuff.every). */
-  | { readonly type: "buffTick"; readonly frame: number; readonly operator: string; readonly buff: string }
+  /** A periodic tick of one of the operator's kit buffs (KitBuff.every); `snapshot`: the attacker side it took when applied, for tick hits with an ATK snapshot. */
+  | { readonly type: "buffTick"; readonly frame: number; readonly operator: string; readonly buff: string; readonly snapshot?: readonly Modifier[] }
   /** `operator` healed `target` (no amounts: what matters is who, and when). */
   | { readonly type: "heal"; readonly frame: number; readonly operator: string; readonly target: string; readonly kind: SkillType | "none" }
   /** The fight starts (permanent auras, start-of-fight effects); `operator` is the controlled one. */
@@ -179,9 +180,13 @@ export type TriggerActionKind =
    * Apply one of the owner's kit buffs; `to: "eventSubject"` gives a team
    * buff to the event's subject only (the healed operator of a heal, else
    * the operator who caused the event); `layers`: this many layers at once
-   * (default 1; 0 applies none), e.g. one per Status Level consumed.
+   * (default 1; 0 applies none), e.g. one per Status Level consumed;
+   * `duration`: this application's seconds instead of the buff's (the
+   * CreateBuffAction's assigned duration), so one buff applied for different
+   * times keeps one layer cap (Pogranichnik's Fervent Morale: 20 s from
+   * talent 1, 10 s from talent 2).
    */
-  | { readonly kind: "buff"; readonly buff: string; readonly to?: "eventSubject"; readonly layers?: ValueExpr }
+  | { readonly kind: "buff"; readonly buff: string; readonly to?: "eventSubject"; readonly layers?: ValueExpr; readonly duration?: ValueExpr }
   /** Add seconds to the remaining time of one of the owner's active kit buffs (all its layers), e.g. a state a skill pauses. */
   | { readonly kind: "extendBuff"; readonly buff: string; readonly seconds: ValueExpr }
   /** Heal (an event for heal triggers; amounts aren't modelled); `healKind`: the skill kind its heal tag names (HealAction healTags), default none. */
@@ -209,8 +214,14 @@ export type TriggerActionKind =
   | { readonly kind: "jump"; readonly skill: string; readonly from: number; readonly until: number; readonly to: number }
   /** Drop the owner's hits still to land from one of its triggers (a cast ending a volley on its way: FinishBuff of its launcher). */
   | { readonly kind: "cancelHits"; readonly trigger: string }
-  /** End one of the owner's kit buffs: all of it, or its oldest `layers`. */
-  | { readonly kind: "endBuff"; readonly buff: string; readonly layers?: number }
+  /**
+   * End one of the owner's kit buffs: all of it, or its oldest `layers`.
+   * `to: "eventSubject"`: a team buff stops reaching the event's subject only
+   * (the healed operator of a heal, else the operator who caused the event),
+   * the others keep it (Last Rite's perfusion: each holder's own Final
+   * Strike ends that holder's); it ends when it reaches no one.
+   */
+  | { readonly kind: "endBuff"; readonly buff: string; readonly layers?: number; readonly to?: "eventSubject" }
   /**
    * Change the remaining cooldown of an operator's skills of a kind by
    * `seconds`, or by `fraction` of their full cooldown (SetSkillCdAtOnce

@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
-import { isBuffFileListed, readBuffFile, type RawBuffFile } from "./buffData.ts";
+import { isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
 import { attrFeedsZone, buffAttrHasEffect, type KitBuffModifier, ELEMENTS, predicateRefs, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -30,6 +30,8 @@ interface RawHit {
   id: string; label?: string; scale: string[]; count?: ValueExpr; framesEvery?: number; element?: Element; events?: string[]; frames?: number[];
   applies?: KitApplication[]; requires?: StackRequirement; gains?: { stack: string; amount?: ValueExpr; if?: Predicate }[];
   bonuses?: { zone: Zone; key: string }[];
+  zoneScale?: { zone: Zone; value: ValueExpr }[];
+  atkSnapshot?: boolean;
   finalStrike?: boolean;
   factor?: number;
   reaction?: { kind: "burst" | "reaction"; element: "fire" | "pulse" | "cryst" | "natural"; level?: number };
@@ -188,14 +190,20 @@ function withPercent(file: string, buffId: string, raw: RawBuffFile, m: KitBuffM
 /**
  * How many instances a kit buff keeps (KitBuff.instances) by its game buff:
  * stackingType 1 with a priority key keeps maxStackCnt (0: no limit), or
- * the applying skill's maxStackCntKey. Undefined for other game buffs.
+ * the value of its maxStackCntKey. That key is the applying skill's (the
+ * CreateBuffAction assigns it); when the applying skills don't have it
+ * (`applyingSkillHasKey` false), the buff's own blackboard value
+ * (Tangtang's spellvulnerable: cntmax 1), and a key in neither reads 0, no
+ * limit (Navigator's and Wedge's `max_stack`, Dreams of the Starry Beach's;
+ * their literal maxStackCnt is 0 too). Undefined for other game buffs.
  */
-function gameBuffInstances(file: string, b: Pick<KitBuff, "id" | "maxStacks">, raw: RawBuffFile): ValueExpr | undefined {
+function gameBuffInstances(file: string, b: Pick<KitBuff, "id" | "maxStacks">, raw: RawBuffFile, applyingSkillHasKey?: boolean): ValueExpr | undefined {
   const s = raw.stacking;
   if (s.type !== 1 || s.priorityKey === null) return undefined;
   if (s.negatePriority) throw new Error(`${file}: buff ${b.id}: ${raw.id} keeps its weakest instance (negatePriority), which isn't supported`);
   if (b.maxStacks !== undefined) throw new Error(`${file}: buff ${b.id}: ${raw.id} keeps instances by priority (stackingType 1, priority key ${s.priorityKey}): drop maxStacks`);
-  return s.maxStacksKey ?? s.maxStackCnt;
+  if (s.maxStacksKey === null) return s.maxStackCnt;
+  return applyingSkillHasKey === false ? (raw.blackboard[s.maxStacksKey] ?? 0) : s.maxStacksKey;
 }
 
 /**
@@ -205,20 +213,33 @@ function gameBuffInstances(file: string, b: Pick<KitBuff, "id" | "maxStacks">, r
  * (`instances`: maxStackCnt, 0 no limit, or the applying skill's
  * maxStackCntKey); type 11 with a priority key and one instance is a group
  * too, so two wielders' copies don't add (layered type 11 stays per owner);
- * type 8: layers on one refreshed timer. An attribute modifier the game
+ * types 8 and 10: layers on one refreshed timer (SHARED_TIMER_TYPES). An attribute modifier the game
  * buff has in formulaItem 6 is a percentage (`percent`).
+ * `applyingSkillHasKey`: whether the skills that apply it have its
+ * maxStackCntKey (gameBuffInstances; default: assumed).
  */
-export function withGameBuff(file: string, b: KitBuff): KitBuff {
+export function withGameBuff(file: string, b: KitBuff, applyingSkillHasKey?: boolean): KitBuff {
   const { gameBuff } = b;
   if (!gameBuff) return b;
   const raw = gameBuffFile(file, b.id, gameBuff);
   const modifiers = b.modifiers.map((m) => withPercent(file, b.id, raw, m));
   const s = raw.stacking;
-  const instances = gameBuffInstances(file, b, raw);
+  const instances = gameBuffInstances(file, b, raw, applyingSkillHasKey);
   if (s.type === 1) return { ...b, modifiers, stackGroup: s.key ?? gameBuff, ...(instances !== undefined ? { instances } : {}) };
   if (s.type === 11 && s.priorityKey !== null && s.maxStacksKey === null && s.maxStackCnt === 1) return { ...b, modifiers, stackGroup: s.key ?? gameBuff };
-  return s.type === 8 && b.maxStacks !== undefined && b.sharedTimer === undefined ? { ...b, modifiers, sharedTimer: true } : { ...b, modifiers };
+  return SHARED_TIMER_TYPES.has(s.type) && b.maxStacks !== undefined && b.sharedTimer === undefined ? { ...b, modifiers, sharedTimer: true } : { ...b, modifiers };
 }
+
+/**
+ * BuffData stackingTypes whose layers share one timer each new layer
+ * refreshes (KitBuff.sharedTimer). 8: batch-3 B3 (in-game test 62). 10: the
+ * inflictions' type (buff_common_enemy_spell_*_attached, maxStackCnt 4),
+ * which the engine already runs on one refreshed timer (status.ts); Ember's
+ * talent 2 (buff_chr_0009_azrila_talent_2_buff, max 3) is listed once in
+ * fixtures/pending/zmdlogs-7e19489ae503.json though applied twice (batch 4
+ * B3; test 62's Ember variant settles it).
+ */
+const SHARED_TIMER_TYPES: ReadonlySet<number> = new Set([8, 10]);
 
 /** What one kit's values, stacks and buffs may name. */
 interface KitScope {
@@ -237,11 +258,37 @@ interface KitScope {
   readonly checkSourceKey: (id: string, key: string, where: string) => void;
   /** The buffs and skills a talent (0-based) attaches at its levels, for `{talent, key}` values; none for equipment. */
   readonly talentSources?: (talent: number) => readonly string[];
+  /** SkillData files whose CreateBuffAttachingSkill effects make a consumed buff act while its cast runs (an equipment's skills; consumedScope). */
+  readonly castBuffSkills?: readonly string[];
+}
+
+/**
+ * What a consumed kit buff acts on by default (KitBuff.consumedScope): while
+ * the consuming cast runs when the game attaches the cast's effect buff to
+ * the cast (CreateBuffAttachingSkill of a buff with an attribute modifier,
+ * or a damage modifier that doesn't check the cast ID) in the kit buff's
+ * game buff or the equipment's skills (Cohesive Traction, Aspirant, Grand
+ * Vision, Glorious Memory, Yvonne's talent 1); else the cast's own hits.
+ */
+function defaultConsumedScope(b: KitBuff, skills: readonly string[]): KitBuff["consumedScope"] {
+  const attached = [...(b.gameBuff ? skillAttachedEffects("BuffData", b.gameBuff) : []), ...skills.flatMap((id) => skillAttachedEffects("SkillData", id))].filter((x) => x !== b.gameBuff);
+  return attached.length ? "whileCasting" : undefined;
 }
 
 /** Checks and normalises the parts operator and equipment kits share: values, predicates, buffs, hits, triggers. */
 function kitChecker(scope: KitScope) {
   const { stackIds, buffDefs } = scope;
+  /** Per buff whose instances a maxStackCntKey sets: whether each skill applying it has the key (B2: else the buff's own value). */
+  const instanceKeySites = new Map<string, boolean[]>();
+  const hasKey = (skillId: string, key: string): boolean => {
+    if (!scope.isSource(skillId)) return false;
+    try {
+      scope.checkSourceKey(skillId, key, "");
+      return true;
+    } catch {
+      return false;
+    }
+  };
   /** Every key a value names must exist in one of the kit's sources (a plain key names `skillId`). */
   const checkValue = (v: ValueExpr, skillId: string, where: string) => {
     let keys;
@@ -278,9 +325,9 @@ function kitChecker(scope: KitScope) {
     for (const m of b.modifiers) if ((m.zone === undefined) === (m.attr === undefined)) throw new Error(`${where}: buff ${b.id}: each modifier has a zone or an attribute`);
     for (const m of b.modifiers) if (m.attr !== undefined && !buffAttrHasEffect(m.attr)) throw new Error(`${where}: buff ${b.id}: attribute ${m.attr} feeds no damage zone and nothing reads it (ATK is the atk zone)`);
     for (const m of b.modifiers) if (m.percent && (m.attr === undefined || attrFeedsZone(m.attr))) throw new Error(`${where}: buff ${b.id}: a percentage is of an attribute read where the game reads it (DEF, Strength, …), not of a zone`);
-    // Instances kept by the applying skill's value (maxStackCntKey): the key must be there.
+    // Instances kept by the applying skill's value (maxStackCntKey): whether this applier has the key (normalizeBuffs decides).
     const instances = b.gameBuff ? gameBuffInstances(scope.file, b, gameBuffFile(scope.file, b.id, b.gameBuff)) : undefined;
-    if (typeof instances === "string") checkValue(instances, skillId, `${where}: buff ${b.id} instances (maxStackCntKey)`);
+    if (typeof instances === "string") instanceKeySites.set(b.id, [...(instanceKeySites.get(b.id) ?? []), hasKey(skillId, instances)]);
     if (b.recipients && b.target !== "team") throw new Error(`${where}: buff ${b.id}: only team buffs have recipients`);
     // Recipient filters judge the recipient; its own stacks and buffs aren't the kit's, so they aren't checked here.
   };
@@ -291,7 +338,7 @@ function kitChecker(scope: KitScope) {
    */
   const normalizeHits = (
     hits: readonly RawHit[],
-    src: { skillId: string; label: string; damageType?: SkillType; checkScale: (key: string, where: string) => void; defaultEvent?: string; finalStrike?: (h: RawHit, events: string[]) => boolean },
+    src: { skillId: string; label: string; damageType?: SkillType; checkScale: (key: string, where: string) => void; defaultEvent?: string; finalStrike?: (h: RawHit, events: string[]) => boolean; buffTick?: boolean },
     where: string,
   ): KitHit[] => {
     const ids = new Set<string>();
@@ -316,9 +363,13 @@ function kitChecker(scope: KitScope) {
       }
       if (h.scaleValue !== undefined) checkValue(h.scaleValue, src.skillId, `${where} hit ${h.id} scaleValue`);
       if (h.base !== undefined) checkValue(h.base, src.skillId, `${where} hit ${h.id} base`);
+      for (const z of h.zoneScale ?? []) checkValue(z.value, src.skillId, `${where} hit ${h.id} zoneScale`);
+      if (h.zoneScale && new Set(h.zoneScale.map((z) => z.zone)).size !== h.zoneScale.length) throw new Error(`${where} hit ${h.id}: zoneScale names a zone twice`);
+      // The snapshot is the ticking buff's (taken when it was applied): only a buffTick trigger's hits have one.
+      if (h.atkSnapshot && !src.buffTick) throw new Error(`${where} hit ${h.id}: atkSnapshot is for the hits of a buffTick trigger (the ticking buff keeps the snapshot)`);
       if (h.fixedDamage !== undefined) {
         checkValue(h.fixedDamage, src.skillId, `${where} hit ${h.id} fixedDamage`);
-        if (h.scale.length || h.scaleValue !== undefined || h.extraScale || h.factor !== undefined || h.reaction || h.bonuses) throw new Error(`${where} hit ${h.id}: a Fixed DMG hit has no scale, factor, reaction or bonuses`);
+        if (h.scale.length || h.scaleValue !== undefined || h.extraScale || h.factor !== undefined || h.reaction || h.bonuses || h.zoneScale || h.atkSnapshot) throw new Error(`${where} hit ${h.id}: a Fixed DMG hit has no scale, factor, reaction, bonuses, zoneScale or atkSnapshot`);
       }
       if (h.if) checkPredicate(h.if, `${where} hit ${h.id}`);
       for (const x of [...(h.applies ?? []), ...(h.buffs ?? []), ...(h.gains ?? [])]) if (x.if) checkPredicate(x.if, `${where} hit ${h.id}`);
@@ -341,6 +392,7 @@ function kitChecker(scope: KitScope) {
         const b = buffDefs.get(a.buff);
         if (!b) throw new Error(`${where} hit ${h.id}: unknown buff ${a.buff}`);
         checkBuff(b, src.skillId, `${where} hit ${h.id}`);
+        if (a.duration !== undefined) checkValue(a.duration, src.skillId, `${where} hit ${h.id} buff ${a.buff} duration`);
       }
       // A count that's a value is judged at the cast: its frames are the first landings', the rest repeat the last (framesEvery apart).
       if (typeof (h.count ?? 1) === "number") {
@@ -354,6 +406,8 @@ function kitChecker(scope: KitScope) {
         ...(h.applies ? { applies: h.applies } : {}),
         ...(h.requires ? { requires: h.requires } : {}),
         ...(h.bonuses ? { bonuses: h.bonuses } : {}),
+        ...(h.zoneScale ? { zoneScale: h.zoneScale } : {}),
+        ...(h.atkSnapshot ? { atkSnapshot: true } : {}),
         ...(h.factor !== undefined ? { factor: h.factor } : {}),
         ...(h.reaction ? { reaction: h.reaction } : {}),
         ...(h.extraScale ? { extraScale: h.extraScale } : {}),
@@ -415,8 +469,10 @@ function kitChecker(scope: KitScope) {
           const b = buffDefs.get(a.buff);
           if (!b) throw new Error(`${where}: unknown buff ${a.buff}`);
           if (a.kind === "buff") checkBuff(b, skillId, where);
-          if (a.kind === "buff" && a.to && b.target !== "team") throw new Error(`${where}: buff ${a.buff} goes to the event's subject, so it must target the team`);
+          if (a.to && b.target !== "team") throw new Error(`${where}: buff ${a.buff} ${a.kind === "buff" ? "goes to" : "ends for"} the event's subject, so it must target the team`);
+          if (a.kind === "endBuff" && a.to && a.layers !== undefined) throw new Error(`${where}: endBuff for the event's subject ends its use of every instance, not layers`);
           if (a.kind === "buff" && a.layers !== undefined) checkValue(a.layers, skillId, `${where} buff layers`);
+          if (a.kind === "buff" && a.duration !== undefined) checkValue(a.duration, skillId, `${where} buff duration`);
           break;
         }
         case "extendBuff":
@@ -465,13 +521,21 @@ function kitChecker(scope: KitScope) {
     const normalize = (list: readonly RawAction[]): TriggerAction[] =>
       list.map((a) =>
         a.kind === "gain" ? { ...a, gains: a.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1, ...(g.if ? { if: g.if } : {}) })) }
-        : a.kind === "hits" ? { ...(a.if ? { if: a.if } : {}), ...(a.now ? { now: true } : {}), kind: "hits", hits: normalizeHits(a.hits, { skillId, label: t.id, checkScale: (key, w) => checkValue(key, skillId, w) }, where) }
+        : a.kind === "hits" ? { ...(a.if ? { if: a.if } : {}), ...(a.now ? { now: true } : {}), kind: "hits", hits: normalizeHits(a.hits, { skillId, label: t.id, checkScale: (key, w) => checkValue(key, skillId, w), buffTick: t.on.event === "buffTick" }, where) }
         : a.kind === "choose" ? { ...a, options: a.options.map((o) => ({ weight: o.weight, do: normalize(o.do) })) }
         : a,
       );
     return { ...t, do: normalize(t.do) };
   };
-  const normalizeBuffs = (buffs: readonly RawBuff[]): KitBuff[] => buffs.map(({ note: _note, ...b }) => withGameBuff(scope.file, b));
+  /** The kit's buffs with their game buffs' rules; after every hit and trigger is checked (which skills apply each buff). */
+  const normalizeBuffs = (buffs: readonly RawBuff[]): KitBuff[] =>
+    buffs.map(({ note: _note, ...b }) => {
+      const sites = instanceKeySites.get(b.id);
+      if (sites && sites.some((x) => x) && sites.some((x) => !x)) throw new Error(`${scope.file}: buff ${b.id}: some skills applying it have its game buff's maxStackCntKey and some don't`);
+      if (b.consumedScope && !b.consumedBy) throw new Error(`${scope.file}: buff ${b.id}: consumedScope is for a buff a cast consumes (consumedBy)`);
+      const consumedScope = b.consumedBy && b.consumedScope === undefined ? defaultConsumedScope(b, scope.castBuffSkills ?? []) : undefined;
+      return withGameBuff(scope.file, consumedScope ? { ...b, consumedScope } : b, sites ? sites.every((x) => x) : undefined);
+    });
   /** A kit's triggers, checked, with the triggers their actions name (cancelHits) among them. */
   const checkTriggers = (list: readonly Omit<RawTrigger, "note">[]): KitTrigger[] => {
     const out = list.map(checkTrigger);
@@ -581,8 +645,9 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
       return { id: x.id, label: x.label, max: x.max, ...(x.initial !== undefined ? { initial: x.initial } : {}) };
     }),
     ...(kit.activeConditions ? { activeConditions: kit.activeConditions } : {}),
-    buffs: c.normalizeBuffs(kit.buffs ?? []),
+    // Triggers first: normalizeBuffs reads which skills apply each buff.
     triggers: c.checkTriggers((kit.triggers ?? []).map(({ note: _note, ...t }) => t)),
+    buffs: c.normalizeBuffs(kit.buffs ?? []),
     ...(kit.statusTweaks
       ? {
           statusTweaks: kit.statusTweaks.map(({ note: _note, ...t }) => {
@@ -628,6 +693,7 @@ function loadEquipmentKit(data: KitData, file: string, kit: RawEquipmentKit): Eq
     buffDefs: new Map((kit.buffs ?? []).map((b) => [b.id, b])),
     // Equipment acts for any wearer, so its cast filters can only be by kind.
     isSkill: () => false,
+    castBuffSkills: [...skills],
     isSource: (sid) => skills.has(sid) && data.skills[sid] !== undefined,
     checkSourceKey: (sid, key, where) => checkKey(data.skills[sid] as SkillData, key, where),
   });
@@ -638,8 +704,9 @@ function loadEquipmentKit(data: KitData, file: string, kit: RawEquipmentKit): Eq
       if (x.initial !== undefined) c.checkValue(x.initial, "", `${where0}: stack ${x.id} initial`);
       return { id: x.id, label: x.label, max: x.max, ...(x.initial !== undefined ? { initial: x.initial } : {}) };
     }),
-    buffs: c.normalizeBuffs(kit.buffs ?? []),
+    // Triggers first: normalizeBuffs reads which skills apply each buff.
     triggers: c.checkTriggers((kit.triggers ?? []).map(({ note: _note, ...t }) => t)),
+    buffs: c.normalizeBuffs(kit.buffs ?? []),
     conditions: (kit.conditions ?? []).map((x) => {
       if (x.source.kind !== "weaponSkill" || !weapon) throw new Error(`${where0}: condition ${x.id}: equipment conditions use weaponSkill sources (weapons only)`);
       return condition(id, x);
@@ -665,11 +732,12 @@ function variantOf(kit: RawKit, variant: { operator: string; skills?: Record<str
   return { ...(rename(rest) as RawKit), operator: variant.operator };
 }
 
-export function loadKits(data: KitData): Kits {
+/** The kits under `root` (default packages/data/kits: operators/ and equipment/), checked against the data. */
+export function loadKits(data: KitData, root: string = KITS): Kits {
   const v = validator();
   if (!v.kit) throw new Error("kit schema not registered");
   const operators: Record<string, OperatorKit> = {};
-  const dir = join(KITS, "operators");
+  const dir = join(root, "operators");
   for (const file of readdirSync(dir).filter((f) => f.endsWith(".json")).sort()) {
     const raw = readJson(join(dir, file));
     if (!v.kit(raw)) throw new Error(`kits/operators/${file}: ${v.ajv.errorsText(v.kit.errors)}`);
@@ -682,7 +750,7 @@ export function loadKits(data: KitData): Kits {
     }
   }
   const equipment: Record<string, EquipmentKit> = {};
-  const edir = join(KITS, "equipment");
+  const edir = join(root, "equipment");
   for (const file of existsSync(edir) ? readdirSync(edir).filter((f) => f.endsWith(".json")).sort() : []) {
     const raw = readJson(join(edir, file));
     if (!v.equipment(raw)) throw new Error(`kits/equipment/${file}: ${v.ajv.errorsText(v.equipment.errors)}`);

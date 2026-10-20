@@ -163,6 +163,12 @@ export interface ActiveStatus {
   readonly damageScale?: { readonly key: string; readonly value: number };
   /** Its strength cap × this (Corrosion's shred cap; an applier's talent). */
   readonly capScale?: number;
+  /**
+   * Combustion: the applier's attacker-side modifiers when it was applied
+   * (effects.ts SNAPSHOT_ZONES; buff_common_burning_status takeAtkSnapshot),
+   * which its ticks keep; absent when the caller gave none.
+   */
+  readonly snapshot?: readonly Modifier[];
 }
 
 export interface ActivePhysical {
@@ -224,6 +230,8 @@ export type StatusEvent =
       readonly operator: string;
       readonly level: number;
       readonly damageScale?: { readonly key: string; readonly value: number };
+      /** The applier's attacker-side modifiers at the Combustion's application (ActiveStatus.snapshot). */
+      readonly snapshot?: readonly Modifier[];
     };
 
 /** The BuffData file that holds each physical status's hit: battle logs name the hit after it. */
@@ -269,7 +277,7 @@ export function tickStatus(s: EnemyStatus, frame: number): { state: EnemyStatus;
     let next = x.nextTickAt;
     if (next === undefined) return x;
     while (next <= frame && next <= x.expiresAt) {
-      events.push({ kind: "combustionTick", frame: next, operator: x.operator, level: x.level, ...(x.damageScale ? { damageScale: x.damageScale } : {}) });
+      events.push({ kind: "combustionTick", frame: next, operator: x.operator, level: x.level, ...(x.damageScale ? { damageScale: x.damageScale } : {}), ...(x.snapshot ? { snapshot: x.snapshot } : {}) });
       next += COMBUSTION_TICK_FRAMES;
     }
     return next === x.nextTickAt ? x : { ...x, nextTickAt: next };
@@ -288,6 +296,8 @@ interface StatusOverrides {
   /** Frames added to this application's duration (HitApplication `extraSeconds`). */
   readonly extraFrames?: number;
   readonly damageScale?: { readonly key: string; readonly value: number };
+  /** The applier's attacker-side modifiers now, kept by a status with damage ticks (Combustion): asked for only then. */
+  readonly snapshot?: () => readonly Modifier[];
 }
 
 /** How an applier's kit changes the statuses it applies (OperatorKit.statusTweaks, resolved for the applier). */
@@ -305,6 +315,7 @@ function withStatus(s: EnemyStatus, st: ReactionStatus, level: number, frame: nu
     artsIntensity,
     ...(st === "combustion" ? { nextTickAt: frame + COMBUSTION_TICK_FRAMES } : {}),
     ...(o.damageScale ? { damageScale: o.damageScale } : {}),
+    ...(st === "combustion" && o.snapshot ? { snapshot: o.snapshot() } : {}),
   };
   return { ...s, statuses: [...s.statuses.filter((x) => x.status !== st), status] };
 }
@@ -315,8 +326,9 @@ function noSkillValues(key: string): number {
 
 /**
  * Applies what a hit does, at a frame, by an operator with the given Arts
- * Intensity. `skillValue` resolves the applying skill's blackboard keys.
- * Returns the new state and what happened (bursts and reactions to deal
+ * Intensity. `skillValue` resolves the applying skill's blackboard keys;
+ * `snapshot` gives the applier's attacker-side modifiers, which a Combustion
+ * it applies keeps for its ticks (ActiveStatus.snapshot). Returns the new state and what happened (bursts and reactions to deal
  * damage for, consumptions for skills that count them).
  */
 export function applyToEnemy(
@@ -327,11 +339,12 @@ export function applyToEnemy(
   artsIntensity: number,
   skillValue: (key: string) => number = noSkillValues,
   tweaks: StatusTweaks = {},
+  snapshot?: () => readonly Modifier[],
 ): { state: EnemyStatus; events: StatusEvent[] } {
   const s = expireStatus(state, frame);
   const cur = s.infliction;
   if (app.kind === "infliction") {
-    if (app.element === "enemy") return cur ? applyToEnemy(s, { ...app, element: cur.element }, frame, operator, artsIntensity, skillValue, tweaks) : { state: s, events: [] };
+    if (app.element === "enemy") return cur ? applyToEnemy(s, { ...app, element: cur.element }, frame, operator, artsIntensity, skillValue, tweaks, snapshot) : { state: s, events: [] };
     const element = app.element;
     const stacks = app.stacks ?? 1;
     if (!Number.isInteger(stacks) || stacks < 1) throw new EngineError(`infliction stacks ${stacks}`);
@@ -352,7 +365,7 @@ export function applyToEnemy(
     const status = REACTION_OF[element];
     const level = Math.min(MAX_INFLICTION_STACKS, cur.stacks);
     return {
-      state: withStatus({ ...s, infliction: null }, status, level, frame, operator, artsIntensity, {}, tweaks),
+      state: withStatus({ ...s, infliction: null }, status, level, frame, operator, artsIntensity, snapshot ? { snapshot } : {}, tweaks),
       events: [{ kind: "reaction", frame, operator, status, element: element, level, consumed: cur.element, initialHit: true }],
     };
   }
@@ -362,6 +375,7 @@ export function applyToEnemy(
       ...(app.durationKey ? { durationFrames: Math.round(skillValue(app.durationKey) * FPS) } : {}),
       ...(app.extraSeconds ? { extraFrames: Math.round(app.extraSeconds * FPS) } : {}),
       ...(app.scaleKey ? { damageScale: { key: app.scaleKey, value: skillValue(app.scaleKey) } } : {}),
+      ...(snapshot ? { snapshot } : {}),
     };
     return {
       state: withStatus(s, app.status, level, frame, operator, artsIntensity, o, tweaks),

@@ -16,6 +16,9 @@ import {
   parseReactionEvent,
   roundDamage,
   skillValue,
+  FPS,
+  SNAPSHOT_ZONES,
+  STATUS_FRAMES,
   type GameData,
   type KitHit,
   type KitSkill,
@@ -346,6 +349,22 @@ function withLayers(hit: LogHit, layers: ReadonlyMap<string, number>): LogHit {
   return { ...hit, effects: hit.effects.map(scale), boundaryEffects: hit.boundaryEffects.map(scale) };
 }
 
+/**
+ * The logged hit a Combustion tick keeps its attacker side from (effects.ts
+ * SNAPSHOT_ZONES): the latest Heat reaction's initial hit by the tick's
+ * operator within a Combustion's duration before it, or null (a forced
+ * Combustion has no initial hit: the tick's own effects are used).
+ */
+function combustionSource(fx: LogFixture, tick: LogHit): LogHit | null {
+  const ms = ((STATUS_FRAMES.combustion[0] as number) / FPS) * 1000;
+  let found: LogHit | null = null;
+  for (const h of fx.hits) {
+    const r = parseReactionEvent(h.event);
+    if (h.operator === tick.operator && r?.kind === "reaction" && r.element === "fire" && h.t <= tick.t && tick.t - h.t <= ms && (!found || h.t >= found.t)) found = h;
+  }
+  return found;
+}
+
 export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
   const panels = new Map(fx.team.map((b) => [b.operator, { build: b, panel: computeStats(data, b) }]));
   const target = { enemy: fx.enemy.id, level: fx.enemy.level };
@@ -359,13 +378,19 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
     if (!member || (found.length === 0 && !reaction)) return { kind: "uncovered", hit };
     const actual = hit.uncapped ?? hit.value;
     const stackOptions = reaction && reaction.kind !== "burst" ? [1, 2, 3, 4] : [1];
+    // A Combustion tick's attacker side is its application's (takeAtkSnapshot; fixtures/zmdlogs-4e5e1390085e.json 66004–68449 ms).
+    const snapshotFrom = reaction?.kind === "combustionTick" ? combustionSource(fx, hit) : null;
     const predicted: number[] = [];
     // Whole-hit assumptions (enemy auras the log doesn't list, layers of a buff it lists once), the plain reading first:
     // a hit that matches without them keeps matching as before.
     for (const variant of combine(auras, layerVariants(hit, caps))) {
       for (const c of candidates(withLayers(hit, variant.layers), panels, stackOptions)) {
+        const logged = (category: HitCategory) =>
+          snapshotFrom
+            ? [...logModifiers(c.effects, category, caps).filter((m) => !SNAPSHOT_ZONES.has(m.zone)), ...logModifiers(snapshotFrom.effects, category, caps).filter((m) => SNAPSHOT_ZONES.has(m.zone))]
+            : logModifiers(c.effects, category, caps);
         const options = (category: HitCategory) => ({
-          crit: c.crit ? ("always" as const) : ("never" as const), staggered: false, conditions: [], modifiers: [...logModifiers(c.effects, category, caps), ...c.extra, ...variant.modifiers],
+          crit: c.crit ? ("always" as const) : ("never" as const), staggered: false, conditions: [], modifiers: [...logged(category), ...c.extra, ...variant.modifiers],
         });
         const results = reaction
           ? [{ label: null, r: computeReaction(data, member.build, member.panel, target, { ...reaction, stacks: c.stacks }, options(reaction.kind)) }]
