@@ -593,7 +593,7 @@ describe("timeline: values and resources", () => {
   it("a hit that names its SP returns it when it lands, instead of the skill's atb on its first hit", () => {
     const plain = stepTo(data, noEnergy(chain), 30 * 3).sp;
     const d = withKit({ skills: kit.skills.map((s) => (s.skillId === L + "attack5" ? { ...s, hits: s.hits.map((h) => ({ ...h, sp: 5 })) } : s)) });
-    const hits = kit.skills.find((s) => s.skillId === L + "attack5")?.hits.reduce((n, h) => n + h.count, 0) ?? 0;
+    const hits = kit.skills.find((s) => s.skillId === L + "attack5")?.hits.reduce((n, h) => n + (typeof h.count === "number" ? h.count : Number.NaN), 0) ?? 0;
     // attack5's atb is 20; here each of its landings returns 5 instead.
     expect(stepTo(d, noEnergy(chain), 30 * 3).sp).toBeCloseTo(plain - 20 + 5 * hits, 6);
   });

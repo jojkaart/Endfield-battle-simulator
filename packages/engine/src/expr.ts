@@ -40,6 +40,8 @@ export type Predicate =
   | { readonly stack: string; readonly atLeast?: number; readonly below?: number }
   /** One of the operator's own kit buffs is active. */
   | { readonly buffActive: string }
+  /** One of the operator's own kit buffs has at least / fewer than this many active layers (a plain buff: 1 or 0). */
+  | { readonly buffLayers: string; readonly atLeast?: number; readonly below?: number }
   /** The hit itself consumed at least this many infliction stacks (default 1). */
   | { readonly consumedAtLeast: number }
   /** The operator is the controlled one (Typhoeus's 5th aerial shot is a Final Strike only then). */
@@ -94,6 +96,8 @@ export type ValueExpr =
   | { readonly targetsHit: true }
   /** The operator's own stack count (e.g. the room left: max − count). */
   | { readonly stackCount: string }
+  /** The active layers of one of the operator's own kit buffs (a plain buff: 1 or 0): Avywenna's Thunderlances on the field. */
+  | { readonly buffLayers: string }
   /** The enemy's Vulnerable stacks (Gilberta's Arts Susceptibility per stack). */
   | { readonly enemyVulnerableStacks: true }
   | { readonly if: Predicate; readonly then: ValueExpr; readonly else?: ValueExpr }
@@ -137,6 +141,8 @@ export interface EvalContext {
   readonly enemy?: EnemyStatus;
   readonly stacks?: Readonly<Record<string, number>>;
   readonly buffActive?: (id: string) => boolean;
+  /** Active layers of one of the operator's own kit buffs (as `buffActive` sees them). */
+  readonly buffLayers?: (id: string) => number;
   readonly consumed?: number;
   /** ValueExpr `eventCount`. */
   readonly eventCount?: number;
@@ -205,6 +211,11 @@ export function test(p: Predicate, c: EvalContext): boolean | undefined {
     return (p.atLeast === undefined || n >= p.atLeast) && (p.below === undefined || n < p.below);
   }
   if ("buffActive" in p) return c.buffActive ? c.buffActive(p.buffActive) : undefined;
+  if ("buffLayers" in p) {
+    if (!c.buffLayers) return undefined;
+    const n = c.buffLayers(p.buffLayers);
+    return (p.atLeast === undefined || n >= p.atLeast) && (p.below === undefined || n < p.below);
+  }
   if ("consumedAtLeast" in p) return c.consumed === undefined ? undefined : c.consumed >= p.consumedAtLeast;
   if ("controlled" in p) return c.controlled === undefined ? undefined : c.controlled === c.build.operator;
   if ("enemyBuff" in p) return c.enemyGameBuffs ? c.enemyGameBuffs.has(p.enemyBuff) : undefined;
@@ -274,6 +285,10 @@ export function evaluate(v: ValueExpr, c: EvalContext): number {
     if (!c.stacks) throw new Error(`value needs stack ${v.stackCount}, which isn't known here`);
     return c.stacks[v.stackCount] ?? 0;
   }
+  if ("buffLayers" in v) {
+    if (!c.buffLayers) throw new Error(`value needs the layers of buff ${v.buffLayers}, which aren't known here`);
+    return c.buffLayers(v.buffLayers);
+  }
   const t = test(v.if, c);
   if (t === undefined) throw new Error("value depends on a condition that isn't known here");
   return t ? evaluate(v.then, c) : v.else === undefined ? 0 : evaluate(v.else, c);
@@ -309,5 +324,16 @@ export function predicateRefs(p: Predicate): { stacks: string[]; buffs: string[]
   // An eventOperator predicate names the event operator's stacks and buffs, not the kit's own.
   if ("stack" in p) return { stacks: [p.stack], buffs: [] };
   if ("buffActive" in p) return { stacks: [], buffs: [p.buffActive] };
+  if ("buffLayers" in p) return { stacks: [], buffs: [p.buffLayers] };
   return { stacks: [], buffs: [] };
+}
+
+/** Own stacks and buffs a value names (its own and its conditions'), for the loader to check. */
+export function valueRefs(v: ValueExpr): { stacks: string[]; buffs: string[] } {
+  if (typeof v === "number" || typeof v === "string") return { stacks: [], buffs: [] };
+  if ("stackCount" in v) return { stacks: [v.stackCount], buffs: [] };
+  if ("buffLayers" in v) return { stacks: [], buffs: [v.buffLayers] };
+  const parts = "sum" in v ? v.sum : "product" in v ? v.product : "min" in v ? v.min : "max" in v ? v.max : "if" in v ? [v.then, ...(v.else !== undefined ? [v.else] : [])] : "floor" in v ? [v.floor] : "div" in v ? v.div : [];
+  const refs = [...parts.map(valueRefs), ...("if" in v ? [predicateRefs(v.if)] : [])];
+  return { stacks: refs.flatMap((x) => x.stacks), buffs: refs.flatMap((x) => x.buffs) };
 }

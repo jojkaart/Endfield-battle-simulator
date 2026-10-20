@@ -11,7 +11,7 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { isBuffFileListed, readBuffFile } from "./buffData.ts";
-import { buffAttrHasEffect, ELEMENTS, predicateRefs, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
+import { buffAttrHasEffect, ELEMENTS, predicateRefs, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
@@ -27,7 +27,7 @@ interface RawCondition {
 }
 
 interface RawHit {
-  id: string; label?: string; scale: string[]; count?: number; element?: Element; events?: string[]; frames?: number[];
+  id: string; label?: string; scale: string[]; count?: ValueExpr; framesEvery?: number; element?: Element; events?: string[]; frames?: number[];
   applies?: KitApplication[]; requires?: StackRequirement; gains?: { stack: string; amount?: ValueExpr; if?: Predicate }[];
   bonuses?: { zone: Zone; key: string }[];
   finalStrike?: boolean;
@@ -52,7 +52,15 @@ interface RawHit {
   damageType?: SkillType | "none";
 }
 
-type RawTrigger = Omit<KitTrigger, "do"> & { note?: string; do: (Exclude<KitTrigger["do"][number], { kind: "hits" }> | { kind: "hits"; hits: RawHit[]; if?: Predicate; now?: boolean })[] };
+type RawAction =
+  | Exclude<TriggerAction, { kind: "hits" } | { kind: "choose" }>
+  | { kind: "hits"; hits: RawHit[]; if?: Predicate; now?: boolean }
+  | { kind: "choose"; options: { weight: ValueExpr; do: RawAction[] }[]; if?: Predicate };
+
+type RawTrigger = Omit<KitTrigger, "do"> & { note?: string; do: RawAction[] };
+
+/** A list of raw actions with those inside its choose options (an option's after its choose). */
+const flatActions = (list: readonly RawAction[]): RawAction[] => list.flatMap((a) => (a.kind === "choose" ? [a, ...a.options.flatMap((o) => flatActions(o.do))] : [a]));
 
 interface RawKit {
   operator: string;
@@ -180,6 +188,10 @@ function kitChecker(scope: KitScope) {
       if (!scope.isSource(sid)) throw new Error(`${where}: ${sid} isn't one of ${scope.owner}'s value sources`);
       scope.checkSourceKey(sid, key, where);
     }
+    // The own stacks and buffs it reads (stackCount, buffLayers, and its conditions').
+    const refs = valueRefs(v);
+    for (const id of refs.stacks) if (!stackIds.has(id)) throw new Error(`${where}: unknown stack ${id}`);
+    for (const id of refs.buffs) if (!buffDefs.has(id)) throw new Error(`${where}: unknown buff ${id}`);
   };
   /** Every own stack and buff a predicate names must exist in the kit. */
   const checkPredicate = (p: Predicate, where: string) => {
@@ -208,12 +220,13 @@ function kitChecker(scope: KitScope) {
   ): KitHit[] => {
     const ids = new Set<string>();
     // Alternatives pair up landing by landing: a branch's hits land equally often.
-    const branches = new Map<string, number>();
+    const branches = new Map<string, string>();
     for (const h of hits) {
       if (!h.branch) continue;
       const n = branches.get(h.branch);
-      if (n !== undefined && n !== (h.count ?? 1)) throw new Error(`${where} hit ${h.id}: the hits of branch ${h.branch} land a different number of times`);
-      branches.set(h.branch, h.count ?? 1);
+      const count = JSON.stringify(h.count ?? 1);
+      if (n !== undefined && n !== count) throw new Error(`${where} hit ${h.id}: the hits of branch ${h.branch} land a different number of times`);
+      branches.set(h.branch, count);
     }
     return hits.map((h) => {
       if (src.damageType && h.damageType) throw new Error(`${where} hit ${h.id}: a skill's hits take its damage type`);
@@ -252,10 +265,15 @@ function kitChecker(scope: KitScope) {
         if (!b) throw new Error(`${where} hit ${h.id}: unknown buff ${a.buff}`);
         checkBuff(b, src.skillId, `${where} hit ${h.id}`);
       }
-      if (h.frames && h.frames.length !== (h.count ?? 1)) throw new Error(`${where} hit ${h.id}: ${h.frames.length} frames for count ${h.count ?? 1}`);
+      // A count that's a value is judged at the cast: its frames are the first landings', the rest repeat the last (framesEvery apart).
+      if (typeof (h.count ?? 1) === "number") {
+        if (h.frames && h.frames.length !== (h.count ?? 1)) throw new Error(`${where} hit ${h.id}: ${h.frames.length} frames for count ${JSON.stringify(h.count ?? 1)}`);
+        if (h.framesEvery !== undefined) throw new Error(`${where} hit ${h.id}: framesEvery is for a count that's a value`);
+      } else checkValue(h.count as ValueExpr, src.skillId, `${where} hit ${h.id} count`);
       return {
         id: h.id, label: h.label ?? src.label, scale: h.scale, count: h.count ?? 1, damageType: src.damageType ?? h.damageType ?? "none", element, events,
         ...(h.frames ? { frames: h.frames } : {}),
+        ...(h.framesEvery !== undefined ? { framesEvery: h.framesEvery } : {}),
         ...(h.applies ? { applies: h.applies } : {}),
         ...(h.requires ? { requires: h.requires } : {}),
         ...(h.bonuses ? { bonuses: h.bonuses } : {}),
@@ -301,7 +319,7 @@ function kitChecker(scope: KitScope) {
     if (t.if) checkPredicate(t.if, where);
     if (t.cooldown !== undefined) checkValue(t.cooldown, skillId, `${where} cooldown`);
     if (t.chance !== undefined) checkValue(t.chance, skillId, `${where} chance`);
-    for (const a of t.do) {
+    for (const a of flatActions(t.do)) {
       if (a.if) checkPredicate(a.if, where);
       switch (a.kind) {
         case "gain":
@@ -349,19 +367,24 @@ function kitChecker(scope: KitScope) {
         case "apply":
           for (const x of a.applies) if (x.if) checkPredicate(x.if, where);
           break;
+        case "choose":
+          // Its options' actions come after it in flatActions.
+          if (a.options.length < 2) throw new Error(`${where}: a choose action has at least two options`);
+          for (const o of a.options) checkValue(o.weight, skillId, `${where} choose weight`);
+          break;
         case "openCombo":
         case "hits":
           break;
       }
     }
-    return {
-      ...t,
-      do: t.do.map((a) =>
+    const normalize = (list: readonly RawAction[]): TriggerAction[] =>
+      list.map((a) =>
         a.kind === "gain" ? { ...a, gains: a.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1, ...(g.if ? { if: g.if } : {}) })) }
         : a.kind === "hits" ? { ...(a.if ? { if: a.if } : {}), ...(a.now ? { now: true } : {}), kind: "hits", hits: normalizeHits(a.hits, { skillId, label: t.id, checkScale: (key, w) => checkValue(key, skillId, w) }, where) }
+        : a.kind === "choose" ? { ...a, options: a.options.map((o) => ({ weight: o.weight, do: normalize(o.do) })) }
         : a,
-      ),
-    };
+      );
+    return { ...t, do: normalize(t.do) };
   };
   /** Buffs, with their stack group from the game buff they stand for (BuffData stackingType 1: its stackingKey, else its file). */
   const normalizeBuffs = (buffs: readonly RawBuff[]): KitBuff[] =>
@@ -378,7 +401,7 @@ function kitChecker(scope: KitScope) {
   const checkTriggers = (list: readonly Omit<RawTrigger, "note">[]): KitTrigger[] => {
     const out = list.map(checkTrigger);
     const ids = new Set(out.map((t) => t.id));
-    for (const t of out) for (const a of t.do) if (a.kind === "cancelHits" && !ids.has(a.trigger)) throw new Error(`${scope.file}: trigger ${t.id}: cancelHits names no trigger of this kit (${a.trigger})`);
+    for (const t of out) for (const a of allActions(t.do)) if (a.kind === "cancelHits" && !ids.has(a.trigger)) throw new Error(`${scope.file}: trigger ${t.id}: cancelHits names no trigger of this kit (${a.trigger})`);
     return out;
   };
   return { checkValue, checkPredicate, checkBuff, normalizeHits, checkTrigger, checkTriggers, normalizeBuffs, isSource: scope.isSource };

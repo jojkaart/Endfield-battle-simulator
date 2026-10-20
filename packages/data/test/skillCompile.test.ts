@@ -323,7 +323,7 @@ function kitDisagreements(): string[] {
         else if (!path) out.push(`${tag} frames: kit [${want.join(", ")}], data [${frames(best).join(", ")}]${branchText(best[0]?.branch)}`);
         const at = (best.length ? best : cand).filter((l) => !h.frames || h.frames.includes(l.frame));
         for (const l of at) claimed.add(l);
-        if (h.frames && path && at.length > h.count) out.push(`${tag} count: kit ${h.count}, data ${at.length} landings at its frames (${[...new Set(at.map((l) => l.file))].join(", ")})`);
+        if (h.frames && path && typeof h.count === "number" && at.length > h.count) out.push(`${tag} count: kit ${h.count}, data ${at.length} landings at its frames (${[...new Set(at.map((l) => l.file))].join(", ")})`);
         // Element and stagger of the landings the kit hit stands for (a landing without one: Fixed DMG, no poise unit).
         const els = [...new Set(at.map((l) => l.element).filter((x) => x !== null))];
         if (els.length && !els.includes(h.element)) out.push(`${tag} element: kit ${h.element}, data ${els.join(" | ")}`);

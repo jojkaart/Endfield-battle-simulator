@@ -162,7 +162,7 @@ describe("physical state (Vulnerable, Lift, Knock Down, Crush, Breach, Shatter)"
 
   it("without Vulnerable, a status only adds a stack, unless it's a forced Lift", () => {
     const r = phys(NO_STATUS, "crush", 0);
-    expect(r.events).toEqual([{ kind: "vulnerable", frame: 0, operator: "a", stacks: 1 }]);
+    expect(r.events).toEqual([{ kind: "vulnerable", frame: 0, operator: "a", stacks: 1, before: 0 }]);
     expect(r.state.vulnerable).toEqual({ stacks: 1, expiresAt: 600 });
     const f = phys(NO_STATUS, "lift", 0, true);
     expect(f.events.map((e) => e.kind)).toEqual(["vulnerable", "physical"]);

@@ -38,8 +38,12 @@ export type BattleEvent =
   | { readonly type: "status"; readonly frame: number; readonly operator: string; readonly event: StatusEvent; readonly fromKind: SkillType | "none"; readonly cast?: number }
   /** `operator` applied one of its kit buffs; `categories`: what the buff is (BuffCategory); `fromKind`: the kind of the skill behind it. */
   | { readonly type: "buffApplied"; readonly frame: number; readonly operator: string; readonly buff: string; readonly categories: readonly BuffCategory[]; readonly fromKind?: SkillType | "none"; readonly gameBuff?: string }
-  /** `remaining`: frames it had left when it ended (0 when it ran out); `recorded`: what a recording buff recorded. */
-  | { readonly type: "buffEnded"; readonly frame: number; readonly operator: string; readonly buff: string; readonly remaining: number; readonly recorded?: number }
+  /**
+   * `remaining`: frames it had left when it ended (0 when it ran out); `recorded`: what a recording buff recorded;
+   * `consumed`: an action ended it before it ran out (an `endBuff`, a cast consuming it), not its expiry;
+   * `gameBuff`: the BuffData buff it stands for.
+   */
+  | { readonly type: "buffEnded"; readonly frame: number; readonly operator: string; readonly buff: string; readonly remaining: number; readonly recorded?: number; readonly consumed?: boolean; readonly gameBuff?: string }
   /** A periodic tick of one of the operator's kit buffs (KitBuff.every). */
   | { readonly type: "buffTick"; readonly frame: number; readonly operator: string; readonly buff: string }
   /** `operator` healed `target` (no amounts: what matters is who, and when). */
@@ -48,8 +52,11 @@ export type BattleEvent =
   | { readonly type: "fightStart"; readonly frame: number; readonly operator: string }
   /** The enemy's stagger bar passed one of its Stagger Nodes (a fraction of its stagger HP; `operator` dealt the stagger). */
   | { readonly type: "staggerNode"; readonly frame: number; readonly operator: string; readonly node: number }
-  /** An operator's hit or trigger granted SP; `kind`: the skill kind behind it (a hit's, or its owner's skill behind a trigger chain; else none). */
-  | { readonly type: "sp"; readonly frame: number; readonly operator: string; readonly amount: number; readonly kind: SkillType | "none"; readonly natural: boolean }
+  /**
+   * An operator's hit or trigger granted SP; `kind`: the skill kind behind it (a hit's, or its owner's skill behind a trigger chain; else none);
+   * `sourceType`: the grant's ObtainCostAction atbSourceType (SkillData.spSources: 1 basic attacks, 3 skills, 0 finishers and some extras), when known.
+   */
+  | { readonly type: "sp"; readonly frame: number; readonly operator: string; readonly amount: number; readonly kind: SkillType | "none"; readonly natural: boolean; readonly sourceType?: number }
   /** The enemy became Staggered (`operator` dealt the last stagger). */
   | { readonly type: "staggered"; readonly frame: number; readonly operator: string }
   /** The enemy attacked `operator` (TimelineScenario.enemyActions); `controlled`: whether it was the controlled operator. */
@@ -97,13 +104,22 @@ export type TriggerOn =
   | { readonly event: "buffApplied"; readonly categories: readonly BuffCategory[]; readonly fromKinds?: readonly (SkillType | "none")[] }
   /** Someone (`by`) applies a kit buff standing for one of these BuffData buffs (Grand Vision: "applies Originium Crystals"). */
   | { readonly event: "buffApplied"; readonly gameBuffs: readonly string[] }
+  /**
+   * A kit buff standing for one of these BuffData buffs ends, whoever owns it (`by`: its owner); `consumed`: only
+   * ends by an action before it ran out (an `endBuff`, a cast consuming it), or only the others (Alesh's combo:
+   * "Originium Crystals … consumed"). Judged on the situation at the event.
+   */
+  | { readonly event: "buffEnded"; readonly gameBuffs: readonly string[]; readonly consumed?: boolean }
   /** Someone (`by`) heals someone; `toOthers`: only heals of someone other than the healer; `kinds`: only heals by these skill kinds (HealAction healTags). */
   | { readonly event: "heal"; readonly toOthers?: boolean; readonly kinds?: readonly (SkillType | "none")[] }
   | { readonly event: "staggered" }
   /** The enemy's stagger bar passes a Stagger Node. */
   | { readonly event: "staggerNode" }
-  /** Someone (`by`) recovers SP for the team by a hit or a trigger (not regeneration); `kinds`: from skills of these kinds. */
-  | { readonly event: "sp"; readonly kinds?: readonly (SkillType | "none")[]; readonly natural?: boolean }
+  /**
+   * Someone (`by`) recovers SP for the team by a hit or a trigger (not regeneration); `kinds`: from skills of these kinds;
+   * `sourceTypes`: only grants of these atbSourceTypes (CheckObtainAtbType obtainTypeList); a grant whose data doesn't say has none.
+   */
+  | { readonly event: "sp"; readonly kinds?: readonly (SkillType | "none")[]; readonly natural?: boolean; readonly sourceTypes?: readonly number[] }
   | { readonly event: "fightStart" }
   /** The enemy attacks someone (`by`: the one attacked; `controlled` as for hits); `elements`: only attacks of these elements. */
   | { readonly event: "attacked"; readonly elements?: readonly Element[] }
@@ -125,8 +141,12 @@ export type StatusOn =
   | { readonly event: "burst"; readonly elements?: readonly ArtsElement[] }
   /** A physical status lands (Lift, Knock Down, Crush, Breach); `forced` narrows it to forced ones. */
   | { readonly event: "physicalStatus"; readonly statuses?: readonly PhysicalStatus[]; readonly forced?: boolean }
-  /** Vulnerable stacks are added (by a physical status or directly), leaving at least `minStacks`. */
-  | { readonly event: "vulnerable"; readonly minStacks?: number }
+  /**
+   * Vulnerable stacks are added (by a physical status or directly), leaving at least `minStacks`; `fromNone`: only
+   * on an enemy that had none before (true), or only on one that had some (false); `rising`: only when the count
+   * went up (true: not a stack added at the cap of 4), or only when it didn't (false).
+   */
+  | { readonly event: "vulnerable"; readonly minStacks?: number; readonly fromNone?: boolean; readonly rising?: boolean }
   | { readonly event: "shatter" }
   /** A control status is applied (Jade Vessel: "applies Immobilization"). */
   | { readonly event: "control"; readonly statuses?: readonly string[] }
@@ -199,7 +219,34 @@ export type TriggerActionKind =
    * hits land as the action runs, before the trigger's next action (a
    * DamageAction inside the game's event handler).
    */
-  | { readonly kind: "hits"; readonly hits: readonly KitHit[]; readonly now?: boolean };
+  | { readonly kind: "hits"; readonly hits: readonly KitHit[]; readonly now?: boolean }
+  /**
+   * One option's actions, picked at random when the action runs: option i with probability weight_i / Σ weights
+   * (weights judged then; 0 excludes an option, all 0 runs none), rolled on the battle's `chance` stream
+   * (Purrchena's giftbox item). Its actions run in place, before the trigger's next action.
+   */
+  | { readonly kind: "choose"; readonly options: readonly ChooseOption[] };
+
+/** An option of a `choose` action. */
+export interface ChooseOption {
+  readonly weight: ValueExpr;
+  readonly do: readonly TriggerAction[];
+}
+
+/** A list of trigger actions with those inside its `choose` options, in order (an option's after its `choose`). */
+export function allActions(actions: readonly TriggerAction[]): TriggerAction[] {
+  return actions.flatMap((a) => (a.kind === "choose" ? [a, ...a.options.flatMap((o) => allActions(o.do))] : [a]));
+}
+
+/**
+ * One of a trigger's actions by its place: index `action` in its `do`, then, through `choose` actions, pairs of
+ * option and action indexes (`nested`).
+ */
+export function triggerActionAt(t: Pick<KitTrigger, "do">, action: number, nested: readonly number[] = []): TriggerAction | undefined {
+  let a = t.do[action];
+  for (let i = 0; i + 1 < nested.length; i += 2) a = a?.kind === "choose" ? a.options[nested[i] as number]?.do[nested[i + 1] as number] : undefined;
+  return a;
+}
 
 /** Whom a heal reaches: the healer, the controlled operator, the whole team, or the operator who caused the event. */
 export type HealTarget = "self" | "controlled" | "team" | "eventOperator";
@@ -280,6 +327,8 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
       if ("gameBuffs" in on) return e.type === "buffApplied" && e.gameBuff !== undefined && on.gameBuffs.includes(e.gameBuff);
       return e.type === on.event && e.operator === owner && e.buff === on.buff;
     case "buffEnded":
+      if ("gameBuffs" in on) return e.type === "buffEnded" && e.gameBuff !== undefined && on.gameBuffs.includes(e.gameBuff) && (on.consumed === undefined || on.consumed === (e.consumed ?? false));
+      return e.type === on.event && e.operator === owner && e.buff === on.buff;
     case "buffTick":
       return e.type === on.event && e.operator === owner && e.buff === on.buff;
     case "heal":
@@ -291,7 +340,7 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
     case "staggerNode":
       return e.type === "staggerNode";
     case "sp":
-      return e.type === "sp" && has(on.kinds, e.kind) && (on.natural === undefined || on.natural === e.natural);
+      return e.type === "sp" && has(on.kinds, e.kind) && (on.natural === undefined || on.natural === e.natural) && (!on.sourceTypes || (e.sourceType !== undefined && on.sourceTypes.includes(e.sourceType)));
     case "fightStart":
       return e.type === "fightStart";
     case "attacked":
@@ -317,7 +366,7 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
     case "physicalStatus":
       return s.kind === "physical" && has(on.statuses, s.status) && (on.forced === undefined || on.forced === s.forced);
     case "vulnerable":
-      return s.kind === "vulnerable" && s.stacks >= (on.minStacks ?? 1);
+      return s.kind === "vulnerable" && s.stacks >= (on.minStacks ?? 1) && (on.fromNone === undefined || on.fromNone === (s.before === 0)) && (on.rising === undefined || on.rising === s.stacks > s.before);
     case "shatter":
       return s.kind === "shatter";
     case "control":
@@ -327,7 +376,8 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
 
 /** Whether the event's cause counts for a trigger (`by`). Stack and own-buff events are the owner's (a buff category's aren't). */
 export function causeMatches(by: KitTrigger["by"], e: BattleEvent, owner: string, on?: TriggerOn): boolean {
-  const ownBuff = (e.type === "buffApplied" && !(on && ("categories" in on || "gameBuffs" in on))) || e.type === "buffEnded" || e.type === "buffTick";
+  // A buffEnded trigger by game buff judges the ended buff's owner (`by`), as a buffApplied one its applier.
+  const ownBuff = ((e.type === "buffApplied" || e.type === "buffEnded") && !(on && ("categories" in on || "gameBuffs" in on))) || e.type === "buffTick";
   if (e.type === "stacks" || ownBuff || e.type === "fightStart" || e.type === "enemyCharge") return true;
   if (by === "anyone") return true;
   if (by === "self") return e.operator === owner;

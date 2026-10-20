@@ -15,6 +15,7 @@ export interface RawSkillFile {
   readonly defaults: Record<string, number>;
   readonly statModifiers: readonly { attr: number; slot: number; target: number; key: string | null; literal: number }[];
   readonly spKinds: Readonly<Record<string, SpKind>>;
+  readonly spSources: Readonly<Record<string, number>>;
 }
 
 /** A Unity AnimationCurve key (TimeDilationAction timeScaleCurve). */
@@ -182,7 +183,7 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     ends: ends.sort((a, b) => a - b),
     ...(interruptibleFrom !== undefined ? { interruptibleFrom } : {}),
   };
-  return { timing, defaults, statModifiers, spKinds: spKindsOf(j) };
+  return { timing, defaults, statModifiers, spKinds: spKindsOf(j), spSources: spSourcesOf(j) };
 }
 
 /** The destinations of the JumpToActions in an IfElse's branches (its success and fail action lists, at any depth of nested IfElses). */
@@ -215,6 +216,31 @@ export function spKindsOf(file: unknown): Record<string, SpKind> {
     if (typeof o["$type"] === "string" && o["$type"].includes("ObtainCostAction") && o["costType"] === 1 && o["isEnable"] !== false) {
       const v = o["costValue"] as { blackboardKey?: unknown; useBlackboardKey?: unknown } | undefined;
       if (v?.useBlackboardKey === true && typeof v.blackboardKey === "string" && !(v.blackboardKey in out)) out[v.blackboardKey] = o["atbGainMethod"] === 1 ? "returned" : "natural";
+    }
+    for (const x of Object.values(o)) walk(x);
+  };
+  walk(file);
+  return out;
+}
+
+/**
+ * The atbSourceType of the SP each blackboard key grants (ObtainCostAction
+ * costType 1): 1 basic attacks, 3 skills, 0 finishers and some extras, as
+ * CheckObtainAtbType obtainTypeList filters them (OBJ Edge of Lightness:
+ * [3]). A key granted with several source types keeps the first (none do in
+ * game 1.6).
+ */
+export function spSourcesOf(file: unknown): Record<string, number> {
+  const out: Record<string, number> = {};
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (typeof node !== "object" || node === null) return;
+    const o = node as Record<string, unknown>;
+    if (typeof o["$type"] === "string" && o["$type"].includes("ObtainCostAction") && o["costType"] === 1 && o["isEnable"] !== false) {
+      const v = o["costValue"] as { blackboardKey?: unknown; useBlackboardKey?: unknown } | undefined;
+      const type = o["atbSourceType"];
+      if (typeof type !== "number") throw new Error(`ObtainCostAction for SP without an atbSourceType (${JSON.stringify(v)})`);
+      if (v?.useBlackboardKey === true && typeof v.blackboardKey === "string" && !(v.blackboardKey in out)) out[v.blackboardKey] = type;
     }
     for (const x of Object.values(o)) walk(x);
   };

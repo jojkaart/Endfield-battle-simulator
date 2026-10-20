@@ -8,7 +8,7 @@
 // part of them a replay of logged hits can use.
 
 import type { SkillType } from "./attributes.ts";
-import { causeMatches, eventMatches, triggerSkillId, type BattleEvent } from "./events.ts";
+import { allActions, causeMatches, eventMatches, triggerSkillId, type BattleEvent } from "./events.ts";
 import type { Build } from "./build.ts";
 import type { GameData, KitApplication, KitHit, OperatorKit, StackGain } from "./model.ts";
 import { wornEquipment, type StatPanel } from "./stats.ts";
@@ -47,12 +47,12 @@ export function hitEffects(teamKits: readonly OperatorKit[], hitter: string, hit
   return out;
 }
 
-/** Every hit a kit can land, with the skill its values come from: its skills' hits, then its triggers' hits. */
+/** Every hit a kit can land, with the skill its values come from: its skills' hits, then its triggers' hits (those in `choose` options too). */
 export function kitHitEntries(kit: OperatorKit | undefined): { readonly skillId: string; readonly hit: KitHit }[] {
   if (!kit) return [];
   return [
     ...kit.skills.flatMap((s) => s.hits.map((hit) => ({ skillId: s.skillId, hit }))),
-    ...kit.triggers.flatMap((t) => t.do.flatMap((a) => (a.kind === "hits" ? a.hits.map((hit) => ({ skillId: triggerSkillId(kit.operator, t), hit })) : []))),
+    ...kit.triggers.flatMap((t) => allActions(t.do).flatMap((a) => (a.kind === "hits" ? a.hits.map((hit) => ({ skillId: triggerSkillId(kit.operator, t), hit })) : []))),
   ];
 }
 
@@ -86,7 +86,7 @@ export function kitBuffModifiers(data: GameData, build: Build, panel: StatPanel,
   if (!kit || !def) throw new EngineError(`${build.operator} has no kit buff ${buffId}${kit ? ` (its buffs: ${kit.buffs.map((b) => b.id).join(", ")})` : ""}`);
   const source =
     kit.skills.find((s) => s.hits.some((h) => h.buffs?.some((a) => a.buff === buffId)))?.skillId ??
-    kit.triggers.filter((t) => t.do.some((a) => a.kind === "buff" && a.buff === buffId)).map((t) => triggerSkillId(kit.operator, t))[0];
+    kit.triggers.filter((t) => allActions(t.do).some((a) => a.kind === "buff" && a.buff === buffId)).map((t) => triggerSkillId(kit.operator, t))[0];
   if (!source) throw new EngineError(`nothing in ${build.operator}'s kit applies ${buffId}`);
   const b = applyBuff(data, build, panel, source, def, 0);
   if (!b) return [];

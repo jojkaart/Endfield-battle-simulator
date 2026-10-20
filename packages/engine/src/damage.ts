@@ -31,7 +31,7 @@ export interface DamageOptions {
 }
 
 /** The parts of an EvalContext that describe the moment rather than the build. */
-export type Situation = Partial<Pick<EvalContext, "team" | "enemy" | "stacks" | "buffActive" | "consumed" | "eventCount" | "eventRemaining" | "eventRecorded" | "attrBonus" | "enemyGameBuffs" | "operatorModifiers" | "controlled" | "staggered" | "enemyHp" | "enemyModifiers" | "owner" | "eventOperator">>;
+export type Situation = Partial<Pick<EvalContext, "team" | "enemy" | "stacks" | "buffActive" | "buffLayers" | "consumed" | "eventCount" | "eventRemaining" | "eventRecorded" | "attrBonus" | "enemyGameBuffs" | "operatorModifiers" | "controlled" | "staggered" | "enemyHp" | "enemyModifiers" | "owner" | "eventOperator">>;
 
 /** The context kit predicates and values are evaluated in, for a build's skill. */
 export function evalContext(data: GameData, build: Build, panel: StatPanel, skillId: string, situation: Situation = {}): EvalContext {
@@ -335,10 +335,13 @@ function reactionScaleParts(
   ];
 }
 
+/** A hit's landings per use for a per-hit listing: its count, or 1 for a count judged at the cast (a value). */
+const staticCount = (hit: KitHit): number => (typeof hit.count === "number" ? hit.count : 1);
+
 /** A Fixed DMG hit (KitHit.fixedDamage): exactly its value, every zone ×1. */
 export function fixedHit(skillId: string, hit: KitHit, value: number): HitDamage {
   const zones: Zones = { atk: 1, scale: 1, damageBonus: 1, crit: 1, amp: 1, susceptibility: 1, damageTaken: 1, multiplicative: 1, stagger: 1, defense: 1, resistance: 1 };
-  return { skillId, hitId: hit.id, label: hit.label, count: hit.count, element: hit.element, scaleParts: [{ key: "fixed", value }], zones, modifiers: [], exact: value, damage: roundDamage(value) };
+  return { skillId, hitId: hit.id, label: hit.label, count: staticCount(hit), element: hit.element, scaleParts: [{ key: "fixed", value }], zones, modifiers: [], exact: value, damage: roundDamage(value) };
 }
 
 /** A kit hit: its multiplier is the product of its skill's blackboard values (and its literal factor). */
@@ -369,7 +372,7 @@ export function computeHit(
     skillId: skill.skillId,
     hitId: hit.id,
     label: hit.label,
-    count: hit.count,
+    count: staticCount(hit),
     element: hit.reaction?.element ?? hit.element,
     skillType: hit.reaction || hit.damageType === "none" ? null : hit.damageType,
     scaleParts,

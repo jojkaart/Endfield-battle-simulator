@@ -643,6 +643,14 @@
                     "minimum": 1,
                     "maximum": 4
                   },
+                  "fromNone": {
+                    "type": "boolean",
+                    "description": "Only on an enemy that had no Vulnerable stacks before (true: Chimeric Justice's \"an enemy with no Vulnerability stacks\"), or only on one that had some (false)."
+                  },
+                  "rising": {
+                    "type": "boolean",
+                    "description": "Only when the count went up (true: not a stack added at the cap of 4), or only when it didn't (false)."
+                  },
                   "fromKinds": {
                     "type": "array",
                     "items": {
@@ -871,6 +879,15 @@
                   "natural": {
                     "type": "boolean",
                     "description": "Only natural SP (true: ObtainCostAction atbGainMethod 0, which gives ultimate energy when spent), or only returned SP (false)."
+                  },
+                  "sourceTypes": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "minItems": 1,
+                    "description": "Only grants of these atbSourceTypes (CheckObtainAtbType obtainTypeList: 1 basic attacks, 3 skills, 0 finishers and some extras), from the granting key's ObtainCostAction; a grant whose data doesn't say has none."
                   }
                 },
                 "description": "Someone (by) recovers SP for the team by a hit or a trigger (not regeneration)."
@@ -895,6 +912,32 @@
                     "description": "Any kit buff standing for one of these BuffData buffs, applied by whoever `by` names."
                   }
                 }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "event",
+                  "gameBuffs"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
+                    "const": "buffEnded"
+                  },
+                  "gameBuffs": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "description": "Any kit buff standing for one of these BuffData buffs ends, owned by whoever `by` names."
+                  },
+                  "consumed": {
+                    "type": "boolean",
+                    "description": "Only ends by an action before it ran out (true: an endBuff, a cast consuming it), or only the others (false: expiry, the end of its cast)."
+                  }
+                },
+                "description": "A kit buff standing for one of these BuffData buffs ends (Alesh's combo: Originium Crystals consumed); judged on the situation at the event."
               }
             ]
           },
@@ -1386,6 +1429,41 @@
                     }
                   },
                   "description": "An event-driven JumpToAction: if the owner's current skill is `skill` and its playhead (skill frames) is in [from, until), it moves to `to`; the frames between are skipped as for the data's own jumps."
+                },
+                {
+                  "type": "object",
+                  "required": ["kind", "options"],
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": { "const": "choose" },
+                    "options": {
+                      "type": "array",
+                      "minItems": 2,
+                      "items": {
+                        "type": "object",
+                        "required": ["weight", "do"],
+                        "additionalProperties": false,
+                        "properties": {
+                          "weight": {
+                            "$ref": "#/$defs/valueExpr",
+                            "description": "Judged when the action runs: the option's probability is weight / Σ weights; 0 excludes it."
+                          },
+                          "do": {
+                            "type": "array",
+                            "items": {
+                              "$ref": "#/properties/triggers/items/properties/do/items"
+                            },
+                            "description": "Its actions, run in place of the choose (before the trigger's next action); none for an option that does nothing."
+                          }
+                        }
+                      }
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
+                    }
+                  },
+                  "description": "A weighted random choice (Purrchena's giftbox item): one option's actions run, rolled on the battle's chance stream (one roll whatever the weights); all weights 0 runs none."
                 }
               ]
             }
@@ -2174,6 +2252,27 @@
         {
           "type": "object",
           "required": [
+            "buffLayers"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "buffLayers": {
+              "type": "string",
+              "description": "One of the kit's own buffs: its active layers (a plain buff's: 1 or 0) are at least atLeast and below below."
+            },
+            "atLeast": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "below": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
             "consumedAtLeast"
           ],
           "additionalProperties": false,
@@ -2557,6 +2656,19 @@
         {
           "type": "object",
           "required": [
+            "buffLayers"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "buffLayers": {
+              "type": "string",
+              "description": "The active layers of one of the kit's own buffs (a plain buff's: 1 or 0)."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
             "eventCount"
           ],
           "additionalProperties": false,
@@ -2691,8 +2803,17 @@
           "description": "Empty for a Fixed DMG hit, or when scaleValue alone gives the multiplier."
         },
         "count": {
-          "type": "integer",
-          "minimum": 1
+          "description": "How many times the hit lands per use: a whole number ≥ 1, or a value judged at the cast for the caster (before a requires uses stacks up; a triggered hit's when its action runs), e.g. {\"buffLayers\": …}; a value of 0 lands nothing. Each landing is its own hit.",
+          "if": {
+            "type": "number"
+          },
+          "then": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "else": {
+            "$ref": "#/$defs/valueExpr"
+          }
         },
         "events": {
           "type": "array",
@@ -2707,7 +2828,12 @@
             "type": "integer",
             "minimum": 0
           },
-          "description": "Frame (30 FPS, from the skill's start) at which each landing happens; one entry per count. Projectile travel time isn't in the data, so projectile hits use the launch frame."
+          "description": "Frame (30 FPS, from the skill's start) at which each landing happens; one entry per count (a count that's a value: the first landings', the rest repeat the last, framesEvery apart). Projectile travel time isn't in the data, so projectile hits use the launch frame."
+        },
+        "framesEvery": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "A count that's a value: frames between the landings past `frames` (default: all at its last frame)."
         },
         "element": {
           "$ref": "#/$defs/element"
