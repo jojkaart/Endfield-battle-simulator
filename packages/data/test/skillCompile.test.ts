@@ -9,7 +9,7 @@ import type { KitHit } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill, type CompiledValue } from "../src/index.ts";
 
 const data = loadGameData();
-const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora"];
+const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
   const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
@@ -426,6 +426,16 @@ const KNOWN: string[] = [
   // talent0_usp; with buff_chr_0012_avywen_talent_0 = talent 1). The kit grants talent0_usp at the lance's hit, gated on talent 1.
   'chr_0012_avywen_normal_skill/lance energy: kit {"if":{"talentAtLeast":[0,1]},"then":"talent0_usp"} at [7], data $EntityBB_talent0@7 (if CheckDistanceCondition(distance=50), if $EntityBB_talent0 > 0, …), $EntityBB_talent0@7 (if CheckDistanceCondition(distance=50), if $EntityBB_talent0 > 0, …)',
   'chr_0012_avywen_normal_skill/lance_ex energy: kit {"if":{"talentAtLeast":[0,1]},"then":"talent0_usp"} at [7], data $EntityBB_talent0@7 (if CheckDistanceCondition(distance=50), if $EntityBB_talent0 > 0, …), $EntityBB_talent0@7 (if CheckDistanceCondition(distance=50), if $EntityBB_talent0 > 0, …)',
+  // Batch 3, Arclight.
+  // Kit right (batch-3 S6): buff_common_obtain_ultimate_sp at 24 is on the plain path (jump 95 → 204 skips 136), the ones at 136 on the
+  // Electrification path (jump 4 → 96 skips 24): exclusive parts. The test keeps the first when parts add up to more than 1, as kit-draft does.
+  "chr_0007_ikut_normal_skill teamEnergy: kit 1@24, 1@136, data 1@24",
+  // Kit right: at 136 the CheckTagMatch-false side's DamageAction on the smart target has poise2 (the data has poise2 on two DamageActions:
+  // the extra attack and this one); the test matches the kit hit to another atk_scale landing there (the `tar` hits, the out-of-range branch).
+  "chr_0007_ikut_normal_skill/third poise: kit \"poise2\", data -",
+  // Compiler limit: ForceSpellStatusAction consumedType 1 with consumedLayer = count (the Electric stacks) consumes the infliction; the compiler
+  // reports only the forced Electrification (conditional on the infliction's tag). The kit consumes, then forces at the consumed level (batch-3 A3).
+  "chr_0007_ikut_ultimate_skill applies at 117: kit [consume pulse, forced electrification], data []",
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {

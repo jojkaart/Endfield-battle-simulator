@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0018",
+  "sources": [
+    "Twelve Questions. rmxlinux Json/SkillData/sk_wpn_sword_0018 (game 1.6); values SkillPatchTable sk_wpn_sword_0018 (level 1 → 9: atk_up 0.075 →, second_attr_up 0.05 →; duration 20, max_stack 2 at every level). Skill 1 (Agility), skill 2 (ATK %) and skill 3's cardAttributeModifier attribute 0 formulaItem 6 modifyAttributeType 2 (the wielder's secondary attribute + second_attr_up %) are on the stat panel.",
+    "passiveEventActions: abilityEvent 208 (the wielder removes a buff) + CheckBuffIdInContext checkType 1 on tag 1474064594 (Arts Reaction: the parent tag of the reaction statuses, as Liino's batch-1 report reads it) → buff_wpn_sword_0018_atk_up (attribute 2 formulaItem 6 atk_up, `duration`; stackingType 2, max max_stack: each layer its own duration). Description: \"After the wielder consumes an Arts Reaction, ATK +{atk_up} for {duration}s\".",
+    "Not in any log or fixture yet. Open: whether a Shatter by the wielder (Solidification ended by a physical status) counts as consuming a reaction (batch-3 A7, in-game test 63): here no (a Shatter is not a statusConsumed event)."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_sword_0018.atk_up",
+      "label": "Twelve Questions: ATK after consuming an Arts Reaction",
+      "target": "self",
+      "gameBuff": "buff_wpn_sword_0018_atk_up",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_sword_0018.consume",
+      "on": { "event": "statusConsumed" },
+      "by": "self",
+      "skill": "sk_wpn_sword_0018",
+      "do": [{ "kind": "buff", "buff": "wpn_sword_0018.atk_up" }],
+      "note": "Any reaction status the wielder consumes (Electrification, Combustion, Solidification, Corrosion); not an infliction (Arclight's ultimate consumes an Electric Infliction: no layer)."
+    }
+  ]
+}

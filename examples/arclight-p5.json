@@ -1,0 +1,18 @@
+{
+  "operator": "chr_0007_ikut",
+  "level": 90,
+  "promotion": 4,
+  "potential": 5,
+  "skillLevels": {
+    "basic": 12,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+  },
+  "weapon": {
+    "id": "wpn_sword_0018",
+    "level": 90,
+    "skillLevels": [9, 9, 9]
+  },
+  "gear": []
+}

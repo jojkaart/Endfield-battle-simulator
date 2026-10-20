@@ -364,3 +364,109 @@ Notes for the kits phase:
   four reaction statuses: tag 1474064594 is the Arts Reaction tag the
   "Arts Reaction" weapons query). The secondary attribute % is on the stat
   panel. Shatter waits on test A3.
+
+## Kit (2026-10-20)
+
+Written against the engine at 182f22b (batch-3 shared features S1–S7,
+T1–T4, V2–V4, B1, B2, A1–A5, C1, D1–D4, E3, N1 in).
+
+### Re-analysis against the engine
+
+| Row / gap | Now | How |
+|---|---|---|
+| 1, 2 | done | kit-draft's hits (frames, events, Physical element, `sp: {if: controlled, then: atb}` from atbOnlyMainChar, attack5's Final Strike, `poise`, `poiseControlledOnly`) |
+| 3 finisher factors | done (D2) | kit-draft emits the 0.05 / 0.05 / 0.9 factors; the kit takes them |
+| 4 dive attack | open (S10, deferred) | kept for `calc`, not castable |
+| 5 dash attack | open (S5, deferred) | left out |
+| **G2** / 6 the Electrification variant | **done (S7)** | `jumps: [{at: 4, if: {enemyStatus: electrification}}]`, judged on the enemy at the cast |
+| 7, 8 slashes per variant | done | `slash1`/`slash2` at 19 / 24 (the jump 95 → 204 skips 136), `slash1_e`/`slash2_e` at 112 / 118 (cast 20 / 26 after the 4 → 96 jump) |
+| 9, 10 extra attack / third slash | done | `branch: third`: `extra` (`atk_scale2`, Electric, `if: {enemyStatus: electrification}`, `sp: atb`, `poise2`) or `third` (Physical, `poise2`) |
+| 11 the extra keeps Electrification's Arts DMG Taken | **done (A4)** | the extra hit's own `applies: [{consumeStatus: electrification, afterDamage: true}]` replaces the plan's hit trigger `extra_consumes` |
+| 12 hits on `tar` | n/a | none against one enemy |
+| **G1** / 13 team energy at 24 / 136 | **done (S6)** | `teamEnergy: [{frame: 24, ratio: 1}, {frame: 136, ratio: 1}]`; a test pins 6.5 at cast + 24 (plain) and cast + 44 (Electrification) |
+| 14 distance < 5 | assumed | in range |
+| 15 windows, interrupt, hit-stops | data / open (Ti1b) | hit-stops not modelled |
+| 16 kit-draft's battle skill | still data (D3 open) | kit-draft still doesn't follow jumps (both variants' slashes as one hit of count 2, the frame-136 alternatives without conditions: tag and distance checks are notes); the kit writes the variants by hand |
+| 17 combo triggers | done | `reaction` / `statusConsumed` Electrification, `by: anyone` |
+| 18, 19 combo | done | kit-draft's hits (`usp`, returned `atb`, `poise`); cooldown and slow-down from SkillData |
+| 20 a trigger during the combo's cooldown | unknown, interim (T5) | engine-wide: ignored. In the example her extra attack's consumption at 6.27 s falls in the cooldown of the combo cast at 3.90 s: no window. In-game test 60 |
+| 21 dead combo data | n/a | left out |
+| 22, 23 ultimate hits | done (S2) | `dash` / `explosion` with `launch: 54` (SpawnAbilityEntity) instead of `detached` |
+| 24 forced Electrification at the consumed level | **done (A3, A4)** | explosion `applies: [{consumeInfliction: pulse, afterDamage: true}, {forcedReaction: electrification, level: {consumed: true}, afterDamage: true}]` replaces the plan's four-entry cast trigger; level 0 (no Electric Infliction) applies nothing |
+| 25 kit-draft's ultimate | partly data (D3/D4) | kit-draft now has the forced Electrification with its level noted, but in `applies` before the damage and without the consumption (consumedType 1); KNOWN entry |
+| 26 ultimate timing, cost | done | SkillData; cost 76.5 at P4+ (a test) |
+| 27 super-armor freeze | open (batch-2 G6, deferred) | not modelled |
+| 28, 29 talent 1 counter and grant | done | stack `wildland_count` (gain on `extra` if talent 1), team buff `wildland_trekker` on the completing hit (`{attr: 52, value: {product: [pulse_up, {attr: 41}]}}`), `stackAtLeast` resets. The thresholds 3 / 2 are literals with `potentialAtLeast` (no predicate compares a stack with a value; `count` is the data's) |
+| 30 grant before the completing hit's damage | unknown, interim | the buff `beforeDamage` on the hit. In-game test 65 (2) |
+| 31 counter lifetime | unknown, interim (B4) | never expires. In-game test 65 (1) |
+| 32–35 talent / potential values | done | data (P1 +10 SP, P3 × 1.3, P5 count 2: tests) |
+| 36 talent 2 | n/a | enemies don't inflict operators |
+| 37 orphans | n/a | left out |
+| W1, W6 stat panel | done | data |
+| W2, W3 Aspirant | done | as planned (layers with `phy_dmg_up`, `consumedBy: [ultimate]`); tested on Estella's Lift and Physical ultimate |
+| W4 layers added during the consuming ultimate | open (edge case) | kept for the next ultimate; noted in the kit |
+| W5 Aspirant on Arclight | done | only the stat panel acts |
+| W7 Twelve Questions | done | as planned (`statusConsumed` by self → layered ATK) |
+| W8 Shatter as consumption | unknown (A7) | interim no. In-game test 63 |
+| W9 `switchToBuffConfig` | n/a | inert |
+
+Nothing new is unique or missing. No engine change. One display-only
+change in `packages/cli/src/simulate.ts`: the arts-reaction table printed
+an empty line for `statusConsumed` events; it now prints "consumed
+electrification level 1" (no total or log output changes: no committed
+example had such an event).
+
+### What was written
+
+- `packages/data/kits/operators/chr_0007_ikut.json`.
+- `packages/data/kits/equipment/wpn_sword_0015.json` (Aspirant),
+  `wpn_sword_0018.json` (Twelve Questions).
+- `examples/arclight-p5.json` (P5, Twelve Questions 9/9/9, no gear) and
+  `examples/arclight-solo.scenario.json`.
+- `tests/kit-arclight.test.ts` (18 tests): the ultimate's infliction,
+  consumption and forced level (I alone; II with Antal's repeated stack;
+  nothing on a Heat-inflicted enemy, where the dash reacts), its cost; both
+  battle-skill variants' frames, the third slash when the Electrification
+  runs out before frame 136, the extra hit's Arts DMG Taken, team energy
+  per path, the extra's SP (50 at P5, 40 at P0); the combo's window from
+  the forced reaction, from the consumption, and not during its cooldown;
+  talent 1 (P5 count 2, P4 count 3, P0 without P3's × 1.3, unlearned, the
+  counter kept 20 s later); Twelve Questions; Aspirant on Estella and on
+  Arclight.
+- `packages/data/test/skillCompile.test.ts`: Arclight in OPERATORS, three
+  KNOWN entries (team energy parts the test reads as kit-draft does; the
+  third slash's poise matched to another frame-136 landing; the
+  consumption in ForceSpellStatusAction consumedType 1, which the compiler
+  doesn't report).
+
+### Verification
+
+No fixture has Arclight or either weapon: nothing to check against a log;
+`zmdlogs check` / `reactions` outputs on every fixture are unchanged.
+
+`examples/arclight-solo.scenario.json`: 39,232 damage in 10.6 s (3,701
+DPS). Ultimate dash 5,120 at 2.03 s (Electric Infliction), explosion
+8,045 at 3.90 s, then the infliction consumed and Electrification I forced
+(12 s). Combo at 3.90 s: 3 × 1,711. Battle skill at 4.80 s takes the
+Electrification variant: slashes 1,921 × 2 (Link × 1.3) at 5.47 / 5.67 s,
+the extra attack 8,625 at 6.27 s (× 1.3 Link × 1.12 Electrification I),
+team energy 6.5 then, 50 SP back; Twelve Questions' ATK + 21% on every
+later hit (basic attacks × 1.16). The consumption's combo trigger falls in
+the combo's cooldown (T5). Second battle skill at 9.80 s, plain: two
+slashes at 10.43 / 10.60 s. The same numbers as the analysis's scratch run
+(the kit differs from the plan only in how row 11 and row 24 are written).
+With the counter started at 1 (P5) the extra attack gets Wildland
+Trekker's +16.42% (0.00104 × Intellect 157.9).
+
+### In-game tests the kit depends on
+
+- **60** (combo trigger during the combo's cooldown, T5): decides whether
+  the consumption at about 2.4 s after a combo gives a second combo.
+- **65** (talent counter's lifetime, B4; the grant on the completing hit):
+  decides whether talent 1 fires without an Electrification teammate.
+- **63** (Shatter as consumption, A7): Twelve Questions on a wielder that
+  Shatters (not Arclight).
+- **66** (a forced Electrification on a stronger one): her ultimate's
+  forced Electrification on a reaction's Electrification III/IV replaces it
+  here.
+- Test 17's rule (jumps skip time) underlies the two variants' lengths.

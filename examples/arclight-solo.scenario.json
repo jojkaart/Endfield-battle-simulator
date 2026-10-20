@@ -1,0 +1,25 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Arclight (P5, Twelve Questions) alone vs Rhodagn, ultimate charged: her ultimate forces Electrification, the combo follows, her battle skill takes the Electrification variant and consumes it; a second battle skill without Electrification.",
+  "team": ["arclight-p5.json"],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0007_ikut": "full"
+  },
+  "durationSeconds": 30,
+  "crit": "expected",
+  "rotation": [
+    { "operator": "chr_0007_ikut", "skill": "chr_0007_ikut_ultimate_skill" },
+    { "operator": "chr_0007_ikut", "skill": "chr_0007_ikut_combo_skill" },
+    { "operator": "chr_0007_ikut", "skill": "chr_0007_ikut_normal_skill" },
+    { "operator": "chr_0007_ikut", "skill": "chr_0007_ikut_attack1" },
+    { "operator": "chr_0007_ikut", "skill": "chr_0007_ikut_attack2" },
+    { "operator": "chr_0007_ikut", "skill": "chr_0007_ikut_attack3" },
+    { "operator": "chr_0007_ikut", "skill": "chr_0007_ikut_attack4" },
+    { "operator": "chr_0007_ikut", "skill": "chr_0007_ikut_attack5" },
+    { "operator": "chr_0007_ikut", "skill": "chr_0007_ikut_normal_skill" }
+  ]
+}

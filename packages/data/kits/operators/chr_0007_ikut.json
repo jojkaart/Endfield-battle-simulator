@@ -1,0 +1,249 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0007_ikut",
+  "sources": [
+    "Kit plan: docs/kit-batches/batch-3/chr_0007_ikut.md (analysis 1, re-analysed in its \"Kit (2026-10-20)\" section). Hit structure, frames, keys, events, elements, stagger, finisher factors, SP and energy: rmxlinux Json/SkillData chr_0007_ikut_* and Json/BuffData buff_chr_0007_ikut_* (game 1.6), as compiled by efsim kit-draft and corrected by hand where noted; values from SkillPatchTable (level 12: attack1–4 atk_scale 0.23 / 0.28 / 0.29 / 0.27, attack5 1.07 with poise 16 and atb 17, finisher 9, dive 1.8; battle skill atk_scale 1.01, atk_scale2 4.05, poise1 / poise2 5, atb 40, cost 100 SP; combo atk_scale 1.17, poise 5, atb 10, usp 5, cooldown 3 s; ultimate atk_scale1 3.5, atk_scale2 5.5, poise1 / poise2 10, cost 90, cooldown 15 s).",
+    "Skill descriptions (CharGrowthTable + I18nTextTable_EN). Battle skill \"Tempestuous Arc\": two slashes; \"If the enemy has active Electrification, consume the Electrification to unleash an additional attack that deals Electric DMG and recovers some SP.\" Combo \"Peal of Thunder\": \"COMBO TRIGGER: When an enemy suffers Electrification or after an enemy's Electrification is consumed.\" Ultimate \"Exploding Blitz\": a dash and an explosion that deal Electric DMG; \"If the enemy has active Electric Infliction, consume the Electric Infliction and forcibly apply Electrification.\"",
+    "Talents and potentials: PotentialTalentEffectTable chr_0007_ikut_talent_1_1 / _1_2 (skillBbModifiers on chr_0007_ikut_normal_skill: talent_1 = 1, duration = 15, pulse_up += 0.0005 / 0.0008, count = 3); talent 2 (buff_chr_0007_ikut_talent_2: a chance to ignore an Arts Infliction applied on her; enemies don't inflict operators in the engine: no effect); P1 atb += 10 on the battle skill; P2 Agility and Intellect +15 (stat panel); P3 pulse_up × 1.3; P4 ultimate cost × 0.85; P5 count = 2 and buff_chr_0007_ikut_finish_count_p5 (clears the counter when it starts: nothing in a fresh fight). The engine applies talents' skillBbModifiers, then potentials (pulse_up 0.0008 × 1.3 at P5).",
+    "Not modelled: the dash attack (in no skill group; design.md), the dive attack in rotations (S10), hit-stops (Ti1b), InterruptAction, the ultimate's 3 s freeze of enemies with super armor below 10 (no super armor in EnemyData; bosses unaffected; as the Endministrator's seal), the frame-136 hits on `tar` (every enemy in range except the main target: none against one enemy), CheckDistanceCondition < 5 at frame 136 (assumed in range: she blinks to the target). Dead data left out: chr_0007_ikut_talent_1 (SkillData) and buff_chr_0007_ikut_talent_1, buff_chr_0007_ikut_atk_buff_talent_p5, buff_chr_0007_ikut_combo_skill_counts (no table attaches or creates them), the combo's tutorial marker.",
+    "Not verified against a log: no fixture has Arclight. Interims: the Wildland Trekker counter never expires (batch-3 B4, in-game test 65 (a)); the talent buff acts on the extra attack that completes the count (row 30, test 65 (b)); a combo trigger during the combo's own cooldown opens nothing (batch-3 T5, engine-wide, test 60)."
+  ],
+  "element": "pulse",
+  "stacks": [
+    {
+      "id": "wildland_count",
+      "label": "Wildland Trekker: extra attacks counted",
+      "max": 3,
+      "note": "buff_chr_0007_ikut_normal_skill_extra_count (stackingType 3, maxStackCnt 3, lifeType 1), one layer per extra attack while talent_1 > 0 (normal_skill frame 136). Its duration is a literal 10 s, but lifeType 1: interim, the layers never expire (batch-3 B4, in-game test 65 (a)). At `count` layers (3; P5: 2) its buffEvent 6 handler grants the team buff and finishes all layers (buff wildland_trekker on the extra hit, triggers wildland_reset / wildland_reset_p5)."
+    }
+  ],
+  "buffs": [
+    {
+      "id": "wildland_trekker",
+      "label": "Wildland Trekker (talent 1): team Electric DMG per point of Intellect",
+      "target": "team",
+      "gameBuff": "buff_chr_0007_ikut_atk_buff_talent",
+      "duration": "duration",
+      "modifiers": [{ "attr": 52, "value": { "product": ["pulse_up", { "attr": 41 }] } }],
+      "note": "extra_count buffEvent 6: CheckBuffStackNumAdvanced ≥ count → StoreAttributeValue attribute 41 (her Intellect) × pulse_up → final_pulse_up → CreateBuff buff_chr_0007_ikut_atk_buff_talent on CharacterTeamFinder (attribute 52 Electric DMG, formulaItem 5; duration 15 s; stackingType 2 max 1: a new grant replaces it, \"cannot stack\"). Values taken for the applier at application (her Intellect then)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_on_electrification",
+      "on": { "event": "reaction", "statuses": ["electrification"] },
+      "by": "anyone",
+      "do": [{ "kind": "openCombo" }],
+      "note": "COMBO TRIGGER: \"When an enemy suffers Electrification\" (anyone's, forced ones included: her ultimate's too). A trigger during the combo's 3 s cooldown opens nothing (batch-3 T5, engine-wide interim; in-game test 60)."
+    },
+    {
+      "id": "combo_on_consumed",
+      "on": { "event": "statusConsumed", "statuses": ["electrification"] },
+      "by": "anyone",
+      "do": [{ "kind": "openCombo" }],
+      "note": "\"... or after an enemy's Electrification is consumed\" (her battle skill's extra attack included)."
+    },
+    {
+      "id": "wildland_reset",
+      "on": { "event": "stackAtLeast", "stack": "wildland_count", "atLeast": 3 },
+      "by": "self",
+      "if": { "not": { "potentialAtLeast": 5 } },
+      "skill": "chr_0007_ikut_normal_skill",
+      "do": [{ "kind": "gain", "gains": [{ "stack": "wildland_count", "amount": -3 }] }],
+      "note": "extra_count buffEvent 6 at count = 3 (talent 1; literal: a stack threshold can't be a value): FinishBuffAdvanced all extra_count layers. The team buff itself comes from the completing extra hit, before its damage (hit extra)."
+    },
+    {
+      "id": "wildland_reset_p5",
+      "on": { "event": "stackAtLeast", "stack": "wildland_count", "atLeast": 2 },
+      "by": "self",
+      "if": { "potentialAtLeast": 5 },
+      "skill": "chr_0007_ikut_normal_skill",
+      "do": [{ "kind": "gain", "gains": [{ "stack": "wildland_count", "amount": -3 }] }],
+      "note": "P5 sets count = 2 (PotentialTalentEffectTable; literal: a stack threshold can't be a value)."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0007_ikut_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [5], "events": ["chr_0007_ikut_attack1"], "element": "physical", "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "atb is 0 (SkillPatchTable)." }
+      ]
+    },
+    {
+      "skillId": "chr_0007_ikut_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [5], "events": ["chr_0007_ikut_attack2"], "element": "physical", "sp": { "if": { "controlled": true }, "then": "atb" } }
+      ]
+    },
+    {
+      "skillId": "chr_0007_ikut_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [7, 13], "events": ["chr_0007_ikut_attack3"], "element": "physical", "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "note": "display_atk_scale is 2 × atk_scale: two landings." }
+      ]
+    },
+    {
+      "skillId": "chr_0007_ikut_attack4",
+      "label": "Basic attack 4",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "count": 3,
+          "frames": [5, 6, 7],
+          "events": ["chr_0007_ikut_attack4"],
+          "element": "physical",
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "note": "ChannelingAction from frame 5 every 0.033 s, at most 3 per target (display_atk_scale 3 × atk_scale)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0007_ikut_attack5",
+      "label": "Basic attack 5 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [12],
+          "events": ["chr_0007_ikut_attack5"],
+          "element": "physical",
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "poise": "poise",
+          "poiseControlledOnly": true,
+          "finalStrike": true,
+          "note": "Mask 2097280 (Final Strike); SP atb (17) and stagger poise (16) as the controlled operator only."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0007_ikut_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [15, 23], "events": ["chr_0007_ikut_power_attack"], "element": "physical", "factor": 0.05, "note": "BreakingAttackCalculation multiplier 0.05." },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [38], "events": ["chr_0007_ikut_power_attack"], "element": "physical", "factor": 0.9, "note": "BreakingAttackCalculation multiplier 0.9; finisher SP is the engine's (GainBreakingAttackAtb)." }
+      ]
+    },
+    {
+      "skillId": "chr_0007_ikut_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [1],
+          "events": ["chr_0007_ikut_plunging_attack_end"],
+          "element": "physical",
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "note": "Needs mid-air, so rotations don't cast it (S10); kept for calc."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0007_ikut_normal_skill",
+      "label": "Battle skill: Tempestuous Arc",
+      "damageType": "battle",
+      "jumps": [{ "at": 4, "if": { "enemyStatus": "electrification" } }],
+      "teamEnergy": [
+        { "frame": 24, "ratio": 1 },
+        { "frame": 136, "ratio": 1 }
+      ],
+      "note": "Frame 0: IfElse CheckTagMatch 1466867135 (Electrification) on the target sets SpawnThird = 1; frame 4: JumpToAction → 96 if SpawnThird = 1 (the Electrification variant, judged on the enemy at the cast: batch-3 S7). Without it: slashes at 19 and 24, then the unconditional jump 95 → 204 (the frame-136 part never plays). With it: slashes at 112 and 118 (cast frames 20 and 26), then at 136 (cast 44) the extra attack if the target still has Electrification, else a third Physical slash. Team energy (buff_common_obtain_ultimate_sp) at 24 on one path, 136 on the other (every frame-136 branch has it): exclusive, so both are 1 (batch-3 S6). Windows 36–60 and 162–188, exclusiveFrame 164: SkillData.",
+      "hits": [
+        { "id": "slash1", "label": "Slash 1 (no Electrification at the cast)", "scale": ["atk_scale"], "frames": [19], "events": ["chr_0007_ikut_normal_skill"], "element": "physical" },
+        { "id": "slash2", "label": "Slash 2 (no Electrification at the cast)", "scale": ["atk_scale"], "frames": [24], "events": ["chr_0007_ikut_normal_skill"], "element": "physical", "poise": "poise1" },
+        { "id": "slash1_e", "label": "Slash 1 (Electrification at the cast)", "scale": ["atk_scale"], "frames": [112], "events": ["chr_0007_ikut_normal_skill"], "element": "physical", "note": "After the frame-4 jump: cast frame 20." },
+        { "id": "slash2_e", "label": "Slash 2 (Electrification at the cast)", "scale": ["atk_scale"], "frames": [118], "events": ["chr_0007_ikut_normal_skill"], "element": "physical", "poise": "poise1" },
+        {
+          "id": "extra",
+          "label": "Additional attack (Electrification consumed)",
+          "scale": ["atk_scale2"],
+          "frames": [136],
+          "events": ["chr_0007_ikut_normal_skill"],
+          "element": "pulse",
+          "branch": "third",
+          "if": { "enemyStatus": "electrification" },
+          "poise": "poise2",
+          "sp": "atb",
+          "applies": [{ "kind": "consumeStatus", "statuses": ["electrification"], "afterDamage": true }],
+          "gains": [{ "stack": "wildland_count", "amount": 1, "if": { "talentAtLeast": [0, 1] } }],
+          "buffs": [
+            {
+              "buff": "wildland_trekker",
+              "beforeDamage": true,
+              "if": {
+                "all": [
+                  { "talentAtLeast": [0, 1] },
+                  { "any": [{ "stack": "wildland_count", "atLeast": 3 }, { "all": [{ "potentialAtLeast": 5 }, { "stack": "wildland_count", "atLeast": 2 }] }] }
+                ]
+              }
+            }
+          ],
+          "note": "Frame 136, distance < 5 and CheckTagMatch Electrification on the smart target: CreateBuff extra_count (if talent_1 > 0), ObtainCostAction atb (atbSourceType 3: returned; P1 +10), DamageAction atk_scale2 damageType 3 (Electric) + poise2, then FinishBuffAdvanced tag 1466867135 (isFinishedEarly): the Electrification is consumed after the damage (afterDamage, batch-3 A4), so this hit keeps its Arts DMG Taken. The counter's layer comes first and its buffEvent 6 handler grants the team buff before the DamageAction (the buff's if is judged after the hit's gains: 3, or 2 at P5): interim, in-game test 65 (b)."
+        },
+        {
+          "id": "third",
+          "label": "Third slash (Electrification gone by frame 136)",
+          "scale": ["atk_scale"],
+          "frames": [136],
+          "events": ["chr_0007_ikut_normal_skill"],
+          "element": "physical",
+          "branch": "third",
+          "poise": "poise2",
+          "note": "The IfElse's false side: someone consumed the Electrification between the cast and frame 136 (not in the description)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0007_ikut_combo_skill",
+      "label": "Combo skill: Peal of Thunder",
+      "damageType": "combo",
+      "hits": [
+        { "id": "hit1", "scale": ["atk_scale"], "frames": [17], "events": ["chr_0007_ikut_combo_skill"], "element": "physical", "energy": "usp", "sp": "atb", "poise": "poise", "note": "Frame 17: ObtainCostAction atb (atbSourceType 3), DamageAction mask 12288 + poise, ObtainCostAction costType 0 usp." },
+        { "id": "hit2", "scale": ["atk_scale"], "count": 2, "frames": [21, 25], "events": ["chr_0007_ikut_combo_skill"], "element": "physical", "note": "display_atk_scale 3 × atk_scale: three slashes in all." }
+      ]
+    },
+    {
+      "skillId": "chr_0007_ikut_ultimate_skill",
+      "label": "Ultimate: Exploding Blitz",
+      "damageType": "ultimate",
+      "note": "SpawnAbilityEntity abilityentity_chr_0007_ikut_ultimate_skill at 54 (launch); its timeline chr_0007_ikut_ultimate_skill_abentity lands at its frames 7 and 63. Time stop 0–56, channel 0–85 (cantCastSkill, cantSwitchPosition), damage immunity: SkillData.",
+      "hits": [
+        {
+          "id": "dash",
+          "scale": ["atk_scale1"],
+          "frames": [61],
+          "events": ["chr_0007_ikut_ultimate_skill_abentity"],
+          "element": "pulse",
+          "launch": 54,
+          "poise": "poise1",
+          "applies": [{ "kind": "infliction", "element": "pulse" }],
+          "note": "Entity frame 7: SpellInfliction type 1 (Electric), then DamageAction atk_scale1 damageType 3 mask 4608 + poise1."
+        },
+        {
+          "id": "explosion",
+          "scale": ["atk_scale2"],
+          "frames": [117],
+          "events": ["chr_0007_ikut_ultimate_skill_abentity"],
+          "element": "pulse",
+          "launch": 54,
+          "poise": "poise2",
+          "applies": [
+            { "kind": "consumeInfliction", "elements": ["pulse"], "afterDamage": true },
+            { "kind": "forcedReaction", "status": "electrification", "level": { "consumed": true }, "afterDamage": true }
+          ],
+          "note": "Entity frame 63: DamageAction atk_scale2 + poise2, then ForEach target with Electric Infliction (tag 2123008650): SaveBuffStackNumByTag count, ForceSpellStatusAction spellStatusType 1 (Electrification) with count = consumedLayer = the stacks, consumedType 1: the infliction is consumed and Electrification forced at that level, after the damage (batch-3 A3, A4). No Electric Infliction: level 0, nothing."
+        }
+      ]
+    }
+  ]
+}
