@@ -9,7 +9,7 @@ import type { KitHit } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill, type CompiledValue } from "../src/index.ts";
 
 const data = loadGameData();
-const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph"];
+const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
   const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
@@ -440,6 +440,9 @@ const KNOWN: string[] = [
   // count, SaveBuffStackNumAdvanced) and Solidifies at that level, only if CheckBuffStackNumByTag Cryo ≥ 1; the compiler reads no consumption and lists
   // the forced Solidification only under that condition, which the kit's level {consumed: true} expresses (0 consumed applies nothing; batch-3 A3).
   "chr_0024_deepfin_normal_skill applies at 27: kit [consume cryst, forced solidification], data []",
+  // Batch 3, Chen Qianyu. Compiler limit (D3 open): at frame 103, CompareFloat potential5 = 1 → ModifyDynamicBlackboard atk_scale2 += phy_up
+  // before the DamageAction; the compiler stops at the ModifyDynamicBlackboard ($atk_scale2?). The kit writes the data's branch as a sum (potential5 is 0 or 1; phy_up is 0).
+  'chr_0005_chen_ultimate_skill/final scale: kit {"sum":["atk_scale2",{"product":["potential5","phy_up"]}]}, data $atk_scale2?',
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {

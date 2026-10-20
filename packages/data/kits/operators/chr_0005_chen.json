@@ -1,0 +1,169 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0005_chen",
+  "sources": [
+    "Kit plan: docs/kit-batches/batch-3/chr_0005_chen.md (analysis 1, § Kit plan; re-analysed in § Kit (2026-10-20)). Hits, frames, keys, stagger, the finisher's factors and the Lifts: rmxlinux Json/SkillData chr_0005_chen_* (game 1.6) as compiled by efsim kit-draft, with the hand-written parts noted per hit; values SkillPatchTable at the build's levels (level 12: attack1–4 atk_scale 0.23 / 0.54 / 0.30 / 0.34, attack5 0.9 with poise 16 and atb 18, finisher 9.0, dive 1.8, battle skill 3.8 with poise 10 and cost 100 SP, combo 2.7 with usp 10 and cooldown 15 s, ultimate atk_scale1 0.81, atk_scale2 10.23, poise_start 15, poise_final 20, cost 70, cooldown 10 s). Timing (windows, exclusive frames, dontInterruptCombo, the combo's time dilation, the ultimate's time stop and 3.57 s channel) is the loader's, from SkillData.",
+    "Talent indices: 0 is Slashing Edge (PotentialTalentEffectTable chr_0005_chen_talent_1_1 / _1_2 attach buff_chr_0005_chen_talent_0 with atk 0.04 / 0.08, duration 10, max_stack 5), 1 is Momentum Breaker (chr_0005_chen_talent_2_1 / _2_2 attach buff_chr_0005_chen_talent_1 with poise 5 / 10).",
+    "Talent 2 isn't modelled: buff_chr_0005_chen_talent_1 runs on abilityEvent 141 (an enemy's charge interrupted) a DamageAction with only a poise unit (`poise`); enemy charges are an instant event, not a state that skill hits interrupt (batch 3 E1, deferred by the owner, 2026-10-20). 0 Stagger instead of 5 / 10 per interrupted charge.",
+    "P1 Shadowless follows the data: buff_chr_0005_chen_potential_1's damageModifier (DamageScaleProcessor NormalCalcZone + extra_dmg 0.2) has the condition CheckHp isRatio compare 0 hp_remain 0.5 on the damage's target, so it acts only while the scenario's enemy HP (TimelineScenario.enemyHp, batch 3 N1) is below 50%. The 7e19 log lists it on every hit at about full HP (in-game test 69 decides; the log reading is in the report). hp_remain is a literal 0.5 in enemyHpBelow (the predicate takes a number; the key is 0.5 at every potential).",
+    "P2 (Agility +15, Physical DMG +8%), P3 (×1.1 on atk_scale1 / atk_scale2 of the ultimate and atk_scale of the battle skill and combo), P4 (ultimate cost ×0.85) and P5's combo cooldown −3 s are the loader's (stat panel, skillBbModifier, skillParamModifier). P5's ultimate part (potential5 = 1: atk_scale2 += phy_up) is in the final slash's scaleValue; phy_up is 0 in the file and no table sets it, so it adds nothing.",
+    "Not modelled: the Lift's duration from the battle skill (airborne_initial 2.5 s + Strength × airborne_coefficient 0; the engine's Lift is 3 s and nothing reads its length), the combo's EventListener (abilityEvent 55, an enemy Lifted, → SetSkillCdAtOnce cd_reduction: 0 and set by nothing), the dash attack (SkillPatchTable only, not a rotation action: S5), the dive attack's jump (S10), the ultimate's InterruptAction on scripted enemy actions, and the battle skill's and finisher's second AirborneAction / launch on a dying target (deadOption 2). combo_skill_mark, combo_skill_tutorial_marker and train_ultimate are training markers."
+  ],
+  "element": "physical",
+  "buffs": [
+    {
+      "id": "slashing_edge",
+      "label": "Slashing Edge (talent 1): ATK per layer",
+      "target": "self",
+      "gameBuff": "buff_chr_0005_chen_talent_0_1",
+      "duration": { "talent": 0, "key": "duration" },
+      "maxStacks": { "talent": 0, "key": "max_stack" },
+      "modifiers": [{ "zone": "atk", "value": { "talent": 0, "key": "atk" } }],
+      "note": "\"After hitting an enemy with skills, Chen gains ATK +{atk} for {duration}s. This effect can reach {max_stack} stacks.\" buff_chr_0005_chen_talent_0_1: attr 2 formulaItem 6 + atk (0.08 at talent level 2), duration 10 s, stackingType 8 maxStackCnt 5: the loader gives its layers one timer that each new layer refreshes (sharedTimer; batch 3 B3 open: the 7e19 log has them expire 10.6 s after the first, in-game test 62)."
+    },
+    {
+      "id": "shadowless",
+      "label": "Shadowless (P1): DMG Dealt below half HP",
+      "target": "self",
+      "gameBuff": "buff_chr_0005_chen_potential_1",
+      "modifiers": [{ "zone": "damageBonus", "value": { "key": "extra_dmg", "skill": "buff_chr_0005_chen_potential_1" }, "if": { "enemyHpBelow": 0.5 } }],
+      "note": "\"DMG Dealt +{extra_dmg} to enemies below {hp_remain} HP.\" (P1 attachBuff: extra_dmg 0.2, hp_remain 0.5; lifeType 1, permanent). Judged per hit on the scenario's enemy HP."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_window",
+      "on": { "event": "vulnerable" },
+      "by": "anyone",
+      "do": [{ "kind": "openCombo" }],
+      "note": "CharGrowthTable chr_0005_chen_ComboSkill: \"COMBO TRIGGER: When an enemy becomes Vulnerable.\" (game code). Opens on every Vulnerable stack added, by anyone (the report's interim, row 10): whether a stack on an already Vulnerable enemy opens it is in-game test 64; if not, this becomes `fromNone: true` (batch 3 T1). In 7e19 both of her combos follow a first stack."
+    },
+    {
+      "id": "slashing_edge",
+      "on": { "event": "hit", "kinds": ["battle", "combo", "ultimate"] },
+      "by": "self",
+      "if": { "talentAtLeast": [0, 1] },
+      "do": [{ "kind": "buff", "buff": "slashing_edge" }],
+      "note": "buff_chr_0005_chen_talent_0: abilityEvent 13 (her damage landing) with CheckDamageDecorateMask checkType 2 mask 256 / 512 / 8192 (battle, ultimate, combo) → CreateBuff talent_0_1: one layer per landing, after its damage (the log has the battle skill's first layer as a boundary entry). An ultimate gives up to 7 (5 kept); the Lift's own hit and equipment hits (mask 0) don't count."
+    },
+    {
+      "id": "shadowless",
+      "on": { "event": "fightStart" },
+      "by": "self",
+      "if": { "potentialAtLeast": 1 },
+      "do": [{ "kind": "buff", "buff": "shadowless" }],
+      "note": "P1's attached buff (permanent); its modifier is conditioned on the enemy's HP."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0005_chen_attack1",
+      "label": "Soaring Break: basic attack 1",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [8, 11], "events": ["chr_0005_chen_attack1"], "note": "Two landings (display_atk_scale = 2 × atk_scale); mask 128; atb 0." }]
+    },
+    {
+      "skillId": "chr_0005_chen_attack2",
+      "label": "Soaring Break: basic attack 2",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [7], "events": ["chr_0005_chen_attack2"], "note": "Mask 128; atb 0." }]
+    },
+    {
+      "skillId": "chr_0005_chen_attack3",
+      "label": "Soaring Break: basic attack 3",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [9, 12], "events": ["chr_0005_chen_attack3"], "note": "Two landings (display_atk_scale = 2 × atk_scale); mask 128; atb 0." }]
+    },
+    {
+      "skillId": "chr_0005_chen_attack4",
+      "label": "Soaring Break: basic attack 4",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [4, 10], "events": ["chr_0005_chen_attack4"], "note": "Two landings (display_atk_scale = 2 × atk_scale); mask 128; atb 0." }]
+    },
+    {
+      "skillId": "chr_0005_chen_attack5",
+      "label": "Soaring Break: basic attack 5 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [16],
+          "events": ["chr_0005_chen_attack5"],
+          "finalStrike": true,
+          "poise": "poise",
+          "poiseControlledOnly": true,
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "note": "ChannelingAction 16–21, maxCountPerTarget 1: one landing at 16 (mask 2097280, Final Strike). \"As the controlled operator, Final Strike also deals {poise} Stagger\" (onlyEnableForMainChar); its atb 18 likewise only when controlled (CheckMainCharacterCondition before the ObtainCostAction). The third unit (hitEnvData 25) is environment damage."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0005_chen_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [5], "events": ["chr_0005_chen_power_attack"], "factor": 0.2, "note": "BreakingAttackCalculation atk_scale × multiplier 0.2 (mask 132)." },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [29], "events": ["chr_0005_chen_power_attack"], "factor": 0.8, "note": "BreakingAttackCalculation atk_scale × multiplier 0.8; GainBreakingAttackAtb at 29 (the engine gives finisher SP at the first hit)." }
+      ]
+    },
+    {
+      "skillId": "chr_0005_chen_plunging_attack_end",
+      "label": "Soaring Break: dive attack",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "events": ["chr_0005_chen_plunging_attack_end"], "note": "Mask 1152; atb 0. Not castable until rotations have jumps (S10)." }]
+    },
+    {
+      "skillId": "chr_0005_chen_normal_skill",
+      "label": "Ascending Strike (battle skill)",
+      "damageType": "battle",
+      "teamEnergy": [{ "frame": 13, "ratio": 1 }],
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [13],
+          "events": ["chr_0005_chen_normal_skill"],
+          "poise": "poise",
+          "applies": [{ "kind": "physicalStatus", "status": "lift" }],
+          "note": "Frame 13: StoreAttributeValue airborne, AirborneAction (Lift, not forced: on an enemy without Vulnerable it only adds a stack) before the DamageAction (atk_scale, poise; mask 4352), then buff_common_obtain_ultimate_sp. The second AirborneAction after the damage (forceAirborne, deadOption 2) launches a dying target."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0005_chen_combo_skill",
+      "label": "Soar to the Stars (combo skill)",
+      "damageType": "combo",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [17],
+          "events": ["chr_0005_chen_combo_skill"],
+          "energy": "usp",
+          "applies": [{ "kind": "physicalStatus", "status": "lift" }],
+          "note": "AuraAction 17–27 along the dash, once per target: AirborneAction (floatingDuration 0) then DamageAction atk_scale (mask 12288, no poise unit), then ObtainCostAction usp once per cast. The aura's action is taken at its start (one enemy). Its window: trigger combo_window."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0005_chen_ultimate_skill",
+      "label": "Blade Gale (ultimate)",
+      "damageType": "ultimate",
+      "hits": [
+        { "id": "slash1", "label": "First slash", "scale": ["atk_scale1"], "frames": [58], "events": ["chr_0005_chen_ultimate_skill"], "poise": "poise_start", "note": "\"First Strike Stagger\": only the first slash has a poise unit (poise_start 15)." },
+        { "id": "slash", "label": "Slashes 2–6", "scale": ["atk_scale1"], "count": 5, "frames": [63, 68, 72, 76, 80], "events": ["chr_0005_chen_ultimate_skill"], "note": "Their poise units are 0." },
+        {
+          "id": "final",
+          "label": "Final slash",
+          "scale": [],
+          "scaleValue": { "sum": ["atk_scale2", { "product": ["potential5", "phy_up"] }] },
+          "frames": [103],
+          "events": ["chr_0005_chen_ultimate_skill"],
+          "poise": "poise_final",
+          "note": "Frame 103: CompareFloat potential5 = 1 (P5 sets it) → ModifyDynamicBlackboard atk_scale2 += phy_up (operation 1), then the DamageAction atk_scale2 with poise_final. potential5 is 0 or 1, so the product is the data's branch; phy_up is 0 (file default, no table sets it). The compiler leaves the scale as $atk_scale2? (D3 open)."
+        }
+      ]
+    }
+  ]
+}

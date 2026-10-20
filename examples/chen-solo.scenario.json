@@ -1,0 +1,41 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Chen Qianyu alone (P5, Sundering Steel, Swordmancer ×4) vs Rhodagn, which is below half HP from 15 s (her P1's +20%); she starts with her ultimate charged. Her battle skill's Lift on the fresh enemy only adds a Vulnerable stack, which opens her combo window (no Sundering Steel or Swordmancer: no physical status); the combo's Lift on the Vulnerable enemy is a real one (Sundering Steel's first ATK layer, before the combo's damage, and Swordmancer's extra hit). Every battle-skill, combo and ultimate landing adds a Slashing Edge layer (5 at most, one timer). The second battle skill and combo come after the combo's 12 s cooldown (P5), below half HP.",
+  "team": [
+    "chen-p5.json"
+  ],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0005_chen": "full"
+  },
+  "enemyHp": [
+    { "at": 15, "fraction": 0.45 }
+  ],
+  "durationSeconds": 30,
+  "crit": "expected",
+  "rotation": [
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_normal_skill" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_combo_skill" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_ultimate_skill" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_attack1" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_attack2" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_attack3" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_attack4" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_attack5" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_attack1" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_attack2" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_attack3" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_attack4" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_attack5" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_normal_skill", "at": 15 },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_combo_skill" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_attack1" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_attack2" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_attack3" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_attack4" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_attack5" }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0005",
+  "sources": [
+    "Sundering Steel (5-star sword, WeaponBasicTable wpn_sword_0005): Agility (wpn_attr_agi_mid), Physical DMG (wpn_sp_attr_phydam_mid) and the third skill's ATK + atk_up1 (sk_wpn_sword_0005 cardAttributeModifier attr 2 formulaItem 6: 5–14% by skill level) are on the stat panel. Batch-3 report docs/kit-batches/batch-3/chr_0005_chen.md rows 27–32.",
+    "rmxlinux SkillData sk_wpn_sword_0005 (game 1.6): passiveEventActions abilityEvent 401 (the wielder applies a physical status; no CheckPhysicalInflictionType, so any of them), CheckTimedMarkerCondition sk_wpn_sword_0005 (returnTrueIfNotExists) → CreateBuff buff_wpn_sword_0005_atk_up_up (attr 2 formulaItem 6 + atk_up2: 7.5–21%, `duration` 20 s, stackingType 2 with maxStackCntKey max_stack 2: each layer its own timer, at the maximum a new one replaces the oldest) and CreateTimedMarker for `cd`. Description: \"When the wielder deals a Physical Status, the wielder gains ATK +{atk_up2} for {duration}s. Max stacks for effects of the same name: {max_stack}. Duration of each stack is counted separately. Effect only triggers once every 0.1s.\" Values: SkillPatchTable sk_wpn_sword_0005.",
+    "The level table names the marker key \"cd \" (with a trailing space), so `cd` comes from the SkillData blackboard default, 0.1 s, as the description says.",
+    "beforeDamage: abilityEvent 401 runs inside the status's AirborneAction / KnockDownAction / CrushAction / FractureAction, which skills put before their DamageAction (Chen's battle skill and combo), so the new layer acts on the hit that applied the status (the question of in-game test 51).",
+    "A Lift or Knock Down on an enemy without Vulnerable only adds a stack: the engine emits no physicalStatus then, so the weapon doesn't trigger (as Swordmancer and Valiant). Whether the game's 401 comes for it is in-game test 39 (its Sundering Steel part, batch 3 P1). Shatter isn't a physicalStatus event either.",
+    "buff_wpn_sword_0005_atk_up_basic (atk_up1) is referenced by no skill file (the panel line is the skill's cardAttributeModifier); the toggleBuffs buff_wpn_passive_spirit_01 has no BuffData file."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_sword_0005.atk",
+      "label": "Sundering Steel: ATK per Physical Status",
+      "target": "self",
+      "gameBuff": "buff_wpn_sword_0005_atk_up_up",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [{ "zone": "atk", "value": "atk_up2" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_sword_0005.on_physical_status",
+      "on": { "event": "physicalStatus" },
+      "by": "self",
+      "beforeDamage": true,
+      "cooldown": "cd",
+      "skill": "sk_wpn_sword_0005",
+      "do": [{ "kind": "buff", "buff": "wpn_sword_0005.atk" }]
+    }
+  ]
+}
