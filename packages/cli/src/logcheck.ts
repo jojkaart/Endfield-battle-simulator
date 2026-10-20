@@ -2,6 +2,7 @@
 // stored build and the logged buff effects, and compares with the real damage.
 
 import {
+  Attr,
   attrModifier,
   computeHit,
   computeReaction,
@@ -248,10 +249,109 @@ function unloggedCastBuffs(data: GameData, build: Build, panel: StatPanel, kind:
   return out.map((o) => (o.label ? { ...o, label: `unlogged ${o.label}` } : o));
 }
 
+/** Whether a kit hit is a finisher's (SkillData skillSpecification 8), as the timeline judges it: a skill's own hit, not a trigger's. */
+function isFinisher(data: GameData, build: Build, skillId: string, hit: KitHit): boolean {
+  return data.skills[skillId]?.timing?.specification === 8 && (effectiveKit(data, build)?.skills ?? []).some((s) => s.skillId === skillId && s.hits.includes(hit));
+}
+
+/** The finisher multiplier (the enemy's BreakingAttackDamageTakenScalar, attribute 27) as the timeline applies it; ZMDLogs doesn't list it. */
+function finisherModifier(data: GameData, enemy: string): Modifier {
+  const attr = Attr.BreakingAttackDamageTakenScalar;
+  const v = data.enemies[enemy]?.staticAttrs[attr] ?? data.attributeDefaults[attr] ?? 1;
+  return { zone: "multiplicative", value: v - 1, source: "Finisher" };
+}
+
+/** An assumption about a whole hit the log leaves open: what it adds and how the report names it. */
+export interface Variant {
+  readonly label: string | null;
+  readonly modifiers: readonly Modifier[];
+  /** Layer counts of layered buffs the log lists once, by buff. */
+  readonly layers: ReadonlyMap<string, number>;
+}
+
+const NO_VARIANT: Variant = { label: null, modifiers: [], layers: new Map() };
+
+/** Every pair of a variant of each list, the first of each first. */
+function combine(a: readonly Variant[], b: readonly Variant[]): Variant[] {
+  return a.flatMap((x) =>
+    b.map((y) => ({
+      label: [x.label, y.label].filter((l) => l).join(", ") || null,
+      modifiers: [...x.modifiers, ...y.modifiers],
+      layers: new Map([...x.layers, ...y.layers]),
+    })),
+  );
+}
+
+/**
+ * Enemy-side team auras a kit writes on an enemy buff, which ZMDLogs doesn't
+ * list: a kit buff on the enemy whose game buff the log never names, with a
+ * modifier whose value is a talent's. The Endministrator's talent 2
+ * (buff_chr_0003_endminf_talent_0, an aura on the team: Physical DMG Taken
+ * +dmg against enemies carrying her crystals) is written on her
+ * `originium_crystals`; in 7e19489ae503 every hit on the sealed enemy is
+ * ×1.2 of the prediction without it. The log doesn't say when the crystals
+ * are on, so each is tried absent first, then present, as cast-consumed
+ * buffs are.
+ */
+export function unloggedEnemyAuras(data: GameData, fx: LogFixture, panels: ReadonlyMap<string, { readonly build: Build; readonly panel: StatPanel }>): Variant[] {
+  const listed = new Set(fx.hits.flatMap((h) => [...h.effects, ...h.boundaryEffects, ...h.unquantified].map((e) => e.buff)));
+  let out: Variant[] = [NO_VARIANT];
+  for (const { build, panel } of panels.values()) {
+    for (const def of effectiveKit(data, build)?.buffs ?? []) {
+      if (def.target !== "enemy" || (def.gameBuff !== undefined && listed.has(def.gameBuff))) continue;
+      if (!def.modifiers.some((m) => typeof m.value === "object" && "talent" in m.value)) continue;
+      let modifiers: Modifier[];
+      try {
+        modifiers = kitBuffModifiers(data, build, panel, def.id, 1);
+      } catch {
+        continue; // nothing in the kit applies it, or its values need a fight
+      }
+      if (modifiers.length > 0) out = combine(out, [NO_VARIANT, { label: `unlogged enemy buff ${def.id} (${build.operator})`, modifiers, layers: new Map() }]);
+    }
+  }
+  return out;
+}
+
+/**
+ * ZMDLogs lists a layered buff (BuffData stackingType 8, layers on one
+ * timer) once, with one layer's value, however many layers it has: Chen's
+ * buff_chr_0005_chen_talent_0_1 in 7e19489ae503 is one 0.08 entry while
+ * her ultimate slashes rise a layer (+3.5%) each. Such a buff listed once
+ * at a hit is tried at 1 up to its maximum layers (its literal maxStackCnt,
+ * or the cap the applying skill sets), 1 first, as unlogged cast buffs are.
+ */
+export function layerVariants(hit: LogHit, cap: StackCap = () => null): Variant[] {
+  const all = [...hit.effects, ...hit.boundaryEffects];
+  const counts = new Map<string, number>();
+  for (const e of all) counts.set(`${e.buff}|${e.zone}|${e.element}`, (counts.get(`${e.buff}|${e.zone}|${e.element}`) ?? 0) + 1);
+  let out: Variant[] = [NO_VARIANT];
+  for (const buff of new Set(all.map((e) => e.buff))) {
+    const st = buffFile(buff)?.stacking;
+    if (st?.type !== 8 || [...counts].some(([k, n]) => k.startsWith(`${buff}|`) && n !== 1)) continue;
+    const max = st.maxStacks ?? (st.maxStacksKey ? cap(buff, st.maxStacksKey) : null);
+    if (max === null || max <= 1) continue;
+    const layers = Array.from({ length: max - 1 }, (_, i): Variant => ({ label: `${buff} ×${i + 2} layers`, modifiers: [], layers: new Map([[buff, i + 2]]) }));
+    out = combine(out, [NO_VARIANT, ...layers]);
+  }
+  return out;
+}
+
+/** The hit with each listed-once layered buff's effects at the variant's layer count. */
+function withLayers(hit: LogHit, layers: ReadonlyMap<string, number>): LogHit {
+  if (layers.size === 0) return hit;
+  const scale = (e: LogEffect): LogEffect => {
+    const n = layers.get(e.buff);
+    return n === undefined ? e : { ...e, value: e.value * n };
+  };
+  return { ...hit, effects: hit.effects.map(scale), boundaryEffects: hit.boundaryEffects.map(scale) };
+}
+
 export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
   const panels = new Map(fx.team.map((b) => [b.operator, { build: b, panel: computeStats(data, b) }]));
   const target = { enemy: fx.enemy.id, level: fx.enemy.level };
   const caps = teamStackCaps([...panels.values()].map((m) => m.panel));
+  const auras = unloggedEnemyAuras(data, fx, panels);
+  const finisher = finisherModifier(data, fx.enemy.id);
   return fx.hits.map((hit): HitVerdict => {
     const member = panels.get(hit.operator);
     const reaction = parseReactionEvent(hit.event);
@@ -260,37 +360,43 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
     const actual = hit.uncapped ?? hit.value;
     const stackOptions = reaction && reaction.kind !== "burst" ? [1, 2, 3, 4] : [1];
     const predicted: number[] = [];
-    for (const c of candidates(hit, panels, stackOptions)) {
-      const options = (category: HitCategory) => ({
-        crit: c.crit ? ("always" as const) : ("never" as const), staggered: false, conditions: [], modifiers: [...logModifiers(c.effects, category, caps), ...c.extra],
-      });
-      const results = reaction
-        ? [{ label: null, r: computeReaction(data, member.build, member.panel, target, { ...reaction, stacks: c.stacks }, options(reaction.kind)) }]
-        : found
-            .filter(([s, h]) => hitAvailable(data, member.build, member.panel, s.skillId, h, { team: fx.team }))
-            .flatMap(([s, h]) =>
-              // A hit whose conditions or extra scale depend on what the log doesn't record (inflictions, stacks): try both outcomes;
-              // one whose values read the count of the event behind it (Si's combo): try counts 1-4; buffs its cast would carry unlogged: try them.
-              unloggedCastBuffs(data, member.build, member.panel, h.damageType).flatMap((unlogged) =>
-                (h.extraScale?.length || h.if ? [false, true] : [false]).flatMap((assume) =>
-                  (JSON.stringify(h).includes('"eventCount"') ? [1, 2, 3, 4] : [undefined]).flatMap((eventCount) => {
-                    try {
-                      const situation = { team: fx.team, ...(eventCount !== undefined ? { eventCount } : {}) };
-                      const base = options(h.reaction?.kind ?? h.damageType);
-                      const r = computeHit(data, member.build, member.panel, target, s, h, { ...base, modifiers: [...base.modifiers, ...unlogged.modifiers], situation, assumeUnknown: assume });
-                      const label = [found.length > 1 ? `kit hit ${h.id}` : null, assume ? "situational parts assumed" : null, eventCount !== undefined ? `event count ${eventCount}` : null, unlogged.label].filter((x) => x).join(", ");
-                      return [{ label: label || null, r }];
-                    } catch {
-                      return []; // the hit doesn't happen under this assumption
-                    }
-                  }),
+    // Whole-hit assumptions (enemy auras the log doesn't list, layers of a buff it lists once), the plain reading first:
+    // a hit that matches without them keeps matching as before.
+    for (const variant of combine(auras, layerVariants(hit, caps))) {
+      for (const c of candidates(withLayers(hit, variant.layers), panels, stackOptions)) {
+        const options = (category: HitCategory) => ({
+          crit: c.crit ? ("always" as const) : ("never" as const), staggered: false, conditions: [], modifiers: [...logModifiers(c.effects, category, caps), ...c.extra, ...variant.modifiers],
+        });
+        const results = reaction
+          ? [{ label: null, r: computeReaction(data, member.build, member.panel, target, { ...reaction, stacks: c.stacks }, options(reaction.kind)) }]
+          : found
+              .filter(([s, h]) => hitAvailable(data, member.build, member.panel, s.skillId, h, { team: fx.team }))
+              .flatMap(([s, h]) =>
+                // A hit whose conditions or extra scale depend on what the log doesn't record (inflictions, stacks): try both outcomes;
+                // one whose values read the count of the event behind it (Si's combo): try counts 1-4; buffs its cast would carry unlogged: try them.
+                // A finisher takes the enemy's finisher multiplier, as in the timeline.
+                unloggedCastBuffs(data, member.build, member.panel, h.damageType).flatMap((unlogged) =>
+                  (h.extraScale?.length || h.if ? [false, true] : [false]).flatMap((assume) =>
+                    (JSON.stringify(h).includes('"eventCount"') ? [1, 2, 3, 4] : [undefined]).flatMap((eventCount) => {
+                      try {
+                        const situation = { team: fx.team, ...(eventCount !== undefined ? { eventCount } : {}) };
+                        const base = options(h.reaction?.kind ?? h.damageType);
+                        const own = isFinisher(data, member.build, s.skillId, h) ? [finisher] : [];
+                        const r = computeHit(data, member.build, member.panel, target, s, h, { ...base, modifiers: [...base.modifiers, ...unlogged.modifiers, ...own], situation, assumeUnknown: assume });
+                        const label = [found.length > 1 ? `kit hit ${h.id}` : null, assume ? "situational parts assumed" : null, eventCount !== undefined ? `event count ${eventCount}` : null, unlogged.label].filter((x) => x).join(", ");
+                        return [{ label: label || null, r }];
+                      } catch {
+                        return []; // the hit doesn't happen under this assumption
+                      }
+                    }),
+                  ),
                 ),
-              ),
-            );
-      for (const { label, r } of results) {
-        const p = roundDamage(r.exact);
-        if (Math.abs(p - actual) <= 1) return { kind: "match", hit, predicted: p, assumed: label ? [...c.assumed, label] : c.assumed };
-        predicted.push(p);
+              );
+        for (const { label, r } of results) {
+          const p = roundDamage(r.exact);
+          if (Math.abs(p - actual) <= 1) return { kind: "match", hit, predicted: p, assumed: [...c.assumed, ...[label, variant.label].filter((l) => l !== null)] };
+          predicted.push(p);
+        }
       }
     }
     // Corrosion's ramp doesn't fit every log yet (time dilation may pause its ticks; talents change its cap and
@@ -303,6 +409,7 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
     return { kind: "mismatch", hit, predicted: [...new Set(predicted)].slice(0, 6), ratio: actual / (predicted[0] ?? 1) };
   });
 }
+
 
 export function formatLogCheck(data: GameData, fx: LogFixture, verdicts: readonly HitVerdict[]): string {
   const out: string[] = [`${fx.id}: ${fx.provenance.url}`];

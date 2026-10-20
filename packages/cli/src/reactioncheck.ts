@@ -3,16 +3,26 @@
 // the bursts and reactions it predicts with the ones the log records. Logs
 // don't record inflictions, so this is how a kit's `applies` gets verified.
 
-import { applyToEnemy, computeStats, expireStatus, FPS, effectiveKit, hitAvailable, hitEffects, kitHitEntries, NO_STATUS, resolveApplication, statusEventKey, type GameData, type KitHit, type Predicate, type StatusEvent } from "@efsim/engine";
+import { applyToEnemy, computeStats, expireStatus, FPS, effectiveKit, hitAvailable, hitEffects, kitHitEntries, NO_STATUS, resolveApplication, statusEventKey, type EnemyStatus, type GameData, type KitHit, type Predicate, type StatusEvent } from "@efsim/engine";
 import type { LogFixture } from "@efsim/data";
 
 /**
- * Bursts show up in logs up to about a second after the hit that caused them
- * (btl_upload_40d9a3c1da37: +893 ms and +912 ms), reactions at the same
- * time. A logged event matches a prediction by the same operator and key
- * within this window after it.
+ * Reactions show up in logs at the hit that caused them. A logged event
+ * matches a prediction by the same operator and key within this window
+ * after it (bursts: BURST_LOG_DELAY_MS).
  */
 export const REACTION_LOG_DELAY_MS = 1200;
+
+/**
+ * An Arts Burst (same element) deals its damage on the burst buff's first
+ * 1 s tick (BuffData `buff_common_<e>_<e>_triggered`: waitFirstTriggerInterval,
+ * triggerInterval 1.0), on the enemy's clock, which time stops, stagger and
+ * hit-stop hold back: Xaihi's Cryo bursts in btl_upload_abfd4b7478ec come
+ * +1.52, +1.41 and +3.53 s (the last across a stagger) after her combo
+ * hits. Until the engine delays bursts (batch 3's A5), a predicted burst
+ * matches a logged one within this window.
+ */
+export const BURST_LOG_DELAY_MS = 4000;
 
 export interface ReactionCheck {
   readonly matched: readonly { readonly predicted: StatusEvent; readonly t: number; readonly loggedT: number }[];
@@ -44,13 +54,17 @@ function kitHit(data: GameData, fixture: LogFixture, operator: string, event: st
   return null;
 }
 
-/** Whether a predicate can hold for an operator of the fixture (false only when its build decides it is false). */
-function possible(data: GameData, fixture: LogFixture, operator: string, event: string, p: Predicate): boolean {
+/**
+ * Whether a predicate can hold for an operator of the fixture: false only
+ * when its build, or the replay's enemy state for what reads the enemy
+ * (inflictions, statuses, Vulnerable), decides it is false.
+ */
+function possible(data: GameData, fixture: LogFixture, operator: string, event: string, p: Predicate, enemy: EnemyStatus): boolean {
   const build = fixture.team.find((b) => b.operator === operator);
   if (!build) return true;
   const hit: KitHit = { id: "x", label: "", scale: [], count: 1, events: [event], damageType: "basic", element: "physical", if: p };
   try {
-    return hitAvailable(data, build, computeStats(data, build), "", hit, { team: fixture.team });
+    return hitAvailable(data, build, computeStats(data, build), "", hit, { team: fixture.team, enemy });
   } catch {
     // It reads a skill value the replay doesn't know: undecided.
     return true;
@@ -69,8 +83,9 @@ export function checkReactions(data: GameData, fixture: LogFixture): ReactionChe
     // Only the controlled operator does basic attacks, so a logged Final Strike counts for Final Strike triggers.
     for (const effect of hitEffects(teamKits, h.operator, kh, h.event)) {
       for (const app of effect.applies) {
-        // An application that can't happen for this build (a mode: KitApplication.if) is left out; one the log can't decide stays.
-        if (app.if && !possible(data, fixture, effect.owner, h.event, app.if)) continue;
+        // An application that can't happen for this build (a mode: KitApplication.if), or on the replay's enemy (Fluorite's
+        // ultimate branches on the enemy's infliction), is left out; one neither decides stays.
+        if (app.if && !possible(data, fixture, effect.owner, h.event, app.if, expireStatus(enemy, frame))) continue;
         // Arts Intensity only scales status strength, and skill values only a forced status's duration and damage, which this check doesn't compare.
         // A replay doesn't know stack counts: a stack amount that's a value counts as all (4).
         // An application repeating the event behind it (a combo's window) can't be replayed from a log.
@@ -93,7 +108,8 @@ export function checkReactions(data: GameData, fixture: LogFixture): ReactionChe
       other.push(p);
       continue;
     }
-    const m = logged.find((l) => !l.used && sameKey(l.event, p.predicted) && l.operator === p.predicted.operator && l.t >= p.t && l.t - p.t <= REACTION_LOG_DELAY_MS);
+    const window = p.predicted.kind === "burst" ? BURST_LOG_DELAY_MS : REACTION_LOG_DELAY_MS;
+    const m = logged.find((l) => !l.used && sameKey(l.event, p.predicted) && l.operator === p.predicted.operator && l.t >= p.t && l.t - p.t <= window);
     if (m) {
       m.used = true;
       matched.push({ ...p, loggedT: m.t });
