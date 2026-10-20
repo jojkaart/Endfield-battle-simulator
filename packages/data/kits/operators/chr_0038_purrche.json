@@ -1,0 +1,2604 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0038_purrche",
+  "sources": [
+    "Hits, frames, keys and events: rmxlinux Json/SkillData chr_0038_purrche_* and Json/BuffData buff_chr_0038_purrche_* (game 1.6), as compiled by efsim kit-draft for the basic attacks, finisher, dive and counter; the shield, the giftbox and the Prezzies written from the data by hand (the compiler emits every random alternative). Values: SkillPatchTable (level 12), PotentialTalentEffectTable, CharacterPotentialTable. Report docs/kit-batches/batch-3/chr_0038_purrche.md, § Kit plan and § Kit (2026-10-20).",
+    "Skill timing from SkillData (the loader): normal_skill exclusive 50 and its CastSkill of normal_skill_loop_1 at 49; the loops (helper skills, batch 3 S4) hold her until the shield drops (exclusive 361); the combo's conditional jumps at 0 (KitSkill.jumps, D1), its end at 206 and MarkCanInterrupt 28 (S1); the ultimate's jump 67 → 135.",
+    "Not modelled: damage taken (Protection and its step-down, talent 2 \"Ambassador's Duty\": a defender-side reduction at full HP, N2), heal amounts (Will-based), the enemy being interrupted, pulled or knocked back, layer-1 dilations at blocks, projectile travel (test 47), swaps ending the shield, and which enemy hits a block counts (CheckDamageDecorateMask 805306368: every attack assumed) or the grab branch."
+  ],
+  "element": "physical",
+  "stacks": [
+    {
+      "id": "blocked",
+      "label": "A block in this battle skill (buff_chr_0038_purrche_block_counter at 2+ layers)",
+      "max": 1
+    },
+    {
+      "id": "sorry_came_late",
+      "label": "Your sorry came LATE!: layers for the next ultimate's Ambassador's Special chance (buff_chr_0038_purrche_ult_add_red)",
+      "max": 3
+    },
+    {
+      "id": "combo_last",
+      "label": "The last Giftbox item (buff_chr_0038_purrche_combo_lasttype combotype: 1 Handicraft, 2 Bomb, 3 Yummy Dessert; 0 none yet)",
+      "max": 3
+    },
+    {
+      "id": "ult_red",
+      "label": "Ambassador's Specials in this ultimate (box_num)",
+      "max": 3
+    },
+    {
+      "id": "ult_handicraft",
+      "label": "A Handicraft in this ultimate (black_hole_count)",
+      "max": 1
+    },
+    {
+      "id": "combo_unguarded",
+      "label": "A shielded combo before its listener (frames 210–220 / 270–280: an attack isn't blocked)",
+      "max": 1
+    }
+  ],
+  "buffs": [
+    {
+      "id": "shield_up",
+      "label": "I'M NOT SLEEPING!: shield up",
+      "target": "self",
+      "gameBuff": "buff_chr_0038_purrche_aura_block",
+      "duration": {
+        "key": "display_time_1",
+        "skill": "chr_0038_purrche_normal_skill"
+      },
+      "modifiers": [],
+      "note": "buff_chr_0038_purrche_aura_block, created at normal_skill frame 0 (duration ← display_time_1, 3 s). PauseBuffTime while block_1 / block_2 / a shielded combo play, until their pause_block ends (block_1 0–9, block_2 0–11, combo 210–251 / 270–310): written as extendBuff by those lengths (triggers block_1_cast, block_2_cast, combo_shielded*). At the first block (block_counter reaching 2) SetBuffDuration 3.0 (a literal): the block_1_cast trigger re-applies it. It ends with a dash (buff_common_dash), an ultimate (CheckSkillType 7) and any skill that doesn't inherit it (inheritSkillIdList: block_1/2, loop_1/2, combo, counter; the counter finishes it at its frame 0). Its end creates block_end, on which the loops jump to 360 (trigger shield_end). Swaps (its swap events 2/3) aren't modelled."
+    },
+    {
+      "id": "protection",
+      "label": "I'M NOT SLEEPING!: Protection (self and nearby operators)",
+      "target": "team",
+      "gameBuff": "buff_chr_0038_purrche_block_instance",
+      "duration": {
+        "key": "display_time_1",
+        "skill": "chr_0038_purrche_normal_skill"
+      },
+      "modifiers": [
+        {
+          "attr": 63,
+          "value": {
+            "key": "dmg_taken_down_1",
+            "skill": "chr_0038_purrche_normal_skill"
+          }
+        }
+      ],
+      "note": "buff_chr_0038_purrche_block (AuraAction on nearby operators) → buff_chr_0038_purrche_block_instance: ShelterAction dmg_taken_down (attribute 63), while the shield is up (it follows shield_up here: same pauses, re-applied at the first block, ended with it). Its modifier makes it a Protection-category buff for buffApplied triggers (Eternal Xiranite); damage taken isn't simulated, so it has no other effect. The step-down after blocks (\"Protection … is reduced after every blocked attack\") isn't written: SkillPatchTable dmg_taken_down_2..4 (0.8 / 0.7 / 0.6) and block_instance's shelter_add −0.2 per block_shelter_down layer disagree (report row 10)."
+    },
+    {
+      "id": "counter_ready",
+      "label": "Battle skill changed to LEAVE MY FRIENDS ALONE!",
+      "target": "self",
+      "gameBuff": "buff_chr_0038_purrche_block_change_skill",
+      "duration": 10,
+      "modifiers": [],
+      "note": "buff_chr_0038_purrche_block_change_skill, created at normal_skill frame 0: its BuffData blackboard duration 10 (not assigned by the skill; a buff default, not a skill key), and its ChangeSkillAction normal_skill → normal_skill_counter (duration 10, lifeTimeType 2). Paused during the ultimate (pause_change_skill_buff, ultimate frames 0–146: trigger counter_paused_by_ult). The counter finishes it at its frame 0. Assumed: its finishWithNextSkillIfNotInherited with an empty inherit list doesn't end it (the loops list the counter in their windows over their whole length)."
+    },
+    {
+      "id": "arts_susceptibility",
+      "label": "Ambassador's Special: Arts Susceptibility",
+      "target": "enemy",
+      "gameBuff": "buff_chr_0038_purrche_ult_spell_vulnerable",
+      "duration": {
+        "key": "duration_vul",
+        "skill": "chr_0038_purrche_ultimate_skill"
+      },
+      "maxStacks": 3,
+      "modifiers": [
+        {
+          "zone": "susceptibility",
+          "value": {
+            "key": "rate_vul",
+            "skill": "chr_0038_purrche_ultimate_skill"
+          },
+          "elements": [
+            "fire",
+            "pulse",
+            "cryst",
+            "natural"
+          ]
+        }
+      ],
+      "note": "buff_chr_0038_purrche_ult_spell_vulnerable (duration ← duration_vul 5 s; stackingType 2, maxStackCnt 3), created on the target by ult_skill_projhit before its DamageAction: VulnerableAction subType 1 (Arts) → child buff_chr_0038_purrche_vulnerable_spell_child (rate ← rate_vul, 0.025, P5 ×1.2). Assumed: layers (one per Ambassador's Special, each its own 5 s) add up (the child is priority-keyed with stackingType 0)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "battle_cast",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_normal_skill"
+        ]
+      },
+      "by": "self",
+      "skill": "chr_0038_purrche_normal_skill",
+      "do": [
+        {
+          "kind": "sp",
+          "value": "atb_return_1"
+        },
+        {
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "blocked",
+              "amount": -1
+            }
+          ]
+        },
+        {
+          "kind": "buff",
+          "buff": "shield_up"
+        },
+        {
+          "kind": "buff",
+          "buff": "protection"
+        },
+        {
+          "kind": "buff",
+          "buff": "counter_ready"
+        }
+      ],
+      "note": "normal_skill frame 0: ObtainCostAction costType 1 atb_return_1 (atbGainMethod 1: returned, \"immediately returns some SP\"; potential_5_atb is 0 at every level and no potential sets it), CreateBuff aura_block, block (Protection aura), block_counter (a new count), block_change_skill. Team energy: buff_common_obtain_ultimate_sp at frame 0 (no ratio), the default."
+    },
+    {
+      "id": "battle_loop",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_normal_skill"
+        ]
+      },
+      "by": "self",
+      "delay": 49,
+      "do": [
+        {
+          "kind": "cast",
+          "skill": "chr_0038_purrche_normal_skill_loop_1"
+        }
+      ],
+      "note": "normal_skill [49] CastSkill normal_skill_loop_1: the shield holds her (the loop runs until the shield drops). Dropped when a block or the counter ends normal_skill first."
+    },
+    {
+      "id": "block_first",
+      "on": {
+        "event": "attacked"
+      },
+      "by": "self",
+      "if": {
+        "all": [
+          {
+            "buffActive": "shield_up"
+          },
+          {
+            "stack": "blocked",
+            "below": 1
+          },
+          {
+            "stack": "combo_unguarded",
+            "below": 1
+          }
+        ]
+      },
+      "do": [
+        {
+          "kind": "cast",
+          "skill": "chr_0038_purrche_normal_skill_block_1"
+        }
+      ],
+      "note": "EventListenerAction abilityEvent 101 (Purrchena is hit; CheckDamageDecorateMask checkType 3, mask 805306368, assumed to pass every enemy attack) → CastSkill normal_skill_block_1, in normal_skill [0–50], loop_1 [0–360] and the shielded combo [221–251]: wherever she is while the shield is up and no block has happened yet. The abilityEvent 9 branch (one enemy's grab, buff_eny_0018_lbtough_pre_catch) isn't modelled. Not seen by the dodge policy (E3 reads only `jump` counters): with dodging on she dashes, which ends the shield."
+    },
+    {
+      "id": "block_later",
+      "on": {
+        "event": "attacked"
+      },
+      "by": "self",
+      "if": {
+        "all": [
+          {
+            "buffActive": "shield_up"
+          },
+          {
+            "stack": "blocked",
+            "atLeast": 1
+          },
+          {
+            "stack": "combo_unguarded",
+            "below": 1
+          }
+        ]
+      },
+      "do": [
+        {
+          "kind": "cast",
+          "skill": "chr_0038_purrche_normal_skill_block_2"
+        }
+      ],
+      "note": "Listeners → CastSkill normal_skill_block_2 in block_1 [3–24], loop_2 [0–360], block_2 [2–25] and the shielded combo after a block [281–310]. The blocks' first 2–3 frames (no listener yet) aren't told apart."
+    },
+    {
+      "id": "block_1_cast",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_normal_skill_block_1"
+        ]
+      },
+      "by": "self",
+      "skill": "chr_0038_purrche_normal_skill_block_1",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "shield_up"
+        },
+        {
+          "kind": "extendBuff",
+          "buff": "shield_up",
+          "seconds": {
+            "div": [
+              9,
+              30
+            ]
+          }
+        },
+        {
+          "kind": "buff",
+          "buff": "protection"
+        },
+        {
+          "kind": "extendBuff",
+          "buff": "protection",
+          "seconds": {
+            "div": [
+              9,
+              30
+            ]
+          }
+        },
+        {
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "blocked",
+              "amount": 1
+            }
+          ]
+        },
+        {
+          "kind": "sp",
+          "value": "atb_return_2"
+        },
+        {
+          "kind": "energy",
+          "value": "talent_1_usp"
+        },
+        {
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "sorry_came_late",
+              "amount": 1,
+              "if": {
+                "talentAtLeast": [
+                  0,
+                  1
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "note": "\"The first successful block extends the shield up duration and returns additional SP\": aura_block on block_counter ≥ 2 the first time: SetBuffDuration 3.0 (the remaining time set to 3 s: re-applied); block_1 frame 0: PauseBuffTime of the aura until pause_block [0–9] ends (+9 frames), ObtainCostAction costType 1 atb_return_2 (20, returned), costType 0 talent_1_usp (talent 1: 6 / 10 energy; 0 without it), CompareFloat talent_1_usp > 0 → CreateBuff ult_add_red (one layer, max 3, lifeType 1). Its DamageAction is disabled; InterruptAction on the attacker and the layer-1 dilations have no effect here."
+    },
+    {
+      "id": "block_1_loop",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_normal_skill_block_1"
+        ]
+      },
+      "by": "self",
+      "delay": 23,
+      "do": [
+        {
+          "kind": "cast",
+          "skill": "chr_0038_purrche_normal_skill_loop_2"
+        }
+      ],
+      "note": "block_1 [23] CastSkill normal_skill_loop_2 (at 9 instead when the shield ended meanwhile: the paused aura can't end then, so not written)."
+    },
+    {
+      "id": "block_2_cast",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_normal_skill_block_2"
+        ]
+      },
+      "by": "self",
+      "do": [
+        {
+          "kind": "extendBuff",
+          "buff": "shield_up",
+          "seconds": {
+            "div": [
+              11,
+              30
+            ]
+          }
+        },
+        {
+          "kind": "extendBuff",
+          "buff": "protection",
+          "seconds": {
+            "div": [
+              11,
+              30
+            ]
+          }
+        }
+      ],
+      "note": "block_2 frame 0: PauseBuffTime of the aura until pause_block [0–11] ends (+11 frames). Its DamageAction is disabled."
+    },
+    {
+      "id": "block_2_loop",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_normal_skill_block_2"
+        ]
+      },
+      "by": "self",
+      "delay": 22,
+      "do": [
+        {
+          "kind": "cast",
+          "skill": "chr_0038_purrche_normal_skill_loop_2"
+        }
+      ],
+      "note": "block_2 [22] CastSkill normal_skill_loop_2 (at 12 if the shield ended: not written, as for block_1)."
+    },
+    {
+      "id": "shield_end",
+      "on": {
+        "event": "buffEnded",
+        "buff": "shield_up"
+      },
+      "by": "self",
+      "do": [
+        {
+          "kind": "jump",
+          "skill": "chr_0038_purrche_normal_skill_loop_1",
+          "from": 0,
+          "until": 360,
+          "to": 360
+        },
+        {
+          "kind": "jump",
+          "skill": "chr_0038_purrche_normal_skill_loop_2",
+          "from": 0,
+          "until": 360,
+          "to": 360
+        },
+        {
+          "kind": "endBuff",
+          "buff": "protection"
+        }
+      ],
+      "note": "aura_block's end creates block_end; the loops' EventListenerAction [0–360] (abilityEvent 9 with block_end) → JumpToAction 360: she's free at their exclusiveFrame 361 (MarkCanInterrupt 361); loop_1 ends at 491 (InterruptCurSkillAction). The Protection aura goes with the shield."
+    },
+    {
+      "id": "counter_cast",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_normal_skill_counter"
+        ]
+      },
+      "by": "self",
+      "do": [
+        {
+          "kind": "endBuff",
+          "buff": "counter_ready"
+        },
+        {
+          "kind": "endBuff",
+          "buff": "shield_up"
+        },
+        {
+          "kind": "endBuff",
+          "buff": "protection"
+        }
+      ],
+      "note": "normal_skill_counter frame 0: FinishBuff aura_block, block_counter, block_change_skill, block_counter_mark."
+    },
+    {
+      "id": "shield_cut",
+      "on": {
+        "event": "cast",
+        "kinds": [
+          "basic",
+          "ultimate"
+        ]
+      },
+      "by": "self",
+      "do": [
+        {
+          "kind": "endBuff",
+          "buff": "shield_up"
+        },
+        {
+          "kind": "endBuff",
+          "buff": "protection"
+        }
+      ],
+      "note": "aura_block ends with the next skill that doesn't inherit it (finishWithNextSkillIfNotInherited) and on an ultimate cast (CheckSkillType 7). While the shield holds her only the ultimate can start."
+    },
+    {
+      "id": "shield_dash",
+      "on": {
+        "event": "perfectDodge"
+      },
+      "by": "self",
+      "do": [
+        {
+          "kind": "endBuff",
+          "buff": "shield_up"
+        },
+        {
+          "kind": "endBuff",
+          "buff": "protection"
+        }
+      ],
+      "note": "aura_block: abilityEvent 9 with buff_common_dash ends it (a dash; the engine's dashes are perfect dodges)."
+    },
+    {
+      "id": "counter_paused_by_ult",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_ultimate_skill"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "buffActive": "counter_ready"
+      },
+      "do": [
+        {
+          "kind": "extendBuff",
+          "buff": "counter_ready",
+          "seconds": {
+            "div": [
+              9,
+              30
+            ]
+          }
+        }
+      ],
+      "note": "Ultimate CreateBuff pause_change_skill_buff [0–146] (autoFinishByAction) pauses block_change_skill: frames 0–67 and 135–146 are played (the jump 67 → 135), 78 real frames. The ultimate's time stop (TimeDilationAction layer 0 [0–135], cut by the jump: 69 frames) already holds every buff that long in the engine, so 9 frames more."
+    },
+    {
+      "id": "combo_window",
+      "on": {
+        "event": "attacked"
+      },
+      "by": "controlled",
+      "do": [
+        {
+          "kind": "openCombo"
+        }
+      ],
+      "note": "CharGrowthTable chr_0038_purrche_ComboSkill: \"When the controlled operator is attacked\" (game code; no trigger action in the data)."
+    },
+    {
+      "id": "combo_shielded",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_combo_skill"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "all": [
+          {
+            "buffActive": "shield_up"
+          },
+          {
+            "stack": "blocked",
+            "below": 1
+          }
+        ]
+      },
+      "do": [
+        {
+          "kind": "extendBuff",
+          "buff": "shield_up",
+          "seconds": {
+            "div": [
+              18,
+              30
+            ]
+          }
+        },
+        {
+          "kind": "extendBuff",
+          "buff": "protection",
+          "seconds": {
+            "div": [
+              18,
+              30
+            ]
+          }
+        },
+        {
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "combo_unguarded",
+              "amount": 1
+            }
+          ]
+        }
+      ],
+      "note": "The shielded combo (the skill's jump at 0 → 210): aura_block paused from the cast until pause_block [210–251] ends, 41 frames (cut short if a block ends the combo first: not modelled). Written as 41 − 23: the engine already holds every buff for what the combo's slow-downs cost the world (23 frames on this path: the frame-0 slow-down kept at the jump's own frame, and the one at 270 that the cast at 250 never reaches; see the report), so the shield lasts the data's 41 frames longer. Until frame 221 no listener: an attack isn't blocked (combo_unguarded)."
+    },
+    {
+      "id": "combo_shielded_listen",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_combo_skill"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "all": [
+          {
+            "buffActive": "shield_up"
+          },
+          {
+            "stack": "blocked",
+            "below": 1
+          }
+        ]
+      },
+      "delay": 221,
+      "do": [
+        {
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "combo_unguarded",
+              "amount": -1
+            }
+          ]
+        }
+      ],
+      "note": "combo [221] EventListenerAction (abilityEvent 101 → block_1 / block_2) starts: 11 frames after the cast."
+    },
+    {
+      "id": "combo_shielded_loop",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_combo_skill"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "all": [
+          {
+            "buffActive": "shield_up"
+          },
+          {
+            "stack": "blocked",
+            "below": 1
+          }
+        ]
+      },
+      "delay": 250,
+      "do": [
+        {
+          "kind": "cast",
+          "skill": "chr_0038_purrche_normal_skill_loop_1"
+        }
+      ],
+      "note": "combo [250] CastSkill normal_skill_loop_1: back to the shield's hold, 40 frames after the cast."
+    },
+    {
+      "id": "combo_shielded_blocked",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_combo_skill"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "all": [
+          {
+            "buffActive": "shield_up"
+          },
+          {
+            "stack": "blocked",
+            "atLeast": 1
+          }
+        ]
+      },
+      "do": [
+        {
+          "kind": "extendBuff",
+          "buff": "shield_up",
+          "seconds": {
+            "div": [
+              27,
+              30
+            ]
+          }
+        },
+        {
+          "kind": "extendBuff",
+          "buff": "protection",
+          "seconds": {
+            "div": [
+              27,
+              30
+            ]
+          }
+        },
+        {
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "combo_unguarded",
+              "amount": 1
+            }
+          ]
+        }
+      ],
+      "note": "The shielded combo (the skill's jump at 0 → 270): aura_block paused from the cast until pause_block [270–310] ends, 40 frames (cut short if a block ends the combo first: not modelled). Written as 40 − 13: the engine already holds every buff for what the combo's slow-downs cost the world (13 frames on this path: the frame-0 slow-down kept at the jump's own frame; see the report), so the shield lasts the data's 40 frames longer. Until frame 281 no listener: an attack isn't blocked (combo_unguarded)."
+    },
+    {
+      "id": "combo_shielded_blocked_listen",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_combo_skill"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "all": [
+          {
+            "buffActive": "shield_up"
+          },
+          {
+            "stack": "blocked",
+            "atLeast": 1
+          }
+        ]
+      },
+      "delay": 281,
+      "do": [
+        {
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "combo_unguarded",
+              "amount": -1
+            }
+          ]
+        }
+      ],
+      "note": "combo [281] EventListenerAction (abilityEvent 101 → block_1 / block_2) starts: 11 frames after the cast."
+    },
+    {
+      "id": "combo_shielded_blocked_loop",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_combo_skill"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "all": [
+          {
+            "buffActive": "shield_up"
+          },
+          {
+            "stack": "blocked",
+            "atLeast": 1
+          }
+        ]
+      },
+      "delay": 309,
+      "do": [
+        {
+          "kind": "cast",
+          "skill": "chr_0038_purrche_normal_skill_loop_2"
+        }
+      ],
+      "note": "combo [309] CastSkill normal_skill_loop_2: back to the shield's hold, 39 frames after the cast."
+    },
+    {
+      "id": "combo_listen_reset",
+      "on": {
+        "event": "cast",
+        "kinds": [
+          "basic",
+          "battle",
+          "ultimate"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "stack": "combo_unguarded",
+        "atLeast": 1
+      },
+      "do": [
+        {
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "combo_unguarded",
+              "amount": -1
+            }
+          ]
+        }
+      ],
+      "note": "Another skill ended the shielded combo before its listener (its delayed reset is dropped with it)."
+    },
+    {
+      "id": "giftbox",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_combo_skill"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "not": {
+          "buffActive": "shield_up"
+        }
+      },
+      "delay": 61,
+      "detached": true,
+      "launch": 17,
+      "skill": "chr_0038_purrche_combo_skill",
+      "do": [
+        {
+          "kind": "heal",
+          "target": "team",
+          "healKind": "combo"
+        },
+        {
+          "kind": "energy",
+          "value": "usp"
+        },
+        {
+          "kind": "choose",
+          "options": [
+            {
+              "weight": {
+                "if": {
+                  "all": [
+                    {
+                      "stack": "combo_last",
+                      "atLeast": 1
+                    },
+                    {
+                      "stack": "combo_last",
+                      "below": 2
+                    }
+                  ]
+                },
+                "then": 0,
+                "else": 1
+              },
+              "do": [
+                {
+                  "kind": "hits",
+                  "if": {
+                    "not": {
+                      "potentialAtLeast": 3
+                    }
+                  },
+                  "hits": [
+                    {
+                      "id": "handicraft_pull",
+                      "label": "Giftbox: Handicraft (pull)",
+                      "scale": [
+                        "atk_scale_blackhole_dot"
+                      ],
+                      "count": 4,
+                      "frames": [
+                        1,
+                        16,
+                        31,
+                        46
+                      ],
+                      "damageType": "combo",
+                      "events": [
+                        "chr_0038_purrche_combo_skill_abilityrange_1_1"
+                      ],
+                      "note": "combo_skill_abilityrange_1_1: ExecuteIntervalAction every 0.5 s over [0–56] (PullAction + DamageAction atk_scale_blackhole_dot, mask 8192), from the giftbox's frame 45."
+                    },
+                    {
+                      "id": "handicraft_end",
+                      "label": "Giftbox: Handicraft (end)",
+                      "scale": [
+                        "atk_scale_blackhole_end"
+                      ],
+                      "frames": [
+                        57
+                      ],
+                      "damageType": "combo",
+                      "events": [
+                        "chr_0038_purrche_combo_skill_abilityrange_1_1"
+                      ],
+                      "note": "[56] DamageAction atk_scale_blackhole_end (mask 12288) + InterruptAction. display_atk_scale_blackhole 1.5 = 4 × 0.25 + 0.5."
+                    }
+                  ]
+                },
+                {
+                  "kind": "hits",
+                  "if": {
+                    "potentialAtLeast": 3
+                  },
+                  "hits": [
+                    {
+                      "id": "handicraft_pull_p3",
+                      "label": "Giftbox: Handicraft (pull, P3)",
+                      "scale": [
+                        "atk_scale_blackhole_dot"
+                      ],
+                      "count": 4,
+                      "frames": [
+                        1,
+                        16,
+                        31,
+                        46
+                      ],
+                      "damageType": "combo",
+                      "events": [
+                        "chr_0038_purrche_combo_skill_abilityrange_1_1_potential_3"
+                      ],
+                      "note": "P3 (potential_3 = 1): the entity combo_skill_abilityrange_1_1_potential_3 instead (radius +20%: no effect on one enemy); the same timeline."
+                    },
+                    {
+                      "id": "handicraft_end_p3",
+                      "label": "Giftbox: Handicraft (end, P3)",
+                      "scale": [
+                        "atk_scale_blackhole_end"
+                      ],
+                      "frames": [
+                        57
+                      ],
+                      "damageType": "combo",
+                      "events": [
+                        "chr_0038_purrche_combo_skill_abilityrange_1_1_potential_3"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "kind": "gain",
+                  "gains": [
+                    {
+                      "stack": "combo_last",
+                      "amount": {
+                        "sum": [
+                          1,
+                          {
+                            "product": [
+                              -1,
+                              {
+                                "stackCount": "combo_last"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "weight": {
+                "if": {
+                  "all": [
+                    {
+                      "stack": "combo_last",
+                      "atLeast": 2
+                    },
+                    {
+                      "stack": "combo_last",
+                      "below": 3
+                    }
+                  ]
+                },
+                "then": 0,
+                "else": 1
+              },
+              "do": [
+                {
+                  "kind": "hits",
+                  "hits": [
+                    {
+                      "id": "bomb",
+                      "label": "Giftbox: Bomb",
+                      "scale": [
+                        "atk_scale_boom"
+                      ],
+                      "poise": "poise",
+                      "frames": [
+                        1
+                      ],
+                      "damageType": "combo",
+                      "events": [
+                        "chr_0038_purrche_combo_skill_projhit_3"
+                      ],
+                      "note": "combo_skill_projhit_3 (launched at the giftbox's frame 45; travel not in the data): DamageAction atk_scale_boom (3.0, P3 ×1.2; mask 12288) with poise (\"additional Stagger\"), InterruptAction 1 s."
+                    }
+                  ]
+                },
+                {
+                  "kind": "gain",
+                  "gains": [
+                    {
+                      "stack": "combo_last",
+                      "amount": {
+                        "sum": [
+                          2,
+                          {
+                            "product": [
+                              -1,
+                              {
+                                "stackCount": "combo_last"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "weight": {
+                "if": {
+                  "all": [
+                    {
+                      "stack": "combo_last",
+                      "atLeast": 3
+                    },
+                    {
+                      "stack": "combo_last",
+                      "below": 4
+                    }
+                  ]
+                },
+                "then": 0,
+                "else": 1
+              },
+              "do": [
+                {
+                  "kind": "heal",
+                  "target": "team",
+                  "healKind": "combo"
+                },
+                {
+                  "kind": "gain",
+                  "gains": [
+                    {
+                      "stack": "combo_last",
+                      "amount": {
+                        "sum": [
+                          3,
+                          {
+                            "product": [
+                              -1,
+                              {
+                                "stackCount": "combo_last"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "note": "combo [17] LaunchProjectile → combo_skill_gene → SpawnAbilityEntity combo_skill_giftbox_abilityrange (travel not in the data: the entity at the launch frame); its frame 44 (skill frame 61): HealAction (Will × heal_scale + heal_static_value, combo heal tag −1517158118) on the team, ObtainCostAction usp; frame 45: SwitchAction comboType. The item (frame 17: Probablity 0.3333, else 0.5; equal to comboType_last → Probablity 0.5 between the other two, so 1/2 each; written as 1/3 each, 0.3333 vs 0.33335 aside) as one choose; combo_lasttype (lifeType 1: until replaced, so its 40 s duration is ignored) as the stack combo_last. Yummy Dessert: ForEach team → projectile → combo_skill_projhit_4: HealAction (Will × heal_scale_fish + heal_static_value_fish, the combo heal tag) on every team member (the description says the controlled operator), here at the item's frame without travel. Heal amounts aren't modelled."
+    },
+    {
+      "id": "giftbox_shielded",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_combo_skill"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "all": [
+          {
+            "buffActive": "shield_up"
+          },
+          {
+            "stack": "blocked",
+            "below": 1
+          }
+        ]
+      },
+      "delay": 265,
+      "detached": true,
+      "launch": 221,
+      "skill": "chr_0038_purrche_combo_skill",
+      "do": [
+        {
+          "kind": "heal",
+          "target": "team",
+          "healKind": "combo"
+        },
+        {
+          "kind": "energy",
+          "value": "usp"
+        },
+        {
+          "kind": "choose",
+          "options": [
+            {
+              "weight": {
+                "if": {
+                  "all": [
+                    {
+                      "stack": "combo_last",
+                      "atLeast": 1
+                    },
+                    {
+                      "stack": "combo_last",
+                      "below": 2
+                    }
+                  ]
+                },
+                "then": 0,
+                "else": 1
+              },
+              "do": [
+                {
+                  "kind": "hits",
+                  "if": {
+                    "not": {
+                      "potentialAtLeast": 3
+                    }
+                  },
+                  "hits": [
+                    {
+                      "id": "handicraft_pull",
+                      "label": "Giftbox: Handicraft (pull)",
+                      "scale": [
+                        "atk_scale_blackhole_dot"
+                      ],
+                      "count": 4,
+                      "frames": [
+                        1,
+                        16,
+                        31,
+                        46
+                      ],
+                      "damageType": "combo",
+                      "events": [
+                        "chr_0038_purrche_combo_skill_abilityrange_1_1"
+                      ],
+                      "note": "combo_skill_abilityrange_1_1: ExecuteIntervalAction every 0.5 s over [0–56] (PullAction + DamageAction atk_scale_blackhole_dot, mask 8192), from the giftbox's frame 45."
+                    },
+                    {
+                      "id": "handicraft_end",
+                      "label": "Giftbox: Handicraft (end)",
+                      "scale": [
+                        "atk_scale_blackhole_end"
+                      ],
+                      "frames": [
+                        57
+                      ],
+                      "damageType": "combo",
+                      "events": [
+                        "chr_0038_purrche_combo_skill_abilityrange_1_1"
+                      ],
+                      "note": "[56] DamageAction atk_scale_blackhole_end (mask 12288) + InterruptAction. display_atk_scale_blackhole 1.5 = 4 × 0.25 + 0.5."
+                    }
+                  ]
+                },
+                {
+                  "kind": "hits",
+                  "if": {
+                    "potentialAtLeast": 3
+                  },
+                  "hits": [
+                    {
+                      "id": "handicraft_pull_p3",
+                      "label": "Giftbox: Handicraft (pull, P3)",
+                      "scale": [
+                        "atk_scale_blackhole_dot"
+                      ],
+                      "count": 4,
+                      "frames": [
+                        1,
+                        16,
+                        31,
+                        46
+                      ],
+                      "damageType": "combo",
+                      "events": [
+                        "chr_0038_purrche_combo_skill_abilityrange_1_1_potential_3"
+                      ],
+                      "note": "P3 (potential_3 = 1): the entity combo_skill_abilityrange_1_1_potential_3 instead (radius +20%: no effect on one enemy); the same timeline."
+                    },
+                    {
+                      "id": "handicraft_end_p3",
+                      "label": "Giftbox: Handicraft (end, P3)",
+                      "scale": [
+                        "atk_scale_blackhole_end"
+                      ],
+                      "frames": [
+                        57
+                      ],
+                      "damageType": "combo",
+                      "events": [
+                        "chr_0038_purrche_combo_skill_abilityrange_1_1_potential_3"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "kind": "gain",
+                  "gains": [
+                    {
+                      "stack": "combo_last",
+                      "amount": {
+                        "sum": [
+                          1,
+                          {
+                            "product": [
+                              -1,
+                              {
+                                "stackCount": "combo_last"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "weight": {
+                "if": {
+                  "all": [
+                    {
+                      "stack": "combo_last",
+                      "atLeast": 2
+                    },
+                    {
+                      "stack": "combo_last",
+                      "below": 3
+                    }
+                  ]
+                },
+                "then": 0,
+                "else": 1
+              },
+              "do": [
+                {
+                  "kind": "hits",
+                  "hits": [
+                    {
+                      "id": "bomb",
+                      "label": "Giftbox: Bomb",
+                      "scale": [
+                        "atk_scale_boom"
+                      ],
+                      "poise": "poise",
+                      "frames": [
+                        1
+                      ],
+                      "damageType": "combo",
+                      "events": [
+                        "chr_0038_purrche_combo_skill_projhit_3"
+                      ],
+                      "note": "combo_skill_projhit_3 (launched at the giftbox's frame 45; travel not in the data): DamageAction atk_scale_boom (3.0, P3 ×1.2; mask 12288) with poise (\"additional Stagger\"), InterruptAction 1 s."
+                    }
+                  ]
+                },
+                {
+                  "kind": "gain",
+                  "gains": [
+                    {
+                      "stack": "combo_last",
+                      "amount": {
+                        "sum": [
+                          2,
+                          {
+                            "product": [
+                              -1,
+                              {
+                                "stackCount": "combo_last"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "weight": {
+                "if": {
+                  "all": [
+                    {
+                      "stack": "combo_last",
+                      "atLeast": 3
+                    },
+                    {
+                      "stack": "combo_last",
+                      "below": 4
+                    }
+                  ]
+                },
+                "then": 0,
+                "else": 1
+              },
+              "do": [
+                {
+                  "kind": "heal",
+                  "target": "team",
+                  "healKind": "combo"
+                },
+                {
+                  "kind": "gain",
+                  "gains": [
+                    {
+                      "stack": "combo_last",
+                      "amount": {
+                        "sum": [
+                          3,
+                          {
+                            "product": [
+                              -1,
+                              {
+                                "stackCount": "combo_last"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "note": "combo [221] LaunchProjectile → combo_skill_gene → SpawnAbilityEntity combo_skill_giftbox_abilityrange (travel not in the data: the entity at the launch frame); its frame 44 (skill frame 265): HealAction (Will × heal_scale + heal_static_value, combo heal tag −1517158118) on the team, ObtainCostAction usp; frame 45: SwitchAction comboType. The item (frame 221: Probablity 0.3333, else 0.5; equal to comboType_last → Probablity 0.5 between the other two, so 1/2 each; written as 1/3 each, 0.3333 vs 0.33335 aside) as one choose; combo_lasttype (lifeType 1: until replaced, so its 40 s duration is ignored) as the stack combo_last. Yummy Dessert: ForEach team → projectile → combo_skill_projhit_4: HealAction (Will × heal_scale_fish + heal_static_value_fish, the combo heal tag) on every team member (the description says the controlled operator), here at the item's frame without travel. Heal amounts aren't modelled."
+    },
+    {
+      "id": "giftbox_shielded_blocked",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_combo_skill"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "all": [
+          {
+            "buffActive": "shield_up"
+          },
+          {
+            "stack": "blocked",
+            "atLeast": 1
+          }
+        ]
+      },
+      "delay": 325,
+      "detached": true,
+      "launch": 281,
+      "skill": "chr_0038_purrche_combo_skill",
+      "do": [
+        {
+          "kind": "heal",
+          "target": "team",
+          "healKind": "combo"
+        },
+        {
+          "kind": "energy",
+          "value": "usp"
+        },
+        {
+          "kind": "choose",
+          "options": [
+            {
+              "weight": {
+                "if": {
+                  "all": [
+                    {
+                      "stack": "combo_last",
+                      "atLeast": 1
+                    },
+                    {
+                      "stack": "combo_last",
+                      "below": 2
+                    }
+                  ]
+                },
+                "then": 0,
+                "else": 1
+              },
+              "do": [
+                {
+                  "kind": "hits",
+                  "if": {
+                    "not": {
+                      "potentialAtLeast": 3
+                    }
+                  },
+                  "hits": [
+                    {
+                      "id": "handicraft_pull",
+                      "label": "Giftbox: Handicraft (pull)",
+                      "scale": [
+                        "atk_scale_blackhole_dot"
+                      ],
+                      "count": 4,
+                      "frames": [
+                        1,
+                        16,
+                        31,
+                        46
+                      ],
+                      "damageType": "combo",
+                      "events": [
+                        "chr_0038_purrche_combo_skill_abilityrange_1_1"
+                      ],
+                      "note": "combo_skill_abilityrange_1_1: ExecuteIntervalAction every 0.5 s over [0–56] (PullAction + DamageAction atk_scale_blackhole_dot, mask 8192), from the giftbox's frame 45."
+                    },
+                    {
+                      "id": "handicraft_end",
+                      "label": "Giftbox: Handicraft (end)",
+                      "scale": [
+                        "atk_scale_blackhole_end"
+                      ],
+                      "frames": [
+                        57
+                      ],
+                      "damageType": "combo",
+                      "events": [
+                        "chr_0038_purrche_combo_skill_abilityrange_1_1"
+                      ],
+                      "note": "[56] DamageAction atk_scale_blackhole_end (mask 12288) + InterruptAction. display_atk_scale_blackhole 1.5 = 4 × 0.25 + 0.5."
+                    }
+                  ]
+                },
+                {
+                  "kind": "hits",
+                  "if": {
+                    "potentialAtLeast": 3
+                  },
+                  "hits": [
+                    {
+                      "id": "handicraft_pull_p3",
+                      "label": "Giftbox: Handicraft (pull, P3)",
+                      "scale": [
+                        "atk_scale_blackhole_dot"
+                      ],
+                      "count": 4,
+                      "frames": [
+                        1,
+                        16,
+                        31,
+                        46
+                      ],
+                      "damageType": "combo",
+                      "events": [
+                        "chr_0038_purrche_combo_skill_abilityrange_1_1_potential_3"
+                      ],
+                      "note": "P3 (potential_3 = 1): the entity combo_skill_abilityrange_1_1_potential_3 instead (radius +20%: no effect on one enemy); the same timeline."
+                    },
+                    {
+                      "id": "handicraft_end_p3",
+                      "label": "Giftbox: Handicraft (end, P3)",
+                      "scale": [
+                        "atk_scale_blackhole_end"
+                      ],
+                      "frames": [
+                        57
+                      ],
+                      "damageType": "combo",
+                      "events": [
+                        "chr_0038_purrche_combo_skill_abilityrange_1_1_potential_3"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "kind": "gain",
+                  "gains": [
+                    {
+                      "stack": "combo_last",
+                      "amount": {
+                        "sum": [
+                          1,
+                          {
+                            "product": [
+                              -1,
+                              {
+                                "stackCount": "combo_last"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "weight": {
+                "if": {
+                  "all": [
+                    {
+                      "stack": "combo_last",
+                      "atLeast": 2
+                    },
+                    {
+                      "stack": "combo_last",
+                      "below": 3
+                    }
+                  ]
+                },
+                "then": 0,
+                "else": 1
+              },
+              "do": [
+                {
+                  "kind": "hits",
+                  "hits": [
+                    {
+                      "id": "bomb",
+                      "label": "Giftbox: Bomb",
+                      "scale": [
+                        "atk_scale_boom"
+                      ],
+                      "poise": "poise",
+                      "frames": [
+                        1
+                      ],
+                      "damageType": "combo",
+                      "events": [
+                        "chr_0038_purrche_combo_skill_projhit_3"
+                      ],
+                      "note": "combo_skill_projhit_3 (launched at the giftbox's frame 45; travel not in the data): DamageAction atk_scale_boom (3.0, P3 ×1.2; mask 12288) with poise (\"additional Stagger\"), InterruptAction 1 s."
+                    }
+                  ]
+                },
+                {
+                  "kind": "gain",
+                  "gains": [
+                    {
+                      "stack": "combo_last",
+                      "amount": {
+                        "sum": [
+                          2,
+                          {
+                            "product": [
+                              -1,
+                              {
+                                "stackCount": "combo_last"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "weight": {
+                "if": {
+                  "all": [
+                    {
+                      "stack": "combo_last",
+                      "atLeast": 3
+                    },
+                    {
+                      "stack": "combo_last",
+                      "below": 4
+                    }
+                  ]
+                },
+                "then": 0,
+                "else": 1
+              },
+              "do": [
+                {
+                  "kind": "heal",
+                  "target": "team",
+                  "healKind": "combo"
+                },
+                {
+                  "kind": "gain",
+                  "gains": [
+                    {
+                      "stack": "combo_last",
+                      "amount": {
+                        "sum": [
+                          3,
+                          {
+                            "product": [
+                              -1,
+                              {
+                                "stackCount": "combo_last"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "note": "combo [281] LaunchProjectile → combo_skill_gene → SpawnAbilityEntity combo_skill_giftbox_abilityrange (travel not in the data: the entity at the launch frame); its frame 44 (skill frame 325): HealAction (Will × heal_scale + heal_static_value, combo heal tag −1517158118) on the team, ObtainCostAction usp; frame 45: SwitchAction comboType. The item (frame 281: Probablity 0.3333, else 0.5; equal to comboType_last → Probablity 0.5 between the other two, so 1/2 each; written as 1/3 each, 0.3333 vs 0.33335 aside) as one choose; combo_lasttype (lifeType 1: until replaced, so its 40 s duration is ignored) as the stack combo_last. Yummy Dessert: ForEach team → projectile → combo_skill_projhit_4: HealAction (Will × heal_scale_fish + heal_static_value_fish, the combo heal tag) on every team member (the description says the controlled operator), here at the item's frame without travel. Heal amounts aren't modelled."
+    },
+    {
+      "id": "ult_rolls",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_ultimate_skill"
+        ]
+      },
+      "by": "self",
+      "skill": "chr_0038_purrche_ultimate_skill",
+      "do": [
+        {
+          "kind": "choose",
+          "options": [
+            {
+              "weight": {
+                "sum": [
+                  "prob",
+                  {
+                    "product": [
+                      "talent1_prob_up",
+                      {
+                        "stackCount": "sorry_came_late"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "do": [
+                {
+                  "kind": "gain",
+                  "gains": [
+                    {
+                      "stack": "ult_red",
+                      "amount": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "weight": {
+                "sum": [
+                  1,
+                  {
+                    "product": [
+                      -1,
+                      {
+                        "sum": [
+                          "prob",
+                          {
+                            "product": [
+                              "talent1_prob_up",
+                              {
+                                "stackCount": "sorry_came_late"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "do": []
+            }
+          ]
+        },
+        {
+          "kind": "choose",
+          "options": [
+            {
+              "weight": {
+                "sum": [
+                  "prob",
+                  {
+                    "product": [
+                      "talent1_prob_up",
+                      {
+                        "stackCount": "sorry_came_late"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "do": [
+                {
+                  "kind": "gain",
+                  "gains": [
+                    {
+                      "stack": "ult_red",
+                      "amount": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "weight": {
+                "sum": [
+                  1,
+                  {
+                    "product": [
+                      -1,
+                      {
+                        "sum": [
+                          "prob",
+                          {
+                            "product": [
+                              "talent1_prob_up",
+                              {
+                                "stackCount": "sorry_came_late"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "do": []
+            }
+          ]
+        },
+        {
+          "kind": "choose",
+          "options": [
+            {
+              "weight": {
+                "sum": [
+                  "prob",
+                  {
+                    "product": [
+                      "talent1_prob_up",
+                      {
+                        "stackCount": "sorry_came_late"
+                      }
+                    ]
+                  }
+                ]
+              },
+              "do": [
+                {
+                  "kind": "gain",
+                  "gains": [
+                    {
+                      "stack": "ult_red",
+                      "amount": 1
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "weight": {
+                "sum": [
+                  1,
+                  {
+                    "product": [
+                      -1,
+                      {
+                        "sum": [
+                          "prob",
+                          {
+                            "product": [
+                              "talent1_prob_up",
+                              {
+                                "stackCount": "sorry_came_late"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "do": []
+            }
+          ]
+        },
+        {
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "sorry_came_late",
+              "amount": -3
+            }
+          ]
+        }
+      ],
+      "note": "ultimate [0–3]: prob += ult_add_red layers × talent1_prob_up (talent 1: 0.1 per layer), then three Probablity(prob) rolls each adding 1 to box_num (prob 0.2, P1 ×1.5), then FinishBuff ult_add_red (all layers)."
+    },
+    {
+      "id": "ult_prezzies",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0038_purrche_ultimate_skill"
+        ]
+      },
+      "by": "self",
+      "skill": "chr_0038_purrche_ultimate_skill",
+      "delay": 138,
+      "detached": true,
+      "launch": 138,
+      "do": [
+        {
+          "kind": "hits",
+          "hits": [
+            {
+              "id": "ambassador",
+              "label": "Prezzie: Ambassador's Special",
+              "scale": [
+                "atk_scale_ult"
+              ],
+              "poise": "poise_2",
+              "frames": [
+                0
+              ],
+              "damageType": "ultimate",
+              "events": [
+                "chr_0038_purrche_ult_skill_projhit"
+              ],
+              "buffs": [
+                {
+                  "buff": "arts_susceptibility",
+                  "beforeDamage": true
+                }
+              ],
+              "note": "ult_skill_projhit: CreateBuff ult_spell_vulnerable (before the DamageAction), DamageAction atk_scale_ult (6.0, P5 ×1.2; mask 4608) with poise_2."
+            }
+          ],
+          "if": {
+            "stack": "ult_red",
+            "atLeast": 1
+          }
+        },
+        {
+          "kind": "choose",
+          "if": {
+            "stack": "ult_red",
+            "below": 1
+          },
+          "options": [
+            {
+              "weight": "normal_boom_prob",
+              "do": [
+                {
+                  "kind": "hits",
+                  "hits": [
+                    {
+                      "id": "bomb",
+                      "label": "Prezzie: Bomb",
+                      "scale": [
+                        "atk_scale"
+                      ],
+                      "poise": "poise_1",
+                      "frames": [
+                        0
+                      ],
+                      "damageType": "ultimate",
+                      "events": [
+                        "chr_0038_purrche_ult_skill_normal_bomb_projhit"
+                      ],
+                      "note": "ult_skill_normal_bomb_projhit: DamageAction atk_scale (3.0; mask 4608) with poise_1."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "weight": {
+                "sum": [
+                  1,
+                  {
+                    "product": [
+                      -1,
+                      "normal_boom_prob"
+                    ]
+                  }
+                ]
+              },
+              "do": [
+                {
+                  "kind": "hits",
+                  "hits": [
+                    {
+                      "id": "handicraft_pull",
+                      "label": "Prezzie: Handicraft (pull)",
+                      "scale": [
+                        "atk_scale_blackhole_dot"
+                      ],
+                      "count": 4,
+                      "frames": [
+                        0,
+                        15,
+                        30,
+                        45
+                      ],
+                      "damageType": "ultimate",
+                      "events": [
+                        "chr_0038_purrche_ultimate_skill_abilityrange_blackhole"
+                      ],
+                      "note": "ult_skill_normal_blackhole_projhit → ultimate_skill_abilityrange_blackhole: ExecuteIntervalAction every 0.5 s over [0–56] (atk_scale_blackhole_dot, mask 512)."
+                    },
+                    {
+                      "id": "handicraft_end",
+                      "label": "Prezzie: Handicraft (end)",
+                      "scale": [
+                        "atk_scale_blackhole_end"
+                      ],
+                      "frames": [
+                        56
+                      ],
+                      "damageType": "ultimate",
+                      "events": [
+                        "chr_0038_purrche_ultimate_skill_abilityrange_blackhole"
+                      ],
+                      "note": "[56] atk_scale_blackhole_end (mask 4608)."
+                    }
+                  ],
+                  "if": {
+                    "stack": "ult_handicraft",
+                    "below": 1
+                  }
+                },
+                {
+                  "kind": "hits",
+                  "hits": [
+                    {
+                      "id": "bomb",
+                      "label": "Prezzie: Bomb",
+                      "scale": [
+                        "atk_scale"
+                      ],
+                      "poise": "poise_1",
+                      "frames": [
+                        0
+                      ],
+                      "damageType": "ultimate",
+                      "events": [
+                        "chr_0038_purrche_ult_skill_normal_bomb_projhit"
+                      ],
+                      "note": "ult_skill_normal_bomb_projhit: DamageAction atk_scale (3.0; mask 4608) with poise_1."
+                    }
+                  ],
+                  "if": {
+                    "stack": "ult_handicraft",
+                    "atLeast": 1
+                  }
+                },
+                {
+                  "kind": "gain",
+                  "gains": [
+                    {
+                      "stack": "ult_handicraft",
+                      "amount": 1
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "hits",
+          "hits": [
+            {
+              "id": "ambassador",
+              "label": "Prezzie: Ambassador's Special",
+              "scale": [
+                "atk_scale_ult"
+              ],
+              "poise": "poise_2",
+              "frames": [
+                0
+              ],
+              "damageType": "ultimate",
+              "events": [
+                "chr_0038_purrche_ult_skill_projhit"
+              ],
+              "buffs": [
+                {
+                  "buff": "arts_susceptibility",
+                  "beforeDamage": true
+                }
+              ],
+              "note": "ult_skill_projhit: CreateBuff ult_spell_vulnerable (before the DamageAction), DamageAction atk_scale_ult (6.0, P5 ×1.2; mask 4608) with poise_2."
+            }
+          ],
+          "if": {
+            "stack": "ult_red",
+            "atLeast": 2
+          }
+        },
+        {
+          "kind": "choose",
+          "if": {
+            "stack": "ult_red",
+            "below": 2
+          },
+          "options": [
+            {
+              "weight": "normal_boom_prob",
+              "do": [
+                {
+                  "kind": "hits",
+                  "hits": [
+                    {
+                      "id": "bomb",
+                      "label": "Prezzie: Bomb",
+                      "scale": [
+                        "atk_scale"
+                      ],
+                      "poise": "poise_1",
+                      "frames": [
+                        0
+                      ],
+                      "damageType": "ultimate",
+                      "events": [
+                        "chr_0038_purrche_ult_skill_normal_bomb_projhit"
+                      ],
+                      "note": "ult_skill_normal_bomb_projhit: DamageAction atk_scale (3.0; mask 4608) with poise_1."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "weight": {
+                "sum": [
+                  1,
+                  {
+                    "product": [
+                      -1,
+                      "normal_boom_prob"
+                    ]
+                  }
+                ]
+              },
+              "do": [
+                {
+                  "kind": "hits",
+                  "hits": [
+                    {
+                      "id": "handicraft_pull",
+                      "label": "Prezzie: Handicraft (pull)",
+                      "scale": [
+                        "atk_scale_blackhole_dot"
+                      ],
+                      "count": 4,
+                      "frames": [
+                        0,
+                        15,
+                        30,
+                        45
+                      ],
+                      "damageType": "ultimate",
+                      "events": [
+                        "chr_0038_purrche_ultimate_skill_abilityrange_blackhole"
+                      ],
+                      "note": "ult_skill_normal_blackhole_projhit → ultimate_skill_abilityrange_blackhole: ExecuteIntervalAction every 0.5 s over [0–56] (atk_scale_blackhole_dot, mask 512)."
+                    },
+                    {
+                      "id": "handicraft_end",
+                      "label": "Prezzie: Handicraft (end)",
+                      "scale": [
+                        "atk_scale_blackhole_end"
+                      ],
+                      "frames": [
+                        56
+                      ],
+                      "damageType": "ultimate",
+                      "events": [
+                        "chr_0038_purrche_ultimate_skill_abilityrange_blackhole"
+                      ],
+                      "note": "[56] atk_scale_blackhole_end (mask 4608)."
+                    }
+                  ],
+                  "if": {
+                    "stack": "ult_handicraft",
+                    "below": 1
+                  }
+                },
+                {
+                  "kind": "hits",
+                  "hits": [
+                    {
+                      "id": "bomb",
+                      "label": "Prezzie: Bomb",
+                      "scale": [
+                        "atk_scale"
+                      ],
+                      "poise": "poise_1",
+                      "frames": [
+                        0
+                      ],
+                      "damageType": "ultimate",
+                      "events": [
+                        "chr_0038_purrche_ult_skill_normal_bomb_projhit"
+                      ],
+                      "note": "ult_skill_normal_bomb_projhit: DamageAction atk_scale (3.0; mask 4608) with poise_1."
+                    }
+                  ],
+                  "if": {
+                    "stack": "ult_handicraft",
+                    "atLeast": 1
+                  }
+                },
+                {
+                  "kind": "gain",
+                  "gains": [
+                    {
+                      "stack": "ult_handicraft",
+                      "amount": 1
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "hits",
+          "hits": [
+            {
+              "id": "ambassador",
+              "label": "Prezzie: Ambassador's Special",
+              "scale": [
+                "atk_scale_ult"
+              ],
+              "poise": "poise_2",
+              "frames": [
+                0
+              ],
+              "damageType": "ultimate",
+              "events": [
+                "chr_0038_purrche_ult_skill_projhit"
+              ],
+              "buffs": [
+                {
+                  "buff": "arts_susceptibility",
+                  "beforeDamage": true
+                }
+              ],
+              "note": "ult_skill_projhit: CreateBuff ult_spell_vulnerable (before the DamageAction), DamageAction atk_scale_ult (6.0, P5 ×1.2; mask 4608) with poise_2."
+            }
+          ],
+          "if": {
+            "stack": "ult_red",
+            "atLeast": 3
+          }
+        },
+        {
+          "kind": "choose",
+          "if": {
+            "stack": "ult_red",
+            "below": 3
+          },
+          "options": [
+            {
+              "weight": "normal_boom_prob",
+              "do": [
+                {
+                  "kind": "hits",
+                  "hits": [
+                    {
+                      "id": "bomb",
+                      "label": "Prezzie: Bomb",
+                      "scale": [
+                        "atk_scale"
+                      ],
+                      "poise": "poise_1",
+                      "frames": [
+                        0
+                      ],
+                      "damageType": "ultimate",
+                      "events": [
+                        "chr_0038_purrche_ult_skill_normal_bomb_projhit"
+                      ],
+                      "note": "ult_skill_normal_bomb_projhit: DamageAction atk_scale (3.0; mask 4608) with poise_1."
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "weight": {
+                "sum": [
+                  1,
+                  {
+                    "product": [
+                      -1,
+                      "normal_boom_prob"
+                    ]
+                  }
+                ]
+              },
+              "do": [
+                {
+                  "kind": "hits",
+                  "hits": [
+                    {
+                      "id": "handicraft_pull",
+                      "label": "Prezzie: Handicraft (pull)",
+                      "scale": [
+                        "atk_scale_blackhole_dot"
+                      ],
+                      "count": 4,
+                      "frames": [
+                        0,
+                        15,
+                        30,
+                        45
+                      ],
+                      "damageType": "ultimate",
+                      "events": [
+                        "chr_0038_purrche_ultimate_skill_abilityrange_blackhole"
+                      ],
+                      "note": "ult_skill_normal_blackhole_projhit → ultimate_skill_abilityrange_blackhole: ExecuteIntervalAction every 0.5 s over [0–56] (atk_scale_blackhole_dot, mask 512)."
+                    },
+                    {
+                      "id": "handicraft_end",
+                      "label": "Prezzie: Handicraft (end)",
+                      "scale": [
+                        "atk_scale_blackhole_end"
+                      ],
+                      "frames": [
+                        56
+                      ],
+                      "damageType": "ultimate",
+                      "events": [
+                        "chr_0038_purrche_ultimate_skill_abilityrange_blackhole"
+                      ],
+                      "note": "[56] atk_scale_blackhole_end (mask 4608)."
+                    }
+                  ],
+                  "if": {
+                    "stack": "ult_handicraft",
+                    "below": 1
+                  }
+                },
+                {
+                  "kind": "hits",
+                  "hits": [
+                    {
+                      "id": "bomb",
+                      "label": "Prezzie: Bomb",
+                      "scale": [
+                        "atk_scale"
+                      ],
+                      "poise": "poise_1",
+                      "frames": [
+                        0
+                      ],
+                      "damageType": "ultimate",
+                      "events": [
+                        "chr_0038_purrche_ult_skill_normal_bomb_projhit"
+                      ],
+                      "note": "ult_skill_normal_bomb_projhit: DamageAction atk_scale (3.0; mask 4608) with poise_1."
+                    }
+                  ],
+                  "if": {
+                    "stack": "ult_handicraft",
+                    "atLeast": 1
+                  }
+                },
+                {
+                  "kind": "gain",
+                  "gains": [
+                    {
+                      "stack": "ult_handicraft",
+                      "amount": 1
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "ult_red",
+              "amount": -3
+            }
+          ]
+        },
+        {
+          "kind": "gain",
+          "gains": [
+            {
+              "stack": "ult_handicraft",
+              "amount": -1
+            }
+          ]
+        }
+      ],
+      "note": "ultimate [138]: three LaunchProjectile slots; slot n is an Ambassador's Special if n ≤ box_num, else Probablity(normal_boom_prob 0.5) → normal_bomb_projhit, else normal_blackhole_projhit if black_hole_count < 1 (then +1), else the bomb. A skill frame: after the jump 67 → 135, 70 frames after the cast. Projectile travel isn't in the data (in-game test 47)."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0038_purrche_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            10
+          ],
+          "factor": 0.4,
+          "events": [
+            "chr_0038_purrche_attack1"
+          ]
+        },
+        {
+          "id": "hit_2",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            17
+          ],
+          "factor": 0.6,
+          "events": [
+            "chr_0038_purrche_attack1"
+          ]
+        }
+      ],
+      "note": "SimpleCalcBBAction factors 0.4 / 0.6 on atk_scale (kit-draft)."
+    },
+    {
+      "skillId": "chr_0038_purrche_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            11
+          ],
+          "factor": 0.2,
+          "events": [
+            "chr_0038_purrche_attack2"
+          ]
+        },
+        {
+          "id": "hit_2",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            14
+          ],
+          "factor": 0.3,
+          "events": [
+            "chr_0038_purrche_attack2"
+          ]
+        },
+        {
+          "id": "hit_3",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            22
+          ],
+          "factor": 0.5,
+          "events": [
+            "chr_0038_purrche_attack2"
+          ]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0038_purrche_attack3",
+      "label": "Basic attack 3 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            18
+          ],
+          "factor": 0.2,
+          "events": [
+            "chr_0038_purrche_attack3"
+          ],
+          "finalStrike": false
+        },
+        {
+          "id": "hit_2",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            21
+          ],
+          "factor": 0.8,
+          "events": [
+            "chr_0038_purrche_attack3"
+          ],
+          "sp": {
+            "if": {
+              "controlled": true
+            },
+            "then": "atb"
+          },
+          "poise": "poise",
+          "poiseControlledOnly": true,
+          "finalStrike": true,
+          "note": "Mask 2097280 (Final Strike); \"As the controlled operator, Final Strike also deals {poise} Stagger\" (onlyEnableForMainChar); atb 23 (atbOnlyMainChar)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0038_purrche_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            24
+          ],
+          "events": [
+            "chr_0038_purrche_power_attack"
+          ],
+          "note": "BreakingAttackCalculation atk_scale (9.0) × multiplier 1.0."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0038_purrche_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            1
+          ],
+          "events": [
+            "chr_0038_purrche_plunging_attack_end"
+          ],
+          "sp": {
+            "if": {
+              "controlled": true
+            },
+            "then": "atb"
+          }
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0038_purrche_normal_skill",
+      "label": "Battle skill: I'M NOT SLEEPING!",
+      "damageType": "battle",
+      "available": {
+        "not": {
+          "buffActive": "counter_ready"
+        }
+      },
+      "hits": [],
+      "note": "No damage: raises the shield (triggers battle_cast, battle_loop, block_*, shield_*). The battle slot shows the counter for 10 s after the cast (ChangeSkillAction; counter_ready)."
+    },
+    {
+      "skillId": "chr_0038_purrche_normal_skill_loop_1",
+      "label": "Shield up (hold)",
+      "damageType": "battle",
+      "followUpOnly": true,
+      "hits": [],
+      "jumps": [
+        {
+          "at": 0,
+          "if": {
+            "not": {
+              "buffActive": "shield_up"
+            }
+          }
+        }
+      ],
+      "note": "Helper skill (SkillData only; the loader gives it normal_skill's group and values). IfElse [0–1]: enter_normal_skill_end present or no aura → JumpToAction 360. Then it runs until the shield ends (trigger shield_end: the jump 0–360 → 360); exclusiveFrame and MarkCanInterrupt 361. No DamageAction (its atk_scale / poise blackboard defaults are unused). The counter is allowed over its whole length."
+    },
+    {
+      "skillId": "chr_0038_purrche_normal_skill_loop_2",
+      "label": "Shield up (hold, after a block)",
+      "damageType": "battle",
+      "followUpOnly": true,
+      "hits": [],
+      "jumps": [
+        {
+          "at": 0,
+          "if": {
+            "not": {
+              "buffActive": "shield_up"
+            }
+          }
+        }
+      ],
+      "note": "As loop_1, cast by the blocks and the shielded combo after a block."
+    },
+    {
+      "skillId": "chr_0038_purrche_normal_skill_block_1",
+      "label": "Shield: first block",
+      "damageType": "battle",
+      "followUpOnly": true,
+      "hits": [],
+      "note": "25 frames; DamageAction disabled. Its effects: triggers block_1_cast and block_1_loop."
+    },
+    {
+      "skillId": "chr_0038_purrche_normal_skill_block_2",
+      "label": "Shield: later block",
+      "damageType": "battle",
+      "followUpOnly": true,
+      "hits": [],
+      "note": "25 frames; DamageAction disabled. Triggers block_2_cast and block_2_loop."
+    },
+    {
+      "skillId": "chr_0038_purrche_normal_skill_counter",
+      "label": "LEAVE MY FRIENDS ALONE! (headbutt)",
+      "damageType": "battle",
+      "available": {
+        "buffActive": "counter_ready"
+      },
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            9
+          ],
+          "events": [
+            "chr_0038_purrche_normal_skill_counter"
+          ],
+          "element": "natural",
+          "applies": [
+            {
+              "kind": "infliction",
+              "element": "natural"
+            }
+          ],
+          "sp": "atb_return",
+          "poise": "poise",
+          "note": "ChannelingAction [9–13]: SpellInfliction 3 (Nature), DamageAction atk_scale (4.0; damageType 6, mask 4352) with poise (20), BlowOffAction, ObtainCostAction atb_return / potential_5_atb (0 at every level) if a block happened. \"headbutts a target in front of her to deal Nature DMG and apply Nature Infliction\"."
+        }
+      ],
+      "note": "The battle skill as changed for 10 s (counter_ready); 0 SP. Frame 0 ends the shield (trigger counter_cast)."
+    },
+    {
+      "skillId": "chr_0038_purrche_combo_skill",
+      "label": "Combo: CAKE OR \"PREZZIE\"",
+      "damageType": "combo",
+      "hits": [],
+      "jumps": [
+        {
+          "at": 0,
+          "to": 210,
+          "if": {
+            "all": [
+              {
+                "buffActive": "shield_up"
+              },
+              {
+                "stack": "blocked",
+                "below": 1
+              }
+            ]
+          }
+        },
+        {
+          "at": 0,
+          "to": 270,
+          "if": {
+            "all": [
+              {
+                "buffActive": "shield_up"
+              },
+              {
+                "stack": "blocked",
+                "atLeast": 1
+              }
+            ]
+          }
+        }
+      ],
+      "note": "All its effects come from the giftbox (triggers giftbox*). Frame 0 IfElse: aura_block up → JumpToAction 210 (block_counter < 2) or 270 (after a block); unshielded it ends at 206 (InterruptCurSkillAction), cancellable from MarkCanInterrupt 28; the shielded paths go back to the loops (combo_shielded*_loop). Its three ComboSkill slow-downs (0, 210, 270): only the path's plays."
+    },
+    {
+      "skillId": "chr_0038_purrche_ultimate_skill",
+      "label": "Ultimate: NAUGHTY IS BANNED!",
+      "damageType": "ultimate",
+      "hits": [],
+      "note": "Three Prezzies (triggers ult_rolls, ult_prezzies). The conditional JumpToAction 0 → 68 (box_num ≥ 1) isn't taken: both paths reach frame 138 70 frames after the cast; the jump 67 → 135 always is."
+    }
+  ]
+}

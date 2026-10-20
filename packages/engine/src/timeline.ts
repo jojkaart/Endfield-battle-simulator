@@ -1737,9 +1737,9 @@ function afterCantCast(ctx: TimelineContext, state: TimelineState, operator: str
 export function earliestStart(ctx: TimelineContext, state: TimelineState, action: RotationAction): { frame: number } | { error: string } {
   const r = startFrom(ctx, state, action);
   const cur = state.acting[action.operator];
-  // Its action may end sooner: a kit's endAction, a jump or end on its timeline, a perfect dodge.
+  // Its action may end sooner: a kit's endAction or follow-up cast (Purrchena's block or loop replaces the current skill), a jump or end on its timeline, a perfect dodge.
   const ends =
-    ctx.kits.get(action.operator)?.triggers.some((t) => allActions(t.do).some((a) => a.kind === "endAction")) ||
+    ctx.kits.get(action.operator)?.triggers.some((t) => allActions(t.do).some((a) => a.kind === "endAction" || a.kind === "cast")) ||
     state.pendingJumps.some((j) => j.operator === action.operator) ||
     (ctx.scenario.options.dodge !== undefined && state.enemyActions.some((a) => a.kind === "attack"));
   if (!cur || ("frame" in r && r.frame <= state.frame) || !ends) return r;

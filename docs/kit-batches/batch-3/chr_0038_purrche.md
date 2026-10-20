@@ -434,3 +434,117 @@ Prezzies land 2.33 s after the cast.
   works on any wielder whose kit declares combo-kind heals (hit `heals` or
   a trigger `heal` with `healKind: combo`), e.g. Liino's combo; B9's
   cross-wielder stacking stays open.
+
+## Kit (2026-10-20)
+
+Written against the engine after batch 3's shared features (S1–S4, D1,
+D3, T4, B2). Files: `packages/data/kits/operators/chr_0038_purrche.json`,
+`packages/data/kits/equipment/wpn_sword_0023.json`, the example
+`examples/purrchena-shield.scenario.json` (build `purrchena-p5.json`) and
+`tests/kit-purrchena.test.ts`; Purrchena is in skillCompile.test.ts's
+OPERATORS with no KNOWN entry (her combo's and ultimate's landings are all
+on branches, which the test doesn't report; everything else agrees).
+
+### Re-analysis
+
+| Gap / row | Now | How |
+|---|---|---|
+| G1 helper skills (row 7) | **done** (S4) | `normal_skill_loop_1/_2`, `_block_1/_2` are `followUpOnly` kit skills (no hits), cast by delayed cast-trigger `cast` actions at the data's frames: normal_skill 49 → loop_1, block_1 23 / block_2 22 → loop_2, shielded combo 250 → loop_1 / 309 → loop_2. The loops' IfElse at 0 is `jumps: [{at: 0, if: {not: shield_up}}]` (D1); the shield's end jumps them to 360 (trigger `shield_end`), exclusive 361. Not attacked she's free 91 frames after the cast (the data: 3 s), 130 after a block at 1 s. Blocks: `attacked` → `cast` block_1 (no block yet) / block_2; block_1's own effects (SP, energy, layer, the shield set to 3 s) are its cast trigger. **Local engine fix** (below) |
+| G2 detached after a jump (rows 20, 29) | **done** (S2) | the giftbox triggers in skill frames with `launch` 17 / 221 / 281 (open at 61 / 265 / 325: real 61 / 55 / 55), the Prezzies `detached` with `launch: 138` (real 70 after the cast). The real-frame interim is gone |
+| G3 MarkCanInterrupt (row 21) | **done** (S1) | from the loader: attack1 28 frames after an unshielded combo (test); on the shielded paths the jump skips frame 28 |
+| G4 weighted choice (rows 15, 26) | **done** (T4) | the item is one `choose` per path (weights `{if: combo_last = n, then: 0, else: 1}`, the chosen option sets `combo_last`); the Prezzies: `ult_rolls` at the cast (three `choose` red / not, judged before the layers are used up), `ult_prezzies` at 138 (per slot: the Ambassador's Special if slot ≤ `ult_red`, else `choose` Bomb `normal_boom_prob` / the rest: Handicraft if none yet, else Bomb). 26 triggers instead of 57 |
+| G5 slow-downs off the path (row 22) | **mostly done** (S3 + the combo's `jumps`); **open residue** | unshielded: only the frame-0 slow-down plays (13.2 world frames lost). Shielded: S3 keeps a slow-down that starts at the jump's own frame (0), and can't see the combo end at 250 by its CastSkill (a trigger `cast`, not in `timing.ends`), so after a block (270) the world loses 13 frames (data 9.9: the 15-frame one only) and before one (210) 23 (data 11.8: the 18-frame one only). See "Open" |
+| Row 8/9 blocks, pauses | interim (as planned) | the aura's PauseBuffTime as `extendBuff` by the pause_block lengths (9, 11; the combo's 41 / 40 minus what the engine already holds, see "Open"); the first block re-applies the shield (SetBuffDuration 3.0) |
+| Row 11 the change, paused by the ultimate | interim | `counter_ready` (10 s, buff default) + `extendBuff` 9 frames at the ultimate (78 real frames paused, of which the engine's time stop already holds 69) |
+| Row 20 the shielded combo's listener | done | stack `combo_unguarded` from the cast to frame 221 / 281: no block before (in practice the slow-down keeps the enemy from attacking then) |
+| Rows 10, 31, 33, 35 | open as before | Protection step-down (data disagrees with itself), talent 2 (N2, deferred), projectile travel (test 47), which hits a block counts (all assumed). None changes damage |
+| E3 (B9) | **done** (B2) | both Dessert Moment buffs are stack groups from their game buffs (stackingType 11, priority key, maxStackCnt 1) |
+| Row 34 dash; batch-3 E3 dodge policy | **open** (shared) | E3's policy only sees `attacked` triggers with a `jump` of the current skill: Purrchena's blocks are `cast` actions, so with `--dodge` she dashes at every attack while shielded (ending the shield) instead of blocking |
+
+**Local engine fix** (timeline.ts `earliestStart`, one condition): a kit
+whose triggers have a `cast` action now counts as one whose current action
+may end sooner, as `endAction` already did. Without it a step judged while
+block_1 was current started at block_1's exclusive frame (55), right
+through its loop_2 cast at 53 (the block test's attack1 at 55 instead of
+130). Typhoeus and Liino also have `cast` actions: every example total and
+every `zmdlogs check` / `reactions` output is unchanged.
+
+### What the kit models
+
+- Basic attacks, finisher, dive and counter as kit-draft compiles them
+  (factors, Final Strike's controlled-only stagger and SP, the counter's
+  Nature element, infliction and poise).
+- The shield: `shield_up` (self, `display_time_1`), `protection` (team,
+  attribute 63: a Protection-category buff), `counter_ready` (the battle
+  slot shows the counter for 10 s: `available` on both skills); the
+  battle skill's 20 returned SP (`atb_return_1`), the first block's 20
+  (`atb_return_2`), talent 1's energy (`talent_1_usp`, block_1's key) and
+  its layer (`sorry_came_late`, max 3); the shield ends with the counter,
+  a basic attack, an ultimate or a dash.
+- The combo: window on an attack on the controlled operator; the three
+  paths by the combo's `jumps` (shield up and `blocked` below / at least
+  1); the giftbox's team heal (combo heal tag), `usp` and item: Handicraft
+  (4 pulls `atk_scale_blackhole_dot` 0.5 s apart from the item's frame,
+  the end `atk_scale_blackhole_end` at +56; at P3 under the
+  `…_abilityrange_1_1_potential_3` key), Bomb (`atk_scale_boom`, P3 ×1.2,
+  poise) or Yummy Dessert (a team heal with the combo tag), never the last
+  one (combo_lasttype is lifeType 1: kept until replaced, so the stack
+  `combo_last` keeps it for the fight).
+- The ultimate: three Prezzies 70 frames after the cast; the Ambassador's
+  Special chance `prob` (P1 ×1.5) + layers × `talent1_prob_up`; its Arts
+  Susceptibility (`rate_vul`, P5 ×1.2; max 3 layers, each 5 s) before its
+  own damage; at most one Handicraft.
+- Dessert Moment: Arts Intensity +14 and Arts DMG +9.8% for 20 s on
+  whoever a combo heal of the wielder heals.
+
+Left out: damage taken and heal amounts, swaps ending the shield, the
+grab branch, the blocks' first 2–3 frames without a listener, block_1 /
+block_2 casting the loop early when the shield ended during them (it's
+paused then), a block cutting the combo's pause short, projectile travel.
+
+### Verification
+
+No fixture has Purrchena or Dessert Moment, so nothing to check against
+logs. `efsim calc` (P5, Dessert Moment 90 / 9, no gear; ATK 2,178 vs
+Rhodagn Lv90, expected crits): headbutt 4,466 (×1.3 with the combo's Link,
+×1.098 with Dessert Moment: 6,375 in the example), Ambassador's Special
+8,039, Prezzie Bomb 3,350, giftbox Bomb 4,020, Handicraft 279 per pull and
+558 at the end: the analysis's scratch numbers. The example (seed 1):
+40,342 in 30.9 s; blocks at 1.0 / 2.0 / 4.4 / 5.4 s (the later two on the
+enemy's clock, delayed by the combo's slow-down), the counter from the
+loop at 6.0 s, the Prezzies at +2.33 s, the second battle skill holding her
+3.0 s before attack1, attack1 0.93 s after the unshielded combo. Rolls
+(scratch, 300 ultimates per setting): Ambassador's Special 0.316 per
+Prezzie at P5 (0.3), 0.212 at P0 (0.2), 0.613 at P5 with three layers
+(100 ultimates; 0.6); never two Handicrafts in one ultimate. The test's
+80 combos (20 seeds × 4) never repeat an item.
+
+### Open (shared; not fixed here)
+
+- **S3 residue** (timing): `plannedSlowdowns` keeps a slow-down starting
+  exactly at a jump's frame (the combo's frame-0 one on both shielded
+  paths, where the data's IfElse at 0 leaves it at once), and can't drop
+  one after an end that a kit's `cast` makes (the 270 slow-down on the 210
+  path, after the CastSkill at 250). About 3 / 11 world frames too many per
+  shielded combo.
+- **The caster's own buffs under her own slow-downs**: the engine holds
+  every buff for what a slow-down costs the world, the caster's too. The
+  data pauses Purrchena's aura during the shielded combo (pause_block) and
+  her skill change during her ultimate (pause_change_skill_buff), which
+  suggests (doesn't prove) her own buffs aren't held. The kit's pauses are
+  written as the data's length minus what the engine holds (41 − 23,
+  40 − 13, 78 − 69), so the totals are the data's either way; the tests
+  pin them, so a change in either engine rule shows.
+- **Random outcomes miss `choose`**: `randomOutcomes` (search.ts) lists
+  rolled crits, dodges and trigger `chance`, not `choose` actions, so
+  `simulate` prints no "one battle of a distribution" note for her and
+  `search` ranks candidates over one seed.
+- **Dodge policy** (E3): see row 34 above.
+
+### In-game tests the kit depends on
+
+76 (hers: A the shield's hold, C the item never repeating, D one
+Handicraft per ultimate), 61 (MarkCanInterrupt; her combo's frame 28 is
+one of its alternatives), 53 and 54 (whether a dodged hit counts as
+attacked, and dashes), 47 (projectile travel: the giftbox, Dessert and
+Prezzies land at their launch + entity frames).
