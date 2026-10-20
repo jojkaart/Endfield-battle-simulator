@@ -9,8 +9,10 @@ import {
   Attr,
   attrName,
   availableConditions,
-  computeKit,
+  computeHit,
   computeStats,
+  EngineError,
+  hitAvailable,
   NOT_MODELLED,
   type Build,
   type DamageOptions,
@@ -21,6 +23,7 @@ import {
   kitBuffModifiers,
 } from "@efsim/engine";
 import { num, pct, signedPct, table } from "./format.ts";
+import { assumeValues, readsAnything, statedCounts, valueReads } from "./hitvalues.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -132,6 +135,29 @@ function readsEventCount(data: GameData, build: Build): boolean {
   return (data.kits.operators[build.operator]?.skills ?? []).some((s) => JSON.stringify(s.hits).includes('"eventCount"'));
 }
 
+const STATED_NOTE = "  (hits whose values read the infliction stacks they consume, the operator's own stacks or the enemy's stacks are shown at 1 of each)";
+function readsStated(data: GameData, build: Build): boolean {
+  return (data.kits.operators[build.operator]?.skills ?? []).some((s) => s.hits.some((h) => readsAnything(valueReads(h))));
+}
+
+/**
+ * Every hit of the operator's kit, as computeKit gives them (conditions the
+ * options don't decide count as met), a hit whose values read what only a
+ * fight knows (consumed stacks, own stacks, the enemy's stacks: hitvalues.ts)
+ * at the stated counts instead of failing.
+ */
+function kitHits(data: GameData, build: Build, panel: StatPanel, target: DamageTarget, options: DamageOptions): HitDamage[] {
+  const kit = data.kits.operators[build.operator];
+  if (!kit) throw new EngineError(`no kit for ${build.operator} yet`);
+  const opts = { assumeUnknown: true, ...options };
+  return kit.skills.flatMap((s) =>
+    s.hits.filter((h) => hitAvailable(data, build, panel, s.skillId, h, opts.situation)).map((h) => {
+      const r = valueReads(h);
+      return computeHit(data, build, panel, target, s, readsAnything(r) ? assumeValues(h, statedCounts(r), false) : h, opts);
+    }),
+  );
+}
+
 export function calc(data: GameData, build: Build, options: CalcOptions): string {
   const panel = computeStats(data, build);
   const out = [formatPanel(data, panel, options.verbose)];
@@ -147,9 +173,10 @@ export function calc(data: GameData, build: Build, options: CalcOptions): string
     out.push("  No kit for this operator yet, so no hit damage (stats above are complete).");
   } else {
     const buffMods = (options.buffs ?? []).flatMap((b) => kitBuffModifiers(data, build, panel, b.buff, b.layers));
-    const hits = computeKit(data, build, panel, options.target, { ...withEventCount(options), modifiers: [...(options.modifiers ?? []), ...buffMods] });
+    const hits = kitHits(data, build, panel, options.target, { ...withEventCount(options), modifiers: [...(options.modifiers ?? []), ...buffMods] });
     out.push(table(["skill", "hit", "count", "multiplier", "damage"], hitRows(hits), ["l", "l", "l", "l", "r"]));
     if (readsEventCount(data, build)) out.push(EVENT_COUNT_NOTE);
+    if (readsStated(data, build)) out.push(STATED_NOTE);
     if (options.verbose) {
       const z = hits[0]?.zones;
       if (z) out.push("", `Zones of the first hit: ${Object.entries(z).map(([k, v]) => `${k} ${num(v, 4)}`).join(", ")}`);
@@ -177,8 +204,8 @@ export function compare(data: GameData, a: Build, b: Build, options: CalcOptions
   }
   out.push(table(["stat", "A", "B", "B vs A"], statRows, ["l", "r", "r", "r"]));
   if (data.kits.operators[a.operator]) {
-    const ha = computeKit(data, a, pa, options.target, withEventCount(options));
-    const hb = computeKit(data, b, pb, options.target, withEventCount(options));
+    const ha = kitHits(data, a, pa, options.target, withEventCount(options));
+    const hb = kitHits(data, b, pb, options.target, withEventCount(options));
     const rows = ha.map((h, i) => {
       const other = hb[i] as HitDamage;
       return [h.skillId.replace(/^chr_\d+_[a-z]+_/, ""), h.label, num(h.damage, 0), num(other.damage, 0), signedPct(other.exact / h.exact - 1)];

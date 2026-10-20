@@ -2,14 +2,22 @@
 // stored build and the logged buff effects, and compares with the real damage.
 
 import {
+  allActions,
+  applyBuff,
   Attr,
   attrModifier,
   computeHit,
   computeReaction,
   effectiveKit,
+  evalContext,
+  evaluate,
+  FPS,
   hitAvailable,
   kitBuffModifiers,
   kitHitEntries,
+  linkValue,
+  test,
+  triggerSkillId,
   type Build,
   computeStats,
   corrosionModifier,
@@ -20,11 +28,14 @@ import {
   type KitHit,
   type KitSkill,
   type Modifier,
+  type OperatorKit,
   type ReactionKind,
   type SkillType,
   type StatPanel,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit, type RawBuffFile } from "@efsim/data";
+import { assumeValues, valueAssumptions, valueReads } from "./hitvalues.ts";
+import { distinctCasts, placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
 
 export type HitVerdict =
   | { readonly kind: "match"; readonly hit: LogHit; readonly predicted: number; readonly assumed: readonly string[] }
@@ -101,6 +112,53 @@ export function teamStackCaps(panels: readonly StatPanel[]): StackCap {
     const b = norm(buffId);
     for (const p of panels) for (const [id, bb] of Object.entries(p.sources)) if (b.startsWith(norm(id)) && bb[key] !== undefined) return bb[key] as number;
     return null;
+  };
+}
+
+/** The skill that applies one of a kit's buffs (a hit's skill or a trigger's source), as kitBuffModifiers finds it. */
+function kitBuffSource(kit: OperatorKit, buffId: string): string | undefined {
+  return (
+    kit.skills.find((s) => s.hits.some((h) => h.buffs?.some((a) => a.buff === buffId)))?.skillId ??
+    kit.triggers.filter((t) => allActions(t.do).some((a) => a.kind === "buff" && a.buff === buffId)).map((t) => triggerSkillId(kit.operator, t))[0]
+  );
+}
+
+/**
+ * Caps of layered buffs whose applying skill the ID prefix doesn't find
+ * (batch 4 L2: buff_equipsuit_critsuitatk_01 comes from
+ * passive_equipsuit_critsuit_01, buff_equipsuit_poisedmg_01_damagebuff from
+ * passive_equipsuit_poisebreak_01): after the prefix rule (teamStackCaps,
+ * whose answers stand), the kit buff that stands for the game buff
+ * (KitBuff.gameBuff) in a team member's kit, what it wears included: its
+ * maximum layers (or kept instances) valued from the skill that applies it
+ * in the kit. Null when neither knows.
+ */
+export function kitStackCaps(data: GameData, panels: ReadonlyMap<string, { readonly build: Build; readonly panel: StatPanel }>): StackCap {
+  const byPrefix = teamStackCaps([...panels.values()].map((m) => m.panel));
+  const cache = new Map<string, number | null>();
+  const fromKits = (buffId: string): number | null => {
+    for (const { build, panel } of panels.values()) {
+      const kit = effectiveKit(data, build);
+      for (const def of kit?.buffs ?? []) {
+        if (def.gameBuff !== buffId || !kit) continue;
+        const source = kitBuffSource(kit, def.id);
+        if (!source) continue;
+        try {
+          const b = applyBuff(data, build, panel, source, def, 0);
+          const cap = b?.maxLayers ?? (b?.maxInstances ? b.maxInstances : undefined);
+          if (cap !== undefined) return cap;
+        } catch {
+          // its values need a fight
+        }
+      }
+    }
+    return null;
+  };
+  return (buffId, key) => {
+    const prefix = byPrefix(buffId, key);
+    if (prefix !== null) return prefix;
+    if (!cache.has(buffId)) cache.set(buffId, fromKits(buffId));
+    return cache.get(buffId) ?? null;
   };
 }
 
@@ -318,7 +376,9 @@ export function unloggedEnemyAuras(data: GameData, fx: LogFixture, panels: Reado
  * buff_chr_0005_chen_talent_0_1 in 7e19489ae503 is one 0.08 entry while
  * her ultimate slashes rise a layer (+3.5%) each. Such a buff listed once
  * at a hit is tried at 1 up to its maximum layers (its literal maxStackCnt,
- * or the cap the applying skill sets), 1 first, as unlogged cast buffs are.
+ * or the cap the applying skill sets: kitStackCaps), 1 first, as unlogged
+ * cast buffs are. A cap nobody's skill sets falls back to the literal
+ * maxStackCnt the file writes beside its key (batch 4 L2).
  */
 export function layerVariants(hit: LogHit, cap: StackCap = () => null): Variant[] {
   const all = [...hit.effects, ...hit.boundaryEffects];
@@ -328,7 +388,7 @@ export function layerVariants(hit: LogHit, cap: StackCap = () => null): Variant[
   for (const buff of new Set(all.map((e) => e.buff))) {
     const st = buffFile(buff)?.stacking;
     if (st?.type !== 8 || [...counts].some(([k, n]) => k.startsWith(`${buff}|`) && n !== 1)) continue;
-    const max = st.maxStacks ?? (st.maxStacksKey ? cap(buff, st.maxStacksKey) : null);
+    const max = st.maxStacks ?? (st.maxStacksKey ? (cap(buff, st.maxStacksKey) ?? (st.maxStackCnt > 1 ? st.maxStackCnt : null)) : null);
     if (max === null || max <= 1) continue;
     const layers = Array.from({ length: max - 1 }, (_, i): Variant => ({ label: `${buff} ×${i + 2} layers`, modifiers: [], layers: new Map([[buff, i + 2]]) }));
     out = combine(out, [NO_VARIANT, ...layers]);
@@ -346,12 +406,200 @@ function withLayers(hit: LogHit, layers: ReadonlyMap<string, number>): LogHit {
   return { ...hit, effects: hit.effects.map(scale), boundaryEffects: hit.boundaryEffects.map(scale) };
 }
 
+/** One way an unlogged buff may stand at a hit: its modifiers then. */
+export interface BuffOption {
+  readonly label: string;
+  readonly modifiers: readonly Modifier[];
+}
+
+/** Zones a crit decides: ZMDLogs lists no effect in them (no fixture has one). */
+const CRIT_ZONES = new Set(["critRate", "critDamage"]);
+
+const signature = (mods: readonly Modifier[]) => JSON.stringify(mods.map(({ source: _s, ...m }) => m).sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b))));
+
+/**
+ * What ZMDLogs never lists of an operator's own kit buffs (its own and what
+ * it wears; batch 4 L3): the crit-zone part of every buff (no fixture has a
+ * crit entry), and all of a buff whose game buff the log never names (an
+ * `endsWithCast` one included). Each buff's options: 1 up to its maximum
+ * layers and, where a modifier's condition is one only a fight decides,
+ * each such branch alone. Crit Rate is left out (the check knows whether a
+ * hit crit), and so are buffs a cast consumes (unloggedCastBuffs), on the
+ * enemy, or Link.
+ */
+export function unloggedOwnBuffs(data: GameData, fx: LogFixture, build: Build, panel: StatPanel): BuffOption[][] {
+  const kit = effectiveKit(data, build);
+  if (!kit) return [];
+  const listed = new Set(fx.hits.flatMap((h) => [...h.effects, ...h.boundaryEffects, ...h.unquantified].map((e) => e.buff)));
+  const out: BuffOption[][] = [];
+  for (const def of kit.buffs) {
+    if (def.target === "enemy" || def.consumedBy || def.link) continue;
+    const source = kitBuffSource(kit, def.id);
+    if (!source) continue;
+    const critOnly = !def.gameBuff || listed.has(def.gameBuff);
+    let max: number;
+    try {
+      max = applyBuff(data, build, panel, source, def, 0)?.maxLayers ?? 1;
+    } catch {
+      continue; // its values need a fight
+    }
+    const options: BuffOption[] = [];
+    const seen = new Set<string>();
+    for (let n = 1; n <= Math.min(max, 12); n++) {
+      // A condition is decided when the build decides it, and the buff's own layers (n here) whatever the others' are.
+      const judge = (when: NonNullable<Modifier["when"]>, others: number) => {
+        const layers = (id: string) => (id === def.id ? n : others);
+        try {
+          return test(when, evalContext(data, build, panel, source, { team: fx.team, buffLayers: layers, buffActive: (id) => layers(id) > 0 }));
+        } catch {
+          return undefined;
+        }
+      };
+      const decided = (m: Modifier): boolean | undefined => {
+        if (!m.when) return true;
+        const [none, many] = [judge(m.when, 0), judge(m.when, 99)];
+        return none === many ? none : undefined;
+      };
+      let mods: Modifier[];
+      try {
+        mods = kitBuffModifiers(data, build, panel, def.id, n);
+      } catch {
+        break;
+      }
+      mods = mods.filter((m) => m.zone !== "critRate" && (!critOnly || CRIT_ZONES.has(m.zone)) && decided(m) !== false);
+      const strip = ({ when: _w, ...m }: Modifier): Modifier => m;
+      const sure = mods.filter((m) => decided(m) === true).map(strip);
+      const branches = [...new Set(mods.filter((m) => decided(m) === undefined).map((m) => JSON.stringify(m.when)))];
+      const sets = branches.length === 0 ? [{ mods: sure, branch: null as number | null }] : branches.map((b, i) => ({ mods: [...sure, ...mods.filter((m) => JSON.stringify(m.when) === b).map(strip)], branch: i + 1 }));
+      for (const s of sets) {
+        const k = signature(s.mods);
+        if (s.mods.length === 0 || seen.has(k)) continue;
+        seen.add(k);
+        options.push({ label: `unlogged own ${def.id}${n > 1 ? ` ×${n}` : ""}${s.branch !== null ? ` (branch ${s.branch})` : ""}${critOnly ? " crit part" : ""}`, modifiers: s.mods });
+      }
+    }
+    if (options.length) out.push(options);
+  }
+  return out;
+}
+
+/** Above this many combinations of unlogged own buffs at a hit, each buff is tried alone. */
+const MAX_OWN_COMBINATIONS = 64;
+
+/** The unlogged own buffs' variants at one logged hit: none first, then their combinations, keeping only what can act on the hit (its element; crit parts on hits that may crit). */
+export function ownBuffVariants(options: readonly BuffOption[][], hit: LogHit): Variant[] {
+  const fits = (m: Modifier) => (m.element === undefined || m.element === hit.element) && !(hit.crit === false && CRIT_ZONES.has(m.zone));
+  const perBuff = options
+    .map((list) => {
+      const seen = new Set<string>();
+      return list.flatMap((o) => {
+        const modifiers = o.modifiers.filter(fits);
+        const k = signature(modifiers);
+        if (modifiers.length === 0 || seen.has(k)) return [];
+        seen.add(k);
+        return [{ label: o.label, modifiers, layers: new Map() } as Variant];
+      });
+    })
+    .filter((l) => l.length > 0);
+  const combinations = perBuff.reduce((n, l) => n * (l.length + 1), 1);
+  if (combinations > MAX_OWN_COMBINATIONS) return [NO_VARIANT, ...perBuff.flat()];
+  return perBuff.reduce<Variant[]>((acc, l) => combine(acc, [NO_VARIANT, ...l]), [NO_VARIANT]);
+}
+
+/** How long a Link stack lasts unless its source says (buff_common_affixes_combo_trigger: 15 s). */
+const LINK_MS = 15000;
+
+/**
+ * Link stacks a cast would use, from the Link sources the log's casts show
+ * (batch 4 L3, after B1: Link comes only from Link sources): kit triggers on
+ * a logged cast with a `link` action or a `link` kit buff (their `if`s
+ * counted as met), until they run out or a battle skill or ultimate of a
+ * logged cast uses them up; at most 4.
+ */
+export function predictedLink(data: GameData, fx: LogFixture, placement: Placement, cast: Pick<LoggedCast, "start">): number {
+  let known = linkGrantCache.get(placement);
+  if (!known) linkGrantCache.set(placement, (known = linkGrants(data, fx, placement)));
+  const { casts, grants } = known;
+  // A battle skill or ultimate cast before this one uses up what was granted before it.
+  const users = casts.filter((c) => (c.kind === "battle" || c.kind === "ultimate") && c.start < cast.start - 1);
+  let n = 0;
+  for (const g of grants) {
+    if (!(g.at <= cast.start && g.until > cast.start)) continue;
+    if (users.some((u) => u.start >= g.at)) continue;
+    n += g.count;
+  }
+  return Math.min(4, Math.round(n));
+}
+
+interface LinkGrant {
+  readonly at: number;
+  readonly until: number;
+  readonly count: number;
+}
+
+const linkGrantCache = new WeakMap<Placement, { casts: LoggedCast[]; grants: LinkGrant[] }>();
+
+/** The Link stacks the logged casts grant (predictedLink), with when they run out, in ms. */
+function linkGrants(data: GameData, fx: LogFixture, placement: Placement): { casts: LoggedCast[]; grants: LinkGrant[] } {
+  const casts = distinctCasts(placement);
+  const grants: LinkGrant[] = [];
+  for (const build of fx.team) {
+    const kit = effectiveKit(data, build);
+    if (!kit) continue;
+    const panel = computeStats(data, build);
+    for (const t of kit.triggers) {
+      if (t.on.event !== "cast" || !t.on.skills?.length) continue;
+      const skillId = triggerSkillId(kit.operator, t);
+      for (const a of allActions(t.do)) {
+        let count = 0;
+        let ms = LINK_MS;
+        try {
+          if (a.kind === "link") {
+            const ec = evalContext(data, build, panel, skillId, { team: fx.team });
+            count = a.count === undefined ? 1 : evaluate(a.count, ec);
+            ms = a.seconds === undefined ? LINK_MS : evaluate(a.seconds, ec) * 1000;
+          } else if (a.kind === "buff") {
+            const def = kit.buffs.find((b) => b.id === a.buff && b.link);
+            const b = def ? applyBuff(data, build, panel, skillId, def, 0) : null;
+            if (b) [count, ms] = [1, Number.isFinite(b.expiresAt) ? (b.expiresAt * 1000) / FPS : LINK_MS];
+          }
+        } catch {
+          continue;
+        }
+        if (count <= 0) continue;
+        for (const c of casts) {
+          if (c.operator !== build.operator || !t.on.skills.includes(c.skillId)) continue;
+          const at = c.start + ((t.delay ?? 0) * 1000) / FPS;
+          grants.push({ at, until: at + ms, count });
+        }
+      }
+    }
+  }
+  return { casts, grants };
+}
+
+/**
+ * Link stacks on a battle-skill or ultimate hit, which ZMDLogs doesn't list:
+ * none first, then the predicted stacks (predictedLink) and one either side,
+ * each Link's multiplier for the cast's kind.
+ */
+export function linkVariants(kind: SkillType | null, predicted: number): Variant[] {
+  if (kind !== "battle" && kind !== "ultimate") return [NO_VARIANT];
+  const counts = [...new Set([predicted, predicted - 1, predicted + 1])].filter((n) => n >= 1 && n <= 4);
+  return [
+    NO_VARIANT,
+    ...counts.map((n): Variant => ({ label: `Link ${n} (predicted ${predicted})`, modifiers: [{ zone: "multiplicative", value: linkValue(kind, n), source: `Link (${n})` }], layers: new Map() })),
+  ];
+}
+
 export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
   const panels = new Map(fx.team.map((b) => [b.operator, { build: b, panel: computeStats(data, b) }]));
   const target = { enemy: fx.enemy.id, level: fx.enemy.level };
-  const caps = teamStackCaps([...panels.values()].map((m) => m.panel));
+  const caps = kitStackCaps(data, panels);
   const auras = unloggedEnemyAuras(data, fx, panels);
   const finisher = finisherModifier(data, fx.enemy.id);
+  const placement = placeHits(data, fx);
+  const ownBuffs = new Map([...panels].map(([op, m]) => [op, unloggedOwnBuffs(data, fx, m.build, m.panel)]));
   return fx.hits.map((hit): HitVerdict => {
     const member = panels.get(hit.operator);
     const reaction = parseReactionEvent(hit.event);
@@ -360,9 +608,17 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
     const actual = hit.uncapped ?? hit.value;
     const stackOptions = reaction && reaction.kind !== "burst" ? [1, 2, 3, 4] : [1];
     const predicted: number[] = [];
+    // What the log never lists (batch 4 L3): the operator's own unlogged buffs and crit parts, and Link on a battle skill's or
+    // ultimate's hits (around the stacks the logged Link sources predict), each tried after every reading without them.
+    const kit = effectiveKit(data, member.build);
+    const placed = placement.hits.get(hit);
+    const kind = placed ? placed.cast.kind : (kit?.skills.find((s) => found.some(([f]) => f.skillId === s.skillId))?.kind ?? null);
+    const link = kind === "battle" || kind === "ultimate" ? linkVariants(kind, predictedLink(data, fx, placement, placed?.cast ?? { start: hit.t })) : [NO_VARIANT];
+    const unloggedOwn = reaction ? [NO_VARIANT] : combine(ownBuffVariants(ownBuffs.get(hit.operator) ?? [], hit), link);
+    const stackMax = (id: string) => kit?.stacks.find((x) => x.id === id)?.max ?? 4;
     // Whole-hit assumptions (enemy auras the log doesn't list, layers of a buff it lists once), the plain reading first:
     // a hit that matches without them keeps matching as before.
-    for (const variant of combine(auras, layerVariants(hit, caps))) {
+    for (const variant of combine(unloggedOwn, combine(auras, layerVariants(hit, caps)))) {
       for (const c of candidates(withLayers(hit, variant.layers), panels, stackOptions)) {
         const options = (category: HitCategory) => ({
           crit: c.crit ? ("always" as const) : ("never" as const), staggered: false, conditions: [], modifiers: [...logModifiers(c.effects, category, caps), ...c.extra, ...variant.modifiers],
@@ -377,18 +633,22 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
                 // A finisher takes the enemy's finisher multiplier, as in the timeline.
                 unloggedCastBuffs(data, member.build, member.panel, h.damageType).flatMap((unlogged) =>
                   (h.extraScale?.length || h.if ? [false, true] : [false]).flatMap((assume) =>
-                    (JSON.stringify(h).includes('"eventCount"') ? [1, 2, 3, 4] : [undefined]).flatMap((eventCount) => {
-                      try {
-                        const situation = { team: fx.team, ...(eventCount !== undefined ? { eventCount } : {}) };
-                        const base = options(h.reaction?.kind ?? h.damageType);
-                        const own = isFinisher(data, member.build, s.skillId, h) ? [finisher] : [];
-                        const r = computeHit(data, member.build, member.panel, target, s, h, { ...base, modifiers: [...base.modifiers, ...unlogged.modifiers, ...own], situation, assumeUnknown: assume });
-                        const label = [found.length > 1 ? `kit hit ${h.id}` : null, assume ? "situational parts assumed" : null, eventCount !== undefined ? `event count ${eventCount}` : null, unlogged.label].filter((x) => x).join(", ");
-                        return [{ label: label || null, r }];
-                      } catch {
-                        return []; // the hit doesn't happen under this assumption
-                      }
-                    }),
+                    (JSON.stringify(h).includes('"eventCount"') ? [1, 2, 3, 4] : [undefined]).flatMap((eventCount) =>
+                      // Values that read what only a fight knows (consumed stacks, own stacks, the enemy's stacks: L4, L6): over their range.
+                      [{ assumption: null, label: null }, ...valueAssumptions(valueReads(h), stackMax)].flatMap((va) => {
+                        try {
+                          const situation = { team: fx.team, ...(eventCount !== undefined ? { eventCount } : {}) };
+                          const base = options(h.reaction?.kind ?? h.damageType);
+                          const own = isFinisher(data, member.build, s.skillId, h) ? [finisher] : [];
+                          const kh = va.assumption ? assumeValues(h, va.assumption, true) : h;
+                          const r = computeHit(data, member.build, member.panel, target, s, kh, { ...base, modifiers: [...base.modifiers, ...unlogged.modifiers, ...own], situation, assumeUnknown: assume });
+                          const label = [found.length > 1 ? `kit hit ${h.id}` : null, assume ? "situational parts assumed" : null, eventCount !== undefined ? `event count ${eventCount}` : null, va.label, unlogged.label].filter((x) => x).join(", ");
+                          return [{ label: label || null, r }];
+                        } catch {
+                          return []; // the hit doesn't happen under this assumption
+                        }
+                      }),
+                    ),
                   ),
                 ),
               );

@@ -4,7 +4,8 @@
 // don't record inflictions, so this is how a kit's `applies` gets verified.
 
 import { applyToEnemy, computeStats, expireStatus, FPS, effectiveKit, hitAvailable, hitEffects, kitHitEntries, NO_STATUS, resolveApplication, statusEventKey, type EnemyStatus, type GameData, type KitHit, type Predicate, type StatusEvent } from "@efsim/engine";
-import type { LogFixture } from "@efsim/data";
+import type { LogFixture, LogHit } from "@efsim/data";
+import { distinctCasts, placeHits, type Placement } from "./logcasts.ts";
 
 /**
  * Reactions show up in logs at the hit that caused them. A logged event
@@ -25,9 +26,10 @@ export const REACTION_LOG_DELAY_MS = 1200;
 export const BURST_LOG_DELAY_MS = 4000;
 
 export interface ReactionCheck {
-  readonly matched: readonly { readonly predicted: StatusEvent; readonly t: number; readonly loggedT: number }[];
+  /** `due`: a burst the logged casts' time stops held (L5): when it lands on the enemy's clock, in ms. */
+  readonly matched: readonly { readonly predicted: StatusEvent; readonly t: number; readonly loggedT: number; readonly due?: number }[];
   /** Predicted with an initial hit, but not in the log. */
-  readonly unlogged: readonly { readonly predicted: StatusEvent; readonly t: number }[];
+  readonly unlogged: readonly { readonly predicted: StatusEvent; readonly t: number; readonly due?: number }[];
   /** In the log, but not predicted. */
   readonly unpredicted: readonly { readonly t: number; readonly operator: string; readonly event: string }[];
   /** Forced reactions and consumptions: nothing in the log to match them against. */
@@ -45,13 +47,54 @@ function sameKey(logged: string, predicted: StatusEvent): boolean {
   return logged === key || (predicted.kind === "reaction" && logged === `buff_common_${predicted.element}_triggered`);
 }
 
-/** The kit hit a logged event is, among those this build can have (modes: KitHit.if). */
-function kitHit(data: GameData, fixture: LogFixture, operator: string, event: string): KitHit | null {
-  const build = fixture.team.find((b) => b.operator === operator);
+/**
+ * The kit hit a logged event is, among those this build can have (modes:
+ * KitHit.if): the landing its place in its cast says (logcasts.ts: the n-th
+ * logged landing of a key in a cast is the n-th kit landing with it), else
+ * the first with its key.
+ */
+function kitHit(data: GameData, fixture: LogFixture, placement: Placement, h: LogHit): KitHit | null {
+  const placed = placement.hits.get(h)?.hits[0];
+  if (placed) return placed;
+  const build = fixture.team.find((b) => b.operator === h.operator);
   if (!build) return null;
   const panel = computeStats(data, build);
-  for (const e of kitHitEntries(effectiveKit(data, build))) if (e.hit.events.includes(event) && hitAvailable(data, build, panel, e.skillId, e.hit, { team: fixture.team })) return e.hit;
+  for (const e of kitHitEntries(effectiveKit(data, build))) if (e.hit.events.includes(h.event) && hitAvailable(data, build, panel, e.skillId, e.hit, { team: fixture.team })) return e.hit;
   return null;
+}
+
+/** A global slow-down a logged cast caused (SkillTiming.slowdowns: UltimateTimeAction, global TimeDilationAction): from frame `start`, the world's time scale per frame. */
+export interface TimeStop {
+  readonly start: number;
+  readonly scales: readonly number[];
+  readonly operator: string;
+  readonly skillId: string;
+}
+
+/** The time stops of the logged casts of skills that have them, each cast placed from its first logged hit (logcasts.ts). */
+export function loggedTimeStops(data: GameData, placement: Placement): TimeStop[] {
+  return distinctCasts(placement).flatMap((c) => {
+    const at = Math.round((c.start * FPS) / 1000);
+    return (data.skills[c.skillId]?.timing?.slowdowns ?? []).map((d) => ({ start: at + d.from, scales: d.scales, operator: c.operator, skillId: c.skillId }));
+  });
+}
+
+/**
+ * When something due `frames` frames after `t` ms on the enemy's clock
+ * happens, in ms: over each frame the clock runs at the lowest scale of the
+ * time stops then (the engine's pending bursts: batch-3 A5).
+ */
+export function enemyClockDue(t: number, frames: number, stops: readonly TimeStop[]): number {
+  const from = Math.round((t * FPS) / 1000);
+  const relevant = stops.filter((s) => s.start + s.scales.length > from);
+  let remaining = frames;
+  let f = from;
+  for (; remaining > 1e-9 && f < from + 100 * FPS; f++) {
+    let rate = 1;
+    for (const s of relevant) if (f >= s.start && f < s.start + s.scales.length) rate = Math.min(rate, s.scales[f - s.start] as number);
+    remaining -= rate;
+  }
+  return t + ((f - from) * 1000) / FPS;
 }
 
 /**
@@ -75,9 +118,11 @@ export function checkReactions(data: GameData, fixture: LogFixture): ReactionChe
   const hits = [...fixture.hits].sort((a, b) => a.t - b.t);
   let enemy = NO_STATUS;
   const teamKits = fixture.team.flatMap((b) => effectiveKit(data, b) ?? []);
+  const placement = placeHits(data, fixture);
+  const stops = loggedTimeStops(data, placement);
   const predicted: { predicted: StatusEvent; t: number }[] = [];
   for (const h of hits) {
-    const kh = kitHit(data, fixture, h.operator, h.event);
+    const kh = kitHit(data, fixture, placement, h);
     if (!kh) continue;
     const frame = (h.t * FPS) / 1000;
     // Only the controlled operator does basic attacks, so a logged Final Strike counts for Final Strike triggers.
@@ -108,12 +153,16 @@ export function checkReactions(data: GameData, fixture: LogFixture): ReactionChe
       other.push(p);
       continue;
     }
-    const window = p.predicted.kind === "burst" ? BURST_LOG_DELAY_MS : REACTION_LOG_DELAY_MS;
+    // A burst lands its element's delay later on the enemy's clock, which the logged casts' time stops hold (L5): its window grows by that.
+    const delay = p.predicted.kind === "burst" ? (data.constants.burstDelayFrames?.[p.predicted.element] ?? 0) : 0;
+    const held = p.predicted.kind === "burst" && stops.length ? Math.max(0, enemyClockDue(p.t, delay, stops) - p.t - (delay * 1000) / FPS) : 0;
+    const window = (p.predicted.kind === "burst" ? BURST_LOG_DELAY_MS : REACTION_LOG_DELAY_MS) + held;
     const m = logged.find((l) => !l.used && sameKey(l.event, p.predicted) && l.operator === p.predicted.operator && l.t >= p.t && l.t - p.t <= window);
+    const due = held > 0 ? { due: Math.round(p.t + (delay * 1000) / FPS + held) } : {};
     if (m) {
       m.used = true;
-      matched.push({ ...p, loggedT: m.t });
-    } else unlogged.push(p);
+      matched.push({ ...p, loggedT: m.t, ...due });
+    } else unlogged.push({ ...p, ...due });
   }
   return {
     matched,
@@ -146,8 +195,9 @@ export function formatReactionCheck(c: ReactionCheck): string {
   const lines: string[] = [];
   lines.push(`Reactions: ${c.matched.length} matched, ${c.unlogged.length} predicted but not logged, ${c.unpredicted.length} logged but not predicted.`);
   if (c.withoutApplies.length) lines.push(`No inflictions in the kit (replay incomplete): ${c.withoutApplies.join(", ")}`);
-  for (const m of c.matched) lines.push(`  match      ${m.t} ms → logged ${m.loggedT} ms  ${describe(m.predicted)}`);
-  for (const u of c.unlogged) lines.push(`  not logged ${u.t} ms  ${describe(u.predicted)}`);
+  const due = (x: { readonly due?: number }) => (x.due !== undefined ? ` (due ${x.due} ms: held by time stops)` : "");
+  for (const m of c.matched) lines.push(`  match      ${m.t} ms → logged ${m.loggedT} ms  ${describe(m.predicted)}${due(m)}`);
+  for (const u of c.unlogged) lines.push(`  not logged ${u.t} ms  ${describe(u.predicted)}${due(u)}`);
   for (const u of c.unpredicted) lines.push(`  unexpected ${u.t} ms  ${u.operator}: ${u.event}`);
   for (const o of c.other) lines.push(`  other      ${o.t} ms  ${describe(o.predicted)}`);
   return lines.join("\n");

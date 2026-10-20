@@ -675,6 +675,11 @@ function actionSpeed(ctx: TimelineContext, st: TimelineState, operator: string, 
 /** How long a Link stack lasts (buff_common_affixes_combo_trigger duration 15 s). */
 const LINK_FRAMES = 15 * FPS;
 
+/** Link's multiplier (zone multiplicative) on the hits of a battle skill or ultimate that uses n stacks (1–4): +30/45/60/75% / +20/30/40/50%. */
+export function linkValue(kind: "battle" | "ultimate", n: number): number {
+  return kind === "battle" ? 0.15 + 0.15 * n : 0.1 + 0.1 * n;
+}
+
 /** How long a chain survives a skill that doesn't interrupt it, after that skill's exclusive time. */
 const CHAIN_CACHE_FRAMES = 30;
 
@@ -2019,7 +2024,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
         next = { ...next, buffs: next.buffs.filter((b) => !linkBuffs.includes(b)) };
         linkEnded.push(...new Map(linkBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id, remaining: remainingOf([b], frame), consumed: true, ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) }])).values());
       }
-      const value = costs.kind === "battle" ? 0.15 + 0.15 * n : 0.1 + 0.1 * n;
+      const value = linkValue(costs.kind, n);
       const lastHit = Math.max(frame, ...pending.map((h) => h.frame));
       const link: ActiveBuff = { id: "link", owner: operator, target: "self", appliedAt: frame, expiresAt: lastHit + 1, cast: castIndex, modifiers: [{ zone: "multiplicative", value, source: `Link (${n})` }] };
       next = { ...next, link: [], buffs: [...next.buffs, link] };

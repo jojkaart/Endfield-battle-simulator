@@ -2813,6 +2813,19 @@
         {
           "type": "object",
           "required": [
+            "enemyInflictionStacks"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "enemyInflictionStacks": {
+              "$ref": "#/$defs/artsElement",
+              "description": "The enemy's infliction stacks of this element (0 when it has none, or another element's): the twin of enemyVulnerableStacks."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
             "floor"
           ],
           "additionalProperties": false,
