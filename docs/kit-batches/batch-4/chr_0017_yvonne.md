@@ -128,7 +128,7 @@ S state, T timing / legality.
 | 21 | Ultimate state from frame 61 for `duration` (7 s): basic attacks become the enhanced chain (SwitchModeAction "ult"), no energy | supported | buff `ult_state` (`blocksEnergy`) by a cast trigger at delay 61; attack1–4 `available: not (ult_state or ult_end or barrage)`, ult attacks `available: ult_state and not barrage` (Laevatain's pattern) |
 | 22 | Enhanced chain 1_1 → 2_1 → 2_2 → 3_1 → 3_2 → 3_2 …: 3, 4, 4, 8, 8 shots of `atk_scale` | supported | one entry per projectile with `launch`; events ult_attack1/2_projhit (2_2's shots at 1 and 7 can be either key); log ✓ |
 | 23 | Layers: one per launch (not 2_1's last or 2_2's last; +1 at the end strike's frame 0), max 10, 4 s on one timer: Crit Rate +0.03 per layer; at 10 layers Crit DMG +0.06 per layer (+0.6) | supported | buff `ult_layers` (`maxStacks: 10`, the loader's `sharedTimer`), modifiers attr 9 `normal_dmg_up`, attr 10 `crit_rate_up` `if: {buffLayers: ult_layers, atLeast: 10}`; hits `buffs: [{buff: ult_layers, beforeDamage: true}]`. Log ✓ (+0.6 Crit DMG at 10 layers). Whether the timer restarts per layer: B3 (test 62) |
-| 24 | End state (3 s, from the state's end): the next basic-attack input becomes ult_attack_end (ComboCacheAction in the buff), no energy | gap | **G1** (a buff's input mapping). Interim: buff `ult_end` (`blocksEnergy`), ult_attack_end `available: ult_end`; cast inside an open chain window it waits for the window's end (≤ 0.3 s) |
+| 24 | End state (3 s, from the state's end): the next basic-attack input becomes ult_attack_end (ComboCacheAction in the buff), no energy | gap | **G1** (a buff's input mapping). Interim: buff `ult_end` (`blocksEnergy`), ult_attack_end `available: ult_end`; cast inside an open chain window it waits for the window's end (up to 0.3 s) |
 | 25 | End strike at 28: `atk_scale` 3.0 Final Strike, poise 20; "If the enemy is Solidified, Yvonne performs an additional attack … and then consumes the enemy's Solidification" (`atk_scale_extra` 6.0, mask 128, FinishBuffAdvanced after it) | supported | hits `end` (`finalStrike`) and `end_extra` (`if` Solidified, `finalStrike: false`, `consumeStatus [solidification]` `afterDamage`); the end strike on a Solidified enemy opens her combo |
 | 26 | End strike: which IfElse branch and whether the layers still act. [28–60] (checks the end state) and [28–31] (FinishBuff end state and layers) start on the same frame; damage first: layers act (Crit Rate +0.3, Crit DMG +0.6 at 10), no processors; finish first: processors only (Crit Rate +0.03 × layers, Crit DMG +0.06) | unknown | interim: file order (damage first). About ±25% on the crits of her two biggest hits. A log only (row 23's log has no end strike) |
 | 27 | Ultimate cooldown: 10 s set when the end state ends (consumed by the end strike at 28, or after 3 s) | supported | triggers `ult_cooldown` (`buffEnded ult_end` → `cooldown set 10`, end layers), `end_strike_ends_state` (delay 28) |
@@ -155,8 +155,8 @@ S state, T timing / legality.
 | W9 | Wedge: "When the wielder's battle skill applies an Arts Reaction, the wielder gains Arts DMG Dealt +{spell_dmg_up3} for {duration2}s. The two effects apply separately" (forced reactions included) | supported | `{on: reaction, fromKinds: [battle]}`, `beforeDamage` (test 51's question) → a second buff |
 | W10 | Weapon leftovers: toggleBuffs `buff_wpn_lance_0003` / `buff_wpn_passive_spirit_01`, Wedge `_extra` / `_cd` / `_icon` | supported | inert |
 
-**Counts** (49 rows): supported 38 (5 of them `supported (data)`: rows
-18, 19, 33, W1, W4, W7 — six with W7; rows 29 and 9 rest on interims),
+**Counts** (49 rows): supported 38 (6 of them `supported (data)`: rows
+18, 19, 33, W1, W4, W7; rows 9, 29, W2 and W8 rest on interims),
 gap 5 (rows 3 and 24: G1; row 4: G2; W3: G4; row 7: S5, deferred),
 unknown 5 (rows 26, 30, 37, 38, W6), data 1 (row 39), unique? 0. G3 (log
 tooling) has no row: it blocks verification, not the kit.
@@ -193,7 +193,8 @@ tooling) has no row: it blocks verification, not the kit.
   instead of after four attacks (~3 s); search would find it. The interim
   (attack5 `chainStep: false`, `available: barrage or a4_chain`, every
   other basic attack `not barrage`) is exact except that attack5 or the end
-  strike cast inside another step's open window waits for its end (≤ 0.9 s).
+  strike cast inside another step's open window waits for its end (up to
+  14 frames, about 0.5 s).
 
 ### G2. Windows under a condition
 

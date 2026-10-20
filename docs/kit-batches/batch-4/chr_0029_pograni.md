@@ -143,7 +143,8 @@ Vulnerability application) and Grand Vision never does; Thermite Cutter
 - **impact:** after a 2- or 3-stack combo, his actions outside the
   AllowNextSkillAction windows (ultimate, swap, as test 61 defines the
   mark) wait until the path's end (145 / 191 frames) instead of 50 / 80:
-  3.2–3.7 s. Purrchena's and Typhoeus's later segments the same.
+  3.2–3.7 s. Purrchena's and Typhoeus's skills may be affected the same
+  way where a jump skips their first mark (not checked here).
 
 ### G3. One buff applied with different durations
 
@@ -196,8 +197,9 @@ Vulnerability application) and Grand Vision never does; Thermite Cutter
   Aspirant `_pdi_up`.
 - **impact:** Grand Vision on the Endministrator: her Crush (her largest
   hit) and the crystal hit miss +64.8% (L5) to +100.8% (L9) Physical
-  DMG; the opener's total about −30%. Glorious Memory and Aspirant: the
-  Lift / Knock Down hits inside the ultimate (Chen's none; others').
+  DMG (with her other DMG bonuses about −30% on those two hits, which are
+  most of her opener's damage). Glorious Memory and Aspirant: the Lift /
+  Knock Down hits inside the ultimate (Chen's has none).
 
 ### G6. Weapon variants
 
