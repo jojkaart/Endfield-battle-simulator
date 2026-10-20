@@ -1,25 +1,30 @@
 // Compiles an operator skill's SkillData file, and the projectile, ability
 // entity and buff files it reaches, into the plain facts a kit hand-writes
 // today (docs/kit-abstractions.md section 1): every damage landing with its
-// frame from the skill's start, scale key and SimpleCalcBB factor, decorate
-// mask and log event key; inflictions, forced reactions and partial
-// consumption next to it; ultimate energy and SP grants; energy blocks; the
-// team-energy frame; and the jumps and branches it can't decide.
+// frame from the skill's start, scale key, literal factor (SimpleCalcBB,
+// BreakingAttackCalculation's multiplier), element, stagger (poise units),
+// damage-unit bonuses, decorate mask and log event key; inflictions, forced
+// reactions, physical statuses and partial consumption next to it; ultimate
+// energy and SP grants; energy blocks; the team-energy frame; the buffs it
+// creates and on whom; and the jumps and branches it can't decide.
 //
 // It reads the action graph without running the game: one enemy, every
 // ForEach once, IfElse / Switch conditions decided only when the data
 // settles them (a literal comparison, runtime state at its start value,
-// "there is a target"), otherwise both sides are kept and labelled in
-// `branch`. JumpToAction is reported, never followed. Event handlers (ability
-// events, a buff's events) run once at their buff's or entity's start, so
-// their frames are lower bounds, labelled in `branch`. Frames are 30 FPS;
-// projectile travel isn't in the data, so a projectile's hits use its launch
-// frame. Enum codes it relies on (buffEvent, compare, blackboard operations)
-// are the ones Endaxis documents; shared reaction buffs (buff_common_*) are
-// recognised by name, not followed.
+// "there is a target"), otherwise every side is kept and labelled in
+// `branch` (and in `steps`, which say which alternatives exclude each other
+// and, where the compiler can, the condition as a kit predicate). JumpToAction
+// is reported, never followed. Event handlers (ability events, a buff's
+// events) run once at their buff's or entity's start, so their frames are
+// lower bounds, labelled in `branch`. Frames are 30 FPS; projectile travel
+// isn't in the data, so a projectile's hits use its launch frame. Enum codes
+// it relies on (buffEvent, compare, blackboard operations) are the ones
+// Endaxis documents; shared reaction buffs (buff_common_*) are recognised by
+// name, not followed.
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { Element, PhysicalStatus, Predicate, Zone } from "@efsim/engine";
 import { parseJsonExact } from "./json.ts";
 import { sourceDir } from "./sources.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
@@ -37,6 +42,12 @@ export type StatusName = "combustion" | "electrification" | "solidification" | "
 /** SpellInfliction inflictionType → kit element (0 Heat, 1 Electric, 2 Cryo, 3 Nature). */
 const INFLICTION: readonly InflictionElement[] = ["fire", "pulse", "cryst", "natural"];
 /**
+ * DamageAction damageUnits[].damageType → element: 0 Physical, 2 Heat, 3
+ * Electric, 4 Cryo, 6 Nature, as every kit hit with a log agrees (8 is Fixed
+ * DMG, not an element). Other codes don't occur in operator files.
+ */
+const DAMAGE_ELEMENT: Readonly<Record<number, Element>> = { 0: "physical", 2: "fire", 3: "pulse", 4: "cryst", 6: "natural" };
+/**
  * ForceSpellStatusAction spellStatusType → status. Assumed to follow the
  * inflictionType order (the batch's only case, Liino's ultimate bomb, is 1 and
  * forces Electrification per its description).
@@ -44,6 +55,10 @@ const INFLICTION: readonly InflictionElement[] = ["fire", "pulse", "cryst", "nat
 const FORCED_STATUS: readonly StatusName[] = ["combustion", "electrification", "solidification", "corrosion"];
 /** Status words in the shared reaction buffs a skill creates to force a reaction (buff_common_fire_fire_burning_triggered). */
 const STATUS_WORD: Readonly<Record<string, StatusName>> = { burning: "combustion", conduct: "electrification", frozen: "solidification", corrupt: "corrosion" };
+/** The physical-status actions: AirborneAction is Lift, KnockDownAction Knock Down, CrushAction Crush, FractureAction Breach. */
+const PHYSICAL_ACTION: Readonly<Record<string, PhysicalStatus>> = { AirborneAction: "lift", KnockDownAction: "knockdown", CrushAction: "crush", FractureAction: "breach" };
+/** The shared buff that adds a Vulnerable stack (CreateBuff count = stacks). */
+const VULNERABLE_BUFF = "buff_physical_no_guard";
 
 /** A blackboard value as the compiler tracks it: a product of keys × a literal factor (no keys: a literal), with its value when known. */
 export interface CompiledValue {
@@ -51,7 +66,7 @@ export interface CompiledValue {
   readonly keys: readonly string[];
   /** Per key, the file whose blackboard defines it (the compiled skill's own, unless a child file's key wasn't passed down). */
   readonly origins: readonly string[];
-  /** Literal multiplier applied on the way (SimpleCalcBB × / ÷). */
+  /** Literal multiplier applied on the way (SimpleCalcBB × / ÷, BreakingAttackCalculation's multiplier). */
   readonly factor: number;
   /** Its value, when known: the level value (CompileOptions.values) or the file's default for keys, the literal otherwise. */
   readonly value: number | null;
@@ -59,6 +74,21 @@ export interface CompiledValue {
   readonly expr?: string;
   /** The key is runtime state (SkillData blackboard isDynamic, e.g. a hit counter): its default is its starting value. */
   readonly dynamic?: true;
+}
+
+/**
+ * One undecided condition on the way to a fact. Facts on different `alt`s
+ * of one `site` exclude each other (the sides of an IfElse, the options of a
+ * Switch); a gate (a condition among a sequence's actions) has only alt 0.
+ */
+export interface BranchStep {
+  readonly label: string;
+  /** The IfElse, Switch or gating condition (the same number every time the walk passes it), or null for what isn't a choice (an event handler, a blocked projectile). */
+  readonly site: number | null;
+  /** IfElse: 0 the succeed side, 1 the fail side; Switch: the option's index; a gate: 0. */
+  readonly alt: number;
+  /** The condition as a kit predicate, when the compiler can say it (controlled, a talent's or potential's attached buff); null otherwise. */
+  readonly pred: Predicate | null;
 }
 
 /** Where a fact happens. */
@@ -75,8 +105,17 @@ export interface Placement {
   readonly detached: boolean;
   /** Conditions the compiler couldn't decide on the way, outermost first (empty: unconditional). */
   readonly branch: readonly string[];
+  /** The same conditions, with what excludes what and their predicates (one per `branch` entry). */
+  readonly steps: readonly BranchStep[];
   /** How the file was reached, e.g. `LaunchProjectile@12 hit → chr_0016_laevat_attack_5_projhit`. */
   readonly via: readonly string[];
+}
+
+/** Stagger a damage landing deals (its DamageAction's poise unit, damageAttributeType 1). */
+export interface CompiledPoise {
+  readonly value: CompiledValue;
+  /** onlyEnableForMainChar: it counts only while the operator is controlled. */
+  readonly controlledOnly: boolean;
 }
 
 export interface CompiledLanding extends Placement {
@@ -86,14 +125,38 @@ export interface CompiledLanding extends Placement {
   readonly finalStrike: boolean;
   /** damageUnits[].damageType (the element / physical type code). */
   readonly damageType: number;
+  /** The damage's element (from damageType), or null for Fixed DMG and unknown codes. */
+  readonly element: Element | null;
+  /** Its DamageAction's stagger, or null when it deals none. */
+  readonly poise: CompiledPoise | null;
+  /** Bonuses its damage unit's processors give it (InstantModifyAttribute crit rate, DamageScaleProcessor zones). */
+  readonly bonuses: readonly { readonly zone: Zone; readonly value: CompiledValue }[];
 }
 
-/** What a skill does to the enemy's arts state; `landing` is the landing it goes with (as for CompiledCost), or null. */
+/** What a skill does to the enemy's arts and physical state; `landing` is the landing it goes with (as for CompiledCost), or null. */
 export type CompiledEffect = Placement & { landing: number | null } & (
   | { readonly kind: "infliction"; readonly element: InflictionElement; readonly isExtra: boolean }
-  | { readonly kind: "forcedReaction"; readonly status: StatusName | null; readonly source: string; readonly level: CompiledValue | null; readonly duration: CompiledValue | null }
+  | {
+      readonly kind: "forcedReaction";
+      readonly status: StatusName | null;
+      readonly source: string;
+      readonly level: CompiledValue | null;
+      readonly duration: CompiledValue | null;
+      /** The created status buff's other assigned keys (extra_scaling, extra_duration, …), by the buff's key. */
+      readonly assigned: Readonly<Record<string, CompiledValue>>;
+    }
   | { readonly kind: "burst"; readonly element: InflictionElement | null; readonly source: string }
   | { readonly kind: "consumeInfliction"; readonly element: InflictionElement | null; readonly layers: CompiledValue | null; readonly tags: readonly number[] }
+  | {
+      readonly kind: "physicalStatus";
+      readonly status: PhysicalStatus;
+      /** forceAirborne / forceKnockDown: it lands without Vulnerable. */
+      readonly forced: boolean;
+      /** CrushAction damageMultiplier, or null for the others. */
+      readonly multiplier: CompiledValue | null;
+      readonly isExtra: boolean;
+    }
+  | { readonly kind: "vulnerable"; readonly stacks: CompiledValue }
 );
 
 export interface CompiledCost extends Placement {
@@ -124,6 +187,19 @@ export interface CompiledCast extends Placement {
   readonly followed: boolean;
 }
 
+/** On whom a created buff goes: the operator, the enemy (a target group of enemies), the context's target (the enemy hit, in a hit or projectile), the team, an aura's members, or not known. */
+export type BuffTarget = "self" | "enemy" | "target" | "team" | "aura" | "unknown";
+
+/** A buff the skill creates (CreateBuff or an AuraAction's buffInput), other than the shared buff_common_* ones. */
+export interface CompiledBuff extends Placement {
+  readonly buff: string;
+  readonly target: BuffTarget;
+  /** Its duration in seconds (BuffData, with assigned keys), or null when it lasts until ended or isn't known. */
+  readonly seconds: number | null;
+  /** What it does, in short (damage modifiers, attribute modifiers, susceptibility), from its BuffData; empty when it has none of these. */
+  readonly summary: string;
+}
+
 export interface CompiledSkill {
   readonly skillId: string;
   readonly durationFrames: number;
@@ -139,6 +215,7 @@ export interface CompiledSkill {
   readonly teamEnergy: readonly TeamEnergyPart[];
   readonly jumps: readonly CompiledJump[];
   readonly casts: readonly CompiledCast[];
+  readonly buffs: readonly CompiledBuff[];
   /** Assumptions made and things not followed. */
   readonly notes: readonly string[];
   /** Every file read, the skill's own first. */
@@ -159,6 +236,20 @@ export interface CompileOptions {
    * 7.5 in the file, 15 at every level). Default: the file's defaults.
    */
   readonly values?: Readonly<Record<string, number>>;
+  /**
+   * Buffs a talent or potential attaches to the operator, with the kit
+   * predicate that holds while it's attached ({talentAtLeast: [0, 1]},
+   * {potentialAtLeast: 3}): a CheckBuffStackNum on one of them is that
+   * predicate.
+   */
+  readonly attachedBuffs?: ReadonlyMap<string, Predicate>;
+  /**
+   * Keys of the compiled skill that are 0 unless a talent or potential sets
+   * them (Wulfgard's `talent2`), with the predicate under which they're set
+   * and the smallest and largest values they're set to: comparing one with 0 is that
+   * predicate.
+   */
+  readonly valueGates?: ReadonlyMap<string, { readonly pred: Predicate; readonly min: number; readonly max: number }>;
 }
 
 const shortType = (t: unknown): string => {
@@ -176,17 +267,28 @@ const toFrame = (seconds: number) => Math.round(seconds * FPS);
 /** Whether branch `a` is `b` or encloses it. */
 export const prefixOf = (a: readonly string[], b: readonly string[]) => a.length <= b.length && a.every((x, k) => b[k] === x);
 const fmt = (n: number) => String(Math.round(n * 1e6) / 1e6);
+const not = (p: Predicate | null): Predicate | null => (p === null ? null : "not" in p ? p.not : { not: p });
+/** The conjunction of predicates; null when any is unknown. */
+export function allOf(ps: readonly (Predicate | null)[]): Predicate | null {
+  if (ps.some((p) => p === null)) return null;
+  const known = ps as readonly Predicate[];
+  return known.length === 1 ? (known[0] as Predicate) : { all: [...known] };
+}
 
 type BB = Map<string, CompiledValue>;
+/** What a FindTargetAction's target group holds. */
+type GroupKind = "enemy" | "team" | "other";
 
 interface Ctx {
   readonly file: string;
   readonly detached: boolean;
   readonly bb: BB;
-  readonly branch: readonly string[];
+  readonly steps: readonly BranchStep[];
   readonly via: readonly string[];
   /** Files on the way here (cycle guard). */
   readonly stack: readonly string[];
+  /** Target groups found in this file so far (FindTargetAction targetGroupKey). */
+  readonly groups: Map<string, GroupKind>;
   /** The buff's life when walking a buff file: RefrainObtainUsp in it blocks for that long. */
   readonly buffSpan?: { readonly buff: string; readonly from: number; readonly to: number | null };
   /** Inside an event handler, which may run any number of times: runtime counters aren't at their start value. */
@@ -195,6 +297,12 @@ interface Ctx {
 
 interface Sequence {
   readonly actionData?: unknown;
+}
+
+interface Verdict {
+  readonly value: boolean | null;
+  readonly label: string;
+  readonly pred: Predicate | null;
 }
 
 function readJson(path: string): Obj {
@@ -231,6 +339,18 @@ function describeValue(v: CompiledValue): string {
   return [...v.keys, ...(v.factor === 1 ? [] : [fmt(v.factor)])].join(" × ");
 }
 
+/** A finder's group: HitBoxFinder factionTarget 1 and the enemy finders are enemies, the team finders and factionTarget 0 the team. */
+function groupKind(finder: Obj | null): GroupKind {
+  const t = shortType(finder?.["$type"]);
+  if (t === "Selector" && finder) {
+    const name = String(finder["$type"]).split(",")[0]?.split(".").pop() ?? "";
+    if (/^Selector\+(AllEnemyFinder|MainTargetFinder|InFightEnemyFinder|SmartTargetFinder)/.test(name)) return "enemy";
+    if (/^Selector\+CharacterTeamFinder/.test(name)) return "team";
+    if (/^Selector\+HitBoxFinder/.test(name)) return finder["factionTarget"] === 1 ? "enemy" : finder["factionTarget"] === 0 ? "team" : "other";
+  }
+  return "other";
+}
+
 class Compiler {
   readonly landings: CompiledLanding[] = [];
   readonly effects: CompiledEffect[] = [];
@@ -239,8 +359,12 @@ class Compiler {
   readonly teamEnergy: TeamEnergyPart[] = [];
   readonly jumps: CompiledJump[] = [];
   readonly casts: CompiledCast[] = [];
+  readonly buffs: CompiledBuff[] = [];
   readonly notes = new Set<string>();
   readonly files: string[] = [];
+  /** The choice actions met, numbered in the order first walked (BranchStep.site). */
+  private readonly sites = new WeakMap<object, number>();
+  private siteCount = 0;
 
   readonly root: string;
   readonly options: CompileOptions;
@@ -250,8 +374,22 @@ class Compiler {
     this.options = options;
   }
 
-  private place(ctx: Ctx, frame: number, extraBranch: readonly string[] = []): Placement {
-    return { frame, file: ctx.file, detached: ctx.detached, branch: [...ctx.branch, ...extraBranch], via: ctx.via };
+  private site(a: object): number {
+    let n = this.sites.get(a);
+    if (n === undefined) {
+      n = this.siteCount++;
+      this.sites.set(a, n);
+    }
+    return n;
+  }
+
+  private place(ctx: Ctx, frame: number): Placement {
+    return { frame, file: ctx.file, detached: ctx.detached, branch: ctx.steps.map((s) => s.label), steps: ctx.steps, via: ctx.via };
+  }
+
+  /** The context one undecided condition further in. */
+  private sub(ctx: Ctx, label: string, site: number | null = null, alt = 0, pred: Predicate | null = null): Ctx {
+    return { ...ctx, steps: [...ctx.steps, { label, site, alt, pred }] };
   }
 
   /** A `{useBlackboardKey, blackboardKey, value}` field read against the blackboard. */
@@ -269,7 +407,6 @@ class Compiler {
   /** Blackboard arithmetic (Endaxis-documented operation codes: 0 assign, 1 add, 2 multiply, 3 divide). */
   calc(op: number, a: CompiledValue, b: CompiledValue, repeated = false): CompiledValue {
     const lit = isLiteral;
-    // Counting on runtime state (hit_index += 1) gives a literal; a skill value's default isn't its level value.
     // Counting on runtime state (hit_index += 1, atk_scale_total += atk_scale) starts from its known value; a skill value's default isn't its level value.
     const state = (v: CompiledValue) => (!repeated && v.dynamic === true && isKnown(v) ? LITERAL(v.value) : v);
     if (op === 1 && (state(a) !== a || state(b) !== b)) return this.calc(op, state(a), state(b), repeated);
@@ -316,7 +453,7 @@ class Compiler {
       // A value the level table has is a skill value, not runtime state.
       bb.set(k, { keys: [k], origins: [d?.origins[0] ?? this.root], factor: 1, value: v });
     }
-    const ctx: Ctx = { file: this.root, detached: false, bb, branch: [], via: [], stack: [this.root] };
+    const ctx: Ctx = { file: this.root, detached: false, bb, steps: [], via: [], stack: [this.root], groups: new Map() };
     this.walkSkillFile(j, 0, ctx);
     this.attach();
     return {
@@ -331,6 +468,7 @@ class Compiler {
       teamEnergy: this.teamEnergy,
       jumps: this.jumps,
       casts: this.casts,
+      buffs: this.buffs,
       notes: [...this.notes],
       files: this.files,
     };
@@ -360,7 +498,7 @@ class Compiler {
     const group = (j["actionGroupData"] ?? {}) as Obj;
     this.walkTimeline((group["timelineActions"] ?? []) as Obj[], base, ctx);
     for (const e of (group["passiveEventActions"] ?? []) as Obj[]) {
-      this.walkSequences(e["actions"], base, base, { ...ctx, repeated: true, branch: [...ctx.branch, `on ability event ${String(e["abilityEvent"])}`] });
+      this.walkSequences(e["actions"], base, base, { ...this.sub(ctx, `on ability event ${String(e["abilityEvent"])}`), repeated: true });
     }
   }
 
@@ -394,7 +532,8 @@ class Compiler {
         if (r.value === false) return;
         if (r.value === null) {
           // The rest runs only if the gate holds: what it writes is known only on that path.
-          this.fork(ctx, [(c) => this.execActions(actions, i + 1, start, end, { ...c, branch: [...c.branch, `if ${r.label}`] }), () => {}]);
+          const site = this.site(raw);
+          this.fork(ctx, [(c) => this.execActions(actions, i + 1, start, end, this.sub(c, `if ${r.label}`, site, 0, r.pred)), () => {}]);
           return;
         }
         continue;
@@ -421,17 +560,18 @@ class Compiler {
     }
   }
 
-  /** Decides a condition when the data settles it (a literal comparison, a target being there); otherwise null. */
-  evalCondition(a: Obj, ctx: Ctx): { value: boolean | null; label: string } {
+  /** Decides a condition when the data settles it (a literal comparison, a target being there); otherwise null, with the condition as a predicate when it can say it. */
+  evalCondition(a: Obj, ctx: Ctx): Verdict {
     const r = this.evalPlain(a, ctx);
     if (a["invertCondition"] !== true) return r;
-    return { value: r.value === null ? null : !r.value, label: `not ${r.label}` };
+    return { value: r.value === null ? null : !r.value, label: `not ${r.label}`, pred: not(r.pred) };
   }
 
-  private evalPlain(a: Obj, ctx: Ctx): { value: boolean | null; label: string } {
+  private evalPlain(a: Obj, ctx: Ctx): Verdict {
     const t = shortType(a["$type"]);
     const sym = (code: unknown) => ["<", "≤", ">", "≥", "="][Number(code ?? 0)] ?? `cmp${String(code)}`;
     const cmp = (x: number, y: number, code: number): boolean | null => (code === 0 ? x < y : code === 1 ? x <= y : code === 2 ? x > y : code === 3 ? x >= y : code === 4 ? x === y : null);
+    const open = (label: string, pred: Predicate | null = null): Verdict => ({ value: null, label, pred });
     switch (t) {
       case "CompareFloat": {
         const x = this.value(a["valueA"], ctx.bb);
@@ -440,63 +580,101 @@ class Compiler {
         const label = `${describeValue(x)} ${sym(code)} ${describeValue(y)}`;
         // Only literals and runtime state: a skill value's default isn't its level value.
         const decidable = (v: CompiledValue) => (ctx.repeated ? isLiteral(v) : isKnown(v));
-        if (decidable(x) && decidable(y)) return { value: cmp(x.value as number, y.value as number, code), label: `${label} (${fmt(x.value as number)} vs ${fmt(y.value as number)})` };
-        return { value: null, label };
+        if (decidable(x) && decidable(y)) return { value: cmp(x.value as number, y.value as number, code), label: `${label} (${fmt(x.value as number)} vs ${fmt(y.value as number)})`, pred: null };
+        return open(label, this.gatePred(x, code, y));
       }
       case "CheckEntityNum": {
         const label = `targets ${sym(a["compareType"])} ${String(a["minNum"] ?? 0)}`;
         // Counts the skill's targets: one enemy in this simulator (not spawned entities or teammates).
         const finder = JSON.stringify(((a["checkTarget"] ?? {}) as Obj)["selectorData"] ?? null);
-        if (finder.includes("Spawned") || finder.includes("Team")) return { value: null, label };
+        if (finder.includes("Spawned") || finder.includes("Team")) return open(label);
         const v = cmp(1, Number(a["minNum"] ?? 0), Number(a["compareType"]));
         if (v !== null) this.notes.add(`CheckEntityNum decided for one enemy (${label} → ${String(v)})`);
-        return { value: v, label };
+        return { value: v, label, pred: null };
       }
       case "CheckObjectTypeMatch": {
         // objectTypeMask 16 is Enemy (Endaxis's AuraTargetType table): the hit target is the enemy.
         const m = Number(a["objectTypeMask"] ?? 0);
-        return { value: (m & 16) !== 0 ? true : null, label: `object type ${m}` };
+        return { value: (m & 16) !== 0 ? true : null, label: `object type ${m}`, pred: null };
       }
       case "CheckSquadInFight":
-        return { value: true, label: "in fight" };
+        return { value: true, label: "in fight", pred: null };
       case "CheckTargetsEqual":
         // Two target groups of one enemy are the same target.
         this.notes.add("CheckTargetsEqual decided true for one enemy");
-        return { value: true, label: "same target" };
+        return { value: true, label: "same target", pred: null };
       case "OrConditionAction": {
         const parts = ((a["conditionList"] ?? []) as Sequence[]).map((seq) => this.evalSequenceCondition(seq, ctx));
         const label = parts.map((p) => p.label).join(" or ") || "or";
-        if (parts.some((p) => p.value === true)) return { value: true, label };
-        return { value: parts.length && parts.every((p) => p.value === false) ? false : null, label };
+        if (parts.some((p) => p.value === true)) return { value: true, label, pred: null };
+        if (parts.length && parts.every((p) => p.value === false)) return { value: false, label, pred: null };
+        const undecided = parts.filter((p) => p.value === null);
+        const preds = undecided.map((p) => p.pred);
+        return open(label, preds.some((p) => p === null) ? null : preds.length === 1 ? (preds[0] as Predicate) : { any: preds as Predicate[] });
       }
       case "CheckMainCharacterCondition":
-        return { value: null, label: "controlled" };
+        return open("controlled", { controlled: true });
       case "Probablity":
-        return { value: null, label: `chance ${describeValue(this.value(a["prob"], ctx.bb))}` };
+        return open(`chance ${describeValue(this.value(a["prob"], ctx.bb))}`);
       case "CheckBuffStackNumAdvanced":
       case "CheckBuffStackNum": {
         const what = this.buffRef(a["buffSettings"] ?? a["buffId"]);
-        return { value: null, label: `stacks(${what}) ${sym(a["compareType"])} ${describeValue(this.value(a["value"], ctx.bb))}` };
+        const v = this.value(a["value"], ctx.bb);
+        return open(`stacks(${what}) ${sym(a["compareType"])} ${describeValue(v)}`, this.attachedPred(what, Number(a["compareType"] ?? 0), v));
       }
       case "CheckBuffIdInContextAdvanced": {
-        const ids = ((a["buffIdList"] ?? []) as Obj[]).map((x) => describeValue(this.value(x, ctx.bb)) === "?" ? String(x["value"]) : String(x["value"]));
-        return { value: null, label: `buff in context(${ids.join("|")})` };
+        const ids = ((a["buffIdList"] ?? []) as Obj[]).map((x) => String(x["value"]));
+        return open(`buff in context(${ids.join("|")})`);
       }
       case "CheckTagMatch":
       case "CheckDamageTag": {
         const q = (a["query"] ?? a) as Obj;
-        return { value: null, label: `${t === "CheckDamageTag" ? "damage tag" : "tag"}(${((q["tags"] ?? []) as Obj[]).map((x) => this.tagName(Number(x["tagId"]))).join("|")})` };
+        return open(`${t === "CheckDamageTag" ? "damage tag" : "tag"}(${((q["tags"] ?? []) as Obj[]).map((x) => this.tagName(Number(x["tagId"]))).join("|")})`);
       }
       default:
-        return { value: null, label: this.summary(a) };
+        return open(this.summary(a));
     }
+  }
+
+  /**
+   * A stack check on a buff a talent or potential attaches: the attaching
+   * predicate when the check asks whether it's there (≥ 1, > 0), its negation
+   * when it asks whether it's absent (< 1, ≤ 0, = 0); null otherwise.
+   */
+  private attachedPred(buff: string, code: number, v: CompiledValue): Predicate | null {
+    const p = this.options.attachedBuffs?.get(buff);
+    if (!p || !isLiteral(v)) return null;
+    const n = v.value as number;
+    if ((code === 3 && n > 0 && n <= 1) || (code === 2 && n >= 0 && n < 1)) return p;
+    if ((code === 0 && n > 0 && n <= 1) || (code === 1 && n >= 0 && n < 1) || (code === 4 && n === 0)) return { not: p };
+    return null;
+  }
+
+  /**
+   * A comparison of a gate key (CompileOptions.valueGates) with a literal: the
+   * gate's predicate when it asks whether the key is set (> 0, ≥ a value up
+   * to the smallest it's set to), its negation when it asks whether it isn't
+   * (= 0, ≤ 0, < such a value); null otherwise.
+   */
+  private gatePred(x: CompiledValue, code: number, y: CompiledValue): Predicate | null {
+    const key = x.keys.length === 1 && x.factor === 1 && !x.expr && x.origins[0] === this.root ? x.keys[0] : undefined;
+    const gate = key === undefined ? undefined : this.options.valueGates?.get(key);
+    if (!gate || !isLiteral(y)) return null;
+    const n = y.value as number;
+    const within = n > 0 && n <= gate.min;
+    // Equal to the one value it's ever set to (a flag: potential_2 = 1).
+    const isSet = code === 4 && n === gate.min && gate.max === gate.min;
+    if ((code === 2 && n === 0) || (code === 3 && within) || isSet) return gate.pred;
+    if (((code === 4 || code === 1) && n === 0) || (code === 0 && within)) return { not: gate.pred };
+    return null;
   }
 
   /** A buff filter (buffSettings / buffId) as text: buff IDs, or tags (infliction tags by element). */
   private buffRef(v: unknown): string {
-    if (!v || typeof v !== "object") return "?";
+    if (!v || typeof v !== "object") return typeof v === "string" ? v : "?";
     const o = v as Obj;
     if (typeof o["buffId"] === "string") return o["buffId"];
+    if (o["useBlackboardKey"] === false && typeof o["value"] === "string") return o["value"];
     const ids = Array.isArray(o["buffIdList"]) ? (o["buffIdList"] as unknown[]).filter((x): x is string => typeof x === "string") : [];
     const tags = (((o["tagQuery"] ?? {}) as Obj)["tags"] ?? []) as Obj[];
     return [...ids, ...tags.map((x) => this.tagName(Number(x["tagId"])))].join("|") || "?";
@@ -534,8 +712,13 @@ class Compiler {
         return;
       }
       case "ForceSpellStatusAction":
-        this.effects.push({ ...this.place(ctx, start), landing: null, kind: "forcedReaction", status: FORCED_STATUS[Number(a["spellStatusType"])] ?? null, source: `ForceSpellStatusAction spellStatusType ${String(a["spellStatusType"])}`, level: this.value(a["count"], ctx.bb), duration: null });
+        this.effects.push({ ...this.place(ctx, start), landing: null, kind: "forcedReaction", status: FORCED_STATUS[Number(a["spellStatusType"])] ?? null, source: `ForceSpellStatusAction spellStatusType ${String(a["spellStatusType"])}`, level: this.value(a["count"], ctx.bb), duration: null, assigned: {} });
         return;
+      case "AirborneAction":
+      case "KnockDownAction":
+      case "CrushAction":
+      case "FractureAction":
+        return this.physical(a, t, start, ctx);
       case "FinishBuffAdvanced":
       case "FinishBuffAction":
         return this.finishBuff(a, start, ctx);
@@ -547,7 +730,9 @@ class Compiler {
         return;
       }
       case "CreateBuffAction":
-        return this.createBuff(a, start, ctx);
+        return this.createBuffs((a["buffs"] ?? []) as Obj[], start, ctx, this.buffTarget(a, ctx), `CreateBuff@${start}`, this.value(a["count"], ctx.bb));
+      case "AuraAction":
+        return this.aura(a, start, end, ctx);
       case "CreateGlobalBuffAction":
         this.notes.add(`${ctx.file}@${start}: CreateGlobalBuffAction ${JSON.stringify((a["globalBuffs"] ?? []) as unknown[]).slice(0, 120)} not followed`);
         return;
@@ -557,16 +742,24 @@ class Compiler {
         return this.entity(a, start, ctx);
       case "CastSkill":
         return this.castSkill(a, start, ctx);
+      case "FindTargetAction":
+      case "ContinuousFindTargetAction": {
+        const key = a["targetGroupKey"];
+        if (typeof key === "string" && key) ctx.groups.set(key, groupKind((((a["selectorData"] ?? {}) as Obj)["finderData"] ?? null) as Obj | null));
+        return this.generic(a, t, start, end, ctx);
+      }
       case "IfElseAction": {
         const cond = (a["conditionAction"] ?? {}) as Sequence;
         const r = this.evalSequenceCondition(cond, ctx);
         if (r.value === true) this.execSeq(a["succeedActions"] as Sequence, start, end, ctx);
         else if (r.value === false) this.execSeq(a["failActions"] as Sequence, start, end, ctx);
-        else
+        else {
+          const site = this.site(a);
           this.fork(ctx, [
-            (c) => this.execSeq(a["succeedActions"] as Sequence, start, end, { ...c, branch: [...c.branch, `if ${r.label}`] }),
-            (c) => this.execSeq(a["failActions"] as Sequence, start, end, { ...c, branch: [...c.branch, `if not ${r.label}`] }),
+            (c) => this.execSeq(a["succeedActions"] as Sequence, start, end, this.sub(c, `if ${r.label}`, site, 0, r.pred)),
+            (c) => this.execSeq(a["failActions"] as Sequence, start, end, this.sub(c, `if not ${r.label}`, site, 1, not(r.pred))),
           ]);
+        }
         return;
       }
       case "SwitchAction": {
@@ -577,7 +770,8 @@ class Compiler {
         if (known) {
           for (const o of options) if (this.value(o["value"], ctx.bb).value === choice.value) this.execSeq(o["actionData"] as Sequence, start, end, ctx);
         } else {
-          const runs = options.map((o) => (c: Ctx) => this.execSeq(o["actionData"] as Sequence, start, end, { ...c, branch: [...c.branch, `switch ${label} = ${String(this.value(o["value"], ctx.bb).value)}`] }));
+          const site = this.site(a);
+          const runs = options.map((o, k) => (c: Ctx) => this.execSeq(o["actionData"] as Sequence, start, end, this.sub(c, `switch ${label} = ${String(this.value(o["value"], ctx.bb).value)}`, site, k)));
           this.fork(ctx, [...runs, () => {}]);
         }
         if (known) this.notes.add(`${ctx.file}@${start}: Switch on ${String((a["choice"] as Obj)["blackboardKey"] ?? "literal")} = ${String(choice.value)} (from the data's own values)`);
@@ -593,6 +787,7 @@ class Compiler {
       case "ChannelingAction":
       case "ChannelingActionV2":
       case "TickIntervalAction":
+      case "ExecuteIntervalAction":
         return this.ticks(a, t, start, end, ctx);
       case "JumpToAction": {
         const r = this.evalSequenceCondition((a["conditionAction"] ?? {}) as Sequence, ctx);
@@ -617,7 +812,7 @@ class Compiler {
         else this.blocks.push({ ...this.place(ctx, start), buff: null, until: end });
         return;
       case "EventListenerAction":
-        for (const m of (a["abilityActionMap"] ?? []) as Obj[]) this.walkSequences(m["actions"], start, end, { ...ctx, repeated: true, branch: [...ctx.branch, `on ability event ${String(m["abilityEvent"])}`] });
+        for (const m of (a["abilityActionMap"] ?? []) as Obj[]) this.walkSequences(m["actions"], start, end, { ...this.sub(ctx, `on ability event ${String(m["abilityEvent"])}`), repeated: true });
         return;
       default:
         return this.generic(a, t, start, end, ctx);
@@ -641,41 +836,97 @@ class Compiler {
       for (const s of seqs) {
         if (s && typeof s === "object" && Array.isArray((s as Obj)["actionData"])) {
           const before = this.landings.length;
-          this.execSeq(s as Sequence, start, end, { ...ctx, branch: [...ctx.branch, `${t}.${k}`] });
+          this.execSeq(s as Sequence, start, end, this.sub(ctx, `${t}.${k}`));
           if (this.landings.length > before) this.notes.add(`${ctx.file}@${start}: damage inside ${t}.${k}, timing not interpreted`);
         }
       }
     }
   }
 
-  private evalSequenceCondition(seq: Sequence, ctx: Ctx): { value: boolean | null; label: string } {
+  private evalSequenceCondition(seq: Sequence, ctx: Ctx): Verdict {
     const parts = ((seq.actionData ?? []) as Obj[]).filter((x) => x["isEnable"] !== false && isConditionType(x["$type"])).map((x) => this.evalCondition(x, ctx));
-    if (parts.length === 0) return { value: true, label: "always" };
-    if (parts.some((p) => p.value === false)) return { value: false, label: parts.map((p) => p.label).join(" and ") };
+    if (parts.length === 0) return { value: true, label: "always", pred: null };
+    if (parts.some((p) => p.value === false)) return { value: false, label: parts.map((p) => p.label).join(" and "), pred: null };
     const open = parts.filter((p) => p.value === null);
-    return { value: open.length ? null : true, label: (open.length ? open : parts).map((p) => p.label).join(" and ") };
+    return { value: open.length ? null : true, label: (open.length ? open : parts).map((p) => p.label).join(" and "), pred: open.length ? allOf(open.map((p) => p.pred)) : null };
+  }
+
+  /** A damage unit's stagger: DefiniteValueCalculation value (× valueScale when applyScale); null when it's 0. */
+  private poiseOf(u: Obj, ctx: Ctx, where: string): CompiledPoise | null {
+    const pc = (u["poiseCalculation"] ?? null) as Obj | null;
+    if (!pc) return null;
+    if (shortType(pc["$type"]) !== "DefiniteValueCalculation") {
+      this.notes.add(`${where}: stagger by ${shortType(pc["$type"])} (not read)`);
+      return null;
+    }
+    let v = this.value(pc["value"], ctx.bb);
+    if (pc["applyScale"] === true) v = this.calc(2, v, this.value(pc["valueScale"], ctx.bb));
+    // A key that is 0 (not in the level table, file default 0: Antal's battle skill) deals none.
+    if (!v.expr && v.value === 0) return null;
+    return { value: v, controlledOnly: u["onlyEnableForMainChar"] === true };
   }
 
   private damage(a: Obj, frame: number, ctx: Ctx) {
-    for (const u of (a["damageUnits"] ?? []) as Obj[]) {
-      if (u["damageAttributeType"] !== 0) continue; // 1 = poise (stagger) damage
+    const units = (a["damageUnits"] ?? []) as Obj[];
+    const where = `${ctx.file}@${frame}`;
+    // damageAttributeType 1 = poise (stagger) damage, shared by the action's HP units.
+    const poises = units.filter((u) => u["damageAttributeType"] === 1).map((u) => this.poiseOf(u, ctx, where)).filter((p): p is CompiledPoise => p !== null);
+    if (poises.length > 1) this.notes.add(`${where}: ${poises.length} stagger units (the first is used)`);
+    const poise = poises[0] ?? null;
+    const hp = units.filter((u) => u["damageAttributeType"] === 0);
+    if (hp.length === 0 && poise) this.notes.add(`${where}: stagger ${describeValue(poise.value)} without damage (no hit drafted)`);
+    for (const u of hp) {
       // The scale is on the unit's atkScale or on an AtkScaleCalculation; the other one is an unused 0.
       const calc = (u["atkCalculation"] ?? null) as Obj | null;
       const fields = [calc && typeof calc["atkScale"] === "object" ? calc["atkScale"] : undefined, u["atkScale"]].filter((x): x is Obj => !!x && typeof x === "object");
       const used = fields.find((f) => f["useBlackboardKey"] === true) ?? fields.find((f) => typeof f["value"] === "number" && f["value"] !== 0) ?? fields[0];
-      const scale = this.value(used, ctx.bb);
-      if (calc && shortType(calc["$type"]) !== "AtkScaleCalculation") this.notes.add(`${ctx.file}@${frame}: damage by ${shortType(calc["$type"])} (not ATK × scale)`);
+      let scale = this.value(used, ctx.bb);
+      const calcType = calc ? shortType(calc["$type"]) : null;
+      // A finisher's share of its scale (BreakingAttackCalculation multiplier, e.g. 0.2 and 0.8 of atk_scale).
+      if (calcType === "BreakingAttackCalculation") scale = this.calc(2, scale, this.value(calc?.["multiplier"], ctx.bb));
+      else if (calc && calcType !== "AtkScaleCalculation") this.notes.add(`${where}: damage by ${calcType} (not ATK × scale)`);
       const mask = typeof u["damageDecorateMask"] === "number" ? u["damageDecorateMask"] : 0;
       const kind = (Object.entries(DECORATE_BITS) as [string, number][]).find(([k, bit]) => k !== "finalStrike" && (mask & bit) !== 0)?.[0] as ActionKind | undefined;
+      const damageType = typeof u["damageType"] === "number" ? u["damageType"] : -1;
       this.landings.push({
         ...this.place(ctx, frame),
         scale,
         decorateMask: mask,
         kind: kind ?? null,
         finalStrike: Math.floor(mask / DECORATE_BITS.finalStrike) % 2 === 1,
-        damageType: typeof u["damageType"] === "number" ? u["damageType"] : -1,
+        damageType,
+        element: DAMAGE_ELEMENT[damageType] ?? null,
+        poise,
+        bonuses: this.processors(u, ctx, where),
       });
     }
+  }
+
+  /** A damage unit's processors as hit bonuses: InstantModifyAttribute attribute 9 is crit rate; DamageScaleProcessor on the attacker's side NormalCalcZone the DMG bonus zone, ProdCalcZone the multiplicative one. */
+  private processors(u: Obj, ctx: Ctx, where: string): { zone: Zone; value: CompiledValue }[] {
+    const out: { zone: Zone; value: CompiledValue }[] = [];
+    for (const p of (u["damageProcessors"] ?? []) as Obj[]) {
+      const t = shortType(p["$type"]);
+      if (t === "InstantModifyAttribute") {
+        const m = (p["modifier"] ?? {}) as Obj;
+        if (m["attributeType"] === 9 && p["modifyTargetSide"] === 0) out.push({ zone: "critRate", value: this.value(m["param"], ctx.bb) });
+        else this.notes.add(`${where}: damage processor InstantModifyAttribute attribute ${String(m["attributeType"])} side ${String(p["modifyTargetSide"])} (not read)`);
+      } else if (t === "DamageScaleProcessor" && p["side"] === 0 && (p["zoneName"] === "NormalCalcZone" || p["zoneName"] === "ProdCalcZone")) {
+        out.push({ zone: p["zoneName"] === "NormalCalcZone" ? "damageBonus" : "multiplicative", value: this.value(p["addition"], ctx.bb) });
+      } else this.notes.add(`${where}: damage processor ${this.summary(p)} (not read)`);
+    }
+    return out;
+  }
+
+  /** A physical status action; one with deadOption 2 acts on a dying target only (a death launch or knock-back, per the batch-2 and batch-3 reports) and is only noted. */
+  private physical(a: Obj, t: string, frame: number, ctx: Ctx) {
+    const status = PHYSICAL_ACTION[t] as PhysicalStatus;
+    if (a["deadOption"] === 2) {
+      this.notes.add(`${ctx.file}@${frame}: ${t} with deadOption 2 (on a dying target, assumed) not applied`);
+      return;
+    }
+    const forced = a["forceAirborne"] === true || a["forceKnockDown"] === true;
+    this.effects.push({ ...this.place(ctx, frame), landing: null, kind: "physicalStatus", status, forced, multiplier: t === "CrushAction" ? this.value(a["damageMultiplier"], ctx.bb) : null, isExtra: a["isExtra"] === true });
   }
 
   private finishBuff(a: Obj, frame: number, ctx: Ctx) {
@@ -705,7 +956,7 @@ class Compiler {
       return null;
     }
     if (!this.files.includes(file)) this.files.push(file);
-    return { ...ctx, file, detached: true, via: [...ctx.via, `${how} → ${file}`], stack: [...ctx.stack, file] };
+    return { ...ctx, file, detached: true, via: [...ctx.via, `${how} → ${file}`], stack: [...ctx.stack, file], groups: new Map() };
   }
 
   private skillFile(file: string, how: string): Obj | null {
@@ -739,8 +990,8 @@ class Compiler {
       if (!j) continue;
       const c = this.enter(ctx, file, how);
       if (!c) continue;
-      const branch = label === "block" && blockIsAlternative ? [...c.branch, `if ${String(a["projectileId"])} is blocked`] : c.branch;
-      this.walkSkillFile(j, frame, { ...c, branch, bb: this.childBB(file, j, ctx.bb, a["assignBlackboard"] === true, a["assignPairs"]) });
+      const inner = label === "block" && blockIsAlternative ? this.sub(c, `if ${String(a["projectileId"])} is blocked`) : c;
+      this.walkSkillFile(j, frame, { ...inner, bb: this.childBB(file, j, ctx.bb, a["assignBlackboard"] === true, a["assignPairs"]) });
     }
   }
 
@@ -773,8 +1024,40 @@ class Compiler {
     this.walkSkillFile(j, frame, { ...c, bb: this.childBB(file, j, ctx.bb, false, []) });
   }
 
-  private createBuff(a: Obj, frame: number, ctx: Ctx) {
-    for (const entry of (a["buffs"] ?? []) as Obj[]) {
+  /** On whom a CreateBuff puts its buffs (targetSettings.targetSource: 0 the context's target, 1 and 4 the owner, 2 a target group). */
+  private buffTarget(a: Obj, ctx: Ctx): BuffTarget {
+    const ts = (a["targetSettings"] ?? {}) as Obj;
+    const source = ts["targetSource"];
+    if (source === 1 || source === 4) return "self";
+    if (source === 0) return "target";
+    if (source === 2 && typeof ts["targetGroupKey"] === "string") {
+      const g = ctx.groups.get(ts["targetGroupKey"]);
+      return g === "enemy" ? "enemy" : g === "team" ? "team" : "unknown";
+    }
+    return "unknown";
+  }
+
+  /** An AuraAction: its buffInput buffs go on whoever is inside from its start; actionInAura runs as the enemy enters (at its start), actionWhenExitAura as it leaves (at its end). */
+  private aura(a: Obj, start: number, end: number, ctx: Ctx) {
+    this.invalidate(a, "AuraAction", ctx);
+    const inAura = (a["actionInAura"] ?? null) as Sequence | null;
+    if (inAura && Array.isArray(inAura.actionData) && inAura.actionData.length) {
+      this.notes.add(`${ctx.file}@${start}: AuraAction actionInAura assumed to run once, at its start (the enemy inside)`);
+      this.execSeq(inAura, start, end, ctx);
+    }
+    this.createBuffs((a["buffInput"] ?? []) as Obj[], start, ctx, "aura", `AuraAction@${start}`, LITERAL(1), end);
+    const exit = (a["actionWhenExitAura"] ?? null) as Sequence | null;
+    if (exit && Array.isArray(exit.actionData) && exit.actionData.length) this.execSeq(exit, end, end, this.sub(ctx, "when leaving the aura"));
+  }
+
+  /**
+   * CreateBuff entries (or an aura's buffInput): the shared team-energy,
+   * reaction and Vulnerable buffs as facts, any other buff reported with its
+   * target and followed into its file. `auraEnd` bounds a buff without a
+   * duration of its own.
+   */
+  private createBuffs(entries: readonly Obj[], frame: number, ctx: Ctx, target: BuffTarget, how: string, count: CompiledValue, auraEnd?: number) {
+    for (const entry of entries) {
       const id = entry["buffId"];
       if (entry["readIdFromBlackboard"] === true || typeof id !== "string") {
         this.notes.add(`${ctx.file}@${frame}: CreateBuff of a buff named in the blackboard (not followed)`);
@@ -792,31 +1075,66 @@ class Compiler {
         this.teamEnergy.push({ ...this.place(ctx, frame), ratio: ratio === undefined ? 1 : isLiteral(ratio) ? ratio.value : null });
         continue;
       }
+      if (id === VULNERABLE_BUFF) {
+        this.effects.push({ ...this.place(ctx, frame), landing: null, kind: "vulnerable", stacks: count });
+        continue;
+      }
       const reaction = /^buff_common_([a-z]+)_([a-z]+)_(?:([a-z]+)_)?triggered/.exec(id);
       if (reaction && reaction[1] === reaction[2]) {
         const word = reaction[3];
-        if (word && STATUS_WORD[word]) this.effects.push({ ...this.place(ctx, frame), landing: null, kind: "forcedReaction", status: STATUS_WORD[word] ?? null, source: id, level: assigned.get("count") ?? null, duration: assigned.get("duration") ?? null });
-        else this.effects.push({ ...this.place(ctx, frame), landing: null, kind: "burst", element: (INFLICTION as readonly string[]).includes(reaction[1] ?? "") ? (reaction[1] as InflictionElement) : null, source: id });
+        if (word && STATUS_WORD[word]) {
+          const others = Object.fromEntries([...assigned].filter(([k]) => k !== "count" && k !== "duration"));
+          this.effects.push({ ...this.place(ctx, frame), landing: null, kind: "forcedReaction", status: STATUS_WORD[word] ?? null, source: id, level: assigned.get("count") ?? null, duration: assigned.get("duration") ?? null, assigned: others });
+        } else this.effects.push({ ...this.place(ctx, frame), landing: null, kind: "burst", element: (INFLICTION as readonly string[]).includes(reaction[1] ?? "") ? (reaction[1] as InflictionElement) : null, source: id });
         continue;
       }
       if (id.startsWith("buff_common_")) continue; // shared mechanics (reactions, immunity, …): not the skill's own
       if (!isBuffFileListed(id) || !existsSync(buffPath(id))) {
         this.notes.add(`${ctx.file}@${frame}: buff ${id} ${isBuffFileListed(id) ? "has no BuffData file" : "isn't listed in packages/data/tables.json"}`);
+        this.buffs.push({ ...this.place(ctx, frame), buff: id, target, seconds: null, summary: "" });
         continue;
       }
-      const c = this.enter(ctx, id, `CreateBuff@${frame}`);
+      const c = this.enter(ctx, id, how);
       if (!c) continue;
       const j = readJson(buffPath(id));
       const bb = this.defaults(id, j);
       for (const [k, v] of assigned) bb.set(k, v);
-      this.walkBuff(id, j, frame, { ...c, bb });
+      const span = this.walkBuff(id, j, frame, { ...c, bb }, auraEnd);
+      this.buffs.push({ ...this.place(ctx, frame), buff: id, target, seconds: span === null ? null : (span - frame) / FPS, summary: this.buffSummary(j, bb) });
     }
   }
 
-  private walkBuff(id: string, j: Obj, from: number, ctx: Ctx) {
+  /** What a buff does, in short: its damage modifiers, attribute modifiers and susceptibility (VulnerableAction) rates. */
+  private buffSummary(j: Obj, bb: BB): string {
+    const parts: string[] = [];
+    for (const m of ((j["attributeModifier"] ?? {}) as Obj)["attributeModifiers"] as Obj[] | undefined ?? []) parts.push(`attribute ${String(m["attributeType"])} ${describeValue(this.value(m["param"], bb))}`);
+    for (const d of (j["damageModifier"] ?? []) as Obj[]) {
+      for (const p of (d["damageProcessors"] ?? []) as Obj[]) {
+        if (shortType(p["$type"]) === "DamageScaleProcessor") parts.push(`${p["side"] === 1 ? "taken" : "dealt"} ${String(p["zoneName"])} ${describeValue(this.value(p["addition"], bb))}`);
+        else if (shortType(p["$type"]) === "InstantModifyAttribute") {
+          const m = (p["modifier"] ?? {}) as Obj;
+          parts.push(`${p["modifyTargetSide"] === 1 ? "taken" : "dealt"} attribute ${String(m["attributeType"])} ${describeValue(this.value(m["param"], bb))}`);
+        }
+      }
+    }
+    const vul: string[] = [];
+    const find = (o: unknown) => {
+      if (Array.isArray(o)) o.forEach(find);
+      else if (o && typeof o === "object") {
+        const x = o as Obj;
+        if (shortType(x["$type"]) === "VulnerableAction" && x["isEnable"] !== false) vul.push(`susceptibility ${describeValue(this.value(x["rate"], bb))}`);
+        Object.values(x).forEach(find);
+      }
+    };
+    find(j["buffEventAction"]);
+    return [...parts, ...new Set(vul)].join(", ");
+  }
+
+  /** Walks a buff file from `from`; returns its end frame (null when it lasts until ended). */
+  private walkBuff(id: string, j: Obj, from: number, ctx: Ctx, auraEnd?: number): number | null {
     const dur = this.value(j["duration"], ctx.bb);
     const seconds = dur.value !== null && !dur.expr && dur.value > 0 ? dur.value : null;
-    const to = seconds === null ? null : from + toFrame(seconds);
+    const to = seconds === null ? (auraEnd ?? null) : from + toFrame(seconds);
     const c: Ctx = { ...ctx, buffSpan: { buff: id, from, to } };
     this.walkTimeline((j["timelineActions"] ?? []) as Obj[], from, c);
     for (const e of (j["buffEventAction"] ?? []) as Obj[]) {
@@ -827,7 +1145,7 @@ class Compiler {
         const interval = this.value(j["triggerInterval"], c.bb).value ?? 0;
         const max = this.value(j["maxTriggerCnt"], c.bb).value ?? 0;
         if (interval <= 0) {
-          this.walkSequences(e["actions"], from, from, { ...c, branch: [...c.branch, `on ${id} trigger (no interval)`] });
+          this.walkSequences(e["actions"], from, from, this.sub(c, `on ${id} trigger (no interval)`));
           continue;
         }
         const first = j["waitFirstTriggerInterval"] === true ? 1 : 0;
@@ -844,11 +1162,12 @@ class Compiler {
         }
       } else if (ev === 2) {
         if (to !== null) this.walkSequences(e["actions"], to, to, c);
-        else this.walkSequences(e["actions"], from, from, { ...c, branch: [...c.branch, `when ${id} ends`] });
-      } else this.walkSequences(e["actions"], from, from, { ...c, repeated: true, branch: [...c.branch, `on ${id} event ${ev}`] });
+        else this.walkSequences(e["actions"], from, from, this.sub(c, `when ${id} ends`));
+      } else this.walkSequences(e["actions"], from, from, { ...this.sub(c, `on ${id} event ${ev}`), repeated: true });
     }
-    for (const e of (j["abilityEventAction"] ?? []) as Obj[]) this.walkSequences(e["actions"], from, from, { ...c, repeated: true, branch: [...c.branch, `on ability event ${String(e["abilityEvent"])}`] });
-    for (const e of (j["igniteEventAction"] ?? []) as Obj[]) this.walkSequences(e["actions"], from, from, { ...c, repeated: true, branch: [...c.branch, `on ignite ${String(e["igniteType"])}`] });
+    for (const e of (j["abilityEventAction"] ?? []) as Obj[]) this.walkSequences(e["actions"], from, from, { ...this.sub(c, `on ability event ${String(e["abilityEvent"])}`), repeated: true });
+    for (const e of (j["igniteEventAction"] ?? []) as Obj[]) this.walkSequences(e["actions"], from, from, { ...this.sub(c, `on ignite ${String(e["igniteType"])}`), repeated: true });
+    return to;
   }
 
   private ticks(a: Obj, t: string, start: number, end: number, ctx: Ctx) {
@@ -857,8 +1176,10 @@ class Compiler {
     const interval =
       t === "TickIntervalAction"
         ? read(a["useTickIntervalBlackboardKey"] === true ? { useBlackboardKey: true, blackboardKey: a["tickIntervalBlackboardKey"] } : a["tickInterval"])
-        : Math.max(read(a["triggerInterval"]), read(a["targetTriggerInterval"]));
-    const body = (a["actionOnTick"] ?? a["action"]) as Sequence | undefined;
+        : t === "ExecuteIntervalAction"
+          ? read(a["executeInterval"])
+          : Math.max(read(a["triggerInterval"]), read(a["targetTriggerInterval"]));
+    const body = (a["actionOnTick"] ?? a["actionOnExecuting"] ?? a["action"]) as Sequence | undefined;
     const perTarget = typeof a["maxCountPerTarget"] === "number" && a["maxCountPerTarget"] > 0 ? a["maxCountPerTarget"] : Infinity;
     const before = this.landings.length;
     let n = 0;

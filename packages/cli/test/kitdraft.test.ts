@@ -22,6 +22,11 @@ interface DraftHit {
   finalStrike?: boolean;
   detached?: boolean;
   applies?: { kind: string; element?: string; status?: string }[];
+  element?: string;
+  poise?: unknown;
+  poiseControlledOnly?: boolean;
+  bonuses?: { zone: string; key: string }[];
+  branch?: string;
 }
 interface DraftSkill {
   skillId: string;
@@ -41,7 +46,9 @@ function draft(operator: string, logged: ReadonlyMap<string, number> = new Map()
 const skill = (skills: DraftSkill[], id: string) => skills.find((s) => s.skillId === id) as DraftSkill;
 
 describe("kit-draft v2", () => {
-  it.each(["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten"])("drafts %s in the current kit format", (operator) => {
+  // Every operator with a kit, and batch 3's ten.
+  const BATCH_3 = ["chr_0004_pelica", "chr_0005_chen", "chr_0006_wolfgd", "chr_0007_ikut", "chr_0011_seraph", "chr_0012_avywen", "chr_0014_aurora", "chr_0018_dapan", "chr_0024_deepfin", "chr_0038_purrche"];
+  it.each([...Object.keys(data.kits.operators), ...BATCH_3])("drafts %s in the current kit format", (operator) => {
     const { text } = draft(operator);
     const kit = JSON.parse(text.split("\n\n//")[0] as string) as unknown;
     const ok = validate(kit);
@@ -70,11 +77,44 @@ describe("kit-draft v2", () => {
     expect(skill(laevat, "chr_0016_laevat_ultimate_skill").energyBlockSeconds).toBe(16);
     const extra = skill(laevat, "chr_0016_laevat_normal_skill").hits.find((h) => h.frames.includes(104));
     expect(extra?.energy).toBe("extra_usp");
-    expect(extra?.applies).toEqual([{ kind: "forcedReaction", status: "combustion" }]);
+    // The created status buff's assigned keys (CreateBuff buff_common_fire_fire_burning_triggered duration, extra_scaling), as the kit writes them.
+    expect(extra?.applies).toEqual([{ kind: "forcedReaction", status: "combustion", durationKey: "duration", scaleKey: "extra_scaling" }]);
     const gilberta = draft("chr_0013_aglina").skills;
     expect(skill(gilberta, "chr_0013_aglina_ultimate_skill").hits.map((h) => h.applies)).toEqual([[{ kind: "infliction", element: "natural" }]]);
     const typhoeus = draft("chr_0034_typhoea").skills;
     expect(skill(typhoeus, "chr_0034_typhoea_attack1").hits.map((h) => [h.frames, h.factor])).toEqual([[[5, 8], 0.5]]);
+  });
+
+  it("carries per-hit element, stagger, finisher factors, bonuses and talent gates", () => {
+    const avywen = draft("chr_0012_avywen").skills;
+    // Electric operator, Physical basic attacks.
+    expect(skill(avywen, "chr_0012_avywen_attack1").hits.map((h) => h.element)).toEqual(["physical"]);
+    expect(skill(avywen, "chr_0012_avywen_attack5").hits.map((h) => [h.poise, h.poiseControlledOnly])).toEqual([["poise", true]]);
+    expect(skill(avywen, "chr_0012_avywen_power_attack").hits.map((h) => [h.frames, h.factor])).toEqual([
+      [[27], 0.3],
+      [[28], 0.2],
+      [[29], 0.5],
+    ]);
+    // Talent 1's buff gates the combo's energy (CheckBuffStackNumAdvanced on the buff the talent attaches).
+    expect(skill(avywen, "chr_0012_avywen_combo_skill").hits.map((h) => h.energy)).toEqual([{ if: { talentAtLeast: [0, 1] }, then: "talent0_usp" }]);
+    expect(skill(draft("chr_0004_pelica").skills, "chr_0004_pelica_ultimate_skill").hits.map((h) => h.bonuses)).toEqual([[{ zone: "critRate", key: "crit" }]]);
+  });
+
+  it("drafts alternatives of one landing as branch hits", () => {
+    const wulfgard = skill(draft("chr_0006_wolfgd").skills, "chr_0006_wolfgd_normal_skill");
+    expect(wulfgard.hits.filter((h) => h.frames.includes(23)).map((h) => [h.events[0], h.branch])).toEqual([
+      ["chr_0006_wolfgd_normal_skill_projhit_1", "at23"],
+      ["chr_0006_wolfgd_normal_skill_projhit_FireSpellInfiction", "at23"],
+    ]);
+  });
+
+  it("drafts what has no landing as cast triggers", () => {
+    const triggers = (operator: string) => (JSON.parse(kitDraft(data, operator, new Map()).split("\n\n//")[0] as string) as { triggers?: { id: string; delay?: number; do: unknown[] }[] }).triggers ?? [];
+    // Da Pan's ultimate Lifts every enemy at the cast; Snowshine's combo has energy and no damage.
+    expect(triggers("chr_0018_dapan").find((t) => t.id === "ultimate_skill_f0")?.do).toEqual([{ kind: "apply", applies: [{ kind: "physicalStatus", status: "lift", forced: true }] }]);
+    expect(triggers("chr_0014_aurora").find((t) => t.id === "combo_skill_f12")).toMatchObject({ delay: 12, do: [{ kind: "energy", value: "usp" }] });
+    // Purrchena's giftbox energy is on both sides of "controlled": one unconditional grant.
+    expect(triggers("chr_0038_purrche").find((t) => t.id === "combo_skill_f61")?.do).toEqual([{ kind: "energy", value: "usp" }]);
   });
 
   it("keeps the logged-event cross-check", () => {
