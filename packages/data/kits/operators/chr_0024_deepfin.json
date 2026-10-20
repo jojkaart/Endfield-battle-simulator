@@ -1,0 +1,227 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0024_deepfin",
+  "sources": [
+    "Hits, frames, keys and events: rmxlinux Json/SkillData chr_0024_deepfin_* (game 1.6) as compiled by efsim kit-draft and checked by hand; Json/BuffData buff_chr_0024_deepfin_talent_1_auro, _talent_1, _potential_3; values SkillPatchTable chr_0024_deepfin_*, SkillData defaults for keys the table doesn't set (combo prob_add, prob_max, rate, atk_up, Duration; ultimate hp_tar, atk_up, kill_num); talents and potentials PotentialTalentEffectTable. Batch-3 report docs/kit-batches/batch-3/chr_0024_deepfin.md (mechanics table, kit plan, section Kit).",
+    "Talent indices: 0 is Flash-frozen for Freshness (buff_chr_0024_deepfin_talent_1_auro: energy on Solidification and Originium Crystals), 1 is Veteran Angler (sets the combo's prob_add 0.002 / 0.005, prob_max 0.3, rate 10), in CharGrowthTable order.",
+    "Potentials: P1 sets the battle skill's potential_1 / potential_1_atb (+10 SP with a consumption); P2 Strength and Intellect +15 (stat panel); P3 the combo's potential_3 (team ATK after a Rare Fin); P4 ultimate cost ×0.85 (loader); P5 the ultimate's potential_5 (×atk_up 1.5 below hp_tar HP).",
+    "Element: Physical for every hit but the ultimate (DamageAction damage type 0; the ultimate's is 4, Cryo). Stagger: damage units with damageAttributeType 1 (the skills' poise keys). The finisher's BreakingAttackCalculation multiplier is 1.0 on both hits (no factor).",
+    "No log fixture has Alesh, OBJ Edge of Lightness or Finchaser 3.0 (2026-10-20). Hit-stops (combo 0.95 s controlled / 0.3 s, battle skill 0.3 s) aren't modelled (batch-1 Ti1)."
+  ],
+  "element": "physical",
+  "buffs": [
+    {
+      "id": "talent1_icd",
+      "label": "Flash-frozen for Freshness: 3 s lockout (timed marker)",
+      "target": "self",
+      "duration": 3,
+      "modifiers": [],
+      "note": "CreateTimedMarker 'talent' on Alesh, CD 3 s: a literal because it's a BuffData default of buff_chr_0024_deepfin_talent_1_auro (CD) and the talent table's attached blackboard has only usp / usp_self; the loader doesn't read BuffData defaults into talent values (batch-3 D4, open). All three handlers (his own Solidification, a teammate's, a teammate's Originium Crystals) check and set the same marker: one shared 3 s cooldown."
+    },
+    {
+      "id": "p3_atk",
+      "label": "May the Willing Bite (P3): team ATK after a Rare Fin",
+      "target": "team",
+      "gameBuff": "buff_chr_0024_deepfin_potential_3",
+      "duration": { "key": "Duration", "skill": "chr_0024_deepfin_combo_skill" },
+      "modifiers": [{ "zone": "atk", "value": { "key": "atk_up", "skill": "chr_0024_deepfin_combo_skill" } }],
+      "note": "Combo frame 93, IfElse potential_3 ≥ 1: CreateBuff buff_chr_0024_deepfin_potential_3 on targetGroupKey team (attribute 2 formulaItem 6: ATK +atk_up 0.15; duration = the combo's Duration 10; stackingType 4: a new one refreshes it, \"this effect cannot stack\"). After the frame-93 DamageAction."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_on_consumed",
+      "on": { "event": "statusConsumed" },
+      "by": "anyone",
+      "do": [{ "kind": "openCombo" }],
+      "note": "COMBO TRIGGER (CharGrowthTable chr_0024_deepfin_ComboSkill): \"When the Arts Reaction or Originium Crystals of a nearby target is consumed\" (game code; conditionId empty). An Arts Reaction removed by a hit before it runs out (consumeStatus). An infliction consumed (his own battle skill) doesn't count."
+    },
+    {
+      "id": "combo_on_shatter",
+      "on": { "event": "shatter" },
+      "by": "anyone",
+      "do": [{ "kind": "openCombo" }],
+      "note": "Interim (batch-3 A7, open; in-game test 63): a Shatter removes Solidification with a physical status, and the engine raises `shatter`, not `statusConsumed`. Hypothesis A (a Shatter counts as consuming the reaction: sk_wpn_lance_0013's \"after consuming Solidification\" listens to the Solidified tag being removed). Drop this trigger if test 63 says no."
+    },
+    {
+      "id": "combo_on_crystals",
+      "on": { "event": "buffEnded", "gameBuffs": ["buff_common_originum_frozen"], "consumed": true },
+      "by": "anyone",
+      "do": [{ "kind": "openCombo" }],
+      "note": "The combo trigger's second half: Originium Crystals (buff_common_originum_frozen, the Endministrator's) consumed, by whichever kit stands for them (batch-3 T2): ended by an action before they ran out, not their expiry (in-game test 71 part 1)."
+    },
+    {
+      "id": "rare_fin",
+      "on": { "event": "cast", "skills": ["chr_0024_deepfin_combo_skill"] },
+      "by": "self",
+      "delay": 10,
+      "skill": "chr_0024_deepfin_combo_skill",
+      "chance": {
+        "min": [
+          { "sum": ["prob", { "product": [{ "attr": 41 }, { "div": ["prob_add", "rate"] }] }] },
+          { "sum": ["prob", "prob_max"] }
+        ]
+      },
+      "do": [{ "kind": "jump", "skill": "chr_0024_deepfin_combo_skill", "from": 10, "until": 11, "to": 65 }],
+      "note": "Combo frame 10: SimpleCalcBB prob_max = prob + prob_max and prob_add = prob_add / rate; StoreAttributeValue prob = prob + Intellect (primaryAttributeType 2, attribute 41) × prob_add, useFloor false (continuous, not per full 10 Intellect as the text reads); Probablity(min of the two) → JumpToAction 65, the Rare Fin path (hits at 77 and 93). Otherwise the normal hits at 22 and 38 and the data's unconditional jump 64 → 120. prob 0.1; talent 2 sets prob_add 0.002 / 0.005, prob_max 0.3, rate 10. A chance jump isn't a skill `jumps` entry (Probablity branches: batch-3 D1 open), so it's this trigger, rolled on the battle's chance stream."
+    },
+    {
+      "id": "talent1_self",
+      "on": { "event": "reaction", "statuses": ["solidification"] },
+      "by": "self",
+      "if": { "all": [{ "talentAtLeast": [0, 1] }, { "not": { "buffActive": "talent1_icd" } }] },
+      "do": [
+        { "kind": "energy", "value": { "sum": [{ "talent": 0, "key": "usp" }, { "talent": 0, "key": "usp_self" }] } },
+        { "kind": "buff", "buff": "talent1_icd" }
+      ],
+      "note": "buff_chr_0024_deepfin_talent_1_auro abilityEvent 102 (Alesh applies a buff), CheckTimedMarker 'talent', CheckBuffIdInContext checkType 1 tag 1535684437 (Solidified; forced ones too): ObtainCostAction costType 0 usp + usp_self (3 + 6 / 4 + 8), then the marker."
+    },
+    {
+      "id": "talent1_team_solidification",
+      "on": { "event": "reaction", "statuses": ["solidification"] },
+      "by": "teammate",
+      "if": { "all": [{ "talentAtLeast": [0, 1] }, { "not": { "buffActive": "talent1_icd" } }] },
+      "do": [
+        { "kind": "energy", "value": { "talent": 0, "key": "usp" } },
+        { "kind": "buff", "buff": "talent1_icd" }
+      ],
+      "note": "The aura gives buff_chr_0024_deepfin_talent_1 to the teammates (excludeOwner); on a teammate's abilityEvent 102 with the Solidified tag: usp to Alesh (targetSource 1), the same marker on him."
+    },
+    {
+      "id": "talent1_team_crystals",
+      "on": { "event": "buffApplied", "gameBuffs": ["buff_common_originum_frozen"] },
+      "by": "teammate",
+      "if": { "all": [{ "talentAtLeast": [0, 1] }, { "not": { "buffActive": "talent1_icd" } }] },
+      "do": [
+        { "kind": "energy", "value": { "talent": 0, "key": "usp" } },
+        { "kind": "buff", "buff": "talent1_icd" }
+      ],
+      "note": "buff_chr_0024_deepfin_talent_1, abilityEvent 102 with CheckBuffIdInContext checkType 0 buff_common_originum_frozen (a teammate applies Originium Crystals: the Endministrator's combo): usp to Alesh, the same marker."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0024_deepfin_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [7], "events": ["chr_0024_deepfin_attack1"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "atb is 0 at every level; ObtainCostAction atbSourceType 1, only while controlled." }]
+    },
+    {
+      "skillId": "chr_0024_deepfin_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [5], "events": ["chr_0024_deepfin_attack2"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+    },
+    {
+      "skillId": "chr_0024_deepfin_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [13], "events": ["chr_0024_deepfin_attack3"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+    },
+    {
+      "skillId": "chr_0024_deepfin_attack4",
+      "label": "Basic attack 4",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [15], "events": ["chr_0024_deepfin_attack4"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "note": "The data's ObtainCostAction has coefficient 0.5 here; atb is 0 anyway." }]
+    },
+    {
+      "skillId": "chr_0024_deepfin_attack5",
+      "label": "Basic attack 5 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [18], "events": ["chr_0024_deepfin_attack5"], "finalStrike": true, "poise": "poise", "poiseControlledOnly": true, "note": "Mask 2097280 (Final Strike); its stagger unit (poise 17) onlyEnableForMainChar: \"As the controlled operator, Final Strike also deals {poise} Stagger\"." },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [19], "events": ["chr_0024_deepfin_attack5"], "finalStrike": false, "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Mask 128 (not a Final Strike); ObtainCostAction atb 19 (atbSourceType 1) if controlled. 0.62 + 0.62 = the displayed atk_scale_display 1.24." }
+      ]
+    },
+    {
+      "skillId": "chr_0024_deepfin_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale1"], "frames": [13], "events": ["chr_0024_deepfin_power_attack"], "sp": 0, "note": "BreakingAttackCalculation multiplier 1.0; ObtainCostAction literal 0 (atbSourceType 0)." },
+        { "id": "hit_2", "scale": ["atk_scale2"], "frames": [47], "events": ["chr_0024_deepfin_power_attack"], "note": "BreakingAttackCalculation multiplier 1.0; GainBreakingAttackAtb factor 1 (the enemy's finisher SP)." }
+      ]
+    },
+    {
+      "skillId": "chr_0024_deepfin_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "events": ["chr_0024_deepfin_plunging_attack_end"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Needs mid-air, so rotations don't schedule it (S10); kept for calc." }]
+    },
+    {
+      "skillId": "chr_0024_deepfin_normal_skill",
+      "label": "Battle skill: Unconventional Lure",
+      "damageType": "battle",
+      "teamEnergy": [{ "frame": 27, "ratio": 1 }],
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [27],
+          "events": ["chr_0024_deepfin_normal_skill"],
+          "poise": "poise",
+          "applies": [
+            { "kind": "consumeInfliction", "elements": ["cryst"], "afterDamage": true },
+            { "kind": "forcedReaction", "status": "solidification", "level": { "consumed": true }, "afterDamage": true }
+          ],
+          "sp": {
+            "if": { "consumedAtLeast": 4 },
+            "then": { "sum": ["atb_4", "potential_1_atb"] },
+            "else": {
+              "if": { "consumedAtLeast": 3 },
+              "then": { "sum": ["atb_3", "potential_1_atb"] },
+              "else": {
+                "if": { "consumedAtLeast": 2 },
+                "then": { "sum": ["atb_2", "potential_1_atb"] },
+                "else": { "if": { "consumedAtLeast": 1 }, "then": { "sum": ["atb_1", "potential_1_atb"] }, "else": 0 }
+              }
+            }
+          },
+          "note": "Frame 27, in data order: num = the target's Cryo Infliction stacks (SaveBuffStackNumAdvanced tag 1570888476); IfElse potential_1 ≥ 1 → atb_n += potential_1_atb (P1: +10); SwitchAction on num 1–4 → ObtainCostAction atb_1…atb_4 (15 / 25 / 35 / 45; atbSourceType 3, gain method 0: natural; num 0 matches no option: no SP; \"can only trigger 1 time\"); DamageAction atk_scale + poise (mask 4352); buff_common_obtain_ultimate_sp; ForceSpellStatusAction spellStatusType 2 (Solidification), count = consumedLayer = num, consumedType 2 (Cryo), only if CheckBuffStackNumByTag Cryo ≥ 1. The consumption and the Solidification come after the damage (afterDamage, batch-3 A4); its level is the stacks consumed (batch-3 A3: level {consumed: true}; 0 consumed applies nothing). The SP is judged after them, on the stacks consumed (the data's num, saved before; the same count)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0024_deepfin_combo_skill",
+      "label": "Combo skill: Auger Angling",
+      "damageType": "combo",
+      "note": "Normal path: frames 0–64, then JumpToAction 64 → 120 (unconditional, read from SkillData). Rare Fin path: trigger rare_fin jumps 10 → 65. The jump at frame 0 (no target within 4.5 m → 4) isn't taken. buff_chr_0024_deepfin_combo_camera (f0) is a camera effect.",
+      "hits": [
+        { "id": "hook", "label": "Hook", "scale": ["atk_scale_1"], "frames": [22], "events": ["chr_0024_deepfin_combo_skill"], "sp": "atb", "note": "ObtainCostAction atb (15; atbSourceType 3, natural) before the DamageAction (mask 8192)." },
+        { "id": "slam", "label": "Slam", "scale": ["atk_scale_2"], "frames": [38], "events": ["chr_0024_deepfin_combo_skill"], "poise": "poise", "energy": "usp_normal", "note": "Mask 12288; ObtainCostAction costType 0 usp_normal (10) on hit." },
+        { "id": "hook_ex", "label": "Rare Fin: hook", "scale": ["atk_scale_1ex"], "frames": [77], "events": ["chr_0024_deepfin_combo_skill"], "sp": "atb", "note": "Rare Fin path only (skipped by the jump 64 → 120 otherwise)." },
+        {
+          "id": "slam_ex",
+          "label": "Rare Fin: slam",
+          "scale": ["atk_scale_2ex"],
+          "frames": [93],
+          "events": ["chr_0024_deepfin_combo_skill"],
+          "poise": "poise",
+          "energy": "usp_normal",
+          "sp": "atb_sp",
+          "buffs": [{ "buff": "p3_atk", "if": { "potentialAtLeast": 3 } }],
+          "note": "Rare Fin path only. ObtainCostAction atb_sp (10; atbSourceType 0, natural) before the DamageAction; usp_normal; P3's team ATK after it."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0024_deepfin_ultimate_skill",
+      "label": "Ultimate: One Monster Catch!",
+      "damageType": "ultimate",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "element": "cryst",
+          "frames": [90],
+          "events": ["chr_0024_deepfin_ultimate_skill"],
+          "poise": "poise",
+          "applies": [{ "kind": "infliction", "element": "cryst" }],
+          "extraScale": [{ "value": "atk_up", "if": { "all": [{ "potentialAtLeast": 5 }, { "enemyHpBelow": 0.5 }] } }],
+          "sp": { "min": [{ "sum": [{ "product": ["atb_up", "kill_num"] }, "atb"] }, "atb_max"] },
+          "note": "Frame 90: SpellInfliction Cryo; IfElse (potential_5 ≥ 1 and CheckHp isRatio < hp_tar) → DamageAction atk_scale × atk_up (1.5), else atk_scale (damage type 4, Cryo; mask 4608) + poise; BlowOff. P5 Mega Lunker Rumors through the scenario's enemy HP (batch-3 N1, enemyHpBelow; 0.5 is hp_tar, a literal because the predicate takes a number). Frame 91: ObtainCostAction atb_up × kill_num + atb, at most atb_max (atbSourceType 3, natural): 25; kill_num counts targets defeated in frames 89–91 (EventListenerAction), 0 here (kills deferred: batch-3 N2). On the hit, one frame early."
+        }
+      ]
+    }
+  ]
+}

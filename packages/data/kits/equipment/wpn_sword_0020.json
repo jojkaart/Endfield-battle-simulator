@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0020",
+  "sources": [
+    "rmxlinux Json/SkillData/sk_wpn_sword_0020 (game 1.6; Finchaser 3.0, weapon skill 3, Suppression: Fin Chaser's Intent) and Json/BuffData buff_wpn_sword_0020_cryst; values SkillPatchTable sk_wpn_sword_0020. Batch-3 report docs/kit-batches/batch-3/chr_0024_deepfin.md (rows W4-W7).",
+    "cardAttributeModifier attribute 2 formulaItem 6 (ATK +atk_up) and weapon skills 1-2 are on the stat panel.",
+    "passiveEventActions abilityEvent 206 (the wielder applies a buff), CheckOriginSkillType skillTypeList [2] (from a battle skill), CheckBuffIdInContext checkType 1 tag 1535684437 (Solidified: reaction and forced Solidification alike) → CreateBuffAction buff_wpn_sword_0020_cryst on the target: DamageScaleProcessor side 1 (taken) NormalCalcZone +cryst_dmg_up, CheckDamageTypeMask 16 (Cryo), `duration` 15 s; stackingType 1 (\"effects of the same name cannot stack\": the loader sets the stack group). After the applying hit's damage (Alesh's ForceSpellStatusAction comes after his DamageAction).",
+    "buff_wpn_sword_0020_atk_up (flat ATK, lifeType 1) is referenced by no SkillData or BuffData file: left out. Not in any log or fixture yet."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_sword_0020.cryo_taken",
+      "label": "Fin Chaser's Intent: Cryo DMG Taken",
+      "target": "enemy",
+      "gameBuff": "buff_wpn_sword_0020_cryst",
+      "duration": "duration",
+      "modifiers": [{ "zone": "damageTaken", "value": "cryst_dmg_up", "elements": ["cryst"] }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_sword_0020.solidified",
+      "on": { "event": "reaction", "statuses": ["solidification"], "fromKinds": ["battle"] },
+      "by": "self",
+      "skill": "sk_wpn_sword_0020",
+      "do": [{ "kind": "buff", "buff": "wpn_sword_0020.cryo_taken" }],
+      "note": "\"When the wielder's battle skill applies Solidification, target enemy suffers Cryo DMG Taken +{cryst_dmg_up} for {duration}s. Effects of the same name cannot stack.\""
+    }
+  ]
+}

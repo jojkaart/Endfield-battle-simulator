@@ -1,0 +1,45 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Alesh (P5, Finchaser 3.0) with Estella (build as in estella-solidification) vs Rhodagn. Alesh's ultimate inflicts Cryo next to Estella's battle skill's: a Cryo burst, two stacks left. His battle skill consumes both after its damage and forces Solidification level 2 (35 SP with P1; talent 1's 12 energy; Finchaser's Cryo DMG Taken on the enemy). Estella's combo, opened by the Solidification, Lifts and Shatters it, which opens Alesh's combo (batch-3 A7 interim, in-game test 63); the combo's Rare Fin is a chance (seed 1: the normal path), then a basic chain.",
+  "team": [
+    {
+      "operator": "chr_0024_deepfin",
+      "level": 90,
+      "promotion": 4,
+      "potential": 5,
+      "skillLevels": { "basic": 12, "battle": 12, "combo": 12, "ultimate": 12 },
+      "weapon": { "id": "wpn_sword_0020", "level": 90, "skillLevels": [9, 9, 9] },
+      "gear": []
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "level": 90,
+      "promotion": 4,
+      "potential": 5,
+      "skillLevels": { "basic": 12, "battle": 12, "combo": 12, "ultimate": 12 },
+      "weapon": { "id": "wpn_lance_0010", "level": 90, "skillLevels": [3, 9, 6] },
+      "gear": [
+        { "id": "item_equip_t4_suit_phy01_hand_03", "artifice": [3, 3, 3] },
+        { "id": "item_equip_t4_suit_phy01_body_01", "artifice": [3, 3, 3] },
+        { "id": "item_equip_t4_suit_phy01_edc_02", "artifice": [2, 3, 3] },
+        { "id": "item_equip_t4_suit_fire_natr01_edc_03", "artifice": [3, 0, 3] }
+      ]
+    }
+  ],
+  "target": { "enemy": "eny_0051_rodin", "level": 90 },
+  "startEnergy": { "chr_0024_deepfin": "full" },
+  "durationSeconds": 20,
+  "crit": "expected",
+  "rotation": [
+    { "operator": "chr_0024_deepfin", "skill": "chr_0024_deepfin_ultimate_skill" },
+    { "operator": "chr_0021_whiten", "skill": "chr_0021_whiten_normal_skill" },
+    { "operator": "chr_0024_deepfin", "skill": "chr_0024_deepfin_normal_skill" },
+    { "operator": "chr_0021_whiten", "skill": "chr_0021_whiten_combo_skill" },
+    { "operator": "chr_0024_deepfin", "skill": "chr_0024_deepfin_combo_skill" },
+    { "operator": "chr_0024_deepfin", "skill": "chr_0024_deepfin_attack1" },
+    { "operator": "chr_0024_deepfin", "skill": "chr_0024_deepfin_attack2" },
+    { "operator": "chr_0024_deepfin", "skill": "chr_0024_deepfin_attack3" },
+    { "operator": "chr_0024_deepfin", "skill": "chr_0024_deepfin_attack4" },
+    { "operator": "chr_0024_deepfin", "skill": "chr_0024_deepfin_attack5" }
+  ]
+}

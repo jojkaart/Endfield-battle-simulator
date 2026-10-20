@@ -1,0 +1,34 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0019",
+  "sources": [
+    "rmxlinux Json/SkillData/sk_wpn_sword_0019 (game 1.6; OBJ Edge of Lightness, weapon skill 3, Flow: Unbridled Edge) and Json/BuffData buff_wpn_sword_0019_up; values SkillPatchTable sk_wpn_sword_0019. Batch-3 report docs/kit-batches/batch-3/chr_0024_deepfin.md (rows W1-W3).",
+    "cardAttributeModifier attribute 0 formulaItem 6 modifyAttributeType 2 (the wielder's secondary attribute +second_attr_up) and weapon skills 1-2 are on the stat panel.",
+    "passiveEventActions abilityEvent 142 (the wielder obtains SP) with CheckObtainAtbType checkObtainType true, obtainTypeList [3] (SP of skills: ObtainCostAction atbSourceType 3), checkObtainMethod false (natural and returned SP both count) → CreateBuffAction buff_wpn_sword_0019_up on the team (CharacterTeamFinder): attributes 51 and 52 (Heat and Electric DMG) formulaItem 5 +dmg_up for `duration` (20 s); stackingType 11, max_stack 3, each layer timed separately (\"Effect of each stack is counted separately\"). The source type comes from the granting key's SkillData (batch-3 T3); grants of type 1 (basic attacks) and 0 (finishers, perfect dodges, Alesh's Rare Fin atb_sp) don't count, nor a grant whose data names no source type (a kit literal).",
+    "Open: two wielders' copies add (stackingType 11 across wielders is done only for single-layer buffs, batch-3 B2). Not in any log or fixture yet."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_sword_0019.dmg",
+      "label": "Flow: Unbridled Edge (Heat and Electric DMG)",
+      "target": "team",
+      "gameBuff": "buff_wpn_sword_0019_up",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [
+        { "attr": 51, "value": "dmg_up" },
+        { "attr": 52, "value": "dmg_up" }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_sword_0019.skill_sp",
+      "on": { "event": "sp", "sourceTypes": [3] },
+      "by": "self",
+      "skill": "sk_wpn_sword_0019",
+      "do": [{ "kind": "buff", "buff": "wpn_sword_0019.dmg" }],
+      "note": "\"After the wielder's skill recovers SP, the entire team gains Heat DMG Dealt and Electric DMG Dealt +{dmg_up} for {duration}s\": one layer per SP grant of source type 3."
+    }
+  ]
+}
