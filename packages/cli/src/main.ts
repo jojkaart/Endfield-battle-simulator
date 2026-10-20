@@ -6,7 +6,7 @@ import { parseArgs } from "node:util";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadGameData } from "@efsim/data";
-import type { CritMode } from "@efsim/engine";
+import type { CritMode, TimelineScenario } from "@efsim/engine";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "./commands.ts";
 import { kitDraft } from "./kitdraft.ts";
 import { formatRuns, formatSimulation, readScenario, searchCommand } from "./simulate.ts";
@@ -30,6 +30,10 @@ const USAGE = `Usage:
   efsim search <scenario.json>            Find a rotation for the scenario's team (its rotation is ignored)
                 [--beam n] [--out file]   Beam width (default 24); save the rotation as a scenario
                 [--resource-weight w]     How much unspent SP and energy count while searching (default 0)
+                [--seeds k]               With random outcomes: battles each candidate is ranked over (default 4)
+                [--percentile p]          Rank by that percentile (0–100) of them instead of the mean
+                [--runs n]                Battles for the found rotation's distribution (default 50; 0: none)
+                [--seed n] [--dodge p] [--attack-every s]  As for simulate
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
                 [--enemy-level n]         (default: inferred from total damage on a clear)
                 [--note text]             Extra provenance note (repeatable)
@@ -69,6 +73,8 @@ async function main(argv: string[]): Promise<number> {
       "resource-weight": { type: "string" },
       seed: { type: "string" },
       runs: { type: "string" },
+      seeds: { type: "string" },
+      percentile: { type: "string" },
       dodge: { type: "string" },
       "attack-every": { type: "string" },
       out: { type: "string" },
@@ -100,6 +106,20 @@ async function main(argv: string[]): Promise<number> {
 
   const need = (n: number) => {
     if (args.length !== n) throw new Error(`${command} takes ${n} argument${n === 1 ? "" : "s"}\n\n${USAGE}`);
+  };
+  /** The scenario with --seed, --dodge and --attack-every applied (simulate and search). */
+  const withBattleOptions = (scenario: TimelineScenario): TimelineScenario => {
+    const seed = values.seed === undefined ? undefined : Number(values.seed);
+    if (seed !== undefined && !(Number.isInteger(seed) && seed >= 0)) throw new Error(`--seed must be a whole number ≥ 0`);
+    const chance = values.dodge === undefined ? undefined : Number(values.dodge);
+    if (chance !== undefined && !(chance >= 0 && chance <= 1)) throw new Error(`--dodge must be a chance from 0 to 1`);
+    const every = values["attack-every"] === undefined ? undefined : Number(values["attack-every"]);
+    if (every !== undefined && !(every > 0)) throw new Error(`--attack-every must be a positive number of seconds`);
+    return {
+      ...scenario,
+      options: { ...scenario.options, ...(seed !== undefined ? { seed } : {}), ...(chance !== undefined ? { dodge: { chance } } : {}) },
+      ...(every !== undefined ? { enemyActions: [...(scenario.enemyActions ?? []), { kind: "attack" as const, every: every * 30 }] } : {}),
+    };
   };
   const data = loadGameData();
   let text: string;
@@ -153,18 +173,7 @@ async function main(argv: string[]): Promise<number> {
     case "simulate":
       need(1);
       {
-        const scenario = readScenario(args[0] as string);
-        const seed = values.seed === undefined ? undefined : Number(values.seed);
-        if (seed !== undefined && !(Number.isInteger(seed) && seed >= 0)) throw new Error(`--seed must be a whole number ≥ 0`);
-        const chance = values.dodge === undefined ? undefined : Number(values.dodge);
-        if (chance !== undefined && !(chance >= 0 && chance <= 1)) throw new Error(`--dodge must be a chance from 0 to 1`);
-        const every = values["attack-every"] === undefined ? undefined : Number(values["attack-every"]);
-        if (every !== undefined && !(every > 0)) throw new Error(`--attack-every must be a positive number of seconds`);
-        const seeded = {
-          ...scenario,
-          options: { ...scenario.options, ...(seed !== undefined ? { seed } : {}), ...(chance !== undefined ? { dodge: { chance } } : {}) },
-          ...(every !== undefined ? { enemyActions: [...(scenario.enemyActions ?? []), { kind: "attack" as const, every: every * 30 }] } : {}),
-        };
+        const seeded = withBattleOptions(readScenario(args[0] as string));
         const runs = values.runs === undefined ? undefined : Number(values.runs);
         if (runs !== undefined && !(Number.isInteger(runs) && runs >= 1)) throw new Error(`--runs must be a whole number ≥ 1`);
         text = runs === undefined ? formatSimulation(data, seeded, values.verbose) : formatRuns(data, seeded, runs);
@@ -172,7 +181,23 @@ async function main(argv: string[]): Promise<number> {
       break;
     case "search":
       need(1);
-      text = searchCommand(data, readScenario(args[0] as string), { beam: Number(values.beam), ...(values.out ? { out: values.out } : {}), ...(values["resource-weight"] !== undefined ? { resourceWeight: Number(values["resource-weight"]) } : {}), verbose: values.verbose });
+      {
+        const seeds = values.seeds === undefined ? undefined : Number(values.seeds);
+        if (seeds !== undefined && !(Number.isInteger(seeds) && seeds >= 1)) throw new Error(`--seeds must be a whole number ≥ 1`);
+        const percentile = values.percentile === undefined ? undefined : Number(values.percentile);
+        if (percentile !== undefined && !(percentile >= 0 && percentile <= 100)) throw new Error(`--percentile must be 0–100`);
+        const runs = values.runs === undefined ? undefined : Number(values.runs);
+        if (runs !== undefined && !(Number.isInteger(runs) && runs >= 0)) throw new Error(`--runs must be a whole number ≥ 0`);
+        text = searchCommand(data, withBattleOptions(readScenario(args[0] as string)), {
+          beam: Number(values.beam),
+          ...(values.out ? { out: values.out } : {}),
+          ...(values["resource-weight"] !== undefined ? { resourceWeight: Number(values["resource-weight"]) } : {}),
+          ...(seeds !== undefined ? { seeds } : {}),
+          ...(percentile !== undefined ? { percentile } : {}),
+          ...(runs !== undefined ? { runs } : {}),
+          verbose: values.verbose,
+        });
+      }
       break;
     case "kit-census":
       text = formatCensus(kitCensus());

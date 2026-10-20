@@ -1540,7 +1540,7 @@ function enemyActionEvents(ctx: TimelineContext, st: TimelineState, a: EnemyActi
 }
 
 /** Processes every pending hit, status tick and buff expiry up to (and including) a frame, in frame order. */
-export function advance(ctx: TimelineContext, state: TimelineState, frame: number): TimelineState {
+function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number): TimelineState {
   if (frame < state.frame) throw new EngineError(`can't go back from frame ${state.frame} to ${frame}`);
   let st = state;
   for (;;) {
@@ -2016,4 +2016,66 @@ export function simulateRuns(data: GameData, scenario: TimelineScenario, runs: n
     min: sorted[0] as number, max: sorted[runs - 1] as number,
     p5: rank(0.05), p50: rank(0.5), p95: rank(0.95),
   };
+}
+
+// --- Helpers for search drivers (rotation search, search.ts) -----------------
+//
+// startsNow: whether an action can start at the state's own frame, i.e.
+// earliestStart(…).frame === state.frame, without judging how much later it
+// could start. At a decision point at the state's frame a later start isn't
+// a choice, and judging it is most of the search's time (earliestStart
+// replays the fight to when the current action ends; a combo waits for a
+// window). Exact: earliestStart returns startFrom's frame when it's the
+// state's own, and otherwise a later frame or an error; startFrom only ever
+// moves the frame later, so a cooldown still running, too little SP, or a
+// combo whose window isn't open at the state's frame means later.
+export function startsNow(ctx: TimelineContext, state: TimelineState, action: RotationAction): boolean {
+  if (action.at !== undefined && action.at > state.frame) return false;
+  if (action.skill !== "swap" && ctx.builds.has(action.operator)) {
+    let costs;
+    try {
+      costs = skillCosts(ctx, action.operator, action.skill);
+    } catch {
+      return false;
+    }
+    if ((state.readyAt[action.skill] ?? 0) > state.frame || spAt(state, state.frame) < costs.spCost) return false;
+    if (costs.kind === "combo" && hasComboTrigger(ctx, action.operator)) {
+      const w = advance(ctx, state, state.frame).comboWindow[action.operator];
+      if (!w || w.until < state.frame) return false;
+    }
+  }
+  const r = startFrom(ctx, state, action);
+  return "frame" in r && r.frame === state.frame;
+}
+
+// memoAdvance: `advance` is a pure function of (context, state, frame) and
+// states are never changed in place, so while a driver runs inside
+// `memoAdvance` a repeated call with the same state object and frame returns
+// the first call's result. The rotation search needs it: judging each
+// candidate action from one state advances that state to the same frames
+// many times over (earliestStart's search for when the current action ends,
+// combo windows, finishers). Off outside `memoAdvance`, where `advance` is
+// `advanceFrom` as written above.
+
+let advanceMemo: WeakMap<TimelineState, { readonly ctx: TimelineContext; readonly byFrame: Map<number, TimelineState> }> | null = null;
+
+/** Processes every pending hit, status tick and buff expiry up to (and including) a frame, in frame order (advanceFrom; memoised inside memoAdvance). */
+export function advance(ctx: TimelineContext, state: TimelineState, frame: number): TimelineState {
+  if (!advanceMemo) return advanceFrom(ctx, state, frame);
+  let m = advanceMemo.get(state);
+  if (!m || m.ctx !== ctx) advanceMemo.set(state, (m = { ctx, byFrame: new Map() }));
+  let r = m.byFrame.get(frame);
+  if (!r) m.byFrame.set(frame, (r = advanceFrom(ctx, state, frame)));
+  return r;
+}
+
+/** Runs `f` with `advance` memoised per state object and frame (the cache lives as long as its states; nested calls share the outer one). */
+export function memoAdvance<T>(f: () => T): T {
+  const outer = advanceMemo;
+  advanceMemo ??= new WeakMap();
+  try {
+    return f();
+  } finally {
+    advanceMemo = outer;
+  }
 }

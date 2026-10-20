@@ -302,6 +302,90 @@ evaluate(state) → partial Result        // damage so far, resources, timings
 - The Rust port implements the same API; drivers can stay in TypeScript at
   first, calling the Rust engine, or move over later.
 
+### Rotation search
+
+`efsim search` (engine `searchRotation`) is a beam search on the stepping
+API. At each decision point every legal action is tried (`legalActions`:
+the actions that can start soonest, plus the controlled operator's next
+basic attacks even if later), each applied with `at` the frame it starts,
+so the found rotation replays to exactly the searched states with
+`simulate`. Per half-second bucket the best `beamWidth` (24) nodes survive,
+ranked by committed damage (hits landed plus everything already on its
+way: the state advanced to the fight's end), optionally plus the worth of
+unspent SP and energy (`resourceWeight`); equivalent states (`stateKey`:
+resources, windows, buffs, pending hits…) keep only the best.
+
+**Random outcomes** (owner, 2026-10-20: "the result becomes not a number,
+but rather a random distribution and needs to be interpreted and tracked as
+such"). A scenario has them (`randomOutcomes`) with rolled crits, a dodge
+chance strictly between 0 and 1 and enemy attacks to dodge, or a kit
+trigger (own or worn) with a `chance`. Then each beam node carries the
+states of K seeded battles (`seeds`, default 4; `efsim search --seeds k`):
+seeds `seed`, `seed` + 1, … from the scenario's seed. The first battle
+(the scenario's own seed) proposes the legal actions and their frames;
+every battle applies the same step with that `at`, which in the others
+starts at their own earliest legal frame from there (after a perfect dodge
+one battle may be ahead of another) — exactly what `simulate` does when it
+replays the rotation with that seed, so replay stays exact per seed. A
+child whose step isn't legal in some battle (no combo window there, not
+enough energy) is dropped. Requiring the same start frame in every battle
+was the alternative; it drops nearly every child once dodges have shifted
+the battles apart. A node's score is the mean of its K battles' values, or
+a percentile (`percentile`, nearest rank; `--percentile 25`) to prefer
+rotations that hold up when the dice go badly. Without random outcomes
+K = 1 and the search is the deterministic one, bit for bit.
+
+The result keeps the single battle with the scenario's seed (`result`,
+for inspection) and adds the found rotation's distribution
+(`rotationSpread` over `runs` battles, default 50: mean, standard
+deviation, min, 5th / 50th / 95th percentiles, max). Unlike `simulateRuns`
+(`efsim simulate --runs`, which rolls crits), it keeps the scenario's own
+options, crit mode included, so an expected-crit fight with dodges varies
+by its dodges only. A battle in which the rotation can't be played (an
+action's random outcome went otherwise) is counted as `illegal` and left
+out of the figures. `efsim simulate` without `--runs` notes when the
+scenario has random outcomes: its total is one battle of a distribution.
+
+**Speed** (profiled 2026-10-20). 75–85% of the search's time went to
+judging candidate actions (`earliestStart`), and nearly all of that to
+actions that couldn't be chosen anyway: errors and starts later than the
+soonest. `earliestStart` replays the fight to find when the operator's
+current action ends (a kit's `endAction`, jumps, dodges), a combo replays
+to every pending hit looking for its window, and each replay starts from
+the node's state again. Now, all exact (same rotations and totals):
+
+- `memoAdvance` (timeline.ts): while the search runs, `advance` is
+  memoised per state object and frame. `advance` is a pure function and
+  states are never changed in place, so a repeated call returns the first
+  one's result; judging an operator's skills from one state shares the
+  replays.
+- `legalActions` judges the controlled operator's basic attacks and the
+  swaps first. When one can start at the state's own frame (most decision
+  points), nothing starts sooner, so the other actions are choices only if
+  they can start right then: `startsNow` (timeline.ts) judges that without
+  how much later they could (`startFrom`'s frame is the state's own, and a
+  combo that needs a window has one open).
+- Of the others, `startsNow` is asked first; only when no action at all
+  can start at the state's frame are they judged in full.
+- Follow-up skills (`followUpOnly`) aren't judged (never legal from a
+  rotation); committed damage is cached per state (its advance to the end
+  isn't kept by the memo).
+
+Searches at beam 24, wall time without loading the data, before and after
+run alternately on the same (shared, so noisy) machine, best of the runs;
+found rotations and totals unchanged:
+
+| example | before | after | total |
+|---|---|---|---|
+| laevatain-solo (30 s, one operator) | 5.7 s | 2.9 s | 1,182,147 |
+| si-laevatain (20 s) | 10.9 s | 5.4 s | 1,916,642 |
+| liino-laevatain (30 s) | 55.1 s | 21.4 s | 1,510,009 |
+| typhoeus-gilberta (60 s) | 289.5 s | 38.3 s | 3,366,828 |
+
+With random outcomes a search costs about K times as much per child
+(each battle is applied and scored; only the first judges the choices):
+si-laevatain with `--dodge 0.7 --attack-every 4` and K = 4 took 23 s.
+
 ### Time
 
 Integer frames at **30 FPS**, the game's own timeline unit (verified across
