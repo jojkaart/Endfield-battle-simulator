@@ -1,0 +1,7 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_claym_0012",
+  "sources": [
+    "Finishing Call (WeaponBasicTable wpn_claym_0012). Nothing acts on damage dealt, so this kit has nothing to declare: skills 1–2 (Strength wpn_attr_str_mid, Max HP wpn_sp_attr_hp_mid) and skill 3's Secondary Attribute +second_attr_up (rmxlinux SkillData sk_wpn_claym_0012 cardAttributeModifier formulaItem 6, modifyAttributeType 2) are in the stat panel. Skill 3's \"Combo skill HP treatment effect +{heal_up}\" is its passive buff buff_wpn_claym_0012_up (lifeType 1), a healModifier on heals with tag −1517158118 (combo-skill heals): attribute 29 (Treatment Efficiency) +heal_up. Heal amounts aren't simulated (as in suit_heal01)."
+  ]
+}

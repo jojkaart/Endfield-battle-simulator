@@ -372,3 +372,83 @@ team-energy entry from the main session's in-progress K4 change.)
 - **wpn_claym_0012** (Finishing Call): no buffs or triggers. Its stat
   lines are in the panel, and its combo-heal bonus acts on heal amounts,
   which aren't simulated (`sources` say so, like suit_heal01).
+
+## Kit (2026-10-20)
+
+Files: [chr_0014_aurora.json](../../../packages/data/kits/operators/chr_0014_aurora.json),
+[wpn_claym_0011.json](../../../packages/data/kits/equipment/wpn_claym_0011.json),
+[wpn_claym_0012.json](../../../packages/data/kits/equipment/wpn_claym_0012.json);
+tests [kit-snowshine.test.ts](../../../tests/kit-snowshine.test.ts); example
+[snowshine-counter.scenario.json](../../../examples/snowshine-counter.scenario.json)
+(build snowshine-p5.json: P5, Seeker of Dark Lung, no gear). Started from
+`efsim kit-draft chr_0014_aurora`, which now compiles everything the kit
+has from SkillData except Protection, the counter's jump, the combo's heal
+and its window. Snowshine is in `skillCompile.test.ts`'s OPERATORS with
+**no** KNOWN entries: the kit and the compiled data agree on every hit,
+frame, factor, element, stagger, application and team-energy part.
+
+### Re-analysis
+
+| Gap / row | Status | How |
+|---|---|---|
+| G1 MarkCanInterrupt (row 15) | **done** (S1), plus a local engine fix | The loader reads `interruptibleFrom` 67; past it the gate counts the cast as past its exclusive frame. But a rotation step without a time also waits for the cast's own pending hits (`ownHitsLanded`), and the bash at 125, reached only through the counter's jump, was one of them: the step then waited until the end at 106 dropped it, so an un-hit shield still held her 106 frames (in-game test 61's triple shield: 7.1 s instead of the engine's stated 4.5 s). Fixed in `timeline.ts` `ownHitsLanded`: when the cast's next pending jump is an end (InterruptCurSkillAction), what lies past it isn't waited for. No other kit has pending hits or awaited actions past its first end (checked: Catcher, Typhoeus's floating attacks and combo, Liino), and every example and log output is unchanged. A jump an attack sets off is judged again by `earliestStart`, so the counter path still waits for its bash (tested) |
+| G2 combo trigger (row 22) | **interim** (E2 dropped by the owner) | `combo_window`: every enemy attack on the controlled operator opens it, as if it took that operator below 60% HP. What this means for rotations: in a scenario without `enemyActions` (every DPS scenario so far) her combo is **never** castable, which matches the owner's "effects needing an operator below an HP threshold don't fire"; in a scenario with attacks it is castable after **each** attack on the controlled operator (off cooldown), which overstates it. Its only value is 10 energy (× UGE), a Link stack and a combo cast; it has no damage. If the owner prefers "never" also with attacks, the trigger needs a condition that never holds (removing it would make the combo castable whenever off cooldown) |
+| G3 forced Solidification's extra seconds (row 33) | **done** (A2) | `extraSeconds: "extra_duration"` on the zone's application: 0 below P3, +2 s at P3+ (5.75 → 7.75 s at level 1), not on any other Solidification |
+| G4 no dash at a countered attack (row 21) | **done** (E3) | read from the kit's `counter` trigger: with `--dodge 1` the bash lands and the combo opens (tested); an attack outside frames 0–51 is still dodged |
+| Rows 3–4 poise, per-hit element | **done** (D2) | compiled: attack 3's Final Strike poise (controlled only), the bash's and the slam's poise; Physical basics, finisher and dive |
+| Row 23 combo energy | **done** (D3) | compiled as a cast trigger at 12 (`combo_cast`, with the heal) |
+| Rows 30, 32 Snow Zone | **done** (D3) | compiled through the entity's AuraAction: ten ticks 81–216 and the forced Solidification with the tick at 126 (the kit puts it on that tick, as the compiler does, before its damage; the frost and damage buffs' order at that frame isn't in the data and changes nothing) |
+| Row 31 9 or 10 ticks | unknown | 10, as compiled (the 10th at the buff's 5 s end); a log settles it |
+| Row 8, row 34 hit-stops, the counter's and the frost's slow-downs | open (Ti1b) | not modelled |
+| Row 29 TakeDownAction, InterruptAction | unknown | not modelled (Catcher's test C) |
+| Row 24 combo heal | supported | one team `heal` event (combo kind) at the launch frame; the loop heals are left out (no heal amounts, no kit reacts to repeated heals) |
+| Rows 13, 35, 36, 37, 39, 41 | supported / inert | not modelled, as the report says (grab branch, `ultimate_skill_limit`, P2 radius, P1 immunity, talent 1 heals, orphan buffs) |
+| W2 Seeker of Dark Lung | supported | burst trigger, cooldown `cd`, `beforeDamage`, layers `max_stack` (3). Since A5 an Arts Burst lands a second after its infliction, so the bash whose Cryo infliction bursts does **not** count the new layer (the report's scratch run, before A5, had it count); the burst and later hits do |
+| W5 Finishing Call | supported | stat lines only |
+
+The protection value: SkillData's `taken_dmg` (0.9, unlevelled; the
+AuraAction passes it), which SkillPatchTable calls `dmg_reduce` (same
+value). Only its category matters while damage taken isn't simulated.
+
+### What the kit models and leaves out
+
+Models: the basic chain (Physical, attack 3's Final Strike with 25 SP and
+controlled-only stagger), finisher, dive (refused until rotations jump);
+the battle skill's 30 returned SP and team Protection at the cast, the
+counter (jump 0–51 → 107), the second Protection, talent 2's energy and
+the second team-energy half at 107, the bash at 125 (Cryo infliction,
+stagger, P5's 10 SP), the f67 release when not attacked and the end at
+106; the combo's 10 energy and heal event at 12, its interim window; the
+ultimate's slam, ten Snow Zone ticks and the forced Solidification with
+P3's +2 s; Seeker's ATK layers. Leaves out what the § Kit plan lists:
+damage taken and heal amounts, hit-stops and slow-downs (Ti1b), TakeDown,
+InterruptAction, the grab branch, `ultimate_skill_limit`, P2's radius.
+
+### Verification
+
+- **Logs:** no fixture has Snowshine or either weapon; nothing to check.
+- **Example** (snowshine-counter, solo vs Rhodagn, attacks at 1 and 6 s):
+  52,403 damage, 2,217 DPS over 23.6 s. Counters at 0.5 s and 5.5 s: the
+  bash 0.6 s after each attack (5,202, then 6,763 with the combo's Link
+  ×1.30), the second bursts 1 s later (3,141, with Seeker's layer);
+  attack 1 after the burst 1,433 → 1,674 (×1.168, one layer). Ultimate:
+  slam 6,076, ticks 878 each (0.65 / 4.5 of the slam) every 0.5 s from
+  +2.7 s, Solidification at +4.2 s. The last shield isn't attacked: the
+  next attack starts 2.23 s after it (f67), not 3.53 s (f106). With
+  `--dodge 1` the same totals: no dash during either shield.
+- Timings match the report's scratch runs (bash at +1.10 s from a cast at
+  0.5 s attacked at 1 s; slam +2.07 s; ticks from +2.70 s;
+  Solidification +4.20 s), except the un-hit shield, now 2.23 s (S1).
+
+### In-game tests the kit depends on
+
+- **61** (MarkCanInterrupt; its Snowshine alternative: three shields
+  back to back, about 4.5 s with the mark, as the engine now gives, vs
+  7.1 s without).
+- **53** (a perfectly dodged hit as "attacked"): moot for her shield
+  while E3 keeps her from dashing, but it decides the combo window when a
+  dodge happens outside the shield.
+- **51** (an effect a hit triggers counting on that hit): Seeker's layer
+  on the burst (`beforeDamage`, from Umbra's log).
+- Not by hand: row 31 (9 or 10 ticks) and the bash's timing after the
+  counter's slow-down need a log with her.

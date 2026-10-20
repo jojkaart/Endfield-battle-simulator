@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_claym_0011",
+  "sources": [
+    "Seeker of Dark Lung (WeaponBasicTable wpn_claym_0011). Skills 1–2 (Strength wpn_attr_str_mid, Ultimate Gain Efficiency wpn_sp_attr_usgs_mid) and skill 3's Main Attribute +primary_attr_up (rmxlinux SkillData sk_wpn_claym_0011 cardAttributeModifier formulaItem 6, modifyAttributeType 1) are stat-panel modifiers, not here.",
+    "Skill 3: \"When the wielder applies an Arts Burst, the wielder gains ATK +{atk_up} for {duration}s. Max stacks for effects of the same name: {max_stack}. Duration of each stack is counted separately. Effect only triggers once every 0.1s.\" sk_wpn_claym_0011 passiveEventActions abilityEvent 127 (the wielder applies an Arts Burst, as in sk_wpn_funnel_0019) + CheckTimedMarkerCondition / CreateTimedMarker cd (0.1 s) → CreateBuff buff_wpn_claym_0011_atk_up_up on the wielder (attributeModifier ATK attr 2 formulaItem 6 +atk_up, duration 30 s, stackingType 2 with maxStackCntKey max_stack: independent layers). The buff file's max_stack 2 is overridden by the skill's (3 at every level, SkillPatchTable).",
+    "Its toggleBuffs buff_wpn_passive_spirit_01 and buff_wpn_claym_0011_primary01 are created by nothing (inert, as in wpn_funnel_0002 / wpn_lance_0010). No log has this weapon."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_claym_0011.atk_up",
+      "label": "ATK (Seeker of Dark Lung)",
+      "target": "self",
+      "gameBuff": "buff_wpn_claym_0011_atk_up_up",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_claym_0011.burst",
+      "on": { "event": "burst" },
+      "by": "self",
+      "beforeDamage": true,
+      "cooldown": "cd",
+      "skill": "sk_wpn_claym_0011",
+      "do": [{ "kind": "buff", "buff": "wpn_claym_0011.atk_up" }],
+      "note": "Each of the wielder's Arts Bursts (0.1 s timed marker cd), before that burst's damage, as Umbra of Frigid Eventide's trigger on the same abilityEvent 127 (wpn_funnel_0019: log dbaee23b801d t=8391); unverified for this weapon (test 51's question)."
+    }
+  ]
+}
