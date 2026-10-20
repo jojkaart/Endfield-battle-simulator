@@ -453,6 +453,10 @@ function kitChecker(scope: KitScope) {
           if (a.options.length < 2) throw new Error(`${where}: a choose action has at least two options`);
           for (const o of a.options) checkValue(o.weight, skillId, `${where} choose weight`);
           break;
+        case "link":
+          if (a.count !== undefined) checkValue(a.count, skillId, `${where} link count`);
+          if (a.seconds !== undefined) checkValue(a.seconds, skillId, `${where} link seconds`);
+          break;
         case "openCombo":
         case "hits":
           break;

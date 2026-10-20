@@ -294,8 +294,11 @@ stats (attribute types 64–69, 70–75, 62, 63), not zones.
   to 0 / 0.2 / 0.5 / 0.8 / 1 †. Can exceed ×1 (Talos rewrite, 2026).
 - **Finisher:** ×1 / 1.25 / 1.5 / 1.75 by enemy tier.
 - **Link:** battle skill +30/45/60/75%, ultimate +20/30/40/50% by stack count.
-  In the data (rmxlinux BuffData): a combo skill leaves
-  `buff_common_affixes_combo_trigger` stacks on the team; casting a battle
+  In the data (rmxlinux BuffData): `buff_common_affixes_combo_trigger`
+  stacks on the team, left only by a ComboAction (SkillData: Lifeng's
+  combo, Camille's combos) or a buff that creates the trigger buff
+  (Thermite Cutter; Akekuri's talent), not by every combo (corrected
+  2026-10-20, batch 4 B1: ordinary combos leave no Link in five logs); casting a battle
   skill or ultimate (skill types 2, 7) reads the stack count, looks up
   `imbue_scale` under the skill-setting key 连击增伤 (not in the fetched
   tables) and creates `buff_common_affixes_skillimbue_atk`: a `ComboCalcZone`

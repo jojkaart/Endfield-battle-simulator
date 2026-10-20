@@ -133,12 +133,12 @@ describe("Snowshine's combo (interim trigger: any attack on the controlled opera
     expect(earliestStart(ctx, init(ctx), op("combo_skill"))).toEqual({ error: `${P}combo_skill: its combo trigger hasn't happened (no open window at frame 0)` });
   });
 
-  it("opens on an attack on her as the controlled operator; usp (10) energy at frame 12, no damage, a Link stack", () => {
+  it("opens on an attack on her as the controlled operator; usp (10) energy at frame 12, no damage, no Link (her combo has no ComboAction)", () => {
     const sc = scenario({}, attackAt(1));
     const s = run(sc, [op("combo_skill", 1)], 60);
     expect(s.casts.find((c) => c.skill === P + "combo_skill")?.frame).toBe(30);
     expect(hitsOf(s, P + "combo_skill")).toHaveLength(0);
-    expect(s.link).toHaveLength(1);
+    expect(s.link).toHaveLength(0);
     const before = run(sc, [op("combo_skill", 1)], 30 + 11).energy[C] ?? 0;
     const after = run(sc, [op("combo_skill", 1)], 30 + 12).energy[C] ?? 0;
     expect(before).toBe(0);

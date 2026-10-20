@@ -117,15 +117,25 @@ array's 20 s (as the engine now assumes) or end with the animation? The
 same log suggests it ends with the animation; if it really lasts 20 s, it
 explains about ×1.24 of the ×1.9.
 
-### 8. Link stack values (ready)
+### 8. Where Link comes from, and its values (ready; higher priority: affects every team)
 
-**Why:** Link (a teammate's combo skill boosting the next battle skill or
-ultimate) is found in the data, but its per-stack values aren't in the
-tables we have. One log shows +20% for one stack on Gilberta's ultimate.
-**How:** on a training dummy, one operator's ultimate (Gilberta's is a
-single hit) cast: with no combo skill before it; after one teammate's
-combo; after two or three teammates' combos. Screenshots of the ultimate's
-damage number each time (no crits, same buffs otherwise).
+**Why:** Link boosts the next battle skill or ultimate (+20% for one
+stack on an ultimate, from a log). Until 2026-10-20 the engine gave Link
+after every combo; the game data gives it only from a few sources
+(Lifeng's combo, Camille's combo and Hunter Pursuit, Thermite Cutter,
+Akekuri's talent), and five logs agree: ordinary combos left no Link on
+the next skill. The engine now follows the data. This test confirms it.
+**How:** on a training dummy, Gilberta's ultimate (a single hit), lower
+of two damage numbers each time (crits):
+- (a) with no combo in the last 20 s;
+- (b) right after Estella's combo (anyone but Camille or Lifeng);
+- (c) right after Camille's combo on a dummy with hovering Vesperwings
+  (her battle skill first, talent 1 learned);
+- (d) right after Camille's combo without them;
+- optionally (e) right after Lifeng's combo, and (f) after two Link
+  combos (Camille and Lifeng) for the two-stack value.
+Data and logs (engine now): a = b = d, c = e ≈ 1.20 × a. The old rule
+(every combo gives Link) would give b = d ≈ 1.20 × a and c ≈ 1.30 × a.
 
 ### 9. Typhoeus's burst with and without a Nature infliction (ready, if you have Typhoeus)
 
@@ -483,8 +493,8 @@ ultimate; see test 8), and Liino's talent-2 SP.
 - Si wearing 3 Type 50 Yinglung pieces: cast her battle skill, Initial
   Stroke, Final Stroke, then read the Yinglung's Edge stacks: 1 means the
   strokes don't count, 3 means they do.
-- After a teammate's combo (Link up), cast Si's Initial Stroke: is Link
-  used up?
+- After Camille's or Lifeng's combo (Link up; see test 8), cast Si's
+  Initial Stroke: is Link used up?
 - Liino: with Link up, cast End Stance, then her battle skill: does the
   battle skill still get the Link bonus? And after her combo (talent 2
   active), cast End Stance: is Starry Boost used up (its icon gone)? Its
@@ -1233,9 +1243,9 @@ battle skill.
    skill's number), and its Susceptibility changes the ratios.
 2. With Cohesive Traction: her battle skill's own number (a) with no
    combo in the last 30 s, (b) after one combo, (c) after two combos
-   about 12 s apart. Cast the battle skill 16–29 s after the last combo:
-   within 15 s of a combo, Link adds +30% (one combo) or +45% (two) and
-   hides the comparison. (b) is about 1.2× (a). Then (c) about the same
+   about 12 s apart, with no Camille or Lifeng on the team (their combos
+   give Link, which would hide the comparison; see test 8). (b) is about
+   1.2× (a). Then (c) about the same
    as (b): one layer (data, engine); about 1.17× (b): two layers add.
    The buff icon's stack counter shows it too.
 

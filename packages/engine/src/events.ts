@@ -193,6 +193,14 @@ export type TriggerActionKind =
    */
   | { readonly kind: "endAction" }
   /**
+   * Give the team `count` Link stacks (default 1) lasting `seconds` (default
+   * 15, buff_common_affixes_combo_trigger's duration): the data's ComboAction
+   * (Lifeng's and Camille's combos) and buffs that create the combo-trigger
+   * buff (Thermite Cutter). A combo cast gives none by itself. The next
+   * battle skill or ultimate, by anyone, uses up to 4 of them.
+   */
+  | { readonly kind: "link"; readonly count?: ValueExpr; readonly seconds?: ValueExpr }
+  /**
    * Move the owner's current skill's playhead to frame `to` (an event-driven
    * JumpToAction: Catcher's counter when attacked), if that skill is `skill`
    * and the playhead is in `[from, until)`: the frames between are skipped

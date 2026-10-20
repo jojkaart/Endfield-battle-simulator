@@ -69,9 +69,10 @@ describe("rotation search", () => {
     expect(found.seeds).toEqual([1]);
     expect(found.spread).toBeUndefined();
     // Pinned 2026-10-20 from the search before seeded battles, memoAdvance and startsNow (a kit change may move them);
-    // re-pinned after batch 3's S1 / D1 (MarkCanInterrupt, IfElse jumps), which free Laevatain sooner: 1,079,511.708 → 1,176,753.682, 530 → 529 states.
-    expect(found.result.total).toBeCloseTo(1176753.6824, 3);
-    expect(found.expanded).toBe(529);
+    // re-pinned after batch 3's S1 / D1 (MarkCanInterrupt, IfElse jumps), which free Laevatain sooner: 1,079,511.708 → 1,176,753.682, 530 → 529 states; then after batch 4's Link correction (a combo
+    // gives no Link by itself): 1,070,547.094, 538 states.
+    expect(found.result.total).toBeCloseTo(1070547.0939, 3);
+    expect(found.expanded).toBe(538);
   });
 
   it("values SP and ultimate energy by what the team's own skills deal per point", () => {

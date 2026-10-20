@@ -1419,6 +1419,31 @@
                 },
                 {
                   "type": "object",
+                  "required": [
+                    "kind"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "kind": {
+                      "const": "link"
+                    },
+                    "count": {
+                      "$ref": "#/$defs/valueExpr",
+                      "description": "Link stacks given to the team (default 1)."
+                    },
+                    "seconds": {
+                      "$ref": "#/$defs/valueExpr",
+                      "description": "How long they last (default 15, buff_common_affixes_combo_trigger)."
+                    },
+                    "if": {
+                      "$ref": "#/$defs/predicate",
+                      "description": "This action only in this situation (judged for the owner when it runs)."
+                    }
+                  },
+                  "description": "Give the team Link stacks (the data's ComboAction: Lifeng's and Camille's combos; Thermite Cutter). A combo cast gives none by itself; the next battle skill or ultimate, by anyone, uses up to 4."
+                },
+                {
+                  "type": "object",
                   "required": ["kind", "skill", "from", "until", "to"],
                   "additionalProperties": false,
                   "properties": {

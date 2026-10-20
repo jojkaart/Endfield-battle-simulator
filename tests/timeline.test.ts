@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, parseReactionEvent, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, simulateRuns, enemyActionsOf, enemyHpAt, nextRandom, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
+import { advance, apply, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, parseReactionEvent, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, simulateRuns, enemyActionsOf, enemyHpAt, nextRandom, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, type TimelineState, wornEquipment } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -962,22 +962,30 @@ describe("timeline: haste", () => {
 describe("timeline: Link and fight start", () => {
   const kit = data.kits.operators[op] as OperatorKit;
   const skill = (s: string, at?: number): RotationAction => ({ operator: op, skill: L + s, ...(at !== undefined ? { at } : {}) });
-  const comboThen = (next: RotationAction) => {
+  const comboThen = (next: RotationAction, d: GameData = data) => {
     const five = Array.from({ length: 5 }, () => skill("normal_skill"));
-    const ctx = createContext(data, { ...scenario([]), durationFrames: 30 * 120 });
+    const ctx = createContext(d, { ...scenario([]), durationFrames: 30 * 120 });
     let s = init(ctx);
     for (const a of five) s = apply(ctx, s, a);
     const combustion = advance(ctx, s, ctx.scenario.durationFrames).reactions.find((e) => e.kind === "reaction");
     s = apply(ctx, advance(ctx, s, combustion?.frame ?? 0), skill("combo_skill"));
     return { ctx, s: advance(ctx, apply(ctx, s, next), ctx.scenario.durationFrames) };
   };
-
-  it("a combo leaves the team a Link stack that the next battle skill uses for its own hits (+30% at one stack)", () => {
-    const { s } = comboThen(skill("normal_skill"));
+  const kitL = data.kits.operators[op] as OperatorKit;
+  // A combo that gives Link as Lifeng's and Camille's do (the data's ComboAction).
+  const linking: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kitL, triggers: [...kitL.triggers, { id: "combo_link", on: { event: "cast", kinds: ["combo"] }, by: "self", do: [{ kind: "link" }] }] } } } };
+  const linked = (s: TimelineState) => {
     const bs = s.casts.length - 1;
     const last = s.hits.filter((h) => h.skillId === L + "normal_skill" && h.frame >= (s.casts[bs]?.frame ?? Infinity));
     expect(last.length).toBeGreaterThan(0);
-    expect(last.every((h) => h.modifiers.some((m) => m.source === "Link (1)" && m.zone === "multiplicative" && Math.abs(m.value - 0.3) < 1e-12))).toBe(true);
+    return last.every((h) => h.modifiers.some((m) => m.source === "Link (1)" && m.zone === "multiplicative" && Math.abs(m.value - 0.3) < 1e-12));
+  };
+
+  it("a combo gives no Link by itself; a kit's `link` action gives a stack the next battle skill uses for its own hits (+30% at one stack)", () => {
+    // Batch 4 (Lifeng G2, Camille G2): only ComboAction (Lifeng's and Camille's combos) and the combo-trigger buff give Link.
+    expect(linked(comboThen(skill("normal_skill")).s)).toBe(false);
+    const { s } = comboThen(skill("normal_skill"), linking);
+    expect(linked(s)).toBe(true);
     expect(s.link).toEqual([]);
   });
 

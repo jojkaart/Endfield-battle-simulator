@@ -1235,6 +1235,12 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         }
         break;
       }
+      case "link": {
+        const n = Math.max(0, Math.round(evaluate(a.count ?? 1, ec())));
+        const until = frame + Math.round(evaluate(a.seconds ?? LINK_FRAMES / FPS, ec()) * FPS);
+        st = { ...st, link: [...st.link.filter((f) => f > frame), ...Array.from({ length: n }, () => until)] };
+        break;
+      }
       case "endAction": {
         const r = endCurrentSkill(st, owner, frame);
         st = { ...r.state, acting: Object.fromEntries(Object.entries(r.state.acting).filter(([k]) => k !== owner)) };
@@ -1999,15 +2005,15 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     const { [operator]: _used, ...rest } = next.comboWindow;
     next = { ...next, comboWindow: rest };
   }
-  // Link (buff_common_affixes_combo_trigger → skillimbue_atk): a combo leaves the team a stack for 15 s; the next battle
-  // skill or ultimate, by anyone, uses all of them (at most 4) for its own hits: +30/45/60/75% / +20/30/40/50%.
+  // Link (buff_common_affixes_combo_trigger → skillimbue_atk): stacks a kit gives the team (trigger action `link`: the data's
+  // ComboAction, not every combo; batch 4, Lifeng G2 and Camille G2, from the data and five logs); the next battle skill or
+  // ultimate, by anyone, uses all of them (at most 4) for its own hits: +30/45/60/75% / +20/30/40/50%.
   const linkEnded: BattleEvent[] = [];
   if (!followUp) {
     const live = next.link.filter((f) => f > frame);
     // Kit buffs that count as a Link stack (KitBuff.link) for the caster, used up with the combo stacks.
     const linkBuffs = next.buffs.filter((b) => b.link && b.cast === undefined && reaches(b, operator) && b.appliedAt <= frame && b.expiresAt > frame);
-    if (costs.kind === "combo") next = { ...next, link: [...live, frame + LINK_FRAMES] };
-    else if ((costs.kind === "battle" || costs.kind === "ultimate") && live.length + linkBuffs.length > 0) {
+    if ((costs.kind === "battle" || costs.kind === "ultimate") && live.length + linkBuffs.length > 0) {
       const n = Math.min(4, live.length + linkBuffs.length);
       if (linkBuffs.length) {
         next = { ...next, buffs: next.buffs.filter((b) => !linkBuffs.includes(b)) };
