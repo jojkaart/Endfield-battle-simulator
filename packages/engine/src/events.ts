@@ -238,6 +238,15 @@ export interface KitTrigger {
   /** Delayed actions of a cast event happen even if the cast is cut short. */
   readonly detached?: boolean;
   /**
+   * A detached cast trigger's launch (skill frames after the cast, at most
+   * `delay`: the frame its entity or projectile comes out): until then its
+   * actions are the cast's own, so cutting the cast or a jump over the
+   * launch drops them and a jump before it moves them; after it, they run
+   * whatever happens. Without it, detached actions are on their way from
+   * the cast.
+   */
+  readonly launch?: number;
+  /**
    * A delayed cast trigger whose actions are the skill's own effect (Fluorite's
    * kick planting her explosive): a rotation step without `at` waits for it,
    * as for the cast's own hits. Others (follow-ups the next input cuts) don't

@@ -219,7 +219,8 @@ export interface TimelineState {
   readonly pending: readonly PendingHit[];
   /** Trigger actions due later (KitTrigger.delay), with the event that started them. */
   /** Delayed trigger actions; `cast`: the cast they belong to (a cast trigger's), dropped when it's cut short. */
-  readonly pendingActions: readonly { readonly frame: number; readonly owner: string; readonly trigger: string; readonly event: BattleEvent; readonly origin: Origin | null; readonly cast?: { readonly operator: string; readonly index: number }; readonly awaited?: boolean }[];
+  /** `launchAt`: a detached cast trigger's launch (KitTrigger.launch); the cast's own until then. */
+  readonly pendingActions: readonly { readonly frame: number; readonly owner: string; readonly trigger: string; readonly event: BattleEvent; readonly origin: Origin | null; readonly cast?: { readonly operator: string; readonly index: number }; readonly awaited?: boolean; readonly launchAt?: number }[];
   /** Jumps and ends on casts' timelines still to come (SkillTiming.jumps and ends; a conditional jump only if the kit's condition held at the cast). */
   readonly pendingJumps: readonly PendingJump[];
   /** The team's Link stacks (combo casts leave one each, 15 s): their expiry frames. */
@@ -519,7 +520,7 @@ function ownHitsLanded(st: TimelineState, operator: string): number {
   let last = 0;
   // A detached hit is the cast's own until its launch: interrupting before it would cancel it.
   for (const h of st.pending) if (h.operator === operator && h.cast === cast) last = Math.max(last, h.detached ? (h.launchAt ?? 0) : h.frame);
-  for (const a of st.pendingActions) if (a.awaited && a.cast && a.cast.operator === operator && a.cast.index === cast && a.frame > last) last = a.frame;
+  for (const a of st.pendingActions) if ((a.awaited || a.launchAt !== undefined) && a.cast && a.cast.operator === operator && a.cast.index === cast) last = Math.max(last, a.launchAt ?? a.frame);
   return last;
 }
 
@@ -626,8 +627,8 @@ function shiftOperator(st: TimelineState, operator: string, start: number, n: nu
   const chain = st.chainNext[operator];
   return {
     ...st,
-    pending: st.pending.map((h) => (h.operator === operator && h.frame > start ? { ...h, frame: h.frame + n } : h)),
-    pendingActions: st.pendingActions.map((a) => (a.owner === operator && a.frame > start ? { ...a, frame: a.frame + n } : a)),
+    pending: st.pending.map((h) => (h.operator === operator && h.frame > start ? { ...h, frame: h.frame + n, ...(h.launchAt !== undefined ? { launchAt: later(h.launchAt) } : {}) } : h)),
+    pendingActions: st.pendingActions.map((a) => (a.owner === operator && a.frame > start ? { ...a, frame: a.frame + n, ...(a.launchAt !== undefined ? { launchAt: later(a.launchAt) } : {}) } : a)),
     pendingJumps: st.pendingJumps.map((j) => (j.operator === operator && j.frame > start ? { ...j, frame: j.frame + n } : j)),
     ...(cur ? { acting: { ...st.acting, [operator]: { ...cur, frame: cur.frame + n, ...(cur.skips ? { skips: cur.skips.map((k) => ({ ...k, at: k.at + n })) } : {}) } } } : {}),
     ...(chain ? { chainNext: { ...st.chainNext, [operator]: { ...shift(chain), ...(chain.alternatives ? { alternatives: chain.alternatives.map(shift) } : {}) } } } : {}),
@@ -1060,11 +1061,13 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
         st = { ...st, triggerState: { ...st.triggerState, [key]: { readyAt: e.frame + cooldown, count: (ts?.count ?? 0) + 1 } } };
         if (castKey) st = { ...st, triggerState: { ...st.triggerState, [castKey]: { readyAt: 0, count: (st.triggerState[castKey]?.count ?? 0) + 1 } } };
         if (t.delay) {
-          const cast = e.type === "cast" && e.cast !== undefined && !t.detached ? { cast: { operator: e.operator, index: e.cast } } : {};
+          // A detached trigger's actions are the cast's own until their launch.
+          const cast = e.type === "cast" && e.cast !== undefined && (!t.detached || t.launch !== undefined) ? { cast: { operator: e.operator, index: e.cast } } : {};
           // A cast's own effects at frames play at its speed, as its hits do (Haste).
           const acting = e.type === "cast" ? st.acting[e.operator] : undefined;
-          const delay = acting && acting.frame === e.frame && acting.speed ? Math.round(t.delay / acting.speed) : t.delay;
-          st = { ...st, pendingActions: [...st.pendingActions, { frame: e.frame + delay, owner, trigger: t.id, event: e, origin, ...cast, ...(t.awaited ? { awaited: true } : {}) }] };
+          const scaled = (f: number) => (acting && acting.frame === e.frame && acting.speed ? Math.round(f / acting.speed) : f);
+          const launch = t.detached && t.launch !== undefined && "cast" in cast ? { launchAt: e.frame + scaled(t.launch) } : {};
+          st = { ...st, pendingActions: [...st.pendingActions, { frame: e.frame + scaled(t.delay), owner, trigger: t.id, event: e, origin, ...cast, ...launch, ...(t.awaited ? { awaited: true } : {}) }] };
           continue;
         }
         const r = runActions(ctx, st, t, owner, e, origin, atEvent);
@@ -1466,7 +1469,13 @@ function takeJump(st: TimelineState, j: PendingJump): { state: TimelineState; ev
           .filter((h) => h.detached && h.launchAt !== undefined)
           .flatMap((h) => (h.operator !== j.operator || h.cast !== j.cast || (h.launchAt as number) <= at ? [h] : (h.launchAt as number) < at + length ? [] : [{ ...h, frame: h.frame - length, launchAt: (h.launchAt as number) - length }])),
       ],
-      pendingActions: skip(st.pendingActions, (x) => mine(x.cast)),
+      pendingActions: [
+        ...skip(st.pendingActions.filter((x) => x.launchAt === undefined), (x) => mine(x.cast)),
+        // Launched later: moves with its launch, as a detached hit does.
+        ...st.pendingActions
+          .filter((x) => x.launchAt !== undefined)
+          .flatMap((x) => (!mine(x.cast) || (x.launchAt as number) <= at ? [x] : (x.launchAt as number) < at + length ? [] : [{ ...x, frame: x.frame - length, launchAt: (x.launchAt as number) - length }])),
+      ],
       pendingEnergy: skip(st.pendingEnergy, (x) => mine(x.cast) && !x.detached),
       pendingJumps: skip(st.pendingJumps, (x) => x.operator === j.operator && x.cast === j.cast),
       buffs: st.buffs.flatMap((b) => (ending.includes(b) ? [] : b.owner === j.operator && b.endsWithCast === j.cast && b.expiresAt >= at + length ? [{ ...b, expiresAt: b.expiresAt - length, skipped: (b.skipped ?? 0) + length }] : [b])),
@@ -1788,7 +1797,7 @@ function endCurrentSkill(advanced: TimelineState, operator: string, frame: numbe
   const state = {
     ...advanced,
     pending: advanced.pending.filter((h) => !(h.operator === operator && h.cast === prevCast && h.frame > frame && (!h.detached || (h.launchAt !== undefined && h.launchAt > frame)))),
-    pendingActions: advanced.pendingActions.filter((x) => !(x.cast && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame)),
+    pendingActions: advanced.pendingActions.filter((x) => !(x.cast && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame && (x.launchAt === undefined || x.launchAt > frame))),
     pendingEnergy: advanced.pendingEnergy.filter((x) => !(x.cast && !x.detached && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame)),
     pendingJumps: advanced.pendingJumps.filter((x) => !(x.operator === operator && x.cast === prevCast)),
     buffs: advanced.buffs.filter((b) => !endsNow.includes(b)),

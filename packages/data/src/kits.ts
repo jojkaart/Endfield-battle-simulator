@@ -297,6 +297,7 @@ function kitChecker(scope: KitScope) {
     if (t.maxPerCast !== undefined && !(t.maxPerCast >= 1)) throw new Error(`${where}: maxPerCast must be at least 1`);
     if (t.detached && !(t.delay && t.on.event === "cast")) throw new Error(`${where}: only a delayed cast trigger can be detached from its cast`);
     if (t.awaited && !(t.delay && t.on.event === "cast" && !t.detached)) throw new Error(`${where}: only a delayed cast trigger that belongs to its cast can be awaited`);
+    if (t.launch !== undefined && !(t.detached && t.delay && Number.isInteger(t.launch) && t.launch >= 0 && t.launch <= t.delay)) throw new Error(`${where}: a launch frame needs a detached delayed cast trigger, at or before its delay`);
     if (t.if) checkPredicate(t.if, where);
     if (t.cooldown !== undefined) checkValue(t.cooldown, skillId, `${where} cooldown`);
     if (t.chance !== undefined) checkValue(t.chance, skillId, `${where} chance`);

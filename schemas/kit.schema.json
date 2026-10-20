@@ -946,6 +946,11 @@
             "type": "boolean",
             "description": "A delayed cast trigger's actions happen even if the cast is cut short (by default they are the cast's own and are dropped with it)."
           },
+          "launch": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "A detached cast trigger's launch (skill frames after the cast, at most `delay`): until then its actions are the cast's own (a cut or a jump over it drops them, a jump before it moves them); after it, they run whatever happens."
+          },
           "awaited": {
             "type": "boolean",
             "description": "A delayed cast trigger whose actions are the skill's own effect: a rotation step without `at` waits for it, as for the cast's own hits."

@@ -1828,6 +1828,24 @@ describe("jumps in a skill's timeline", () => {
     expect(cutAt(5)).toBe(true);
   });
 
+  it("a detached cast trigger's actions are the cast's own until their launch: a cut or a jump over it drops them, a jump before it moves them", () => {
+    const shot: KitHit = { id: "launched", label: "launched", scale: ["atk_scale"], count: 1, frames: [0], events: [], damageType: "none", element: "fire" };
+    const at = (launch: number, cutAt?: number) => {
+      const t: KitTrigger = { id: "out", on: { event: "cast", kinds: ["battle"] }, by: "self", delay: 250, detached: true, launch, skill: L + "normal_skill", do: [{ kind: "hits", hits: [shot] }] };
+      const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, triggers: [...kit.triggers, t] } } } };
+      const rotation: RotationAction[] = [{ operator: op, skill: L + "normal_skill" }, ...(cutAt !== undefined ? [{ operator: op, skill: L + "ultimate_skill", at: cutAt }] : [])];
+      const r = simulate(g, { ...scenario(rotation), startEnergy: { [op]: "full" as const } });
+      return r.hits.find((h) => h.hitId === "launched")?.frame;
+    };
+    // The plain battle skill jumps 37 → 215 (178 frames).
+    expect(at(20)).toBe(250);
+    expect(at(100)).toBeUndefined();
+    expect(at(220)).toBe(250 - 178);
+    // Cut at 5: launched at 2 it runs anyway; at 20 it never comes out.
+    expect(at(2, 5)).toBe(250);
+    expect(at(20, 5)).toBeUndefined();
+  });
+
   it("a cast's slow-downs follow its path: one in frames its jump skips never starts", () => {
     const ns = data.skills[L + "normal_skill"];
     const withSlow = (from: number): GameData => ({ ...data, skills: { ...data.skills, [L + "normal_skill"]: { ...ns, timing: { ...ns?.timing, slowdowns: [{ from, scales: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }] } } } as GameData["skills"] });
