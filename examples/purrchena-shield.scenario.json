@@ -1,0 +1,36 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Purrchena alone (P5, Dessert Moment, no gear) vs Rhodagn, which attacks at 1, 2, 4, 5 and 24 s (its clock: time stops and slow-downs delay them); she starts with her ultimate charged. The battle skill raises the shield (3 s; 20 returned SP) and holds her in its loop; the first attack is blocked (block_1: the shield set to 3 s again, +20 SP, talent 1's energy and a layer for the next ultimate), the later ones too (block_2), and each opens the combo window. The combo cast with the shield up takes the shielded path (jump to 270, the shield paused 40 frames, back to the loop at 309); its giftbox heals the team (Dessert Moment's buffs) and picks an item (never the last one). The counter from the loop (Nature, with the combo's Link and Dessert Moment's Arts DMG) ends the shield; the ultimate's three Prezzies land 70 frames after its cast (talent 1's layer raises the Ambassador's Special chance). The second battle skill isn't attacked: the shield holds her its 3 s before the basic attacks. The second combo, without the shield, ends at 206 but lets her attack from MarkCanInterrupt 28. Items and Prezzies are random (the scenario's seed).",
+  "team": [
+    "purrchena-p5.json"
+  ],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0038_purrche": "full"
+  },
+  "durationSeconds": 35,
+  "crit": "expected",
+  "enemyActions": [
+    { "kind": "attack", "at": [1, 2, 4, 5, 24] }
+  ],
+  "rotation": [
+    { "operator": "chr_0038_purrche", "skill": "chr_0038_purrche_normal_skill" },
+    { "operator": "chr_0038_purrche", "skill": "chr_0038_purrche_combo_skill", "at": 2.3 },
+    { "operator": "chr_0038_purrche", "skill": "chr_0038_purrche_normal_skill_counter", "at": 6 },
+    { "operator": "chr_0038_purrche", "skill": "chr_0038_purrche_ultimate_skill" },
+    { "operator": "chr_0038_purrche", "skill": "chr_0038_purrche_attack1" },
+    { "operator": "chr_0038_purrche", "skill": "chr_0038_purrche_attack2" },
+    { "operator": "chr_0038_purrche", "skill": "chr_0038_purrche_attack3" },
+    { "operator": "chr_0038_purrche", "skill": "chr_0038_purrche_normal_skill" },
+    { "operator": "chr_0038_purrche", "skill": "chr_0038_purrche_attack1" },
+    { "operator": "chr_0038_purrche", "skill": "chr_0038_purrche_attack2" },
+    { "operator": "chr_0038_purrche", "skill": "chr_0038_purrche_attack3" },
+    { "operator": "chr_0038_purrche", "skill": "chr_0038_purrche_combo_skill", "at": 27 },
+    { "operator": "chr_0038_purrche", "skill": "chr_0038_purrche_attack1" },
+    { "operator": "chr_0038_purrche", "skill": "chr_0038_purrche_attack2" },
+    { "operator": "chr_0038_purrche", "skill": "chr_0038_purrche_attack3" }
+  ]
+}

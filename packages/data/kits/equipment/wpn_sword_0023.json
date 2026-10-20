@@ -1,0 +1,44 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0023",
+  "sources": [
+    "rmxlinux Json/SkillData/sk_wpn_sword_0023 (game 1.6), passiveEventActions: abilityEvent 50 (a heal by the wielder) with CheckHealTag −1517158118 (the combo-skill heal tag; no CheckTargetsEqual, so the wielder's heals of itself count too) → CreateBuff buff_wpn_sword_0023_intensityup (attribute 87 Arts Intensity + phy_spell_up) and buff_wpn_sword_0023_spelldmgup (attributes 51–54 Heat / Electric / Cryo / Nature DMG + spell_dmg_up) on the healed operator (targetSource 0), both for `duration` (20 s). Both are stackingType 11 with a priority key and maxStackCnt 1 (\"Effects of the same name cannot stack\"): the loader makes each a stack group from its game buff (batch 3 B2), so two wielders' copies don't add, and a new heal refreshes the 20 s. Values: SkillPatchTable sk_wpn_sword_0023 (level 9: phy_spell_up 14, spell_dmg_up 0.098). Max HP + hp_up (cardAttributeModifier), Strength and Treatment Efficiency are on the stat panel.",
+    "It acts for any wielder whose kit declares combo-kind heals (a trigger heal with healKind combo, or a hit's heals): Purrchena's giftbox and Yummy Dessert, Liino's combo. Not in any log or fixture yet. Batch-3 report docs/kit-batches/batch-3/chr_0038_purrche.md rows E1–E3."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_sword_0023.intensity",
+      "label": "Dessert Moment: Arts Intensity up",
+      "target": "team",
+      "gameBuff": "buff_wpn_sword_0023_intensityup",
+      "duration": "duration",
+      "modifiers": [{ "attr": 87, "value": "phy_spell_up" }]
+    },
+    {
+      "id": "wpn_sword_0023.arts_dmg",
+      "label": "Dessert Moment: Arts DMG up",
+      "target": "team",
+      "gameBuff": "buff_wpn_sword_0023_spelldmgup",
+      "duration": "duration",
+      "modifiers": [
+        { "attr": 51, "value": "spell_dmg_up" },
+        { "attr": 52, "value": "spell_dmg_up" },
+        { "attr": 53, "value": "spell_dmg_up" },
+        { "attr": 54, "value": "spell_dmg_up" }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_sword_0023.healed",
+      "on": { "event": "heal", "kinds": ["combo"] },
+      "by": "self",
+      "skill": "sk_wpn_sword_0023",
+      "do": [
+        { "kind": "buff", "buff": "wpn_sword_0023.intensity", "to": "eventSubject" },
+        { "kind": "buff", "buff": "wpn_sword_0023.arts_dmg", "to": "eventSubject" }
+      ],
+      "note": "\"When the wielder's combo skill grants HP treatment, the operator receiving this HP treatment gains Arts Intensity +{phy_spell_up} and Arts DMG Dealt +{spell_dmg_up} for {duration}s\": every combo-tagged heal by the wielder, to whomever it heals (the wielder included)."
+    }
+  ]
+}
