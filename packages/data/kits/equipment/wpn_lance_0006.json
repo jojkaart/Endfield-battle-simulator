@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_lance_0006",
+  "sources": [
+    "Cohesive Traction, skill 3: rmxlinux Json/SkillData sk_wpn_lance_0006 (game 1.6) passiveEventActions abilityEvent 30 (the wielder casts a skill): CheckSkillType [6] (combo) → CreateBuff buff_wpn_lance_0006_exist on the wielder (duration, max_stack); CheckSkillType [2] (battle skill) → SaveBuffStackNumAdvanced buff_wpn_lance_0006_exist → count, SimpleCalcBB pulse_dmg = pulse_dmg_up × count, CreateBuffAttachingSkill buff_wpn_lance_0006_skill_pulse01 (attributeType 52 formulaItem 5: Electric DMG +pulse_dmg for that cast; its finish event, buffEvent 2, ends every exist layer: FinishBuffAdvanced finishAll). BuffData buff_wpn_lance_0006_exist: duration `duration`, stackingType 2 with maxStackCntKey max_stack (each layer its own timer), addingCooldown 30.0. SkillPatchTable sk_wpn_lance_0006 L9: pulse_dmg_up 0.28, duration 30, max_stack 3, dmg_up 0.28. Same structure as Bonekrusha (suit_attri01). Batch-3 report docs/kit-batches/batch-3/chr_0012_avywen.md row 33.",
+    "The adding cooldown (U2, in-game test 73): addingCooldown is a literal in BuffData (no skill key), written as the trigger's cooldown 30. With it equal to the layer's duration, at most one layer is ever active, though the text says up to {max_stack} stacks. Combo Skill DMG +dmg_up is cardAttributeModifier attribute 33 (stat panel); buff_wpn_lance_0006_comboskill01 is referenced by no file. toggleBuffs buff_wpn_passive_spirit_01 has no BuffData file (inert). Not in any log or fixture yet."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_lance_0006.pulse",
+      "label": "Suppression: Concentric Circles (Electric DMG, next battle skill)",
+      "target": "self",
+      "gameBuff": "buff_wpn_lance_0006_exist",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "consumedBy": ["battle"],
+      "modifiers": [{ "attr": 52, "value": "pulse_dmg_up" }],
+      "note": "A layer per combo cast (each its own 30 s); the next battle skill uses every layer: pulse_dmg_up × layers Electric DMG on that cast's hits (the returning Thunderlances included), then they end."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_lance_0006.combo",
+      "on": { "event": "cast", "kinds": ["combo"] },
+      "by": "self",
+      "skill": "sk_wpn_lance_0006",
+      "cooldown": 30,
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0006.pulse" }],
+      "note": "cooldown: buff_wpn_lance_0006_exist's addingCooldown (30 s, a BuffData literal), counted from the last layer added whether or not a battle skill used it since."
+    }
+  ]
+}

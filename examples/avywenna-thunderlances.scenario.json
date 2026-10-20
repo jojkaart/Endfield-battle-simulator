@@ -1,0 +1,84 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Avywenna alone (P5, Cohesive Traction, Pulser Labs) vs Rhodagn, ultimate charged. Her ultimate throws a Thunderlance EX and leaves Electric Susceptibility (talent 2); the battle skill recalls it (Electric Infliction; \u00d71.15 at P5 under the Susceptibility). A basic chain's Final Strike on the Electric enemy opens her combo, which throws 3 Thunderlances and gives Cohesive Traction's layer; the next battle skill recalls them (3 returning hits, +28% Electric DMG on that cast) and talent 1 gives 6 energy per lance hit. A second chain and combo after the combo's 12 s cooldown throw 3 more, which a battle skill at 50 s still finds: at P2 they live 50 s (30 s below).",
+  "team": [
+    "avywenna-p5.json"
+  ],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0012_avywen": "full"
+  },
+  "durationSeconds": 55,
+  "crit": "expected",
+  "rotation": [
+    {
+      "operator": "chr_0012_avywen",
+      "skill": "chr_0012_avywen_ultimate_skill"
+    },
+    {
+      "operator": "chr_0012_avywen",
+      "skill": "chr_0012_avywen_normal_skill"
+    },
+    {
+      "operator": "chr_0012_avywen",
+      "skill": "chr_0012_avywen_attack1"
+    },
+    {
+      "operator": "chr_0012_avywen",
+      "skill": "chr_0012_avywen_attack2"
+    },
+    {
+      "operator": "chr_0012_avywen",
+      "skill": "chr_0012_avywen_attack3"
+    },
+    {
+      "operator": "chr_0012_avywen",
+      "skill": "chr_0012_avywen_attack4"
+    },
+    {
+      "operator": "chr_0012_avywen",
+      "skill": "chr_0012_avywen_attack5"
+    },
+    {
+      "operator": "chr_0012_avywen",
+      "skill": "chr_0012_avywen_combo_skill"
+    },
+    {
+      "operator": "chr_0012_avywen",
+      "skill": "chr_0012_avywen_normal_skill"
+    },
+    {
+      "operator": "chr_0012_avywen",
+      "skill": "chr_0012_avywen_attack1",
+      "at": 16.5
+    },
+    {
+      "operator": "chr_0012_avywen",
+      "skill": "chr_0012_avywen_attack2"
+    },
+    {
+      "operator": "chr_0012_avywen",
+      "skill": "chr_0012_avywen_attack3"
+    },
+    {
+      "operator": "chr_0012_avywen",
+      "skill": "chr_0012_avywen_attack4"
+    },
+    {
+      "operator": "chr_0012_avywen",
+      "skill": "chr_0012_avywen_attack5"
+    },
+    {
+      "operator": "chr_0012_avywen",
+      "skill": "chr_0012_avywen_combo_skill"
+    },
+    {
+      "operator": "chr_0012_avywen",
+      "skill": "chr_0012_avywen_normal_skill",
+      "at": 50
+    }
+  ]
+}

@@ -509,3 +509,104 @@ Notes:
   target's tags when the damage is computed, after the SpellInfliction,
   so that one hit may be 22% low. This affects every C1 modifier, not
   only this weapon; noted for the merge, not counted as a row here.
+
+## Kit (2026-10-20)
+
+Files: [packages/data/kits/operators/chr_0012_avywen.json](../../../packages/data/kits/operators/chr_0012_avywen.json),
+equipment [wpn_lance_0004](../../../packages/data/kits/equipment/wpn_lance_0004.json),
+[wpn_lance_0006](../../../packages/data/kits/equipment/wpn_lance_0006.json),
+[wpn_lance_0013](../../../packages/data/kits/equipment/wpn_lance_0013.json);
+tests [tests/kit-avywenna.test.ts](../../../tests/kit-avywenna.test.ts);
+example [examples/avywenna-thunderlances.scenario.json](../../../examples/avywenna-thunderlances.scenario.json)
+with the build `examples/avywenna-p5.json` (P5, Cohesive Traction, Pulser
+Labs). Started from `efsim kit-draft chr_0012_avywen` on this commit; the
+analysis scratch kit was used as notes only. No engine, loader, compiler
+or schema change.
+
+### Re-analysis
+
+| Gap / row | Status now | How |
+|---|---|---|
+| G1 (lance counter stacks) | **done** (V2) | lances are layers of the self buffs `thunderlance` / `thunderlance_ex` (each layer its own timer); the two counter stacks and the two `buffEnded` expiry triggers are gone |
+| G2 (hit count from a value), rows 9–10 | **done** (V3) | one hit each, `count: {buffLayers: thunderlance}` / `{buffLayers: thunderlance_ex}`, judged at the cast; the 15 + 5 `requires atLeast k` entries are gone, and the exactness limit (15 / 5 lances) with them |
+| G3 (Chimeric Justice "enemy with no Vulnerability"), row 31 | **done** (T1) | `on: {event: vulnerable, fromNone: true}`, no `if`; an application of 2+ stacks on a clean enemy now counts too |
+| G4 (compiler leftovers), row 29 | **mostly done** (D2–D4) | the draft now has the Physical element on the basics, every poise unit and `poiseControlledOnly`, the finisher factors 0.3 / 0.2 / 0.5 as three hits, the combo and ultimate energy as `{if: talentAtLeast [0, 1], then: talent0_usp}`, controlled-only basic SP. **Open (D4):** the EX lance's infliction through `lance_pulse_check`'s start event ("with no landing"), the recalled entities as a declared count, the lance_back IfElse (two branch hits "no kit condition" instead of the P5 `extraScale`), the lance energy at reach. All hand-written in the kit |
+| C1 (Razorhorn's bonus on the Solidifying hit; kit-plan note) | **done** (06d21e3) | tested: Estella's battle-skill hit that Solidifies has the +0.224 |
+| Rows 1–4, 7, 14, 16, 17 | supported (data) | as compiled; the battle skill's frame-7 lances, frame-18 hit and team energy, the combo's frame-14 hit, the ultimate's frame-51 hit checked in the tests |
+| Row 5 (dive), row 6 (dash, dodge) | open (S10) / n/a | dive kept for `calc` only |
+| Row 8 (recall) | supported | cast trigger `recall` at the battle skill's frame 7 ends both lance buffs; the hits' count is judged at the cast, before it. 50 m range: one enemy |
+| Row 11 (EX lance infliction once per group) | supported | tested with two EX lances landing together: one stack |
+| Row 12 (lance flight time, U3) | open (Ti2) | the returning hits land at frame 7 (their `launch`), a lower bound; not testable by hand (test 47) |
+| Row 13 (combo trigger) | supported; U5 unknown | `by: controlled` Final Strike with Electric Infliction or Electrification, judged after the hit's applications |
+| Rows 15, 18 (lances thrown) | supported | cast triggers `combo_lances` (frame 14, 3 layers) and `ult_lance` (frame 45, 1 layer) |
+| Row 19 (ultimate `pulse_resist_down_*`) | n/a | dead keys |
+| Row 20 (talent 1) | supported (interim timing) | energy `talent0_usp` at each lance hit, gated on talent 1; the data grants it when the lance reaches her (`_lance_back_reach`): the one KNOWN entry pair in skillCompile.test.ts |
+| Rows 21, 22 (talent 2; U6) | supported; **U6 open** (test 38) | enemy buff `tactful_approach` before the ultimate's damage; another Electric Susceptibility adds (no stack group) |
+| Rows 23–27 (potentials) | supported | P1 / P2 skill values, P3 / P4 stat panel and cost, P5 `extraScale` (tested: ×1.150 on the EX lance under Susceptibility, ×1 on the battle skill's own hit and without Susceptibility) |
+| Row 28 (hit-stop, time dilation) | open (Ti1b) | not modelled |
+| Rows 30, 32, 34 (weapon stat lines) | supported (data) | stat panel (`efsim calc`: PulseDamageIncrease 0.676 and ComboSkillDamageIncrease 0.28 on the example build) |
+| Row 33 (Cohesive Traction; U2) | supported; **U2 open** (test 73 part 2) | as planned; trigger `cooldown: 30` is BuffData's `addingCooldown` (a literal there) |
+| Rows 35, 36 (Razorhorn; U4) | supported; **A7 open** (test 63) | `damageBonus` with a C1 condition; ATK on `statusConsumed` (solidification) and, as the interim, on the wielder's `shatter` |
+| Row 37 (`buff_wpn_passive_spirit_01`) | n/a | no BuffData file: inert |
+
+Nothing new is unique; no new shared gap. Engine behaviour noticed, not
+changed: a combo's own slow-down stretches the caster's earlier buffs,
+so the first combo's lances outlive their 50 s by 10 frames when a second
+combo is cast while they're out (the engine's rule for the caster's buffs
+during slow-downs, as for Estella's ultimate; tested as such).
+
+### What the kit models and leaves out
+
+Models: the five-hit basic chain (Physical, SP only while controlled,
+Final Strike stagger only while controlled), the finisher's three hits,
+the battle skill (returning Thunderlances and Thunderlances EX, one hit
+per lance on the field at the cast, 1.68 / 4.32 × ATK, stagger 5 / 10,
+the EX lance's Electric Infliction once per 0.3 s, P5 ×1.15 under an
+Electric, Arts or all-element Susceptibility; its own 1.5 hit and team
+energy at frame 18), the combo (trigger, 3.8 hit, three lances), the
+ultimate (9.5 hit with talent 2's Susceptibility before it, one EX lance),
+lance lifetimes 30 s / 50 s at P2 with each lance its own timer, talent 1's
+energy per lance hit, combo hit and ultimate hit, and the three weapons.
+Leaves out: hit-stops and time dilations (Ti1b), lance flight times (U3),
+missed lances (U1: every lance hits the one enemy), the 50 m recall range,
+dive and dash attacks (S10, S5).
+
+### Verification
+
+No ZMDLogs fixture has Avywenna or any of her three weapons, so nothing is
+checked against a log. The example (solo, P5, Cohesive Traction L9,
+Pulser Labs, crit expected; `efsim simulate
+examples/avywenna-thunderlances.scenario.json --verbose`): ultimate hit
+24,632 at 1.70 s (frame 51); battle skill at 1.90 s: EX lance 12,881 at
+2.13 s (frame 7), own hit 3,889 at 2.50 s (frame 18); chain; combo at
+5.77 s (hit 11,499 at frame 14, under talent 2's +0.10); battle skill at
+6.47 s: three lances of 7,600 at frame 7 and its own hit 5,901; second
+combo at 19.10 s (10,454: no Susceptibility left); battle skill at 50 s:
+the second combo's three lances (3,960 each) still out at P2. Ratios
+check out by hand: EX / plain lance at 50 s 3.253 = 2.571 (4.32 / 1.68) ×
+1.10 × 1.15; the 6.70 s lances / the 50.23 s ones 1.919 = 1.10
+(Susceptibility) × 1.15 (P5) × 1.30 (Link) × 1.167 (Cohesive Traction's
++0.28 over 1.676 Electric DMG); the battle skill's own hits 1.669, the
+same without the 1.15. Energy: 6 per lance hit, combo hit and ultimate
+hit at P1+ (talent 1 level 2: 4 at P0). DPS over the first 7.07 s (one
+of each skill): 12,169 solo; the whole example's DPS is meaningless (it
+idles to 50 s on purpose).
+
+Example totals and every `zmdlogs check` / `zmdlogs reactions` output
+(fixtures and fixtures/pending) are byte-identical before and after.
+
+### In-game tests the kit depends on
+
+- **73** (both parts): U1, how many returning lances hit one target (all,
+  here), and U2, Cohesive Traction's adding cooldown (one layer, here).
+  Part 2's ratios leave out Link: a battle skill within 15 s of a combo
+  also has Link (+30% for one combo, +45% for two), so in the engine
+  (b)/(a) ≈ 1.2 × 1.3 and (c)/(b) ≈ 1.45 / 1.30 with one Traction layer.
+  Casting the battle skill 16–29 s after the last combo avoids Link.
+- **38** (Avywenna and Antal part): U6, two Electric Susceptibilities add
+  (here) or the larger counts.
+- **63** (OBJ Razorhorn variant): A7, a Shatter counts as consuming
+  Solidification (here, the `shatter` trigger).
+- **51**: talent 2's debuff acts on the ultimate's own hit (the data
+  creates it before the DamageAction; the kit follows the data).
+- **47** (not by hand): U3, the returning lances' flight time.

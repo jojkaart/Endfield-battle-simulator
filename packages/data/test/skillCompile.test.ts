@@ -9,7 +9,7 @@ import type { KitHit } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill, type CompiledValue } from "../src/index.ts";
 
 const data = loadGameData();
-const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm"];
+const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0012_avywen"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
   const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
@@ -418,6 +418,11 @@ const KNOWN: string[] = [
   "chr_0003_endminf_ultimate_skill/shatter: no landing scaled by atk_scale_trigger (data: atk_scale | originum_ult_break_scale)",
   "chr_0002_endminm_combo_skill: data lands chr_0002_endminm_combo_skill  at [23], no kit hit",
   "chr_0002_endminm_ultimate_skill/shatter: no landing scaled by atk_scale_trigger (data: atk_scale | originum_ult_break_scale)",
+  // Batch 3, Avywenna. Kit interim, energy timing: talent 1's energy for a returning lance is ObtainCostAction EntityBB_talent0 in
+  // chr_0012_avywen_combo_skill_lance_back_reach (when the lance reaches her, if it hit something: lance_back set EntityBB_talent0 =
+  // talent0_usp; with buff_chr_0012_avywen_talent_0 = talent 1). The kit grants talent0_usp at the lance's hit, gated on talent 1.
+  'chr_0012_avywen_normal_skill/lance energy: kit {"if":{"talentAtLeast":[0,1]},"then":"talent0_usp"} at [7], data $EntityBB_talent0@7 (if CheckDistanceCondition(distance=50), if $EntityBB_talent0 > 0, …), $EntityBB_talent0@7 (if CheckDistanceCondition(distance=50), if $EntityBB_talent0 > 0, …)',
+  'chr_0012_avywen_normal_skill/lance_ex energy: kit {"if":{"talentAtLeast":[0,1]},"then":"talent0_usp"} at [7], data $EntityBB_talent0@7 (if CheckDistanceCondition(distance=50), if $EntityBB_talent0 > 0, …), $EntityBB_talent0@7 (if CheckDistanceCondition(distance=50), if $EntityBB_talent0 > 0, …)',
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {

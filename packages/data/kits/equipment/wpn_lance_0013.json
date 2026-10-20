@@ -1,0 +1,50 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_lance_0013",
+  "sources": [
+    "OBJ Razorhorn, skill 3: rmxlinux Json/SkillData sk_wpn_lance_0013 (game 1.6). Its `buffs` give the wielder buff_wpn_lance_0013_damage01 for the whole fight (lifeType 1): damageModifier with CheckTagMatch on the target for tags 1570888476 (Cryo Infliction, buff_common_energy_shard_attached_cryst) or 1535684437 (Solidification, buff_common_cryst_*_triggered), DamageScaleProcessor NormalCalcZone +dmg_up. passiveEventActions abilityEvent 208 (the wielder consumes a buff): CheckBuffIdInContext tag 1535684437 (Solidification), CheckConsumeBuffLayer ≥ 1 → CreateBuff buff_wpn_lance_0013_atk_up on the wielder (attributeType 2 formulaItem 6: ATK +atk_up, duration `duration`, stackingType 2 max 1). SkillPatchTable sk_wpn_lance_0013 L9: dmg_up 0.224, atk_up 0.336, duration 15. Batch-3 report docs/kit-batches/batch-3/chr_0012_avywen.md rows 35–36.",
+    "The DMG bonus's condition is judged on the enemy as the damage is computed, after the hit's own applications (batch-3 C1), as the data checks the target's tags at the DamageAction: the hit that Solidifies gets it, the hit that Shatters doesn't. Whether a Shatter counts as consuming Solidification is open (A7, in-game test 63): here yes (the shatter trigger). Physical DMG and Will lines are stat-panel modifiers; toggleBuffs buff_wpn_passive_spirit_01 has no BuffData file (inert). Not in any log or fixture yet."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_lance_0013.dmg",
+      "label": "Infliction: Conquest of Icy Peaks (DMG vs Cryo / Solidified)",
+      "target": "self",
+      "gameBuff": "buff_wpn_lance_0013_damage01",
+      "modifiers": [{ "zone": "damageBonus", "value": "dmg_up", "if": { "any": [{ "enemyInfliction": "cryst" }, { "enemyStatus": "solidification" }] } }]
+    },
+    {
+      "id": "wpn_lance_0013.atk",
+      "label": "Infliction: Conquest of Icy Peaks (ATK after consuming Solidification)",
+      "target": "self",
+      "gameBuff": "buff_wpn_lance_0013_atk_up",
+      "duration": "duration",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_lance_0013.start",
+      "on": { "event": "fightStart" },
+      "by": "self",
+      "skill": "sk_wpn_lance_0013",
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0013.dmg" }]
+    },
+    {
+      "id": "wpn_lance_0013.consumed",
+      "on": { "event": "statusConsumed", "statuses": ["solidification"] },
+      "by": "self",
+      "skill": "sk_wpn_lance_0013",
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0013.atk" }],
+      "note": "A hit of the wielder's that removes Solidification before it runs out."
+    },
+    {
+      "id": "wpn_lance_0013.shatter",
+      "on": { "event": "shatter" },
+      "by": "self",
+      "skill": "sk_wpn_lance_0013",
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0013.atk" }],
+      "note": "Interim (A7, in-game test 63): the wielder's Shatter counts as consuming Solidification (the engine's Shatter emits shatter, not statusConsumed). If the test says no, this trigger goes."
+    }
+  ]
+}
