@@ -63,11 +63,53 @@ factor, applies, energy, sp, detached, finalStrike; `teamEnergyFrame`,
 loader doesn't use it yet: kits still hand-write these, and loader defaults
 from the compiler are the next step.
 
-`packages/data/test/skillCompile.test.ts` compares the seven batch-1 kits with
-it; every disagreement is listed there with its data evidence (kit errors
-such as Laevatain's combo frame and Liino's follow-up frame, and compiler
-limits: buffs a skill creates on the target, jumps, event handlers, which run
-once at their buff's start so their frames are lower bounds).
+**Since batch 3 (D2–D4, 2026-10-20)** the compiler also reads, per landing,
+its element (damageType 0 Physical, 2 Heat, 3 Electric, 4 Cryo, 6 Nature),
+its DamageAction's poise unit (DefiniteValueCalculation, × valueScale with
+applyScale; onlyEnableForMainChar → controlled only; a key that is 0 is no
+stagger), BreakingAttackCalculation's `multiplier` into the factor, and its
+damage unit's processors as bonuses (InstantModifyAttribute attribute 9 →
+critRate; DamageScaleProcessor on the attacker's side, NormalCalcZone →
+damageBonus, ProdCalcZone → multiplicative). Next to the landings: physical
+statuses (AirborneAction Lift, KnockDownAction Knock Down, CrushAction Crush
+with its damageMultiplier, FractureAction Breach; forceAirborne /
+forceKnockDown → forced; deadOption 2, which batch-2 and batch-3 reports read
+as a dying target's launch, is only noted), Vulnerable stacks
+(`buff_physical_no_guard`), and a created status buff's assigned keys
+(duration, extra_scaling, …). It expands ExecuteIntervalAction ticks and
+follows an AuraAction's buffInput buffs (their ticks and applications;
+actionInAura runs at the aura's start), reports every buff it creates with
+its target (self, the enemy, the hit target, the team, an aura) and what the
+buff does, and labels each undecided condition with the choice site it
+belongs to (the sides of one IfElse or Switch exclude each other) and, where
+it can, a kit predicate: `controlled`, a stack check on a buff a talent or
+potential attaches (`talentAtLeast` / `potentialAtLeast`), and a comparison
+of a key only one talent or the potentials set (Wulfgard's `talent2 > 0`).
+
+kit-draft turns those into `element` (when it isn't the operator's),
+`poise` / `poiseControlledOnly`, `factor`, `bonuses`, `applies` (physical
+statuses with `forced` / `multiplierKey`, `vulnerable`, forced reactions
+with `durationKey` / `scaleKey` and a level), `if` on hits, applications and
+grants (`{if, then}`) when every condition on the way can be said, and
+`branch` for the alternatives of one site when each side is one hit landing
+equally often (other alternatives keep their notes). What has no landing
+(energy, applications, a hitless skill's SP or SP from another key than the
+skill's `atb`) becomes a cast trigger at its frame (`delay`, `detached`),
+the same grant on both sides of one condition merged. Skill notes list the
+created buffs and the compiler's own notes. Still open: jumps (D1),
+conditions it can't say (distance, tags, chance), ModifyDynamicBlackboard
+on a scale (Chen's P5), Switch-chosen SP (Alesh), a buff's infliction on
+another branch than its landing (Avywenna's lance check), talents' own
+buffs and triggers, recalled entities as stacks.
+
+`packages/data/test/skillCompile.test.ts` compares the kits (batches 1 and 2) with
+it, now also each hit's element, stagger and physical statuses; every
+disagreement is listed there with its data evidence (kit errors such as
+Laevatain's combo frame and Liino's follow-up frame, Arcane's missing
+Final Strike stagger and finisher stagger the data doesn't have, and
+compiler limits: buffs a skill creates on the target, jumps, event handlers,
+which run once at their buff's start so their frames are lower bounds). The
+23 finisher-factor entries went with BreakingAttackCalculation.
 
 ## 2. One mechanism each, not one field per request
 
