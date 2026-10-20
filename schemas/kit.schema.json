@@ -144,6 +144,10 @@
                   "type": "integer",
                   "description": "An attribute instead of a zone (mapped to its zone like any stat; one that doesn't act on hits, e.g. Ultimate Gain Efficiency 44, is read where the game reads it)."
                 },
+                "percent": {
+                  "type": "boolean",
+                  "description": "An attribute read where the game reads it (DEF, Strength, …) as a percentage: adds value × (base + Σ add) of the receiver's panel line, in the panel's percent slot (BuffData formulaItem 6; the loader takes it from the game buff)."
+                },
                 "if": {
                   "$ref": "#/$defs/predicate",
                   "description": "Only while this holds at each hit, for the hitter (its target's state, e.g. enemyControl slow)."
@@ -1710,6 +1714,10 @@
             "if": {
               "$ref": "#/$defs/predicate",
               "description": "Only in this situation (judged when it happens)."
+            },
+            "afterDamage": {
+              "type": "boolean",
+              "description": "A hit's application only: it (and its if) runs after the hit's damage, for data where a FinishBuffByTag or consumption follows the DamageAction. Default: before the damage, which sees it."
             }
           }
         },
@@ -1733,9 +1741,8 @@
               ]
             },
             "level": {
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 4
+              "$ref": "#/$defs/valueExpr",
+              "description": "Status level 1–4 (default 1), judged when it happens, after the hit's earlier applications: {consumed: true} is the stacks the preceding consumeInfliction took (ForceSpellStatusAction consumedLayer); 0 applies nothing."
             },
             "durationKey": {
               "type": "string",
@@ -1743,11 +1750,19 @@
             },
             "scaleKey": {
               "type": "string",
-              "description": "Skill blackboard value multiplying the status's damage over time."
+              "description": "Skill blackboard value multiplying the status's strength (extra_scaling): Combustion's damage over time, Electrification's Arts DMG Taken, Corrosion's shred."
+            },
+            "extraSeconds": {
+              "$ref": "#/$defs/valueExpr",
+              "description": "Seconds added to this application's duration only (the common buffs' extra_duration), unlike statusTweaks."
             },
             "if": {
               "$ref": "#/$defs/predicate",
               "description": "Only in this situation (judged when it happens)."
+            },
+            "afterDamage": {
+              "type": "boolean",
+              "description": "A hit's application only: it (and its if) runs after the hit's damage, for data where a FinishBuffByTag or consumption follows the DamageAction. Default: before the damage, which sees it."
             }
           }
         },
@@ -1771,6 +1786,10 @@
             "if": {
               "$ref": "#/$defs/predicate",
               "description": "Only in this situation (judged when it happens)."
+            },
+            "afterDamage": {
+              "type": "boolean",
+              "description": "A hit's application only: it (and its if) runs after the hit's damage, for data where a FinishBuffByTag or consumption follows the DamageAction. Default: before the damage, which sees it."
             },
             "stacks": {
               "$ref": "#/$defs/valueExpr",
@@ -1803,6 +1822,10 @@
             "if": {
               "$ref": "#/$defs/predicate",
               "description": "Only in this situation (judged when it happens)."
+            },
+            "afterDamage": {
+              "type": "boolean",
+              "description": "A hit's application only: it (and its if) runs after the hit's damage, for data where a FinishBuffByTag or consumption follows the DamageAction. Default: before the damage, which sees it."
             }
           }
         },
@@ -1824,6 +1847,10 @@
             "if": {
               "$ref": "#/$defs/predicate",
               "description": "Only in this situation (judged when it happens)."
+            },
+            "afterDamage": {
+              "type": "boolean",
+              "description": "A hit's application only: it (and its if) runs after the hit's damage, for data where a FinishBuffByTag or consumption follows the DamageAction. Default: before the damage, which sees it."
             }
           }
         },
@@ -1862,9 +1889,17 @@
               "type": "string",
               "description": "Skill value multiplying the status's hit (CrushAction damageMultiplier)."
             },
+            "scaleKey": {
+              "type": "string",
+              "description": "Breach only: skill value multiplying its Physical DMG Taken, not its hit (buff_physical_do_fracture: physical_res_down × extra_scaling)."
+            },
             "if": {
               "$ref": "#/$defs/predicate",
               "description": "Only in this situation (judged when it happens)."
+            },
+            "afterDamage": {
+              "type": "boolean",
+              "description": "A hit's application only: it (and its if) runs after the hit's damage, for data where a FinishBuffByTag or consumption follows the DamageAction. Default: before the damage, which sees it."
             }
           }
         },
@@ -1898,6 +1933,10 @@
             "if": {
               "$ref": "#/$defs/predicate",
               "description": "Only in this situation (judged when it happens)."
+            },
+            "afterDamage": {
+              "type": "boolean",
+              "description": "A hit's application only: it (and its if) runs after the hit's damage, for data where a FinishBuffByTag or consumption follows the DamageAction. Default: before the damage, which sees it."
             }
           }
         }

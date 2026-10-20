@@ -108,6 +108,11 @@ export function buffAttrHasEffect(attr: AttrType): boolean {
   return ATTR_ZONES.has(attr) || READ_ATTRS.has(attr);
 }
 
+/** Whether an attribute feeds a damage zone (its buff value is a zone value, so it has no panel percentage: KitBuffModifier.percent). */
+export function attrFeedsZone(attr: AttrType): boolean {
+  return ATTR_ZONES.has(attr);
+}
+
 /** The modifier an attribute value amounts to, or null when the attribute doesn't act on hits directly. */
 export function attrModifier(attr: AttrType, value: number, source: string): Modifier | null {
   const m = ATTR_ZONES.get(attr);

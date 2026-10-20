@@ -28,6 +28,12 @@ export interface RawBuffFile {
     readonly maxStacksKey: string | null;
     /** stackingSettings.stackingKey: buffs of different files with one key are one buff for stacking (Liino's two stances: `liino_atk_up`). */
     readonly key: string | null;
+    /** stackingSettings.priorityKey when usePriorityKey is set: instances compete by this value (the strongest acts), or null. */
+    readonly priorityKey: string | null;
+    /** stackingSettings.negatePriority: the lowest priority value wins. */
+    readonly negatePriority: boolean;
+    /** The literal maxStackCnt as written (0: no limit), whatever useMaxStackCntKey says. */
+    readonly maxStackCnt: number;
   };
   /**
    * The decorate-mask condition every damage modifier of the buff shares
@@ -75,6 +81,9 @@ export function readBuffFile(buffId: string): RawBuffFile | null {
       maxStacks: stackingRaw["useMaxStackCntKey"] === true || literalMax <= 0 ? null : literalMax,
       maxStacksKey: stackingRaw["useMaxStackCntKey"] === true && typeof stackingRaw["maxStackCntKey"] === "string" ? (stackingRaw["maxStackCntKey"] as string) : null,
       key: typeof stackingRaw["stackingKey"] === "string" && stackingRaw["stackingKey"] !== "" ? (stackingRaw["stackingKey"] as string) : null,
+      priorityKey: stackingRaw["usePriorityKey"] === true && typeof stackingRaw["priorityKey"] === "string" && stackingRaw["priorityKey"] !== "" ? (stackingRaw["priorityKey"] as string) : null,
+      negatePriority: stackingRaw["negatePriority"] === true,
+      maxStackCnt: literalMax,
     },
     damageMask: shared ? { checkType: shared[0] as number, mask: shared[1] as number } : null,
     attributeModifiers: mods.map((m, i) => {

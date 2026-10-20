@@ -65,7 +65,7 @@ export const TIMELINE_ASSUMPTIONS = [
   "Projectile hits land at the frames their kit gives (travel time isn't in the data; kits read it from logs where they can).",
   "SP gain: a skill's blackboard value `atb` (e.g. a final strike's 20) is added when its first hit lands (unverified timing).",
   "Buffs and debuffs from skills apply only where a kit declares them (OperatorKit.buffs); always-on conditions, given modifiers and the enemy's reaction statuses apply too.",
-  "Inflictions and reactions follow the Talos Wiki rules (status.ts). What a hit applies takes effect before its own damage and the reaction's initial hit (logs: Gilberta's explosion and Arcane's battle skill include the Corrosion they trigger).",
+  "Inflictions and reactions follow the Talos Wiki rules (status.ts). What a hit applies takes effect before its own damage and the reaction's initial hit (logs: Gilberta's explosion and Arcane's battle skill include the Corrosion they trigger), unless its kit says afterDamage; buff modifiers' conditions on the enemy see it too.",
   "Physical statuses (Vulnerable, Lift, Knock Down, Crush, Breach), Shatter and stagger follow the Talos Wiki tutorial tables (status.ts). Hit-stop and entity-layer slow-downs aren't modelled.",
   "One enemy; every hit lands on it.",
   `Team SP: max ${SP.max}, start ${SP.start}, ${SP.perSecond}/s, paused ${SP.pauseAfterSpendFrames / FPS} s after spending (unverified).`,
@@ -644,7 +644,7 @@ function shiftOperator(st: TimelineState, operator: string, start: number, n: nu
 function actionSpeed(ctx: TimelineContext, st: TimelineState, operator: string, frame: number): number {
   const panel = ctx.panels.get(operator) as StatPanel;
   const base = panel.attrs[Attr.KeywordSpeedUpScalar]?.total ?? ctx.data.attributeDefaults[Attr.KeywordSpeedUpScalar] ?? 1;
-  return Math.max(0.1, Math.min(1.3, base + buffAttr(st.buffs, operator, frame, Attr.KeywordSpeedUpScalar)));
+  return Math.max(0.1, Math.min(1.3, base + buffAttr(st.buffs, operator, frame, Attr.KeywordSpeedUpScalar, panel.attrs[Attr.KeywordSpeedUpScalar])));
 }
 
 /** How long a Link stack lasts (buff_common_affixes_combo_trigger duration 15 s). */
@@ -672,7 +672,7 @@ function gainEnergy(ctx: TimelineContext, st: TimelineState, operator: string, a
   const blocked = (st.energyBlockedUntil[operator] ?? -1) > frame || st.buffs.some((b) => b.blocksEnergy && b.owner === operator && b.appliedAt <= frame && b.expiresAt > frame);
   if (amount <= 0 || (!opts.ignoreBlock && blocked)) return st;
   const panel = ctx.panels.get(operator) as StatPanel;
-  const efficiency = opts.ignoreEfficiency ? 1 : (panel.attrs[Attr.UltimateSpGainScalar]?.total ?? ctx.data.attributeDefaults[Attr.UltimateSpGainScalar] ?? 1) + buffAttr(st.buffs, operator, frame, Attr.UltimateSpGainScalar);
+  const efficiency = opts.ignoreEfficiency ? 1 : (panel.attrs[Attr.UltimateSpGainScalar]?.total ?? ctx.data.attributeDefaults[Attr.UltimateSpGainScalar] ?? 1) + buffAttr(st.buffs, operator, frame, Attr.UltimateSpGainScalar, panel.attrs[Attr.UltimateSpGainScalar]);
   const now = st.energy[operator] ?? 0;
   return { ...st, energy: { ...st.energy, [operator]: Math.min(maxEnergy(ctx, operator), now + amount * efficiency) } };
 }
@@ -794,11 +794,16 @@ function situationAt(ctx: TimelineContext, operator: string, st: TimelineState, 
     staggered: isStaggered(st, frame),
     enemyHp: enemyHpAt(ctx.scenario, frame),
     enemyModifiers: st.buffs.filter((b) => b.target === "enemy" && active(b)).flatMap((b) => b.modifiers),
-    attrBonus: (attr) => buffAttr(st.buffs, operator, frame, attr),
+    attrBonus: (attr) => buffAttr(st.buffs, operator, frame, attr, ctx.panels.get(operator)?.attrs[attr]),
     enemyGameBuffs: new Set(st.buffs.filter((b) => b.target === "enemy" && b.gameBuff && active(b)).map((b) => b.gameBuff as string)),
     operatorModifiers: st.buffs.filter((b) => b.target !== "enemy" && b.cast === undefined && reaches(b, operator) && active(b)).flatMap((b) => b.modifiers),
     ...(consumed !== undefined ? { consumed } : {}),
   };
+}
+
+/** The parts of a situation that describe the enemy (its arts and physical state, the buffs on it). */
+function enemySituation(s: Situation): Situation {
+  return { ...(s.enemy ? { enemy: s.enemy } : {}), ...(s.enemyGameBuffs ? { enemyGameBuffs: s.enemyGameBuffs } : {}), ...(s.enemyModifiers ? { enemyModifiers: s.enemyModifiers } : {}) };
 }
 
 /** The enemy's HP fraction at a frame (TimelineScenario.enemyHp; 1 before the first entry). */
@@ -859,7 +864,10 @@ function addBuff(ctx: TimelineContext, st: TimelineState, owner: string, skillId
     const end = cur ? actionFrame(cur, timingOf(ctx, cur.skill).durationFrames) : -1;
     b = cur && index >= 0 && end > frame ? { ...b, expiresAt: Math.min(b.expiresAt, end), endsWithCast: index } : null;
   }
-  return { state: b ? { ...st, buffs: withBuff(st.buffs, b) } : st, applied: b !== null };
+  if (!b) return { state: st, applied: false };
+  const buffs = withBuff(st.buffs, b);
+  // An instance weaker than the ones a buff keeps isn't applied (KitBuff.instances).
+  return { state: { ...st, buffs }, applied: buffs.includes(b) };
 }
 
 /** How an operator's kit changes the statuses it applies, resolved at a frame (OperatorKit.statusTweaks). */
@@ -1352,6 +1360,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   const controlled = hit.controlledAtCast ?? st.controlled;
   const at = (consumedSoFar?: number): Situation => ({ ...situationAt(ctx, hit.operator, st, hit.frame, consumedSoFar), controlled, ...(hit.eventCount !== undefined ? { eventCount: hit.eventCount } : {}) });
   const before = at();
+  const buffsAtLanding = st.buffs;
   const happens = (h: PendingHit) => {
     const def = h === hit ? kitHit : pendingHitDef(ctx, h).kitHit;
     return !def.if || decide(def.if, evalContext(ctx.data, build, panel, hit.skillId, before));
@@ -1364,21 +1373,26 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     if (chosen !== hit) return st;
   } else if (!happens(hit)) return st;
   // What the hit applies comes first: its own damage and a reaction's initial hit already see the new status.
-  const statusEvents: StatusEvent[] = [];
+  // Applications marked afterDamage run after the damage instead (KitApplication.afterDamage).
   let consumed = 0;
-  if (kitHit.applies?.length) {
+  const applyPhase = (afterDamage: boolean): StatusEvent[] => {
+    const out: StatusEvent[] = [];
+    const apps = (kitHit.applies ?? []).filter((app) => (app.afterDamage ?? false) === afterDamage);
+    if (!apps.length) return out;
     const ai = artsIntensity(ctx, st, hit.operator, hit.frame);
-    for (const app of kitHit.applies) {
+    for (const app of apps) {
       if (app.if && !decide(app.if, evalContext(ctx.data, build, panel, hit.skillId, at(consumed)))) continue;
       const resolved = resolveApplication(app, (v) => evaluate(v, evalContext(ctx.data, build, panel, hit.skillId, at(consumed))), hit.eventSource);
       if (!resolved) continue;
       const r = applyToEnemy(st.enemy, resolved, hit.frame, hit.operator, ai, (key) => skillValue(ctx.data, panel, build, hit.skillId, key), statusTweaks(ctx, st, hit.operator, hit.frame));
       const d = delayBursts(ctx, { ...st, enemy: r.state }, r.events, kind, hit.cast);
       st = d.state;
-      statusEvents.push(...d.now);
+      out.push(...d.now);
       for (const x of r.events) if (x.kind === "consumed") consumed += x.stacks;
     }
-  }
+    return out;
+  };
+  const statusEvents = applyPhase(false);
   // A hit computed as a burst is one for triggers too (its damage is the hit's own).
   const burst: StatusEvent[] = kitHit.reaction?.kind === "burst" ? [{ kind: "burst", frame: hit.frame, operator: hit.operator, element: kitHit.reaction.element }] : [];
   // Triggers that act before the hit's damage on its own status events (a buff they apply already counts for it).
@@ -1415,8 +1429,15 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     ...(roll !== undefined ? { critRoll: roll } : {}),
     ...(finisher ? { modifiers: [...damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast).modifiers, { zone: "multiplicative" as const, value: enemyAttr(ctx, Attr.BreakingAttackDamageTakenScalar) - 1, source: "Finisher" }] } : {}),
     situation: { ...before, consumed },
+    // Its modifiers' conditions on the enemy see the enemy as the damage is computed: after the hit's own applications.
+    ...(st.enemy !== before.enemy || st.buffs !== buffsAtLanding ? { modifierSituation: { ...before, consumed, ...enemySituation(at(consumed)) } } : {}),
   });
   st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}) }]);
+  // The enemy the damage saw: the reactions of the applications before it see it too.
+  const enemyAtDamage = st.enemy;
+  const lateEvents = applyPhase(true);
+  // Triggers that act on a hit's own status events before its damage act on these as they happen.
+  if (lateEvents.length && ctx.beforeDamage) st = runTriggers(ctx, st, asEvents(lateEvents, kind, hit.cast), { operator: hit.operator, kind }, (t) => t.beforeDamage === true, false);
   applyBuffs(false);
   if (hit.usesUp) {
     const own = st.stacks[hit.operator] ?? {};
@@ -1432,7 +1453,8 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.energy, at(consumed));
     st = gainEnergy(ctx, st, hit.operator, amount, hit.frame);
   }
-  st = recordStatus(ctx, st, statusEvents, st.enemy);
+  st = recordStatus(ctx, st, statusEvents, enemyAtDamage);
+  if (lateEvents.length) st = recordStatus(ctx, st, lateEvents, st.enemy);
   // Stagger: Final Strikes' only while their operator is controlled (onlyEnableForMainChar).
   const poiseEvents: BattleEvent[] = [];
   if (kitHit.poise !== undefined && (!kitHit.poiseControlledOnly || controlled === hit.operator)) {
@@ -1448,7 +1470,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     ...((ctx.scenario.options.crit === "always" && hit.fixed === undefined) || result.crit ? { crit: true } : {}),
   };
   const all: BattleEvent[] = [
-    hitEvent, ...asEvents(statusEvents, kind, hit.cast), ...asEvents(burst, kind, hit.cast), ...poiseEvents, ...events, ...spEvents,
+    hitEvent, ...asEvents(statusEvents, kind, hit.cast), ...asEvents(burst, kind, hit.cast), ...asEvents(lateEvents, kind, hit.cast), ...poiseEvents, ...events, ...spEvents,
     ...(kitHit.heals ? healEvents(ctx, st, hit.operator, kitHit.heals, hit.frame, kind) : []),
     ...(kitHit.gains?.length ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator, changed: stacksChanged }] : []),
   ];
@@ -1629,7 +1651,8 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
     if (first(expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame)) {
       const at = expiry as number;
       // A buff a cast consumed already ended when it was consumed.
-      const ended = st.buffs.filter((b) => b.expiresAt === at && b.cast === undefined);
+      // A buff that keeps instances (KitBuff.instances) ends with its last one.
+      const ended = st.buffs.filter((b) => b.expiresAt === at && b.cast === undefined).filter((b, i, all) => b.maxInstances === undefined || (all.findIndex((x) => x.id === b.id && x.owner === b.owner) === i && !st.buffs.some((x) => x.id === b.id && x.owner === b.owner && x.cast === undefined && x.expiresAt > at)));
       st = { ...st, buffs: st.buffs.filter((b) => b.expiresAt !== at) };
       // Run out: nothing left, but what its cast's jumps took from it.
       st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: at, operator: b.owner, buff: b.id, remaining: b.skipped ?? 0, ...(b.records ? { recorded: b.records.total } : {}), ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) })), null);
