@@ -20,7 +20,7 @@ import { at, get, obj, type Ctx } from "./fields.ts";
 import { loadKits } from "./kits.ts";
 import { Names } from "./names.ts";
 import { isSkillFileListed, readSkillFile } from "./skillData.ts";
-import { burstDelays, perfectDodgeData, switchedSkills } from "./buffData.ts";
+import { burstDelays, castHelpers, perfectDodgeData, switchedSkills } from "./buffData.ts";
 import { PRIMARY, readTable, sourceCommit, SOURCES } from "./sources.ts";
 import { loadAttributeDefaults } from "./tables/attributeMeta.ts";
 import { loadBattleConst } from "./tables/battleConst.ts";
@@ -72,6 +72,17 @@ function build(): GameData {
   const virtualId = typeof globals["endminVirtualCharId"] === "string" ? globals["endminVirtualCharId"] : null;
   const playsVirtual = new Set([globals["maleCharID"], globals["femaleCharID"]].filter((x): x is string => typeof x === "string"));
   const operators: Record<string, OperatorData> = {};
+  // Helper skills (CastSkill targets no skill group lists) and the listed skill each takes its group and values from.
+  const helpers = new Map<string, string>();
+  const withHelpers = <T extends string>(groups: Record<string, T>): Record<string, T> => {
+    const out = { ...groups };
+    for (const [id, owner] of castHelpers(groups)) {
+      helpers.set(id, owner);
+      const group = groups[owner];
+      if (group !== undefined) out[id] = group;
+    }
+    return out;
+  };
   for (const op of Object.values(loadOperators(PRIMARY))) {
     if (op.charId === virtualId) continue;
     const g = growth[op.charId];
@@ -88,7 +99,7 @@ function build(): GameData {
       mainAttr: op.mainAttrType,
       subAttr: op.subAttrType,
       levelRows: op.levelRows.map((r) => ({ breakStage: r.breakStage, level: r.attrs[0] ?? Number.NaN, attrs: r.attrs })),
-      skillGroups: {
+      skillGroups: withHelpers({
         // Skills a ChangeSkillAction puts in a skill slot belong to that slot's group (CharGrowthTable misses some, e.g. Si's Final Stroke).
         ...Object.fromEntries(switchedSkills(op.charId)),
         ...Object.fromEntries(
@@ -98,7 +109,7 @@ function build(): GameData {
             return [skillId, group];
           }),
         ),
-      },
+      }),
       attributeNodes: g.attributeNodes.map((n) => ({ ...n, modifiers: n.modifiers.map(modifier) })),
       talentNodes: (talentGrowth ?? g).talentNodes.map((n) => ({
         nodeId: n.nodeId,
@@ -111,7 +122,10 @@ function build(): GameData {
   }
 
   const skills: Record<string, SkillData> = {};
-  for (const s of Object.values(loadSkills(PRIMARY))) {
+  const patched = loadSkills(PRIMARY);
+  // A helper without its own SkillPatchTable row takes its owner's level values (its file's blackboard gives the defaults).
+  const rows = [...Object.values(patched), ...[...helpers].filter(([id]) => patched[id] === undefined).flatMap(([id, owner]) => (patched[owner] ? [{ ...patched[owner], skillId: id }] : []))];
+  for (const s of rows) {
     const file = isSkillFileListed(s.skillId) ? readSkillFile(s.skillId) : null;
     skills[s.skillId] = {
       id: s.skillId,

@@ -135,4 +135,17 @@ describe("assembled game data", () => {
     expect(e?.resistance.fire).toBe(0);
     expect(e?.staticAttrs[20]).toBe(280);
   });
+
+  it("helper skills a skill casts (CastSkill) are in its owner's group with its level values: Purrchena's shield loop and blocks", () => {
+    const op = data.operators["chr_0038_purrche"];
+    const P = "chr_0038_purrche_normal_skill";
+    for (const id of [`${P}_loop_1`, `${P}_loop_2`, `${P}_block_1`, `${P}_block_2`]) expect(op?.skillGroups[id]).toBe("battle");
+    // loop_1 has no SkillPatchTable row: normal_skill's values, its own timing.
+    expect(data.skills[`${P}_loop_1`]?.levels).toEqual(data.skills[P]?.levels);
+    expect(data.skills[`${P}_loop_1`]?.timing?.exclusiveFrames).toBe(361);
+    // block_1 has its own row.
+    expect(Object.keys(data.skills[`${P}_block_1`]?.levels[0]?.blackboard ?? {})).toEqual(["atb_return_2"]);
+    // A target without a file isn't a skill.
+    expect(op?.skillGroups["chr_0038_purrche_block"]).toBeUndefined();
+  });
 });

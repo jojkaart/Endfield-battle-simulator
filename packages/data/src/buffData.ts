@@ -127,6 +127,46 @@ export function switchedSkills(charId: string): Map<string, (typeof SKILL_SLOTS)
 }
 
 /**
+ * Helper skills an operator's skills reach through CastSkill (and those
+ * reach in turn) that no skill group lists: Purrchena's shield loop and
+ * blocks. Each maps to its owner, the listed skill whose ID is the longest
+ * prefix of the helper's (else the skill that casts it): the helper is in
+ * the owner's group and takes its level values. Only listed SkillData files
+ * are read, and only helpers with a file are returned.
+ */
+export function castHelpers(groups: Readonly<Record<string, string>>): Map<string, string> {
+  const out = new Map<string, string>();
+  const known = new Set(Object.keys(groups));
+  const queue = [...known];
+  const path = join(sourceDir("rmxlinux"), "Json", "SkillData");
+  const fileOf = (id: string) => (ALLOWED_SKILL_FILE(id) && existsSync(join(path, `${id}.json`)) ? join(path, `${id}.json`) : null);
+  while (queue.length > 0) {
+    const id = queue.shift() as string;
+    const file = fileOf(id);
+    if (!file) continue;
+    const text = readFileSync(file, "utf8");
+    if (!text.includes("CastSkill+Data")) continue;
+    const walk = (node: unknown): void => {
+      if (Array.isArray(node)) return node.forEach(walk);
+      if (typeof node !== "object" || node === null) return;
+      const o = node as Record<string, unknown>;
+      if (typeof o["$type"] === "string" && o["$type"].includes("CastSkill+Data") && o["isEnable"] !== false) {
+        const target = (o["skillId"] as { value?: unknown } | undefined)?.value;
+        if (typeof target === "string" && !known.has(target) && fileOf(target)) {
+          known.add(target);
+          queue.push(target);
+          const prefix = Object.keys(groups).filter((g) => target.startsWith(`${g}_`)).sort((a, b) => b.length - a.length)[0];
+          out.set(target, prefix ?? out.get(id) ?? id);
+        }
+      }
+      for (const v of Object.values(o)) walk(v);
+    };
+    walk(JSON.parse(text));
+  }
+  return out;
+}
+
+/**
  * When an Arts Burst deals its damage: its buff
  * (buff_common_<e>_<e>_triggered) does it in its first tick, after one
  * triggerInterval when waitFirstTriggerInterval is set (frames per element;
