@@ -492,6 +492,7 @@
             "chr_0016_laevat_normal_skill_abilityentity"
           ],
           "detached": true,
+          "launch": 4,
           "gains": [
             {
               "stack": "melting_flame"
@@ -522,7 +523,8 @@
           "events": [
             "chr_0016_laevat_normal_skill_abilityentity"
           ],
-          "detached": true
+          "detached": true,
+          "launch": 4
         },
         {
           "id": "empowered_extra",

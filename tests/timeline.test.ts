@@ -1806,6 +1806,15 @@ describe("jumps in a skill's timeline", () => {
     expect(t?.jumps).toEqual([{ at: 31, to: 118, conditional: true }, { at: 117, to: 247, conditional: false }]);
   });
 
+  it("a detached hit is its cast's own until its launch: cut before frame 4, the Magma Fragment never spawns", () => {
+    const cutAt = (f: number) => {
+      const sc = { ...scenario([{ operator: op, skill: L + "normal_skill" }, { operator: op, skill: L + "ultimate_skill", at: f }]), startEnergy: { [op]: "full" as const } };
+      return simulate(data, sc).hits.some((h) => h.hitId === "explosion");
+    };
+    expect(cutAt(2)).toBe(false);
+    expect(cutAt(5)).toBe(true);
+  });
+
   it("an end on the skill's own timeline ends the action there", () => {
     const a1 = data.skills[L + "attack1"];
     const g: GameData = { ...data, skills: { ...data.skills, [L + "attack1"]: { ...a1, timing: { ...a1?.timing, ends: [8] } } } as GameData["skills"] };

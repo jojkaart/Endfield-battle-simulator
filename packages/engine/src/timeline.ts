@@ -150,8 +150,9 @@ interface PendingHit {
   readonly eventCount?: number;
   /** …and what it was (applications with `element: "event"` / `status: "event"`). */
   readonly eventSource?: EventSource;
-  /** Lands even if its skill is interrupted (a projectile or entity already on its way: KitHit.detached). */
+  /** Lands even if its skill is interrupted (a projectile or entity already on its way: KitHit.detached), from `launchAt` (KitHit.launch) on. */
   readonly detached?: boolean;
+  readonly launchAt?: number;
   /** The index of the hit's cast (Cast list), for buffs that cast consumed. */
   readonly cast?: number;
   /** Who was controlled when the hit's skill was cast (predicates on the hit judge `controlled` by it). */
@@ -508,7 +509,8 @@ function chainAfter(ctx: TimelineContext, st: TimelineState, operator: string, s
 function ownHitsLanded(st: TimelineState, operator: string): number {
   const cast = st.acting[operator]?.cast ?? st.casts.findLastIndex((c) => c.operator === operator);
   let last = 0;
-  for (const h of st.pending) if (h.operator === operator && h.cast === cast && !h.detached && h.frame > last) last = h.frame;
+  // A detached hit is the cast's own until its launch: interrupting before it would cancel it.
+  for (const h of st.pending) if (h.operator === operator && h.cast === cast) last = Math.max(last, h.detached ? (h.launchAt ?? 0) : h.frame);
   for (const a of st.pendingActions) if (a.awaited && a.cast && a.cast.operator === operator && a.cast.index === cast && a.frame > last) last = a.frame;
   return last;
 }
@@ -1393,7 +1395,13 @@ function takeJump(st: TimelineState, j: PendingJump): { state: TimelineState; ev
   return {
     state: {
       ...st,
-      pending: skip(st.pending, (h) => h.operator === j.operator && h.cast === j.cast && !h.detached),
+      pending: [
+        ...skip(st.pending.filter((h) => !h.detached || h.launchAt === undefined), (h) => h.operator === j.operator && h.cast === j.cast && !h.detached),
+        // A detached hit not launched yet moves with its launch: dropped if the jump skips it, sooner if it comes after.
+        ...st.pending
+          .filter((h) => h.detached && h.launchAt !== undefined)
+          .flatMap((h) => (h.operator !== j.operator || h.cast !== j.cast || (h.launchAt as number) <= at ? [h] : (h.launchAt as number) < at + length ? [] : [{ ...h, frame: h.frame - length, launchAt: (h.launchAt as number) - length }])),
+      ],
       pendingActions: skip(st.pendingActions, (x) => mine(x.cast)),
       pendingEnergy: skip(st.pendingEnergy, (x) => mine(x.cast) && !x.detached),
       pendingJumps: skip(st.pendingJumps, (x) => x.operator === j.operator && x.cast === j.cast),
@@ -1695,7 +1703,7 @@ function endCurrentSkill(advanced: TimelineState, operator: string, frame: numbe
   const endsNow = advanced.buffs.filter((b) => b.owner === operator && b.endsWithCast !== undefined && b.endsWithCast === prevCast && b.expiresAt > frame);
   const state = {
     ...advanced,
-    pending: advanced.pending.filter((h) => !(h.operator === operator && h.cast === prevCast && !h.detached && h.frame > frame)),
+    pending: advanced.pending.filter((h) => !(h.operator === operator && h.cast === prevCast && h.frame > frame && (!h.detached || (h.launchAt !== undefined && h.launchAt > frame)))),
     pendingActions: advanced.pendingActions.filter((x) => !(x.cast && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame)),
     pendingEnergy: advanced.pendingEnergy.filter((x) => !(x.cast && !x.detached && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame)),
     pendingJumps: advanced.pendingJumps.filter((x) => !(x.operator === operator && x.cast === prevCast)),
@@ -1760,7 +1768,8 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     frames.forEach((f, i) =>
       pending.push({
         frame: frame + scaled(f), operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castIndex,
-        ...(usesAtHit(h.id).length && i === 0 ? { usesUp: usesAtHit(h.id) } : {}), ...(h.detached ? { detached: true } : {}),
+        ...(usesAtHit(h.id).length && i === 0 ? { usesUp: usesAtHit(h.id) } : {}), ...(h.detached || h.launch !== undefined ? { detached: true } : {}),
+        ...(h.launch !== undefined ? { launchAt: frame + scaled(h.launch) } : {}),
         ...(windowCount !== undefined ? { eventCount: windowCount } : {}), ...(windowSource ? { eventSource: windowSource } : {}), ...(h.branch ? { branch: `${castIndex}:${h.branch}:${i}` } : {}),
       }),
     );

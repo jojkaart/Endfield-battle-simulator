@@ -318,6 +318,14 @@ export interface KitHit {
   /** Lands even if the skill is interrupted before it: a projectile or ability entity already on its way. */
   readonly detached?: boolean;
   /**
+   * A detached hit's launch (skill frame of its LaunchProjectile or
+   * SpawnAbilityEntity): until then it's the cast's own, so cutting the cast
+   * or a jump over the launch drops it and a jump before it moves it; after
+   * it, it lands whatever happens. Implies `detached`; without it, a detached
+   * hit is on its way from the cast's frame 0.
+   */
+  readonly launch?: number;
+  /**
    * Fixed DMG: the hit deals exactly this value (no ATK, zones, crit, DEF,
    * RES or Staggered multiplier; SkillData damageType 8), and `scale` is
    * empty. A triggered hit's value is judged when its trigger fires.
