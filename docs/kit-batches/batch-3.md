@@ -32,8 +32,23 @@ fixtures/pending/zmdlogs-e82d45c46040.json; Xaihi in
 fixtures/zmdlogs-dbaee23b801d.json and fixtures/pending/zmdlogs-abfd4b7478ec.json;
 Chen Qianyu in fixtures/pending/zmdlogs-7e19489ae503.json.
 
-Phase: **analysis 1 done (2026-10-19); merge below.** Reports:
-[batch-3/](batch-3/), one per operator, each ending with a kit plan.
+Phase: **kits done (2026-10-20).** Reports:
+[batch-3/](batch-3/), one per operator, each ending with a kit plan and a
+"Kit (2026-10-20)" section (re-analysis per gap, verification, in-game
+tests the kit depends on).
+
+**Kits done (2026-10-20):** all ten, with the 23 equipment kits of the
+table above, each with a test file and (except Da Pan's) an example
+scenario. Logs: Xaihi matches all 82 of her hits (weapon level 85 in
+dbaee23b801d and 60 in abfd4b7478ec, fitted from her hits; provenance
+notes in the fixtures), and abfd's reactions go from 0 matched / 8
+unexpected to 5 / 3. Perlica's Electrification at 7544 ms matches as a
+reaction; her two hits mismatch (A6 and the e82d residuals). Chen's 21
+hits are covered and mismatch: the log's build for her looks off (test
+75) and it doesn't list team effects acting on her. Engine fixes at the
+merge: `ownHitsLanded` (Snowshine's and Wulfgard's) and `earliestStart`
+for kits with `cast` actions (Purrchena); `enemyHpBelow` takes a value.
+Pattern review: [kit-abstractions.md](../kit-abstractions.md#review-after-batch-3s-kits-2026-10-20).
 
 ## Merged gaps
 

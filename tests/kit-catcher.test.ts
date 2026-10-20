@@ -146,10 +146,8 @@ describe("Catcher's equipment", () => {
     const s = run(sc, chain, 220);
     expect(s.buffs.filter((b) => b.id === "suit_criti01.atk")).toHaveLength(5);
     expect(s.buffs.some((b) => b.id === "suit_criti01.crit")).toBe(true);
-    expect(s.stacks[C]?.["suit_criti01.layers"]).toBe(5);
     const later = run(sc, chain, 220 + 6 * 30);
     expect(later.buffs.some((b) => b.id.startsWith("suit_criti01."))).toBe(false);
-    expect(later.stacks[C]?.["suit_criti01.layers"] ?? 0).toBe(0);
     // With expected crits no hit counts as one.
     expect(run(scenario({ gear: MI }), chain, 220).buffs.some((b) => b.id.startsWith("suit_criti01."))).toBe(false);
   });

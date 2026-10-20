@@ -3,9 +3,8 @@
   "equipment": "suit_criti01",
   "sources": [
     "MI Security 3-piece (EquipSuitTable suit_criti01): rmxlinux SkillData passive_equipsuit_critsuit_01 (Crit Rate + crit_up, on the stat panel) → BuffData buff_equipsuit_critsuit_01: on abilityEvent 44 (the wearer scores a critical hit) → CreateBuff buff_equipsuit_critsuitatk_01 (attr 2 formulaItem 6: ATK + atk_up per layer, `duration` 5 s, stackingType 8 max max_stack 5: layers on one timer each new layer refreshes; the loader sets sharedTimer from it). critsuitatk's buffEvent 6 (a layer change) with CheckBuffStackNum ≥ max_stack → CreateBuff buff_equipsuit_critsuitdmg_01 (Crit Rate + crit_up2, lifeType 1: until ended); its buffEvent 2 (its end) → FinishBuff critsuitdmg.",
-    "Description: \"After the wearer scores a critical hit, the wearer gains ATK +{atk_up} for {duration}s. This effect can reach {max_stack} stacks. At max stacks, grant an additional Critical Rate +{crit_up2}. This effect cannot stack.\" The layer count for the max-stacks check is the stack suit_criti01.layers (the layers share one timer, so they all end together and the counter empties with them). Crits are only events with rolled crits (scenario crit \"rolled\"; design.md, Damage): with expected crits the set gives only its Crit Rate."
+    "Description: \"After the wearer scores a critical hit, the wearer gains ATK +{atk_up} for {duration}s. This effect can reach {max_stack} stacks. At max stacks, grant an additional Critical Rate +{crit_up2}. This effect cannot stack.\" The max-stacks check reads the ATK buff's own layers (buffLayers). Crits are only events with rolled crits (scenario crit \"rolled\"; design.md, Damage): with expected crits the set gives only its Crit Rate."
   ],
-  "stacks": [{ "id": "suit_criti01.layers", "label": "MI Security layers", "max": 5 }],
   "buffs": [
     {
       "id": "suit_criti01.atk",
@@ -31,9 +30,8 @@
       "by": "self",
       "skill": "passive_equipsuit_critsuit_01",
       "do": [
-        { "kind": "gain", "gains": [{ "stack": "suit_criti01.layers", "amount": 1 }] },
         { "kind": "buff", "buff": "suit_criti01.atk" },
-        { "kind": "buff", "buff": "suit_criti01.crit", "if": { "stack": "suit_criti01.layers", "atLeast": 5 } }
+        { "kind": "buff", "buff": "suit_criti01.crit", "if": { "buffLayers": "suit_criti01.atk", "atLeast": 5 } }
       ]
     },
     {
@@ -41,7 +39,6 @@
       "on": { "event": "buffEnded", "buff": "suit_criti01.atk" },
       "by": "self",
       "do": [
-        { "kind": "gain", "gains": [{ "stack": "suit_criti01.layers", "amount": -5 }] },
         { "kind": "endBuff", "buff": "suit_criti01.crit" }
       ]
     }

@@ -337,3 +337,54 @@ added or substantially changed (also in CLAUDE.md). Checklist:
    counter stack plus expiry trigger in Akekuri's P1, Æthertech and MI
    Security (MI Security keeps a counter only for its 5-layer check, exact
    since all layers share one timer).
+
+### Review after batch 3's kits (2026-10-20)
+
+1. **Census** (22 operator kits). Still hand-written although the data has
+   it, in every kit: hit frames, log event keys, energy grants and
+   finisher factors. kit-draft now compiles all four (D2–D4), but kits copy
+   them: loader defaults from the compiler remain the way to remove them.
+   Features one operator kit uses so far are shared mechanisms by design:
+   `trigger.do.choose` (Purrchena; any weighted Probablity),
+   `trigger.on.perfectDodge` (Purrchena; E1). `applies.consumeStatus`
+   with `afterDamage` is now used by two kits (Wulfgard, Arclight), and
+   `hit.launch` by four.
+2. **Requests from the kit agents**, each in an existing family:
+   - Conditions: `enemyHpBelow` takes a value (done at the merge: Chen's
+     `hp_remain`, Alesh's `hp_tar`); a stack compared with a value
+     (Arclight's talent thresholds are literals behind `potentialAtLeast`;
+     open).
+   - Skills / timing, done at the merge: a step without `at` waits for
+     nothing past a first end on the cast's timeline (Snowshine's bash,
+     reached only through her counter's jump) or that a due jump will skip
+     (Wulfgard's frame-141 shot); `earliestStart` treats a kit with
+     trigger `cast` actions as one whose action may end sooner
+     (Purrchena's blocks). Open: S3's residue (a slow-down starting on a
+     jump's own frame; one after an end made by a kit `cast`), and the
+     dodge policy recognising a counter written as a `cast` (Purrchena's
+     blocks) and not only as a `jump`.
+   - Search: `randomOutcomes` counts `choose` actions (done).
+   - Loader: Final Strike is decided per file, not per hit (Alesh's
+     second attack-5 hit needs `finalStrike: false`); a hit whose `sp`
+     names a key without an `spKinds` entry should warn (Alesh's ultimate
+     SP is keyed `atb_up`). Both open.
+   - Compiler (D3 / D4, open): ForceSpellStatusAction `consumedType` as a
+     consumption (Arclight), CheckHp → `enemyHpBelow` (Alesh), SP chosen
+     by a Switch (Alesh), ModifyDynamicBlackboard on a hit's scale
+     (Chen), a check on a status's start event (Avywenna), talents'
+     attached buffs (Da Pan, Wulfgard).
+   - Engine-wide questions, recorded, not changed: global slow-downs hold
+     every buff's timer, the caster's own included (Xaihi, Avywenna,
+     Purrchena; the data pauses some of Purrchena's buffs explicitly,
+     which suggests her own aren't held); finisher SP comes at the
+     finisher's first hit, not at GainBreakingAttackAtb's frame (Chen,
+     small). The `burst` event 1 s after its infliction (Wulfgard asked)
+     follows the data: TriggerSpellBurstEventAction is in the burst
+     buff's first tick.
+3. **One mechanism written two ways:** MI Security's 5-layer check now
+   reads the ATK buff's own layers (`buffLayers`), so its counter stack
+   and reset are gone (done); Avywenna's lances are buff layers counted
+   with `buffLayers` and `count`, not counter stacks. Frontiers and
+   Akekuri's P1 could use `sourceTypes: [3]` for "SP from a skill", but
+   that isn't an exact swap (grants of type 0 or 1 inside skills), so
+   they stay on `kinds` until a log decides.

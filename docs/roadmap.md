@@ -21,14 +21,15 @@ the six favourites.
    - Batch 2 is done: five kits and 27 equipment kits, and the leftovers
      K1–K8 ([batch-2.md](kit-batches/batch-2.md)); K3 and K7 wait on
      in-game tests.
-   - Batch 3 (the ten 5-stars, their 5-star weapons, two gear sets):
-     analysis done, shared features done except S3's event-driven jumps
-     (no kit needs them yet) and the deferred E1 / S5
-     ([status](kit-batches/batch-3.md#merged-gaps)); in-game tests 60–76
-     wait on the owner. Next: the ten kits with their equipment (each
-     agent first re-checks its report's gaps against the engine), Xaihi's
-     fixture correction with her kit, then the pattern review
-     (`efsim kit-census`).
+   - Batch 3 is done: the ten 5-star kits with 23 equipment kits
+     ([batch-3.md](kit-batches/batch-3.md)); what's left waits on in-game
+     tests 60–76 or is listed as open in the
+     [review](kit-abstractions.md#review-after-batch-3s-kits-2026-10-20)
+     (S3's residue, the dodge policy for `cast` counters, loader warnings,
+     compiler leftovers D3 / D4).
+   - Next batch: the eleven 6-stars without kits (Ember, Lifeng, Yvonne,
+     Ardelia, Last Rite, Tangtang, Rossi, Pogranichnik, Zhuang Fangyi, Mi
+     Fu, Camille); seven of them are on log fixtures' teams.
 2. **Rotation search** (`efsim search`, beam search on the stepping API) is
    in, with an optional resource-aware ranking (`--resource-weight`), ranking
    over seeded battles when a fight has random outcomes (`--seeds`,
