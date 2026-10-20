@@ -332,3 +332,158 @@ talent layers rising per slash, cooldown 12 s, ultimate cost 59.5.
   status: a filter on the event, triggers family).
 - `wpn_sword_0007.json` (Fortmaker): sources only; everything is in the
   stat panel.
+
+## Kit (2026-10-20)
+
+Written against the engine after batch 3's shared features (T1, T2, C1,
+V2–V4, B1, B2, A1–A5, S1–S4, S6, S7, D1–D4, L1, L2, N1). Files:
+`packages/data/kits/operators/chr_0005_chen.json`,
+`packages/data/kits/equipment/wpn_sword_0005.json` (Sundering Steel),
+`packages/data/kits/equipment/wpn_sword_0007.json` (Fortmaker), tests
+`tests/kit-chen.test.ts`, example `examples/chen-solo.scenario.json` with
+the build `examples/chen-p5.json` (P5, Sundering Steel 90 / 9-9-9,
+Swordmancer ×4), and Chen in `packages/data/test/skillCompile.test.ts`.
+No engine, loader or compiler code changed.
+
+### Re-analysis of the gaps and rows
+
+| Gap / row | Now | How |
+|---|---|---|
+| G1 (row 18) talent 2, enemy charges as a state | **open** (E1, deferred by the owner) | not written: 0 Stagger instead of 5 / 10 per interrupted charge. Once E1 exists: an `interrupt` trigger with a poise-only hit `{talent: 1, key: poise}` (sources note) |
+| G2 (row 19) P1 below half HP | **done** (N1) | buff `shadowless` (fightStart, P1+) with `{zone: damageBonus, value: extra_dmg, if: {enemyHpBelow: 0.5}}`: the data's reading, judged per hit on the scenario's `enemyHp`. `hp_remain` is a literal, as `enemyHpBelow` takes a number (0.5 at every potential). The analysis' "always on" interim is gone; the log's reading is below and in-game test 69 decides |
+| G3 (row 33) layers listed once | **done** (L1) | `zmdlogs check` tries 1–5 layers of `buff_chr_0005_chen_talent_0_1` (the extra predictions on her lines) |
+| Rows 2, 3, 13 (poise, finisher factors, first-slash poise) | **done** (D2) | kit-draft now emits them; the kit takes its hits as drafted |
+| Row 14 (P5's `atk_scale2 += phy_up`) | **data** (D3 open) | hand-written `scaleValue: {sum: [atk_scale2, {product: [potential5, phy_up]}]}` (potential5 is 0 or 1, so the product is the data's branch); phy_up is 0, so it adds nothing. One KNOWN entry in skillCompile.test.ts (the compiler leaves `$atk_scale2?`) |
+| Row 10 (combo on a stack added to a Vulnerable enemy) | **interim**; T1 done | `combo_window` on every `vulnerable` event, `by: anyone` (the plan, and test 64's "Engine: yes"). If test 64 says dark: add `fromNone: true` |
+| Row 17 (stackingType 8 timer) | **open** (B3, test 62) | `slashing_edge` uses the loader's `sharedTimer` (each layer refreshes the one timer). 7e19's final slash (no talent entry, 10.6 s after the layers' first) fits "all expire with the first" |
+| Row 29 (Sundering Steel on a Vulnerable-only status) | **open** (P1, test 39) | the engine emits no `physicalStatus` for it, so no layer (the kit's tests pin it) |
+| Row 8 (Lift duration from the skill) | not modelled | nothing reads a Lift's length; noted in the sources |
+| Row 12 (combo's cooldown cut on an enemy Lifted) | inert | `cd_reduction` is 0 and set by nothing |
+| Row 30 (Sundering Steel on the hit that applied the status) | **interim** (test 51's question) | `beforeDamage: true` (abilityEvent 401 runs inside the AirborneAction, before the DamageAction) |
+| Rows 1, 4–7, 9, 11, 15, 16, 20–28, 31, 32 | supported | as the plan; frames, windows and costs from SkillData / SkillPatchTable; P2–P5 by the loader |
+
+### What the kit models
+
+- Basic attacks 1–5 (2 / 1 / 2 / 2 / 1 landings at 8, 11 / 7 / 9, 12 /
+  4, 10 / 16), attack 5 the Final Strike with 16 Stagger and its 18 SP only
+  as the controlled operator (`sp: {if: controlled, then: atb}`); the
+  finisher's two BreakingAttackCalculation hits (× 0.2 at 5, × 0.8 at
+  29); the dive attack.
+- Battle skill: one hit at 13 (4.18 at P3+, 10 Stagger) with a Lift
+  before its damage, team energy at 13. On an enemy without Vulnerable
+  the Lift only adds a stack (no Lift damage, no Sundering Steel layer),
+  and that stack opens her combo window.
+- Combo: one hit at 17 (2.97 at P3+, no poise unit) with a Lift before it,
+  usp 10; cooldown 12 s at P5 (15 s below).
+- Ultimate: slashes at 58, 63, 68, 72, 76, 80 (0.891 at P3+; the first
+  with 15 Stagger), the final slash at 103 (11.253 at P3+, 20 Stagger);
+  cost 59.5 at P4+ (70 below).
+- Talent 1 Slashing Edge: one ATK +0.08 layer after every battle-skill,
+  combo and ultimate landing (after its damage), 5 at most, one timer
+  10 s after the latest (B3). Not on basic attacks, Lift hits or
+  equipment hits.
+- P1 by the scenario's enemy HP (above).
+- Sundering Steel: ATK + atk_up2 (21% at skill level 9) for 20 s per
+  physical status the wielder applies (Lift, Knock Down, Crush, Breach;
+  not Vulnerable-only, not Shatter), on the hit that applies it; 2 layers
+  with their own timers, a third replaces the oldest; the 0.1 s marker
+  (`cd` from the SkillData default: the level table's key is `"cd "`).
+  Generic: any wielder's statuses.
+- Fortmaker: a sources-only kit (ATK +14%, Arts Intensity +70 and the
+  other lines are on the stat panel).
+
+Left out: talent 2 (E1), the Lift's duration, the combo's inert cooldown
+cut, the dash attack (S5), the dive attack in rotations (S10), the
+ultimate's InterruptAction on scripted enemy actions, the deadOption 2
+launches.
+
+### Verification
+
+**7e19 (`fixtures/pending/zmdlogs-7e19489ae503.json`), `zmdlogs check`:**
+before 0 match, 0 mismatch, 2 unmodelled, 19 not covered (2% covered);
+now **0 match, 21 mismatch, 0 not covered (100% covered)**. The other
+three operators' lines are unchanged. The hit structure matches the log
+(every event key, landing count and the two Lifts); the values don't,
+for reasons outside the kit:
+
+- the build (in-game test 75): the fixture's weapon and gear levels are
+  assumed. With the logged effects, her 0-layer battle skill at 5435 is
+  ×0.987, the Lift at 7335 ×0.979, the basic attacks ×1.027 against the
+  one listed layer (×0.97 with their real two): a drift of about −0.75%
+  per talent layer, which no single kit value explains;
+- unlogged effects: Type 50 Yinglung's combo bonus (combos ×1.34 /
+  ×1.54), the Endministrator's crystal aura on attack 5 (×1.23, K6) and
+  slashes 1–4, Pogranichnik's `buff_wpn_sword_0012_atk_up` listed 7–9
+  times (second battle skill ×0.959);
+- the final slash: the log lists no talent layer on it (36117, 10.6 s
+  after the battle skill that created the first layer at 25479, though
+  the combo and six slashes added layers since): implied atk_scale2 ×1.039
+  without layers, against 5 layers (+0.40 ATK%) in the engine's B3
+  reading (test 62).
+
+`zmdlogs reactions`: before 0 matched, 0 predicted, 7 logged but not
+predicted; now 2 matched (her combo's Lifts at 7335 and 27753), 2
+predicted but not logged, 5 unexpected (Ember's Knock Downs and
+Pogranichnik's Breach: no kits). Not logged: her battle skill's Lift at
+25479 (Pogranichnik's Breach at 14984 consumed the stacks, and his kit is
+missing from the replay), as in the analysis; and the Endministrator's
+Crush at 33734, which the replay now gives level 4 from her stacks (it
+was a Vulnerable-only application before). The log has that Crush's
+413,543 hit (`buff_physical_crushed`) but no status event for it; this is
+the only line of another operator that changed.
+
+**P1 and the log's reading (test 69).** The log lists
+`buff_chr_0005_chen_potential_1` (+0.2 DMG) on all 21 of her hits. From
+the logged damage the enemy (Rhodagn Lv90, 2,292,909 HP, a kill) was at
+99.9% HP at her first hit and crossed 50% only at 33734 (the
+Endministrator's 413,543 Crush); 18 of her hits are above half HP. Two
+readings:
+- ZMDLogs lists a buff's damage modifier whenever the buff is attached,
+  without its CheckHp condition (it doesn't evaluate conditions); then
+  the +0.2 on her first 18 hits is a listing, not damage;
+- or the condition holds at full HP (targetSource 0 isn't the target).
+The damage alone can't decide: with the fixture's build her first battle
+skill fits ×0.987 with the +0.2 and ×1.170 without (as if three talent
+layers, which the log doesn't list, or 17% more ATK or DMG than the
+assumed build, which test 75 may show). The kit follows the data; a
+scenario of this fight would set `enemyHp: [{at: 33.73, fraction: 0.5}]`.
+If test 69 shows equal damage above and below half HP, the modifier's
+`if` goes (one line). The checker uses the logged effects, so its verdicts
+don't depend on this.
+
+**Example** (`examples/chen-solo.scenario.json`, 30 s, crit expected):
+242,283 in 19.40 s (12,489 DPS). Battle skill at 0 (Vulnerable 1, the
+window opens at 0.43 s), combo at 0.43 s (Lift, Sundering Steel layer 1,
+Swordmancer's hit), ultimate at 1.00 s (cost 59.5; slashes with 2, 3, 4,
+5, 5, 5 talent layers, the final 61,705), two basic chains, battle skill
+at 15 s below half HP (P1, two Sundering Steel layers: ×1.51 over the
+first battle skill = 1.101 × 1.368, the DMG and ATK zones), combo at
+15.43 s (cooldown 12 s: ready from 12.43 s). The analysis' scratch
+scenario now gives 314,646 in 15 s, not 340,482: P1 follows the enemy's
+HP (full there) instead of always on.
+
+### In-game tests the kit depends on
+
+- **62** (B3): Slashing Edge's timer; the log says the layers expire
+  with the first.
+- **64** (row 10): whether a stack on an already Vulnerable enemy opens
+  her combo.
+- **69** (G2): P1 at full HP.
+- **75**: her stat panel, to settle 7e19's build.
+- **39** (its Sundering Steel part, P1): a Vulnerable-only Lift and the
+  weapon.
+- **51** (row 30): Sundering Steel's layer on the hit whose status raised
+  it.
+- **60** (T5, every combo): a trigger during her combo's cooldown is
+  ignored.
+
+### Notes on shared code (not changed)
+
+- `enemyHpBelow` takes a number, so a key such as `hp_remain` can't be
+  read from the data (Alesh's `hp_tar` has the same need); a ValueExpr
+  there would let the kit cite the key.
+- Finisher SP (GainBreakingAttackAtb) comes at the finisher's first hit
+  (frame 5 for her) rather than the data's frame 29: engine-wide, small.
+- `efsim calc` lists Fortmaker's skill 3 under "conditional effects"
+  although it has none (its only toggleBuff, `buff_wpn_passive_spirit_01`,
+  has no file); cosmetic.

@@ -9,7 +9,7 @@ import type { KitHit } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill, type CompiledValue } from "../src/index.ts";
 
 const data = loadGameData();
-const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm"];
+const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0005_chen"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
   const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
@@ -418,6 +418,9 @@ const KNOWN: string[] = [
   "chr_0003_endminf_ultimate_skill/shatter: no landing scaled by atk_scale_trigger (data: atk_scale | originum_ult_break_scale)",
   "chr_0002_endminm_combo_skill: data lands chr_0002_endminm_combo_skill  at [23], no kit hit",
   "chr_0002_endminm_ultimate_skill/shatter: no landing scaled by atk_scale_trigger (data: atk_scale | originum_ult_break_scale)",
+  // Batch 3, Chen Qianyu. Compiler limit (D3 open): at frame 103, CompareFloat potential5 = 1 → ModifyDynamicBlackboard atk_scale2 += phy_up
+  // before the DamageAction; the compiler stops at the ModifyDynamicBlackboard ($atk_scale2?). The kit writes the data's branch as a sum (potential5 is 0 or 1; phy_up is 0).
+  'chr_0005_chen_ultimate_skill/final scale: kit {"sum":["atk_scale2",{"product":["potential5","phy_up"]}]}, data $atk_scale2?',
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {
