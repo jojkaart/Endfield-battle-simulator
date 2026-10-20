@@ -1148,7 +1148,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         const cur = st.acting[owner];
         if (!cur || cur.skill !== a.skill || cur.cast === undefined) break;
         // The playhead: real frames since the start, plus what jumps skipped, in skill frames.
-        const playhead = Math.round((frame - cur.frame + (cur.skips ?? []).filter((k) => k.at <= frame).reduce((t, k) => t + k.length, 0)) * (cur.speed ?? 1));
+        const playhead = playheadOf(cur, frame);
         if (playhead < a.from || playhead >= a.until || a.to <= playhead) break;
         const r = takeJump(st, { frame, operator: owner, cast: cur.cast, from: playhead, to: a.to });
         st = r.state;
@@ -1448,6 +1448,8 @@ function enemyAct(ctx: TimelineContext, state: TimelineState, a: EnemyAction): T
     const t = timingOf(ctx, cur.skill);
     if (t.specification === 5 && a.frame < actionFrame(cur, t.exclusiveFrames)) return runTriggers(ctx, state, events, null);
   }
+  // No dash at an attack the current skill would counter (a kit's `attacked` trigger that jumps this skill from where its playhead is).
+  if (cur && counters(ctx, op, cur, a.frame)) return runTriggers(ctx, state, events, null);
   const roll = draw(ctx, state, "dodge");
   if (roll.value >= dodge.chance) return runTriggers(ctx, roll.state, events, null);
   const ended = endCurrentSkill(roll.state, op, a.frame);
@@ -1459,6 +1461,19 @@ function enemyAct(ctx: TimelineContext, state: TimelineState, a: EnemyAction): T
   st = shiftOperator(st, op, a.frame, Math.round(pd.dodgerSlowdown.reduce((t, x) => t + (1 - x), 0)));
   const others = events.filter((e) => !(e.type === "attacked" && e.operator === op));
   return runTriggers(ctx, st, [...ended.events, { type: "perfectDodge", frame: a.frame, operator: op }, ...others], null);
+}
+
+/** An action's playhead at a real frame, in skill frames: real frames since its start plus what its jumps skipped, at its speed. */
+function playheadOf(cur: Acting, frame: number): number {
+  return Math.round((frame - cur.frame + (cur.skips ?? []).filter((k) => k.at <= frame).reduce((t, k) => t + k.length, 0)) * (cur.speed ?? 1));
+}
+
+/** Whether an attack on the operator now would set off its current skill's counter (an `attacked` trigger with a `jump` of this skill in range). */
+function counters(ctx: TimelineContext, operator: string, cur: Acting, frame: number): boolean {
+  const p = playheadOf(cur, frame);
+  return (ctx.kits.get(operator)?.triggers ?? []).some(
+    (t) => t.on.event === "attacked" && t.by === "self" && t.do.some((x) => x.kind === "jump" && x.skill === cur.skill && p >= x.from && p < x.until),
+  );
 }
 
 /** The events an enemy action makes: an attack on each operator it hits, or the start of a charge. */

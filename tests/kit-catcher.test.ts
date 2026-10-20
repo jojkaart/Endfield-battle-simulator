@@ -169,3 +169,14 @@ describe("Catcher: what the batch-2 merge added", () => {
     expect(kit?.buffs.find((b) => b.id === "weakness")?.modifiers.map((m) => m.attr)).toEqual([62]);
   });
 });
+
+describe("Catcher with dodging on", () => {
+  it("doesn't dash at an attack her shield counters: the bash lands; an attack outside it is dodged", () => {
+    const sc = (seconds: number): TimelineScenario => ({ ...scenario({}, attackAt(seconds)), options: { ...example.options, dodge: { chance: 1 } } });
+    const countered = run(sc(10 / 30), [op("normal_skill")], 200);
+    expect(hitsOf(countered, P + "normal_skill", "bash")).toHaveLength(1);
+    expect(countered.casts.some((c) => c.skill === "dodge")).toBe(false);
+    const later = run(sc(4), [op("normal_skill")], 200);
+    expect(later.casts.some((c) => c.skill === "dodge")).toBe(true);
+  });
+});
