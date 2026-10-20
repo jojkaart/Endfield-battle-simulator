@@ -225,6 +225,8 @@ export interface BattleConstants {
   readonly maxUltimateSp: number;
   /** What a perfect dodge does (BuffData buff_common_dash, buff_common_dash_behit_listener); absent when not fetched. */
   readonly perfectDodge?: PerfectDodge;
+  /** Frames from a same-element infliction to its Arts Burst's damage and event, per element (BuffData buff_common_<e>_<e>_triggered: its first tick); 0 when not fetched. */
+  readonly burstDelayFrames?: Partial<Record<ArtsElement, number>>;
 }
 
 /** A perfect dodge (BuffData; docs/kit-batches/batch-2.md, E1). */

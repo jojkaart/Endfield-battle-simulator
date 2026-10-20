@@ -228,6 +228,8 @@ export interface TimelineState {
   readonly enemyFrozenUntil: number;
   /** The enemy's actions still to come (TimelineScenario.enemyActions), in frame order, on its clock. */
   readonly enemyActions: readonly EnemyAction[];
+  /** Arts Bursts still to land (BattleConstants.burstDelayFrames after their infliction), on the enemy's clock, with the kind and cast of what caused them. */
+  readonly pendingBursts: readonly PendingBurst[];
   /** The enemy's stagger: its stagger HP left, until when it's Staggered, and whether this stagger's finisher is used. */
   readonly stagger: { readonly poise: number; readonly until: number | null; readonly finisherUsed: boolean };
   /** Global time slow-downs (an ultimate's time stop, a combo's slow-down) still running or to come: per frame from `start`, all but `exempt` (the caster). */
@@ -310,6 +312,7 @@ function initialState(ctx: TimelineContext): TimelineState {
     stagger: { poise: maxPoise(ctx), until: null, finisherUsed: false },
     enemyFrozenUntil: 0,
     enemyActions: enemyActionsOf(ctx.scenario),
+    pendingBursts: [],
     link: [],
     enemy: NO_STATUS,
     buffs: [],
@@ -588,6 +591,7 @@ function shiftEnemy(st: TimelineState, start: number, n: number): TimelineState 
     buffs: st.buffs.map((b) => (b.target === "enemy" ? shiftBuff(b, start, n) : b)),
     stagger: st.stagger.until !== null ? { ...st.stagger, until: later(st.stagger.until) } : st.stagger,
     enemyActions: st.enemyActions.map((a) => (a.frame > start ? { ...a, frame: a.frame + n } : a)),
+    pendingBursts: st.pendingBursts.map((b) => (b.frame > start ? { ...b, frame: b.frame + n, event: { ...b.event, frame: b.frame + n } } : b)),
   };
 }
 
@@ -948,6 +952,23 @@ function draw(ctx: TimelineContext, st: TimelineState, stream: string): { value:
 const asEvents = (events: readonly StatusEvent[], fromKind: SkillType | "none", cast?: number): BattleEvent[] =>
   events.map((e) => ({ type: "status", frame: e.frame, operator: e.operator, event: e, fromKind, ...(cast !== undefined ? { cast } : {}) }));
 
+/** An Arts Burst on its way: it lands, deals its damage and is a `burst` event at `frame`. */
+export interface PendingBurst {
+  readonly frame: number;
+  readonly event: Extract<StatusEvent, { kind: "burst" }>;
+  readonly fromKind: SkillType | "none";
+  readonly cast?: number;
+}
+
+/** An infliction's status events without its bursts, which are scheduled their element's delay later, on the enemy's clock (BattleConstants.burstDelayFrames). */
+function delayBursts(ctx: TimelineContext, st: TimelineState, events: readonly StatusEvent[], fromKind: SkillType | "none", cast?: number): { state: TimelineState; now: StatusEvent[] } {
+  const delay = (e: StatusEvent) => (e.kind === "burst" ? (ctx.data.constants.burstDelayFrames?.[e.element] ?? 0) : 0);
+  const now = events.filter((e) => delay(e) === 0);
+  if (now.length === events.length) return { state: st, now };
+  const later = events.flatMap((e) => (e.kind === "burst" && delay(e) > 0 ? [{ frame: e.frame + delay(e), event: { ...e, frame: e.frame + delay(e) }, fromKind, ...(cast !== undefined ? { cast } : {}) }] : []));
+  return { state: { ...st, pendingBursts: [...st.pendingBursts, ...later] }, now };
+}
+
 /** What started a chain of events: an operator's own combo hits don't open its own combo window. */
 interface Origin {
   readonly operator: string;
@@ -1092,9 +1113,11 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
           const resolved = resolveApplication(app, (v) => evaluate(v, ec()), eventSourceOf(e));
           if (!resolved) continue;
           const r = applyToEnemy(expireStatus(st.enemy, frame), resolved, frame, owner, ai, (key) => skillValue(ctx.data, panel, build, triggerSkillId(owner, t), key), statusTweaks(ctx, st, owner, frame));
-          st = recordStatus(ctx, { ...st, enemy: r.state }, r.events, r.state);
+          const fromKind = origin && origin.operator === owner ? origin.kind : "none";
+          const d = delayBursts(ctx, { ...st, enemy: r.state }, r.events, fromKind);
+          st = recordStatus(ctx, d.state, d.now, r.state);
           for (const x of r.events) if (x.kind === "consumed") consumed += x.stacks;
-          events.push(...asEvents(r.events, origin && origin.operator === owner ? origin.kind : "none"));
+          events.push(...asEvents(d.now, fromKind));
         }
         break;
       }
@@ -1298,8 +1321,9 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
       const resolved = resolveApplication(app, (v) => evaluate(v, evalContext(ctx.data, build, panel, hit.skillId, at(consumed))), hit.eventSource);
       if (!resolved) continue;
       const r = applyToEnemy(st.enemy, resolved, hit.frame, hit.operator, ai, (key) => skillValue(ctx.data, panel, build, hit.skillId, key), statusTweaks(ctx, st, hit.operator, hit.frame));
-      st = { ...st, enemy: r.state };
-      statusEvents.push(...r.events);
+      const d = delayBursts(ctx, { ...st, enemy: r.state }, r.events, kind, hit.cast);
+      st = d.state;
+      statusEvents.push(...d.now);
       for (const x of r.events) if (x.kind === "consumed") consumed += x.stacks;
     }
   }
@@ -1377,6 +1401,16 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     ...(kitHit.gains?.length ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator, changed: stacksChanged }] : []),
   ];
   return runTriggers(ctx, st, all, { operator: hit.operator, kind }, ctx.beforeDamage ? (t) => !t.beforeDamage : undefined);
+}
+
+/** A burst lands: before-damage triggers on it, its damage (on the enemy as it is now), then its other triggers. */
+function landBurst(ctx: TimelineContext, state: TimelineState, b: PendingBurst): TimelineState {
+  const origin = { operator: b.event.operator, kind: b.fromKind };
+  const events = asEvents([b.event], b.fromKind, b.cast);
+  let st = { ...state, enemy: expireStatus(state.enemy, b.frame) };
+  if (ctx.beforeDamage) st = runTriggers(ctx, st, events, origin, (t) => t.beforeDamage === true, false);
+  st = recordStatus(ctx, st, [b.event], st.enemy);
+  return runTriggers(ctx, st, events, origin, ctx.beforeDamage ? (t) => !t.beforeDamage : undefined);
 }
 
 /** A cast's jumps and ends: the unconditional ones, and conditional ones whose kit condition holds at the cast. */
@@ -1511,7 +1545,8 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
     const due = st.pendingActions.reduce<TimelineState["pendingActions"][number] | null>((a, x) => (x.frame <= frame && (!a || x.frame < a.frame) ? x : a), null);
     const grant = st.pendingEnergy.reduce<TimelineState["pendingEnergy"][number] | null>((a, g) => (g.frame <= frame && (!a || g.frame < a.frame) ? g : a), null);
     const enemyAction = st.enemyActions[0] !== undefined && st.enemyActions[0].frame <= frame ? st.enemyActions[0] : null;
-    // At one frame: ticks of a status already on the enemy, then buffs ending, then delayed trigger actions, energy grants,
+    const burst = st.pendingBursts.reduce<PendingBurst | null>((a, x) => (x.frame <= frame && (!a || x.frame < a.frame) ? x : a), null);
+    // At one frame: Arts Bursts landing, ticks of a status already on the enemy, then buffs ending, then delayed trigger actions, energy grants,
     // the enemy's actions, buffs' periodic ticks, then hits. Each kind waits for everything earlier.
     const first = (x: number | null, ...later: (number | null)[]) => x !== null && later.every((y) => y === null || x <= y);
     const hitFrame = hit ? hit.frame : null;
@@ -1521,6 +1556,10 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
     // A jump comes after everything else at its frame (what's at its skill frame still happens).
     const jump = st.pendingJumps.reduce<PendingJump | null>((a, x) => (x.frame <= frame && (!a || x.frame < a.frame) ? x : a), null);
     const jumpFrame = jump?.frame ?? null;
+    if (burst && first(burst.frame, tickDue, expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame)) {
+      st = landBurst(ctx, { ...st, pendingBursts: st.pendingBursts.filter((x) => x !== burst) }, burst);
+      continue;
+    }
     if (first(tickDue, expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame)) {
       const tickFrame = tickDue as number;
       const before = st.enemy;

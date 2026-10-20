@@ -381,8 +381,8 @@ describe("timeline: kit triggers", () => {
     expect(echoes[0]?.scaleParts).toEqual(explosion?.scaleParts);
     expect(explosion?.modifiers.some((m) => m.source === "test battle bonus")).toBe(true);
     expect(echoes[0]?.modifiers.some((m) => m.source === "test battle bonus")).toBe(false);
-    // Its applications are events like any hit's: the second Heat infliction bursts.
-    expect(s.reactions.some((e) => e.kind === "burst" && e.frame === cast + 40)).toBe(true);
+    // Its applications are events like any hit's: the second Heat infliction bursts (a second later).
+    expect(s.reactions.some((e) => e.kind === "burst" && e.frame === cast + 40 + (data.constants.burstDelayFrames?.fire ?? 0))).toBe(true);
   });
 
   it("Laevatain's kit triggers: Twilight, its pauses and cooldown, the absorption, the combo window, Scorching Heart", () => {
@@ -927,6 +927,19 @@ describe("timeline: control statuses", () => {
     expect(plain.enemy.infliction?.expiresAt).toBe(600);
     // Frozen for 1 s: the Heat applied with it lasts 30 frames longer.
     expect(run(d(true)).enemy.infliction?.expiresAt).toBe(630);
+  });
+
+  it("an Arts Burst lands its element's delay after the infliction, on the enemy's clock: a freeze holds it", () => {
+    const burstAt = (freezes: boolean) => {
+      const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, triggers: [...kit.triggers, { id: "imm", on: { event: "cast", kinds: ["basic"] }, by: "self", maxCount: 1, do: [{ kind: "apply", applies: [{ kind: "infliction", element: "fire" }, { kind: "infliction", element: "fire" }, { kind: "control", status: "immobilization", seconds: 1, freezes }] }] }] } } } };
+      const ctx = createContext(g, scenario([{ operator: op, skill: L + "attack1" }]));
+      const s = advance(ctx, apply(ctx, init(ctx), { operator: op, skill: L + "attack1" }), 100);
+      return s.reactions.filter((r) => r.kind === "burst").map((r) => r.frame);
+    };
+    // buff_common_fire_fire_triggered deals it at its first tick: 1 s.
+    expect(data.constants.burstDelayFrames?.fire).toBe(30);
+    expect(burstAt(false)).toEqual([30]);
+    expect(burstAt(true)).toEqual([60]);
   });
 });
 

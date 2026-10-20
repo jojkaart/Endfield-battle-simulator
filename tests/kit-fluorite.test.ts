@@ -107,7 +107,10 @@ describe("Fluorite's kit", () => {
     const combo = castAt(p5, "combo_skill");
     expect(combo).toBe(castAt(p4, "combo_skill"));
     const hit = mine(p5).find((h) => h.skillId === P + "combo_skill");
-    expect(p5.reactions.some((r) => r.kind === "burst" && r.element === "natural" && r.frame === hit?.frame)).toBe(true);
+    // Its burst lands a second later (the burst buff's first tick).
+    const delay = data.constants.burstDelayFrames?.natural ?? 0;
+    expect(delay).toBe(30);
+    expect(p5.reactions.some((r) => r.kind === "burst" && r.element === "natural" && r.frame === (hit?.frame ?? NaN) + delay)).toBe(true);
     // The explosion that opens the window cuts nothing (the combo isn't on cooldown yet), and the combo's own Nature
     // 15 frames later falls in P5's 1 s; the second battle skill's explosion cuts 1 s.
     expect((p4.readyAt[P + "combo_skill"] ?? 0) - (p5.readyAt[P + "combo_skill"] ?? 0)).toBe(30);
@@ -117,7 +120,8 @@ describe("Fluorite's kit", () => {
     const sc = scenario({}, { startEnergy: { [F]: "full" } });
     const inflicted = (s: TimelineState) => {
       const shot4 = mine(s).find((h) => h.hitId === "shot4");
-      return s.reactions.filter((r) => (r.kind === "inflicted" || r.kind === "burst") && r.operator === F && r.frame === shot4?.frame).length;
+      // A burst lands a second after its infliction.
+      return s.reactions.filter((r) => r.kind === "burst" && r.operator === F && r.frame === (shot4?.frame ?? NaN) + (data.constants.burstDelayFrames?.natural ?? 0)).length;
     };
     // Gilberta's explosion (frame 164) and the detonation make 2 stacks before shot 4.
     expect(inflicted(run(sc, [gilberta("normal_skill"), op("normal_skill", 90), op("ultimate_skill")]))).toBe(1);

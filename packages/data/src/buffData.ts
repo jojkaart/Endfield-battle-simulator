@@ -126,6 +126,23 @@ export function switchedSkills(charId: string): Map<string, (typeof SKILL_SLOTS)
   return out;
 }
 
+/**
+ * When an Arts Burst deals its damage: its buff
+ * (buff_common_<e>_<e>_triggered) does it in its first tick, after one
+ * triggerInterval when waitFirstTriggerInterval is set (frames per element;
+ * the elements whose file isn't fetched are left out).
+ */
+export function burstDelays(): Partial<Record<"fire" | "pulse" | "cryst" | "natural", number>> {
+  const out: Partial<Record<"fire" | "pulse" | "cryst" | "natural", number>> = {};
+  for (const e of ["fire", "pulse", "cryst", "natural"] as const) {
+    const file = join(sourceDir("rmxlinux"), "Json", "BuffData", `buff_common_${e}_${e}_triggered.json`);
+    if (!existsSync(file)) continue;
+    const b = JSON.parse(readFileSync(file, "utf8")) as { triggerInterval?: { value?: number }; waitFirstTriggerInterval?: boolean };
+    out[e] = b.waitFirstTriggerInterval ? Math.round((b.triggerInterval?.value ?? 0) * 30) : 0;
+  }
+  return out;
+}
+
 /** Frames the perfect-dodge skill holds the dodger (common_character_perfect_dodge: durationFrame 15, exclusiveFrame 15; its SkillData isn't fetched). */
 const PERFECT_DODGE_SKILL_FRAMES = 15;
 
