@@ -1,0 +1,212 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0004_pelica",
+  "sources": [
+    "Hits, frames, keys, events, stagger, energy, inflictions, the forced Electrification's keys and the ultimate's crit: rmxlinux Json/SkillData chr_0004_pelica_* (game 1.6) as compiled by efsim kit-draft v2, checked against the files (packages/data/test/skillCompile.test.ts). Frames are SkillData frames; projectile hits use the launch frame (travel isn't in the data, in-game test 47). Batch-3 report docs/kit-batches/batch-3/chr_0004_pelica.md (gap report, kit plan and the section \"Kit\").",
+    "Values: SkillPatchTable chr_0004_pelica_* (L12: attacks 0.57 / 0.34 ×2 / 0.28 ×3 / 1.27, attack4 poise 15 and atb 15, finisher 9.0, dive 1.8, battle skill 4.0 poise 10, combo 1.8 poise 10 usp 10 duration 5, ultimate 10.0 poise 20); SkillData defaults where the table has no key (combo extra_scaling 1, ultimate crit 0). Talents and potentials (CharacterPotentialTable, PotentialTalentEffectTable): talent 1 attaches buff_chr_0004_pelica_talent_0 (dmg 0.2 / 0.3); talent 2 sets the combo's talent2 1 (a bounce to another enemy: nothing against one); P1 combo duration ×1.75; P2 ultimate cost ×0.85; P3 attaches buff_chr_0004_pelica_potential_3 (atk_up 0.2, atk_duration 5, max_stack 2); P4 sets the combo's extra_scaling 1.33; P5 ultimate crit +0.3.",
+    "Log check: fixtures/pending/zmdlogs-e82d45c46040.json (Perlica P5 at promotion 2, logged skill levels 1, unreliable): two hits at 7544 ms, her battle skill and the Electrification reaction it forms on a Cryo enemy. Neither matches (report, section \"Kit\"): the reaction fits only without its own Electrification (open list A6) and without Pulser Labs' bonus; the battle skill fits P3 at two layers or skill level 5-6. Combo, ultimate, finisher and basic attacks aren't in any log."
+  ],
+  "element": "pulse",
+  "buffs": [
+    {
+      "id": "obliteration_protocol",
+      "label": "Obliteration Protocol: DMG Dealt vs Staggered",
+      "target": "self",
+      "gameBuff": "buff_chr_0004_pelica_talent_0",
+      "modifiers": [{ "zone": "damageBonus", "value": { "talent": 0, "key": "dmg" }, "if": { "enemyStaggered": true } }],
+      "note": "Talent 1: \"DMG Dealt +{dmg} to Staggered enemies.\" buff_chr_0004_pelica_talent_0 (lifeType 1, attached by talent nodes chr_0004_pelica_passive_skill_0_1 / _0_2: dmg 0.2 / 0.3): damageModifier CheckPoiseValue compareType 4 (equal) against 0 on the target, i.e. a fully Staggered enemy only (not Zero Sanity's stagger nodes) → attacker NormalCalcZone + dmg. Judged on the enemy after the hit's own applications (C1)."
+    },
+    {
+      "id": "supervisory_duties",
+      "label": "P3: ATK after applying Electrification",
+      "target": "self",
+      "gameBuff": "buff_chr_0004_pelica_potential_3_atkup",
+      "duration": { "key": "atk_duration", "skill": "buff_chr_0004_pelica_potential_3" },
+      "maxStacks": { "key": "max_stack", "skill": "buff_chr_0004_pelica_potential_3" },
+      "modifiers": [{ "zone": "atk", "value": { "key": "atk_up", "skill": "buff_chr_0004_pelica_potential_3" } }],
+      "note": "P3: \"After Perlica applies Electrification to the enemy, she gains ATK +{atk_up} for {atk_duration}s. This effect can reach {max_stack} stacks.\" buff_chr_0004_pelica_potential_3 (abilityEvent 102 + CheckBuffIdInContext tag 1466867135) creates buff_chr_0004_pelica_potential_3_atkup (attribute 2 formulaItem 6: ATK %, assigning atk_up and atk_duration; stackingType 8, max 2: the loader gives the layers one timer each layer refreshes, open list B3, in-game test 62). One layer per Electrification (U1, in-game test 68: the e82d battle skill would fit two)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_window",
+      "on": { "event": "hit", "finalStrike": true },
+      "by": "controlled",
+      "do": [{ "kind": "openCombo" }],
+      "note": "CharGrowthTable: \"COMBO TRIGGER: When controlled operator performs a Final Strike on any enemy.\""
+    },
+    {
+      "id": "obliteration_protocol",
+      "on": { "event": "fightStart" },
+      "by": "self",
+      "if": { "talentAtLeast": [0, 1] },
+      "do": [{ "kind": "buff", "buff": "obliteration_protocol" }],
+      "note": "Talent 1's buff is on for the whole fight (lifeType 1)."
+    },
+    {
+      "id": "supervisory_duties",
+      "on": { "event": "reaction", "statuses": ["electrification"] },
+      "by": "self",
+      "beforeDamage": true,
+      "if": { "potentialAtLeast": 3 },
+      "do": [{ "kind": "buff", "buff": "supervisory_duties" }],
+      "note": "Tag 1466867135 is on the reaction buffs buff_common_pulse_{cryst,fire,natural}_triggered and on the forced buff_common_pulse_pulse_conduct_triggered_do, so both count. beforeDamage: abilityEvent 102 fires when the tagged buff is added, before the applying hit's DamageAction (the combo creates its conduct buff first; the battle skill's SpellInfliction precedes its damage) and before the reaction buff's own start-event damage. The e82d log has P3 on the reaction hit (×1.200 of the ×1.209); test 51's question, answered yes here."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0004_pelica_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": ["atk_scale"],
+          "frames": [8],
+          "events": ["chr_0004_pelica_attack1_projhit"],
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "detached": true,
+          "note": "LaunchProjectile@8 → attack1_projhit: DamageAction atk_scale (mask 128); ObtainCostAction atb while controlled (atb is 0 at every level)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0004_pelica_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": ["atk_scale"],
+          "count": 2,
+          "frames": [9, 12],
+          "events": ["chr_0004_pelica_attack2_projhit"],
+          "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.333333313] } },
+          "detached": true,
+          "note": "Two LaunchProjectile (9, 12), each one atk_scale landing (display_atk_scale = 2 × atk_scale is the tooltip); ObtainCostAction atb × coefficient 1/3 while controlled (atb is 0)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0004_pelica_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": ["atk_scale"],
+          "count": 3,
+          "frames": [16, 19, 22],
+          "events": ["chr_0004_pelica_attack3_projhit"],
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "detached": true,
+          "note": "Three LaunchProjectile (16, 19, 22), each atk_scale (display_atk_scale = 3 × atk_scale)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0004_pelica_attack4",
+      "label": "Basic attack 4 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "label": "Final Strike",
+          "scale": ["atk_scale"],
+          "frames": [27],
+          "events": ["chr_0004_pelica_attack4_projhit"],
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "poise": "poise",
+          "poiseControlledOnly": true,
+          "finalStrike": true,
+          "detached": true,
+          "note": "LaunchProjectile@27 → attack4_projhit: DamageAction mask 2097280 (Final Strike), poise unit `poise` (onlyEnableForMainChar), ObtainCostAction atb 15 (atbSourceType 1) while controlled."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0004_pelica_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [35],
+          "events": ["chr_0004_pelica_power_attack"],
+          "note": "BreakingAttackCalculation atk_scale × multiplier 1 (mask 132) at 35; the engine gates it on a Staggered enemy and adds the enemy's finisher multiplier and SP. Interim (compiler's reading): no Knock Down. After the DamageAction, IfElse CheckMainCharacter → KnockDownAction forceKnockDown with deadOption 2, which the compiler reads as acting on a dying target only; the report's row 7 read it as a forced Knock Down on every finished enemy while she is controlled (a Knock Down hit and +1 Vulnerable). In-game test 67 settles it."
+        }
+      ],
+      "note": "buff_common_power_attack_disable_cast_skill (0-35) and the full immunity come from SkillData."
+    },
+    {
+      "skillId": "chr_0004_pelica_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [3],
+          "events": ["chr_0004_pelica_plunging_attack_end"],
+          "sp": "atb",
+          "note": "DamageAction atk_scale (mask 1152) at 3-8; the four plunging_attack_projhit projectiles have no actions."
+        }
+      ],
+      "note": "Not castable in rotations yet (S10: dive attacks need jumps)."
+    },
+    {
+      "skillId": "chr_0004_pelica_normal_skill",
+      "label": "Battle skill (Protocol ω: Strike)",
+      "damageType": "battle",
+      "teamEnergy": [{ "frame": 13, "ratio": 1 }],
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [13],
+          "events": ["chr_0004_pelica_normal_skill"],
+          "applies": [{ "kind": "infliction", "element": "pulse" }],
+          "poise": "poise",
+          "note": "Frame 13: SpellInfliction inflictionType 1 (Electric) before the DamageAction (atk_scale, mask 4352; a second unit with poise), then buff_common_obtain_ultimate_sp (team energy)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0004_pelica_combo_skill",
+      "label": "Combo skill (Instant Protocol: Chain)",
+      "damageType": "combo",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": ["atk_scale"],
+          "frames": [24],
+          "events": ["chr_0004_pelica_combo_skill_projhit"],
+          "applies": [{ "kind": "forcedReaction", "status": "electrification", "durationKey": "duration", "scaleKey": "extra_scaling" }],
+          "energy": "usp",
+          "poise": "poise",
+          "detached": true,
+          "note": "LaunchProjectile@24 → combo_skill_projhit: CreateBuff buff_common_pulse_pulse_conduct_triggered on the target (count 1: level I; assigns duration 5 s, P1 ×1.75 = 8.75 s, and extra_scaling 1, P4 1.33) before the DamageAction (atk_scale, mask 12288, poise unit `poise`), so the combo hit already takes it; then ObtainCostAction usp (its atb key doesn't exist: 0). conduct_triggered_do multiplies final_spell_resistance_decrease by extra_scaling (ModifyDynamicBlackboard operation 2): Arts DMG Taken = level I × AI curve × 1.33 at P4 (open list A1; btl_upload_b6082588d600 logged 0.272665 = 0.12 × 1.33 × 1.70843). On an enemy with a stronger Electrification the forced one replaces it (stacking key pulse_triggered, stackingType 2 max 1; in-game test 66). Talent 2's bounce (EntityBB_bounced, FindTarget excluding the hit target) goes to another enemy: nothing against one."
+        }
+      ],
+      "note": "Time dilation 0-22 comes from SkillData; the tutorial marker buff has no effect."
+    },
+    {
+      "skillId": "chr_0004_pelica_ultimate_skill",
+      "label": "Ultimate (Protocol ε: 70.41K)",
+      "damageType": "ultimate",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [58],
+          "events": ["chr_0004_pelica_ultimate_skill"],
+          "bonuses": [{ "zone": "critRate", "key": "crit" }],
+          "poise": "poise",
+          "note": "Frames 58-63: DamageAction atk_scale (mask 4608) with an InstantModifyAttribute damage processor: attribute 9 (crit rate) + crit for this hit only (0; P5 +0.3); poise unit `poise`."
+        }
+      ],
+      "note": "Time stop 0-50 and the damage immunity come from SkillData; the ability entity spawned at 55 only finishes itself. Cost 80 (P2 ×0.85: 68), no energy block."
+    }
+  ]
+}

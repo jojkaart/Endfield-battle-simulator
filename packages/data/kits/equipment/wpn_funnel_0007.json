@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_funnel_0007",
+  "sources": [
+    "Monaihe (5-star Arts Unit). Every effect is in the stat panel, so this kit has nothing to declare: skill 1 wpn_attr_will_mid (Will), skill 2 wpn_sp_attr_usgs_mid (Ultimate Gain Efficiency), skill 3 sk_wpn_funnel_0007 cardAttributeModifier (formulaItem 6, modifyAttributeType 1: Main Attribute +primary_attr_up, L1-L9 5-14%; attribute 87 Arts Intensity +phy_spell_up, 25-70; SkillPatchTable).",
+    "buff_wpn_funnel_0007 (the same values) is never created: the skill's toggleBuffs names buff_wpn_passive_spirit_01, which has no BuffData file (as in Jiminy 12, wpn_funnel_0002). Not in any log or fixture yet."
+  ]
+}

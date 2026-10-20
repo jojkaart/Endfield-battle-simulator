@@ -1,0 +1,26 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "suit_wisd01",
+  "sources": [
+    "Mordvolt Insulation, 3-piece set skill passive_equipsuit_wisd_01 (SkillPatchTable L1: wisd_up 50, hp_ratio 0.8, spell_dmg_up 0.2; the SkillData defaults are overridden): cardAttributeModifier Intellect + wisd_up (stat panel); toggleBuffs buff_equipsuit_wisd_spdmg_01 (attributes 51-54 Heat / Electric / Cryo / Nature DMG + spell_dmg_up, formulaItem 5) while CheckCurHpRatio (compareType 3) is above hp_ratio. Operator HP isn't modelled (N1, E2 dropped): the wearer is at full HP, so it is on from the start, as Roving MSGR (suit_agi01). buff_equipsuit_wisd_01 (wisd 200) has no modifiers: inert. Description: \"Wearer's Intellect +{wisd_up}. When the wearer's HP is above {hp_ratio:0%}, Arts DMG +{spell_dmg_up:0%}.\"",
+    "Not in any log or fixture yet."
+  ],
+  "buffs": [
+    {
+      "id": "suit_wisd01.arts_dmg",
+      "label": "Mordvolt Insulation: Arts DMG (HP above 80%)",
+      "target": "self",
+      "gameBuff": "buff_equipsuit_wisd_spdmg_01",
+      "modifiers": [{ "attr": 51, "value": "spell_dmg_up" }, { "attr": 52, "value": "spell_dmg_up" }, { "attr": 53, "value": "spell_dmg_up" }, { "attr": 54, "value": "spell_dmg_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "suit_wisd01.start",
+      "on": { "event": "fightStart" },
+      "by": "self",
+      "skill": "passive_equipsuit_wisd_01",
+      "do": [{ "kind": "buff", "buff": "suit_wisd01.arts_dmg" }]
+    }
+  ]
+}

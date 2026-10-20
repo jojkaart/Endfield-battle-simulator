@@ -384,3 +384,120 @@ G3 (dash attack); U2 and U3 keep their interims. Nothing is unique:
 `scaleKey` is Laevatain's field, a forced Knock Down is Da Pan's too,
 "applies Electrification" triggers are Pulser Labs', HP-gated set bonuses
 are Roving MSGR's.
+
+## Kit (2026-10-20)
+
+Re-analysis against the engine at 182f22b (batch 3's shared features
+06d21e3 and fec9acd, the compiler's D2 / D4), then the kit.
+
+### Re-analysis per gap and row
+
+| Gap / row | Now | How |
+|---|---|---|
+| G1, row 26 (P4's ×1.33) | **done** (A1) | `forcedReaction.scaleKey: extra_scaling` on the combo: the status keeps `damageScale` and `statusModifiers` multiplies Electrification's Arts DMG Taken by it. Default `extra_scaling` 1 (SkillData default), P4 sets 1.33. Tested: the combo hit's own Electrification is ×1.33 of the P3 build's |
+| G2, row 29 (a reaction's initial hit and its own status) | **open** (A6, logs only) | engine unchanged: the initial hit takes the status it creates. The e82d reaction still fits only without it (below) |
+| G3, row 10 (dash attack) | **deferred** (S5) | not in the kit (no dash-attack action) |
+| D3 / D4, rows 12, 15, 18 (poise, created buff's keys, damage-unit crit) | **done** (D2, D4) | kit-draft now emits every hit's `poise` and attack4's `poiseControlledOnly`, the combo's `durationKey` / `scaleKey`, and the ultimate's `bonuses: critRate crit`. `skillCompile.test.ts` with her in OPERATORS: **no disagreement**, so no KNOWN entry |
+| Row 7 (finisher's forced Knock Down) | **interim** (D2's reading) | the compiler reads the KnockDownAction's deadOption 2 as "on a dying target only" and drops it; the kit follows (no `applies` on the finisher) and says so in its note. The data shows nothing else that decides it. In-game test 67 |
+| Row 16, U2 (forced Electrification over a longer one) | **interim** (replace) | stacking key `pulse_triggered` max 1; the engine's `withStatus` replaces: timer and strength are the combo's. In-game test 66 |
+| Row 20 (talent 1) | **done** (C1) | `enemyStaggered` judged on the enemy after the hit's own applications; whole-fight buff from `fightStart` |
+| Rows 24, 25, U1 (P3) | **interim** for the layer count | `beforeDamage` reaction trigger (test 51's question; the e82d reaction confirms it for P3); one layer per Electrification (in-game test 68 part 1). The layers' shared timer is the loader's stackingType-8 reading (B3, in-game test 62) |
+| W3 (Wild Wanderer across wielders) | **done** (B2) | `buff_wpn_funnel_0004_up` is stackingType 11 with priority key `dmg_up` and maxStackCnt 1: the loader gives the kit buff `stackGroup: buff_wpn_funnel_0004_up` from `gameBuff` alone |
+| W4, U3 (Wild Wanderer's event 206) | **interim** | reaction and forced Electrification both fire it, after the applying hit's damage (no `beforeDamage`). In-game test 68 part 2 |
+| U4 (the e82d residuals) | **open** | below |
+| All other rows | supported | as in the table above; nothing new needed |
+
+No engine, loader or compiler change was made.
+
+### What the kit models and leaves out
+
+- `packages/data/kits/operators/chr_0004_pelica.json`: 9 skills (attacks
+  1–4, finisher, dive, battle skill, combo, ultimate), 2 buffs
+  (`obliteration_protocol` talent 1, `supervisory_duties` P3), 3 triggers
+  (`combo_window` on the controlled operator's Final Strike,
+  `obliteration_protocol` at fight start, `supervisory_duties` on her
+  Electrification). Values are keys (SkillPatchTable, SkillData defaults,
+  the talent's and P3's attached buffs); the only literal is attack2's SP
+  coefficient 0.333333313 (SimpleCalcBB, `atb` is 0 anyway).
+- `wpn_funnel_0004` Wild Wanderer: team buff `wpn_funnel_0004.team_dmg`
+  (attr 50 / 52 + `dmg_up`, `duration`) on the wielder's Electrification.
+- `wpn_funnel_0007` Monaihe: sources only (all in the stat panel; its
+  toggle buff names a BuffData file that doesn't exist).
+- `suit_wisd01` Mordvolt Insulation: Arts DMG + `spell_dmg_up` from the
+  start (HP isn't modelled: always above 80%); Intellect +50 in the panel.
+- Left out: the dash attack (S5), talent 2's bounce (needs a second enemy;
+  one enemy: nothing), the finisher's Knock Down (interim), damage
+  immunities (incoming damage isn't modelled).
+- `examples/perlica-estella.scenario.json` + `examples/perlica-p5.json`
+  (P5, Wild Wanderer, 4 × Mordvolt Insulation) with Estella: her Cryo,
+  Perlica's battle skill at 1 s (Electrification I, P3 layer 1, Wild
+  Wanderer), a basic chain, the combo on the Final Strike (forced
+  Electrification I ×1.33 for 8.75 s, P3 layer 2) and the ultimate at 6 s.
+  Total 130,866 (Perlica 121,642) in 7.93 s.
+- `tests/kit-perlica.test.ts` (15 tests): every skill's hits and frames
+  (attacks 8 / 9, 12 / 16, 19, 22 / 27; battle 13; combo 24; ultimate 58;
+  finisher 35), attack4's stagger and the combo window (also from
+  Estella's Final Strike), the battle skill's infliction, reaction and team
+  energy, the combo's forced Electrification (263 frames at P1, 150 below;
+  ×1.33 at P4, ×1 below; on its own hit), its usp × Ultimate Gain
+  Efficiency and 19 s cooldown, the replace interim, the ultimate's crit
+  (+0.3 at P5, 0 at P4) and cost (68 / 80), the finisher without Knock
+  Down, talent 1 (0.3 / 0.2 / none, Staggered only), P3 (one layer on the
+  battle skill and the reaction hit, two on the combo hit, one shared 5 s
+  timer, none below P3 or without Electrification), Wild Wanderer (not on
+  the applying hit, on her next hit and on Estella's Physical hit, 15 s,
+  from the forced one too, one buff in its stack group), Monaihe's panel
+  and Mordvolt Insulation's buff and Intellect.
+
+### Verification
+
+**fixtures/pending/zmdlogs-e82d45c46040.json**, `zmdlogs check`: Perlica
+**2 hits, 0 match, 2 mismatch** (before the kit: 1 uncovered, 1 under
+unmodelled effects). Both mismatches are the report's, unchanged with
+today's engine (the level-III reaction without boundary buffs is still
+29973):
+
+- t=7544 `buff_common_pulse_cryst_triggered` 36250: P3 alone gives
+  29973 × 1.2 ≈ 35968 (×1.0078), outside the tolerance; with Pulser Labs'
+  bonus or its own Electrification it's further off. Waits on A6 (a second
+  log) and U4.
+- t=7544 `chr_0004_pelica_normal_skill` 8542: fits P3 at two layers
+  (U1, in-game test 68) or a different skill level (the log's skill levels
+  at promotion 2 aren't reliable). Can't verify the battle skill until
+  her skill levels are known.
+
+`zmdlogs reactions`: her Electrification at 7544 ms (level III, consumed
+Cryo) is now **matched** (before the kit: "unexpected"), and Arcane's
+predicted-but-unlogged Cryo burst at 8734 ms is gone, since the replay now
+has her Electric Infliction consume that Cryo: 3 matched, 0 unlogged, 0
+unexpected (before: 2 / 1 / 1). The fixture stays pending. Every other
+`zmdlogs check` / `reactions` output and every example total is unchanged.
+
+**Scenario** (the example): the battle skill lands at 1.43 s, the
+reaction with it; P3's layer acts on both (ATK 4192.7 vs 4763.3 with two
+layers on the combo hit, ×1.136); Wild Wanderer's +22.4% Electric DMG
+from attack1 on (not on the battle skill); the forced Electrification's
+Arts DMG Taken 0.1868 = 0.1405 (level I at AI 28) × 1.33 on the combo and
+ultimate hits; the ultimate's crit zone 1.175 (5% + 30%, ×0.5 crit DMG).
+The combo window opens at the Final Strike (4.90 s); the combo's hit
+0.8 s later, the ultimate's 58 frames after its cast. The same effects
+as the kit plan's scratch run, now with P4's ×1.33 acting.
+
+### In-game tests the kit depends on
+
+- **66** (forced Electrification over a longer one: replace interim).
+- **67** (the finisher's Knock Down: the compiler's deadOption 2 reading).
+- **68** (P3 layers per Electrification; Wild Wanderer on a reaction and
+  on the forced one).
+- **62** (stackingType 8's timer: P3's layers).
+- **51** (an effect a hit triggers on that hit: P3 yes, Wild Wanderer no).
+- **47** (projectile travel: every hit of hers but the battle skill's,
+  finisher's, dive's and ultimate's is a projectile at its launch frame).
+- A6 (G2) has no in-game test: logs only.
+
+### Still open
+
+A6 (G2), S5 (G3), U4 (the e82d residuals), and the interims of row 7,
+U1, U2, U3. `fixtures/pending/README.md` still says ×1.209 for the e82d
+reaction; batch-3.md's correction (×1.200 from P3, ×1.0078 left) isn't in
+it yet (not edited here: not this kit's file).
