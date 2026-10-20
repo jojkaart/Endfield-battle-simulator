@@ -28,6 +28,9 @@ describe.each(Object.values(data.kits.operators))("kit $operator", (kit) => {
     // Known gaps, kept explicit so new ones show up (reasons in each kit's sources).
     const knownGaps: Record<string, string[]> = {
       // Finisher: BreakingAttackCalculation, not ATK × key.
+      // Helpers her trap buffs cast (batch 4 S6), with normal_skill's values: inkmove_2's Fixed DMG burst is the kit's Inksoul
+      // trigger hit (it names the file), inkhurt_front deals no damage.
+      chr_0036_jsspsi: ["chr_0036_jsspsi_normal_skill_inkhurt_front", "chr_0036_jsspsi_normal_skill_inkmove_2"],
     };
     expect(missing.sort()).toEqual(knownGaps[kit.operator] ?? []);
   });

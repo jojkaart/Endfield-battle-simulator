@@ -211,6 +211,10 @@
           "link": {
             "type": "boolean",
             "description": "A team buff that counts as one Link stack while active; the next battle skill or ultimate that uses Link uses it and ends it."
+          },
+          "basicAttack": {
+            "type": "string",
+            "description": "While active, its owner's basic-attack input is this kit basic attack (a ComboCacheAction in the game buff's buffEvent 5; the loader sets it from gameBuff and checks a written one): it starts as a chain head or inside any window listing it, and the owner's other basic attacks (not finishers) can't start."
           }
         }
       }
@@ -1021,6 +1025,20 @@
                     "kind": {
                       "const": "openCombo"
                     },
+                    "skills": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": { "type": "string" },
+                      "description": "A window of its own that only these combo skills of the kit use (and need): it isn't subject to the rule that the owner's own combo doesn't open its window (a combo opening its next sequence), and opens unless all of them are on cooldown."
+                    },
+                    "seconds": {
+                      "$ref": "#/$defs/valueExpr",
+                      "description": "How long the window stays open (default 6 s; without it and with whileBuff, as long as the buff)."
+                    },
+                    "whileBuff": {
+                      "type": "string",
+                      "description": "The window is open only while this own kit buff is active (applied before or right after in the same trigger); extending the buff extends it, its end closes it (a finisher's PauseComboSkillTime: extendBuff)."
+                    },
                     "if": {
                       "$ref": "#/$defs/predicate",
                       "description": "This action only in this situation (judged for the owner when it runs)."
@@ -1252,12 +1270,16 @@
                       "$ref": "#/$defs/valueExpr",
                       "description": "Instead: start a cooldown of this many seconds, whether one is running or not (SetSkillCdAtOnce functionType 1)."
                     },
+                    "setFraction": {
+                      "$ref": "#/$defs/valueExpr",
+                      "description": "Instead: start a cooldown of this fraction of each skill's own full cooldown, whether one is running or not (SetSkillCdAtOnce functionType 1 with isPercentage)."
+                    },
                     "if": {
                       "$ref": "#/$defs/predicate",
                       "description": "This action only in this situation (judged for the owner when it runs)."
                     }
                   },
-                  "description": "Exactly one of seconds, fraction and set (the loader checks)."
+                  "description": "Exactly one of seconds, fraction, set and setFraction (the loader checks)."
                 },
                 {
                   "type": "object",
@@ -1652,6 +1674,32 @@
           "chainStep": {
             "type": "boolean",
             "description": "Override: a basic-attack chain step, castable only while the chain points at it (default from the data: an earlier step's cancel window lists it)."
+          },
+          "windows": {
+            "type": "array",
+            "minItems": 1,
+            "description": "When the skill's conditional windows (SkillData AllowNextSkillAction under a TogglableAction or an IfElse branch; by frame, and skills to tell apart two at one frame; all at that frame without skills) are open: when `if` holds for the caster at the cast, always without one. A conditional window not listed stays closed.",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["from"],
+              "properties": {
+                "from": { "type": "integer", "minimum": 0 },
+                "skills": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+                "if": { "$ref": "#/$defs/predicate" }
+              }
+            }
+          },
+          "comboWindow": {
+            "const": false,
+            "description": "A combo-kind skill cast without the combo window (from another button), with its own cost and cooldown, gated by `available`; a combo for everything else (cast and hits of kind combo, no Link). It doesn't use up the combo window."
+          },
+          "noDodge": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": { "type": "integer", "minimum": 0 },
+            "description": "Skill frames [from, until) on the cast's playhead in which the controlled operator doesn't dash at an enemy attack, with dodging on (a counter that isn't a jump: a guard that wants to be hit); the attack lands and its triggers fire."
           },
           "beside": {
             "$ref": "#/$defs/predicate",

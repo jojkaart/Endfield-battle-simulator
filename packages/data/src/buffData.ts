@@ -6,6 +6,7 @@
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { arr, at, get, int, num, obj, str, type Ctx } from "./fields.ts";
+import { DataError } from "./errors.ts";
 import { parseJsonExact } from "./json.ts";
 import type { PerfectDodge } from "@efsim/engine";
 import { globToRegExp, isSkillFileListed as ALLOWED_SKILL_FILE, slowdownOf } from "./skillData.ts";
@@ -41,6 +42,12 @@ export interface RawBuffFile {
    * or they differ.
    */
   readonly damageMask: { readonly checkType: number; readonly mask: number } | null;
+  /**
+   * The skill the owner's basic-attack input maps to while the buff is
+   * enabled (a ComboCacheAction of cmdType 0 in its buffEvent 5), or null
+   * (Yvonne's talent-1 Final Strike: attack5).
+   */
+  readonly basicAttack: string | null;
 }
 
 const ALLOWED = DATA_FILES.json.BuffData.map(globToRegExp);
@@ -73,6 +80,19 @@ export function readBuffFile(buffId: string): RawBuffFile | null {
       .map((a) => `${get(a, "checkType", dc, int)}:${get(a, "mask", dc, int)}`);
     return found.length === 1 ? (found[0] as string) : found.length === 0 ? "" : "many";
   });
+  // buffEvent 5 runs while the buff is enabled: an input mapping there holds as long as it does.
+  const mapped = new Set<string>();
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (typeof node !== "object" || node === null) return;
+    const o = node as Record<string, unknown>;
+    if (typeof o["$type"] === "string" && o["$type"].includes("ComboCacheAction") && o["isEnable"] !== false) {
+      for (const m of (o["mappingDataList"] ?? []) as Record<string, unknown>[]) if ((m["cmdType"] ?? 0) === 0 && typeof m["skillId"] === "string") mapped.add(m["skillId"]);
+    }
+    for (const v of Object.values(o)) walk(v);
+  };
+  for (const e of (Array.isArray(j["buffEventAction"]) ? j["buffEventAction"] : []) as Record<string, unknown>[]) if (e["buffEvent"] === 5) walk(e["actions"]);
+  if (mapped.size > 1) throw new DataError("rmxlinux", `BuffData/${buffId}`, `maps the basic-attack input to several skills (${[...mapped].join(", ")})`);
   const shared = masks.length > 0 && masks.every((m) => m === masks[0]) && masks[0] !== "" && masks[0] !== "many" ? (masks[0] as string).split(":").map(Number) : null;
   return {
     id: buffId,
@@ -86,6 +106,7 @@ export function readBuffFile(buffId: string): RawBuffFile | null {
       maxStackCnt: literalMax,
     },
     damageMask: shared ? { checkType: shared[0] as number, mask: shared[1] as number } : null,
+    basicAttack: [...mapped][0] ?? null,
     attributeModifiers: mods.map((m, i) => {
       const mc = at(at(ac, "attributeModifiers"), i);
       const mo = obj(m, mc);
@@ -138,34 +159,54 @@ export function switchedSkills(charId: string): Map<string, (typeof SKILL_SLOTS)
 /**
  * Helper skills an operator's skills reach through CastSkill (and those
  * reach in turn) that no skill group lists: Purrchena's shield loop and
- * blocks. Each maps to its owner, the listed skill whose ID is the longest
- * prefix of the helper's (else the skill that casts it): the helper is in
- * the owner's group and takes its level values. Only listed SkillData files
- * are read, and only helpers with a file are returned.
+ * blocks; also through the operator's own BuffData its skills name (a
+ * CreateBuff, a switch config) and those buffs name in turn: Zhuang
+ * Fangyi's ultimate_skill_end, cast when her Empyrean state ends. Each
+ * maps to its owner, the listed skill whose ID is the longest prefix of the
+ * helper's (else the skill that casts it, or that created the buff that
+ * does): the helper is in the owner's group and takes its level values.
+ * Only listed SkillData and BuffData files are read, and only helpers with
+ * a file are returned.
  */
 export function castHelpers(groups: Readonly<Record<string, string>>): Map<string, string> {
   const out = new Map<string, string>();
   const known = new Set(Object.keys(groups));
-  const queue = [...known];
-  const path = join(sourceDir("rmxlinux"), "Json", "SkillData");
-  const fileOf = (id: string) => (ALLOWED_SKILL_FILE(id) && existsSync(join(path, `${id}.json`)) ? join(path, `${id}.json`) : null);
+  const seenBuffs = new Set<string>();
+  // Each file to read, with the skill it counts as (for a buff: the skill that named it).
+  const queue: { id: string; buff: boolean; via: string }[] = [...known].map((id) => ({ id, buff: false, via: id }));
+  const skills = join(sourceDir("rmxlinux"), "Json", "SkillData");
+  const buffs = join(sourceDir("rmxlinux"), "Json", "BuffData");
+  const fileOf = (id: string) => (ALLOWED_SKILL_FILE(id) && existsSync(join(skills, `${id}.json`)) ? join(skills, `${id}.json`) : null);
+  const buffFileOf = (id: string) => (isBuffFileListed(id) && existsSync(join(buffs, `${id}.json`)) ? join(buffs, `${id}.json`) : null);
+  const charOf = (id: string) => /^(chr_\d+_[a-z]+)_/.exec(id)?.[1];
   while (queue.length > 0) {
-    const id = queue.shift() as string;
-    const file = fileOf(id);
+    const { id, buff, via } = queue.shift() as { id: string; buff: boolean; via: string };
+    const file = buff ? buffFileOf(id) : fileOf(id);
     if (!file) continue;
     const text = readFileSync(file, "utf8");
-    if (!text.includes("CastSkill+Data")) continue;
+    // The operator's own buffs it names (CreateBuff, switchToBuffConfig, …): followed for their CastSkill.
+    const char = charOf(buff ? id.replace(/^buff_/, "") : id);
+    const ownBuff = char ? new RegExp(`^buff_${char}_`) : null;
+    if (!text.includes("CastSkill+Data") && !(ownBuff && text.includes(`buff_${char}_`))) continue;
     const walk = (node: unknown): void => {
       if (Array.isArray(node)) return node.forEach(walk);
+      if (typeof node === "string") {
+        if (ownBuff?.test(node) && node !== id && !seenBuffs.has(node) && buffFileOf(node)) {
+          seenBuffs.add(node);
+          queue.push({ id: node, buff: true, via: buff ? via : id });
+        }
+        return;
+      }
       if (typeof node !== "object" || node === null) return;
       const o = node as Record<string, unknown>;
       if (typeof o["$type"] === "string" && o["$type"].includes("CastSkill+Data") && o["isEnable"] !== false) {
         const target = (o["skillId"] as { value?: unknown } | undefined)?.value;
         if (typeof target === "string" && !known.has(target) && fileOf(target)) {
           known.add(target);
-          queue.push(target);
+          queue.push({ id: target, buff: false, via: target });
+          const caster = buff ? via : id;
           const prefix = Object.keys(groups).filter((g) => target.startsWith(`${g}_`)).sort((a, b) => b.length - a.length)[0];
-          out.set(target, prefix ?? out.get(id) ?? id);
+          out.set(target, prefix ?? out.get(caster) ?? caster);
         }
       }
       for (const v of Object.values(o)) walk(v);

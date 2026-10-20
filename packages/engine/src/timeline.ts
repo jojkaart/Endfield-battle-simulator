@@ -206,8 +206,13 @@ export interface TimelineState {
   readonly energy: Readonly<Record<string, number>>;
   /** Per operator: frame until which it gains no energy (some ultimates block it). */
   readonly energyBlockedUntil: Readonly<Record<string, number>>;
-  /** Per operator with a combo trigger: the open combo window, if any. */
-  readonly comboWindow: Readonly<Record<string, { readonly from: number; readonly until: number; readonly count: number; readonly source?: EventSource }>>;
+  /**
+   * Per operator with a combo trigger: the open combo window, if any; a
+   * window of its own skills (an `openCombo` with `skills`) is under
+   * `<operator>>skillId` (windowKey). `whileBuff`: open only while that
+   * buff of the operator is active.
+   */
+  readonly comboWindow: Readonly<Record<string, { readonly from: number; readonly until: number; readonly count: number; readonly source?: EventSource; readonly whileBuff?: string }>>;
   /** Frame until which SP doesn't regenerate. */
   readonly spPausedUntil: number;
   readonly controlled: string;
@@ -219,7 +224,7 @@ export interface TimelineState {
    * (Fluorite's attack3: attack4 in 18–24, attack4_1 in 24–30).
    */
   readonly chainNext: Readonly<Record<string, ChainStep & { readonly alternatives?: readonly ChainStep[] }>>;
-  /** Per skill ID: frame from which it's off cooldown. */
+  /** Per skill ID: frame from which it's off cooldown (a combo cooldown run at a recovery rate may end within a frame: ready from the next whole one). */
   readonly readyAt: Readonly<Record<string, number>>;
   readonly pending: readonly PendingHit[];
   /** Trigger actions due later (KitTrigger.delay), with the event that started them. */
@@ -268,6 +273,12 @@ export interface TimelineContext {
   readonly kits: ReadonlyMap<string, OperatorKit>;
   /** Whether any kit has a trigger that acts before its hit's damage (KitTrigger.beforeDamage). */
   readonly beforeDamage: boolean;
+  /** Whether any kit buff changes a combo cooldown's recovery rate (attribute 93), so cooldowns follow buffs over time. */
+  readonly comboRates?: boolean;
+  /** Whether any kit buff changes skills' SP cost (attribute 45), so costs are judged on the buffs at the start frame. */
+  readonly costBuffs?: boolean;
+  /** Whether any kit buff maps the basic-attack input (KitBuff.basicAttack). */
+  readonly inputBuffs?: boolean;
 }
 
 export function createContext(data: GameData, scenario: TimelineScenario): TimelineContext {
@@ -283,7 +294,14 @@ export function createContext(data: GameData, scenario: TimelineScenario): Timel
     return kit ? [[b.operator, kit] as const] : [];
   }));
   const beforeDamage = [...kits.values()].some((k) => k.triggers.some((t) => t.beforeDamage));
-  return { data, scenario, builds, panels, modifiers, kits, beforeDamage };
+  const buffAttrs = new Set([...kits.values()].flatMap((k) => k.buffs.flatMap((b) => b.modifiers.flatMap((m) => (m.attr !== undefined ? [m.attr] : [])))));
+  const inputBuffs = [...kits.values()].some((k) => k.buffs.some((b) => b.basicAttack !== undefined));
+  return {
+    data, scenario, builds, panels, modifiers, kits, beforeDamage,
+    ...(buffAttrs.has(Attr.ComboSkillCooldownRecoveryScalar) ? { comboRates: true } : {}),
+    ...(buffAttrs.has(Attr.AtbCostAddition) ? { costBuffs: true } : {}),
+    ...(inputBuffs ? { inputBuffs: true } : {}),
+  };
 }
 
 export function init(ctx: TimelineContext): TimelineState {
@@ -382,12 +400,144 @@ function skillCosts(ctx: TimelineContext, operator: string, skillId: string) {
     group,
     /** The action's kind (KitSkill.kind), which basic-attack control and combo windows go by. */
     kind,
+    /** costType 1: it costs SP (its cost then changes with attribute 45: spCostAt). */
+    paysSp: level.costType === 1,
     spCost: level.costType === 1 ? cost : 0,
     /** costType 0: ultimate energy. */
     energyCost: level.costType === 0 ? cost : 0,
     cooldownFrames: Math.round(skillParam(panel, skillId, "cooldown", level.coolDown) * scalar * FPS),
     timing,
   };
+}
+
+/**
+ * A skill's SP cost at a frame: its table cost plus attribute 45
+ * (AtbCostAddition, default 0) of the caster's panel and active buffs, at
+ * least 0 (Zhuang Fangyi's free battle skill in Empyrean: −100).
+ */
+function spCostAt(ctx: TimelineContext, st: TimelineState, operator: string, costs: { readonly paysSp: boolean; readonly spCost: number }, frame: number): number {
+  if (!costs.paysSp) return 0;
+  const panel = ctx.panels.get(operator) as StatPanel;
+  const extra = (panel.attrs[Attr.AtbCostAddition]?.total ?? 0) + buffAttr(st.buffs, operator, frame, Attr.AtbCostAddition, panel.attrs[Attr.AtbCostAddition]);
+  return extra === 0 ? costs.spCost : Math.max(0, costs.spCost + extra);
+}
+
+/**
+ * Combo-kind skills of an operator that an `openCombo` with `skills` names:
+ * each uses only a window of its own (windowKey), which its own combo may
+ * open (Rossi's sequence 2).
+ */
+const ownWindowCache = new WeakMap<OperatorKit, ReadonlySet<string>>();
+function ownWindowSkills(ctx: TimelineContext, operator: string): ReadonlySet<string> {
+  const kit = ctx.kits.get(operator);
+  if (!kit) return new Set();
+  let s = ownWindowCache.get(kit);
+  if (!s) ownWindowCache.set(kit, (s = new Set(kit.triggers.flatMap((t) => allActions(t.do).flatMap((a) => (a.kind === "openCombo" ? (a.skills ?? []) : []))))));
+  return s;
+}
+
+/** The combo window a skill uses: one of its own (ownWindowSkills), else its operator's. */
+function windowKey(ctx: TimelineContext, operator: string, skillId: string): string {
+  return ownWindowSkills(ctx, operator).has(skillId) ? `${operator}>${skillId}` : operator;
+}
+
+/**
+ * Whether a combo window (by windowKey) of an operator is open at a frame: not past its end, and its buff (whileBuff)
+ * active, an instance applied by the time it opened (one applied later doesn't reopen it).
+ */
+function windowOpen(st: TimelineState, operator: string, key: string, frame: number): boolean {
+  const w = st.comboWindow[key];
+  if (!w || w.until < frame) return false;
+  return !w.whileBuff || st.buffs.some((b) => b.id === w.whileBuff && b.owner === operator && b.cast === undefined && b.appliedAt <= Math.min(frame, w.from) && b.expiresAt > frame);
+}
+
+/** Whether a combo skill needs a window to be cast: one of its own, or its operator's when a trigger opens one; not one cast without it (KitSkill.comboWindow false). */
+function needsWindow(ctx: TimelineContext, operator: string, skill: KitSkill): boolean {
+  if (skill.kind !== "combo" || skill.comboWindow === false) return false;
+  return ownWindowSkills(ctx, operator).has(skill.skillId) || hasComboTrigger(ctx, operator);
+}
+
+/**
+ * An operator's combo cooldown recovery rate at a frame (attribute 93,
+ * ComboSkillCooldownRecoveryScalar, default 1, with its buffs): a combo
+ * cooldown runs this many frames per frame.
+ */
+function comboRate(ctx: TimelineContext, buffs: readonly ActiveBuff[], operator: string, frame: number): number {
+  const panel = ctx.panels.get(operator) as StatPanel;
+  const line = panel.attrs[Attr.ComboSkillCooldownRecoveryScalar];
+  const base = line?.total ?? ctx.data.attributeDefaults[Attr.ComboSkillCooldownRecoveryScalar] ?? 1;
+  return base + buffAttr(buffs, operator, frame, Attr.ComboSkillCooldownRecoveryScalar, line ?? { base, add: 0, multiply: 1 });
+}
+
+/** The combo cooldown rate from a frame on, in constant pieces (by the rate buffs' starts and ends): each piece's first frame and rate. */
+function rateSegments(ctx: TimelineContext, buffs: readonly ActiveBuff[], operator: string, from: number): { readonly start: number; readonly rate: number }[] {
+  const points = new Set([from]);
+  for (const b of buffs) {
+    if (!b.attrs?.some((a) => a.attr === Attr.ComboSkillCooldownRecoveryScalar) || !reaches(b, operator)) continue;
+    for (const p of [b.appliedAt, b.expiresAt]) if (p > from && Number.isFinite(p)) points.add(p);
+  }
+  return [...points].sort((a, b) => a - b).map((start) => ({ start, rate: comboRate(ctx, buffs, operator, start) }));
+}
+
+/** Cooldown frames (at rate 1) a combo cooldown recovers over [from, to) under some buffs. */
+function rateProgress(ctx: TimelineContext, buffs: readonly ActiveBuff[], operator: string, from: number, to: number): number {
+  const segs = rateSegments(ctx, buffs, operator, from);
+  let sum = 0;
+  segs.forEach((s, i) => {
+    const end = Math.min(to, segs[i + 1]?.start ?? Infinity);
+    if (end > s.start) sum += Math.max(0, s.rate) * (end - s.start);
+  });
+  return sum;
+}
+
+/**
+ * When a combo cooldown with `remaining` frames (at rate 1) left at `from`
+ * ends under some buffs (Infinity if it never does): exact, so a later
+ * change of rate keeps the progress made (a fraction of a frame included);
+ * the skill is ready from the first whole frame at or past it.
+ */
+function rateReady(ctx: TimelineContext, buffs: readonly ActiveBuff[], operator: string, from: number, remaining: number): number {
+  if (remaining <= 0) return from;
+  let left = remaining;
+  const segs = rateSegments(ctx, buffs, operator, from);
+  for (let i = 0; i < segs.length; i++) {
+    const s = segs[i] as { start: number; rate: number };
+    const len = (segs[i + 1]?.start ?? Infinity) - s.start;
+    if (s.rate > 0 && s.rate * len >= left - 1e-9) {
+      const end = s.start + left / s.rate;
+      return Math.abs(end - Math.round(end)) < 1e-9 ? Math.round(end) : end;
+    }
+    if (s.rate > 0) left -= s.rate * len;
+  }
+  return Infinity;
+}
+
+/** When a cooldown of `frames` started at `from` ends: then, or for a combo skill at its operator's recovery rate (comboRate) under the buffs as they are. */
+function cooldownEnd(ctx: TimelineContext, buffs: readonly ActiveBuff[], operator: string, skill: KitSkill, from: number, frames: number): number {
+  return ctx.comboRates && skill.kind === "combo" ? rateReady(ctx, buffs, operator, from, frames) : from + frames;
+}
+
+/**
+ * Combo cooldowns when the buffs that set their rate change at a frame
+ * (attribute 93): each running one keeps the progress it made and runs the
+ * rest at the new rates. The engine calls it wherever buffs change other
+ * than by running out (the expiry was already counted).
+ */
+function rebaseCooldowns(ctx: TimelineContext, before: TimelineState, after: TimelineState, frame: number): TimelineState {
+  if (!ctx.comboRates || before.buffs === after.buffs) return after;
+  const sig = (buffs: readonly ActiveBuff[], op: string) => JSON.stringify(buffs.filter((b) => b.attrs?.some((a) => a.attr === Attr.ComboSkillCooldownRecoveryScalar) && reaches(b, op) && b.cast === undefined && !b.consumedBy).map((b) => [b.owner, b.id, b.appliedAt, b.expiresAt, b.attrs]));
+  let readyAt = after.readyAt;
+  for (const m of ctx.scenario.team) {
+    const op = m.operator;
+    if (sig(before.buffs, op) === sig(after.buffs, op)) continue;
+    for (const s of ctx.kits.get(op)?.skills ?? []) {
+      const r = after.readyAt[s.skillId];
+      if (s.kind !== "combo" || r === undefined || r <= frame || !Number.isFinite(r)) continue;
+      const next = rateReady(ctx, after.buffs, op, frame, rateProgress(ctx, before.buffs, op, frame, r));
+      if (next !== r) readyAt = { ...readyAt, [s.skillId]: next };
+    }
+  }
+  return readyAt === after.readyAt ? after : { ...after, readyAt };
 }
 
 /**
@@ -427,6 +577,8 @@ export interface Acting {
   readonly cast?: number;
   /** Jumps it took: from skill frame `from` to `to`, at real frame `at`, `length` real frames skipped. */
   readonly skips?: readonly { readonly from: number; readonly to: number; readonly at: number; readonly length: number }[];
+  /** Its conditional windows (indexes in SkillTiming.windows) whose kit condition held at the cast (KitSkill.windows). */
+  readonly windows?: readonly number[];
 }
 
 /** A jump (or, with `end`, the action's own end) at a real frame of an operator's cast, in its skill frames. */
@@ -463,7 +615,24 @@ function chainSteps(st: TimelineState, operator: string): readonly ChainStep[] {
   return c ? [c, ...(c.alternatives ?? [])] : [];
 }
 
-function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, skillId: string, base: number): { frame: number } | { error: string } {
+/**
+ * The first skill frame of a window [from, to] the playhead plays, given the
+ * jumps its cast took: frames a jump skipped are never played, so a window
+ * wholly inside a skipped segment is null (closed) and one that starts
+ * inside it opens at the jump's target.
+ */
+function windowReached(cur: Acting, from: number, to: number): number | null {
+  let f = from;
+  for (const k of cur.skips ?? []) {
+    if (!(f > k.from && f < k.to)) continue;
+    if (to < k.to) return null;
+    f = k.to;
+  }
+  return f;
+}
+
+/** `mapped`: what the operator's basic-attack input is at the start (KitBuff.basicAttack), if a buff maps it. */
+function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, skillId: string, base: number, mapped?: string): { frame: number } | { error: string } {
   const next = kitSkill(ctx, operator, skillId);
   const nt = timingOf(ctx, skillId);
   const steps = chainSteps(st, operator);
@@ -472,15 +641,23 @@ function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, s
   if (cur) {
     const ct = timingOf(ctx, cur.skill);
     const at = (x: number) => actionFrame(cur, x);
-    // MarkCanInterrupt: past it (unless a jump skipped it), the cast counts as past its exclusive frame.
-    const mark = ct.interruptibleFrom !== undefined && !(cur.skips ?? []).some((k) => (ct.interruptibleFrom as number) > k.from && (ct.interruptibleFrom as number) < k.to) ? ct.interruptibleFrom : undefined;
+    // MarkCanInterrupt: past the first one no taken jump skipped, the cast counts as past its exclusive frame.
+    const mark = (ct.interruptibleFrom ?? []).find((m) => !(cur.skips ?? []).some((k) => m > k.from && m < k.to));
     const exclusive = mark !== undefined ? Math.min(ct.exclusiveFrames, mark) : ct.exclusiveFrames;
     const options = [Math.max(frame, at(ct.durationFrames)), Math.max(frame, at(exclusive))];
     if (priorityOf(nt) > priorityOf(ct)) options.push(frame);
-    for (const w of ct.windows) if (w.skills.includes(skillId) && Math.max(frame, at(w.from)) <= at(w.to)) options.push(Math.max(frame, at(w.from)));
+    ct.windows.forEach((w, i) => {
+      // A conditional window only if its kit condition held at the cast; only from the first frame the playhead plays.
+      if (!w.skills.includes(skillId) || (w.conditional && !cur.windows?.includes(i))) return;
+      const from = windowReached(cur, w.from, w.to);
+      if (from !== null && Math.max(frame, at(from)) <= at(w.to)) options.push(Math.max(frame, at(from)));
+    });
     frame = Math.min(...options);
   }
-  if (next.kind === "basic" && nt.specification === 1) {
+  if (next.kind === "basic" && nt.specification === 1 && mapped !== undefined) {
+    // A buff maps the attack input: only that skill, as a chain head (no chain window defers or gates it).
+    if (mapped !== skillId) return { error: `${skillId}: the basic-attack input is ${mapped} while a buff maps it` };
+  } else if (next.kind === "basic" && nt.specification === 1) {
     if (next.chainStep) {
       const own = steps.filter((c) => c.skill === skillId);
       if (!own.length) return { error: `${skillId} is a basic-attack chain step, and the chain isn't at it` };
@@ -491,25 +668,28 @@ function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, s
     } else {
       // An attack input in one of the chain's windows becomes that window's step.
       const inWindow = steps.find((c) => c.skill !== skillId && c.from <= frame && frame <= c.until);
-      if (inWindow) return actionGate(ctx, st, operator, skillId, inWindow.until + 1);
+      if (inWindow) return actionGate(ctx, st, operator, skillId, inWindow.until + 1, mapped);
     }
   }
   return { frame };
 }
 
 /** The chain's next step after a cast: a basic attack's window that lists a basic attack; kept for a moment by skills that don't interrupt the chain, cleared by others. */
-function chainAfter(ctx: TimelineContext, st: TimelineState, operator: string, skill: KitSkill, frame: number, speed = 1): TimelineState["chainNext"] {
+/** `openWindows`: its conditional windows open at this cast (Acting.windows). */
+function chainAfter(ctx: TimelineContext, st: TimelineState, operator: string, skill: KitSkill, frame: number, speed = 1, openWindows: readonly number[] = []): TimelineState["chainNext"] {
   const t = timingOf(ctx, skill.skillId);
   const at = (x: number) => frame + Math.round(x / speed);
   const { [operator]: prev, ...rest } = st.chainNext;
   if (skill.kind === "basic" && t.specification === 1) {
     const kit = ctx.kits.get(operator);
     const steps: ChainStep[] = [];
-    for (const w of t.windows) {
-      // Only a chain step (attack2…) continues the chain; a window listing the skill itself or another chain head doesn't.
-      const step = w.skills.find((id) => kit?.skills.some((s) => s.skillId === id && s.kind === "basic" && s.chainStep));
+    t.windows.forEach((w, i) => {
+      if (w.conditional && !openWindows.includes(i)) return;
+      // Only a chain step (attack2…) continues the chain; a window listing the skill itself or another chain head doesn't;
+      // with an input mapping (ComboCacheAction), only a step it maps the attack input to.
+      const step = w.skills.find((id) => kit?.skills.some((s) => s.skillId === id && s.kind === "basic" && s.chainStep) && (!t.inputMap || t.inputMap.includes(id)));
       if (step) steps.push({ skill: step, from: at(w.from), until: at(w.to) });
-    }
+    });
     const [first, ...alternatives] = steps;
     return first ? { ...rest, [operator]: { ...first, ...(alternatives.length ? { alternatives } : {}) } } : rest;
   }
@@ -584,7 +764,8 @@ function slowDown(ctx: TimelineContext, st: TimelineState, caster: string, timin
     s = { ...shiftWorld(s, start, world), slowdowns: [...s.slowdowns, { start, scales: d.scales, exempt: caster }] };
     for (const [op, n] of by) s = shiftOperator(s, op, start, n);
   }
-  return s;
+  // Cooldowns run on through it, while the buffs on the world's clock (a recovery rate's among them) last longer.
+  return rebaseCooldowns(ctx, st, s, frame);
 }
 
 /** A scenario's enemy actions, in frame order (attacks before charges at one frame), up to the fight's end. */
@@ -892,7 +1073,7 @@ function addBuff(ctx: TimelineContext, st: TimelineState, owner: string, skillId
   if (!b) return { state: st, applied: false };
   const buffs = withBuff(st.buffs, b);
   // An instance weaker than the ones a buff keeps isn't applied (KitBuff.instances).
-  return { state: { ...st, buffs }, applied: buffs.includes(b) };
+  return { state: rebaseCooldowns(ctx, st, { ...st, buffs }, frame), applied: buffs.includes(b) };
 }
 
 /** How an operator's kit changes the statuses it applies, resolved at a frame (OperatorKit.statusTweaks). */
@@ -1087,6 +1268,11 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
       st = r.state;
       queue.push(...r.events);
     }
+    // A combo window that lasts while a buff is active closes when it ends (and doesn't reopen with a new instance).
+    if (e.type === "buffEnded" && Object.values(st.comboWindow).some((w) => w.whileBuff === e.buff)) {
+      const prefix = `${e.operator}>`;
+      st = { ...st, comboWindow: Object.fromEntries(Object.entries(st.comboWindow).filter(([k, w]) => !(w.whileBuff === e.buff && (k === e.operator || k.startsWith(prefix))))) };
+    }
     // Every trigger on this event judges its condition on the situation at the event, before any of them acts
     // (the game raises the event for all its listeners at once: an equipment set still sees what its owner's trigger consumes).
     const atEvent = st;
@@ -1155,15 +1341,21 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
     if (a.if && !decide(a.if, ec())) continue;
     switch (a.kind) {
       case "openCombo": {
-        if (origin && origin.operator === owner && origin.kind === "combo") break;
-        const combos = (ctx.kits.get(owner)?.skills ?? []).filter((s) => s.kind === "combo");
+        // An operator's own combo doesn't open its window, except a window of its own skills (its next sequence).
+        if (!a.skills && origin && origin.operator === owner && origin.kind === "combo") break;
+        // Not while every combo the window is for is on cooldown (the regular window: those without one of their own, and cast with one).
+        const own = ownWindowSkills(ctx, owner);
+        const combos = (ctx.kits.get(owner)?.skills ?? []).filter((s) => s.kind === "combo" && (a.skills ? a.skills.includes(s.skillId) : s.comboWindow !== false && !own.has(s.skillId)));
         if (combos.length > 0 && combos.every((s) => (st.readyAt[s.skillId] ?? 0) > frame)) break;
-        // The window keeps the largest count of the events that opened it (Si's finisher reads it).
-        const open = st.comboWindow[owner];
-        const count = Math.max(eventCountOf(e), open && open.until >= frame ? open.count : 0);
-        // …and what the latest event that opened or refreshed it was (Antal's combo repeats it: assumed, the data overwrites it).
-        const source = eventSourceOf(e) ?? (open && open.until >= frame ? open.source : undefined);
-        st = { ...st, comboWindow: { ...st.comboWindow, [owner]: { from: frame, until: frame + COMBO_WINDOW_FRAMES, count, ...(source ? { source } : {}) } } };
+        const until = frame + (a.seconds === undefined ? (a.whileBuff ? Infinity : COMBO_WINDOW_FRAMES) : Math.round(evaluate(a.seconds, ec()) * FPS));
+        for (const key of a.skills ? a.skills.map((id) => `${owner}>${id}`) : [owner]) {
+          // The window keeps the largest count of the events that opened it (Si's finisher reads it).
+          const open = st.comboWindow[key];
+          const count = Math.max(eventCountOf(e), open && open.until >= frame ? open.count : 0);
+          // …and what the latest event that opened or refreshed it was (Antal's combo repeats it: assumed, the data overwrites it).
+          const source = eventSourceOf(e) ?? (open && open.until >= frame ? open.source : undefined);
+          st = { ...st, comboWindow: { ...st.comboWindow, [key]: { from: frame, until, count, ...(source ? { source } : {}), ...(a.whileBuff ? { whileBuff: a.whileBuff } : {}) } } };
+        }
         break;
       }
       case "apply": {
@@ -1220,7 +1412,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
       }
       case "extendBuff": {
         const buffs = extendBuff(st.buffs, a.buff, owner, frame, Math.round(evaluate(a.seconds, ec()) * FPS));
-        if (buffs) st = { ...st, buffs };
+        if (buffs) st = rebaseCooldowns(ctx, st, { ...st, buffs }, frame);
         break;
       }
       case "heal":
@@ -1229,7 +1421,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
       case "endBuff": {
         const r = endBuff(st.buffs, a.buff, owner, frame, a.layers);
         if (r.ended) {
-          st = { ...st, buffs: r.buffs };
+          st = rebaseCooldowns(ctx, st, { ...st, buffs: r.buffs }, frame);
           const gameBuff = ctx.kits.get(owner)?.buffs.find((x) => x.id === a.buff)?.gameBuff;
           events.push({ type: "buffEnded", frame, operator: owner, buff: a.buff, remaining: r.remaining, ...(r.recorded !== undefined ? { recorded: r.recorded } : {}), consumed: true, ...(gameBuff ? { gameBuff } : {}) });
         }
@@ -1243,7 +1435,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
       }
       case "endAction": {
         const r = endCurrentSkill(st, owner, frame);
-        st = { ...r.state, acting: Object.fromEntries(Object.entries(r.state.acting).filter(([k]) => k !== owner)) };
+        st = rebaseCooldowns(ctx, st, { ...r.state, acting: Object.fromEntries(Object.entries(r.state.acting).filter(([k]) => k !== owner)) }, frame);
         events.push(...r.events);
         break;
       }
@@ -1254,7 +1446,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         const playhead = playheadOf(cur, frame);
         if (playhead < a.from || playhead >= a.until || a.to <= playhead) break;
         const r = takeJump(st, { frame, operator: owner, cast: cur.cast, from: playhead, to: a.to });
-        st = r.state;
+        st = rebaseCooldowns(ctx, st, r.state, frame);
         events.push(...r.events);
         break;
       }
@@ -1264,19 +1456,22 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
       case "cooldown": {
         const who = a.who === "self" ? owner : a.who === "eventOperator" ? e.operator : ctx.scenario.team[a.who.slot]?.operator;
         if (!who) break;
-        const v = evaluate("seconds" in a ? a.seconds : "fraction" in a ? a.fraction : a.set, ec());
+        const v = evaluate("seconds" in a ? a.seconds : "fraction" in a ? a.fraction : "set" in a ? a.set : a.setFraction, ec());
         const readyAt = { ...st.readyAt };
         for (const s of ctx.kits.get(who)?.skills ?? []) {
           if (s.kind !== a.skills) continue;
-          // Setting starts a cooldown whether one runs or not; changes apply only to a running one.
-          if ("set" in a) {
-            readyAt[s.skillId] = frame + Math.round(v * FPS);
+          // Setting starts a cooldown whether one runs or not: of `set` seconds, or that fraction of the skill's own full cooldown.
+          if ("set" in a || "setFraction" in a) {
+            readyAt[s.skillId] = cooldownEnd(ctx, st.buffs, who, s, frame, Math.round("set" in a ? v * FPS : v * skillCosts(ctx, who, s.skillId).cooldownFrames));
             continue;
           }
+          // Changes apply only to a running one.
           if ((readyAt[s.skillId] ?? 0) <= frame) continue;
           // A fraction is of the skill's full cooldown (assumed; in-game test 36).
           const change = Math.round("seconds" in a ? v * FPS : v * skillCosts(ctx, who, s.skillId).cooldownFrames);
-          readyAt[s.skillId] = Math.max(frame, (readyAt[s.skillId] ?? 0) + change);
+          // At a recovery rate (attribute 93) the change is to what's left at rate 1.
+          if (ctx.comboRates && s.kind === "combo") readyAt[s.skillId] = rateReady(ctx, st.buffs, who, frame, rateProgress(ctx, st.buffs, who, frame, readyAt[s.skillId] ?? 0) + change);
+          else readyAt[s.skillId] = Math.max(frame, (readyAt[s.skillId] ?? 0) + change);
         }
         st = { ...st, readyAt };
         break;
@@ -1518,6 +1713,9 @@ function landBurst(ctx: TimelineContext, state: TimelineState, b: PendingBurst):
   return runTriggers(ctx, st, events, origin, ctx.beforeDamage ? (t) => !t.beforeDamage : undefined);
 }
 
+/** Whether two skill lists name the same skills. */
+const sameSkills = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x) => b.includes(x));
+
 /** A cast's jumps and ends: the unconditional ones, and conditional ones whose kit condition holds at the cast. */
 function castJumps(timing: SkillTiming, skill: KitSkill, ec: EvalContext, operator: string, cast: number, frame: number, scaled: (f: number) => number): PendingJump[] {
   const taken = timing.jumps.filter((j) => !j.conditional || skill.jumps?.some((k) => k.at === j.at && (k.to === undefined || k.to === j.to) && decide(k.if, ec)));
@@ -1614,7 +1812,7 @@ function enemyAct(ctx: TimelineContext, state: TimelineState, a: EnemyAction): T
   // It's in the cast list as the skill "dodge" (no cast event: nothing listens to the perfect-dodge skill's cast).
   const sp = Math.min(SP.max, spAt(ended.state, a.frame) + pd.sp);
   const cast: Cast = { frame: a.frame, operator: op, skill: DODGE, spAfter: sp, energyAfter: ended.state.energy[op] ?? 0 };
-  let st: TimelineState = { ...ended.state, sp, frame: Math.max(ended.state.frame, a.frame), acting: { ...ended.state.acting, [op]: { skill: DODGE, frame: a.frame, cast: ended.state.casts.length } }, casts: [...ended.state.casts, cast] };
+  let st: TimelineState = rebaseCooldowns(ctx, roll.state, { ...ended.state, sp, frame: Math.max(ended.state.frame, a.frame), acting: { ...ended.state.acting, [op]: { skill: DODGE, frame: a.frame, cast: ended.state.casts.length } }, casts: [...ended.state.casts, cast] }, a.frame);
   st = slowDown(ctx, st, op, { ...timingOf(ctx, DODGE), slowdowns: [{ from: 0, scales: pd.slowdown }] }, a.frame);
   st = shiftOperator(st, op, a.frame, Math.round(pd.dodgerSlowdown.reduce((t, x) => t + (1 - x), 0)));
   const others = events.filter((e) => !(e.type === "attacked" && e.operator === op));
@@ -1626,9 +1824,14 @@ function playheadOf(cur: Acting, frame: number): number {
   return Math.round((frame - cur.frame + (cur.skips ?? []).filter((k) => k.at <= frame).reduce((t, k) => t + k.length, 0)) * (cur.speed ?? 1));
 }
 
-/** Whether an attack on the operator now would set off its current skill's counter (an `attacked` trigger with a `jump` of this skill in range). */
+/**
+ * Whether an attack on the operator now would set off its current skill's counter: an `attacked` trigger with a
+ * `jump` of this skill in range, or a range of the skill the operator doesn't dodge in (KitSkill.noDodge).
+ */
 function counters(ctx: TimelineContext, operator: string, cur: Acting, frame: number): boolean {
   const p = playheadOf(cur, frame);
+  const guard = ctx.kits.get(operator)?.skills.find((s) => s.skillId === cur.skill)?.noDodge;
+  if (guard && p >= guard[0] && p < guard[1]) return true;
   return (ctx.kits.get(operator)?.triggers ?? []).some(
     (t) => t.on.event === "attacked" && t.by === "self" && t.do.some((x) => x.kind === "jump" && x.skill === cur.skill && p >= x.from && p < x.until),
   );
@@ -1721,11 +1924,11 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
       if (st.acting[jump.operator]?.cast !== jump.cast) continue;
       if (jump.end) {
         const r = endCurrentSkill(st, jump.operator, jump.frame);
-        st = { ...r.state, acting: Object.fromEntries(Object.entries(r.state.acting).filter(([k]) => k !== jump.operator)) };
+        st = rebaseCooldowns(ctx, st, { ...r.state, acting: Object.fromEntries(Object.entries(r.state.acting).filter(([k]) => k !== jump.operator)) }, jump.frame);
         st = runTriggers(ctx, st, r.events, null);
       } else {
         const r = takeJump(st, jump);
-        st = runTriggers(ctx, r.state, r.events, null);
+        st = runTriggers(ctx, rebaseCooldowns(ctx, st, r.state, jump.frame), r.events, null);
       }
       continue;
     }
@@ -1804,25 +2007,54 @@ function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
   if (costs.kind === "basic" && state.controlled !== action.operator) return { error: `${action.operator} isn't the controlled operator (swap first)` };
   // A dive attack (skillSpecification 6) needs the operator in mid-air, and rotations have no jumps yet.
   if (costs.timing.specification === 6) return { error: `${action.skill} is a dive attack: it needs mid-air, and rotations have no jumps` };
-  frame = Math.max(frame, state.readyAt[action.skill] ?? 0);
+  // (A cooldown run at a recovery rate may end within a frame: the skill is ready from the next whole one.)
+  frame = Math.max(frame, Math.ceil(state.readyAt[action.skill] ?? 0));
+  // A combo cooldown at a recovery rate (attribute 93) follows the rate buffs, which may change before it ends: judged on the state then.
+  if (ctx.comboRates && costs.kind === "combo") {
+    for (let i = 0; i < 8; i++) {
+      const r = Math.max(state.frame, action.at ?? 0, Math.ceil(advance(ctx, state, frame).readyAt[action.skill] ?? 0));
+      if (r === frame) break;
+      frame = r;
+    }
+    if (!Number.isFinite(frame)) return { error: `${action.skill}: its cooldown doesn't end (recovery rate 0)` };
+  }
   // Without a time, an action waits for the current skill's own hits (interrupting would cancel them); with one, it may
   // interrupt. A skill that runs beside the current one cancels nothing, so it doesn't wait.
   const beside = ((s) => s.beside !== undefined && decide(s.beside, evalContext(ctx.data, ctx.builds.get(action.operator) as Build, ctx.panels.get(action.operator) as StatPanel, s.skillId, situationAt(ctx, action.operator, state, frame))))(kitSkill(ctx, action.operator, action.skill));
   if (action.at === undefined && !beside) frame = Math.max(frame, ownHitsLanded(state, action.operator));
-  const gate = actionGate(ctx, state, action.operator, action.skill, frame);
+  // What the basic-attack input is at the start (a buff that maps it: KitBuff.basicAttack), judged again where the start moves.
+  const mappedAt = (f: number) => {
+    if (!ctx.inputBuffs || costs.kind !== "basic" || costs.timing.specification !== 1) return undefined;
+    return advance(ctx, state, f).buffs.find((b) => b.basicAttack !== undefined && b.owner === action.operator && b.cast === undefined && b.appliedAt <= f && b.expiresAt > f)?.basicAttack;
+  };
+  let mapped = mappedAt(frame);
+  let gate = actionGate(ctx, state, action.operator, action.skill, frame, mapped);
+  for (let i = 0; i < 4 && "frame" in gate && mappedAt(gate.frame) !== mapped; i++) {
+    mapped = mappedAt(gate.frame);
+    gate = actionGate(ctx, state, action.operator, action.skill, gate.frame, mapped);
+  }
   if ("error" in gate) return gate;
+  if (mappedAt(gate.frame) !== mapped) return { error: `${action.skill}: what the basic-attack input maps to changes at frame ${gate.frame}` };
   frame = gate.frame;
   // A channel that forbids casting (cantCastSkill, a finisher's disable-cast buff) holds every cast of its operator, whatever its priority.
   frame = afterCantCast(ctx, state, action.operator, frame);
   // A finisher only on a Staggered enemy, once per stagger.
   if (costs.timing.specification === 8 && ((then) => !isStaggered(then, frame) || then.stagger.finisherUsed)(advance(ctx, state, frame))) return { error: `${action.skill} is a finisher: the enemy isn't Staggered (or this stagger's finisher is used) at frame ${frame}` };
-  if (costs.spCost > SP.max) return { error: `${action.skill} costs ${costs.spCost} SP, more than the maximum` };
-  // Wait for SP: regen is linear after any pause.
-  const spThen = spAt(state, frame);
-  if (spThen < costs.spCost) {
+  // Its SP cost at the start (attribute 45 of the caster's buffs then: judged again where the start moves).
+  const costAt = (f: number) => spCostAt(ctx, ctx.costBuffs ? advance(ctx, state, f) : state, action.operator, costs, f);
+  let spCost = costAt(frame);
+  for (let i = 0; i < 4; i++) {
+    if (spCost > SP.max) return { error: `${action.skill} costs ${spCost} SP, more than the maximum` };
+    // Wait for SP: regen is linear after any pause.
+    const spThen = spAt(state, frame);
+    if (spThen >= spCost) break;
     const from = Math.max(frame, state.spPausedUntil);
-    frame = from + Math.ceil(((costs.spCost - spAt(state, from)) * FPS) / SP.perSecond);
+    frame = from + Math.ceil(((spCost - spAt(state, from)) * FPS) / SP.perSecond);
+    const again = costAt(frame);
+    if (again === spCost) break;
+    spCost = again;
   }
+  if (spAt(state, frame) < spCost - 1e-6) return { error: `${action.skill}: its SP cost keeps changing as it waits for SP (${spCost} at frame ${frame})` };
   if (frame > ctx.scenario.durationFrames) return { error: `${action.skill} can't start before the fight ends` };
   // Energy, combo windows and states change only as hits land, so check them as they'll be at the start frame.
   const skill = kitSkill(ctx, action.operator, action.skill);
@@ -1832,20 +2064,19 @@ function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
     const ok = decide(skill.available, evalContext(ctx.data, build, ctx.panels.get(action.operator) as StatPanel, skill.skillId, situationAt(ctx, action.operator, then, frame)));
     if (!ok) return { error: `${action.skill} isn't available at frame ${frame} (${JSON.stringify(skill.available)})` };
   }
-  if (costs.energyCost > 0 || (costs.kind === "combo" && hasComboTrigger(ctx, action.operator))) {
+  const windowed = needsWindow(ctx, action.operator, skill);
+  if (costs.energyCost > 0 || windowed) {
     const then = advance(ctx, state, frame);
     if (costs.energyCost > 0 && (then.energy[action.operator] ?? 0) < costs.energyCost - 1e-9) {
       return { error: `${action.skill} needs ${costs.energyCost} ultimate energy, ${(then.energy[action.operator] ?? 0).toFixed(1)} at frame ${frame}` };
     }
-    if (costs.kind === "combo" && hasComboTrigger(ctx, action.operator)) {
-      const w = then.comboWindow[action.operator];
-      if (!w || w.until < frame) {
-        // Not open yet: wait for a hit already on its way to open it (a recorded rotation's combo follows its trigger).
-        const later = [...new Set(state.pending.map((h) => h.frame).filter((f) => f > frame))].sort((a, b) => a - b);
-        const opens = later.find((f) => {
-          const x = advance(ctx, state, f).comboWindow[action.operator];
-          return x !== undefined && x.until >= f;
-        });
+    if (windowed) {
+      const key = windowKey(ctx, action.operator, action.skill);
+      if (!windowOpen(then, action.operator, key, frame)) {
+        // Not open yet: wait for a hit already on its way to open it (a recorded rotation's combo follows its trigger), or for
+        // a delayed trigger action to (a combo opening its own next sequence some frames in).
+        const later = [...new Set([...state.pending.map((h) => h.frame), ...state.pendingActions.map((x) => x.frame)].filter((f) => f > frame))].sort((a, b) => a - b);
+        const opens = later.find((f) => windowOpen(advance(ctx, state, f), action.operator, key, f));
         if (opens === undefined || opens > ctx.scenario.durationFrames) return { error: `${action.skill}: its combo trigger hasn't happened (no open window at frame ${frame})` };
         frame = opens;
       }
@@ -1854,24 +2085,24 @@ function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
   return { frame };
 }
 
-/** Whether the operator's combo needs a window: some trigger of its kit opens one (for this build's modes). */
+/** Whether the operator's combo needs a window: some trigger of its kit opens one (for this build's modes; a window of its own skills aside). */
 function hasComboTrigger(ctx: TimelineContext, operator: string): boolean {
   const panel = ctx.panels.get(operator) as StatPanel;
   const build = ctx.builds.get(operator) as Build;
   return (ctx.kits.get(operator)?.triggers ?? []).some(
-    (t) => allActions(t.do).some((a) => a.kind === "openCombo") && (!t.if || test(t.if, evalContext(ctx.data, build, panel, triggerSkillId(operator, t), { team: ctx.scenario.team })) !== false),
+    (t) => allActions(t.do).some((a) => a.kind === "openCombo" && !a.skills) && (!t.if || test(t.if, evalContext(ctx.data, build, panel, triggerSkillId(operator, t), { team: ctx.scenario.team })) !== false),
   );
 }
 
-/** Cooldowns after a cast: the skill's own, and every member of its cooldown group on its own cooldown. */
-function castCooldowns(ctx: TimelineContext, readyAt: TimelineState["readyAt"], operator: string, skill: KitSkill, cooldownFrames: number, frame: number): TimelineState["readyAt"] {
+/** Cooldowns after a cast: the skill's own, and every member of its cooldown group on its own cooldown (`buffs`: for a combo's recovery rate). */
+function castCooldowns(ctx: TimelineContext, readyAt: TimelineState["readyAt"], operator: string, skill: KitSkill, cooldownFrames: number, frame: number, buffs: readonly ActiveBuff[]): TimelineState["readyAt"] {
   const out = { ...readyAt };
-  if (cooldownFrames > 0) out[skill.skillId] = frame + cooldownFrames;
+  if (cooldownFrames > 0) out[skill.skillId] = cooldownEnd(ctx, buffs, operator, skill, frame, cooldownFrames);
   if (skill.cooldownGroup) {
     for (const other of ctx.kits.get(operator)?.skills ?? []) {
       if (other.cooldownGroup !== skill.cooldownGroup || other.skillId === skill.skillId) continue;
       const cd = skillCosts(ctx, operator, other.skillId).cooldownFrames;
-      if (cd > 0) out[other.skillId] = Math.max(out[other.skillId] ?? 0, frame + cd);
+      if (cd > 0) out[other.skillId] = Math.max(out[other.skillId] ?? 0, cooldownEnd(ctx, buffs, operator, other, frame, cd));
     }
   }
   return out;
@@ -1925,10 +2156,11 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   // Starting a skill ends the operator's current one, unless it runs beside it (KitSkill.beside).
   const beside = skill.beside !== undefined && decide(skill.beside, evalContext(ctx.data, ctx.builds.get(operator) as Build, ctx.panels.get(operator) as StatPanel, skillId, situationAt(ctx, operator, advanced, frame)));
   const ended = beside ? { state: advanced, events: [] } : endCurrentSkill(advanced, operator, frame);
-  const s = ended.state;
+  const s = rebaseCooldowns(ctx, advanced, ended.state, frame);
   const endsNowEvents = ended.events;
   const full = skillCosts(ctx, operator, skillId);
-  const costs = followUp ? { ...full, spCost: 0, energyCost: 0, cooldownFrames: 0 } : full;
+  // Its SP cost with the caster's cost buffs (attribute 45) as it starts.
+  const costs = followUp ? { ...full, spCost: 0, energyCost: 0, cooldownFrames: 0 } : { ...full, spCost: spCostAt(ctx, advanced, operator, full, frame) };
   // Hits that need stacks happen only if the stacks are there at the cast; meeting a consuming requirement uses the stack up.
   const own = s.stacks[operator] ?? {};
   const panel = ctx.panels.get(operator) as StatPanel;
@@ -1940,8 +2172,10 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   // Haste (attribute 92, KeywordSpeedUpScalar, default 1, at most 1.3): the cast plays faster (assumed; in-game test 19).
   const speed = actionSpeed(ctx, s, operator, frame);
   const scaled = (f: number) => (speed === 1 ? f : Math.round(f / speed));
-  const windowCount = costs.kind === "combo" ? s.comboWindow[operator]?.count : undefined;
-  const windowSource = costs.kind === "combo" ? s.comboWindow[operator]?.source : undefined;
+  // A combo's window (its own, or its operator's; none for one cast without it): what opened it, and it's used up.
+  const windowOf = costs.kind === "combo" && skill.comboWindow !== false ? windowKey(ctx, operator, skillId) : undefined;
+  const windowCount = windowOf !== undefined ? s.comboWindow[windowOf]?.count : undefined;
+  const windowSource = windowOf !== undefined ? s.comboWindow[windowOf]?.source : undefined;
   const inRange = (r: StackRequirement) => {
     const n = own[r.stack] ?? 0;
     return (r.atLeast === undefined || n >= r.atLeast) && (r.below === undefined || n < r.below);
@@ -2001,8 +2235,8 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   }
   if (costs.energyCost > 0) next = { ...next, energy: { ...next.energy, [operator]: Math.max(0, (next.energy[operator] ?? 0) - costs.energyCost) } };
   if (skill.energyBlockSeconds) next = { ...next, energyBlockedUntil: { ...next.energyBlockedUntil, [operator]: frame + Math.round(skill.energyBlockSeconds * FPS) } };
-  if (!followUp && costs.kind === "combo" && next.comboWindow[operator]) {
-    const { [operator]: _used, ...rest } = next.comboWindow;
+  if (!followUp && windowOf !== undefined && next.comboWindow[windowOf]) {
+    const { [windowOf]: _used, ...rest } = next.comboWindow;
     next = { ...next, comboWindow: rest };
   }
   // Link (buff_common_affixes_combo_trigger → skillimbue_atk): stacks a kit gives the team (trigger action `link`: the data's
@@ -2032,16 +2266,19 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     next = { ...next, buffs: [...next.buffs.filter((b) => !consumedBuffs.includes(b)), ...consumedBuffs.map((b) => ({ ...b, cast: castIndex, appliedAt: frame, expiresAt: lastHit + 1 }))] };
   }
   // A conditional jump reads the situation at the cast, the enemy's state included (Arclight's battle skill on an Electrified target).
-  const planned = castJumps(full.timing, skill, evalContext(ctx.data, ctx.builds.get(operator) as Build, panel, skill.skillId, { ...situationAt(ctx, operator, s, frame), ...castSituation }), operator, castIndex, frame, scaled);
+  const jumpEc = evalContext(ctx.data, ctx.builds.get(operator) as Build, panel, skill.skillId, { ...situationAt(ctx, operator, s, frame), ...castSituation });
+  const planned = castJumps(full.timing, skill, jumpEc, operator, castIndex, frame, scaled);
+  // Its conditional windows open at this cast (KitSkill.windows), judged as its jumps are.
+  const openWindows = full.timing.windows.flatMap((w, i) => (w.conditional && skill.windows?.some((k) => k.from === w.from && (k.skills === undefined || sameSkills(k.skills, w.skills)) && (!k.if || decide(k.if, jumpEc))) ? [i] : []));
   const cast: TimelineState = {
     ...next,
     sp: s.sp - costs.spCost,
     spPausedUntil: costs.spCost > 0 ? frame + SP.pauseAfterSpendFrames : s.spPausedUntil,
-    acting: beside ? s.acting : { ...s.acting, [operator]: { skill: skillId, frame, cast: castIndex, ...(speed !== 1 ? { speed } : {}) } },
+    acting: beside ? s.acting : { ...s.acting, [operator]: { skill: skillId, frame, cast: castIndex, ...(speed !== 1 ? { speed } : {}), ...(openWindows.length ? { windows: openWindows } : {}) } },
     pendingJumps: beside ? next.pendingJumps : [...next.pendingJumps, ...planned],
     ...(full.timing.specification === 8 ? { stagger: { ...s.stagger, finisherUsed: true } } : {}),
-    chainNext: beside ? next.chainNext : chainAfter(ctx, next, operator, skill, frame, speed),
-    readyAt: castCooldowns(ctx, next.readyAt, operator, skill, costs.cooldownFrames, frame),
+    chainNext: beside ? next.chainNext : chainAfter(ctx, next, operator, skill, frame, speed, openWindows),
+    readyAt: castCooldowns(ctx, next.readyAt, operator, skill, costs.cooldownFrames, frame, s.buffs),
     ...(skill.takesControl ? { controlled: operator } : {}),
     pending: [...s.pending, ...pending],
     stacks,
@@ -2052,7 +2289,9 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     ...(windowCount !== undefined ? { count: windowCount } : {}), ...(followUp ? { followUp: true } : {}),
   };
   const endedEvents: BattleEvent[] = [...new Map(consumedBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id, remaining: remainingOf([b], frame), consumed: true, ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) }])).values()];
-  return { state: slowDown(ctx, cast, operator, { ...costs.timing, slowdowns: plannedSlowdowns(costs.timing, planned) }, frame), events: [...endsNowEvents, castEvent, ...endedEvents, ...linkEnded], origin: { operator, kind: costs.kind } };
+  // Buffs the cast used up (Link, consumed ones) may have set a combo's recovery rate.
+  const spent = rebaseCooldowns(ctx, { ...cast, buffs: s.buffs }, cast, frame);
+  return { state: slowDown(ctx, spent, operator, { ...costs.timing, slowdowns: plannedSlowdowns(costs.timing, planned) }, frame), events: [...endsNowEvents, castEvent, ...endedEvents, ...linkEnded], origin: { operator, kind: costs.kind } };
 }
 
 export interface TimelineResult {
@@ -2148,11 +2387,9 @@ export function startsNow(ctx: TimelineContext, state: TimelineState, action: Ro
     } catch {
       return false;
     }
-    if ((state.readyAt[action.skill] ?? 0) > state.frame || spAt(state, state.frame) < costs.spCost) return false;
-    if (costs.kind === "combo" && hasComboTrigger(ctx, action.operator)) {
-      const w = advance(ctx, state, state.frame).comboWindow[action.operator];
-      if (!w || w.until < state.frame) return false;
-    }
+    if ((state.readyAt[action.skill] ?? 0) > state.frame || spAt(state, state.frame) < spCostAt(ctx, state, action.operator, costs, state.frame)) return false;
+    const skill = ctx.kits.get(action.operator)?.skills.find((x) => x.skillId === action.skill);
+    if (skill && needsWindow(ctx, action.operator, skill) && !windowOpen(advance(ctx, state, state.frame), action.operator, windowKey(ctx, action.operator, action.skill), state.frame)) return false;
   }
   const r = startFrom(ctx, state, action);
   return "frame" in r && r.frame === state.frame;

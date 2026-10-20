@@ -50,6 +50,8 @@ export interface ActiveBuff {
   readonly sharedTimer?: boolean;
   /** Counts as a Link stack (KitBuff.link). */
   readonly link?: boolean;
+  /** While active, its owner's basic-attack input is this skill (KitBuff.basicAttack). */
+  readonly basicAttack?: string;
   /** A recording buff (KitBuff.records): its rate, and the damage it has recorded. */
   readonly records?: { readonly rate: number; readonly total: number };
 }
@@ -102,6 +104,7 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
     ...(buff.gameBuff ? { gameBuff: buff.gameBuff } : {}),
     ...(buff.sharedTimer ? { sharedTimer: true } : {}),
     ...(buff.link ? { link: true } : {}),
+    ...(buff.basicAttack ? { basicAttack: buff.basicAttack } : {}),
     owner: build.operator,
     target: buff.target,
     appliedAt: frame,

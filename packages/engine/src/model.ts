@@ -76,8 +76,12 @@ export interface SkillTiming {
   readonly durationFrames: number;
   /** Until here (exclusiveFrame) it can't be interrupted, except as `windows` and priorities allow. */
   readonly exclusiveFrames: number;
-  /** AllowNextSkillAction: from `from` to `to` (inclusive) these skills may start. */
-  readonly windows: readonly { readonly from: number; readonly to: number; readonly skills: readonly string[] }[];
+  /**
+   * AllowNextSkillAction: from `from` to `to` (inclusive) these skills may
+   * start. `conditional`: it's under a TogglableAction or an IfElse branch,
+   * so it's open only when the kit says (KitSkill.windows).
+   */
+  readonly windows: readonly { readonly from: number; readonly to: number; readonly skills: readonly string[]; readonly conditional?: boolean }[];
   /** ChannelingCastingAction: the caster can't cast skills / can't be swapped out, from `from` to `to`. */
   readonly channels: readonly { readonly from: number; readonly to: number; readonly cantCastSkill: boolean; readonly cantSwitch: boolean }[];
   /** skillSpecification: 1 basic attack, 3 battle skill, 4 combo, 5 ultimate, 6 plunging, 8 finisher. */
@@ -100,8 +104,19 @@ export interface SkillTiming {
   readonly jumps: readonly { readonly at: number; readonly to: number; readonly conditional: boolean }[];
   /** InterruptCurSkillAction on its own timeline: the action ends at these frames, unless a jump skips them. */
   readonly ends: readonly number[];
-  /** MarkCanInterrupt on its own timeline: once the playhead reaches it (a jump can skip it), the cast counts as past its exclusive frame. */
-  readonly interruptibleFrom?: number;
+  /**
+   * MarkCanInterrupt on its own timeline, in frame order (one per path of a
+   * skill whose jumps choose the path): once the playhead reaches the first
+   * one no taken jump skipped, the cast counts as past its exclusive frame.
+   */
+  readonly interruptibleFrom?: readonly number[];
+  /**
+   * The skills a basic-attack input during it maps to (ComboCacheAction,
+   * cmdType 0), when it has any: only these continue its basic-attack chain
+   * (a window listing another chain step only gives that step's frames when
+   * something else maps the input to it).
+   */
+  readonly inputMap?: readonly string[];
 }
 
 /** SP a grant gives: natural (spent, it gives the team ultimate energy, as regenerated SP does) or returned (spent first, gives none). */
@@ -478,6 +493,14 @@ export interface KitBuff {
   /** Layers share one timer that each new layer refreshes (BuffData stackingType 8; the loader sets it from the game buff). */
   readonly sharedTimer?: boolean;
   /**
+   * While active, its owner's basic-attack input is this skill (a
+   * ComboCacheAction in the game buff's buffEvent 5; the loader sets it from
+   * the game buff): it starts as a chain head or inside any window listing
+   * it, another step's open chain window doesn't defer it, and the owner's
+   * other basic attacks (not finishers) can't start. Judged at the start.
+   */
+  readonly basicAttack?: string;
+  /**
    * A team buff that counts as one Link stack while active: the next battle
    * skill or ultimate that uses Link uses it too, and that ends it
    * (Akekuri's talent 2: global_buff_combo_trigger).
@@ -616,6 +639,30 @@ export interface KitSkill {
   readonly chainStep?: boolean;
   /** Skills of one group share a cooldown: casting one puts every member on its own cooldown (Typhoeus's two combos). */
   readonly cooldownGroup?: string;
+  /**
+   * When the skill's conditional windows (SkillTiming.windows marked
+   * `conditional`, by their frame `from` and, to tell apart two at one
+   * frame, their `skills`; without them, every one at that frame) are open:
+   * when `if` holds for the caster at the cast (as for `jumps`), always
+   * without one. A conditional window not listed stays closed.
+   */
+  readonly windows?: readonly { readonly from: number; readonly skills?: readonly string[]; readonly if?: Predicate }[];
+  /**
+   * `false`: a combo-kind skill cast without the combo window (from another
+   * button, e.g. under a ChangeSkillAction of the battle skill), with its
+   * own cost and cooldown and gated by `available`; a combo for everything
+   * else (its cast and hits are of kind combo, it doesn't use Link). It
+   * neither needs nor uses up the operator's combo window, and an
+   * `openCombo` doesn't look at its cooldown.
+   */
+  readonly comboWindow?: false;
+  /**
+   * Skill frames [from, until) on the cast's playhead in which the
+   * controlled operator doesn't dash at an enemy attack, with dodging on: a
+   * counter that isn't a jump (a guard that wants to be hit). The attack
+   * lands and its triggers fire.
+   */
+  readonly noDodge?: readonly [number, number];
   /** Hits may be none: a skill that only changes state (Laevatain's ultimate, Liino's End Stance) does it with triggers on its cast. */
   readonly hits: readonly KitHit[];
 }

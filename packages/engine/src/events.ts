@@ -160,8 +160,18 @@ export const STATUS_EVENTS: readonly StatusOn["event"][] = ["reaction", "inflict
 export type TriggerAction = TriggerActionKind & { readonly if?: Predicate };
 
 export type TriggerActionKind =
-  /** Open the owner's combo window (not while its combo is on cooldown). */
-  | { readonly kind: "openCombo" }
+  /**
+   * Open the owner's combo window (not while its combo is on cooldown), for
+   * `seconds` (default 6) or while the owner's buff `whileBuff` is active
+   * (an instance applied by the frame it opens, e.g. later in the same
+   * trigger; extending the buff extends the window, its end closes it, and
+   * an instance applied afterwards doesn't reopen it), whichever
+   * ends first. `skills`: a window of its own that only these combo skills
+   * use and need (not while all of them are on cooldown), which the owner's
+   * own combo can open (a combo opening its next sequence: Rossi's
+   * TriggerComboSkillAction).
+   */
+  | { readonly kind: "openCombo"; readonly skills?: readonly string[]; readonly seconds?: ValueExpr; readonly whileBuff?: string }
   /** Apply to the enemy, as the owner. */
   | { readonly kind: "apply"; readonly applies: readonly KitApplication[] }
   | { readonly kind: "gain"; readonly gains: readonly StackGain[] }
@@ -216,9 +226,12 @@ export type TriggerActionKind =
    * `seconds`, or by `fraction` of their full cooldown (SetSkillCdAtOnce
    * isPercentage; assumed, in-game test 36); negative cuts it. `set` starts
    * one of `set` seconds whether one is running or not (SetSkillCdAtOnce
-   * functionType 1: End Stance's lockout on Liino's battle skill).
+   * functionType 1: End Stance's lockout on Liino's battle skill);
+   * `setFraction` likewise one of that fraction of each skill's own full
+   * cooldown (SetSkillCdAtOnce functionType 1 with isPercentage: Rossi's
+   * combo when sequence 2 isn't cast).
    */
-  | ({ readonly kind: "cooldown"; readonly who: "self" | "eventOperator" | { readonly slot: number }; readonly skills: SkillType } & ({ readonly seconds: ValueExpr } | { readonly fraction: ValueExpr } | { readonly set: ValueExpr }))
+  | ({ readonly kind: "cooldown"; readonly who: "self" | "eventOperator" | { readonly slot: number }; readonly skills: SkillType } & ({ readonly seconds: ValueExpr } | { readonly fraction: ValueExpr } | { readonly set: ValueExpr } | { readonly setFraction: ValueExpr }))
   /** The owner casts one of its kit skills by itself (SkillData CastSkill: a follow-up, e.g. Typhoeus's aerial shots off-field): no control, cost or cooldown. */
   | { readonly kind: "cast"; readonly skill: string }
   /**

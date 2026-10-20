@@ -85,6 +85,9 @@ interface RawKit {
     beside?: Predicate;
     cooldownGroup?: string;
     chainStep?: boolean;
+    windows?: { from: number; skills?: string[]; if?: Predicate }[];
+    comboWindow?: false;
+    noDodge?: [number, number];
     hits: RawHit[];
   }[];
   conditions?: RawCondition[];
@@ -208,10 +211,13 @@ function gameBuffInstances(file: string, b: Pick<KitBuff, "id" | "maxStacks">, r
  * type 8: layers on one refreshed timer. An attribute modifier the game
  * buff has in formulaItem 6 is a percentage (`percent`).
  */
-export function withGameBuff(file: string, b: KitBuff): KitBuff {
-  const { gameBuff } = b;
-  if (!gameBuff) return b;
-  const raw = gameBuffFile(file, b.id, gameBuff);
+export function withGameBuff(file: string, b0: KitBuff): KitBuff {
+  const { gameBuff } = b0;
+  if (!gameBuff) return b0;
+  const raw = gameBuffFile(file, b0.id, gameBuff);
+  // The basic-attack input it maps (a ComboCacheAction in its buffEvent 5); a kit's own must agree with the data.
+  if (b0.basicAttack !== undefined && b0.basicAttack !== raw.basicAttack) throw new Error(`${file}: buff ${b0.id}: ${raw.id} maps the basic-attack input to ${raw.basicAttack ?? "nothing"}, not ${b0.basicAttack}`);
+  const b = raw.basicAttack !== null ? { ...b0, basicAttack: raw.basicAttack } : b0;
   const modifiers = b.modifiers.map((m) => withPercent(file, b.id, raw, m));
   const s = raw.stacking;
   const instances = gameBuffInstances(file, b, raw);
@@ -231,6 +237,8 @@ interface KitScope {
   readonly buffDefs: ReadonlyMap<string, KitBuff>;
   /** Whether a skill ID is one of the owner's skills (cast filters name them). */
   readonly isSkill: (id: string) => boolean;
+  /** Whether a skill ID is a combo-kind skill of the owner's kit cast with the combo window (`openCombo` `skills` name them); none for equipment. */
+  readonly isComboSkill?: (id: string) => boolean;
   /** Whether a skill or source ID is one the kit can read values from. */
   readonly isSource: (id: string) => boolean;
   /** Throws unless the source has the key (at every level, for skills). */
@@ -436,9 +444,9 @@ function kitChecker(scope: KitScope) {
           if (!(a.from < a.until && a.from < a.to)) throw new Error(`${where}: a jump moves forward from inside [from, until)`);
           break;
         case "cooldown": {
-          const given = (["seconds", "fraction", "set"] as const).filter((k) => k in a);
-          if (given.length !== 1) throw new Error(`${where}: a cooldown change has one of seconds, fraction or set`);
-          checkValue("seconds" in a ? a.seconds : "fraction" in a ? a.fraction : a.set, skillId, `${where} cooldown change`);
+          const given = (["seconds", "fraction", "set", "setFraction"] as const).filter((k) => k in a);
+          if (given.length !== 1) throw new Error(`${where}: a cooldown change has one of seconds, fraction, set or setFraction`);
+          checkValue("seconds" in a ? a.seconds : "fraction" in a ? a.fraction : "set" in a ? a.set : a.setFraction, skillId, `${where} cooldown change`);
           break;
         }
         case "apply":
@@ -458,6 +466,15 @@ function kitChecker(scope: KitScope) {
           if (a.seconds !== undefined) checkValue(a.seconds, skillId, `${where} link seconds`);
           break;
         case "openCombo":
+          if (a.skills && a.skills.length === 0) throw new Error(`${where}: openCombo: skills names at least one skill`);
+          for (const id of a.skills ?? []) if (!scope.isComboSkill?.(id)) throw new Error(`${where}: openCombo: ${id} isn't a combo skill of ${scope.owner}'s kit cast with the combo window`);
+          if (a.whileBuff !== undefined) {
+            const b = buffDefs.get(a.whileBuff);
+            if (!b) throw new Error(`${where}: openCombo: unknown buff ${a.whileBuff}`);
+            if (b.target === "enemy") throw new Error(`${where}: openCombo: the window lasts while one of the owner's own buffs is active, not an enemy debuff (${a.whileBuff})`);
+          }
+          if (a.seconds !== undefined) checkValue(a.seconds, skillId, `${where} openCombo seconds`);
+          break;
         case "hits":
           break;
       }
@@ -530,6 +547,7 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
     stackIds: idsOf(where0, "stack", kit.stacks ?? []),
     buffDefs: new Map((kit.buffs ?? []).map((b) => [b.id, b])),
     isSkill: ownSkill,
+    isComboSkill: (id) => kit.skills.some((x) => x.skillId === id && x.damageType === "combo" && x.comboWindow !== false),
     isSource: (id) => attached.has(id) || ownSkill(id),
     talentSources: (i) => {
       const index = [...new Set((op.talentNodes ?? []).map((n) => n.index))].sort((a, b) => a - b)[i];
@@ -558,6 +576,17 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
       if (matching.length > 1) throw new Error(`${where}: jumps: several conditional jumps at frame ${j.at}; say which with \`to\` (${matching.map((x) => x.to).join(", ")})`);
       c.checkPredicate(j.if, `${where} jump at ${j.at}`);
     }
+    // A conditional window (under a TogglableAction or an IfElse branch) is open when the kit says: by its frame, and its skills to tell two apart.
+    const conditional = (skill.timing?.windows ?? []).filter((x) => x.conditional);
+    const sameSkills = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x) => b.includes(x));
+    for (const w of s.windows ?? []) {
+      if (!conditional.some((x) => x.from === w.from && (w.skills === undefined || sameSkills(w.skills, x.skills)))) {
+        throw new Error(`${where}: windows: the skill has no conditional window from frame ${w.from}${w.skills ? ` for ${w.skills.join(", ")}` : ""} (its conditional windows: ${conditional.map((x) => `${x.from}–${x.to} ${x.skills.join("+")}`).join(", ") || "none"})`);
+      }
+      if (w.if) c.checkPredicate(w.if, `${where} window from ${w.from}`);
+    }
+    if (s.comboWindow === false && s.damageType !== "combo") throw new Error(`${where}: comboWindow: false is for a combo-kind skill`);
+    if (s.noDodge && !(s.noDodge[0] >= 0 && s.noDodge[0] < s.noDodge[1])) throw new Error(`${where}: noDodge is a range [from, until) of skill frames`);
     return {
       skillId: s.skillId,
       label: s.label,
@@ -571,9 +600,19 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
       ...(s.beside ? { beside: s.beside } : {}),
       ...(s.cooldownGroup ? { cooldownGroup: s.cooldownGroup } : {}),
       ...((s.chainStep ?? isChainStep(data, kit, s.skillId)) ? { chainStep: true } : {}),
+      ...(s.windows ? { windows: s.windows } : {}),
+      ...(s.comboWindow === false ? { comboWindow: false as const } : {}),
+      ...(s.noDodge ? { noDodge: s.noDodge } : {}),
       hits: c.normalizeHits(s.hits, { skillId: s.skillId, damageType: s.damageType, label: s.label, checkScale: (key, w) => checkKey(skill, key, w), defaultEvent: s.skillId, finalStrike: (h, events) => isFinalStrike(s.skillId, events, s.hits.length) }, where),
     };
   });
+  const buffs = c.normalizeBuffs(kit.buffs ?? []);
+  // A buff that maps the basic-attack input maps it to one of the kit's basic attacks.
+  for (const b of buffs) {
+    if (b.basicAttack === undefined) continue;
+    if (b.target === "enemy") throw new Error(`${where0}: buff ${b.id}: an enemy debuff can't map its owner's basic-attack input`);
+    if (!kit.skills.some((x) => x.skillId === b.basicAttack && x.damageType === "basic")) throw new Error(`${where0}: buff ${b.id}: maps the basic-attack input to ${b.basicAttack}, which isn't a basic attack of the kit`);
+  }
   return {
     operator: kit.operator,
     stacks: (kit.stacks ?? []).map((x) => {
@@ -581,7 +620,7 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
       return { id: x.id, label: x.label, max: x.max, ...(x.initial !== undefined ? { initial: x.initial } : {}) };
     }),
     ...(kit.activeConditions ? { activeConditions: kit.activeConditions } : {}),
-    buffs: c.normalizeBuffs(kit.buffs ?? []),
+    buffs,
     triggers: c.checkTriggers((kit.triggers ?? []).map(({ note: _note, ...t }) => t)),
     ...(kit.statusTweaks
       ? {
@@ -632,13 +671,15 @@ function loadEquipmentKit(data: KitData, file: string, kit: RawEquipmentKit): Eq
     checkSourceKey: (sid, key, where) => checkKey(data.skills[sid] as SkillData, key, where),
   });
   idsOf(where0, "buff", kit.buffs ?? []);
+  const buffs = c.normalizeBuffs(kit.buffs ?? []);
+  for (const b of buffs) if (b.basicAttack !== undefined) throw new Error(`${where0}: buff ${b.id}: equipment can't map its wearer's basic-attack input (${b.basicAttack})`);
   return {
     id,
     stacks: (kit.stacks ?? []).map((x) => {
       if (x.initial !== undefined) c.checkValue(x.initial, "", `${where0}: stack ${x.id} initial`);
       return { id: x.id, label: x.label, max: x.max, ...(x.initial !== undefined ? { initial: x.initial } : {}) };
     }),
-    buffs: c.normalizeBuffs(kit.buffs ?? []),
+    buffs,
     triggers: c.checkTriggers((kit.triggers ?? []).map(({ note: _note, ...t }) => t)),
     conditions: (kit.conditions ?? []).map((x) => {
       if (x.source.kind !== "weaponSkill" || !weapon) throw new Error(`${where0}: condition ${x.id}: equipment conditions use weaponSkill sources (weapons only)`);

@@ -1664,7 +1664,7 @@ describe("batch 2 group 3: chain steps by timing", () => {
   const g: GameData = {
     ...data,
     operators: { ...data.operators, [op]: { ...laev, skillGroups: { ...laev.skillGroups, [L + "attack4_1"]: "basic" } } },
-    skills: { ...data.skills, [L + "attack3"]: { ...a3, timing: { ...a3?.timing, windows: [{ from: 12, to: 20, skills: [L + "attack4"] }, { from: 21, to: 32, skills: [L + "attack4_1"] }] } }, [L + "attack4_1"]: a4 } as GameData["skills"],
+    skills: { ...data.skills, [L + "attack3"]: { ...a3, timing: { ...a3?.timing, windows: [{ from: 12, to: 20, skills: [L + "attack4"] }, { from: 21, to: 32, skills: [L + "attack4_1"] }], inputMap: [L + "attack4", L + "attack4_1"] } }, [L + "attack4_1"]: a4 } as GameData["skills"],
     kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills: [...kit.skills, { ...step4, skillId: L + "attack4_1", chainStep: true }] } } },
   };
   const after3 = () => {
@@ -1823,7 +1823,7 @@ describe("jumps in a skill's timeline", () => {
 
   it("reads MarkCanInterrupt and jumps inside a top-level IfElse from SkillData (Wulfgard's battle skill)", () => {
     const t = data.skills["chr_0006_wolfgd_normal_skill"]?.timing;
-    expect(t?.interruptibleFrom).toBe(48);
+    expect(t?.interruptibleFrom).toEqual([48]);
     expect(t?.jumps).toEqual([{ at: 31, to: 118, conditional: true }, { at: 117, to: 247, conditional: false }]);
   });
 
