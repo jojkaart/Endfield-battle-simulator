@@ -1,0 +1,56 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Xaihi (P5, OBJ Arts Identifier) with Si vs Rhodagn, Xaihi's ultimate charged. Xaihi's battle skill brings out the Auxiliary Crystal (frame 37); her own Final Strike uses its first treatment (Arts Amp 0.20 on her for 25 s), then, after the swap, Si's Final Strike the second (the Amp on Si), which opens Xaihi's combo: a plain hit on a clean enemy, its Cryo Infliction. Her ultimate gives the team Cryo and Nature Amp (atk_up + min(Intellect × wisd_up, wisd_max)) for 12 s, over Si's battle skill and a chain. A second crystal and two more Final Strikes by Si open the combo again, now on a Cryo-inflicted enemy: talent 1's Cryo DMG Taken counts on that hit, and its Cryo Infliction is an Arts Burst a second later, which gives the team OBJ Arts Identifier's Heat and Electric DMG (no Heat or Electric hits here).",
+  "team": [
+    "xaihi-p5.json",
+    "si-jade-vessel.json"
+  ],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0011_seraph": "full"
+  },
+  "durationSeconds": 40,
+  "crit": "expected",
+  "rotation": [
+    { "operator": "chr_0011_seraph", "skill": "chr_0011_seraph_normal_skill" },
+    { "operator": "chr_0011_seraph", "skill": "chr_0011_seraph_attack1" },
+    { "operator": "chr_0011_seraph", "skill": "chr_0011_seraph_attack2" },
+    { "operator": "chr_0011_seraph", "skill": "chr_0011_seraph_attack3" },
+    { "operator": "chr_0011_seraph", "skill": "chr_0011_seraph_attack4" },
+    { "operator": "chr_0011_seraph", "skill": "chr_0011_seraph_attack5" },
+    { "operator": "chr_0036_jsspsi", "skill": "swap", "at": 4.2},
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack1" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack2" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack3" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack4" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack5" },
+    { "operator": "chr_0011_seraph", "skill": "chr_0011_seraph_combo_skill", "at": 7.7},
+    { "operator": "chr_0011_seraph", "skill": "chr_0011_seraph_ultimate_skill", "at": 9},
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_normal_skill", "at": 11.4},
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack1" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack2" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack3" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack4" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack5" },
+    { "operator": "chr_0011_seraph", "skill": "chr_0011_seraph_normal_skill", "at": 16},
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack1" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack2" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack3" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack4" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack5" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack1" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack2" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack3" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack4" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack5" },
+    { "operator": "chr_0011_seraph", "skill": "chr_0011_seraph_combo_skill" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack1" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack2" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack3" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack4" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack5" }
+  ]
+}

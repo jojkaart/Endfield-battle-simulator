@@ -1,0 +1,41 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_funnel_0014",
+  "sources": [
+    "OBJ Arts Identifier (5-star Arts Unit). Skill 3, sk_wpn_funnel_0014 (rmxlinux Json/SkillData; values from SkillPatchTable at the weapon's skill-3 level: hp_up 0.10-0.28, dmg_up 0.08 at level 1 to 0.224 at level 9, duration 15, lv): \"Max HP +{hp_up}. When the wielder's combo skill applies Arts Burst or Physical Status, the entire team gains Heat DMG Dealt and Electric DMG Dealt +{dmg_up} for {duration}s. Effects of the same name cannot stack.\" passiveEventActions abilityEvent 127 (the wielder applies an Arts Burst) and 401 (the wielder applies a Physical Status), each CheckOriginSkillType skillTypeList [6] (combo) → CreateBuffAction buff_wpn_funnel_0014_up on every team member (CharacterTeamFinder), assigning dmg_up, duration and lv.",
+    "buff_wpn_funnel_0014_up: attributes 51 (Heat DMG) and 52 (Electric DMG) formulaItem 5 + dmg_up for duration; stackingType 11 with priorityKey lv and maxStackCnt 1, so two wielders' copies are one group and the strongest acts (the loader's stackGroup from gameBuff: batch 3 B2).",
+    "Its other effects (Intellect, wpn_sp_attr_phy_spell_mid: Arts Intensity, Max HP + hp_up: cardAttributeModifier) are in the stat panel. toggleBuffs names buff_wpn_passive_spirit_01, which has no BuffData file; buff_wpn_funnel_0014_hp (formulaItem 7) is never created. The CreateBuffActions' finishWithNextSkillIfNotInherited is read as for every other weapon passive (no effect on a passive's buff). Docs: docs/kit-batches/batch-3/chr_0011_seraph.md (E3-E5)."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_funnel_0014.heat_electric",
+      "label": "OBJ Arts Identifier: team Heat and Electric DMG (after the wielder's combo bursts or applies a physical status)",
+      "target": "team",
+      "gameBuff": "buff_wpn_funnel_0014_up",
+      "duration": "duration",
+      "modifiers": [
+        { "attr": 51, "value": "dmg_up" },
+        { "attr": 52, "value": "dmg_up" }
+      ],
+      "note": "Created on the event, so the hit that caused it doesn't have it. A burst lands a second after its infliction on the enemy's clock (A5), so the buff starts then, not at the combo's hit."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_funnel_0014.combo_burst",
+      "on": { "event": "burst", "fromKinds": ["combo"] },
+      "by": "self",
+      "skill": "sk_wpn_funnel_0014",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0014.heat_electric" }],
+      "note": "abilityEvent 127 + CheckOriginSkillType [6]: an Arts Burst from the wielder's combo skill."
+    },
+    {
+      "id": "wpn_funnel_0014.combo_physical",
+      "on": { "event": "physicalStatus", "fromKinds": ["combo"] },
+      "by": "self",
+      "skill": "sk_wpn_funnel_0014",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0014.heat_electric" }],
+      "note": "abilityEvent 401 + CheckOriginSkillType [6], without CheckPhysicalInflictionType: any physical status (Lift, Knock Down, Crush, Breach). Whether a Lift or Knock Down that only adds a Vulnerable stack counts is P1 (in-game test 39; engine: no)."
+    }
+  ]
+}
