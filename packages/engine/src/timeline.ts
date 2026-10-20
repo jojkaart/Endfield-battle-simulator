@@ -522,10 +522,17 @@ function chainAfter(ctx: TimelineContext, st: TimelineState, operator: string, s
 /** The frame by which an operator's current cast has landed its hits, and run its awaited delayed actions, that an interrupt would cancel. */
 function ownHitsLanded(st: TimelineState, operator: string): number {
   const cast = st.acting[operator]?.cast ?? st.casts.findLastIndex((c) => c.operator === operator);
+  // An end on its timeline that comes before any jump (InterruptCurSkillAction) drops what lies past it: nothing there to
+  // wait for on this path (Snowshine's bash, reached only through her counter's jump; a jump an attack sets off is judged again).
+  const next = st.pendingJumps.filter((j) => j.operator === operator && j.cast === cast).reduce<PendingJump | null>((a, x) => (!a || x.frame < a.frame ? x : a), null);
+  const until = next?.end ? next.frame : Infinity;
   let last = 0;
+  const wait = (f: number) => {
+    if (f <= until) last = Math.max(last, f);
+  };
   // A detached hit is the cast's own until its launch: interrupting before it would cancel it.
-  for (const h of st.pending) if (h.operator === operator && h.cast === cast) last = Math.max(last, h.detached ? (h.launchAt ?? 0) : h.frame);
-  for (const a of st.pendingActions) if ((a.awaited || a.launchAt !== undefined) && a.cast && a.cast.operator === operator && a.cast.index === cast) last = Math.max(last, a.launchAt ?? a.frame);
+  for (const h of st.pending) if (h.operator === operator && h.cast === cast) wait(h.detached ? (h.launchAt ?? 0) : h.frame);
+  for (const a of st.pendingActions) if ((a.awaited || a.launchAt !== undefined) && a.cast && a.cast.operator === operator && a.cast.index === cast) wait(a.launchAt ?? a.frame);
   return last;
 }
 

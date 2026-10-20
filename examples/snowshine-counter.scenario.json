@@ -1,0 +1,37 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Snowshine alone (P5, Seeker of Dark Lung, no gear) vs Rhodagn, which attacks at 1 and 6 s (its clock: slow-downs delay it); she starts with her ultimate charged. A battle skill the attack catches (frames 0–51) counters: the playhead jumps to 107 (second Protection, talent 2's energy, the second team-energy half) and the bash lands at 125 with a Cryo infliction and P5's SP. The attack also opens her combo (interim: any attack on the controlled operator stands for 'drops below 60% HP'), cast after the bash: 10 energy, no damage. The second counter's Cryo infliction bursts on the first one's (Seeker: an ATK layer before the burst's damage). The battle skill keeps the basic chain, so the chain goes on where it was. The Snow Zone ticks ten times and forcibly Solidifies the enemy at its 4th tick (P3: +2 s). The last battle skill isn't attacked: MarkCanInterrupt frees her at its frame 67.",
+  "team": [
+    "snowshine-p5.json"
+  ],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0014_aurora": "full"
+  },
+  "durationSeconds": 30,
+  "crit": "expected",
+  "enemyActions": [
+    { "kind": "attack", "at": [1, 6] }
+  ],
+  "rotation": [
+    { "operator": "chr_0014_aurora", "skill": "chr_0014_aurora_normal_skill", "at": 0.5 },
+    { "operator": "chr_0014_aurora", "skill": "chr_0014_aurora_combo_skill" },
+    { "operator": "chr_0014_aurora", "skill": "chr_0014_aurora_attack1" },
+    { "operator": "chr_0014_aurora", "skill": "chr_0014_aurora_attack2" },
+    { "operator": "chr_0014_aurora", "skill": "chr_0014_aurora_normal_skill", "at": 5.5 },
+    { "operator": "chr_0014_aurora", "skill": "chr_0014_aurora_attack3" },
+    { "operator": "chr_0014_aurora", "skill": "chr_0014_aurora_attack1" },
+    { "operator": "chr_0014_aurora", "skill": "chr_0014_aurora_attack2" },
+    { "operator": "chr_0014_aurora", "skill": "chr_0014_aurora_ultimate_skill" },
+    { "operator": "chr_0014_aurora", "skill": "chr_0014_aurora_attack1" },
+    { "operator": "chr_0014_aurora", "skill": "chr_0014_aurora_attack2" },
+    { "operator": "chr_0014_aurora", "skill": "chr_0014_aurora_normal_skill" },
+    { "operator": "chr_0014_aurora", "skill": "chr_0014_aurora_attack3" },
+    { "operator": "chr_0014_aurora", "skill": "chr_0014_aurora_attack1" },
+    { "operator": "chr_0014_aurora", "skill": "chr_0014_aurora_attack2" },
+    { "operator": "chr_0014_aurora", "skill": "chr_0014_aurora_attack3" }
+  ]
+}

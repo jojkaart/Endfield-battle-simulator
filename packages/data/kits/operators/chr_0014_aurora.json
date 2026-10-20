@@ -1,0 +1,178 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0014_aurora",
+  "sources": [
+    "Hits, frames, keys and events: rmxlinux Json/SkillData chr_0014_aurora_* and Json/BuffData buff_chr_0014_aurora_* (game 1.6), as compiled by efsim kit-draft (element, poise, Final Strike, the Snow Zone's ticks through the entity's AuraAction, the hitless energy and SP as cast triggers), plus what it leaves out (Protection, the counter's jump, the combo's heal and window). Batch-3 report docs/kit-batches/batch-3/chr_0014_aurora.md, § Kit plan and § Kit (2026-10-20).",
+    "Battle skill timing from SkillData (the loader): the counter's JumpToAction 107 (trigger counter below, on an enemy attack during the listener's frames 0–51); not attacked, MarkCanInterrupt at 67 frees her (SkillTiming.interruptibleFrom, batch-3 S1) and InterruptCurSkillAction at 106 ends the action; the counter path skips 67 and is free at its exclusive frame 145. With dodging on, the controlled Snowshine doesn't dash at an attack her shield counters (batch-3 E3, read from the counter trigger).",
+    "INTERIM (combo trigger, report G2; E2 dropped by the owner 2026-10-20: operator HP isn't tracked): \"After controlled operator gets attacked and drops below {trigger_hp_ratio} HP\" is taken as every enemy attack on the controlled operator (trigger combo_window). With no enemyActions in a scenario the combo never opens; with attacks, each one opens it as if it took the controlled operator below 60%.",
+    "Not modelled: damage taken and heal amounts (Protection, talent 1's Treatment Effect, P1's infliction immunity for Protected allies, the combo's heals: kept as buffs and heal events only); the layer-1 TimeDilationAction at the counter's frame 107 (0.7 s on Snowshine and the attacker) and the hit-stops (Ti1b); the enemy being interrupted (InterruptAction) and the ultimate's TakeDownAction 0.5 s; the listener's abilityEvent 9 branch (one enemy's grab, buff_eny_0018_lbtough_pre_catch); the Snow Zone's slow-down of enemies with super armour below 30, and buff_chr_0014_aurora_ultimate_skill_limit (created by nothing in the checkout); P2's +20% radius (one enemy). The dash attack (not in the NormalAttack skill group) is left out."
+  ],
+  "element": "cryst",
+  "buffs": [
+    {
+      "id": "protection",
+      "label": "Saturated Defense: Protection (self and nearby operators)",
+      "target": "team",
+      "duration": 2.2,
+      "modifiers": [{ "attr": 63, "value": { "key": "taken_dmg", "skill": "chr_0014_aurora_normal_skill" } }],
+      "gameBuff": "buff_chr_0014_aurora_reduce_damage",
+      "note": "AuraAction [0–51] of buff_chr_0014_aurora_reduce_damage (ShelterAction taken_dmg, the skill's SkillData default 0.9 passed by buffInput; SkillPatchTable names it dmg_reduce, same value), then on its finish buff_chr_0014_aurora_reduce_damage_remain 0.5 s: 51/30 + 0.5 = 2.2 s, a literal (the remain buff's duration isn't a skill value). On the counter path the aura ends at the attack's frame in the game; the buff keeps its 2.2 s here, which changes nothing while damage taken isn't simulated. Its modifier (attribute 63) makes it a Protection-category buff for buffApplied triggers (suit_usp02, Eternal Xiranite)."
+    },
+    {
+      "id": "protection_counter",
+      "label": "Saturated Defense: Protection (counter)",
+      "target": "team",
+      "duration": 1.1,
+      "modifiers": [{ "attr": 63, "value": { "key": "taken_dmg", "skill": "chr_0014_aurora_normal_skill" } }],
+      "gameBuff": "buff_chr_0014_aurora_reduce_damage",
+      "note": "Counter path: AuraAction [107–125] (0.6 s) + buff_chr_0014_aurora_reduce_damage_remain 0.5 s = 1.1 s; Snowshine's own 1 s copy at 107 (CreateBuff on self, duration assigned 1) lies inside it."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "battle_cast",
+      "on": { "event": "cast", "skills": ["chr_0014_aurora_normal_skill"] },
+      "by": "self",
+      "skill": "chr_0014_aurora_normal_skill",
+      "do": [{ "kind": "sp", "value": "atb_return_base" }, { "kind": "buff", "buff": "protection" }],
+      "note": "Frame 0: ObtainCostAction costType 1 atb_return_base (atbGainMethod 1: returned SP, \"immediately returns some SP\"; kit-draft's normal_skill_f0), and the Protection aura."
+    },
+    {
+      "id": "counter",
+      "on": { "event": "attacked" },
+      "by": "self",
+      "do": [{ "kind": "jump", "skill": "chr_0014_aurora_normal_skill", "from": 0, "until": 51, "to": 107 }],
+      "note": "\"When attacked while the said shield is raised, perform a retaliation bash\": EventListenerAction [0–51] abilityEvent 101 (Snowshine is hit; CheckDamageDecorateMask checkType 3 mask 805306368, assumed to pass every enemy attack, as for Catcher) → JumpToAction 107. The bash (hit at 125), the second team-energy half, the second Protection and talent 2's energy (frame 107) are then on the path. Not attacked, InterruptCurSkillAction at 106 ends the action before 107. The engine's dodge policy reads this trigger: no dash at an attack it counters (E3)."
+    },
+    {
+      "id": "counter_effects",
+      "on": { "event": "cast", "skills": ["chr_0014_aurora_normal_skill"] },
+      "by": "self",
+      "delay": 107,
+      "skill": "chr_0014_aurora_normal_skill",
+      "do": [
+        { "kind": "buff", "buff": "protection_counter" },
+        { "kind": "energy", "value": "talent_2_sup", "if": { "talentAtLeast": [1, 1] } }
+      ],
+      "note": "Frame 107, reached only through the counter's jump (kit-draft's normal_skill_f107): the second Protection aura, and talent 2 (SAR Professional): ObtainCostAction talent_2_sup if > 0 (PotentialTalentEffectTable chr_0014_aurora_talent_2_1/_2 set 6 / 10; 0 while not learned). The jump brings these delayed actions forward to its frame; the other path ends at 106 and drops them."
+    },
+    {
+      "id": "combo_window",
+      "on": { "event": "attacked" },
+      "by": "controlled",
+      "do": [{ "kind": "openCombo" }],
+      "note": "INTERIM (report G2; E2 dropped, operator HP isn't tracked): CharGrowthTable chr_0014_aurora_ComboSkill \"After controlled operator gets attacked and drops below {trigger_hp_ratio} HP\" (0.6): every enemy attack on the controlled operator is taken to drop it below 60%. Without enemy attacks the combo is never available; with them it overstates (any attack opens it). Her only combo trigger."
+    },
+    {
+      "id": "combo_cast",
+      "on": { "event": "cast", "skills": ["chr_0014_aurora_combo_skill"] },
+      "by": "self",
+      "skill": "chr_0014_aurora_combo_skill",
+      "delay": 12,
+      "do": [{ "kind": "energy", "value": "usp" }, { "kind": "heal", "target": "team", "healKind": "combo" }],
+      "note": "Frame 12: ObtainCostAction usp (10; kit-draft's combo_skill_f12) and LaunchProjectile projectile_chr_0014_aurora_combo_skill_bear_out at the controlled operator → SpawnAbilityEntity chr_0014_aurora_combo_skill_abilityrange, whose aura heals the operators nearby (buff_chr_0014_aurora_combo_skill_heal: HealAction Will × heal_scale + heal_static_value, combo heal tag). Projectile travel isn't in the data (Ti2): the heal is put at the launch frame. The loop heal (buff_chr_0014_aurora_combo_skill_heal_loop, every 0.5 s for duration 3 s) is left out: heal amounts aren't modelled and no kit reacts to repeated heals."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0014_aurora_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [19], "events": ["chr_0014_aurora_attack1"], "element": "physical", "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "DamageAction damageType 0 (Physical; the operator is Cryo). atb is 0 at every level (SkillPatchTable)." }]
+    },
+    {
+      "skillId": "chr_0014_aurora_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [19], "events": ["chr_0014_aurora_attack2"], "element": "physical", "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Physical; atb 0." }]
+    },
+    {
+      "skillId": "chr_0014_aurora_attack3",
+      "label": "Basic attack 3 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [21], "factor": 0.4, "events": ["chr_0014_aurora_attack3"], "element": "physical", "finalStrike": false, "note": "ChannelingAction [21–27]: SimpleCalcBB atk_scale × 0.4." },
+        {
+          "id": "hit_2",
+          "scale": ["atk_scale"],
+          "frames": [39],
+          "factor": 0.6,
+          "events": ["chr_0014_aurora_attack3"],
+          "element": "physical",
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "poise": "poise",
+          "poiseControlledOnly": true,
+          "finalStrike": true,
+          "note": "ChannelingAction [39–43]: atk_scale × 0.6, mask 2097280 (Final Strike); \"As the controlled operator, Final Strike also deals {poise} Stagger\" (onlyEnableForMainChar); DoOnce SP atb (25)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0014_aurora_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [41], "events": ["chr_0014_aurora_power_attack"], "element": "physical", "note": "BreakingAttackCalculation multiplier 1.0; finisher SP from the enemy (GainBreakingAttackAtb, the engine's)." }]
+    },
+    {
+      "skillId": "chr_0014_aurora_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "events": ["chr_0014_aurora_plunging_attack_end"], "element": "physical", "sp": "atb" }]
+    },
+    {
+      "skillId": "chr_0014_aurora_normal_skill",
+      "label": "Battle skill",
+      "damageType": "battle",
+      "teamEnergy": [{ "frame": 0, "ratio": 0.5 }, { "frame": 107, "ratio": 0.5 }],
+      "hits": [
+        {
+          "id": "bash",
+          "label": "Retaliation bash",
+          "scale": ["atk_scale"],
+          "frames": [125],
+          "events": ["chr_0014_aurora_normal_skill"],
+          "poise": "poise",
+          "applies": [{ "kind": "infliction", "element": "cryst" }],
+          "sp": "potential_5_atb",
+          "note": "Reached only through the counter's jump to 107. ChannelingAction [125–127]: SpellInfliction Cryo on the target (inflictionType 2, before the DamageAction, as the engine applies it), DoOnce ObtainCostAction costType 1 potential_5_atb (P5 \"Cold Disaster Specialist\": 10 returned SP; 0 below P5), DamageAction atk_scale (mask 4352, Cryo) with poise."
+        }
+      ],
+      "note": "Team energy: CreateBuff buff_common_obtain_ultimate_sp ratio 0.5 at frame 0 and at frame 107; the second only on the counter path."
+    },
+    {
+      "skillId": "chr_0014_aurora_combo_skill",
+      "label": "Combo skill (heal)",
+      "damageType": "combo",
+      "hits": [],
+      "note": "No damage: its energy and heal are in trigger combo_cast. Its window: trigger combo_window (interim). Its value to the team: usp energy, a Link stack (engine) and a combo cast for combo-cast triggers."
+    },
+    {
+      "skillId": "chr_0014_aurora_ultimate_skill",
+      "label": "Ultimate",
+      "damageType": "ultimate",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [62], "events": ["chr_0014_aurora_ultimate_skill"], "poise": "poise", "note": "DamageAction atk_scale (mask 4608, Cryo) with poise; its InterruptAction and TakeDownAction 0.5 s on the target aren't modelled." },
+        {
+          "id": "snow_zone",
+          "label": "Snow Zone",
+          "scale": ["atk_scale_loop"],
+          "count": 9,
+          "frames": [81, 96, 111, 141, 156, 171, 186, 201, 216],
+          "events": ["buff_chr_0014_aurora_ultimate_skill_dmg"],
+          "detached": true,
+          "note": "SpawnAbilityEntity at 62 (chr_0014_aurora_ultimate_skill_abilityrange, or _potential2 at P2+: same ticks) → AuraAction from its frame 4 on enemies → buff_chr_0014_aurora_ultimate_skill_dmg (5 s, triggerInterval 0.5 s, waitFirstTriggerInterval: DamageAction atk_scale_loop, mask 512, Cryo) from frame 66: ticks at 66 + 15k, k = 1–10, the 10th at the buff's 5 s end (9 or 10: report row 31, a log settles it). The tick at 126 is snow_zone_solidify. Assumes the enemy stays in the zone."
+        },
+        {
+          "id": "snow_zone_solidify",
+          "label": "Snow Zone (forced Solidification)",
+          "scale": ["atk_scale_loop"],
+          "frames": [126],
+          "events": ["buff_chr_0014_aurora_ultimate_skill_dmg"],
+          "detached": true,
+          "applies": [{ "kind": "forcedReaction", "status": "solidification", "level": 1, "extraSeconds": "extra_duration" }],
+          "note": "The zone's 4th tick, and with it buff_chr_0014_aurora_ultimate_skill_frost (from the same aura at 66; triggerInterval 2 s, waitFirstTriggerInterval, maxTriggerCnt 1) → CreateBuff buff_common_cryst_cryst_frozen_triggered at 126 (count 1: a level-1 Solidification for its table duration, ModifyDynamicBlackboard duration += extra_duration). \"Forcibly applies Solidification to enemies caught within it\". P3 (Polar Survival Guide): extra_duration += 2 (skillBbModifier add; 0 in SkillData below P3), on this application only (batch-3 A2). Put before the tick's damage; the two buffs' order at that frame isn't in the data, and Solidification changes no damage of the tick."
+        }
+      ]
+    }
+  ]
+}
