@@ -1,0 +1,336 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0006_wolfgd",
+  "sources": [
+    "Hits, frames, keys and events: rmxlinux Json/SkillData chr_0006_wolfgd_* and Json/BuffData buff_chr_0006_wolfgd_* (fetched by 535e88f), as compiled by efsim kit-draft and corrected by hand where the data decides in IfElse branches: the battle skill's SpellInflict flag (frames 0-2, CheckTagMatch on the smart target: Burning -1110095722 = Combustion, Conduct 1466867135 = Electrification), the third shot's two projectiles at 23 and the additional shot's succeed / fail branches at landing. Frames are SkillData frames; every hit of a LaunchProjectile is at its launch frame (`launch`: the cast's own until then; travel isn't in the data, in-game test 47).",
+    "Timing from SkillData (loader): the battle skill's conditional JumpToAction 31 -> 118 (inside the IfElse on SpellInflict, D1; named by `jumps`), its unconditional 117 -> 247 and its MarkCanInterrupt at 48 (S1: a plain cast frees him at 48; the reaction path's jump skips the mark, so it holds until its exclusive frame 159 = real 72).",
+    "Values: SkillPatchTable chr_0006_wolfgd_*; talents (PotentialTalentEffectTable): talent 1 attaches buff_chr_0006_wolfgd_talent_0 (add 0.2 / 0.3, duration 10), talent 2 sets the battle skill's returnskillpower (5 / 10) and talent2. Potentials: P1 Strength +15 and Agility +15 (data); P2 potential_skillpower 10; P3 potential_3 and teammate_percent 0.5; P4 ultimate cost x0.85 (data); P5 potential_5 (the ultimate's combo reset).",
+    "Batch-3 report docs/kit-batches/batch-3/chr_0006_wolfgd.md (gap report, kit plan and the section \"Kit\"). No log fixture has Wulfgard: nothing here is verified by a log."
+  ],
+  "element": "fire",
+  "buffs": [
+    {
+      "id": "spell_inflict",
+      "label": "Thermite Tracers: the target had Combustion or Electrification at the cast",
+      "target": "self",
+      "duration": 10,
+      "endsWithCast": true,
+      "modifiers": [],
+      "note": "The battle skill's blackboard flag SpellInflict (ModifyDynamicBlackboard at frames 0-2 when the smart target carries the Burning or Conduct tag), which the frame-23 IfElse reads. State only; ends with the cast (10 s outlasts it)."
+    },
+    {
+      "id": "scorching_fangs",
+      "label": "Scorching Fangs: Heat DMG",
+      "target": "self",
+      "gameBuff": "buff_chr_0006_wolfgd_talent_0_effectbuff",
+      "duration": { "talent": 0, "key": "duration" },
+      "modifiers": [{ "attr": 51, "value": { "talent": 0, "key": "add" } }],
+      "note": "Talent 1. buff_chr_0006_wolfgd_talent_0_effectbuff: attr 51 (Heat DMG) formulaItem 5 +add (0.2 / 0.3), duration 10 s, stackingType 4 max 1 (refreshed: \"This effect cannot stack\")."
+    },
+    {
+      "id": "scorching_fangs_team",
+      "label": "Scorching Fangs (P3, teammates): Heat DMG",
+      "target": "team",
+      "recipients": { "not": { "isOwner": true } },
+      "gameBuff": "buff_chr_0006_wolfgd_talent_0_effectbuff",
+      "duration": { "talent": 0, "key": "duration" },
+      "modifiers": [{ "attr": 51, "value": { "product": [{ "talent": 0, "key": "add" }, { "key": "teammate_percent", "skill": "chr_0006_wolfgd_normal_skill" }] } }],
+      "note": "P3: the battle skill at frame 141 (FindTarget CharacterTeamFinder, ModifyDynamicBlackboard teammate_percent x add, CreateBuff) gives the effect buff with add x teammate_percent (0.5). The finder has no validator, so the data's second CreateBuff reaches Wulfgard too; interim (report row 26): teammates only, as the description says (\"grants other teammates Scorching Fangs with {teammate_percent} of the base effects\"). Whether his own copy drops to 15% is in-game test 72."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_window",
+      "on": { "event": "inflictionApplied" },
+      "by": "anyone",
+      "do": [{ "kind": "openCombo" }],
+      "note": "CharGrowthTable: \"COMBO TRIGGER: When an Arts Infliction is applied to an enemy.\" An infliction that forms a reaction at once doesn't count (the engine's inflictionApplied rule; in-game test 35, Wulfgard's part)."
+    },
+    {
+      "id": "scorching_fangs_on_combustion",
+      "on": { "event": "reaction", "statuses": ["combustion"] },
+      "by": "self",
+      "beforeDamage": true,
+      "if": { "talentAtLeast": [0, 1] },
+      "do": [{ "kind": "buff", "buff": "scorching_fangs" }],
+      "note": "Talent 1: \"Whenever Wulfgard applies Combustion, he gains Scorching Fangs.\" buff_chr_0006_wolfgd_talent_0 (lifeType 1): abilityEvent 102 (he applies a buff) + CheckBuffIdInContext tag -1110095722 (Burning) -> the effect buff on him. The ultimate's forced Combustion counts (the engine's reaction event includes forced ones). Before the hit's damage: the data's SpellInfliction precedes its DamageAction (in-game test 51's question)."
+    },
+    {
+      "id": "thermite_flag",
+      "on": { "event": "cast", "skills": ["chr_0006_wolfgd_normal_skill"] },
+      "by": "self",
+      "if": { "any": [{ "enemyStatus": "combustion" }, { "enemyStatus": "electrification" }] },
+      "do": [{ "kind": "buff", "buff": "spell_inflict" }],
+      "note": "Frames 0-2: IfElse CheckTagMatch Burning / Conduct on the smart target -> SpellInflict = 1 (judged at the cast, as the jump at 31 is)."
+    },
+    {
+      "id": "hunting_hour",
+      "on": { "event": "cast", "skills": ["chr_0006_wolfgd_normal_skill"] },
+      "by": "self",
+      "delay": 141,
+      "skill": "chr_0006_wolfgd_normal_skill",
+      "do": [
+        { "kind": "buff", "buff": "scorching_fangs", "if": { "all": [{ "potentialAtLeast": 3 }, { "buffActive": "scorching_fangs" }] } },
+        { "kind": "buff", "buff": "scorching_fangs_team", "if": { "all": [{ "potentialAtLeast": 3 }, { "buffActive": "scorching_fangs" }] } }
+      ],
+      "note": "P3: \"While Scorching Fangs is active, triggering the battle skill's additional effects immediately resets the Scorching Fangs duration and grants other teammates Scorching Fangs with {teammate_percent} of the base effects.\" At the additional shot's launch, skill frame 141 (IfElse potential_3 > 0 and CheckBuffStackNumAdvanced effect buff >= 1 on Wulfgard, judged when it runs). The cast's own delayed action: the 31 -> 118 jump moves it to real frame 54, the plain path's 117 -> 247 jump drops it, and so does a cut before it."
+    },
+    {
+      "id": "natural_predator",
+      "on": { "event": "cast", "skills": ["chr_0006_wolfgd_ultimate_skill"] },
+      "by": "self",
+      "if": { "potentialAtLeast": 5 },
+      "do": [{ "kind": "cooldown", "who": "self", "skills": "combo", "set": 0 }],
+      "note": "P5: \"Casting the ultimate Wolven Fury immediately resets the cooldown of the combo skill.\" Ultimate frames 0-14: IfElse potential_5 > 0 -> SetSkillCdAtOnce functionType 1, skillTypeMask 64 (combo), value 0."
+    },
+    {
+      "id": "wolven_fury_combustion",
+      "on": { "event": "cast", "skills": ["chr_0006_wolfgd_ultimate_skill"] },
+      "by": "self",
+      "delay": 45,
+      "skill": "chr_0006_wolfgd_ultimate_skill",
+      "do": [{ "kind": "apply", "applies": [{ "kind": "forcedReaction", "status": "combustion" }] }],
+      "note": "\"forcibly applying Combustion\": ChannelingAction frames 45-72 (every 0.2 s, maxCountPerTarget 1) -> buff_common_fire_fire_burning_triggered on target group target1 (forced Combustion, level I, 10 s). Interim 45, the compiler's frame (report row 35): the group is filled by the frame-46 FindTargetAction, so the first tick may find no one and the Combustion come at 51, after the first hit (then that hit has no Scorching Fangs: about 4% of the ultimate). Only a log settles it."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0006_wolfgd_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit01",
+          "scale": ["atk_scale"],
+          "frames": [7],
+          "launch": 7,
+          "events": ["chr_0006_wolfgd_attack1_projhit01"],
+          "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] }, "else": 0 },
+          "note": "LaunchProjectile at 7. ObtainCostAction atb x 0.5 for the controlled operator; atb is 0 at every level."
+        },
+        {
+          "id": "projhit",
+          "scale": ["atk_scale"],
+          "frames": [14],
+          "launch": 14,
+          "events": ["chr_0006_wolfgd_attack1_projhit"],
+          "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] }, "else": 0 }
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0006_wolfgd_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit1",
+          "scale": ["atk_scale"],
+          "frames": [10],
+          "launch": 10,
+          "events": ["chr_0006_wolfgd_attack2_projhit"],
+          "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] }, "else": 0 }
+        },
+        {
+          "id": "projhit2",
+          "scale": ["atk_scale"],
+          "frames": [16],
+          "launch": 16,
+          "events": ["chr_0006_wolfgd_attack2_projhit"],
+          "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] }, "else": 0 }
+        }
+      ],
+      "note": "Two LaunchProjectiles (10, 16) of one projhit file: one hit entry each, so each is the cast's own until its launch."
+    },
+    {
+      "skillId": "chr_0006_wolfgd_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit1",
+          "scale": ["atk_scale"],
+          "frames": [12],
+          "launch": 12,
+          "events": ["chr_0006_wolfgd_attack3_projhit"],
+          "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.333333] }, "else": 0 }
+        },
+        {
+          "id": "projhit2",
+          "scale": ["atk_scale"],
+          "frames": [18],
+          "launch": 18,
+          "events": ["chr_0006_wolfgd_attack3_projhit"],
+          "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.333333] }, "else": 0 }
+        },
+        {
+          "id": "projhit3",
+          "scale": ["atk_scale"],
+          "frames": [24],
+          "launch": 24,
+          "events": ["chr_0006_wolfgd_attack3_projhit"],
+          "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.333333] }, "else": 0 }
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0006_wolfgd_attack4",
+      "label": "Basic attack 4 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "label": "Final Strike",
+          "scale": ["atk_scale"],
+          "frames": [23],
+          "launch": 23,
+          "events": ["chr_0006_wolfgd_attack4_projhit"],
+          "sp": { "if": { "controlled": true }, "then": "atb", "else": 0 },
+          "poise": "poise",
+          "poiseControlledOnly": true,
+          "note": "Final Strike (mask 2097280, from the data). \"As the controlled operator, Final Strike also deals {poise} Stagger\": the poise unit is onlyEnableForMainChar; SP `atb` (18, natural: atbGainMethod 0) for the controlled operator."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0006_wolfgd_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [34],
+          "events": ["chr_0006_wolfgd_power_attack"],
+          "note": "BreakingAttackCalculation at 34, multiplier 1 (no factor)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0006_wolfgd_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [2],
+          "events": ["chr_0006_wolfgd_plunging_attack_end"]
+        }
+      ],
+      "note": "Not castable until rotations have jumps (S10)."
+    },
+    {
+      "skillId": "chr_0006_wolfgd_normal_skill",
+      "label": "Battle skill (Thermite Tracers)",
+      "damageType": "battle",
+      "jumps": [{ "at": 31, "if": { "any": [{ "enemyStatus": "combustion" }, { "enemyStatus": "electrification" }] } }],
+      "teamEnergy": [{ "frame": 23, "ratio": 1 }],
+      "hits": [
+        {
+          "id": "shot1",
+          "scale": ["atk_scale"],
+          "frames": [6],
+          "launch": 6,
+          "events": ["chr_0006_wolfgd_normal_skill_projhit"],
+          "poise": "poise_first_bullet"
+        },
+        {
+          "id": "shot2",
+          "scale": ["atk_scale"],
+          "frames": [16],
+          "launch": 16,
+          "events": ["chr_0006_wolfgd_normal_skill_projhit"],
+          "poise": "poise_first_bullet"
+        },
+        {
+          "id": "shot3_reaction",
+          "label": "Final shot (the target had a reaction)",
+          "branch": "shot3",
+          "scale": ["atk_scale"],
+          "frames": [23],
+          "launch": 23,
+          "events": ["chr_0006_wolfgd_normal_skill_projhit_1"],
+          "poise": "poise_first_bullet",
+          "if": { "buffActive": "spell_inflict" },
+          "note": "Frame 23: IfElse SpellInflict >= 1 -> projhit_1 (no infliction)."
+        },
+        {
+          "id": "shot3",
+          "label": "Final shot (Heat Infliction)",
+          "branch": "shot3",
+          "scale": ["atk_scale"],
+          "frames": [23],
+          "launch": 23,
+          "events": ["chr_0006_wolfgd_normal_skill_projhit_FireSpellInfiction"],
+          "poise": "poise_first_bullet",
+          "applies": [{ "kind": "infliction", "element": "fire" }],
+          "note": "\"The final shot also applies Heat Infliction\": the else branch, projhit_FireSpellInfiction (SpellInfliction Heat, then its DamageAction)."
+        },
+        {
+          "id": "extra_shot",
+          "label": "Additional shot (consumes the reaction)",
+          "branch": "extra",
+          "scale": ["atk_scale_plus"],
+          "frames": [141],
+          "launch": 141,
+          "events": ["chr_0006_wolfgd_normal_skill_plus_projhit"],
+          "poise": "poise_extra_bullet",
+          "if": { "any": [{ "enemyStatus": "combustion" }, { "enemyStatus": "electrification" }] },
+          "sp": { "if": { "talentAtLeast": [1, 1] }, "then": { "sum": ["returnskillpower", "potential_skillpower"] }, "else": 0 },
+          "applies": [
+            { "kind": "consumeStatus", "statuses": ["electrification"], "if": { "not": { "enemyStatus": "combustion" } }, "afterDamage": true },
+            { "kind": "consumeStatus", "statuses": ["combustion"], "afterDamage": true }
+          ],
+          "note": "\"If the target has active Combustion or Electrification, consume the Arts Reaction to fire an additional shot that deals massive Heat DMG.\" Launched at 141 (the 31 -> 118 jump makes it real frame 54; the plain path's 117 -> 247 jump drops it). plus_projhit checks the target again at landing: with Burning / Conduct, talent 2's SP (\"return {returnskillpower} SP\", returned: atbGainMethod 1; P2 adds potential_skillpower inside talent2 > 0) and the DamageAction; after it, IfElse Burning -> FinishBuffByTag Burning, else Conduct -> FinishBuffByTag Conduct (afterDamage, A4: the shot keeps Electrification's Arts DMG Taken). The Electrification consumption comes first in the list, with the else as its `if`, because the second application's `if` is judged after the first ran."
+        },
+        {
+          "id": "extra_shot_fail",
+          "label": "Additional shot (the reaction ran out meanwhile)",
+          "branch": "extra",
+          "scale": ["atk_scale_plus_fail"],
+          "frames": [141],
+          "launch": 141,
+          "events": ["chr_0006_wolfgd_normal_skill_plus_projhit"],
+          "applies": [{ "kind": "infliction", "element": "fire" }],
+          "note": "plus_projhit's fail branch: SpellInfliction (Heat), DamageAction atk_scale_plus_fail; its poise key poise_extra_bullet_fail is 0 at every level (no stagger)."
+        }
+      ],
+      "note": "LaunchProjectile at 6 and 16 (normal_skill_projhit), at 23 (projhit_1 or projhit_FireSpellInfiction by SpellInflict) and at 141 (plus_projhit); team energy at 23 (buff_common_obtain_ultimate_sp, ratio 1). The P3 effects at 141 are the trigger hunting_hour."
+    },
+    {
+      "skillId": "chr_0006_wolfgd_combo_skill",
+      "label": "Combo skill (Frag Grenade·β)",
+      "damageType": "combo",
+      "hits": [
+        {
+          "id": "grenade",
+          "scale": ["atk_scale"],
+          "frames": [12],
+          "launch": 12,
+          "events": ["chr_0006_wolfgd_combo_skill_abilityrange"],
+          "poise": "poise",
+          "energy": "usp",
+          "applies": [{ "kind": "infliction", "element": "fire" }],
+          "note": "LaunchProjectile at 12 -> combo_skill_projhit -> SpawnAbilityEntity abilityentity_chr_0006_wolfgd_combo_skill -> combo_skill_abilityrange at entity frame 0: SpellInfliction (Heat), DamageAction atk_scale + poise, ObtainCostAction costType 0 usp. Travel unknown (Zero Sanity's 0.9 s would be about 15 frames later)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0006_wolfgd_ultimate_skill",
+      "label": "Ultimate (Wolven Fury)",
+      "damageType": "ultimate",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "count": 5,
+          "frames": [46, 52, 59, 64, 69],
+          "events": ["chr_0006_wolfgd_ultimate_skill"],
+          "poise": "poise",
+          "note": "\"dealing 5 hits of Heat DMG\": DamageActions in the skill at 46, 52, 59, 64, 69 (mask 4608). The six wolf projectiles at 45-65 cast nothing (every castSkillOn... flag false)."
+        }
+      ]
+    }
+  ]
+}

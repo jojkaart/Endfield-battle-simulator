@@ -1,0 +1,29 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_pistol_0012",
+  "sources": [
+    "OBJ Velocitous. rmxlinux Json/SkillData/sk_wpn_pistol_0012 (weapon skill 3, SkillPatchTable: atk_up, nature_dmg_up_mult, duration): cardAttributeModifier attr 2 formulaItem 6 +atk_up (stat panel, with skills 1 and 2: Agility, Ultimate Gain Efficiency); passiveEventActions abilityEvent 208 (the wielder removes a buff) + CheckBuffIdInContext tag -193971080 (Arts Infliction) + CheckConsumeBuffLayer >= 1 (storeKey count) -> SimpleCalcBB nature_dmg_up = nature_dmg_up_mult x count -> CreateBuff buff_wpn_pistol_0012_natural on the wielder (attr 54 (Nature DMG) formulaItem 5 +nature_dmg_up, duration `duration`, stackingType 1 with a priority key: the loader keeps instances, the strongest acts, B1). \"After the wielder consumes an Arts Infliction, the wielder gains Nature DMG Dealt +[{nature_dmg_up_mult} x Stacks Consumed] for {duration}s. Effects of the same name cannot stack.\" buff_wpn_pistol_0012_atk_up is named by nothing (orphan). Batch-3 report docs/kit-batches/batch-3/chr_0006_wolfgd.md rows W5-W7."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_pistol_0012.nature",
+      "label": "Nature DMG (OBJ Velocitous)",
+      "target": "self",
+      "gameBuff": "buff_wpn_pistol_0012_natural",
+      "duration": "duration",
+      "modifiers": [{ "attr": 54, "value": { "product": ["nature_dmg_up_mult", { "eventCount": true }] } }],
+      "note": "The value is taken at the consumption (the event's stacks, K2)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_pistol_0012.consumed",
+      "on": { "event": "inflictionConsumed" },
+      "by": "self",
+      "beforeDamage": true,
+      "skill": "sk_wpn_pistol_0012",
+      "do": [{ "kind": "buff", "buff": "wpn_pistol_0012.nature" }],
+      "note": "Interims (report row W7): a reaction's consumption of the infliction it lands on counts (the engine's inflictionConsumed includes it), and a weaker reapplication doesn't replace a stronger instance (B1). Before the consuming hit's damage, as the consumption precedes it."
+    }
+  ]
+}

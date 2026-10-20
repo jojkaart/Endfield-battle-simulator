@@ -408,3 +408,108 @@ Draft files (loaded with the real loader in the scratch repo copy: `calc`,
   ```
   trigger `{on: inflictionConsumed, by: self, beforeDamage: true}` → buff
   (W7's interims).
+
+## Kit (2026-10-20)
+
+Re-analysis against the engine at 182f22b, then the kit:
+`packages/data/kits/operators/chr_0006_wolfgd.json`, equipment
+`packages/data/kits/equipment/wpn_pistol_0004.json`, `wpn_pistol_0006.json`,
+`wpn_pistol_0012.json`; tests `tests/kit-wulfgard.test.ts` (17); example
+`examples/wulfgard-p5.json` and `examples/wulfgard-fluorite.scenario.json`;
+Wulfgard added to `OPERATORS` in `packages/data/test/skillCompile.test.ts`.
+
+### Re-analysis per gap and row
+
+| Gap / row | Now | How |
+|---|---|---|
+| Row 3 (attack4's natural SP) | done (V1, f393bbe) | the loader takes `atb`'s kind from atbGainMethod 0: natural |
+| G1 MarkCanInterrupt (row 14) | done (S1) | the loader reads `interruptibleFrom: 48`; nothing in the kit. A plain cast frees him at 48 (1.6 s); the reaction path's jump skips the mark, so it holds him to its exclusive frame (real 72, 2.4 s) |
+| G2 jump inside the IfElse (row 12) | done (D1) | `jumps: [{at: 31, if: Combustion or Electrification}]` on the battle skill (judged at the cast, S7); the interim cast trigger with `jump` is gone. The 117 → 247 jump lies in the skipped frames, so it isn't reached |
+| G3 consumption after the damage (row 17) | done (A4) | the additional shot's `applies`: `consumeStatus [electrification]` with `if: {not: {enemyStatus: combustion}}`, then `consumeStatus [combustion]`, both `afterDamage` (the second `if` is judged after the first runs, so the Electrification one comes first and carries the else); the marker buff and the two `buffApplied` triggers are gone |
+| G4 (a) detached until the launch (row 18) | done (S2, `KitHit.launch`) | every projectile hit has `launch` = its LaunchProjectile frame (= its `frames`, travel unknown); the `detached: false` interim is gone. Multi-shot entries (attack2, attack3, the battle skill's first two shots) are one entry per projectile, so each is the cast's own until its own launch |
+| G4 (b) a step without `at` (row 19) | **fixed here** (local engine fix) | it was not done: `ownHitsLanded` counted the frame-141 launch that the 117 → 247 jump skips, so a step without `at` after a plain battle skill waited for that jump (3.9 s, not 1.6 s). Fix in `packages/engine/src/timeline.ts`: `ownHitsLanded` skips hits and awaited actions that a jump still due on the cast will skip (`skippedByJumps`, the same rule `takeJump` uses). Every example total and every log check is unchanged (below); the kit test "plain: … frees him at 48" covers it |
+| G5 dash attacks (row 7) | deferred (S5, owner) | not modelled for anyone |
+| Row 40 (kit-draft leftovers) | mostly done (D2–D4) | kit-draft now gives poise, `poiseControlledOnly`, the branches at 23 and 141 and the forced Combustion trigger; still hand-written: the branches' conditions (the SpellInflict flag, the landing check), talent 2's SP, P3's trigger and the jump's `if` |
+| Rows 9–11, 13, 15, 16, 20, 22–25, 27–29, 31–34, 36–39 | supported | as in the kit plan; written as planned |
+| Row 21 (Fangs and the weapons' buffs on the reaction-forming hit) | unknown, interim | `beforeDamage: true` on talent 1's trigger and on Rational Farewell's and Opus's (the data's SpellInfliction precedes its DamageAction). Test 51 |
+| Row 26 (P3 on Wulfgard himself) | unknown, interim | teammates only (`recipients: not isOwner`). Test 72 |
+| Row 30 (combo window from a reaction-forming infliction) | unknown, interim | no (the engine's `inflictionApplied`). Test 35 (Wulfgard's part) |
+| Row 35 (the forced Combustion's frame) | unknown, interim | 45 (all five ultimate hits get Fangs). A log only |
+| W1–W6 | supported | as planned |
+| W7 (Velocitous on a reaction's consumption; weaker reapplication) | unknown, interim | a reaction's consumption counts; instances by B1 (the loader sets `instances` from the game buff) |
+
+### What the kit models and leaves out
+
+- **Basic attacks:** one hit per projectile at its launch frame (attack1
+  7 / 14, attack2 10 / 16, attack3 12 / 18 / 24, attack4 23 with Final
+  Strike, `atb` 18 natural SP and 18 Stagger as the controlled operator);
+  the `atb × 0.5 / 0.333` grants of attacks 1–3 (0 at every level);
+  finisher (34) and dive attack (2, not castable).
+- **Battle skill:** shots at 6 and 16; the final shot at 23 by the
+  SpellInflict flag (cast trigger `thermite_flag` → marker `spell_inflict`,
+  ends with the cast): Heat Infliction, or none after a reaction; team
+  energy at 23; on Combustion or Electrification at the cast the 31 → 118
+  jump, then the additional shot launched at 141 (real 54): with the
+  reaction still there 8.5 × ATK, poise 5, talent 2's returned SP
+  (`returnskillpower` + P2's `potential_skillpower`: 20 at P5) and the
+  consumption after the damage; without it, 0.81 × ATK with Heat Infliction.
+  P3 (`hunting_hour`, at 141 = real 54, dropped with the plain path's jump).
+- **Combo:** the grenade at its launch (12): Heat Infliction, `usp`, poise
+  10; opened by any Arts Infliction.
+- **Ultimate:** five hits at 46–69, forced Combustion at 45 (talent 1's
+  Scorching Fangs on all five), P5's combo reset.
+- **Equipment:** Rational Farewell's ATK from a combo's burst (when the
+  burst lands, A5) or Combustion (on the combo's own hit); Opus's layered
+  ATK per reaction (0.1 s cooldown, 2 layers); Velocitous's Nature DMG ×
+  stacks consumed. Stat-panel parts from the data.
+- **Left out:** the dash attack (S5); projectile and grenade travel (test
+  47: all hits at their launch frames); InterruptActions (no control
+  status); the ultimate's wolf projectiles (cast nothing); orphan files.
+
+### Verification
+
+- **Logs:** no fixture has Wulfgard. OBJ Velocitous is on Fluorite in
+  `fixtures/pending/zmdlogs-abfd4b7478ec.json`: `zmdlogs check` and
+  `zmdlogs reactions` unchanged (she consumes no infliction there).
+  Every other `zmdlogs check` / `reactions` output on fixtures/ and
+  fixtures/pending/ is unchanged too (diffed before and after, with the
+  engine fix).
+- **Example totals:** all 14 existing `examples/*.scenario.json` unchanged
+  (diffed before and after). New: `wulfgard-fluorite.scenario.json`
+  87,343 in 22.57 s.
+- **Sanity check** (the new example, P5, level 12, Rational Farewell, no
+  gear): Fluorite's Nature at 3.3 s; his combo forms Combustion (Rational
+  Farewell +44.8% on the grenade, 3,512); the ultimate at 3.7 s (P5 resets
+  the combo) forces Combustion at 5.2 s, five hits of 2,248 with Fangs;
+  the battle skill at 6.2 s on the Combusted enemy: shots 2,344, the
+  additional shot at 8.0 s (1.8 s after the cast) 25,875 = the scratch
+  run's 17,870 × 1.448 (Rational Farewell), Combustion consumed, +20 SP,
+  Fangs refreshed and Fluorite's 15%; the plain battle skill at 17.4 s (SP
+  bound): Heat at 18.17 s opens the combo, cast at once; its Heat on Heat
+  bursts at 19.57 s. Before the G4 (b) fix the combo (a step without
+  `at`) waited for the plain cast's 117 → 247 jump, until 21.3 s.
+
+### In-game tests the kit depends on
+
+- **61** (MarkCanInterrupt): plain battle skill frees him at 1.6 s,
+  Combusted 2.4 s (engine).
+- **72** (P3 on himself): engine keeps +30%.
+- **17**, Wulfgard's part (jumps skip time): the additional shot 1.8 s
+  after the cast.
+- **35**, Wulfgard's part (combo window from a reaction-forming
+  infliction): engine no.
+- **51** (an effect on the hit that triggers it): talent 1, Rational
+  Farewell, Opus.
+- **47** (projectile travel): every hit at its launch frame.
+- Row 35 and W7 need a log (a ZMDLogs battle with Wulfgard; see
+  "Logs that would verify the kit" above).
+
+### Open questions for the shared engine
+
+- **When "applies an Arts Burst" fires (abilityEvent 127).** Since A5 the
+  engine's `burst` event is at the burst's landing, a second after the
+  infliction; the data's burst buff (`buff_common_<e>_<e>_triggered`) is
+  created at the infliction, so the event may fire then. Rational Farewell
+  (and Xaihi's, Snowshine's burst weapons) would then count on the combo's
+  own hit when its infliction bursts. Kept as the engine has it (Umbra's
+  log fixes only "before the burst's damage").
