@@ -99,6 +99,8 @@ export interface SkillTiming {
   readonly jumps: readonly { readonly at: number; readonly to: number; readonly conditional: boolean }[];
   /** InterruptCurSkillAction on its own timeline: the action ends at these frames, unless a jump skips them. */
   readonly ends: readonly number[];
+  /** MarkCanInterrupt on its own timeline: once the playhead reaches it (a jump can skip it), the cast counts as past its exclusive frame. */
+  readonly interruptibleFrom?: number;
 }
 
 /** SP a grant gives: natural (spent, it gives the team ultimate energy, as regenerated SP does) or returned (spent first, gives none). */
@@ -512,9 +514,10 @@ export interface KitSkill {
    * When the skill's conditional jumps (SkillTiming.jumps, by their frame
    * `at`) are taken: `if` judged for the caster at the cast (the data's
    * conditions read state the skill sets up as it starts, e.g. Laevatain's
-   * has_max_energy at frame 3). A conditional jump not listed isn't taken.
+   * has_max_energy at frame 3). A conditional jump not listed isn't taken;
+   * `to` tells apart two jumps from the same frame (an IfElse's branches).
    */
-  readonly jumps?: readonly { readonly at: number; readonly if: Predicate }[];
+  readonly jumps?: readonly { readonly at: number; readonly to?: number; readonly if: Predicate }[];
   /** The operator gains no ultimate energy for this long after the cast (SkillData RefrainObtainUsp, e.g. Laevatain's ultimate). */
   readonly energyBlockSeconds?: number;
   /** Castable only when this holds for the operator at the start frame (a state: `buffActive`; replaced by a stance: `not`). */

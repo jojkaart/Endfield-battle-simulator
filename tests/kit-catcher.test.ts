@@ -50,13 +50,13 @@ describe("Catcher's battle skill", () => {
     expect(attacked.energy[C] ?? 0).toBeCloseTo(2 * (s.energy[C] ?? 0), 6);
   });
 
-  it("attacked in frames 0–45: the counter jumps to 60, the bash lands at 83 − 30 with 1 Vulnerable and a P1 strike, and the action ends at 194 − 30", () => {
+  it("attacked in frames 0–45: the counter jumps to 60, the bash lands at 83 − 30 with 1 Vulnerable and a P1 strike, she's free at MarkCanInterrupt 129 − 30, and the action ends at 194 − 30", () => {
     const sc = scenario({}, attackAt(1));
     const ctx = createContext(data, sc);
     const at30 = advance(ctx, apply(ctx, init(ctx), op("normal_skill")), 31);
     expect(at30.acting[C]?.skips).toEqual([{ from: 30, to: 60, at: 30, length: 30 }]);
-    // Judged after the attack, the next step sees the end (InterruptCurSkillAction at 194).
-    expect(earliestStart(ctx, at30, op("attack1"))).toEqual({ frame: 164 });
+    // Judged after the attack, the next step may start at the counter path's MarkCanInterrupt (129), before its end at 194.
+    expect(earliestStart(ctx, at30, op("attack1"))).toEqual({ frame: 99 });
     const s = advance(ctx, at30, 200);
     expect(hitsOf(s, P + "normal_skill", "bash").map((h) => h.frame)).toEqual([53]);
     expect(strikes(s).map((h) => h.frame)).toEqual([53]);
@@ -156,11 +156,11 @@ describe("Catcher's equipment", () => {
 });
 
 describe("Catcher: what the batch-2 merge added", () => {
-  it("a step judged before the attack sees the counter path's end (jump 10 → 60, end at 194: real 144)", () => {
+  it("a step judged before the attack sees the counter path (jump 10 → 60, MarkCanInterrupt at 129: real 79)", () => {
     const sc = scenario({}, attackAt(10 / 30));
     const ctx = createContext(data, sc);
     const cast = apply(ctx, init(ctx), op("normal_skill"));
-    expect(earliestStart(ctx, cast, op("attack1"))).toEqual({ frame: (cast.casts.at(-1)?.frame ?? NaN) + 194 - 50 });
+    expect(earliestStart(ctx, cast, op("attack1"))).toEqual({ frame: (cast.casts.at(-1)?.frame ?? NaN) + 129 - 50 });
   });
 
   it("her Protection and Weakness are buffs of those categories (attributes 63, 62)", () => {

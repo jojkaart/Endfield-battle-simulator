@@ -457,7 +457,10 @@ function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, s
   if (cur) {
     const ct = timingOf(ctx, cur.skill);
     const at = (x: number) => actionFrame(cur, x);
-    const options = [Math.max(frame, at(ct.durationFrames)), Math.max(frame, at(ct.exclusiveFrames))];
+    // MarkCanInterrupt: past it (unless a jump skipped it), the cast counts as past its exclusive frame.
+    const mark = ct.interruptibleFrom !== undefined && !(cur.skips ?? []).some((k) => (ct.interruptibleFrom as number) > k.from && (ct.interruptibleFrom as number) < k.to) ? ct.interruptibleFrom : undefined;
+    const exclusive = mark !== undefined ? Math.min(ct.exclusiveFrames, mark) : ct.exclusiveFrames;
+    const options = [Math.max(frame, at(ct.durationFrames)), Math.max(frame, at(exclusive))];
     if (priorityOf(nt) > priorityOf(ct)) options.push(frame);
     for (const w of ct.windows) if (w.skills.includes(skillId) && Math.max(frame, at(w.from)) <= at(w.to)) options.push(Math.max(frame, at(w.from)));
     frame = Math.min(...options);
@@ -1363,7 +1366,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
 
 /** A cast's jumps and ends: the unconditional ones, and conditional ones whose kit condition holds at the cast. */
 function castJumps(timing: SkillTiming, skill: KitSkill, ec: EvalContext, operator: string, cast: number, frame: number, scaled: (f: number) => number): PendingJump[] {
-  const taken = timing.jumps.filter((j) => !j.conditional || skill.jumps?.some((k) => k.at === j.at && decide(k.if, ec)));
+  const taken = timing.jumps.filter((j) => !j.conditional || skill.jumps?.some((k) => k.at === j.at && (k.to === undefined || k.to === j.to) && decide(k.if, ec)));
   return [
     ...taken.map((j) => ({ frame: frame + scaled(j.at), operator, cast, from: j.at, to: j.to })),
     ...timing.ends.map((e) => ({ frame: frame + scaled(e), operator, cast, from: e, to: e, end: true as const })),

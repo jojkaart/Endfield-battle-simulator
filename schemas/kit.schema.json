@@ -1499,6 +1499,7 @@
               "required": ["at", "if"],
               "properties": {
                 "at": { "type": "integer", "minimum": 0 },
+                "to": { "type": "integer", "minimum": 1, "description": "The jump's destination, when several conditional jumps leave the same frame (an IfElse's branches)." },
                 "if": { "$ref": "#/$defs/predicate" }
               }
             }

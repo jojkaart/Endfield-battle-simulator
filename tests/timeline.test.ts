@@ -1800,6 +1800,12 @@ describe("jumps in a skill's timeline", () => {
     expect(jumped(onHeat)).toBe(37);
   });
 
+  it("reads MarkCanInterrupt and jumps inside a top-level IfElse from SkillData (Wulfgard's battle skill)", () => {
+    const t = data.skills["chr_0006_wolfgd_normal_skill"]?.timing;
+    expect(t?.interruptibleFrom).toBe(48);
+    expect(t?.jumps).toEqual([{ at: 31, to: 118, conditional: true }, { at: 117, to: 247, conditional: false }]);
+  });
+
   it("an end on the skill's own timeline ends the action there", () => {
     const a1 = data.skills[L + "attack1"];
     const g: GameData = { ...data, skills: { ...data.skills, [L + "attack1"]: { ...a1, timing: { ...a1?.timing, ends: [8] } } } as GameData["skills"] };

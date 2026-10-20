@@ -68,7 +68,7 @@ interface RawKit {
     label: string;
     damageType: "basic" | "battle" | "combo" | "ultimate";
     energyBlockSeconds?: number;
-    jumps?: { at: number; if: Predicate }[];
+    jumps?: { at: number; to?: number; if: Predicate }[];
     teamEnergy?: { frame: number; ratio: number; if?: Predicate; detached?: boolean }[];
     available?: Predicate;
     followUpOnly?: boolean;
@@ -452,7 +452,9 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
     // Parts may add up to more than the whole when jumps make them exclusive (Arclight's battle skill: frame 24 on one path, 136 on the other).
     if (s.beside) c.checkPredicate(s.beside, `${where} beside`);
     for (const j of s.jumps ?? []) {
-      if (!skill.timing?.jumps.some((x) => x.conditional && x.at === j.at)) throw new Error(`${where}: jumps: the skill has no conditional jump at frame ${j.at} (its jumps: ${(skill.timing?.jumps ?? []).map((x) => `${x.at}→${x.to}${x.conditional ? "?" : ""}`).join(", ") || "none"})`);
+      const matching = (skill.timing?.jumps ?? []).filter((x) => x.conditional && x.at === j.at && (j.to === undefined || x.to === j.to));
+      if (matching.length === 0) throw new Error(`${where}: jumps: the skill has no conditional jump at frame ${j.at}${j.to !== undefined ? ` to ${j.to}` : ""} (its jumps: ${(skill.timing?.jumps ?? []).map((x) => `${x.at}→${x.to}${x.conditional ? "?" : ""}`).join(", ") || "none"})`);
+      if (matching.length > 1) throw new Error(`${where}: jumps: several conditional jumps at frame ${j.at}; say which with \`to\` (${matching.map((x) => x.to).join(", ")})`);
       c.checkPredicate(j.if, `${where} jump at ${j.at}`);
     }
     return {

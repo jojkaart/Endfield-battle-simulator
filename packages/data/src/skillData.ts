@@ -151,6 +151,7 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
   const group = obj(j["actionGroupData"] ?? {}, at(ctx, "actionGroupData"));
   const jumps: { at: number; to: number; conditional: boolean }[] = [];
   const ends: number[] = [];
+  let interruptibleFrom: number | undefined;
   for (const ta of (group["timelineActions"] ?? []) as Record<string, unknown>[]) {
     const from = Number(ta["_startFrame"]);
     find(ta["_sequenceActionData"], from, ta["_endFrame"] === undefined ? from : Number(ta["_endFrame"]));
@@ -164,6 +165,9 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
         jumps.push({ at: from, to: Number(a["destFrame"]), conditional: cond.length > 0 });
       }
       if (type.includes("InterruptCurSkillAction")) ends.push(from);
+      if (type.includes("MarkCanInterrupt") && interruptibleFrom === undefined) interruptibleFrom = from;
+      // A jump in a top-level IfElse's branches is a conditional jump at this frame (the kit says when: KitSkill.jumps).
+      if (type.includes("IfElseAction")) for (const to of branchJumps(a)) if (to > from) jumps.push({ at: from, to, conditional: true });
     }
   }
   const timing: SkillTiming = {
@@ -174,10 +178,26 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     specification: get(j, "skillSpecification", ctx, int),
     keepsChain: j["dontInterruptCombo"] === true,
     slowdowns,
-    jumps: jumps.sort((a, b) => a.at - b.at),
+    jumps: jumps.filter((j, i) => jumps.findIndex((k) => k.at === j.at && k.to === j.to && k.conditional === j.conditional) === i).sort((a, b) => a.at - b.at),
     ends: ends.sort((a, b) => a - b),
+    ...(interruptibleFrom !== undefined ? { interruptibleFrom } : {}),
   };
   return { timing, defaults, statModifiers, spKinds: spKindsOf(j) };
+}
+
+/** The destinations of the JumpToActions in an IfElse's branches (its success and fail action lists, at any depth of nested IfElses). */
+function branchJumps(ifElse: Record<string, unknown>): number[] {
+  const out: number[] = [];
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (typeof node !== "object" || node === null) return;
+    const o = node as Record<string, unknown>;
+    const type = typeof o["$type"] === "string" ? o["$type"] : "";
+    if (type.includes("JumpToAction") && o["isEnable"] !== false && typeof o["destFrame"] === "number") out.push(o["destFrame"]);
+    for (const [k, v] of Object.entries(o)) if (k !== "conditionAction" && k !== "conditions") walk(v);
+  };
+  walk(ifElse);
+  return [...new Set(out)];
 }
 
 /**
