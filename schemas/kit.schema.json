@@ -188,6 +188,13 @@
             "minItems": 1,
             "description": "The next cast of these kinds by someone it reaches consumes it; it then acts on that cast's hits only (Link, Jade Vessel's combo bonus)."
           },
+          "consumedScope": {
+            "enum": [
+              "cast",
+              "whileCasting"
+            ],
+            "description": "What a consumed buff acts on: cast, the consuming cast's own hits (a damage modifier that checks the cast ID); whileCasting, also every other hit of the caster until the cast ends (a buff attached to the cast, CreateBuffAttachingSkill: status, reaction and trigger hits). Default: the loader reads it from the data where it can tell, else cast."
+          },
           "every": {
             "$ref": "#/$defs/valueExpr",
             "description": "Periodic: a buffTick event every this many seconds while active, for triggers."
@@ -219,7 +226,7 @@
           },
           "sharedTimer": {
             "type": "boolean",
-            "description": "Layers share one timer each new layer refreshes (BuffData stackingType 8; the loader sets it from the game buff)."
+            "description": "Layers share one timer each new layer refreshes (BuffData stackingType 8 or 10; the loader sets it from the game buff)."
           },
           "link": {
             "type": "boolean",
@@ -1264,6 +1271,10 @@
                     "layers": {
                       "$ref": "#/$defs/valueExpr",
                       "description": "This many layers at once (default 1; 0 applies none), e.g. one per Status Level consumed ({eventCount: true})."
+                    },
+                    "duration": {
+                      "$ref": "#/$defs/valueExpr",
+                      "description": "This application's seconds instead of the buff's (the CreateBuffAction's assigned duration): the same buff, so one layer cap across applications of different lengths."
                     }
                   }
                 },
@@ -1289,6 +1300,10 @@
                       "type": "integer",
                       "minimum": 1,
                       "description": "End only the oldest this many layers (default: all)."
+                    },
+                    "to": {
+                      "const": "eventSubject",
+                      "description": "A team buff stops reaching the event's subject only (the healed operator of a heal, else the operator who caused the event); the others keep it, and it ends when it reaches no one."
                     }
                   }
                 },
@@ -3145,6 +3160,31 @@
             }
           }
         },
+        "zoneScale": {
+          "type": "array",
+          "minItems": 1,
+          "description": "For this hit only, every modifier of the zone that reaches it (anyone's, the enemy's debuffs and statuses included; only those reaching the hit's element) × value, judged as it lands: a damage unit's target-side InstantModifyAttribute with formulaItem 8 on the zone's attribute (Last Rite's ultimate: Cryo Susceptibility × rate).",
+          "items": {
+            "type": "object",
+            "required": [
+              "zone",
+              "value"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "zone": {
+                "$ref": "#/$defs/zone"
+              },
+              "value": {
+                "$ref": "#/$defs/valueExpr"
+              }
+            }
+          }
+        },
+        "atkSnapshot": {
+          "type": "boolean",
+          "description": "A buffTick trigger's hit only (DamageAction takeAtkSnapshot): it takes its owner's attacker-side modifiers (ATK, DMG bonus, Amp, crit, Arts Intensity) from when the ticking buff was applied; the enemy's side is read at the tick."
+        },
         "factor": {
           "type": "number",
           "exclusiveMinimum": 0,
@@ -3198,6 +3238,10 @@
               "if": {
                 "$ref": "#/$defs/predicate",
                 "description": "Only in this situation (judged when it happens)."
+              },
+              "duration": {
+                "$ref": "#/$defs/valueExpr",
+                "description": "This application's seconds instead of the buff's (the CreateBuffAction's assigned duration): the same buff, one layer cap."
               }
             }
           }

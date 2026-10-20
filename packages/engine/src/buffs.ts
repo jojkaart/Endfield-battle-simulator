@@ -34,6 +34,8 @@ export interface ActiveBuff {
   readonly categories?: readonly BuffCategory[];
   /** A team buff with a recipient filter: the team members it reaches. */
   readonly recipients?: readonly string[];
+  /** Team members it no longer reaches: each used it up for itself (trigger action `endBuff` with `to: "eventSubject"`). */
+  readonly excluded?: readonly string[];
   /** Layered: at most this many instances of the buff from one owner, each with its own expiry. */
   readonly maxLayers?: number;
   /** Instances with a priority (KitBuff.instances): at most this many from one owner (0: no limit), the strongest acting; at the limit the weakest goes. */
@@ -42,6 +44,8 @@ export interface ActiveBuff {
   readonly consumedBy?: readonly SkillType[];
   /** Consumed by a cast: acts only on that cast's hits (the index of the cast in the timeline). */
   readonly cast?: number;
+  /** Consumed by a cast with KitBuff.consumedScope whileCasting: it also acts on every hit of `operator` before `until` (the cast's end). */
+  readonly whileCasting?: { readonly operator: string; readonly until: number };
   /** While active, its owner gains no ultimate energy (KitBuff.blocksEnergy). */
   readonly blocksEnergy?: boolean;
   /** Periodic: frames between ticks (KitBuff.every), and the next tick's frame. */
@@ -59,6 +63,8 @@ export interface ActiveBuff {
   readonly link?: boolean;
   /** A recording buff (KitBuff.records): its rate, and the damage it has recorded. */
   readonly records?: { readonly rate: number; readonly total: number };
+  /** A ticking buff whose tick hits keep an ATK snapshot (KitHit.atkSnapshot): its owner's attacker-side modifiers when it was applied. */
+  readonly snapshot?: readonly Modifier[];
 }
 
 /** A buff attribute's hit filters (its KitBuffModifier's), judged by readers of the attribute per landing. */
@@ -201,6 +207,24 @@ export function endBuff(buffs: readonly ActiveBuff[], id: string, owner: string,
   return { buffs: buffs.filter((x) => !gone.includes(x)), ended: gone.length > 0, remaining: remainingOf(gone, frame), ...(recorded !== undefined ? { recorded } : {}) };
 }
 
+/**
+ * Ends a team buff from an owner for one member only (trigger action
+ * `endBuff` with `to: "eventSubject"`): each active instance stops reaching
+ * it and keeps the others; an instance that then reaches none of the team
+ * ends. `ended`: whether the buff ended altogether (no instance left).
+ */
+export function endBuffFor(buffs: readonly ActiveBuff[], id: string, owner: string, frame: number, member: string, team: readonly string[]): { buffs: ActiveBuff[]; ended: boolean; remaining: number; recorded?: number } {
+  const active = (x: ActiveBuff) => x.id === id && x.owner === owner && x.cast === undefined && x.appliedAt <= frame && x.expiresAt > frame;
+  const touched = buffs.filter((x) => active(x) && reaches(x, member));
+  if (touched.length === 0) return { buffs: [...buffs], ended: false, remaining: 0 };
+  const narrowed = new Map(touched.map((x) => [x, { ...x, excluded: [...(x.excluded ?? []), member] }]));
+  const gone = touched.filter((x) => team.every((m) => !reaches(narrowed.get(x) as ActiveBuff, m)));
+  const out = buffs.flatMap((x) => (gone.includes(x) ? [] : [narrowed.get(x) ?? x]));
+  const ended = gone.length > 0 && !out.some(active);
+  const recorded = ended ? recordedOf(gone) : undefined;
+  return { buffs: out, ended, remaining: ended ? remainingOf(gone, frame) : 0, ...(recorded !== undefined ? { recorded } : {}) };
+}
+
 /** The damage some recording buffs recorded, or undefined when none records. */
 export function recordedOf(buffs: readonly ActiveBuff[]): number | undefined {
   return buffs.some((b) => b.records) ? buffs.reduce((t, b) => t + (b.records?.total ?? 0), 0) : undefined;
@@ -227,7 +251,7 @@ export function extendBuff(buffs: readonly ActiveBuff[], id: string, owner: stri
 /** Whether a buff reaches an operator: self buffs their owner, team buffs their recipients (everyone without a filter), enemy debuffs every hit on the enemy. */
 export function reaches(b: ActiveBuff, operator: string): boolean {
   if (b.target === "self") return b.owner === operator;
-  if (b.target === "team") return !b.recipients || b.recipients.includes(operator);
+  if (b.target === "team") return (!b.recipients || b.recipients.includes(operator)) && !b.excluded?.includes(operator);
   return true;
 }
 
@@ -241,7 +265,8 @@ export function buffModifiers(buffs: readonly ActiveBuff[], operator: string, fr
   const strongest = new Map<string, Modifier>();
   for (const b of buffs) {
     if (!(b.expiresAt > frame && b.appliedAt <= frame && reaches(b, operator))) continue;
-    if (b.cast !== undefined && b.cast !== cast) continue;
+    // …and, attached to the cast (whileCasting), on its caster's other hits while the cast runs.
+    if (b.cast !== undefined && b.cast !== cast && !(b.whileCasting && b.whileCasting.operator === operator && frame < b.whileCasting.until)) continue;
     // A buff a cast consumes acts only on that cast's hits: not before it's consumed.
     if (b.cast === undefined && b.consumedBy) continue;
     for (const m of b.modifiers) {

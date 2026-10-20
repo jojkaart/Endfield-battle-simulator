@@ -43,6 +43,8 @@ export interface RawBuffFile {
   readonly damageMask: { readonly checkType: number; readonly mask: number } | null;
   /** The buff's own tags (applyTags tagId): what tag checks on it see (e.g. −1757502026, a shield). */
   readonly applyTags: readonly number[];
+  /** The buff's own blackboard (key → valueDouble): what its keys read when the creating action doesn't assign them. */
+  readonly blackboard: Readonly<Record<string, number>>;
 }
 
 const ALLOWED = DATA_FILES.json.BuffData.map(globToRegExp);
@@ -89,6 +91,13 @@ export function readBuffFile(buffId: string): RawBuffFile | null {
     },
     damageMask: shared ? { checkType: shared[0] as number, mask: shared[1] as number } : null,
     applyTags: (Array.isArray(j["applyTags"]) ? (j["applyTags"] as unknown[]) : []).map((t, i) => get(obj(t, at(at(ctx, "applyTags"), i)), "tagId", at(at(ctx, "applyTags"), i), int)),
+    blackboard: Object.fromEntries(
+      (Array.isArray(j["blackboard"]) ? (j["blackboard"] as unknown[]) : []).flatMap((b, i) => {
+        const bc = at(at(ctx, "blackboard"), i);
+        const o = obj(b, bc);
+        return typeof o["valueDouble"] === "number" ? [[get(o, "key", bc, str), o["valueDouble"]] as const] : [];
+      }),
+    ),
     attributeModifiers: mods.map((m, i) => {
       const mc = at(at(ac, "attributeModifiers"), i);
       const mo = obj(m, mc);
@@ -103,6 +112,42 @@ export function readBuffFile(buffId: string): RawBuffFile | null {
       };
     }),
   };
+}
+
+/**
+ * The effect buffs a BuffData or SkillData file attaches to a skill cast
+ * (CreateBuffAttachingSkill: the buff lives with the cast, ending with it):
+ * those with an attribute modifier, or a damage modifier that doesn't check
+ * the damage's cast ID (CheckSkillCastId), so it acts on whatever its holder
+ * deals meanwhile. Files tables.json doesn't cover, or that don't exist,
+ * have none.
+ */
+export function skillAttachedEffects(dir: "BuffData" | "SkillData", id: string): string[] {
+  const listed = dir === "BuffData" ? isBuffFileListed(id) : ALLOWED_SKILL_FILE(id);
+  const file = join(sourceDir("rmxlinux"), "Json", dir, `${id}.json`);
+  if (!listed || !existsSync(file)) return [];
+  const text = readFileSync(file, "utf8");
+  if (!text.includes("CreateBuffAttachingSkill")) return [];
+  const created = new Set<string>();
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (typeof node !== "object" || node === null) return;
+    const o = node as Record<string, unknown>;
+    if (typeof o["$type"] === "string" && o["$type"].includes("CreateBuffAttachingSkill") && o["isEnable"] !== false) {
+      for (const b of Array.isArray(o["buffs"]) ? (o["buffs"] as Record<string, unknown>[]) : []) if (typeof b["buffId"] === "string") created.add(b["buffId"]);
+    }
+    for (const v of Object.values(o)) walk(v);
+  };
+  walk(JSON.parse(text));
+  return [...created].filter((b) => {
+    if (!isBuffFileListed(b)) return false;
+    const path = join(sourceDir("rmxlinux"), "Json", "BuffData", `${b}.json`);
+    if (!existsSync(path)) return false;
+    const raw = readFileSync(path, "utf8");
+    const j = JSON.parse(raw) as { attributeModifier?: { attributeModifiers?: unknown[] }; damageModifier?: unknown[] };
+    const dms = Array.isArray(j.damageModifier) ? j.damageModifier : [];
+    return (j.attributeModifier?.attributeModifiers?.length ?? 0) > 0 || dms.some((d) => !JSON.stringify(d).includes("CheckSkillCastId"));
+  });
 }
 
 const SKILL_SLOTS = ["battle", "combo", "ultimate"] as const;
