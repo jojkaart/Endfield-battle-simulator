@@ -18,20 +18,22 @@ the six favourites.
      log mismatches ([kits](kit-batches/batch-1.md#kits-2026-10-19)); what's
      left waits on in-game tests
      ([open](kit-batches/batch-1.md#pass-2-whats-still-open)).
-   - Batch 2 (the Endministrator and the 4-stars; the 5-stars are batch 3):
-     analysis done, shared features in progress
-     ([status](kit-batches/batch-2.md)). Done: groups 1–3, rolled crits
-     with the spread over many battles (E2), the scenario's enemy attacks
-     and charges, dodges with a success chance and perfect dodges (E1),
-     jumps in a skill's timeline (S1), and the five kits with their 27
-     equipment kits. Next: the gaps the kits left (K1–K8 in
-     [batch-2.md](kit-batches/batch-2.md): trigger chances, physical status
-     damage order, …), compiler defaults (D3), then batch 3 (the 5-stars).
+   - Batch 2 is done: five kits and 27 equipment kits, and the leftovers
+     K1–K8 ([batch-2.md](kit-batches/batch-2.md)); K3 and K7 wait on
+     in-game tests.
+   - Batch 3 (the ten 5-stars, their 5-star weapons, two gear sets):
+     analysis done, shared features done except S3's event-driven jumps
+     (no kit needs them yet) and the deferred E1 / S5
+     ([status](kit-batches/batch-3.md#merged-gaps)); in-game tests 60–76
+     wait on the owner. Next: the ten kits with their equipment (each
+     agent first re-checks its report's gaps against the engine), Xaihi's
+     fixture correction with her kit, then the pattern review
+     (`efsim kit-census`).
 2. **Rotation search** (`efsim search`, beam search on the stepping API) is
-   in, with an optional resource-aware ranking (`--resource-weight`). Next:
-   speed for long team fights (a 49 s two-operator fight takes over 10
-   min at beam 24), team runs for the favourites, and a report of the best
-   rotations found.
+   in, with an optional resource-aware ranking (`--resource-weight`), ranking
+   over seeded battles when a fight has random outcomes (`--seeds`,
+   `--percentile`) and the found rotation's spread (`--runs`). Next: team
+   runs for the favourites and a report of the best rotations found.
 3. **Corrosion model:** time dilation, the applier's talents (Arcane), and
    carry-over on reapplication; in-game test 4.
 4. **Still open from setup:** a `Result` schema, `NOTICE` when MIT code is

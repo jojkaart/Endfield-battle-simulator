@@ -237,7 +237,7 @@ melee hit, start the 5th attack and press the battle skill immediately:
 does the Final Strike's damage number appear? (Its SP isn't visible on the
 bar; the damage number answers both.)
 
-### 17. Do the jumps in Laevatain's battle skill skip time? (ready, if you have Laevatain)
+### 17. Do the jumps in Laevatain's battle skill skip time? (ready, if you have Laevatain or Wulfgard)
 
 **Why:** her battle skill's data has jumps: the timeline skips ahead, on
 one path when she has 4 Melting Flame (empowered) and on another when
@@ -279,6 +279,14 @@ basic attack's number: under 1 s (about 0.7 s) with skips, about 3.4 s
 without. With 4 Melting Flame, from the explosion's number to the big
 extra hit: about 1.1 s vs 2.7 s (closer to the limit of what a video shows;
 the Twilight run above is the clearer test).
+
+With Wulfgard instead (optional; batch 3, Wulfgard W2: the same question
+on a 5-star everyone has): on a Combusted dummy (right after his ultimate,
+while it burns), cast his battle skill and time from the cast to the big
+additional shot's damage number. With skips **about 1.8 s** (plus the
+shot's flight), without **about 4.7 s**. A second sign: with skips he
+attacks again about 2.4 s after the cast (test 61's Combusted run),
+without about 5.3 s.
 
 ### 18. What an ultimate's time stop freezes (ready)
 
@@ -555,7 +563,7 @@ then her battle skill on the same enemy within a few seconds: does a
 second explosion appear, and lasers? Does the SP bar jump up by about a
 tenth (30 SP) at its hit, after the third the battle skill spent?
 
-### 35. Combo windows opened by a reaction (ready, if you have Gilberta or Arcane)
+### 35. Combo windows opened by a reaction (ready, if you have Gilberta, Arcane or Wulfgard)
 
 **Why:** two open questions about the same moment. Gilberta's combo opens
 on any Arts Reaction; the engine also opens it when her own battle skill
@@ -567,7 +575,15 @@ hit forms Corrosion (Gilberta's battle skill explosion if you have her,
 otherwise any Nature skill). Is Gilberta's combo button lit? Is Arcane's
 (both INT and WILL modes, if you can)?
 
-### 36. Cooldowns cut by a percentage (ready, if you have Typhoeus, or Arcane at P5)
+With Wulfgard (optional; batch 3, Wulfgard W4): his combo opens when an
+Arts Infliction is applied; the engine doesn't count one that forms a
+reaction at once (as for Arcane). A teammate applies a non-Heat infliction
+(his combo lights); wait about 7 s until the button goes dark again (the
+window is 6 s; the infliction lasts 20 s); then a second teammate applies
+a different element, forming a reaction. Does Wulfgard's combo light up?
+Engine: no.
+
+### 36. Cooldowns cut by a percentage (ready, if you have Typhoeus, Da Pan, or Arcane at P5)
 
 **Why:** one data action sets a cooldown by a fraction, and its meaning is
 unclear. Arcane's P5: casting her second ultimate in WILL mode cuts her
@@ -584,6 +600,14 @@ That's about one earlier Arcane combo per second ultimate.
   about 11 s, set to 5.4 s left; 18 s, no cut. (Casting the ultimate at
   5–6 s keeps the four readings at least 1.5 s apart.) Repeat with
   Intellect ≥ Will (data: no cut, 18 s).
+- Da Pan with talent 2 (optional; batch 3, Da Pan C): his ultimate's Prep
+  Ingredients cuts his combo cooldown by 40% when the combo hits. Cast his
+  ultimate, then his combo (the ultimate's two forced statuses help reach
+  4 Vulnerable stacks), and time from the combo's cast until it's ready
+  again. 40% of the full 19 s off (engine): about 11.4 s; set to 40% of
+  full: about 8.4 s; no cut: 19 s. (40% of what's left gives about
+  11.7 s, too close to 11.4 s; the Arcane part separates that one.)
+  Without the ultimate first: 19 s.
 
 ### 37. Enemy timers while Imprisoned or Immobilized (ready, if you have Arcane; the Si part is not testable by hand)
 
@@ -608,7 +632,7 @@ engine doesn't do that yet. This may also explain part of test 4.
   timer, too close for a stopwatch or a phone video. Impact: 1–1.5 s of
   Artful Intent or Jade Vessel's debuff per battle skill, on bosses only.
 
-### 38. Two Arts Susceptibility sources (ready, if you have Gilberta and Ardelia)
+### 38. Two Arts Susceptibility sources (ready, if you have Gilberta and Ardelia, or Avywenna and Antal)
 
 **Why:** the engine adds two sources of Arts Susceptibility on one enemy.
 The game may count only the larger. With both up, the team's Arts damage
@@ -618,7 +642,14 @@ Physical Susceptibility has the same open question.
 read the Arts Susceptibility value (or a teammate's Arts hit) with each
 alone and with both: the sum or the larger?
 
-### 39. Swordmancer's extra hit (ready, if you have 3 Swordmancer pieces)
+With Avywenna and Antal (optional; batch 3, Avywenna U6): the same
+question for Electric Susceptibility. Her ultimate gives the enemy
+Electric Susceptibility (talent 2: 10% for 10 s), and so does Antal's
+Focus. A teammate's Electric hit (same skill, no crits) with each alone
+and with both: is the gain with both the sum of the two gains (engine) or
+the larger one?
+
+### 39. Swordmancer's extra hit (ready, if you have 3 Swordmancer pieces, or Chen with Sundering Steel)
 
 **Why:** the 3-piece set deals an extra Physical hit when the wearer
 applies a Physical status, at most once per 15 s. Its scale (2.5 × ATK
@@ -632,6 +663,18 @@ again within 15 s" part needs a wearer with two Physical statuses less
 than 15 s apart (no hit expected on the second). Optionally: a
 Vulnerable-only hit (no hit expected), and a Shatter by the wearer
 (unknown).
+
+The Vulnerable-only part matters beyond Swordmancer (batch 3, P1; higher
+priority): Sundering Steel, Grizzled Edge, OBJ Arts Identifier and
+Antal's combo listen for the same "applies a physical status" event. On
+an enemy without Vulnerable, a Lift or Knock Down that isn't forced only
+adds a Vulnerable stack; the engine doesn't count that as applying a
+physical status. With Chen and Sundering Steel instead of Swordmancer
+(batch 3, Chen C2): her battle skill on a dummy with no Vulnerable stacks.
+Does the weapon's ATK buff icon appear? Then a second battle skill (now a
+real Lift): 1 or 2 stacks on the icon? Engine: no icon after the first, 1
+stack after the second. If it shows 1 then 2, a Vulnerable-only status
+counts.
 
 ### 40. Messenger's Song (ready, if you have Gilberta; lower priority)
 
@@ -749,7 +792,7 @@ Solidifications within 1 s should give one step, not two, but they can't
 be timed by hand reliably; skip that part.) If the gauge doesn't show such
 a small step, this one is not testable by hand.
 
-### 51. Does an effect a hit triggers count on that same hit? (ready, if you have Arcane with Solemn Phalanx, or Hot Work)
+### 51. Does an effect a hit triggers count on that same hit? (ready, if you have Arcane with Solemn Phalanx, Hot Work, or Da Pan with Ancient Canal)
 
 **Why:** some weapon and gear-set effects start from something a hit does
 (an Arts Infliction, a Susceptibility it applies). The data creates some
@@ -762,6 +805,17 @@ up, cast her battle skill on a dummy: compare its damage with a second
 battle skill cast while the buff is up. Equal means the first hit already
 had the buff. Hot Work: compare her INT ultimate hit with and without the
 set's buff already up before it.
+
+With Da Pan and Ancient Canal (optional; batch 3, Da Pan B): his combo's
+Crush creates Ancient Canal's bonus (+56%) and his talent-1 layers before
+the combo's own damage in the data, so the engine puts both on that hit.
+Compare the first combo of a fight (no bonus up before it) with a second
+combo within 20 s of it (the first one's bonus still up; his ultimate's
+Prep Ingredients shortens the cooldown enough): the lower of two tries
+each, against crits. About equal: the hit sees what its own Crush creates
+(engine). The second about 1.3–1.4× the first: it doesn't. The same
+question decides Wulfgard's Scorching Fangs on the hit that forms his
+Combustion, Perlica's P3 and Pulser Labs, and Seeker of Dark Lung.
 
 ### 52. SP from one perfect dodge (not testable by hand)
 
@@ -879,6 +933,356 @@ chance itself.
 the ATK-up icon appears: about 1 in 5 below P2, 3 in 10 from P2. Tedious;
 low priority. Catcher's tests (low priority): § Kit of
 docs/kit-batches/batch-2/chr_0020_meurs.md.
+
+### 60. A combo trigger during the combo's cooldown (ready, if you have Arclight; higher priority: every short-cooldown combo)
+
+**Why:** a combo's trigger can come while the combo is still on cooldown:
+Arclight's cooldown is 3 s, and her own battle skill consumes
+Electrification (one of her triggers) about 2.4 s after a combo. The
+engine ignores such a trigger for every operator (batch 3, T5): the combo
+stays dark until a new one. The other reading keeps it, and the combo
+lights when the cooldown ends. For every combo with a short cooldown,
+that's one combo more or less each time.
+**How:** her ultimate on a dummy (its forced Electrification lights her
+combo). Cast the combo as soon as it lights, then her battle skill at
+once: the dummy still has Electrification, so the battle skill's extra
+Electric attack consumes it inside the combo's 3 s cooldown. Then press
+nothing and watch the combo button for a few seconds, with no new
+Electrification. Engine: it stays dark. Kept: it lights when the
+cooldown ends. The margin is only about half a second (if the extra
+attack lands after the cooldown, the button lights in both readings), so
+cast the battle skill as fast as the game takes it and repeat a few
+times: dark even once means the engine is right; lit every time means
+the trigger is kept.
+
+### 61. MarkCanInterrupt: when a skill lets its operator act again (ready, if you have Wulfgard; alternatives with Snowshine or Purrchena)
+
+**Why:** some skills carry a mark in the data (MarkCanInterrupt) from
+which the operator can act again before the skill ends. Since 2026-10-20
+the engine reads it (batch 3, S1): past the mark, the next basic attack or
+skill can start. Wulfgard's plain battle skill then frees him at about
+1.6 s instead of 3.9 s (2.3 s per plain battle skill), Snowshine's un-hit
+shield 1.3 s sooner, Purrchena's unshielded combo about 6 s sooner,
+Catcher's counter too (batch 2). If the game doesn't free them there,
+these rotations are too fast in the engine.
+**How:** on a dummy with no Combustion or Electrification, cast
+Wulfgard's battle skill and keep pressing basic attack; time from the
+cast to the first basic-attack damage number. Then the same on a
+Combusted dummy (right after his ultimate, while it burns): there the
+skill takes a path that skips the mark, so it's the baseline.
+- Mark (engine): plain **about 1.6 s**, Combusted about 2.4 s: the plain
+  cast is sooner.
+- No mark (the engine before S1): plain **about 3.9 s**, Combusted
+  2.4 s: the plain cast is later.
+
+Alternatives (the owner doesn't use these two, so low priority):
+- Snowshine on a dummy (which doesn't attack), SP bar full: press her
+  battle skill three times in a row, each as soon as the game takes it,
+  and time from the first shield to the third: **about 4.5 s** with the
+  mark (engine), **about 7.1 s** without.
+- Purrchena: let an enemy hit the controlled operator to light her combo,
+  cast it with no shield up, and press basic attack at once (Purrchena
+  controlled): a swing within about 1 s (mark, engine), or only about 7 s
+  later.
+
+### 62. Layers on one timer: does each new layer restart it? (ready, if you have Chen; or Akekuri at P1+)
+
+**Why:** buffs whose layers share one timer (the data's stackingType 8:
+Chen's talent 1, Perlica's P3, Da Pan's talent 1, Akekuri's P1, Æthertech,
+MI Security) are read as Endaxis does: each new layer restarts the timer
+(batch 3, B3). Chen's only log has her layers gone 10.6 s after the first
+one, though six were added since: all layers may expire with the first.
+For Chen that's up to five layers of ATK +8%; for Akekuri, +50% ATK
+nearly all the time (restart) or 2–4 layers.
+**How:** SP bar at least two-thirds full. On a dummy, Chen's battle skill
+(one hit: one layer of her talent's ATK buff, 10 s), then a second battle
+skill about 8 s later (a second layer). No combo or ultimate in between
+(their hits add layers; leave her combo when it lights). Watch the
+talent's buff icon and its counter (1, then 2), timed from the first
+battle skill:
+- gone at about 10 s, both layers at once: they expire with the first
+  (the log);
+- 2 layers until about 18 s, then gone: each layer restarts the timer
+  (engine);
+- down to 1 at about 10 s, gone at about 18 s: each layer has its own
+  timer.
+
+With Akekuri at P1+ (the same question, batch 2's U3): two combos about
+8 s apart, then wait. Does her ATK icon (4 layers) go about 10 s after the
+first combo, all at once about 10 s after the second (engine), or drop to
+2 layers about 8 s before that?
+
+### 63. Does a Shatter count as consuming a reaction? (ready, if you have Alesh and Estella; variants with OBJ Razorhorn or Twelve Questions)
+
+**Why:** a Shatter ends Solidification with a physical status. Effects
+that listen for "an Arts Reaction consumed" may or may not count it
+(batch 3, A7): Alesh's combo trigger, Liino's combo, OBJ Razorhorn's ATK,
+Twelve Questions' ATK. The engine's interims disagree today: Alesh's and
+Razorhorn's count a Shatter, Twelve Questions' doesn't. One answer fixes
+them all: an Alesh combo per Shatter, Razorhorn's ATK +33.6%.
+**How:** Alesh's ultimate on a dummy (a Cryo Infliction icon), then his
+battle skill: it consumes the Cryo and Solidifies the dummy. His combo
+button should stay dark (an infliction was consumed, not a reaction: the
+control). Then Estella's combo or battle skill (a forced Lift) Shatters
+it: the Shatter damage number appears. Does Alesh's combo button light
+within a moment? Lit: a Shatter counts (Alesh's interim); dark: it
+doesn't.
+
+Variants (each answers the same question; batch 3, Avywenna U4 and
+Arclight A3):
+- Estella with OBJ Razorhorn: Shatter a Solidified dummy (her combo's
+  Lift). Does an ATK buff icon appear on her, and is her next basic attack
+  about 1.2× the same attack before? (Razorhorn's interim: yes.)
+- Twelve Questions on a sword operator who can Shatter (Chen's battle
+  skill Lift, or the Endministrator's Crush, on a Solidified dummy): does
+  its ATK-up icon appear after the Shatter? (Its interim: no.) Arclight
+  can't Shatter, so she can't test her own weapon.
+
+### 64. A Vulnerable stack on an already Vulnerable enemy: does it open a combo? (ready, if you have Chen or Da Pan)
+
+**Why:** Chen's combo opens "when an enemy becomes Vulnerable", Da Pan's
+"when an enemy reaches 4 stacks of Vulnerability". The engine opens
+Chen's on every stack added, and Da Pan's on every stack added at 4, even
+when the count stays at 4 (their kit plans). Since 2026-10-20 it can also
+tell a first stack and a rising count apart (batch 3, T1), so the kits can
+follow whatever the game does. Each is one combo more or less per such
+stack.
+**How:**
+- Chen: her battle skill on a clean dummy (1 Vulnerable stack: her combo
+  lights), then her combo (2 stacks). Wait until the combo's cooldown is
+  over (12 s at P5, 15 s below) and its button is dark; Vulnerable lasts
+  20 s from the combo's stack. Then a teammate's Lift or Knock Down adds a
+  third stack (Estella, Gilberta, Da Pan's battle skill). Does Chen's
+  combo light? Engine: yes. Dark: only the first stack opens it.
+- Da Pan: bring a dummy to 4 Vulnerable stacks (his battle skills and
+  ultimate add them; a teammate's Lift helps) without casting his combo,
+  and wait about 10 s until its button is dark (the window is 6 s). Then
+  one more battle skill (its Lift adds a stack; the count stays at 4).
+  Does his combo light again? Engine: yes. Dark: only going from 3 to 4
+  opens it.
+
+### 65. Arclight's talent counter: does it expire? (ready, if you have Arclight; part 2 needs P5 and a teammate who causes Electrification)
+
+**Why:** Arclight's talent 1 counts her extra attacks (each consumes an
+Electrification); at 3 (2 at P5) the team gets Electric DMG +16% or so.
+The counter's data has "no expiry" in one field and 10 s in another; the
+engine never expires it (batch 3, B4). Without a teammate who causes
+Electrification her extra attacks are usually more than 10 s apart, so
+this decides whether the talent ever fires in such teams. Xaihi's crystal
+count (test 70) and Typhoeus's Signs (test 42) have the same data pattern.
+A second question: the engine gives the bonus to the extra attack that
+completes the count (the data adds the layer before the hit's damage).
+**How:**
+1. Her ultimate on a dummy (forced Electrification), then her battle
+   skill: its extra Electric attack consumes the Electrification, and her
+   talent icon (on the squad bar) appears with 1 on it. Watch it for 15 s
+   with no more Electrification: gone after about 10 s, or still there
+   (engine)?
+2. At P5 (the count is 2): two extra attacks within 10 s, nothing else
+   changed between them (no combo). Is the second extra attack's damage
+   number about 16% higher than the first (engine), or the same? The
+   team's Electric DMG icon should appear as the second lands. Two
+   Electrifications within 10 s need a teammate who causes them (e.g.
+   Perlica's combo, or an Electric hit on a Heat- or Cryo-inflicted
+   dummy). Make both the same level and from the same teammate:
+   Electrification also raises the extra attack (12% or more), so
+   different sources would hide the 16%.
+
+### 66. A forced Electrification on a stronger one (ready, if you have Perlica)
+
+**Why:** Perlica's combo forces Electrification I (5 s; 8.75 s from P1).
+On an enemy that already has a stronger, longer Electrification from a
+reaction, the engine replaces it with the new one; the game may keep the
+stronger one. The same rule covers every forced reaction landing on a
+stronger status (Arclight's ultimate, Alesh's battle skill, Laevatain's
+forced Combustion). For Electrification it's 4–12 points of Arts DMG
+Taken (× Arts Intensity) on the team's Arts hits for up to 20 s.
+**How:** build Electrification III or IV with a reaction: 3 or 4 stacks
+of one infliction from teammates (Cryo or Heat), then an Electric hit
+(e.g. Perlica's battle skill). It lasts 24 s (III) or 30 s (IV). About
+4 s later, a Final Strike by the controlled operator and Perlica's combo
+at once. Time how long the Electrification icon stays after the combo:
+- replaced (engine): about 8.75 s (5 s below P1);
+- kept: the rest of the original, about 20 s (III) or 26 s (IV).
+
+### 67. Perlica's finisher: a Knock Down on an enemy that survives? (ready, if you have Perlica)
+
+**Why:** her finisher's data forces a Knock Down when she's controlled
+(her report, row 7), but the action carries the flag for a dying target
+(deadOption 2), which elsewhere marks a death launch or knock-back
+(Karin's battle skill in batch 2, Chen's second Lift). The SkillData
+compiler follows that reading (batch 3, D2), so the engine gives her
+finisher no Knock Down on an enemy that survives. If the game does knock
+it down, each of her finishers adds a Knock Down damage hit and a
+Vulnerable stack (which can open Chen's and Da Pan's combos, test 64).
+The answer also says how to read that flag for other operators.
+**How:** stagger a dummy with no Vulnerable stacks (it can't die) and
+finish it with Perlica controlled. After the finisher's own number, does
+a Knock Down damage number appear and a Vulnerable stack show on the
+dummy (or does it fall)? Engine: neither. Then the same with another
+operator's finisher, as the baseline (no Knock Down expected).
+
+### 68. Perlica's P3 layers and Wild Wanderer (ready, if you have Perlica at P3+; part 2 needs Wild Wanderer)
+
+**Why:** (1) P3 gives her ATK +20% per layer (up to 2) when she applies
+Electrification. The engine gives one layer per Electrification; her only
+log's battle skill fits two. (2) Wild Wanderer gives the team Physical and
+Electric DMG (+22.4% at its top level) for 15 s when the wielder applies
+Electrification. The engine counts both a reaction Electrification and
+her combo's forced one; the data's event might mean only one of them.
+**How:**
+1. A teammate applies Cryo to a dummy, then Perlica's battle skill (one
+   Electrification reaction). Count the stacks on her ATK buff icon: 1
+   (engine) or 2.
+2. With Wild Wanderer on Perlica: the same reaction, then look for the
+   team buff icon on a teammate. Wait until it's gone (15 s), then her
+   combo (forced Electrification): does the icon appear again? Engine:
+   both times.
+
+### 69. Chen's P1 at full HP (ready, if you have Chen at P1+)
+
+**Why:** her P1 gives "DMG Dealt +20% to enemies below 50% HP". Her only
+log has the bonus on every hit from the start, at about full HP, and the
+damage fits only with it. Since 2026-10-20 the engine can follow the data
+(enemy HP from the scenario, batch 3, N1), but her kit plan keeps P1
+always on, as in the log, until this test says otherwise. It's 20% of her
+damage while the enemy is above half HP.
+**How:** on one enemy whose HP bar goes down, basic attack 1 above half
+HP, then below (no skill for 10 s before each, so no talent layers; take
+the lower of a few hits each, against crits). About ×1.19 higher below
+half HP: the condition holds (data). Equal: P1 is always on (the log).
+
+### 70. Xaihi's crystal (ready, if you have Xaihi)
+
+**Why:** her battle skill puts out a crystal that heals the controlled
+operator on two Final Strikes, then opens her combo. Three open points
+(batch 3, Xaihi U1–U3): (1) the crystal's Arts Amp (+20% at P5) goes to an
+operator already at Max HP when healed; the engine gives it on every heal
+(operator HP isn't tracked: operators count as topped up). (2) A second
+battle skill with a crystal out: the engine replaces the crystal and
+resets its count. (3) The count may expire after 10 s (test 65's
+pattern); the engine keeps it.
+**How:**
+1. Let an enemy hit the controlled operator hard (well over the 500–650
+   HP a heal restores), then cast Xaihi's battle skill and do a Final
+   Strike: does the Arts Amp icon appear on that operator? Then the same
+   at full HP. Data: no icon when hurt, an icon at full HP. An icon both
+   times: the condition isn't what the data says. (The engine keeps the
+   Amp either way; a "no" means a hurt controlled operator misses it.)
+2. Cast her battle skill twice within a few seconds and count the
+   crystals around the controlled operator; then count the Final Strikes
+   until her combo can be cast. One crystal and 2 Final Strikes: replaced
+   (engine). Two crystals and 2: they share one count; two and 4: each
+   has its own.
+3. Battle skill, one Final Strike, then wait 12 s by stopwatch (the
+   crystal lasts 20 s) and do a second Final Strike: can the combo be
+   cast? Compare with two Final Strikes 3 s apart. Castable both times:
+   the count doesn't expire (engine). Only with 3 s: the first layer
+   expired after 10 s (a third Final Strike then opens it).
+
+### 71. Alesh's combo on consumed Originium Crystals, and his Solidification level (ready, if you have Alesh and the Endministrator; part 2 optional)
+
+**Why:** Alesh's combo also opens "when Originium Crystals on a nearby
+target are consumed" (the Endministrator's crystals). Since 2026-10-20 the
+engine can tell a consumed buff from one that runs out (batch 3, T2); his
+kit plan opens the combo on consumption only. Part 2 confirms that his
+battle skill's forced Solidification takes its level from the Cryo
+stacks it consumes.
+**How:**
+1. The Endministrator's combo puts crystals on a dummy; let them run out
+   (about 5 s) without a physical status: Alesh's combo button should
+   stay dark. Again, and this time her battle skill (a Crush) consumes
+   them: the button should light. If it lights when they run out too,
+   the trigger is "the crystals end", not "consumed".
+2. Optional: time the Solidification icon after his battle skill on a
+   dummy with 1 Cryo stack, then on one with 3 or 4 (Cryo hits from
+   teammates): about 5.75 s vs 7.75–8.75 s (engine).
+
+### 72. Wulfgard's P3: does he keep his full Scorching Fangs? (ready, if you have Wulfgard at P3+)
+
+**Why:** at P3 his battle skill's additional shot gives teammates
+Scorching Fangs at half strength (15% Heat DMG). The data gives that copy
+to the whole team, him included, on a buff he already has; if a refresh
+takes the new values, his own drops from +30% to +15%. The engine follows
+the description: teammates only.
+**How:** after his ultimate (Scorching Fangs on), note the non-crit
+damage numbers of basic attack 1. Cast his battle skill on the
+still-Combusted dummy (the additional shot triggers P3), then basic
+attack 1 again within 10 s. No combos in between (Link, Rational
+Farewell). Same numbers: he keeps +30% (engine). About 9–10% lower (with a
++34.7% Heat or Arts DMG weapon; 11–12% without): his copy became the
+teammates' 15%.
+
+### 73. Avywenna's returning lances and Cohesive Traction (ready, if you have Avywenna; part 2 needs Cohesive Traction)
+
+**Why:** (1) her combo throws 3 lances; her battle skill recalls them, and
+each returning lance hits what it meets (1.68 × ATK). The engine assumes
+every lance hits a single target once; if some miss, her damage and her
+talent's energy drop. (2) Cohesive Traction's battle-skill bonus says "up
+to 3 stacks", but the data's 30 s adding cooldown allows one layer at a
+time; the engine follows the data. +28% vs up to +84% Electric DMG on a
+battle skill.
+**How:**
+1. A teammate applies Electric Infliction to a dummy; a Final Strike by
+   the controlled operator lights Avywenna's combo. Cast it, then her
+   battle skill. Count the Electric damage numbers: the battle skill's
+   own and 3 lance numbers, each about 1.12× the battle skill's
+   (engine). Fewer lance numbers: some lances miss. Again after two
+   combos (12 s apart, her cooldown): 6 lance numbers. Don't use her
+   ultimate first: its EX lance returns too (about 2.9× the battle
+   skill's number), and its Susceptibility changes the ratios.
+2. With Cohesive Traction: her battle skill's own number (a) with no
+   combo in the last 30 s, (b) after one combo, (c) after two combos
+   about 12 s apart. (b) is about 1.2× (a). Then (c) about the same as
+   (b): one layer (data, engine); about 1.17× (b): two layers add. The
+   buff icon's stack counter shows it too.
+
+### 74. Da Pan's P5 stack and the Lift (ready, if you have Da Pan at P5)
+
+**Why:** at P5 his battle skill adds 1 more Vulnerable stack (once per
+45 s). The data judges the Lift first: on an enemy without Vulnerable the
+Lift only adds a stack, then P5 adds the second. The engine follows that
+order. The other order gives a real Lift (its damage and the status) on
+the first battle skill.
+**How:** on a dummy with no Vulnerable stacks (and no battle skill of his
+in the last 45 s), cast his battle skill once. 2 Vulnerable stacks and no
+Lift damage number (the dummy isn't lifted): the data's order (engine). 2
+stacks and a Lift damage number: the extra stack came first.
+
+### 75. Chen's ATK: stat panel vs the engine (ready, if you have Chen)
+
+**Why:** her only log (fixtures/pending/zmdlogs-7e19489ae503.json)
+doesn't record her weapon and gear levels, and her hits drift as if her
+ATK% were about 1.57 instead of 1.35 on a base about 15% lower (like the
+Endministrator's extra 180 ATK in test 55). Her stat panel settles the
+build.
+**How:** as in test 55: open her character panel and note ATK, with her
+weapon, gear and level as they are, and send the build (or a screenshot
+of the panel with weapon and gear) to compare with `efsim calc`. Any
+build of hers helps.
+
+### 76. Purrchena's shield, Giftbox and Handicraft (ready, if you have Purrchena; low priority; C and D are tedious)
+
+**Why:** (A) her battle skill's shield runs as helper skills in the data;
+the loader reads those since 2026-10-20 (batch 3, S4), so her kit will
+hold her until the shield drops (about 3 s), not about 1.7 s. (C) Her
+combo's Giftbox picks one of three items and, in the data, never the
+previous one; the engine follows the data. (D) In the data, at most one
+Handicraft (a pulling vortex) per ultimate. Report's details:
+docs/kit-batches/batch-3/chr_0038_purrche.md.
+**How:**
+- A: on a dummy (which doesn't attack), cast her battle skill and keep
+  pressing basic attack. Does her first swing come while the shield and
+  the Protection icon are still up, or only when the shield drops (data,
+  engine)? With an attacking enemy, after the first block the shield
+  should stay about 3 s more.
+- C: cast her combo six times, each within 40 s of the last, and note
+  the item each time (an explosion, a pulling vortex, or a dessert). The
+  data never repeats the previous item; with independent thirds, at
+  least one of the five pairs would repeat 87% of the time.
+- D: over ten ultimates without an Ambassador's Special (fewest at P0),
+  count the vortexes each time. The data allows one at most; independent
+  50/50 Prezzies would give two or more in about half of them.
 
 ## Results
 
