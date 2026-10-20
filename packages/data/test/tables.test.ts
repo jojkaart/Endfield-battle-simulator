@@ -85,7 +85,7 @@ describe("provenance", () => {
 describe("table list", () => {
   it("refuses tables and skill files not listed for fetching", () => {
     expect(() => readTable("rmxlinux", "GachaPoolTable")).toThrow(/isn't listed in packages\/data\/tables.json/);
-    expect(() => readSkillFile("chr_0017_yvonne_attack1")).toThrow(/isn't covered by packages\/data\/tables.json/);
+    expect(() => readSkillFile("eny_0051_rodin_attack1")).toThrow(/isn't covered by packages\/data\/tables.json/);
   });
 });
 

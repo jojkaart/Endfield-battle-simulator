@@ -48,7 +48,17 @@
       "chr_0014_aurora*",
       "chr_0018_dapan*",
       "chr_0024_deepfin*",
-      "chr_0038_purrche*"
+      "chr_0038_purrche*",
+      "chr_0009_azrila*",
+      "chr_0015_lifeng*",
+      "chr_0017_yvonne*",
+      "chr_0025_ardelia*",
+      "chr_0026_lastrite*",
+      "chr_0027_tangtang*",
+      "chr_0028_wulfa*",
+      "chr_0029_pograni*",
+      "chr_0030_zhuangfy*",
+      "chr_0031_mifu*"
     ],
     "BuffData": [
       "buff_wpn_*",
@@ -79,7 +89,17 @@
       "buff_chr_0014_aurora*",
       "buff_chr_0018_dapan*",
       "buff_chr_0024_deepfin*",
-      "buff_chr_0038_purrche*"
+      "buff_chr_0038_purrche*",
+      "buff_chr_0009_azrila*",
+      "buff_chr_0015_lifeng*",
+      "buff_chr_0017_yvonne*",
+      "buff_chr_0025_ardelia*",
+      "buff_chr_0026_lastrite*",
+      "buff_chr_0027_tangtang*",
+      "buff_chr_0028_wulfa*",
+      "buff_chr_0029_pograni*",
+      "buff_chr_0030_zhuangfy*",
+      "buff_chr_0031_mifu*"
     ]
   }
 }

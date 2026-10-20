@@ -86,3 +86,7 @@ first.
    loadout searches (a player's own account data overrides it later).
    With the 5-star weapons that have no kit yet and the last two gear sets
    ([batch-3.md](kit-batches/batch-3.md)).
+4. The rest (owner, 2026-10-20: "Let's complete the rest of the operators
+   now"): the eleven 6-stars without a kit (Ember, Lifeng, Yvonne, Ardelia,
+   Last Rite, Tangtang, Rossi, Pogranichnik, Zhuang Fangyi, Mi Fu, Camille)
+   and the 41 weapons without one ([batch-4.md](kit-batches/batch-4.md)).
