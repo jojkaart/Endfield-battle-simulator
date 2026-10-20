@@ -10,7 +10,7 @@ the wielder (Navigator and Home Longing suit any Cryo or Nature wielder).
 
 Sources: rmxlinux TableCfg CharGrowthTable, CharacterPotentialTable,
 PotentialTalentEffectTable, SkillPatchTable, WeaponBasicTable,
-I18nTextTable_EN; Json/SkillData `chr_0017_yvonne_*` (38 files),
+I18nTextTable_EN; Json/SkillData `chr_0017_yvonne_*` (39 files),
 `sk_wpn_pistol_0005/0007/0008`; Json/BuffData `buff_chr_0017_yvonne_*` (38
 files), `buff_wpn_pistol_0005*`, `_0007_valid`, `_0008*`. All of them are in
 the checkout. `efsim kit-draft chr_0017_yvonne` run on the main checkout.
