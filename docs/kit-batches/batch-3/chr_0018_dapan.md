@@ -333,3 +333,98 @@ P1 waits on N1 (kills): not in the kit (its buff and listener would be a
   {event: buffApplied, categories: [weakness]}`, both `by: self`,
   `cooldown: "cd"`, `skill: sk_wpn_claym_0015`. Loads. With G1 its
   modifier becomes `{attr: 3, value: "def_up", percent: true}`.
+
+## Kit (2026-10-20)
+
+Written against the engine after batch 3's shared features (T1–T4, V2–V4,
+B1, B2, A1–A4, C1, D2–D4, S1–S4, N1) and the current `efsim kit-draft`.
+No engine, loader, compiler or shared code was changed.
+
+### Re-analysis
+
+| Report item | Now | How |
+|---|---|---|
+| Rows 1, 4–7, 9, 10, 12, 14, 16, 17, 19, 22, 24, 27–30 | supported | as in the table above; checked in tests/kit-dapan.test.ts |
+| Row 2 (Final Strike poise, controlled only) | done (D2) | compiled: `poise: "poise"`, `poiseControlledOnly: true`, `finalStrike: true` |
+| Row 3 (finisher factors) | done (D2) | compiled: `factor` 0.4 / 0.6 |
+| Rows 7, 14 (battle skill and combo poise) | done (D2) | compiled |
+| Row 8 (battle skill Lift, not forced) | done (D2) | compiled `physicalStatus lift` |
+| Row 11 (P5's extra Vulnerable once per 45 s) | done in part (D3) | the compiler gives the `vulnerable` application on the frame-43 hit (its conditions only as a note: CheckTimedMarker isn't sayable); the kit hand-writes the `if` (`potentialAtLeast 5`, not `p5_interval`) and the 45 s marker buff `p5_interval`. Order kept: Lift first (in-game test 74) |
+| Row 13 (a stack added at 4) | interim (T1 done) | T1 gives `rising`; the kit keeps the engine's reading (a stack at the cap reopens the window, as in-game test 64 says "Engine: yes"). If 64 says dark, add `rising: true` to `combo_window` |
+| Row 15 (Crush × `crush_multi`) | done (D2) | compiled `multiplierKey: crush_multi` |
+| Row 18 (ultimate f0 forced Lift) | done (D3) | compiled as the cast trigger `ultimate_skill_f0` (the compile test reads only hits' applications: a KNOWN entry) |
+| Row 20 (dunk forced Knock Down) | done (D2) | compiled |
+| Row 21 (talent 1, Reduce and Thicken) | hand-written (D4 open: talents' attached buffs and their triggers) | buff `reduce_and_thicken` (`gameBuff` → shared timer, B3 interim) and trigger on `physicalStatus` crush / breach, `beforeDamage`, `layers: {eventCount: true}` |
+| Row 23 (talent 2, Prep Ingredients) | hand-written (D4 open) | buff `prep_ingredients` on the dunk, `if: {talentAtLeast: [1, 1]}` |
+| Row 25 (what "shortens by 40%" means) | interim | 40% of the full cooldown (engine-wide reading; in-game test 36, Da Pan part) |
+| Row 26 (P1, a kill by the ultimate) | open (N2, deferred) | not in the kit: no effect against a boss |
+| E1, E2, E4–E7, E9 | supported | as above |
+| E3 (G2: instances by priority) | done (B1) | the loader gives `wpn_claym_0014.phys` `instances: 2` from maxStackCnt; the kit's `maxStacks: 2` interim is gone (the loader refuses it now) |
+| E8 (G1: DEF %) | done (V4) | `{attr: 3, value: "def_up"}`; the loader sets `percent` from formulaItem 6 |
+
+Still open and shared (not implemented here): N2 (kills: P1), B3 (the
+stackingType 8 timer of talent 1's layers and Prep Ingredients: test 62),
+T5 (a trigger during the combo's own cooldown: the window is ignored then),
+D4's talent buffs (hand-written, as in batch 2), P1 of the batch table
+(a Knock Down on an enemy without Vulnerable fires no OBJ Heavy Burden:
+test 39's question).
+
+### What was written
+
+- `packages/data/kits/operators/chr_0018_dapan.json`: the kit plan's kit,
+  from today's kit-draft (its frames, keys, poise, factors, statuses, the
+  f0 cast trigger and the basic attacks' controlled-only `sp`), plus the
+  talents' buffs and triggers, P5's `if` and marker, and the combo window.
+  Hit IDs: `charge` / `flip` (battle skill), `flurry` ×6 / `dunk`
+  (ultimate).
+- `packages/data/kits/equipment/wpn_claym_0014.json` (Ancient Canal):
+  the plan's kit without `maxStacks` (B1).
+- `packages/data/kits/equipment/wpn_claym_0015.json` (OBJ Heavy Burden):
+  the plan's kit with the DEF modifier (V4).
+- `tests/kit-dapan.test.ts` (17 tests): every skill's hits and frames, the
+  finisher factors, the Final Strike's poise and SP, P5's order (2 stacks,
+  no Lift, a 45 s marker; P4: 1 stack), the battle skill's team energy at
+  frame 43, the ultimate's forced Lift and Knock Down, Prep Ingredients
+  (30 s, max 3 at P5; 20 s, max 2 at P1; none without talent 2), the
+  combo window at 4 stacks and its reopening at the cap (interim), the
+  Crush (level 4 × 1.2), talent 1's 4 layers (0.06; 0.04 at level 1) and
+  Ancient Canal's 0.56 on both the combo hit and its Crush, the cooldown
+  cut (cast + 570 − 228 frames; 570 without talent 2), no P1 buff, Ancient
+  Canal's `instances` 2, and OBJ Heavy Burden on Da Pan (the dunk) and on
+  Catcher (her ultimate's Weakness, refreshed by its Knock Down; her P1
+  strikes gain 5 × 0.504 × her DEF line).
+- `packages/data/test/skillCompile.test.ts`: Da Pan in OPERATORS, one KNOWN
+  entry (the f0 Lift is a cast trigger; the test reads only hits).
+
+### Verification
+
+No fixture has Da Pan, Ancient Canal or OBJ Heavy Burden: no `zmdlogs`
+run is possible. The kit plan's scratch scenario (P5, Ancient Canal 9/9/9,
+Grizzled Edge ×3 + a Bonekrusha piece at artifice 3, alone against
+Rhodagn; battle skill, ultimate, combo, attacks 1–4, battle skill ×2,
+attacks 1–4, battle skill) gives the same as in the plan: **313,233** in
+29.9 s (10,465 DPS); with OBJ Heavy Burden **212,611**. The engine casts
+the ultimate at frame 43 of the first battle skill (its priority lets it
+cut the skill once the flip has landed), so the f0 Lift comes at 1.43 s,
+right after the battle skill's two stacks: 3 stacks, then 4 at the dunk
+(4.10 s), which opens the combo (cast 4.30 s); its hit (30,746) and Crush
+(122,680) carry talent 1's +0.24, Ancient Canal's +0.56 and Grizzled Edge's
++0.24. Timings fit the data: the flurry at 42–61 and the dunk at 80 from
+the ultimate's cast, the combo hit at 23. With OBJ Heavy Burden its DEF
+buff starts at the dunk (4.10 s) and lasts 15 s; it changes no number of
+his (no DEF-based hit; damage taken isn't simulated).
+
+Every example total and every `zmdlogs check` / `zmdlogs reactions`
+output (fixtures and fixtures/pending) is byte-identical before and after
+the kit.
+
+### In-game tests the kit depends on
+
+- **74** (P5's stack and the Lift: the kit judges the Lift first).
+- **64**, Da Pan part (a stack added at 4 reopens the combo window).
+- **51**, Da Pan part (talent 1 and Ancient Canal on the combo's own hit
+  and its Crush).
+- **36**, Da Pan part (Prep Ingredients cuts 40% of the full cooldown).
+- **62** (stackingType 8 timer: talent 1's layers, Prep Ingredients).
+- **39**'s Vulnerable-only part (batch 3 P1: OBJ Heavy Burden on a Knock
+  Down that only adds a stack).

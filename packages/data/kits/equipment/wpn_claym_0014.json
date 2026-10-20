@@ -1,0 +1,31 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_claym_0014",
+  "sources": [
+    "Ancient Canal (WeaponBasicTable wpn_claym_0014): its Strength and Arts Intensity lines and sk_wpn_claym_0014's Arts Intensity +phy_spell_up (cardAttributeModifier attr 87) are on the stat panel. sk_wpn_claym_0014 passiveEventActions: abilityEvent 208 (the wielder consumes a buff) + CheckBuffIdInContext tag 1075718177 (Vulnerable) + CheckConsumeBuffLayer → count; SimpleCalcBB phy_dmg_up = phy_dmg_up_mult × count → CreateBuff buff_wpn_claym_0014_pdi_up (attr 50 Physical DMG, `duration` 20 s). Description: \"After the wielder consumes Vulnerability stack(s), the wielder gains Physical DMG Dealt +[{phy_dmg_up_mult} × Stacks Consumed] for {duration}s. Effects of the same name cannot stack.\" Values: SkillPatchTable sk_wpn_claym_0014 (phy_dmg_up_mult 0.14 at level 9). Batch-3 report docs/kit-batches/batch-3/chr_0018_dapan.md rows E1–E4.",
+    "buff_wpn_claym_0014_pdi_up is stackingType 1 with priority key phy_dmg_up_mult and maxStackCnt 2: the loader keeps up to two instances, each with its own timer, and only the strongest acts (batch 3 B1); at the limit the weakest goes, so a weaker reapplication over two stronger ones isn't applied.",
+    "toggleBuffs buff_wpn_passive_spirit_01 (atk_up, a key sk_wpn_claym_0014 doesn't have): a template leftover with no effect, as Twilight's (batch 1). buff_wpn_claym_0014 (attr 87 phy_spell_up, lifeType 1) is referenced by no file: the panel's Arts Intensity line stands for it."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_claym_0014.phys",
+      "label": "Brutality: Lands of Yore (Physical DMG)",
+      "target": "self",
+      "gameBuff": "buff_wpn_claym_0014_pdi_up",
+      "duration": "duration",
+      "modifiers": [{ "attr": 50, "value": { "product": ["phy_dmg_up_mult", { "eventCount": true }] } }],
+      "note": "Its value is taken at the event (the stacks consumed): 0.56 after a 4-stack Crush at level 9."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_claym_0014.on_consume",
+      "on": { "event": "physicalStatus", "statuses": ["crush", "breach"] },
+      "by": "self",
+      "beforeDamage": true,
+      "skill": "sk_wpn_claym_0014",
+      "do": [{ "kind": "buff", "buff": "wpn_claym_0014.phys" }],
+      "note": "Crush and Breach are what consume Vulnerable (status.ts); the event's level is the stacks consumed. beforeDamage: the status buff's FinishBuff of Vulnerable (abilityEvent 208) runs before its DamageAction (buff_physical_do_crushed), so the Crush and the hit applying it carry the bonus (in-game test 51, Da Pan part)."
+    }
+  ]
+}

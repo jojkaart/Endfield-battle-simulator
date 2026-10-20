@@ -1,0 +1,39 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_claym_0015",
+  "sources": [
+    "OBJ Heavy Burden (WeaponBasicTable wpn_claym_0015): its Strength and HP% lines and sk_wpn_claym_0015's secondary attribute +second_attr_up (cardAttributeModifier formulaItem 6, modifyAttributeType 2) are on the stat panel. sk_wpn_claym_0015 passiveEventActions: abilityEvent 206 (the wielder applies a buff) + CheckBuffIdInContext tag 2029588776 (Weakness, as on buff_common_affixes_weak), and abilityEvent 401 (the wielder applies a physical status) + CheckPhysicalInflictionType mask 2 (Knock Down), each behind CheckTimedMarker / CreateTimedMarker `cd` (0.1 s) → CreateBuff buff_wpn_claym_0015 (attributeModifier attr 3 DEF, formulaItem 6: DEF +def_up %, `duration` 15 s; stackingType 4: refreshed). Description: \"When the wielder applies Knocked Down or Weakness, the wielder gains DEF +{def_up} for {duration}s.\" Values: SkillPatchTable sk_wpn_claym_0015 (def_up 0.504 at level 9). Batch-3 report docs/kit-batches/batch-3/chr_0018_dapan.md rows E5–E9.",
+    "The DEF modifier is a percentage of the panel's DEF line: the loader sets percent from the game buff's formulaItem 6 (batch 3 V4). DEF acts only on DEF-based hits (a hit's `base`, e.g. Catcher's P1 strike) and on damage taken (not simulated).",
+    "toggleBuffs buff_wpn_lance_0003 (CheckCurHpRatio with an hp_ratio key sk_wpn_claym_0015 doesn't have): a template leftover with no effect, as for Pursuit and Forgeborn (batch 1)."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_claym_0015.def",
+      "label": "Efficacy: Tenacious Will (DEF)",
+      "target": "self",
+      "gameBuff": "buff_wpn_claym_0015",
+      "duration": "duration",
+      "modifiers": [{ "attr": 3, "value": "def_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_claym_0015.on_knockdown",
+      "on": { "event": "physicalStatus", "statuses": ["knockdown"] },
+      "by": "self",
+      "skill": "sk_wpn_claym_0015",
+      "cooldown": "cd",
+      "do": [{ "kind": "buff", "buff": "wpn_claym_0015.def" }],
+      "note": "abilityEvent 401 with mask 2 (Knock Down). A Knock Down on an enemy without Vulnerable only adds a stack (no physicalStatus event; in-game test 39's open question, batch 3 P1)."
+    },
+    {
+      "id": "wpn_claym_0015.on_weakness",
+      "on": { "event": "buffApplied", "categories": ["weakness"] },
+      "by": "self",
+      "skill": "sk_wpn_claym_0015",
+      "cooldown": "cd",
+      "do": [{ "kind": "buff", "buff": "wpn_claym_0015.def" }],
+      "note": "abilityEvent 206 on a Weakness-tagged buff: a kit buff with attribute 62 (Weakness) counts, e.g. Catcher's ultimate."
+    }
+  ]
+}
