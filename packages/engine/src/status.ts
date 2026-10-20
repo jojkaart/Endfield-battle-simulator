@@ -195,8 +195,8 @@ export type StatusEvent =
   | { readonly kind: "consumed"; readonly frame: number; readonly operator: string; readonly element: ArtsElement; readonly stacks: number }
   /** A reaction status was removed by a hit before it ran out. */
   | { readonly kind: "statusConsumed"; readonly frame: number; readonly operator: string; readonly status: ReactionStatus; readonly level: number }
-  /** Vulnerable stacks were added; `stacks` is the count after. */
-  | { readonly kind: "vulnerable"; readonly frame: number; readonly operator: string; readonly stacks: number }
+  /** Vulnerable stacks were added; `stacks` is the count after, `before` the count before (equal when added at the cap). */
+  | { readonly kind: "vulnerable"; readonly frame: number; readonly operator: string; readonly stacks: number; readonly before: number }
   /** A physical status landed (its hit is its damage); `multiplier` scales the hit (Crush). */
   | { readonly kind: "physical"; readonly frame: number; readonly operator: string; readonly status: PhysicalStatus; readonly level: number; readonly forced: boolean; readonly multiplier?: number }
   /** A control status was applied (`frames` long); `freezes`: the enemy's own clock stops meanwhile. */
@@ -395,7 +395,7 @@ function addVulnerable(s: EnemyStatus, n: number, frame: number, operator: strin
   const cur = s.vulnerable;
   const stacks = Math.min(MAX_VULNERABLE_STACKS, (cur?.stacks ?? 0) + n);
   const state: EnemyStatus = { ...s, vulnerable: { stacks, expiresAt: Math.max(cur?.expiresAt ?? 0, frame + VULNERABLE_FRAMES) } };
-  const events: StatusEvent[] = [{ kind: "vulnerable", frame, operator, stacks }];
+  const events: StatusEvent[] = [{ kind: "vulnerable", frame, operator, stacks, before: cur?.stacks ?? 0 }];
   if (!shatters) return { state, events };
   const sh = shatter(state, frame, operator);
   return { state: sh.state, events: [...events, ...sh.events] };

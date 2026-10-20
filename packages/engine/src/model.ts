@@ -7,6 +7,7 @@ import type { ArtsElement } from "./reactions.ts";
 import type { HealTarget, KitTrigger } from "./events.ts";
 import type { Predicate, ValueExpr } from "./expr.ts";
 import type { HitApplication, PhysicalStatus, ReactionStatus } from "./status.ts";
+import { EngineError } from "./errors.ts";
 
 /**
  * How a modifier combines with an attribute (the tables' `formulaItem` /
@@ -121,6 +122,8 @@ export interface SkillData {
   readonly defaults: Readonly<Record<string, number>>;
   /** The kind of SP each blackboard key grants in this skill's file (ObtainCostAction atbGainMethod); empty when not loaded. */
   readonly spKinds: Readonly<Record<string, SpKind>>;
+  /** The atbSourceType of the SP each blackboard key grants in this file (ObtainCostAction: 1 basic attacks, 3 skills, 0 some extras); empty when not loaded. */
+  readonly spSources: Readonly<Record<string, number>>;
   /** Permanent stat effects (`cardAttributeModifier`), e.g. weapon and gear set stats. */
   readonly statModifiers: readonly SkillAttrModifier[];
 }
@@ -262,12 +265,21 @@ export interface KitHit {
   readonly id: string;
   readonly label: string;
   readonly scale: readonly string[];
-  /** How many times the hit lands per use. */
-  readonly count: number;
+  /**
+   * How many times the hit lands per use: a number, or a value judged at the cast for its caster (before a
+   * `requires` uses stacks up; a triggered hit's when its action runs), e.g. one per Thunderlance on the field;
+   * 0 lands nothing. Each landing is its own hit.
+   */
+  readonly count: ValueExpr;
   /** Event keys battle logs use for this hit (skill, projectile or ability-entity IDs). */
   readonly events: readonly string[];
-  /** Frame of each landing from the skill's start (30 FPS), when known. */
+  /**
+   * Frame of each landing from the skill's start (30 FPS), when known; with a count that's a value, landings
+   * past the list repeat its last frame, `framesEvery` frames apart.
+   */
   readonly frames?: readonly number[];
+  /** A count that's a value: frames between landings past `frames` (default 0: all at its last frame). */
+  readonly framesEvery?: number;
   /** Which skill-type damage bonus applies (enhanced basic attacks during an ultimate are still "basic"); `none` for triggered hits of no skill type. */
   readonly damageType: SkillType | "none";
   readonly element: Element;
@@ -369,6 +381,17 @@ export function resolveApplication(app: KitApplication, value: (v: ValueExpr) =>
   const { if: _if, ...rest } = app;
   if ((rest.kind === "infliction" || rest.kind === "consumeInfliction") && rest.stacks !== undefined) return { ...rest, stacks: value(rest.stacks) } as HitApplication;
   return rest as HitApplication;
+}
+
+/**
+ * The frames of a hit's `n` landings (KitHit.count, resolved): its `frames` in order, landings past them at
+ * the last one plus `framesEvery` per landing; frame 0 without frames.
+ */
+export function landingFrames(hit: Pick<KitHit, "id" | "frames" | "framesEvery">, n: number): number[] {
+  if (!Number.isInteger(n) || n < 0) throw new EngineError(`hit ${hit.id} lands ${n} times: a count is a whole number ≥ 0`);
+  const frames = hit.frames ?? [];
+  const last = frames.length ? (frames[frames.length - 1] as number) : 0;
+  return Array.from({ length: n }, (_, i) => (i < frames.length ? (frames[i] as number) : last + (i - Math.max(0, frames.length - 1)) * (hit.framesEvery ?? 0)));
 }
 
 /** How an operator's kit changes the statuses it applies (Arcane's talent: Corrosion lasts longer and shreds more). */

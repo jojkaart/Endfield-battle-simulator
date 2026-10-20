@@ -29,15 +29,16 @@ import {
 } from "./damage.ts";
 import { zoneSum, type Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
-import { resolveApplication, type EventSource, type GameData, type KitBuff, type KitHit, type KitSkill, type OperatorKit, type SkillTiming, type SpKind, type StackGain, type StackRequirement } from "./model.ts";
+import { landingFrames, resolveApplication, type EventSource, type GameData, type KitBuff, type KitHit, type KitSkill, type OperatorKit, type SkillTiming, type SpKind, type StackGain, type StackRequirement } from "./model.ts";
 import { effectiveKit } from "./triggers.ts";
-import { causeMatches, eventMatches, triggerSkillId, type BattleEvent, type BuffCategory, type KitTrigger } from "./events.ts";
+import { allActions, causeMatches, eventMatches, triggerActionAt, triggerSkillId, type BattleEvent, type BuffCategory, type KitTrigger } from "./events.ts";
 import { evaluate, test, valueKeys, type EvalContext, type Predicate, type ValueExpr } from "./expr.ts";
 import { applyBuff, buffAttr, buffModifiers, endBuff, extendBuff, reaches, recordedOf, remainingOf, resolveValue, withBuff, type ActiveBuff } from "./buffs.ts";
 import { computeStats, skillLevel, skillParam, type StatPanel } from "./stats.ts";
 import { Attr } from "./attributes.ts";
 import { applyToEnemy, expireStatus, nextTick, NO_STATUS, statusModifiers, tickStatus, type EnemyStatus, type StatusEvent, type StatusTweaks } from "./status.ts";
 import { FPS } from "./units.ts";
+import { FINISHER_SP_SOURCE_TYPE } from "./constants.ts";
 
 /**
  * Team SP. Values from Endaxis's notes on the native skill settings (team SP
@@ -146,9 +147,10 @@ interface PendingHit {
   readonly operator: string;
   readonly skillId: string;
   readonly hitId: string;
-  /** SP this hit gives when it lands (the skill's `atb`, on its first hit), and its kind. */
+  /** SP this hit gives when it lands (the skill's `atb`, on its first hit), its kind and its atbSourceType. */
   readonly sp: number;
   readonly spKind?: SpKind;
+  readonly spSource?: number;
   /** Stacks this landing uses up (StackRequirement.consumeAt "hit"; Infinity: all). */
   readonly usesUp?: readonly { readonly stack: string; readonly amount: number }[];
   /** A combo's hits: the count of the event that opened its window (ValueExpr `eventCount`)… */
@@ -162,8 +164,11 @@ interface PendingHit {
   readonly cast?: number;
   /** Who was controlled when the hit's skill was cast (predicates on the hit judge `controlled` by it). */
   readonly controlledAtCast?: string;
-  /** A triggered hit: the owner's trigger and the index of its `hits` action (`skillId` is then the trigger's value source). */
-  readonly trigger?: { readonly id: string; readonly action: number };
+  /**
+   * A triggered hit: the owner's trigger and the index of its `hits` action (`skillId` is then the trigger's value
+   * source); inside a `choose`, `nested` goes on from there (triggerActionAt).
+   */
+  readonly trigger?: { readonly id: string; readonly action: number; readonly nested?: readonly number[] };
   /** Alternatives of one landing (KitHit.branch): the same key for each, judged together when the first lands. */
   readonly branch?: string;
   /** A triggered Fixed DMG hit's value, judged when its trigger fired. */
@@ -691,6 +696,21 @@ function spKindOf(ctx: TimelineContext, skillId: string, value: ValueExpr, given
   return "returned";
 }
 
+/** A grant's atbSourceType: what the data says for the first skill key its value reads that has one (talent keys aside), else none. */
+function spSourceOf(ctx: TimelineContext, skillId: string, value: ValueExpr): { sourceType?: number } {
+  let keys: { skill: string; key: string }[] = [];
+  try {
+    keys = valueKeys(value, skillId);
+  } catch {
+    // A talent value: no skill file to say.
+  }
+  for (const k of keys) {
+    const type = ctx.data.skills[k.skill]?.spSources[k.key];
+    if (type !== undefined) return { sourceType: type };
+  }
+  return {};
+}
+
 /** SP a skill returns (its blackboard `atb` at the operator's level, after potentials). */
 function skillSpGain(ctx: TimelineContext, operator: string, skillId: string): number {
   const build = ctx.builds.get(operator) as Build;
@@ -764,6 +784,7 @@ function situationAt(ctx: TimelineContext, operator: string, st: TimelineState, 
     enemy: expireStatus(st.enemy, frame),
     stacks: st.stacks[operator] ?? {},
     buffActive: (id) => st.buffs.some((b) => b.id === id && b.owner === operator && b.cast === undefined && active(b)),
+    buffLayers: (id) => st.buffs.filter((b) => b.id === id && b.owner === operator && b.cast === undefined && active(b)).length,
     controlled: st.controlled,
     staggered: isStaggered(st, frame),
     enemyHp: enemyHpAt(ctx.scenario, frame),
@@ -1070,7 +1091,10 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
   const panel = ctx.panels.get(owner) as StatPanel;
   let consumed = 0;
   const ec = () => evalContext(ctx.data, build, panel, triggerSkillId(owner, t), triggerSituation(ctx, owner, st, e, consumed));
-  for (const a of t.do) {
+  // Each action with its place in the trigger (triggerActionAt): a chosen option's actions run next, in place.
+  const work = t.do.map((a, i) => ({ a, place: [i] }));
+  for (let next = work.shift(); next; next = work.shift()) {
+    const { a, place } = next;
     if (a.if && !decide(a.if, ec())) continue;
     switch (a.kind) {
       case "openCombo": {
@@ -1118,7 +1142,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
           const amount = evaluate(a.value, ec());
           const spKind = spKindOf(ctx, triggerSkillId(owner, t), a.value, a.spKind);
           st = gainSp(st, amount, frame, spKind);
-          if (amount > 0) events.push({ type: "sp", frame, operator: owner, amount, kind: origin && origin.operator === owner ? origin.kind : "none", natural: spKind === "natural" });
+          if (amount > 0) events.push({ type: "sp", frame, operator: owner, amount, kind: origin && origin.operator === owner ? origin.kind : "none", natural: spKind === "natural", ...spSourceOf(ctx, triggerSkillId(owner, t), a.value) });
         }
         break;
       case "buff": {
@@ -1147,7 +1171,8 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         const r = endBuff(st.buffs, a.buff, owner, frame, a.layers);
         if (r.ended) {
           st = { ...st, buffs: r.buffs };
-          events.push({ type: "buffEnded", frame, operator: owner, buff: a.buff, remaining: r.remaining, ...(r.recorded !== undefined ? { recorded: r.recorded } : {}) });
+          const gameBuff = ctx.kits.get(owner)?.buffs.find((x) => x.id === a.buff)?.gameBuff;
+          events.push({ type: "buffEnded", frame, operator: owner, buff: a.buff, remaining: r.remaining, ...(r.recorded !== undefined ? { recorded: r.recorded } : {}), consumed: true, ...(gameBuff ? { gameBuff } : {}) });
         }
         break;
       }
@@ -1199,14 +1224,15 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         break;
       }
       case "hits": {
-        const index = t.do.indexOf(a);
+        const [index, ...nested] = place as [number, ...number[]];
         const pending: PendingHit[] = [];
         // `now`: its frame-0 hits land as the action runs, before the trigger's next action (a DamageAction inside an event handler).
         const landNow: PendingHit[] = [];
         for (const h of a.hits) {
-          (h.frames ?? Array.from({ length: h.count }, () => 0)).forEach((f, i) => {
+          // A count that's a value is judged as the action runs.
+          (typeof h.count === "number" ? (h.frames ?? Array.from({ length: h.count }, () => 0)) : landingFrames(h, evaluate(h.count, ec()))).forEach((f, i) => {
             const p: PendingHit = {
-              frame: frame + f, operator: owner, skillId: triggerSkillId(owner, t), hitId: h.id, sp: 0, trigger: { id: t.id, action: index },
+              frame: frame + f, operator: owner, skillId: triggerSkillId(owner, t), hitId: h.id, sp: 0, trigger: { id: t.id, action: index, ...(nested.length ? { nested } : {}) },
               ...(h.branch ? { branch: `${owner}:${t.id}:${frame}:${h.branch}:${i}` } : {}), ...(h.fixedDamage !== undefined ? { fixed: evaluate(h.fixedDamage, ec()) } : {}),
             };
             (a.now && f === 0 ? landNow : pending).push(p);
@@ -1214,6 +1240,27 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         }
         st = { ...st, pending: [...st.pending, ...pending] };
         for (const p of landNow) st = landHit(ctx, st, p);
+        break;
+      }
+      case "choose": {
+        // One roll whatever the weights, so the stream doesn't depend on them.
+        const weights = a.options.map((o) => evaluate(o.weight, ec()));
+        if (weights.some((w) => !(w >= 0))) throw new EngineError(`${owner} trigger ${t.id}: choose weights must be ≥ 0 (${weights.join(", ")})`);
+        const roll = draw(ctx, st, "chance");
+        st = roll.state;
+        const total = weights.reduce((x, w) => x + w, 0);
+        if (total === 0) break;
+        // Option i covers [Σ_{<i} w, Σ_{≤i} w) of the roll × Σ w (rounding past the end: the last positive one).
+        const r = roll.value * total;
+        let chosen = -1;
+        for (let i = 0, sum = 0; i < weights.length; i++) {
+          const w = weights[i] as number;
+          if (w === 0) continue;
+          chosen = i;
+          sum += w;
+          if (r < sum) break;
+        }
+        work.unshift(...(a.options[chosen]?.do ?? []).map((x, j) => ({ a: x, place: [...place, chosen, j] })));
         break;
       }
     }
@@ -1244,8 +1291,9 @@ function pendingHitDef(ctx: TimelineContext, hit: PendingHit): { skill: Pick<Kit
     const skill = kitSkill(ctx, hit.operator, hit.skillId);
     return { skill, kind: skill.kind, kitHit: skill.hits.find((h) => h.id === hit.hitId) as KitHit };
   }
-  const { id, action } = hit.trigger;
-  const a = ctx.kits.get(hit.operator)?.triggers.find((t) => t.id === id)?.do[action];
+  const { id, action, nested } = hit.trigger;
+  const t = ctx.kits.get(hit.operator)?.triggers.find((x) => x.id === id);
+  const a = t && triggerActionAt(t, action, nested);
   const kitHit = a?.kind === "hits" ? a.hits.find((h) => h.id === hit.hitId) : undefined;
   if (!kitHit) throw new EngineError(`${hit.operator} trigger ${id} has no hit ${hit.hitId}`);
   return { skill: { skillId: hit.skillId }, kind: kitHit.damageType, kitHit };
@@ -1254,8 +1302,9 @@ function pendingHitDef(ctx: TimelineContext, hit: PendingHit): { skill: Pick<Kit
 /** A pending hit's position in its kit list (skill hits, or its trigger action's hits): alternatives are judged in this order. */
 function hitOrder(ctx: TimelineContext, hit: PendingHit): number {
   if (!hit.trigger) return kitSkill(ctx, hit.operator, hit.skillId).hits.findIndex((h) => h.id === hit.hitId);
-  const { id, action } = hit.trigger;
-  const a = ctx.kits.get(hit.operator)?.triggers.find((t) => t.id === id)?.do[action];
+  const { id, action, nested } = hit.trigger;
+  const t = ctx.kits.get(hit.operator)?.triggers.find((x) => x.id === id);
+  const a = t && triggerActionAt(t, action, nested);
   return a?.kind === "hits" ? a.hits.findIndex((h) => h.id === hit.hitId) : 0;
 }
 
@@ -1267,7 +1316,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   if (hit.sp > 0) {
     const spKind = hit.spKind ?? "returned";
     st = gainSp(st, hit.sp, hit.frame, spKind);
-    spEvents.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount: hit.sp, kind, natural: spKind === "natural" });
+    spEvents.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount: hit.sp, kind, natural: spKind === "natural", ...(hit.spSource !== undefined ? { sourceType: hit.spSource } : {}) });
   }
   const build = ctx.builds.get(hit.operator) as Build;
   st = { ...st, enemy: expireStatus(st.enemy, hit.frame) };
@@ -1350,7 +1399,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.sp, at(consumed));
     const spKind = spKindOf(ctx, hit.skillId, kitHit.sp, kitHit.spKind);
     st = gainSp(st, amount, hit.frame, spKind);
-    if (amount > 0) spEvents.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount, kind, natural: spKind === "natural" });
+    if (amount > 0) spEvents.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount, kind, natural: spKind === "natural", ...spSourceOf(ctx, hit.skillId, kitHit.sp) });
   }
   if (kitHit.energy) {
     const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.energy, at(consumed));
@@ -1421,7 +1470,7 @@ function takeJump(st: TimelineState, j: PendingJump): { state: TimelineState; ev
   const skip = <T extends { readonly frame: number }>(list: readonly T[], ownedBy: (x: T) => boolean): T[] =>
     list.flatMap((x) => (!ownedBy(x) || x.frame <= at ? [x] : x.frame < at + length ? [] : [{ ...x, frame: x.frame - length }]));
   const ending = st.buffs.filter((b) => b.owner === j.operator && b.endsWithCast === j.cast && b.expiresAt > at && b.expiresAt < at + length);
-  const events: BattleEvent[] = [...new Map(ending.map((b) => [b.id, { type: "buffEnded" as const, frame: at, operator: j.operator, buff: b.id, remaining: remainingOf(ending.filter((x) => x.id === b.id), at) }])).values()];
+  const events: BattleEvent[] = [...new Map(ending.map((b) => [b.id, { type: "buffEnded" as const, frame: at, operator: j.operator, buff: b.id, remaining: remainingOf(ending.filter((x) => x.id === b.id), at), ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) }])).values()];
   return {
     state: {
       ...st,
@@ -1535,7 +1584,7 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
       const ended = st.buffs.filter((b) => b.expiresAt === at && b.cast === undefined);
       st = { ...st, buffs: st.buffs.filter((b) => b.expiresAt !== at) };
       // Run out: nothing left, but what its cast's jumps took from it.
-      st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: at, operator: b.owner, buff: b.id, remaining: b.skipped ?? 0, ...(b.records ? { recorded: b.records.total } : {}) })), null);
+      st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: at, operator: b.owner, buff: b.id, remaining: b.skipped ?? 0, ...(b.records ? { recorded: b.records.total } : {}), ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) })), null);
       continue;
     }
     if (due && first(due.frame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame)) {
@@ -1612,7 +1661,7 @@ export function earliestStart(ctx: TimelineContext, state: TimelineState, action
   const cur = state.acting[action.operator];
   // Its action may end sooner: a kit's endAction, a jump or end on its timeline, a perfect dodge.
   const ends =
-    ctx.kits.get(action.operator)?.triggers.some((t) => t.do.some((a) => a.kind === "endAction")) ||
+    ctx.kits.get(action.operator)?.triggers.some((t) => allActions(t.do).some((a) => a.kind === "endAction")) ||
     state.pendingJumps.some((j) => j.operator === action.operator) ||
     (ctx.scenario.options.dodge !== undefined && state.enemyActions.some((a) => a.kind === "attack"));
   if (!cur || ("frame" in r && r.frame <= state.frame) || !ends) return r;
@@ -1708,7 +1757,7 @@ function hasComboTrigger(ctx: TimelineContext, operator: string): boolean {
   const panel = ctx.panels.get(operator) as StatPanel;
   const build = ctx.builds.get(operator) as Build;
   return (ctx.kits.get(operator)?.triggers ?? []).some(
-    (t) => t.do.some((a) => a.kind === "openCombo") && (!t.if || test(t.if, evalContext(ctx.data, build, panel, triggerSkillId(operator, t), { team: ctx.scenario.team })) !== false),
+    (t) => allActions(t.do).some((a) => a.kind === "openCombo") && (!t.if || test(t.if, evalContext(ctx.data, build, panel, triggerSkillId(operator, t), { team: ctx.scenario.team })) !== false),
   );
 }
 
@@ -1757,7 +1806,7 @@ function endCurrentSkill(advanced: TimelineState, operator: string, frame: numbe
   const events: BattleEvent[] = [...new Map(endsNow.map((b) => {
     const same = endsNow.filter((x) => x.id === b.id);
     const recorded = recordedOf(same);
-    return [b.id, { type: "buffEnded" as const, frame, operator, buff: b.id, remaining: remainingOf(same, frame), ...(recorded !== undefined ? { recorded } : {}) }];
+    return [b.id, { type: "buffEnded" as const, frame, operator, buff: b.id, remaining: remainingOf(same, frame), ...(recorded !== undefined ? { recorded } : {}), ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) }];
   })).values()];
   return { state, events };
 }
@@ -1781,7 +1830,10 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   // Hits that need stacks happen only if the stacks are there at the cast; meeting a consuming requirement uses the stack up.
   const own = s.stacks[operator] ?? {};
   const panel = ctx.panels.get(operator) as StatPanel;
-  const castSituation: Situation = { team: ctx.scenario.team, controlled: s.controlled, stacks: own, buffActive: (id) => s.buffs.some((b) => b.id === id && b.owner === operator && b.cast === undefined && b.appliedAt <= frame && b.expiresAt > frame) };
+  const castSituation: Situation = {
+    team: ctx.scenario.team, controlled: s.controlled, stacks: own, buffActive: (id) => s.buffs.some((b) => b.id === id && b.owner === operator && b.cast === undefined && b.appliedAt <= frame && b.expiresAt > frame),
+    buffLayers: (id) => s.buffs.filter((b) => b.id === id && b.owner === operator && b.cast === undefined && b.appliedAt <= frame && b.expiresAt > frame).length,
+  };
   const castIndex = s.casts.length;
   // Haste (attribute 92, KeywordSpeedUpScalar, default 1, at most 1.3): the cast plays faster (assumed; in-game test 19).
   const speed = actionSpeed(ctx, s, operator, frame);
@@ -1808,8 +1860,10 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   const usesAtHit = (hitId: string) => [...usage].filter(([, u]) => u.atHit === hitId).map(([stack, u]) => ({ stack, amount: u.amount }));
   const pending: PendingHit[] = [];
   // A hit's `if` is judged as it lands (it may depend on what the skill itself does first); only its stack requirement is the cast's.
+  // A count that's a value is judged here, before the cast uses stacks up.
+  const countEc = () => evalContext(ctx.data, ctx.builds.get(operator) as Build, panel, skill.skillId, { ...situationAt(ctx, operator, s, frame), ...castSituation });
   for (const h of skill.hits.filter((x) => !x.requires || inRange(x.requires))) {
-    const frames = h.frames ?? Array.from({ length: h.count }, () => 0);
+    const frames = typeof h.count === "number" ? (h.frames ?? Array.from({ length: h.count }, () => 0)) : landingFrames(h, evaluate(h.count, countEc()));
     frames.forEach((f, i) =>
       pending.push({
         frame: frame + scaled(f), operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castIndex,
@@ -1827,7 +1881,9 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     const first = pending.reduce((a, b) => (b.frame < a.frame ? b : a));
     // The skill's `atb` is of the kind its data gives; a finisher's SP (GainBreakingAttackAtb, atbGainMethod 0) is natural.
     const spKind = ownGain > 0 ? spKindOf(ctx, skillId, "atb") : "natural";
-    pending[pending.indexOf(first)] = { ...first, sp: spGain, spKind };
+    // Its atbSourceType likewise: the `atb` key's, a finisher's 0.
+    const spSource = ownGain > 0 ? spSourceOf(ctx, skillId, "atb").sourceType : FINISHER_SP_SOURCE_TYPE;
+    pending[pending.indexOf(first)] = { ...first, sp: spGain, spKind, ...(spSource !== undefined ? { spSource } : {}) };
   }
   // Returned SP is spent first; only the natural part gives the team ultimate energy.
   const natural = Math.max(0, costs.spCost - s.spReturned);
@@ -1859,7 +1915,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
       const n = Math.min(4, live.length + linkBuffs.length);
       if (linkBuffs.length) {
         next = { ...next, buffs: next.buffs.filter((b) => !linkBuffs.includes(b)) };
-        linkEnded.push(...new Map(linkBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id, remaining: remainingOf([b], frame) }])).values());
+        linkEnded.push(...new Map(linkBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id, remaining: remainingOf([b], frame), consumed: true, ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) }])).values());
       }
       const value = costs.kind === "battle" ? 0.15 + 0.15 * n : 0.1 + 0.1 * n;
       const lastHit = Math.max(frame, ...pending.map((h) => h.frame));
@@ -1893,7 +1949,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     type: "cast", frame, operator, skillId, kind: costs.kind, finisher: full.timing.specification === 8, controlled: s.controlled === operator, cast: castIndex,
     ...(windowCount !== undefined ? { count: windowCount } : {}), ...(followUp ? { followUp: true } : {}),
   };
-  const endedEvents: BattleEvent[] = [...new Map(consumedBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id, remaining: remainingOf([b], frame) }])).values()];
+  const endedEvents: BattleEvent[] = [...new Map(consumedBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id, remaining: remainingOf([b], frame), consumed: true, ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) }])).values()];
   return { state: slowDown(ctx, cast, operator, { ...costs.timing, slowdowns: plannedSlowdowns(costs.timing, planned) }, frame), events: [...endsNowEvents, castEvent, ...endedEvents, ...linkEnded], origin: { operator, kind: costs.kind } };
 }
 

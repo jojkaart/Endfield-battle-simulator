@@ -127,6 +127,7 @@ function build(): GameData {
       defaults: file?.defaults ?? {},
       statModifiers: file?.statModifiers ?? [],
       spKinds: file?.spKinds ?? {},
+      spSources: file?.spSources ?? {},
     };
   }
 
