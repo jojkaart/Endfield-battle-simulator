@@ -26,6 +26,13 @@ export interface DamageOptions {
   readonly modifiers?: readonly Modifier[];
   /** What's known about the moment of the hit, for kit predicates (KitHit.if, extraScale); unknown parts are left out. */
   readonly situation?: Situation;
+  /**
+   * What modifiers that hold only in a situation (Modifier.when) are judged
+   * on, when it differs from `situation`: a kit hit's see the enemy after
+   * the hit's own applications (the game checks the target's tags when the
+   * damage is computed, after SpellInfliction). Default: `situation`.
+   */
+  readonly modifierSituation?: Situation;
   /** What a predicate the situation can't decide counts as (the log checker tries both); default: an error. */
   readonly assumeUnknown?: boolean;
 }
@@ -242,7 +249,7 @@ export function activeModifiers(data: GameData, build: Build, panel: StatPanel, 
   const all = [...panelModifiers(data, panel), ...conditionModifiers(data, build, options.conditions, panel), ...(options.modifiers ?? [])];
   if (!all.some((m) => m.when)) return all;
   // A modifier that holds only in a situation (KitBuffModifier.if): judged on the hit's situation; one it can't decide counts as assumeUnknown says (default: not).
-  const ec = evalContext(data, build, panel, "", options.situation);
+  const ec = evalContext(data, build, panel, "", options.modifierSituation ?? options.situation);
   return all.filter((m) => !m.when || (test(m.when, ec) ?? options.assumeUnknown ?? false));
 }
 

@@ -341,13 +341,30 @@ export interface KitHit {
  * its stacks can be values (e.g. up to the room left in a stack).
  */
 export type KitApplication = (
-  | Exclude<HitApplication, { readonly kind: "infliction" | "consumeInfliction" | "physicalStatus" }>
+  | Exclude<HitApplication, { readonly kind: "infliction" | "consumeInfliction" | "physicalStatus" | "forcedReaction" }>
+  /**
+   * `level` judged when it happens, after the hit's earlier applications:
+   * `{consumed: true}` is the stacks the preceding `consumeInfliction` took
+   * (ForceSpellStatusAction `consumedLayer`); 0 applies nothing. `extraSeconds`
+   * is added to this application's duration only.
+   */
+  | (Omit<Extract<HitApplication, { readonly kind: "forcedReaction" }>, "level" | "extraSeconds"> & { readonly level?: ValueExpr; readonly extraSeconds?: ValueExpr })
   /** `status: "event"`: the physical status of the event behind it (a combo's: the one that opened its window). */
   | (Omit<Extract<HitApplication, { readonly kind: "physicalStatus" }>, "status"> & { readonly status: Extract<HitApplication, { readonly kind: "physicalStatus" }>["status"] | "event" })
   /** `element: "event"`: the infliction element of the event behind it (a combo's: the one that opened its window). */
   | (Omit<Extract<HitApplication, { readonly kind: "infliction" }>, "stacks" | "element"> & { readonly element: Extract<HitApplication, { readonly kind: "infliction" }>["element"] | "event"; readonly stacks?: ValueExpr })
   | (Omit<Extract<HitApplication, { readonly kind: "consumeInfliction" }>, "stacks"> & { readonly stacks?: ValueExpr })
-) & { readonly if?: Predicate };
+) & {
+  readonly if?: Predicate;
+  /**
+   * A hit's application that runs (and has its `if` judged) after the hit's
+   * damage, for data where a FinishBuffByTag or consumption follows the
+   * DamageAction (Wulfgard's extra shot keeps the Electrification it then
+   * consumes). Default: before the damage, which sees it (Gilberta's and
+   * Arcane's logs). Hits only.
+   */
+  readonly afterDamage?: boolean;
+};
 
 /** What an event behind an effect was, for applications that repeat it (`element: "event"`, `status: "event"`): Antal's combo. */
 export type EventSource = { readonly kind: "infliction"; readonly element: ArtsElement } | { readonly kind: "physical"; readonly status: PhysicalStatus };
@@ -355,7 +372,8 @@ export type EventSource = { readonly kind: "infliction"; readonly element: ArtsE
 /**
  * The arts-state application a kit application amounts to, with its values
  * resolved; null when it repeats the event behind it and that event isn't
- * of its kind (an infliction-opened combo window and a `status: "event"`).
+ * of its kind (an infliction-opened combo window and a `status: "event"`),
+ * or when it's a forced reaction of level 0 (nothing consumed).
  */
 export function resolveApplication(app: KitApplication, value: (v: ValueExpr) => number, source?: EventSource): HitApplication | null {
   if (app.kind === "infliction" && app.element === "event") {
@@ -366,8 +384,15 @@ export function resolveApplication(app: KitApplication, value: (v: ValueExpr) =>
     if (source?.kind !== "physical") return null;
     return resolveApplication({ ...app, status: source.status }, value);
   }
-  const { if: _if, ...rest } = app;
+  const { if: _if, afterDamage: _after, ...rest } = app;
   if ((rest.kind === "infliction" || rest.kind === "consumeInfliction") && rest.stacks !== undefined) return { ...rest, stacks: value(rest.stacks) } as HitApplication;
+  if (rest.kind === "forcedReaction") {
+    const { level, extraSeconds, ...plain } = rest;
+    const n = level === undefined ? undefined : value(level);
+    if (n === 0) return null;
+    const extra = extraSeconds === undefined ? 0 : value(extraSeconds);
+    return { ...plain, ...(n !== undefined ? { level: n } : {}), ...(extra !== 0 ? { extraSeconds: extra } : {}) };
+  }
   return rest as HitApplication;
 }
 
@@ -405,6 +430,16 @@ export interface KitBuffModifier {
   readonly onlyKinds?: readonly HitKind[];
   /** Only while this holds at each hit (judged per hit for the hitter: `enemyControl`, `enemyStatus`, …). */
   readonly if?: Predicate;
+  /**
+   * An attribute's percentage (BuffData formulaItem 6; the loader takes it
+   * from the game buff): while active it adds value × (base + Σ add) of the
+   * receiver's panel line (× its Π multiply), the panel formula's percent
+   * slot, summed with the panel's percentages, not compounded with them.
+   * Only for attributes read where the game reads them (DEF, Strength, …),
+   * not those feeding a zone. A main attribute's percentage doesn't reach
+   * ATK through the attribute bonus (not modelled, as for flat ones).
+   */
+  readonly percent?: boolean;
 }
 export interface KitBuff {
   /** Unique within the kit. Reapplying replaces the active instance and resets its duration. */
@@ -457,6 +492,17 @@ export interface KitBuff {
    * same name don't stack"), e.g. Arts Susceptibility from two operators.
    */
   readonly stackGroup?: string;
+  /**
+   * Instances of one buff with a priority (BuffData stackingType 1 with a
+   * priority key; the loader sets it from the game buff, `maxStackCnt` or
+   * the applying skill's `maxStackCntKey`): a reapplication by the same owner
+   * keeps up to this many instances (0: no limit), each with its own
+   * duration, and only the strongest acts (its `stackGroup`); a weaker one
+   * doesn't replace a stronger one. At the limit the weakest instance goes
+   * (ties: the oldest), the new one included: an interim, as the data
+   * doesn't say which (batch 3 B1). Its `buffEnded` comes with the last one.
+   */
+  readonly instances?: ValueExpr;
   /** The BuffData buff it stands for (kits name it; predicates and triggers by game buff read it). */
   readonly gameBuff?: string;
   readonly modifiers: readonly KitBuffModifier[];

@@ -8,10 +8,10 @@ import type { AttrType, SkillType } from "./attributes.ts";
 import type { Build } from "./build.ts";
 import { evalContext, type Situation } from "./damage.ts";
 import { evaluate, type ValueExpr } from "./expr.ts";
-import { attrModifier, type Modifier } from "./effects.ts";
+import { attrFeedsZone, attrModifier, type Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
 import type { GameData, KitBuff } from "./model.ts";
-import type { StatPanel } from "./stats.ts";
+import type { StatLine, StatPanel } from "./stats.ts";
 import { FPS } from "./units.ts";
 
 export interface ActiveBuff {
@@ -23,12 +23,14 @@ export interface ActiveBuff {
   /** Infinity for a buff that lasts until something ends it. */
   readonly expiresAt: number;
   readonly modifiers: readonly Modifier[];
-  /** Attributes that don't act on hits directly (e.g. Ultimate Gain Efficiency), read where the game reads them. */
-  readonly attrs?: readonly { readonly attr: AttrType; readonly value: number }[];
+  /** Attributes that don't act on hits directly (e.g. Ultimate Gain Efficiency), read where the game reads them; `percent`: of the receiver's panel line (KitBuffModifier.percent). */
+  readonly attrs?: readonly { readonly attr: AttrType; readonly value: number; readonly percent?: true }[];
   /** A team buff with a recipient filter: the team members it reaches. */
   readonly recipients?: readonly string[];
   /** Layered: at most this many instances of the buff from one owner, each with its own expiry. */
   readonly maxLayers?: number;
+  /** Instances with a priority (KitBuff.instances): at most this many from one owner (0: no limit), the strongest acting; at the limit the weakest goes. */
+  readonly maxInstances?: number;
   /** The next cast of these kinds by someone it reaches consumes it (KitBuff.consumedBy). */
   readonly consumedBy?: readonly SkillType[];
   /** Consumed by a cast: acts only on that cast's hits (the index of the cast in the timeline). */
@@ -69,10 +71,15 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
   if (!(seconds > 0)) throw new EngineError(`${build.operator} buff ${buff.id}: duration ${seconds} s`);
   const source = `${build.operator} ${buff.label}`;
   const modifiers: Modifier[] = [];
-  const attrs: { attr: AttrType; value: number }[] = [];
+  const attrs: { attr: AttrType; value: number; percent?: true }[] = [];
   for (const m of buff.modifiers) {
     const value = resolveValue(data, build, panel, skillId, m.value, situation);
     const filters = { ...(m.skillType ? { skillType: m.skillType } : {}), ...(m.onlyKinds ? { onlyKinds: m.onlyKinds } : {}), ...(m.if ? { when: m.if } : {}) };
+    if (m.percent) {
+      if (m.attr === undefined || attrFeedsZone(m.attr)) throw new EngineError(`${build.operator} buff ${buff.id}: a percentage needs an attribute read where the game reads it (DEF, Strength, …), not a zone`);
+      attrs.push({ attr: m.attr, value, percent: true });
+      continue;
+    }
     if (m.attr !== undefined) {
       const mapped = attrModifier(m.attr, value, source);
       if (mapped) modifiers.push({ ...mapped, ...filters });
@@ -87,6 +94,8 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
   const every = buff.every === undefined ? undefined : Math.round(resolveValue(data, build, panel, skillId, buff.every, situation) * FPS);
   if (every !== undefined && !(every > 0)) throw new EngineError(`${build.operator} buff ${buff.id}: ticks every ${every} frames`);
   const maxLayers = buff.maxStacks === undefined ? undefined : Math.round(resolveValue(data, build, panel, skillId, buff.maxStacks, situation));
+  const maxInstances = buff.instances === undefined ? undefined : Math.round(resolveValue(data, build, panel, skillId, buff.instances, situation));
+  if (maxInstances !== undefined && (maxLayers !== undefined || !(maxInstances >= 0))) throw new EngineError(`${build.operator} buff ${buff.id}: ${maxLayers !== undefined ? "layers and instances with a priority don't go together" : `${maxInstances} instances`}`);
   return {
     id: buff.id,
     ...(buff.stackGroup ? { stackGroup: buff.stackGroup } : {}),
@@ -101,6 +110,7 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
     ...(attrs.length ? { attrs } : {}),
     ...(recipients ? { recipients } : {}),
     ...(maxLayers !== undefined ? { maxLayers } : {}),
+    ...(maxInstances !== undefined ? { maxInstances } : {}),
     ...(buff.consumedBy ? { consumedBy: buff.consumedBy } : {}),
     ...(buff.blocksEnergy ? { blocksEnergy: true } : {}),
     ...(every !== undefined ? { every, nextTick: frame + (buff.tickOnApply ? 0 : every) } : {}),
@@ -108,16 +118,31 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
   };
 }
 
+/** An instance's strength, for which of a buff's instances with a priority goes at the limit (KitBuff.instances): its values summed. */
+function instanceStrength(b: ActiveBuff): number {
+  return b.modifiers.reduce((s, m) => s + m.value, 0) + (b.attrs ?? []).reduce((s, a) => s + a.value, 0);
+}
+
 /**
  * Adds a buff. A plain buff replaces the active instance of the same buff
  * from the same owner; a layered one adds a layer, replacing the oldest
- * when it's at its maximum.
+ * when it's at its maximum; one with instances (KitBuff.instances) adds an
+ * instance, and at its maximum the weakest goes (ties: the oldest; the new
+ * one too, so a weaker one doesn't replace a stronger one).
  */
 export function withBuff(buffs: readonly ActiveBuff[], b: ActiveBuff | null): ActiveBuff[] {
   if (!b) return [...buffs];
   // A buff given to some operators only keeps its layers per recipient set (Liino's weapon: 4 per teammate).
   const who = (x: ActiveBuff) => (x.recipients ? x.recipients.join(",") : "");
   const same = (x: ActiveBuff) => x.id === b.id && x.owner === b.owner && x.cast === undefined && who(x) === who(b);
+  if (b.maxInstances !== undefined) {
+    const all = [...buffs.filter(same), b];
+    if (b.maxInstances === 0 || all.length <= b.maxInstances) return [...buffs, b];
+    // Weakest first; among equals the oldest (the new one is last, so it stays over an equal one).
+    const order = all.map((x, i) => ({ x, i })).sort((p, q) => instanceStrength(p.x) - instanceStrength(q.x) || p.i - q.i);
+    const drop = new Set(order.slice(0, all.length - b.maxInstances).map((p) => p.x));
+    return [...buffs, b].filter((x) => !drop.has(x));
+  }
   if (b.maxLayers === undefined) return [...buffs.filter((x) => !same(x)), b];
   const layers = buffs.filter(same).sort((x, y) => x.appliedAt - y.appliedAt);
   const drop = new Set(layers.slice(0, Math.max(0, layers.length - b.maxLayers + 1)));
@@ -181,7 +206,8 @@ export function buffModifiers(buffs: readonly ActiveBuff[], operator: string, fr
         out.push(m);
         continue;
       }
-      const k = JSON.stringify([b.stackGroup, m.zone, m.element ?? null, m.skillType ?? null, m.onlyKinds ?? null]);
+      // A modifier that holds only in a situation competes only with ones under the same condition.
+      const k = JSON.stringify([b.stackGroup, m.zone, m.element ?? null, m.skillType ?? null, m.onlyKinds ?? null, m.when ?? null]);
       const cur = strongest.get(k);
       if (!cur || m.value > cur.value) strongest.set(k, m);
     }
@@ -189,16 +215,26 @@ export function buffModifiers(buffs: readonly ActiveBuff[], operator: string, fr
   return [...out, ...strongest.values()];
 }
 
-/** The sum of an attribute that active buffs give an operator (those that don't act on hits directly), strongest per stack group. */
-export function buffAttr(buffs: readonly ActiveBuff[], operator: string, frame: number, attr: AttrType): number {
+/**
+ * The sum of an attribute that active buffs give an operator (those that
+ * don't act on hits directly), strongest per stack group. A percentage
+ * (KitBuffModifier.percent) is of the operator's panel `line` for the
+ * attribute: value × (base + Σ add) × Π multiply, the panel's percent slot.
+ */
+export function buffAttr(buffs: readonly ActiveBuff[], operator: string, frame: number, attr: AttrType, line?: Pick<StatLine, "base" | "add" | "multiply">): number {
   let sum = 0;
   const strongest = new Map<string, number>();
+  const amount = (a: NonNullable<ActiveBuff["attrs"]>[number]) => {
+    if (!a.percent) return a.value;
+    if (!line) throw new EngineError(`a percentage buff on attribute ${attr} needs ${operator}'s panel line for it`);
+    return a.value * (line.base + line.add) * line.multiply;
+  };
   for (const b of buffs) {
     if (!(b.expiresAt > frame && b.appliedAt <= frame && reaches(b, operator) && b.cast === undefined && !b.consumedBy)) continue;
     for (const a of b.attrs ?? []) {
       if (a.attr !== attr) continue;
-      if (b.stackGroup) strongest.set(b.stackGroup, Math.max(strongest.get(b.stackGroup) ?? -Infinity, a.value));
-      else sum += a.value;
+      if (b.stackGroup) strongest.set(b.stackGroup, Math.max(strongest.get(b.stackGroup) ?? -Infinity, amount(a)));
+      else sum += amount(a);
     }
   }
   for (const v of strongest.values()) sum += v;

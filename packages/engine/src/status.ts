@@ -94,8 +94,14 @@ export type HitApplication =
   | { readonly kind: "infliction"; readonly element: ArtsElement | "enemy"; readonly stacks?: number }
   /**
    * Forcibly apply a reaction status. Some skills set its duration (seconds)
-   * or scale its damage with their own blackboard values, e.g. Laevatain's
+   * or scale its strength with their own blackboard values, e.g. Laevatain's
    * temporary Combustion (`duration`, `extra_scaling`, both raised by her P3).
+   * `scaleKey` multiplies whatever strength the status has (the common
+   * buffs' `extra_scaling`): Combustion's damage over time, Electrification's
+   * Arts DMG Taken (buff_common_pulse_pulse_conduct_triggered_do), Corrosion's
+   * shred (buff_common_natural_natural_corrupt_triggered: start, per second
+   * and cap). `extraSeconds` lengthens this application only
+   * (buff_common_cryst_cryst_frozen_triggered's `extra_duration`).
    */
   | {
       readonly kind: "forcedReaction";
@@ -103,6 +109,7 @@ export type HitApplication =
       readonly level?: number;
       readonly durationKey?: string;
       readonly scaleKey?: string;
+      readonly extraSeconds?: number;
     }
   /**
    * Consume (absorb) the infliction without a reaction, e.g. a final strike
@@ -118,9 +125,11 @@ export type HitApplication =
    * A physical status (AirborneAction, KnockDownAction, CrushAction,
    * FractureAction). `forced`: a Lift or Knock Down that lands without
    * Vulnerable (forceAirborne / forceKnockDown). `multiplierKey`: a skill
-   * value multiplying its hit (CrushAction damageMultiplier).
+   * value multiplying its hit (CrushAction damageMultiplier). `scaleKey`: a
+   * skill value multiplying a Breach's Physical DMG Taken, not its hit
+   * (buff_physical_do_fracture: `physical_res_down` × `extra_scaling`).
    */
-  | { readonly kind: "physicalStatus"; readonly status: PhysicalStatus; readonly forced?: boolean; readonly multiplierKey?: string }
+  | { readonly kind: "physicalStatus"; readonly status: PhysicalStatus; readonly forced?: boolean; readonly multiplierKey?: string; readonly scaleKey?: string }
   /**
    * A control status the game marks with a tag (Immobilization: tag
    * −1065936627), for its duration (seconds, or a skill value). `freezes`:
@@ -146,7 +155,11 @@ export interface ActiveStatus {
   readonly artsIntensity: number;
   /** Frame of the next damage tick (Combustion only). */
   readonly nextTickAt?: number;
-  /** Multiplier on its damage over time, from the applying skill (default none). */
+  /**
+   * Multiplier on its strength from the applying skill, taken at application
+   * (HitApplication `scaleKey`; default none, ×1): Combustion's damage over
+   * time, Electrification's Arts DMG Taken, Corrosion's shred.
+   */
   readonly damageScale?: { readonly key: string; readonly value: number };
   /** Its strength cap × this (Corrosion's shred cap; an applier's talent). */
   readonly capScale?: number;
@@ -161,6 +174,8 @@ export interface ActivePhysical {
   readonly operator: string;
   /** Breach's strength follows the applier's Arts Intensity. */
   readonly artsIntensity: number;
+  /** Breach: multiplier on its Physical DMG Taken from the applying skill (HitApplication `scaleKey`; default ×1). */
+  readonly damageScale?: { readonly key: string; readonly value: number };
 }
 
 export interface EnemyStatus {
@@ -270,6 +285,8 @@ function checkLevel(level: number): number {
 
 interface StatusOverrides {
   readonly durationFrames?: number;
+  /** Frames added to this application's duration (HitApplication `extraSeconds`). */
+  readonly extraFrames?: number;
   readonly damageScale?: { readonly key: string; readonly value: number };
 }
 
@@ -282,7 +299,7 @@ function withStatus(s: EnemyStatus, st: ReactionStatus, level: number, frame: nu
     status: st,
     level: checkLevel(level),
     appliedAt: frame,
-    expiresAt: frame + (o.durationFrames ?? (STATUS_FRAMES[st][level - 1] as number)) + (t?.extraFrames ?? 0),
+    expiresAt: frame + (o.durationFrames ?? (STATUS_FRAMES[st][level - 1] as number)) + (o.extraFrames ?? 0) + (t?.extraFrames ?? 0),
     ...(t && t.capScale !== 1 ? { capScale: t.capScale } : {}),
     operator,
     artsIntensity,
@@ -343,6 +360,7 @@ export function applyToEnemy(
     const level = app.level ?? 1;
     const o: StatusOverrides = {
       ...(app.durationKey ? { durationFrames: Math.round(skillValue(app.durationKey) * FPS) } : {}),
+      ...(app.extraSeconds ? { extraFrames: Math.round(app.extraSeconds * FPS) } : {}),
       ...(app.scaleKey ? { damageScale: { key: app.scaleKey, value: skillValue(app.scaleKey) } } : {}),
     };
     return {
@@ -361,6 +379,7 @@ export function applyToEnemy(
     };
   }
   if (app.kind === "physicalStatus") {
+    if (app.scaleKey && app.status !== "breach") throw new EngineError(`a ${app.status} has no strength for scaleKey ${app.scaleKey} to scale (only Breach's DMG Taken)`);
     const n = s.vulnerable?.stacks ?? 0;
     const lifting = app.status === "lift" || app.status === "knockdown";
     // Without Vulnerable (and not a forced Lift / Knock Down) it only adds a stack.
@@ -368,7 +387,10 @@ export function applyToEnemy(
     const level = lifting ? 1 : n;
     const multiplier = app.multiplierKey ? skillValue(app.multiplierKey) : undefined;
     const added = lifting ? addVulnerable(s, 1, frame, operator, false) : { state: { ...s, vulnerable: null }, events: [] };
-    const phys: ActivePhysical = { status: app.status, level, appliedAt: frame, expiresAt: frame + (PHYSICAL_FRAMES[app.status][level - 1] as number), operator, artsIntensity };
+    const phys: ActivePhysical = {
+      status: app.status, level, appliedAt: frame, expiresAt: frame + (PHYSICAL_FRAMES[app.status][level - 1] as number), operator, artsIntensity,
+      ...(app.scaleKey ? { damageScale: { key: app.scaleKey, value: skillValue(app.scaleKey) } } : {}),
+    };
     const state = { ...added.state, physical: [...added.state.physical.filter((x) => x.status !== app.status), phys] };
     const hit: StatusEvent = { kind: "physical", frame, operator, status: app.status, level, forced: app.forced === true, ...(multiplier !== undefined ? { multiplier } : {}) };
     const sh = shatter(state, frame, operator);
@@ -408,20 +430,25 @@ function shatter(s: EnemyStatus, frame: number, operator: string): { state: Enem
   return { state: { ...s, statuses: s.statuses.filter((x) => x !== solid) }, events: [{ kind: "shatter", frame, operator, level: solid.level }] };
 }
 
-/** The damage modifiers the enemy's statuses give at a frame: Corrosion's resistance shred, Electrification's Arts DMG Taken, Breach's Physical DMG Taken. */
+/**
+ * The damage modifiers the enemy's statuses give at a frame: Corrosion's
+ * resistance shred, Electrification's Arts DMG Taken, Breach's Physical DMG
+ * Taken, each × its applying skill's scale (`damageScale`, default ×1).
+ */
 export function statusModifiers(state: EnemyStatus, frame: number): Modifier[] {
   const out: Modifier[] = [];
+  const scaled = (x: { readonly damageScale?: { readonly value: number } }) => x.damageScale?.value ?? 1;
   for (const x of expireStatus(state, frame).statuses) {
     if (x.status === "corrosion") {
-      out.push(corrosionModifier(x.level, ((frame - x.appliedAt) * 1000) / FPS, x.artsIntensity, x.capScale ?? 1));
+      out.push(corrosionModifier(x.level, ((frame - x.appliedAt) * 1000) / FPS, x.artsIntensity, x.capScale ?? 1, scaled(x)));
     } else if (x.status === "electrification") {
-      const value = (ELECTRIFICATION_DAMAGE_TAKEN[x.level - 1] as number) * artsIntensityEffect(x.artsIntensity);
+      const value = (ELECTRIFICATION_DAMAGE_TAKEN[x.level - 1] as number) * artsIntensityEffect(x.artsIntensity) * scaled(x);
       for (const element of ARTS_ELEMENTS) out.push({ zone: "damageTaken", value, element, source: `Electrification level ${x.level}` });
     }
   }
   for (const x of expireStatus(state, frame).physical) {
     if (x.status !== "breach") continue;
-    out.push({ zone: "damageTaken", value: (BREACH_DAMAGE_TAKEN[x.level - 1] as number) * artsIntensityEffect(x.artsIntensity), element: "physical", source: `Breach level ${x.level}` });
+    out.push({ zone: "damageTaken", value: (BREACH_DAMAGE_TAKEN[x.level - 1] as number) * artsIntensityEffect(x.artsIntensity) * scaled(x), element: "physical", source: `Breach level ${x.level}` });
   }
   return out;
 }
