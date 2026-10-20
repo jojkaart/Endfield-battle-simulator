@@ -1,0 +1,232 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0012_avywen",
+  "sources": [
+    "Kit plan: docs/kit-batches/batch-3/chr_0012_avywen.md (analysis 1, re-analysed in its \"Kit (2026-10-20)\" section). Hit structure and frames: rmxlinux Json/SkillData chr_0012_avywen_* and Json/BuffData buff_chr_0012_avywen_* (game 1.6), as compiled by efsim kit-draft v2 and corrected by hand where noted; values from SkillPatchTable (level 12: attack1–5 atk_scale 0.37 / 0.48 / 0.46 / 0.23 + 0.45 (atk_scale_2) / 1.13, attack5 poise 17 and atb 19, attack1–4 atb 0; finisher 9.0; dive 1.8; battle skill atk_scale 1.5, poise 5, atk_scale_lance 1.68, poise_lance 5, atk_scale_lance_ult 4.32, poise_lance_ult 10, cost 100 SP; combo atk_scale 3.8, poise 10, lance_duration 30, cooldown 12 s; ultimate atk_scale 9.5, poise 20, lance_duration_ult 30, cost 100, cooldown 10 s).",
+    "Skill descriptions (CharGrowthTable + I18nTextTable_EN). Battle skill \"Thunderlance: Interdiction\": \"... dealing some Electric DMG to nearby enemies while pulling back all Thunderlances and Thunderlance EX in the battlefield towards herself. The returning Thunderlances pierce through all enemies along their paths and deal Electric DMG, while returning Thunderlances EX deal more Electric DMG and also apply Electric Infliction.\" Combo \"Thunderlance: Strike\": \"COMBO TRIGGER: When controlled operator performs a Final Strike on a target with active Electric Infliction or Electrification. Leaps into mid-air and throws 3 Thunderlances at the target, then deals 1 hit of Electric DMG to enemies in the area of effect.\" Ultimate \"Thunderlance: Final Shock\": \"Throws a Thunderlance EX at the target area that deals massive Electric DMG to enemies nearby.\"",
+    "Thunderlances are field objects (ability entities abilityentity_chr_0012_avywen_combo_skill_lance / _ultimate_skill_lance, spawned where the thrown projectile lands: combo frame 14, three LaunchProjectile to lance_land_pos1–3; ultimate frame 45, one). Each lives 900 frames (30 s), 1500 (50 s) when potential_2 ≥ 1 (FinishOwner in chr_0012_avywen_combo_skill_lance / _ultimate_skill_lance); the battle skill at frame 7 recalls every one within 50 m (buff_chr_0012_avywen_lance_becalled → JumpToAction 1500, the entity ends) and launches one returning projectile per lance (ForEach over ComboLances / UltiLances). The kit keeps them as layers of the self buffs thunderlance / thunderlance_ex (each layer its own timer, batch-3 V2) and lands one returning hit per layer (KitHit.count {buffLayers}, V3).",
+    "Talents and potentials. Talent 1 \"Expedited Delivery\" (attaches buff_chr_0012_avywen_talent_0; skillBbModifier talent0_usp 4 on the battle skill, combo and ultimate): energy per thrown or returning lance that hits, per target of the combo and ultimate hits (ObtainCostAction talent0_usp, CheckBuffStackNumAdvanced on buff_chr_0012_avywen_talent_0 ≥ 1: talentAtLeast [0, 1]); a returning lance's energy is granted when it reaches her (chr_0012_avywen_combo_skill_lance_back_reach, if EntityBB_talent0 > 0), modelled at its hit. Talent 2 \"Tactful Approach\": the ultimate's Electric Susceptibility (pulse_vul_rate 0.06 / 0.10, pulse_vul_duration 10 s; 0 s while unlearned: not applied). P1 talent0_usp +2 (skill values; the talent gate matters, since P1 adds to the key even with talent 1 unlearned). P2 potential_2 = 20 on combo and ultimate (lance lifetime +20 s). P3 Will +15, Electric DMG +8% and P4 ultimate cost ×0.85: stat panel and skill values. P5 potential_5_rate 1.15 on the battle skill: the returning lances' multipliers ×1.15 against an Electric Susceptible enemy.",
+    "Ultimate energy: max 100 (85 at P4). No usp from the combo: SkillPatchTable's usp 10 is read by no action (its only ObtainCostAction costs talent0_usp; the game's own sub-description says \"Ultimate Energy Gain 0\"). The battle skill gives the team its SP energy at frame 18 (buff_common_obtain_ultimate_sp). No RefrainObtainUsp in her files. Ultimate pulse_resist_down_rate / _duration (SkillPatchTable) are dead keys: no action reads them.",
+    "Not modelled: hit-stops and the lances' TimeDilation (lance_back 0.2 s, EX lance interrupt_weakness 0.4 s, battle skill 0.15 s; Ti1b), the returning lances' flight time (projectile files aren't in the data: they land at frame 7, a lower bound; U3, Ti2), the 50 m recall range (one enemy, always in range), the dive attack in rotations (S10), the dash attack and dodge (no skill group). Not verified against a log: no fixture has Avywenna. Unknowns: how many returning lances hit one boss (U1, here all; in-game test 73), two Electric Susceptibilities sum or the larger (U6, here sum; in-game test 38)."
+  ],
+  "element": "pulse",
+  "buffs": [
+    {
+      "id": "thunderlance",
+      "label": "Thunderlances on the field (one layer per lance)",
+      "target": "self",
+      "duration": { "sum": ["lance_duration", "potential_2"] },
+      "maxStacks": 99,
+      "modifiers": [],
+      "note": "A layer per thrown Thunderlance, each with its own lifetime: 900 frames (30 s), 1500 (50 s) at P2 in chr_0012_avywen_combo_skill_lance (FinishOwner, chosen by potential_2 ≥ 1); written as lance_duration (30) + potential_2 (0 / 20), the same values. The lifetime starts at the combo's frame 14 here; in the game when the projectile lands, a few frames later. No maximum in the data (entities): 99 is only a bound the kit never reaches (one combo per 12 s, three lances each)."
+    },
+    {
+      "id": "thunderlance_ex",
+      "label": "Thunderlances EX on the field (one layer per lance)",
+      "target": "self",
+      "duration": { "sum": ["lance_duration_ult", "potential_2"] },
+      "maxStacks": 99,
+      "modifiers": [],
+      "note": "As thunderlance, for the ultimate's Thunderlance EX (chr_0012_avywen_ultimate_skill_lance: 900 / 1500 frames), from the ultimate's frame 45."
+    },
+    {
+      "id": "lance_pulse_check",
+      "label": "Thunderlance EX infliction lockout (0.3 s)",
+      "target": "enemy",
+      "gameBuff": "buff_chr_0012_avywen_lance_pulse_check",
+      "duration": 0.3,
+      "modifiers": [],
+      "note": "Created on the enemy by each returning EX lance before its damage (chr_0012_avywen_ultimate_skill_lance_back frame 0); its start event (buffEvent 0) inflicts Electric (SpellInfliction type 1) only if no other check is active, so EX lances landing together inflict once (U7). BuffData duration 0.3 (a literal there)."
+    },
+    {
+      "id": "tactful_approach",
+      "label": "Tactful Approach: Electric Susceptibility",
+      "target": "enemy",
+      "gameBuff": "buff_chr_0012_avywen_ultimate_skill_debuff",
+      "duration": "pulse_vul_duration",
+      "modifiers": [{ "zone": "susceptibility", "elements": ["pulse"], "value": "pulse_vul_rate" }],
+      "note": "Talent 2: chr_0012_avywen_ultimate_skill frame 51, if pulse_vul_duration > 0, CreateBuff buff_chr_0012_avywen_ultimate_skill_debuff before the DamageAction: VulnerableAction subType 6 (Electric), rate pulse_vul_rate. stackingType 2 max 1: no stack group, so another Electric Susceptibility (Antal's Focus) adds to it (U6, in-game test 38)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_window",
+      "on": { "event": "hit", "finalStrike": true },
+      "by": "controlled",
+      "if": { "any": [{ "enemyInfliction": "pulse" }, { "enemyStatus": "electrification" }] },
+      "do": [{ "kind": "openCombo" }],
+      "note": "CharGrowthTable: \"COMBO TRIGGER: When controlled operator performs a Final Strike on a target with active Electric Infliction or Electrification.\" The enemy is judged after the Final Strike's own applications (U5; no kit's Final Strike inflicts today)."
+    },
+    {
+      "id": "combo_lances",
+      "on": { "event": "cast", "skills": ["chr_0012_avywen_combo_skill"] },
+      "by": "self",
+      "skill": "chr_0012_avywen_combo_skill",
+      "delay": 14,
+      "awaited": true,
+      "do": [{ "kind": "buff", "buff": "thunderlance", "layers": 3 }],
+      "note": "chr_0012_avywen_combo_skill frame 14: three LaunchProjectile chr_0012_avywen_combo_skill_lance_out (lance_land_pos1–3), each spawning a lance on block (chr_0012_avywen_combo_skill_lance_gene → SpawnAbilityEntity)."
+    },
+    {
+      "id": "ult_lance",
+      "on": { "event": "cast", "skills": ["chr_0012_avywen_ultimate_skill"] },
+      "by": "self",
+      "skill": "chr_0012_avywen_ultimate_skill",
+      "delay": 45,
+      "awaited": true,
+      "do": [{ "kind": "buff", "buff": "thunderlance_ex" }],
+      "note": "chr_0012_avywen_ultimate_skill frame 45: LaunchProjectile chr_0012_avywen_ultimate_skill_lance_out, spawning the EX lance on block."
+    },
+    {
+      "id": "recall",
+      "on": { "event": "cast", "skills": ["chr_0012_avywen_normal_skill"] },
+      "by": "self",
+      "skill": "chr_0012_avywen_normal_skill",
+      "delay": 7,
+      "do": [{ "kind": "endBuff", "buff": "thunderlance" }, { "kind": "endBuff", "buff": "thunderlance_ex" }],
+      "note": "chr_0012_avywen_normal_skill frame 7: CreateBuff buff_chr_0012_avywen_lance_becalled on every lance within 50 m (its timeline jumps to 1500 and finishes) and a returning projectile per lance. The returning hits' count is judged at the cast (V3), before this."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0012_avywen_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "element": "physical", "frames": [7], "events": ["chr_0012_avywen_attack1"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "DamageAction damageType 0 (Physical), mask 128. ObtainCostAction atb with atbOnlyMainChar (atb 0 at every level)." }]
+    },
+    {
+      "skillId": "chr_0012_avywen_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "element": "physical", "frames": [7], "events": ["chr_0012_avywen_attack2"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+    },
+    {
+      "skillId": "chr_0012_avywen_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "element": "physical", "frames": [7], "events": ["chr_0012_avywen_attack3"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+    },
+    {
+      "skillId": "chr_0012_avywen_attack4",
+      "label": "Basic attack 4",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "element": "physical", "frames": [5], "events": ["chr_0012_avywen_attack4"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } },
+        { "id": "hit_2", "scale": ["atk_scale_2"], "element": "physical", "frames": [18], "events": ["chr_0012_avywen_attack4"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "note": "ObtainCostAction atb coefficient 0.5 at each of the two DamageActions." }
+      ]
+    },
+    {
+      "skillId": "chr_0012_avywen_attack5",
+      "label": "Basic attack 5 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "element": "physical",
+          "frames": [24],
+          "events": ["chr_0012_avywen_attack5"],
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "poise": "poise",
+          "poiseControlledOnly": true,
+          "finalStrike": true,
+          "note": "Mask 2097280 (Final Strike); poise unit onlyEnableForMainChar."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0012_avywen_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "element": "physical", "frames": [27], "events": ["chr_0012_avywen_power_attack"], "factor": 0.3, "note": "BreakingAttackCalculation multiplier 0.3 (mask 132); GainBreakingAttackAtb here: the finisher SP is the engine's." },
+        { "id": "hit_2", "scale": ["atk_scale"], "element": "physical", "frames": [28], "events": ["chr_0012_avywen_power_attack"], "factor": 0.2, "sp": 0, "note": "Multiplier 0.2; an ObtainCostAction costType 1 without a value (0 SP)." },
+        { "id": "hit_3", "scale": ["atk_scale"], "element": "physical", "frames": [29], "events": ["chr_0012_avywen_power_attack"], "factor": 0.5, "sp": 0, "note": "Multiplier 0.5; an ObtainCostAction costType 1 without a value (0 SP)." }
+      ]
+    },
+    {
+      "skillId": "chr_0012_avywen_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "element": "physical", "frames": [1], "events": ["chr_0012_avywen_plunging_attack_end"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Needs mid-air, so the engine won't schedule it (rotations have no jumps, S10); kept for calc." }]
+    },
+    {
+      "skillId": "chr_0012_avywen_normal_skill",
+      "label": "Battle skill: Thunderlance: Interdiction",
+      "damageType": "battle",
+      "teamEnergy": [{ "frame": 18, "ratio": 1 }],
+      "hits": [
+        {
+          "id": "lance",
+          "label": "Returning Thunderlance",
+          "scale": ["atk_scale_lance"],
+          "count": { "buffLayers": "thunderlance" },
+          "frames": [7],
+          "launch": 7,
+          "events": ["chr_0012_avywen_combo_skill_lance_back"],
+          "poise": "poise_lance",
+          "energy": { "if": { "talentAtLeast": [0, 1] }, "then": "talent0_usp" },
+          "extraScale": [{ "value": "potential_5_rate", "if": { "all": [{ "potentialAtLeast": 5 }, { "enemyModifier": { "zone": "susceptibility", "element": "pulse" } }] } }],
+          "note": "One landing per Thunderlance on the field at the cast (V3; the data's ForEach at frame 7 launches one chr_0012_avywen_combo_skill_lance_back per lance, which hits what it meets on the way back: every lance hits the one enemy, U1). Lands at frame 7, its launch: the flight back isn't in the data (U3). chr_0012_avywen_combo_skill_lance_back: IfElse (potential_5_rate > 0 and the target has tag −1640994543, carried by buff_common_affixes_vulnerable_pulse / _spell / _all) → atk_scale_lance × potential_5_rate (1.15 at P5; 0 below, the SkillData default), else × 1: the extraScale (enemyModifier counts all-element Susceptibility, as the tag does). DamageAction mask 4352, poise poise_lance. Talent 1's energy: ModifyDynamicBlackboard EntityBB_talent0 = talent0_usp, granted on reach (chr_0012_avywen_combo_skill_lance_back_reach) if the talent's buff is there; here at the hit."
+        },
+        {
+          "id": "lance_ex",
+          "label": "Returning Thunderlance EX",
+          "scale": ["atk_scale_lance_ult"],
+          "count": { "buffLayers": "thunderlance_ex" },
+          "frames": [7],
+          "launch": 7,
+          "events": ["chr_0012_avywen_ultimate_skill_lance_back"],
+          "poise": "poise_lance_ult",
+          "energy": { "if": { "talentAtLeast": [0, 1] }, "then": "talent0_usp" },
+          "extraScale": [{ "value": "potential_5_rate", "if": { "all": [{ "potentialAtLeast": 5 }, { "enemyModifier": { "zone": "susceptibility", "element": "pulse" } }] } }],
+          "applies": [{ "kind": "infliction", "element": "pulse", "if": { "not": { "buffActive": "lance_pulse_check" } } }],
+          "buffs": [{ "buff": "lance_pulse_check" }],
+          "note": "One landing per Thunderlance EX on the field (UltiLances), as lance with atk_scale_lance_ult and poise_lance_ult. Before its damage, CreateBuff buff_chr_0012_avywen_lance_pulse_check on the target, whose start event inflicts Electric only if no other check is active: the infliction with the not-buffActive condition, then the check (0.3 s), so EX lances landing together inflict once (U7). The compiler can't follow it (D4 open: the infliction is on another branch than the landing)."
+        },
+        {
+          "id": "hit",
+          "label": "Thunderlance: Interdiction",
+          "scale": ["atk_scale"],
+          "frames": [18],
+          "events": ["chr_0012_avywen_normal_skill"],
+          "poise": "poise",
+          "note": "DamageAction mask 4352 at frame 18, poise poise; CreateBuff buff_common_obtain_ultimate_sp at 18 (teamEnergy). No P5 branch on this hit (only the lance_back files have potential_5_rate). Window 34–60 to itself."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0012_avywen_combo_skill",
+      "label": "Combo skill: Thunderlance: Strike",
+      "damageType": "combo",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [14],
+          "events": ["chr_0012_avywen_combo_skill"],
+          "poise": "poise",
+          "energy": { "if": { "talentAtLeast": [0, 1] }, "then": "talent0_usp" },
+          "note": "DamageAction mask 12288 at frame 14, poise poise; then, with buff_chr_0012_avywen_talent_0, ObtainCostAction talent0_usp per target (talent 1). No usp (see sources). Its three lances: trigger combo_lances."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0012_avywen_ultimate_skill",
+      "label": "Ultimate: Thunderlance: Final Shock",
+      "damageType": "ultimate",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [51],
+          "events": ["chr_0012_avywen_ultimate_skill"],
+          "poise": "poise",
+          "energy": { "if": { "talentAtLeast": [0, 1] }, "then": "talent0_usp" },
+          "buffs": [{ "buff": "tactful_approach", "beforeDamage": true }],
+          "note": "Frame 51: the talent-2 debuff (if pulse_vul_duration > 0) is created before the DamageAction (mask 4608, poise poise), so this hit already has its Susceptibility (in-game test 51's question); then talent0_usp per target with talent 1. Its EX lance: trigger ult_lance."
+        }
+      ]
+    }
+  ]
+}

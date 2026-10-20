@@ -1,0 +1,28 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_lance_0004",
+  "sources": [
+    "Chimeric Justice, skill 3: rmxlinux Json/SkillData sk_wpn_lance_0004 (game 1.6) passiveEventActions abilityEvent 206 (the wielder applies a buff): CheckBuffStackNumAdvanced buff_physical_no_guard compareType 1 value 0 on the target, CheckBuffIdInContext tag 1075718177 (buff_physical_no_guard: Vulnerable), CreateBuff buff_wpn_lance_0004_atk_up on the wielder. BuffData buff_wpn_lance_0004_atk_up: attributeType 2 formulaItem 6 (ATK +atk_up), duration `duration`, stackingType 4 (a reapplication refreshes it). SkillPatchTable sk_wpn_lance_0004 L9: atk_up 0.42, duration 15, crit_up 0.084. Description (Brutality: Cemented Fury): \"When the wielder applies Vulnerability to an enemy with no Vulnerability stacks, the wielder gains ATK +{atk_up} for {duration}s.\" Batch-3 report docs/kit-batches/batch-3/chr_0012_avywen.md rows 30–31 (G3).",
+    "Crit Rate +crit_up (cardAttributeModifier attribute 9) and the weapon's Strength and Ultimate Gain Efficiency lines are stat-panel modifiers; buff_wpn_lance_0004_crit_up is referenced by no file, and toggleBuffs buff_wpn_passive_spirit_01 has no BuffData file (inert). Not in any log or fixture yet."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_lance_0004.atk",
+      "label": "Brutality: Cemented Fury (ATK)",
+      "target": "self",
+      "gameBuff": "buff_wpn_lance_0004_atk_up",
+      "duration": "duration",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_lance_0004.first_vulnerable",
+      "on": { "event": "vulnerable", "fromNone": true },
+      "by": "self",
+      "skill": "sk_wpn_lance_0004",
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0004.atk" }],
+      "note": "Any Vulnerable stack the wielder adds to an enemy that had none (a kit's vulnerable application, or a Lift / Knock Down on an enemy without Vulnerable), batch-3 T1 fromNone: judged on the stacks before the event, so an application of two stacks on a clean enemy counts too."
+    }
+  ]
+}
