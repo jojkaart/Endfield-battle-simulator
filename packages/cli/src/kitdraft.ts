@@ -11,7 +11,7 @@
 // log fixtures.
 
 import type { GameData, Predicate } from "@efsim/engine";
-import { allOf, compileSkill, formatCompiledValue, prefixOf, type BranchStep, type CompiledCost, type CompiledEffect, type CompiledLanding, type CompiledSkill, type CompiledValue, type Placement } from "@efsim/data";
+import { allOf, compileSkill, formatCompiledValue, prefixOf, type BranchStep, type CompiledCost, type CompiledEffect, type CompiledJump, type CompiledLanding, type CompiledPoiseLanding, type CompiledSkill, type CompiledValue, type Placement } from "@efsim/data";
 
 const FPS = 30;
 const round = (n: number, d = 4) => Math.round(n * 10 ** d) / 10 ** d;
@@ -106,13 +106,22 @@ function siteAlternatives(landings: readonly CompiledLanding[]): Map<number, Set
   return out;
 }
 
+/** The ability-event handler a landing is dealt in (compiler step "on ability event N"), or undefined. */
+const eventStep = (l: Placement) => l.steps.find((s) => s.site === null && s.label.startsWith("on ability event "));
+
 function draftHits(c: CompiledSkill, skillType: string, logged: ReadonlyMap<string, number>, element: string | undefined) {
   const skillId = c.skillId;
   const fsFiles = new Set(c.landings.filter((l) => l.finalStrike).map((l) => l.file));
   type Entry = { sig: string; landings: CompiledLanding[]; hit: Record<string, Json>; notes: string[] };
   const groups: Entry[] = [];
   const used = new Set<object>();
+  // Landings an ability event handler deals (a Final Strike's event 302, a crit's 43): triggers to write, not hits at fixed frames.
+  const byEvent: CompiledLanding[] = [];
   for (const l of c.landings) {
+    if (eventStep(l)) {
+      byEvent.push(l);
+      continue;
+    }
     const apps: Json[] = [];
     const notes: string[] = [];
     for (const e of c.effects) {
@@ -130,15 +139,26 @@ function draftHits(c: CompiledSkill, skillType: string, logged: ReadonlyMap<stri
       const first = list[0];
       if (!first) return null;
       if (list.length > 1) notes.push(`${list.length} ${type === 0 ? "energy" : "SP"} grants here: ${list.map(costText).join("; ")}`);
-      const pred = extraPred(first.steps, l.steps.length);
-      if (pred === null) notes.push(`${costText(first)} only ${first.branch.slice(l.branch.length).join(", ")}`);
+      const extra = extraPred(first.steps, l.steps.length);
+      if (extra === null) notes.push(`${costText(first)} only ${first.branch.slice(l.branch.length).join(", ")}`);
       if (first.isPercent) notes.push(`${costText(first)}: a percentage`);
+      if (type === 1 && first.beforeDamage) spBefore = true;
       const v = valueExpr(first.value, first.coefficient);
       if (v === null) notes.push(`${costText(first)}: not a kit value`);
+      // atbOnlyMainChar: only while controlled.
+      const controlled: Predicate = { controlled: true };
+      const said = (p: Predicate) => JSON.stringify(p) === JSON.stringify(controlled) || ("all" in p && p.all.some((q) => JSON.stringify(q) === JSON.stringify(controlled)));
+      const pred = first.controlledOnly && !(extra && said(extra)) && !l.steps.some((s) => s.pred && said(s.pred)) ? (extra ? allOf([extra, controlled]) : controlled) : extra;
       return v === null ? null : gated(v, pred ?? undefined);
     };
+    let spBefore = false;
     const energy = cost(0);
     const sp = cost(1);
+    // Whom it heals (HealAction at this landing): an event for heal triggers.
+    const healsHere = c.heals.filter((x) => goesWith(x, l, c.landings));
+    for (const x of healsHere) used.add(x);
+    const heals = healsHere.find((x) => x.target !== "unknown")?.target ?? null;
+    if (healsHere.some((x) => x.target === "unknown")) notes.push("a heal of an unknown target here");
     const scale = l.scale.keys.length ? [...l.scale.keys] : [l.scale.expr ?? `LITERAL_${l.scale.value ?? 0}`];
     if (l.scale.expr) notes.push(`scale is ${l.scale.expr}: not key × literal (write it by hand)`);
     else if (l.scale.keys.length === 0) notes.push(`scale is the literal ${l.scale.value ?? "?"}`);
@@ -157,18 +177,23 @@ function draftHits(c: CompiledSkill, skillType: string, logged: ReadonlyMap<stri
       else notes.push(`${b.zone} bonus ${formatCompiledValue(b.value)} (not a key: write it by hand)`);
     }
     const hitIf = l.steps.length ? allOf(l.steps.map((s) => s.pred)) : null;
-    const sig = JSON.stringify([l.file, scale, factor, l.decorateMask, finalStrike, l.branch, apps, energy, sp, l.detached, poise, l.poise?.controlledOnly ?? false, hitElement, bonuses, notes]);
+    // A landing whose decorate mask lacks its skill's kind bit takes another type's bonus (none without a kind bit).
+    const hitType = l.kind !== skillType ? (l.kind ?? "none") : null;
+    const sig = JSON.stringify([l.file, scale, factor, l.decorateMask, finalStrike, l.branch, apps, energy, sp, heals, l.detached, poise, l.poise?.controlledOnly ?? false, hitElement, bonuses, notes]);
     let g = groups.find((x) => x.sig === sig);
     if (!g) {
       const hit: Record<string, Json> = { scale };
       g = { sig, landings: [], hit, notes };
       if (hitIf) hit["if"] = hitIf as unknown as Json;
       if (hitElement) hit["element"] = hitElement;
+      if (hitType) hit["damageType"] = hitType;
       if (factor !== 1) hit["factor"] = factor;
       if (bonuses.length) hit["bonuses"] = bonuses;
       if (apps.length) hit["applies"] = apps;
       if (energy !== null) hit["energy"] = energy;
       if (sp !== null) hit["sp"] = sp;
+      if (sp !== null && spBefore) hit["spBeforeDamage"] = true;
+      if (heals) hit["heals"] = heals;
       if (poise !== null) hit["poise"] = poise;
       if (l.poise?.controlledOnly) hit["poiseControlledOnly"] = true;
       if (l.detached) hit["detached"] = true;
@@ -238,7 +263,77 @@ function draftHits(c: CompiledSkill, skillType: string, logged: ReadonlyMap<stri
       note,
     } as Record<string, Json>;
   });
-  return { hits, used };
+  // One note per handler, file and scale.
+  const eventNotes = new Map<string, { label: string; frames: number[] }>();
+  for (const l of byEvent) {
+    const step = eventStep(l) as BranchStep;
+    const key = `${step.label}: ${l.file} ${formatCompiledValue(l.scale)}`;
+    const e = eventNotes.get(key) ?? { label: key, frames: [] };
+    e.frames.push(l.frame);
+    eventNotes.set(key, e);
+  }
+  const eventDriven = [...eventNotes.values()].map((e) => `event-driven landing (write a trigger: ${e.label.replace(/^on ability event (\d+)/, "ability event $1")}${e.frames.length > 1 ? `, ${e.frames.length} paths` : ""}; frames are lower bounds: ${[...new Set(e.frames)].slice(0, 4).join(", ")})`);
+  return { hits, used, eventDriven };
+}
+
+/**
+ * Stagger-only DamageActions (CompiledSkill.poiseOnly): one is folded into
+ * the landing it goes with when that landing deals no stagger of its own
+ * and the only extra condition is none or "controlled" (then
+ * poiseControlledOnly, as CheckMainCharacterCondition gates it); the others
+ * become poise-only hits of their own.
+ */
+function foldPoise(c: CompiledSkill): { skill: CompiledSkill; rest: CompiledPoiseLanding[] } {
+  const landings = [...c.landings];
+  const rest: CompiledPoiseLanding[] = [];
+  for (const p of c.poiseOnly) {
+    const l = p.landing === null ? undefined : landings[p.landing];
+    const extra = l && prefixOf(l.branch, p.branch) ? p.steps.slice(l.steps.length) : null;
+    const controlledGate = extra?.length === 1 && JSON.stringify(extra[0]?.pred) === JSON.stringify({ controlled: true });
+    if (l && p.landing !== null && l.file === p.file && l.frame === p.frame && !l.poise && extra && (extra.length === 0 || controlledGate)) {
+      landings[p.landing] = { ...l, poise: { value: p.poise.value, controlledOnly: p.poise.controlledOnly || controlledGate } };
+    } else rest.push(p);
+  }
+  return { skill: { ...c, landings }, rest };
+}
+
+/** Poise-only landings that fold into no hit: hits with `poiseOnly`, alike ones grouped. */
+function poiseHits(c: CompiledSkill, rest: readonly CompiledPoiseLanding[], taken: ReadonlySet<string>, logged: ReadonlyMap<string, number>): Record<string, Json>[] {
+  const groups = new Map<string, CompiledPoiseLanding[]>();
+  for (const p of rest) {
+    const sig = JSON.stringify([p.file, formatCompiledValue(p.poise.value), p.poise.controlledOnly, p.branch, p.detached]);
+    groups.set(sig, [...(groups.get(sig) ?? []), p]);
+  }
+  const ids = new Set(taken);
+  return [...groups.values()].map((ps) => {
+    const first = ps[0] as CompiledPoiseLanding;
+    const frames = ps.map((p) => p.frame).sort((a, b) => a - b);
+    const base = `${(first.file === c.skillId ? "hit" : first.file.startsWith(`${c.skillId}_`) ? first.file.slice(c.skillId.length + 1) : first.file.replace(/^buff_/, "")).replace(/[^a-z0-9_]/gi, "_")}_poise`;
+    let id = base;
+    for (let k = 2; ids.has(id); k++) id = `${base}_${k}`;
+    ids.add(id);
+    const pred = first.steps.length ? allOf(first.steps.map((s) => s.pred)) : null;
+    const poise = valueExpr(first.poise.value);
+    const notes = [
+      `${frames.length} stagger-only landing(s) in ${first.file}${first.via.length ? ` (first via ${first.via.join("; ")})` : ""}: a DamageAction whose units are all stagger`,
+      ...(first.branch.length ? [`only ${first.branch.join(", ")}${pred ? "" : " (no kit condition: lands always)"}`] : []),
+      ...(poise === null ? [`stagger ${formatCompiledValue(first.poise.value)}: not a kit value`] : []),
+      `logged ${logged.get(first.file) ?? 0}×`,
+    ];
+    return {
+      id,
+      ...(pred ? { if: pred as unknown as Json } : {}),
+      scale: [],
+      ...(frames.length > 1 ? { count: frames.length } : {}),
+      frames,
+      events: [first.file],
+      poiseOnly: true,
+      poise: poise ?? 0,
+      ...(first.poise.controlledOnly ? { poiseControlledOnly: true } : {}),
+      ...(first.detached ? { detached: true } : {}),
+      note: notes.join("; "),
+    };
+  });
 }
 
 /** What a skill creates on whom, in short. */
@@ -266,12 +361,15 @@ function buffNotes(c: CompiledSkill): string[] {
   return out;
 }
 
-function draftSkill(c: CompiledSkill, groupType: string, logged: ReadonlyMap<string, number>, operator: string, element: string | undefined): { skill: Record<string, Json>; triggers: Record<string, Json>[] } {
+function draftSkill(compiled: CompiledSkill, groupType: string, logged: ReadonlyMap<string, number>, operator: string, element: string | undefined, timingJumps: readonly { at: number; to: number; conditional: boolean }[] = []): { skill: Record<string, Json>; triggers: Record<string, Json>[] } {
+  const { skill: c, rest } = foldPoise(compiled);
   const kinds = new Set(c.landings.map((l) => l.kind));
   const only = kinds.size === 1 ? [...kinds][0] : undefined;
   const damageType = only ?? (["basic", "battle", "combo", "ultimate"].includes(groupType) ? groupType : "basic");
-  const { hits, used } = draftHits(c, damageType, logged, element);
-  const notes: string[] = [];
+  const drafted = draftHits(c, damageType, logged, element);
+  const { used } = drafted;
+  const hits = [...drafted.hits, ...poiseHits(c, rest.filter((p) => !eventStep(p)), new Set(drafted.hits.map((h) => String(h["id"]))), logged)];
+  const notes: string[] = [...drafted.eventDriven];
   if (only && only !== groupType) notes.push(`damageType ${only} from the decorate masks; the skill's group is ${groupType}`);
   const team = c.teamEnergy.filter((t) => t.branch.length === 0);
   // Each unconditional part at its frame, its ratio of the energy (the whole when the parts don't say).
@@ -314,9 +412,18 @@ function draftSkill(c: CompiledSkill, groupType: string, logged: ReadonlyMap<str
     const kind = x.costType === 0 ? "energy" : "sp";
     // The engine gives a skill's own `atb` on its first hit: SP from that key becomes a trigger only in a skill without hits.
     const ownAtb = kind === "sp" && hits.length > 0 && x.value.keys.includes("atb");
-    const ok = v !== null && !x.isPercent && !ownAtb && later(x, { kind, value: v }, costText(x));
+    const value = v !== null && x.controlledOnly ? gated(v, { controlled: true }) : v;
+    const ok = value !== null && !x.isPercent && !ownAtb && later(x, { kind, value }, costText(x));
     if (!ok) notes.push(`${costText(x)} at ${placeText(x)} with no landing${ownAtb ? " (the engine gives the skill's atb on its first hit)" : ""}`);
   }
+  // A heal with no landing: a heal action at its frame (its heal tag's kind).
+  const unplaced = new Map<string, number>();
+  for (const h of c.heals) {
+    if (used.has(h)) continue;
+    const ok = h.target !== "unknown" && later(h, { kind: "heal", target: h.target, ...(h.healKind ? { healKind: h.healKind } : {}) }, `heal (${h.target})`);
+    if (!ok) unplaced.set(`${h.target} in ${h.file}`, (unplaced.get(`${h.target} in ${h.file}`) ?? 0) + 1);
+  }
+  if (unplaced.size) notes.push(`heals with no landing or no known target (whom: write by hand): ${[...unplaced].map(([k, n]) => `${k} ×${n}`).join(", ")}`);
   // The same action on both sides of one condition (energy if controlled, and if not) happens either way.
   for (const slot of atFrame.values()) {
     const text = (a: Json | undefined) => JSON.stringify(a ?? null);
@@ -346,7 +453,22 @@ function draftSkill(c: CompiledSkill, groupType: string, logged: ReadonlyMap<str
   }));
 
   notes.push(...buffNotes(c));
-  for (const j of c.jumps) notes.push(`JumpToAction at ${placeText(j)} → frame ${j.destFrame} (${j.condition}); not followed`);
+  // Jumps, one note per jump (not per path to it); a conditional jump on the skill's own timeline whose condition can be said becomes a kit `jumps` entry.
+  const jumps: Record<string, Json>[] = [];
+  const jumpGroups = new Map<string, CompiledJump[]>();
+  for (const j of c.jumps) {
+    const key = JSON.stringify([j.frame, j.file, j.destFrame, j.condition]);
+    jumpGroups.set(key, [...(jumpGroups.get(key) ?? []), j]);
+  }
+  for (const group of jumpGroups.values()) {
+    const j = group[0] as CompiledJump;
+    const preds = new Set(group.map((x) => JSON.stringify(x.pred)));
+    const pred = preds.size === 1 ? j.pred : null;
+    const listed = timingJumps.filter((x) => x.conditional && x.at === j.frame && x.to === j.destFrame);
+    const emitted = j.file === c.skillId && !j.detached && pred !== null && listed.length === 1 && group.length === c.jumps.filter((x) => x.frame === j.frame && x.destFrame === j.destFrame).length;
+    if (emitted) jumps.push({ at: j.frame, to: j.destFrame, if: pred as unknown as Json });
+    notes.push(`JumpToAction at ${placeText(j)}${group.length > 1 ? ` (and ${group.length - 1} more path(s) to it)` : ""} → frame ${j.destFrame} (${j.condition}); ${emitted ? "in jumps" : "not followed"}`);
+  }
   for (const k of c.casts) notes.push(`casts ${k.skillId} at ${placeText(k)}${k.followed ? " (compiled into this skill)" : ""}`);
   // The compiler's own assumptions and what it didn't follow (not the one-enemy decisions every skill has).
   notes.push(...c.notes.filter((n) => !/^(CheckEntityNum decided|CheckTargetsEqual decided)/.test(n)).map((n) => `compiler: ${n}`));
@@ -357,6 +479,7 @@ function draftSkill(c: CompiledSkill, groupType: string, logged: ReadonlyMap<str
       damageType,
       ...(teamEnergy ? { teamEnergy } : {}),
       ...(energyBlockSeconds ? { energyBlockSeconds } : {}),
+      ...(jumps.length ? { jumps } : {}),
       ...(notes.length ? { note: notes.join(" | ") } : {}),
       hits,
     },
@@ -417,12 +540,12 @@ export function kitDraft(data: GameData, operator: string, loggedEvents: Readonl
   for (const id of [...top].sort()) {
     const values = data.skills[id]?.levels.at(-1)?.blackboard;
     const c = compileSkill(id, { followCast: (s) => !top.has(s), attachedBuffs: attached, valueGates: valueGates(data, operator, id, values), ...(values ? { values } : {}) });
-    if (!c || (c.landings.length === 0 && c.energy.length === 0 && c.sp.length === 0 && c.teamEnergy.length === 0 && c.energyBlocks.length === 0 && !c.effects.length)) {
+    if (!c || (c.landings.length === 0 && c.poiseOnly.length === 0 && c.energy.length === 0 && c.sp.length === 0 && c.teamEnergy.length === 0 && c.energyBlocks.length === 0 && !c.effects.length)) {
       empty.push(c ? id : `${id} (no SkillData file)`);
       continue;
     }
     for (const l of c.landings) covered.add(l.file);
-    const d = draftSkill(c, op.skillGroups[id] ?? "basic", loggedEvents, operator, op.element);
+    const d = draftSkill(c, op.skillGroups[id] ?? "basic", loggedEvents, operator, op.element, data.skills[id]?.timing?.jumps ?? []);
     skills.push(d.skill);
     triggers.push(...d.triggers);
   }

@@ -1403,6 +1403,12 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     st = { ...st, pending: st.pending.filter((p) => p.branch !== hit.branch || p === chosen) };
     if (chosen !== hit) return st;
   } else if (!happens(hit)) return st;
+  // A poise-only landing (KitHit.poiseOnly): its Stagger and nothing else (the cast's SP on its first landing stays).
+  if (kitHit.poiseOnly) {
+    if (kitHit.poise === undefined || (kitHit.poiseControlledOnly && controlled !== hit.operator)) return spEvents.length ? runTriggers(ctx, st, spEvents, { operator: hit.operator, kind }) : st;
+    const r = dealPoise(ctx, st, hit.operator, resolveValue(ctx.data, build, panel, hit.skillId, kitHit.poise, before), hit.frame);
+    return runTriggers(ctx, r.state, [...r.events, ...spEvents], { operator: hit.operator, kind });
+  }
   // What the hit applies comes first: its own damage and a reaction's initial hit already see the new status.
   // Applications marked afterDamage run after the damage instead (KitApplication.afterDamage).
   let consumed = 0;
@@ -1451,6 +1457,20 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     if (beforeDamage && into.length) st = runTriggers(ctx, st, into, { operator: hit.operator, kind });
   };
   applyBuffs(true);
+  /** The hit's own SP (KitHit.sp), its event into `into`. */
+  const grantSp = (into: BattleEvent[]) => {
+    if (kitHit.sp === undefined) return;
+    const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.sp, at(consumed));
+    const spKind = spKindOf(ctx, hit.skillId, kitHit.sp, kitHit.spKind);
+    st = gainSp(st, amount, hit.frame, spKind);
+    if (amount > 0) into.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount, kind, natural: spKind === "natural", ...spSourceOf(ctx, hit.skillId, kitHit.sp) });
+  };
+  // SP granted before the damage (KitHit.spBeforeDamage): its triggers act before it too (a buff they apply counts for the hit).
+  if (kitHit.spBeforeDamage) {
+    const early: BattleEvent[] = [];
+    grantSp(early);
+    if (early.length) st = runTriggers(ctx, st, early, { operator: hit.operator, kind });
+  }
   // A finisher (skillSpecification 8) is multiplied by the enemy's finisher multiplier (attribute 27).
   const finisher = !hit.trigger && ctx.data.skills[hit.skillId]?.timing?.specification === 8;
   let roll: number | undefined;
@@ -1474,12 +1494,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     const own = st.stacks[hit.operator] ?? {};
     st = { ...st, stacks: { ...st.stacks, [hit.operator]: { ...own, ...Object.fromEntries(hit.usesUp.map((u) => [u.stack, Math.max(0, (own[u.stack] ?? 0) - u.amount)])) } } };
   }
-  if (kitHit.sp !== undefined) {
-    const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.sp, at(consumed));
-    const spKind = spKindOf(ctx, hit.skillId, kitHit.sp, kitHit.spKind);
-    st = gainSp(st, amount, hit.frame, spKind);
-    if (amount > 0) spEvents.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount, kind, natural: spKind === "natural", ...spSourceOf(ctx, hit.skillId, kitHit.sp) });
-  }
+  if (kitHit.sp !== undefined && !kitHit.spBeforeDamage) grantSp(spEvents);
   if (kitHit.energy) {
     const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.energy, at(consumed));
     st = gainEnergy(ctx, st, hit.operator, amount, hit.frame);
@@ -1494,7 +1509,8 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     poiseEvents.push(...r.events);
   }
   const hitEvent: BattleEvent = {
-    type: "hit", frame: hit.frame, operator: hit.operator, skillId: hit.skillId, kind,
+    // A skill's hit with a damage type of its own (KitHit.damageType) is a hit of that kind; the rest of the cast's events keep the skill's.
+    type: "hit", frame: hit.frame, operator: hit.operator, skillId: hit.skillId, kind: kitHit.damageType,
     element: kitHit.reaction?.element ?? kitHit.element, finalStrike: kitHit.finalStrike ?? false, finisher, controlled: st.controlled === hit.operator,
     ...(kitHit.reaction ? { reaction: true } : {}),
     ...(hit.cast !== undefined ? { cast: hit.cast } : {}),

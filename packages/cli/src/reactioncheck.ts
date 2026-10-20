@@ -50,7 +50,7 @@ function kitHit(data: GameData, fixture: LogFixture, operator: string, event: st
   const build = fixture.team.find((b) => b.operator === operator);
   if (!build) return null;
   const panel = computeStats(data, build);
-  for (const e of kitHitEntries(effectiveKit(data, build))) if (e.hit.events.includes(event) && hitAvailable(data, build, panel, e.skillId, e.hit, { team: fixture.team })) return e.hit;
+  for (const e of kitHitEntries(effectiveKit(data, build))) if (!e.hit.poiseOnly && e.hit.events.includes(event) && hitAvailable(data, build, panel, e.skillId, e.hit, { team: fixture.team })) return e.hit;
   return null;
 }
 

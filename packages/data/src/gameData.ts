@@ -19,7 +19,7 @@ import { DataError } from "./errors.ts";
 import { at, get, obj, type Ctx } from "./fields.ts";
 import { loadKits } from "./kits.ts";
 import { Names } from "./names.ts";
-import { isSkillFileListed, readSkillFile } from "./skillData.ts";
+import { isSkillFileListed, passiveBuffModifiers, reachedSp, readSkillFile } from "./skillData.ts";
 import { burstDelays, castHelpers, perfectDodgeData, switchedSkills } from "./buffData.ts";
 import { PRIMARY, readTable, sourceCommit, SOURCES } from "./sources.ts";
 import { loadAttributeDefaults } from "./tables/attributeMeta.ts";
@@ -38,7 +38,19 @@ const SKILL_GROUP_TYPES: Record<number, SkillType> = { 0: "basic", 1: "battle", 
 
 const modifier = (m: RawAttrModifier): AttrModifier => ({ attr: m.attr, slot: m.slot, target: m.target, value: m.value });
 
-const toEffect = (e: RawEffect): Effect => (e.kind === "attr" ? { ...e, kind: "attr", modifier: modifier(e.modifier) } : e);
+const passiveCache = new Map<string, ReturnType<typeof passiveBuffModifiers>>();
+/** An attached skill's permanent buff stats (passiveBuffModifiers), once per skill. */
+const passiveOf = (skillId: string) => {
+  let m = passiveCache.get(skillId);
+  if (!m) passiveCache.set(skillId, (m = passiveBuffModifiers(skillId)));
+  return m;
+};
+
+const toEffect = (e: RawEffect): Effect => {
+  if (e.kind === "attr") return { ...e, kind: "attr", modifier: modifier(e.modifier) };
+  if (e.kind === "skill" && passiveOf(e.skillId).length) return { ...e, buffModifiers: passiveOf(e.skillId) };
+  return e;
+};
 
 /** Reads `table[id].field` as a text reference and resolves it. */
 function nameLookup(names: Names, table: string, field: string): (id: string) => string {
@@ -127,6 +139,8 @@ function build(): GameData {
   const rows = [...Object.values(patched), ...[...helpers].filter(([id]) => patched[id] === undefined).flatMap(([id, owner]) => (patched[owner] ? [{ ...patched[owner], skillId: id }] : []))];
   for (const s of rows) {
     const file = isSkillFileListed(s.skillId) ? readSkillFile(s.skillId) : null;
+    // SP the files it reaches grant (entities, helper casts, created buffs) under keys its own file doesn't.
+    const sp = file ? reachedSp(s.skillId, file, (id) => helpers.has(id)) : null;
     skills[s.skillId] = {
       id: s.skillId,
       levels: s.levels.map((l) => ({
@@ -140,8 +154,8 @@ function build(): GameData {
       timing: file?.timing ?? null,
       defaults: file?.defaults ?? {},
       statModifiers: file?.statModifiers ?? [],
-      spKinds: file?.spKinds ?? {},
-      spSources: file?.spSources ?? {},
+      spKinds: sp?.spKinds ?? {},
+      spSources: sp?.spSources ?? {},
     };
   }
 

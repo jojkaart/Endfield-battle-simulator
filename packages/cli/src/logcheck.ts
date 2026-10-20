@@ -138,7 +138,8 @@ export function logModifiers(effects: readonly LogEffect[], category: HitCategor
 
 /** Every kit hit a logged event key could be (a key can stand for several hits, e.g. two hits of one attack). */
 function findHits(data: GameData, build: Build, event: string): [{ skillId: string }, KitHit][] {
-  return kitHitEntries(effectiveKit(data, build)).filter((e) => e.hit.events.includes(event)).map((e) => [{ skillId: e.skillId }, e.hit]);
+  // A poise-only landing (KitHit.poiseOnly) has no logged damage.
+  return kitHitEntries(effectiveKit(data, build)).filter((e) => !e.hit.poiseOnly && e.hit.events.includes(event)).map((e) => [{ skillId: e.skillId }, e.hit]);
 }
 
 /** Above this many boundary buffs (64 subsets), only none or all are tried. A burst that triggers its wearer's weapon and gear-set buffs has six (fixtures/zmdlogs-dbaee23b801d.json t=8391). */

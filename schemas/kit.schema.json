@@ -3089,7 +3089,11 @@
               "const": "none"
             }
           ],
-          "description": "Triggered hits only (required there): which skill-type DMG bonus applies; none for no skill type. A skill's hits take the skill's."
+          "description": "Which skill-type DMG bonus applies; none for no skill type. Required on triggered hits. On a skill's hit, an override of the skill's (a hit whose decorate mask lacks its skill's kind, e.g. one treated as another type): the hit takes that type's bonus and its hit event that kind, while the cast stays the skill's (SP, cast events, team energy)."
+        },
+        "poiseOnly": {
+          "const": true,
+          "description": "A landing that deals only its poise (SkillData DamageAction whose units are all damageAttributeType 1): Stagger, nodes and staggered events, no damage, crit or hit event. Needs poise and an empty scale; no damage, effects or resources of its own."
         },
         "heals": {
           "enum": [
@@ -3106,6 +3110,10 @@
         "spKind": {
           "enum": ["natural", "returned"],
           "description": "The SP's kind; default: what the skill's data says for a plain key (atbGainMethod 0 natural, 1 returned), else returned."
+        },
+        "spBeforeDamage": {
+          "const": true,
+          "description": "The hit's sp comes before its damage (ObtainCostAction before the DamageAction in the same tick): triggers on that SP act before the damage, so a buff they apply counts for this hit. Default: after the damage."
         },
         "detached": {
           "type": "boolean",
