@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { FPS, searchRotation, simulate, simulateRuns, type TimelineResult, type Build, type CritMode, type Element, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { FPS, randomOutcomes, searchRotation, simulate, simulateRuns, type RotationSpread, type TimelineResult, type Build, type CritMode, type Element, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
 import { readBuild } from "./commands.ts";
 import { num, table } from "./format.ts";
 
@@ -56,8 +56,17 @@ export function readScenario(file: string): TimelineScenario {
   };
 }
 
+/** One battle of the scenario; with random outcomes, a note that it's one battle of a distribution (unless `runs` was asked for, which prints formatRuns instead). */
 export function formatSimulation(data: GameData, scenario: TimelineScenario, verbose: boolean): string {
-  return formatResult(data, scenario, simulate(data, scenario), verbose);
+  const text = formatResult(data, scenario, simulate(data, scenario), verbose);
+  const random = randomOutcomes(data, scenario);
+  if (random.length === 0) return text;
+  const [first, ...rest] = text.split("\n");
+  return [
+    first,
+    `Note: random outcomes (${random.join("; ")}): this is one battle (seed ${scenario.options.seed ?? 1}) of a distribution; --runs n shows the spread over n battles.`,
+    ...rest,
+  ].join("\n");
 }
 
 /** The spread of a rotation's damage over many battles with rolled crits, beside its expected-crit total. */
@@ -85,21 +94,61 @@ export function formatRuns(data: GameData, scenario: TimelineScenario, runs: num
   ].join("\n");
 }
 
+/** A search result's distribution over seeded battles, beside the one battle with the scenario's own seed. */
+export function formatSpread(data: GameData, scenario: TimelineScenario, spread: RotationSpread, single: number): string {
+  const n = (x: number) => num(Math.round(x), 0);
+  const legal = spread.runs - spread.illegal;
+  return [
+    `The found rotation over ${spread.runs} battles (seeds ${spread.seed}–${spread.seed + spread.runs - 1}, crit: ${scenario.options.crit}) vs ${data.enemies[scenario.target.enemy]?.name ?? scenario.target.enemy} Lv${scenario.target.level}:`,
+    ...(spread.illegal > 0 ? [`Not legal in ${spread.illegal} of them (an action's random outcome went otherwise there); the figures are over the other ${legal}.`] : []),
+    "",
+    table(
+      ["", "total damage"],
+      [
+        ["mean", n(spread.mean)],
+        ["standard deviation", `${n(spread.sd)} (${spread.mean ? ((spread.sd / spread.mean) * 100).toFixed(1) : "0.0"}%)`],
+        ["min", n(spread.min)],
+        ["5th percentile", n(spread.p5)],
+        ["median", n(spread.p50)],
+        ["95th percentile", n(spread.p95)],
+        ["max", n(spread.max)],
+        [`one battle (seed ${scenario.options.seed ?? 1})`, n(single)],
+      ],
+      ["l", "r"],
+    ),
+  ].join("\n");
+}
+
 /** Search a rotation for the scenario's team (its own rotation is ignored); optionally save it as a scenario that `simulate` replays. */
-export function searchCommand(data: GameData, scenario: TimelineScenario, options: { beam: number; out?: string; resourceWeight?: number; verbose: boolean }): string {
+export function searchCommand(
+  data: GameData,
+  scenario: TimelineScenario,
+  options: { beam: number; out?: string; resourceWeight?: number; seeds?: number; percentile?: number; runs?: number; verbose: boolean },
+): string {
   const { rotation: _ignored, ...rest } = scenario;
   const t0 = Date.now();
-  const found = searchRotation(data, rest, { beamWidth: options.beam, ...(options.resourceWeight !== undefined ? { resourceWeight: options.resourceWeight } : {}) });
+  const found = searchRotation(data, rest, {
+    beamWidth: options.beam,
+    ...(options.resourceWeight !== undefined ? { resourceWeight: options.resourceWeight } : {}),
+    ...(options.seeds !== undefined ? { seeds: options.seeds } : {}),
+    ...(options.percentile !== undefined ? { percentile: options.percentile } : {}),
+    ...(options.runs !== undefined ? { runs: options.runs } : {}),
+  });
   const seconds = ((Date.now() - t0) / 1000).toFixed(1);
+  const seeds = found.seeds.length === 1 ? `seed ${found.seeds[0]}` : `seeds ${found.seeds[0]}–${found.seeds.at(-1)}`;
+  const ranked = typeof found.rankedBy === "string" ? "the mean" : `percentile ${found.rankedBy.percentile}`;
+  const full = { ...scenario, rotation: found.rotation };
   const lines = [
     `Searched ${found.expanded} states (beam ${options.beam}) in ${seconds} s.`,
+    ...(found.random.length > 0 ? [`Random outcomes (${found.random.join("; ")}): each candidate ranked by ${ranked} of ${found.seeds.length} battle${found.seeds.length === 1 ? "" : "s"} (${seeds}).`] : []),
     "",
-    formatResult(data, { ...scenario, rotation: found.rotation }, found.result, options.verbose),
+    formatResult(data, full, found.result, options.verbose),
+    ...(found.spread ? ["", formatSpread(data, full, found.spread, found.result.total)] : []),
   ];
   if (options.out) {
     const doc = {
       $schema: "../schemas/scenario.schema.json",
-      description: `Rotation found by efsim search (beam ${options.beam}); replays with efsim simulate.`,
+      description: `Rotation found by efsim search (beam ${options.beam}${found.random.length > 0 ? `, ranked by ${ranked} of ${found.seeds.length} seeded battles` : ""}); replays with efsim simulate.`,
       team: scenario.team,
       target: scenario.target,
       ...(scenario.controlled ? { controlled: scenario.controlled } : {}),

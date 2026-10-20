@@ -3,16 +3,27 @@
 // recorded one. Every decision goes through the same apply / earliestStart
 // as recorded rotations, so a found rotation is legal by construction and
 // replays to the same numbers with `simulate`.
+//
+// With random outcomes (trigger chances, dodge success, rolled crits) a
+// rotation's damage is a distribution, not a number (owner, 2026-10-20): the
+// search then plays every candidate in several seeded battles at once and
+// ranks it by a statistic of their damage, and reports the found rotation's
+// distribution over many more (docs/design.md#rotation-search).
 
+import { EngineError } from "./errors.ts";
 import type { GameData } from "./model.ts";
 import {
   advance,
   apply,
   createContext,
   earliestStart,
+  enemyActionsOf,
   init,
+  memoAdvance,
   simulate,
+  startsNow,
   type RotationAction,
+  type RunSpread,
   type TimelineContext,
   type TimelineResult,
   type TimelineScenario,
@@ -48,18 +59,31 @@ function hasBasics(data: GameData, operator: string): boolean {
   return (data.kits.operators[operator]?.skills ?? []).some((s) => s.kind === "basic");
 }
 
+/** The actions to judge at a state, in a fixed order: each operator's non-basic skills, then the controlled one's next basic attacks, or a swap to the others. */
+function actionsToJudge(ctx: TimelineContext, state: TimelineState): RotationAction[] {
+  const out: RotationAction[] = [];
+  for (const b of ctx.scenario.team) {
+    const op = b.operator;
+    // Follow-ups (cast only by their own skill) are never legal from a rotation: earliestStart would say so, at a cost.
+    for (const s of ctx.data.kits.operators[op]?.skills ?? []) if (s.kind !== "basic" && !s.followUpOnly) out.push({ operator: op, skill: s.skillId });
+    if (op === state.controlled) for (const skill of nextBasics(ctx.data, state, op)) out.push({ operator: op, skill });
+    else if (hasBasics(ctx.data, op)) out.push({ operator: op, skill: "swap" });
+  }
+  return out;
+}
+
+/** An action's earliest legal start within the fight, or null. */
+function judge(ctx: TimelineContext, state: TimelineState, action: RotationAction): Candidate | null {
+  const s = earliestStart(ctx, state, action);
+  return !("error" in s) && s.frame <= ctx.scenario.durationFrames ? { action, frame: s.frame } : null;
+}
+
 /** Every action that can still happen, with its earliest legal start (stepping API: legal actions). */
 export function candidateActions(ctx: TimelineContext, state: TimelineState): Candidate[] {
   const out: Candidate[] = [];
-  const consider = (action: RotationAction) => {
-    const s = earliestStart(ctx, state, action);
-    if (!("error" in s) && s.frame <= ctx.scenario.durationFrames) out.push({ action, frame: s.frame });
-  };
-  for (const b of ctx.scenario.team) {
-    const op = b.operator;
-    for (const s of ctx.data.kits.operators[op]?.skills ?? []) if (s.kind !== "basic") consider({ operator: op, skill: s.skillId });
-    if (op === state.controlled) for (const skill of nextBasics(ctx.data, state, op)) consider({ operator: op, skill });
-    else if (hasBasics(ctx.data, op)) consider({ operator: op, skill: "swap" });
+  for (const a of actionsToJudge(ctx, state)) {
+    const c = judge(ctx, state, a);
+    if (c) out.push(c);
   }
   return out;
 }
@@ -68,21 +92,70 @@ export function candidateActions(ctx: TimelineContext, state: TimelineState): Ca
  * The choices at the next decision point: the actions that can start
  * soonest, plus the controlled operator's next basic attack even if later
  * (taking it defers everything else).
+ *
+ * The controlled operator's basic attacks and the swaps (kept even if
+ * later, or cheap) are judged in full; of the others, first only whether
+ * they can start at the state's own frame (startsNow), which is much
+ * cheaper than judging how much later they could. When any action can
+ * start then, nothing starts sooner, and the others aren't choices; only
+ * when none can are they judged in full. The same choices, in the same
+ * order, as judging them all.
  */
 export function legalActions(ctx: TimelineContext, state: TimelineState): Candidate[] {
-  const all = candidateActions(ctx, state);
+  const actions = actionsToJudge(ctx, state);
+  const basics = new Set(nextBasics(ctx.data, state, state.controlled));
+  const early = (a: RotationAction) => a.skill === "swap" || (a.operator === state.controlled && basics.has(a.skill));
+  const judged: (Candidate | null | undefined)[] = actions.map((a) => (early(a) ? judge(ctx, state, a) : undefined));
+  const inFight = state.frame <= ctx.scenario.durationFrames;
+  // Then whether the others can start now: if any action can, the others that can't aren't choices.
+  actions.forEach((a, i) => {
+    if (judged[i] === undefined && inFight && startsNow(ctx, state, a)) judged[i] = { action: a, frame: state.frame };
+  });
+  const now = judged.some((c) => c?.frame === state.frame);
+  const all: Candidate[] = [];
+  actions.forEach((a, i) => {
+    // Only when nothing can start now: when the others could start.
+    const c = judged[i] === undefined ? (now ? null : judge(ctx, state, a)) : judged[i];
+    if (c) all.push(c);
+  });
   if (all.length === 0) return [];
   const soonest = Math.min(...all.map((c) => c.frame));
-  const basics = new Set(nextBasics(ctx.data, state, state.controlled));
   return all.filter((c) => c.frame === soonest || (c.action.operator === state.controlled && basics.has(c.action.skill)));
 }
 
+/** Per state: its committed damage (states are never changed in place, so it's computed once per context). */
+const committed = new WeakMap<TimelineState, { readonly ctx: TimelineContext; readonly total: number }>();
+
 /** Damage the state has committed within the fight: landed hits plus everything already on its way. */
 export function committedDamage(ctx: TimelineContext, state: TimelineState): number {
-  const end = advance(ctx, state, ctx.scenario.durationFrames);
+  const known = committed.get(state);
+  if (known?.ctx === ctx) return known.total;
+  // Advanced from a copy, so memoAdvance doesn't keep the fight's end (every hit to come) for as long as the state lives.
+  const end = advance(ctx, { ...state }, ctx.scenario.durationFrames);
   let total = 0;
   for (const h of end.hits) total += h.exact;
+  committed.set(state, { ctx, total });
   return total;
+}
+
+/**
+ * Where a scenario's battles can go differently from seed to seed: rolled
+ * crits, a dodge chance strictly between 0 and 1 with enemy attacks to dodge,
+ * kit triggers (own or worn) that fire with a chance. Empty: one battle is
+ * the result.
+ */
+export function randomOutcomes(data: GameData, scenario: Omit<TimelineScenario, "rotation">): string[] {
+  const out: string[] = [];
+  const o = scenario.options;
+  if (o.crit === "rolled") out.push("rolled crits");
+  const full = { ...scenario, rotation: [] };
+  if (o.dodge && o.dodge.chance > 0 && o.dodge.chance < 1 && enemyActionsOf(full).some((a) => a.kind === "attack")) out.push(`dodge chance ${o.dodge.chance}`);
+  const ctx = createContext(data, full);
+  for (const b of scenario.team) {
+    const chance = (ctx.kits.get(b.operator)?.triggers ?? []).filter((t) => t.chance !== undefined).map((t) => t.id);
+    if (chance.length) out.push(`trigger chance (${data.operators[b.operator]?.name ?? b.operator}: ${chance.join(", ")})`);
+  }
+  return out;
 }
 
 export interface SearchOptions {
@@ -99,6 +172,20 @@ export interface SearchOptions {
    * fight's end; the result is still ranked by damage alone.
    */
   readonly resourceWeight?: number;
+  /**
+   * Seeded battles each candidate is played in when the scenario has random
+   * outcomes (randomOutcomes; default 4): seeds `seed`, `seed` + 1, … from
+   * the scenario's seed (default 1). Without random outcomes it's always 1.
+   */
+  readonly seeds?: number;
+  /**
+   * Rank by this percentile (0–100, nearest rank) of the seeded battles'
+   * damage instead of their mean: a low one (e.g. 25) prefers rotations that
+   * hold up when the dice go badly.
+   */
+  readonly percentile?: number;
+  /** Battles the found rotation is replayed in for its distribution, when the scenario has random outcomes (default 50; 0: none). */
+  readonly runs?: number;
 }
 
 /**
@@ -135,11 +222,57 @@ export function resourceValues(data: GameData, scenario: Omit<TimelineScenario, 
   return { perSp, perEnergy };
 }
 
+/**
+ * A rotation's total damage over seeded battles, each with the scenario's
+ * own options (crit mode included) and seed `seed` + i. A battle in which
+ * an action of the rotation isn't legal (its random outcomes went
+ * otherwise: no combo window, not enough energy) can't be played: it's
+ * counted in `illegal`, and the statistics are over the others.
+ */
+export interface RotationSpread extends RunSpread {
+  /** Battles in which the rotation isn't legal (not in `totals`). */
+  readonly illegal: number;
+}
+
+/** The distribution of a recorded rotation's total damage over `runs` seeded battles with the scenario's options (simulateRuns rolls crits instead). */
+export function rotationSpread(data: GameData, scenario: TimelineScenario, runs: number, seed = scenario.options.seed ?? 1): RotationSpread {
+  if (!Number.isInteger(runs) || runs < 1) throw new EngineError(`runs must be a whole number ≥ 1, not ${runs}`);
+  const totals: number[] = [];
+  let illegal = 0;
+  for (let i = 0; i < runs; i++) {
+    try {
+      totals.push(simulate(data, { ...scenario, options: { ...scenario.options, seed: (seed + i) >>> 0 } }).total);
+    } catch (e) {
+      if (!(e instanceof EngineError)) throw e;
+      illegal++;
+    }
+  }
+  const n = totals.length;
+  if (n === 0) throw new EngineError(`the rotation isn't legal in any of ${runs} battles (seeds ${seed}–${seed + runs - 1})`);
+  const mean = totals.reduce((a, b) => a + b, 0) / n;
+  const sorted = [...totals].sort((a, b) => a - b);
+  const rank = (p: number) => sorted[Math.max(0, Math.ceil(p * n) - 1)] as number;
+  return {
+    runs, seed, totals, mean, illegal,
+    sd: Math.sqrt(totals.reduce((a, t) => a + (t - mean) ** 2, 0) / n),
+    min: sorted[0] as number, max: sorted[n - 1] as number,
+    p5: rank(0.05), p50: rank(0.5), p95: rank(0.95),
+  };
+}
+
 export interface SearchResult {
   readonly rotation: readonly RotationAction[];
-  /** The best rotation replayed with `simulate`. */
+  /** The best rotation replayed with `simulate`: one battle, with the scenario's own seed. */
   readonly result: TimelineResult;
   readonly expanded: number;
+  /** The scenario's random outcomes (randomOutcomes); empty: deterministic, one battle is the result. */
+  readonly random: readonly string[];
+  /** Seeds of the battles every candidate was ranked over (one seed without random outcomes). */
+  readonly seeds: readonly number[];
+  /** What the beam ranked by: the mean of the seeded battles, or a percentile (SearchOptions.percentile). */
+  readonly rankedBy: "mean" | { readonly percentile: number };
+  /** With random outcomes: the found rotation's distribution over SearchOptions.runs battles (rotationSpread). */
+  readonly spread?: RotationSpread;
 }
 
 /**
@@ -181,80 +314,136 @@ function stateKey(s: TimelineState): string {
   ]);
 }
 
-/** The best node per equivalent state, best first, at most `n`. */
+/** The best node per equivalent state (in every seeded battle), best first, at most `n`. */
 function prune(nodes: readonly Node[], n: number): Node[] {
   const byKey = new Map<string, Node>();
   for (const x of nodes) {
-    const k = stateKey(x.state);
-    const y = byKey.get(k);
-    if (!y || x.score > y.score) byKey.set(k, x);
+    const y = byKey.get(x.key);
+    if (!y || x.score > y.score) byKey.set(x.key, x);
   }
   return [...byKey.values()].sort((a, b) => b.score - a.score).slice(0, n);
 }
 
 interface Node {
-  readonly state: TimelineState;
+  /** The same rotation's state in each seeded battle (the first: the scenario's own seed, which proposes the actions). */
+  readonly states: readonly TimelineState[];
   readonly rotation: readonly RotationAction[];
-  /** What the beam ranks it by: committed damage, plus its resources' worth (SearchOptions.resourceWeight). */
+  /** stateKey of every state. */
+  readonly key: string;
+  /** What the beam ranks it by: the statistic of committed damage plus resources' worth (SearchOptions.resourceWeight) over the battles. */
   readonly score: number;
+  /** The statistic of committed damage over the battles. */
   readonly damage: number;
+}
+
+/** The mean of the values, or their percentile (0–100, nearest rank). One value is itself either way. */
+function statistic(values: readonly number[], percentile: number | undefined): number {
+  if (values.length === 1) return values[0] as number;
+  if (percentile === undefined) return values.reduce((a, b) => a + b, 0) / values.length;
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.max(0, Math.ceil((percentile / 100) * sorted.length) - 1)] as number;
 }
 
 /**
  * Beam search over rotations for a team: at each decision point every legal
  * action is tried; per half-second bucket the best `beamWidth` states by
  * committed damage survive. Deterministic: ties keep generation order.
+ *
+ * With random outcomes each node holds K seeded battles (SearchOptions.seeds)
+ * advanced by the same actions: the first battle (the scenario's seed)
+ * proposes the legal actions and their frames; each step is applied with
+ * `at` that frame in every battle (in the others it starts at their own
+ * earliest legal frame from there, as `simulate` replays it), and a child
+ * whose step isn't legal in some battle is dropped. Its score is the mean
+ * (or SearchOptions.percentile) of the K battles' values.
  */
 export function searchRotation(data: GameData, scenario: Omit<TimelineScenario, "rotation">, options: SearchOptions = {}): SearchResult {
+  // Judging the candidates of one state advances it to the same frames over and over: memoised (exact, states are plain data).
+  return memoAdvance(() => search(data, scenario, options));
+}
+
+function search(data: GameData, scenario: Omit<TimelineScenario, "rotation">, options: SearchOptions): SearchResult {
   const beam = options.beamWidth ?? 24;
   const bucketFrames = options.bucketFrames ?? 15;
   const maxExpansions = options.maxExpansions ?? 200_000;
-  const ctx = createContext(data, { ...scenario, rotation: [] });
-  const start = init(ctx);
+  const percentile = options.percentile;
+  if (percentile !== undefined && !(percentile >= 0 && percentile <= 100)) throw new EngineError(`percentile must be 0–100, not ${percentile}`);
+  const random = randomOutcomes(data, scenario);
+  const k = random.length === 0 ? 1 : (options.seeds ?? 4);
+  if (!Number.isInteger(k) || k < 1) throw new EngineError(`seeds must be a whole number ≥ 1, not ${options.seeds}`);
+  const seed0 = scenario.options.seed ?? 1;
+  const seeds = Array.from({ length: k }, (_, i) => (seed0 + i) >>> 0);
+  // One battle: the scenario as given (bit for bit the search without seeds). More: the same with seed + i.
+  const ctxs = k === 1 ? [createContext(data, { ...scenario, rotation: [] })] : seeds.map((seed) => createContext(data, { ...scenario, rotation: [], options: { ...scenario.options, seed } }));
+  const ctx = ctxs[0] as TimelineContext;
   const weight = options.resourceWeight ?? 0;
   const values = weight > 0 ? resourceValues(data, scenario) : null;
-  const node = (state: TimelineState, rotation: readonly RotationAction[]): Node => {
-    const damage = committedDamage(ctx, state);
-    if (!values) return { state, rotation, score: damage, damage };
-    const left = Math.max(0, 1 - state.frame / ctx.scenario.durationFrames);
+  const scoreOf = (c: TimelineContext, state: TimelineState, damage: number): number => {
+    if (!values) return damage;
+    const left = Math.max(0, 1 - state.frame / c.scenario.durationFrames);
     const worth = state.sp * values.perSp + Object.entries(state.energy).reduce((t, [op, e]) => t + e * (values.perEnergy[op] ?? 0), 0);
-    return { state, rotation, score: damage + weight * left * worth, damage };
+    return damage + weight * left * worth;
+  };
+  const node = (states: readonly TimelineState[], rotation: readonly RotationAction[]): Node => {
+    const damages = states.map((s, i) => committedDamage(ctxs[i] as TimelineContext, s));
+    const scores = values ? states.map((s, i) => scoreOf(ctxs[i] as TimelineContext, s, damages[i] as number)) : damages;
+    return { states, rotation, key: states.map(stateKey).join("\n"), score: statistic(scores, percentile), damage: statistic(damages, percentile) };
   };
   const buckets = new Map<number, Node[]>();
   const push = (n: Node) => {
-    const k = Math.floor(n.state.frame / bucketFrames);
-    const list = buckets.get(k) ?? [];
+    const b = Math.floor((n.states[0] as TimelineState).frame / bucketFrames);
+    const list = buckets.get(b) ?? [];
     list.push(n);
-    buckets.set(k, list);
+    buckets.set(b, list);
   };
-  push(node(start, []));
-  let best: Node = node(start, []);
+  const root = node(ctxs.map((c) => init(c)), []);
+  push(root);
+  let best: Node = root;
   let expanded = 0;
   while (buckets.size > 0 && expanded < maxExpansions) {
-    const k = Math.min(...buckets.keys());
-    let layer = buckets.get(k) as Node[];
-    buckets.delete(k);
+    const b = Math.min(...buckets.keys());
+    let layer = buckets.get(b) as Node[];
+    buckets.delete(b);
     // Children that stay in this bucket (casts at the same frame) are expanded in further rounds, under the same beam.
     while (layer.length > 0 && expanded < maxExpansions) {
       const nodes = prune(layer, beam);
       layer = [];
       for (const n of nodes) {
         expanded++;
+        const first = n.states[0] as TimelineState;
         // A swap takes no time: never two in a row (they'd loop within a frame).
         const lastSwap = n.rotation.at(-1)?.skill === "swap";
-        const choices = legalActions(ctx, n.state).filter((c) => !(lastSwap && c.action.skill === "swap"));
+        const choices = legalActions(ctx, first).filter((c) => !(lastSwap && c.action.skill === "swap"));
         if (choices.length === 0 && n.damage > best.damage) best = n;
         for (const c of choices) {
-          // Applied as recorded, with `at` the frame it starts, so the rotation replays to exactly this state.
+          // Applied as recorded, with `at` the frame it starts, so the rotation replays to exactly these states.
           const step = { ...c.action, at: c.frame };
-          const state = apply(ctx, n.state, step);
-          const child = node(state, [...n.rotation, step]);
+          const states: TimelineState[] = [];
+          for (let i = 0; i < k; i++) {
+            const ci = ctxs[i] as TimelineContext;
+            const si = n.states[i] as TimelineState;
+            // The proposing battle found it legal; another may not (its dice went otherwise): then the child is dropped.
+            if (i > 0 && "error" in earliestStart(ci, si, step)) break;
+            states.push(apply(ci, si, step));
+          }
+          if (states.length < k) continue;
+          const child = node(states, [...n.rotation, step]);
           if (child.damage > best.damage) best = child;
-          if (Math.floor(state.frame / bucketFrames) === k) layer.push(child);
+          if (Math.floor((states[0] as TimelineState).frame / bucketFrames) === b) layer.push(child);
           else push(child);
         }
       }
     }
   }
-  return { rotation: best.rotation, result: simulate(data, { ...scenario, rotation: best.rotation }), expanded };
+  const full: TimelineScenario = { ...scenario, rotation: best.rotation };
+  const runs = options.runs ?? 50;
+  return {
+    rotation: best.rotation,
+    result: simulate(data, full),
+    expanded,
+    random,
+    seeds,
+    rankedBy: percentile === undefined ? "mean" : { percentile },
+    ...(random.length > 0 && runs > 0 ? { spread: rotationSpread(data, full, runs, seed0) } : {}),
+  };
 }
