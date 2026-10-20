@@ -1815,6 +1815,20 @@ describe("jumps in a skill's timeline", () => {
     expect(cutAt(5)).toBe(true);
   });
 
+  it("a cast's slow-downs follow its path: one in frames its jump skips never starts", () => {
+    const ns = data.skills[L + "normal_skill"];
+    const withSlow = (from: number): GameData => ({ ...data, skills: { ...data.skills, [L + "normal_skill"]: { ...ns, timing: { ...ns?.timing, slowdowns: [{ from, scales: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }] } } } as GameData["skills"] });
+    const slowed = (g: GameData) => {
+      const ctx = createContext(g, scenario([]));
+      return apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" }).slowdowns.length;
+    };
+    // The plain path jumps 37 → 215: a slow-down at 100 is skipped, one at 10 isn't, and one at 220 starts at 220 − 178.
+    expect(slowed(withSlow(100))).toBe(0);
+    expect(slowed(withSlow(10))).toBe(1);
+    const ctx = createContext(withSlow(220), scenario([]));
+    expect(apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" }).slowdowns[0]?.start).toBe(220 - 178);
+  });
+
   it("an end on the skill's own timeline ends the action there", () => {
     const a1 = data.skills[L + "attack1"];
     const g: GameData = { ...data, skills: { ...data.skills, [L + "attack1"]: { ...a1, timing: { ...a1?.timing, ends: [8] } } } as GameData["skills"] };

@@ -1376,6 +1376,23 @@ function castJumps(timing: SkillTiming, skill: KitSkill, ec: EvalContext, operat
 }
 
 /**
+ * A cast's slow-downs along the path its jumps decided at the cast take: one
+ * in a skipped segment or after the action's own end never starts, and one
+ * after a jump starts that much sooner (skill frames). Event-driven jumps
+ * (a trigger's `jump`) can't be foreseen here.
+ */
+function plannedSlowdowns(timing: SkillTiming, planned: readonly PendingJump[]): SkillTiming["slowdowns"] {
+  if (planned.length === 0) return timing.slowdowns;
+  const skips: { from: number; to: number }[] = [];
+  for (const j of [...planned].filter((x) => !x.end).sort((a, b) => a.from - b.from)) if (!skips.some((k) => j.from > k.from && j.from < k.to)) skips.push({ from: j.from, to: j.to });
+  const skipped = (x: number) => skips.some((k) => x > k.from && x < k.to);
+  const end = Math.min(Infinity, ...planned.filter((x) => x.end && !skipped(x.from)).map((x) => x.from));
+  return timing.slowdowns
+    .filter((d) => !skipped(d.from) && d.from < end)
+    .map((d) => ({ ...d, from: d.from - skips.filter((k) => k.to <= d.from).reduce((t, k) => t + (k.to - k.from), 0) }));
+}
+
+/**
  * A jump on an operator's current cast at its frame: what the cast has
  * still to do in the skipped frames doesn't happen (its own hits, delayed
  * actions, team energy, jumps; detached hits go on), what's after comes
@@ -1828,13 +1845,14 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     const lastHit = Math.max(frame, ...pending.map((h) => h.frame));
     next = { ...next, buffs: [...next.buffs.filter((b) => !consumedBuffs.includes(b)), ...consumedBuffs.map((b) => ({ ...b, cast: castIndex, appliedAt: frame, expiresAt: lastHit + 1 }))] };
   }
+  // A conditional jump reads the situation at the cast, the enemy's state included (Arclight's battle skill on an Electrified target).
+  const planned = castJumps(full.timing, skill, evalContext(ctx.data, ctx.builds.get(operator) as Build, panel, skill.skillId, { ...situationAt(ctx, operator, s, frame), ...castSituation }), operator, castIndex, frame, scaled);
   const cast: TimelineState = {
     ...next,
     sp: s.sp - costs.spCost,
     spPausedUntil: costs.spCost > 0 ? frame + SP.pauseAfterSpendFrames : s.spPausedUntil,
     acting: beside ? s.acting : { ...s.acting, [operator]: { skill: skillId, frame, cast: castIndex, ...(speed !== 1 ? { speed } : {}) } },
-    // A conditional jump reads the situation at the cast, the enemy's state included (Arclight's battle skill on an Electrified target).
-    pendingJumps: beside ? next.pendingJumps : [...next.pendingJumps, ...castJumps(full.timing, skill, evalContext(ctx.data, ctx.builds.get(operator) as Build, panel, skill.skillId, { ...situationAt(ctx, operator, s, frame), ...castSituation }), operator, castIndex, frame, scaled)],
+    pendingJumps: beside ? next.pendingJumps : [...next.pendingJumps, ...planned],
     ...(full.timing.specification === 8 ? { stagger: { ...s.stagger, finisherUsed: true } } : {}),
     chainNext: beside ? next.chainNext : chainAfter(ctx, next, operator, skill, frame, speed),
     readyAt: castCooldowns(ctx, next.readyAt, operator, skill, costs.cooldownFrames, frame),
@@ -1848,7 +1866,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     ...(windowCount !== undefined ? { count: windowCount } : {}), ...(followUp ? { followUp: true } : {}),
   };
   const endedEvents: BattleEvent[] = [...new Map(consumedBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id, remaining: remainingOf([b], frame) }])).values()];
-  return { state: slowDown(ctx, cast, operator, costs.timing, frame), events: [...endsNowEvents, castEvent, ...endedEvents, ...linkEnded], origin: { operator, kind: costs.kind } };
+  return { state: slowDown(ctx, cast, operator, { ...costs.timing, slowdowns: plannedSlowdowns(costs.timing, planned) }, frame), events: [...endsNowEvents, castEvent, ...endedEvents, ...linkEnded], origin: { operator, kind: costs.kind } };
 }
 
 export interface TimelineResult {
