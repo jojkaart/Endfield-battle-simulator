@@ -41,6 +41,8 @@ export interface RawBuffFile {
    * or they differ.
    */
   readonly damageMask: { readonly checkType: number; readonly mask: number } | null;
+  /** The buff's own tags (applyTags tagId): what tag checks on it see (e.g. −1757502026, a shield). */
+  readonly applyTags: readonly number[];
 }
 
 const ALLOWED = DATA_FILES.json.BuffData.map(globToRegExp);
@@ -86,6 +88,7 @@ export function readBuffFile(buffId: string): RawBuffFile | null {
       maxStackCnt: literalMax,
     },
     damageMask: shared ? { checkType: shared[0] as number, mask: shared[1] as number } : null,
+    applyTags: (Array.isArray(j["applyTags"]) ? (j["applyTags"] as unknown[]) : []).map((t, i) => get(obj(t, at(at(ctx, "applyTags"), i)), "tagId", at(at(ctx, "applyTags"), i), int)),
     attributeModifiers: mods.map((m, i) => {
       const mc = at(at(ac, "attributeModifiers"), i);
       const mo = obj(m, mc);

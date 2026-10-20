@@ -5,7 +5,7 @@
 import { Attr, attrName, type Element, type SkillType } from "./attributes.ts";
 import type { Build } from "./build.ts";
 import { STAGGER_DAMAGE_TAKEN } from "./constants.ts";
-import { applies, attrModifier, zoneProduct, zoneSum, type HitContext, type HitKind, type Modifier, type Zone } from "./effects.ts";
+import { applies, attrModifier, zoneProduct, zoneSum, type HitContext, type HitDecoration, type HitKind, type Modifier, type Zone } from "./effects.ts";
 import { EngineError } from "./errors.ts";
 import type { Condition, GameData, KitHit, KitSkill } from "./model.ts";
 import { artsIntensityDamage, levelCoefficientOf, reactionBase, type ReactionKind } from "./reactions.ts";
@@ -35,10 +35,12 @@ export interface DamageOptions {
   readonly modifierSituation?: Situation;
   /** What a predicate the situation can't decide counts as (the log checker tries both); default: an error. */
   readonly assumeUnknown?: boolean;
+  /** A kit hit's decorations (the timeline knows a finisher's); default: what the hit and its skill's data say. */
+  readonly decorations?: readonly HitDecoration[];
 }
 
 /** The parts of an EvalContext that describe the moment rather than the build. */
-export type Situation = Partial<Pick<EvalContext, "team" | "enemy" | "stacks" | "buffActive" | "buffLayers" | "consumed" | "eventCount" | "eventRemaining" | "eventRecorded" | "attrBonus" | "enemyGameBuffs" | "operatorModifiers" | "controlled" | "staggered" | "enemyHp" | "enemyModifiers" | "owner" | "eventOperator">>;
+export type Situation = Partial<Pick<EvalContext, "team" | "enemy" | "stacks" | "buffActive" | "buffLayers" | "consumed" | "eventCount" | "eventRemaining" | "eventRecorded" | "attrBonus" | "enemyGameBuffs" | "operatorModifiers" | "operatorBuffs" | "castLink" | "currentAction" | "enemySuperArmor" | "enemyRank" | "controlled" | "staggered" | "enemyHp" | "enemyModifiers" | "owner" | "eventOperator">>;
 
 /** The context kit predicates and values are evaluated in, for a build's skill. */
 export function evalContext(data: GameData, build: Build, panel: StatPanel, skillId: string, situation: Situation = {}): EvalContext {
@@ -242,6 +244,8 @@ export interface DamageSpec {
   readonly kind: HitKind;
   /** The value the multiplier multiplies in place of ATK (KitHit.base). */
   readonly base?: number;
+  /** The landing's decorations (Final Strike, finisher, dive), for decoration-limited modifiers. */
+  readonly decorations?: readonly HitDecoration[];
 }
 
 /** All modifiers acting on a build's hits: stat panel, active conditions, and external ones. */
@@ -267,7 +271,7 @@ export function computeDamage(
   const enemyLevel = enemy.levels[target.level - 1];
   if (!enemyLevel) throw new EngineError(`${enemy.id} has no level ${target.level}`);
 
-  const ctx: HitContext = { element: spec.element, skillType: spec.skillType, staggered: options.staggered, kind: spec.kind };
+  const ctx: HitContext = { element: spec.element, skillType: spec.skillType, staggered: options.staggered, kind: spec.kind, ...(spec.decorations?.length ? { decorations: spec.decorations } : {}) };
   const mods = activeModifiers(data, build, panel, options).filter((m) => applies(m, ctx));
   const sum = (zone: Zone) => zoneSum(mods, zone, ctx);
 
@@ -386,7 +390,13 @@ export function computeHit(
     canCrit: true,
     kind: hit.reaction?.kind ?? hit.damageType,
     ...(hit.base !== undefined ? { base: evaluate(hit.base, ec) } : {}),
+    decorations: options.decorations ?? hitDecorations(hit, data.skills[skill.skillId]?.timing?.specification === 8),
   }, options);
+}
+
+/** A kit hit's decorations: a Final Strike's and a dive attack's from the hit, a finisher's (its skill is of skillSpecification 8) as given. */
+export function hitDecorations(hit: Pick<KitHit, "finalStrike" | "dive">, finisher: boolean): HitDecoration[] {
+  return [...(hit.finalStrike ? ["finalStrike" as const] : []), ...(finisher ? ["finisher" as const] : []), ...(hit.dive ? ["dive" as const] : [])];
 }
 
 /** An arts reaction, burst or burning tick caused by the build's operator. */

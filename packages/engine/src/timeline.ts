@@ -18,6 +18,7 @@ import {
   decide,
   evalContext,
   hitAvailable,
+  hitDecorations,
   type Situation,
   computeReaction,
   conditionModifiers,
@@ -27,13 +28,13 @@ import {
   type DamageTarget,
   type HitDamage,
 } from "./damage.ts";
-import { zoneSum, type Modifier } from "./effects.ts";
+import { applies, zoneSum, type HitContext, type Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
 import { landingFrames, resolveApplication, type EventSource, type GameData, type KitBuff, type KitHit, type KitSkill, type OperatorKit, type SkillTiming, type SpKind, type StackGain, type StackRequirement } from "./model.ts";
 import { effectiveKit } from "./triggers.ts";
 import { allActions, causeMatches, eventMatches, triggerActionAt, triggerSkillId, type BattleEvent, type BuffCategory, type KitTrigger } from "./events.ts";
 import { evaluate, test, valueKeys, type EvalContext, type Predicate, type ValueExpr } from "./expr.ts";
-import { applyBuff, buffAttr, buffModifiers, endBuff, extendBuff, reaches, recordedOf, remainingOf, resolveValue, withBuff, type ActiveBuff } from "./buffs.ts";
+import { applyBuff, buffAttr, buffModifiers, buffReach, endBuff, extendBuff, reaches, recordedOf, remainingOf, resolveValue, withBuff, type ActiveBuff, type AttrFilters } from "./buffs.ts";
 import { computeStats, skillLevel, skillParam, type StatPanel } from "./stats.ts";
 import { Attr } from "./attributes.ts";
 import { applyToEnemy, expireStatus, nextTick, NO_STATUS, statusModifiers, tickStatus, type EnemyStatus, type StatusEvent, type StatusTweaks } from "./status.ts";
@@ -182,6 +183,8 @@ export interface Cast {
   readonly spAfter: number;
   /** The caster's ultimate energy after the cast. */
   readonly energyAfter: number;
+  /** Link stacks the cast used (a battle skill or ultimate; absent: none). */
+  readonly link?: number;
 }
 
 export interface LandedHit extends HitDamage {
@@ -787,12 +790,22 @@ const isStaggered = (st: TimelineState, frame: number) => st.stagger.until !== n
  * Stagger damage to the enemy (docs/data-sources.md "Physical state"):
  * value × the attacker's attribute 26 × the enemy's 24. At 0 it's Staggered
  * for attribute 21 × 31 seconds, taking no more stagger, then its stagger
- * HP refills.
+ * HP refills. Attribute 26 is the panel's plus what active buffs give
+ * (KitBuffModifier attr 26): for a kit hit's landing (`landing`) those
+ * whose filters hold for it (decorations, skill type, kind, element, `if`),
+ * otherwise (Lift, Knock Down) only unfiltered ones.
  */
-function dealPoise(ctx: TimelineContext, st: TimelineState, operator: string, value: number, frame: number): { state: TimelineState; events: BattleEvent[] } {
+function dealPoise(ctx: TimelineContext, st: TimelineState, operator: string, value: number, frame: number, landing?: { readonly hit: HitContext; readonly ec: EvalContext; readonly cast?: number }): { state: TimelineState; events: BattleEvent[] } {
   if (value <= 0 || isStaggered(st, frame)) return { state: st, events: [] };
   const panel = ctx.panels.get(operator) as StatPanel;
-  const dealt = value * (panel.attrs[Attr.PoiseDamageOutputScalar]?.total ?? ctx.data.attributeDefaults[Attr.PoiseDamageOutputScalar] ?? 1) * enemyAttr(ctx, Attr.PoiseDamageTakenScalar);
+  const accepts = (f: AttrFilters) => {
+    if (!landing) return false;
+    const { elements, when, ...rest } = f;
+    return (!elements || elements.includes(landing.hit.element)) && applies({ zone: "atk", value: 0, source: "", ...rest }, landing.hit) && (!when || (test(when, landing.ec) ?? false));
+  };
+  const scalar = (panel.attrs[Attr.PoiseDamageOutputScalar]?.total ?? ctx.data.attributeDefaults[Attr.PoiseDamageOutputScalar] ?? 1) +
+    buffAttr(st.buffs, operator, frame, Attr.PoiseDamageOutputScalar, undefined, { accepts, ...(landing?.cast !== undefined ? { cast: landing.cast } : {}) });
+  const dealt = value * scalar * enemyAttr(ctx, Attr.PoiseDamageTakenScalar);
   // A stagger that has ended refilled the bar.
   const before = st.stagger.until !== null ? maxPoise(ctx) : st.stagger.poise;
   const poise = before - dealt;
@@ -822,7 +835,33 @@ function situationAt(ctx: TimelineContext, operator: string, st: TimelineState, 
     attrBonus: (attr) => buffAttr(st.buffs, operator, frame, attr, ctx.panels.get(operator)?.attrs[attr]),
     enemyGameBuffs: new Set(st.buffs.filter((b) => b.target === "enemy" && b.gameBuff && active(b)).map((b) => b.gameBuff as string)),
     operatorModifiers: st.buffs.filter((b) => b.target !== "enemy" && b.cast === undefined && reaches(b, operator) && active(b)).flatMap((b) => b.modifiers),
+    operatorBuffs: st.buffs.filter((b) => b.target !== "enemy" && b.cast === undefined && reaches(b, operator) && active(b)).map((b) => ({ categories: b.categories ?? [], ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) })),
+    currentAction: currentActionOf(ctx, st, operator, frame),
+    ...enemyStanding(ctx, isStaggered(st, frame)),
     ...(consumed !== undefined ? { consumed } : {}),
+  };
+}
+
+/**
+ * An operator's running action at a frame (the `currentAction` predicate): its kind (a kit skill's KitSkill.kind; `none`
+ * for the perfect-dodge skill) and whether its playhead is before the skill's exclusive frame (SkillData
+ * exclusiveFrame); null once it's over.
+ */
+function currentActionOf(ctx: TimelineContext, st: TimelineState, operator: string, frame: number): { kind: SkillType | "none"; beforeExclusive: boolean } | null {
+  const cur = st.acting[operator];
+  if (!cur) return null;
+  const t = timingOf(ctx, cur.skill);
+  if (frame >= actionFrame(cur, t.durationFrames)) return null;
+  const kind = cur.skill === DODGE ? "none" : kitSkill(ctx, operator, cur.skill).kind;
+  return { kind, beforeExclusive: frame < actionFrame(cur, t.exclusiveFrames) };
+}
+
+/** The enemy's super armor (its Staggered value while Staggered) and rank, where the data has them. */
+function enemyStanding(ctx: TimelineContext, staggered: boolean): Situation {
+  const e = ctx.data.enemies[ctx.scenario.target.enemy];
+  return {
+    ...(e?.superArmor ? { enemySuperArmor: staggered ? e.superArmor.staggered : e.superArmor.initial } : {}),
+    ...(e?.rank !== undefined ? { enemyRank: e.rank } : {}),
   };
 }
 
@@ -851,25 +890,22 @@ function healEvents(ctx: TimelineContext, st: TimelineState, healer: string, tar
   return targets.map((t) => ({ type: "heal", frame, operator: healer, target: t, kind }));
 }
 
-/** What a kit buff is, for triggers on buff categories: by the zones and attributes of its modifiers. */
-function buffCategories(def: KitBuff): BuffCategory[] {
-  const out = new Set<BuffCategory>();
-  for (const m of def.modifiers) {
-    if (m.zone === "amp" || m.zone === "susceptibility") out.add(m.zone);
-    if (m.attr === Attr.WeaknessDmgScalar) out.add("weakness");
-    if (m.attr === Attr.ShelterDmgScalar) out.add("protection");
-  }
-  return [...out];
+/**
+ * A kit buff applied: what it is for triggers on buff categories (buffReach: categories and the elements each
+ * reaches) and whom it reaches (the operators of its last applied instance; none for an enemy buff).
+ */
+function buffAppliedEvent(ctx: TimelineContext, frame: number, operator: string, def: KitBuff, fromKind: SkillType | "none", applied: ActiveBuff | null): BattleEvent {
+  const reach = buffReach(def);
+  const recipients = !applied || applied.target === "enemy" ? [] : ctx.scenario.team.map((b) => b.operator).filter((m) => reaches(applied, m));
+  return { type: "buffApplied", frame, operator, buff: def.id, categories: Object.keys(reach) as BuffCategory[], reach, recipients, fromKind, ...(def.gameBuff ? { gameBuff: def.gameBuff } : {}) };
 }
-
-const buffAppliedEvent = (frame: number, operator: string, def: KitBuff, fromKind: SkillType | "none"): BattleEvent => ({ type: "buffApplied", frame, operator, buff: def.id, categories: buffCategories(def), fromKind, ...(def.gameBuff ? { gameBuff: def.gameBuff } : {}) });
 
 /**
  * Applies one of an owner's kit buffs (values for `skillId`); a filtered
  * team buff reaches the members its `recipients` holds for. Returns the
  * state and whether it was applied (a 0 s buff isn't).
  */
-function addBuff(ctx: TimelineContext, st: TimelineState, owner: string, skillId: string, def: KitBuff, frame: number, situation: Situation, only?: readonly string[]): { state: TimelineState; applied: boolean } {
+function addBuff(ctx: TimelineContext, st: TimelineState, owner: string, skillId: string, def: KitBuff, frame: number, situation: Situation, only?: readonly string[]): { state: TimelineState; applied: boolean; buff: ActiveBuff | null } {
   const build = ctx.builds.get(owner) as Build;
   const panel = ctx.panels.get(owner) as StatPanel;
   let recipients: readonly string[] | undefined = only;
@@ -889,10 +925,10 @@ function addBuff(ctx: TimelineContext, st: TimelineState, owner: string, skillId
     const end = cur ? actionFrame(cur, timingOf(ctx, cur.skill).durationFrames) : -1;
     b = cur && index >= 0 && end > frame ? { ...b, expiresAt: Math.min(b.expiresAt, end), endsWithCast: index } : null;
   }
-  if (!b) return { state: st, applied: false };
+  if (!b) return { state: st, applied: false, buff: null };
   const buffs = withBuff(st.buffs, b);
   // An instance weaker than the ones a buff keeps isn't applied (KitBuff.instances).
-  return { state: { ...st, buffs }, applied: buffs.includes(b) };
+  return { state: { ...st, buffs }, applied: buffs.includes(b), buff: b };
 }
 
 /** How an operator's kit changes the statuses it applies, resolved at a frame (OperatorKit.statusTweaks). */
@@ -1037,7 +1073,10 @@ const MAX_CHAIN = 500;
 function triggerSituation(ctx: TimelineContext, owner: string, st: TimelineState, e: BattleEvent, consumed?: number): Situation {
   const cause = ctx.builds.get(e.operator);
   const eventOperator = cause ? evalContext(ctx.data, cause, ctx.panels.get(e.operator) as StatPanel, "", situationAt(ctx, e.operator, st, e.frame)) : undefined;
-  return { ...situationAt(ctx, owner, st, e.frame, consumed), eventCount: eventCountOf(e), ...(e.type === "buffEnded" ? { eventRemaining: e.remaining / FPS, ...(e.recorded !== undefined ? { eventRecorded: e.recorded } : {}) } : {}), ...(eventOperator ? { eventOperator } : {}) };
+  // The Link stacks the event's cast used (a hit's, a status event's, a cast's own); 0 for an event of no cast.
+  const cast = e.type === "hit" || e.type === "status" || e.type === "cast" ? e.cast : undefined;
+  const castLink = cast !== undefined ? (st.casts[cast]?.link ?? 0) : 0;
+  return { ...situationAt(ctx, owner, st, e.frame, consumed), eventCount: eventCountOf(e), castLink, ...(e.type === "buffEnded" ? { eventRemaining: e.remaining / FPS, ...(e.recorded !== undefined ? { eventRecorded: e.recorded } : {}) } : {}), ...(eventOperator ? { eventOperator } : {}) };
 }
 
 /** What an event was, for applications that repeat it: an infliction applied, consumed or burst, or a physical status. */
@@ -1209,13 +1248,13 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         if (!def) throw new EngineError(`${owner} has no buff ${a.buff}`);
         const subject = a.to === "eventSubject" ? [e.type === "heal" ? e.target : e.operator] : undefined;
         const layers = a.layers === undefined ? 1 : Math.max(0, Math.round(evaluate(a.layers, ec())));
-        let applied = false;
+        let applied: ActiveBuff | null = null;
         for (let i = 0; i < layers; i++) {
           const r = addBuff(ctx, st, owner, triggerSkillId(owner, t), def, frame, triggerSituation(ctx, owner, atEvent ?? st, e, consumed), subject);
           st = r.state;
-          applied ||= r.applied;
+          if (r.applied) applied = r.buff;
         }
-        if (applied) events.push(buffAppliedEvent(frame, owner, def, origin && origin.operator === owner ? origin.kind : "none"));
+        if (applied) events.push(buffAppliedEvent(ctx, frame, owner, def, origin && origin.operator === owner ? origin.kind : "none", applied));
         break;
       }
       case "extendBuff": {
@@ -1389,7 +1428,9 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   // Its situation as it lands, before its own effects: whether it happens (KitHit.if) and its extra scale.
   // Who counts as controlled is who was when its skill was cast.
   const controlled = hit.controlledAtCast ?? st.controlled;
-  const at = (consumedSoFar?: number): Situation => ({ ...situationAt(ctx, hit.operator, st, hit.frame, consumedSoFar), controlled, ...(hit.eventCount !== undefined ? { eventCount: hit.eventCount } : {}) });
+  // The Link stacks its cast used (castLink; a triggered hit is of no cast: 0).
+  const castLink = hit.cast !== undefined ? (st.casts[hit.cast]?.link ?? 0) : 0;
+  const at = (consumedSoFar?: number): Situation => ({ ...situationAt(ctx, hit.operator, st, hit.frame, consumedSoFar), controlled, castLink, ...(hit.eventCount !== undefined ? { eventCount: hit.eventCount } : {}) });
   const before = at();
   const buffsAtLanding = st.buffs;
   const happens = (h: PendingHit) => {
@@ -1446,7 +1487,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
       if (a.if && !decide(a.if, evalContext(ctx.data, build, panel, hit.skillId, at(consumed)))) continue;
       const r = addBuff(ctx, st, hit.operator, hit.skillId, def, hit.frame, at(consumed));
       st = r.state;
-      if (r.applied) into.push(buffAppliedEvent(hit.frame, hit.operator, def, kind));
+      if (r.applied) into.push(buffAppliedEvent(ctx, hit.frame, hit.operator, def, kind, r.buff));
     }
     if (beforeDamage && into.length) st = runTriggers(ctx, st, into, { operator: hit.operator, kind });
   };
@@ -1455,8 +1496,10 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   const finisher = !hit.trigger && ctx.data.skills[hit.skillId]?.timing?.specification === 8;
   let roll: number | undefined;
   if (ctx.scenario.options.crit === "rolled" && hit.fixed === undefined) ({ value: roll, state: st } = draw(ctx, st, "crit"));
+  const decorations = hitDecorations(kitHit, finisher);
   const result = hit.fixed !== undefined ? fixedHit(skill.skillId, kitHit, hit.fixed) : computeHit(ctx.data, build, panel, ctx.scenario.target, skill, kitHit, {
     ...damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast),
+    decorations,
     ...(roll !== undefined ? { critRoll: roll } : {}),
     ...(finisher ? { modifiers: [...damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast).modifiers, { zone: "multiplicative" as const, value: enemyAttr(ctx, Attr.BreakingAttackDamageTakenScalar) - 1, source: "Finisher" }] } : {}),
     situation: { ...before, consumed },
@@ -1489,13 +1532,19 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   // Stagger: Final Strikes' only while their operator is controlled (onlyEnableForMainChar).
   const poiseEvents: BattleEvent[] = [];
   if (kitHit.poise !== undefined && (!kitHit.poiseControlledOnly || controlled === hit.operator)) {
-    const r = dealPoise(ctx, st, hit.operator, resolveValue(ctx.data, build, panel, hit.skillId, kitHit.poise, at(consumed)), hit.frame);
+    const landing = {
+      hit: { element: kitHit.reaction?.element ?? kitHit.element, skillType: kitHit.reaction || kind === "none" ? null : kind, staggered: isStaggered(st, hit.frame), kind: kitHit.reaction?.kind ?? kind, decorations },
+      ec: evalContext(ctx.data, build, panel, hit.skillId, at(consumed)),
+      ...(hit.cast !== undefined ? { cast: hit.cast } : {}),
+    };
+    const r = dealPoise(ctx, st, hit.operator, resolveValue(ctx.data, build, panel, hit.skillId, kitHit.poise, at(consumed)), hit.frame, landing);
     st = r.state;
     poiseEvents.push(...r.events);
   }
   const hitEvent: BattleEvent = {
     type: "hit", frame: hit.frame, operator: hit.operator, skillId: hit.skillId, kind,
     element: kitHit.reaction?.element ?? kitHit.element, finalStrike: kitHit.finalStrike ?? false, finisher, controlled: st.controlled === hit.operator,
+    ...(kitHit.dive ? { dive: true } : {}),
     ...(kitHit.reaction ? { reaction: true } : {}),
     ...(hit.cast !== undefined ? { cast: hit.cast } : {}),
     ...((ctx.scenario.options.crit === "always" && hit.fixed === undefined) || result.crit ? { crit: true } : {}),
@@ -2009,12 +2058,14 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   // ComboAction, not every combo; batch 4, Lifeng G2 and Camille G2, from the data and five logs); the next battle skill or
   // ultimate, by anyone, uses all of them (at most 4) for its own hits: +30/45/60/75% / +20/30/40/50%.
   const linkEnded: BattleEvent[] = [];
+  let linkUsed = 0;
   if (!followUp) {
     const live = next.link.filter((f) => f > frame);
     // Kit buffs that count as a Link stack (KitBuff.link) for the caster, used up with the combo stacks.
     const linkBuffs = next.buffs.filter((b) => b.link && b.cast === undefined && reaches(b, operator) && b.appliedAt <= frame && b.expiresAt > frame);
     if ((costs.kind === "battle" || costs.kind === "ultimate") && live.length + linkBuffs.length > 0) {
       const n = Math.min(4, live.length + linkBuffs.length);
+      linkUsed = n;
       if (linkBuffs.length) {
         next = { ...next, buffs: next.buffs.filter((b) => !linkBuffs.includes(b)) };
         linkEnded.push(...new Map(linkBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id, remaining: remainingOf([b], frame), consumed: true, ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) }])).values());
@@ -2032,7 +2083,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     next = { ...next, buffs: [...next.buffs.filter((b) => !consumedBuffs.includes(b)), ...consumedBuffs.map((b) => ({ ...b, cast: castIndex, appliedAt: frame, expiresAt: lastHit + 1 }))] };
   }
   // A conditional jump reads the situation at the cast, the enemy's state included (Arclight's battle skill on an Electrified target).
-  const planned = castJumps(full.timing, skill, evalContext(ctx.data, ctx.builds.get(operator) as Build, panel, skill.skillId, { ...situationAt(ctx, operator, s, frame), ...castSituation }), operator, castIndex, frame, scaled);
+  const planned = castJumps(full.timing, skill, evalContext(ctx.data, ctx.builds.get(operator) as Build, panel, skill.skillId, { ...situationAt(ctx, operator, s, frame), ...castSituation, castLink: linkUsed }), operator, castIndex, frame, scaled);
   const cast: TimelineState = {
     ...next,
     sp: s.sp - costs.spCost,
@@ -2045,11 +2096,11 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     ...(skill.takesControl ? { controlled: operator } : {}),
     pending: [...s.pending, ...pending],
     stacks,
-    casts: [...s.casts, { frame, operator, skill: skillId, spAfter: s.sp - costs.spCost, energyAfter: next.energy[operator] ?? 0 }],
+    casts: [...s.casts, { frame, operator, skill: skillId, spAfter: s.sp - costs.spCost, energyAfter: next.energy[operator] ?? 0, ...(linkUsed > 0 ? { link: linkUsed } : {}) }],
   };
   const castEvent: BattleEvent = {
     type: "cast", frame, operator, skillId, kind: costs.kind, finisher: full.timing.specification === 8, controlled: s.controlled === operator, cast: castIndex,
-    ...(windowCount !== undefined ? { count: windowCount } : {}), ...(followUp ? { followUp: true } : {}),
+    ...(windowCount !== undefined ? { count: windowCount } : {}), ...(followUp ? { followUp: true } : {}), ...(beside ? { beside: true } : {}),
   };
   const endedEvents: BattleEvent[] = [...new Map(consumedBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id, remaining: remainingOf([b], frame), consumed: true, ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) }])).values()];
   return { state: slowDown(ctx, cast, operator, { ...costs.timing, slowdowns: plannedSlowdowns(costs.timing, planned) }, frame), events: [...endsNowEvents, castEvent, ...endedEvents, ...linkEnded], origin: { operator, kind: costs.kind } };

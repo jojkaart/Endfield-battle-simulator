@@ -39,6 +39,13 @@ export type Zone = (typeof ZONES)[number];
 /** `none`: a hit of no skill type (some triggered hits, e.g. from weapons or gear sets). */
 export type HitKind = SkillType | "none" | "burst" | "reaction" | "combustionTick" | "lift" | "knockdown" | "crush" | "breach" | "shatter";
 
+/**
+ * A landing's decorations (SkillData decorate-mask bits): a Final Strike
+ * (2097152), a finisher's (4: its skill is of skillSpecification 8), a dive
+ * attack's (1024). Hit triggers and buff modifiers can ask for any of them.
+ */
+export type HitDecoration = "finalStrike" | "finisher" | "dive";
+
 export interface Modifier {
   readonly zone: Zone;
   readonly value: number;
@@ -50,6 +57,8 @@ export interface Modifier {
   readonly staggeredOnly?: boolean;
   /** Only hits of these kinds (the game's decorate-mask conditions, e.g. bursts only). */
   readonly onlyKinds?: readonly HitKind[];
+  /** Only landings with any of these decorations (KitBuffModifier.decorations: Last Rite's Final-Strike bonus). */
+  readonly decorations?: readonly HitDecoration[];
   /** Only while this holds at the hit, for the hitter (its target's state: Fluorite's DMG against Slowed enemies); judged by the damage pipeline. */
   readonly when?: Predicate;
   readonly source: string;
@@ -63,6 +72,8 @@ export interface HitContext {
   readonly staggered: boolean;
   /** Unknown when absent: kind-limited modifiers then don't apply. */
   readonly kind?: HitKind;
+  /** The landing's decorations; none when absent (decoration-limited modifiers then don't apply). */
+  readonly decorations?: readonly HitDecoration[];
 }
 
 type Mapping = Omit<Modifier, "value" | "source">;
@@ -101,6 +112,8 @@ export const READ_ATTRS: ReadonlySet<AttrType> = new Set([
   // Read by the timeline's buff categories (Weakness, Protection) for buffApplied triggers; no damage effect (enemy damage isn't simulated).
   Attr.WeaknessDmgScalar,
   Attr.ShelterDmgScalar,
+  // Stagger efficiency (PoiseDamageOutputScalar): the timeline's Stagger reads it per landing, with the modifier's filters (batch 4 C3).
+  Attr.PoiseDamageOutputScalar,
 ]);
 
 /** Whether a kit buff's attribute does something: it feeds a damage zone, or the engine reads it. */
@@ -123,7 +136,8 @@ export function applies(m: Modifier, hit: HitContext): boolean {
   return (m.element === undefined || m.element === hit.element) &&
     (m.skillType === undefined || m.skillType === hit.skillType) &&
     (!m.staggeredOnly || hit.staggered) &&
-    (!m.onlyKinds || (hit.kind !== undefined && m.onlyKinds.includes(hit.kind)));
+    (!m.onlyKinds || (hit.kind !== undefined && m.onlyKinds.includes(hit.kind))) &&
+    (!m.decorations || m.decorations.some((d) => hit.decorations?.includes(d) === true));
 }
 
 /** Sum of a zone's modifiers that apply to the hit. */

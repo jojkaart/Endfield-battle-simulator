@@ -15,6 +15,8 @@ export interface RawEnemy {
   readonly finisherSp: number;
   /** Stagger nodes: fractions of its stagger HP that trigger a small stagger (poiseKnotPctList). */
   readonly staggerNodes: readonly number[];
+  /** Super armor (initialSuperArmor), and while Staggered (zeroPoiseSuperArmor): CheckSuperArmor reads it. */
+  readonly superArmor: { readonly initial: number; readonly staggered: number };
 }
 
 function attrs(raw: unknown, ctx: Ctx): Record<number, number> {
@@ -48,6 +50,7 @@ export function normalizeEnemies(raw: unknown, source: SourceName): Record<strin
         natural: get(r, "naturalResistance", c, num),
       },
       finisherSp: get(r, "breakingAttackedAtbObtain", c, num),
+      superArmor: { initial: get(r, "initialSuperArmor", c, num), staggered: get(r, "zeroPoiseSuperArmor", c, num) },
       staggerNodes: get(r, "poiseKnotPctList", c, arr).map((x, i) => {
         if (typeof x !== "number") throw new DataError(source, `${c.path}.poiseKnotPctList[${i}]`, "not a number");
         return x;

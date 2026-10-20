@@ -189,7 +189,13 @@ function build(): GameData {
             source: PRIMARY,
             path: `EnemyTemplateDisplayInfoTable.${e.id}.name`,
           });
-    enemies[e.id] = { id: e.id, name, levels: e.levels, staticAttrs: e.staticAttrs, resistance: { ...e.resistance, ether: 0 }, finisherSp: e.finisherSp, staggerNodes: e.staggerNodes };
+    // Rank: the display table's displayType (the enemyRank predicate; 555me DisplayEnemyTypeTable: 0 Common, 1 Elite, 2 Boss, 3 Advanced, 4 Alpha).
+    const displayType = display === undefined ? undefined : obj(display, { source: PRIMARY, path: `EnemyTemplateDisplayInfoTable.${e.id}` })["displayType"];
+    if (displayType !== undefined && !Number.isInteger(displayType)) throw new DataError(PRIMARY, `EnemyTemplateDisplayInfoTable.${e.id}.displayType`, "not a whole number");
+    enemies[e.id] = {
+      id: e.id, name, levels: e.levels, staticAttrs: e.staticAttrs, resistance: { ...e.resistance, ether: 0 }, finisherSp: e.finisherSp, staggerNodes: e.staggerNodes, superArmor: e.superArmor,
+      ...(displayType !== undefined ? { rank: displayType as number } : {}),
+    };
   }
 
   const c = loadBattleConst(PRIMARY);

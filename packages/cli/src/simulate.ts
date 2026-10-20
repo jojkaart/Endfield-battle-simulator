@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { FPS, randomOutcomes, searchRotation, simulate, simulateRuns, type RotationSpread, type TimelineResult, type Build, type CritMode, type Element, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { FPS, critTriggers, randomOutcomes, searchRotation, simulate, simulateRuns, type RotationSpread, type TimelineResult, type Build, type CritMode, type Element, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
 import { readBuild } from "./commands.ts";
 import { num, table } from "./format.ts";
 
@@ -61,12 +61,15 @@ export function readScenario(file: string): TimelineScenario {
 /** One battle of the scenario; with random outcomes, a note that it's one battle of a distribution (unless `runs` was asked for, which prints formatRuns instead). */
 export function formatSimulation(data: GameData, scenario: TimelineScenario, verbose: boolean): string {
   const text = formatResult(data, scenario, simulate(data, scenario), verbose);
-  const random = randomOutcomes(data, scenario);
-  if (random.length === 0) return text;
+  // With expected crits, crit-triggered effects never fire (no hit counts as a crit): a warning, not a distribution.
+  const offCrits = scenario.options.crit === "expected" ? critTriggers(data, scenario) : [];
+  const random = randomOutcomes(data, scenario).filter((x) => offCrits.length === 0 || !x.startsWith("crit-triggered effects"));
+  if (random.length === 0 && offCrits.length === 0) return text;
   const [first, ...rest] = text.split("\n");
   return [
     first,
-    `Note: random outcomes (${random.join("; ")}): this is one battle (seed ${scenario.options.seed ?? 1}) of a distribution; --runs n shows the spread over n battles.`,
+    ...(offCrits.length ? [`Warning: crit-triggered effects never fire with expected crits (${offCrits.join("; ")}); crit "rolled" or --runs n plays them.`] : []),
+    ...(random.length ? [`Note: random outcomes (${random.join("; ")}): this is one battle (seed ${scenario.options.seed ?? 1}) of a distribution; --runs n shows the spread over n battles.`] : []),
     ...rest,
   ].join("\n");
 }
@@ -139,7 +142,8 @@ export function searchCommand(
   const seconds = ((Date.now() - t0) / 1000).toFixed(1);
   const seeds = found.seeds.length === 1 ? `seed ${found.seeds[0]}` : `seeds ${found.seeds[0]}–${found.seeds.at(-1)}`;
   const ranked = typeof found.rankedBy === "string" ? "the mean" : `percentile ${found.rankedBy.percentile}`;
-  const full = { ...scenario, rotation: found.rotation };
+  // Played in the search's crit mode (rolled for crit-triggered effects under expected crits: searchCritMode).
+  const full = { ...scenario, rotation: found.rotation, options: { ...scenario.options, crit: found.crit } };
   const lines = [
     `Searched ${found.expanded} states (beam ${options.beam}) in ${seconds} s.`,
     ...(found.random.length > 0 ? [`Random outcomes (${found.random.join("; ")}): each candidate ranked by ${ranked} of ${found.seeds.length} battle${found.seeds.length === 1 ? "" : "s"} (${seeds}).`] : []),
@@ -157,7 +161,7 @@ export function searchCommand(
       ...(scenario.startEnergy ? { startEnergy: scenario.startEnergy } : {}),
       ...(scenario.startStacks ? { startStacks: scenario.startStacks } : {}),
       durationSeconds: scenario.durationFrames / FPS,
-      crit: scenario.options.crit,
+      crit: found.crit,
       ...(scenario.options.seed !== undefined ? { seed: scenario.options.seed } : {}),
       ...(scenario.options.dodge ? { dodge: scenario.options.dodge } : {}),
       ...(scenario.enemyHp ? { enemyHp: scenario.enemyHp.map((e) => ({ at: e.from / FPS, fraction: e.fraction })) } : {}),

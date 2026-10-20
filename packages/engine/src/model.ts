@@ -2,9 +2,9 @@
 // tables; the engine never reads tables itself (docs/design.md#layers).
 
 import type { AttrType, Element, SkillType } from "./attributes.ts";
-import type { HitKind, Zone } from "./effects.ts";
+import type { HitDecoration, HitKind, Zone } from "./effects.ts";
 import type { ArtsElement } from "./reactions.ts";
-import type { HealTarget, KitTrigger } from "./events.ts";
+import type { BuffCategory, HealTarget, KitTrigger } from "./events.ts";
 import type { Predicate, ValueExpr } from "./expr.ts";
 import type { HitApplication, PhysicalStatus, ReactionStatus } from "./status.ts";
 import { EngineError } from "./errors.ts";
@@ -219,6 +219,19 @@ export interface EnemyData {
   readonly finisherSp: number;
   /** Stagger nodes: fractions of its stagger HP that trigger a small stagger (poiseKnotPctList). */
   readonly staggerNodes: readonly number[];
+  /**
+   * Super armor (EnemyAttributeTemplateTable initialSuperArmor, and
+   * zeroPoiseSuperArmor while Staggered), for the `enemySuperArmor`
+   * predicate (CheckSuperArmor); absent: unknown.
+   */
+  readonly superArmor?: { readonly initial: number; readonly staggered: number };
+  /**
+   * Its rank (EnemyTemplateDisplayInfoTable displayType; 555me's
+   * DisplayEnemyTypeTable names them: 0 Common, 1 Elite, 2 Boss, 3 Advanced,
+   * 4 Alpha), for the `enemyRank` predicate; absent when the table has no
+   * entry for it.
+   */
+  readonly rank?: number;
 }
 
 export interface BattleConstants {
@@ -295,6 +308,8 @@ export interface KitHit {
   readonly bonuses?: readonly HitBonus[];
   /** A Final Strike (SkillData decorate-mask bit 2097152, set by the data loader). */
   readonly finalStrike?: boolean;
+  /** A dive attack's landing (SkillData decorate-mask bit 1024, set by the data loader). */
+  readonly dive?: boolean;
   /** A literal multiplier from the skill graph (e.g. a SimpleCalcBB ÷ 2 splitting a value over two arrows). */
   readonly factor?: number;
   /** Damage computed as an arts reaction or burst (no skill-type bonus, level coefficient, Arts Intensity), times `scale`. */
@@ -465,6 +480,13 @@ export interface KitBuffModifier {
    * ATK through the attribute bonus (not modelled, as for flat ones).
    */
   readonly percent?: boolean;
+  /**
+   * Only on landings with any of these decorations (BuffData
+   * CheckDamageDecorateMask: Final Strikes, finishers, dive attacks), for a
+   * zone, an attribute feeding one, or Stagger efficiency (26), which the
+   * Stagger of the landings it reaches reads with this modifier's filters.
+   */
+  readonly decorations?: readonly HitDecoration[];
 }
 export interface KitBuff {
   /** Unique within the kit. Reapplying replaces the active instance and resets its duration. */
@@ -530,6 +552,14 @@ export interface KitBuff {
   readonly instances?: ValueExpr;
   /** The BuffData buff it stands for (kits name it; predicates and triggers by game buff read it). */
   readonly gameBuff?: string;
+  /**
+   * What it is for category triggers and the `operatorBuff` predicate, in
+   * place of what its modifiers say (buffs.ts buffReach): e.g. `[]` for a
+   * buff that only raises an active Amp's rate (an EnhancedAction), which
+   * isn't gaining one. The loader sets it, with `shield`, for a buff whose
+   * game buff has the shield tag (−1757502026).
+   */
+  readonly categories?: readonly BuffCategory[];
   readonly modifiers: readonly KitBuffModifier[];
 }
 

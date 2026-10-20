@@ -3,8 +3,9 @@
 // kit field that needs a condition or a number uses these, so a new
 // situation is a new case here, not a new field on hits, buffs or triggers.
 
-import type { AttrType, Element } from "./attributes.ts";
+import type { AttrType, Element, SkillType } from "./attributes.ts";
 import type { Build } from "./build.ts";
+import type { BuffCategory } from "./events.ts";
 import type { GameData } from "./model.ts";
 import type { ArtsElement } from "./reactions.ts";
 import type { Modifier, Zone } from "./effects.ts";
@@ -60,6 +61,25 @@ export type Predicate =
   | { readonly isOwner: true }
   /** The operator has the effect owner's element. */
   | { readonly sameElementAsOwner: true }
+  /**
+   * A buff from anyone that reaches the operator is of one of these categories (BuffCategory: Amp, Susceptibility,
+   * Weakness, Protection, Shield), or stands for this BuffData buff: the twin of `enemyBuff` and of `operatorModifier`.
+   */
+  | { readonly operatorBuff: { readonly categories: readonly BuffCategory[] } | string }
+  /**
+   * The hit's own cast used at least `atLeast` (default 1) Link stacks (false for a hit not of a cast: a trigger's;
+   * a detached entity hit judges its cast's).
+   */
+  | { readonly castLink: { readonly atLeast?: number } }
+  /**
+   * The operator's current action (still running) is a skill of one of these kinds, before its exclusive frame with
+   * `beforeExclusive` (CheckSkillType checkTargetCurSkill, mustBeforeExclusiveTime): for KitSkill.beside.
+   */
+  | { readonly currentAction: { readonly kinds: readonly SkillType[]; readonly beforeExclusive?: true } }
+  /** The enemy's super armor is at least / below this (CheckSuperArmor; EnemyData.superArmor, its Staggered value while Staggered). */
+  | { readonly enemySuperArmor: { readonly atLeast?: number; readonly below?: number } }
+  /** The enemy's rank is one of these (EnemyData.rank: EnemyTemplateDisplayInfoTable displayType, 0 Common … 4 Alpha). */
+  | { readonly enemyRank: readonly number[] }
   /** Judged for the operator who caused the event a trigger reacts to (e.g. a teammate's battle skill: its caster's element). */
   | { readonly eventOperator: Predicate };
 
@@ -164,6 +184,16 @@ export interface EvalContext {
   readonly enemyGameBuffs?: ReadonlySet<string>;
   /** Modifiers of the buffs from anyone that reach the operator. */
   readonly operatorModifiers?: readonly Modifier[];
+  /** The buffs from anyone that reach the operator: their categories and the BuffData buffs they stand for. */
+  readonly operatorBuffs?: readonly { readonly categories: readonly BuffCategory[]; readonly gameBuff?: string }[];
+  /** Link stacks the hit's (or the event's) cast used; 0 for one of no cast. */
+  readonly castLink?: number;
+  /** The operator's running action (null: none): its kind (`none` for one that isn't a kit skill) and whether it's before its exclusive frame. */
+  readonly currentAction?: { readonly kind: SkillType | "none"; readonly beforeExclusive: boolean } | null;
+  /** The enemy's super armor now (EnemyData.superArmor). */
+  readonly enemySuperArmor?: number;
+  /** The enemy's rank (EnemyData.rank). */
+  readonly enemyRank?: number;
   /** Whose effect is judged, when `build` is someone else (a team buff's recipient); default: `build`'s operator. */
   readonly owner?: string;
   /** The context of the operator who caused the event a trigger reacts to. */
@@ -229,6 +259,23 @@ export function test(p: Predicate, c: EvalContext): boolean | undefined {
     const { zone, element } = p.enemyModifier;
     return c.enemyModifiers.some((m) => m.zone === zone && (element === undefined || m.element === undefined || m.element === element));
   }
+  if ("operatorBuff" in p) {
+    if (!c.operatorBuffs) return undefined;
+    const want = p.operatorBuff;
+    return c.operatorBuffs.some((b) => (typeof want === "string" ? b.gameBuff === want : b.categories.some((x) => want.categories.includes(x))));
+  }
+  if ("castLink" in p) return c.castLink === undefined ? undefined : c.castLink >= (p.castLink.atLeast ?? 1);
+  if ("currentAction" in p) {
+    if (c.currentAction === undefined) return undefined;
+    const cur = c.currentAction;
+    return cur !== null && (p.currentAction.kinds as readonly string[]).includes(cur.kind) && (!p.currentAction.beforeExclusive || cur.beforeExclusive);
+  }
+  if ("enemySuperArmor" in p) {
+    if (c.enemySuperArmor === undefined) return undefined;
+    const n = c.enemySuperArmor;
+    return (p.enemySuperArmor.atLeast === undefined || n >= p.enemySuperArmor.atLeast) && (p.enemySuperArmor.below === undefined || n < p.enemySuperArmor.below);
+  }
+  if ("enemyRank" in p) return c.enemyRank === undefined ? undefined : p.enemyRank.includes(c.enemyRank);
   if ("operatorElement" in p) return p.operatorElement.includes(c.data.operators[c.build.operator]?.element as Element);
   if ("operatorProfession" in p) return p.operatorProfession.includes(c.data.operators[c.build.operator]?.profession ?? Number.NaN);
   if ("isOwner" in p) return (c.owner ?? c.build.operator) === c.build.operator;

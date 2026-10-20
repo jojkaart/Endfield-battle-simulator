@@ -151,6 +151,19 @@
                 "if": {
                   "$ref": "#/$defs/predicate",
                   "description": "Only while this holds at each hit, for the hitter (its target's state, e.g. enemyControl slow)."
+                },
+                "decorations": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "finalStrike",
+                      "finisher",
+                      "dive"
+                    ]
+                  },
+                  "minItems": 1,
+                  "uniqueItems": true,
+                  "description": "Only on landings with any of these decorations (BuffData CheckDamageDecorateMask: Final Strike 2097152, finisher 4, dive 1024): for a zone, an attribute feeding one, or Stagger efficiency (attribute 26, which the Stagger of such landings reads)."
                 }
               },
               "description": "A zone or an attribute (exactly one; the loader checks)."
@@ -211,6 +224,14 @@
           "link": {
             "type": "boolean",
             "description": "A team buff that counts as one Link stack while active; the next battle skill or ultimate that uses Link uses it and ends it."
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/$defs/buffCategory"
+            },
+            "uniqueItems": true,
+            "description": "What it is for buffApplied category triggers and the operatorBuff predicate, in place of what its modifiers say (amp, susceptibility by zone; weakness, protection by attribute 62, 63): e.g. [] for a buff that only raises an active Amp's rate. The loader adds shield for a game buff with the shield tag (−1757502026)."
           }
         }
       }
@@ -281,11 +302,12 @@
                     "items": {
                       "enum": [
                         "finalStrike",
-                        "finisher"
+                        "finisher",
+                        "dive"
                       ]
                     },
                     "minItems": 1,
-                    "description": "Only landings with any of these decorations (SkillData decorate-mask bits 2097152, 4; a finisher is a skillSpecification 8 skill's)."
+                    "description": "Only landings with any of these decorations (SkillData decorate-mask bits 2097152, 4, 1024; a finisher is a skillSpecification 8 skill's, a dive a plunging attack's)."
                   },
                   "reaction": {
                     "type": "boolean",
@@ -329,6 +351,10 @@
                   "followUp": {
                     "type": "boolean",
                     "description": "Only casts a skill made by itself (CastSkill, a trigger's cast action), or only the player's."
+                  },
+                  "beside": {
+                    "type": "boolean",
+                    "description": "Only casts that run beside the current action (KitSkill.beside: the beside path's effects at frame 0), or only those that replace it (the animated path's effects, at their frames)."
                   }
                 }
               },
@@ -533,6 +559,10 @@
                   "toOthers": {
                     "type": "boolean",
                     "description": "Only heals of someone other than the healer."
+                  },
+                  "toOwner": {
+                    "type": "boolean",
+                    "description": "Only heals of the trigger's owner, from any healer `by` allows (abilityEvent 45 OnReceiveHeal; the wielder's own heals are 50)."
                   },
                   "kinds": {
                     "type": "array",
@@ -815,15 +845,10 @@
                   "categories": {
                     "type": "array",
                     "items": {
-                      "enum": [
-                        "amp",
-                        "susceptibility",
-                        "weakness",
-                        "protection"
-                      ]
+                      "$ref": "#/$defs/buffCategory"
                     },
                     "minItems": 1,
-                    "description": "Any kit buff (own, weapon or gear set) of one of these categories, applied by whoever `by` names: Amp and Susceptibility by zone, Weakness and Protection by attribute 62, 63."
+                    "description": "Any kit buff (own, weapon or gear set) of one of these categories, applied by whoever `by` names: Amp and Susceptibility by zone, Weakness and Protection by attribute 62, 63, Shield by its game buff's tag (KitBuff.categories overrides)."
                   },
                   "fromKinds": {
                     "type": "array",
@@ -839,8 +864,74 @@
                     },
                     "minItems": 1,
                     "description": "Only buffs applied by skills of these kinds (a hit's, or a trigger's run by its owner's own skill); none otherwise."
+                  },
+                  "elements": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/element"
+                    },
+                    "minItems": 1,
+                    "description": "Only when a listed category of the buff reaches one of these elements (an all-element or all-Arts one counts): tag 1066759270 Physical Susceptibility = [physical], 1427729990 Arts Susceptibility = the four Arts elements."
+                  },
+                  "allElements": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/$defs/element"
+                    },
+                    "minItems": 1,
+                    "description": "Only when a listed category of the buff reaches every one of these (tag 486772476 Arts Amp: only an all-Arts or all-element Amp)."
+                  },
+                  "toOthers": {
+                    "type": "boolean",
+                    "description": "Only when the buff reaches an operator other than its applier (a team buff, a buff given to a teammate)."
+                  },
+                  "received": {
+                    "type": "boolean",
+                    "description": "Only when the buff reaches the trigger's owner (\"the wielder gains\"; from anyone with by: anyone)."
                   }
                 }
+              },
+              {
+                "type": "object",
+                "required": [
+                  "event",
+                  "tags"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
+                    "const": "buffApplied"
+                  },
+                  "tags": {
+                    "type": "array",
+                    "items": {
+                      "type": "integer"
+                    },
+                    "minItems": 1,
+                    "description": "The data's buff tags (CheckBuffIdInContext tag query: any of them); the loader turns them into categories and elements (packages/data/src/buffTags.ts), or refuses tags it can't."
+                  },
+                  "fromKinds": {
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "$ref": "#/$defs/skillType"
+                        },
+                        {
+                          "const": "none"
+                        }
+                      ]
+                    },
+                    "minItems": 1
+                  },
+                  "toOthers": {
+                    "type": "boolean"
+                  },
+                  "received": {
+                    "type": "boolean"
+                  }
+                },
+                "description": "buffApplied by the game's buff tags, as the categories form."
               },
               {
                 "type": "object",
@@ -1703,6 +1794,16 @@
         "cryst",
         "natural"
       ]
+    },
+    "buffCategory": {
+      "enum": [
+        "amp",
+        "susceptibility",
+        "weakness",
+        "protection",
+        "shield"
+      ],
+      "description": "What a buff is (engine events.ts BuffCategory): Amp and Susceptibility by zone, Weakness and Protection by attribute 62 / 63, Shield by its game buff's tag −1757502026."
     },
     "application": {
       "oneOf": [
@@ -2567,6 +2668,130 @@
               "description": "A buff from anyone that reaches the operator has a modifier in this zone (an Amped teammate)."
             }
           }
+        },
+        {
+          "type": "object",
+          "required": [
+            "operatorBuff"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "operatorBuff": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "required": [
+                    "categories"
+                  ],
+                  "additionalProperties": false,
+                  "properties": {
+                    "categories": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/$defs/buffCategory"
+                      },
+                      "minItems": 1
+                    }
+                  }
+                },
+                {
+                  "type": "string"
+                }
+              ],
+              "description": "A buff from anyone that reaches the operator is of one of these categories (shield: a game buff with tag −1757502026), or stands for this BuffData buff (the twin of enemyBuff)."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "castLink"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "castLink": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "atLeast": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 4
+                }
+              },
+              "description": "The hit's own cast used at least atLeast (default 1) Link stacks; false for a triggered hit of no cast."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "currentAction"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "currentAction": {
+              "type": "object",
+              "required": [
+                "kinds"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "kinds": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/skillType"
+                  },
+                  "minItems": 1
+                },
+                "beforeExclusive": {
+                  "const": true
+                }
+              },
+              "description": "The operator's running action is a skill of these kinds, before its exclusive frame with beforeExclusive (CheckSkillType checkTargetCurSkill, mustBeforeExclusiveTime): for a skill's beside."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "enemySuperArmor"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "enemySuperArmor": {
+              "type": "object",
+              "minProperties": 1,
+              "additionalProperties": false,
+              "properties": {
+                "atLeast": {
+                  "type": "number"
+                },
+                "below": {
+                  "type": "number"
+                }
+              },
+              "description": "The enemy's super armor is at least / below this (CheckSuperArmor; EnemyAttributeTemplateTable initialSuperArmor, zeroPoiseSuperArmor while Staggered)."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "enemyRank"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "enemyRank": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "minItems": 1,
+              "description": "The enemy's rank is one of these: EnemyTemplateDisplayInfoTable displayType (0 Common, 1 Elite, 2 Boss, 3 Advanced, 4 Alpha in 555me's DisplayEnemyTypeTable). CheckEnemyRank's enemyRankSet reads as a bit set over them (a claim): 1 Common, 2 Elite."
+            }
+          }
         }
       ]
     },
@@ -2980,6 +3205,10 @@
         "finalStrike": {
           "type": "boolean",
           "description": "Override: whether the hit is a Final Strike. By default read from SkillData (decorate-mask bit 2097152) via the hit's events."
+        },
+        "dive": {
+          "type": "boolean",
+          "description": "Override: whether the hit is a dive attack's landing. By default read from SkillData (decorate-mask bit 1024) as finalStrike is."
         },
         "requires": {
           "type": "object",

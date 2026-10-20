@@ -12,6 +12,7 @@
 
 import { EngineError } from "./errors.ts";
 import type { GameData } from "./model.ts";
+import type { CritMode } from "./damage.ts";
 import { allActions } from "./events.ts";
 import {
   advance,
@@ -142,8 +143,11 @@ export function committedDamage(ctx: TimelineContext, state: TimelineState): num
 /**
  * Where a scenario's battles can go differently from seed to seed: rolled
  * crits, a dodge chance strictly between 0 and 1 with enemy attacks to dodge,
- * kit triggers (own or worn) that fire with a chance. Empty: one battle is
- * the result.
+ * kit triggers (own or worn) that fire with a chance, and kit triggers on
+ * crits (`on: {event: hit, crit}`) unless crits are `never` or `always`
+ * (owner, batch 3 decision 2: random results are distributions; with
+ * `expected` they never fire, so search plays such a scenario with rolled
+ * crits: searchCritMode). Empty: one battle is the result.
  */
 export function randomOutcomes(data: GameData, scenario: Omit<TimelineScenario, "rotation">): string[] {
   const out: string[] = [];
@@ -157,7 +161,33 @@ export function randomOutcomes(data: GameData, scenario: Omit<TimelineScenario, 
     const chance = (ctx.kits.get(b.operator)?.triggers ?? []).filter((t) => t.chance !== undefined || allActions(t.do).some((x) => x.kind === "choose")).map((t) => t.id);
     if (chance.length) out.push(`trigger chance (${data.operators[b.operator]?.name ?? b.operator}: ${chance.join(", ")})`);
   }
+  if (o.crit === "rolled" || o.crit === "expected") {
+    const crits = critTriggers(data, scenario);
+    if (crits.length) out.push(`crit-triggered effects (${crits.join("; ")})${o.crit === "expected" ? ": ranked with rolled crits" : ""}`);
+  }
   return out;
+}
+
+/**
+ * The team's kit triggers (own or worn) that listen to crits (`on: {event: hit, crit}`), as "operator: trigger IDs"
+ * per operator. With expected crits no hit counts as a crit (design.md "Crit modes"), so they never fire.
+ */
+export function critTriggers(data: GameData, scenario: Omit<TimelineScenario, "rotation">): string[] {
+  const ctx = createContext(data, { ...scenario, rotation: [] });
+  return scenario.team.flatMap((b) => {
+    const ids = (ctx.kits.get(b.operator)?.triggers ?? []).filter((t) => t.on.event === "hit" && t.on.crit !== undefined).map((t) => t.id);
+    return ids.length ? [`${data.operators[b.operator]?.name ?? b.operator}: ${ids.join(", ")}`] : [];
+  });
+}
+
+/**
+ * The crit mode a search plays a scenario's battles in: its own, except `expected` with crit-triggered effects in
+ * the team (critTriggers), which never fire with expected crits: then rolled, so the candidates are ranked over
+ * seeded battles in which they do (batch 4 T3).
+ */
+export function searchCritMode(data: GameData, scenario: Omit<TimelineScenario, "rotation">): CritMode {
+  const crit = scenario.options.crit;
+  return crit === "expected" && critTriggers(data, scenario).length > 0 ? "rolled" : crit;
 }
 
 export interface SearchOptions {
@@ -271,6 +301,8 @@ export interface SearchResult {
   readonly random: readonly string[];
   /** Seeds of the battles every candidate was ranked over (one seed without random outcomes). */
   readonly seeds: readonly number[];
+  /** The crit mode the battles (and `result`, `spread`) were played in: the scenario's, or rolled for crit-triggered effects (searchCritMode). */
+  readonly crit: CritMode;
   /** What the beam ranked by: the mean of the seeded battles, or a percentile (SearchOptions.percentile). */
   readonly rankedBy: "mean" | { readonly percentile: number };
   /** With random outcomes: the found rotation's distribution over SearchOptions.runs battles (rotationSpread). */
@@ -365,13 +397,16 @@ export function searchRotation(data: GameData, scenario: Omit<TimelineScenario, 
   return memoAdvance(() => search(data, scenario, options));
 }
 
-function search(data: GameData, scenario: Omit<TimelineScenario, "rotation">, options: SearchOptions): SearchResult {
+function search(data: GameData, given: Omit<TimelineScenario, "rotation">, options: SearchOptions): SearchResult {
   const beam = options.beamWidth ?? 24;
   const bucketFrames = options.bucketFrames ?? 15;
   const maxExpansions = options.maxExpansions ?? 200_000;
   const percentile = options.percentile;
   if (percentile !== undefined && !(percentile >= 0 && percentile <= 100)) throw new EngineError(`percentile must be 0–100, not ${percentile}`);
-  const random = randomOutcomes(data, scenario);
+  const random = randomOutcomes(data, given);
+  // Expected crits with crit-triggered effects: the battles roll crits, or those effects would never fire (searchCritMode).
+  const crit = searchCritMode(data, given);
+  const scenario = crit === given.options.crit ? given : { ...given, options: { ...given.options, crit } };
   const k = random.length === 0 ? 1 : (options.seeds ?? 4);
   if (!Number.isInteger(k) || k < 1) throw new EngineError(`seeds must be a whole number ≥ 1, not ${options.seeds}`);
   const seed0 = scenario.options.seed ?? 1;
@@ -446,6 +481,7 @@ function search(data: GameData, scenario: Omit<TimelineScenario, "rotation">, op
     expanded,
     random,
     seeds,
+    crit,
     rankedBy: percentile === undefined ? "mean" : { percentile },
     ...(random.length > 0 && runs > 0 ? { spread: rotationSpread(data, full, runs, seed0) } : {}),
   };

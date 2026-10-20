@@ -11,7 +11,8 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { isBuffFileListed, readBuffFile, type RawBuffFile } from "./buffData.ts";
-import { attrFeedsZone, buffAttrHasEffect, type KitBuffModifier, ELEMENTS, predicateRefs, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
+import { buffTagFilter, SHIELD_TAG } from "./buffTags.ts";
+import { Attr, attrFeedsZone, buffAttrHasEffect, buffReach, type BuffCategory, type TriggerOn, type KitBuffModifier, ELEMENTS, predicateRefs, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
@@ -31,6 +32,7 @@ interface RawHit {
   applies?: KitApplication[]; requires?: StackRequirement; gains?: { stack: string; amount?: ValueExpr; if?: Predicate }[];
   bonuses?: { zone: Zone; key: string }[];
   finalStrike?: boolean;
+  dive?: boolean;
   factor?: number;
   reaction?: { kind: "burst" | "reaction"; element: "fire" | "pulse" | "cryst" | "natural"; level?: number };
   extraScale?: { value: ValueExpr; if: Predicate }[];
@@ -57,7 +59,24 @@ type RawAction =
   | { kind: "hits"; hits: RawHit[]; if?: Predicate; now?: boolean }
   | { kind: "choose"; options: { weight: ValueExpr; do: RawAction[] }[]; if?: Predicate };
 
-type RawTrigger = Omit<KitTrigger, "do"> & { note?: string; do: RawAction[] };
+/**
+ * A trigger's event as kits write it: also `buffApplied` by the game's buff tags (`tags`, any of them), which the
+ * loader turns into its category filter (buffTags.ts buffTagFilter).
+ */
+export type RawOn = TriggerOn | { event: "buffApplied"; tags: number[]; fromKinds?: (SkillType | "none")[]; toOthers?: boolean; received?: boolean };
+
+type RawTrigger = Omit<KitTrigger, "do" | "on"> & { note?: string; on: RawOn; do: RawAction[] };
+
+/** A trigger's event with buff tags turned into their category filter. */
+export function triggerOn(on: RawOn, where: string): TriggerOn {
+  if (!("tags" in on)) return on;
+  const { tags, ...rest } = on;
+  try {
+    return { ...rest, ...buffTagFilter(tags) };
+  } catch (e) {
+    throw new Error(`${where}: ${e instanceof Error ? e.message : String(e)}`, { cause: e });
+  }
+}
 
 /** A list of raw actions with those inside its choose options (an option's after its choose). */
 const flatActions = (list: readonly RawAction[]): RawAction[] => list.flatMap((a) => (a.kind === "choose" ? [a, ...a.options.flatMap((o) => flatActions(o.do))] : [a]));
@@ -140,10 +159,16 @@ const FINAL_STRIKE_BIT = 2097152;
  * events name (or, for a skill's only hit entry without events, the skill's
  * file and its projectile files) has a damage unit with the Final Strike bit.
  */
-function isFinalStrike(skillId: string, events: readonly string[], hitEntries: number): boolean {
+function isFinalStrike(skillId: string, events: readonly string[], hitEntries: number, bit = FINAL_STRIKE_BIT): boolean {
   const files = events.length ? events : hitEntries === 1 ? operatorSkillFiles(skillId.replace(/^(chr_\d+_[a-z]+)_.*$/, "$1")).filter((f) => f === skillId || f.startsWith(`${skillId}_`)) : [];
-  return files.some((f) => isSkillFileListed(f) && existsSync(skillFilePath(f)) && damageSites(f).some((d) => (Math.floor(d.decorateMask / FINAL_STRIKE_BIT) & 1) === 1));
+  return files.some((f) => isSkillFileListed(f) && existsSync(skillFilePath(f)) && damageSites(f).some((d) => (Math.floor(d.decorateMask / bit) & 1) === 1));
 }
+
+/** SkillData decorate-mask bit of a dive attack's landing (the plunging attacks' masks are 1152: 1024 + the basic attack's 128). */
+const DIVE_BIT = 1024;
+
+/** Whether a kit hit is a dive attack's landing: as isFinalStrike, by the dive bit. */
+const isDive = (skillId: string, events: readonly string[], hitEntries: number): boolean => isFinalStrike(skillId, events, hitEntries, DIVE_BIT);
 
 /** Checks that a blackboard key has a value at every level (or a SkillData default). */
 function checkKey(skill: SkillData, key: string, where: string) {
@@ -220,6 +245,21 @@ export function withGameBuff(file: string, b: KitBuff): KitBuff {
   return s.type === 8 && b.maxStacks !== undefined && b.sharedTimer === undefined ? { ...b, modifiers, sharedTimer: true } : { ...b, modifiers };
 }
 
+/**
+ * A kit buff's categories with what its game buff says: one whose game buff
+ * has the shield tag (applyTags −1757502026) is a shield, in addition to what
+ * its modifiers make it (buffReach). Kit-written categories must agree with
+ * the tag.
+ */
+export function withCategories(file: string, b: KitBuff): KitBuff {
+  const shield = b.gameBuff ? gameBuffFile(file, b.id, b.gameBuff).applyTags.includes(SHIELD_TAG) : undefined;
+  if (b.categories) {
+    if (shield !== undefined && shield !== b.categories.includes("shield")) throw new Error(`${file}: buff ${b.id}: ${b.gameBuff} ${shield ? "has" : "hasn't"} the shield tag (${SHIELD_TAG}), so its categories ${shield ? "include" : "don't include"} shield`);
+    return b;
+  }
+  return shield ? { ...b, categories: [...(Object.keys(buffReach(b)) as BuffCategory[]), "shield"] } : b;
+}
+
 /** What one kit's values, stacks and buffs may name. */
 interface KitScope {
   /** Prefix of error messages (the kit file). */
@@ -278,6 +318,9 @@ function kitChecker(scope: KitScope) {
     for (const m of b.modifiers) if ((m.zone === undefined) === (m.attr === undefined)) throw new Error(`${where}: buff ${b.id}: each modifier has a zone or an attribute`);
     for (const m of b.modifiers) if (m.attr !== undefined && !buffAttrHasEffect(m.attr)) throw new Error(`${where}: buff ${b.id}: attribute ${m.attr} feeds no damage zone and nothing reads it (ATK is the atk zone)`);
     for (const m of b.modifiers) if (m.percent && (m.attr === undefined || attrFeedsZone(m.attr))) throw new Error(`${where}: buff ${b.id}: a percentage is of an attribute read where the game reads it (DEF, Strength, …), not of a zone`);
+    // Decorations filter what's judged per landing: a zone, an attribute feeding one, or Stagger efficiency (26).
+    for (const m of b.modifiers) if (m.decorations && m.attr !== undefined && !attrFeedsZone(m.attr) && m.attr !== Attr.PoiseDamageOutputScalar) throw new Error(`${where}: buff ${b.id}: decorations filter landings: a zone, an attribute feeding one, or Stagger efficiency (26), not attribute ${m.attr}`);
+    for (const m of b.modifiers) if (m.attr === Attr.PoiseDamageOutputScalar && m.percent) throw new Error(`${where}: buff ${b.id}: Stagger efficiency (26) is a ratio added to the panel's, not a percentage`);
     // Instances kept by the applying skill's value (maxStackCntKey): the key must be there.
     const instances = b.gameBuff ? gameBuffInstances(scope.file, b, gameBuffFile(scope.file, b.id, b.gameBuff)) : undefined;
     if (typeof instances === "string") checkValue(instances, skillId, `${where}: buff ${b.id} instances (maxStackCntKey)`);
@@ -291,7 +334,7 @@ function kitChecker(scope: KitScope) {
    */
   const normalizeHits = (
     hits: readonly RawHit[],
-    src: { skillId: string; label: string; damageType?: SkillType; checkScale: (key: string, where: string) => void; defaultEvent?: string; finalStrike?: (h: RawHit, events: string[]) => boolean },
+    src: { skillId: string; label: string; damageType?: SkillType; checkScale: (key: string, where: string) => void; defaultEvent?: string; finalStrike?: (h: RawHit, events: string[]) => boolean; dive?: (h: RawHit, events: string[]) => boolean },
     where: string,
   ): KitHit[] => {
     const ids = new Set<string>();
@@ -373,13 +416,15 @@ function kitChecker(scope: KitScope) {
         ...(h.if ? { if: h.if } : {}),
         ...(h.branch ? { branch: h.branch } : {}),
         ...((h.finalStrike ?? src.finalStrike?.(h, events) ?? false) ? { finalStrike: true } : {}),
+        ...((h.dive ?? src.dive?.(h, events) ?? false) ? { dive: true } : {}),
         ...(h.gains ? { gains: h.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1, ...(g.if ? { if: g.if } : {}) })) } : {}),
       };
     });
   };
   const triggerIds = new Set<string>();
-  const checkTrigger = (t: Omit<RawTrigger, "note">): KitTrigger => {
-    const where = `${scope.file}: trigger ${t.id}`;
+  const checkTrigger = (raw: Omit<RawTrigger, "note">): KitTrigger => {
+    const where = `${scope.file}: trigger ${raw.id}`;
+    const t = { ...raw, on: triggerOn(raw.on, where) };
     if (triggerIds.has(t.id)) throw new Error(`${where}: duplicate trigger ID`);
     triggerIds.add(t.id);
     const skillId = triggerSkillId(scope.owner, t);
@@ -471,7 +516,7 @@ function kitChecker(scope: KitScope) {
       );
     return { ...t, do: normalize(t.do) };
   };
-  const normalizeBuffs = (buffs: readonly RawBuff[]): KitBuff[] => buffs.map(({ note: _note, ...b }) => withGameBuff(scope.file, b));
+  const normalizeBuffs = (buffs: readonly RawBuff[]): KitBuff[] => buffs.map(({ note: _note, ...b }) => withCategories(scope.file, withGameBuff(scope.file, b)));
   /** A kit's triggers, checked, with the triggers their actions name (cancelHits) among them. */
   const checkTriggers = (list: readonly Omit<RawTrigger, "note">[]): KitTrigger[] => {
     const out = list.map(checkTrigger);
@@ -571,7 +616,7 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
       ...(s.beside ? { beside: s.beside } : {}),
       ...(s.cooldownGroup ? { cooldownGroup: s.cooldownGroup } : {}),
       ...((s.chainStep ?? isChainStep(data, kit, s.skillId)) ? { chainStep: true } : {}),
-      hits: c.normalizeHits(s.hits, { skillId: s.skillId, damageType: s.damageType, label: s.label, checkScale: (key, w) => checkKey(skill, key, w), defaultEvent: s.skillId, finalStrike: (h, events) => isFinalStrike(s.skillId, events, s.hits.length) }, where),
+      hits: c.normalizeHits(s.hits, { skillId: s.skillId, damageType: s.damageType, label: s.label, checkScale: (key, w) => checkKey(skill, key, w), defaultEvent: s.skillId, finalStrike: (h, events) => isFinalStrike(s.skillId, events, s.hits.length), dive: (h, events) => isDive(s.skillId, events, s.hits.length) }, where),
     };
   });
   return {
