@@ -126,12 +126,13 @@ Action types per file that affect damage, resources, state or timing
 | 44 | Signatures | n/a | Lustrous Carmine is Camille's (both her logs). Mountain Bearer is plainly Lifeng's: his battle skill Knocks Down (Vulnerable) and applies Physical Susceptibility to an enemy without Vulnerable (CharGrowthTable chr_0015_lifeng_NormalSkill); the merge may move it to his report. Golden Age (Will, Electric, combo heals of teammates) fits an Electric healer such as Liino |
 
 Counts (44 rows, by primary status): **supported 30** (rows 1–8, 11–14,
-16, 18, 20, 21, 23–28, 33–37, 41–43; 19 of them "supported (data)";
+16, 18, 20, 21, 23–28, 33–37, 41–43; 17 of them "supported (data)";
 rows 8, 13, 14 need hand-written parts the compiler misses), **gap 6**
 (rows 17 G2, 19 G1, 22 G3, 31 G6, 38 V4 residue, 39 G4), **data 1**
-(row 30; rows 8, 13, 14 have data parts), **unknown 3** (rows 15 U2,
-settled by logs; 22's U1; 29 U5), **unique? 0**, **n/a 6** (rows 9, 10,
-32, 40, 44; row 28's hit-stop half is the known Ti1b).
+(row 30; rows 8, 13, 14 have data parts), **unknown 2** (rows 15 U2,
+settled by logs, and 29 U5; row 22 carries U1, row 35 U4), **unique? 0**,
+**n/a 5** (rows 9, 10, 32, 40, 44; row 28's hit-stop half is the known
+Ti1b).
 
 Nothing is unique. ComboAction (Link) is also in `chr_0015_lifeng_combo_skill`;
 the explosion is an ordinary triggered hit; the hover debuff is a plain
@@ -376,8 +377,8 @@ node_modules linked to its own packages, `EFSIM_DATA_DIR` the main
 checkout's data): `packages/data/kits/operators/chr_0033_camille.json` and
 `packages/data/kits/equipment/{wpn_lance_0012,wpn_lance_0015,wpn_lance_0016}.json`
 there. All load; `vitest run packages/data/test tests/logs.test.ts
-tests/timeline.test.ts` passes (587 tests; skillCompile needed
-`--testTimeout 120000` under the parallel agents' load). `efsim calc`
+tests/timeline.test.ts --testTimeout 120000` passes (587 tests; the
+longer timeout only because ten agents share the machine). `efsim calc`
 lists every hit; scratch scenarios (`examples/camille-scratch*.scenario.json`
 there: Camille P5 with Laevatain, and with Gilberta) run battle skill →
 Corrosion opens the combo → combo with explosion 0.4 s after hit 3, heal,
