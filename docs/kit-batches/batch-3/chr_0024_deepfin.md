@@ -391,3 +391,113 @@ and the secondary attribute are on the stat panel.
 After the applying hit's damage (Alesh's ForceSpellStatusAction comes
 after his DamageAction). ATK and skills 1–2 are on the stat panel;
 buff_wpn_sword_0020_atk_up is unreferenced and left out.
+
+## Kit (2026-10-20)
+
+Written against main at 182f22b (batch-3 shared features T1–T4, V2–V4,
+B1, B2, A1–A5, C1, N1, D1–D4 merged). No engine, loader or compiler code
+changed.
+
+### Re-analysis
+
+Gaps:
+
+| Gap | Now | How the kit uses it |
+|---|---|---|
+| G1 combo on Originium Crystals consumed | **done** (T2) | trigger `combo_on_crystals`: `on: {event: buffEnded, gameBuffs: [buff_common_originum_frozen], consumed: true}`, `by: anyone` → `openCombo`. Works with the Endministrator's kit as it is (her `endBuff originium_crystals` in the four consumption triggers is a consumption; expiry isn't) |
+| G2 forced reaction level as a value | **done** (A3) | one battle-skill hit instead of five branches: `applies [consumeInfliction cryst, forcedReaction solidification level {consumed: true}]`, both `afterDamage` (A4: the data's ForceSpellStatusAction comes after the DamageAction); SP by nested `if consumedAtLeast 4…1` (SP is judged after the applications, so it sees the count). Compiler half still open (KNOWN entry) |
+| G3 enemy HP | **done** (N1) | ultimate `extraScale [{value: atk_up, if: {all: [potentialAtLeast 5, enemyHpBelow 0.5]}}]`; 0.5 is `hp_tar`, a literal because `enemyHpBelow` takes a number. The scenario's `enemyHp` sets it; full by default, so P5 never acts unless a scenario says the enemy is below half |
+| G4 SP source type | **done** (T3) | Edge of Lightness: `on: {event: sp, sourceTypes: [3]}` (was `kinds [battle, combo, ultimate]`): the Rare Fin's `atb_sp` (type 0) no longer adds a layer |
+| U1 / A7 Shatter as consumption | **open**, interim | `combo_on_shatter` (`on: shatter`, by anyone → `openCombo`), hypothesis A; in-game test 63 |
+| Row 30 hit-stop (Ti1) | open (batch 1) | not modelled |
+| Row 27 talent `CD` literal (D4) | open | `talent1_icd` duration 3 (a BuffData default of the talent's aura; talent values don't read BuffData defaults) |
+| Ultimate SP kills (N2) | deferred | the data's expression with `kill_num` (0): `min(atb_up × kill_num + atb, atb_max)` = 25 |
+| Rare Fin chance jump (D1, Probablity branches) | open, interim (exact) | trigger `rare_fin`: cast of the combo, `delay 10`, `chance`, `jump 10 → 65` |
+| B2 layered stackingType 11 across wielders | open | Edge of Lightness: two wielders' layers add (one wielder in any normal team) |
+
+Mechanics rows: 1–5, 9, 12–19, 22–29, 31, W1, W3–W7 as planned
+(supported); 6–8 by A3 / A4 / V1 (one hit, natural SP of source type 3);
+11 by T2; 20 natural and of source type 3 only because the kit's value
+names `atb_up` first (SkillData `spKinds` / `spSources` key the grant by
+the keys of its ObtainCostAction value, `atb_up` and `atb_max`, not `atb`:
+a plain `sp: atb` would be returned SP of no source type); 21 by N1; W2 by
+T3. Row 10 open (A7), row 30 open (Ti1), row 15 data (continuous reading).
+
+### What the kit models and leaves out
+
+- `packages/data/kits/operators/chr_0024_deepfin.json`: basic attacks
+  (attack5's Final Strike and controlled-only stagger, its second hit's 19
+  SP; `finalStrike: false` on it, else the loader marks every hit of a
+  Final-Strike file), finisher (two hits, multiplier 1.0), dive attack;
+  battle skill (one hit, consumption and level after the damage, SP 15 /
+  25 / 35 / 45 + P1's 10, team energy at 27); combo (normal path hits at
+  22 and 38; Rare Fin path by the `rare_fin` chance trigger: the jump skips
+  55 frames, so its hits at data frames 77 and 93 land 22 and 38 frames
+  after the cast as well; P3's team ATK +15% for 10 s after the Rare Fin
+  slam); ultimate (Cryo, infliction, 20 stagger, 25 SP, P5 below half HP);
+  combo triggers (Arts Reaction consumed, Shatter interim, crystals
+  consumed); talent 1's three handlers with one shared 3 s marker.
+- `wpn_sword_0019.json` (OBJ Edge of Lightness): a team layer per SP grant
+  of source type 3 (battle skill, combo hook, ultimate, other skills' type-3
+  grants; not basic attacks, finishers or the Rare Fin's `atb_sp`), Heat and
+  Electric DMG +8.4% each, 20 s, three layers timed separately.
+- `wpn_sword_0020.json` (Finchaser 3.0): Cryo DMG Taken +19.6% on the enemy
+  for 15 s when the wielder's battle skill applies Solidification (forced or
+  by reaction), after that hit's damage; stack group from the game buff.
+- Left out: hit-stop; kills (ultimate SP per kill); the combo's out-of-range
+  jump (0 → 4); buff_wpn_sword_0020_atk_up (unreferenced); camera buffs.
+- `examples/alesh-estella.scenario.json` (new): Alesh P5 with Finchaser and
+  Estella: 137,101 total (Alesh 35,902) in 9.83 s, expected crits, seed 1
+  (the combo's normal path); 40 seeds with rolled crits: mean 136,787,
+  sd 3.5%, max 153,231 (Rare Fin seeds).
+- `tests/kit-alesh.test.ts` (18 tests): basic chain frames and SP (one grant,
+  source type 1); finisher and skill list; battle skill on 0–4 Cryo stacks
+  (consumption, forced Solidification level, SP with and without P1, natural
+  SP), its damage before the Solidification, talent 1's 12 energy and
+  marker, no talent below level 1; combo windows on a Shatter (not on his
+  own Cryo consumption), on a consumed reaction, on the Endministrator's
+  consumed crystals (not on their expiry; talent 1's 4 energy when she
+  applies them); the combo's two paths, SP sources and energy, the Rare Fin
+  rate over 40 seeds, P3 and its absence at P2, the chance expression
+  (talent 2 levels 2 and 0); the ultimate's hit, infliction, stagger and SP;
+  P5 ×1.5 below / not above half HP / not at P4; a teammate's Solidification
+  (4 energy) and the shared lockout; Edge of Lightness's layers (none from
+  basic attacks or a Cryo-less battle skill, none from `atb_sp`, cap 3,
+  separate timers, values); Finchaser's debuff (timing, duration, the
+  ultimate's time stop extending it on the enemy's clock, not on the
+  applying hit, not from a teammate's Solidification).
+- `packages/data/test/skillCompile.test.ts`: Alesh in OPERATORS; one KNOWN
+  entry (the battle skill's consumption and level: the compiler reads no
+  consumption from ForceSpellStatusAction `consumedLayer` and lists the
+  Solidification only under CheckBuffStackNumByTag).
+
+### Verification
+
+- **Logs:** no ZMDLogs fixture has Alesh, Edge of Lightness or Finchaser
+  3.0, so `zmdlogs check` / `reactions` have nothing of his; every existing
+  fixture's output is unchanged.
+- **Examples:** every existing `examples/*.scenario.json` total unchanged
+  (the kit adds an operator and two weapons nobody else in them uses).
+- **Scenario sanity** (the new example): ultimate at 3.0 s (frame 90) with
+  Estella's Cryo: a Cryo burst at 4.0 s (A5), two stacks; his battle skill at
+  4.1 s consumes both and forces Solidification level 2 (+35 SP; talent 1's
+  12 energy; Finchaser's debuff); Estella's combo Lifts and Shatters at
+  4.73 s, which opens his combo (A7 interim); combo hits at +0.73 s and
+  +1.27 s, as in the report's scratch runs.
+
+### Compiler leftovers (data)
+
+`kit-draft chr_0024_deepfin` now gets elements, stagger and Final Strikes
+right. Still open (D3 / D4 / A3's compiler half): the kit `element` is the
+operator's (`cryst`); the battle skill's Switch-chosen SP (listed as 8
+grants) and its consumption and level; the Rare Fin chance jump; P3's
+CreateBuff (only noted); the ultimate's P5 branch as two unconditioned
+alternatives (CheckHp could now compile to `enemyHpBelow`) and its SP as
+`atb_up × (kill_num + 1) + atb` with no landing.
+
+### In-game tests the kit depends on
+
+- **63** (Shatter as a consumption): `combo_on_shatter` stays or goes.
+- **71** part 1 (crystals consumed vs run out): `combo_on_crystals` reads
+  "consumed"; part 2 confirms the Solidification level from the stacks
+  consumed (A3).

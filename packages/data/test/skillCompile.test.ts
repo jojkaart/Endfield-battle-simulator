@@ -9,7 +9,7 @@ import type { KitHit } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill, type CompiledValue } from "../src/index.ts";
 
 const data = loadGameData();
-const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm"];
+const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0024_deepfin"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
   const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
@@ -418,6 +418,10 @@ const KNOWN: string[] = [
   "chr_0003_endminf_ultimate_skill/shatter: no landing scaled by atk_scale_trigger (data: atk_scale | originum_ult_break_scale)",
   "chr_0002_endminm_combo_skill: data lands chr_0002_endminm_combo_skill  at [23], no kit hit",
   "chr_0002_endminm_ultimate_skill/shatter: no landing scaled by atk_scale_trigger (data: atk_scale | originum_ult_break_scale)",
+  // Batch 3, Alesh. Compiler limitation, kit right: the battle skill's ForceSpellStatusAction consumes the Cryo stacks (consumedLayer = consumedType 2's
+  // count, SaveBuffStackNumAdvanced) and Solidifies at that level, only if CheckBuffStackNumByTag Cryo ≥ 1; the compiler reads no consumption and lists
+  // the forced Solidification only under that condition, which the kit's level {consumed: true} expresses (0 consumed applies nothing; batch-3 A3).
+  "chr_0024_deepfin_normal_skill applies at 27: kit [consume cryst, forced solidification], data []",
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {
