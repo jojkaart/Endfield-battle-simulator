@@ -8,7 +8,7 @@
     "Combo skill: seal_total (frame 9) starts Imprisonment (buff_…_combo_skill_seal) and its Susceptibility (…_spell_vulnerable_pre, its child) at once: trigger imprison at cast + 11 (seal_total frame 2), detached (nothing cuts the combo before 16). The touch (frame 15) gives `usp` energy; in WILL it adds an Arts Infliction of the enemy's current element (seal_total switches on EntityBB_consumed_type, set natively: open list A6, in-game test 33). Natural end → explosion at +14 (abilityentity_end); in INT also the bunshin_end_listener (int_after_end), whose next battle-skill hit returns SP and explodes again (int_late_hit; lasers after it: test 34). INT early end (the battle skill hits an Imprisoned enemy: seal2 abilityEvent 101 → seal_listener 204 → seal_again): SP atb_return_wisd, explosion, Imprisonment and its Susceptibility end, the post-Imprisonment Susceptibility (rate_pre, ended by the final laser 58 frames later) and lasers at +43/46/49/52/58 (btl_upload_d9e59d0fb737 has them ~1.5 frames earlier). In WILL nothing ends Imprisonment early (seal2's 101 handler checks isWisd), so WILL has no post-Imprisonment Susceptibility and no seal_finisher (unreachable).",
     "Ultimate: frame 47 creates the array (listener_owner, `duration` 20 s, energy blocked, ult slot → Gloompurge Arcana) and, in WILL, talent 1's Susceptibility, both before the hit's DamageAction (serverActionIndex 45 / 79 vs 82): hit buffs with beforeDamage, so INT Amp (array_start) and the equipment's category triggers act on the hit (btl_upload_dbaee23b801d's ultimate matches only with buff_wpn_funnel_0016_will_dmg on it). Cluster Strike (inaura abilityEvent 101): a Final Strike by the controlled operator (lasers at +15/19/23/27, 0.4 s debounce) or a Finisher (once per finisher, lasers at +12/16/20/24), each +50% max energy (usp_step, ignoreUspGainScalar) past the block; the second ends the array and starts Gloompurge Arcana (listener: energy cleared, then +100%, 10 s; its length and whether casting ult 2 ends it: test 32). The array ending with fewer than 2 strikes, and Gloompurge ending, clear energy (−999). buff_…_ultimate_skill_inaura_attack is referenced by nothing; a third strike (laser3) can't happen (the second ends the array entity).",
     "Talent 1 (values from chr_0032_lizhiyan_talent1 by {talent: 0}): WILL Susceptibility min(Will × spell_vul_rate_per_will, spell_vul_rate) + spell_vul_rate_potential on Nature and Cryo for the talent's `duration` 10 s (the ultimates read it with GetTargetBuffBBAdvanced desiredKey duration; test 30 confirms), on both ultimates; INT Arts Amp enhance_rate while the array or Gloompurge Arcana lasts (listener_owner / listener children; test 7). Both exist only when their value is above 0 (CompareFloat before the CreateBuff): talent 1 level 1 has 0 for both, so the kit guards them with talent 1 level 2 or P5. Talent 2: statusTweaks on every Corrosion she applies (duration_add, max resistance reduction × (1 + corrupt_rate)). P5 (WILL only): casting ult 2 cuts the combo's cooldown by cd_minus of its full cooldown (SetSkillCdAtOnce isPercentage; the meaning is assumed: open list V7, test 36).",
-    "Finisher (power_attack, BreakingAttackCalculation, mask 132): six landings at 7, 10, 13, 32, 34, 36 of atk_scale × multiplier 0.1 (×5) and 0.5; poise 5/5/5/20/20/10 (DefiniteValueCalculation literals). It has no ObtainCostAction: the file default `atb` 8 isn't read by any action, so `sp: 0` (open list D2, test 31); the enemy's finisher SP stays.",
+    "Finisher (power_attack, BreakingAttackCalculation, mask 132): six landings at 7, 10, 13, 32, 34, 36 of atk_scale × multiplier 0.1 (×5) and 0.5; no Stagger (its DamageActions have no poise unit; the 5/5/5/20/20/10 DefiniteValueCalculation literals are hitEnvData, damage to scenery). It has no ObtainCostAction: the file default `atb` 8 isn't read by any action, so `sp: 0` (open list D2, test 31); the enemy's finisher SP stays.",
     "Not modelled: Imprisonment's slow-down of the enemy's clock (SealAction curve 0.3 → 0.2 → 1.0) and hit-stops (open list Ti1b; tests 18, 37); whether an application that forms a reaction opens the combo window (inflictionApplied excludes it; open list 'Arcane R3', test 35); the paramType 4 half of talent 1 level 2 (R11, undecoded); buff_common_<element>_triggered's ×1.42 (open list L2).",
     "Verified against logs (Rhodagn / Lv90 challenge, game 1.6): btl_upload_b7b3762d5da8 (P4, WILL) all 13 Arcane hits ±1 (touch ×2 = atk_scale_touch, ultimate with its talent-1 Susceptibility, attack1 ×3, attack2 ×3, plunge, cryst bursts ×3); btl_upload_0eef2474a26f (P5, WILL) touch and battle skill (atk_scale_will, under Corrosion level 2 from its own Nature-onto-Cryo reaction); btl_upload_bdf223db8e49, btl_upload_dbaee23b801d and btl_upload_e82d45c46040 (fixtures/pending). btl_upload_d9e59d0fb737 (the only INT battle, before 555me's 1.6 table commit 371c743) has every hit after her ultimate ×1.7–2.2 the 1.6 model, all under the ultimate's forced Corrosion; inside it the INT hits are mutually consistent (lasers / atk_scale_laser1, final laser / atk_scale_laser2 and attack1 / atk_scale give the same ×1.9617; seal2 / atk_scale_boom equals battle skill / atk_scale_wisd).",
     "The timeline takes skill timing (lock, windows, channels) from SkillData."
@@ -1027,7 +1027,9 @@
             },
             "then": "atb"
           },
-          "note": "Final Strike (decorate mask 2097152 + basic): triggers Cluster Strike inside the array when Arcane is controlled. SP atb only if controlled."
+          "poise": "poise",
+          "poiseControlledOnly": true,
+          "note": "Final Strike (decorate mask 2097152 + basic): triggers Cluster Strike inside the array when Arcane is controlled. SP atb only if controlled; Stagger `poise` (10) too (its DamageAction's poise unit, onlyEnableForMainChar)."
         }
       ]
     },
@@ -1049,11 +1051,10 @@
             10,
             13
           ],
-          "poise": 5,
           "events": [
             "chr_0032_lizhiyan_power_attack"
           ],
-          "note": "BreakingAttackCalculation multiplier 0.1, poise 5 each."
+          "note": "BreakingAttackCalculation multiplier 0.1. No Stagger: no damage unit is a poise one (the 5 / 20 / 10 literals are hitEnvData, damage to scenery)."
         },
         {
           "id": "b",
@@ -1066,11 +1067,10 @@
             32,
             34
           ],
-          "poise": 20,
           "events": [
             "chr_0032_lizhiyan_power_attack"
           ],
-          "note": "Multiplier 0.1, poise 20 each (the two share one action, to verify)."
+          "note": "Multiplier 0.1, no Stagger (the two share one action, to verify)."
         },
         {
           "id": "c",
@@ -1081,12 +1081,11 @@
           "frames": [
             36
           ],
-          "poise": 10,
           "sp": 0,
           "events": [
             "chr_0032_lizhiyan_power_attack"
           ],
-          "note": "Multiplier 0.5, poise 10; GainBreakingAttackAtb here. sp 0: the skill's unread `atb` 8 isn't SP (open list D2, test 31)."
+          "note": "Multiplier 0.5, no Stagger; GainBreakingAttackAtb here. sp 0: the skill's unread `atb` 8 isn't SP (open list D2, test 31)."
         }
       ]
     },

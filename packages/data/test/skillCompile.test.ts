@@ -380,12 +380,6 @@ const KNOWN: string[] = [
   "chr_0034_typhoea_floating_attack2: data lands chr_0034_typhoea_floating_attack1_01_projhit atk_scale_base × atk_scale_enhence at [46, 76, 106, 136], no kit hit",
   "chr_0034_typhoea_floating_attack3: data lands chr_0034_typhoea_floating_attack1_01_projhit atk_scale_base × atk_scale_enhence at [46, 76, 106, 136], no kit hit",
   "chr_0034_typhoea_floating_attack4: data lands chr_0034_typhoea_floating_attack1_01_projhit atk_scale_base × atk_scale_enhence at [151, 301, 451, 601], no kit hit",
-  // Kit wrong (left for the kit's owner): attack5's DamageAction has a poise unit `poise` (10) with onlyEnableForMainChar, the Final Strike's "As the controlled operator, … deals {poise} Stagger"; the kit hit has no poise.
-  'chr_0032_lizhiyan_attack5/hit poise: kit -, data "poise"',
-  // Kit wrong (left for the kit's owner): none of the finisher's five DamageActions has a poise unit (damageAttributeType 1), so the kit's 5 / 20 / 10 Stagger isn't in the data (the file's `poise` 20 is read by nothing).
-  "chr_0032_lizhiyan_power_attack/a poise: kit 5, data -",
-  "chr_0032_lizhiyan_power_attack/b poise: kit 20, data -",
-  "chr_0032_lizhiyan_power_attack/c poise: kit 10, data -",
   // WILL: seal_total switches on EntityBB_consumed_type (set natively) for the element; the kit applies the enemy's current one (`element: enemy`, if WILL; open list A6).
   "chr_0032_lizhiyan_combo_skill applies at 15: kit [infliction enemy], data [], conditionally [infliction natural, infliction cryst, infliction pulse, infliction fire]",
   // RefrainObtainUsp 0–47 is the skill's; the array's own block (listener_owner, 20 s) is the kit buff gloompurger_array's blocksEnergy, which ends early with two Cluster Strikes.
