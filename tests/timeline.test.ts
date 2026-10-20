@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, parseReactionEvent, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, simulateRuns, enemyActionsOf, nextRandom, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
+import { advance, apply, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, parseReactionEvent, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, simulateRuns, enemyActionsOf, enemyHpAt, nextRandom, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, wornEquipment } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -1926,5 +1926,19 @@ describe("trigger chances", () => {
     expect(half.n).toBeGreaterThan(0);
     expect(half.n).toBeLessThan(half.hits);
     expect(count(0.5, 1).n).toBe(half.n);
+  });
+});
+
+describe("enemy HP from the scenario", () => {
+  const kit = data.kits.operators[op] as OperatorKit;
+  const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills: kit.skills.map((s) => (s.skillId === L + "attack1" ? { ...s, hits: s.hits.map((h) => ({ ...withoutIf(h), if: { enemyHpBelow: 0.5 } })) } : s)) } } } };
+  const lands = (at: number, enemyHp?: TimelineScenario["enemyHp"]) =>
+    simulate(g, { ...scenario([{ operator: op, skill: L + "attack1", at }]), ...(enemyHp ? { enemyHp } : {}) }).hits.some((h) => h.skillId === L + "attack1");
+
+  it("full by default; below a threshold from the frame the scenario says", () => {
+    expect(lands(0)).toBe(false);
+    expect(lands(0, [{ from: 30, fraction: 0.4 }])).toBe(false);
+    expect(lands(40, [{ from: 30, fraction: 0.4 }])).toBe(true);
+    expect(enemyHpAt({ ...scenario([]), enemyHp: [{ from: 30, fraction: 0.4 }, { from: 60, fraction: 0.2 }] }, 70)).toBe(0.2);
   });
 });

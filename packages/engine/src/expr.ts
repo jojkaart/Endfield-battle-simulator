@@ -32,6 +32,8 @@ export type Predicate =
   | { readonly enemyVulnerable: number }
   /** The enemy is Staggered. */
   | { readonly enemyStaggered: true }
+  /** The enemy's HP is below this fraction of its Max HP (CheckHp isRatio; the scenario says the enemy's HP: TimelineScenario.enemyHp). */
+  | { readonly enemyHpBelow: number }
   /** The enemy has this control status (Immobilization, …). */
   | { readonly enemyControl: string }
   /** The operator's own stack is at least / below a count. */
@@ -148,6 +150,8 @@ export interface EvalContext {
   readonly controlled?: string;
   /** Whether the enemy is Staggered. */
   readonly staggered?: boolean;
+  /** The enemy's HP as a fraction of its Max HP (the scenario's). */
+  readonly enemyHp?: number;
   /** Modifiers of the buffs on the enemy, from anyone. */
   readonly enemyModifiers?: readonly Modifier[];
   /** BuffData IDs of the buffs from anyone on the enemy. */
@@ -192,6 +196,7 @@ export function test(p: Predicate, c: EvalContext): boolean | undefined {
   if ("enemyStatus" in p) return c.enemy ? c.enemy.statuses.some((s) => s.status === p.enemyStatus) : undefined;
   if ("enemyPhysical" in p) return c.enemy ? c.enemy.physical.some((s) => s.status === p.enemyPhysical) : undefined;
   if ("enemyStaggered" in p) return c.staggered;
+  if ("enemyHpBelow" in p) return c.enemyHp === undefined ? undefined : c.enemyHp < p.enemyHpBelow;
   if ("enemyControl" in p) return c.enemy ? c.enemy.controls.some((x) => x.status === p.enemyControl) : undefined;
   if ("enemyVulnerable" in p) return c.enemy ? (c.enemy.vulnerable?.stacks ?? 0) >= p.enemyVulnerable : undefined;
   if ("stack" in p) {

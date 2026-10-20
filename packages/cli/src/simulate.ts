@@ -22,6 +22,7 @@ interface RawScenario {
   startEnergy?: Record<string, number | "full">;
   startStacks?: Record<string, Record<string, number>>;
   rotation: { operator: string; skill: string; at?: number; repeat?: number }[];
+  enemyHp?: { at: number; fraction: number }[];
   enemyActions?: { kind: "attack" | "charge"; at?: number[]; every?: number; from?: number; target?: string; element?: Element }[];
 }
 
@@ -45,6 +46,7 @@ export function readScenario(file: string): TimelineScenario {
     ...(s.controlled ? { controlled: s.controlled } : {}),
     ...(s.startEnergy ? { startEnergy: s.startEnergy } : {}),
     ...(s.startStacks ? { startStacks: s.startStacks } : {}),
+    ...(s.enemyHp ? { enemyHp: s.enemyHp.map((e) => ({ from: Math.round(e.at * FPS), fraction: e.fraction })) } : {}),
     ...(s.enemyActions ? { enemyActions: s.enemyActions.map((a) => ({
       kind: a.kind,
       ...(a.at ? { at: a.at.map((t) => Math.round(t * FPS)) } : {}),
@@ -109,6 +111,7 @@ export function searchCommand(data: GameData, scenario: TimelineScenario, option
       crit: scenario.options.crit,
       ...(scenario.options.seed !== undefined ? { seed: scenario.options.seed } : {}),
       ...(scenario.options.dodge ? { dodge: scenario.options.dodge } : {}),
+      ...(scenario.enemyHp ? { enemyHp: scenario.enemyHp.map((e) => ({ at: e.from / FPS, fraction: e.fraction })) } : {}),
       ...(scenario.enemyActions ? { enemyActions: scenario.enemyActions.map((a) => ({ ...a, ...(a.at ? { at: a.at.map((f) => f / FPS) } : {}), ...(a.every !== undefined ? { every: a.every / FPS } : {}), ...(a.from !== undefined ? { from: a.from / FPS } : {}) })) } : {}),
       ...(scenario.options.conditions ? { conditions: scenario.options.conditions } : {}),
       rotation: found.rotation.map((a) => ({ operator: a.operator, skill: a.skill, ...(a.at !== undefined ? { at: a.at / FPS } : {}) })),

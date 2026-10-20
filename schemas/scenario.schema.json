@@ -44,6 +44,19 @@
       "description": "Always-on conditions per operator ID.",
       "additionalProperties": { "type": "array", "items": { "type": "string" } }
     },
+    "enemyHp": {
+      "type": "array",
+      "description": "The enemy's HP over the fight: from each time (seconds), its fraction of Max HP; full before the first. For effects that need the enemy below an HP threshold.",
+      "items": {
+        "type": "object",
+        "required": ["at", "fraction"],
+        "additionalProperties": false,
+        "properties": {
+          "at": { "type": "number", "minimum": 0 },
+          "fraction": { "type": "number", "minimum": 0, "maximum": 1 }
+        }
+      }
+    },
     "dodge": {
       "type": "object",
       "required": ["chance"],

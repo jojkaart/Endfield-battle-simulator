@@ -2339,6 +2339,21 @@
         {
           "type": "object",
           "required": [
+            "enemyHpBelow"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "enemyHpBelow": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1,
+              "description": "The enemy's HP is below this fraction of its Max HP (the scenario sets the enemy's HP over the fight; full by default)."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
             "enemyControl"
           ],
           "additionalProperties": false,

@@ -109,6 +109,11 @@ export interface TimelineScenario {
   readonly startStacks?: Readonly<Record<string, Readonly<Record<string, number>>>>;
   /** What the enemy does (owner, 2026-10-19: the scenario says when it attacks; default nothing). */
   readonly enemyActions?: readonly EnemyActionSpec[];
+  /**
+   * The enemy's HP over the fight (owner, 2026-10-20: the scenario sets it):
+   * from each `from` frame, its fraction of Max HP; full before the first.
+   */
+  readonly enemyHp?: readonly { readonly from: number; readonly fraction: number }[];
 }
 
 /**
@@ -761,12 +766,20 @@ function situationAt(ctx: TimelineContext, operator: string, st: TimelineState, 
     buffActive: (id) => st.buffs.some((b) => b.id === id && b.owner === operator && b.cast === undefined && active(b)),
     controlled: st.controlled,
     staggered: isStaggered(st, frame),
+    enemyHp: enemyHpAt(ctx.scenario, frame),
     enemyModifiers: st.buffs.filter((b) => b.target === "enemy" && active(b)).flatMap((b) => b.modifiers),
     attrBonus: (attr) => buffAttr(st.buffs, operator, frame, attr),
     enemyGameBuffs: new Set(st.buffs.filter((b) => b.target === "enemy" && b.gameBuff && active(b)).map((b) => b.gameBuff as string)),
     operatorModifiers: st.buffs.filter((b) => b.target !== "enemy" && b.cast === undefined && reaches(b, operator) && active(b)).flatMap((b) => b.modifiers),
     ...(consumed !== undefined ? { consumed } : {}),
   };
+}
+
+/** The enemy's HP fraction at a frame (TimelineScenario.enemyHp; 1 before the first entry). */
+export function enemyHpAt(scenario: TimelineScenario, frame: number): number {
+  let hp = 1;
+  for (const e of [...(scenario.enemyHp ?? [])].sort((a, b) => a.from - b.from)) if (e.from <= frame) hp = e.fraction;
+  return hp;
 }
 
 /** An operator's Arts Intensity at a frame (panel, conditions and active buffs): it sets the strength of the statuses it applies. */
