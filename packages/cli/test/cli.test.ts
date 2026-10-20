@@ -4,8 +4,10 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "../src/index.ts";
-import { boundarySubsets, logModifiers, teamStackCaps } from "../src/logcheck.ts";
-import type { StatPanel } from "@efsim/engine";
+import { boundarySubsets, checkLog, layerVariants, logModifiers, teamStackCaps, unloggedEnemyAuras } from "../src/logcheck.ts";
+import { readLogFixture } from "../src/logs.ts";
+import { checkReactions } from "../src/reactioncheck.ts";
+import { computeStats, type StatPanel } from "@efsim/engine";
 import { formatCensus, kitCensus } from "../src/census.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -106,5 +108,59 @@ describe("log check: stack caps the applying skill sets", () => {
     const four = [e, e, e, e] as unknown as Parameters<typeof logModifiers>[0];
     expect(logModifiers(four, null, caps).length).toBe(3);
     expect(logModifiers(four).length).toBe(4);
+  });
+});
+
+describe("log check: what ZMDLogs leaves out (batch 2 K6, batch 3 L1)", () => {
+  const pending = (id: string) => readLogFixture(join(ROOT, "fixtures/pending", `zmdlogs-${id}.json`));
+
+  it("multiplies a finisher by the enemy's finisher multiplier (attribute 27)", () => {
+    // Si's four finisher hits in abfd4b7478ec were exactly ×1.75 of the prediction without it.
+    const fx = pending("abfd4b7478ec");
+    const verdicts = checkLog(data, { ...fx, hits: fx.hits.filter((h) => h.event === "chr_0036_jsspsi_power_attack") });
+    expect(verdicts.map((v) => v.kind)).toEqual(["match", "match", "match", "match"]);
+  });
+
+  it("tries the Endministrator's talent-2 aura on her crystals, which the log doesn't list, without and with", () => {
+    const fx = pending("7e19489ae503");
+    const panels = new Map(fx.team.map((b) => [b.operator, { build: b, panel: computeStats(data, b) }]));
+    const auras = unloggedEnemyAuras(data, fx, panels);
+    expect(auras.map((a) => a.label)).toEqual([null, "unlogged enemy buff originium_crystals (chr_0003_endminf)"]);
+    expect(auras[1]?.modifiers.map((m) => [m.zone, Number(m.value.toFixed(6)), m.element])).toEqual([["damageTaken", 0.2, "physical"]]);
+    // With her unexplained +180 ATK (batch 2 K4: +0.2198 in the ATK% sum) as a stand-in, her hits on the sealed enemy match with the aura.
+    const k4 = { buff: "k4_stand_in", zone: "atk" as const, element: null, value: 0.2198 };
+    const hits = fx.hits.filter((h) => h.operator === "chr_0003_endminf" && (h.t === 14260 || h.t === 14591)).map((h) => ({ ...h, effects: [...h.effects, k4] }));
+    const verdicts = checkLog(data, { ...fx, hits });
+    expect(verdicts.map((v) => (v.kind === "match" ? v.assumed.at(-1) : v.kind))).toEqual([
+      "unlogged enemy buff originium_crystals (chr_0003_endminf)",
+      "unlogged enemy buff originium_crystals (chr_0003_endminf)",
+    ]);
+  });
+
+  it("tries a layered buff the log lists once at 1 to its maximum layers", () => {
+    const e = { buff: "buff_chr_0005_chen_talent_0_1", zone: "atk" as const, element: null, value: 0.08 };
+    const hit = { t: 0, operator: "chr_0005_chen", event: "x", value: 1, crit: false, element: "physical" as const, effects: [e], boundaryEffects: [], unquantified: [] };
+    expect(layerVariants(hit).map((v) => v.label)).toEqual([null, ...[2, 3, 4, 5].map((n) => `buff_chr_0005_chen_talent_0_1 ×${n} layers`)]);
+    // Listed twice, the log counts its layers itself.
+    expect(layerVariants({ ...hit, effects: [e, e] })).toHaveLength(1);
+  });
+});
+
+describe("reaction replay", () => {
+  const pending = (id: string) => readLogFixture(join(ROOT, "fixtures/pending", `zmdlogs-${id}.json`));
+
+  it("leaves out an application the replay's enemy state rules out", () => {
+    // Fluorite's 4th ultimate shot inflicts Nature only on an enemy with 2+ Nature stacks; at 62772 ms the replay's enemy has Cryo.
+    const c = checkReactions(data, pending("abfd4b7478ec"));
+    expect([...c.unlogged, ...c.matched].filter((p) => p.predicted.kind === "reaction")).toEqual([]);
+  });
+
+  it("matches an Arts Burst logged on its first tick, up to 4 s later", () => {
+    const c = checkReactions(data, pending("e82d45c46040"));
+    const late = c.matched.filter((m) => m.predicted.kind === "burst" && m.loggedT - m.t > 1200);
+    expect(late.map((m) => [m.t, m.loggedT])).toEqual([
+      [7021, 8561],
+      [7022, 8647],
+    ]);
   });
 });
