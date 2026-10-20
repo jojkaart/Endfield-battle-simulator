@@ -2487,10 +2487,8 @@
           "additionalProperties": false,
           "properties": {
             "enemyHpBelow": {
-              "type": "number",
-              "exclusiveMinimum": 0,
-              "maximum": 1,
-              "description": "The enemy's HP is below this fraction of its Max HP (the scenario sets the enemy's HP over the fight; full by default)."
+              "$ref": "#/$defs/valueExpr",
+              "description": "The enemy's HP is below this fraction of its Max HP (a value: a literal or the data's key, e.g. CheckHp's hp_remain; the scenario sets the enemy's HP over the fight; full by default)."
             }
           }
         },

@@ -12,6 +12,7 @@
 
 import { EngineError } from "./errors.ts";
 import type { GameData } from "./model.ts";
+import { allActions } from "./events.ts";
 import {
   advance,
   apply,
@@ -152,7 +153,8 @@ export function randomOutcomes(data: GameData, scenario: Omit<TimelineScenario, 
   if (o.dodge && o.dodge.chance > 0 && o.dodge.chance < 1 && enemyActionsOf(full).some((a) => a.kind === "attack")) out.push(`dodge chance ${o.dodge.chance}`);
   const ctx = createContext(data, full);
   for (const b of scenario.team) {
-    const chance = (ctx.kits.get(b.operator)?.triggers ?? []).filter((t) => t.chance !== undefined).map((t) => t.id);
+    // A chance on the trigger, or a weighted random choice among its actions (Purrchena's giftbox).
+    const chance = (ctx.kits.get(b.operator)?.triggers ?? []).filter((t) => t.chance !== undefined || allActions(t.do).some((x) => x.kind === "choose")).map((t) => t.id);
     if (chance.length) out.push(`trigger chance (${data.operators[b.operator]?.name ?? b.operator}: ${chance.join(", ")})`);
   }
   return out;

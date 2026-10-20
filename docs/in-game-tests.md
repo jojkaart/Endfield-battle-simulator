@@ -1233,9 +1233,11 @@ battle skill.
    skill's number), and its Susceptibility changes the ratios.
 2. With Cohesive Traction: her battle skill's own number (a) with no
    combo in the last 30 s, (b) after one combo, (c) after two combos
-   about 12 s apart. (b) is about 1.2× (a). Then (c) about the same as
-   (b): one layer (data, engine); about 1.17× (b): two layers add. The
-   buff icon's stack counter shows it too.
+   about 12 s apart. Cast the battle skill 16–29 s after the last combo:
+   within 15 s of a combo, Link adds +30% (one combo) or +45% (two) and
+   hides the comparison. (b) is about 1.2× (a). Then (c) about the same
+   as (b): one layer (data, engine); about 1.17× (b): two layers add.
+   The buff icon's stack counter shows it too.
 
 ### 74. Da Pan's P5 stack and the Lift (ready, if you have Da Pan at P5)
 

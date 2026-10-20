@@ -128,6 +128,9 @@ describe("rotation search with random outcomes", () => {
     expect(randomOutcomes(data, { ...attacks, options: { ...short.options, dodge: { chance: 0.5 } } })).toEqual(["dodge chance 0.5"]);
     // A sure dodge, or none to make, isn't random.
     expect(randomOutcomes(data, { ...attacks, options: { ...short.options, dodge: { chance: 1 } } })).toEqual([]);
+    // A weighted random choice among a trigger's actions is random too (Purrchena's giftbox and Prezzies).
+    const purrchena = readScenario(new URL("../examples/purrchena-shield.scenario.json", import.meta.url).pathname);
+    expect(randomOutcomes(data, purrchena).some((x) => x.startsWith("trigger chance (Purrchena:"))).toBe(true);
     expect(randomOutcomes(data, { ...short, options: { ...short.options, dodge: { chance: 0.5 } } })).toEqual([]);
     const antal = readScenario(new URL("../examples/antal-focus.scenario.json", import.meta.url).pathname);
     expect(randomOutcomes(data, antal).join()).toMatch(/trigger chance/);

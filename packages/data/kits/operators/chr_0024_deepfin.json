@@ -217,9 +217,9 @@
           "events": ["chr_0024_deepfin_ultimate_skill"],
           "poise": "poise",
           "applies": [{ "kind": "infliction", "element": "cryst" }],
-          "extraScale": [{ "value": "atk_up", "if": { "all": [{ "potentialAtLeast": 5 }, { "enemyHpBelow": 0.5 }] } }],
+          "extraScale": [{ "value": "atk_up", "if": { "all": [{ "potentialAtLeast": 5 }, { "enemyHpBelow": "hp_tar" }] } }],
           "sp": { "min": [{ "sum": [{ "product": ["atb_up", "kill_num"] }, "atb"] }, "atb_max"] },
-          "note": "Frame 90: SpellInfliction Cryo; IfElse (potential_5 ≥ 1 and CheckHp isRatio < hp_tar) → DamageAction atk_scale × atk_up (1.5), else atk_scale (damage type 4, Cryo; mask 4608) + poise; BlowOff. P5 Mega Lunker Rumors through the scenario's enemy HP (batch-3 N1, enemyHpBelow; 0.5 is hp_tar, a literal because the predicate takes a number). Frame 91: ObtainCostAction atb_up × kill_num + atb, at most atb_max (atbSourceType 3, natural): 25; kill_num counts targets defeated in frames 89–91 (EventListenerAction), 0 here (kills deferred: batch-3 N2). On the hit, one frame early."
+          "note": "Frame 90: SpellInfliction Cryo; IfElse (potential_5 ≥ 1 and CheckHp isRatio < hp_tar) → DamageAction atk_scale × atk_up (1.5), else atk_scale (damage type 4, Cryo; mask 4608) + poise; BlowOff. P5 Mega Lunker Rumors through the scenario's enemy HP (batch-3 N1, enemyHpBelow reads hp_tar, 0.5). Frame 91: ObtainCostAction atb_up × kill_num + atb, at most atb_max (atbSourceType 3, natural): 25; kill_num counts targets defeated in frames 89–91 (EventListenerAction), 0 here (kills deferred: batch-3 N2). On the hit, one frame early."
         }
       ]
     }

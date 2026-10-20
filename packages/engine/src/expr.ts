@@ -33,7 +33,7 @@ export type Predicate =
   /** The enemy is Staggered. */
   | { readonly enemyStaggered: true }
   /** The enemy's HP is below this fraction of its Max HP (CheckHp isRatio; the scenario says the enemy's HP: TimelineScenario.enemyHp). */
-  | { readonly enemyHpBelow: number }
+  | { readonly enemyHpBelow: ValueExpr }
   /** The enemy has this control status (Immobilization, …). */
   | { readonly enemyControl: string }
   /** The operator's own stack is at least / below a count. */
@@ -202,7 +202,7 @@ export function test(p: Predicate, c: EvalContext): boolean | undefined {
   if ("enemyStatus" in p) return c.enemy ? c.enemy.statuses.some((s) => s.status === p.enemyStatus) : undefined;
   if ("enemyPhysical" in p) return c.enemy ? c.enemy.physical.some((s) => s.status === p.enemyPhysical) : undefined;
   if ("enemyStaggered" in p) return c.staggered;
-  if ("enemyHpBelow" in p) return c.enemyHp === undefined ? undefined : c.enemyHp < p.enemyHpBelow;
+  if ("enemyHpBelow" in p) return c.enemyHp === undefined ? undefined : c.enemyHp < evaluate(p.enemyHpBelow, c);
   if ("enemyControl" in p) return c.enemy ? c.enemy.controls.some((x) => x.status === p.enemyControl) : undefined;
   if ("enemyVulnerable" in p) return c.enemy ? (c.enemy.vulnerable?.stacks ?? 0) >= p.enemyVulnerable : undefined;
   if ("stack" in p) {
@@ -325,6 +325,7 @@ export function predicateRefs(p: Predicate): { stacks: string[]; buffs: string[]
   if ("stack" in p) return { stacks: [p.stack], buffs: [] };
   if ("buffActive" in p) return { stacks: [], buffs: [p.buffActive] };
   if ("buffLayers" in p) return { stacks: [], buffs: [p.buffLayers] };
+  if ("enemyHpBelow" in p) return valueRefs(p.enemyHpBelow);
   return { stacks: [], buffs: [] };
 }
 
