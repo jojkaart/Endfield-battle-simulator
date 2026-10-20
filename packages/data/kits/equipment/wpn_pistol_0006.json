@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_pistol_0006",
+  "sources": [
+    "Opus: The Living. rmxlinux Json/SkillData/sk_wpn_pistol_0006 (weapon skill 3, SkillPatchTable: crit_up, atk_up, duration, max_stack, cd): cardAttributeModifier attr 9 (Critical Rate) +crit_up (stat panel, with skills 1 and 2: Agility, Arts DMG); passiveEventActions abilityEvent 206 (the wielder applies a buff) + CheckBuffIdInContext tag 1474064594 (Arts Reaction) + CheckTimedMarkerCondition / CreateTimedMarker `cd` (0.1 s) -> CreateBuff buff_wpn_pistol_0006_atk_up_up on the wielder (attr 2 formulaItem 6 +atk_up, duration `duration`, stackingType 2 with maxStackCnt from max_stack: layers, each with its own duration). \"When the wielder applies an Arts Reaction, the wielder gains ATK +{atk_up} for {duration}s. Max stacks ... {max_stack}. Duration of each stack is counted separately. Effect only triggers once every 0.1s.\" buff_wpn_pistol_0006_crit_up is named by nothing (orphan). Batch-3 report docs/kit-batches/batch-3/chr_0006_wolfgd.md rows W3-W4."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_pistol_0006.atk_up",
+      "label": "ATK (Opus: The Living)",
+      "target": "self",
+      "gameBuff": "buff_wpn_pistol_0006_atk_up_up",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_pistol_0006.reaction",
+      "on": { "event": "reaction" },
+      "by": "self",
+      "beforeDamage": true,
+      "cooldown": "cd",
+      "skill": "sk_wpn_pistol_0006",
+      "do": [{ "kind": "buff", "buff": "wpn_pistol_0006.atk_up" }],
+      "note": "Any reaction the wielder applies, forced ones included (the engine's reaction event). Before the hit's damage, as the data's SpellInfliction precedes its DamageAction (in-game test 51's question)."
+    }
+  ]
+}

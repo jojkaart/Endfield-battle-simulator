@@ -1,0 +1,37 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_pistol_0004",
+  "sources": [
+    "Rational Farewell. rmxlinux Json/SkillData/sk_wpn_pistol_0004 (weapon skill 3, SkillPatchTable: dmg_up, atk_up, duration): cardAttributeModifier attr 32 (Battle Skill DMG) formulaItem 5 +dmg_up (stat panel, with skills 1 and 2: Strength, Heat DMG); passiveEventActions abilityEvent 127 (the wielder applies an Arts Burst) and abilityEvent 206 (the wielder applies a buff) + CheckBuffIdInContext tag -1110095722 (Burning = Combustion), both with CheckOriginSkillType [6] (from a combo skill) -> CreateBuff buff_wpn_pistol_0004_atk_up on the wielder (attr 2 formulaItem 6 +atk_up, duration `duration`, stackingType 2 max 1: a new one replaces the old). \"When the wielder's combo skill applies Arts Burst or Combusted, the wielder gains ATK +{atk_up} for {duration}s. Effects of the same name cannot stack.\" buff_wpn_pistol_0004_up is named by nothing (orphan). Batch-3 report docs/kit-batches/batch-3/chr_0006_wolfgd.md rows W1-W2."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_pistol_0004.atk_up",
+      "label": "ATK (Rational Farewell)",
+      "target": "self",
+      "gameBuff": "buff_wpn_pistol_0004_atk_up",
+      "duration": "duration",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_pistol_0004.burst",
+      "on": { "event": "burst", "fromKinds": ["combo"] },
+      "by": "self",
+      "beforeDamage": true,
+      "skill": "sk_wpn_pistol_0004",
+      "do": [{ "kind": "buff", "buff": "wpn_pistol_0004.atk_up" }],
+      "note": "abilityEvent 127 from a combo. The engine's burst event is when the burst lands (a second after its infliction, A5); before the burst's damage, as Umbra's trigger on the same event."
+    },
+    {
+      "id": "wpn_pistol_0004.combustion",
+      "on": { "event": "reaction", "statuses": ["combustion"], "fromKinds": ["combo"] },
+      "by": "self",
+      "beforeDamage": true,
+      "skill": "sk_wpn_pistol_0004",
+      "do": [{ "kind": "buff", "buff": "wpn_pistol_0004.atk_up" }],
+      "note": "abilityEvent 206 + Burning tag from a combo: Combustion formed (or forced) by the wielder's combo. Before the combo hit's damage, as the data's SpellInfliction precedes its DamageAction (in-game test 51's question)."
+    }
+  ]
+}

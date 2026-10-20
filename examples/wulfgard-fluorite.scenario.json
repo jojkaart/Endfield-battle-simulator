@@ -1,0 +1,59 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Wulfgard (P5, Rational Farewell, no gear) with Fluorite vs Rhodagn; he starts with his ultimate charged. Ultimate: forced Combustion at frame 45 (Scorching Fangs, Heat DMG +30%, on all five hits; P5 resets the combo). Battle skill on the Combusted enemy: the 31 -> 118 jump, the additional shot (8.5 x ATK) at 1.8 s consumes Combustion, returns 20 SP and (P3) refreshes Fangs and gives Fluorite 15%. Plain battle skill: the final shot's Heat opens his combo, MarkCanInterrupt frees him at 1.6 s; the combo's Heat on Heat bursts a second later (Rational Farewell's ATK from then on). Fluorite's Nature and his next combo form Combustion (Rational Farewell on the grenade itself), then the basic chain.",
+  "team": [
+    "wulfgard-p5.json",
+    "fluorite-p5.json"
+  ],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0006_wolfgd": "full"
+  },
+  "durationSeconds": 30,
+  "crit": "expected",
+  "rotation": [
+    {
+      "operator": "chr_0022_bounda",
+      "skill": "chr_0022_bounda_normal_skill"
+    },
+    {
+      "operator": "chr_0006_wolfgd",
+      "skill": "chr_0006_wolfgd_combo_skill"
+    },
+    {
+      "operator": "chr_0006_wolfgd",
+      "skill": "chr_0006_wolfgd_ultimate_skill"
+    },
+    {
+      "operator": "chr_0006_wolfgd",
+      "skill": "chr_0006_wolfgd_normal_skill"
+    },
+    {
+      "operator": "chr_0006_wolfgd",
+      "skill": "chr_0006_wolfgd_normal_skill"
+    },
+    {
+      "operator": "chr_0006_wolfgd",
+      "skill": "chr_0006_wolfgd_combo_skill"
+    },
+    {
+      "operator": "chr_0006_wolfgd",
+      "skill": "chr_0006_wolfgd_attack1"
+    },
+    {
+      "operator": "chr_0006_wolfgd",
+      "skill": "chr_0006_wolfgd_attack2"
+    },
+    {
+      "operator": "chr_0006_wolfgd",
+      "skill": "chr_0006_wolfgd_attack3"
+    },
+    {
+      "operator": "chr_0006_wolfgd",
+      "skill": "chr_0006_wolfgd_attack4"
+    }
+  ]
+}

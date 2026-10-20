@@ -9,7 +9,7 @@ import type { KitHit } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill, type CompiledValue } from "../src/index.ts";
 
 const data = loadGameData();
-const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen"];
+const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen", "chr_0006_wolfgd"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
   const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
@@ -443,6 +443,9 @@ const KNOWN: string[] = [
   // Batch 3, Chen Qianyu. Compiler limit (D3 open): at frame 103, CompareFloat potential5 = 1 → ModifyDynamicBlackboard atk_scale2 += phy_up
   // before the DamageAction; the compiler stops at the ModifyDynamicBlackboard ($atk_scale2?). The kit writes the data's branch as a sum (potential5 is 0 or 1; phy_up is 0).
   'chr_0005_chen_ultimate_skill/final scale: kit {"sum":["atk_scale2",{"product":["potential5","phy_up"]}]}, data $atk_scale2?',
+  // Batch 3, Wulfgard. Kit form, not a disagreement: the ChannelingAction's forced Combustion at 45 has no landing there, so the kit
+  // applies it from a delayed cast trigger (wolven_fury_combustion, as kit-draft emits it); this check compares hits' applications only.
+  "chr_0006_wolfgd_ultimate_skill applies at 45: kit [], data [forced combustion]",
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {

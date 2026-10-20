@@ -527,13 +527,31 @@ function ownHitsLanded(st: TimelineState, operator: string): number {
   const next = st.pendingJumps.filter((j) => j.operator === operator && j.cast === cast).reduce<PendingJump | null>((a, x) => (!a || x.frame < a.frame ? x : a), null);
   const until = next?.end ? next.frame : Infinity;
   let last = 0;
+  // What a jump still due on the cast will skip never happens, so nothing waits for it either (batch 3 S2: Wulfgard's plain
+  // battle skill launches no frame-141 shot past its 117 → 247 jump).
+  const skipped = skippedByJumps(st, operator, cast);
   const wait = (f: number) => {
-    if (f <= until) last = Math.max(last, f);
+    if (f <= until && !skipped(f)) last = Math.max(last, f);
   };
-  // A detached hit is the cast's own until its launch: interrupting before it would cancel it.
-  for (const h of st.pending) if (h.operator === operator && h.cast === cast) wait(h.detached ? (h.launchAt ?? 0) : h.frame);
+  // A detached hit is the cast's own until its launch: interrupting before it would cancel it (one on its way from frame 0 waits for nothing).
+  for (const h of st.pending) if (h.operator === operator && h.cast === cast && !(h.detached && h.launchAt === undefined)) wait(h.detached ? (h.launchAt as number) : h.frame);
   for (const a of st.pendingActions) if ((a.awaited || a.launchAt !== undefined) && a.cast && a.cast.operator === operator && a.cast.index === cast) wait(a.launchAt ?? a.frame);
   return last;
+}
+
+/**
+ * Whether a cast's jumps still to come skip a real frame (as takeJump drops
+ * what falls in the skipped frames); a jump inside an earlier one's skipped
+ * frames isn't reached.
+ */
+function skippedByJumps(st: TimelineState, operator: string, cast: number): (frame: number) => boolean {
+  const speed = st.acting[operator]?.speed;
+  const spans: { readonly at: number; readonly until: number }[] = [];
+  for (const j of st.pendingJumps.filter((x) => x.operator === operator && x.cast === cast && !x.end).sort((a, b) => a.frame - b.frame)) {
+    if (spans.some((s) => j.frame > s.at && j.frame < s.until)) continue;
+    spans.push({ at: j.frame, until: j.frame + (speed ? Math.round((j.to - j.from) / speed) : j.to - j.from) });
+  }
+  return (frame) => spans.some((s) => frame > s.at && frame < s.until);
 }
 
 /**
