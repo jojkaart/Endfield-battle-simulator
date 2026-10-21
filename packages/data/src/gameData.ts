@@ -25,7 +25,7 @@ import { PRIMARY, readTable, sourceCommit, SOURCES } from "./sources.ts";
 import { loadAttributeDefaults } from "./tables/attributeMeta.ts";
 import { loadBattleConst } from "./tables/battleConst.ts";
 import type { RawAttrModifier } from "./tables/common.ts";
-import { loadEnemies } from "./tables/enemies.ts";
+import { loadEnemies, loadEnemyAliases, loadStageEnemies } from "./tables/enemies.ts";
 import { loadGear, loadGearSets } from "./tables/equip.ts";
 import { loadGrowth } from "./tables/growth.ts";
 import { loadOperators } from "./tables/operators.ts";
@@ -238,6 +238,18 @@ function build(): GameData {
     };
   }
 
+  // Stage variants (EnemyTable: `eny_0120_klbear_tower015` → template `eny_0120_klbear`), with their stat modifiers.
+  for (const alias of Object.values(loadEnemyAliases(PRIMARY))) {
+    const template = enemies[alias.template];
+    if (enemies[alias.id] || !template) continue;
+    const apply = (attrs: Readonly<Record<number, number>>) => {
+      const out = { ...attrs };
+      for (const m of alias.modifiers) if (m.attr in out) out[m.attr] = m.kind === 0 ? (out[m.attr] as number) + m.value : (out[m.attr] as number) * (m.kind === 1 ? 1 + m.value : m.value);
+      return out;
+    };
+    enemies[alias.id] = { ...template, id: alias.id, levels: template.levels.map(apply), staticAttrs: apply(template.staticAttrs) };
+  }
+
   const c = loadBattleConst(PRIMARY);
   const kits = loadKits({ skills, operators, weapons, gearSets });
   return {
@@ -257,6 +269,7 @@ function build(): GameData {
     gear,
     gearSets,
     enemies,
+    stages: loadStageEnemies(PRIMARY),
     kits,
   };
 }

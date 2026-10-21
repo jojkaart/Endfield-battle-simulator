@@ -136,6 +136,19 @@ describe("assembled game data", () => {
     expect(e?.staticAttrs[20]).toBe(280);
   });
 
+  it("stage variants of an enemy use their template's stats (EnemyTable), with its modifiers; stages give enemy levels (DungeonTable)", () => {
+    const tower = data.enemies["eny_0120_klbear_tower015"];
+    const base = data.enemies["eny_0120_klbear"];
+    expect(tower?.levels).toEqual(base?.levels);
+    expect(tower?.resistance).toEqual(base?.resistance);
+    // eny_0090_wgabyss_hdg011: template eny_0090_wgabyss_hdg010, HP +50% (modifierType 1), DEF unchanged.
+    const hard = data.enemies["eny_0090_wgabyss_hdg011"];
+    const template = data.enemies["eny_0090_wgabyss_hdg010"];
+    expect((hard?.levels[89]?.[1] ?? 0) / (template?.levels[89]?.[1] ?? 1)).toBeCloseTo(1.5, 9);
+    expect(hard?.levels[89]?.[3]).toBe(template?.levels[89]?.[3]);
+    expect(data.stages?.["indie_battletower015_ex"]).toEqual([{ id: "eny_0120_klbear_tower015", level: 90 }]);
+  });
+
   it("helper skills a skill casts (CastSkill) are in its owner's group with its level values: Purrchena's shield loop and blocks", () => {
     const op = data.operators["chr_0038_purrche"];
     const P = "chr_0038_purrche_normal_skill";

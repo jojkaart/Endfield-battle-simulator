@@ -2,7 +2,7 @@
 // attributes (stagger HP, finisher multiplier, …) and resistances.
 
 import { DataError } from "../errors.ts";
-import { arr, at, get, int, num, obj, type Ctx } from "../fields.ts";
+import { arr, at, get, int, num, obj, str, type Ctx } from "../fields.ts";
 import { readTable, type SourceName } from "../sources.ts";
 import { records } from "./common.ts";
 
@@ -62,4 +62,46 @@ export function normalizeEnemies(raw: unknown, source: SourceName): Record<strin
 
 export function loadEnemies(source: SourceName): Record<string, RawEnemy> {
   return normalizeEnemies(readTable(source, "EnemyAttributeTemplateTable"), source);
+}
+
+/** An EnemyTable entry: an enemy ID and the attribute template it uses, with that entry's stat modifiers. */
+export interface EnemyAlias {
+  readonly id: string;
+  readonly template: string;
+  /**
+   * attrModifiers on every level's attribute: modifierType 0 adds `value`, 1 multiplies by 1 + `value` (ATK −0.3,
+   * HP +0.5), 4 multiplies by `value` (a reading: only HP and stagger HP use it, e.g. stagger HP × 0.0 on enemies that
+   * can't be staggered).
+   */
+  readonly modifiers: readonly { readonly attr: number; readonly value: number; readonly kind: 0 | 1 | 4 }[];
+}
+
+/** EnemyTable: enemy IDs (stage variants like `eny_0120_klbear_tower015`) → their attribute templates. */
+export function loadEnemyAliases(source: SourceName): Record<string, EnemyAlias> {
+  const out: Record<string, EnemyAlias> = {};
+  for (const [id, r, c] of records(readTable(source, "EnemyTable"), { source, path: "EnemyTable" })) {
+    const modifiers = get(r, "attrModifiers", c, arr).map((m, i) => {
+      const mc = at(at(c, "attrModifiers"), i);
+      const o = obj(m, mc);
+      const kind = get(o, "modifierType", mc, int);
+      if (kind !== 0 && kind !== 1 && kind !== 4) throw new DataError(source, mc.path, `unknown modifierType ${kind}`);
+      if (get(o, "modifyAttributeType", mc, int) !== 0) throw new DataError(source, mc.path, "modifyAttributeType isn't 0");
+      return { attr: get(o, "attrType", mc, int), value: get(o, "attrValue", mc, num), kind: kind as 0 | 1 | 4 };
+    });
+    out[id] = { id, template: get(r, "attrTemplateId", c, str), modifiers };
+  }
+  return out;
+}
+
+/** DungeonTable: each stage's enemies and their levels (stages whose two lists differ in length are left out). */
+export function loadStageEnemies(source: SourceName): Record<string, readonly { readonly id: string; readonly level: number }[]> {
+  const out: Record<string, { id: string; level: number }[]> = {};
+  for (const [id, r, c] of records(readTable(source, "DungeonTable"), { source, path: "DungeonTable" })) {
+    const ids = get(r, "enemyIds", c, arr);
+    const levels = get(r, "enemyLevels", c, arr);
+    // A few stages list a different number of levels (dung01_takestwo003_hard): they don't say which enemy has which.
+    if (ids.length !== levels.length) continue;
+    out[id] = ids.map((e, i) => ({ id: str(e, at(at(c, "enemyIds"), i)), level: int(levels[i], at(at(c, "enemyLevels"), i)) }));
+  }
+  return out;
 }

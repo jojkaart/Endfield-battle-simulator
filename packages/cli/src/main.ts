@@ -36,7 +36,7 @@ const USAGE = `Usage:
                 [--seed n] [--dodge p] [--attack-every s]  As for simulate
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
                                           (fixtures/multi-target/ when it hit several enemies)
-                [--enemy-level n]         (default: inferred from total damage on a clear; 90 assumed for multi-target)
+                [--enemy-level n]         (default: the stage's, else inferred from total damage on a clear)
                 [--detail file]           Use an already downloaded /api/battles/<id> response
                 [--note text]             Extra provenance note (repeatable)
   efsim zmdlogs check <fixture.json>      Predict every logged hit and compare

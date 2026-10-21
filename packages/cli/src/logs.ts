@@ -23,6 +23,21 @@ export function readLogFixture(file: string): LogFixture {
   return raw as LogFixture;
 }
 
+/**
+ * The enemies' level from the fight's stage (DungeonTable, by the log's dungeonContextId): the boss's own entry, or
+ * the one level all its enemies share. Undefined when the stage isn't known or doesn't decide it.
+ */
+function stageEnemyLevel(data: GameData, detail: unknown): { level: number; stage: string } | undefined {
+  const battle = (detail as { battle?: { bossKey?: string; dungeonContextId?: string } }).battle;
+  const stage = battle?.dungeonContextId;
+  const enemies = stage ? data.stages?.[stage] : undefined;
+  if (!stage || !enemies?.length) return undefined;
+  const own = enemies.find((e) => e.id === battle?.bossKey);
+  if (own) return { level: own.level, stage };
+  const levels = new Set(enemies.map((e) => e.level));
+  return levels.size === 1 ? { level: [...levels][0] as number, stage } : undefined;
+}
+
 /** The enemy level whose HP equals the logged total damage, for a full clear of a single-target fight. */
 function inferEnemyLevel(data: GameData, detail: unknown): number {
   const battle = (detail as { battle?: { bossKey?: string; totalDamage?: number; clearFlag?: boolean } }).battle;
@@ -37,14 +52,16 @@ function inferEnemyLevel(data: GameData, detail: unknown): number {
 }
 
 /**
- * Imports a battle as a log fixture. A fight against several enemies goes to fixtures/multi-target/ with each hit's
- * target; its enemy level can't be inferred from the total, so 90 is assumed unless given.
+ * Imports a battle as a log fixture. The enemy level comes from --enemy-level, the stage (DungeonTable), or the total
+ * damage on a single-target clear. A fight against several enemies goes to fixtures/multi-target/ with each hit's
+ * target (90 assumed when the stage doesn't say).
  */
 export async function importBattle(data: GameData, battleId: string, enemyLevel?: number, notes: readonly string[] = [], detailFile?: string): Promise<string> {
   const { detail, exported } = await fetchBattle(battleId, detailFile === undefined ? undefined : (JSON.parse(readFileSync(detailFile, "utf8")) as unknown));
   const enemies = enemiesHit(detail);
   const multi = enemies.length > 1;
-  const level = enemyLevel ?? (multi ? 90 : inferEnemyLevel(data, detail));
+  const fromStage = enemyLevel === undefined ? stageEnemyLevel(data, detail) : undefined;
+  const level = enemyLevel ?? fromStage?.level ?? (multi ? 90 : inferEnemyLevel(data, detail));
   const fx = zmdlogsToFixture(
     battleId,
     detail,
@@ -62,6 +79,7 @@ export async function importBattle(data: GameData, battleId: string, enemyLevel?
       verifiedAgainst: Object.fromEntries(SOURCES.map((s) => [s, sourceCommit(s)])),
       notes: [
         ...fx.provenance.notes,
+        ...(fromStage ? [`Enemy level ${fromStage.level} from the stage's DungeonTable entry (${fromStage.stage}).`] : []),
         ...(multi ? [`Multi-target: hits landed on ${enemies.join(", ")}; each hit names its target (enemies of one type aren't told apart). The engine doesn't model several targets yet, so the log check doesn't run this fixture.`] : []),
         ...notes,
       ],

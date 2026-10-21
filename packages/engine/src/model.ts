@@ -296,6 +296,8 @@ export interface GameData {
   readonly gear: Readonly<Record<string, GearData>>;
   readonly gearSets: Readonly<Record<string, GearSetData>>;
   readonly enemies: Readonly<Record<string, EnemyData>>;
+  /** Each stage's enemies and their levels (DungeonTable), by stage ID; the log importer reads a fight's enemy level from it. */
+  readonly stages?: Readonly<Record<string, readonly { readonly id: string; readonly level: number }[]>>;
   readonly kits: Kits;
 }
 
