@@ -1,0 +1,69 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_funnel_0018",
+  "sources": [
+    "Junction Point (arts unit). Skill 3, sk_wpn_funnel_0018 (rmxlinux Json/SkillData; values from SkillPatchTable at the weapon's skill-3 level: atk_up, atk_up2, max_stack, duration). Its cardAttributeModifier (attribute 54, Nature DMG + nature_dmg_up) and skills 1-2 stay in the stat panel. Batch-4 report docs/kit-batches/batch-4/chr_0030_zhuangfy.md rows J1-J4.",
+    "Four abilityEvent 206 handlers (the wielder applies a buff), one per CheckBuffIdInContextAdvanced checkType 1 tag: 458037917 Heat, 1425735059 Cryo, -1640994543 Electric, -575106878 Nature Susceptibility; and one abilityEvent 126 handler (the wielder applies an Arts Infliction); each with CheckOriginSkillType [6] (from a combo). Each creates buff_wpn_funnel_0018_layer on the wielder (atk_up) and on every other team member (CharacterTeamFinder + ExcludeTarget of the wielder, atk_up2 into its atk_up): attribute 2 formulaItem 6, ATK %; stackingType 11 with priority key atk_up, maxStackCnt from max_stack: layers, each its own `duration`. No timed marker: an Arts Susceptibility (all four tags) runs all four handlers, so four applications (the cap keeps max_stack); written as four triggers, one per tag, as the data has them.",
+    "Open: whether an infliction that forms a reaction counts as applying one (test 35's question; inflictionApplied excludes it); two wielders' layers (stackingType 11 with a priority key across owners: batch-3 B2 residue) are kept per wielder.",
+    "Description (report J2): \"When the wielder applies Arts Susceptibility or Arts Infliction with a combo skill, the wielder gains ATK +{atk_up} while other operators gain ATK +{atk_up2} for {duration}s. Max stacks: {max_stack}. Duration of each stack is counted separately.\""
+  ],
+  "buffs": [
+    {
+      "id": "wpn_funnel_0018.atk",
+      "label": "Junction Point: ATK (wielder)",
+      "target": "self",
+      "gameBuff": "buff_wpn_funnel_0018_layer",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }]
+    },
+    {
+      "id": "wpn_funnel_0018.team_atk",
+      "label": "Junction Point: ATK (other operators)",
+      "target": "team",
+      "recipients": { "not": { "isOwner": true } },
+      "gameBuff": "buff_wpn_funnel_0018_layer",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [{ "zone": "atk", "value": "atk_up2" }],
+      "note": "The same game buff on the teammates, with atk_up2 assigned to its atk_up."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_funnel_0018.on_heat_susceptibility",
+      "on": { "event": "buffApplied", "tags": [458037917], "fromKinds": ["combo"] },
+      "by": "self",
+      "skill": "sk_wpn_funnel_0018",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0018.atk" }, { "kind": "buff", "buff": "wpn_funnel_0018.team_atk" }]
+    },
+    {
+      "id": "wpn_funnel_0018.on_cryo_susceptibility",
+      "on": { "event": "buffApplied", "tags": [1425735059], "fromKinds": ["combo"] },
+      "by": "self",
+      "skill": "sk_wpn_funnel_0018",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0018.atk" }, { "kind": "buff", "buff": "wpn_funnel_0018.team_atk" }]
+    },
+    {
+      "id": "wpn_funnel_0018.on_electric_susceptibility",
+      "on": { "event": "buffApplied", "tags": [-1640994543], "fromKinds": ["combo"] },
+      "by": "self",
+      "skill": "sk_wpn_funnel_0018",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0018.atk" }, { "kind": "buff", "buff": "wpn_funnel_0018.team_atk" }]
+    },
+    {
+      "id": "wpn_funnel_0018.on_nature_susceptibility",
+      "on": { "event": "buffApplied", "tags": [-575106878], "fromKinds": ["combo"] },
+      "by": "self",
+      "skill": "sk_wpn_funnel_0018",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0018.atk" }, { "kind": "buff", "buff": "wpn_funnel_0018.team_atk" }]
+    },
+    {
+      "id": "wpn_funnel_0018.on_infliction",
+      "on": { "event": "inflictionApplied", "fromKinds": ["combo"] },
+      "by": "self",
+      "skill": "sk_wpn_funnel_0018",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0018.atk" }, { "kind": "buff", "buff": "wpn_funnel_0018.team_atk" }]
+    }
+  ]
+}

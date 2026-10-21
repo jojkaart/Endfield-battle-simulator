@@ -1,0 +1,31 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_funnel_0017",
+  "sources": [
+    "Flickers in the Mist (arts unit). Skill 3, sk_wpn_funnel_0017 (rmxlinux Json/SkillData; values from SkillPatchTable at the weapon's skill-3 level: pulse_dmg_up2, max_stack, duration). Its cardAttributeModifier (attribute 2 formulaItem 6, ATK + atk_up) and skills 1-2 stay in the stat panel. Batch-4 report docs/kit-batches/batch-4/chr_0030_zhuangfy.md rows F1-F2, gap G3 (batch-4 T1).",
+    "abilityEvent 9 (a buff is added to the wielder) + CheckBuffIdInContext (checkType 0, the ID list) buff_common_affixes_enhance_pulse / buff_common_affixes_enhance_spell + CheckTimedMarkerCondition / CreateTimedMarker 0.1 s (the literal of the data) -> buff_wpn_funnel_0017_layer (attribute 52 formulaItem 5, Electric DMG + pulse_dmg_up2; stackingType 2, maxStackCnt from max_stack: layers, each its own `duration`). Those two common buffs are what EnhancedAction creates for an Electric Amp and an all-Arts Amp, from any operator; kit Amp buffs name their own game buffs, so the trigger reads the Amp by category: an Amp reaching the wielder (received, by anyone) that covers Electric (an Arts or all-element one counts). A kit buff that only raises an active Amp's rate (Zhuang Fangyi's talent-1 growth) has categories [] and doesn't count.",
+    "Description: \"When the wielder gains Electric Amp or Arts Amp, the wielder gains Electric DMG +{pulse_dmg_up2} for {duration}s. Max stacks: {max_stack}. Duration of each stack is counted separately. Effect only triggers once every 0.1s.\" (paraphrased from I18nTextTable_EN)"
+  ],
+  "buffs": [
+    {
+      "id": "wpn_funnel_0017.layer",
+      "label": "Flickers in the Mist: Electric DMG per Amp gained",
+      "target": "self",
+      "gameBuff": "buff_wpn_funnel_0017_layer",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [{ "zone": "damageBonus", "elements": ["pulse"], "value": "pulse_dmg_up2" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_funnel_0017.on_amp",
+      "on": { "event": "buffApplied", "categories": ["amp"], "elements": ["pulse"], "received": true },
+      "by": "anyone",
+      "cooldown": 0.1,
+      "skill": "sk_wpn_funnel_0017",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0017.layer" }],
+      "note": "Leftover: an all-element Amp (buff_common_affixes_enhance_all, not in the ID list) also counts here; no kit gives one today."
+    }
+  ]
+}

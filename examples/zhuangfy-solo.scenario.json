@@ -1,0 +1,32 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Zhuang Fangyi (P5, Lone Barge, Pulser Labs) alone vs Rhodagn, ultimate charged. Two battle skills make Sunderblades (2 then 3 strike: the free one and P1's, then the free one), the ultimate opens the Empyrean of Truth: its first battle skill is free (no SP) and makes 3 more, its final Thunder Strike inflicts Electric, the Empyrean chain's Final Strike opens the combo window, the combo consumes the infliction and forces Electrification, which the next battle skill consumes for 2 more Sunderblades (and Lone Barge's layer); in the state the combo's cooldown runs 5 times as fast, so it's back for the next chain.",
+  "team": ["zhuangfy-p5.json"],
+  "target": { "enemy": "eny_0051_rodin", "level": 90 },
+  "startEnergy": { "chr_0030_zhuangfy": "full" },
+  "durationSeconds": 40,
+  "crit": "expected",
+  "rotation": [
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_normal_skill" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_normal_skill", "at": 3 },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_ultimate_skill", "at": 6 },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_normal_skill_ult" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_attack1_ult" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_attack2_ult" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_attack3_ult" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_combo_skill_ult" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_normal_skill_ult" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_attack1_ult" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_attack2_ult" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_attack3_ult" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_combo_skill_ult" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_attack1_ult" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_attack2_ult" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_attack3_ult" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_normal_skill_ult" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_attack1_ult" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_attack2_ult" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_attack3_ult" },
+    { "operator": "chr_0030_zhuangfy", "skill": "chr_0030_zhuangfy_combo_skill_ult" }
+  ]
+}
