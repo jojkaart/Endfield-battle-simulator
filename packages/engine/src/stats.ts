@@ -148,6 +148,8 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
   const warnings: string[] = [];
   /** Skill changes under an activeCondition, decided once the panel's attributes are known. */
   const conditional: { readonly cond: readonly string[]; readonly add: () => void; readonly source: string }[] = [];
+  /** Attached passive skills' permanent buff stats, applied once every talent and potential has changed their values. */
+  const passive: { readonly skillId: string; readonly blackboard: Readonly<Record<string, number>>; readonly modifiers: NonNullable<Extract<Effect, { kind: "skill" }>["buffModifiers"]>; readonly source: string }[] = [];
   const applyEffects = (effects: readonly Effect[], source: string) => {
     for (const e of effects) {
       const now = (f: () => void) => (e.activeCondition?.length ? conditional.push({ cond: e.activeCondition, add: f, source }) : f());
@@ -156,7 +158,13 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
         else apply(e.modifier.attr, e.modifier.slot, e.modifier.target, e.modifier.value, source);
       } else if (e.kind === "skillValue") now(() => (skillValues[e.skillId] ??= []).push({ key: e.key, op: e.op, value: e.value, source }));
       else if (e.kind === "skillParam") now(() => (skillParams[e.skillId] ??= []).push({ param: e.param, op: e.op, value: e.value, source }));
-      else if (e.kind === "skill") now(() => (sources[e.skillId] = { ...e.blackboard }));
+      else if (e.kind === "skill") {
+        now(() => (sources[e.skillId] = { ...e.blackboard }));
+        if (e.buffModifiers?.length) {
+          if (e.activeCondition?.length) notApplied.push(`${source}: ${e.skillId}'s buff stats under condition ${e.activeCondition.join(", ")}`);
+          else passive.push({ skillId: e.skillId, blackboard: e.blackboard, modifiers: e.buffModifiers, source });
+        }
+      }
       else if (e.kind === "buff") {
         now(() => (sources[e.buffId] = { ...e.blackboard }));
         notApplied.push(`${source}: buff ${e.buffId}`);
@@ -190,6 +198,20 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
   // Potentials P1..Pn.
   if (build.potential > op.potentials.length) throw new EngineError(`${op.id} has no potential ${build.potential}`);
   op.potentials.slice(0, build.potential).forEach((effects, i) => applyEffects(effects, `potential ${i + 1}`));
+
+  // An attached passive skill's buff stats, with its values after the potentials' changes (Lifeng's talent 1 and P3).
+  for (const p of passive) {
+    for (const m of p.modifiers) {
+      let value = m.literal;
+      if (m.key !== null) {
+        const v = p.blackboard[m.key];
+        if (v === undefined) throw new EngineError(`${p.source}: ${p.skillId} has no value ${m.key}`);
+        value = v;
+        for (const c of skillValues[p.skillId] ?? []) if (c.key === m.key) value = c.op === "add" ? value + c.value : c.op === "multiply" ? value * c.value : c.value;
+      }
+      apply(m.attr, m.slot, m.target, value, `${p.source} (${p.skillId}: ${m.buff})`);
+    }
+  }
 
   // Permanent stat effects of a skill (weapon or gear set skills).
   const applySkill = (skillId: string, level: number, source: string) => {

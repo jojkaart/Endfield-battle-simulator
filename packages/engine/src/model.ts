@@ -52,8 +52,12 @@ export type Effect = EffectBody & { readonly activeCondition?: readonly string[]
 
 type EffectBody =
   | { readonly kind: "attr"; readonly modifier: AttrModifier }
-  /** A skill attached by a talent: its blackboard holds the talent's values at that level. */
-  | { readonly kind: "skill"; readonly skillId: string; readonly blackboard: Readonly<Record<string, number>> }
+  /**
+   * A skill attached by a talent: its blackboard holds the talent's values at that level. `buffModifiers`: the
+   * permanent attribute modifiers of the buffs a passive skill (castType 1) lists, keyed by the skill's own
+   * blackboard (as its `assignItems` pass them on): stats in the panel, like a weapon skill's.
+   */
+  | { readonly kind: "skill"; readonly skillId: string; readonly blackboard: Readonly<Record<string, number>>; readonly buffModifiers?: readonly (SkillAttrModifier & { readonly buff: string })[] }
   | { readonly kind: "skillValue"; readonly skillId: string; readonly key: string; readonly op: SkillValueOp; readonly value: number }
   | { readonly kind: "buff"; readonly buffId: string; readonly blackboard: Readonly<Record<string, number>> }
   | { readonly kind: "skillParam"; readonly skillId: string; readonly param: "cost" | "cooldown"; readonly op: SkillValueOp; readonly value: number }
@@ -375,10 +379,20 @@ export interface KitHit {
   readonly sp?: ValueExpr;
   /** Its kind; by default the skill's data says (SkillData.spKinds for a plain key), else returned. */
   readonly spKind?: SpKind;
+  /**
+   * The SP comes before the hit's damage (SkillData ObtainCostAction before the DamageAction in the same tick):
+   * triggers on it act before the damage, so a buff they apply counts for this hit. Default: after the damage.
+   */
+  readonly spBeforeDamage?: true;
   /** Stagger damage the hit deals (SkillData damage units of damageAttributeType 1, e.g. the skill's `poise`). */
   readonly poise?: ValueExpr;
   /** Its stagger counts only while its operator is controlled (onlyEnableForMainChar, Final Strikes). */
   readonly poiseControlledOnly?: boolean;
+  /**
+   * A landing that deals only its `poise` (a SkillData DamageAction whose units are all stagger units): Stagger,
+   * nodes and `staggered` events, no damage, crit or `hit` event; `scale` is empty.
+   */
+  readonly poiseOnly?: true;
   /** Lands even if the skill is interrupted before it: a projectile or ability entity already on its way. */
   readonly detached?: boolean;
   /**

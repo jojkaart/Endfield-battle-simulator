@@ -439,5 +439,6 @@ export function computeKit(data: GameData, build: Build, panel: StatPanel, targe
   if (!kit) throw new EngineError(`no kit for ${build.operator} yet`);
   // Every hit the build can have, each in the situation it's written for: conditions the options don't decide count as met.
   const opts = { assumeUnknown: true, ...options };
-  return kit.skills.flatMap((s) => s.hits.filter((h) => hitAvailable(data, build, panel, s.skillId, h, opts.situation)).map((h) => computeHit(data, build, panel, target, s, h, opts)));
+  // A poise-only landing (KitHit.poiseOnly) deals no damage.
+  return kit.skills.flatMap((s) => s.hits.filter((h) => !h.poiseOnly && hitAvailable(data, build, panel, s.skillId, h, opts.situation)).map((h) => computeHit(data, build, panel, target, s, h, opts)));
 }

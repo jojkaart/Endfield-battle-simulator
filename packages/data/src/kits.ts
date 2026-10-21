@@ -42,6 +42,7 @@ interface RawHit {
   fixedDamage?: ValueExpr;
   base?: ValueExpr;
   spKind?: "natural" | "returned";
+  spBeforeDamage?: true;
   if?: Predicate;
   branch?: string;
   buffs?: BuffApplication[];
@@ -52,8 +53,9 @@ interface RawHit {
   launch?: number;
   poise?: ValueExpr;
   poiseControlledOnly?: boolean;
-  /** Triggered hits only: which skill-type bonus applies (`none`: no skill type). */
+  /** Which skill-type bonus applies (`none`: no skill type): required on triggered hits; on a skill's hit, an override of the skill's. */
   damageType?: SkillType | "none";
+  poiseOnly?: true;
 }
 
 type RawAction =
@@ -403,7 +405,12 @@ function kitChecker(scope: KitScope) {
       branches.set(h.branch, count);
     }
     return hits.map((h) => {
-      if (src.damageType && h.damageType) throw new Error(`${where} hit ${h.id}: a skill's hits take its damage type`);
+      if (src.damageType && h.damageType === src.damageType) throw new Error(`${where} hit ${h.id}: damageType ${h.damageType} is the skill's own (leave it out)`);
+      if (h.poiseOnly) {
+        if (h.poise === undefined || h.scale.length) throw new Error(`${where} hit ${h.id}: a poise-only landing has a poise and an empty scale`);
+        const extra = (["scaleValue", "extraScale", "factor", "reaction", "fixedDamage", "base", "bonuses", "applies", "gains", "buffs", "energy", "sp", "spKind", "heals", "requires", "finalStrike"] as const).filter((k) => h[k] !== undefined);
+        if (extra.length) throw new Error(`${where} hit ${h.id}: a poise-only landing deals only its poise (drop ${extra.join(", ")})`);
+      }
       if (!src.damageType && !h.damageType) throw new Error(`${where} hit ${h.id}: a triggered hit needs a damageType`);
       if (ids.has(h.id)) throw new Error(`${where}: duplicate hit ${h.id}`);
       ids.add(h.id);
@@ -438,6 +445,7 @@ function kitChecker(scope: KitScope) {
       }
       if (h.energy !== undefined) checkValue(h.energy, src.skillId, `${where} hit ${h.id} energy`);
       if (h.sp !== undefined) checkValue(h.sp, src.skillId, `${where} hit ${h.id} sp`);
+      if (h.spBeforeDamage && h.sp === undefined) throw new Error(`${where} hit ${h.id}: spBeforeDamage needs the hit's sp`);
       if (h.poise !== undefined) checkValue(h.poise, src.skillId, `${where} hit ${h.id} poise`);
       for (const a of h.buffs ?? []) {
         const b = buffDefs.get(a.buff);
@@ -451,7 +459,7 @@ function kitChecker(scope: KitScope) {
         if (h.framesEvery !== undefined) throw new Error(`${where} hit ${h.id}: framesEvery is for a count that's a value`);
       } else checkValue(h.count as ValueExpr, src.skillId, `${where} hit ${h.id} count`);
       return {
-        id: h.id, label: h.label ?? src.label, scale: h.scale, count: h.count ?? 1, damageType: src.damageType ?? h.damageType ?? "none", element, events,
+        id: h.id, label: h.label ?? src.label, scale: h.scale, count: h.count ?? 1, damageType: h.damageType ?? src.damageType ?? "none", element, events,
         ...(h.frames ? { frames: h.frames } : {}),
         ...(h.framesEvery !== undefined ? { framesEvery: h.framesEvery } : {}),
         ...(h.applies ? { applies: h.applies } : {}),
@@ -469,8 +477,10 @@ function kitChecker(scope: KitScope) {
         ...(h.energy ? { energy: h.energy } : {}),
         ...(h.sp !== undefined ? { sp: h.sp } : {}),
         ...(h.spKind !== undefined ? { spKind: h.spKind } : {}),
+        ...(h.spBeforeDamage ? { spBeforeDamage: true as const } : {}),
         ...(h.poise !== undefined ? { poise: h.poise } : {}),
         ...(h.poiseControlledOnly ? { poiseControlledOnly: true } : {}),
+        ...(h.poiseOnly ? { poiseOnly: true as const } : {}),
         ...(h.heals ? { heals: h.heals } : {}),
         // A hit dealt from another SkillData file (a projectile or ability entity) is on its way and survives an interrupt.
         ...((h.detached ?? (h.launch !== undefined || (src.defaultEvent !== undefined && events.length > 0 && !events.includes(src.defaultEvent)))) ? { detached: true } : {}),
@@ -820,14 +830,44 @@ function variantOf(kit: RawKit, variant: { operator: string; skills?: Record<str
   return { ...(rename(rest) as RawKit), operator: variant.operator };
 }
 
-/** The kits under `root` (default packages/data/kits: operators/ and equipment/), checked against the data. */
-export function loadKits(data: KitData, root: string = KITS): Kits {
+/**
+ * Weapons without a kit of their own that wear another weapon's: the one
+ * (first by ID) with the same skill list (WeaponBasicTable weaponSkillList,
+ * which holds weaponPotentialSkill too), e.g. a skin such as
+ * wpn_sword_0021_ink. Variant → the weapon whose kit it uses.
+ */
+export function weaponVariants(weapons: KitData["weapons"], kitted: ReadonlySet<string>): Map<string, string> {
+  const out = new Map<string, string>();
+  const key = (id: string) => JSON.stringify(weapons[id]?.skills ?? []);
+  const sources = [...kitted].filter((id) => weapons[id] && (weapons[id]?.skills.length ?? 0) > 0).sort();
+  for (const id of Object.keys(weapons).sort()) {
+    if (kitted.has(id)) continue;
+    const src = sources.find((s) => key(s) === key(id));
+    if (src) out.set(id, src);
+  }
+  return out;
+}
+
+/** An equipment kit under another equipment ID: its own IDs (`<id>.…`) renamed. */
+function equipmentVariantOf(kit: RawEquipmentKit, id: string): RawEquipmentKit {
+  const from = `${kit.equipment}.`;
+  const rename = (x: unknown): unknown => {
+    if (typeof x === "string") return x.startsWith(from) ? `${id}.${x.slice(from.length)}` : x;
+    if (Array.isArray(x)) return x.map(rename);
+    if (x && typeof x === "object") return Object.fromEntries(Object.entries(x).map(([k, v]) => [k, k === "note" || k === "label" ? v : rename(v)]));
+    return x;
+  };
+  return { ...(rename(kit) as RawEquipmentKit), equipment: id, sources: [...kit.sources, `Variant of ${kit.equipment} (same weapon skills): its kit, renamed.`] };
+}
+
+/** Loads the kits under `dir` (default packages/data/kits: its operators/ and equipment/ folders). */
+export function loadKits(data: KitData, dir: string = KITS): Kits {
   const v = validator();
   if (!v.kit) throw new Error("kit schema not registered");
   const operators: Record<string, OperatorKit> = {};
-  const dir = join(root, "operators");
-  for (const file of readdirSync(dir).filter((f) => f.endsWith(".json")).sort()) {
-    const raw = readJson(join(dir, file));
+  const odir = join(dir, "operators");
+  for (const file of existsSync(odir) ? readdirSync(odir).filter((f) => f.endsWith(".json")).sort() : []) {
+    const raw = readJson(join(odir, file));
     if (!v.kit(raw)) throw new Error(`kits/operators/${file}: ${v.ajv.errorsText(v.kit.errors)}`);
     const kit = loadOperatorKit(data, file, raw as RawKit);
     operators[kit.operator] = kit;
@@ -838,12 +878,15 @@ export function loadKits(data: KitData, root: string = KITS): Kits {
     }
   }
   const equipment: Record<string, EquipmentKit> = {};
-  const edir = join(root, "equipment");
+  const raws = new Map<string, RawEquipmentKit>();
+  const edir = join(dir, "equipment");
   for (const file of existsSync(edir) ? readdirSync(edir).filter((f) => f.endsWith(".json")).sort() : []) {
     const raw = readJson(join(edir, file));
     if (!v.equipment(raw)) throw new Error(`kits/equipment/${file}: ${v.ajv.errorsText(v.equipment.errors)}`);
     const kit = loadEquipmentKit(data, file, raw as RawEquipmentKit);
     equipment[kit.id] = kit;
+    raws.set(kit.id, raw as RawEquipmentKit);
   }
+  for (const [id, src] of weaponVariants(data.weapons, new Set(raws.keys()))) equipment[id] = loadEquipmentKit(data, `${id}.json`, equipmentVariantOf(raws.get(src) as RawEquipmentKit, id));
   return { operators, equipment };
 }

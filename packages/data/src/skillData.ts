@@ -166,13 +166,16 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     const from = Number(ta["_startFrame"]);
     find(ta["_sequenceActionData"], from, ta["_endFrame"] === undefined ? from : Number(ta["_endFrame"]));
     // Jumps and ends on the timeline itself; those inside conditions or event handlers are the kit's to say.
+    // A sequence stops at its first failing check, so a jump after one in its own sequence is conditional too.
+    let gated = false;
     for (const a of ((ta["_sequenceActionData"] as Record<string, unknown> | undefined)?.["actionData"] ?? []) as Record<string, unknown>[]) {
       const type = typeof a["$type"] === "string" ? a["$type"] : "";
       if (a["isEnable"] === false) continue;
+      if (isConditionAction(type)) gated = true;
       // Only forward jumps: a backward one repeats frames, which nothing here uses.
       if (type.includes("JumpToAction") && Number(a["destFrame"]) > from) {
         const cond = ((a["conditionAction"] as Record<string, unknown> | undefined)?.["actionData"] ?? []) as unknown[];
-        jumps.push({ at: from, to: Number(a["destFrame"]), conditional: cond.length > 0 });
+        jumps.push({ at: from, to: Number(a["destFrame"]), conditional: gated || cond.length > 0 });
       }
       if (type.includes("InterruptCurSkillAction")) ends.push(from);
       if (type.includes("MarkCanInterrupt")) interruptibleFrom.push(from);
@@ -196,6 +199,17 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
   return { timing, defaults, statModifiers, spKinds: spKindsOf(j), spSources: spSourcesOf(j) };
 }
 
+/**
+ * Whether an action `$type` is a check a sequence stops at when it fails:
+ * the `Conditions.` namespace, Check… and Compare… actions, Probablity
+ * (sic), OrConditionAction, and NotNextCheckAction (which negates the next).
+ */
+export function isConditionAction(type: string): boolean {
+  const name = (type.split(",")[0] ?? "").split(".").pop() ?? "";
+  const short = name.split("+")[0] ?? name;
+  return type.includes(".Conditions.") || type.includes(".Condition.") || /^(Check|Compare)/.test(short) || short === "Probablity" || short === "OrConditionAction" || short === "NotNextCheckAction";
+}
+
 /** The destinations of the JumpToActions in an IfElse's branches (its success and fail action lists, at any depth of nested IfElses). */
 function branchJumps(ifElse: Record<string, unknown>): number[] {
   const out: number[] = [];
@@ -209,6 +223,115 @@ function branchJumps(ifElse: Record<string, unknown>): number[] {
   };
   walk(ifElse);
   return [...new Set(out)];
+}
+
+const BUFF_ALLOWED = DATA_FILES.json.BuffData.map(globToRegExp);
+/** LaunchProjectile's skill fields, each with the flag that enables it. */
+const PROJECTILE_ROUTES: readonly [string, string][] = [["castSkillOnHit", "projectileSkillId"], ["castSkillOnReach", "skillIdOnReach"], ["castSkillOnFinish", "skillIdOnFinish"], ["castSkillOnLaunch", "skillIdOnLaunch"], ["castSkillOnBlock", "skillIdOnBlock"]];
+
+/**
+ * The SkillData and BuffData files a skill's file reaches, in the order
+ * first met (breadth first, the skill's own not included): its spawned
+ * ability entities and projectiles' skills, the helper skills it casts
+ * (`isHelper`: a CastSkill of another of the operator's own skills isn't
+ * followed), the buffs it creates (not the shared buff_common_* ones) and,
+ * through them, what their handlers reach. Files the data doesn't list or
+ * have are left out.
+ */
+export function reachedFiles(skillId: string, isHelper: (id: string) => boolean): { kind: "skill" | "buff"; id: string; json: unknown }[] {
+  const out: { kind: "skill" | "buff"; id: string; json: unknown }[] = [];
+  const seen = new Set([`skill:${skillId}`]);
+  const buffPath = (id: string) => join(sourceDir("rmxlinux"), "Json", "BuffData", `${id}.json`);
+  const read = (kind: "skill" | "buff", id: string): unknown => {
+    const ok = kind === "skill" ? isSkillFileListed(id) && existsSync(skillFilePath(id)) : BUFF_ALLOWED.some((re) => re.test(id)) && existsSync(buffPath(id));
+    return ok ? parseJsonExact(readFileSync(kind === "skill" ? skillFilePath(id) : buffPath(id), "utf8")) : null;
+  };
+  const queue: unknown[] = [read("skill", skillId)];
+  const add = (kind: "skill" | "buff", id: unknown) => {
+    if (typeof id !== "string" || !id || seen.has(`${kind}:${id}`)) return;
+    seen.add(`${kind}:${id}`);
+    const json = read(kind, id);
+    if (json === null) return;
+    out.push({ kind, id, json });
+    queue.push(json);
+  };
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (typeof node !== "object" || node === null) return;
+    const o = node as Record<string, unknown>;
+    const type = typeof o["$type"] === "string" ? o["$type"] : "";
+    if (o["isEnable"] !== false) {
+      if (type.includes("SpawnAbilityEntity")) add("skill", o["abilityEntitySkillId"]);
+      if (type.includes("LaunchProjectile")) for (const [flag, field] of PROJECTILE_ROUTES) if (o[flag] === true) add("skill", o[field]);
+      if (type.includes("CastSkill+Data")) {
+        const sid = o["skillId"] as { useBlackboardKey?: unknown; value?: unknown } | undefined;
+        if (sid?.useBlackboardKey !== true && typeof sid?.value === "string" && isHelper(sid.value)) add("skill", sid.value);
+      }
+      if (type.includes("CreateBuffAction") || type.includes("AuraAction")) {
+        for (const b of [...((o["buffs"] ?? []) as Record<string, unknown>[]), ...((o["buffInput"] ?? []) as Record<string, unknown>[])]) {
+          if (b && b["readIdFromBlackboard"] !== true && typeof b["buffId"] === "string" && !b["buffId"].startsWith("buff_common_")) add("buff", b["buffId"]);
+        }
+      }
+    }
+    for (const v of Object.values(o)) walk(v);
+  };
+  while (queue.length) walk(queue.shift());
+  return out;
+}
+
+/**
+ * The permanent attribute modifiers a passive skill (castType 1, e.g. one a
+ * talent attaches) gives through the buffs its `buffs` list creates: each
+ * listed BuffData buff that lasts for good (lifeType 1) and does nothing
+ * else (no event handlers, timeline or damage modifiers: those are kit
+ * work), with each modifier's key renamed to the skill's key that its
+ * `assignItems` pass on (a direct value or an unassigned key: a literal).
+ * Empty for other skills and when the file isn't there.
+ */
+export function passiveBuffModifiers(skillId: string): { buff: string; attr: number; slot: number; target: number; key: string | null; literal: number }[] {
+  if (!isSkillFileListed(skillId) || !existsSync(skillFilePath(skillId))) return [];
+  const j = parseJsonExact(readFileSync(skillFilePath(skillId), "utf8")) as Record<string, unknown>;
+  if (j["castType"] !== 1) return [];
+  const out: ReturnType<typeof passiveBuffModifiers> = [];
+  for (const entry of (j["buffs"] ?? []) as Record<string, unknown>[]) {
+    const id = entry["buffId"];
+    if (entry["readIdFromBlackboard"] === true || typeof id !== "string" || !BUFF_ALLOWED.some((re) => re.test(id))) continue;
+    const path = join(sourceDir("rmxlinux"), "Json", "BuffData", `${id}.json`);
+    if (!existsSync(path)) continue;
+    const b = parseJsonExact(readFileSync(path, "utf8")) as Record<string, unknown>;
+    const busy = ["buffEventAction", "abilityEventAction", "igniteEventAction", "timelineActions", "damageModifier"].some((k) => Array.isArray(b[k]) && (b[k] as unknown[]).length > 0);
+    if (b["lifeType"] !== 1 || busy) continue;
+    const defaults = new Map(((b["blackboard"] ?? []) as Record<string, unknown>[]).map((x) => [x["key"], typeof x["valueDouble"] === "number" ? x["valueDouble"] : 0]));
+    const assigned = new Map(entry["assignBlackboard"] === true ? ((entry["assignItems"] ?? []) as Record<string, unknown>[]).map((x) => [x["targetKey"], x]) : []);
+    for (const m of (((b["attributeModifier"] ?? {}) as Record<string, unknown>)["attributeModifiers"] ?? []) as Record<string, unknown>[]) {
+      const param = (m["param"] ?? {}) as Record<string, unknown>;
+      const base = { buff: id, attr: Number(m["attributeType"]), slot: Number(m["formulaItem"]), target: Number(m["modifyAttributeType"]) };
+      if (param["useBlackboardKey"] !== true || typeof param["blackboardKey"] !== "string") {
+        out.push({ ...base, key: null, literal: typeof param["value"] === "number" ? param["value"] : 0 });
+        continue;
+      }
+      const item = assigned.get(param["blackboardKey"]);
+      if (item && item["useDirectValue"] !== true && typeof item["inputValueKey"] === "string") out.push({ ...base, key: item["inputValueKey"], literal: 0 });
+      else out.push({ ...base, key: null, literal: item ? Number(item["numericValue"]) : (defaults.get(param["blackboardKey"]) ?? 0) });
+    }
+  }
+  return out;
+}
+
+/**
+ * A skill's SP kinds and sources (spKindsOf, spSourcesOf) with the keys of
+ * the files it reaches (reachedFiles) that its own file doesn't grant: a
+ * kit hit naming such a key (a spawned entity's `atb_trigger`, read from
+ * the skill's values) gets the data's kind and source type.
+ */
+export function reachedSp(skillId: string, own: Pick<RawSkillFile, "spKinds" | "spSources">, isHelper: (id: string) => boolean): Pick<RawSkillFile, "spKinds" | "spSources"> {
+  const spKinds: Record<string, SpKind> = { ...own.spKinds };
+  const spSources: Record<string, number> = { ...own.spSources };
+  for (const f of reachedFiles(skillId, isHelper)) {
+    for (const [k, v] of Object.entries(spKindsOf(f.json))) if (!(k in spKinds)) spKinds[k] = v;
+    for (const [k, v] of Object.entries(spSourcesOf(f.json))) if (!(k in spSources)) spSources[k] = v;
+  }
+  return { spKinds, spSources };
 }
 
 /**

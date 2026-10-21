@@ -412,11 +412,9 @@ const KNOWN: string[] = [
   // SwitchAction on EntityBB_combo_index (2 → Cryo, 3 → Nature), set natively when the window opens: the window's element (`element: event`).
   "chr_0022_bounda_combo_skill applies at 15: kit [infliction event], data [], conditionally [infliction cryst, infliction natural]",
   // Batch 2, the Endministrator (both IDs: chr_0002_endminm is the kit's variant).
-  // The combo's first DamageAction at 23 names atk_scale without useBlackboardKey (a literal 0): a hit of no damage, left out of the kit (the log has one combo hit per cast).
-  "chr_0003_endminf_combo_skill: data lands chr_0003_endminf_combo_skill  at [23], no kit hit",
+  // (The combo's first DamageAction at 23, a literal-0 scale, is left out by the compiler since batch 4's D8, as by the kit.)
   // The ultimate's IgniteAction 6 runs buff_common_originum_frozen's own DamageAction (atk_scale_trigger from the combo), which the compiler doesn't follow (an ignite handler of a buff on the target); the kit's third hit on sealed targets.
   "chr_0003_endminf_ultimate_skill/shatter: no landing scaled by atk_scale_trigger (data: atk_scale | originum_ult_break_scale)",
-  "chr_0002_endminm_combo_skill: data lands chr_0002_endminm_combo_skill  at [23], no kit hit",
   "chr_0002_endminm_ultimate_skill/shatter: no landing scaled by atk_scale_trigger (data: atk_scale | originum_ult_break_scale)",
   // Batch 3, Da Pan. Kit right, a limit of this test: the frame-0 forced Lift (AirborneAction forceAirborne, no damage landing there) is the
   // kit's cast trigger ultimate_skill_f0, as kit-draft compiles it; this test only reads applications on a skill's hits.
