@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_claym_0007",
+  "sources": [
+    "Thunderberge (WeaponBasicTable wpn_claym_0007): Strength, HP and sk_wpn_claym_0007's Shield applied +shield_up (cardAttributeModifier attribute 88: shield strength, not modelled) are on the stat panel. sk_wpn_claym_0007 passiveEventActions: abilityEvent 50 (the wielder heals) + CheckHealTag −1517158118 (the combo heal tag) + CheckGlobalCDTimer buff_wpn_claym_0007_valid → StoreAttributeValue Max HP × hp_ratio, AddGlobalCDTimer `cd` (on the wielder), CreateBuff buff_wpn_claym_0007_valid (a shield of that value, applyTags −1757502026, `duration`) on the controlled operator. Description: \"After the wielder's combo skill provides HP treatment, the controlled operator gains an additional [{hp_ratio} × Wielder's Max HP] Shield for {duration}s. Effect only triggers once every {cd}s.\" Batch-4 report docs/kit-batches/batch-4/chr_0009_azrila.md rows T1–T4.",
+    "Shield points aren't modelled; the shield is kept as a buff with the shield tag (the loader makes it a shield-category buff, for operatorBuff predicates). toggleBuffs buff_wpn_lance_0003 (CheckCurHpRatio, atk_up the skill doesn't have): a template leftover with no effect."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_claym_0007.shield",
+      "label": "Medicant: Eye of Talos (Shield on the controlled operator)",
+      "target": "team",
+      "recipients": { "controlled": true },
+      "duration": "duration",
+      "modifiers": [],
+      "gameBuff": "buff_wpn_claym_0007_valid"
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_claym_0007.on_combo_heal",
+      "on": { "event": "heal", "kinds": ["combo"] },
+      "by": "self",
+      "skill": "sk_wpn_claym_0007",
+      "cooldown": "cd",
+      "do": [{ "kind": "buff", "buff": "wpn_claym_0007.shield" }],
+      "note": "Heals the wielder's kit declares with the combo kind (a combo hit's heals; a trigger heal with healKind combo)."
+    }
+  ]
+}
