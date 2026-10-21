@@ -1,0 +1,50 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_funnel_0020",
+  "sources": [
+    "Suffering's End (arts unit). Skill 3, sk_wpn_funnel_0020 (rmxlinux Json/SkillData; values from SkillPatchTable at the weapon's skill-3 level: nature_dmg_up, nature_dmg_up2, duration). Its cardAttributeModifier (attribute 87, Arts Intensity + phy_spell_up) and skills 1-2 stay in the stat panel. Batch-4 report docs/kit-batches/batch-4/chr_0030_zhuangfy.md rows S1-S2.",
+    "abilityEvent 127 (the wielder applies an Arts Burst) + CheckTimedMarkerCondition / CreateTimedMarker 0.1 s (the data's literal) -> buff_wpn_funnel_0020_intensityup (attribute 54 formulaItem 5, Nature DMG + nature_dmg_up, `duration`; stackingType 11 without priority key, the literal maxStackCnt 4 of its BuffData, no key: layers, each its own timer); then CheckBuffStackNumAdvanced intensityup >= 4 (the data's literal) -> buff_wpn_funnel_0020_maxup (Nature DMG + nature_dmg_up2, `duration`, stackingType 4: refreshed). abilityEvent 209 (a buff layer of the wielder ends) with intensityup below 4 -> FinishBuffAdvanced maxup: when a layer runs out (buffEnded) and fewer than 4 are left.",
+    "Description (report S2): \"When the wielder applies an Arts Burst, the wielder gains Nature DMG +{nature_dmg_up} for {duration}s. Max stacks: 4. Duration of each stack is counted separately. Effect only triggers once every 0.1s. At 4 stacks, the wielder gains an additional Nature DMG +{nature_dmg_up2}.\""
+  ],
+  "buffs": [
+    {
+      "id": "wpn_funnel_0020.layer",
+      "label": "Suffering's End: Nature DMG per Arts Burst",
+      "target": "self",
+      "gameBuff": "buff_wpn_funnel_0020_intensityup",
+      "duration": "duration",
+      "maxStacks": 4,
+      "modifiers": [{ "zone": "damageBonus", "elements": ["natural"], "value": "nature_dmg_up" }],
+      "note": "maxStacks: buff_wpn_funnel_0020_intensityup's literal maxStackCnt 4 (no maxStackCntKey)."
+    },
+    {
+      "id": "wpn_funnel_0020.max",
+      "label": "Suffering's End: Nature DMG at 4 layers",
+      "target": "self",
+      "gameBuff": "buff_wpn_funnel_0020_maxup",
+      "duration": "duration",
+      "modifiers": [{ "zone": "damageBonus", "elements": ["natural"], "value": "nature_dmg_up2" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_funnel_0020.on_burst",
+      "on": { "event": "burst" },
+      "by": "self",
+      "cooldown": 0.1,
+      "skill": "sk_wpn_funnel_0020",
+      "do": [
+        { "kind": "buff", "buff": "wpn_funnel_0020.layer" },
+        { "kind": "buff", "buff": "wpn_funnel_0020.max", "if": { "buffLayers": "wpn_funnel_0020.layer", "atLeast": 4 } }
+      ],
+      "note": "Any Arts Burst the wielder applies (no CheckOriginSkillType: from any of the wielder's hits)."
+    },
+    {
+      "id": "wpn_funnel_0020.layer_end",
+      "on": { "event": "buffEnded", "buff": "wpn_funnel_0020.layer" },
+      "by": "self",
+      "if": { "buffLayers": "wpn_funnel_0020.layer", "below": 4 },
+      "do": [{ "kind": "endBuff", "buff": "wpn_funnel_0020.max" }]
+    }
+  ]
+}

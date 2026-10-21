@@ -9,7 +9,7 @@ import type { KitHit } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill, type CompiledValue } from "../src/index.ts";
 
 const data = loadGameData();
-const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen", "chr_0006_wolfgd", "chr_0031_mifu", "chr_0033_camille", "chr_0026_lastrite", "chr_0017_yvonne", "chr_0015_lifeng", "chr_0025_ardelia", "chr_0029_pograni", "chr_0028_wulfa"];
+const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen", "chr_0006_wolfgd", "chr_0031_mifu", "chr_0033_camille", "chr_0026_lastrite", "chr_0017_yvonne", "chr_0015_lifeng", "chr_0025_ardelia", "chr_0029_pograni", "chr_0028_wulfa", "chr_0030_zhuangfy"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
   const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
@@ -521,6 +521,119 @@ const KNOWN: string[] = [
   "chr_0028_wulfa_ultimate_skill/stab scale: kit atk_scale_1, data $atk_scale_1?",
   "chr_0028_wulfa_ultimate_skill/slash1 scale: kit atk_scale_2, data $atk_scale_2?",
   "chr_0028_wulfa_ultimate_skill/slash2 scale: kit atk_scale_3, data $atk_scale_3?",
+  // Batch 4, Zhuang Fangyi. Compiler limit (batch-1 D2): buff_common_obtain_ultimate_sp at frame 6 is on both sides of the IfElse on
+  // the Electrification tag (consume or not); the compiler doesn't merge exhaustive branches, so it finds none unconditional. Same for normal_skill_ult at 5.
+  "chr_0030_zhuangfy_normal_skill teamEnergy: kit 1@6, data 1@0",
+  // Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff
+  // normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each
+  // Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack
+  // strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key
+  // products only); usp_extra on every strike, at its frame.
+  "chr_0030_zhuangfy_normal_skill/final_1 energy: kit usp_extra at [28], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/final_1 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill/final_1 frames: kit [28], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/strike_2 energy: kit usp_extra at [25], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/strike_2 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + (atk_up_per_conduct × $conductCnt?)) | ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill/strike_2 frames: kit [25], data [16] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/final_2 energy: kit usp_extra at [36], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/final_2 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill/final_2 frames: kit [36], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/strike_3 energy: kit usp_extra at [24, 32], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/strike_3 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + (atk_up_per_conduct × $conductCnt?)) | ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill/strike_3 frames: kit [24, 32], data [16] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/final_3 energy: kit usp_extra at [43], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/final_3 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill/final_3 frames: kit [43], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/strike_4 energy: kit usp_extra at [24, 32, 39], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/strike_4 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + (atk_up_per_conduct × $conductCnt?)) | ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill/strike_4 frames: kit [24, 32, 39], data [16] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/final_4 energy: kit usp_extra at [50], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/final_4 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill/final_4 frames: kit [50], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/strike_5 energy: kit usp_extra at [24, 31, 38, 46], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/strike_5 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + (atk_up_per_conduct × $conductCnt?)) | ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill/strike_5 frames: kit [24, 31, 38, 46], data [16] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/final_5 energy: kit usp_extra at [56], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/final_5 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill/final_5 frames: kit [56], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/strike_6 energy: kit usp_extra at [23, 30, 37, 44, 51], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/strike_6 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + (atk_up_per_conduct × $conductCnt?)) | ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill/strike_6 frames: kit [23, 30, 37, 44, 51], data [16] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/final_6 energy: kit usp_extra at [61], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/final_6 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill/final_6 frames: kit [61], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/strike_7 energy: kit usp_extra at [23, 30, 36, 43, 50, 56], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/strike_7 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + (atk_up_per_conduct × $conductCnt?)) | ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill/strike_7 frames: kit [23, 30, 36, 43, 50, 56], data [16] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/final_7 energy: kit usp_extra at [66], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/final_7 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill/final_7 frames: kit [66], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/strike_8 energy: kit usp_extra at [23, 29, 35, 42, 48, 54, 61], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/strike_8 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + (atk_up_per_conduct × $conductCnt?)) | ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill/strike_8 frames: kit [23, 29, 35, 42, 48, 54, 61], data [16] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/final_8 energy: kit usp_extra at [70], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/final_8 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill/final_8 frames: kit [70], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/strike_9 energy: kit usp_extra at [22, 28, 34, 40, 46, 52, 58, 64], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/strike_9 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + (atk_up_per_conduct × $conductCnt?)) | ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill/strike_9 frames: kit [22, 28, 34, 40, 46, 52, 58, 64], data [16] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/final_9 energy: kit usp_extra at [73], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill/final_9 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill/final_9 frames: kit [73], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
+  "chr_0030_zhuangfy_normal_skill_ult teamEnergy: kit 1@5, data 1@0",
+  // Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the
+  // final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings).
+  // The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).
+  "chr_0030_zhuangfy_normal_skill_ult/final_1 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill_ult/final_1 frames: kit [32], data [84]",
+  "chr_0030_zhuangfy_normal_skill_ult/strike_2 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + ($conductCnt? × atk_up_per_conduct)) | ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill_ult/final_2 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill_ult/final_2 frames: kit [38], data [84]",
+  "chr_0030_zhuangfy_normal_skill_ult/strike_3 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + ($conductCnt? × atk_up_per_conduct)) | ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill_ult/strike_3 frames: kit [27, 33], data [33, 39, 45, 51, 57, 63, 69, 75, 84] (if $tick_index? < $EntityBB_SwordNum, if $tick_index? = 1)",
+  "chr_0030_zhuangfy_normal_skill_ult/final_3 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill_ult/final_3 frames: kit [44], data [84]",
+  "chr_0030_zhuangfy_normal_skill_ult/strike_4 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + ($conductCnt? × atk_up_per_conduct)) | ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill_ult/strike_4 frames: kit [27, 33, 39], data [33, 39, 45, 51, 57, 63, 69, 75, 84] (if $tick_index? < $EntityBB_SwordNum, if $tick_index? = 1)",
+  "chr_0030_zhuangfy_normal_skill_ult/final_4 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill_ult/final_4 frames: kit [50], data [84]",
+  "chr_0030_zhuangfy_normal_skill_ult/strike_5 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + ($conductCnt? × atk_up_per_conduct)) | ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill_ult/strike_5 frames: kit [27, 33, 39, 45], data [33, 39, 45, 51, 57, 63, 69, 75, 84] (if $tick_index? < $EntityBB_SwordNum, if $tick_index? = 1)",
+  "chr_0030_zhuangfy_normal_skill_ult/final_5 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill_ult/final_5 frames: kit [56], data [84]",
+  "chr_0030_zhuangfy_normal_skill_ult/strike_6 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + ($conductCnt? × atk_up_per_conduct)) | ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill_ult/strike_6 frames: kit [27, 33, 39, 45, 51], data [33, 39, 45, 51, 57, 63, 69, 75, 84] (if $tick_index? < $EntityBB_SwordNum, if $tick_index? = 1)",
+  "chr_0030_zhuangfy_normal_skill_ult/final_6 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill_ult/final_6 frames: kit [62], data [84]",
+  "chr_0030_zhuangfy_normal_skill_ult/strike_7 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + ($conductCnt? × atk_up_per_conduct)) | ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill_ult/strike_7 frames: kit [27, 33, 39, 45, 51, 57], data [33, 39, 45, 51, 57, 63, 69, 75, 84] (if $tick_index? < $EntityBB_SwordNum, if $tick_index? = 1)",
+  "chr_0030_zhuangfy_normal_skill_ult/final_7 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill_ult/final_7 frames: kit [68], data [84]",
+  "chr_0030_zhuangfy_normal_skill_ult/strike_8 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + ($conductCnt? × atk_up_per_conduct)) | ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill_ult/strike_8 frames: kit [27, 33, 39, 45, 51, 57, 63], data [33, 39, 45, 51, 57, 63, 69, 75, 84] (if $tick_index? < $EntityBB_SwordNum, if $tick_index? = 1)",
+  "chr_0030_zhuangfy_normal_skill_ult/final_8 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill_ult/final_8 frames: kit [74], data [84]",
+  "chr_0030_zhuangfy_normal_skill_ult/strike_9 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + ($conductCnt? × atk_up_per_conduct)) | ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill_ult/strike_9 frames: kit [27, 33, 39, 45, 51, 57, 63, 69], data [33, 39, 45, 51, 57, 63, 69, 75, 84] (if $tick_index? < $EntityBB_SwordNum, if $tick_index? = 1)",
+  "chr_0030_zhuangfy_normal_skill_ult/final_9 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
+  "chr_0030_zhuangfy_normal_skill_ult/final_9 frames: kit [80], data [84]",
+  "chr_0030_zhuangfy_normal_skill_ult applies at 32: kit [infliction pulse], data []",
+  "chr_0030_zhuangfy_normal_skill_ult applies at 38: kit [infliction pulse], data []",
+  "chr_0030_zhuangfy_normal_skill_ult applies at 44: kit [infliction pulse], data []",
+  "chr_0030_zhuangfy_normal_skill_ult applies at 50: kit [infliction pulse], data []",
+  "chr_0030_zhuangfy_normal_skill_ult applies at 56: kit [infliction pulse], data []",
+  "chr_0030_zhuangfy_normal_skill_ult applies at 62: kit [infliction pulse], data []",
+  "chr_0030_zhuangfy_normal_skill_ult applies at 68: kit [infliction pulse], data []",
+  "chr_0030_zhuangfy_normal_skill_ult applies at 74: kit [infliction pulse], data []",
+  "chr_0030_zhuangfy_normal_skill_ult applies at 80: kit [infliction pulse], data []",
+  "chr_0030_zhuangfy_normal_skill_ult applies at 84: kit [], data [infliction pulse]",
+  "chr_0030_zhuangfy_normal_skill_ult: data lands chr_0030_zhuangfy_normal_skill_ult_abilityrange (atk_scale + ($conductCnt? × atk_up_per_conduct)) at [75], no kit hit",
+  "chr_0030_zhuangfy_normal_skill_ult: data lands chr_0030_zhuangfy_normal_skill_ult_abilityrange ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate) at [84], no kit hit",
+  // Kit right (D8f's form): ObtainCostAction usp and usp_extra × inflictCnt (the Electric stacks the combo consumes) as one grant, {consumed: true}.
+  "chr_0030_zhuangfy_combo_skill/hit energy: kit {\"sum\":[\"usp\",{\"product\":[\"usp_extra\",{\"consumed\":true}]}]} at [24], data usp@24, (usp_extra × $inflictCnt?)@24",
+  // Kit right: RefrainObtainUsp is buff ult_base's (the Empyrean, `duration` 25 s from frame 78: the kit buff empyrean's blocksEnergy, a key
+  // this test doesn't read), not the skill's.
+  "chr_0030_zhuangfy_ultimate_skill energyBlockSeconds: kit -, data 27.6",
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {

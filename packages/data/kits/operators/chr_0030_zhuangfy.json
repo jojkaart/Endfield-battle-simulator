@@ -1,0 +1,2691 @@
+{
+ "$schema": "../../../../schemas/kit.schema.json",
+ "operator": "chr_0030_zhuangfy",
+ "sources": [
+  "Kit plan: docs/kit-batches/batch-4/chr_0030_zhuangfy.md (analysis 1, with the kit's re-analysis in its \"Kit (2026-10-21)\" section). Hit structure and frames: rmxlinux Json/SkillData chr_0030_zhuangfy_* and Json/BuffData buff_chr_0030_zhuangfy_* (game 1.6), as compiled by efsim kit-draft v2 and corrected by hand where noted; written by a generator (the report names it). Values from SkillPatchTable through the keys (level 12: attack1 atk_scale 0.18 x2, attack2 atk_scale_sword 0.11 x2 + atk_scale 0.08 x4, attack3 atk_scale_sword 0.18 x4, attack4 0.25 x4, attack5 1.08 with poise 18 and atb 18, finisher 9.0, dive 1.8; battle skill atk_scale 0.45, atk_up_per_conduct 0.09, final_rate 6, poise 15, usp_extra 6, max_conduct_sword 3, free_sword_limit 3, remain_sword_limit 9, sword_duration 36, 100 SP; Empyrean battle skill 0.81 / 0.18; combo 3.6, poise 10, usp 10, usp_extra 10, cooldown 17 s; Empyrean combo 5.4; Empyrean attacks 1.5, 2.1, 3.0 with poise 18 and atb 20; ultimate 240 energy, cooldown 15 s, duration 25, combo_cd_rate 4).",
+  "Skill descriptions (CharGrowthTable + I18nTextTable_EN). Battle skill \"Mantra of Sundering\": \"Consumes the target's Electrification to increase the DMG multiplier ... and create [Status Level of Electrification consumed +1] Sunderblades. If the battlefield has fewer than 3 Sunderblades, [it] can still create 1 ... even if it does not consume ... Zhuang Fangyi then channels all Sunderblades nearby to successively unleash Thunder Strikes ... giving bonus Ultimate Energy, with the final Thunder Strike dealing 6 times the DMG. A single battle skill casting can only create a max of 3.\" Combo \"Breath of Transformation\": \"COMBO TRIGGER: When the controlled operator's Final Strike or Finisher hits an enemy with Electric Infliction. ... consume the said Electric Infliction stack(s), forcibly apply Electrification, and give Ultimate Energy based on the number of stacks consumed. If Electrification is forcibly applied to an enemy that already has Electrification, then apply Status Level +1.\" Ultimate \"Smiting Tempest\": the Empyrean of Truth (enhanced basic attacks, battle skill and combo; the combo's \"cooldown becomes 4 times faster\"; \"The first casting of the battle skill ... does not consume SP nor Electrification, and ... is guaranteed to create 3 Sunderblades\").",
+  "Sunderblades (normal_skill_gene_sword_projhit spawns normal_skill_sword entities, EntityBB_swordDuration = sword_duration; at remain_sword_limit the oldest is finished; buff_..._passive_check_sword counts those within 50 m) are layers of the self buff sunderblade, each with its own timer. The Thunder Strikes are a composite: stack strike_n = Sunderblades at f13 (f15 in the Empyrean), stack conduct_cnt = the Electrification level consumed; for each N one strike hit (count N-1) and one final hit, each `if` strike_n = N, judged as they land (a new battle skill resets the stacks at its f6 / f5, ending the old strikes as FinishBuff trigger_sword does). Interims: the f6 Sunderblades already strike in their own cast (U1, in-game test 87); strike frames rounded up from the trigger interval (U2); the 3 s floor on expiring Sunderblades at the cast's start isn't modelled (batch-4 B8, deferred); the conditional jumps 16 -> 116 / 16 -> 100 (marker skillEnd at the last strike) aren't taken: windows 45-116 / 30-143 already let her act, the jump moves her next action by at most a frame.",
+  "Empyrean of Truth (buff_chr_0030_zhuangfy_ult_base, created at the ultimate's frame 78, `duration` 25 s): RefrainObtainUsp (blocksEnergy), ChangeSkill battle -> normal_skill_ult and combo -> combo_skill_ult (inheritOriginSkillCdProgress: one cooldown group), the attacks -> attack1-3_ult (UltMode), attribute 93 formulaItem 6 combo_cd_rate (the loader reads formulaItem 6 as a percentage: rate 1 + 4 = 5; the description says 4 times: U4, not testable by hand), child buff_chr_0030_zhuangfy_ult_skill_free (attribute 45 -100: the first Empyrean battle skill costs no SP). At its end: CastSkill chr_0030_zhuangfy_ultimate_skill_end (a helper from BuffData: 20 exclusive frames, ends her current action) and SetSkillCdAtOnce on the ultimate, 15 s. Interims: TagQueryListener 1200 (ends the state early: swap or death?) isn't modelled (U3, in-game test 88); ExtendBuffAction (each Empyrean action holds the state over its first 17-35 frames) isn't modelled (batch-4 B7, deferred: at most 35 frames per ultimate); the finisher stays castable in the state (U6).",
+  "Talents and potentials. Talent 1 (talent1, attached skill): each battle skill's buff_chr_0030_zhuangfy_talent1 -> buff_chr_0030_zhuangfy_talent1_base (5 s) -> EnhancedAction subType 6: Electric Amp base_rate (logged as buff_common_affixes_enhance_pulse), + enhance_rate per buff_chr_0030_zhuangfy_talent1_mark (one before each Thunder Strike's damage): t1_amp and its growth t1_amp_plus (categories []: raising the active Amp isn't gaining one), cumulative over the cast (U5, in-game test 89). Talent 2 (damage immunity and a heal on taking hits) needs incoming damage and HP: not modelled (N2). P1: atk_scale and atk_up_per_conduct x1.15 (skill values) and buff_chr_0030_zhuangfy_potential1 (abilityEvent 6, entering battle -> potential1_more_sword: one more Sunderblade on the first battle skill; it ends with a battle skill, abilityEvent 31 + CheckSkillType [2]). P2: Will +20, Battle Skill DMG +15% (stat panel). P3: sword_duration +10, atb_return 10 (skill values). P4: ultimate cost x0.85 (skillParam). P5: buff_chr_0030_zhuangfy_potential5 (damageModifier while ult_base is on her: InstantModifyAttribute attribute 97 -ignore_pulse_resist) -> p5_resist with the state."
+ ],
+ "element": "pulse",
+ "stacks": [
+  {
+   "id": "conduct_cnt",
+   "label": "Electrification level the current battle skill consumed",
+   "max": 4
+  },
+  {
+   "id": "strike_n",
+   "label": "Sunderblades striking in the current battle skill",
+   "max": 9
+  }
+ ],
+ "buffs": [
+  {
+   "id": "sunderblade",
+   "label": "Sunderblades on the field (one layer each)",
+   "target": "self",
+   "duration": "sword_duration",
+   "maxStacks": "remain_sword_limit",
+   "modifiers": [],
+   "note": "One layer per normal_skill_sword entity: EntityBB_swordDuration = sword_duration (36 s, 46 s at P3), each its own; at remain_sword_limit (9) a new one replaces the oldest (gene_sword_projhit FinishOwner index 0). No damage by itself: the battle skills count it (bs_count, bsu_count)."
+  },
+  {
+   "id": "p1_more_sword",
+   "label": "P1: the first battle skill makes one more Sunderblade",
+   "target": "self",
+   "gameBuff": "buff_chr_0030_zhuangfy_potential1_more_sword",
+   "modifiers": [],
+   "note": "From buff_chr_0030_zhuangfy_potential1 on entering battle (fightStart); ended by the next battle skill (its abilityEvent 31 + CheckSkillType [2]; here in that skill's own trigger, after its Sunderblades)."
+  },
+  {
+   "id": "t1_amp",
+   "label": "Talent 1: Electric Amp",
+   "target": "self",
+   "gameBuff": "buff_chr_0030_zhuangfy_talent1_base",
+   "duration": {
+    "talent": 0,
+    "key": "duration"
+   },
+   "modifiers": [
+    {
+     "zone": "amp",
+     "elements": [
+      "pulse"
+     ],
+     "value": {
+      "talent": 0,
+      "key": "base_rate"
+     }
+    }
+   ],
+   "note": "buff_chr_0030_zhuangfy_talent1_base's EnhancedAction subType 6 (Electric): rate base_rate (0.09 / 0.18 at talent level 1 / 2) for `duration` (5 s); a new battle skill replaces it (stackingType 2, max 1). Logged as buff_common_affixes_enhance_pulse."
+  },
+  {
+   "id": "t1_amp_plus",
+   "label": "Talent 1: Electric Amp per Thunder Strike",
+   "target": "self",
+   "duration": {
+    "talent": 0,
+    "key": "duration"
+   },
+   "maxStacks": "remain_sword_limit",
+   "categories": [],
+   "modifiers": [
+    {
+     "zone": "amp",
+     "elements": [
+      "pulse"
+     ],
+     "value": {
+      "talent": 0,
+      "key": "enhance_rate"
+     }
+    }
+   ],
+   "note": "talent1_base's enhancingList: each buff_chr_0030_zhuangfy_talent1_mark (created before each Thunder Strike's damage) adds enhance_rate (0.01 / 0.02) to the active Amp's rate: a layer per strike (at most remain_sword_limit strikes per cast, so the cap never binds), ended with t1_amp and at the next battle skill. categories []: it raises an active Amp, it isn't one gained (Flickers in the Mist doesn't count it). Cumulative reading: U5 (in-game test 89)."
+  },
+  {
+   "id": "empyrean",
+   "label": "Empyrean of Truth",
+   "target": "self",
+   "gameBuff": "buff_chr_0030_zhuangfy_ult_base",
+   "duration": "duration",
+   "blocksEnergy": true,
+   "modifiers": [
+    {
+     "attr": 93,
+     "value": "combo_cd_rate"
+    }
+   ],
+   "note": "ult_base, from the ultimate's frame 78 for `duration` (25 s). RefrainObtainUsp: no ultimate energy meanwhile. Attribute 93 (ComboSkillCooldownRecoveryScalar) formulaItem 6 combo_cd_rate (4): the loader marks it a percentage, so the combo cooldown runs at 1 + 4 = 5 times (description: 4 times; U4, logs only). The Empyrean skills check it (`available`)."
+  },
+  {
+   "id": "ult_free",
+   "label": "Empyrean: the first battle skill is free",
+   "target": "self",
+   "gameBuff": "buff_chr_0030_zhuangfy_ult_skill_free",
+   "modifiers": [
+    {
+     "attr": 45,
+     "value": -100
+    }
+   ],
+   "note": "ult_skill_free, a child of ult_base: attribute 45 (AtbCostAddition) formulaItem 5, the literal -100 of its BuffData (no key): the battle skill's 100 SP cost is 0 while it's on (and no team energy, none being spent). normal_skill_ult finishes it at frame 5 on the free path (bsu_swords); it ends with the state (ult_end)."
+  },
+  {
+   "id": "p5_resist",
+   "label": "P5: Electric RES ignored in the Empyrean",
+   "target": "self",
+   "gameBuff": "buff_chr_0030_zhuangfy_potential5",
+   "duration": "duration",
+   "modifiers": [
+    {
+     "zone": "ignoreResistance",
+     "elements": [
+      "pulse"
+     ],
+     "value": {
+      "product": [
+       -1,
+       {
+        "key": "ignore_pulse_resist",
+        "skill": "buff_chr_0030_zhuangfy_potential5"
+       }
+      ]
+     }
+    }
+   ],
+   "note": "buff_chr_0030_zhuangfy_potential5's damageModifier (condition: ult_base on her, CheckBuffStackNumAdvanced >= 1): attacker-side InstantModifyAttribute attribute 97 formulaItem 5 ignore_pulse_resist (-15): 15 Electric RES ignored. Applied with the state from P5 (ult_state), ended with it (ult_end)."
+  }
+ ],
+ "triggers": [
+  {
+   "id": "combo_window",
+   "on": {
+    "event": "hit",
+    "decorations": [
+     "finalStrike",
+     "finisher"
+    ]
+   },
+   "by": "controlled",
+   "if": {
+    "enemyInfliction": "pulse"
+   },
+   "do": [
+    {
+     "kind": "openCombo"
+    }
+   ],
+   "note": "Combo trigger (description): the controlled operator's Final Strike or finisher hits an enemy with Electric Infliction. One window for both combos (the Empyrean swaps the button)."
+  },
+  {
+   "id": "p1_start",
+   "on": {
+    "event": "fightStart"
+   },
+   "by": "self",
+   "if": {
+    "potentialAtLeast": 1
+   },
+   "do": [
+    {
+     "kind": "buff",
+     "buff": "p1_more_sword"
+    }
+   ],
+   "note": "buff_chr_0030_zhuangfy_potential1: abilityEvent 6 (entering battle) -> potential1_more_sword."
+  },
+  {
+   "id": "bs_swords",
+   "on": {
+    "event": "cast",
+    "skills": [
+     "chr_0030_zhuangfy_normal_skill"
+    ]
+   },
+   "by": "self",
+   "skill": "chr_0030_zhuangfy_normal_skill",
+   "delay": 6,
+   "awaited": true,
+   "do": [
+    {
+     "kind": "gain",
+     "gains": [
+      {
+       "stack": "conduct_cnt",
+       "amount": -4
+      },
+      {
+       "stack": "strike_n",
+       "amount": -9
+      }
+     ]
+    },
+    {
+     "kind": "buff",
+     "buff": "sunderblade",
+     "if": {
+      "all": [
+       {
+        "not": {
+         "enemyStatus": "electrification"
+        }
+       },
+       {
+        "buffLayers": "sunderblade",
+        "below": 3
+       }
+      ]
+     }
+    },
+    {
+     "kind": "buff",
+     "buff": "sunderblade",
+     "if": {
+      "buffActive": "p1_more_sword"
+     }
+    },
+    {
+     "kind": "apply",
+     "applies": [
+      {
+       "kind": "consumeStatus",
+       "statuses": [
+        "electrification"
+       ]
+      }
+     ]
+    },
+    {
+     "kind": "endBuff",
+     "buff": "p1_more_sword"
+    },
+    {
+     "kind": "endBuff",
+     "buff": "t1_amp_plus"
+    },
+    {
+     "kind": "buff",
+     "buff": "t1_amp",
+     "if": {
+      "talentAtLeast": [
+       0,
+       1
+      ]
+     }
+    }
+   ],
+   "note": "normal_skill frame 6, in the data's order: FinishBuff of the previous cast's strikes (the stacks reset); without Electrification one Sunderblade if fewer than free_sword_limit (3) are out (CompareFloat EntityBB_SwordNum < free_sword_limit; the literal 3 in `below`: buffLayers takes an integer), one more with potential1_more_sword (in both branches); then the consumption (FinishBuffAdvanced finishAll on tag 1466867135, bs_consumed makes its blades); CreateBuff talent1 (t1_amp, its growth reset)."
+  },
+  {
+   "id": "bs_consumed",
+   "on": {
+    "event": "statusConsumed",
+    "statuses": [
+     "electrification"
+    ],
+    "fromKinds": [
+     "battle"
+    ]
+   },
+   "by": "self",
+   "skill": "chr_0030_zhuangfy_normal_skill",
+   "do": [
+    {
+     "kind": "buff",
+     "buff": "sunderblade",
+     "layers": {
+      "min": [
+       {
+        "sum": [
+         {
+          "eventCount": true
+         },
+         1
+        ]
+       },
+       "max_conduct_sword"
+      ]
+     }
+    },
+    {
+     "kind": "gain",
+     "gains": [
+      {
+       "stack": "conduct_cnt",
+       "amount": {
+        "eventCount": true
+       }
+      }
+     ]
+    },
+    {
+     "kind": "sp",
+     "value": "atb_return"
+    }
+   ],
+   "note": "Electrification consumed by either battle skill (GetTargetBuffBB count -> conductCnt): sword_gene_num = min(conductCnt + 1, max_conduct_sword) Sunderblades (P1's extra one in bs_swords / bsu_swords), conductCnt for the strikes' atk_up_per_conduct, and ObtainCostAction atb_return (returned SP; 0 below P3, 10 from P3). Both battle skills have the same keys."
+  },
+  {
+   "id": "bs_count",
+   "on": {
+    "event": "cast",
+    "skills": [
+     "chr_0030_zhuangfy_normal_skill"
+    ]
+   },
+   "by": "self",
+   "delay": 13,
+   "do": [
+    {
+     "kind": "gain",
+     "gains": [
+      {
+       "stack": "strike_n",
+       "amount": {
+        "buffLayers": "sunderblade"
+       }
+      }
+     ]
+    }
+   ],
+   "note": "normal_skill frame 13: EntityBB_SwordNum (the Sunderblades out, the f6 ones included: U1) is the strike count of trigger_sword."
+  },
+  {
+   "id": "bsu_swords",
+   "on": {
+    "event": "cast",
+    "skills": [
+     "chr_0030_zhuangfy_normal_skill_ult"
+    ]
+   },
+   "by": "self",
+   "skill": "chr_0030_zhuangfy_normal_skill_ult",
+   "delay": 5,
+   "awaited": true,
+   "do": [
+    {
+     "kind": "gain",
+     "gains": [
+      {
+       "stack": "conduct_cnt",
+       "amount": -4
+      },
+      {
+       "stack": "strike_n",
+       "amount": -9
+      }
+     ]
+    },
+    {
+     "kind": "buff",
+     "buff": "sunderblade",
+     "if": {
+      "all": [
+       {
+        "not": {
+         "buffActive": "ult_free"
+        }
+       },
+       {
+        "all": [
+         {
+          "not": {
+           "enemyStatus": "electrification"
+          }
+         },
+         {
+          "buffLayers": "sunderblade",
+          "below": 3
+         }
+        ]
+       }
+      ]
+     }
+    },
+    {
+     "kind": "buff",
+     "buff": "sunderblade",
+     "if": {
+      "all": [
+       {
+        "not": {
+         "buffActive": "ult_free"
+        }
+       },
+       {
+        "buffActive": "p1_more_sword"
+       }
+      ]
+     }
+    },
+    {
+     "kind": "apply",
+     "applies": [
+      {
+       "kind": "consumeStatus",
+       "statuses": [
+        "electrification"
+       ]
+      }
+     ],
+     "if": {
+      "not": {
+       "buffActive": "ult_free"
+      }
+     }
+    },
+    {
+     "kind": "buff",
+     "buff": "sunderblade",
+     "layers": {
+      "sum": [
+       3,
+       {
+        "if": {
+         "buffActive": "p1_more_sword"
+        },
+        "then": 1,
+        "else": 0
+       }
+      ]
+     },
+     "if": {
+      "buffActive": "ult_free"
+     }
+    },
+    {
+     "kind": "endBuff",
+     "buff": "ult_free"
+    },
+    {
+     "kind": "endBuff",
+     "buff": "p1_more_sword"
+    },
+    {
+     "kind": "endBuff",
+     "buff": "t1_amp_plus"
+    },
+    {
+     "kind": "buff",
+     "buff": "t1_amp",
+     "if": {
+      "talentAtLeast": [
+       0,
+       1
+      ]
+     }
+    }
+   ],
+   "note": "normal_skill_ult frame 5: with ult_skill_free, the LaunchProjectile's literal haveSwordNum 3 (4 with potential1_more_sword) Sunderblades, no consumption, and FinishBuff ult_skill_free; else as normal_skill's frame 6. Then talent1."
+  },
+  {
+   "id": "bsu_count",
+   "on": {
+    "event": "cast",
+    "skills": [
+     "chr_0030_zhuangfy_normal_skill_ult"
+    ]
+   },
+   "by": "self",
+   "delay": 15,
+   "do": [
+    {
+     "kind": "gain",
+     "gains": [
+      {
+       "stack": "strike_n",
+       "amount": {
+        "buffLayers": "sunderblade"
+       }
+      }
+     ]
+    }
+   ],
+   "note": "normal_skill_ult frame 15: SpawnAbilityEntity normal_skill_ult_abilityrange with EntityBB_SwordNum."
+  },
+  {
+   "id": "t1_end",
+   "on": {
+    "event": "buffEnded",
+    "buff": "t1_amp"
+   },
+   "by": "self",
+   "do": [
+    {
+     "kind": "endBuff",
+     "buff": "t1_amp_plus"
+    }
+   ],
+   "note": "The Amp's growth ends with the Amp."
+  },
+  {
+   "id": "ult_state",
+   "on": {
+    "event": "cast",
+    "skills": [
+     "chr_0030_zhuangfy_ultimate_skill"
+    ]
+   },
+   "by": "self",
+   "skill": "chr_0030_zhuangfy_ultimate_skill",
+   "delay": 78,
+   "awaited": true,
+   "do": [
+    {
+     "kind": "buff",
+     "buff": "empyrean"
+    },
+    {
+     "kind": "buff",
+     "buff": "ult_free"
+    },
+    {
+     "kind": "buff",
+     "buff": "p5_resist",
+     "if": {
+      "potentialAtLeast": 5
+     }
+    }
+   ],
+   "note": "ultimate_skill frame 78: CreateBuff ult_base (duration, combo_cd_rate) with its child ult_skill_free; P5's buff acts while ult_base is on."
+  },
+  {
+   "id": "ult_end",
+   "on": {
+    "event": "buffEnded",
+    "buff": "empyrean"
+   },
+   "by": "self",
+   "skill": "chr_0030_zhuangfy_ultimate_skill",
+   "do": [
+    {
+     "kind": "endBuff",
+     "buff": "ult_free"
+    },
+    {
+     "kind": "endBuff",
+     "buff": "p5_resist"
+    },
+    {
+     "kind": "cooldown",
+     "who": "self",
+     "skills": "ultimate",
+     "set": 15
+    },
+    {
+     "kind": "cast",
+     "skill": "chr_0030_zhuangfy_ultimate_skill_end"
+    }
+   ],
+   "note": "ult_base buffEvent 2 (its end): CastSkill ultimate_skill_end (the IfElse's branch without buff_common_interrupt_henshin_no_exit_effect, which nothing here applies) and SetSkillCdAtOnce functionType 1 on the ultimate, the literal 15 s of the data; the child ends with it."
+  }
+ ],
+ "skills": [
+  {
+   "skillId": "chr_0030_zhuangfy_attack1",
+   "label": "Basic attack 1",
+   "damageType": "basic",
+   "available": {
+    "not": {
+     "buffActive": "empyrean"
+    }
+   },
+   "hits": [
+    {
+     "id": "projhit",
+     "scale": [
+      "atk_scale"
+     ],
+     "count": 2,
+     "frames": [
+      6,
+      8
+     ],
+     "events": [
+      "chr_0030_zhuangfy_attack1_projhit"
+     ],
+     "detached": true
+    }
+   ]
+  },
+  {
+   "skillId": "chr_0030_zhuangfy_attack2",
+   "label": "Basic attack 2",
+   "damageType": "basic",
+   "available": {
+    "not": {
+     "buffActive": "empyrean"
+    }
+   },
+   "note": "Two sword projectiles at frame 2, then the entity attack2_abilityrange (SpawnAbilityEntity@15): a DamageAction at once and TickInterval ticks 9-16 every 0.1 s (frames 24, 27, 30). kit-draft's six alternatives are one hit: CheckDistanceCondition only picks positions and the 0.5 Probablity chooses between two equal DamageActions (VFX).",
+   "hits": [
+    {
+     "id": "sword",
+     "scale": [
+      "atk_scale_sword"
+     ],
+     "count": 2,
+     "frames": [
+      2,
+      2
+     ],
+     "events": [
+      "chr_0030_zhuangfy_attack2_sword_projhit"
+     ],
+     "detached": true
+    },
+    {
+     "id": "range",
+     "scale": [
+      "atk_scale"
+     ],
+     "count": 4,
+     "frames": [
+      15,
+      24,
+      27,
+      30
+     ],
+     "events": [
+      "chr_0030_zhuangfy_attack2_abilityrange"
+     ],
+     "launch": 15
+    }
+   ]
+  },
+  {
+   "skillId": "chr_0030_zhuangfy_attack3",
+   "label": "Basic attack 3",
+   "damageType": "basic",
+   "available": {
+    "not": {
+     "buffActive": "empyrean"
+    }
+   },
+   "hits": [
+    {
+     "id": "sword",
+     "scale": [
+      "atk_scale_sword"
+     ],
+     "count": 4,
+     "frames": [
+      14,
+      14,
+      16,
+      16
+     ],
+     "events": [
+      "chr_0030_zhuangfy_attack3_sword_projhit"
+     ],
+     "detached": true
+    }
+   ]
+  },
+  {
+   "skillId": "chr_0030_zhuangfy_attack4",
+   "label": "Basic attack 4",
+   "damageType": "basic",
+   "available": {
+    "not": {
+     "buffActive": "empyrean"
+    }
+   },
+   "note": "attack2's entity again (SpawnAbilityEntity@11, ticks at 20, 23, 26), as one hit (see attack2).",
+   "hits": [
+    {
+     "id": "range",
+     "scale": [
+      "atk_scale"
+     ],
+     "count": 4,
+     "frames": [
+      11,
+      20,
+      23,
+      26
+     ],
+     "events": [
+      "chr_0030_zhuangfy_attack2_abilityrange"
+     ],
+     "launch": 11
+    }
+   ]
+  },
+  {
+   "skillId": "chr_0030_zhuangfy_attack5",
+   "label": "Basic attack 5 (Final Strike)",
+   "damageType": "basic",
+   "available": {
+    "not": {
+     "buffActive": "empyrean"
+    }
+   },
+   "note": "attack5_abilityrange (SpawnAbilityEntity@20): one DamageAction (mask 2097280, Final Strike; kit-draft's three distance alternatives are one), poise onlyEnableForMainChar, ObtainCostAction atb atbOnlyMainChar.",
+   "hits": [
+    {
+     "id": "range",
+     "scale": [
+      "atk_scale"
+     ],
+     "frames": [
+      20
+     ],
+     "events": [
+      "chr_0030_zhuangfy_attack5_abilityrange"
+     ],
+     "launch": 20,
+     "sp": {
+      "if": {
+       "controlled": true
+      },
+      "then": "atb"
+     },
+     "poise": "poise",
+     "poiseControlledOnly": true,
+     "finalStrike": true
+    }
+   ]
+  },
+  {
+   "skillId": "chr_0030_zhuangfy_power_attack",
+   "label": "Finisher",
+   "damageType": "basic",
+   "note": "BreakingAttackCalculation x 0.1 at 11 and x 0.9 at 40; castable in the Empyrean too (UltMode's windows don't list it: U6).",
+   "hits": [
+    {
+     "id": "hit",
+     "scale": [
+      "atk_scale"
+     ],
+     "frames": [
+      11
+     ],
+     "events": [
+      "chr_0030_zhuangfy_power_attack"
+     ],
+     "factor": 0.1
+    },
+    {
+     "id": "hit_2",
+     "scale": [
+      "atk_scale"
+     ],
+     "frames": [
+      40
+     ],
+     "events": [
+      "chr_0030_zhuangfy_power_attack"
+     ],
+     "factor": 0.9
+    }
+   ]
+  },
+  {
+   "skillId": "chr_0030_zhuangfy_plunging_attack_end",
+   "label": "Dive attack",
+   "damageType": "basic",
+   "note": "Mask 1152 (dive): not castable in rotations until dive attacks are (batch-1 S10).",
+   "hits": [
+    {
+     "id": "hit",
+     "scale": [
+      "atk_scale"
+     ],
+     "frames": [
+      1
+     ],
+     "events": [
+      "chr_0030_zhuangfy_plunging_attack_end"
+     ],
+     "sp": {
+      "if": {
+       "controlled": true
+      },
+      "then": "atb"
+     }
+    }
+   ]
+  },
+  {
+   "skillId": "chr_0030_zhuangfy_attack1_ult",
+   "label": "Empyrean basic attack 1",
+   "damageType": "basic",
+   "available": {
+    "buffActive": "empyrean"
+   },
+   "note": "Four entities (SpawnAbilityEntity 12-15), each hitting a target only without the 0.4 s marker hitMark1 the first one leaves: one hit per target, at the first entity's landing (frame 15). kit-draft's eight branch hits would land 4-8 times.",
+   "hits": [
+    {
+     "id": "range",
+     "scale": [
+      "atk_scale"
+     ],
+     "frames": [
+      15
+     ],
+     "events": [
+      "chr_0030_zhuangfy_attack1_ult_1_abilityrange"
+     ],
+     "launch": 12
+    }
+   ]
+  },
+  {
+   "skillId": "chr_0030_zhuangfy_attack2_ult",
+   "label": "Empyrean basic attack 2",
+   "damageType": "basic",
+   "available": {
+    "buffActive": "empyrean"
+   },
+   "note": "As attack1_ult: entities 10-13, one hit at 13 (logged under attack1_ult_1_abilityrange, the entity it spawns).",
+   "hits": [
+    {
+     "id": "range",
+     "scale": [
+      "atk_scale"
+     ],
+     "frames": [
+      13
+     ],
+     "events": [
+      "chr_0030_zhuangfy_attack1_ult_1_abilityrange"
+     ],
+     "launch": 10
+    }
+   ]
+  },
+  {
+   "skillId": "chr_0030_zhuangfy_attack3_ult",
+   "label": "Empyrean basic attack 3 (Final Strike)",
+   "damageType": "basic",
+   "available": {
+    "buffActive": "empyrean"
+   },
+   "note": "attack3_ult_abilityrange (SpawnAbilityEntity@3): one DamageAction at 33 (mask 2097280, Final Strike; distance alternatives are one), poise onlyEnableForMainChar, atb atbOnlyMainChar.",
+   "hits": [
+    {
+     "id": "range",
+     "scale": [
+      "atk_scale"
+     ],
+     "frames": [
+      33
+     ],
+     "events": [
+      "chr_0030_zhuangfy_attack3_ult_abilityrange"
+     ],
+     "launch": 3,
+     "sp": {
+      "if": {
+       "controlled": true
+      },
+      "then": "atb"
+     },
+     "poise": "poise",
+     "poiseControlledOnly": true,
+     "finalStrike": true
+    }
+   ]
+  },
+  {
+   "skillId": "chr_0030_zhuangfy_normal_skill",
+   "label": "Battle skill: Mantra of Sundering",
+   "damageType": "battle",
+   "available": {
+    "not": {
+     "buffActive": "empyrean"
+    }
+   },
+   "teamEnergy": [
+    {
+     "frame": 6,
+     "ratio": 1
+    }
+   ],
+   "note": "Its effects at frames 6 and 13 are the triggers bs_swords, bs_consumed, bs_count; the Thunder Strikes are detached from 13 (a buff on her: trigger_sword). buff_common_obtain_ultimate_sp at frame 6 in both branches (teamEnergy). One strike_N / final_N pair per Sunderblade count N (sources).",
+   "hits": [
+    {
+     "id": "final_1",
+     "label": "Final Thunder Strike (1 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      28
+     ],
+     "events": [
+      "buff_chr_0030_zhuangfy_sword_triggerd"
+     ],
+     "launch": 13,
+     "energy": "usp_extra",
+     "poise": "poise",
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 1,
+      "below": 2
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "strike_2",
+     "label": "Thunder Strike (2 Sunderblades)",
+     "scale": [],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "count": 1,
+     "frames": [
+      25
+     ],
+     "events": [
+      "buff_chr_0030_zhuangfy_sword_triggerd"
+     ],
+     "launch": 13,
+     "energy": "usp_extra",
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 2,
+      "below": 3
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "final_2",
+     "label": "Final Thunder Strike (2 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      36
+     ],
+     "events": [
+      "buff_chr_0030_zhuangfy_sword_triggerd"
+     ],
+     "launch": 13,
+     "energy": "usp_extra",
+     "poise": "poise",
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 2,
+      "below": 3
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "strike_3",
+     "label": "Thunder Strike (3 Sunderblades)",
+     "scale": [],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "count": 2,
+     "frames": [
+      24,
+      32
+     ],
+     "events": [
+      "buff_chr_0030_zhuangfy_sword_triggerd"
+     ],
+     "launch": 13,
+     "energy": "usp_extra",
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 3,
+      "below": 4
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "final_3",
+     "label": "Final Thunder Strike (3 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      43
+     ],
+     "events": [
+      "buff_chr_0030_zhuangfy_sword_triggerd"
+     ],
+     "launch": 13,
+     "energy": "usp_extra",
+     "poise": "poise",
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 3,
+      "below": 4
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "strike_4",
+     "label": "Thunder Strike (4 Sunderblades)",
+     "scale": [],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "count": 3,
+     "frames": [
+      24,
+      32,
+      39
+     ],
+     "events": [
+      "buff_chr_0030_zhuangfy_sword_triggerd"
+     ],
+     "launch": 13,
+     "energy": "usp_extra",
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 4,
+      "below": 5
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "final_4",
+     "label": "Final Thunder Strike (4 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      50
+     ],
+     "events": [
+      "buff_chr_0030_zhuangfy_sword_triggerd"
+     ],
+     "launch": 13,
+     "energy": "usp_extra",
+     "poise": "poise",
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 4,
+      "below": 5
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "strike_5",
+     "label": "Thunder Strike (5 Sunderblades)",
+     "scale": [],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "count": 4,
+     "frames": [
+      24,
+      31,
+      38,
+      46
+     ],
+     "events": [
+      "buff_chr_0030_zhuangfy_sword_triggerd"
+     ],
+     "launch": 13,
+     "energy": "usp_extra",
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 5,
+      "below": 6
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "final_5",
+     "label": "Final Thunder Strike (5 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      56
+     ],
+     "events": [
+      "buff_chr_0030_zhuangfy_sword_triggerd"
+     ],
+     "launch": 13,
+     "energy": "usp_extra",
+     "poise": "poise",
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 5,
+      "below": 6
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "strike_6",
+     "label": "Thunder Strike (6 Sunderblades)",
+     "scale": [],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "count": 5,
+     "frames": [
+      23,
+      30,
+      37,
+      44,
+      51
+     ],
+     "events": [
+      "buff_chr_0030_zhuangfy_sword_triggerd"
+     ],
+     "launch": 13,
+     "energy": "usp_extra",
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 6,
+      "below": 7
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "final_6",
+     "label": "Final Thunder Strike (6 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      61
+     ],
+     "events": [
+      "buff_chr_0030_zhuangfy_sword_triggerd"
+     ],
+     "launch": 13,
+     "energy": "usp_extra",
+     "poise": "poise",
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 6,
+      "below": 7
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "strike_7",
+     "label": "Thunder Strike (7 Sunderblades)",
+     "scale": [],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "count": 6,
+     "frames": [
+      23,
+      30,
+      36,
+      43,
+      50,
+      56
+     ],
+     "events": [
+      "buff_chr_0030_zhuangfy_sword_triggerd"
+     ],
+     "launch": 13,
+     "energy": "usp_extra",
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 7,
+      "below": 8
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "final_7",
+     "label": "Final Thunder Strike (7 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      66
+     ],
+     "events": [
+      "buff_chr_0030_zhuangfy_sword_triggerd"
+     ],
+     "launch": 13,
+     "energy": "usp_extra",
+     "poise": "poise",
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 7,
+      "below": 8
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "strike_8",
+     "label": "Thunder Strike (8 Sunderblades)",
+     "scale": [],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "count": 7,
+     "frames": [
+      23,
+      29,
+      35,
+      42,
+      48,
+      54,
+      61
+     ],
+     "events": [
+      "buff_chr_0030_zhuangfy_sword_triggerd"
+     ],
+     "launch": 13,
+     "energy": "usp_extra",
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 8,
+      "below": 9
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "final_8",
+     "label": "Final Thunder Strike (8 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      70
+     ],
+     "events": [
+      "buff_chr_0030_zhuangfy_sword_triggerd"
+     ],
+     "launch": 13,
+     "energy": "usp_extra",
+     "poise": "poise",
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 8,
+      "below": 9
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "strike_9",
+     "label": "Thunder Strike (9 Sunderblades)",
+     "scale": [],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "count": 8,
+     "frames": [
+      22,
+      28,
+      34,
+      40,
+      46,
+      52,
+      58,
+      64
+     ],
+     "events": [
+      "buff_chr_0030_zhuangfy_sword_triggerd"
+     ],
+     "launch": 13,
+     "energy": "usp_extra",
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 9,
+      "below": 10
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "final_9",
+     "label": "Final Thunder Strike (9 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      73
+     ],
+     "events": [
+      "buff_chr_0030_zhuangfy_sword_triggerd"
+     ],
+     "launch": 13,
+     "energy": "usp_extra",
+     "poise": "poise",
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 9,
+      "below": 10
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "skillId": "chr_0030_zhuangfy_normal_skill_ult",
+   "label": "Empyrean battle skill: Mantra of Sundering",
+   "damageType": "battle",
+   "available": {
+    "buffActive": "empyrean"
+   },
+   "teamEnergy": [
+    {
+     "frame": 5,
+     "ratio": 1
+    }
+   ],
+   "note": "Triggers bsu_swords (frame 5) and bsu_count (15); the strikes come from the entity spawned at 15 (detached). Team energy only on the paid path (the free cast spends no SP). No usp_extra in this file (and RefrainObtainUsp).",
+   "hits": [
+    {
+     "id": "final_1",
+     "label": "Final Thunder Strike (1 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      32
+     ],
+     "events": [
+      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+     ],
+     "launch": 15,
+     "poise": "poise",
+     "applies": [
+      {
+       "kind": "infliction",
+       "element": "pulse"
+      }
+     ],
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 1,
+      "below": 2
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "strike_2",
+     "label": "Thunder Strike (2 Sunderblades)",
+     "scale": [],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "count": 1,
+     "frames": [
+      27
+     ],
+     "events": [
+      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+     ],
+     "launch": 15,
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 2,
+      "below": 3
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "final_2",
+     "label": "Final Thunder Strike (2 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      38
+     ],
+     "events": [
+      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+     ],
+     "launch": 15,
+     "poise": "poise",
+     "applies": [
+      {
+       "kind": "infliction",
+       "element": "pulse"
+      }
+     ],
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 2,
+      "below": 3
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "strike_3",
+     "label": "Thunder Strike (3 Sunderblades)",
+     "scale": [],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "count": 2,
+     "frames": [
+      27,
+      33
+     ],
+     "events": [
+      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+     ],
+     "launch": 15,
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 3,
+      "below": 4
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "final_3",
+     "label": "Final Thunder Strike (3 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      44
+     ],
+     "events": [
+      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+     ],
+     "launch": 15,
+     "poise": "poise",
+     "applies": [
+      {
+       "kind": "infliction",
+       "element": "pulse"
+      }
+     ],
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 3,
+      "below": 4
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "strike_4",
+     "label": "Thunder Strike (4 Sunderblades)",
+     "scale": [],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "count": 3,
+     "frames": [
+      27,
+      33,
+      39
+     ],
+     "events": [
+      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+     ],
+     "launch": 15,
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 4,
+      "below": 5
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "final_4",
+     "label": "Final Thunder Strike (4 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      50
+     ],
+     "events": [
+      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+     ],
+     "launch": 15,
+     "poise": "poise",
+     "applies": [
+      {
+       "kind": "infliction",
+       "element": "pulse"
+      }
+     ],
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 4,
+      "below": 5
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "strike_5",
+     "label": "Thunder Strike (5 Sunderblades)",
+     "scale": [],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "count": 4,
+     "frames": [
+      27,
+      33,
+      39,
+      45
+     ],
+     "events": [
+      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+     ],
+     "launch": 15,
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 5,
+      "below": 6
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "final_5",
+     "label": "Final Thunder Strike (5 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      56
+     ],
+     "events": [
+      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+     ],
+     "launch": 15,
+     "poise": "poise",
+     "applies": [
+      {
+       "kind": "infliction",
+       "element": "pulse"
+      }
+     ],
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 5,
+      "below": 6
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "strike_6",
+     "label": "Thunder Strike (6 Sunderblades)",
+     "scale": [],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "count": 5,
+     "frames": [
+      27,
+      33,
+      39,
+      45,
+      51
+     ],
+     "events": [
+      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+     ],
+     "launch": 15,
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 6,
+      "below": 7
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "final_6",
+     "label": "Final Thunder Strike (6 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      62
+     ],
+     "events": [
+      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+     ],
+     "launch": 15,
+     "poise": "poise",
+     "applies": [
+      {
+       "kind": "infliction",
+       "element": "pulse"
+      }
+     ],
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 6,
+      "below": 7
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "strike_7",
+     "label": "Thunder Strike (7 Sunderblades)",
+     "scale": [],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "count": 6,
+     "frames": [
+      27,
+      33,
+      39,
+      45,
+      51,
+      57
+     ],
+     "events": [
+      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+     ],
+     "launch": 15,
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 7,
+      "below": 8
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "final_7",
+     "label": "Final Thunder Strike (7 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      68
+     ],
+     "events": [
+      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+     ],
+     "launch": 15,
+     "poise": "poise",
+     "applies": [
+      {
+       "kind": "infliction",
+       "element": "pulse"
+      }
+     ],
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 7,
+      "below": 8
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "strike_8",
+     "label": "Thunder Strike (8 Sunderblades)",
+     "scale": [],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "count": 7,
+     "frames": [
+      27,
+      33,
+      39,
+      45,
+      51,
+      57,
+      63
+     ],
+     "events": [
+      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+     ],
+     "launch": 15,
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 8,
+      "below": 9
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "final_8",
+     "label": "Final Thunder Strike (8 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      74
+     ],
+     "events": [
+      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+     ],
+     "launch": 15,
+     "poise": "poise",
+     "applies": [
+      {
+       "kind": "infliction",
+       "element": "pulse"
+      }
+     ],
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 8,
+      "below": 9
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "strike_9",
+     "label": "Thunder Strike (9 Sunderblades)",
+     "scale": [],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "count": 8,
+     "frames": [
+      27,
+      33,
+      39,
+      45,
+      51,
+      57,
+      63,
+      69
+     ],
+     "events": [
+      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+     ],
+     "launch": 15,
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 9,
+      "below": 10
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "id": "final_9",
+     "label": "Final Thunder Strike (9 Sunderblades)",
+     "scale": [
+      "final_rate"
+     ],
+     "scaleValue": {
+      "sum": [
+       "atk_scale",
+       {
+        "product": [
+         "atk_up_per_conduct",
+         {
+          "stackCount": "conduct_cnt"
+         }
+        ]
+       }
+      ]
+     },
+     "frames": [
+      80
+     ],
+     "events": [
+      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
+     ],
+     "launch": 15,
+     "poise": "poise",
+     "applies": [
+      {
+       "kind": "infliction",
+       "element": "pulse"
+      }
+     ],
+     "if": {
+      "stack": "strike_n",
+      "atLeast": 9,
+      "below": 10
+     },
+     "buffs": [
+      {
+       "buff": "t1_amp_plus",
+       "beforeDamage": true,
+       "if": {
+        "talentAtLeast": [
+         0,
+         1
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "skillId": "chr_0030_zhuangfy_combo_skill",
+   "label": "Combo: Breath of Transformation",
+   "damageType": "combo",
+   "available": {
+    "not": {
+     "buffActive": "empyrean"
+    }
+   },
+   "cooldownGroup": "combo",
+   "note": "Frame 24: if the target has Electric Infliction (tag 2123008650): inflictCnt = its stacks, conductCnt = inflictCnt + 1 if Electrified, at most 4, CreateBuff buff_common_pulse_pulse_conduct_triggered (forced Electrification, level conductCnt); DamageAction (mask 12288) with poise; FinishBuff the infliction (after the damage: no difference here); ObtainCostAction usp and usp_extra x inflictCnt.",
+   "hits": [
+    {
+     "id": "hit",
+     "scale": [
+      "atk_scale"
+     ],
+     "frames": [
+      24
+     ],
+     "events": [
+      "chr_0030_zhuangfy_combo_skill"
+     ],
+     "applies": [
+      {
+       "kind": "consumeInfliction",
+       "elements": [
+        "pulse"
+       ]
+      },
+      {
+       "kind": "forcedReaction",
+       "status": "electrification",
+       "level": {
+        "if": {
+         "consumedAtLeast": 1
+        },
+        "then": {
+         "min": [
+          4,
+          {
+           "sum": [
+            {
+             "consumed": true
+            },
+            {
+             "if": {
+              "enemyStatus": "electrification"
+             },
+             "then": 1,
+             "else": 0
+            }
+           ]
+          }
+         ]
+        },
+        "else": 0
+       }
+      }
+     ],
+     "poise": "poise",
+     "energy": {
+      "sum": [
+       "usp",
+       {
+        "product": [
+         "usp_extra",
+         {
+          "consumed": true
+         }
+        ]
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "skillId": "chr_0030_zhuangfy_combo_skill_ult",
+   "label": "Empyrean combo: Breath of Transformation",
+   "damageType": "combo",
+   "available": {
+    "buffActive": "empyrean"
+   },
+   "cooldownGroup": "combo",
+   "note": "As combo_skill at 24 with atk_scale 5.4 and no energy. Its ring (combo_skill_ring_projhit -> ring_hit) hits only enemies without the main target's 0.5 s marker zhuangfy_combo_ult_tar: other enemies, none here (kit-draft lands it on the main target).",
+   "hits": [
+    {
+     "id": "hit",
+     "scale": [
+      "atk_scale"
+     ],
+     "frames": [
+      24
+     ],
+     "events": [
+      "chr_0030_zhuangfy_combo_skill_ult"
+     ],
+     "applies": [
+      {
+       "kind": "consumeInfliction",
+       "elements": [
+        "pulse"
+       ]
+      },
+      {
+       "kind": "forcedReaction",
+       "status": "electrification",
+       "level": {
+        "if": {
+         "consumedAtLeast": 1
+        },
+        "then": {
+         "min": [
+          4,
+          {
+           "sum": [
+            {
+             "consumed": true
+            },
+            {
+             "if": {
+              "enemyStatus": "electrification"
+             },
+             "then": 1,
+             "else": 0
+            }
+           ]
+          }
+         ]
+        },
+        "else": 0
+       }
+      }
+     ],
+     "poise": "poise"
+    }
+   ]
+  },
+  {
+   "skillId": "chr_0030_zhuangfy_ultimate_skill",
+   "label": "Ultimate: Smiting Tempest",
+   "damageType": "ultimate",
+   "note": "No damage: UltimateTimeAction 0-78, then the Empyrean (ult_state). Its energy block is the state's (blocksEnergy), not kit-draft's energyBlockSeconds.",
+   "hits": []
+  },
+  {
+   "skillId": "chr_0030_zhuangfy_ultimate_skill_end",
+   "label": "Empyrean ends",
+   "damageType": "basic",
+   "followUpOnly": true,
+   "note": "Cast only by ult_end (ult_base buffEvent 2 CastSkill, after ChangeSkillType skillType 3): 20 exclusive frames, ends her current action, no damage. Kind basic because skill type 3 is none of battle (2), combo (6) or ultimate (7): no 'casts an ultimate' effect (abilityEvent 30 + CheckSkillType [7]: Lone Barge, Hypernova Auto, ...) may fire for it; no shared effect listens to basic casts.",
+   "hits": []
+  }
+ ]
+}
