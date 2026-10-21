@@ -1,0 +1,46 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Mi Fu (P5, Amaranthine Tassel, Grizzled Edge) with Da Pan (P5, Ancient Canal, Grizzled Edge) vs Rhodagn, ultimates charged. Da Pan's battle skill and ultimate bring the enemy to 3+ Vulnerable stacks, which opens Mi Fu's combo: its Physical Susceptibility (10% at P1+, before its own last hit) and Trail and Mangle's state. Trail and Mangle's Crush consumes 3+ stacks, so World Splitter follows (talent 1 ×1.2 on the Susceptible target, no Battle Skill DMG bonus). Cloudtrapper (Rhodagn's super armor 30: the heavy path) gives Trail and Mangle again, whose Crush on a clean enemy only adds a stack; then a basic-attack chain, the ultimate (forced Lift) and a last Trail and Mangle.",
+  "team": [
+    "mifu-p5.json",
+    {
+      "operator": "chr_0018_dapan",
+      "level": 90,
+      "promotion": 4,
+      "potential": 5,
+      "skillLevels": { "basic": 12, "battle": 12, "combo": 12, "ultimate": 12 },
+      "weapon": { "id": "wpn_claym_0014", "level": 90, "skillLevels": [9, 9, 9] },
+      "gear": [
+        { "id": "item_equip_t4_suit_crush_fracture_body_01", "artifice": [3, 3, 3] },
+        { "id": "item_equip_t4_suit_crush_fracture_hand_01", "artifice": [3, 3, 3] },
+        { "id": "item_equip_t4_suit_crush_fracture_edc_01", "artifice": [3, 3, 3] },
+        { "id": "item_equip_t4_suit_attri01_edc_03", "artifice": [3, 3, 3] }
+      ]
+    }
+  ],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0031_mifu": "full",
+    "chr_0018_dapan": "full"
+  },
+  "durationSeconds": 30,
+  "crit": "expected",
+  "rotation": [
+    { "operator": "chr_0018_dapan", "skill": "chr_0018_dapan_normal_skill" },
+    { "operator": "chr_0018_dapan", "skill": "chr_0018_dapan_ultimate_skill" },
+    { "operator": "chr_0031_mifu", "skill": "chr_0031_mifu_combo_skill" },
+    { "operator": "chr_0031_mifu", "skill": "chr_0031_mifu_normalskill_2" },
+    { "operator": "chr_0031_mifu", "skill": "chr_0031_mifu_normalskill_3" },
+    { "operator": "chr_0031_mifu", "skill": "chr_0031_mifu_normalskill_1" },
+    { "operator": "chr_0031_mifu", "skill": "chr_0031_mifu_normalskill_2" },
+    { "operator": "chr_0031_mifu", "skill": "chr_0031_mifu_attack1" },
+    { "operator": "chr_0031_mifu", "skill": "chr_0031_mifu_attack2" },
+    { "operator": "chr_0031_mifu", "skill": "chr_0031_mifu_attack3" },
+    { "operator": "chr_0031_mifu", "skill": "chr_0031_mifu_attack4" },
+    { "operator": "chr_0031_mifu", "skill": "chr_0031_mifu_ultimate_skill" },
+    { "operator": "chr_0031_mifu", "skill": "chr_0031_mifu_normalskill_2" }
+  ]
+}
