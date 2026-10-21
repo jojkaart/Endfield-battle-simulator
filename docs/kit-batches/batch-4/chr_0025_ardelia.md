@@ -371,3 +371,110 @@ Efficiency) come from cardAttributeModifier in the stat panel, as `calc`
 shows; nothing to write. Per-kit test files and an example scenario
 (Ardelia with Dreams: chain, combo, battle skill on the Corrosion,
 ultimate) come with the kits in phase 5.
+
+## Kit (2026-10-21)
+
+Files: [chr_0025_ardelia.json](../../../packages/data/kits/operators/chr_0025_ardelia.json);
+equipment `wpn_funnel_0006`, `_0008`, `_0009`, `_0010`, `_0013` in
+[packages/data/kits/equipment/](../../../packages/data/kits/equipment/);
+tests [tests/kit-ardelia.test.ts](../../../tests/kit-ardelia.test.ts); example
+[examples/ardelia-corrosion.scenario.json](../../../examples/ardelia-corrosion.scenario.json)
+(build `ardelia-dreams.json`: P0, Dreams of the Starry Beach L9, Hot Work).
+kit-draft was re-run on the merged engine; the kit is the plan above with
+the corrections below. No engine, loader or compiler change.
+
+### Re-analysis
+
+| Item | Now | How |
+|---|---|---|
+| G1 (talent 2's jump read as unconditional) | **done** | batch-4 D1: the loader marks 33 → 189 and the dash shortcuts 25 → 32, 214 → 221 conditional; the kit lists none of them, so none is taken. Test: a second battle skill starts at frame 52 (MarkCanInterrupt), attack1 at 47 (window 47–52); the scratch figures were 2.77 s / 1.10 s with the bug |
+| G2 (a window inside a skipped segment) | **done** | S9b; no longer reached for her (no jump taken) |
+| G3.1 ultimate landings (82) | open (compiler, D7e not in kit-draft's output yet) | kit by hand (11 / 14); KNOWN entries in skillCompile.test.ts |
+| G3.2 the 221 ram on the recast path | open (D7c) | kit by hand (one ram); KNOWN entry |
+| G3.3 ExcludeTarget hit | **done** (D7d) | kit-draft now leaves the half-damage bomb out with a note |
+| G3.4 `atk_scale_boom` changed in the parent, `potential5_dmg_rate > 0` | open (batch-3 D3 / D4) | `extraScale` under `potentialAtLeast: 5` on both combo hits; KNOWN entry for the bomb's scale |
+| G4 (Dreams' `max_stack` in nobody's blackboard) | **done** | B2: the kit names `buff_wpn_funnel_0013_valid`; read as no limit (stack group kept, the log name too) |
+| Row 3 (attack4) | **corrected** | the plan's `launch: 0` was wrong: attack4's `buff_chr_0025_ardelia_attack4_kill_sheep` is a CreateBuff clip over the whole action (0–198, autoFinishByAction, lifeType 1) whose finish (buffEvent 2) runs FindTarget OwnerSpawnedEntityFinder (tag −2043217379) → FinishOwnerAction. So attack4 cut before frame 24 removes its Dolly before the Final Strike: the hit is `detached: false`. Assumed: the tag is that Dolly's (no table gives entity tags; it's the only damaging entity attack4 spawns). Effect: a battle skill, combo or ultimate pressed in attack4's first 24 frames loses the Final Strike, its 18 SP and her combo window; a rotation step without `at` now waits for the Dolly's hit |
+| Rows 7–8 (Corrosion consumed, Susceptibility on the same hit) | supported | as planned; tested: the ram has Arts Susceptibility 0.20 (P1+ 0.28), Dreams' 0.28, no Corrosion shred; 30 s / 25 s of the enemy's time (an ultimate's 80-frame time stop right after holds them, as the engine holds every enemy timer) |
+| Row 10 (talent 2) | supported | never against one enemy (no `jumps`) |
+| Row 13 (combo trigger) | supported | tested both ways (a clean enemy opens it; Gilberta's Nature Infliction blocks it) |
+| Rows 14–15 (combo) | supported | B1 changed one thing: a combo gives no Link, so the scratch's "Link ×1.3" on the following battle skill is gone |
+| Row 16 (combo slow-down) | supported | the loader's slowdowns; unchanged question |
+| Row 17 (projectile travel, Ti2) | open | launch frames |
+| U1 (Wooly Party's hits on one enemy) | interim | the cap: 11 hits below P3, 14 from P3, `detached: false` so the P3 jump drops the last three (tested); test 96 |
+| U2 (Opus' copied toggle) | interim | inert; test 75's toggle variant |
+| U3 (the combo's bomb when the combo is cut) | interim, narrowed | `combo_skill_kill_sheep` is the same kind of clip (whole combo, autoFinishByAction; tag −1450079158). The combo spawns two entities: its own Dolly (`abilityentity_chr_0025_ardelia_combo_skill`, running `combo_skill_sheep`: effects and animation only) and, from the projectile, the bomb. Read as removing the Dolly only, so the bomb (launched at 20) still lands when the combo is cut; unverifiable without entity tags |
+| W1–W12 | supported | as planned; W12 by B2 |
+
+### What the kit models and leaves out
+
+Modelled: the basic chain (projectile hits at launch frames, Mr. Dolly's
+Final Strike at 24 with 18 SP and controlled-only Stagger), the finisher
+(3 hits, factors) and the dive hit (not castable until dives land: S10),
+the combo window, the combo's projectile (10 energy) and bomb (forced
+Corrosion 7 s / P5 11 s, before the bomb's damage), P5's ×1.2, the battle
+skill's two branches (Corroded: consume, both Susceptibilities before the
+damage; plain), team energy at 32, the ultimate's capped hits and P3's
+longer channel, P1 / P4 / P5 through the loader. Left out: the Shadows'
+heals (untagged, need movement, N2), talent 2's recast (needs a second
+Corroded enemy), the bomb's half-damage hit on other enemies, the dash
+shortcuts.
+
+Equipment, each generic and tested on its natural wielder: Opus: Etch
+Figure on Gilberta (`gilberta-gravity-field`, her explosion at 108:
+Laevatain's next attacks +0.196, Gilberta none; Combustion ticks keep
+their applier's side from the reaction, V2), Detonation Unit on Arcane
+(`arcane-will-solo`: her bursts give the enemy +0.252 Arts DMG Taken),
+Oblivion on Ardelia (+0.336 from the combo's cast, +0.672 from the
+ultimate's, separate), Chivalric Virtues on Xaihi (`xaihi-si`: her
+crystal's battle-skill treatment, team ATK +0.252 from after that Final
+Strike), Dreams on Ardelia (the example). Each also tested as inert on
+Ardelia where it can't fire (Opus, Detonation Unit, Chivalric Virtues).
+
+### Verification
+
+- No fixture has Ardelia. Two fixtures have her weapons on others:
+  `fixtures/pending/zmdlogs-abfd4b7478ec.json` (Xaihi with Chivalric
+  Virtues, skill 3 at level 1: `atk_up` 0.09) and
+  `fixtures/pending/zmdlogs-e82d45c46040.json` (Perlica with Detonation
+  Unit). Their `zmdlogs check` / `reactions` outputs are unchanged by the
+  kits (the checker takes logged buffs from the log). In abfd the logged
+  `buff_wpn_funnel_0010_atk_up` (0.09) agrees with the kit's timing: it
+  first appears on the hit after Si's Final Strike at 12390 ms (not on it:
+  created after the heal), again after her Final Strike at 52451 ms, and
+  lapses between 38174 and 43098 ms, 15 s after the last treatment at
+  25929 ms; Si's 193 hits match 190 with it. Perlica never bursts in e82d,
+  so Detonation Unit has nothing to show there (no logged buff, as
+  predicted).
+- Every other example total and every log output is unchanged (all 41
+  `simulate` / `zmdlogs check` / `zmdlogs reactions` outputs before and
+  after, byte for byte).
+- The example: 150,605 damage in 17.9 s (8,414 DPS, P0, expected crits):
+  the Corroded ram 14,945 = 3,124.76 ATK × 3.2 × DMG 1.899 (panel 0.399,
+  Hot Work 0.5) × crit 1.025 × Susceptibility 1.2 × Dreams 1.28 × DEF 0.5,
+  no Link; Wooly Party 11 × 7,706 (56% of the total); the bomb 5,928 with
+  its own Corrosion's shred (resistance ×1.059).
+- skillCompile.test.ts: four KNOWN entries (the recast's 221 ram, the
+  bomb's ModifyDynamicBlackboard scale, the ultimate's marker cap twice).
+
+### In-game tests the kit depends on
+
+- **Test 51, Ardelia's variant** (batch-4.md "An effect on its own hit,
+  Ardelia's form"), recomputed under B1 (her combo gives no Link): A/B ≈
+  1.00 if both her Susceptibility and Dreams' Arts DMG Taken act on the
+  consuming ram A (engine), ≈ 0.78 if only the Susceptibility does, ≈
+  0.83 if only Dreams' does, ≈ 0.65 if neither (B within 25 s has both);
+  assumes nothing else changes between A and B (without Hot Work, whose
+  Nature DMG lasts 10 s from the Corrosion).
+- **Test 38** (her Susceptibility with Gilberta's).
+- **Test 96** (U1: Wooly Party's hit count on one enemy).
+- **Test 75's toggle variant** (U2, Opus: Etch Figure).
+- **Test 35** (Opus: an infliction that reacts at once isn't an
+  `inflictionApplied`), **test 4** (Corrosion's ramp on her combo's
+  Corrosion), **test 47** (Ti2, not by hand).
+- Proposed (new, for the merge; not in in-game-tests.md): **attack4 cut
+  early.** Basic chain to attack 4, then press the battle skill the moment
+  attack 4 starts (within about 0.8 s): does Mr. Dolly's Final Strike
+  number still appear, and does the combo light? Kit: no number, no
+  combo (the kill clip); if it appears, the hit is detached (`launch: 0`).
+  Medium priority (needs Ardelia; by eye).

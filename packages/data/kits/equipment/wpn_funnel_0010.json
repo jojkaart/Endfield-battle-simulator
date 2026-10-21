@@ -1,0 +1,29 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_funnel_0010",
+  "sources": [
+    "Chivalric Virtues (6-star Arts Unit), skill 3 \"Medicant: Blight Fervor\": \"After the wielder's skill provides HP treatment, the entire team gains ATK +{atk_up} for {duration}s.\" SkillPatchTable sk_wpn_funnel_0010: atk_up 0.09 (L1) to 0.252 (L9), duration 15, lv.",
+    "rmxlinux Json/SkillData sk_wpn_funnel_0010 passiveEventActions: abilityEvent 50 (a heal by the wielder) + CheckHealTag (−320297214 battle, −1517158118 combo, −1499119779 ultimate skill heal tags) → CreateBuff buff_wpn_funnel_0010_atk_up on every team member (CharacterTeamFinder): attributeType 2 formulaItem 6 (ATK +atk_up), duration, stackingType 1 priority lv (two wielders' copies don't add). The tags are those of wpn_lance_0014 (batch 1), so untagged talent and equipment heals don't count (batch-1 Liino R7).",
+    "The Will, HP and Treatment Efficiency + heal_up lines (cardAttributeModifier) are in the stat panel (Treatment Efficiency has no damage effect); toggleBuffs names buff_wpn_passive_spirit_01, which has no BuffData file (inert). Fits a healer whose skill heals carry a skill tag (Xaihi's crystal treatment, healKind battle); Ardelia's Shadows heal untagged and aren't simulated: never on her. docs/kit-batches/batch-4/chr_0025_ardelia.md W8–W9."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_funnel_0010.atk",
+      "label": "Medicant: Blight Fervor: team ATK",
+      "target": "team",
+      "gameBuff": "buff_wpn_funnel_0010_atk_up",
+      "duration": "duration",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_funnel_0010.heal",
+      "on": { "event": "heal", "kinds": ["battle", "combo", "ultimate"] },
+      "by": "self",
+      "skill": "sk_wpn_funnel_0010",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0010.atk" }],
+      "note": "Any target (no CheckTargetsEqual): self-heals count too. Created after the heal, so a hit that heals doesn't have it."
+    }
+  ]
+}

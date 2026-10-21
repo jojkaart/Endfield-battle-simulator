@@ -1,0 +1,31 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Ardelia alone (P0, Dreams of the Starry Beach, Hot Work) vs Rhodagn, ultimate charged. Her basic chain's Final Strike on the clean enemy opens her combo window; the combo's bomb forces Corrosion (7 s) and Hot Work gives her Nature DMG for it; her battle skill then consumes the Corrosion: that ram already has her Physical and Arts Susceptibility (+20%, 30 s) and the weapon's Arts DMG Taken (+28%, 25 s), and no Corrosion shred. Wooly Party below P3: one hit every 0.3 s on the one enemy, 11 hits. A second chain and battle skill follow on the plain enemy.",
+  "team": [
+    "ardelia-dreams.json"
+  ],
+  "controlled": "chr_0025_ardelia",
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0025_ardelia": "full"
+  },
+  "durationSeconds": 25,
+  "crit": "expected",
+  "rotation": [
+    { "operator": "chr_0025_ardelia", "skill": "chr_0025_ardelia_attack1" },
+    { "operator": "chr_0025_ardelia", "skill": "chr_0025_ardelia_attack2" },
+    { "operator": "chr_0025_ardelia", "skill": "chr_0025_ardelia_attack3" },
+    { "operator": "chr_0025_ardelia", "skill": "chr_0025_ardelia_attack4" },
+    { "operator": "chr_0025_ardelia", "skill": "chr_0025_ardelia_combo_skill" },
+    { "operator": "chr_0025_ardelia", "skill": "chr_0025_ardelia_normal_skill", "at": 6 },
+    { "operator": "chr_0025_ardelia", "skill": "chr_0025_ardelia_ultimate_skill" },
+    { "operator": "chr_0025_ardelia", "skill": "chr_0025_ardelia_attack1" },
+    { "operator": "chr_0025_ardelia", "skill": "chr_0025_ardelia_attack2" },
+    { "operator": "chr_0025_ardelia", "skill": "chr_0025_ardelia_attack3" },
+    { "operator": "chr_0025_ardelia", "skill": "chr_0025_ardelia_attack4" },
+    { "operator": "chr_0025_ardelia", "skill": "chr_0025_ardelia_normal_skill" }
+  ]
+}
