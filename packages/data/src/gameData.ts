@@ -19,7 +19,7 @@ import { DataError } from "./errors.ts";
 import { at, get, obj, type Ctx } from "./fields.ts";
 import { loadKits } from "./kits.ts";
 import { Names } from "./names.ts";
-import { isSkillFileListed, passiveBuffModifiers, reachedSp, readSkillFile } from "./skillData.ts";
+import { diveOf, isSkillFileListed, passiveBuffModifiers, reachedSp, readSkillFile } from "./skillData.ts";
 import { burstDelays, castHelpers, perfectDodgeData, switchedSkills } from "./buffData.ts";
 import { PRIMARY, readTable, sourceCommit, SOURCES } from "./sources.ts";
 import { loadAttributeDefaults } from "./tables/attributeMeta.ts";
@@ -95,12 +95,25 @@ function build(): GameData {
     }
     return out;
   };
+  // Dive starts (no SkillPatchTable row) and the landing whose level count each takes, with blank values: its file's apply at every level.
+  const diveStarts = new Map<string, string>();
   for (const op of Object.values(loadOperators(PRIMARY))) {
     if (op.charId === virtualId) continue;
     const g = growth[op.charId];
     // Their own talent nodes point at stale, empty effects; the virtual character's carry the values.
     const talentGrowth = virtualId && playsVirtual.has(op.charId) ? (growth[virtualId] ?? g) : g;
     if (!g) throw new DataError(PRIMARY, `CharGrowthTable.${op.charId}`, "operator has no growth entry");
+    const listed = Object.fromEntries(
+      Object.entries(g.skillGroups).map(([skillId, type]) => {
+        const group = SKILL_GROUP_TYPES[type];
+        if (!group) throw new DataError(PRIMARY, `CharGrowthTable.${op.charId}.skillGroupMap`, `unknown skillGroupType ${type}`);
+        return [skillId, group];
+      }),
+    );
+    // A dive's start joins its landing's group (skillData.diveOf).
+    const dive = diveOf(Object.keys(listed));
+    const diveStart = dive?.start !== undefined ? { [dive.start]: listed[dive.end] as SkillType } : {};
+    if (dive?.start !== undefined) diveStarts.set(dive.start, dive.end);
     operators[op.charId] = {
       id: op.charId,
       name: operatorName(op.charId),
@@ -114,14 +127,10 @@ function build(): GameData {
       skillGroups: withHelpers({
         // Skills a ChangeSkillAction puts in a skill slot belong to that slot's group (CharGrowthTable misses some, e.g. Si's Final Stroke).
         ...Object.fromEntries(switchedSkills(op.charId)),
-        ...Object.fromEntries(
-          Object.entries(g.skillGroups).map(([skillId, type]) => {
-            const group = SKILL_GROUP_TYPES[type];
-            if (!group) throw new DataError(PRIMARY, `CharGrowthTable.${op.charId}.skillGroupMap`, `unknown skillGroupType ${type}`);
-            return [skillId, group];
-          }),
-        ),
+        ...listed,
+        ...diveStart,
       }),
+      ...(dive ? { dive } : {}),
       attributeNodes: g.attributeNodes.map((n) => ({ ...n, modifiers: n.modifiers.map(modifier) })),
       talentNodes: (talentGrowth ?? g).talentNodes.map((n) => ({
         nodeId: n.nodeId,
@@ -136,7 +145,12 @@ function build(): GameData {
   const skills: Record<string, SkillData> = {};
   const patched = loadSkills(PRIMARY);
   // A helper without its own SkillPatchTable row takes its owner's level values (its file's blackboard gives the defaults).
-  const rows = [...Object.values(patched), ...[...helpers].filter(([id]) => patched[id] === undefined).flatMap(([id, owner]) => (patched[owner] ? [{ ...patched[owner], skillId: id }] : []))];
+  const rows = [
+    ...Object.values(patched),
+    ...[...helpers].filter(([id]) => patched[id] === undefined).flatMap(([id, owner]) => (patched[owner] ? [{ ...patched[owner], skillId: id }] : [])),
+    // A dive's start: its landing's levels with no values, so its file's blackboard gives them at every level.
+    ...[...diveStarts].filter(([id]) => patched[id] === undefined).flatMap(([id, end]) => (patched[end] ? [{ skillId: id, levels: patched[end].levels.map((l) => ({ ...l, coolDown: 0, costType: 0, costValue: 0, blackboard: {} })) }] : [])),
+  ];
   for (const s of rows) {
     const file = isSkillFileListed(s.skillId) ? readSkillFile(s.skillId) : null;
     // SP the files it reaches grant (entities, helper casts, created buffs) under keys its own file doesn't.

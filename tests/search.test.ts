@@ -40,7 +40,9 @@ const duo = {
 function judgedInFull(ctx: TimelineContext, state: TimelineState): Candidate[] {
   const all = candidateActions(ctx, state);
   if (all.length === 0) return [];
-  const soonest = Math.min(...all.map((c) => c.frame));
+  // The controlled operator's dive is always a choice and doesn't count for what's soonest (tests/batch4-dive.test.ts).
+  const dive = (c: Candidate) => c.action.operator === state.controlled && c.action.skill === data.operators[c.action.operator]?.dive?.end;
+  const soonest = Math.min(...all.filter((c) => !dive(c)).map((c) => c.frame));
   // The candidates' basic attacks are the controlled operator's next ones.
   const basic = (c: Candidate) => data.kits.operators[c.action.operator]?.skills.find((s) => s.skillId === c.action.skill)?.kind === "basic";
   return all.filter((c) => c.frame === soonest || (c.action.operator === state.controlled && basic(c)));
@@ -70,9 +72,10 @@ describe("rotation search", () => {
     expect(found.spread).toBeUndefined();
     // Pinned 2026-10-20 from the search before seeded battles, memoAdvance and startsNow (a kit change may move them);
     // re-pinned after batch 3's S1 / D1 (MarkCanInterrupt, IfElse jumps), which free Laevatain sooner: 1,079,511.708 → 1,176,753.682, 530 → 529 states; then after batch 4's Link correction (a combo
-    // gives no Link by itself): 1,070,547.094, 538 states.
-    expect(found.result.total).toBeCloseTo(1070547.0939, 3);
-    expect(found.expanded).toBe(538);
+    // gives no Link by itself): 1,070,547.094, 538 states; then with dives among the choices (batch-1 S10): 1,161,308.759,
+    // 524 states (the found rotation has no dive; the dive children changed which states the beam kept).
+    expect(found.result.total).toBeCloseTo(1161308.759, 3);
+    expect(found.expanded).toBe(524);
   });
 
   it("values SP and ultimate energy by what the team's own skills deal per point", () => {
@@ -181,5 +184,5 @@ describe("rotation search with random outcomes", () => {
   });
 });
 
-/** The two-operator search's total at beam 6, pinned with the beam-8 solo one. */
-const DUO_TOTAL = 216663.5299;
+/** The two-operator search's total at beam 6, pinned with the beam-8 solo one (216,663.530 before dives; its rotation now has 19). */
+const DUO_TOTAL = 269470.9311;

@@ -853,7 +853,7 @@
           ]
         }
       ],
-      "note": "Not castable in rotations yet (S10: dive attacks need jumps)."
+      "note": "A rotation's dive: a jump, then this landing (batch-1 S10)."
     }
   ]
 }

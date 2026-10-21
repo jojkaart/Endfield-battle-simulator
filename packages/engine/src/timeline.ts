@@ -39,7 +39,7 @@ import { computeStats, skillLevel, skillParam, type StatPanel } from "./stats.ts
 import { Attr } from "./attributes.ts";
 import { applyToEnemy, expireStatus, nextTick, NO_STATUS, statusModifiers, tickStatus, type EnemyStatus, type StatusEvent, type StatusTweaks } from "./status.ts";
 import { FPS } from "./units.ts";
-import { FINISHER_SP_SOURCE_TYPE } from "./constants.ts";
+import { DIVE_MOTION, FINISHER_SP_SOURCE_TYPE } from "./constants.ts";
 
 /**
  * Team SP. Values from Endaxis's notes on the native skill settings (team SP
@@ -58,11 +58,15 @@ export const SP = { max: 300, start: 200, perSecond: 8, pauseAfterSpendFrames: 4
 export const ENERGY = { perNaturalSp: 0.065 } as const;
 export const COMBO_WINDOW_FRAMES = 6 * FPS;
 
+/** A dive's frames from its jump (diveFrames). */
+const DIVE = diveFrames();
+
 /** What v1 doesn't model; returned with every result so numbers aren't over-trusted. */
 export const TIMELINE_ASSUMPTIONS = [
   "Ultimate energy: max = the ultimate's cost, no passive gain; battle skills give the team 0.065 per natural SP spent (at the cast); kits list their fixed grants. Grants are scaled by Ultimate Gain Efficiency.",
   "Combo skills open a 6 s window on their kit's trigger (ignored while on cooldown); kits without a trigger allow the combo whenever off cooldown.",
-  "When the next action may start comes from SkillData (windows, priorities, exclusive time, cantCastSkill channels); basic attacks need the operator to be the controlled one. A swap costs no time and waits only for a cantSwitchPosition channel. Dive attacks need jumps, which rotations don't have.",
+  "When the next action may start comes from SkillData (windows, priorities, exclusive time, cantCastSkill channels); basic attacks need the operator to be the controlled one. A swap costs no time and waits only for a cantSwitchPosition channel.",
+  `Dives: a rotation's dive (the operator's plunging_attack_end) is a jump by the controlled operator, which may interrupt its current skill as a plunging attack may; the fall (plunging_attack_start) starts ${DIVE.rise} frames later and the landing ${DIVE.fall} after that (the native movement settings as Endaxis reads them; unverified). In the air the operator neither casts nor dodges.`,
   "Projectile hits land at the frames their kit gives (travel time isn't in the data; kits read it from logs where they can).",
   "SP gain: a skill's blackboard value `atb` (e.g. a final strike's 20) is added when its first hit lands (unverified timing).",
   "Buffs and debuffs from skills apply only where a kit declares them (OperatorKit.buffs); always-on conditions, given modifiers and the enemy's reaction statuses apply too.",
@@ -556,11 +560,37 @@ const priorityOf = (t: SkillTiming) => (t.specification === 6 ? Infinity : (PRIO
 /** The current action of an operator that perfectly dodged: the perfect-dodge skill (skillSpecification 2). */
 export const DODGE = "dodge";
 
+/** The current action of an operator that jumped for a dive, until its fall (the dive's start skill) or landing replaces it (jumpToDive). */
+export const JUMP = "jump";
+
+/**
+ * A dive's frames from its jump (DIVE_MOTION): `rise` until the plunge
+ * starts (the first frame the operator is high enough), then `fall` until
+ * the landing skill starts: the start segment, then the frames down at
+ * downSpeed (in the first one the speed ramps up from rest, as the native
+ * mover averages a frame's start and end speeds, so it covers half a
+ * frame's distance).
+ */
+export function diveFrames(m: { readonly maxJumpHeight: number; readonly gravity: number; readonly minHeight: number; readonly startSeconds: number; readonly downSpeed: number } = DIVE_MOTION): { readonly rise: number; readonly fall: number } {
+  if (!(m.gravity > 0 && m.downSpeed > 0 && m.minHeight > 0 && m.minHeight <= m.maxJumpHeight && m.startSeconds >= 0)) throw new EngineError("a dive needs a reachable plunge height and positive speeds");
+  const v0 = Math.sqrt(2 * m.gravity * m.maxJumpHeight);
+  const height = (t: number) => v0 * t - (m.gravity * t * t) / 2;
+  let rise = 1;
+  while (height(rise / FPS) < m.minHeight) rise++;
+  const step = m.downSpeed / FPS;
+  const h = height(rise / FPS);
+  const down = h <= step / 2 ? 1 : 1 + Math.ceil((h - step / 2) / step);
+  // The start segment ends on the frame its time reaches startSeconds (a hair under: 0.633 s is 18.99 frames).
+  return { rise, fall: Math.ceil(m.startSeconds * FPS - 1e-9) + down };
+}
+
 function timingOf(ctx: TimelineContext, skillId: string): SkillTiming {
   if (skillId === DODGE) {
     const n = ctx.data.constants.perfectDodge?.busyFrames ?? 0;
     return { durationFrames: n, exclusiveFrames: n, windows: [], channels: [], specification: 2, keepsChain: true, slowdowns: [], jumps: [], ends: [] };
   }
+  // In the air until the landing at the latest (a plunging action: nothing else of the operator's starts meanwhile).
+  if (skillId === JUMP) return { durationFrames: DIVE.rise + DIVE.fall, exclusiveFrames: DIVE.rise + DIVE.fall, windows: [], channels: [], specification: 6, keepsChain: false, slowdowns: [], jumps: [], ends: [] };
   const t = ctx.data.skills[skillId]?.timing;
   if (!t) throw new EngineError(`${skillId}: SkillData isn't loaded, so its timing is unknown`);
   return t;
@@ -586,7 +616,12 @@ export interface Acting {
   readonly windows?: readonly number[];
 }
 
-/** A jump (or, with `end`, the action's own end) at a real frame of an operator's cast, in its skill frames. */
+/**
+ * A jump (or, with `end`, the action's own end) at a real frame of an
+ * operator's cast, in its skill frames; or, with `then`, a dive's next
+ * part (jumpToDive): the operator casts `then` at that frame, and with
+ * `landing`, its landing follows the fall (`from` and `to` are 0).
+ */
 interface PendingJump {
   readonly frame: number;
   readonly operator: string;
@@ -594,6 +629,8 @@ interface PendingJump {
   readonly from: number;
   readonly to: number;
   readonly end?: true;
+  readonly then?: string;
+  readonly landing?: string;
 }
 
 /** The real frame of an action's skill frame `x`: from its start at its speed, less what its jumps skipped (a skipped frame is its jump's). */
@@ -636,6 +673,25 @@ function windowReached(cur: Acting, from: number, to: number): number | null {
   return f;
 }
 
+/** An action's exclusive frame, in skill frames: MarkCanInterrupt past the first mark no taken jump skipped, the cast counts as past it. */
+function exclusiveOf(ct: SkillTiming, cur: Acting): number {
+  const mark = (ct.interruptibleFrom ?? []).find((m) => !(cur.skips ?? []).some((k) => m > k.from && m < k.to));
+  return mark !== undefined ? Math.min(ct.exclusiveFrames, mark) : ct.exclusiveFrames;
+}
+
+/**
+ * The frame from which an operator's current action no longer holds what
+ * doesn't outrank it (its exclusive frame, or its end), at least the
+ * state's frame: for a driver that doesn't cancel a skill with a dive's
+ * jump (search.ts).
+ */
+export function exclusiveUntil(ctx: TimelineContext, state: TimelineState, operator: string): number {
+  const cur = state.acting[operator];
+  if (!cur) return state.frame;
+  const ct = timingOf(ctx, cur.skill);
+  return Math.max(state.frame, Math.min(actionFrame(cur, ct.durationFrames), actionFrame(cur, exclusiveOf(ct, cur))));
+}
+
 /** `mapped`: what the operator's basic-attack input is at the start (KitBuff.basicAttack), if a buff maps it. */
 function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, skillId: string, base: number, mapped?: string): { frame: number } | { error: string } {
   const next = kitSkill(ctx, operator, skillId);
@@ -646,13 +702,11 @@ function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, s
   if (cur) {
     const ct = timingOf(ctx, cur.skill);
     const at = (x: number) => actionFrame(cur, x);
-    // MarkCanInterrupt: past the first one no taken jump skipped, the cast counts as past its exclusive frame.
-    const mark = (ct.interruptibleFrom ?? []).find((m) => !(cur.skips ?? []).some((k) => m > k.from && m < k.to));
-    const exclusive = mark !== undefined ? Math.min(ct.exclusiveFrames, mark) : ct.exclusiveFrames;
-    const options = [Math.max(frame, at(ct.durationFrames)), Math.max(frame, at(exclusive))];
+    const options = [Math.max(frame, at(ct.durationFrames)), Math.max(frame, at(exclusiveOf(ct, cur)))];
     if (priorityOf(nt) > priorityOf(ct)) options.push(frame);
     ct.windows.forEach((w, i) => {
       // A conditional window only if its kit condition held at the cast; only from the first frame the playhead plays.
+      // An entry naming another operator's skill opens nothing (Mi Fu's dive landing lists Ember's attack1: a data quirk).
       if (!w.skills.includes(skillId) || (w.conditional && !cur.windows?.includes(i))) return;
       const from = windowReached(cur, w.from, w.to);
       if (from !== null && Math.max(frame, at(from)) <= at(w.to)) options.push(Math.max(frame, at(from)));
@@ -1054,7 +1108,7 @@ function currentActionOf(ctx: TimelineContext, st: TimelineState, operator: stri
   if (!cur) return null;
   const t = timingOf(ctx, cur.skill);
   if (frame >= actionFrame(cur, t.durationFrames)) return null;
-  const kind = cur.skill === DODGE ? "none" : kitSkill(ctx, operator, cur.skill).kind;
+  const kind = cur.skill === DODGE || cur.skill === JUMP ? "none" : kitSkill(ctx, operator, cur.skill).kind;
   return { kind, beforeExclusive: frame < actionFrame(cur, t.exclusiveFrames) };
 }
 
@@ -1910,6 +1964,8 @@ function enemyAct(ctx: TimelineContext, state: TimelineState, a: EnemyAction): T
   if (cur) {
     const t = timingOf(ctx, cur.skill);
     if (t.specification === 5 && a.frame < actionFrame(cur, t.exclusiveFrames)) return runTriggers(ctx, state, events, null);
+    // Nor in the air (a dive whose landing is still to come; assumed: no dash in mid-air).
+    if (state.pendingJumps.some((j) => j.operator === op && j.cast === cur.cast && j.then !== undefined)) return runTriggers(ctx, state, events, null);
   }
   // No dash at an attack the current skill would counter (a kit's `attacked` trigger that jumps this skill from where its playhead is).
   if (cur && counters(ctx, op, cur, a.frame)) return runTriggers(ctx, state, events, null);
@@ -2029,7 +2085,13 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
       st = { ...st, pendingJumps: st.pendingJumps.filter((x) => x !== jump) };
       // Only while that cast is still the operator's current action.
       if (st.acting[jump.operator]?.cast !== jump.cast) continue;
-      if (jump.end) {
+      if (jump.then !== undefined) {
+        // A dive's fall or landing (jumpToDive): cast now; after the fall, the landing.
+        const r = castSkill(ctx, st, jump.operator, jump.then, jump.frame, false);
+        const cast = r.state.acting[jump.operator]?.cast;
+        const next = jump.landing === undefined || cast === undefined ? r.state : { ...r.state, pendingJumps: [...r.state.pendingJumps, { frame: jump.frame + DIVE.fall, operator: jump.operator, cast, from: 0, to: 0, then: jump.landing }] };
+        st = runTriggers(ctx, next, r.events, r.origin);
+      } else if (jump.end) {
         const r = endCurrentSkill(st, jump.operator, jump.frame);
         st = rebaseCooldowns(ctx, st, { ...r.state, acting: Object.fromEntries(Object.entries(r.state.acting).filter(([k]) => k !== jump.operator)) }, jump.frame);
         st = runTriggers(ctx, st, r.events, null);
@@ -2112,8 +2174,13 @@ function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
     return { error: e instanceof Error ? e.message : String(e) };
   }
   if (costs.kind === "basic" && state.controlled !== action.operator) return { error: `${action.operator} isn't the controlled operator (swap first)` };
-  // A dive attack (skillSpecification 6) needs the operator in mid-air, and rotations have no jumps yet.
-  if (costs.timing.specification === 6) return { error: `${action.skill} is a dive attack: it needs mid-air, and rotations have no jumps` };
+  // A dive (skillSpecification 6): a rotation names its landing; it starts with a jump, which only the controlled operator makes (jumpToDive).
+  if (costs.timing.specification === 6) {
+    const dive = ctx.data.operators[action.operator]?.dive;
+    if (dive?.start === action.skill) return { error: `${action.skill} is a dive's fall: a rotation dives with ${dive.end}` };
+    if (dive?.end !== action.skill) return { error: `${action.skill} is a plunging skill, not ${action.operator}'s dive` };
+    if (state.controlled !== action.operator) return { error: `${action.operator} isn't the controlled operator: only it jumps (swap first)` };
+  }
   // (A cooldown run at a recovery rate may end within a frame: the skill is ready from the next whole one.)
   frame = Math.max(frame, Math.ceil(state.readyAt[action.skill] ?? 0));
   // A combo cooldown at a recovery rate (attribute 93) follows the rate buffs, which may change before it ends: judged on the state then.
@@ -2221,8 +2288,39 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
   if ("error" in start) throw new EngineError(`frame ${state.frame}: ${action.operator} ${action.skill}: ${start.error}`);
   const advanced = advance(ctx, state, start.frame);
   if (action.skill === "swap") return { ...advanced, controlled: action.operator };
+  const dive = ctx.data.operators[action.operator]?.dive;
+  if (dive?.end === action.skill) {
+    const j = jumpToDive(ctx, advanced, action.operator, dive, start.frame);
+    return runTriggers(ctx, j.state, j.events, null);
+  }
   const r = castSkill(ctx, advanced, action.operator, action.skill, start.frame, false);
   return runTriggers(ctx, r.state, r.events, r.origin);
+}
+
+/**
+ * The jump a dive starts with: it ends the operator's current action as a
+ * skill's start would (a plunging attack may interrupt anything:
+ * priorityOf; assumed for the jump too, as Endaxis has it), and the
+ * operator is in the air (the action JUMP) until the dive's fall, its
+ * start skill, `rise` frames later (when its kit has that skill), and the
+ * landing `fall` frames after that; without the start skill, the landing
+ * comes `rise + fall` frames after the jump. Each part happens only while
+ * the one before is still the operator's current action. Assumed: the
+ * jump keeps no basic-attack chain (the landing clears it).
+ */
+function jumpToDive(ctx: TimelineContext, advanced: TimelineState, operator: string, dive: { readonly start?: string; readonly end: string }, frame: number): { state: TimelineState; events: BattleEvent[] } {
+  const ended = endCurrentSkill(advanced, operator, frame);
+  const s = ended.state;
+  const index = s.casts.length;
+  const start = dive.start !== undefined && ctx.kits.get(operator)?.skills.some((x) => x.skillId === dive.start) ? dive.start : undefined;
+  const next: PendingJump =
+    start !== undefined
+      ? { frame: frame + DIVE.rise, operator, cast: index, from: 0, to: 0, then: start, landing: dive.end }
+      : { frame: frame + DIVE.rise + DIVE.fall, operator, cast: index, from: 0, to: 0, then: dive.end };
+  // In the cast list as the action "jump" (no cast event: nothing listens to a jump).
+  const cast: Cast = { frame, operator, skill: JUMP, spAfter: s.sp, energyAfter: s.energy[operator] ?? 0 };
+  const state = rebaseCooldowns(ctx, advanced, { ...s, acting: { ...s.acting, [operator]: { skill: JUMP, frame, cast: index } }, casts: [...s.casts, cast], pendingJumps: [...s.pendingJumps, next] }, frame);
+  return { state, events: ended.events };
 }
 
 /**

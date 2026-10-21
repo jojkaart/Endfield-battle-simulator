@@ -20,3 +20,19 @@ export const STAGGER_DAMAGE_TAKEN = 1.3;
  * in game.
  */
 export const FINISHER_SP_SOURCE_TYPE = 0;
+
+/**
+ * A dive's movement, from the native MovementSetting_Default and each
+ * character's plungingAttackData, which aren't in the data: the values as
+ * Endaxis's game-data compiler extracted them (movementSettingCatalog and
+ * the operators' plungingAttack startDuration; read, not copied,
+ * 2026-10-21). A jump starts at the speed that reaches `maxJumpHeight` (m)
+ * under `gravity` (m/s²); the plunge starts once the operator is
+ * `minHeight` up (an attack input before then waits for it), hovers
+ * `startSeconds` (the start segment, at no speed), then falls at
+ * `downSpeed` (m/s), and the landing skill starts on the frame it reaches
+ * the ground. Every operator has the same values there (Zhuang Fangyi
+ * overrides downSpeed with 200, which changes no frame). Assumed: the
+ * player jumps from the ground and attacks at once; not checked in game.
+ */
+export const DIVE_MOTION = { maxJumpHeight: 2.1, gravity: 40, minHeight: 0.6, startSeconds: 0.633, downSpeed: 60 } as const;

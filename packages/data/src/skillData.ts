@@ -89,6 +89,26 @@ export function skillFilePath(skillId: string): string {
   return join(sourceDir("rmxlinux"), "Json", "SkillData", `${skillId}.json`);
 }
 
+const DIVE_END = /_plunging_attack_end$/;
+
+/**
+ * An operator's dive (plunging attack) among its skills: CharGrowthTable
+ * lists only the landing, `…_plunging_attack_end` (it deals the damage);
+ * the fall before it, `…_plunging_attack_start`, has a SkillData file of its
+ * own but no skill group or SkillPatchTable row (`start` when that file is
+ * fetched). The native character template pairs the two (its
+ * plungingAttackData, which isn't in the data); every operator's files pair
+ * them by these names.
+ */
+export function diveOf(skillIds: readonly string[]): { readonly start?: string; readonly end: string } | null {
+  const ends = skillIds.filter((id) => DIVE_END.test(id));
+  if (ends.length > 1) throw new Error(`more than one dive landing among ${ends.join(", ")}`);
+  const end = ends[0];
+  if (end === undefined) return null;
+  const start = end.replace(DIVE_END, "_plunging_attack_start");
+  return isSkillFileListed(start) && existsSync(skillFilePath(start)) ? { start, end } : { end };
+}
+
 /** Reads a skill file, or returns null when the game has none for this skill. */
 export function readSkillFile(skillId: string): RawSkillFile | null {
   if (!isSkillFileListed(skillId)) {

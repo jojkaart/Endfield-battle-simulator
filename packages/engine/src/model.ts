@@ -181,6 +181,13 @@ export interface OperatorData {
   readonly levelRows: readonly OperatorLevelRow[];
   /** Which skill level applies to each of the operator's skills. */
   readonly skillGroups: Readonly<Record<string, SkillType>>;
+  /**
+   * Its dive (plunging attack, skillSpecification 6): `end` the landing (a
+   * rotation's dive action names it), `start` the fall before it when its
+   * SkillData is loaded (a skill in `skillGroups` too, whose values are its
+   * file's at every level).
+   */
+  readonly dive?: { readonly start?: string; readonly end: string };
   readonly attributeNodes: readonly AttributeNode[];
   readonly talentNodes: readonly TalentNode[];
   /** Effects per potential level; index 0 is P1. */

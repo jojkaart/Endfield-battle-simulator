@@ -109,7 +109,7 @@
       "skillId": "chr_0021_whiten_plunging_attack_end",
       "label": "Plunging attack",
       "damageType": "basic",
-      "note": "canCastInAir (skillSpecification 6): the engine refuses it until rotations have jumps.",
+      "note": "canCastInAir (skillSpecification 6). A rotation's dive: a jump, then this landing (batch-1 S10).",
       "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "note": "Not logged yet." }]
     },
     {

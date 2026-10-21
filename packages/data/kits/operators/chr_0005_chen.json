@@ -111,7 +111,7 @@
       "skillId": "chr_0005_chen_plunging_attack_end",
       "label": "Soaring Break: dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "events": ["chr_0005_chen_plunging_attack_end"], "note": "Mask 1152; atb 0. Not castable until rotations have jumps (S10)." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "events": ["chr_0005_chen_plunging_attack_end"], "note": "Mask 1152; atb 0. A rotation's dive: a jump, then this landing (batch-1 S10)." }]
     },
     {
       "skillId": "chr_0005_chen_normal_skill",

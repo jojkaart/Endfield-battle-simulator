@@ -445,7 +445,7 @@
             0
           ],
           "sp": "atb",
-          "note": "Needs mid-air, so the engine won't schedule it (rotations have no jumps); kept for calc. Not yet checked against an in-game value (no logged plunging attack)."
+          "note": "A rotation's dive: a jump, then this landing (batch-1 S10). Not yet checked against an in-game value (no logged plunging attack)."
         }
       ]
     }
