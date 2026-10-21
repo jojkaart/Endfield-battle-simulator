@@ -77,7 +77,10 @@ describe("Tangtang's kit: hits and frames", () => {
   it("the dive attack is 4 ticks of atk_scale (the display's 180% at level 12 is 4 × 0.45), a dive landing each", () => {
     const dive = kit.skills.find((k) => k.skillId === P + "plunging_attack_end")?.hits[0];
     expect([dive?.count, dive?.frames, dive?.dive]).toEqual([4, [3, 5, 7, 9], true]);
-    expect(() => run(noHaste(), [op("plunging_attack_end")], 30 * 2)).toThrow(/dive attack/);
+    // A rotation's dive (batch-1 S10, tests/batch4-dive.test.ts): the landing 22 frames after the jump, its four ticks after it.
+    const s = run(noHaste(), [op("plunging_attack_end")], 30 * 2);
+    expect(castAt(s, "plunging_attack_end")).toBe(22);
+    expect(mine(s).filter((h) => h.skillId === P + "plunging_attack_end").map((h) => h.frame)).toEqual([25, 27, 29, 31]);
   });
 
   it("the combo opens on a Cryo Infliction (here her own Waterspout's), not before", () => {
