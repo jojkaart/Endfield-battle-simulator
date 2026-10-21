@@ -143,6 +143,7 @@ function build(): GameData {
   }
 
   const skills: Record<string, SkillData> = {};
+  const switchCasts = new Map<string, readonly string[]>();
   const patched = loadSkills(PRIMARY);
   // A helper without its own SkillPatchTable row takes its owner's level values (its file's blackboard gives the defaults).
   const rows = [
@@ -171,6 +172,17 @@ function build(): GameData {
       spKinds: sp?.spKinds ?? {},
       spSources: sp?.spSources ?? {},
     };
+    if (file?.switchCasts.length) switchCasts.set(s.skillId, file.switchCasts);
+  }
+  // A window listing a skill whose cast casts another instead (switchToBuffConfig) opens for that one too: Camille's combo and
+  // ultimate windows list the battle-skill button normal_skill_2, which casts Hunter Pursuit (combo_skill_2) in her ultimate's state.
+  for (const s of Object.values(skills)) {
+    if (!s.timing || !s.timing.windows.some((w) => w.skills.some((id) => switchCasts.has(id)))) continue;
+    const windows = s.timing.windows.map((w) => {
+      const extra = w.skills.flatMap((id) => switchCasts.get(id) ?? []).filter((id) => !w.skills.includes(id));
+      return extra.length ? { ...w, skills: [...w.skills, ...new Set(extra)] } : w;
+    });
+    skills[s.id] = { ...s, timing: { ...s.timing, windows } };
   }
 
   const itemName = nameLookup(names, "ItemTable", "name");

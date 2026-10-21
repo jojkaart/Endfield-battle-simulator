@@ -223,6 +223,13 @@ export interface CompiledBuff extends Placement {
   readonly seconds: number | null;
   /** What it does, in short (damage modifiers, attribute modifiers, susceptibility), from its BuffData; empty when it has none of these. */
   readonly summary: string;
+  /**
+   * Created in the skill's own timeline by a CreateBuffAction with
+   * autoFinishByAction: it ends at its clip's end frame (or with the cast).
+   * A kit writes a clip end before the skill's end as the application's
+   * `untilFrame`.
+   */
+  readonly untilFrame?: number;
 }
 
 export interface CompiledSkill {
@@ -824,7 +831,8 @@ class Compiler {
         return;
       }
       case "CreateBuffAction":
-        return this.createBuffs((a["buffs"] ?? []) as Obj[], start, ctx, this.buffTarget(a, ctx), `CreateBuff@${start}`, this.value(a["count"], ctx.bb));
+        // autoFinishByAction in the skill's own timeline: the buff ends with its clip (frames of an entity's or a buff's timeline aren't the cast's).
+        return this.createBuffs((a["buffs"] ?? []) as Obj[], start, ctx, this.buffTarget(a, ctx), `CreateBuff@${start}`, this.value(a["count"], ctx.bb), undefined, a["autoFinishByAction"] === true && ctx.file === this.root && !ctx.buffSpan && !ctx.repeated ? end : undefined);
       case "AuraAction":
         return this.aura(a, start, end, ctx);
       case "CreateGlobalBuffAction":
@@ -1173,7 +1181,8 @@ class Compiler {
    * target and followed into its file. `auraEnd` bounds a buff without a
    * duration of its own.
    */
-  private createBuffs(entries: readonly Obj[], frame: number, ctx: Ctx, target: BuffTarget, how: string, count: CompiledValue, auraEnd?: number) {
+  private createBuffs(entries: readonly Obj[], frame: number, ctx: Ctx, target: BuffTarget, how: string, count: CompiledValue, auraEnd?: number, untilFrame?: number) {
+    const until = untilFrame !== undefined ? { untilFrame } : {};
     for (const entry of entries) {
       const id = entry["buffId"];
       if (entry["readIdFromBlackboard"] === true || typeof id !== "string") {
@@ -1208,7 +1217,7 @@ class Compiler {
       if (id.startsWith("buff_common_")) continue; // shared mechanics (reactions, immunity, …): not the skill's own
       if (!isBuffFileListed(id) || !existsSync(buffPath(id))) {
         this.notes.add(`${ctx.file}@${frame}: buff ${id} ${isBuffFileListed(id) ? "has no BuffData file" : "isn't listed in packages/data/tables.json"}`);
-        this.buffs.push({ ...this.place(ctx, frame), buff: id, target, seconds: null, summary: "" });
+        this.buffs.push({ ...this.place(ctx, frame), buff: id, target, seconds: null, summary: "", ...until });
         continue;
       }
       const c = this.enter(ctx, id, how);
@@ -1217,7 +1226,7 @@ class Compiler {
       const bb = this.defaults(id, j);
       for (const [k, v] of assigned) bb.set(k, v);
       const span = this.walkBuff(id, j, frame, { ...c, bb }, auraEnd, target);
-      this.buffs.push({ ...this.place(ctx, frame), buff: id, target, seconds: span === null ? null : (span - frame) / FPS, summary: this.buffSummary(j, bb) });
+      this.buffs.push({ ...this.place(ctx, frame), buff: id, target, seconds: span === null ? null : (span - frame) / FPS, summary: this.buffSummary(j, bb), ...until });
     }
   }
 

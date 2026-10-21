@@ -15,7 +15,7 @@
       "endsWithCast": true,
       "modifiers": [{ "attr": 63, "value": { "sum": ["shelterrate", "extrashelter"] } }],
       "gameBuff": "buff_chr_0009_azrila_normal_skill_shelter",
-      "note": "Battle skill clip [0–38], combo clip [0–26]: if talent1 > 0, CreateBuff buff_chr_0009_azrila_normal_skill_shelter (ShelterAction rate = shelterrate, duration −1, autoFinishByAction: it ends with its clip); P1 first adds extrashelter (ModifyDynamicBlackboard operation 1, if potential_1 > 0). shelterrate, extrashelter and talent1 / potential_1 are SkillData keys talent 1 and P1 set on both skills (PotentialTalentEffectTable skillBbModifier), 0 otherwise. Ended at the clip's end by the triggers protection_end_battle / protection_end_combo. Damage taken isn't simulated: it's a Protection-category buff (attribute 63) for buffApplied triggers and operatorBuff predicates (Eternal Xiranite, Former Finery)."
+      "note": "Battle skill clip [0–38], combo clip [0–26]: if talent1 > 0, CreateBuff buff_chr_0009_azrila_normal_skill_shelter (ShelterAction rate = shelterrate, duration −1, autoFinishByAction: it ends with its clip); P1 first adds extrashelter (ModifyDynamicBlackboard operation 1, if potential_1 > 0). shelterrate, extrashelter and talent1 / potential_1 are SkillData keys talent 1 and P1 set on both skills (PotentialTalentEffectTable skillBbModifier), 0 otherwise. It ends at the clip's end: `untilFrame` 38 / 26 on the applications (triggers battle_cast, combo_cast), or when the skill ends sooner. Damage taken isn't simulated: it's a Protection-category buff (attribute 63) for buffApplied triggers and operatorBuff predicates (Eternal Xiranite, Former Finery)."
     },
     {
       "id": "protection_hit",
@@ -32,7 +32,7 @@
       "target": "self",
       "endsWithCast": true,
       "modifiers": [],
-      "note": "chr_0009_azrila_normal_skill clip [0–38]: EventListenerAction (abilityEvent 101, CheckDamageDecorateMask checkType 3 mask 805306368: Ember takes an enemy hit). Ended at frame 38 by trigger guard_listen_end. No game buff (it's the skill's own listener)."
+      "note": "chr_0009_azrila_normal_skill clip [0–38]: EventListenerAction (abilityEvent 101, CheckDamageDecorateMask checkType 3 mask 805306368: Ember takes an enemy hit). Ends at frame 38 (`untilFrame` on its application in battle_cast). No game buff (it's the skill's own listener)."
     },
     {
       "id": "guard_success",
@@ -94,17 +94,8 @@
       "on": { "event": "cast", "skills": ["chr_0009_azrila_normal_skill"] },
       "by": "self",
       "skill": "chr_0009_azrila_normal_skill",
-      "do": [{ "kind": "buff", "buff": "protection", "if": { "talentAtLeast": [0, 1] } }, { "kind": "buff", "buff": "guard_listen" }],
-      "note": "Frame 0: talent 1's shelter (clip [0–38]) and the guard listener (EventListenerAction [0–38])."
-    },
-    {
-      "id": "guard_listen_end",
-      "on": { "event": "cast", "skills": ["chr_0009_azrila_normal_skill"] },
-      "by": "self",
-      "skill": "chr_0009_azrila_normal_skill",
-      "delay": 38,
-      "do": [{ "kind": "endBuff", "buff": "guard_listen" }, { "kind": "endBuff", "buff": "protection" }],
-      "note": "The listener's and the shelter's clips end at frame 38 (autoFinishByAction); the slam's guard landing at 38 is judged before (its hit lands first)."
+      "do": [{ "kind": "buff", "buff": "protection", "if": { "talentAtLeast": [0, 1] }, "untilFrame": 38 }, { "kind": "buff", "buff": "guard_listen", "untilFrame": 38 }],
+      "note": "Frame 0: talent 1's shelter (clip [0–38], autoFinishByAction) and the guard listener (EventListenerAction [0–38]), both to frame 38. They end before the slam's hits at 38 (a buff ends before a frame's hits); the slam's guard landing reads guard_success, not the listener."
     },
     {
       "id": "guard",
@@ -120,17 +111,8 @@
       "by": "self",
       "skill": "chr_0009_azrila_combo_skill",
       "if": { "talentAtLeast": [0, 1] },
-      "do": [{ "kind": "buff", "buff": "protection" }],
-      "note": "Combo clip [0–26]: talent 1's shelter, as for the battle skill."
-    },
-    {
-      "id": "protection_end_combo",
-      "on": { "event": "cast", "skills": ["chr_0009_azrila_combo_skill"] },
-      "by": "self",
-      "skill": "chr_0009_azrila_combo_skill",
-      "delay": 26,
-      "do": [{ "kind": "endBuff", "buff": "protection" }],
-      "note": "The combo's shelter clip ends at frame 26 (autoFinishByAction)."
+      "do": [{ "kind": "buff", "buff": "protection", "untilFrame": 26 }],
+      "note": "Combo clip [0–26]: talent 1's shelter, as for the battle skill (autoFinishByAction: to frame 26)."
     }
   ],
   "skills": [
@@ -217,7 +199,7 @@
           "note": "Clip [38–41], after the slam's DamageAction: IfElse CheckBuffStackNumAdvanced (buff_chr_0009_azrila_normal_skill_gpsuccess ≥ 1) → a DamageAction whose only unit is poise extrapoise (10): Stagger only."
         }
       ],
-      "note": "Talent 1's Protection and the guard listener: triggers battle_cast, guard, guard_listen_end. The listener [0–38] wants Ember to be hit, so with dodging on she doesn't dash then (noDodge, batch-4 S12). Super armour 25 [0–55]."
+      "note": "Talent 1's Protection and the guard listener: triggers battle_cast (to frame 38: untilFrame), guard. The listener [0–38] wants Ember to be hit, so with dodging on she doesn't dash then (noDodge, batch-4 S12). Super armour 25 [0–55]."
     },
     {
       "skillId": "chr_0009_azrila_combo_skill",

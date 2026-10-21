@@ -239,7 +239,7 @@ export interface TimelineState {
   /** Trigger actions due later (KitTrigger.delay), with the event that started them. */
   /** Delayed trigger actions; `cast`: the cast they belong to (a cast trigger's), dropped when it's cut short. */
   /** `launchAt`: a detached cast trigger's launch (KitTrigger.launch); the cast's own until then. */
-  readonly pendingActions: readonly { readonly frame: number; readonly owner: string; readonly trigger: string; readonly event: BattleEvent; readonly origin: Origin | null; readonly cast?: { readonly operator: string; readonly index: number }; readonly awaited?: boolean; readonly launchAt?: number }[];
+  readonly pendingActions: readonly { readonly frame: number; readonly owner: string; readonly trigger: string; readonly event: BattleEvent; readonly origin: Origin | null; readonly cast?: { readonly operator: string; readonly index: number }; readonly awaited?: boolean; readonly launchAt?: number; readonly afterHits?: boolean }[];
   /** Jumps and ends on casts' timelines still to come (SkillTiming.jumps and ends; a conditional jump only if the kit's condition held at the cast). */
   readonly pendingJumps: readonly PendingJump[];
   /** The team's Link stacks (combo casts leave one each, 15 s): their expiry frames. */
@@ -1126,6 +1126,18 @@ function enemySituation(s: Situation): Situation {
   return { ...(s.enemy ? { enemy: s.enemy } : {}), ...(s.enemyGameBuffs ? { enemyGameBuffs: s.enemyGameBuffs } : {}), ...(s.enemyModifiers ? { enemyModifiers: s.enemyModifiers } : {}) };
 }
 
+/** The parts of a situation the buffs give (which are active, their layers and what they add), the enemy's included. */
+function buffSituation(s: Situation): Situation {
+  return {
+    ...enemySituation(s),
+    ...(s.buffActive ? { buffActive: s.buffActive } : {}),
+    ...(s.buffLayers ? { buffLayers: s.buffLayers } : {}),
+    ...(s.attrBonus ? { attrBonus: s.attrBonus } : {}),
+    ...(s.operatorModifiers ? { operatorModifiers: s.operatorModifiers } : {}),
+    ...(s.operatorBuffs ? { operatorBuffs: s.operatorBuffs } : {}),
+  };
+}
+
 /** The enemy's HP fraction at a frame (TimelineScenario.enemyHp; 1 before the first entry). */
 export function enemyHpAt(scenario: TimelineScenario, frame: number): number {
   let hp = 1;
@@ -1161,7 +1173,7 @@ function buffAppliedEvent(ctx: TimelineContext, frame: number, operator: string,
  * team buff reaches the members its `recipients` holds for. Returns the
  * state and whether it was applied (a 0 s buff isn't).
  */
-function addBuff(ctx: TimelineContext, st: TimelineState, owner: string, skillId: string, def: KitBuff, frame: number, situation: Situation, only?: readonly string[]): { state: TimelineState; applied: boolean; buff: ActiveBuff | null } {
+function addBuff(ctx: TimelineContext, st: TimelineState, owner: string, skillId: string, def: KitBuff, frame: number, situation: Situation, only?: readonly string[], untilFrame?: number): { state: TimelineState; applied: boolean; buff: ActiveBuff | null } {
   const build = ctx.builds.get(owner) as Build;
   const panel = ctx.panels.get(owner) as StatPanel;
   let recipients: readonly string[] | undefined = only;
@@ -1174,11 +1186,11 @@ function addBuff(ctx: TimelineContext, st: TimelineState, owner: string, skillId
       .map((m) => m.operator);
   }
   let b = applyBuff(ctx.data, build, panel, skillId, def, frame, situation, recipients);
-  if (b && def.endsWithCast) {
-    // It ends with its owner's current skill: at the skill's end, or earlier if the owner starts another.
+  if (b && (def.endsWithCast || untilFrame !== undefined)) {
+    // It ends with its owner's current skill: at the skill's end (or at its frame `untilFrame`), or earlier if the owner starts another.
     const cur = st.acting[owner];
     const index = st.casts.findLastIndex((c) => c.operator === owner);
-    const end = cur ? actionFrame(cur, timingOf(ctx, cur.skill).durationFrames) : -1;
+    const end = cur ? actionFrame(cur, Math.min(timingOf(ctx, cur.skill).durationFrames, untilFrame ?? Infinity)) : -1;
     b = cur && index >= 0 && end > frame ? { ...b, expiresAt: Math.min(b.expiresAt, end), endsWithCast: index } : null;
   }
   if (!b) return { state: st, applied: false, buff: null };
@@ -1431,7 +1443,7 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
           const acting = e.type === "cast" ? st.acting[e.operator] : undefined;
           const scaled = (f: number) => (acting && acting.frame === e.frame && acting.speed ? Math.round(f / acting.speed) : f);
           const launch = t.detached && t.launch !== undefined && "cast" in cast ? { launchAt: e.frame + scaled(t.launch) } : {};
-          st = { ...st, pendingActions: [...st.pendingActions, { frame: e.frame + scaled(t.delay), owner, trigger: t.id, event: e, origin, ...cast, ...launch, ...(t.awaited ? { awaited: true } : {}) }] };
+          st = { ...st, pendingActions: [...st.pendingActions, { frame: e.frame + scaled(t.delay), owner, trigger: t.id, event: e, origin, ...cast, ...launch, ...(t.awaited ? { awaited: true } : {}), ...(t.afterHits ? { afterHits: true } : {}) }] };
           continue;
         }
         const r = runActions(ctx, st, t, owner, e, origin, atEvent);
@@ -1530,7 +1542,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         const applying = a.duration !== undefined ? { ...def, duration: a.duration } : def;
         let applied: ActiveBuff | null = null;
         for (let i = 0; i < layers; i++) {
-          const r = addBuff(ctx, st, owner, triggerSkillId(owner, t), applying, frame, triggerSituation(ctx, owner, atEvent ?? st, e, consumed), subject);
+          const r = addBuff(ctx, st, owner, triggerSkillId(owner, t), applying, frame, triggerSituation(ctx, owner, atEvent ?? st, e, consumed), subject, a.untilFrame);
           st = r.state;
           if (r.applied) applied = r.buff;
         }
@@ -1663,20 +1675,30 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
   return { state: st, events };
 }
 
-/** The earliest periodic tick of an active buff at or before `frame` (one that ends at that frame doesn't tick). */
+/**
+ * The earliest periodic tick of an active buff at or before `frame`. A tick
+ * on the buff's end frame happens (before the buff ends): Rossi's 25 s bleed
+ * ticking every 1 s from its application logs 26 ticks (zmdlogs-4e5e), as
+ * the enemy's statuses tick on their end frame too (status.ts nextTick).
+ */
 function nextBuffTick(buffs: readonly ActiveBuff[], frame: number): { b: ActiveBuff; frame: number } | null {
   let next: { b: ActiveBuff; frame: number } | null = null;
   for (const b of buffs) {
     const t = b.nextTick;
-    if (t !== undefined && t <= frame && t < b.expiresAt && (next === null || t < next.frame)) next = { b, frame: t };
+    if (t !== undefined && t <= frame && t <= b.expiresAt && (next === null || t < next.frame)) next = { b, frame: t };
   }
   return next;
 }
 
-/** Earliest frame at or before `frame` when an active buff ends, or null. */
+/** Whether a buff still has a periodic tick due at or before its end (it ends after that tick). */
+function tickDueBeforeEnd(b: ActiveBuff): boolean {
+  return b.nextTick !== undefined && b.nextTick <= b.expiresAt;
+}
+
+/** Earliest frame at or before `frame` when an active buff ends (one with a tick still due by then waits for it), or null. */
 function nextExpiry(buffs: readonly ActiveBuff[], frame: number): number | null {
   let next: number | null = null;
-  for (const b of buffs) if (b.expiresAt <= frame && (next === null || b.expiresAt < next)) next = b.expiresAt;
+  for (const b of buffs) if (b.expiresAt <= frame && !tickDueBeforeEnd(b) && (next === null || b.expiresAt < next)) next = b.expiresAt;
   return next;
 }
 
@@ -1783,7 +1805,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
       const def = kitBuff(a.buff);
       if (!def) throw new EngineError(`${hit.operator} has no buff ${a.buff}`);
       if (a.if && !decide(a.if, evalContext(ctx.data, build, panel, hit.skillId, at(consumed)))) continue;
-      const r = addBuff(ctx, st, hit.operator, hit.skillId, a.duration !== undefined ? { ...def, duration: a.duration } : def, hit.frame, at(consumed));
+      const r = addBuff(ctx, st, hit.operator, hit.skillId, a.duration !== undefined ? { ...def, duration: a.duration } : def, hit.frame, at(consumed), undefined, a.untilFrame);
       st = r.state;
       if (r.applied) into.push(buffAppliedEvent(ctx, hit.frame, hit.operator, def, kind, r.buff));
     }
@@ -1815,8 +1837,9 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     ...(roll !== undefined ? { critRoll: roll } : {}),
     ...(finisher ? { modifiers: [...damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast, hit.snapshot).modifiers, { zone: "multiplicative" as const, value: enemyAttr(ctx, Attr.BreakingAttackDamageTakenScalar) - 1, source: "Finisher" }] } : {}),
     situation: { ...before, consumed },
-    // Its modifiers' conditions on the enemy see the enemy as the damage is computed: after the hit's own applications.
-    ...(st.enemy !== before.enemy || st.buffs !== buffsAtLanding ? { modifierSituation: { ...before, consumed, ...enemySituation(at(consumed)) } } : {}),
+    // Its modifiers' conditions see the enemy and the buffs as the damage is computed: after the hit's own applications and
+    // beforeDamage buffs (whose modifiers count for it: Yvonne's 10th layer gives its Crit DMG to the shot that adds it).
+    ...(st.enemy !== before.enemy || st.buffs !== buffsAtLanding ? { modifierSituation: { ...before, consumed, ...buffSituation(at(consumed)) } } : {}),
   });
   st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}) }]);
   // The enemy the damage saw: the reactions of the applications before it see it too.
@@ -2022,12 +2045,22 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
     const expiry = nextExpiry(st.buffs, frame);
     const tickDue = tick !== null && tick <= frame ? tick : null;
     const buffTick = nextBuffTick(st.buffs, frame);
-    const due = st.pendingActions.reduce<TimelineState["pendingActions"][number] | null>((a, x) => (x.frame <= frame && (!a || x.frame < a.frame) ? x : a), null);
+    type Due = TimelineState["pendingActions"][number];
+    const due = st.pendingActions.reduce<Due | null>((a, x) => (x.frame <= frame && !x.afterHits && (!a || x.frame < a.frame) ? x : a), null);
+    // Delayed actions after their frame's hits (KitTrigger.afterHits).
+    const late = st.pendingActions.reduce<Due | null>((a, x) => (x.frame <= frame && x.afterHits && (!a || x.frame < a.frame) ? x : a), null);
+    const lateFrame = late?.frame ?? null;
+    const runDue = (x: Due) => {
+      const t = ctx.kits.get(x.owner)?.triggers.find((y) => y.id === x.trigger);
+      if (!t) throw new EngineError(`${x.owner} has no trigger ${x.trigger}`);
+      const r = runActions(ctx, { ...st, pendingActions: st.pendingActions.filter((y) => y !== x) }, t, x.owner, { ...x.event, frame: x.frame }, x.origin);
+      return runTriggers(ctx, r.state, r.events, x.origin);
+    };
     const grant = st.pendingEnergy.reduce<TimelineState["pendingEnergy"][number] | null>((a, g) => (g.frame <= frame && (!a || g.frame < a.frame) ? g : a), null);
     const enemyAction = st.enemyActions[0] !== undefined && st.enemyActions[0].frame <= frame ? st.enemyActions[0] : null;
     const burst = st.pendingBursts.reduce<PendingBurst | null>((a, x) => (x.frame <= frame && (!a || x.frame < a.frame) ? x : a), null);
     // At one frame: Arts Bursts landing, ticks of a status already on the enemy, then buffs ending, then delayed trigger actions, energy grants,
-    // the enemy's actions, buffs' periodic ticks, then hits. Each kind waits for everything earlier.
+    // the enemy's actions, buffs' periodic ticks, then hits, then delayed actions marked afterHits. Each kind waits for everything earlier.
     const first = (x: number | null, ...later: (number | null)[]) => x !== null && later.every((y) => y === null || x <= y);
     const hitFrame = hit ? hit.frame : null;
     const dueFrame = due?.frame ?? null;
@@ -2036,11 +2069,11 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
     // A jump comes after everything else at its frame (what's at its skill frame still happens).
     const jump = st.pendingJumps.reduce<PendingJump | null>((a, x) => (x.frame <= frame && (!a || x.frame < a.frame) ? x : a), null);
     const jumpFrame = jump?.frame ?? null;
-    if (burst && first(burst.frame, tickDue, expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame)) {
+    if (burst && first(burst.frame, tickDue, expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
       st = landBurst(ctx, { ...st, pendingBursts: st.pendingBursts.filter((x) => x !== burst) }, burst);
       continue;
     }
-    if (first(tickDue, expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame)) {
+    if (first(tickDue, expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
       const tickFrame = tickDue as number;
       const before = st.enemy;
       const t = tickStatus(st.enemy, tickFrame);
@@ -2048,43 +2081,45 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
       st = runTriggers(ctx, st, asEvents(t.events, "none"), null);
       continue;
     }
-    if (first(expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame)) {
+    if (first(expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
       const at = expiry as number;
       // A buff a cast consumed already ended when it was consumed.
       // A buff that keeps instances (KitBuff.instances) ends with its last one.
-      const ended = st.buffs.filter((b) => b.expiresAt === at && b.cast === undefined).filter((b, i, all) => b.maxInstances === undefined || (all.findIndex((x) => x.id === b.id && x.owner === b.owner) === i && !st.buffs.some((x) => x.id === b.id && x.owner === b.owner && x.cast === undefined && x.expiresAt > at)));
-      st = { ...st, buffs: st.buffs.filter((b) => b.expiresAt !== at) };
+      // One with its last tick still due at this frame ends after that tick (nextBuffTick).
+      const ends = (b: ActiveBuff) => b.expiresAt === at && !tickDueBeforeEnd(b);
+      const ended = st.buffs.filter((b) => ends(b) && b.cast === undefined).filter((b, i, all) => b.maxInstances === undefined || (all.findIndex((x) => x.id === b.id && x.owner === b.owner) === i && !st.buffs.some((x) => x.id === b.id && x.owner === b.owner && x.cast === undefined && (x.expiresAt > at || (x.expiresAt === at && !ends(x))))));
+      st = { ...st, buffs: st.buffs.filter((b) => !ends(b)) };
       // Run out: nothing left, but what its cast's jumps took from it.
       st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: at, operator: b.owner, buff: b.id, remaining: b.skipped ?? 0, ...(b.records ? { recorded: b.records.total } : {}), ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) })), null);
       continue;
     }
-    if (due && first(due.frame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame)) {
-      const t = ctx.kits.get(due.owner)?.triggers.find((x) => x.id === due.trigger);
-      if (!t) throw new EngineError(`${due.owner} has no trigger ${due.trigger}`);
-      st = { ...st, pendingActions: st.pendingActions.filter((x) => x !== due) };
-      const r = runActions(ctx, st, t, due.owner, { ...due.event, frame: due.frame }, due.origin);
-      st = runTriggers(ctx, r.state, r.events, due.origin);
+    if (due && first(due.frame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
+      st = runDue(due);
       continue;
     }
-    if (grant && first(grant.frame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame)) {
+    if (grant && first(grant.frame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
       st = { ...st, pendingEnergy: st.pendingEnergy.filter((g) => g !== grant) };
       const caster = grant.cast?.operator ?? grant.operator;
       const holds = !grant.if || decide(grant.if, evalContext(ctx.data, ctx.builds.get(caster) as Build, ctx.panels.get(caster) as StatPanel, "", situationAt(ctx, caster, st, grant.frame)));
       if (holds) st = gainEnergy(ctx, st, grant.operator, grant.amount, grant.frame);
       continue;
     }
-    if (enemyAction && first(enemyAction.frame, buffTick?.frame ?? null, hitFrame, jumpFrame)) {
+    if (enemyAction && first(enemyAction.frame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
       st = enemyAct(ctx, { ...st, enemyActions: st.enemyActions.slice(1) }, enemyAction);
       continue;
     }
-    if (buffTick && first(buffTick.frame, hitFrame, jumpFrame)) {
+    if (buffTick && first(buffTick.frame, hitFrame, jumpFrame, lateFrame)) {
       const { b, frame: at } = buffTick;
       const every = b.every as number;
       st = { ...st, buffs: st.buffs.map((x) => (x === b ? { ...b, nextTick: at + every } : x)) };
       st = runTriggers(ctx, st, [{ type: "buffTick", frame: at, operator: b.owner, buff: b.id, ...(b.snapshot ? { snapshot: b.snapshot } : {}) }], null);
       continue;
     }
-    if (jump && (hitFrame === null || jump.frame < hitFrame)) {
+    if (late && (hitFrame === null || late.frame < hitFrame) && (jumpFrame === null || late.frame <= jumpFrame)) {
+      st = runDue(late);
+      continue;
+    }
+    if (jump && (hitFrame === null || jump.frame < hitFrame) && (lateFrame === null || jump.frame < lateFrame)) {
       st = { ...st, pendingJumps: st.pendingJumps.filter((x) => x !== jump) };
       // Only while that cast is still the operator's current action.
       if (st.acting[jump.operator]?.cast !== jump.cast) continue;

@@ -1104,6 +1104,10 @@
             "minimum": 0,
             "description": "Frames after the event when the actions run (the trigger's if is judged at the event, each action's own if when it runs)."
           },
+          "afterHits": {
+            "type": "boolean",
+            "description": "With delay: at its frame the actions run after the hits landing then (default: before them). The game runs a skill's clips starting on one frame in file order: a clip listed after the damage clip it starts with takes this."
+          },
           "detached": {
             "type": "boolean",
             "description": "A delayed cast trigger's actions happen even if the cast is cut short (by default they are the cast's own and are dropped with it)."
@@ -1306,6 +1310,11 @@
                     "duration": {
                       "$ref": "#/$defs/valueExpr",
                       "description": "This application's seconds instead of the buff's (the CreateBuffAction's assigned duration): the same buff, so one layer cap across applications of different lengths."
+                    },
+                    "untilFrame": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "description": "It ends at this skill frame of the owner's current skill, or when that skill ends sooner (CreateBuffAction autoFinishByAction in a clip shorter than the cast); not applied while the owner isn't in a skill or past that frame."
                     }
                   }
                 },
@@ -3318,6 +3327,11 @@
               "duration": {
                 "$ref": "#/$defs/valueExpr",
                 "description": "This application's seconds instead of the buff's (the CreateBuffAction's assigned duration): the same buff, one layer cap."
+              },
+              "untilFrame": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "It ends at this skill frame of the operator's current skill, or when that skill ends sooner (CreateBuffAction autoFinishByAction in a clip shorter than the cast)."
               }
             }
           }

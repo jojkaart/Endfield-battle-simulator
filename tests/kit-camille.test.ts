@@ -177,9 +177,9 @@ describe("Camille's kit", () => {
     expect(cost(4)).toBeCloseTo(110.5, 4);
   });
 
-  it("interim: Hunter Pursuit right after the ultimate waits for its exclusive frames (133), the button's window from 125 isn't Hunter Pursuit's", () => {
+  it("Hunter Pursuit right after the ultimate starts in its window from 125 (it lists the button normal_skill_2, which casts combo_skill_2), not at its exclusive frames (133)", () => {
     const st = run(example, [cam("ultimate_skill"), cam("combo_skill_2")], 300);
-    expect(castOf(st, "combo_skill_2")[0]?.frame).toBe(133);
+    expect(castOf(st, "combo_skill_2")[0]?.frame).toBe(125);
   });
 
   it("the example: every skill cast, the totals stay as the kit report gives them", () => {

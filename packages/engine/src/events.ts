@@ -232,9 +232,13 @@ export type TriggerActionKind =
    * `duration`: this application's seconds instead of the buff's (the
    * CreateBuffAction's assigned duration), so one buff applied for different
    * times keeps one layer cap (Pogranichnik's Fervent Morale: 20 s from
-   * talent 1, 10 s from talent 2).
+   * talent 1, 10 s from talent 2). `untilFrame`: it ends at this skill
+   * frame of its owner's current skill, or when that skill ends sooner (a
+   * CreateBuffAction with autoFinishByAction in a clip ending there, shorter
+   * than the cast: Ember's talent-1 Protection over frames 0–38 of her
+   * battle skill); not applied while the owner isn't in a skill or past it.
    */
-  | { readonly kind: "buff"; readonly buff: string; readonly to?: "eventSubject"; readonly layers?: ValueExpr; readonly duration?: ValueExpr }
+  | { readonly kind: "buff"; readonly buff: string; readonly to?: "eventSubject"; readonly layers?: ValueExpr; readonly duration?: ValueExpr; readonly untilFrame?: number }
   /** Add seconds to the remaining time of one of the owner's active kit buffs (all its layers), e.g. a state a skill pauses. */
   | { readonly kind: "extendBuff"; readonly buff: string; readonly seconds: ValueExpr }
   /** Heal (an event for heal triggers; amounts aren't modelled); `healKind`: the skill kind its heal tag names (HealAction healTags), default none. */
@@ -349,9 +353,19 @@ export interface KitTrigger {
    * Frames after the event when its actions run (its `if` is judged at the
    * event; each action's own `if` when it runs). Delayed actions of a cast
    * event are the cast's own: dropped if the caster starts another skill
-   * first, unless `detached`.
+   * first, unless `detached`. At its frame they run before that frame's
+   * hits (as everything but jumps does), unless `afterHits`.
    */
   readonly delay?: number;
+  /**
+   * With `delay`: at its frame the actions run after the hits landing then
+   * (and before a jump there). The game runs a skill's timeline clips that
+   * start on one frame in their file order, which differs by skill: a
+   * FinishBuff clip listed after the damage clip it starts with (Yvonne's
+   * end strike [28–60] then [28–31]) takes this; one listed before (Mi Fu's
+   * normalskill_2 [24–24]) doesn't.
+   */
+  readonly afterHits?: boolean;
   /** Delayed actions of a cast event happen even if the cast is cut short. */
   readonly detached?: boolean;
   /**
