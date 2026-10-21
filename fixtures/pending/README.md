@@ -11,7 +11,9 @@ yet, because something outside the kits doesn't match. Move a file up to
   battle skill (t=2315) ×1.139, and an Arcane Cryo burst (t=8561) sits between the predictions
   with and without its boundary buffs. Something the log doesn't list acts
   on several operators; its Electrification *strength* (0.39571) does
-  match (docs/data-sources.md).
+  match (docs/data-sources.md). Si's ×1.139 is Ginseng Meat Stew (+180
+  flat ATK, a food buff the log doesn't list; 2026-10-21, hand-noted):
+  21 of her 22 hits match. No food fits Perlica's two hits.
 - `zmdlogs-7e19489ae503.json` (Rhodagn, game 1.6, imported 2026-10-19 for
   batch 2): the Endministrator (34% of the damage, P3) with Ember, Chen
   Qianyu and Pogranichnik; Ember and Pogranichnik have no kit yet. Chen's

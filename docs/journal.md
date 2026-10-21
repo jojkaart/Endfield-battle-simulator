@@ -19,6 +19,9 @@ for 300 s. Hand-noted on her hits in the fixture (as 180 / 819 in the
 ATK% sum): 34 of 34 match. The logs list percentage food buffs (40d9's
 Bottled Duskberry Juice, b7b3's Jakub's Legacy) but not this flat one.
 The stew doesn't fit Chen in the same log (her hits go to ×0.84–0.88).
+Trying every ATK and DMG food on each remaining mismatch: Si in e82d is
+the stew too (her ×1.139; 0 → 21 of 22 match, hand-noted); no food fits
+Chen, Ember or Perlica.
 
 **Decision:** food isn't in builds or scenarios yet. All 36 combat foods
 share one stacking key and target one operator for 300 s; several are

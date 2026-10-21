@@ -912,7 +912,9 @@ unchanged):
   checked by hand in pass 2 (uncapped 301679 / 432652 / 530319).
 - fixtures/pending/zmdlogs-e82d45c46040: Si's hits are now mapped and are
   all ×1.139 off, the factor already listed for that fixture (something
-  unlogged), so it stays pending.
+  unlogged), so it stays pending. Explained 2026-10-21: Ginseng Meat Stew
+  (+180 flat ATK, a food buff the log doesn't list, as on the
+  Endministrator in 7e19); hand-noted, 21 of her 22 hits match.
 
 Example, `simulate examples/si-laevatain.scenario.json`: 683,239 →
 793,930 (Si 283,466 → 313,809; Laevatain 399,773 → 480,120). Why:
