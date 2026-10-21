@@ -78,7 +78,8 @@ export async function importBattle(data: GameData, battleId: string, enemyLevel?
       ...fx.provenance,
       verifiedAgainst: Object.fromEntries(SOURCES.map((s) => [s, sourceCommit(s)])),
       notes: [
-        ...fx.provenance.notes,
+        // The level is from the stage, not assumed.
+        ...fx.provenance.notes.filter((n) => !(fromStage && n === `Enemy level ${level} is assumed, not logged.`)),
         ...(fromStage ? [`Enemy level ${fromStage.level} from the stage's DungeonTable entry (${fromStage.stage}).`] : []),
         ...(multi ? [`Multi-target: hits landed on ${enemies.join(", ")}; each hit names its target (enemies of one type aren't told apart). The engine doesn't model several targets yet, so the log check doesn't run this fixture.`] : []),
         ...notes,

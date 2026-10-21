@@ -15,7 +15,6 @@
   },
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
-   "Enemy level 90 is assumed, not logged.",
    "Enemy level 90 from the stage's DungeonTable entry (indie_battletower015_ex)."
   ]
  },

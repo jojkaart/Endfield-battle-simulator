@@ -1,0 +1,7823 @@
+{
+ "$schema": "../schemas/log-fixture.schema.json",
+ "id": "zmdlogs-92b450306768",
+ "description": "ZMDLogs battle btl_upload_92b450306768 vs eny_0027_agscorp_hdg002_assult: chr_0032_lizhiyan, chr_0034_typhoea, chr_0035_liino, chr_0038_purrche; per-hit damage with the logged buff effects.",
+ "provenance": {
+  "source": "ZMDLogs (zmdlogs.com) battle log, captured in game by its client",
+  "url": "https://zmdlogs.com/battles/btl_upload_92b450306768",
+  "battleId": "btl_upload_92b450306768",
+  "parserVersion": "raw-log-parser-v58",
+  "inGame": true,
+  "measured": "2026-10-13T13:41:20+08:00",
+  "verifiedAgainst": {
+   "rmxlinux": "8b955ea78c6f04b6e5164b75f63f46b503c5f6f2",
+   "555me": "2737bc099e4848517eed01a19614ef88932c18a0"
+  },
+  "notes": [
+   "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
+   "Enemy level 90 from the stage's DungeonTable entry (indie_hard002_s)."
+  ]
+ },
+ "enemy": {
+  "id": "eny_0027_agscorp_hdg002_assult",
+  "level": 90
+ },
+ "team": [
+  {
+   "operator": "chr_0032_lizhiyan",
+   "level": 90,
+   "promotion": 4,
+   "potential": 1,
+   "skillLevels": {
+    "basic": 12,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_funnel_0008",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     9
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_combo_cd01_hand_02",
+     "artifice": [
+      0,
+      3,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_usp02_body_03",
+     "artifice": [
+      3,
+      3,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_usp02_edc_04",
+     "artifice": [
+      3,
+      3,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_usp02_edc_04",
+     "artifice": [
+      3,
+      3,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0034_typhoea",
+   "level": 90,
+   "promotion": 4,
+   "potential": 2,
+   "skillLevels": {
+    "basic": 12,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_funnel_0019",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     4
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_spellburst_hand_01",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_spellburst_body_01",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_spellburst_edc_01",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_heal01_edc_03",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0035_liino",
+   "level": 90,
+   "promotion": 4,
+   "potential": 0,
+   "skillLevels": {
+    "basic": 6,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_lance_0014",
+    "level": 90,
+    "skillLevels": [
+     9,
+     4,
+     4
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t3_suit_usp01_hand_01",
+     "artifice": [
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_usp02_body_03",
+     "artifice": [
+      3,
+      3,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t3_suit_usp01_edc_03",
+     "artifice": [
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t3_suit_usp01_edc_03",
+     "artifice": [
+      0,
+      0,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0038_purrche",
+   "level": 80,
+   "promotion": 3,
+   "potential": 5,
+   "skillLevels": {
+    "basic": 1,
+    "battle": 9,
+    "combo": 6,
+    "ultimate": 9
+   },
+   "weapon": {
+    "id": "wpn_sword_0026",
+    "level": 90,
+    "skillLevels": [
+     3,
+     1,
+     4
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_usp02_hand_02",
+     "artifice": [
+      0,
+      0,
+      1
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_usp02_body_04",
+     "artifice": [
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_usp02_edc_05",
+     "artifice": [
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_fire_natr01_edc_03",
+     "artifice": [
+      3,
+      0,
+      3
+     ]
+    }
+   ]
+  }
+ ],
+ "hits": [
+  {
+   "t": 2983,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_normal_skill_attack1_projhit",
+   "value": 1173,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 3193,
+   "operator": "chr_0032_lizhiyan",
+   "event": "chr_0032_lizhiyan_normal_skill_abilityrange2",
+   "value": 5467,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 3193,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_normal_skill_attack2_projhit",
+   "value": 1173,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 3378,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_02",
+   "value": 934,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 3378,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_02",
+   "value": 934,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 3378,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_02",
+   "value": 934,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 3979,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_02",
+   "value": 934,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 3979,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit",
+   "value": 934,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 3979,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_02",
+   "value": 934,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 4168,
+   "operator": "chr_0032_lizhiyan",
+   "event": "buff_chr_0032_lizhiyan_combo_skill_seal_total",
+   "value": 2237,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 4273,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_floating_attack1_01_projhit",
+   "value": 7908,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 4588,
+   "operator": "chr_0034_typhoea",
+   "event": "buff_common_natural_natural_triggered_typhoea",
+   "value": 65605,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 4882,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_floating_attack1_01_projhit",
+   "value": 8214,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 5175,
+   "operator": "chr_0032_lizhiyan",
+   "event": "buff_common_natural_natural_triggered",
+   "value": 12152,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 5280,
+   "operator": "chr_0034_typhoea",
+   "event": "buff_common_natural_natural_triggered_typhoea",
+   "value": 89330,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 5590,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_floating_attack1_01_projhit",
+   "value": 10666,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 5695,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_hit",
+   "value": 671,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 5695,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_hit",
+   "value": 671,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 5695,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_hit",
+   "value": 671,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 5695,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_hit",
+   "value": 671,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 5779,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_hit",
+   "value": 671,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 5779,
+   "operator": "chr_0035_liino",
+   "event": "chr_0035_liino_normal_skill_projhit_hit",
+   "value": 671,
+   "crit": false,
+   "element": "pulse",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup_owner",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 5882,
+   "operator": "chr_0034_typhoea",
+   "event": "buff_common_natural_natural_triggered_typhoea",
+   "value": 74476,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 6199,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_floating_attack1_01_projhit",
+   "value": 11049,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 7264,
+   "operator": "chr_0034_typhoea",
+   "event": "buff_common_natural_natural_triggered_typhoea",
+   "value": 77055,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 7659,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_01_projhit",
+   "value": 2617,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 7659,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_persistentdamage",
+   "value": 509,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 7869,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_02_projhit",
+   "value": 2617,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8080,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_02_projhit",
+   "value": 2617,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8080,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_02_projhit",
+   "value": 2617,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8080,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_persistentdamage",
+   "value": 509,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8164,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_02_projhit",
+   "value": 2617,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8269,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_02_projhit",
+   "value": 2617,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8269,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_02_projhit",
+   "value": 2617,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8373,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_persistentdamage",
+   "value": 763,
+   "crit": true,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8373,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_floating_attack1_01_projhit",
+   "value": 11432,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8665,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_persistentdamage",
+   "value": 509,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8770,
+   "operator": "chr_0034_typhoea",
+   "event": "buff_common_natural_natural_triggered_typhoea",
+   "value": 83210,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 9084,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_persistentdamage",
+   "value": 509,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 9084,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_floating_attack1_01_projhit",
+   "value": 11432,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 9376,
+   "operator": "chr_0034_typhoea",
+   "event": "buff_common_natural_natural_triggered_typhoea",
+   "value": 83210,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 9376,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_persistentdamage",
+   "value": 509,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 9687,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_persistentdamage",
+   "value": 763,
+   "crit": true,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 9687,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_floating_attack1_01_projhit",
+   "value": 11432,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 9977,
+   "operator": "chr_0034_typhoea",
+   "event": "buff_common_natural_natural_triggered_typhoea",
+   "value": 83210,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 10082,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_persistentdamage",
+   "value": 509,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 10289,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_floating_attack1_01_projhit",
+   "value": 11432,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 10393,
+   "operator": "chr_0034_typhoea",
+   "event": "chr_0034_typhoea_combo_persistentdamage",
+   "value": 509,
+   "crit": false,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 10892,
+   "operator": "chr_0034_typhoea",
+   "event": "buff_common_natural_natural_triggered_typhoea",
+   "value": 34241,
+   "uncapped": 124815,
+   "crit": true,
+   "element": "natural",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0026_celebration",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_potential_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_intensityup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 56
+    },
+    {
+     "buff": "buff_chr_0035_liino_atkup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_wpn_lance_0014_damageup",
+     "zone": "atk",
+     "element": null,
+     "value": 0.056
+    },
+    {
+     "buff": "buff_equipsuit_usp_02_AddAttack",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_crystal",
+     "zone": "susceptibility",
+     "element": "cryst",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_natural",
+     "zone": "susceptibility",
+     "element": "natural",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.252
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "fire",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "pulse",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "cryst",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_wpn_funnel_0019_spelldmgup",
+     "zone": "damageBonus",
+     "element": "natural",
+     "value": 0.064
+    },
+    {
+     "buff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+     "zone": "damageTaken",
+     "element": null,
+     "value": 0.1
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    },
+    {
+     "buff": "buff_equipsuit_spellburst_01_physpellup",
+     "zone": "artsIntensity",
+     "element": null,
+     "value": 16
+    }
+   ],
+   "unquantified": []
+  }
+ ]
+}

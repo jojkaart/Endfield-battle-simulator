@@ -130,12 +130,20 @@ export interface BuildLookups {
   weaponSkills(weapon: string): readonly string[] | undefined;
 }
 
-function rosterBuild(entry: unknown, lookups: BuildLookups): Build {
+/** The game's virtual Endministrator (GlobalConst endminVirtualCharId): both genders share stats and the kit's ID. */
+const ENDMIN_VIRTUAL = "chr_9000_endmin";
+const ENDMIN = "chr_0003_endminf";
+
+function rosterBuild(entry: unknown, lookups: BuildLookups, notes: string[]): Build {
   const r = o(entry, "roster entry");
-  const operator = s(r["characterKey"], "characterKey");
+  const key = s(r["characterKey"], "characterKey");
+  const operator = key === ENDMIN_VIRTUAL ? ENDMIN : key;
+  if (operator !== key) notes.push(`The roster names the Endministrator ${ENDMIN_VIRTUAL} (the game's virtual ID); read as ${ENDMIN}.`);
   const level = n(r["characterLevel"], "characterLevel");
   const skills = a(r["skills"], "skills").map((x) => o(x, "skill"));
+  if (skills.length === 0 && operator === ENDMIN) notes.push(`The roster lists no skill levels for ${operator}; 12 assumed for each.`);
   const groupLevel = (g: string) => {
+    if (skills.length === 0 && operator === ENDMIN) return 12;
     const levels = skills.filter((x) => lookups.skillGroup(operator, s(x["skillKey"], "skillKey")) === g).map((x) => n(x["level"], "skill level"));
     if (levels.length === 0) throw new Error(`ZMDLogs: ${operator} has no ${g} skill level`);
     return Math.max(...levels);
@@ -184,7 +192,8 @@ export function zmdlogsToFixture(battleId: string, detail: unknown, exported: un
   const battle = o(d["battle"], "battle");
   if (battle["id"] !== battleId) throw new Error(`ZMDLogs: detail is for ${String(battle["id"])}, not ${battleId}`);
   const ex = o(exported, "export");
-  const team = a(ex["roster"], "roster").map((r) => rosterBuild(r, lookups));
+  const rosterNotes: string[] = [];
+  const team = a(ex["roster"], "roster").map((r) => rosterBuild(r, lookups, rosterNotes));
   const boss = s(battle["bossKey"], "bossKey");
   const enemies = enemiesHit(detail);
 
@@ -203,10 +212,11 @@ export function zmdlogsToFixture(battleId: string, detail: unknown, exported: un
   for (const e of events) {
     if (typeof e["value"] !== "number" || e["value"] <= 0) continue;
     const t = n(e["tsMsFromStart"], "tsMsFromStart");
-    const operator = s(e["sourceCharacterKey"], "sourceCharacterKey");
+    const source = s(e["sourceCharacterKey"], "sourceCharacterKey");
+    const operator = source === ENDMIN_VIRTUAL ? ENDMIN : source;
     // Hits name their target in targetCharacterKey (targetEnemyKey is often empty); in a single-target fight it's the boss.
     const target = enemies.length > 1 ? s(e["targetCharacterKey"], "targetCharacterKey") : typeof e["targetEnemyKey"] === "string" ? e["targetEnemyKey"] : boss;
-    const relevant = buffs.filter((b) => b["targetCharacterKey"] === operator || (b["targetEnemyKey"] !== null && b["targetEnemyKey"] === target));
+    const relevant = buffs.filter((b) => b["targetCharacterKey"] === source || (b["targetEnemyKey"] !== null && b["targetEnemyKey"] === target));
     const start = (b: Json) => n(b["actualStartMsFromStart"], "actualStartMsFromStart");
     const end = (b: Json) => n(b["actualEndMsFromStart"], "actualEndMsFromStart");
     const inside = relevant.filter((b) => start(b) < t && t < end(b));
@@ -227,7 +237,7 @@ export function zmdlogsToFixture(battleId: string, detail: unknown, exported: un
       boundaryEffects: boundary.flatMap(effectsOf),
       unquantified: [...inside, ...boundary]
         .filter((b) => Array.isArray(b["dynamicEffects"]) && (b["dynamicEffects"] as unknown[]).length > 0)
-        .map((b) => ({ buff: s(b["eventKey"], "eventKey").replace(/::.*$/, ""), since: start(b), source: s(b["sourceCharacterKey"], "sourceCharacterKey") })),
+        .map((b) => ({ buff: s(b["eventKey"], "eventKey").replace(/::.*$/, ""), since: start(b), source: ((k) => (k === ENDMIN_VIRTUAL ? ENDMIN : k))(s(b["sourceCharacterKey"], "sourceCharacterKey")) })),
     });
   }
 
@@ -246,6 +256,7 @@ export function zmdlogsToFixture(battleId: string, detail: unknown, exported: un
       notes: [
         "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
         `Enemy level ${enemyLevel} is assumed, not logged.`,
+        ...rosterNotes,
       ],
     },
     enemy: { id: boss, level: enemyLevel },
