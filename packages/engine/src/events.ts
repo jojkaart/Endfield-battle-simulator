@@ -238,8 +238,8 @@ export type TriggerActionKind =
   /**
    * Give the team `count` Link stacks (default 1) lasting `seconds` (default
    * 15, buff_common_affixes_combo_trigger's duration): the data's ComboAction
-   * (Lifeng's and Camille's combos) and buffs that create the combo-trigger
-   * buff (Thermite Cutter). A combo cast gives none by itself. The next
+   * (Lifeng's and Camille's combos). A combo cast gives none by itself
+   * (Thermite Cutter reacts to Link its wielder gains; it gives none). The next
    * battle skill or ultimate, by anyone, uses up to 4 of them.
    */
   | { readonly kind: "link"; readonly count?: ValueExpr; readonly seconds?: ValueExpr }
