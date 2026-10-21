@@ -1,0 +1,33 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Ember (P5, Thunderberge, Æthertech ×4) with Catcher vs Rhodagn, which attacks the controlled operator (Ember) at 1 and 8 s (its clock: time stops delay them); Ember starts with her ultimate charged. The battle skill at 0.5 s is attacked inside its listener (frames 0–38): the slam deals 10 more Stagger (guard), talent 2 gives an ATK layer, and the attack opens her combo window; the combo Knocks Down again, heals the controlled operator (combo heal: Thunderberge's shield on her) and gives Protection with talent 1. The ultimate gives the team its shield and, at P5, ATK +10% to each holder for 10 s. The attack at 8 s lands at 9.93 s (the combo's slow-down and the ultimate's time stop delay it), inside the second battle skill's listener (cast at 9.8 s): a second guard and a new talent-2 layer.",
+  "team": [
+    "ember-p5.json",
+    "catcher-p5.json"
+  ],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0009_azrila": "full"
+  },
+  "durationSeconds": 20,
+  "crit": "expected",
+  "enemyActions": [
+    { "kind": "attack", "at": [1, 8] }
+  ],
+  "rotation": [
+    { "operator": "chr_0009_azrila", "skill": "chr_0009_azrila_normal_skill", "at": 0.5 },
+    { "operator": "chr_0009_azrila", "skill": "chr_0009_azrila_combo_skill" },
+    { "operator": "chr_0009_azrila", "skill": "chr_0009_azrila_ultimate_skill" },
+    { "operator": "chr_0009_azrila", "skill": "chr_0009_azrila_attack1" },
+    { "operator": "chr_0009_azrila", "skill": "chr_0009_azrila_attack2" },
+    { "operator": "chr_0009_azrila", "skill": "chr_0009_azrila_attack3" },
+    { "operator": "chr_0009_azrila", "skill": "chr_0009_azrila_normal_skill", "at": 9.8 },
+    { "operator": "chr_0009_azrila", "skill": "chr_0009_azrila_attack1" },
+    { "operator": "chr_0009_azrila", "skill": "chr_0009_azrila_attack2" },
+    { "operator": "chr_0009_azrila", "skill": "chr_0009_azrila_attack3" },
+    { "operator": "chr_0009_azrila", "skill": "chr_0009_azrila_attack4" }
+  ]
+}

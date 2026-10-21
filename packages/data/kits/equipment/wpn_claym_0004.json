@@ -1,0 +1,31 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_claym_0004",
+  "sources": [
+    "Exemplar (WeaponBasicTable wpn_claym_0004): main attribute, ATK and sk_wpn_claym_0004's Physical DMG +phy_damage_up (cardAttributeModifier attribute 50, formulaItem 5) are on the stat panel. sk_wpn_claym_0004 passiveEventActions: abilityEvent 302 (the wielder's damage landing) + CheckDamageDecorateMask checkType 1 mask 768 (battle 256 or ultimate 512) + no buff_wpn_claym_0004_cd → CreateBuff buff_wpn_claym_0004_cd (cd_duraton 0.1 s, the SkillData default: no SkillPatchTable row sets it) and buff_wpn_claym_0004_phy_damage_up (attribute 50 + phy_damage_up2 for `duration` 30 s; stackingType 2, maxStackCntKey max_stack 3: each layer its own timer). Description: \"When the wielder's battle skill or ultimate hits the enemy, the wielder gains Physical DMG Dealt +{phy_damage_up2} for {duration}s. Max stacks for effects of the same name: {max_stack}. Duration of each stack is counted separately. Effect only triggers once every 0.1s.\" Batch-4 report docs/kit-batches/batch-4/chr_0009_azrila.md rows E1–E3.",
+    "Verified in fixtures/pending/zmdlogs-7e19489ae503.json on Ember: buff_wpn_claym_0004_phy_damage_up layers by her battle-skill landings (two per cast: leap and slam), phy_damage_up2 0.2 at skill level 6. Physical-status hits (Knock Down's own DamageAction, mask 65536) and poise-only landings don't count.",
+    "toggleBuffs buff_wpn_passive_spirit_01 (atk_up, a key this skill doesn't have): a template leftover with no effect."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_claym_0004.phy",
+      "label": "Suppression: Stacked Hew (Physical DMG)",
+      "target": "self",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [{ "attr": 50, "value": "phy_damage_up2" }],
+      "gameBuff": "buff_wpn_claym_0004_phy_damage_up"
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_claym_0004.on_hit",
+      "on": { "event": "hit", "kinds": ["battle", "ultimate"], "reaction": false },
+      "by": "self",
+      "skill": "sk_wpn_claym_0004",
+      "cooldown": "cd_duraton",
+      "do": [{ "kind": "buff", "buff": "wpn_claym_0004.phy" }],
+      "note": "abilityEvent 302 with mask 768: the wielder's battle-skill and ultimate landings (not reactions: their mask has no skill bit); buff_wpn_claym_0004_cd (cd_duraton, sic) is the cooldown."
+    }
+  ]
+}

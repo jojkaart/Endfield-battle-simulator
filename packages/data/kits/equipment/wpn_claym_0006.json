@@ -1,0 +1,20 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_claym_0006",
+  "sources": [
+    "Former Finery (WeaponBasicTable wpn_claym_0006): Will, HP and sk_wpn_claym_0006's Treatment Efficiency +heal_up (cardAttributeModifier attribute 29) are on the stat panel. sk_wpn_claym_0006 passiveEventActions: abilityEvent 64 (an operator takes damage) + CheckBuffStackNumAdvanced on the event's operator, tag −1957150384 ≥ 1 (Protected: buff_common_affixes_shelter, the child of every ShelterAction) + CheckGlobalCDTimer buff_wpn_claym_0006_cd → FinishBuff buff_wpn_claym_0006_icon, HealAction on that operator (heal_will_add + Will × heal_will_mult; healTags empty: kind none), CreateBuff buff_wpn_claym_0006_cd, AddGlobalCDTimer `cd` (on the wielder). Description: \"After a Protected operator takes DMG, the wielder restores the said operator's HP by [{heal_will_add} + Will×{heal_will_mult}]. Effect only triggers once every {cd}s.\" Batch-4 report docs/kit-batches/batch-4/chr_0009_azrila.md rows F1, F2 (G4).",
+    "\"Protected\" is a Protection-category buff (attribute 63: a ShelterAction) from anyone reaching the attacked operator (operatorBuff predicate, batch-4 C2). Heal amounts aren't modelled: the heal is an event for heal triggers. _icon / _cd are the ready icon."
+  ],
+  "triggers": [
+    {
+      "id": "wpn_claym_0006.on_protected_hit",
+      "on": { "event": "attacked" },
+      "by": "anyone",
+      "if": { "eventOperator": { "operatorBuff": { "categories": ["protection"] } } },
+      "skill": "sk_wpn_claym_0006",
+      "cooldown": "cd",
+      "do": [{ "kind": "heal", "target": "eventOperator" }],
+      "note": "abilityEvent 64 on any operator (the wielder included) the enemy hits, while a Protection buff reaches that operator; one cooldown per wielder (AddGlobalCDTimer on the wielder)."
+    }
+  ]
+}

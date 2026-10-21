@@ -533,3 +533,140 @@ until G4). With G4:
 ```
 
 No damage effect today; with G2 its shield counts for Catcher's P5.
+
+## Kit (2026-10-21)
+
+Files: [packages/data/kits/operators/chr_0009_azrila.json](../../../packages/data/kits/operators/chr_0009_azrila.json),
+equipment `wpn_claym_0004` (Exemplar), `wpn_claym_0006` (Former Finery),
+`wpn_claym_0007` (Thunderberge) in packages/data/kits/equipment/, tests
+[tests/kit-ember.test.ts](../../../tests/kit-ember.test.ts), example
+[examples/ember-guard.scenario.json](../../../examples/ember-guard.scenario.json)
+(build `ember-p5.json`, with Catcher). Started from a fresh `efsim
+kit-draft chr_0009_azrila`, which now also emits the combo's `heals:
+controlled` and the guard's poise-only landing. No engine, loader or
+compiler code changed.
+
+### Re-analysis
+
+| Item | Now | How |
+|---|---|---|
+| G1 dodge policy and the guard | **done** | batch-4 S12: battle skill `noDodge: [0, 38]` (the listener's clip). With dodging on she tanks an attack in frames 0–37 and the slam lands; at 38+ she dashes (test) |
+| G2 a shield from anyone | **done** in engine and loader (C2; the loader adds the `shield` category from the tag) | `ult_shield` and `wpn_claym_0007.shield` are shield-category buffs (test). **Open outside this kit:** Catcher's P5 still reads `buffActive: combo_shield` in her kit; `sp: {if: {operatorBuff: {categories: [shield]}}, then: potential5_atb}` would let Ember's shields count (Catcher's kit, not edited here) |
+| G3 stackingType 10 | **done** (B3) | the loader sets `sharedTimer` for type 10; the draft's hand-written one is dropped (test checks the loaded buff). Still a claim: test 62 (Ember variant) decides |
+| G4 "a Protected operator takes DMG" | **done** (C2) | Former Finery: `attacked` `by: anyone`, `if: {eventOperator: {operatorBuff: {categories: [protection]}}}`, `cooldown: cd`, heal `eventOperator` |
+| G5 checker layers of Æthertech | **done** (L2) | 7e19: 14 of 21 match (below) |
+| G6 reactions and two hits under one key | **done** (L1) | 7e19: all four Knock Downs match |
+| G7a heals | **done** (D8d) | kit-draft emits `heals: controlled` on the combo |
+| G7b child buff's target | **done** enough (D10c) | kit-draft now says the shield's child buff goes to the team; the kit puts `p5_atk` on the team |
+| G7c P1's shelter at 38 / 26 | **open** (compiler, D10e) | still not reported by kit-draft; hand-written (`protection_hit` on the slam and the combo hit) |
+| G7d guard poise | **done** (D6), condition hand-written | kit-draft emits a poise-only landing `extrapoise` "lands always"; the kit adds `if: {buffActive: guard_success}` |
+| Row 4 dive attack | **waits on S10** | hit written from the data (mask 1152); rotations can't dive yet, so it never fires in scenarios; nothing dive-triggered in this kit |
+| Row 5 dash attack | **open** (batch-3 S5, deferred) | left out |
+| Row 15 InterruptAction | **open** (batch-3 E1, deferred) | not modelled |
+| Row 25 P3's second heal (U1) | **interim** | no event (HP isn't tracked, N2) |
+| Rows 27–28 shield points, P5 ATK lasting (U2) | **interim** | full 10 s; points not modelled |
+| Row 31 hit-stops | **open** (Ti1b) | not modelled |
+| Row 32 perfect dodge as "attacked" (U3) | **unknown** | engine: no; test 53 (Ember variant) |
+| Row 33 combo trigger during cooldown | **open** (batch-3 T5) | ignored, as for everyone |
+
+New in this pass (data re-read): talent 1's frame-0 shelter is created
+with `autoFinishByAction` inside a clip of [0–38] (battle skill) and
+[0–26] (combo), so Protection ends at those frames, not with the cast
+as the draft's `endsWithCast` had it. The kit keeps `endsWithCast` (a cut
+cast ends it) and ends it at 38 / 26 with delayed `endBuff` triggers
+(`guard_listen_end`, `protection_end_combo`), like the listener. No damage
+effect (Protection only matters for categories and Former Finery). For
+comparison, reference/zero-sanity-timeline gives 1.7 s + 1.5 s on a hit
+at P1; the data's clip says 38 frames + `extratime` from the slam (to
+frame 83). P1's second shelter has `finishWithNextSkillIfNotInherited`
+(may end at her next skill): not modelled.
+
+### What the kit models
+
+- Basics 1–4 (Physical; attack 4 Final Strike, 25 Stagger and 28 SP
+  when controlled), finisher (0.1 / 0.9), dive (Physical, 0 SP).
+- Battle skill: leap (f10) and slam (f38: Heat, Knock Down, 10
+  Stagger, team energy); the guard: a listener buff [0–38] → on an enemy
+  attack on Ember, `guard_success` (gameBuff `…_gpsuccess`, 2 s), read by
+  the poise-only landing `slam_guard` (`extrapoise` 10); `noDodge`.
+- Combo: window when the controlled operator is attacked; f26 hit
+  (Physical, Knock Down, 10 Stagger, `usp`), heal of the controlled
+  operator (combo kind).
+- Ultimate: f50 hit (Heat, 25 Stagger), team `ult_shield` (10 s, shield
+  category from the tag), P5 `p5_atk` (ATK +10% to each holder, same
+  10 s).
+- Talent 1: Protection (attribute 63, `shelterrate + extrashelter`) in
+  the two clips; P1's 1.5 s Protection after the slam / combo hit.
+  Talent 2: `ferric_atk` per enemy hit on Ember (ATK +6 / 9%, 7 s, 3
+  layers, one timer from the loader).
+- P2 (stats), P4 (energy cost × 0.85) from the loader.
+- Exemplar: a Physical DMG layer per battle-skill / ultimate landing
+  (0.1 s cooldown, 3 layers, own timers). Former Finery: a heal event on
+  a Protected attacked operator, once per `cd`. Thunderberge: on the
+  wielder's combo heal, a shield buff on the controlled operator for
+  `duration`, once per `cd`.
+
+Left out: damage taken, shield points, heal amounts, super armour,
+InterruptAction, hit-stops, P3's second heal, the dash attack, the
+unused files of row 34 (kit `sources`).
+
+### Verification
+
+**Log fixtures/pending/zmdlogs-7e19489ae503.json** (`zmdlogs check`):
+Ember 21 hits, **14 match, 7 mismatch**, 100% of her damage covered
+(before the kit: 2 match, 17 not covered). The matches use the kit's
+leap and slam (both battle skills), Æthertech's two damagebuff layers
+(L2) and the Endministrator's unlogged crystals. The 7 left are the
+analysis's, unchanged: t=21935 attack3 (×1.0721) and 23570 attack4
+(×1.0777), each +0.16 Physical DMG short (Æthertech layers the log
+doesn't list, or an unlogged Vulnerable application); t=25812 Knock Down
+(×1.366), 28603 Knock Down and combo (×1.268 both): Physical-only
+excesses with no kit or log candidate here (the Endministrator's crystals
+× unlisted Æthertech layers come within 0.9% at 28603; Pogranichnik's
+`buff_wpn_sword_0012_atk_up` listings are the other lead); t=30861 and
+33152 finishers (×1.48, ×18.2), part of the fight-wide jump after about
+33 s that no kit explains. No other operator's line changed.
+
+`zmdlogs reactions`: **6 matched** (was 2), 2 predicted but not logged,
+1 logged but not predicted (was 5): all four of Ember's Knock Downs
+(6324, 8077, 25812, 28603) match. Her Vulnerable stacks now enter the
+replay, so the "other" lines show Chen's at 7335 and 25479 ms one stack
+higher (3, 4) and Ember's own (2, 4, 4, 4); nothing else changed.
+
+Fixture notes: batch-4.md's proposed note for 7e19 isn't applied here
+(the fixture is shared with Pogranichnik's kit agent; the build needs no
+correction).
+
+**Example** (`efsim simulate examples/ember-guard.scenario.json`):
+96,095 damage in 15.07 s, 6,378 DPS, Ember alone dealing damage. Both
+battle skills are attacked inside the listener (the 8 s attack lands at
+9.93 s after the combo's slow-down and the ultimate's time stop); each
+slam deals 20 Stagger; the combo cuts the battle skill at the slam
+(frame 38, its first combo window) and lands at 2.63 s; the ultimate at
+4.30 s. The slam (3.17 × ATK) hits 7,345, the combo 7,775 plus its Knock
+Down 9,889, the ultimate 15,061, consistent with the report's
+multipliers and her ~4,200–4,900 ATK (talent 2 and P5 layers).
+
+**Totals unchanged:** every other `examples/*.scenario.json` total and
+every other fixture's `zmdlogs check` / `reactions` output is identical
+before and after the kit (only 7e19's Ember lines and the Vulnerable
+counts above changed).
+
+**Tests** (tests/kit-ember.test.ts): leap / slam frames and elements,
+Stagger with and without the guard (attacked at frame 20 vs 45), the
+listener's end, `noDodge` with dodging on, talent 1's Protection window
+and P1's extension (P0 and talent 0 without), the combo's window, frame,
+Stagger, energy and Protection, talent 2's three layers on one timer,
+the ultimate's shield (category) and P5 ATK (none at P4), Exemplar's two
+layers per battle skill on a later basic, Former Finery's heal (only
+while Protected, once per cooldown), Thunderberge's shield on the
+controlled operator. skillCompile: one KNOWN entry (the poise-only
+`slam_guard` has no scale key, which that test matches by).
+
+### In-game tests the kit depends on
+
+- **Test 62, Ember variant** (batch-4.md, "Layers on one timer"):
+  talent 2's layers share one refreshed timer (the loader's B3 reading).
+- **Test 53, Ember variant**: a perfectly dodged attack doesn't count as
+  "attacked" (engine), so no combo window, layer or guard.
+Both low priority (the owner doesn't use Ember).
