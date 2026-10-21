@@ -15,7 +15,8 @@
   },
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
-   "Enemy level 90 is assumed, not logged."
+   "Enemy level 90 is assumed, not logged.",
+   "Last Rite (batch-4 kit): only her ultimate's first two slashes (f86, f105) are logged; the third (atk_scale2, f134) is missing though the fight goes on to 18,024 ms (unexplained; the data has no condition on it). Her frame spacing is faster than 30 FPS (the combo's 50 frames in 1,307 ms: Si's talent-2 Haste, in-game test 19). Both logged slashes need talent 2's zoneScale (×1.5 on the whole Cryo Susceptibility on them)."
   ]
  },
  "enemy": {

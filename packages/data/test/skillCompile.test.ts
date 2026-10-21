@@ -9,7 +9,7 @@ import type { KitHit } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill, type CompiledValue } from "../src/index.ts";
 
 const data = loadGameData();
-const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen", "chr_0006_wolfgd", "chr_0031_mifu", "chr_0033_camille"];
+const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen", "chr_0006_wolfgd", "chr_0031_mifu", "chr_0033_camille", "chr_0026_lastrite"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
   const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
@@ -450,6 +450,15 @@ const KNOWN: string[] = [
   // Compiler limit (batch-3 D3 open item, a ModifyDynamicBlackboard chain on a scale): f26 atk_scale_runtime = atk_scale × yuanshi_multi
   // (ReadSkillSettingData, its table not in the checkout: SkillData default 1) × crushmulti (talent 1: the kit's extraScale).
   "chr_0031_mifu_normalskill_3/split scale: kit atk_scale × yuanshi_multi, data $atk_scale_runtime?",
+  // Batch 4, Last Rite. Kit right (batch-3 S6): buff_common_obtain_ultimate_sp at 32 (controlled path, jump 187 → 429 skips 300) and
+  // at 300 (off-field path, jump 0 → 300 skips 32) are exclusive parts; the test keeps the first when parts add up to more than 1.
+  "chr_0026_lastrite_normal_skill teamEnergy: kit 1@32, 1@300, data 1@32",
+  // Kit form: SaveBuffStackNumByTag (Cryo Infliction) → infliction_num is the enemy's Cryo stacks at frame 63, the ValueExpr
+  // enemyInflictionStacks (batch-4 L6); the test compares key products only.
+  'chr_0026_lastrite_combo_skill/bonus scale: kit atk_scale3 × {"enemyInflictionStacks":"cryst"}, data (atk_scale3 × SaveBuffStackNumByTag→infliction_num)',
+  // Compiler limit: FinishBuffByTag on the Cryo Infliction tag (all layers, after both frame-63 DamageActions) isn't read as a
+  // consumption; the kit's slash consumes them afterDamage (verified on b7b3 t=11462).
+  "chr_0026_lastrite_combo_skill applies at 63: kit [consume cryst], data []",
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {
