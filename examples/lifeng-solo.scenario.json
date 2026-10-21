@@ -1,0 +1,47 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Lifeng alone (P5, Mountain Bearer, Swordmancer ×4) vs Rhodagn; she starts with her ultimate charged. Her battle skill's slam on the fresh enemy only adds a Vulnerable stack (no Knock Down, so no talent-2 hit) and applies her Physical Susceptibility before its own damage (the enemy had no Vulnerable); the next Final Strike on the Susceptible enemy opens her combo, whose ComboAction (frame 19) gives a 20 s Link; the ultimate uses it, so its third hit lands, and each of its two slams Knocks Down the Vulnerable enemy (talent 2's extra hit). P5 charges at 15 s: the third battle skill (about 16.8 s) makes the enhanced talent-2 hit (+250% ATK, 5 Stagger). A second combo would need the Susceptibility again: her later slams find 3–4 Vulnerable stacks (20 s each, refreshed), more than P1's 2, so solo she gets one combo per fight here (a Breach teammate consuming the stacks reopens it).",
+  "team": [
+    "lifeng-p5.json"
+  ],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0015_lifeng": "full"
+  },
+  "durationSeconds": 30,
+  "crit": "expected",
+  "rotation": [
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_normal_skill" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack1" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack2" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack3" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack5" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_combo_skill" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_ultimate_skill" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack1" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack2" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack3" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack5" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_normal_skill" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack1" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack2" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack3" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack5" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_normal_skill" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack1" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack2" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack3" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack5" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack1" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack2" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack3" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack5" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack1" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack2" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack3" },
+    { "operator": "chr_0015_lifeng", "skill": "chr_0015_lifeng_attack5" }
+  ]
+}

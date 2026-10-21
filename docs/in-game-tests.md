@@ -122,8 +122,7 @@ explains about ×1.24 of the ×1.9.
 **Why:** Link boosts the next battle skill or ultimate (+20% for one
 stack on an ultimate, from a log). Until 2026-10-20 the engine gave Link
 after every combo; the game data gives it only from a few sources
-(Lifeng's combo, Camille's combo and Hunter Pursuit, Thermite Cutter,
-Akekuri's talent), and five logs agree: ordinary combos left no Link on
+(Lifeng's combo, Camille's combo and Hunter Pursuit, Akekuri's talent), and five logs agree: ordinary combos left no Link on
 the next skill. The engine now follows the data. This test confirms it.
 **How:** on a training dummy, Gilberta's ultimate (a single hit), lower
 of two damage numbers each time (crits):

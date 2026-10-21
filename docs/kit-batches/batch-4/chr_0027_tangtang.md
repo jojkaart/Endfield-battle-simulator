@@ -492,3 +492,128 @@ G2 (the Susceptibility buffs' `gameBuff`), G4 (the reaction replay; with
 parts. Example scenario for the kit phase: the scratch rotation above
 (`…/scratch-tangtang/repo/examples/tt.scenario.json`), with a teammate's
 Cryo or a burst to open the first combo.
+
+## Kit (2026-10-21)
+
+Files: `packages/data/kits/operators/chr_0027_tangtang.json`,
+`packages/data/kits/equipment/wpn_pistol_0009.json` (Clannibal),
+`wpn_pistol_0010.json` (Artzy Tyrannical), `wpn_pistol_0011.json`
+(Brigand's Calling); example `examples/tangtang-p5.json` +
+`examples/tangtang-whirlpools.scenario.json`; tests
+`tests/kit-tangtang.test.ts` (21), Tangtang in
+`packages/data/test/skillCompile.test.ts` (10 KNOWN entries), and
+`tests/batch4-logs.test.ts`'s L5 case, which expected no unlogged
+prediction on b7b3 (true only without her kit), now allows exactly her two
+explained ones (Verification). No engine, loader, compiler or tooling
+change. Weapons: the three this report covers
+(batch-4.md "Weapon owners" moves none of them).
+
+### Re-analysis of the gaps
+
+| Gap | Status | How |
+|---|---|---|
+| G1 dive attacks in the OLDEN STARE | **done in the kit; fires once dives are castable** (batch-1 S10, open: rotations can't cast `plunging_attack_end` yet) | C3's `dive` decoration on hit triggers (merged). Trigger `olden_stare_dive`: `on: {event: hit, decorations: [dive]}`, `by: controlled`, inside the window (`olden_stare`, 4 s from frame 76) and not after it (`olden_stare_over`): ends the stare, the early wave 5 frames later, with talent 2 the Riot Bringer Waterspouts 18 frames later (with their first tick's Cryo Infliction and Susceptibility, which the draft left out) and the Whirlpools' consumption. No `olden_stare_dive` interim state. The stare's ticks and the plain wave stay skill hits (they keep the cast's Link and cast-consumed buffs) with `if: not olden_stare_over`, instead of trigger hits behind `cancelHits` (G1's plan): same result, and the plain wave sets `olden_stare_over` itself, which closes the window at entity frame 120 even when Haste compresses her frames (below). Tested with dive-marked attack1 hits (her own, and Si's after a swap) |
+| G2 stack cap from the buff's blackboard | **done** (B2) | both Susceptibility buffs name `buff_chr_0027_tangtang_normalskill_spellvulnerable` (loader: stack group, `cntmax` 1 from the buff); the hand-written "one instance across the two kit buffs" stays (the 3-Waterspout cast ends the 2-Waterspout one; the weaker isn't applied over the stronger) |
+| G3a poise-only DamageAction | **done** in kit-draft (D6); the compiled landing still has it apart: 3 KNOWN entries | kit `poise` / `poiseControlledOnly` |
+| G3b TickInterval rounding | **done** (D9a): the draft gives the dive 4 ticks | — |
+| G3c spawned entities as a stack | **open** (batch-3 D4's open item; V3 deferred) | kit: `buffLayers whirlpool` counts, as planned |
+| G3d EntityBB key the passive sets | **open** (D9e doesn't cover it: kit-draft still prints `$EntityBB_abilityentity_water01`): 6 KNOWN entries | kit `scaleValue` on passive_0's `normalskill_atk_scale01` |
+| G3e once-per-cast infliction | **open** in kit-draft (D7f: the new draft still puts 1–3 inflictions on every Waterspout landing) | kit: a first-tick hit and the rest, per variant |
+| G3f Immobilization from the debuff | **open** in kit-draft (D10d: the draft has no trigger for it) | kit trigger `olden_stare` (`control immobilization`, `freezes`) |
+| G3g repeated notes | not seen in the new draft | — |
+| G4 reaction replay first/rest | **done** (L1) | `zmdlogs reactions`: 33 false Cryo bursts → 2 (Verification) |
+
+Mechanics rows not covered above: rows 1–18, 20–23, 25–33 and 36–43 are
+written as the kit plan says (rows 5 and 17 with the folded poise, row 7
+with 4 ticks, row 12 with `gameBuff`, row 43 with `tags: [1427729990]`,
+T1). Row 19 (a third Whirlpool) keeps the interim (the layer cap replaces
+the oldest; U1, test 95). Row 26 keeps the interim (the whole team,
+Tangtang included, gets the Haste; U2, test 84). Row 34 (hit-stop, Ti1b)
+stays open.
+
+### What the kit leaves out or approximates
+
+- **Dives:** none in a simulation until S10; the branch is exact against
+  b7b3 (Verification). The early wave is a trigger's hit, so the
+  ultimate cast's Link (only from Link sources since B1) and buffs that
+  cast consumed don't reach it, while they reach the stare's ticks and
+  the plain wave.
+- **Immobilization after a dive:** the game's ends at the dive (the entity
+  jumps past its aura); the kit's lasts its 4 s (no trigger action ends a
+  control early). Only the freeze's length is off (U3, test 37's
+  variant).
+- **Haste on her own frames:** talent 1's Haste (attribute 92, 20%)
+  compresses all her frames in the engine, the OLDEN STARE entity's too
+  (ticks every 12.5 frames instead of 15, the wave 100 frames after the
+  spawn). Whether entity timelines follow the owner's Haste is test 19's
+  question; the frame tests run with talent 1 unlearned.
+- **Positions:** the team counts as inside every Whirlpool (Haste) and the
+  enemy inside the 5 m Slow; the Slow is only a state.
+- **Riot Bringer's Susceptibility values** use the battle skill's keys:
+  the data's are the ultimate's `rate_spellvulnerable(_02)` plus the
+  passive's (ModifyDynamicBlackboard operation 1 at ultimate frame 76),
+  equal at every potential (0.05 / 0.10 below P3, 0.10 / 0.15 from P3).
+- Literals with their source in the notes: `olden_stare_over` 7 s (the
+  entity's 210 frames); `whirlpool`'s `maxStacks: 2` (the buff's own
+  `water_stack`, which no applying skill has, so a key can't name it).
+
+### Equipment
+
+- **Brigand's Calling** (her signature, tested on her): Cryo DMG +0.56
+  (L9) for 20 s from the inflicting Waterspout tick (before its damage);
+  Arts DMG Taken +0.168 for 20 s after her Susceptibility; nothing from
+  basic attacks or a one-Waterspout cast.
+- **Artzy Tyrannical** (tested on her): a crit on a battle skill or combo
+  hit gives a 30 s layer of Cryo DMG +0.392, at most 3, one per 0.1 s;
+  basic attacks' crits don't count; nothing without crits (searches rank
+  it with rolled crits, T3).
+- **Clannibal** (tested on Wulfgard, the handcannon wielder who consumes
+  reactions: his battle skill's additional shot consumes Combustion in
+  `wulfgard-fluorite`): Heat DMG Taken +0.28 for 15 s on the enemy, one
+  shared 25 s cooldown for the four reactions; nothing on Tangtang.
+  Shatter as a consumption stays batch-3 A7.
+
+### Verification
+
+`zmdlogs check fixtures/zmdlogs-b7b3762d5da8.json`:
+
+```
+Tangtang (chr_0027_tangtang): 46 hits, 46 match, 0 mismatch, 0 under unmodelled effects, 0 not covered by a kit (100% of its damage covered)
+  matched assuming: kit hit stare, situational parts assumed ×5, no crit ×40, boundary buffs applied ×3, kit hit spout2_first, unlogged suit_attri01.smash ×24, unlogged suit_attri01.smash ×5, crit ×2, kit hit early_rogue_wave ×1, kit hit riot_spout1_first ×9
+```
+
+(before: 1 match, 45 not covered). The early wave (193,830) matches the
+dive trigger's hit, the 9 Riot Bringer ticks its `riot_spout1*` hits at
+`dmg_up_water_ult` 1.4. Arcane 13 / 13 and Si 21 / 21 unchanged; Last
+Rite 0 / 5 (no kit in this worktree).
+
+`zmdlogs reactions` on b7b3: before, 3 matched, 1 unexpected (her 15374 ms
+burst: no kit); now 4 matched (her burst among them; Arcane's two bursts
+are now due at 10917 ms, logged at 10910: her ultimate's time stop is
+placed from the kit, L5), 2 predicted but not logged:
+
+- 15928 ms: Riot Bringer's first tick adds Cryo to the battle skill's
+  stack. The log confirms the infliction (Brigand's Calling's `_valid`
+  refreshed on that hit, a boundary entry); the replay's extra stack is
+  Last Rite's Cryo consumption at 11462 ms, which it can't see without her
+  kit. With her analysis draft kit copied in (scratch only) it goes away.
+- 17055 ms: the last two `_projhit_1` ticks of the battle skill cast at
+  about 11 s are placed as a new cast's first landing (so an infliction):
+  the log stretches that cast to 5.8 s with Last Rite's and Arcane's time
+  stops in between, past the placement's span + CAST_SLACK_MS (1 s) and
+  the skill's 4.5 s. A log-tooling limit (logcasts.ts doesn't discount
+  others' time stops when it groups a key's landings); not changed here.
+
+Example `tangtang-whirlpools`: 712,772 damage in 31.0 s, 22,968 DPS
+(solo, expected crits; SP-bound after the ultimate). Every other example
+total and every other `zmdlogs check` / `reactions` output is unchanged.
+
+### In-game tests the kit depends on
+
+37 (batch-4.md's variant "Enemy timers under Last Rite's freeze and
+Tangtang's Immobilization": U3), 84 proposed (her own Haste: U2), 95
+proposed (a third Whirlpool: U1), 19 (what Haste speeds up, entity
+timelines included), 35 (an infliction forming a reaction at once: her
+combo trigger and Brigand's Calling), 38 (her Arts Susceptibility beside
+another), 18 (time stop), 47 (the combo projectile's travel to the
+Whirlpool). Nothing new is ready beyond those proposed.

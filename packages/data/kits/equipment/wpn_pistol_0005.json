@@ -1,0 +1,53 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_pistol_0005",
+  "sources": [
+    "Navigator. rmxlinux Json/SkillData/sk_wpn_pistol_0005 (weapon skill 3, SkillPatchTable: crit_up, dmg_up, crit_up2, duration): cardAttributeModifier attr 9 (Critical Rate) +crit_up (stat panel, with skills 1 and 2: Intellect, Cryo DMG); `buffs` -> buff_wpn_pistol_0005 (permanent AuraAction, radius 40, on enemies) -> buff_wpn_pistol_0005_inaura on each enemy in it: abilityEvent 205 (a buff added to the aura holder, from anyone) + tag Solidification (1535684437) or Corrosion (-421286163): CheckTargetsEqual (the wielder caused it) -> CreateBuff buff_wpn_pistol_0005_valid on the wielder with dmg_up and crit_up2 x multi 2, else (NotNext) the plain one. buff_wpn_pistol_0005_valid: attr 53 (Cryo DMG) and 54 (Nature DMG) +dmg_up, attr 9 (Critical Rate) +crit_up2, `duration`; stackingType 1 with priority key dmg_up (instances compete, the strongest acts: 'Effects of the same name cannot stack'), maxStackCntKey max_stack, which sk_wpn_pistol_0005 doesn't have (B2: no limit). toggleBuffs buff_wpn_lance_0003 (CheckCurHpRatio hp_ratio, a key the skill lacks: a copied leftover, left out). \"When Solidification or Corrosion is applied to enemies, the wielder gains Cryo DMG Dealt and Nature DMG Dealt +{dmg_up}, and Critical Rate +{crit_up2} for {duration}s. If this effect is triggered by the wielder, double the increase gained.\" Batch-4 report docs/kit-batches/batch-4/chr_0017_yvonne.md rows W1-W3."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_pistol_0005.valid",
+      "label": "Navigator: Cryo and Nature DMG, Crit Rate",
+      "target": "self",
+      "gameBuff": "buff_wpn_pistol_0005_valid",
+      "duration": "duration",
+      "modifiers": [
+        { "attr": 53, "value": "dmg_up" },
+        { "attr": 54, "value": "dmg_up" },
+        { "attr": 9, "value": "crit_up2" }
+      ]
+    },
+    {
+      "id": "wpn_pistol_0005.valid_own",
+      "label": "Navigator: doubled (the wielder's own Solidification or Corrosion)",
+      "target": "self",
+      "gameBuff": "buff_wpn_pistol_0005_valid",
+      "duration": "duration",
+      "modifiers": [
+        { "attr": 53, "value": { "product": ["dmg_up", 2] } },
+        { "attr": 54, "value": { "product": ["dmg_up", 2] } },
+        { "attr": 9, "value": { "product": ["crit_up2", 2] } }
+      ],
+      "note": "The same game buff with the doubled values (SimpleCalcBB multi 2, literal in the skill graph): one stack group with the plain copy, so the stronger acts while both last."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_pistol_0005.own",
+      "on": { "event": "reaction", "statuses": ["solidification", "corrosion"] },
+      "by": "self",
+      "beforeDamage": true,
+      "skill": "sk_wpn_pistol_0005",
+      "do": [{ "kind": "buff", "buff": "wpn_pistol_0005.valid_own" }],
+      "note": "Forced ones included (a buff added to the enemy). Before the hit's damage: fixtures/pending/zmdlogs-abfd4b7478ec.json shows the doubled buff on Yvonne's bomb that applies the Solidification (in-game test 51's question)."
+    },
+    {
+      "id": "wpn_pistol_0005.team",
+      "on": { "event": "reaction", "statuses": ["solidification", "corrosion"] },
+      "by": "teammate",
+      "skill": "sk_wpn_pistol_0005",
+      "do": [{ "kind": "buff", "buff": "wpn_pistol_0005.valid" }],
+      "note": "Anyone else's: the plain copy."
+    }
+  ]
+}

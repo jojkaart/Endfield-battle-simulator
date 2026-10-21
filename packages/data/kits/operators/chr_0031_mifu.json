@@ -1,0 +1,317 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0031_mifu",
+  "sources": [
+    "Mi Fu (batch 4; report docs/kit-batches/batch-4/chr_0031_mifu.md, its Mechanics rows and § Kit). Hits, frames, keys, poise, finisher factors, physical statuses, energy, SP and team energy from rmxlinux Json/SkillData chr_0031_mifu_* as efsim kit-draft compiles them (2026-10-21), values from SkillPatchTable at the build's skill level, potentials and talents from PotentialTalentEffectTable (skillBbModifier: P1 combo potential / extra_effect / extra_time, P3 combo potential / talent_shield_cd / potential_addattack_*, P5 the three moves' atk_scale(2) ×1.1 and the ultimate's poise2 +5; talent 1 normalskill_3 talent / crushmultiadd_talent 0.1 / 0.2; talent 2 combo talent / talent_shield_*).",
+    "Battle-skill states (ChangeSkillAction in Json/BuffData buff_chr_0031_mifu_normalskill_2 / _3, 15 s, lifeTimeType 2: the battle-skill button becomes Trail and Mangle / World Splitter): kit buffs trail_ready and splitter_ready gate the three moves through `available`; each state's start ends the other (buffEvent 0 FinishBuff); the finisher pauses them (buff_chr_0031_mifu_buffpause, abilityEvent 9 / 203 PauseBuffTime).",
+    "Not modelled: Trail and Mangle's ×1.25 self speed-up over its first 15 frames (TimeDilationAction layer 1 on herself: Ti1b, open; everything after its frame 15 comes 3 frames late); the ultimate's literal-0 DamageAction at f98 (left out by the compiler, D8c); talent 2's shield and super armor (no damage effect; operator HP isn't tracked, N2); pulls, teleports (buff_chr_0031_mifu_comboprocess), hit-stop switches and World Splitter's CheckSuperArmor hit-stop choice. BuffData buff_chr_0031_mifu_passive, _passive_2, _passive_detect, _blue, _red, _test_1, _anglevalue, _WoundBuff, _vulnerablephysic_ultimate and _chrdg_* are created by no file: leftovers. The dive attack (plunging_attack_end) is in the kit but castable only once dives are rotation steps (batch-1 S10)."
+  ],
+  "element": "physical",
+  "buffs": [
+    {
+      "id": "trail_ready",
+      "label": "Battle skill is Trail and Mangle",
+      "target": "self",
+      "gameBuff": "buff_chr_0031_mifu_normalskill_2",
+      "duration": 15,
+      "modifiers": [],
+      "note": "BuffData buff_chr_0031_mifu_normalskill_2: duration 15 (a literal: useBlackboardKey false), stackingType 2 max 1; buffEvent 5 ChangeSkillAction normalskill_1 → normalskill_2. Created by Cloudtrapper (f0), the combo (f27) and the ultimate (f102); its start ends World Splitter's state (trigger trail_replaces_splitter); Trail and Mangle ends it at its f24 (trail_end); the finisher pauses it (finisher_pause_trail)."
+    },
+    {
+      "id": "splitter_ready",
+      "label": "Battle skill is World Splitter",
+      "target": "self",
+      "gameBuff": "buff_chr_0031_mifu_normalskill_3",
+      "duration": 15,
+      "modifiers": [],
+      "note": "BuffData buff_chr_0031_mifu_normalskill_3: duration 15 (literal), ChangeSkillAction → normalskill_3. Created by buff_chr_0031_mifu_listen_crush (Trail and Mangle f22–27) on a Crush (abilityEvent 401, CheckPhysicalInflictionType mask 8) from a battle skill (CheckOriginSkillType [2]) on a target with at least 3 Vulnerable stacks (tag 1075718177): Trail and Mangle's mangle_splitter hit. Its start ends Trail and Mangle's state; World Splitter ends it at its f21 (splitter_end)."
+    },
+    {
+      "id": "combo_susceptibility",
+      "label": "Combo: Physical Susceptibility",
+      "target": "enemy",
+      "gameBuff": "buff_common_affixes_vulnerable_physical",
+      "duration": { "sum": [{ "key": "duration", "skill": "chr_0031_mifu_combo_skill" }, { "key": "extra_time", "skill": "chr_0031_mifu_combo_skill" }] },
+      "modifiers": [
+        {
+          "zone": "susceptibility",
+          "elements": ["physical"],
+          "value": { "sum": [{ "key": "rate", "skill": "chr_0031_mifu_combo_skill" }, { "key": "extra_effect", "skill": "chr_0031_mifu_combo_skill" }] }
+        }
+      ],
+      "note": "Combo f31 (before its DamageAction): ModifyDynamicBlackboard final_effect = rate (+ extra_effect if potential = 1), final_time = duration (+ extra_time), then CreateBuff buff_chr_0031_mifu_vulnerablephysic_comboskill on the target (VulnerableAction subType 2: buff_common_affixes_vulnerable_physical, as Estella's). extra_effect and extra_time are 0 (SkillData defaults) until P1 sets them and potential = 1, so the sums are exact: 5% for 16 s at level 12, 10% for 20 s at P1+. Whether it adds to another source's Physical Susceptibility: in-game test 38."
+    },
+    {
+      "id": "p3_atk",
+      "label": "P3: ATK when the shield triggers",
+      "target": "self",
+      "gameBuff": "buff_chr_0031_mifu_potential_addattack",
+      "duration": { "key": "potential_addattack_duration", "skill": "chr_0031_mifu_combo_skill" },
+      "modifiers": [{ "zone": "atk", "value": { "key": "potential_addattack_effect", "skill": "chr_0031_mifu_combo_skill" } }],
+      "note": "BuffData buff_chr_0031_mifu_potential_addattack: attribute 2 (ATK) formulaItem 6 addattack_effect, duration addattack_duraion; the combo assigns potential_addattack_effect (0.06 from P3) and potential_addattack_duration (20 s from P3). Below P3 both keys are 0 (SkillData defaults): the P1 `potential` flag alone would create it with no effect."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_window",
+      "on": { "event": "vulnerable", "minStacks": 3 },
+      "by": "anyone",
+      "do": [{ "kind": "openCombo" }],
+      "note": "COMBO TRIGGER (CharGrowthTable text): \"When an enemy has 3 or more Vulnerability stacks\" (the condition is game code). The engine opens a 6 s window per Vulnerable event at 3+ stacks (a stack added at the cap counts: in-game test 64). Whether the game treats it as a state (relit when the cooldown ends while 3+ stacks remain, dark once a Crush consumes them): in-game test 90 (batch-3 T5)."
+    },
+    {
+      "id": "cloudtrapper_cast",
+      "on": { "event": "cast", "skills": ["chr_0031_mifu_normalskill_1"] },
+      "by": "self",
+      "skill": "chr_0031_mifu_normalskill_1",
+      "do": [
+        { "kind": "sp", "value": 50 },
+        { "kind": "buff", "buff": "trail_ready" }
+      ],
+      "note": "normalskill_1 f0: ObtainCostAction costType 1, a literal 50 (atbGainMethod 1: returned SP, the literal's default kind; \"returns 50 SP after casting\"), and CreateBuff buff_chr_0031_mifu_normalskill_2. kit-draft emits the SP; the state is hand-written (D10a reports it, nothing compiled)."
+    },
+    {
+      "id": "trail_end",
+      "on": { "event": "cast", "skills": ["chr_0031_mifu_normalskill_2"] },
+      "by": "self",
+      "delay": 24,
+      "do": [{ "kind": "endBuff", "buff": "trail_ready" }],
+      "note": "normalskill_2 f24 FinishBuffAction buff_chr_0031_mifu_normalskill_2 (the cast's own: a cast cut before f24 keeps the state)."
+    },
+    {
+      "id": "splitter_end",
+      "on": { "event": "cast", "skills": ["chr_0031_mifu_normalskill_3"] },
+      "by": "self",
+      "delay": 21,
+      "do": [{ "kind": "endBuff", "buff": "splitter_ready" }],
+      "note": "normalskill_3 f21 FinishBuffAdvanced buff_chr_0031_mifu_normalskill_3 (a cast cut before f21 keeps the state)."
+    },
+    {
+      "id": "combo_trail",
+      "on": { "event": "cast", "skills": ["chr_0031_mifu_combo_skill"] },
+      "by": "self",
+      "delay": 27,
+      "do": [{ "kind": "buff", "buff": "trail_ready" }],
+      "note": "combo_skill f27 CreateBuff buff_chr_0031_mifu_normalskill_2 (ends a World Splitter state)."
+    },
+    {
+      "id": "ultimate_trail",
+      "on": { "event": "cast", "skills": ["chr_0031_mifu_ultimate_skill"] },
+      "by": "self",
+      "delay": 102,
+      "do": [{ "kind": "buff", "buff": "trail_ready" }],
+      "note": "ultimate_skill f102 CreateBuff buff_chr_0031_mifu_normalskill_2. Its buffpause (0–105, autoFinishByAction) is moot: the cast can't be cut before f103 (ChannelingCastingAction 0–103) and f102 applies the state fresh, which also ends World Splitter's."
+    },
+    {
+      "id": "trail_replaces_splitter",
+      "on": { "event": "buffApplied", "buff": "trail_ready" },
+      "by": "self",
+      "do": [{ "kind": "endBuff", "buff": "splitter_ready" }],
+      "note": "buff_chr_0031_mifu_normalskill_2 buffEvent 0 (start): FinishBuffAction buff_chr_0031_mifu_normalskill_3."
+    },
+    {
+      "id": "splitter_replaces_trail",
+      "on": { "event": "buffApplied", "buff": "splitter_ready" },
+      "by": "self",
+      "do": [{ "kind": "endBuff", "buff": "trail_ready" }],
+      "note": "buff_chr_0031_mifu_normalskill_3 buffEvent 0 (start): FinishBuffAction buff_chr_0031_mifu_normalskill_2."
+    },
+    {
+      "id": "finisher_pause_trail",
+      "on": { "event": "cast", "skills": ["chr_0031_mifu_powerattack"] },
+      "by": "self",
+      "if": { "buffActive": "trail_ready" },
+      "do": [{ "kind": "extendBuff", "buff": "trail_ready", "seconds": { "div": [38, 30] } }],
+      "note": "powerattack CreateBuff buff_chr_0031_mifu_buffpause at f0 (autoFinishByAction) and buff_common_power_attack_disable_cast_skill 0–38 (the channel that holds the finisher): the state buffs' abilityEvent 9 / 203 handlers pause their time while buffpause is on. Written as Purrchena's pause: 38 frames more on the active state (exact unless the finisher is cut before f38, which its channel doesn't allow)."
+    },
+    {
+      "id": "finisher_pause_splitter",
+      "on": { "event": "cast", "skills": ["chr_0031_mifu_powerattack"] },
+      "by": "self",
+      "if": { "buffActive": "splitter_ready" },
+      "do": [{ "kind": "extendBuff", "buff": "splitter_ready", "seconds": { "div": [38, 30] } }],
+      "note": "As finisher_pause_trail, for World Splitter's state."
+    },
+    {
+      "id": "p3_shield_atk",
+      "on": { "event": "cast", "skills": ["chr_0031_mifu_combo_skill"] },
+      "by": "self",
+      "if": { "all": [{ "talentAtLeast": [1, 1] }, { "potentialAtLeast": 3 }] },
+      "cooldown": "talent_shield_cd",
+      "skill": "chr_0031_mifu_combo_skill",
+      "do": [{ "kind": "buff", "buff": "p3_atk" }],
+      "note": "combo_skill f0: if talent > 0 (talent 2 Vigilant Fury sets it) and CheckGlobalCDTimer(buff_chr_0031_mifu_shield): the shield (talent_shield_hppercent of Max HP, talent_shield_duration; no damage effect) and, if potential > 0, buff_chr_0031_mifu_potential_addattack; AddGlobalCDTimer talent_shield_cd (60 s, 45 s at P3). potentialAtLeast 3: P1 also sets potential = 1, but the buff's values are 0 below P3 (see p3_atk)."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0031_mifu_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [9] }]
+    },
+    {
+      "skillId": "chr_0031_mifu_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale1"], "frames": [9] },
+        { "id": "hit_2", "scale": ["atk_scale2"], "frames": [16] }
+      ]
+    },
+    {
+      "skillId": "chr_0031_mifu_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale1"], "count": 2, "frames": [10, 16] },
+        { "id": "hit_2", "scale": ["atk_scale2"], "frames": [30] }
+      ]
+    },
+    {
+      "skillId": "chr_0031_mifu_attack4",
+      "label": "Basic attack 4 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale1"], "frames": [7], "finalStrike": false },
+        {
+          "id": "hit_2",
+          "scale": ["atk_scale2"],
+          "frames": [30],
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "poise": "poise",
+          "poiseControlledOnly": true,
+          "finalStrike": true,
+          "note": "f30 DamageAction mask 2097280 (Final Strike bit), poise 25 onlyEnableForMainChar; ObtainCostAction atb 28 only while controlled (atbOnlyMainChar). The f7 hit (mask 128) isn't the Final Strike."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0031_mifu_powerattack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [6], "factor": 0.3 },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [17], "factor": 0.2 },
+        { "id": "hit_3", "scale": ["atk_scale"], "frames": [37], "factor": 0.5 }
+      ],
+      "note": "BreakingAttackCalculation multipliers 0.3 / 0.2 / 0.5 of atk_scale 9.0 (900% shown). Each landing sits in an IfElse on CheckTargetContains whose two sides are the same DamageAction: one hit each (kit-draft emits them twice as branch alternatives; batch-3 D3, identical sides not merged)."
+    },
+    {
+      "skillId": "chr_0031_mifu_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [2],
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "note": "mask 1152 (basic + dive bit 1024: the hit's dive decoration comes from the data). atb is 0 at every level. Castable once dives are rotation steps (batch-1 S10)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0031_mifu_normalskill_1",
+      "label": "Battle skill: Cloudtrapper",
+      "damageType": "battle",
+      "available": { "all": [{ "not": { "buffActive": "trail_ready" } }, { "not": { "buffActive": "splitter_ready" } }] },
+      "jumps": [{ "at": 7, "if": { "enemySuperArmor": { "atLeast": 30 } } }],
+      "teamEnergy": [{ "frame": 7, "ratio": 1 }],
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [7] }],
+      "note": "f7: DamageAction atk_scale (mask 4352), buff_common_obtain_ultimate_sp, then IfElse CheckSuperArmor (target, compareType 3 ≥, 30) → JumpToAction 105 (the heavy path: no pull, she closes in; windows 115–131, i.e. real frames 17–33), else PullAction (the pull path: windows 11–30, MarkCanInterrupt 25, JumpToAction 104 → 204). Rhodagn (initialSuperArmor 30) and 62 of 149 enemy templates take the jump. The 11–30 windows a jump skips stay closed (S9b)."
+    },
+    {
+      "skillId": "chr_0031_mifu_normalskill_2",
+      "label": "Battle skill: Trail and Mangle",
+      "damageType": "battle",
+      "available": { "buffActive": "trail_ready" },
+      "teamEnergy": [{ "frame": 24, "ratio": 1 }],
+      "hits": [
+        { "id": "flurry", "scale": ["atk_scale"], "count": 2, "frames": [3, 10] },
+        {
+          "id": "mangle_splitter",
+          "branch": "mangle",
+          "if": { "enemyVulnerable": 3 },
+          "scale": ["atk_scale2"],
+          "frames": [24],
+          "poise": "poise",
+          "applies": [{ "kind": "physicalStatus", "status": "crush" }],
+          "buffs": [{ "buff": "splitter_ready" }],
+          "note": "f24 CrushAction (damageMultiplier 1.0), DamageAction atk_scale2 + poise; buff_chr_0031_mifu_listen_crush (f22–27) turns a Crush from a battle skill on a target with ≥ 3 Vulnerable stacks into World Splitter's state: judged on the stacks before this Crush consumes them (a Crush on 0 stacks only adds one). \"If this Crush consumes at least 3 Vulnerability stacks from a single target\"."
+        },
+        {
+          "id": "mangle",
+          "branch": "mangle",
+          "scale": ["atk_scale2"],
+          "frames": [24],
+          "poise": "poise",
+          "applies": [{ "kind": "physicalStatus", "status": "crush" }],
+          "note": "As mangle_splitter, on fewer than 3 Vulnerable stacks: no World Splitter."
+        }
+      ],
+      "note": "50 SP (normalSkillSubType 1, a sub-skill on the battle-skill button: the engine counts it as a battle-skill cast for Link and cast triggers, in-game test 29's question). Its first 15 frames run ×1.25 for her (Ti1b, not modelled: 3 frames late from f15)."
+    },
+    {
+      "skillId": "chr_0031_mifu_normalskill_3",
+      "label": "Battle skill: World Splitter",
+      "damageType": "battle",
+      "available": { "buffActive": "splitter_ready" },
+      "teamEnergy": [{ "frame": 26, "ratio": 1 }],
+      "hits": [
+        {
+          "id": "poise",
+          "scale": [],
+          "count": 2,
+          "frames": [23, 25],
+          "poiseOnly": true,
+          "poise": "poise",
+          "note": "f23 and f25 DamageActions whose only unit is stagger (poise 5 each; SkillPatchTable \"Stagger 10\")."
+        },
+        {
+          "id": "split",
+          "label": "World Splitter",
+          "scale": ["atk_scale", "yuanshi_multi"],
+          "frames": [26],
+          "damageType": "none",
+          "extraScale": [
+            {
+              "value": { "sum": [1, "crushmultiadd_talent"] },
+              "if": { "all": [{ "talentAtLeast": [0, 1] }, { "any": [{ "enemyStaggered": true }, { "enemyModifier": { "zone": "susceptibility", "element": "physical" } }] }] }
+            }
+          ],
+          "note": "f26 ForEach: atk_scale_runtime = atk_scale × yuanshi_multi × crushmulti, DamageAction mask 20480 (4096 + the Crush bit 16384, no battle-skill bit 256): \"this DMG is not treated as Battle Skill DMG, but as Crush DMG\", so no skill-type bonus (damageType none, D5). yuanshi_multi: ReadSkillSettingData \"弭弗特殊猛击\" column 1, a table not in our checkout; the SkillData default 1 (in-game test 91 checks it with the damage type). crushmulti = 1 + crushmultiadd_talent (talent 1 Stern Crackdown: 0.1 / 0.2) when talent > 0 and the target is Staggered (CheckPoiseValue = 0) or has tag 1066759270 (Physical Susceptibility: buff_common_affixes_vulnerable_physical and _all, as enemyModifier reads it). P5 multiplies atk_scale by 1.1 (\"can stack with Stern Crackdown\")."
+        }
+      ],
+      "note": "50 SP; a sub-skill as Trail and Mangle."
+    },
+    {
+      "skillId": "chr_0031_mifu_combo_skill",
+      "label": "Combo skill",
+      "damageType": "combo",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale1"], "count": 2, "frames": [8, 10] },
+        {
+          "id": "uppercut",
+          "scale": ["atk_scale2"],
+          "frames": [31],
+          "energy": "usp",
+          "poise": "poise",
+          "buffs": [{ "buff": "combo_susceptibility", "beforeDamage": true }],
+          "note": "f31: the Physical Susceptibility is created before the DamageAction (it acts on this hit, as Estella's); ObtainCostAction usp after CheckSkillHasHit."
+        }
+      ],
+      "note": "Cooldown 19 s at level 12 (P1 −2 s: tables). Its ComboSkill slow-down (0–8, everyone but her) from the data."
+    },
+    {
+      "skillId": "chr_0031_mifu_ultimate_skill",
+      "label": "Ultimate: Pile of No Mercy",
+      "damageType": "ultimate",
+      "hits": [
+        { "id": "lift", "scale": ["atk_scale"], "frames": [75], "applies": [{ "kind": "physicalStatus", "status": "lift", "forced": true }], "note": "f75 AirborneAction forceAirborne, then the DamageAction." },
+        { "id": "slam", "scale": ["atk_scale2"], "frames": [102], "poise": "poise2", "note": "f102 atk_scale2 + poise2 (20, P5 +5)." }
+      ],
+      "note": "Cost 80 (P4 ×0.85), cooldown 15 s, time stop 0–71, channel 0–103 (tables, SkillData). The f98 DamageAction with a literal-0 multiplier is left out: whether a 0-damage DamageAction counts as a hit for on-hit effects isn't known, and none of hers needs it."
+    }
+  ]
+}

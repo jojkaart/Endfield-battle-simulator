@@ -447,3 +447,124 @@ ultimate's f62, the Cryo DMG buff from her battle skill's Cryo infliction.
   of the four Arts elements).
 
 Both load and fire as described (checked in the runs above).
+
+## Kit (2026-10-21)
+
+Files: [chr_0031_mifu.json](../../../packages/data/kits/operators/chr_0031_mifu.json),
+[wpn_claym_0017.json](../../../packages/data/kits/equipment/wpn_claym_0017.json)
+(Amaranthine Tassel), [wpn_claym_0019.json](../../../packages/data/kits/equipment/wpn_claym_0019.json)
+(Long Heritage, generic, tested on Si); tests
+[tests/kit-mifu.test.ts](../../../tests/kit-mifu.test.ts) (25); example
+[examples/mifu-dapan.scenario.json](../../../examples/mifu-dapan.scenario.json)
+with [examples/mifu-p5.json](../../../examples/mifu-p5.json). Started from
+a fresh `efsim kit-draft chr_0031_mifu` (it now emits World Splitter's
+`damageType: none`, its two `poiseOnly` landings, leaves out the
+ultimate's literal-0 unit) and the kit plan above. Phantom Pain
+(`wpn_claym_0016`) is Last Rite's to write (batch-4.md "Weapon owners");
+Mi Fu is its natural wielder, nothing coordinated here.
+
+### Re-analysis
+
+| Item | Now | How |
+|---|---|---|
+| G1 (window a jump skips) | **done** | S9b. Cloudtrapper on Rhodagn: Trail and Mangle at frame 17 (window 115 after the 7 → 105 jump), 11 on a light enemy (test) |
+| G2 (enemy super armor) | **done** | E1: `jumps: [{at: 7, if: {enemySuperArmor: {atLeast: 30}}}]`; Rhodagn 30, `eny_0099_slimeml2` 5 (test) |
+| G3 (a skill hit's own damage type) | **done** | D5: World Splitter's `split` hit in the skill with `damageType: none`; no Battle Skill DMG on it, the cast stays a battle skill (SP, team energy at 26) |
+| G4 (category triggers by element / recipient) | **done** | T1: Amaranthine `on: {event: buffApplied, tags: [1066759270]}` (the loader maps it to Susceptibility reaching Physical: exact); Long Heritage `categories: [amp], elements: [cryst], toOthers: true` (the reading of checkType 1 stays open: E11) |
+| G5 (poise-only landings) | **done** | D6: `poiseOnly` hit at 23 and 25 (5 + 5 Stagger; test reads the bar) |
+| Row 4 (finisher's identical IfElse sides) | interim, exact | three hits written by hand; kit-draft still emits branch pairs (batch-3 D3 residue) |
+| Row 5 (finisher pauses the states) | interim, exact | `extendBuff` 38 frames on the active state (Purrchena's form; the finisher's channel can't be cut before 38). No shared pause action exists; nothing else needs one here |
+| Row 9, 10 (Cloudtrapper's heavy path) | **done** | G1, G2 |
+| Row 16 (Trail and Mangle ×1.25 self speed-up 0–15) | **open** (Ti1b) | not modelled: everything after its frame 15 comes 3 frames late |
+| Row 18, 20 | **done** | G3, G5 |
+| Row 19 (`yuanshi_multi`) | unknown | written as a scale key (`["atk_scale", "yuanshi_multi"]`): the SkillData default 1, since ReadSkillSettingData's table isn't in the checkout; test 91 |
+| Row 23 (combo trigger as a state) | **open** (batch-3 T5) | engine: a 6 s window per Vulnerable event at 3+; test 90 |
+| Row 25 (combo Susceptibility before its hit) | done | `buffs: [{…, beforeDamage: true}]` on the f31 hit (test: on the uppercut, not on the f10 hit) |
+| Row 29 (ultimate's literal-0 unit) | done | D8c: the compiler leaves it out; the kit too |
+| Row 31 (talent 2's shield) | open (batch-3 N2) | no damage effect; P3's ATK buff is modelled with the shield's 60 / 45 s cooldown |
+| Row 37 (sub-skills as battle skills) | unknown | engine: yes (Link, cast triggers); test 29 |
+| States (ChangeSkillAction) | interim, exact | hand-written (D10a reports the created state buffs, compiles nothing): kit buffs `trail_ready` / `splitter_ready` gating `available` |
+| E2 | **done** | G4 |
+| E5 (`dmgup2` instances) | done | loader (batch-3 B1) |
+| E10 | **done** (reading open) | G4: an Amp reaching Cryo given to someone else |
+| E10's two wielders | open (batch-3 B2 residue) | two Long Heritage wielders' team buffs would add; minor |
+| E11 | unknown | test 92: with "tag query only" the trigger becomes `tags: [486772476]` and Si's Cryo / Heat Amp stops counting |
+
+Nothing new is missing; no engine, loader or compiler change. One tiny
+CLI fix: `efsim calc` listed a `poiseOnly` hit with damage (7,368 ×2 for
+World Splitter's Stagger units); `kitHits` in
+packages/cli/src/commands.ts now skips them as damage.ts's `kitHits`
+does. No kit had a `poiseOnly` hit before, so no existing output changes.
+
+### What the kit models
+
+- Basic attacks 1–4 (attack4's f30 Final Strike: 25 Stagger and 28 SP
+  only while controlled), the finisher (9.0 × 0.3 / 0.2 / 0.5), the dive
+  attack (castable once dives are rotation steps: batch-1 S10).
+- The three battle-skill moves on one button: Cloudtrapper (100 SP, 50
+  returned at the cast, its heavy / pull path by the enemy's super armor),
+  Trail and Mangle (Crush; on 3+ Vulnerable stacks World Splitter's state),
+  World Splitter (10 Stagger at 23 / 25, Crush-type damage at 26, talent 1
+  ×1.1 / ×1.2 on a Staggered or Physically Susceptible target, P5 ×1.1).
+  The states: 15 s, each ending the other, ended by their own move (24 /
+  21, kept if the cast is cut before), given by Cloudtrapper (0), the combo
+  (27) and the ultimate (102), paused by the finisher.
+- The combo (window on 3+ Vulnerable stacks; Physical Susceptibility 5% /
+  16 s, 10% / 20 s at P1+, on its own last hit; 10 energy; 19 s, 17 s at
+  P1), P3's ATK +6% for 20 s once per 45 s with talent 2.
+- The ultimate (80, 68 at P4; forced Lift at 75; slam at 102 with 20 / 25
+  Stagger).
+- Amaranthine Tassel: Arts Intensity +84 for 20 s on the wielder's
+  Physical Susceptibility; Physical DMG +0.252 + 0.084 × stacks for 30 s on
+  a Crush that consumes Vulnerable, already on the Crush and its hit
+  (0.504 at 3 stacks).
+- Long Heritage: Cryo DMG +0.168 for 20 s when the wielder's battle skill
+  inflicts Cryo or Heat (on the inflicting hit too: Si's SpellInfliction
+  comes before its DamageAction); team Arts DMG +0.112 for 20 s when the
+  wielder's Amp reaching Cryo reaches a teammate (Si's ultimate with
+  Laevatain: yes; Si alone: no). On Mi Fu neither fires.
+
+Left out: the ×1.25 speed-up (Ti1b), the shield (N2), pulls, teleports,
+hit-stop and the unreached buffs (row 38). Data quirk noted for the dive
+work: `chr_0031_mifu_plunging_attack_end`'s only AllowNextSkillAction
+window lists `chr_0009_azrila_attack1` (Ember's attack 1), not Mi Fu's.
+
+`efsim kit-census`: `hit.damageType` (on a skill hit) and `hit.poiseOnly`
+are used by this kit only; both are batch-4 shared fields (D5, D6) with
+other data users (D6: Tangtang, Yvonne, Ember), not one-offs.
+skillCompile.test.ts: Mi Fu added to OPERATORS with two KNOWN entries
+(the test can't match a `poiseOnly` hit, whose scale is empty, to a
+landing; World Splitter's `$atk_scale_runtime?`, a ModifyDynamicBlackboard
+chain the compiler doesn't follow).
+
+### Verification
+
+No log fixture has Mi Fu, Amaranthine Tassel or Long Heritage, so no
+`zmdlogs` checks. The example (`mifu-dapan`: Mi Fu P5 with Amaranthine
+Tassel and Grizzled Edge, Da Pan P5 with Ancient Canal, vs Rhodagn):
+636,140 damage in 27.1 s (23,474 DPS); Mi Fu 582,605 (91.6%), of which
+the level-3 Crush from Trail and Mangle is 166,792 and World Splitter
+73,281 (the analysis run's value, ×1.2 from talent 1). Timings match the
+plan: Da Pan's ultimate gives 3 stacks at 1.43 s and opens the combo at
+once; Trail and Mangle at the combo's frame 35 (2.60 s), World Splitter at
+Trail and Mangle's 28 (3.53 s), its hit at 26 (4.40 s); Cloudtrapper waits
+for SP (17.53 s), the next Trail and Mangle at its real frame 17 (heavy
+path); the ultimate's hits at 75 / 102. The analysis run gave 646,443 in
+26.9 s on the engine before the shared features; the difference is most
+likely B1 (no Link from the combo for Trail and Mangle) and the heavy
+path's 6 frames (not traced hit by hit). At P0 (the search default for 6-stars) the
+same rotation gives 548,101.
+
+Example totals and log outputs: every `examples/*.scenario.json` and
+every `zmdlogs check` / `reactions` on fixtures/ and fixtures/pending/
+compared before (a copy of HEAD) and after: unchanged.
+
+### In-game tests the kit depends on
+
+90 (the combo trigger as a state), 91 (World Splitter's damage type and
+`yuanshi_multi`), 92 (Long Heritage and Si's Amp: the checkType 1
+reading), 29 (sub-skills as battle-skill casts), 38 (two Physical
+Susceptibility sources), 51 (Amaranthine's Crush buff on the Crush and its
+hit; Long Heritage's Cryo DMG on the inflicting hit), 64 (a stack added at
+3+ reopens the window), 60 (batch-3 T5), 35 (an infliction that forms a
+reaction, for Long Heritage).

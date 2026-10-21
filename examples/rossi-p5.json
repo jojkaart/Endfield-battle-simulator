@@ -1,0 +1,14 @@
+{
+  "operator": "chr_0028_wulfa",
+  "level": 90,
+  "promotion": 4,
+  "potential": 5,
+  "skillLevels": { "basic": 12, "battle": 12, "combo": 12, "ultimate": 12 },
+  "weapon": { "id": "wpn_sword_0022", "level": 90, "skillLevels": [9, 9, 9] },
+  "gear": [
+    { "id": "item_equip_t4_parts_wuling01_hand_01", "artifice": [3, 3, 0] },
+    { "id": "item_equip_t4_suit_criti01_body_06", "artifice": [3, 3, 3] },
+    { "id": "item_equip_t4_suit_criti01_edc_06", "artifice": [3, 3, 3] },
+    { "id": "item_equip_t4_suit_criti01_edc_06", "artifice": [3, 3, 3] }
+  ]
+}

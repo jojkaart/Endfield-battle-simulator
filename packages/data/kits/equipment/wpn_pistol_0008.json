@@ -1,0 +1,53 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_pistol_0008",
+  "sources": [
+    "Wedge. rmxlinux Json/SkillData/sk_wpn_pistol_0008 (weapon skill 3, SkillPatchTable: spell_dmg_up, spell_dmg_up2, spell_dmg_up3, duration, duration2): cardAttributeModifier attrs 51-54 (Heat, Electric, Cryo, Nature DMG) +spell_dmg_up (stat panel, with skills 1 and 2: main attribute, Critical Rate); passiveEventActions (1) abilityEvent 30 (the wielder casts) + CheckSkillType [2] (battle) -> buff_wpn_pistol_0008 on the wielder (attrs 51-54 +spell_dmg_up2, `duration`); (2) abilityEvent 206 (the wielder applies a buff) + CheckOriginSkillType [2] (from a battle skill) + tag 1474064594 (Arts Reaction) -> buff_wpn_pistol_0008_extra_valid (attrs 51-54 +spell_dmg_up3, `duration2`). Both stackingType 1 with a priority key and maxStackCntKey max_stack, which the skill doesn't have (B2: no limit; a same-owner reapplication of one value is the same as a refresh). buff_wpn_pistol_0008_extra (an abilityEvent-102 copy), _cd and _icon: named by nothing (orphans); toggleBuffs buff_wpn_passive_spirit_01 (no file). \"When the wielder casts a battle skill, the wielder gains Arts DMG Dealt +{spell_dmg_up2} for {duration}s. When the wielder's battle skill applies an Arts Reaction, the wielder gains Arts DMG Dealt +{spell_dmg_up3} for {duration2}s. The two effects apply separately.\" Batch-4 report docs/kit-batches/batch-4/chr_0017_yvonne.md rows W7-W10."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_pistol_0008.cast",
+      "label": "Wedge: Arts DMG after a battle skill",
+      "target": "self",
+      "gameBuff": "buff_wpn_pistol_0008",
+      "duration": "duration",
+      "modifiers": [
+        { "attr": 51, "value": "spell_dmg_up2" },
+        { "attr": 52, "value": "spell_dmg_up2" },
+        { "attr": 53, "value": "spell_dmg_up2" },
+        { "attr": 54, "value": "spell_dmg_up2" }
+      ]
+    },
+    {
+      "id": "wpn_pistol_0008.reaction",
+      "label": "Wedge: Arts DMG after a battle skill's Arts Reaction",
+      "target": "self",
+      "gameBuff": "buff_wpn_pistol_0008_extra_valid",
+      "duration": "duration2",
+      "modifiers": [
+        { "attr": 51, "value": "spell_dmg_up3" },
+        { "attr": 52, "value": "spell_dmg_up3" },
+        { "attr": 53, "value": "spell_dmg_up3" },
+        { "attr": 54, "value": "spell_dmg_up3" }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_pistol_0008.cast",
+      "on": { "event": "cast", "kinds": ["battle"] },
+      "by": "self",
+      "skill": "sk_wpn_pistol_0008",
+      "do": [{ "kind": "buff", "buff": "wpn_pistol_0008.cast" }]
+    },
+    {
+      "id": "wpn_pistol_0008.reaction",
+      "on": { "event": "reaction", "fromKinds": ["battle"] },
+      "by": "self",
+      "beforeDamage": true,
+      "skill": "sk_wpn_pistol_0008",
+      "do": [{ "kind": "buff", "buff": "wpn_pistol_0008.reaction" }],
+      "note": "Any Arts Reaction the wielder's battle skill applies, forced ones included. Before the hit's damage (as Navigator's on the same kind of event in fixtures/pending/zmdlogs-abfd4b7478ec.json; in-game test 51's question)."
+    }
+  ]
+}

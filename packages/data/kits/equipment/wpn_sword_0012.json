@@ -1,0 +1,32 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0012",
+  "sources": [
+    "Thermite Cutter, skill 3 (Flow: Thermal Release): rmxlinux Json/SkillData sk_wpn_sword_0012 (game 1.6); values SkillPatchTable sk_wpn_sword_0012 (level 1 → 9: atk_up 0.10 → 0.28, atk_up2 0.05 → 0.14, lv 1 → 9; duration 20, max_stack 2 at every level). Skill 1 (Will), skill 2 (ATK) and skill 3's cardAttributeModifier (ATK + atk_up, attribute 2 formulaItem 6) are on the stat panel; toggleBuffs buff_wpn_passive_spirit_01 has no BuffData file (inert). Batch-4 reports docs/kit-batches/batch-4/chr_0028_wulfa.md W3, W4 and docs/kit-batches/batch-4/chr_0029_pograni.md (§ Kit).",
+    "passiveEventActions [0]: abilityEvent 142 (the wielder obtains SP) + CheckObtainAtbType method [0] type [3] (natural SP from a skill: ObtainCostAction atbGainMethod 0, atbSourceType 3) → buff_wpn_sword_0012_atk_up on the team (attribute 2 formulaItem 6 + atk_up2, `duration` 20 s; stackingType 11 with priority key lv and maxStackCntKey max_stack 2: layers with their own timers, per wielder). Description: \"After the wielder's skill recovers SP or grants a Link state, the entire team gains ATK +{atk_up2} for {duration}s. Max stacks for effects of the same name: {max_stack}. Duration of each stack is counted separately.\"",
+    "passiveEventActions [1], the Link half, isn't modelled: abilityEvent 9 (a buff added to the wielder) + CheckTargetsEqual (that buff's holder is the wielder) + CheckBuffIdInContext buff_common_affixes_combo_trigger (a Link stack) → the same team buff. This is a reaction to Link the wielder receives; Thermite Cutter itself gives no Link (no ComboAction and no CreateBuff of the combo-trigger buff in its SkillData or BuffData), so the trigger action `link` doesn't stand for it. The engine has no event for a Link stack given (the `link` action is silent), so this half is open (report § Kit); it needs a Link source in the team (Lifeng's or Camille's combo), none of whom can wield a sword (in-game test 94).",
+    "fixtures/pending/zmdlogs-7e19489ae503.json (Pogranichnik, L9 [9, 9, 5]): ZMDLogs lists buff_wpn_sword_0012_atk_up once per application (9 by 28292 ms: the battle skill, three combo slashes, four harasses and the Decisive Assault, all natural type-3 SP), the game counts 2 (the Endministrator's attack 5 at 20424 and 23673 ms: 10,725 both with 2 and 9 listings); zmdlogs check caps them by the kit buff's maxStacks."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_sword_0012.team_atk",
+      "label": "Thermite Cutter: team ATK per skill SP",
+      "target": "team",
+      "gameBuff": "buff_wpn_sword_0012_atk_up",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [{ "zone": "atk", "value": "atk_up2" }],
+      "note": "Two wielders' copies add (stackingType 11 with maxStackCntKey: no stack group; batch-3 B2's residue)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_sword_0012.skill_sp",
+      "on": { "event": "sp", "natural": true, "sourceTypes": [3] },
+      "by": "self",
+      "skill": "sk_wpn_sword_0012",
+      "do": [{ "kind": "buff", "buff": "wpn_sword_0012.team_atk" }],
+      "note": "Every natural skill-SP grant of the wielder (a returned grant, e.g. a P1 refund, doesn't count; Final Strike SP is atbSourceType 1)."
+    }
+  ]
+}

@@ -465,3 +465,123 @@ Hand-written:
   Treatment Efficiency) on `{event: hit, kinds: [combo]}`; team buff
   `.arts` (attrs 51–54 `spell_dmg_up`, `duration2`) on `{event: heal,
   toOthers: true, kinds: [combo]}`.
+
+## Kit (2026-10-21)
+
+Files: `packages/data/kits/operators/chr_0033_camille.json`;
+`packages/data/kits/equipment/wpn_lance_0007.json` (Beacon of Duty, moved
+here from Lifeng by the merge's "Weapon owners"), `wpn_lance_0015.json`
+(Blessing of Lustrous Carmine), `wpn_lance_0016.json` (Golden Age);
+Mountain Bearer (`wpn_lance_0012`) went to Lifeng. Tests:
+`tests/kit-camille.test.ts` (20 tests); Camille added to OPERATORS in
+`packages/data/test/skillCompile.test.ts` (no disagreement with the
+compiled SkillData, so no KNOWN entry). Example:
+`examples/camille-gilberta.scenario.json` with `examples/camille-p3.json`
+(her 40d9 build). Fixture: a note on `fixtures/zmdlogs-40d9a3c1da37.json`
+(what her kit explains; notes only, the build is right). No engine,
+loader or compiler change.
+
+### Re-analysis
+
+Gaps:
+
+| Gap | Status | How |
+|---|---|---|
+| G1 Hunter Pursuit from the battle-skill button | **done** (S7) | `combo_skill_2`: `comboWindow: false`, `available: {buffActive: hunter_state}`; the button skill `normal_skill_2` and its `cast` trigger are gone. `normal_skill` keeps `available: {not: {buffActive: hunter_state}}`. The cast is a combo cast by the player (`followUp: false`), uses no Link and leaves the regular combo's window and cooldown alone. **Residue (open, small):** the combo's (51–63) and the ultimate's (125–150) AllowNextSkill windows list the button `normal_skill_2`, not `combo_skill_2`, so Hunter Pursuit right after them waits for their exclusive frames (63, 133): 12 / 8 frames late. Mapping a window's button skill to the skill its switchToBuffConfig casts would be a loader rule (shared code), not written here |
+| G2 Link only from Link sources | **done** (B1) | trigger action `link` (`seconds: combo_duration`) at combo frame 47 (talent 1 and hovering Vesperwings) and Hunter Pursuit frame 70 (talent 1 only); the engine gives a combo no stack by itself |
+| G3 talent 2 from heals Camille receives | **done** (T2) | `on: {event: heal, kinds: [battle, combo, ultimate], toOwner: true}`, `by: anyone` (the data's OnReceiveHeal). U1 (does a teammate's heal count?) stays for test 93: with Liino in the team her battle skill's heals fill all 5 layers (tested) |
+| G4 Mountain Bearer's element filter | moved | T1 is done; the weapon is Lifeng's now. Beacon of Duty uses T1 here (`tags: [458037917]`) |
+| G5 compiler leftovers | partly done | (1) SP before the damage: **done** (D8a, `spBeforeDamage` on combo hit 3, Hunter Pursuit hits 2 and 4, ultimate hit 3). (2) the hover debuff: still only reported (written by hand). (3) the explosion (entity passive): still not reached; kit-draft lists `…_delay_damage` as a logged key it lacks (hand-written triggers). (4) HealAction: now `heals: "self"`, but unconditional, while the data has it behind `talent_0` and the hover tag: the kit uses heal triggers instead; ComboAction still not compiled (hand-written `link`). (5) the retarget hit: **done** (now an event-driven note, not a landing). (6) the switch to Hunter Pursuit: still "nothing compiled: normal_skill_2" (S7 covers it by hand) |
+| G6 reaction replay by landing | **done** (L1) | 4e5e's ultimate burst (53273 ms) now matches |
+
+Mechanics rows not covered by the gaps: rows 1–8, 11–14, 16, 18, 20, 21,
+23–27, 33–35, 41–43 as in the plan (row 37–40 are Lifeng's now). Row 15
+(U2) settled by the logs: every combo and Hunter Pursuit on a hovering
+target explodes. Row 28: slow-downs from SkillData; hit-stops (Ti1b) open.
+Row 29 (U5): **done** by V2 (Combustion keeps the applier's side from its
+application): 4e5e's three ticks match. Rows 9, 10, 32: n/a on one enemy.
+Row 35's reaction-forming infliction: test 35 (U4).
+
+Beacon of Duty rows (Lifeng's W1–W4): W1 stat panel; W2 `inflictionApplied`
+[fire] from battle / combo / ultimate, `beforeDamage`; W3 **done** by T1:
+`on: {event: buffApplied, tags: [458037917], fromKinds: [battle, combo,
+ultimate]}` (Heat Susceptibility, an Arts or all-element one counts); W4
+plain buffs (two wielders adding: B2's open part).
+
+### What the kit models
+
+- Basic chain, finisher (7 projectiles × 0.05 + 0.65), dive landing (not
+  castable until dive attacks are rotation steps: it never fires in the
+  scenarios).
+- Battle skill: one hit at 12 (`launch: 12`), Heat Infliction, the
+  Vesperwings debuff (Weakness and Heat Susceptibility, 45 s / P1 60 s)
+  before its damage, team energy at 12.
+- Combo: hits at 19 / 27 / 47; SP before hit 3; the explosion
+  (`bat_atk_scale`, battle-skill DMG, 12 frames after hit 3) if the
+  Vesperwings hover; with talent 1 on them, one Link stack and a heal one
+  frame after hit 3 (detached from 47, so a cast cut after hit 3 still
+  heals). Delays run on the cast's playhead: a teammate's time stop between
+  hits moves them with the hits.
+- Ultimate: 7 + 1 + 1 hits, Heat on the last, its SP before that hit;
+  Hunter Pursuit armed at 118 for 15 s.
+- Hunter Pursuit: four hits (20 / 33 / 49 / 70), SP before hits 2 and 4,
+  energy at 70, Link and heal with talent 1 whatever the target, the
+  explosion if hovering; ends the state at its frame 0.
+- Talent 2: two Bloodfount layers per skill heal Camille receives (Heat DMG
+  `atk_up` each, 40 s, max 5), a quarter for each teammate; P5 +0.06.
+- Potentials from the data (P1 values and duration, P2 panel, P3 cooldown,
+  multipliers and SP, P4 cost, P5 talent value).
+- Lustrous Carmine: team ATK on natural skill SP (on the granting hit), team
+  Heat DMG on a Heat Infliction from a skill (on the inflicting hit).
+- Beacon of Duty: the wielder's Physical and Heat DMG on a skill's Heat
+  Infliction; the team's on a skill's Heat Susceptibility (Camille's battle
+  skill: both on its own hit).
+- Golden Age: Treatment Efficiency on a combo hit (no damage effect); team
+  Arts DMG when the wielder's combo heals someone else (never on Camille;
+  on Liino when her combo heals the controlled operator).
+
+Left out: projectile travel (Ti2, test 47), hit-stops (Ti1b), the retarget
+path (one enemy), the bateffect ≥ 2 check (settled: always), heal amounts
+(N2), the Weakness's effect on the enemy's damage (not modelled), and
+Hunter Pursuit's window residue above.
+
+### Verification
+
+`zmdlogs check` (only Camille's lines changed; every other fixture's output
+and every example total are the same as before the kit):
+
+| Fixture | Camille hits | Reactions |
+|---|---|---|
+| 40d9a3c1da37 (P3) | **6 of 6 match** (was 1 match, 5 not covered); Gilberta's ultimate at 12951 ms: "Link 1 (predicted 1)" (was predicted 0) | **3 / 0 / 0** (was 2 / 0 / 1): her battle-skill Heat makes the 7663 ms burst |
+| 4e5e1390085e (P1) | **62 match, 0 mismatch, 23 under unmodelled effects** (was 0 covered); with the fixture's hand annotation applied (Lustrous Carmine's ATK from 49418 ms) **85 of 85** (tested) | **16 / 0 / 2** (was 8 / 1 / 10). Left: Rossi's 12219 ms Lift (no kit yet) and Gilberta's 68873 ms Nature burst (not Camille's) |
+
+One 4e5e match is a coincidence worth knowing: the ultimate's hit 3 at
+52347 ms is reported "Link 1 (predicted 0)", but no Link source is within
+15 s; the real fit is the annotation's ATK (×1.0958 on the ultimate's
+other hits) times Frontiers' +16% boundary buff from that hit's own SP
+(×1.0951 at her DMG-bonus sum 1.68): ×1.2000, the same as one Link stack.
+With the annotation applied it matches without Link. The 23 unquantified
+hits are the annotation's, as in the analysis (24 then: this one now fits a
+variant).
+
+Example `camille-gilberta` (P3, Gilberta P0, 20 s): 201,716 damage, 11,819
+DPS over 17.07 s, Camille 65%. Combo at 4.60 s on Gilberta's Corrosion,
+explosion 0.4 s after hit 3, Link used by Gilberta's ultimate at 7.00 s
+(×1.2), Hunter Pursuit at 11.43 s (133 frames after the ultimate: the
+residue above), its explosion at frame 82. Largest hits: Hunter Pursuit's last
+(27k with Gilberta's field), the ultimate's last (9.7k), combo hit 3
+(10.6k).
+
+### In-game tests the kit depends on
+
+- **8** (Link, rewritten for B1) and its Camille variant in batch-4.md
+  ("Where Link comes from", (c) vs (d)): the talent-1 condition on the
+  combo's Link.
+- **93** (talent 2 from a teammate's heal): the kit counts it (the data's
+  OnReceiveHeal).
+- **35** (a reaction-forming infliction for Lustrous Carmine's and Beacon
+  of Duty's infliction effects: the kit doesn't count it).
+- **38** (two Heat Susceptibilities: the Vesperwings' and another's add).
+- **47** (projectile travel: battle skill, attack 4, finisher).
+- **18** (time stops freeze buffs and the delayed explosion: fits).
+- **77** (Combustion snapshot, V2's ATK part).

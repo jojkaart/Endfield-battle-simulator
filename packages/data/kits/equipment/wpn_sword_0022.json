@@ -1,0 +1,49 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0022",
+  "sources": [
+    "Lupine Scarlet. rmxlinux Json/SkillData/sk_wpn_sword_0022 and Json/BuffData buff_wpn_sword_0022_layer / _final (game 1.6); values SkillPatchTable sk_wpn_sword_0022 (level 1 → 9: dmg_up 0.01 → 0.028, dmg_up2 0.24 → 0.672; max_stack 16 and duration 20 at every level). Skills 1–2 and skill 3's ATK + atk_up (cardAttributeModifier attribute 2) are on the stat panel.",
+    "passiveEventActions abilityEvent 44 (the wielder deals Critical DMG; its CheckDamageDecorateMask 8960 is disabled, isEnable false: any crit, basic attacks and Razor Clawmark ticks included, as the 4e5e log shows layers from attack1 at 4948 ms, attack3 at 6829 ms and a bleed tick at 35175 ms) → CreateBuff buff_wpn_sword_0022_layer (attributes 50 Physical and 51 Heat DMG + dmg_up, stackingType 2 max max_stack, lifeType 1: no expiry); then, with layers ≥ max_stack and no _final, buff_wpn_sword_0022_final (attributes 50, 51 + dmg_up2 assigned as its dmg_up, `duration`), whose end (buffEvent 2) finishes every layer. Description: \"After the wielder's skill deals Critical DMG, the wielder gains 1 stack of Wolven Blood … Physical and Heat DMG Dealt +{dmg_up}. … {max_stack} stacks. After reaching {max_stack} stacks … another +{dmg_up2} for {duration}s. After the duration ends, all Wolven Blood stacks are removed.\" abilityEvent 150 (leaving battle) clearing the layers is outside a fight.",
+    "toggleBuffs buff_wpn_passive_spirit_01 (atk_up): the template leftover with no effect, as on every weapon of this family (batch 1). Crits are only events with rolled crits (design.md, Damage; batch-4 T3: search ranks crit-triggered kits over rolled-crit seeds): with expected crits only the stat-panel part acts. Verified on Rossi in fixtures/zmdlogs-4e5e1390085e.json (docs/kit-batches/batch-4/chr_0028_wulfa.md, Kit section)."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_sword_0022.layer",
+      "label": "Wolven Blood",
+      "target": "self",
+      "gameBuff": "buff_wpn_sword_0022_layer",
+      "maxStacks": "max_stack",
+      "modifiers": [{ "attr": 50, "value": "dmg_up" }, { "attr": 51, "value": "dmg_up" }],
+      "note": "No duration: lifeType 1 (until the final's end removes the layers)."
+    },
+    {
+      "id": "wpn_sword_0022.final",
+      "label": "Wolven Blood at max stacks",
+      "target": "self",
+      "gameBuff": "buff_wpn_sword_0022_final",
+      "duration": "duration",
+      "modifiers": [{ "attr": 50, "value": "dmg_up2" }, { "attr": 51, "value": "dmg_up2" }],
+      "note": "CreateBuff assigns dmg_up2 to the final's dmg_up key (attributes 50, 51 formulaItem 5)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_sword_0022.on_crit",
+      "on": { "event": "hit", "crit": true },
+      "by": "self",
+      "skill": "sk_wpn_sword_0022",
+      "do": [
+        { "kind": "buff", "buff": "wpn_sword_0022.layer" },
+        { "kind": "buff", "buff": "wpn_sword_0022.final", "if": { "all": [{ "buffLayers": "wpn_sword_0022.layer", "atLeast": 16 }, { "not": { "buffActive": "wpn_sword_0022.final" } }] } }
+      ],
+      "note": "The layer first, then CheckBuffStackNumAdvanced layer ≥ max_stack (16 at every level; buffLayers takes a literal) and final < 1. The new layer acts from the next hit (the crit that adds it has already been dealt)."
+    },
+    {
+      "id": "wpn_sword_0022.end",
+      "on": { "event": "buffEnded", "buff": "wpn_sword_0022.final" },
+      "by": "self",
+      "do": [{ "kind": "endBuff", "buff": "wpn_sword_0022.layer" }],
+      "note": "buff_wpn_sword_0022_final buffEvent 2: FinishBuffAdvanced every buff_wpn_sword_0022_layer."
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_funnel_0015",
+  "sources": [
+    "Lone Barge (arts unit). Skill 3, sk_wpn_funnel_0015 (rmxlinux Json/SkillData; values from SkillPatchTable at the weapon's skill-3 level: pulse_dmg_up2, max_stack, duration, cd, pulse_dmg_up3, duration2). Its cardAttributeModifier (attribute 52, Electric DMG + pulse_dmg_up) and skills 1-2 stay in the stat panel. Batch-4 report docs/kit-batches/batch-4/chr_0030_zhuangfy.md rows W1-W3.",
+    "abilityEvent 208 (the wielder removes a buff) + CheckOriginSkillType [2] (from a battle skill) + CheckBuffIdInContext checkType 1 tag 1474064594 (Arts Reaction, the reaction statuses' parent tag) + CheckTimedMarkerCondition / CreateTimedMarker `cd` (0.1 s) -> buff_wpn_funnel_0015_combo (damageModifier: decorate mask 256, battle skill, and damageTypeMask 8, Electric: NormalCalcZone + pulse_dmg_up; stackingType 2, maxStackCnt from max_stack: layers, each its own `duration`). A consumption by a battle skill's own trigger counts as from a battle skill (the trigger's applications take its cast's kind).",
+    "abilityEvent 30 (the wielder casts a skill) + CheckSkillType [7] (ultimate) -> buff_wpn_funnel_0015_ultimate (the same damage modifier with pulse_dmg_up3, for duration2; stackingType 4: refreshed). It starts at the cast, before the ultimate's own effects (Zhuang Fangyi's Empyrean starts 78 frames later, so it outlasts this buff by about 2 s).",
+    "Description: \"When the wielder's battle skill consumes Arts Reactions, the wielder gains Battle Skill Electric DMG +{pulse_dmg_up2} for {duration}s. Max stacks: {max_stack}. Duration of each stack is counted separately. This effect only triggers once every {cd}s. After the wielder casts an ultimate, the wielder gains Battle Skill Electric DMG +{pulse_dmg_up3} for {duration2}s.\" (paraphrased from I18nTextTable_EN)"
+  ],
+  "buffs": [
+    {
+      "id": "wpn_funnel_0015.consume",
+      "label": "Lone Barge: Battle Skill Electric DMG per consumed reaction",
+      "target": "self",
+      "gameBuff": "buff_wpn_funnel_0015_combo",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [{ "zone": "damageBonus", "elements": ["pulse"], "skillType": "battle", "value": "pulse_dmg_up2" }]
+    },
+    {
+      "id": "wpn_funnel_0015.ultimate",
+      "label": "Lone Barge: Battle Skill Electric DMG after an ultimate",
+      "target": "self",
+      "gameBuff": "buff_wpn_funnel_0015_ultimate",
+      "duration": "duration2",
+      "modifiers": [{ "zone": "damageBonus", "elements": ["pulse"], "skillType": "battle", "value": "pulse_dmg_up3" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_funnel_0015.on_consume",
+      "on": { "event": "statusConsumed", "fromKinds": ["battle"] },
+      "by": "self",
+      "cooldown": "cd",
+      "skill": "sk_wpn_funnel_0015",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0015.consume" }],
+      "note": "Any reaction status (Electrification, Combustion, Solidification, Corrosion) the wielder's battle skill consumes, as Twelve Questions' trigger (wpn_sword_0018); not an infliction."
+    },
+    {
+      "id": "wpn_funnel_0015.on_ultimate",
+      "on": { "event": "cast", "kinds": ["ultimate"] },
+      "by": "self",
+      "skill": "sk_wpn_funnel_0015",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0015.ultimate" }]
+    }
+  ]
+}

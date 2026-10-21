@@ -1,0 +1,29 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_funnel_0008",
+  "sources": [
+    "Detonation Unit (6-star Arts Unit), skill 3 \"Detonate: Imposing Champion\": \"When the wielder applies an Arts Burst, target enemy suffers Arts DMG Taken +{spell_damage_taken_up} for {duration}s.\" SkillPatchTable sk_wpn_funnel_0008: spell_damage_taken_up 0.09 (L1) to 0.252 (L9), duration 15, lv.",
+    "rmxlinux Json/SkillData sk_wpn_funnel_0008 passiveEventActions: abilityEvent 127 (the wielder applies an Arts Burst) → CreateBuff buff_wpn_funnel_0008_magic_damage_taken_up on the target (spell_damage_taken_up, duration, lv). BuffData: damageModifier CheckDamageTypeMask 92 (Heat, Electric, Cryo, Nature) with DamageScaleProcessor side 1 (the target's side: DMG Taken) NormalCalcZone; stackingType 1 priority lv (two wielders' copies don't add).",
+    "The main-attribute, Arts Intensity and secondary-attribute + second_attr_up lines (cardAttributeModifier) are in the stat panel; toggleBuffs names buff_wpn_passive_spirit_01, which has no BuffData file (inert). Created on the burst event, so the bursting hit itself doesn't have it. Ardelia never bursts (she inflicts nothing): it fits an operator whose own hits burst. docs/kit-batches/batch-4/chr_0025_ardelia.md W4–W5."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_funnel_0008.arts_taken",
+      "label": "Imposing Champion: Arts DMG Taken",
+      "target": "enemy",
+      "gameBuff": "buff_wpn_funnel_0008_magic_damage_taken_up",
+      "duration": "duration",
+      "modifiers": [{ "zone": "damageTaken", "value": "spell_damage_taken_up", "elements": ["fire", "pulse", "cryst", "natural"] }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_funnel_0008.burst",
+      "on": { "event": "burst" },
+      "by": "self",
+      "skill": "sk_wpn_funnel_0008",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0008.arts_taken" }],
+      "note": "abilityEvent 127: any Arts Burst the wielder applies (no skill-type check)."
+    }
+  ]
+}

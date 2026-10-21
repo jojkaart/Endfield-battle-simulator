@@ -555,3 +555,133 @@ ring hit):
 **Waits on gaps:** G1 (the state's combos: the largest error), G2 (the free
 battle skill's SP), G3 (Flickers from teammates' Amps), G5 (the exit skill),
 G8 (log checks); G4, G6 small; G7 optional; U1–U6 interims as stated.
+
+## Kit (2026-10-21)
+
+Files: [packages/data/kits/operators/chr_0030_zhuangfy.json](../../../packages/data/kits/operators/chr_0030_zhuangfy.json)
+(written by a generator kept with the scratch notes,
+`/tmp/claude-0/-home-user-Endfield-battle-simulator/cfb486ef-c396-564d-b928-8b0d87099e4f/scratchpad/batch4/kit-chr_0030_zhuangfy/genkit.py`,
+started from the analysis one); equipment kits `wpn_funnel_0015` (Lone
+Barge), `wpn_funnel_0017` (Flickers in the Mist), `wpn_funnel_0018`
+(Junction Point), `wpn_funnel_0020` (Suffering's End) in
+packages/data/kits/equipment/; the example
+[examples/zhuangfy-solo.scenario.json](../../../examples/zhuangfy-solo.scenario.json)
+with the build [examples/zhuangfy-p5.json](../../../examples/zhuangfy-p5.json)
+(P5, Lone Barge, Pulser Labs); tests
+[tests/kit-zhuangfy.test.ts](../../../tests/kit-zhuangfy.test.ts); her
+OPERATORS and KNOWN entries in packages/data/test/skillCompile.test.ts. No
+engine, loader or compiler change.
+
+### Re-analysis
+
+Gaps:
+
+| Gap | Now | How |
+|---|---|---|
+| G1 combo cooldown rate (attribute 93) | **done** (S4) | `empyrean` carries `{attr: 93, value: combo_cd_rate}`; the loader reads ult_base's formulaItem 6 as a percentage: rate 1 + 4 = 5 (U4: the description says 4; logs only). The example fits three Empyrean combos in one state (one before) |
+| G2 SP cost from a buff (attribute 45) | **done** (S5) | `ult_free` carries `{attr: 45, value: -100}` (the BuffData's literal, no key); the free cast spends nothing, so it gives no team energy either (`teamEnergy` needs no `if`) |
+| G3 "the wielder gains an Amp" | **done** (T1) | Flickers: `buffApplied` with `categories [amp]`, `elements [pulse]`, `received`, `by: anyone`; `t1_amp_plus` has `categories: []`. Leftover: an all-element Amp would count too (not in the data's ID list; no kit gives one) |
+| G4 ExtendBuffAction (B7) | **open** (deferred by the merge) | not modelled: at most 35 frames of state per ultimate |
+| G5 the exit skill from BuffData (S6) | **done** (S6) | kit skill `ultimate_skill_end` (`followUpOnly`, no hits) cast by `ult_end`: 20 exclusive frames, ends her current action. Its kind is an interim (below) |
+| G6 3 s floor on expiring Sunderblades (B8) | **open** (deferred) | not modelled |
+| G7 counted landings judged at launch (V3) | **open** (deferred; kit size only) | the composite stays: a strike / final pair per Sunderblade count, 17 hits per battle skill |
+| G8 log tooling for stack values (L4) | **done** (L4) | `efsim calc` on the example build shows every strike at conduct_cnt 1 (0.621 × ATK at P5) |
+| Data: `atbOnlyMainChar` | **done** (D8b) | kit-draft emits `sp: {if: {controlled}}` for attack5, attack3_ult, the dive |
+| Data: same-hit alternatives, hitMark1 per-target markers, the ring | **open** (D3, D7e partly) | kit-draft still emits 6 / 8 alternatives; the kit writes one hit each (its notes say why) |
+| Data: buff-driven strikes (D4), the combo's level and `usp_extra × inflictCnt` (D8f, D9f) | **open** (compiler) | hand-written; the KNOWN entries say why (about 100 lines, nearly all the strike pairs) |
+
+Mechanics rows with an interim or still open (the others are supported as
+the mechanics table says):
+
+- Rows 13, 32 (Thunder Strikes): the composite as planned, exact within
+  the model. Row 14 (U1): the f6 Sunderblades strike in their own cast.
+  Row 15 (U2): frames rounded up from the interval. Row 17's edge (an old
+  strike landing after a recast's count, 200 SP in under 2 s) stays.
+- Row 18: the conditional jumps 16 → 116 / 16 → 100 (marker `skillEnd`)
+  aren't taken (an unlisted conditional jump isn't): her windows 45–116 /
+  30–143 already let her act, so the jump moves her next action by at most
+  a frame.
+- Row 25: the engine replaces a weaker Electrification by hers (test 66).
+- Row 36 (the Empyrean combo's ring): left out, it hits only other enemies.
+- Row 37: G4. Row 38: done (G5). Row 39 (U3, TagQueryListener 1200): no
+  early end. Row 41 (U5): cumulative growth. Row 42 (talent 2): not
+  modelled (N2). Row 49 (hit-stop, Ti1b): not modelled. Row 50 (U6): the
+  finisher stays castable in the state.
+- **New, the exit skill's kind:** ult_base casts `ultimate_skill_end` after
+  ChangeSkillType skillType 3, none of battle (2), combo (6) or ultimate
+  (7). The kit format has only the four kinds, so the kit says `basic`: no
+  "casts an ultimate" effect (Lone Barge's abilityEvent 30 + CheckSkillType
+  [7]; Hypernova Auto, suit_atk01 and others by kind) fires at the state's
+  end, as in the data, and no shared kit listens to basic casts (only
+  Purrchena's own triggers, `by: self`). A test checks that Lone Barge's
+  buff isn't re-applied. Open, small: a kind for "other" skills, if
+  another helper needs one.
+
+Equipment rows:
+
+- W2, W3 (Lone Barge): as planned; the trigger's cooldown is the data's key
+  `cd` (0.1 s). Her consumption inside her battle skill's cast trigger
+  counts as from a battle skill (test).
+- F2 (Flickers): G3 above.
+- J2 (Junction Point): better than the plan's interim. Four triggers, one
+  per tag of the data's four abilityEvent-206 handlers (`buffApplied` with
+  `tags`), and `inflictionApplied`, all `fromKinds [combo]`: no Physical
+  Susceptibility any more, and an Arts Susceptibility (all four tags) runs
+  all four handlers as the data does (the cap of 2 keeps it at 2). J3
+  (reaction-forming infliction, test 35) and J4 (two wielders, the batch-3
+  B2 residue) stay open.
+- S2 (Suffering's End): as planned, with `maxStacks: 4`, the BuffData's
+  literal maxStackCnt (no key: the loader derives caps only for
+  priority-keyed type-1 buffs, B2), and the data's literal 4 in the
+  `buffLayers` check.
+
+### What the kit models
+
+Every skill (the 11 the rotation uses, the dive, the exit helper), all
+potentials (P1's extra Sunderblade and ×1.15, P2 and P4 in the panel, P3's
+46 s Sunderblades and 10 SP returned, P5's 15 Electric RES ignored in the
+state), talent 1 (Electric Amp 18% + 2% per Thunder Strike at level 2),
+the Empyrean (swapped skills, the free first battle skill, the 5× combo
+cooldown, the energy block, the exit skill and the ultimate's 15 s
+cooldown at its end). Left out: talent 2 (incoming damage), hit-stops, the
+ring on other enemies, B7, B8, U3's early end.
+
+### Verification
+
+No ZMDLogs fixture has Zhuang Fangyi, Lone Barge, Flickers in the Mist or
+Suffering's End. Junction Point is on Xaihi in
+`fixtures/pending/zmdlogs-e82d45c46040.json`, where Xaihi has no logged
+hit (0 hits) and no logged hit carries `buff_wpn_funnel_0018_layer`:
+`zmdlogs check` and `zmdlogs reactions` on it are byte-identical with the
+four equipment kits. No log can check the kit yet (the log checks it
+would need are listed in "Verification" above).
+
+Scenario `examples/zhuangfy-solo.scenario.json` (P5, Lone Barge, Pulser
+Labs, expected crits, Rhodagn Lv90, one ultimate): 1,108,816 damage in
+31.20 s (35,539 DPS). Thunder Strikes 2, 3 before the ultimate (the free
+Sunderblade and P1's, then the free one); in the Empyrean 6 (the free cast
+at 9.0 s, SP unchanged), 8 and 9 (each paid cast consumes the combo's
+level-1 Electrification: +2, the cap 9 replaces the oldest); three
+Empyrean combos at 12.73, 19.73, 30.40 s (back 3.4 s after each, so the
+chains and SP limit them); the state ends at 34.8 s (25 s from 8.6 s,
+held 0.4 s by each combo's slow-down) with the exit skill. The largest
+hit is the 9-blade final Thunder Strike (136,155: 6.831 × ATK at conduct
+level 1, with Lone Barge's +1.12 and 2 × 0.56). Before the shared
+features the analysis run allowed one combo per state and the free battle
+skill waited until 18.1 s. `efsim calc` on the build runs (L4).
+`kit-census`: no field only this kit uses.
+
+Example totals and log outputs: every existing `examples/*.scenario.json`
+total and every `zmdlogs check` / `zmdlogs reactions` output on
+fixtures/zmdlogs-*.json and fixtures/pending/zmdlogs-*.json is
+byte-identical before and after the kit (none has her or her weapons
+in a logged hit).
+
+### In-game tests the kit depends on
+
+87 (Sunderblades per cast and their own 36 s timers: U1, row 11), 88 (the
+free battle skill, the combo's cooldown in the state, swapping out: S5, S4,
+U3), 89 (talent 1's growth: U5); existing ones: 66 (her forced
+Electrification over a stronger one), 35 (Junction Point, J3), 38 (two
+Electric Amps adding: talent 1 with Antal's ultimate), 18 (slow-downs
+holding buff timers: the state's end), 47 (projectile travel).

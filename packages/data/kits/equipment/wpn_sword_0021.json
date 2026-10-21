@@ -1,0 +1,39 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0021",
+  "sources": [
+    "Grand Vision, skill 3 (Infliction: Long Time Wish): rmxlinux Json/SkillData sk_wpn_sword_0021 (game 1.6); values SkillPatchTable sk_wpn_sword_0021 (level 1 → 9: phy_spell_up 30 → 84, phy_dmg_up 0.36 → 1.008; duration 20 at every level). Skill 1 (Agility), skill 2 (ATK) and skill 3's cardAttributeModifier (Arts Intensity + phy_spell_up, attribute 87 formulaItem 5) are on the stat panel. Batch-4 report docs/kit-batches/batch-4/chr_0029_pograni.md W2, W4, W5. wpn_sword_0021_ink is the same WeaponBasicTable row but for its ID and model (a skin): the loader gives it this kit (D3).",
+    "passiveEventActions: abilityEvent 206 (the wielder applies a buff) with CheckBuffIdInContext [buff_common_originum_frozen] (checkType 0: the ID list; its query's tags 528446605 and 1066759270 are read only under checkType 1, per the reading of Glorious Memory's twin check; batch-4 T1's open reading, in-game test 92) → buff_wpn_sword_0021_exist; or CheckBuffIdInContext checkType 1, tag 1535684437 (Solidification) → the same. _exist: `duration` 20 s, stackingType 9 (\"Effects of the same name cannot stack\": one, refreshed). abilityEvent 30 + CheckSkillType [2, 7] (a battle skill or ultimate cast) with _exist → CreateBuffAttachingSkill buff_wpn_sword_0021_valid (attribute 50 formulaItem 5 + phy_dmg_up, for the cast); its end finishes _exist. Description: \"When the wielder applies Originium Crystals or Solidification, during the next battle skill or ultimate cast within {duration}s, the wielder gains Physical DMG Dealt +{phy_dmg_up}.\"",
+    "_valid is attached to the cast, so the loader makes the consumed buff act on every hit of the wielder while that cast runs (consumedScope whileCasting, B5): fixtures/pending/zmdlogs-7e19489ae503.json t=33734 has _valid 0.648 (L5) on the Endministrator's battle skill hit, its Crush hit (buff_physical_crushed, 413,543) and the crystal hit (buff_common_originum_frozen); not on her ultimate at 35661 (consumed). The Endministrator's signature: only her kit applies Originium Crystals; the Solidification half works for any wielder whose hit forms it.",
+    "toggleBuffs buff_wpn_lance_0003 (Pathfinder's Beacon's ATK + atk_up, a key this skill doesn't have, under CheckCurHpRatio ≥ hp_ratio, another missing key) isn't applied: in-game test 75's variant (a missing key read as 0 would make it +0)."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_sword_0021.ready",
+      "label": "Grand Vision: Physical DMG during the next battle skill or ultimate",
+      "target": "self",
+      "gameBuff": "buff_wpn_sword_0021_exist",
+      "duration": "duration",
+      "consumedBy": ["battle", "ultimate"],
+      "modifiers": [{ "attr": 50, "value": "phy_dmg_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_sword_0021.on_crystals",
+      "on": { "event": "buffApplied", "gameBuffs": ["buff_common_originum_frozen"] },
+      "by": "self",
+      "skill": "sk_wpn_sword_0021",
+      "do": [{ "kind": "buff", "buff": "wpn_sword_0021.ready" }],
+      "note": "The wielder applies Originium Crystals: a kit buff standing for buff_common_originum_frozen (the Endministrator's combo)."
+    },
+    {
+      "id": "wpn_sword_0021.on_solidification",
+      "on": { "event": "reaction", "statuses": ["solidification"] },
+      "by": "self",
+      "skill": "sk_wpn_sword_0021",
+      "do": [{ "kind": "buff", "buff": "wpn_sword_0021.ready" }],
+      "note": "The wielder applies Solidification (a reaction its hit forms; tag 1535684437 is on the Solidification buffs)."
+    }
+  ]
+}

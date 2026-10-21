@@ -1,0 +1,72 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_lance_0012",
+  "sources": [
+    "Mountain Bearer (6-star polearm), skill 3 sk_wpn_lance_0012 (rmxlinux Json/SkillData, game 1.6; values SkillPatchTable L1–L9: dmg_up 0.2–0.56, all_attr_up / all_attr_up2 0.08–0.224, duration 15 s; cd 0.1 s from the SkillData blackboard). Its `buffs` give the wielder buff_wpn_lance_0012_noguard for the whole fight (lifeType 1): damageModifier with CheckBuffStackNumAdvanced buff_physical_no_guard ≥ 1 on the target (Vulnerable), DamageScaleProcessor NormalCalcZone +dmg_up. passiveEventActions abilityEvent 206 (a buff the wielder outputs) with CheckOriginSkillType [2] (from a battle skill): tag 1075718177 (Vulnerable) → buff_wpn_lance_0012_attribute, tag 1066759270 (Physical Susceptibility) → _attribute2 (attributes 39–42 formulaItem 6: All Attributes +all_attr_up / +all_attr_up2, duration; stackingType 4, refreshed), each behind its own 0.1 s timed marker. Batch-4 reports docs/kit-batches/batch-4/chr_0033_camille.md rows 36–40 (draft) and chr_0015_lifeng.md § Kit (moved to Lifeng at the merge).",
+    "Skills 1–2 (Agility, Physical DMG) are stat-panel lines. toggleBuffs buff_wpn_lance_0003 with atk_up from this skill's blackboard, which has none (0): inert.",
+    "Open: the All Attributes percentages don't reach ATK (batch-3 V4 residue: a main attribute's percentage reaching ATK; effects.ts), so .attrs / .attrs2 change only `attr` reads. The DMG bonus's condition is judged after the hit's own applications (batch-3 C1), as the data checks the target at the DamageAction: a hit that adds the first Vulnerable stack gets it. Not in any log."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_lance_0012.vulnerable_dmg",
+      "label": "Efficacy: Weight of Mountain (DMG vs Vulnerable)",
+      "target": "self",
+      "gameBuff": "buff_wpn_lance_0012_noguard",
+      "modifiers": [{ "zone": "damageBonus", "value": "dmg_up", "if": { "enemyVulnerable": 1 } }]
+    },
+    {
+      "id": "wpn_lance_0012.attrs",
+      "label": "All Attributes (Vulnerability from a battle skill)",
+      "target": "self",
+      "gameBuff": "buff_wpn_lance_0012_attribute",
+      "duration": "duration",
+      "modifiers": [
+        { "attr": 39, "value": "all_attr_up", "percent": true },
+        { "attr": 40, "value": "all_attr_up", "percent": true },
+        { "attr": 41, "value": "all_attr_up", "percent": true },
+        { "attr": 42, "value": "all_attr_up", "percent": true }
+      ]
+    },
+    {
+      "id": "wpn_lance_0012.attrs2",
+      "label": "All Attributes (Physical Susceptibility from a battle skill)",
+      "target": "self",
+      "gameBuff": "buff_wpn_lance_0012_attribute2",
+      "duration": "duration",
+      "modifiers": [
+        { "attr": 39, "value": "all_attr_up2", "percent": true },
+        { "attr": 40, "value": "all_attr_up2", "percent": true },
+        { "attr": 41, "value": "all_attr_up2", "percent": true },
+        { "attr": 42, "value": "all_attr_up2", "percent": true }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_lance_0012.always",
+      "on": { "event": "fightStart" },
+      "by": "self",
+      "skill": "sk_wpn_lance_0012",
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0012.vulnerable_dmg" }],
+      "note": "The skill's `buffs` (buff_wpn_lance_0012_noguard, lifeType 1): on the wielder from the start."
+    },
+    {
+      "id": "wpn_lance_0012.vulnerability",
+      "on": { "event": "vulnerable", "fromKinds": ["battle"] },
+      "by": "self",
+      "cooldown": "cd",
+      "skill": "sk_wpn_lance_0012",
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0012.attrs" }],
+      "note": "abilityEvent 206 + tag 1075718177 (Vulnerable, buff_physical_no_guard) + CheckOriginSkillType [2]: the wielder's battle skill adds a Vulnerable stack (a stack at the cap of 4 is output too: no `rising`). Timed marker wpn_lance_0012, cd 0.1 s."
+    },
+    {
+      "id": "wpn_lance_0012.physical_susceptibility",
+      "on": { "event": "buffApplied", "tags": [1066759270], "fromKinds": ["battle"] },
+      "by": "self",
+      "cooldown": "cd",
+      "skill": "sk_wpn_lance_0012",
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0012.attrs2" }],
+      "note": "abilityEvent 206 + CheckBuffIdInContext checkType 1 tag 1066759270 (Physical Susceptibility: buff_common_affixes_vulnerable_physical / _all; the loader maps it to susceptibility reaching Physical, batch-4 T1) + CheckOriginSkillType [2]: a Physical (or all-element) Susceptibility from the wielder's battle skill. Timed marker wpn_lance_0012_2, cd 0.1 s."
+    }
+  ]
+}

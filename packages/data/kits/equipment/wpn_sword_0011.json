@@ -1,0 +1,24 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0011",
+  "sources": [
+    "Rapid Ascent. rmxlinux Json/SkillData/sk_wpn_sword_0011 and Json/BuffData buff_wpn_sword_0011 (game 1.6); values SkillPatchTable sk_wpn_sword_0011 (level 9: phy_dmg_up 0.42, dmg_up 0.98). Skills 1–2 (main attribute, Crit Rate) are on the stat panel; sk_wpn_sword_0011 has no cardAttributeModifier: its `buffs` list gives buff_wpn_sword_0011 (lifeType 1, assigned phy_dmg_up and dmg_up) for the whole fight.",
+    "buff_wpn_sword_0011 damageModifier 1: CheckDamageDecorateMask checkType 1 mask 768 (battle skill, ultimate) + CheckDamageType 0 (Physical) → NormalCalcZone + phy_dmg_up; damageModifier 2: only CheckPoiseValue compare 1 value 0 on the target (Staggered: no poise left), no mask → NormalCalcZone + dmg_up on every hit. Description: \"Battle skills and ultimates gain Physical DMG Dealt +{phy_dmg_up}. Against Staggered enemies, battle skills and ultimates also gain DMG Dealt +{dmg_up}.\" Interim: the data (every hit against a Staggered enemy); in-game test 85 decides (the description's reading adds onlyKinds [battle, ultimate] to the second modifier).",
+    "toggleBuffs buff_wpn_passive_spirit_01 (atk_up, a key sk_wpn_sword_0011 doesn't have): the template leftover with no effect (batch 1). Not in any log."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_sword_0011.dmg",
+      "label": "Rapid Ascent: Physical DMG (battle skill, ultimate) and DMG against Staggered",
+      "target": "self",
+      "gameBuff": "buff_wpn_sword_0011",
+      "modifiers": [
+        { "zone": "damageBonus", "elements": ["physical"], "onlyKinds": ["battle", "ultimate"], "value": "phy_dmg_up" },
+        { "zone": "damageBonus", "value": "dmg_up", "if": { "enemyStaggered": true } }
+      ]
+    }
+  ],
+  "triggers": [
+    { "id": "wpn_sword_0011.on", "on": { "event": "fightStart" }, "by": "self", "skill": "sk_wpn_sword_0011", "do": [{ "kind": "buff", "buff": "wpn_sword_0011.dmg" }], "note": "The skill's `buffs` (lifeType 1): active from the start." }
+  ]
+}

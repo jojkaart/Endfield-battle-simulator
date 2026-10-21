@@ -1,0 +1,45 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_lance_0007",
+  "sources": [
+    "Beacon of Duty (6-star polearm; needs Heat Inflictions and Heat Susceptibility: Camille is the only Heat polearm operator). Skill 3 sk_wpn_lance_0007 (rmxlinux Json/SkillData; SkillPatchTable L1–L9 fire_dmg_up 0.07–0.196, dmg_up 0.08–0.224 for duration 20 s, dmg_up2 0.04–0.112 for duration2 30 s; the file's own blackboard defaults are template values the table overrides): cardAttributeModifier attribute 51 (Heat DMG) +fire_dmg_up is a stat-panel line, as are skills 1–2 (Agility, Ultimate Gain Efficiency).",
+    "abilityEvent 126 (OnCharBeforeOutputSpellInfliction) + CheckOriginSkillType [2, 6, 7] (battle, combo, ultimate) + CheckSpellInflictionType mask 1 (Heat) → buff_wpn_lance_0007_dmgup on the wielder (targetSource 1): Physical and Heat DMG (attributes 50, 51) +dmg_up for duration. Before the inflicting hit's damage, as Lustrous Carmine's and Solemn Phalanx's handler on the same event (40d9 / 4e5e show it for Lustrous Carmine). Whether an infliction that forms a reaction counts (inflictionApplied excludes it): open list 'Arcane R3', test 35.",
+    "abilityEvent 206 (OnBeforeOutputBuff: the wielder applies a buff) + CheckBuffIdInContext checkType 1, tag 458037917 (Heat Susceptibility: on buff_common_affixes_vulnerable_fire, _spell and _all) + CheckOriginSkillType [6, 7, 2] → buff_wpn_lance_0007_dmgup2 on CharacterTeamFinder (the whole team, wielder included): Physical and Heat DMG +dmg_up2 for duration2. The tag maps to the buffApplied filter categories [susceptibility], elements [fire] (an Arts or all-element Susceptibility counts; batch-4 T1). Like the event, it acts before the applying hit's damage when the buff does (Camille's Vesperwings: beforeDamage).",
+    "Both buffs stackingType 4 with priority key pd_up and maxStackCntKey max_stack (keys the weapon doesn't have): one instance, a reapplication refreshes; two wielders' team buffs adding is batch-4 B2's open part. Its toggleBuffs buff_wpn_passive_spirit_01 (atk_up, a key the skill doesn't have) is a template leftover with no effect, as Twilight's. buff_wpn_lance_0007 and _atk_up are referenced by no skill file. Not in any log yet."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_lance_0007.infliction",
+      "label": "Beacon of Duty: Physical and Heat DMG (Heat Infliction)",
+      "target": "self",
+      "gameBuff": "buff_wpn_lance_0007_dmgup",
+      "duration": "duration",
+      "modifiers": [{ "attr": 50, "value": "dmg_up" }, { "attr": 51, "value": "dmg_up" }]
+    },
+    {
+      "id": "wpn_lance_0007.susceptibility",
+      "label": "Beacon of Duty: team Physical and Heat DMG (Heat Susceptibility)",
+      "target": "team",
+      "gameBuff": "buff_wpn_lance_0007_dmgup2",
+      "duration": "duration2",
+      "modifiers": [{ "attr": 50, "value": "dmg_up2" }, { "attr": 51, "value": "dmg_up2" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_lance_0007.heat_infliction",
+      "on": { "event": "inflictionApplied", "elements": ["fire"], "fromKinds": ["battle", "combo", "ultimate"] },
+      "by": "self",
+      "beforeDamage": true,
+      "skill": "sk_wpn_lance_0007",
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0007.infliction" }]
+    },
+    {
+      "id": "wpn_lance_0007.heat_susceptibility",
+      "on": { "event": "buffApplied", "tags": [458037917], "fromKinds": ["battle", "combo", "ultimate"] },
+      "by": "self",
+      "skill": "sk_wpn_lance_0007",
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0007.susceptibility" }]
+    }
+  ]
+}

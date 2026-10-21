@@ -1,0 +1,45 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_lance_0015",
+  "sources": [
+    "Blessing of Lustrous Carmine (6-star polearm; Camille wears it in both her logs). Skill 3 sk_wpn_lance_0015 (rmxlinux Json/SkillData; SkillPatchTable L1–L9 ultimate_gain_up 0.18–0.504, atk_up and fire_dmg_up 0.06–0.168, duration and duration2 20 s): cardAttributeModifier attribute 44 (Ultimate Gain Efficiency) +ultimate_gain_up is a stat-panel line, as are skills 1–2 (Agility, Heat DMG).",
+    "abilityEvent 142 (OnObtainAtb) + CheckObtainAtbType atbGainMethod [0] atbSourceType [3] (the wielder's skill recovers natural SP) → buff_wpn_lance_0015_atkup on the team (CharacterTeamFinder): ATK (attribute 2 formulaItem 6) +atk_up for duration. Logged on the SP-granting hit itself (Camille's combo hit 3: 40d9 9240, 4e5e 7982 / 30769 ms), so SP granted before a hit's damage (KitHit.spBeforeDamage) shows it on that hit.",
+    "abilityEvent 126 (OnCharBeforeOutputSpellInfliction) + CheckOriginSkillType [2, 6, 7] (battle, combo, ultimate) + CheckSpellInflictionType mask 1 (Heat) → buff_wpn_lance_0015_dmgup on the team: Heat DMG (attribute 51 formulaItem 5) +fire_dmg_up (assigned to the buff's dmg_up) for duration2. Logged on the inflicting battle-skill hit itself (beforeDamage; test 51's question answered for this handler). Whether an infliction that forms a reaction counts (inflictionApplied excludes it): open list 'Arcane R3', test 35.",
+    "Both buffs stackingType 4 with priority key pd_up and maxStackCntKey max_stack (keys the weapon doesn't have): one instance, a reapplication refreshes. Its toggleBuffs buff_wpn_passive_spirit_01 (atk_up from the weapon's blackboard) is a template leftover with no effect, as Twilight's."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_lance_0015.atk",
+      "label": "Flow: Absolver of Guilt (team ATK)",
+      "target": "team",
+      "gameBuff": "buff_wpn_lance_0015_atkup",
+      "duration": "duration",
+      "modifiers": [{ "zone": "atk", "value": "atk_up" }]
+    },
+    {
+      "id": "wpn_lance_0015.heat",
+      "label": "Flow: Absolver of Guilt (team Heat DMG)",
+      "target": "team",
+      "gameBuff": "buff_wpn_lance_0015_dmgup",
+      "duration": "duration2",
+      "modifiers": [{ "attr": 51, "value": "fire_dmg_up" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_lance_0015.skill_sp",
+      "on": { "event": "sp", "natural": true, "sourceTypes": [3] },
+      "by": "self",
+      "skill": "sk_wpn_lance_0015",
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0015.atk" }]
+    },
+    {
+      "id": "wpn_lance_0015.heat_infliction",
+      "on": { "event": "inflictionApplied", "elements": ["fire"], "fromKinds": ["battle", "combo", "ultimate"] },
+      "by": "self",
+      "beforeDamage": true,
+      "skill": "sk_wpn_lance_0015",
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0015.heat" }]
+    }
+  ]
+}

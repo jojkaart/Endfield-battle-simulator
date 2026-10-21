@@ -1,0 +1,260 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0009_azrila",
+  "sources": [
+    "Hits, frames, keys and events: rmxlinux Json/SkillData chr_0009_azrila_* and Json/BuffData buff_chr_0009_azrila_* (game 1.6), as compiled by efsim kit-draft (frames, factors, elements, poise, SP, energy, Knock Downs, the combo's heal, team energy at 38, the guard's poise-only landing), plus what it leaves out: the guard's condition, talent 1's Protection, talent 2's ATK, the ultimate's team shield and P5's ATK. Batch-4 report docs/kit-batches/batch-4/chr_0009_azrila.md, § Kit plan and § Kit (2026-10-21). Talent order (0-based): 0 = Inflamed for the Assault (Protection), 1 = Pay the Ferric Price (ATK when hit).",
+    "Not modelled: damage taken, shield points and heal amounts (Protection, the ultimate's shield and the combo's heal are buffs and heal events, for categories, operatorBuff predicates and heal triggers); the enemy being interrupted (InterruptAction immobilizedTime 1 in the combo and ultimate: batch-3 E1); super armour (SetSuperArmor 25 [0–55], talent 1's 35); hit-stops (Ti1b); P3's second heal (\"another teammate with the lowest percentage HP\", group CureTarget: HP isn't tracked, report U1); the dash attack (chr_0009_azrila_dash_attack, SkillPatchTable only: batch-3 S5). Unused files (no CharGrowthTable, SkillPatchTable or PotentialTalentEffectTable entry names them, and no used file reaches them): chr_0009_azrila_talent_0, _potential_5, _combo_skill_defend, _extra_attack, _tactic_skill, _dodge and the buffs only they reach.",
+    "The dive attack (plunging_attack_end) is written from the data like any skill; rotations can't schedule a dive until batch-1 S10 lands."
+  ],
+  "element": "fire",
+  "buffs": [
+    {
+      "id": "protection",
+      "label": "Inflamed for the Assault (talent 1): Protection while casting",
+      "target": "self",
+      "endsWithCast": true,
+      "modifiers": [{ "attr": 63, "value": { "sum": ["shelterrate", "extrashelter"] } }],
+      "gameBuff": "buff_chr_0009_azrila_normal_skill_shelter",
+      "note": "Battle skill clip [0–38], combo clip [0–26]: if talent1 > 0, CreateBuff buff_chr_0009_azrila_normal_skill_shelter (ShelterAction rate = shelterrate, duration −1, autoFinishByAction: it ends with its clip); P1 first adds extrashelter (ModifyDynamicBlackboard operation 1, if potential_1 > 0). shelterrate, extrashelter and talent1 / potential_1 are SkillData keys talent 1 and P1 set on both skills (PotentialTalentEffectTable skillBbModifier), 0 otherwise. Ended at the clip's end by the triggers protection_end_battle / protection_end_combo. Damage taken isn't simulated: it's a Protection-category buff (attribute 63) for buffApplied triggers and operatorBuff predicates (Eternal Xiranite, Former Finery)."
+    },
+    {
+      "id": "protection_hit",
+      "label": "Nomadic Fort (P1): Protection after a hit",
+      "target": "self",
+      "duration": "extratime",
+      "modifiers": [{ "attr": 63, "value": { "sum": ["shelterrate", "extrashelter"] } }],
+      "gameBuff": "buff_chr_0009_azrila_normal_skill_shelter",
+      "note": "Battle skill frame 38 / combo frame 26: if potential_1 > 0, a target was hit (CheckEntityNum ≥ 1) and talent1 > 0, a second shelter buff with duration extratime (1.5 s at P1). The game buff has finishWithNextSkillIfNotInherited: it may end at Ember's next skill (not modelled; no damage effect)."
+    },
+    {
+      "id": "guard_listen",
+      "label": "Forward March: listening for an enemy hit [0–38]",
+      "target": "self",
+      "endsWithCast": true,
+      "modifiers": [],
+      "note": "chr_0009_azrila_normal_skill clip [0–38]: EventListenerAction (abilityEvent 101, CheckDamageDecorateMask checkType 3 mask 805306368: Ember takes an enemy hit). Ended at frame 38 by trigger guard_listen_end. No game buff (it's the skill's own listener)."
+    },
+    {
+      "id": "guard_success",
+      "label": "Forward March: hit while casting",
+      "target": "self",
+      "duration": 2,
+      "endsWithCast": true,
+      "modifiers": [],
+      "gameBuff": "buff_chr_0009_azrila_normal_skill_gpsuccess",
+      "note": "buff_chr_0009_azrila_normal_skill_gpsuccess (BuffData blackboard dur 2 s, the literal duration here; stackingType 7). abilityEvent 31 with CheckSkillId normal_skill finishes it (written as endsWithCast). The slam's poise-only landing slam_guard deals extrapoise while it's on."
+    },
+    {
+      "id": "ferric_atk",
+      "label": "Pay the Ferric Price (talent 2): ATK up when hit",
+      "target": "self",
+      "duration": { "talent": 1, "key": "duration" },
+      "maxStacks": 3,
+      "modifiers": [{ "zone": "atk", "value": { "talent": 1, "key": "attack" } }],
+      "gameBuff": "buff_chr_0009_azrila_talent_2_buff",
+      "note": "buff_chr_0009_azrila_talent_2 (attached by talent 2): abilityEvent 12 (Ember takes damage) with CheckObjectTypeMatch 16 and the enemy-attack mask 805306368 → buff_chr_0009_azrila_talent_2_buff (attribute 2 ATK formulaItem 6 + attack: 0.06 / 0.09; duration 7 s; stackingType 10, maxStackCnt 3, the literal cap here). stackingType 10: the loader runs its layers on one timer each new layer refreshes (batch-4 B3; in-game test 62's Ember variant settles it)."
+    },
+    {
+      "id": "ult_shield",
+      "label": "Re-Ignited Oath: Shield (team)",
+      "target": "team",
+      "duration": { "key": "duration", "skill": "chr_0009_azrila_ultimate_skill" },
+      "modifiers": [],
+      "gameBuff": "buff_chr_0009_azrila_ultimateshield",
+      "note": "Ultimate frame 50: CreateBuff buff_chr_0009_azrila_ultimateshield on group Teammate (CharacterTeamFinder), duration 10 s, shield = hp_percent × Ember's Max HP (× extrashield 1.2 at P5). Its applyTags −1757502026 make it a shield (the loader adds the category) for operatorBuff predicates. Shield points and breaking aren't modelled: it lasts its full duration (report U2)."
+    },
+    {
+      "id": "p5_atk",
+      "label": "The Steel Oath (P5): ATK while shielded",
+      "target": "team",
+      "duration": { "key": "duration", "skill": "chr_0009_azrila_ultimate_skill" },
+      "modifiers": [{ "zone": "atk", "value": { "key": "extraattack", "skill": "chr_0009_azrila_ultimate_skill" } }],
+      "gameBuff": "buff_chr_0009_azrila_ultimate_skill_shield_extraattack",
+      "note": "ultimateshield's start event: if potential_5 > 0, CreateBuff (asChildBuff, targetSource 0: the shield's holder) buff_chr_0009_azrila_ultimate_skill_shield_extraattack (attribute 2 formulaItem 6 + extraattack 0.1); a child buff ends with its shield, so it has the shield's duration here (shields don't break: report U2)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_window",
+      "on": { "event": "attacked" },
+      "by": "controlled",
+      "do": [{ "kind": "openCombo" }],
+      "note": "CharGrowthTable chr_0009_azrila_ComboSkill: \"COMBO TRIGGER: When the controlled operator is attacked.\" (game code; no trigger action in the data). A perfectly dodged attack is no attack here (in-game test 53, Ember's variant)."
+    },
+    {
+      "id": "ferric",
+      "on": { "event": "attacked" },
+      "by": "self",
+      "if": { "talentAtLeast": [1, 1] },
+      "do": [{ "kind": "buff", "buff": "ferric_atk" }],
+      "note": "Talent 2: \"When Ember receives DMG from the enemy, she gains ATK +{attack} for {duration}s. This effect can reach 3 stacks.\""
+    },
+    {
+      "id": "battle_cast",
+      "on": { "event": "cast", "skills": ["chr_0009_azrila_normal_skill"] },
+      "by": "self",
+      "skill": "chr_0009_azrila_normal_skill",
+      "do": [{ "kind": "buff", "buff": "protection", "if": { "talentAtLeast": [0, 1] } }, { "kind": "buff", "buff": "guard_listen" }],
+      "note": "Frame 0: talent 1's shelter (clip [0–38]) and the guard listener (EventListenerAction [0–38])."
+    },
+    {
+      "id": "guard_listen_end",
+      "on": { "event": "cast", "skills": ["chr_0009_azrila_normal_skill"] },
+      "by": "self",
+      "skill": "chr_0009_azrila_normal_skill",
+      "delay": 38,
+      "do": [{ "kind": "endBuff", "buff": "guard_listen" }, { "kind": "endBuff", "buff": "protection" }],
+      "note": "The listener's and the shelter's clips end at frame 38 (autoFinishByAction); the slam's guard landing at 38 is judged before (its hit lands first)."
+    },
+    {
+      "id": "guard",
+      "on": { "event": "attacked" },
+      "by": "self",
+      "if": { "buffActive": "guard_listen" },
+      "do": [{ "kind": "buff", "buff": "guard_success" }],
+      "note": "\"If Ember takes DMG from enemies during casting, the slam deals more Stagger when it hits.\" The listener → buff_chr_0009_azrila_normal_skill_gpsuccess. With dodging on she doesn't dash in frames [0, 38) of the battle skill (KitSkill.noDodge)."
+    },
+    {
+      "id": "combo_cast",
+      "on": { "event": "cast", "skills": ["chr_0009_azrila_combo_skill"] },
+      "by": "self",
+      "skill": "chr_0009_azrila_combo_skill",
+      "if": { "talentAtLeast": [0, 1] },
+      "do": [{ "kind": "buff", "buff": "protection" }],
+      "note": "Combo clip [0–26]: talent 1's shelter, as for the battle skill."
+    },
+    {
+      "id": "protection_end_combo",
+      "on": { "event": "cast", "skills": ["chr_0009_azrila_combo_skill"] },
+      "by": "self",
+      "skill": "chr_0009_azrila_combo_skill",
+      "delay": 26,
+      "do": [{ "kind": "endBuff", "buff": "protection" }],
+      "note": "The combo's shelter clip ends at frame 26 (autoFinishByAction)."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0009_azrila_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [13], "events": ["chr_0009_azrila_attack1"], "element": "physical", "note": "ChannelingAction [13–18], at most one tick per target: DamageAction damageType 0 (Physical; the operator is Heat), mask 128." }]
+    },
+    {
+      "skillId": "chr_0009_azrila_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [6], "events": ["chr_0009_azrila_attack2"], "element": "physical", "note": "ChannelingAction [6–12]." }]
+    },
+    {
+      "skillId": "chr_0009_azrila_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [18], "events": ["chr_0009_azrila_attack3"], "element": "physical", "note": "ChannelingAction [18–22]." }]
+    },
+    {
+      "skillId": "chr_0009_azrila_attack4",
+      "label": "Basic attack 4 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [26],
+          "events": ["chr_0009_azrila_attack4"],
+          "element": "physical",
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "poise": "poise",
+          "poiseControlledOnly": true,
+          "finalStrike": true,
+          "note": "ChannelingAction [26–29]: mask 2097280 (Final Strike); poise 25 for the controlled operator (onlyEnableForMainChar); DoOnce ObtainCostAction atb (28) when controlled."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0009_azrila_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [9], "factor": 0.1, "events": ["chr_0009_azrila_power_attack"], "element": "physical", "note": "BreakingAttackCalculation multiplier 0.1." },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [23], "factor": 0.9, "events": ["chr_0009_azrila_power_attack"], "element": "physical", "note": "BreakingAttackCalculation multiplier 0.9; finisher SP from the enemy (GainBreakingAttackAtb, the engine's)." }
+      ]
+    },
+    {
+      "skillId": "chr_0009_azrila_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "events": ["chr_0009_azrila_plunging_attack_end"], "element": "physical", "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Mask 1152 (basic + dive); ObtainCostAction atb (0 at every level) when controlled." }]
+    },
+    {
+      "skillId": "chr_0009_azrila_normal_skill",
+      "label": "Battle skill (Forward March)",
+      "damageType": "battle",
+      "teamEnergy": [{ "frame": 38, "ratio": 1 }],
+      "noDodge": [0, 38],
+      "hits": [
+        { "id": "leap", "label": "Leap", "scale": ["atk_scale"], "frames": [10], "events": ["chr_0009_azrila_normal_skill"], "note": "ChannelingAction [10–15]: DamageAction atk_scale (Heat, damageType 2, mask 4352), no Stagger; HitStopAction 0.16 s." },
+        {
+          "id": "slam",
+          "label": "Slam",
+          "scale": ["atk_scale2"],
+          "frames": [38],
+          "events": ["chr_0009_azrila_normal_skill"],
+          "applies": [{ "kind": "physicalStatus", "status": "knockdown" }],
+          "poise": "poise",
+          "buffs": [{ "buff": "protection_hit", "if": { "all": [{ "talentAtLeast": [0, 1] }, { "potentialAtLeast": 1 }] } }],
+          "note": "Clip [38–41]: P1's shelter (CompareFloat potential_1, CheckEntityNum, CompareFloat talent1), KnockDownAction 1.5 s, DamageAction atk_scale2 (Heat) with a poise-only unit poise (10); team energy (buff_common_obtain_ultimate_sp if a target was hit); HitStopAction 0.2 s."
+        },
+        {
+          "id": "slam_guard",
+          "label": "Slam: guard Stagger",
+          "scale": [],
+          "poiseOnly": true,
+          "poise": "extrapoise",
+          "frames": [38],
+          "events": ["chr_0009_azrila_normal_skill"],
+          "if": { "buffActive": "guard_success" },
+          "note": "Clip [38–41], after the slam's DamageAction: IfElse CheckBuffStackNumAdvanced (buff_chr_0009_azrila_normal_skill_gpsuccess ≥ 1) → a DamageAction whose only unit is poise extrapoise (10): Stagger only."
+        }
+      ],
+      "note": "Talent 1's Protection and the guard listener: triggers battle_cast, guard, guard_listen_end. The listener [0–38] wants Ember to be hit, so with dodging on she doesn't dash then (noDodge, batch-4 S12). Super armour 25 [0–55]."
+    },
+    {
+      "skillId": "chr_0009_azrila_combo_skill",
+      "label": "Combo skill (Frontline Support)",
+      "damageType": "combo",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [26],
+          "events": ["chr_0009_azrila_combo_skill"],
+          "element": "physical",
+          "applies": [{ "kind": "physicalStatus", "status": "knockdown" }],
+          "energy": "usp",
+          "poise": "poise",
+          "heals": "controlled",
+          "buffs": [{ "buff": "protection_hit", "if": { "all": [{ "talentAtLeast": [0, 1] }, { "potentialAtLeast": 1 }] } }],
+          "note": "Clip [26–27]: InterruptAction (E1), P1's shelter, KnockDownAction 1.5 s, DamageAction atk_scale (Physical, mask 12288) with poise, HealAction on the controlled operator (CharacterTeamFinder + MainCharacterValidator; heal_base + Will × will_additive, healTags −1517158118: the combo heal, so the heal event's kind is combo), ObtainCostAction usp if a target was hit. P3's second heal (× extracure, group CureTarget) isn't an event (report U1)."
+        }
+      ],
+      "note": "Its window opens when the controlled operator is attacked (trigger combo_window). TimeDilationAction [0–12] (the loader). Cooldown from SkillPatchTable (18 s at level 12)."
+    },
+    {
+      "skillId": "chr_0009_azrila_ultimate_skill",
+      "label": "Ultimate (Re-Ignited Oath)",
+      "damageType": "ultimate",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [50],
+          "events": ["chr_0009_azrila_ultimate_skill"],
+          "poise": "poise",
+          "buffs": [{ "buff": "ult_shield" }, { "buff": "p5_atk", "if": { "potentialAtLeast": 5 } }],
+          "note": "Frame 50: InterruptAction (E1), DamageAction atk_scale (Heat, mask 4608) with a poise-only unit poise (25), the team shield and P5's ATK on each holder. Damage immunity [0–90] (buff_common_damage_immune_ult_skill) is defensive. P4's energy cost × 0.85 is the loader's (skill parameters)."
+        }
+      ]
+    }
+  ]
+}

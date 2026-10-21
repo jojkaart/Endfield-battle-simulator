@@ -1,0 +1,1332 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0027_tangtang",
+  "sources": [
+    "Batch 4 kit (docs/kit-batches/batch-4/chr_0027_tangtang.md, kit plan and \"Kit (2026-10-21)\"): efsim kit-draft v2 from rmxlinux Json/SkillData chr_0027_tangtang_* and Json/BuffData buff_chr_0027_tangtang_*, with the hand-written parts the report lists (Whirlpools as a layered buff, Waterspouts per Whirlpool count, the OLDEN STARE's dive branch). Values at the build's skill levels after potentials (SkillPatchTable, CharacterPotentialTable / PotentialTalentEffectTable). Verified on fixtures/zmdlogs-b7b3762d5da8.json: all 46 of her logged hits.",
+    "Whirlpools (combo) are ability entities (chr_0027_tangtang_combo_skill_water, 900 frames) with buff_chr_0027_tangtang_water on Tangtang (stackingType 2, maxStackCntKey water_stack 2, 30 s per layer): kit buff `whirlpool`, one layer per Whirlpool. The battle skill wakes every Whirlpool within 50 m at frame 11 (water_wake → its jump to 1500: FinishBuff 1 layer) and its mover entity spawns 1 + n Waterspouts at frame 23 (normal_skill_abilityentitymove: water_cnt 0 → normal_skill_water_projhit, 1 → two _projhit_1, ≥ 2 → three _projhit_2). Each Waterspout ticks every 0.26 s over 90 frames (12 ticks) at tornado_atk_scale01 = passive_0's normalskill_atk_scale01 (buff_chr_0027_tangtang_passive_0: EntityBB_abilityentity_water01; P3 ×1.1).",
+    "OLDEN STARE (ultimate frame 76: entity chr_0027_tangtang_ultimate_skill_1, 210 frames): its EventListenerAction (entity frames 0–119) jumps to 128 when an operator carrying buff_chr_0027_tangtang_ultskill_buff_damage hits; buff_chr_0027_tangtang_ultskill_buff (the stare's ally aura) gives that buff on a hit by the controlled operator (CheckMainCharacterCondition) with decorate mask 1024 (a dive attack) on an enemy with _ultskill_debuff (inside the stare). Written as a hit trigger on dive landings by the controlled operator (`olden_stare_dive`); dive attacks become castable with batch-1 S10 (rotation actions): until then the branch never fires in a simulation. fixtures/zmdlogs-b7b3762d5da8.json has it: Arcane's plunging_attack_end at 15374 ms, the early wave at 15558 ms, Riot Bringer Waterspouts from 15928 ms."
+  ],
+  "element": "cryst",
+  "buffs": [
+    {
+      "id": "whirlpool",
+      "label": "Whirlpools on the field (one layer each)",
+      "target": "self",
+      "gameBuff": "buff_chr_0027_tangtang_water",
+      "duration": {
+        "key": "duration_water",
+        "skill": "chr_0027_tangtang_combo_skill"
+      },
+      "maxStacks": 2,
+      "modifiers": [],
+      "note": "buff_chr_0027_tangtang_water: stackingType 2, maxStackCntKey water_stack (2, only in the buff's own blackboard: written here), duration duration_water 30 s; CreateBuff at the Whirlpool's spawn (combo_skill_water_gene, when the combo's projectile arrives), one layer removed when a Whirlpool ends (its frame 900, or a wake: frame 1500 / 1515). \"Up to 2 Whirlpools can exist in the battlefield at any time\": a third replaces the oldest (stackingType 2 at its maximum). Whether the game also removes the third's entity is unknown (report U1, in-game test 95)."
+    },
+    {
+      "id": "haste",
+      "label": "Fam of Honor: Haste near a Whirlpool",
+      "target": "team",
+      "gameBuff": "buff_chr_0027_tangtang_comboskill_waterbuff",
+      "duration": {
+        "sum": [
+          {
+            "key": "duration_water",
+            "skill": "chr_0027_tangtang_combo_skill"
+          },
+          {
+            "key": "duration_talent1buff",
+            "skill": "chr_0027_tangtang_combo_skill"
+          }
+        ]
+      },
+      "modifiers": [
+        {
+          "attr": 92,
+          "value": {
+            "key": "ratio_speed",
+            "skill": "chr_0027_tangtang_combo_skill"
+          }
+        }
+      ],
+      "note": "Talent 1: \"When within a 5-meter radius of a Whirlpool, allied operators gain 10% / 20% Haste … These effects persist for 3s after leaving the area of effect.\" The Whirlpool's AuraAction (range_talent1buff 5 m, only if talent1_speed ≥ 1) gives buff_chr_0027_tangtang_comboskill_waterbuff (SpeedupAction ratio_speed); leaving it gives _outaura (duration_talent1buff 3 s). Positions aren't modelled: the whole team counts as inside, Tangtang included (the aura's excludeOwner may exclude her: report U2, in-game test 84). Lasts the Whirlpool's 30 s + 3 s; a consumption (battle skill, Riot Bringer) cuts it to 3 s (haste_tail)."
+    },
+    {
+      "id": "haste_tail",
+      "label": "Fam of Honor: Haste after leaving",
+      "target": "team",
+      "gameBuff": "buff_chr_0027_tangtang_comboskill_waterbuff_outaura",
+      "duration": {
+        "key": "duration_talent1buff",
+        "skill": "chr_0027_tangtang_combo_skill"
+      },
+      "modifiers": [
+        {
+          "attr": 92,
+          "value": {
+            "key": "ratio_speed",
+            "skill": "chr_0027_tangtang_combo_skill"
+          }
+        }
+      ]
+    },
+    {
+      "id": "spout_susceptibility_2",
+      "label": "Waterspouts (2): Arts Susceptibility",
+      "target": "enemy",
+      "gameBuff": "buff_chr_0027_tangtang_normalskill_spellvulnerable",
+      "duration": {
+        "key": "duration_spellvulnerable",
+        "skill": "chr_0027_tangtang_normal_skill"
+      },
+      "modifiers": [
+        {
+          "zone": "susceptibility",
+          "value": {
+            "key": "rate_spellvulnerable",
+            "skill": "chr_0027_tangtang_normal_skill"
+          },
+          "elements": [
+            "fire",
+            "pulse",
+            "cryst",
+            "natural"
+          ]
+        }
+      ],
+      "note": "buff_chr_0027_tangtang_normalskill_spellvulnerable (VulnerableAction subType 1: Arts; logged as buff_common_affixes_vulnerable_spell), created by normal_skill_water_projhit_1 with rate_spellvulnerable: stackingType 1, priority rate_spellvulnerable, maxStackCntKey cntmax, which only the buff's own blackboard has (1: the loader reads it there, batch 4 B2). The 2- and 3-Waterspout casts create the same game buff, so the kit keeps one instance across its two buffs by hand (the stack group already lets only the strongest act): the 3-Waterspout cast ends this one, and this one isn't applied over the 3-Waterspout one. Riot Bringer's Waterspouts apply it too, at the ultimate's rate_spellvulnerable + the passive's (ModifyDynamicBlackboard operation 1 at ultimate frame 76): 0 + 0.05 below P3, 0.05 + 0.05 from P3, the battle skill's own values (0.05 / 0.10) at every potential, so the battle skill's key stands for both."
+    },
+    {
+      "id": "spout_susceptibility_3",
+      "label": "Waterspouts (3): Arts Susceptibility",
+      "target": "enemy",
+      "gameBuff": "buff_chr_0027_tangtang_normalskill_spellvulnerable",
+      "duration": {
+        "key": "duration_spellvulnerable",
+        "skill": "chr_0027_tangtang_normal_skill"
+      },
+      "modifiers": [
+        {
+          "zone": "susceptibility",
+          "value": {
+            "key": "rate_spellvulnerable_02",
+            "skill": "chr_0027_tangtang_normal_skill"
+          },
+          "elements": [
+            "fire",
+            "pulse",
+            "cryst",
+            "natural"
+          ]
+        }
+      ],
+      "note": "normal_skill_water_projhit_2's application, rate_spellvulnerable_02 (10%, 15% at P3). Riot Bringer's: the ultimate's rate_spellvulnerable_02 (0, 0.05 from P3) + the passive's (0.10): equal at every potential."
+    },
+    {
+      "id": "olden_stare",
+      "label": "OLDEN STARE: a dive attack ends it",
+      "target": "self",
+      "duration": {
+        "key": "display_duration",
+        "skill": "chr_0027_tangtang_ultimate_skill"
+      },
+      "modifiers": [],
+      "note": "The window of ultimate_skill_1's EventListenerAction (entity frames 0–119, 4 s; display_duration 4 and the entity's timed marker tangtang_ult 4 s): a dive by the controlled operator now ends the stare (trigger olden_stare_dive)."
+    },
+    {
+      "id": "olden_stare_over",
+      "label": "OLDEN STARE over (dive or rogue wave)",
+      "target": "self",
+      "duration": 7,
+      "modifiers": [],
+      "note": "Set by a dive (the entity's jump to 128: the stare's DoT ticks and the plain rogue wave still to come don't land) or by the plain rogue wave (entity frame 120, the end of the dive window). 7 s: the entity's life (ultimate_skill_1 durationFrame 210), so it covers the rest of the stare and is gone before the next ultimate (cooldown 20 s)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_window_infliction",
+      "on": {
+        "event": "inflictionApplied",
+        "elements": [
+          "cryst"
+        ]
+      },
+      "by": "anyone",
+      "do": [
+        {
+          "kind": "openCombo"
+        }
+      ],
+      "note": "CharGrowthTable: \"COMBO TRIGGER: When applying Cryo Infliction or dealing Arts Burst DMG to an enemy.\" By anyone: fixtures/zmdlogs-b7b3762d5da8.json has her combo at 5137 ms as her first action, after Si's Cryo hits. An infliction that forms a reaction at once doesn't count in the engine (in-game test 35's question)."
+    },
+    {
+      "id": "combo_window_burst",
+      "on": {
+        "event": "burst"
+      },
+      "by": "anyone",
+      "do": [
+        {
+          "kind": "openCombo"
+        }
+      ],
+      "note": "The second half of the COMBO TRIGGER: an Arts Burst of any element."
+    },
+    {
+      "id": "whirlpool_forms",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0027_tangtang_combo_skill"
+        ]
+      },
+      "by": "self",
+      "skill": "chr_0027_tangtang_combo_skill",
+      "delay": 26,
+      "detached": true,
+      "launch": 26,
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "whirlpool"
+        },
+        {
+          "kind": "buff",
+          "buff": "haste",
+          "if": {
+            "talentAtLeast": [
+              0,
+              1
+            ]
+          }
+        },
+        {
+          "kind": "apply",
+          "applies": [
+            {
+              "kind": "control",
+              "status": "slow",
+              "seconds": 33
+            }
+          ],
+          "if": {
+            "talentAtLeast": [
+              0,
+              1
+            ]
+          }
+        }
+      ],
+      "note": "Combo frame 26: LaunchProjectile projectile_chr_0027_tangtang_water (castSkillOnReach / OnFinish / OnBlock → combo_skill_water_gene: SpawnAbilityEntity the Whirlpool + CreateBuff buff_chr_0027_tangtang_water), once per cast, only if the jet hit an enemy (CheckEntityNum tar ≥ 1: always in a simulation). The projectile's travel time isn't in the data (Ti2). Talent 1's Slow (buff_chr_0027_tangtang_comboskill_waterdebuff, SlowAction ratio_speedreduction 20% / 40%, aura 5 m, +3 s after leaving): the enemy counts as inside for the Whirlpool's 30 s + 3 s (a state for enemyControl predicates; enemy speed isn't modelled)."
+    },
+    {
+      "id": "whirlpools_consumed",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0027_tangtang_normal_skill"
+        ]
+      },
+      "by": "self",
+      "skill": "chr_0027_tangtang_normal_skill",
+      "delay": 11,
+      "awaited": true,
+      "do": [
+        {
+          "kind": "sp",
+          "value": {
+            "product": [
+              "atb_return",
+              {
+                "buffLayers": "whirlpool"
+              }
+            ]
+          },
+          "spKind": "returned",
+          "if": {
+            "buffLayers": "whirlpool",
+            "atLeast": 1
+          }
+        },
+        {
+          "kind": "buff",
+          "buff": "haste_tail",
+          "if": {
+            "buffActive": "haste"
+          }
+        },
+        {
+          "kind": "apply",
+          "applies": [
+            {
+              "kind": "control",
+              "status": "slow",
+              "seconds": 3
+            }
+          ],
+          "if": {
+            "all": [
+              {
+                "talentAtLeast": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "buffLayers": "whirlpool",
+                "atLeast": 1
+              }
+            ]
+          }
+        },
+        {
+          "kind": "endBuff",
+          "buff": "spout_susceptibility_2",
+          "if": {
+            "buffLayers": "whirlpool",
+            "atLeast": 2
+          }
+        },
+        {
+          "kind": "endBuff",
+          "buff": "haste"
+        },
+        {
+          "kind": "endBuff",
+          "buff": "whirlpool"
+        }
+      ],
+      "note": "Battle skill frame 11: for each Whirlpool within 50 m (one enemy: all of them), water_cnt += 1 and CreateBuff buff_chr_0027_tangtang_water_wake on it (its jump to 1500 removes one buff_chr_0027_tangtang_water layer); ObtainCostAction costType 1 atb_return × 1 or × 2 by an IfElse on water_cnt, atbGainMethod 1 (returned SP; \"return some SP based on the number of Waterspouts created\": 20 per Whirlpool, 25 from P1). The Waterspout counts are judged at the cast, before this. The 3-Waterspout cast replaces a 2-Waterspout Susceptibility (one instance of the game buff, the stronger kept)."
+    },
+    {
+      "id": "olden_stare",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0027_tangtang_ultimate_skill"
+        ]
+      },
+      "by": "self",
+      "skill": "chr_0027_tangtang_ultimate_skill",
+      "delay": 76,
+      "detached": true,
+      "launch": 76,
+      "do": [
+        {
+          "kind": "apply",
+          "applies": [
+            {
+              "kind": "control",
+              "status": "immobilization",
+              "durationKey": "display_duration",
+              "freezes": true
+            }
+          ]
+        },
+        {
+          "kind": "buff",
+          "buff": "olden_stare"
+        }
+      ],
+      "note": "Ultimate frame 76: SpawnAbilityEntity chr_0027_tangtang_ultimate_skill_1, whose AuraAction (8 m, entity frames 0–120) puts buff_chr_0027_tangtang_ultskill_debuff on enemies inside: applyTags −1065936627 (Immobilization) and, unless the enemy has the control-immune tag 188749032, a layer-1 TimeDilationAction with an empty curve (scale 0) until the buff ends: the enemy's clock stops (scenario target controlImmune turns the freeze off). \"applies temporary Immobilization\"; display_duration 4 s. How long it really stops enemy timers: report U3, in-game test 37's variant. After a dive the entity jumps past the aura, so the game's Immobilization ends at the dive; the kit's lasts its 4 s (no action ends a control early)."
+    },
+    {
+      "id": "olden_stare_dive",
+      "on": {
+        "event": "hit",
+        "decorations": [
+          "dive"
+        ]
+      },
+      "by": "controlled",
+      "if": {
+        "all": [
+          {
+            "buffActive": "olden_stare"
+          },
+          {
+            "not": {
+              "buffActive": "olden_stare_over"
+            }
+          }
+        ]
+      },
+      "skill": "chr_0027_tangtang_ultimate_skill",
+      "do": [
+        {
+          "kind": "endBuff",
+          "buff": "olden_stare"
+        },
+        {
+          "kind": "buff",
+          "buff": "olden_stare_over"
+        },
+        {
+          "kind": "hits",
+          "hits": [
+            {
+              "id": "early_rogue_wave",
+              "scale": [
+                "atk_scale_3"
+              ],
+              "frames": [
+                5
+              ],
+              "events": [
+                "chr_0027_tangtang_ultimate_skill_1"
+              ],
+              "poise": "poise3",
+              "damageType": "ultimate",
+              "note": "ultimate_skill_1 after the jump to 128: DamageAction atk_scale_3 (\"Early Rogue Wave\" 700%, ×1.15 at P5) and poise3 20 at entity frame 133, 5 frames after the dive's landing (b7b3: 184 ms). A trigger's hit: no Link of the ultimate's cast and no buff that cast consumed reaches it (the stare's ticks and the plain wave keep them)."
+            }
+          ]
+        },
+        {
+          "kind": "hits",
+          "hits": [
+            {
+              "id": "riot_spout1_first",
+              "scale": [],
+              "scaleValue": {
+                "key": "normalskill_atk_scale01",
+                "skill": "chr_0027_tangtang_passive_0"
+              },
+              "bonuses": [
+                {
+                  "zone": "damageBonus",
+                  "key": "dmg_up_water_ult"
+                }
+              ],
+              "count": {
+                "if": {
+                  "buffLayers": "whirlpool",
+                  "below": 1
+                },
+                "then": 1,
+                "else": 0
+              },
+              "frames": [
+                18
+              ],
+              "events": [
+                "chr_0027_tangtang_normal_skill_water_projhit"
+              ],
+              "damageType": "battle",
+              "applies": [
+                {
+                  "kind": "infliction",
+                  "element": "cryst"
+                }
+              ]
+            },
+            {
+              "id": "riot_spout1",
+              "scale": [],
+              "scaleValue": {
+                "key": "normalskill_atk_scale01",
+                "skill": "chr_0027_tangtang_passive_0"
+              },
+              "bonuses": [
+                {
+                  "zone": "damageBonus",
+                  "key": "dmg_up_water_ult"
+                }
+              ],
+              "count": {
+                "if": {
+                  "buffLayers": "whirlpool",
+                  "below": 1
+                },
+                "then": 11,
+                "else": 0
+              },
+              "frames": [
+                26,
+                34,
+                41,
+                49,
+                57,
+                65,
+                73,
+                80,
+                88,
+                96,
+                104
+              ],
+              "events": [
+                "chr_0027_tangtang_normal_skill_water_projhit"
+              ],
+              "damageType": "battle"
+            },
+            {
+              "id": "riot_spout2_first",
+              "scale": [],
+              "scaleValue": {
+                "key": "normalskill_atk_scale01",
+                "skill": "chr_0027_tangtang_passive_0"
+              },
+              "bonuses": [
+                {
+                  "zone": "damageBonus",
+                  "key": "dmg_up_water_ult"
+                }
+              ],
+              "count": {
+                "if": {
+                  "buffLayers": "whirlpool",
+                  "atLeast": 1,
+                  "below": 2
+                },
+                "then": 1,
+                "else": 0
+              },
+              "frames": [
+                18
+              ],
+              "events": [
+                "chr_0027_tangtang_normal_skill_water_projhit_1"
+              ],
+              "damageType": "battle",
+              "applies": [
+                {
+                  "kind": "infliction",
+                  "element": "cryst"
+                }
+              ],
+              "buffs": [
+                {
+                  "buff": "spout_susceptibility_2",
+                  "if": {
+                    "not": {
+                      "buffActive": "spout_susceptibility_3"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "id": "riot_spout2",
+              "scale": [],
+              "scaleValue": {
+                "key": "normalskill_atk_scale01",
+                "skill": "chr_0027_tangtang_passive_0"
+              },
+              "bonuses": [
+                {
+                  "zone": "damageBonus",
+                  "key": "dmg_up_water_ult"
+                }
+              ],
+              "count": {
+                "if": {
+                  "buffLayers": "whirlpool",
+                  "atLeast": 1,
+                  "below": 2
+                },
+                "then": 23,
+                "else": 0
+              },
+              "frames": [
+                18,
+                26,
+                26,
+                34,
+                34,
+                41,
+                41,
+                49,
+                49,
+                57,
+                57,
+                65,
+                65,
+                73,
+                73,
+                80,
+                80,
+                88,
+                88,
+                96,
+                96,
+                104,
+                104
+              ],
+              "events": [
+                "chr_0027_tangtang_normal_skill_water_projhit_1"
+              ],
+              "damageType": "battle"
+            },
+            {
+              "id": "riot_spout3_first",
+              "scale": [],
+              "scaleValue": {
+                "key": "normalskill_atk_scale01",
+                "skill": "chr_0027_tangtang_passive_0"
+              },
+              "bonuses": [
+                {
+                  "zone": "damageBonus",
+                  "key": "dmg_up_water_ult"
+                }
+              ],
+              "count": {
+                "if": {
+                  "buffLayers": "whirlpool",
+                  "atLeast": 2
+                },
+                "then": 1,
+                "else": 0
+              },
+              "frames": [
+                18
+              ],
+              "events": [
+                "chr_0027_tangtang_normal_skill_water_projhit_2"
+              ],
+              "damageType": "battle",
+              "applies": [
+                {
+                  "kind": "infliction",
+                  "element": "cryst"
+                }
+              ],
+              "buffs": [
+                {
+                  "buff": "spout_susceptibility_3"
+                }
+              ]
+            },
+            {
+              "id": "riot_spout3",
+              "scale": [],
+              "scaleValue": {
+                "key": "normalskill_atk_scale01",
+                "skill": "chr_0027_tangtang_passive_0"
+              },
+              "bonuses": [
+                {
+                  "zone": "damageBonus",
+                  "key": "dmg_up_water_ult"
+                }
+              ],
+              "count": {
+                "if": {
+                  "buffLayers": "whirlpool",
+                  "atLeast": 2
+                },
+                "then": 35,
+                "else": 0
+              },
+              "frames": [
+                18,
+                18,
+                26,
+                26,
+                26,
+                34,
+                34,
+                34,
+                41,
+                41,
+                41,
+                49,
+                49,
+                49,
+                57,
+                57,
+                57,
+                65,
+                65,
+                65,
+                73,
+                73,
+                73,
+                80,
+                80,
+                80,
+                88,
+                88,
+                88,
+                96,
+                96,
+                96,
+                104,
+                104,
+                104
+              ],
+              "events": [
+                "chr_0027_tangtang_normal_skill_water_projhit_2"
+              ],
+              "damageType": "battle"
+            }
+          ],
+          "if": {
+            "talentAtLeast": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "kind": "buff",
+          "buff": "haste_tail",
+          "if": {
+            "all": [
+              {
+                "talentAtLeast": [
+                  1,
+                  1
+                ]
+              },
+              {
+                "buffActive": "haste"
+              }
+            ]
+          }
+        },
+        {
+          "kind": "apply",
+          "applies": [
+            {
+              "kind": "control",
+              "status": "slow",
+              "seconds": 3
+            }
+          ],
+          "if": {
+            "all": [
+              {
+                "talentAtLeast": [
+                  0,
+                  1
+                ]
+              },
+              {
+                "talentAtLeast": [
+                  1,
+                  1
+                ]
+              },
+              {
+                "buffLayers": "whirlpool",
+                "atLeast": 1
+              }
+            ]
+          }
+        },
+        {
+          "kind": "endBuff",
+          "buff": "spout_susceptibility_2",
+          "if": {
+            "all": [
+              {
+                "talentAtLeast": [
+                  1,
+                  1
+                ]
+              },
+              {
+                "buffLayers": "whirlpool",
+                "atLeast": 2
+              }
+            ]
+          }
+        },
+        {
+          "kind": "endBuff",
+          "buff": "haste",
+          "if": {
+            "talentAtLeast": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "kind": "endBuff",
+          "buff": "whirlpool",
+          "if": {
+            "talentAtLeast": [
+              1,
+              1
+            ]
+          }
+        }
+      ],
+      "note": "A dive attack's landing (decorate bit 1024) by the controlled operator, anyone's (b7b3: Arcane's), inside the stare's window: the entity jumps to 128 (the remaining DoT ticks and the plain rogue wave don't land: olden_stare_over), the early wave 5 frames later. Talent 2 (Riot Bringer; CreateBuff buff_chr_0027_tangtang_ultskill_waterwake at 128 if talent2 ≥ 1): it wakes every Whirlpool within 50 m (water_ultskillwake → their jump to 1515, one layer each) and spawns ult_skill_abilityentitymove, whose frame 18 spawns 1 + n Waterspouts as the battle skill's mover does (n ≥ 2 → three) with talent2_ultskill 1: their damage adds dmg_up_water_ult (0.4 / 0.6, +0.8 at P5: 1.4 in b7b3) in NormalCalcZone, and they are Battle Skill DMG (mask 4352: \"treated as Battle Skill DMG\"; a trigger's hits with damageType battle). Their first tick inflicts Cryo (once per cast and target: the ultimate's cast is another cast than the battle skill's) and, for 2 or 3, applies the Arts Susceptibility. The Whirlpools' consumption as the battle skill's (Haste's tail, the Slow's 3 s; no SP: the ult mover has no ObtainCostAction). Fires once dive attacks are castable (batch-1 S10)."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0027_tangtang_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "shot",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            3
+          ],
+          "launch": 3,
+          "events": [
+            "chr_0027_tangtang_attack1_projhit"
+          ]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0027_tangtang_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "shot_1",
+          "scale": [
+            "atk_scale_1"
+          ],
+          "frames": [
+            6
+          ],
+          "launch": 6,
+          "events": [
+            "chr_0027_tangtang_attack2_projhit"
+          ]
+        },
+        {
+          "id": "shot_2",
+          "scale": [
+            "atk_scale_2"
+          ],
+          "frames": [
+            10
+          ],
+          "launch": 10,
+          "events": [
+            "chr_0027_tangtang_attack2_02_projhit"
+          ],
+          "note": "ObtainCostAction atb × 0.5 if controlled: atb is 0 at every level (SkillPatchTable), so no SP."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0027_tangtang_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "spray",
+          "scale": [
+            "atk_scale_1"
+          ],
+          "count": 5,
+          "frames": [
+            5,
+            7,
+            9,
+            10,
+            12
+          ],
+          "events": [
+            "chr_0027_tangtang_attack3"
+          ]
+        },
+        {
+          "id": "shot",
+          "scale": [
+            "atk_scale_2"
+          ],
+          "count": 4,
+          "frames": [
+            17,
+            17,
+            18,
+            18
+          ],
+          "events": [
+            "chr_0027_tangtang_attack3_projhit"
+          ],
+          "launch": 17
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0027_tangtang_attack4",
+      "label": "Basic attack 4",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale_1"
+          ],
+          "count": 2,
+          "frames": [
+            6,
+            10
+          ],
+          "events": [
+            "chr_0027_tangtang_attack4"
+          ]
+        },
+        {
+          "id": "hit_2",
+          "scale": [
+            "atk_scale_2"
+          ],
+          "frames": [
+            23
+          ],
+          "events": [
+            "chr_0027_tangtang_attack4"
+          ]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0027_tangtang_attack5",
+      "label": "Basic attack 5 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "shot",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            22
+          ],
+          "launch": 22,
+          "events": [
+            "chr_0027_tangtang_attack5_projhit"
+          ],
+          "sp": {
+            "if": {
+              "controlled": true
+            },
+            "then": "atb"
+          },
+          "poise": "poise",
+          "poiseControlledOnly": true,
+          "finalStrike": true,
+          "note": "attack5_projhit: DamageAction atk_scale (mask 2097280), then if controlled a poise-only DamageAction (poise 18: \"As the controlled operator, Final Strike also deals 18 Stagger\"; kit-draft folds it in, D6) and, in the same branch, ObtainCostAction atb once per projectile (EntityBB_atk05_cnt)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0027_tangtang_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            9
+          ],
+          "factor": 0.3,
+          "events": [
+            "chr_0027_tangtang_power_attack"
+          ]
+        },
+        {
+          "id": "hit_2",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            21
+          ],
+          "factor": 0.7,
+          "events": [
+            "chr_0027_tangtang_power_attack"
+          ]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0027_tangtang_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "count": 4,
+          "frames": [
+            3,
+            5,
+            7,
+            9
+          ],
+          "events": [
+            "chr_0027_tangtang_plunging_attack_end"
+          ],
+          "note": "TickIntervalAction 0.07 s over frames 3–11 (0.267 s): 4 ticks, as display_atk_scale 1.8 = 4 × 0.45 says (batch 4 D9a). A dive landing (decorate mask 1152: bit 1024), which ends an OLDEN STARE (trigger olden_stare_dive). Not castable until rotations have dive attacks (batch-1 S10)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0027_tangtang_combo_skill",
+      "label": "RIVER, TO ME!",
+      "damageType": "combo",
+      "hits": [
+        {
+          "id": "jet",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            26
+          ],
+          "events": [
+            "chr_0027_tangtang_combo_skill"
+          ],
+          "energy": "usp",
+          "poise": "poise",
+          "note": "Frame 26: DamageAction atk_scale (mask 12288) and a poise-only DamageAction (poise 10; kit-draft folds it in, D6); usp once per cast (tar_cnt)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0027_tangtang_normal_skill",
+      "label": "IMA WAVERIDAAH!",
+      "damageType": "battle",
+      "teamEnergy": [
+        {
+          "frame": 27,
+          "ratio": 1
+        }
+      ],
+      "hits": [
+        {
+          "id": "shot",
+          "scale": [
+            "atk_scale_1"
+          ],
+          "count": 5,
+          "frames": [
+            27,
+            29,
+            32,
+            34,
+            36
+          ],
+          "events": [
+            "chr_0027_tangtang_normal_skill"
+          ],
+          "poise": "poise1",
+          "note": "ChannelingAction frames 27–39, one target every 0.075 s, at most 5: 5 × atk_scale_1 = \"Shooting DMG Multiplier\" 180%, 5 × poise1 2 = \"Shot Stagger\" 10. buff_common_obtain_ultimate_sp once (DoOnce) at the first tick."
+        },
+        {
+          "id": "spout1_first",
+          "scale": [],
+          "scaleValue": {
+            "key": "normalskill_atk_scale01",
+            "skill": "chr_0027_tangtang_passive_0"
+          },
+          "count": {
+            "if": {
+              "buffLayers": "whirlpool",
+              "below": 1
+            },
+            "then": 1,
+            "else": 0
+          },
+          "frames": [
+            23
+          ],
+          "launch": 11,
+          "events": [
+            "chr_0027_tangtang_normal_skill_water_projhit"
+          ],
+          "applies": [
+            {
+              "kind": "infliction",
+              "element": "cryst"
+            }
+          ],
+          "note": "No Whirlpool: one Waterspout (normal_skill_water_projhit). Its first tick inflicts Cryo (buff_chr_0027_tangtang_comboskill_spelllnfliction < 1 per cast and target: once)."
+        },
+        {
+          "id": "spout1",
+          "scale": [],
+          "scaleValue": {
+            "key": "normalskill_atk_scale01",
+            "skill": "chr_0027_tangtang_passive_0"
+          },
+          "count": {
+            "if": {
+              "buffLayers": "whirlpool",
+              "below": 1
+            },
+            "then": 11,
+            "else": 0
+          },
+          "frames": [
+            31,
+            39,
+            46,
+            54,
+            62,
+            70,
+            78,
+            85,
+            93,
+            101,
+            109
+          ],
+          "launch": 11,
+          "events": [
+            "chr_0027_tangtang_normal_skill_water_projhit"
+          ],
+          "note": "The other ticks (every 0.26 s over 90 frames from the Waterspouts' spawn at frame 23, normal_skill_abilityentitymove's frame 12; all Waterspouts of a cast tick together): DamageAction mask 4352 (Battle Skill DMG), no infliction (the cast's marker buff_chr_0027_tangtang_comboskill_spelllnfliction is there)."
+        },
+        {
+          "id": "spout2_first",
+          "scale": [],
+          "scaleValue": {
+            "key": "normalskill_atk_scale01",
+            "skill": "chr_0027_tangtang_passive_0"
+          },
+          "count": {
+            "if": {
+              "buffLayers": "whirlpool",
+              "atLeast": 1,
+              "below": 2
+            },
+            "then": 1,
+            "else": 0
+          },
+          "frames": [
+            23
+          ],
+          "launch": 11,
+          "events": [
+            "chr_0027_tangtang_normal_skill_water_projhit_1"
+          ],
+          "applies": [
+            {
+              "kind": "infliction",
+              "element": "cryst"
+            }
+          ],
+          "buffs": [
+            {
+              "buff": "spout_susceptibility_2",
+              "if": {
+                "not": {
+                  "buffActive": "spout_susceptibility_3"
+                }
+              }
+            }
+          ],
+          "note": "One Whirlpool: two Waterspouts (_projhit_1); the first one's first tick inflicts and applies Arts Susceptibility rate_spellvulnerable (5% at level 12, +5% at P3) for duration_spellvulnerable 15 s, once per cast."
+        },
+        {
+          "id": "spout2",
+          "scale": [],
+          "scaleValue": {
+            "key": "normalskill_atk_scale01",
+            "skill": "chr_0027_tangtang_passive_0"
+          },
+          "count": {
+            "if": {
+              "buffLayers": "whirlpool",
+              "atLeast": 1,
+              "below": 2
+            },
+            "then": 23,
+            "else": 0
+          },
+          "frames": [
+            23,
+            31,
+            31,
+            39,
+            39,
+            46,
+            46,
+            54,
+            54,
+            62,
+            62,
+            70,
+            70,
+            78,
+            78,
+            85,
+            85,
+            93,
+            93,
+            101,
+            101,
+            109,
+            109
+          ],
+          "launch": 11,
+          "events": [
+            "chr_0027_tangtang_normal_skill_water_projhit_1"
+          ],
+          "note": "The other ticks (every 0.26 s over 90 frames from the Waterspouts' spawn at frame 23, normal_skill_abilityentitymove's frame 12; all Waterspouts of a cast tick together): DamageAction mask 4352 (Battle Skill DMG), no infliction (the cast's marker buff_chr_0027_tangtang_comboskill_spelllnfliction is there)."
+        },
+        {
+          "id": "spout3_first",
+          "scale": [],
+          "scaleValue": {
+            "key": "normalskill_atk_scale01",
+            "skill": "chr_0027_tangtang_passive_0"
+          },
+          "count": {
+            "if": {
+              "buffLayers": "whirlpool",
+              "atLeast": 2
+            },
+            "then": 1,
+            "else": 0
+          },
+          "frames": [
+            23
+          ],
+          "launch": 11,
+          "events": [
+            "chr_0027_tangtang_normal_skill_water_projhit_2"
+          ],
+          "applies": [
+            {
+              "kind": "infliction",
+              "element": "cryst"
+            }
+          ],
+          "buffs": [
+            {
+              "buff": "spout_susceptibility_3"
+            }
+          ],
+          "note": "Two Whirlpools or more (water_cnt ≥ 2): three Waterspouts (_projhit_2); the first one's first tick inflicts (once per cast and target, as for the others) and applies Arts Susceptibility rate_spellvulnerable_02 (10%, 15% from P3) for 15 s."
+        },
+        {
+          "id": "spout3",
+          "scale": [],
+          "scaleValue": {
+            "key": "normalskill_atk_scale01",
+            "skill": "chr_0027_tangtang_passive_0"
+          },
+          "count": {
+            "if": {
+              "buffLayers": "whirlpool",
+              "atLeast": 2
+            },
+            "then": 35,
+            "else": 0
+          },
+          "frames": [
+            23,
+            23,
+            31,
+            31,
+            31,
+            39,
+            39,
+            39,
+            46,
+            46,
+            46,
+            54,
+            54,
+            54,
+            62,
+            62,
+            62,
+            70,
+            70,
+            70,
+            78,
+            78,
+            78,
+            85,
+            85,
+            85,
+            93,
+            93,
+            93,
+            101,
+            101,
+            101,
+            109,
+            109,
+            109
+          ],
+          "launch": 11,
+          "events": [
+            "chr_0027_tangtang_normal_skill_water_projhit_2"
+          ],
+          "note": "The other ticks (every 0.26 s over 90 frames from the Waterspouts' spawn at frame 23, normal_skill_abilityentitymove's frame 12; all Waterspouts of a cast tick together): DamageAction mask 4352 (Battle Skill DMG), no infliction (the cast's marker buff_chr_0027_tangtang_comboskill_spelllnfliction is there)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0027_tangtang_ultimate_skill",
+      "label": "DA CHIEF SEES YOU!",
+      "damageType": "ultimate",
+      "hits": [
+        {
+          "id": "stare",
+          "scale": [
+            "atk_scale_1"
+          ],
+          "count": 8,
+          "frames": [
+            76,
+            91,
+            106,
+            121,
+            136,
+            151,
+            166,
+            181
+          ],
+          "launch": 76,
+          "events": [
+            "chr_0027_tangtang_ultimate_skill_1"
+          ],
+          "if": {
+            "not": {
+              "buffActive": "olden_stare_over"
+            }
+          },
+          "note": "Entity chr_0027_tangtang_ultimate_skill_1 (spawned at frame 76): ChannelingAction entity frames 0–120, one target every 0.5 s, at most 8: 8 × atk_scale_1 = \"DMG Over Time Total Multiplier\" 320% (×1.15 at P5). Ticks still to come when a dive ends the stare don't land (olden_stare_over; b7b3: 5 of 8)."
+        },
+        {
+          "id": "rogue_wave",
+          "scale": [
+            "atk_scale_2"
+          ],
+          "frames": [
+            196
+          ],
+          "launch": 76,
+          "poise": "poise2",
+          "events": [
+            "chr_0027_tangtang_ultimate_skill_1"
+          ],
+          "if": {
+            "not": {
+              "buffActive": "olden_stare_over"
+            }
+          },
+          "buffs": [
+            {
+              "buff": "olden_stare_over"
+            }
+          ],
+          "note": "Entity frame 120: \"When the OLDEN STARE stops evolving, a rogue wave comes crashing down\": atk_scale_2 400% (×1.15 at P5), poise2 15. Not after a dive (the jump to 128 skips it: the early wave instead). It closes the dive window (olden_stare_over): the EventListenerAction ends at entity frame 119."
+        }
+      ]
+    }
+  ]
+}

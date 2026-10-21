@@ -296,8 +296,9 @@ stats (attribute types 64–69, 70–75, 62, 63), not zones.
 - **Link:** battle skill +30/45/60/75%, ultimate +20/30/40/50% by stack count.
   In the data (rmxlinux BuffData): `buff_common_affixes_combo_trigger`
   stacks on the team, left only by a ComboAction (SkillData: Lifeng's
-  combo, Camille's combos) or a buff that creates the trigger buff
-  (Thermite Cutter; Akekuri's talent), not by every combo (corrected
+  combo, Camille's combos) or a buff that counts as one (Akekuri's
+  talent; Thermite Cutter only reacts to Link its wielder gains, its
+  sk_wpn_sword_0012 handler checks for the trigger buff), not by every combo (corrected
   2026-10-20, batch 4 B1: ordinary combos leave no Link in five logs); casting a battle
   skill or ultimate (skill types 2, 7) reads the stack count, looks up
   `imbue_scale` under the skill-setting key 连击增伤 (not in the fetched

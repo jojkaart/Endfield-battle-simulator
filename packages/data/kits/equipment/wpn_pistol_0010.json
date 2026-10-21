@@ -1,0 +1,47 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_pistol_0010",
+  "sources": [
+    "Artzy Tyrannical (batch 4, written with Tangtang's kit: docs/kit-batches/batch-4/chr_0027_tangtang.md). rmxlinux Json/SkillData/sk_wpn_pistol_0010 (weapon skill 3, SkillPatchTable L1–L9: cryst_dmg_up 0.16–0.448, cryst_dmg_up2 0.14–0.392, duration 30, max_stack 3): cardAttributeModifier attribute 53 formulaItem 5 +cryst_dmg_up (Cryo DMG, stat panel). passiveEventActions abilityEvent 44 (the wielder scores a critical hit) + CheckDamageDecorateMask checkType 1 mask 8448 (battle 256 or combo 8192) + a 0.1 s timed marker → buff_wpn_pistol_0010_valid on the wielder (attribute 53 +cryst_dmg_up_valid = cryst_dmg_up2; stackingType 2, maxStackCnt max_stack 3, each layer its own `duration`). toggleBuffs names buff_wpn_lance_0003 behind CheckCurHpRatio hp_ratio with keys this skill doesn't have (atk_up, hp_ratio): a leftover, left out.",
+    "\"After the wielder scores a critical hit with a battle skill or combo skill, the wielder gains Cryo DMG Dealt +{cryst_dmg_up2} for {duration}s. Max stacks for effects of the same name: {max_stack}. Duration of each stack is counted separately. Effect only triggers once every 0.1s.\""
+  ],
+  "buffs": [
+    {
+      "id": "wpn_pistol_0010.cryo_up",
+      "label": "Artzy Exaggeration: Cryo DMG",
+      "target": "self",
+      "gameBuff": "buff_wpn_pistol_0010_valid",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [
+        {
+          "attr": 53,
+          "value": "cryst_dmg_up2"
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_pistol_0010.crit",
+      "on": {
+        "event": "hit",
+        "kinds": [
+          "battle",
+          "combo"
+        ],
+        "crit": true
+      },
+      "by": "self",
+      "cooldown": 0.1,
+      "skill": "sk_wpn_pistol_0010",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "wpn_pistol_0010.cryo_up"
+        }
+      ],
+      "note": "abilityEvent 44 (the wielder's critical hit) + CheckDamageDecorateMask checkType 1 mask 8448 (battle 256 or combo 8192: a hit whose decorate mask has either bit, Tangtang's Waterspouts included) + a 0.1 s timed marker (cooldown 0.1). After the critting hit's damage. Needs rolled crits: expected crits count no hit as a crit (batch 4 T3: searches rank it with rolled crits)."
+    }
+  ]
+}

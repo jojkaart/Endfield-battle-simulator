@@ -1,0 +1,28 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_claym_0016",
+  "sources": [
+    "Phantom Pain (batch 4, docs/kit-batches/batch-4/chr_0026_lastrite.md rows E7–E8). Strength and Arts Intensity lines and sk_wpn_claym_0016's cardAttributeModifier attribute 50 +phy_dmg_up (Physical DMG) on the stat panel. rmxlinux Json/SkillData/sk_wpn_claym_0016 passiveEventActions abilityEvent 30 (the wielder casts) + CheckSkillType [2, 6] (battle skill, combo) + a 0.1 s marker → buff_wpn_claym_0016_dmgup (attribute 50 +phy_dmg_up, assigned the skill's phy_dmg_up2; `duration` 20 s; stackingType 2 with maxStackCntKey max_stack 3: layers with their own timers). buff_wpn_claym_0016, _atk_up and _cd are named by nothing (orphans); toggleBuffs buff_wpn_passive_spirit_01 is a template leftover. Values: SkillPatchTable sk_wpn_claym_0016 by skill level. A Physical weapon: its natural wielder is a Physical greatsword user (Mi Fu, Da Pan, Catcher)."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_claym_0016.phys",
+      "label": "Phantom Pain: Physical DMG after a battle skill or combo",
+      "target": "self",
+      "gameBuff": "buff_wpn_claym_0016_dmgup",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [{ "attr": 50, "value": "phy_dmg_up2" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_claym_0016.on_cast",
+      "on": { "event": "cast", "kinds": ["battle", "combo"] },
+      "by": "self",
+      "cooldown": 0.1,
+      "skill": "sk_wpn_claym_0016",
+      "do": [{ "kind": "buff", "buff": "wpn_claym_0016.phys" }]
+    }
+  ]
+}

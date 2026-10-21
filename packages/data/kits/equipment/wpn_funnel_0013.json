@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_funnel_0013",
+  "sources": [
+    "Dreams of the Starry Beach (6-star Arts Unit, Ardelia's signature), skill 3 \"Infliction: Tidal Murmurs\": \"After the wielder consumes Corrosion, target enemy suffers Arts DMG Taken +{spell_dmg_taken_up} for {duration}s.\" SkillPatchTable sk_wpn_funnel_0013: spell_dmg_taken_up 0.10 (L1) to 0.28 (L9), duration 25, lv.",
+    "rmxlinux Json/SkillData sk_wpn_funnel_0013 passiveEventActions: abilityEvent 208 (a buff the wielder removes) + CheckBuffIdInContext checkType 1 tag −421286163 (Corrosion) + CheckConsumeBuffLayer ≥ 1 → CreateBuff buff_wpn_funnel_0013_valid on the target, assigning spell_taken_up ← spell_dmg_taken_up, duration, lv. BuffData: damageModifier CheckDamageTypeMask 92 (Heat, Electric, Cryo, Nature), DamageScaleProcessor side 1 (DMG Taken) NormalCalcZone; stackingType 1 priority lv with useMaxStackCntKey max_stack, a key neither the skill nor the buff has: read as 0, no limit (batch-4 B2; every instance has the same lv, so the strongest acts either way).",
+    "Order: the consumption comes before the consuming hit's DamageAction (Ardelia's battle skill: FinishBuffByTag Corrosion, then the damage), and an ability-event buff made before a DamageAction acts on it (Perlica's P3 in fixtures/pending/zmdlogs-e82d45c46040.json; Navigator on Yvonne's bomb in fixtures/pending/zmdlogs-abfd4b7478ec.json), so the consuming hit has it (beforeDamage). In-game test 51's Ardelia variant asks it. The Intellect, Treatment Efficiency and secondary-attribute + second_attr_up lines (cardAttributeModifier) are in the stat panel. toggleBuffs buff_wpn_lance_0003 (ATK + atk_up while CheckCurHpRatio ≥ hp_ratio) is inert: sk_wpn_funnel_0013 has neither key. docs/kit-batches/batch-4/chr_0025_ardelia.md W10–W12."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_funnel_0013.arts_taken",
+      "label": "Tidal Murmurs: Arts DMG Taken",
+      "target": "enemy",
+      "gameBuff": "buff_wpn_funnel_0013_valid",
+      "duration": "duration",
+      "modifiers": [{ "zone": "damageTaken", "value": "spell_dmg_taken_up", "elements": ["fire", "pulse", "cryst", "natural"] }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_funnel_0013.corrosion_consumed",
+      "on": { "event": "statusConsumed", "statuses": ["corrosion"] },
+      "by": "self",
+      "beforeDamage": true,
+      "skill": "sk_wpn_funnel_0013",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0013.arts_taken" }],
+      "note": "A hit of the wielder's that removes Corrosion before it runs out (consumeStatus), whatever its skill."
+    }
+  ]
+}

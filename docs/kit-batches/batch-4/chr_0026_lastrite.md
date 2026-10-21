@@ -563,3 +563,149 @@ nothing), Mirage frames (+9 / +21) and their single use, the off-field
 jump, talent 1's value after a 4-stack consumption, Sundered Prince's
 doubling while controlled, Phantom Pain's three layers; example scenario
 `lastrite-si.scenario.json`.
+
+## Kit (2026-10-21)
+
+Kit phase, on the batch-4 shared features (commit 3e66c59). Files:
+`packages/data/kits/operators/chr_0026_lastrite.json`; equipment
+`packages/data/kits/equipment/wpn_claym_0008.json` (Sundered Prince),
+`wpn_claym_0013.json` (Khravengger), `wpn_claym_0016.json` (Phantom Pain);
+`tests/kit-lastrite.test.ts`; the example `examples/lastrite-si.scenario.json`
+with the build `examples/lastrite-p5.json` (P5, Khravengger); Last Rite in
+`packages/data/test/skillCompile.test.ts` with three KNOWN entries; a note
+on her in `fixtures/zmdlogs-b7b3762d5da8.json` (notes only, the build is
+right). `efsim kit-draft` was re-run as the start; the analysis drafts in
+the scratch folder served as notes.
+
+### Re-analysis
+
+Gaps:
+
+| Gap | Now | How |
+|---|---|---|
+| G1 talent 2 (zone scale) | **done** (V1) | `zoneScale: [{zone: susceptibility, value: {if: {talentAtLeast: [1, 1]}, then: rate, else: 1}}]` on all three slashes |
+| G2 P1's +20% DMG on Final Strikes; Sundered Prince's Stagger | **done** (C3) | the perfusion's modifier `{zone: damageBonus, value: atk_up × potential_1, decorations: [finalStrike], if: {controlled: true}}`; Sundered Prince's permanent `{attr: 26, value: poise_up, decorations: [finalStrike], if: {controlled: true}}` |
+| G3 battle skill beside her own basic attack | **done** (C4) | `beside: {all: [{controlled: true}, {currentAction: {kinds: [basic], beforeExclusive: true}}]}`; three cast triggers split by the cast filter `beside` (at the cast / delay 32 / delay 300). Plus the one-line engine fix below |
+| G4 each holder's perfusion | **done** (C2, B6) | the Mirage trigger's `if: {eventOperator: {operatorBuff: buff_chr_0026_lastrite_normal_skill}}` and `{kind: endBuff, buff: perfusion, to: eventSubject}`; a new cast gives it back to everyone |
+| G5a NotNextCheckAction | **done** (D7a) | kit-draft labels the f0 jump "not controlled" |
+| G5b hitless SP, second team-energy part, detached | **partly** (D8e) | kit-draft emits both cast triggers with `atb` and `usp`, but still marks them `detached`, without `ignoreBlock`, and keeps only the first team-energy part (a KNOWN entry). The SP kind comes from `_self` (D2: returned): nothing hand-written |
+| G5c Mirages compiled as skill hits | **done** (D9c) | kit-draft reports them as event-driven landings for a trigger |
+| G5d combo energy, the DefiniteValueCalculation note | **open** (D8f leftover) | kit-draft still puts `usp × 4` on both frame-63 hits and keeps the wrong note; the kit writes the energy by hand |
+| G5e attribute 73 side 1, switchToBuffConfig | **open** (D10a/f leftovers) | still "not read" (the ultimate comes out as talent_2 branch pairs), switchToBuffConfig not reported; `zoneScale` and `beside` hand-written |
+| G6a enemy-state value in `zmdlogs check` | **done** (L6) | the combo bonus is one hit: `scale: [atk_scale3]`, `scaleValue: {enemyInflictionStacks: cryst}`, `if: {enemyInfliction: cryst}` |
+| G6b time stops in `zmdlogs reactions` | **done** (L5) | b7b3's three late Cryo bursts match (held by Arcane's and Tangtang's time stops) |
+
+Mechanics rows that weren't `supported`:
+
+| Row | Now | How |
+|---|---|---|
+| 5 dash attack | open | batch-3 S5; its SkillData isn't in the checkout |
+| 7 returned SP | done | cast triggers `sp atb` (returned per D2); 35 at P5 |
+| 8 her energy with her tag | done | cast triggers `energy usp`, `ignoreBlock`, not detached |
+| 9 team energy | done | `teamEnergy` at 32 and 300 (S6: exclusive by the jumps); at the cast when beside |
+| 10 beside | done | G3 |
+| 12 Mirages | done | trigger `mirage`: two hits per path (the first applies the pair's one Cryo stack), +9 frames, +21 when she's the holder |
+| 13 one use per holder | done | G4 |
+| 14 whose stats the Mirages use | unknown, interim | hers (her trigger hits); no log has the phantom buffs yet |
+| 15 hit-stops | open | Ti1b |
+| 16 P1 DMG | done | G2 |
+| 17 P1 Stagger | done (D6) | a `poiseOnly` hit (`poise`, 5) at the Final Strike, `if: {potentialAtLeast: 1}` (it rode on the first Mirage in the plan) |
+| 22 combo energy | done | one action at delay 13: `usp_base + usp × {enemyInflictionStacks: cryst}` (40 + 15 × n), `ignoreBlock`; the frame-63 fallback for a target dead at 13 isn't written (no kills) |
+| 23 the combo's 2 s enemy freeze | open | Ti1b; test 37's variant |
+| 29 talent 1 on a reaction's consumption | interim | counts (A1, test 81); tested |
+| 30 talent 2 | done | G1 |
+| E3 Sundered Prince's Stagger | done | G2 |
+
+**Engine fix (local; changes no existing total).** In `castSkill`
+(packages/engine/src/timeline.ts) a cast that runs beside the current
+action gives the team's energy at the cast, not at its `teamEnergy`
+frames: a beside cast plays no timeline (the game runs the
+switchToBuffConfig buff, here `_inattack`, which creates
+`buff_common_obtain_ultimate_sp` as it starts). Without it her beside cast
+scheduled both parts (32 and 300; no jump skips either on a beside cast),
+doubling the team's energy. The only other `beside` skill, Liino's combo,
+spends no SP. Example totals and log outputs are unchanged (below).
+
+Assumption: CheckSkillType [0] (her `beside` condition) is read as the kit
+kind `basic`, which includes her finisher and dive; SkillData has no
+skill-type field to confirm whether the game counts those.
+
+### What the kit models
+
+- **Basic attacks, finisher, dive:** kit-draft's hits; attack4 is the
+  Final Strike (25 Stagger and 30 SP as the controlled operator). Dives
+  aren't castable yet (batch-1 S10).
+- **Battle skill:** hitless, three paths. Off-field (jump 0 → 300):
+  returned SP (`atb`, 35 at P5), her 16 energy, the team's energy and the
+  perfusion at the cast. Controlled outside her chain: the same at frame
+  32 (her next action from 34). Controlled inside her basic attack before
+  its exclusive frame: beside the attack, everything at the cast, the
+  chain not delayed (the analysis's interim lost about 1.1 s per cast).
+- **Hypothermic Perfusion:** a team buff (15 s). Each holder's first Final
+  Strike while controlled gets P1's +20% DMG and +5 Stagger, then two
+  Mirages (`atk_scale` × 0.5 each, ×1.2 at P5; battle, Cryo; one Cryo
+  stack) 9 frames later, 21 when Last Rite holds it; that holder's
+  perfusion ends, the others keep theirs. Approximation: the game ends it
+  when the holder next gains a buff (`_tag`, abilityEvent 9), so a Final
+  Strike with several landings may get P1's +20% on more than its first;
+  the kit ends it at once.
+- **Combo:** opens at 3 Cryo stacks; shard (f13), bonus `atk_scale3 × n`
+  and slash (f63), then every Cryo stack consumed; energy 40 + 15 × n at
+  f13. Talent 1: Cryo Susceptibility 0.04 × n for 15 s (the strongest
+  instance acts).
+- **Ultimate:** slashes at 86, 105 and 134, each with the whole Cryo
+  Susceptibility reaching it × 1.5 (×1.2 at talent level 1).
+- **Passive:** only her own grants give her energy (team and gear-set
+  energy are blocked).
+- **Sundered Prince:** ATK +`atk_up` (×`multi` 2 while controlled, judged at
+  application) for 8 s after the wielder's Final Strike; Stagger
+  +`poise_up` on the controlled wielder's Final Strikes. Tested on her.
+- **Khravengger:** Cryo DMG +`cryst_dmg_up` after the wielder's
+  battle-skill Cryo Infliction (her Mirages: from the pair's second Mirage
+  on, the buff coming after the first's damage, test 51's question) and
+  +`cryst_dmg_up2` after combo damage on a Cryo-inflicted enemy. Tested on
+  her and on b7b3.
+- **Phantom Pain:** a layer of Physical DMG +`phy_dmg_up2` per battle skill
+  or combo cast, at most 3 with their own 20 s timers. Tested on Catcher
+  (a Physical greatsword user with a kit).
+
+Left out: the dash attack (S5), hit-stops and the combo's enemy freeze
+(Ti1b), the combo's dead-target energy fallback, damage immunity during
+the ultimate.
+
+### Verification
+
+- `zmdlogs check fixtures/zmdlogs-b7b3762d5da8.json`: Last Rite **5 of 5
+  match**, 100% covered (before: 0 covered): the combo's shard and slash
+  (both 1.84 × ATK, so the checker lists both under `shard`), the bonus at
+  n = 4 (`enemy cryst ×4`) and both ultimate slashes (with `zoneScale`). Arcane 13/13, Si 21/21, Tangtang 1/46 (no kit
+  yet) unchanged. `tests/logs.test.ts` passes.
+- `zmdlogs reactions` on b7b3: still 3 matched, 0 predicted but not
+  logged, 1 logged but not predicted (Tangtang's 15374 ms Solidification,
+  which needs her kit). Her own lines: she left the "no inflictions in the
+  kit" list, and her combo's consumption shows ("other 11462 ms: consumed 4
+  cryst"); it changes no burst. Her Mirages (her only inflictions) aren't
+  in this log.
+- The example (Si controlled, then Last Rite): 823,680 damage in 21.17 s,
+  38,914 DPS. Timings as planned: Mirages at Si's Final Strikes + 9
+  (frames 105, 207), at hers + 21 (328, 459); the battle skill cast in
+  attack 2 at 11.73 s with attack 3 0.97 s later, as in a plain chain;
+  the combo at n = 4 (bonus 11.04 × ATK); the ultimate's slashes at
+  Susceptibility 1.24 (0.16 × 1.5). The analysis's solo scenario now has
+  attack 3 at 7.13 s after the beside cast (8.10 s with the old interim)
+  and 16 energy per battle skill.
+- Every other example total and every `zmdlogs check` / `zmdlogs
+  reactions` output on fixtures/ and fixtures/pending/ is unchanged.
+
+### In-game tests the kit depends on
+
+- **81** (Hypothermia on a reaction): the interim counts it.
+- **82** (the battle skill inside her chain): the kit follows the data (no
+  time lost); the test confirms it.
+- **83** (Mirages after a swap): the kit follows the data (each member's
+  first Final Strike); "only X's" would make the perfusion the controlled
+  operator's only.
+- **37**'s variant (the combo's 2 s enemy freeze): not modelled.
+- **51** (an effect on its own hit: Khravengger's battle buff isn't on the
+  pair's first Mirage), **35** (a reaction-forming infliction for
+  Khravengger: the engine says no), **19** (Haste: her log spacing).

@@ -1,0 +1,35 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0014",
+  "sources": [
+    "White Night Nova. rmxlinux Json/SkillData/sk_wpn_sword_0014 and Json/BuffData buff_wpn_sword_0014_magic_up_ex (game 1.6); values SkillPatchTable sk_wpn_sword_0014 (level 9: spell_dmg_up 0.336, spell_dmg_up2 0.336, phy_spell_up 70, duration 15). Skills 1–2 (main attribute, Arts Intensity) and skill 3's Arts DMG + spell_dmg_up (cardAttributeModifier attributes 51–54) are on the stat panel.",
+    "passiveEventActions abilityEvent 102 (the wielder applies a buff) + CheckBuffIdInContext checkType 1 tags −1110095722 (Burning: Combustion) / 1466867135 (Conduct: Electrification) → CreateBuff buff_wpn_sword_0014_magic_up_ex on the wielder (attributes 51–54 Arts DMG + spell_dmg_up2, attribute 87 Arts Intensity + phy_spell_up, `duration`; stackingType 4: a new one replaces it). The two tags are statuses, not buff categories (buffTags.ts): a reaction trigger. Description: \"After the wielder applies Combustion or Electrification, the wielder gains Arts DMG +{spell_dmg_up2} and Arts Intensity +{phy_spell_up} for {duration}s. Effects of the same name cannot stack.\"",
+    "beforeDamage: the status buff is added before the hit's damage (as Wulfgard's talent, batch 3); forced reactions count (they carry the tag). Rossi's ultimate Heat infliction on another element's infliction is her Combustion. toggleBuffs buff_wpn_passive_spirit_01: the template leftover (batch 1). Not in any log."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_sword_0014.arts",
+      "label": "White Night Nova: Arts DMG and Arts Intensity",
+      "target": "self",
+      "gameBuff": "buff_wpn_sword_0014_magic_up_ex",
+      "duration": "duration",
+      "modifiers": [
+        { "attr": 51, "value": "spell_dmg_up2" },
+        { "attr": 52, "value": "spell_dmg_up2" },
+        { "attr": 53, "value": "spell_dmg_up2" },
+        { "attr": 54, "value": "spell_dmg_up2" },
+        { "attr": 87, "value": "phy_spell_up" }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_sword_0014.on_reaction",
+      "on": { "event": "reaction", "statuses": ["combustion", "electrification"] },
+      "by": "self",
+      "beforeDamage": true,
+      "skill": "sk_wpn_sword_0014",
+      "do": [{ "kind": "buff", "buff": "wpn_sword_0014.arts" }]
+    }
+  ]
+}
