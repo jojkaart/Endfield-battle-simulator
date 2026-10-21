@@ -1,0 +1,335 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0026_lastrite",
+  "sources": [
+    "Batch 4 (docs/kit-batches/batch-4/chr_0026_lastrite.md, its kit plan and the section 'Kit (2026-10-21)'). Hits, frames, keys and events: rmxlinux Json/SkillData chr_0026_lastrite_* via efsim kit-draft, checked by hand; BuffData buff_chr_0026_lastrite_normal_skill (Hypothermic Perfusion), _normal_skill_main_start, _normal_skill_inattack, _normal_skill_self, _normal_skill_tag, _normal_skill_phantom(_main), _talent_1(_vul), _passive; values SkillPatchTable, SkillData defaults (battle skill atk_up 0.2, poise 5, potential_1), PotentialTalentEffectTable.",
+    "Talent indices: 0 is Hypothermia (buff_chr_0026_lastrite_talent_1: crystal_up 0.02 / 0.04, duration 15), 1 is Cryogenic Embrittlement (sets the ultimate's talent_2 to 1 and rate 1.2 / 1.5).",
+    "Potentials (loader, from the data): P1 potential_1 = 1 (the perfusion's +atk_up DMG and +poise Stagger on Final Strikes), P2 Strength +20 and Cryo DMG +10% (stat panel), P3 ×1.15 on the combo's atk_scale / atk_scale2 / atk_scale3 and the ultimate's atk_scale / atk_scale2, P4 ultimate cost ×0.85, P5 battle skill atb +5 and atk_scale ×1.2 (the Mirages).",
+    "Left out: the dash attack (chr_0026_lastrite_dash_attack has a SkillPatchTable row but no SkillData in the checkout; batch-3 S5), hit-stops and the combo's 2 s enemy freeze (buff_chr_0026_lastrite_combo_skill_hitstop, time scale 0 on the enemy: Ti1b), the combo's frame-63 energy fallback when the target died at frame 13 (no kills in the engine), damage immunity during the ultimate (enemy damage isn't simulated)."
+  ],
+  "element": "cryst",
+  "buffs": [
+    {
+      "id": "energy_lock",
+      "label": "Only her own battle and combo skills give her Ultimate Energy",
+      "target": "self",
+      "blocksEnergy": true,
+      "gameBuff": "buff_chr_0026_lastrite_passive",
+      "modifiers": [],
+      "note": "buff_chr_0026_lastrite_passive (lifeType 1): RefrainObtainUsp with refrainObtainUspTags 264623624. Her own ObtainCostAction usp grants carry useUspRecoverTag 264623624 and pass: written as energy actions with ignoreBlock. Team energy (buff_common_obtain_ultimate_sp) and gear-set energy are blocked for her."
+    },
+    {
+      "id": "perfusion",
+      "label": "Hypothermic Perfusion",
+      "target": "team",
+      "duration": { "key": "duration", "skill": "chr_0026_lastrite_normal_skill" },
+      "gameBuff": "buff_chr_0026_lastrite_normal_skill",
+      "modifiers": [
+        {
+          "zone": "damageBonus",
+          "value": { "product": [{ "key": "atk_up", "skill": "chr_0026_lastrite_normal_skill" }, { "key": "potential_1", "skill": "chr_0026_lastrite_normal_skill" }] },
+          "decorations": ["finalStrike"],
+          "if": { "controlled": true }
+        }
+      ],
+      "note": "buff_chr_0026_lastrite_normal_skill, created by buff_..._normal_skill_self on CharacterTeamFinder (every member), `duration` 15 s, stackingType 2 max 1. P1: its damageModifier (CheckMainCharacterCondition, CheckDamageDecorateMask checkType 1 mask 2097152, CompareFloat potential_1 = 1) → DamageScaleProcessor NormalCalcZone +atk_up on the holder's Final Strikes while controlled (batch-4 C3). potential_1 is 0 below P1 (SkillData default) and 1 from P1 (PotentialTalentEffectTable). Each holder's use ends that holder's buff only: trigger mirage (batch-4 B6). In the game the holder's _tag ends it at the next buff the holder gains; here it ends at once after that Final Strike's first landing, so a Final Strike with several landings gets P1's +20% on the first only."
+    },
+    {
+      "id": "talent1_vul",
+      "label": "Hypothermia: Cryo Susceptibility",
+      "target": "enemy",
+      "gameBuff": "buff_chr_0026_lastrite_talent_1_vul",
+      "duration": { "talent": 0, "key": "duration" },
+      "modifiers": [
+        {
+          "zone": "susceptibility",
+          "elements": ["cryst"],
+          "value": { "product": [{ "talent": 0, "key": "crystal_up" }, { "eventCount": true }] }
+        }
+      ],
+      "note": "VulnerableAction subType 5 (Cryo), rate crystal_vul = infliction_num × crystal_up (SimpleCalcBB in buff_..._talent_1), asChildBuff (logged as buff_common_affixes_vulnerable_crystal); stackingType 1, priority crystal_vul, max 1: the strongest instance acts (loader, batch-3 B1). Verified on b7b3 (0.16 = 4 × 0.04 at t=11462 as a boundary buff, active at 15280)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "energy_lock_on",
+      "on": { "event": "fightStart" },
+      "by": "self",
+      "do": [{ "kind": "buff", "buff": "energy_lock" }]
+    },
+    {
+      "id": "combo_window",
+      "on": { "event": "inflictionApplied", "elements": ["cryst"], "minStacks": 3 },
+      "by": "anyone",
+      "do": [{ "kind": "openCombo" }],
+      "note": "COMBO TRIGGER: \"When an enemy has {count} or more Cryo Infliction stacks\" (count 3 at every level)."
+    },
+    {
+      "id": "battle_skill_beside",
+      "on": { "event": "cast", "skills": ["chr_0026_lastrite_normal_skill"], "beside": true },
+      "by": "self",
+      "skill": "chr_0026_lastrite_normal_skill",
+      "do": [
+        { "kind": "endBuff", "buff": "perfusion" },
+        { "kind": "sp", "value": "atb" },
+        { "kind": "energy", "value": "usp", "ignoreBlock": true },
+        { "kind": "buff", "buff": "perfusion" }
+      ],
+      "note": "Cast inside her own basic attack while controlled (KitSkill.beside): the game runs buff_..._normal_skill_inattack instead of the timeline (switchToBuffConfig asSkillCast), whose start event ends the perfusion (FinishBuffAdvanced), creates buff_..._normal_skill_self (the perfusion on every member and ObtainCostAction atb, atbGainMethod 1: returned SP), buff_common_obtain_ultimate_sp (team energy: at the cast for a beside cast) and ObtainCostAction usp with her tag. SP kind from the data (batch-4 D2)."
+    },
+    {
+      "id": "battle_skill_on_field",
+      "on": { "event": "cast", "skills": ["chr_0026_lastrite_normal_skill"], "beside": false },
+      "by": "self",
+      "delay": 32,
+      "skill": "chr_0026_lastrite_normal_skill",
+      "do": [
+        { "kind": "sp", "value": "atb" },
+        { "kind": "energy", "value": "usp", "ignoreBlock": true },
+        { "kind": "buff", "buff": "perfusion" }
+      ],
+      "note": "Controlled path (no jump at 0): buff_..._normal_skill_main_start, created at f6 (finishWithNextSkillIfNotInherited, so not detached), at its frame 26 = skill frame 32: FinishBuff _tag, CreateBuff _self (the perfusion and the returned atb), buff_common_obtain_ultimate_sp (teamEnergy at 32) and ObtainCostAction usp with her tag. The jump 187 → 429 skips frame 300."
+    },
+    {
+      "id": "battle_skill_off_field",
+      "on": { "event": "cast", "skills": ["chr_0026_lastrite_normal_skill"], "beside": false },
+      "by": "self",
+      "delay": 300,
+      "skill": "chr_0026_lastrite_normal_skill",
+      "do": [
+        { "kind": "sp", "value": "atb" },
+        { "kind": "energy", "value": "usp", "ignoreBlock": true },
+        { "kind": "buff", "buff": "perfusion" }
+      ],
+      "note": "Not-controlled path: JumpToAction 0 → 300 (NotNextCheckAction + CheckMainCharacterCondition: she isn't controlled), so frame 300 comes at the cast: FinishBuff _tag, CreateBuff _self, buff_common_obtain_ultimate_sp (teamEnergy at 300), ObtainCostAction usp with her tag, LaunchProjectile (its projhit file is empty)."
+    },
+    {
+      "id": "mirage",
+      "on": { "event": "hit", "finalStrike": true },
+      "by": "controlled",
+      "if": { "eventOperator": { "operatorBuff": "buff_chr_0026_lastrite_normal_skill" } },
+      "cooldown": 0.1,
+      "cooldownPer": "eventSubject",
+      "skill": "chr_0026_lastrite_normal_skill",
+      "do": [
+        {
+          "kind": "hits",
+          "if": { "potentialAtLeast": 1 },
+          "hits": [
+            {
+              "id": "p1_stagger",
+              "label": "P1: Final Strike Stagger",
+              "scale": [],
+              "poiseOnly": true,
+              "poise": "poise",
+              "frames": [0],
+              "damageType": "battle",
+              "note": "The perfusion's abilityEvent 302 handler [CheckHp, Final Strike, controlled, potential_1 = 1]: DamageAction whose unit only deals poise `poise` (5), at the Final Strike."
+            }
+          ]
+        },
+        {
+          "kind": "hits",
+          "if": { "controlled": true },
+          "hits": [
+            {
+              "id": "mirage_main_1",
+              "label": "Mirage (Last Rite's own Final Strike)",
+              "scale": ["atk_scale"],
+              "factor": 0.5,
+              "frames": [21],
+              "events": ["buff_chr_0026_lastrite_normal_skill_phantom_main"],
+              "damageType": "battle",
+              "element": "cryst",
+              "applies": [{ "kind": "infliction", "element": "cryst" }],
+              "note": "buff_..._normal_skill_phantom_main (CheckTagMatch 264623624 on the holder: Last Rite herself) at its frame 21: SpellInfliction Cryo, then two DamageActions of atk_scale (×0.5: the skill's frame-0 ModifyDynamicBlackboard; P5 ×1.2), mask 4352 (battle). One Cryo stack for the pair."
+            },
+            {
+              "id": "mirage_main_2",
+              "label": "Mirage (Last Rite's own Final Strike)",
+              "scale": ["atk_scale"],
+              "factor": 0.5,
+              "frames": [21],
+              "events": ["buff_chr_0026_lastrite_normal_skill_phantom_main"],
+              "damageType": "battle",
+              "element": "cryst"
+            }
+          ]
+        },
+        {
+          "kind": "hits",
+          "if": { "not": { "controlled": true } },
+          "hits": [
+            {
+              "id": "mirage_1",
+              "label": "Mirage",
+              "scale": ["atk_scale"],
+              "factor": 0.5,
+              "frames": [9],
+              "events": ["buff_chr_0026_lastrite_normal_skill_phantom"],
+              "damageType": "battle",
+              "element": "cryst",
+              "applies": [{ "kind": "infliction", "element": "cryst" }],
+              "note": "buff_..._normal_skill_phantom (another holder) at its frame 9: as mirage_main_1."
+            },
+            {
+              "id": "mirage_2",
+              "label": "Mirage",
+              "scale": ["atk_scale"],
+              "factor": 0.5,
+              "frames": [9],
+              "events": ["buff_chr_0026_lastrite_normal_skill_phantom"],
+              "damageType": "battle",
+              "element": "cryst"
+            }
+          ]
+        },
+        { "kind": "endBuff", "buff": "perfusion", "to": "eventSubject" }
+      ],
+      "note": "The perfusion's abilityEvent 302 (the holder deals damage): [CheckHp, the 0.1 s marker, Final Strike mask 2097152, holder controlled] → IfElse CheckTagMatch 264623624 on the holder → buff_..._phantom_main else _phantom on the target, then _tag on the holder, which ends that holder's perfusion (abilityEvent 9): each member's first Final Strike while controlled (batch-4 C2 operatorBuff, B6 endBuff to eventSubject). `controlled` here is the owner: she is controlled exactly when she is the hitter (by: controlled). The Mirages are her trigger hits (her stats): the phantom buffs are hers, on the enemy; no log has them yet (report row 14)."
+    },
+    {
+      "id": "combo_energy",
+      "on": { "event": "cast", "skills": ["chr_0026_lastrite_combo_skill"] },
+      "by": "self",
+      "delay": 13,
+      "skill": "chr_0026_lastrite_combo_skill",
+      "do": [
+        { "kind": "energy", "value": { "sum": ["usp_base", { "product": ["usp", { "enemyInflictionStacks": "cryst" }] }] }, "ignoreBlock": true }
+      ],
+      "note": "Frame 13: SaveBuffStackNumByTag (Cryo Infliction, tag 1570888476) → infliction_num; ObtainCostAction usp_base, and (IfElse CheckHp > 0) usp × infliction_num, both with her tag: 40 + 15 × n. The frame-63 fallback (usp × min(n, 4) when recover_usp = 0, i.e. the target died at frame 13) isn't written."
+    },
+    {
+      "id": "hypothermia",
+      "on": { "event": "inflictionConsumed" },
+      "by": "self",
+      "if": { "talentAtLeast": [0, 1] },
+      "do": [{ "kind": "buff", "buff": "talent1_vul" }],
+      "note": "buff_chr_0026_lastrite_talent_1 abilityEvent 208 (she removes a buff) + CheckBuffIdInContextAdvanced tag −193971080 (Arts Infliction) + CheckConsumeBuffLayer ≥ 1 → crystal_vul = infliction_num × crystal_up → buff_..._talent_1_vul; after the consuming hit's damage. Interim (batch-4 A1, in-game test 81): a reaction's consumption by her Mirage counts too, as for OBJ Velocitous."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0026_lastrite_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [12], "events": ["chr_0026_lastrite_attack1"], "sp": { "if": { "controlled": true }, "then": "atb" } }
+      ]
+    },
+    {
+      "skillId": "chr_0026_lastrite_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [10, 24], "events": ["chr_0026_lastrite_attack2"], "sp": { "if": { "controlled": true }, "then": "atb" } }
+      ]
+    },
+    {
+      "skillId": "chr_0026_lastrite_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [9], "events": ["chr_0026_lastrite_attack3"], "sp": { "if": { "controlled": true }, "then": "atb" } },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [27], "events": ["chr_0026_lastrite_attack3"], "sp": 0, "note": "The SP grant is attached once, to the first landing." }
+      ]
+    },
+    {
+      "skillId": "chr_0026_lastrite_attack4",
+      "label": "Basic attack 4 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [21],
+          "events": ["chr_0026_lastrite_attack4"],
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "poise": "poise",
+          "poiseControlledOnly": true,
+          "finalStrike": true,
+          "note": "Mask 2097280 (Final Strike); poise unit onlyEnableForMainChar."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0026_lastrite_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [40], "events": ["chr_0026_lastrite_power_attack"], "note": "BreakingAttackCalculation multiplier 1.0; GainBreakingAttackAtb (the enemy's finisher SP, engine)." }
+      ]
+    },
+    {
+      "skillId": "chr_0026_lastrite_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [2], "events": ["chr_0026_lastrite_plunging_attack_end"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Mask 1152 (dive). Rotations don't schedule dives yet (batch-1 S10)." }
+      ]
+    },
+    {
+      "skillId": "chr_0026_lastrite_normal_skill",
+      "label": "Esoteric Legacy of Seš'qa",
+      "damageType": "battle",
+      "beside": { "all": [{ "controlled": true }, { "currentAction": { "kinds": ["basic"], "beforeExclusive": true } }] },
+      "jumps": [{ "at": 0, "to": 300, "if": { "not": { "controlled": true } } }],
+      "teamEnergy": [{ "frame": 32, "ratio": 1 }, { "frame": 300, "ratio": 1 }],
+      "hits": [],
+      "note": "Hitless: SP, energy and the perfusion are the triggers battle_skill_beside / _on_field / _off_field; the Mirages are trigger mirage. Controlled: frames 0–187 (MarkCanInterrupt 51), then 187 → 429; team energy at 32. Not controlled: 0 → 300 (exclusiveFrame 373, ends 429); team energy at 300, i.e. at the cast. Cast during her own basic attack while controlled and before its exclusive frame (switchToBuffConfig asSkillCast: CheckSkillType [0] checkTargetCurSkill mustBeforeExclusiveTime + CheckMainCharacterCondition), it runs beside the attack as buff_..._normal_skill_inattack: the chain goes on, team energy at the cast (batch-4 C4). Description: \"When the controlled operator is Last Rite herself, casting this battle skill does not reset her basic attack sequence.\""
+    },
+    {
+      "skillId": "chr_0026_lastrite_combo_skill",
+      "label": "Winter's Devourer",
+      "damageType": "combo",
+      "hits": [
+        { "id": "shard", "label": "Ice shard", "scale": ["atk_scale"], "frames": [13], "events": ["chr_0026_lastrite_combo_skill"], "note": "Mask 8192; simpleCalculation atkScale atk_scale (verified b7b3 t=10155: 1.6 × 1.15 at P3). Energy: trigger combo_energy." },
+        {
+          "id": "bonus",
+          "label": "Bonus per Cryo stack",
+          "if": { "enemyInfliction": "cryst" },
+          "scale": ["atk_scale3"],
+          "scaleValue": { "enemyInflictionStacks": "cryst" },
+          "frames": [63],
+          "events": ["chr_0026_lastrite_combo_skill"],
+          "note": "Frame 63, ForEach target: SaveBuffStackNumByTag Cryo → final_combo_atkscale = atk_scale3 × n (mask 12288), judged before the slash consumes the stacks. Verified b7b3 t=11462 (n = 4)."
+        },
+        {
+          "id": "slash",
+          "label": "Slash",
+          "scale": ["atk_scale2"],
+          "frames": [63],
+          "events": ["chr_0026_lastrite_combo_skill"],
+          "poise": "poise",
+          "applies": [{ "kind": "consumeInfliction", "elements": ["cryst"], "afterDamage": true }],
+          "note": "Then FinishBuffByTag Cryo Infliction (all layers) after both DamageActions: talent 1 sees the consumption after the combo's damage (b7b3: its 0.16 is a boundary buff on these hits)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0026_lastrite_ultimate_skill",
+      "label": "Vigil Services",
+      "damageType": "ultimate",
+      "note": "ChannelingAction ticks at f86, f105 (atk_scale, poise1) and f134 (atk_scale2, poise2), one per target each. Each damage unit, when talent_2 = 1, has InstantModifyAttribute attribute 73 (Cryo Susceptibility) formulaItem 8 modifyTargetSide 1 by `rate`: the whole Cryo Susceptibility reaching the slash × rate (batch-4 V1 zoneScale; b7b3 confirms the whole-zone reading: ×1.1811 on both logged slashes). b7b3 logs only the first two slashes (the third is unexplained; the description says 3).",
+      "hits": [
+        {
+          "id": "slash",
+          "scale": ["atk_scale"],
+          "count": 2,
+          "frames": [86, 105],
+          "events": ["chr_0026_lastrite_ultimate_skill"],
+          "poise": "poise1",
+          "zoneScale": [{ "zone": "susceptibility", "value": { "if": { "talentAtLeast": [1, 1] }, "then": "rate", "else": 1 } }]
+        },
+        {
+          "id": "slash_3",
+          "scale": ["atk_scale2"],
+          "frames": [134],
+          "events": ["chr_0026_lastrite_ultimate_skill"],
+          "poise": "poise2",
+          "zoneScale": [{ "zone": "susceptibility", "value": { "if": { "talentAtLeast": [1, 1] }, "then": "rate", "else": 1 } }]
+        }
+      ]
+    }
+  ]
+}

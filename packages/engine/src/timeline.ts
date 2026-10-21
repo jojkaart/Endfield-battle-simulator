@@ -2333,7 +2333,9 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   const natural = Math.max(0, costs.spCost - s.spReturned);
   let next: TimelineState = { ...s, spReturned: Math.max(0, s.spReturned - costs.spCost) };
   if (natural > 0) {
-    if (skill.teamEnergy === undefined) for (const b of ctx.scenario.team) next = gainEnergy(ctx, next, b.operator, natural * ENERGY.perNaturalSp, frame);
+    // A cast beside the current action plays no timeline (the game runs its switchToBuffConfig buff instead, which
+    // creates buff_common_obtain_ultimate_sp as it starts: Last Rite's _inattack), so its team energy comes at the cast.
+    if (skill.teamEnergy === undefined || beside) for (const b of ctx.scenario.team) next = gainEnergy(ctx, next, b.operator, natural * ENERGY.perNaturalSp, frame);
     else
       for (const part of skill.teamEnergy) {
         const at = frame + scaled(part.frame);

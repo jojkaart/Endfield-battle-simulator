@@ -1,0 +1,43 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Last Rite (P5, Khravengger) with Si vs Rhodagn, Si controlled, Last Rite's ultimate charged. Last Rite's battle skill off-field gives every member Hypothermic Perfusion (SP returned at the cast); Si's Final Strike brings two Mirages 9 frames later (Cryo Infliction, Khravengger's battle-skill Cryo DMG). A second cast, Si's chain again, then the swap: Last Rite's own Final Strike uses the perfusion she still holds (Mirages at +21, P1's +20% DMG and Stagger on it). Cast during her attack 2 the battle skill runs beside the chain. At 3 Cryo stacks her combo consumes them (40 + 15 × n energy, talent 1's Cryo Susceptibility 0.04 × n); the ultimate's slashes take that Susceptibility × 1.5 (talent 2).",
+  "team": [
+    "si-jade-vessel.json",
+    "lastrite-p5.json"
+  ],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0026_lastrite": "full"
+  },
+  "durationSeconds": 30,
+  "crit": "expected",
+  "rotation": [
+    { "operator": "chr_0026_lastrite", "skill": "chr_0026_lastrite_normal_skill" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack1" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack2" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack3" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack4" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack5" },
+    { "operator": "chr_0026_lastrite", "skill": "chr_0026_lastrite_normal_skill", "at": 3.3 },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack1" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack2" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack3" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack4" },
+    { "operator": "chr_0036_jsspsi", "skill": "chr_0036_jsspsi_attack5" },
+    { "operator": "chr_0026_lastrite", "skill": "swap", "at": 6.7 },
+    { "operator": "chr_0026_lastrite", "skill": "chr_0026_lastrite_attack1" },
+    { "operator": "chr_0026_lastrite", "skill": "chr_0026_lastrite_attack2" },
+    { "operator": "chr_0026_lastrite", "skill": "chr_0026_lastrite_attack3" },
+    { "operator": "chr_0026_lastrite", "skill": "chr_0026_lastrite_attack4" },
+    { "operator": "chr_0026_lastrite", "skill": "chr_0026_lastrite_attack1" },
+    { "operator": "chr_0026_lastrite", "skill": "chr_0026_lastrite_attack2" },
+    { "operator": "chr_0026_lastrite", "skill": "chr_0026_lastrite_normal_skill" },
+    { "operator": "chr_0026_lastrite", "skill": "chr_0026_lastrite_attack3" },
+    { "operator": "chr_0026_lastrite", "skill": "chr_0026_lastrite_attack4" },
+    { "operator": "chr_0026_lastrite", "skill": "chr_0026_lastrite_combo_skill" },
+    { "operator": "chr_0026_lastrite", "skill": "chr_0026_lastrite_ultimate_skill" }
+  ]
+}

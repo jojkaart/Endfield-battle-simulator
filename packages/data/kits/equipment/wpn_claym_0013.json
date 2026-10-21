@@ -1,0 +1,47 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_claym_0013",
+  "sources": [
+    "Khravengger (batch 4, docs/kit-batches/batch-4/chr_0026_lastrite.md rows E4–E6). Strength and ATK lines and sk_wpn_claym_0013's cardAttributeModifier attributes 32, 33, 28 +dmg_up (battle, combo, ultimate DMG) on the stat panel. rmxlinux Json/SkillData/sk_wpn_claym_0013 passiveEventActions: abilityEvent 126 (the wielder applies an Arts Infliction) + CheckOriginSkillType [2] (a battle skill's) + CheckSpellInflictionType mask 4 (Cryo) + a 0.1 s marker → buff_wpn_claym_0013_normal_skill (attribute 53 Cryo DMG +cryst_dmg_up, `duration`); abilityEvent 302 (the wielder deals damage) + mask 8192 (combo) + CheckBuffStackNumAdvanced tag 1570888476 (the target's Cryo Infliction) ≥ 1 + marker → buff_wpn_claym_0013_combo_skill (attribute 53 +cryst_dmg_up2, duration2). Both stackingType 4 (refreshed). buff_wpn_claym_0013 (per energy shard) is named by nothing (an orphan); toggleBuffs buff_wpn_lance_0003 is a template leftover. Values: SkillPatchTable sk_wpn_claym_0013 by skill level.",
+    "Verified on fixtures/zmdlogs-b7b3762d5da8.json (Last Rite, skill level 4: the combo buff's 0.32 is a boundary buff on the shard that creates it and acts from the bonus and slash on)."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_claym_0013.battle",
+      "label": "Khravengger: Cryo DMG after a battle-skill Cryo Infliction",
+      "target": "self",
+      "gameBuff": "buff_wpn_claym_0013_normal_skill",
+      "duration": "duration",
+      "modifiers": [{ "attr": 53, "value": "cryst_dmg_up" }]
+    },
+    {
+      "id": "wpn_claym_0013.combo",
+      "label": "Khravengger: Cryo DMG after combo damage on a Cryo-inflicted enemy",
+      "target": "self",
+      "gameBuff": "buff_wpn_claym_0013_combo_skill",
+      "duration": "duration2",
+      "modifiers": [{ "attr": 53, "value": "cryst_dmg_up2" }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_claym_0013.on_battle_cryo",
+      "on": { "event": "inflictionApplied", "elements": ["cryst"], "fromKinds": ["battle"] },
+      "by": "self",
+      "cooldown": 0.1,
+      "skill": "sk_wpn_claym_0013",
+      "do": [{ "kind": "buff", "buff": "wpn_claym_0013.battle" }],
+      "note": "Whether an infliction that forms a reaction counts as applying one is open (in-game test 35); inflictionApplied excludes it."
+    },
+    {
+      "id": "wpn_claym_0013.on_combo_cryo",
+      "on": { "event": "hit", "kinds": ["combo"] },
+      "by": "self",
+      "if": { "enemyInfliction": "cryst" },
+      "cooldown": 0.1,
+      "skill": "sk_wpn_claym_0013",
+      "do": [{ "kind": "buff", "buff": "wpn_claym_0013.combo" }],
+      "note": "Judged after the hit (abilityEvent 302 runs at the damage), so a consumption written afterDamage on the same hit comes first: Last Rite's slash, which consumes her Cryo stacks, doesn't refresh it."
+    }
+  ]
+}

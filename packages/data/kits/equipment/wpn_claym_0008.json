@@ -1,0 +1,42 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_claym_0008",
+  "sources": [
+    "Sundered Prince (batch 4, docs/kit-batches/batch-4/chr_0026_lastrite.md rows E1–E3). Strength and Crit Rate lines on the stat panel. rmxlinux Json/SkillData/sk_wpn_claym_0008 passiveEventActions abilityEvent 302 (the wielder deals damage) + CheckDamageDecorateMask checkType 2 mask 2097152 (a Final Strike): NotNextCheckAction + CheckMainCharacterCondition (the wielder not controlled) → buff_wpn_claym_0008_atk_up with atk_up; controlled → SimpleCalcBB atk_up_dynamic = atk_up × multi (2, SkillData default) → the same buff with atk_up_dynamic. BuffData buff_wpn_claym_0008_atk_up: attributeType 2 formulaItem 6 (ATK%) +atk_up, `duration`, stackingType 1 priority atk_up (the strongest instance acts). The skill's `buffs` give buff_wpn_claym_0008 for the whole fight (lifeType 1): poiseModifier [CheckDamageDecorateMask checkType 2 mask 2097152, CheckMainCharacterCondition] → InstantModifyAttributeForPoise attribute 26 (Stagger efficiency) formulaItem 5 +poise_up. toggleBuffs buff_wpn_passive_spirit_01: a template leftover (nothing to write). Values: SkillPatchTable sk_wpn_claym_0008 by skill level."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_claym_0008.atk",
+      "label": "Sundered Prince: ATK after a Final Strike",
+      "target": "self",
+      "gameBuff": "buff_wpn_claym_0008_atk_up",
+      "duration": "duration",
+      "modifiers": [{ "zone": "atk", "value": { "if": { "controlled": true }, "then": { "product": ["atk_up", "multi"] }, "else": "atk_up" } }],
+      "note": "The value is taken when it's applied: doubled (multi) if the wielder is controlled then, as the two branches of the abilityEvent-302 handler."
+    },
+    {
+      "id": "wpn_claym_0008.stagger",
+      "label": "Sundered Prince: Final Strike Stagger",
+      "target": "self",
+      "gameBuff": "buff_wpn_claym_0008",
+      "modifiers": [{ "attr": 26, "value": "poise_up", "decorations": ["finalStrike"], "if": { "controlled": true } }],
+      "note": "buff_wpn_claym_0008, permanent (lifeType 1): Stagger +poise_up on the wielder's Final Strikes while controlled (batch-4 C3)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_claym_0008.fight_start",
+      "on": { "event": "fightStart" },
+      "by": "self",
+      "skill": "sk_wpn_claym_0008",
+      "do": [{ "kind": "buff", "buff": "wpn_claym_0008.stagger" }]
+    },
+    {
+      "id": "wpn_claym_0008.on_final_strike",
+      "on": { "event": "hit", "finalStrike": true },
+      "by": "self",
+      "skill": "sk_wpn_claym_0008",
+      "do": [{ "kind": "buff", "buff": "wpn_claym_0008.atk" }]
+    }
+  ]
+}
