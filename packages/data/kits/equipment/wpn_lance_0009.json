@@ -1,0 +1,7 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_lance_0009",
+  "sources": [
+    "Opero 77 (3-star polearm; Lifeng's defaultWeaponId in CharGrowthTable): rmxlinux Json/SkillData (game 1.6) wpn_attr_main_low (main attribute +mainattr) and sk_wpn_lance_0009 (cardAttributeModifier attribute 2 formulaItem 7: flat ATK +atk_up, 12 to 33.6 by skill level; SkillPatchTable), both permanent and in the stat panel, so this kit declares nothing. BuffData buff_wpn_lance_0009 (attribute 2 formulaItem 5) is referenced by no skill file; the toggleBuffs entry names buff_wpn_passive_spirit_01, as every weapon skill does. Same structure as Tarr 11 (wpn_sword_0003). Batch-4 report docs/kit-batches/batch-4/chr_0015_lifeng.md row W5."
+  ]
+}

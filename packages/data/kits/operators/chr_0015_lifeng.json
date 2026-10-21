@@ -1,0 +1,225 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0015_lifeng",
+  "sources": [
+    "Hits, frames, keys, events, stagger, energy, the Final Strike, the finisher factors and the Knock Downs: rmxlinux Json/SkillData chr_0015_lifeng_* (game 1.6) as compiled by efsim kit-draft (2026-10-21); values SkillPatchTable chr_0015_lifeng_* (L12: attacks 0.27 ×2 / 0.65 / 0.79 / 0.39 + 1.13, poise 19, atb 21; finisher 9.0; dive 1.8; battle skill 0.86 ×2 + 2.68, poise 10, phy_resist_down 0.12 for 12 s, 100 SP; combo 1.05 + 3.75, poise 10, usp 10, duration 20, cooldown 15 s; ultimate 4.0 + 4.0 + 6.0, poise 5 each, cost 90). Batch-4 report docs/kit-batches/batch-4/chr_0015_lifeng.md (kit plan and § Kit). No log fixture has Lifeng.",
+    "Basic chain attack1 → attack2 → attack3 → attack5 (ComboCacheAction in each file); chr_0015_lifeng_attack4 has SkillPatchTable rows but no SkillData file and isn't in the skill group: unused. attack5's third frame-24 DamageAction (literal-0 scale, mask 0) is left out by the compiler (batch-4 D8c); its SP is the ObtainCostAction once.",
+    "Talent 1 (Illumination: ATK per point of Intellect and Will, attributes 78 / 79 = atk_up 0.001 / 0.0015, P3 +0.0005) is the talent's attached passive skill chr_0015_lifeng_talent_1 → buff_chr_0015_lifeng_talent_1, which the stat panel applies (batch-4 D4): nothing in this kit. Talent 2 (Subduer of Evil) and P5 are BuffData handlers, hand-written below (talents' attached buffs with handlers stay kit work, batch-3 D4).",
+    "Link: her combo's ComboAction (frame 19, count 1, duration = the combo's `duration`, 20 s) is the trigger combo_link (batch-4 B1: a combo gives no Link by itself). The ultimate's third hit needs a cast that used Link (castLink, batch-4 C1). Open: whether this Link lasts the ComboAction's 20 s or the Link buff's literal 15 s (report U2, in-game test 78)."
+  ],
+  "element": "physical",
+  "buffs": [
+    {
+      "id": "physical_susceptibility",
+      "label": "Turbid Avatar: Physical Susceptibility",
+      "target": "enemy",
+      "gameBuff": "buff_common_affixes_vulnerable_physical",
+      "duration": "duration",
+      "modifiers": [{ "zone": "susceptibility", "value": "phy_resist_down", "elements": ["physical"] }],
+      "note": "buff_chr_0015_lifeng_purify (stackingType 2, max 1): VulnerableAction subType 2 (Physical), rate phy_resist_down (0.12 at L12; P1 +0.05), duration 12 s; child icon buff_chr_0015_lifeng_purify_icon. Created at battle-skill frame 54 before the Knock Down and the slam's DamageAction (triggers turbid_susceptibility*). Logged name assumed as Estella's (buff_common_affixes_vulnerable_physical, the affix VulnerableAction subType 2 makes). Two sources of it at once: in-game test 38's question."
+    },
+    {
+      "id": "p5_timer",
+      "label": "P5: recharging (15 s)",
+      "target": "self",
+      "gameBuff": "buff_chr_0015_lifeng_potential_5",
+      "every": { "key": "interval", "skill": "buff_chr_0015_lifeng_potential_5" },
+      "modifiers": [],
+      "note": "buff_chr_0015_lifeng_potential_5 (attached by P5; lifeType 1, triggerInterval interval 15 s, waitFirstTriggerInterval): its first tick, if talent 2's buff is there, creates buff_chr_0015_lifeng_potential_5_1 and finishes itself (trigger p5_charge)."
+    },
+    {
+      "id": "p5_ready",
+      "label": "P5: next talent-2 hit enhanced",
+      "target": "self",
+      "gameBuff": "buff_chr_0015_lifeng_potential_5_1",
+      "modifiers": [],
+      "note": "buff_chr_0015_lifeng_potential_5_1 (lifeType 1): read and finished by talent 2's handler, which then re-creates buff_chr_0015_lifeng_potential_5 (trigger subduer_of_evil)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_window",
+      "on": { "event": "hit", "finalStrike": true },
+      "by": "controlled",
+      "if": { "any": [{ "enemyModifier": { "zone": "susceptibility", "element": "physical" } }, { "enemyPhysical": "breach" }] },
+      "do": [{ "kind": "openCombo" }],
+      "note": "CharGrowthTable chr_0015_lifeng_ComboSkill: \"COMBO TRIGGER: When the controlled operator performs a Final Strike on an enemy with Physical Susceptibility or Breach.\" An all-element Susceptibility counts (enemyModifier)."
+    },
+    {
+      "id": "combo_link",
+      "on": { "event": "cast", "skills": ["chr_0015_lifeng_combo_skill"] },
+      "by": "self",
+      "delay": 19,
+      "awaited": true,
+      "skill": "chr_0015_lifeng_combo_skill",
+      "do": [{ "kind": "link", "count": 1, "seconds": "duration" }],
+      "note": "Combo frame 19: ComboAction count 1, duration blackboard `duration` (20 s at every level; SkillPatchTable sub-description \"Combo Duration (s) 20\"), source self. Description: \"grants Link\". The Link buff's own literal is 15 s (buff_common_affixes_combo_trigger, useBlackboardKey false): which one the game uses is report U2 (in-game test 78); the kit takes the ComboAction's."
+    },
+    {
+      "id": "turbid_susceptibility",
+      "on": { "event": "vulnerable", "fromNone": true, "fromKinds": ["battle"] },
+      "by": "self",
+      "if": { "not": { "potentialAtLeast": 1 } },
+      "beforeDamage": true,
+      "skill": "chr_0015_lifeng_normal_skill",
+      "do": [{ "kind": "buff", "buff": "physical_susceptibility" }],
+      "note": "Battle skill frame 54: ForEach target, CheckBuffStackNumByTag (Vulnerable tag 1075718177) compareType 1 (at most) num (0; P1 sets 2) → CreateBuff buff_chr_0015_lifeng_purify, before the KnockDownAction and the DamageAction. The slam's Knock Down always adds a Vulnerable stack below 4, so 'no stacks before' is the stack event from 0 (exact). beforeDamage: the slam takes it (data order; test 51's question). Written as a trigger because a hit's buffs[].if is judged after the hit's own applies."
+    },
+    {
+      "id": "turbid_susceptibility_p1",
+      "on": { "event": "vulnerable", "rising": true, "fromKinds": ["battle"] },
+      "by": "self",
+      "if": { "all": [{ "potentialAtLeast": 1 }, { "not": { "enemyVulnerable": 4 } }] },
+      "beforeDamage": true,
+      "skill": "chr_0015_lifeng_normal_skill",
+      "do": [{ "kind": "buff", "buff": "physical_susceptibility" }],
+      "note": "P1: num = 2 (\"no more than 2 Vulnerability stacks\"): at most 2 before = at most 3 after a rising stack event (an enemy at 4 adds none: not rising, and it had more than 2). Literal thresholds behind potentialAtLeast (enemyVulnerable takes a literal; batch-3 review's open 'a stack compared with a value')."
+    },
+    {
+      "id": "subduer_of_evil",
+      "on": { "event": "physicalStatus", "statuses": ["knockdown"] },
+      "by": "self",
+      "if": { "talentAtLeast": [1, 1] },
+      "do": [
+        {
+          "kind": "hits",
+          "if": { "not": { "buffActive": "p5_ready" } },
+          "hits": [
+            {
+              "id": "hit",
+              "label": "Subduer of Evil: hit on Knock Down",
+              "scale": [],
+              "scaleValue": { "talent": 1, "key": "atk_scale_talent2" },
+              "element": "physical",
+              "damageType": "none",
+              "frames": [0],
+              "events": ["buff_chr_0015_lifeng_talent_2"],
+              "note": "buff_chr_0015_lifeng_talent_2 abilityEvent 40 (applying Knock Down), without buff_chr_0015_lifeng_potential_5_1: DamageAction atk_scale_talent2 (0.5 / 1.0 by talent level), damageType 0, no decorate mask (no skill-type bonus), no poise. Logged key assumed: the file holding the DamageAction (report row 27, U4)."
+            }
+          ]
+        },
+        {
+          "kind": "hits",
+          "if": { "buffActive": "p5_ready" },
+          "hits": [
+            {
+              "id": "hit_p5",
+              "label": "Subduer of Evil + P5",
+              "scale": [],
+              "scaleValue": { "sum": [{ "talent": 1, "key": "atk_scale_talent2" }, { "key": "atk_scale_potential5", "skill": "buff_chr_0015_lifeng_potential_5" }] },
+              "poise": { "key": "poise_potential5", "skill": "buff_chr_0015_lifeng_potential_5" },
+              "element": "physical",
+              "damageType": "none",
+              "frames": [0],
+              "events": ["buff_chr_0015_lifeng_talent_2"],
+              "note": "With buff_chr_0015_lifeng_potential_5_1: SimpleCalcBB final_atk_scale_talent2 = atk_scale_talent2 + atk_scale_potential5 (2.5) in one DamageAction, plus a poise unit poise_potential5 (5)."
+            }
+          ]
+        },
+        { "kind": "buff", "buff": "p5_timer", "if": { "buffActive": "p5_ready" } },
+        { "kind": "endBuff", "buff": "p5_ready" }
+      ],
+      "note": "No cooldown in the data (the buff's triggerInterval 1 s has no tick handler). The order matters: the plain hit is judged before p5_ready ends, then the P5 handler's FinishBuff _5_1 and CreateBuff _potential_5. The engine emits physicalStatus for a real Knock Down only (an enemy without Vulnerable just gets a stack: batch-3 P1); abilityEvent 40 isn't 401, so the game may differ (report U1, in-game test 39's variant)."
+    },
+    {
+      "id": "p5_start",
+      "on": { "event": "fightStart" },
+      "by": "self",
+      "if": { "all": [{ "potentialAtLeast": 5 }, { "talentAtLeast": [1, 1] }] },
+      "do": [{ "kind": "buff", "buff": "p5_timer" }],
+      "note": "P5 (chr_0015_lifeng_potential_5) attaches buff_chr_0015_lifeng_potential_5 from the start; the first charge after 15 s (waitFirstTriggerInterval). Its tick checks talent 2's buff, so without talent 2 it never charges."
+    },
+    {
+      "id": "p5_charge",
+      "on": { "event": "buffTick", "buff": "p5_timer" },
+      "by": "self",
+      "do": [{ "kind": "buff", "buff": "p5_ready" }, { "kind": "endBuff", "buff": "p5_timer" }],
+      "note": "buff_chr_0015_lifeng_potential_5 tick: CreateBuff _potential_5_1, FinishBuff itself."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0015_lifeng_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [9, 17], "events": ["chr_0015_lifeng_attack1"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "note": "Two DamageActions (display_atk_scale = 2 × atk_scale); ObtainCostAction atb × 0.5 each, controlled only (atb 0 otherwise)." }
+      ]
+    },
+    {
+      "skillId": "chr_0015_lifeng_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [4], "events": ["chr_0015_lifeng_attack2"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+    },
+    {
+      "skillId": "chr_0015_lifeng_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [11], "events": ["chr_0015_lifeng_attack3"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+    },
+    {
+      "skillId": "chr_0015_lifeng_attack5",
+      "label": "Basic attack 4 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [13], "events": ["chr_0015_lifeng_attack5"], "finalStrike": false },
+        { "id": "hit_2", "scale": ["atk_scale2"], "frames": [24], "events": ["chr_0015_lifeng_attack5"], "sp": { "if": { "controlled": true }, "then": "atb" }, "poise": "poise", "poiseControlledOnly": true, "finalStrike": true, "note": "Mask 2097280 (Final Strike); poise onlyEnableForMainChar; SP atb 21, controlled only." }
+      ]
+    },
+    {
+      "skillId": "chr_0015_lifeng_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [6], "events": ["chr_0015_lifeng_power_attack"], "factor": 0.1, "note": "BreakingAttackCalculation multiplier 0.1 (mask 132); GainBreakingAttackAtb: the finisher SP is the engine's." },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [33], "events": ["chr_0015_lifeng_power_attack"], "factor": 0.9, "note": "Multiplier 0.9." }
+      ]
+    },
+    {
+      "skillId": "chr_0015_lifeng_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "events": ["chr_0015_lifeng_plunging_attack_end"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Mask 1152 (dive). Needs mid-air: schedulable once dive attacks are (batch-1 S10); kept for calc." }]
+    },
+    {
+      "skillId": "chr_0015_lifeng_normal_skill",
+      "label": "Battle skill: Turbid Avatar",
+      "damageType": "battle",
+      "teamEnergy": [{ "frame": 54, "ratio": 1 }],
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [7, 20], "events": ["chr_0015_lifeng_normal_skill"], "note": "Two swings (mask 4352), main target only." },
+        {
+          "id": "slam",
+          "scale": ["atk_scale2"],
+          "frames": [54],
+          "events": ["chr_0015_lifeng_normal_skill"],
+          "poise": "poise",
+          "applies": [{ "kind": "physicalStatus", "status": "knockdown" }],
+          "note": "Frame 54: the Susceptibility check (triggers turbid_susceptibility*), then KnockDownAction (1.5 s, not forced) and the DamageAction (poise), then buff_common_obtain_ultimate_sp (teamEnergy)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0015_lifeng_combo_skill",
+      "label": "Combo skill: Aspect of Wrath",
+      "damageType": "combo",
+      "note": "ComboAction at frame 19 gives Link (trigger combo_link). TimeDilation curve ComboSkill from SkillData. buff_chr_0015_lifeng_combo_skill_tutorial_marker (f48) is tutorial only.",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [19], "events": ["chr_0015_lifeng_combo_skill"] },
+        { "id": "hit_2", "scale": ["atk_scale2"], "frames": [48], "events": ["chr_0015_lifeng_combo_skill"], "energy": "usp", "poise": "poise" }
+      ]
+    },
+    {
+      "skillId": "chr_0015_lifeng_ultimate_skill",
+      "label": "Ultimate: Heart of the Unmoving",
+      "damageType": "ultimate",
+      "note": "Time stop (UltimateTimeAction 0–56) from SkillData. SpawnAbilityEntity at 58: chr_0015_lifeng_ultimate_skill_abentity (its frames + 58). At its frame 67 (cast frame 125): if isCombo = 0, JumpToAction 150 (skips the third hit); else EntityBB_isCombo = 0. isCombo is copied at cast frames 1–3 from EntityBB_isCombo, which buff_chr_0015_lifeng_passive sets to 1 when buff_common_affixes_skillimbue_atk (the Link this cast used) is added to her (abilityEvent 9), and to 0 on abilityEvent 31. Event keys: the entity file holds all three DamageActions, so never chr_0015_lifeng_ultimate_skill (which ZMDLogs uses for Valiant's hit, wpn_lance_0010).",
+      "hits": [
+        { "id": "slam", "scale": ["atk_scale1"], "frames": [64], "launch": 58, "events": ["chr_0015_lifeng_ultimate_skill_abentity"], "poise": "poise", "applies": [{ "kind": "physicalStatus", "status": "knockdown" }], "note": "Entity frame 6: KnockDownAction (2.1 s, not forced), PullAction, DamageAction mask 4608." },
+        { "id": "slam_2", "scale": ["atk_scale2"], "frames": [124], "launch": 58, "events": ["chr_0015_lifeng_ultimate_skill_abentity"], "poise": "poise2", "applies": [{ "kind": "physicalStatus", "status": "knockdown" }], "note": "Entity frame 66." },
+        { "id": "link_hit", "scale": ["atk_scale3"], "frames": [179], "launch": 58, "events": ["chr_0015_lifeng_ultimate_skill_abentity"], "poise": "poise3", "if": { "castLink": {} }, "note": "Entity frame 121, only if the cast used a Link (\"If the skill consumes a Link, then it deals an additional hit of massive Physical DMG\"): castLink, judged from the hit's own cast." }
+      ]
+    }
+  ]
+}
