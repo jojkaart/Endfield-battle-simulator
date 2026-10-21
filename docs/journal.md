@@ -18,7 +18,7 @@ values and buffs; skills and timing; data compilation; log tooling), one
 dive agent (batch-1 S10: dives as rotation actions and in the search),
 eleven kit agents, three follow-up agents (log checker; stats and loader;
 engine timing), and two docs agents (in-game tests 77–96 and parts of
-existing tests). All merged one at a time; 1587 tests. Logs: b7b3 matches
+existing tests). All merged one at a time; 1622 tests. Logs: b7b3 matches
 every hit of all four operators; 4e5e's reactions 18/0/0 and, with kit
 values for its hand-noted buffs, Camille 85/85, Estella 41/41, Rossi
 152/162; 7e19 Pogranichnik 29/29, Ember 14/21; abfd Yvonne 182/183; 40d9
