@@ -204,6 +204,14 @@ describe("Tangtang's kit: talents", () => {
     expect(named(twice, "early_rogue_wave")).toHaveLength(1);
   });
 
+  it("a rotation's own dive (batch-1 S10) inside the stare sets off the early wave 5 frames after its landing", () => {
+    const s = run(noHaste(), [op("ultimate_skill"), op("plunging_attack_end", 5 * 30)], 30 * 12);
+    const landing = mine(s).find((h) => h.skillId === P + "plunging_attack_end")?.frame ?? NaN;
+    expect(Number.isFinite(landing)).toBe(true);
+    expect(named(s, "early_rogue_wave").map((h) => h.frame - landing)).toEqual([5]);
+    expect(named(s, "rogue_wave")).toEqual([]);
+  });
+
   it("a dive before the stare or after its rogue wave does nothing; without the dive the plain wave lands", () => {
     const before = run(noHaste(), [op("attack1"), op("ultimate_skill")], 30 * 12, diving);
     expect(named(before, "early_rogue_wave")).toEqual([]);

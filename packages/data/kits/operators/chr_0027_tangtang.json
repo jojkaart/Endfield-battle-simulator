@@ -751,7 +751,7 @@
           }
         }
       ],
-      "note": "A dive attack's landing (decorate bit 1024) by the controlled operator, anyone's (b7b3: Arcane's), inside the stare's window: the entity jumps to 128 (the remaining DoT ticks and the plain rogue wave don't land: olden_stare_over), the early wave 5 frames later. Talent 2 (Riot Bringer; CreateBuff buff_chr_0027_tangtang_ultskill_waterwake at 128 if talent2 ≥ 1): it wakes every Whirlpool within 50 m (water_ultskillwake → their jump to 1515, one layer each) and spawns ult_skill_abilityentitymove, whose frame 18 spawns 1 + n Waterspouts as the battle skill's mover does (n ≥ 2 → three) with talent2_ultskill 1: their damage adds dmg_up_water_ult (0.4 / 0.6, +0.8 at P5: 1.4 in b7b3) in NormalCalcZone, and they are Battle Skill DMG (mask 4352: \"treated as Battle Skill DMG\"; a trigger's hits with damageType battle). Their first tick inflicts Cryo (once per cast and target: the ultimate's cast is another cast than the battle skill's) and, for 2 or 3, applies the Arts Susceptibility. The Whirlpools' consumption as the battle skill's (Haste's tail, the Slow's 3 s; no SP: the ult mover has no ObtainCostAction). Fires once dive attacks are castable (batch-1 S10)."
+      "note": "A dive attack's landing (decorate bit 1024) by the controlled operator, anyone's (b7b3: Arcane's), inside the stare's window: the entity jumps to 128 (the remaining DoT ticks and the plain rogue wave don't land: olden_stare_over), the early wave 5 frames later. Talent 2 (Riot Bringer; CreateBuff buff_chr_0027_tangtang_ultskill_waterwake at 128 if talent2 ≥ 1): it wakes every Whirlpool within 50 m (water_ultskillwake → their jump to 1515, one layer each) and spawns ult_skill_abilityentitymove, whose frame 18 spawns 1 + n Waterspouts as the battle skill's mover does (n ≥ 2 → three) with talent2_ultskill 1: their damage adds dmg_up_water_ult (0.4 / 0.6, +0.8 at P5: 1.4 in b7b3) in NormalCalcZone, and they are Battle Skill DMG (mask 4352: \"treated as Battle Skill DMG\"; a trigger's hits with damageType battle). Their first tick inflicts Cryo (once per cast and target: the ultimate's cast is another cast than the battle skill's) and, for 2 or 3, applies the Arts Susceptibility. The Whirlpools' consumption as the battle skill's (Haste's tail, the Slow's 3 s; no SP: the ult mover has no ObtainCostAction). A rotation's dive (batch-1 S10: `plunging_attack_end` as a rotation action) sets it off."
     }
   ],
   "skills": [
@@ -966,7 +966,7 @@
           "events": [
             "chr_0027_tangtang_plunging_attack_end"
           ],
-          "note": "TickIntervalAction 0.07 s over frames 3–11 (0.267 s): 4 ticks, as display_atk_scale 1.8 = 4 × 0.45 says (batch 4 D9a). A dive landing (decorate mask 1152: bit 1024), which ends an OLDEN STARE (trigger olden_stare_dive). Not castable until rotations have dive attacks (batch-1 S10)."
+          "note": "TickIntervalAction 0.07 s over frames 3–11 (0.267 s): 4 ticks, as display_atk_scale 1.8 = 4 × 0.45 says (batch 4 D9a). A dive landing (decorate mask 1152: bit 1024), which ends an OLDEN STARE (trigger olden_stare_dive). A rotation action of the controlled operator (batch-1 S10): the landing 22 frames after the jump."
         }
       ]
     },
