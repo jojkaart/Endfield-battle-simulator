@@ -46,6 +46,19 @@ Phase: **analysis 1 done (2026-10-20); merge below.** Reports:
 
 ## Merged gaps
 
+**Status (2026-10-21):** shared features merged (five groups in
+worktrees, one merge at a time with the full check, example totals and
+log outputs after each). Done: E1, E2 (the rank mapping from
+EnemyTemplateDisplayInfoTable `displayType` is a claim), T1–T3, C1–C4,
+V1, V2 (Combustion and `atkSnapshot` ticks keep the applier's side —
+ATK, DMG bonus, Amp, crit, Arts Intensity — from their application, as
+4e5e's three ticks show), B1–B6, S1–S9, S11, S12, D1–D6, L1–L6; D7–D10
+partly (the items left are listed in the merge commits). Deferred: B7,
+B8, V3. Dive attacks (batch-1 S10): the owner wants them (2026-10-21),
+next. Example totals moved only by B1 (Link, 1–9% lower) and V2 (four
+examples with Combustion); log verdicts only improved.
+
+
 Report references are `operator Gn` (a gap), `operator row n` / `Wn` /
 `En` (a mechanics or equipment row) or `operator Un` (an unknown); the
 reports are claims, re-checked only where a row says so. IDs are this
