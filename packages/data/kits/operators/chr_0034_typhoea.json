@@ -1057,7 +1057,8 @@
       "skillId": "chr_0034_typhoea_floating_attack1",
       "label": "Aerial basic attack 1",
       "damageType": "basic",
-      "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). Castable while hovering as the 1st attempt (stack abatk 0); not a chain step (the attempt index, not the chain, picks the shot). durationFrames: the next shot's window opens at frame 18 (SkillData; the timeline reads it there).",
+      "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). Castable while hovering as the 1st attempt (stack abatk 0); not a chain step (the attempt index, not the chain, picks the shot). durationFrames: the next shot's window opens at frame 18 (SkillData; the timeline reads it there). Conditional windows (batch 4 S9a): the next shot's windows sit under an IfElse whose two branches are the same SwitchAction on arrow_num, whose options differ only in which shot they allow, at the same frames; the attempt index (abatk, `available`) picks the shot, so every window is listed open (the engine's reading before S9).",
+      "windows": [{ "from": 18 }, { "from": 63 }, { "from": 93 }, { "from": 123 }, { "from": 153 }],
       "available": {
         "all": [
           {
@@ -1195,7 +1196,8 @@
       "skillId": "chr_0034_typhoea_floating_attack2",
       "label": "Aerial basic attack 2",
       "damageType": "basic",
-      "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). Castable while hovering as the 2nd attempt (stack abatk 1); not a chain step (the attempt index, not the chain, picks the shot). durationFrames: the next shot's window opens at frame 18 (SkillData; the timeline reads it there).",
+      "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). Castable while hovering as the 2nd attempt (stack abatk 1); not a chain step (the attempt index, not the chain, picks the shot). durationFrames: the next shot's window opens at frame 18 (SkillData; the timeline reads it there). Conditional windows (batch 4 S9a): the next shot's windows sit under an IfElse whose two branches are the same SwitchAction on arrow_num, whose options differ only in which shot they allow, at the same frames; the attempt index (abatk, `available`) picks the shot, so every window is listed open (the engine's reading before S9).",
+      "windows": [{ "from": 18 }, { "from": 63 }, { "from": 93 }, { "from": 123 }, { "from": 153 }],
       "available": {
         "all": [
           {
@@ -1333,7 +1335,8 @@
       "skillId": "chr_0034_typhoea_floating_attack3",
       "label": "Aerial basic attack 3",
       "damageType": "basic",
-      "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). Castable while hovering as the 3rd attempt (stack abatk 2); not a chain step (the attempt index, not the chain, picks the shot). durationFrames: the next shot's window opens at frame 18 (SkillData; the timeline reads it there).",
+      "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). Castable while hovering as the 3rd attempt (stack abatk 2); not a chain step (the attempt index, not the chain, picks the shot). durationFrames: the next shot's window opens at frame 18 (SkillData; the timeline reads it there). Conditional windows (batch 4 S9a): the next shot's window sits under an IfElse with the same window in both branches: listed open.",
+      "windows": [{ "from": 18 }, { "from": 63 }, { "from": 93 }, { "from": 123 }, { "from": 153 }],
       "available": {
         "all": [
           {
@@ -1471,7 +1474,8 @@
       "skillId": "chr_0034_typhoea_floating_attack4",
       "label": "Aerial basic attack 4",
       "damageType": "basic",
-      "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). Castable while hovering as the 4th attempt (stack abatk 3); not a chain step (the attempt index, not the chain, picks the shot). durationFrames: the next shot's window opens at frame 28 (SkillData; the timeline reads it there).",
+      "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). Castable while hovering as the 4th attempt (stack abatk 3); not a chain step (the attempt index, not the chain, picks the shot). durationFrames: the next shot's window opens at frame 28 (SkillData; the timeline reads it there). Conditional windows (batch 4 S9a): the next shot's window sits under an IfElse with the same window in both branches: listed open.",
+      "windows": [{ "from": 28 }, { "from": 178 }, { "from": 328 }, { "from": 478 }, { "from": 628 }],
       "available": {
         "all": [
           {
@@ -1844,7 +1848,8 @@
       "skillId": "chr_0034_typhoea_combo_skillfloating",
       "label": "Combo skill (hovering)",
       "damageType": "combo",
-      "note": "The combo cast while hovering (floatingmode's ChangeSkillAction puts it in the combo slot when she's controlled as the hover starts): same arrows; it keeps the hover (InheritBuff floatingmode) and resets the ABATK attempts at frame 0; floating_attack1 is allowed from frame 57 (SkillData window 57–74). Off-field it continues with floating_attack1 at 57; controlled and idle, floating_loop at 67. At frame 35: usp energy and the Sign conversion (trigger conversion).",
+      "note": "The combo cast while hovering (floatingmode's ChangeSkillAction puts it in the combo slot when she's controlled as the hover starts): same arrows; it keeps the hover (InheritBuff floatingmode) and resets the ABATK attempts at frame 0; floating_attack1 is allowed from frame 57 (SkillData window 57–74). Off-field it continues with floating_attack1 at 57; controlled and idle, floating_loop at 67. At frame 35: usp energy and the Sign conversion (trigger conversion). Conditional window (batch 4 S9a): 57–74 is under an IfElse on CheckMainCharacterCondition; listed open (the engine's reading before S9; off-field she goes on with floating_attack1 at 57 too).",
+      "windows": [{ "from": 57 }],
       "available": {
         "all": [
           {
@@ -1939,7 +1944,8 @@
       "skillId": "chr_0034_typhoea_ultimate_skillfloating",
       "label": "Ultimate",
       "damageType": "ultimate",
-      "note": "Enters the hover (trigger hover_start); at frame 61 Hunting Arrows, the attempt reset and the Hail of Arrows window (trigger ult_rain), whose rains come from trigger hail_of_arrows; off-field shots from frame 89 (chain_ult). Time stop frames 0–62 (UltimateTimeAction, from SkillData). durationFrames: floating shots are allowed from frame 83 (SkillData window 83–92).",
+      "note": "Enters the hover (trigger hover_start); at frame 61 Hunting Arrows, the attempt reset and the Hail of Arrows window (trigger ult_rain), whose rains come from trigger hail_of_arrows; off-field shots from frame 89 (chain_ult). Time stop frames 0–62 (UltimateTimeAction, from SkillData). durationFrames: floating shots are allowed from frame 83 (SkillData window 83–92). Conditional windows (batch 4 S9a): the 83–92 windows sit under an IfElse and a SwitchAction on the attempt index (EntityBB_floating_attack_index), all at those frames; listed open (the engine's reading before S9), the kit's attempt index picks the shot.",
+      "windows": [{ "from": 83 }],
       "hits": [
         {
           "id": "main",

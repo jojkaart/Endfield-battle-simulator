@@ -14,6 +14,7 @@ import { EngineError } from "./errors.ts";
 import type { GameData } from "./model.ts";
 import type { CritMode } from "./damage.ts";
 import { allActions } from "./events.ts";
+import { predicateRefs } from "./expr.ts";
 import {
   advance,
   apply,
@@ -48,6 +49,8 @@ function nextBasics(data: GameData, state: TimelineState, operator: string): str
   const out = new Set<string>();
   const chain = state.chainNext[operator];
   for (const c of chain ? [chain, ...(chain.alternatives ?? [])] : []) if (c.until >= state.frame) out.add(c.skill);
+  // What a buff maps the attack input to (KitBuff.basicAttack), while it's active.
+  for (const b of state.buffs) if (b.basicAttack && b.owner === operator && b.cast === undefined && b.appliedAt <= state.frame && b.expiresAt > state.frame) out.add(b.basicAttack);
   for (const s of data.kits.operators[operator]?.skills ?? []) {
     // Basic attacks that start a chain, and finishers (castable only on a Staggered enemy).
     const spec = data.skills[s.skillId]?.timing?.specification;
@@ -122,7 +125,38 @@ export function legalActions(ctx: TimelineContext, state: TimelineState): Candid
   });
   if (all.length === 0) return [];
   const soonest = Math.min(...all.map((c) => c.frame));
-  return all.filter((c) => c.frame === soonest || (c.action.operator === state.controlled && basics.has(c.action.skill)));
+  const out = all.filter((c) => c.frame === soonest || (c.action.operator === state.controlled && basics.has(c.action.skill)));
+  // Each choice also at the start of a short timing window it reads, when one is on its way (both the hit and the missed ring).
+  return out.flatMap((c) => [c, ...timingChoices(ctx, state, c)]);
+}
+
+/**
+ * Short timing windows (owner, 2026-10-20: try both): when a skill's jumps,
+ * conditional windows or hits read an own buff that a delayed trigger action
+ * of its operator is about to apply (Rossi's perfect-timing ring, applied
+ * 52 frames into sequence 1), the step at that buff's start is a choice
+ * too, besides the earliest legal frame (a missed ring is a legal rotation).
+ */
+function timingChoices(ctx: TimelineContext, state: TimelineState, c: Candidate): Candidate[] {
+  if (c.action.skill === "swap") return [];
+  const kit = ctx.kits.get(c.action.operator);
+  const skill = kit?.skills.find((s) => s.skillId === c.action.skill);
+  if (!kit || !skill) return [];
+  const read = new Set<string>();
+  for (const p of [...(skill.jumps ?? []).map((j) => j.if), ...(skill.windows ?? []).flatMap((w) => (w.if ? [w.if] : [])), ...skill.hits.flatMap((h) => (h.if ? [h.if] : []))]) for (const id of predicateRefs(p).buffs) read.add(id);
+  if (read.size === 0) return [];
+  const frames = new Set<number>();
+  for (const a of state.pendingActions) {
+    if (a.owner !== c.action.operator || a.frame <= c.frame || a.frame > ctx.scenario.durationFrames) continue;
+    const t = kit.triggers.find((x) => x.id === a.trigger);
+    if (t && allActions(t.do).some((x) => x.kind === "buff" && read.has(x.buff))) frames.add(a.frame);
+  }
+  const out: Candidate[] = [];
+  for (const f of [...frames].sort((x, y) => x - y)) {
+    const s = earliestStart(ctx, state, { ...c.action, at: f });
+    if (!("error" in s) && s.frame !== c.frame && s.frame <= ctx.scenario.durationFrames && !out.some((x) => x.frame === s.frame)) out.push({ action: c.action, frame: s.frame });
+  }
+  return out;
 }
 
 /** Per state: its committed damage (states are never changed in place, so it's computed once per context). */

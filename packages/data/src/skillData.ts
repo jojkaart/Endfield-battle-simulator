@@ -125,15 +125,23 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
       });
     });
   }
-  const windows: { from: number; to: number; skills: string[] }[] = [];
+  const windows: { from: number; to: number; skills: string[]; conditional?: true }[] = [];
+  // ComboCacheAction mappings of the basic-attack input (cmdType 0): what the next attack input becomes.
+  const inputMap = new Set<string>();
   const channels: { from: number; to: number; cantCastSkill: boolean; cantSwitch: boolean }[] = [];
   const slowdowns: { from: number; scales: number[] }[] = [];
-  const find = (node: unknown, from: number, to: number) => {
-    if (Array.isArray(node)) return node.forEach((x) => find(x, from, to));
+  // `conditional`: under a TogglableAction or an IfElse branch, the window is open only when its condition holds (the kit says when).
+  const find = (node: unknown, from: number, to: number, conditional = false) => {
+    if (Array.isArray(node)) return node.forEach((x) => find(x, from, to, conditional));
     if (typeof node !== "object" || node === null) return;
     const o = node as Record<string, unknown>;
     const type = typeof o["$type"] === "string" ? o["$type"] : "";
-    if (o["isEnable"] !== false && type.includes("AllowNextSkillAction")) windows.push({ from, to, skills: ((o["allowedSkillIdList"] ?? []) as unknown[]).filter((x): x is string => typeof x === "string") });
+    if (o["isEnable"] !== false && type.includes("AllowNextSkillAction")) {
+      windows.push({ from, to, skills: ((o["allowedSkillIdList"] ?? []) as unknown[]).filter((x): x is string => typeof x === "string"), ...(conditional ? { conditional: true as const } : {}) });
+    }
+    if (o["isEnable"] !== false && type.includes("ComboCacheAction")) {
+      for (const m of (o["mappingDataList"] ?? []) as Record<string, unknown>[]) if ((m["cmdType"] ?? 0) === 0 && typeof m["skillId"] === "string") inputMap.add(m["skillId"]);
+    }
     if (o["isEnable"] !== false && type.includes("UltimateTimeAction")) {
       const scale = typeof o["timeScale"] === "number" ? o["timeScale"] : 0;
       slowdowns.push({ from, scales: Array.from({ length: Math.max(0, to - from) }, () => scale) });
@@ -147,12 +155,13 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     if (o["isEnable"] !== false && type.includes("CreateBuffAction") && o["autoFinishByAction"] === true && ((o["buffs"] ?? []) as { buffId?: unknown }[]).some((b) => b.buffId === "buff_common_power_attack_disable_cast_skill")) {
       channels.push({ from, to, cantCastSkill: true, cantSwitch: false });
     }
-    for (const v of Object.values(o)) find(v, from, to);
+    const under = conditional || (o["isEnable"] !== false && (type.includes("TogglableAction") || type.includes("IfElseAction")));
+    for (const v of Object.values(o)) find(v, from, to, under);
   };
   const group = obj(j["actionGroupData"] ?? {}, at(ctx, "actionGroupData"));
   const jumps: { at: number; to: number; conditional: boolean }[] = [];
   const ends: number[] = [];
-  let interruptibleFrom: number | undefined;
+  const interruptibleFrom: number[] = [];
   for (const ta of (group["timelineActions"] ?? []) as Record<string, unknown>[]) {
     const from = Number(ta["_startFrame"]);
     find(ta["_sequenceActionData"], from, ta["_endFrame"] === undefined ? from : Number(ta["_endFrame"]));
@@ -166,7 +175,7 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
         jumps.push({ at: from, to: Number(a["destFrame"]), conditional: cond.length > 0 });
       }
       if (type.includes("InterruptCurSkillAction")) ends.push(from);
-      if (type.includes("MarkCanInterrupt") && interruptibleFrom === undefined) interruptibleFrom = from;
+      if (type.includes("MarkCanInterrupt")) interruptibleFrom.push(from);
       // A jump in a top-level IfElse's branches is a conditional jump at this frame (the kit says when: KitSkill.jumps).
       if (type.includes("IfElseAction")) for (const to of branchJumps(a)) if (to > from) jumps.push({ at: from, to, conditional: true });
     }
@@ -181,7 +190,8 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     slowdowns,
     jumps: jumps.filter((j, i) => jumps.findIndex((k) => k.at === j.at && k.to === j.to && k.conditional === j.conditional) === i).sort((a, b) => a.at - b.at),
     ends: ends.sort((a, b) => a - b),
-    ...(interruptibleFrom !== undefined ? { interruptibleFrom } : {}),
+    ...(interruptibleFrom.length ? { interruptibleFrom: [...new Set(interruptibleFrom)].sort((a, b) => a - b) } : {}),
+    ...(inputMap.size ? { inputMap: [...inputMap].sort() } : {}),
   };
   return { timing, defaults, statModifiers, spKinds: spKindsOf(j), spSources: spSourcesOf(j) };
 }

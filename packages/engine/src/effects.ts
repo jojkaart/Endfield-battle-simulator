@@ -115,11 +115,14 @@ const ATTR_ZONES = new Map<AttrType, Mapping>([
 /**
  * Attributes a kit buff may carry that don't act on hits directly: the
  * engine reads them where the game does (Haste 92, Ultimate Gain Efficiency
- * 44). Anything else would load and do nothing (ATK 2 is the `atk` zone).
+ * 44, SP cost 45, combo cooldown recovery 93). Anything else would load and do nothing (ATK 2 is the `atk` zone).
  */
 export const READ_ATTRS: ReadonlySet<AttrType> = new Set([
   Attr.KeywordSpeedUpScalar,
   Attr.UltimateSpGainScalar,
+  // SP cost of the owner's skills (added at the cast) and its combo cooldown's recovery rate (over time): the timeline.
+  Attr.AtbCostAddition,
+  Attr.ComboSkillCooldownRecoveryScalar,
   // Read by `attr` values and `attrAtLeast` (a buff's main attribute doesn't raise ATK through the attribute bonus: not modelled).
   Attr.Def,
   Attr.Str,
