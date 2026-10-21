@@ -1,0 +1,53 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_claym_0019",
+  "sources": [
+    "Long Heritage (WeaponBasicTable wpn_claym_0019, greatsword). Its Intellect and Cryo DMG lines and sk_wpn_claym_0019's main attribute +primary_attr_up (cardAttributeModifier attribute 2, formulaItem 6, modifyAttributeType 1) are on the stat panel. Skill 3 \"Efficacy: Secret History\", rmxlinux Json/SkillData/sk_wpn_claym_0019 passiveEventActions, values from SkillPatchTable at the weapon's skill-3 level (level 9: cryst_dmg_up 0.168, spell_dmg_up 0.112, duration and duration2 20 s). It fits Si (Cryo or Heat battle-skill infliction, a team Cryo and Heat Amp); on Mi Fu (no infliction, no Amp) nothing fires. Batch-4 report docs/kit-batches/batch-4/chr_0031_mifu.md rows E8–E12.",
+    "abilityEvent 126 (the wielder applies an Arts Infliction) + CheckOriginSkillType [2] (battle skill) + CheckSpellInflictionType mask 5 (Heat, Cryo) → buff_wpn_claym_0019_teamspell (targetSource 4 with a CharacterTeamFinder: the wielder): \"When the wielder's battle skill applies Cryo Infliction or Heat Infliction, the wielder gains Cryo DMG Dealt +{cryst_dmg_up} for {duration}s\". An infliction that forms a reaction isn't an inflictionApplied event (open: in-game test 35).",
+    "abilityEvent 102 (the wielder applies a buff) + CheckBuffIdInContext checkType 1 (ID list buff_common_affixes_enhance_crystal, tag query 486772476: Arts Amp, only on _enhance_spell and _enhance_all) + NotNext CheckTargetsEqual(wielder, the buff's target) → buff_wpn_claym_0019_teamatk on the team (targetSource 3): \"When the wielder grants Arts Amp to another operator in the team, the entire team gains Arts DMG Dealt +{spell_dmg_up} for {duration2}s\"."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_claym_0019.cryo",
+      "label": "Secret History: Cryo DMG",
+      "target": "self",
+      "gameBuff": "buff_wpn_claym_0019_teamspell",
+      "duration": "duration",
+      "modifiers": [{ "attr": 53, "value": "cryst_dmg_up" }],
+      "note": "BuffData buff_wpn_claym_0019_teamspell: attribute 53 (Cryo DMG) cryst_dmg_up; stackingType 11 with a priority key, maxStackCnt 1 (the loader reads it: a reapplication refreshes)."
+    },
+    {
+      "id": "wpn_claym_0019.team_arts",
+      "label": "Secret History: team Arts DMG",
+      "target": "team",
+      "gameBuff": "buff_wpn_claym_0019_teamatk",
+      "duration": "duration2",
+      "modifiers": [
+        { "attr": 51, "value": "spell_dmg_up" },
+        { "attr": 52, "value": "spell_dmg_up" },
+        { "attr": 53, "value": "spell_dmg_up" },
+        { "attr": 54, "value": "spell_dmg_up" }
+      ],
+      "note": "BuffData buff_wpn_claym_0019_teamatk: attributes 51–54 (Heat, Electric, Cryo, Nature DMG) spell_dmg_up; stackingType 11 priority, maxStackCnt 1. Two wielders' copies add up here (batch-3 B2 residue, minor)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_claym_0019.on_infliction",
+      "on": { "event": "inflictionApplied", "elements": ["fire", "cryst"], "fromKinds": ["battle"] },
+      "by": "self",
+      "beforeDamage": true,
+      "skill": "sk_wpn_claym_0019",
+      "do": [{ "kind": "buff", "buff": "wpn_claym_0019.cryo" }],
+      "note": "beforeDamage: the infliction comes with its SpellInfliction, before the DamageAction that carries it (Si's chr_0036_jsspsi_normal_skill_abilityrange_1), so the inflicting hit already has the Cryo DMG (in-game test 51's question)."
+    },
+    {
+      "id": "wpn_claym_0019.on_amp",
+      "on": { "event": "buffApplied", "categories": ["amp"], "elements": ["cryst"], "toOthers": true },
+      "by": "self",
+      "skill": "sk_wpn_claym_0019",
+      "do": [{ "kind": "buff", "buff": "wpn_claym_0019.team_arts" }],
+      "note": "Read as checkType 1 = the ID list or the tag query: a Cryo Amp (buff_common_affixes_enhance_crystal, what Si's ultimate grants with its Heat Amp) or an all-Arts one (tag 486772476), i.e. an Amp reaching Cryo; toOthers: it reaches someone other than the wielder (NotNext CheckTargetsEqual). If checkType 1 is the tag query only, this becomes `tags: [486772476]` and Si's Amp doesn't count: in-game test 92 (report E11; batch-4 T1's open reading)."
+    }
+  ]
+}

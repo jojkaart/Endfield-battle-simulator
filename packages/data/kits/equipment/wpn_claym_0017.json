@@ -1,0 +1,49 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_claym_0017",
+  "sources": [
+    "Amaranthine Tassel (WeaponBasicTable wpn_claym_0017, greatsword; Mi Fu's signature). Its Strength and ATK lines and sk_wpn_claym_0017's Physical DMG +phy_dmg_up (cardAttributeModifier attr 50) are on the stat panel. Skill 3 \"Combative: Amaranthine Cleave\", rmxlinux Json/SkillData/sk_wpn_claym_0017 passiveEventActions, values from SkillPatchTable at the weapon's skill-3 level (level 9: phy_spell_up 84, duration 20 s, phy_dmg_up2 0.252, atk_up_mult 0.084, duration2 30 s). Batch-4 report docs/kit-batches/batch-4/chr_0031_mifu.md rows E1–E7.",
+    "abilityEvent 206 (the wielder applies a buff) + CheckBuffIdInContext checkType 1, tag query 1066759270 (Physical Susceptibility: buff_common_affixes_vulnerable_physical and _all; its ID list holds one empty entry) → buff_wpn_claym_0017_dmgup on the wielder: \"When the wielder applies Physical Susceptibility, the wielder gains Arts Intensity +{phy_spell_up} for {duration}s\".",
+    "abilityEvent 401 (the wielder applies a physical status) + CheckPhysicalInflictionType mask 8 (Crush) + CheckBuffStackNumAdvanced Vulnerable (tag 1075718177) ≥ 1 on the target → count = its Vulnerable stacks (SaveBuffStackNumAdvanced, before the Crush consumes them), phy_dmg_up_final = phy_dmg_up2 + atk_up_mult × count → buff_wpn_claym_0017_dmgup2: \"Physical DMG Dealt +[{phy_dmg_up2} + ({atk_up_mult} × Max number of Vulnerability stacks consumed from one enemy)] for {duration2}s\". A Crush on a target without Vulnerable only adds a stack: no physicalStatus event (status.ts), so nothing, as the ≥ 1 check says.",
+    "toggleBuffs buff_wpn_passive_spirit_01 (atk_up, a key sk_wpn_claym_0017 doesn't have): a template leftover with no effect, as Ancient Canal's."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_claym_0017.arts_intensity",
+      "label": "Amaranthine Cleave: Arts Intensity",
+      "target": "self",
+      "gameBuff": "buff_wpn_claym_0017_dmgup",
+      "duration": "duration",
+      "modifiers": [{ "attr": 87, "value": "phy_spell_up" }],
+      "note": "BuffData buff_wpn_claym_0017_dmgup: attribute 87 (Arts Intensity) phy_spell_up; stackingType 4 with priority key lv (the loader reads it from the game buff: a reapplication refreshes)."
+    },
+    {
+      "id": "wpn_claym_0017.phys",
+      "label": "Amaranthine Cleave: Physical DMG after a Crush",
+      "target": "self",
+      "gameBuff": "buff_wpn_claym_0017_dmgup2",
+      "duration": "duration2",
+      "modifiers": [{ "attr": 50, "value": { "sum": ["phy_dmg_up2", { "product": ["atk_up_mult", { "eventCount": true }] }] } }],
+      "note": "BuffData buff_wpn_claym_0017_dmgup2: attribute 50 (Physical DMG) phy_dmg_up_mult, assigned phy_dmg_up_final; stackingType 1 with a priority key, maxStackCnt 2: the loader keeps up to two instances and only the strongest acts (\"do not stack with themselves\", batch-3 B1). Its value is taken at the event: 0.504 after a 3-stack Crush, 0.588 after a 4-stack one at level 9."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_claym_0017.on_susceptibility",
+      "on": { "event": "buffApplied", "tags": [1066759270] },
+      "by": "self",
+      "skill": "sk_wpn_claym_0017",
+      "do": [{ "kind": "buff", "buff": "wpn_claym_0017.arts_intensity" }],
+      "note": "abilityEvent 206 with the tag query (the loader maps 1066759270 to Susceptibility reaching Physical; an all-element one counts, as the tag on _all says). No CheckOriginSkillType: any of the wielder's skills."
+    },
+    {
+      "id": "wpn_claym_0017.on_crush",
+      "on": { "event": "physicalStatus", "statuses": ["crush"] },
+      "by": "self",
+      "beforeDamage": true,
+      "skill": "sk_wpn_claym_0017",
+      "do": [{ "kind": "buff", "buff": "wpn_claym_0017.phys" }],
+      "note": "The event's level is the stacks the Crush consumed ({eventCount}). beforeDamage: abilityEvent 401 comes with the status, before its damage (buff_physical_do_crushed) and the applying hit's, so both carry the bonus (Ancient Canal's reading; in-game test 51)."
+    }
+  ]
+}

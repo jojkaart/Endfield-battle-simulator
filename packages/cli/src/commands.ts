@@ -151,7 +151,8 @@ function kitHits(data: GameData, build: Build, panel: StatPanel, target: DamageT
   if (!kit) throw new EngineError(`no kit for ${build.operator} yet`);
   const opts = { assumeUnknown: true, ...options };
   return kit.skills.flatMap((s) =>
-    s.hits.filter((h) => hitAvailable(data, build, panel, s.skillId, h, opts.situation)).map((h) => {
+    // A poise-only landing (KitHit.poiseOnly) deals no damage (as damage.ts kitHits).
+    s.hits.filter((h) => !h.poiseOnly && hitAvailable(data, build, panel, s.skillId, h, opts.situation)).map((h) => {
       const r = valueReads(h);
       return computeHit(data, build, panel, target, s, readsAnything(r) ? assumeValues(h, statedCounts(r), false) : h, opts);
     }),
