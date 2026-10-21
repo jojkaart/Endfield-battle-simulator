@@ -1,0 +1,49 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_lance_0016",
+  "sources": [
+    "Golden Age (6-star polearm; fits an Electric healer such as Liino). Skill 3 sk_wpn_lance_0016 (rmxlinux Json/SkillData; SkillPatchTable L1–L9 pulse_dmg_up 0.06–0.168, heal_up 0.04–0.112 for duration 15 s, spell_dmg_up 0.05–0.14 for duration2 20 s): cardAttributeModifier attribute 52 (Electric DMG) +pulse_dmg_up is a stat-panel line, as are skills 1–2 (Will, Treatment Efficiency).",
+    "abilityEvent 302 (OnBeforeOutputDamage) + CheckOriginSkillType [6] (the wielder's combo deals damage) → buff_wpn_lance_0016_heal on the wielder: Treatment Efficiency (attribute 29) +heal_up for duration. Heal amounts aren't modelled, so the buff has no damage modifier; it's kept for its events and the timeline.",
+    "abilityEvent 50 (OnOutputHeal) + CheckHealTag combo (−1517158118) + NotNext CheckTargetsEqual (the healed operator isn't the wielder) → buff_wpn_lance_0016_dmgup on the team (CharacterTeamFinder): Arts DMG (attributes 51–54 formulaItem 5) +spell_dmg_up for duration2; stackingType 1 with priority key spell_dmg_up (the stack group from gameBuff: two wielders' copies don't add). The wielder's own heals only (50, not 45 OnReceiveHeal). On Camille it never fires (her combo heals herself); on Liino her combo's heal of the controlled operator does when that's someone else."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_lance_0016.heal",
+      "label": "Pursuit: Great Hero (Treatment Efficiency)",
+      "target": "self",
+      "gameBuff": "buff_wpn_lance_0016_heal",
+      "duration": "duration",
+      "modifiers": [],
+      "note": "Attribute 29 heal_up: heal amounts aren't modelled."
+    },
+    {
+      "id": "wpn_lance_0016.arts",
+      "label": "Pursuit: Great Hero (team Arts DMG)",
+      "target": "team",
+      "gameBuff": "buff_wpn_lance_0016_dmgup",
+      "duration": "duration2",
+      "modifiers": [
+        { "attr": 51, "value": "spell_dmg_up" },
+        { "attr": 52, "value": "spell_dmg_up" },
+        { "attr": 53, "value": "spell_dmg_up" },
+        { "attr": 54, "value": "spell_dmg_up" }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_lance_0016.combo_damage",
+      "on": { "event": "hit", "kinds": ["combo"] },
+      "by": "self",
+      "skill": "sk_wpn_lance_0016",
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0016.heal" }]
+    },
+    {
+      "id": "wpn_lance_0016.combo_heal",
+      "on": { "event": "heal", "toOthers": true, "kinds": ["combo"] },
+      "by": "self",
+      "skill": "sk_wpn_lance_0016",
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0016.arts" }]
+    }
+  ]
+}
