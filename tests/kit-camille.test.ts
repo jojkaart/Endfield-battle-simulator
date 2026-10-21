@@ -206,9 +206,9 @@ describe("Camille's logs", () => {
     expect(g.map((v) => (v.kind === "match" ? v.assumed : v.kind))).toEqual([["Link 1 (predicted 1)"]]);
   });
 
-  it("4e5e: no mismatch; with the fixture's hand annotation applied (Lustrous Carmine's ATK from 49418 ms), all 85 match", () => {
+  it("4e5e: all 85 match, the fixture's hand-annotated Lustrous Carmine ATK (from 49418 ms) valued from her weapon kit or written in as a logged effect", () => {
     const fx = fixture("4e5e1390085e");
-    expect(kinds(fx)).toEqual({ match: 62, unquantified: 23 });
+    expect(kinds(fx)).toEqual({ match: 85 });
     const quantified = {
       ...fx,
       hits: fx.hits.map((h) => (h.unquantified.some((u) => u.buff === "buff_wpn_lance_0015_atkup") ? { ...h, effects: [...h.effects, { buff: "buff_wpn_lance_0015_atkup", zone: "atk" as const, element: null, value: 0.096 }], unquantified: h.unquantified.filter((u) => u.buff !== "buff_wpn_lance_0015_atkup") } : h)),

@@ -226,10 +226,8 @@ describe("L5: pending bursts held through the logged casts' time stops", () => {
     const held = c.matched.find((m) => m.t === 4953);
     expect(held?.loggedT).toBe(10340);
     expect(held?.due).toBeGreaterThan(7400);
-    // With Tangtang's kit, only her Cryo bursts after the dive are unlogged (docs/kit-batches/batch-4/chr_0027_tangtang.md,
-    // Kit § Verification): 15928 ms (Riot Bringer's infliction on a stack Last Rite's combo consumed at 11462 ms, which the
-    // replay sees only with her kit) and 17055 ms (the battle skill's last ticks, stretched past their span by others' time
-    // stops, placed as a new cast's first landing).
-    expect(c.unlogged.map((u) => [u.predicted.operator, u.predicted.kind, u.t]).filter((x) => !(x[0] === "chr_0027_tangtang" && x[1] === "burst" && (x[2] === 15928 || x[2] === 17055)))).toEqual([]);
+    // Nothing is unlogged: Tangtang's battle skill's last ticks (17055 ms) stay in their cast once others' time stops are
+    // taken out of the time between its landings (tests/batch4-logs2.test.ts).
+    expect(c.unlogged).toEqual([]);
   });
 });
