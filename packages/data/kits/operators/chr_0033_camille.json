@@ -1,0 +1,352 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0033_camille",
+  "sources": [
+    "Camille (Heat, polearm, 6-star). Hits, frames, log keys, poise, energy and SP from efsim kit-draft (rmxlinux Json/SkillData chr_0033_camille_* and the files they reach; values at each skill's level from SkillPatchTable); hand-written: the combo trigger, the hovering Vesperwings debuff, the Vesperwings explosion (an ability entity's passive the compiler doesn't reach), Link (ComboAction), the heals, Hunter Pursuit's state and talents 1 and 2. Report: docs/kit-batches/batch-4/chr_0033_camille.md.",
+    "Talent 1 (Hunter of Transgression, talent index 0) sets talent_0 = 1, heal_base / heal_sub_multi and combo_duration 15 on combo_skill and combo_skill_2 (CharGrowthTable talent node effects): its branches are gated by talentAtLeast [0, 1]. Talent 2 (Bloodfount Revival, index 1) attaches chr_0033_camille_passive_talent1 (atk_up, duration, teammate_rate). Potentials (CharacterPotentialTable) come from the data as skill values and skillParams: P1 weak_scale / vulnerable_scale +0.05 and bat_duration +15; P2 Agility and Intellect +20 (panel); P3 combo cooldown -2 s, combo and Hunter Pursuit multipliers x1.3 and their atb / atb_ex x1.15; P4 ultimate cost x0.85; P5 talent-2 atk_up +0.06.",
+    "Interims (report section 'Kit (2026-10-21)'): Hunter Pursuit (comboWindow false) is cast by its own skill ID, not from the battle-skill button's windows: the combo's and ultimate's windows list normal_skill_2 (the button), so Hunter Pursuit right after them waits for their exclusive frames (combo: 63 instead of 51; ultimate: 133 instead of 125). Projectile travel (Ti2) and hit-stops (Ti1b) aren't modelled. One enemy: the battle skill's retarget path (listen_target_dead → projhit_sub → abilityrange) never runs."
+  ],
+  "element": "fire",
+  "buffs": [
+    {
+      "id": "vesperwings",
+      "label": "Firefang Vesperwings hovering: Weakness and Heat Susceptibility",
+      "target": "enemy",
+      "gameBuff": "buff_chr_0033_camille_normal_skill_weak",
+      "duration": { "key": "bat_duration", "skill": "chr_0033_camille_normal_skill" },
+      "modifiers": [
+        { "attr": 62, "value": { "key": "weak_scale", "skill": "chr_0033_camille_normal_skill" } },
+        { "zone": "susceptibility", "elements": ["fire"], "value": { "key": "vulnerable_scale", "skill": "chr_0033_camille_normal_skill" } }
+      ],
+      "note": "buff_chr_0033_camille_normal_skill_weak (applyTags 2079142122, the tag the combo checks; stackingType 7): WeakAction weak_scale and VulnerableAction subType 4 (Heat) vulnerable_scale as child buffs, for EntityBB_bat_duration (the battle skill's bat_duration: 45 s, P1 60 s); created by the Vesperwings entity (normal_skill_abilityrange_first) on its target with autoFinishByAction. The Susceptibility is logged as buff_common_affixes_vulnerable_fire (0.12 at P1 in both logs, on the battle skill's own hit)."
+    },
+    {
+      "id": "hunter_state",
+      "label": "Hunter Pursuit ready (after the ultimate)",
+      "target": "self",
+      "gameBuff": "buff_chr_0033_camille_ult_henshin_state",
+      "duration": { "key": "duration", "skill": "chr_0033_camille_ultimate_skill" },
+      "modifiers": [],
+      "note": "Ultimate frame 118: buff_chr_0033_camille_ult_henshin_state (duration 15 s): ChangeSkillAction battle skill → normal_skill_2, whose switchToBuffConfig (asSkillCast false, henshin ≥ 1) runs buff_chr_0033_camille_cast_combo2 → CastSkill combo_skill_2. combo_skill_2 frame 0 ends it (FinishBuffAdvanced): one Hunter Pursuit per ultimate."
+    },
+    {
+      "id": "bloodfount",
+      "label": "Bloodfount Revival: Heat DMG per layer",
+      "target": "self",
+      "gameBuff": "buff_chr_0033_camille_talent1_atkup",
+      "duration": { "talent": 1, "key": "duration" },
+      "maxStacks": 5,
+      "modifiers": [{ "zone": "damageBonus", "elements": ["fire"], "value": { "talent": 1, "key": "atk_up" } }],
+      "note": "buff_chr_0033_camille_talent1_atkup: attribute 51 (Heat DMG) formulaItem 5 atk_up; stackingType 2 (layers with their own timers); maxStackCntKey max_stack, which passive_talent1 doesn't have, so the buff's own blackboard value 5 (its literal maxStackCnt 3 is overridden by the key; the description says 5); duration 40 s from the talent."
+    },
+    {
+      "id": "bloodfount_team",
+      "label": "Bloodfount Revival: teammates' share",
+      "target": "team",
+      "recipients": { "not": { "isOwner": true } },
+      "gameBuff": "buff_chr_0033_camille_talent1_atkup",
+      "duration": { "talent": 1, "key": "duration" },
+      "maxStacks": 5,
+      "modifiers": [{ "zone": "damageBonus", "elements": ["fire"], "value": { "product": [{ "talent": 1, "key": "atk_up" }, { "talent": 1, "key": "teammate_rate" }] } }],
+      "note": "passive_talent1: ForEach teammate (ExcludeOwnerValidator) the same buff with atk_up_teammate = atk_up × teammate_rate (0.25). Logged 0.01 per layer on Gilberta (40d9, talent level 2)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_window",
+      "on": { "event": "inflictionConsumed", "elements": ["fire"] },
+      "by": "anyone",
+      "do": [{ "kind": "openCombo" }],
+      "note": "CharGrowthTable chr_0033_camille ComboSkill: \"COMBO TRIGGER: When an enemy's Heat Infliction is consumed or absorbed.\""
+    },
+    {
+      "id": "combo_f47",
+      "on": { "event": "cast", "skills": ["chr_0033_camille_combo_skill"] },
+      "by": "self",
+      "delay": 47,
+      "awaited": true,
+      "skill": "chr_0033_camille_combo_skill",
+      "do": [
+        { "kind": "link", "seconds": "combo_duration", "if": { "all": [{ "talentAtLeast": [0, 1] }, { "enemyBuff": "buff_chr_0033_camille_normal_skill_weak" }] } }
+      ],
+      "note": "combo_skill frame 47 (the third ChannelingAction tick): on a target with tag 2079142122 (the hovering Vesperwings) and talent_0 ≥ 1, ComboAction count 1, duration combo_duration (15 s): one Link stack for the team. 40d9: Gilberta's ultimate at 12951 ms after this combo (talent-1 branch taken: the talent-2 layers at 9240 ms) carries exactly one stack (×1.2000)."
+    },
+    {
+      "id": "combo_f47_explosion",
+      "on": { "event": "cast", "skills": ["chr_0033_camille_combo_skill"] },
+      "by": "self",
+      "delay": 47,
+      "awaited": true,
+      "skill": "chr_0033_camille_normal_skill",
+      "do": [
+        {
+          "kind": "hits",
+          "if": { "enemyBuff": "buff_chr_0033_camille_normal_skill_weak" },
+          "hits": [
+            {
+              "id": "explosion",
+              "label": "Vesperwings explosion (combo)",
+              "scale": ["bat_atk_scale"],
+              "frames": [12],
+              "damageType": "battle",
+              "element": "fire",
+              "events": ["buff_chr_0033_camille_normal_skill_delay_damage"]
+            }
+          ]
+        }
+      ],
+      "note": "combo_skill frame 47: on the tagged target CreateBuff buff_chr_0033_camille_normal_skill_bateffect; the entity's passive (passive_normal_skill_ability_entity, abilityEvent 9 OnAddedBuff) creates buff_chr_0033_camille_normal_skill_delay_damage, whose end (0.4 s) deals EntityBB_bat_atk_scale (the battle skill's bat_atk_scale, 1.0), Heat, mask 256 (battle skill DMG). The entity's 'bateffect stacks ≥ 2' check is settled by the logs (report U2): every combo and Hunter Pursuit on a hovering target explodes (6 of 6, 0.29–0.34 s after the hit)."
+    },
+    {
+      "id": "combo_f48_heal",
+      "on": { "event": "cast", "skills": ["chr_0033_camille_combo_skill"] },
+      "by": "self",
+      "delay": 48,
+      "detached": true,
+      "launch": 47,
+      "skill": "chr_0033_camille_combo_skill",
+      "do": [
+        { "kind": "heal", "target": "self", "healKind": "combo", "if": { "all": [{ "talentAtLeast": [0, 1] }, { "enemyBuff": "buff_chr_0033_camille_normal_skill_weak" }] } }
+      ],
+      "note": "combo_skill frame 47: after the DamageAction, on the tagged target with talent_0, HealAction (heal_base + Intellect × heal_sub_multi, heal tag −1517158118 combo) on Camille (CharacterTeamFinder + MainCharacterValidator on targetSource 1: herself, report U2). A cast trigger at the hit's frame runs before the hit, so the heal is one frame later (detached from frame 47: a cast cut after hit 3, e.g. by her own ultimate, still heals): the talent-2 layers it gives aren't on hit 3 (logged at the boundary: 40d9 9240, 4e5e 7982 / 30769 / 55863 ms)."
+    },
+    {
+      "id": "pursuit_f70",
+      "on": { "event": "cast", "skills": ["chr_0033_camille_combo_skill_2"] },
+      "by": "self",
+      "delay": 70,
+      "awaited": true,
+      "skill": "chr_0033_camille_combo_skill_2",
+      "do": [{ "kind": "link", "seconds": "combo_duration", "if": { "talentAtLeast": [0, 1] } }],
+      "note": "combo_skill_2 frame 70: with talent_0, DoOnce ComboAction (count 1, combo_duration) whatever the target (CharGrowthTable: \"this effect can be triggered even when hitting a target with no hovering Vesperwings\")."
+    },
+    {
+      "id": "pursuit_f70_explosion",
+      "on": { "event": "cast", "skills": ["chr_0033_camille_combo_skill_2"] },
+      "by": "self",
+      "delay": 70,
+      "awaited": true,
+      "skill": "chr_0033_camille_normal_skill",
+      "do": [
+        {
+          "kind": "hits",
+          "if": { "enemyBuff": "buff_chr_0033_camille_normal_skill_weak" },
+          "hits": [
+            {
+              "id": "explosion",
+              "label": "Vesperwings explosion (Hunter Pursuit)",
+              "scale": ["bat_atk_scale"],
+              "frames": [12],
+              "damageType": "battle",
+              "element": "fire",
+              "events": ["buff_chr_0033_camille_normal_skill_delay_damage"]
+            }
+          ]
+        }
+      ],
+      "note": "combo_skill_2 frame 70: on the tagged target CreateBuff bateffect → the explosion, as the combo's (combo_f47_explosion)."
+    },
+    {
+      "id": "pursuit_f71_heal",
+      "on": { "event": "cast", "skills": ["chr_0033_camille_combo_skill_2"] },
+      "by": "self",
+      "delay": 71,
+      "detached": true,
+      "launch": 70,
+      "skill": "chr_0033_camille_combo_skill_2",
+      "do": [{ "kind": "heal", "target": "self", "healKind": "combo", "if": { "talentAtLeast": [0, 1] } }],
+      "note": "combo_skill_2 frame 70: with talent_0, HealAction on Camille after the DamageAction (one frame later, as combo_f48_heal), whatever the target."
+    },
+    {
+      "id": "bloodfount",
+      "on": { "event": "heal", "kinds": ["battle", "combo", "ultimate"], "toOwner": true },
+      "by": "anyone",
+      "if": { "talentAtLeast": [1, 1] },
+      "skill": "chr_0033_camille_passive_talent1",
+      "do": [
+        { "kind": "buff", "buff": "bloodfount", "layers": 2 },
+        { "kind": "buff", "buff": "bloodfount_team", "layers": 2 }
+      ],
+      "note": "chr_0033_camille_passive_talent1 abilityEvent 45 (OnReceiveHeal: heals Camille receives, from anyone) + CheckHealTag (battle −320297214, combo −1517158118, ultimate −1499119779): a layer for Camille and each teammate, and a second one if CheckOverHeal (already at Max HP: always, operators count as topped up, batch-3 N2). Logs: two layers at every own combo heal. A teammate's skill heal counting too is the data's reading (OnReceiveHeal; the healer's own heals are abilityEvent 50); in-game test 93 checks it."
+    },
+    {
+      "id": "hunter_on",
+      "on": { "event": "cast", "skills": ["chr_0033_camille_ultimate_skill"] },
+      "by": "self",
+      "delay": 118,
+      "skill": "chr_0033_camille_ultimate_skill",
+      "do": [{ "kind": "buff", "buff": "hunter_state" }],
+      "note": "Ultimate frame 118: CreateBuff buff_chr_0033_camille_ult_henshin_state (nothing cuts the ultimate before 122: ChannelingCastingAction cantCastSkill 0–122)."
+    },
+    {
+      "id": "hunter_end",
+      "on": { "event": "cast", "skills": ["chr_0033_camille_combo_skill_2"] },
+      "by": "self",
+      "do": [{ "kind": "endBuff", "buff": "hunter_state" }],
+      "note": "combo_skill_2 frame 0: FinishBuffAdvanced buff_chr_0033_camille_ult_henshin_state."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0033_camille_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale_1"], "frames": [4], "events": ["chr_0033_camille_attack1"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } },
+        { "id": "hit_2", "scale": ["atk_scale_2"], "frames": [10], "events": ["chr_0033_camille_attack1"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } }
+      ]
+    },
+    {
+      "skillId": "chr_0033_camille_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale_1"], "frames": [10], "events": ["chr_0033_camille_attack2"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } },
+        { "id": "hit_2", "scale": ["atk_scale_2"], "frames": [14], "events": ["chr_0033_camille_attack2"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } }
+      ]
+    },
+    {
+      "skillId": "chr_0033_camille_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "count": 4,
+          "frames": [7, 8, 9, 10],
+          "events": ["chr_0033_camille_attack3"],
+          "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } },
+          "note": "ChannelingAction ticks from frame 7 to 22, at most 4 per target (logged 4 per attack 3)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0033_camille_attack4",
+      "label": "Basic attack 4",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale_1"], "frames": [11], "events": ["chr_0033_camille_attack4"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } },
+        {
+          "id": "projhit",
+          "scale": ["atk_scale_2"],
+          "count": 7,
+          "frames": [20, 22, 24, 26, 28, 30, 32],
+          "events": ["chr_0033_camille_attack4_projhit"],
+          "launch": 20,
+          "note": "LaunchProjectile at 20 → attack4_projhit: 7 DamageActions 2 frames apart; travel isn't in the data (Ti2)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0033_camille_attack5",
+      "label": "Basic attack 5 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [21], "events": ["chr_0033_camille_attack5"], "sp": { "if": { "controlled": true }, "then": "atb" }, "poise": "poise", "poiseControlledOnly": true }
+      ]
+    },
+    {
+      "skillId": "chr_0033_camille_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        { "id": "projhit_witheff", "scale": ["atk_scale"], "frames": [3], "events": ["chr_0033_camille_power_attack_projhit_witheff"], "factor": 0.05, "launch": 3 },
+        { "id": "projhit", "scale": ["atk_scale"], "count": 6, "frames": [3, 4, 5, 6, 7, 8], "events": ["chr_0033_camille_power_attack_projhit"], "factor": 0.05, "launch": 3 },
+        { "id": "hit", "scale": ["atk_scale"], "frames": [43], "events": ["chr_0033_camille_power_attack"], "factor": 0.65 }
+      ]
+    },
+    {
+      "skillId": "chr_0033_camille_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [1], "events": ["chr_0033_camille_plunging_attack_end"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Decorate mask 1152 (dive): castable once dive attacks are rotation steps (batch-1 S10)." }
+      ]
+    },
+    {
+      "skillId": "chr_0033_camille_normal_skill",
+      "label": "Blazing Exorcism",
+      "damageType": "battle",
+      "available": { "not": { "buffActive": "hunter_state" } },
+      "teamEnergy": [{ "frame": 12, "ratio": 1 }],
+      "hits": [
+        {
+          "id": "abilityrange_first",
+          "scale": ["atk_scale"],
+          "frames": [12],
+          "launch": 12,
+          "events": ["chr_0033_camille_normal_skill_abilityrange_first"],
+          "applies": [{ "kind": "infliction", "element": "fire" }],
+          "poise": "poise",
+          "buffs": [{ "buff": "vesperwings", "beforeDamage": true }],
+          "note": "LaunchProjectile at 12 → normal_skill_projhit (CreateBuff buff_common_obtain_ultimate_sp: the team energy) → SpawnAbilityEntity abilityentity_chr_0033_camille_normal_skill: abilityrange_first frame 0 SpellInfliction (Heat), CreateBuff buff_chr_0033_camille_normal_skill_weak and DamageAction EntityBB_atk_scale (= atk_scale), poise EntityBB_poise. The debuff is on the hit itself (4 of 4 logged battle-skill hits match only with it). Projectile travel isn't in the data (Ti2)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0033_camille_combo_skill",
+      "label": "Heartstake Thorn",
+      "damageType": "combo",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale_1_1"], "frames": [19], "events": ["chr_0033_camille_combo_skill"] },
+        { "id": "hit_2", "scale": ["atk_scale_1_2"], "frames": [27], "events": ["chr_0033_camille_combo_skill"], "note": "Its LaunchUpward is displacement only (no Lift)." },
+        {
+          "id": "hit_3",
+          "scale": ["atk_scale_1_3"],
+          "frames": [47],
+          "events": ["chr_0033_camille_combo_skill"],
+          "energy": "usp",
+          "sp": "atb",
+          "spBeforeDamage": true,
+          "poise": "poise",
+          "note": "Frame 47: DoOnce ObtainCostAction atb (natural, atbSourceType 3) before the DamageAction (spBeforeDamage: Blessing of Lustrous Carmine's ATK is logged on this hit, 40d9 9240, 4e5e 7982 / 30769 ms); ObtainCostAction costType 0 usp after it. Link, the explosion and the heal: triggers combo_f47, combo_f47_explosion, combo_f48_heal."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0033_camille_combo_skill_2",
+      "label": "Hunter Pursuit",
+      "damageType": "combo",
+      "comboWindow": false,
+      "available": { "buffActive": "hunter_state" },
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale_2_1"], "frames": [20], "events": ["chr_0033_camille_combo_skill_2"] },
+        { "id": "hit_2", "scale": ["atk_scale_2_2"], "frames": [33], "events": ["chr_0033_camille_combo_skill_2"], "sp": "atb", "spBeforeDamage": true, "poise": "poise", "note": "Frame 33: DoOnce ObtainCostAction atb before the DamageAction." },
+        { "id": "hit_3", "scale": ["atk_scale_2_3"], "frames": [49], "events": ["chr_0033_camille_combo_skill_2"] },
+        {
+          "id": "hit_4",
+          "scale": ["atk_scale_2_4"],
+          "frames": [70],
+          "events": ["chr_0033_camille_combo_skill_2"],
+          "energy": "usp",
+          "sp": "atb_ex",
+          "spBeforeDamage": true,
+          "poise": "poise_2",
+          "note": "Frame 70: DoOnce ObtainCostAction atb_ex before the DamageAction, usp after it. Link, the explosion and the heal: triggers pursuit_f70, pursuit_f70_explosion, pursuit_f71_heal."
+        }
+      ],
+      "note": "Cast from the battle-skill button during hunter_state (ChangeSkillAction → normal_skill_2 → buff_chr_0033_camille_cast_combo2 → CastSkill combo_skill_2; buff_chr_0033_camille_combo_2_type ChangeSkillType → 6): \"Treated as a combo skill and costs no SP\" (CharGrowthTable). A combo-kind cast without the combo window (comboWindow false): it doesn't use Link, doesn't touch the regular combo's window or cooldown (SkillPatchTable: no cost, no cooldown); hunter_end ends the state at its frame 0, so one per ultimate."
+    },
+    {
+      "skillId": "chr_0033_camille_ultimate_skill",
+      "label": "Sanguine Downpour",
+      "damageType": "ultimate",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale_1"], "count": 7, "frames": [75, 77, 78, 80, 81, 83, 84], "events": ["chr_0033_camille_ultimate_skill"], "note": "ChannelingAction ticks every 0.05 s from 75 to 91, at most 7 per target." },
+        { "id": "hit_2", "scale": ["atk_scale_2"], "frames": [104], "events": ["chr_0033_camille_ultimate_skill"] },
+        {
+          "id": "hit_3",
+          "scale": ["atk_scale_3"],
+          "frames": [120],
+          "events": ["chr_0033_camille_ultimate_skill"],
+          "applies": [{ "kind": "infliction", "element": "fire" }],
+          "sp": "atb",
+          "spBeforeDamage": true,
+          "poise": "poise",
+          "note": "Frame 120: Heat Infliction once per target (CreateBuff buff_chr_0033_camille_ult_hit, only if its stacks ≤ 0: one target, always), DoOnce ObtainCostAction atb before the DamageAction."
+        }
+      ]
+    }
+  ]
+}
