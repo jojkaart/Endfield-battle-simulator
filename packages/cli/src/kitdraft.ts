@@ -353,7 +353,9 @@ function buffNotes(c: CompiledSkill): string[] {
     for (const b of c.buffs) {
       if (!targets.includes(b.target) || seen.has(b.buff)) continue;
       seen.add(b.buff);
-      const detail = [`f${b.frame}`, ...(b.seconds !== null ? [`${round(b.seconds, 3)} s`] : []), ...(b.summary ? [b.summary] : []), ...(b.branch.length ? [`only ${b.branch.join(", ")}`] : [])];
+      // A clip shorter than the cast (autoFinishByAction): the kit's untilFrame.
+      const until = b.untilFrame !== undefined && b.untilFrame < c.durationFrames ? [`untilFrame ${b.untilFrame} (autoFinishByAction)`] : [];
+      const detail = [`f${b.frame}`, ...(b.seconds !== null ? [`${round(b.seconds, 3)} s`] : []), ...until, ...(b.summary ? [b.summary] : []), ...(b.branch.length ? [`only ${b.branch.join(", ")}`] : [])];
       parts.push(`${b.buff} (${detail.join("; ")})`);
     }
     if (parts.length) out.push(`creates ${label}: ${parts.join(", ")}`);

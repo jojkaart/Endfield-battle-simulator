@@ -222,13 +222,12 @@ describe("Yvonne's kit", () => {
       const layers = (h: LandedHit | undefined) => sum(from(h, LAYERS, "critRate"));
       const seq = ["ult_attack1_1", "ult_attack2_1", "ult_attack2_2", "ult_attack3_1"].flatMap((k) => hitsOf(s, k)).map((h) => Math.round(layers(h) / 0.03));
       expect(seq).toEqual([1, 2, 3, 4, 5, 6, 6, 7, 8, 9, 9, 10, 10, 10, 10, 10, 10, 10, 10]);
-      // Crit DMG +0.6 at 10 layers (from the shot after the 10th layer: the modifier's `if` reads the layers before the shot's own).
+      // Crit DMG +0.6 at 10 layers, from the shot that adds the 10th: the modifier's `if` reads the layers after the shot's own
+      // beforeDamage layer, whose modifiers count for it (the game refreshes the value at the 10th layer, before that projectile lands).
       const a31 = hitsOf(s, "ult_attack3_1");
       expect(sum(from(a31[1], LAYERS, "critDamage"))).toBeCloseTo(0.6, 6);
-      // The shot that adds the 10th layer has its Crit Rate but not yet the Crit DMG (the engine judges the modifier's
-      // `if` before the shot's own beforeDamage layer; the game refreshes the value at the 10th layer: report, section Kit).
       expect(sum(from(a31[0], LAYERS, "critRate"))).toBeCloseTo(0.3, 6);
-      expect(sum(from(a31[0], LAYERS, "critDamage"))).toBe(0);
+      expect(sum(from(a31[0], LAYERS, "critDamage"))).toBeCloseTo(0.6, 6);
       expect(sum(from(hitsOf(s, "ult_attack2_2")[0], LAYERS, "critDamage"))).toBe(0);
       expect(from(a31[1], STATE, "atk")).toEqual([expect.closeTo(0.1, 6)]);
       expect(from(a31[1], STATE, "critDamage")).toEqual([expect.closeTo(0.3, 6)]);
@@ -248,10 +247,12 @@ describe("Yvonne's kit", () => {
       expect(sum(from(hit[0], LAYERS, "critDamage"))).toBeCloseTo(0.6, 6);
       expect(from(hit[0], END, "atk")).toEqual([expect.closeTo(0.1, 6)]);
       const after = run(sc, [...ult, y("ult_attack_end", stateEnd)], a + 30);
-      expect(end(run(sc, [...ult, y("ult_attack_end", stateEnd)], a + 28))).toBeDefined();
+      expect(end(run(sc, [...ult, y("ult_attack_end", stateEnd)], a + 27))).toBeDefined();
+      expect(end(run(sc, [...ult, y("ult_attack_end", stateEnd)], a + 28))).toBeUndefined();
       expect(end(after)).toBeUndefined();
       expect(myBuff(after, "ult_layers")).toEqual([]);
-      expect(after.readyAt[`${Y}_ultimate_skill`]).toBe(a + 29 + 10 * 30);
+      // The end state's FinishBuff clip starts with the damage, listed after it: at frame 28, after the hits (afterHits).
+      expect(after.readyAt[`${Y}_ultimate_skill`]).toBe(a + 28 + 10 * 30);
       // Without the strike, the end state runs out after 3 s and sets the cooldown then.
       expect(end(run(sc, ult, stateEnd + 1))?.expiresAt).toBe(stateEnd + 3 * 30);
       const idle = run(sc, ult, stateEnd + 3 * 30 + 1);

@@ -511,6 +511,12 @@ export interface BuffApplication {
   readonly beforeDamage?: boolean;
   /** This application's seconds instead of the buff's (the CreateBuffAction's assigned duration; trigger action `buff` has it too). */
   readonly duration?: ValueExpr;
+  /**
+   * It ends at this skill frame of its operator's current skill, or when that
+   * skill ends sooner (CreateBuffAction autoFinishByAction in a clip shorter
+   * than the cast); trigger action `buff` has it too.
+   */
+  readonly untilFrame?: number;
 }
 
 /** Kept for the kit loader's error messages; values are ValueExprs (expr.ts). */

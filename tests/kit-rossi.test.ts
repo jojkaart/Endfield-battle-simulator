@@ -117,17 +117,19 @@ describe("Rossi's battle skill and talent 1", () => {
     expect(justBefore.buffs.some((b) => b.id === "razor_clawmark")).toBe(false);
   });
 
-  it("Razor Clawmark: 0.30 × ATK per second from the application for 25 s (26 ticks: interim one frame longer, the log's last tick at its end), its ATK from the application (atkSnapshot); Physical and Heat DMG Taken +12%", () => {
+  it("Razor Clawmark: 0.30 × ATK per second from the application for 25 s (26 ticks: the last on its end frame, as logged, without its own DMG Taken), its ATK from the application (atkSnapshot); Physical and Heat DMG Taken +12%", () => {
     const s = run(scenario(), [r("normal_skill"), r("normal_skill")]);
     const applied = mine(s).find((h) => h.hitId === "wolf_1")?.frame ?? NaN;
     const ticks = mine(s).filter((h) => h.hitId === "bleed");
     expect(ticks.map((h) => h.frame - applied)).toEqual(Array.from({ length: 26 }, (_, i) => i * 30));
     expect(ticks[0]?.scaleParts[0]).toEqual({ key: "atk_scale_bleed", value: expect.closeTo(0.3, 6) });
-    expect(new Set(ticks.map((h) => h.exact)).size).toBe(1);
+    expect(new Set(ticks.slice(0, 25).map((h) => h.exact)).size).toBe(1);
     // On the projectiles themselves (applied before their damage): physical and Heat both.
     const wolf = mine(s).find((h) => h.hitId === "wolf_2");
     expect(mod(wolf, CLAWMARK, "damageTaken")).toBeCloseTo(0.12, 6);
     expect(mod(ticks[1], CLAWMARK, "damageTaken")).toBeCloseTo(0.12, 6);
+    // The end-frame tick: the buff ends after it and before the frame's damage (zmdlogs-4e5e t=39556: no bleed DMG Taken on it).
+    expect(mod(ticks[25], CLAWMARK, "damageTaken")).toBe(0);
     // Without talent 1 nothing is applied.
     const t0 = run(scenario({ talents: [0, 2] }), [r("normal_skill"), r("normal_skill")]);
     expect(mine(t0).some((h) => h.hitId === "bleed")).toBe(false);

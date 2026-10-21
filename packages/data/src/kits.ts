@@ -452,6 +452,7 @@ function kitChecker(scope: KitScope) {
         if (!b) throw new Error(`${where} hit ${h.id}: unknown buff ${a.buff}`);
         checkBuff(b, src.skillId, `${where} hit ${h.id}`);
         if (a.duration !== undefined) checkValue(a.duration, src.skillId, `${where} hit ${h.id} buff ${a.buff} duration`);
+        if (a.untilFrame !== undefined && !(Number.isInteger(a.untilFrame) && a.untilFrame > 0)) throw new Error(`${where} hit ${h.id}: buff ${a.buff} untilFrame must be a skill frame > 0`);
       }
       // A count that's a value is judged at the cast: its frames are the first landings', the rest repeat the last (framesEvery apart).
       if (typeof (h.count ?? 1) === "number") {
@@ -509,6 +510,7 @@ function kitChecker(scope: KitScope) {
     if (t.maxPerCast !== undefined && !(t.maxPerCast >= 1)) throw new Error(`${where}: maxPerCast must be at least 1`);
     if (t.detached && !(t.delay && t.on.event === "cast")) throw new Error(`${where}: only a delayed cast trigger can be detached from its cast`);
     if (t.awaited && !(t.delay && t.on.event === "cast" && !t.detached)) throw new Error(`${where}: only a delayed cast trigger that belongs to its cast can be awaited`);
+    if (t.afterHits && !t.delay) throw new Error(`${where}: afterHits orders delayed actions (it needs a delay)`);
     if (t.launch !== undefined && !(t.detached && t.delay && Number.isInteger(t.launch) && t.launch >= 0 && t.launch <= t.delay)) throw new Error(`${where}: a launch frame needs a detached delayed cast trigger, at or before its delay`);
     if (t.if) checkPredicate(t.if, where);
     if (t.cooldown !== undefined) checkValue(t.cooldown, skillId, `${where} cooldown`);
@@ -536,6 +538,7 @@ function kitChecker(scope: KitScope) {
           if (a.kind === "endBuff" && a.to && a.layers !== undefined) throw new Error(`${where}: endBuff for the event's subject ends its use of every instance, not layers`);
           if (a.kind === "buff" && a.layers !== undefined) checkValue(a.layers, skillId, `${where} buff layers`);
           if (a.kind === "buff" && a.duration !== undefined) checkValue(a.duration, skillId, `${where} buff duration`);
+          if (a.kind === "buff" && a.untilFrame !== undefined && !(Number.isInteger(a.untilFrame) && a.untilFrame > 0)) throw new Error(`${where}: buff ${a.buff} untilFrame must be a skill frame > 0`);
           break;
         }
         case "extendBuff":

@@ -14,13 +14,13 @@
       "label": "Razor Clawmark (talent 1)",
       "target": "enemy",
       "gameBuff": "buff_chr_0028_wulfa_normal_bleed",
-      "duration": { "sum": [{ "key": "duration_bleed", "skill": "chr_0028_wulfa_normal_skill" }, 0.034] },
+      "duration": { "key": "duration_bleed", "skill": "chr_0028_wulfa_normal_skill" },
       "every": 1,
       "tickOnApply": true,
       "modifiers": [
         { "zone": "damageTaken", "elements": ["physical", "fire"], "value": { "key": "damage_up", "skill": "chr_0028_wulfa_normal_skill" } }
       ],
-      "note": "buff_chr_0028_wulfa_normal_bleed (created by the first Wolven Ambrage projectile's tree, assignItems duration_bleed, atk_scale_bleed, damage_up): damageModifier DamageScaleProcessor NormalCalcZone side 1 (taken) + damage_up for damageType 0 (Physical) and 2 (Heat); buffEventAction every damage_interval (1 s, waitFirstTriggerInterval false: the first tick at once) a DamageAction on atk_scale_bleed, mask 0x90000000 (no skill type), takeAtkSnapshot (trigger razor_clawmark_tick). stackingType 4 (\"This effect cannot stack\"): a new one replaces it (the engine ticks again at once; one 0.3 × ATK tick at most, not testable by hand). every: damage_interval 1 s, the game buff's own blackboard value (not a key of the applying skill), written as the literal. Interim (duration + 0.034 s, one frame): the 4e5e log has 26 ticks from one application at 13314 ms (the first at once, the last 25 s of game time later, at the end), while the engine doesn't tick a buff at the frame it ends (timeline.ts nextBuffTick); the extra frame gives the 26th tick and lengthens the DMG Taken by 1/30 s."
+      "note": "buff_chr_0028_wulfa_normal_bleed (created by the first Wolven Ambrage projectile's tree, assignItems duration_bleed, atk_scale_bleed, damage_up): damageModifier DamageScaleProcessor NormalCalcZone side 1 (taken) + damage_up for damageType 0 (Physical) and 2 (Heat); buffEventAction every damage_interval (1 s, waitFirstTriggerInterval false: the first tick at once) a DamageAction on atk_scale_bleed, mask 0x90000000 (no skill type), takeAtkSnapshot (trigger razor_clawmark_tick). stackingType 4 (\"This effect cannot stack\"): a new one replaces it (the engine ticks again at once; one 0.3 × ATK tick at most, not testable by hand). every: damage_interval 1 s, the game buff's own blackboard value (not a key of the applying skill), written as the literal. The 4e5e log has 26 ticks from one application at 13314 ms (the first at once, the last 25 s of game time later, on its end frame, without the DMG Taken: the buff ends after that tick and before that frame's hits, as the engine does)."
     },
     {
       "id": "seq2_ready",

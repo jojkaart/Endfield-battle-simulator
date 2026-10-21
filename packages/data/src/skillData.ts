@@ -16,6 +16,13 @@ export interface RawSkillFile {
   readonly statModifiers: readonly { attr: number; slot: number; target: number; key: string | null; literal: number }[];
   readonly spKinds: Readonly<Record<string, SpKind>>;
   readonly spSources: Readonly<Record<string, number>>;
+  /**
+   * The skills a cast of this one casts instead, through its
+   * switchToBuffConfig buffs' CastSkill (Camille's normal_skill_2, the
+   * battle-skill button in her ultimate's state, casts combo_skill_2): a
+   * window listing this skill opens for those too.
+   */
+  readonly switchCasts: readonly string[];
 }
 
 /** A Unity AnimationCurve key (TimeDilationAction timeScaleCurve). */
@@ -216,7 +223,30 @@ export function readSkillFile(skillId: string): RawSkillFile | null {
     ...(interruptibleFrom.length ? { interruptibleFrom: [...new Set(interruptibleFrom)].sort((a, b) => a - b) } : {}),
     ...(inputMap.size ? { inputMap: [...inputMap].sort() } : {}),
   };
-  return { timing, defaults, statModifiers, spKinds: spKindsOf(j), spSources: spSourcesOf(j) };
+  return { timing, defaults, statModifiers, spKinds: spKindsOf(j), spSources: spSourcesOf(j), switchCasts: switchCastsOf(j) };
+}
+
+/** The skills a skill file's switchToBuffConfig buffs cast (their enabled CastSkill actions with a literal skill ID). */
+function switchCastsOf(j: Record<string, unknown>): string[] {
+  const config = (j["switchToBuffConfig"] ?? {}) as Record<string, unknown>;
+  const out = new Set<string>();
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) return node.forEach(walk);
+    if (typeof node !== "object" || node === null) return;
+    const o = node as Record<string, unknown>;
+    if (typeof o["$type"] === "string" && o["$type"].includes("CastSkill+Data") && o["isEnable"] !== false) {
+      const sid = o["skillId"] as { useBlackboardKey?: unknown; value?: unknown } | undefined;
+      if (sid?.useBlackboardKey !== true && typeof sid?.value === "string" && sid.value) out.add(sid.value);
+    }
+    for (const v of Object.values(o)) walk(v);
+  };
+  for (const b of (config["buffs"] ?? []) as Record<string, unknown>[]) {
+    const id = b?.["buffId"];
+    if (typeof id !== "string" || !BUFF_ALLOWED.some((re) => re.test(id))) continue;
+    const path = join(sourceDir("rmxlinux"), "Json", "BuffData", `${id}.json`);
+    if (existsSync(path)) walk(parseJsonExact(readFileSync(path, "utf8")));
+  }
+  return [...out].sort();
 }
 
 /**

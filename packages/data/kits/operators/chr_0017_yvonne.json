@@ -291,7 +291,8 @@
         ]
       },
       "by": "self",
-      "delay": 29,
+      "delay": 28,
+      "afterHits": true,
       "do": [
         {
           "kind": "endBuff",
@@ -302,7 +303,7 @@
           "buff": "ult_layers"
         }
       ],
-      "note": "chr_0017_yvonne_ult_attack_end [28-31]: FinishBuffAction on the end state and the layers. It starts on the same frame as the strike's damage [28-60] (both hits); the kit runs the damage first (file order: the layers, P5 and the end state still act on both hits; row 26, open, a log decides), so the action comes one frame later, at 29: the engine runs a frame's delayed trigger actions before its hits."
+      "note": "chr_0017_yvonne_ult_attack_end [28-31]: FinishBuffAction on the end state and the layers. It starts on the same frame as the strike's damage [28-60] (both hits); the kit runs the damage first (file order: the damage clip is timelineActions[5], the FinishBuff [10]; the layers, P5 and the end state still act on both hits; row 26, open, a log decides): at frame 28 after the frame's hits (afterHits)."
     },
     {
       "id": "end_strike_layer",
