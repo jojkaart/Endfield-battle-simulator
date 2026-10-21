@@ -42,9 +42,13 @@ the six favourites.
    owner's favourites (6-stars at P0, 4- and 5-stars at P5 unless the
    owner's account data says otherwise) and a report of the best
    rotations found.
-3. **Corrosion model:** time dilation, the applier's talents (Arcane), and
+3. **Food buffs:** consumables (UseItemTable, BuffData `buff_common_*_potion_*`)
+   as a per-operator build option, so simulations and searches can count
+   them (one food buff per operator, 300 s). The Endministrator's +180 ATK
+   in 7e19 was one (Ginseng Meat Stew).
+4. **Corrosion model:** time dilation, the applier's talents (Arcane), and
    carry-over on reapplication; in-game test 4.
-4. **Still open from setup:** a `Result` schema, `NOTICE` when MIT code is
+5. **Still open from setup:** a `Result` schema, `NOTICE` when MIT code is
    first copied, the tie-break order.
 
 ## Later

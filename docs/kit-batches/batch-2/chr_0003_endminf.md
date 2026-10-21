@@ -482,7 +482,11 @@ New gaps (no engine code written; interims in the kit):
   hit at the consuming moments) is off by exactly ×1.2 (×1.139 under
   Breach's +0.437). **Impact:** those 8 hits can't match.
 - **K4. +180 ATK on the Endministrator in 7e19** (family: data or build;
-  unknown source). Every one of her hits is short by the same additive ATK:
+  **explained 2026-10-21:** Ginseng Meat Stew, a food buff the log doesn't
+  list: UseItemTable `item_corp3_animal_1`, `buff_common_atk_buff_potion_2`
+  ATK +180 flat (formulaItem 7) and Crit Rate +11.44% for 300 s; the
+  owner suggested food. Hand-noted in the fixture, all 34 of her hits
+  match). Every one of her hits is short by the same additive ATK:
   +21.98% in the ATK% sum, i.e. exactly +180 flat ATK before the attribute
   multiplier (180 / 819 = 0.2198), the same with and without talent 1 and
   Pogranichnik's ATK buffs. A lower weapon level can't do it (that scales
@@ -569,8 +573,7 @@ crystals before the Lift's damage; in the game the order inside LiftAction
 
 ### Open questions
 
-- K4's +180 ATK: what gives it (her stat panel will tell whether it's in
-  the panel at all).
+- K4's +180 ATK: explained, Ginseng Meat Stew (above).
 - Row 21: the ultimate's third (crystal) hit.
 - Row 40: a weaker Grizzled Edge reapplication (the engine replaces).
 - Row 43: Bonekrusha's layers without a duration.

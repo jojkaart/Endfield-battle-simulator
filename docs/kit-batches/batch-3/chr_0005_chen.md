@@ -211,8 +211,10 @@ three operators' lines don't change.
   - a drift of about −0.75% per talent layer (0.987, 0.979, 0.972 at 0,
     1, 2 layers): it fits a true 1 + ATK% of about 1.57 instead of the
     panel's 1.35 with a base about 15% lower, i.e. the fixture's assumed
-    build (weapon and gear levels aren't logged) is off, as the
-    Endministrator's +180 ATK was (K7). Settle with Chen's in-game stat
+    build (weapon and gear levels aren't logged) is off. (The
+    Endministrator's +180 ATK in the same log turned out to be a food
+    buff, Ginseng Meat Stew; on Chen the stew doesn't fit: her hits go
+    from about ×1.0 to ×0.84–0.88.) Settle with Chen's in-game stat
     panel (test C5 below, with 55);
   - slashes 5–6 (after the crystals are consumed) ×1.106 and the final
     slash ×1.36 above the plan, unexplained (the final has no talent

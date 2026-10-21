@@ -22,9 +22,10 @@ yet, because something outside the kits doesn't match. Move a file up to
   all 34 of her hits are covered and mismatch, for two reasons outside
   the kit (docs/kit-batches/batch-2/chr_0003_endminf.md, section Kit): the
   log doesn't list talent 2's +20% Physical DMG taken on the sealed enemy,
-  and her ATK is short by what +180 flat ATK (+21.98% ATK) gives, from a
-  source the log's build doesn't show. With both added, 33 of 34 match
-  and the Crush hit is within 0.003%.
+  and her ATK is short by what +180 flat ATK (+21.98% ATK) gives. The ATK
+  is Ginseng Meat Stew, a food buff the log doesn't list (2026-10-21,
+  the owner's suggestion; hand-noted in the fixture's notes and effects):
+  all 34 of her hits match now.
 - `zmdlogs-abfd4b7478ec.json` (Rhodagn, imported 2026-10-19 for batch 2):
   Fluorite (P5) with Si, Yvonne and Seraph. Every Si hit was ×0.965 of the
   prediction and every Fluorite hit ×0.544: build corrections from the

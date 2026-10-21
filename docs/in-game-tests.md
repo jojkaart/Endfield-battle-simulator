@@ -956,12 +956,13 @@ If the operator doesn't dash until the skill ends, or the hit still
 lands, that skill can't be dashed out of (or its hit is already on its
 way).
 
-### 55. The Endministrator's ATK: stat panel vs the engine (ready)
+### 55. The Endministrator's ATK: stat panel vs the engine (answered 2026-10-21: a food buff; optional confirmation)
 
 **Why:** in a ZMDLogs fight (fixtures/pending/zmdlogs-7e19489ae503.json)
-every Endministrator hit implies +180 flat ATK that no game table gives
-(batch 2, K7). If the panel shows it too, something in her build or the
-game adds ATK the engine doesn't know.
+every Endministrator hit implies +180 flat ATK (batch 2, K7). Answered:
+it is Ginseng Meat Stew (ATK +180 flat, Crit Rate +11.4%, 300 s), which
+the log doesn't list; with it all 34 of her hits match. The panel check
+below still confirms the engine's ATK for her build, without food.
 **How:** open her character panel and note ATK, with her weapon, gear and
 level as they are. Send the build (or a screenshot of the panel with
 weapon and gear) so it can be compared with `efsim calc` on the same
@@ -1344,8 +1345,9 @@ stacks and a Lift damage number: the extra stack came first.
 
 **Why:** her only log (fixtures/pending/zmdlogs-7e19489ae503.json)
 doesn't record her weapon and gear levels, and her hits drift as if her
-ATK% were about 1.57 instead of 1.35 on a base about 15% lower (like the
-Endministrator's extra 180 ATK in test 55). Her stat panel settles the
+ATK% were about 1.57 instead of 1.35 on a base about 15% lower (the
+Endministrator's extra 180 ATK in test 55 was a food buff; the same food
+doesn't fit Chen). Her stat panel settles the
 build.
 **How:** as in test 55: open her character panel and note ATK, with her
 weapon, gear and level as they are, and send the build (or a screenshot

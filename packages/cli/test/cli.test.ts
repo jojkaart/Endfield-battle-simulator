@@ -127,9 +127,8 @@ describe("log check: what ZMDLogs leaves out (batch 2 K6, batch 3 L1)", () => {
     const auras = unloggedEnemyAuras(data, fx, panels);
     expect(auras.map((a) => a.label)).toEqual([null, "unlogged enemy buff originium_crystals (chr_0003_endminf)"]);
     expect(auras[1]?.modifiers.map((m) => [m.zone, Number(m.value.toFixed(6)), m.element])).toEqual([["damageTaken", 0.2, "physical"]]);
-    // With her unexplained +180 ATK (batch 2 K4: +0.2198 in the ATK% sum) as a stand-in, her hits on the sealed enemy match with the aura.
-    const k4 = { buff: "k4_stand_in", zone: "atk" as const, element: null, value: 0.2198 };
-    const hits = fx.hits.filter((h) => h.operator === "chr_0003_endminf" && (h.t === 14260 || h.t === 14591)).map((h) => ({ ...h, effects: [...h.effects, k4] }));
+    // With the fixture's hand-noted Ginseng Meat Stew (+180 flat ATK, batch 2 K4), her hits on the sealed enemy match with the aura.
+    const hits = fx.hits.filter((h) => h.operator === "chr_0003_endminf" && (h.t === 14260 || h.t === 14591));
     const verdicts = checkLog(data, { ...fx, hits });
     expect(verdicts.map((v) => (v.kind === "match" ? v.assumed.at(-1) : v.kind))).toEqual([
       "unlogged enemy buff originium_crystals (chr_0003_endminf)",
