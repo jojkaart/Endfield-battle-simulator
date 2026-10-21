@@ -1,0 +1,1395 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0017_yvonne",
+  "sources": [
+    "Hits, frames, keys and events: rmxlinux Json/SkillData chr_0017_yvonne_* and Json/BuffData buff_chr_0017_yvonne_* (commit 8b955ea), as compiled by efsim kit-draft (skillCompile.ts) and completed by hand where noted. Frames are SkillData frames (30 FPS) from the cast; projectiles land at their launch frame (travel isn't in the data: Ti2, in-game test 47). Batch-4 report docs/kit-batches/batch-4/chr_0017_yvonne.md (gap report, kit plan and the section \"Kit\").",
+    "Values: SkillPatchTable chr_0017_yvonne_* at the build's skill levels (level 12: attack1-4 atk_scale 0.53, 0.28 x2, 0.24 x3, 0.92; attack5 1.26, poise 17, atb 17; finisher 9.0 (BreakingAttackCalculation 0.1 / 0.9); dive 1.8; battle skill atk_scale 2.5, atk_scale2 1.5, atk_scale_layer 2.0, poise 10, usp_base 10, usp_layer 30, cost 100 SP; combo atk_scale_tick 1.0, atk_scale_boom 2.0, usp 10, usp_extra 10, poise 10, interval 0.75, maxcnt 4, cooldown 18 s; ultimate duration 7, cost 220, cooldown 10 s, atk_up / crit_dmg_up (P5 sets 0.1 / 0.3); ult attacks atk_scale 0.2 per shot, ult_attack1_1 normal_dmg_up 0.03, crit_rate_up 0.06, layer 10; end strike atk_scale 3.0, atk_scale_extra 6.0, poise 20). Talents (PotentialTalentEffectTable): talent 1 Barrage of Technology attaches chr_0017_yvonne_talent_1 (dmg_up 0 / 0.5), talent 2 Freezing Point attaches chr_0017_yvonne_talent_0 (inflict_up 0.1 / 0.2, status_up 0.2 / 0.4). Potentials: P1 combo radius, interval 0.5, maxcnt 6, usp_extra 25; P2 Intellect +20, Crit Rate +7% (stat panel); P3 talent_0 inflict_up +0.1, status_up +0.2; P4 normal_skill atb_return 10 (has_potential2); P5 ultimate atk_up 0.1, crit_dmg_up 0.3 (has_potential5).",
+    "Not kit skills: chr_0017_yvonne_dash_attack (+ _projhit) and its ultimate modes ult_dash / ult_dash_end (dash attacks: batch-3 S5, deferred), chr_0017_yvonne_dodge, chr_0017_yvonne_passive_0 (+ buff: attached by no talent node), the _potential_4 / _potential_5 skills and buffs (no potential attaches them: the dive's P5 branch and the ultimate's P4 branches read orphan buffs; both ultimate branches are identical), _normal_attack5_mark, _power_attack, _train_*, _combo_skill_tutorial_marker, shield / camera / voice / wep / environment / robot_end buffs, the three Tink-a-Bella entities (no actions), buff_chr_0017_yvonne_normal_skill_frozen (its DamageAction is disabled: it is only the buff talent 1 listens for)."
+  ],
+  "element": "cryst",
+  "buffs": [
+    {
+      "id": "freezing_point",
+      "label": "Freezing Point (talent 2): Crit DMG vs Cryo Infliction, doubled vs Solidification",
+      "target": "self",
+      "gameBuff": "buff_chr_0017_yvonne_talent_0",
+      "modifiers": [
+        {
+          "attr": 10,
+          "value": {
+            "talent": 1,
+            "key": "status_up"
+          },
+          "if": {
+            "enemyStatus": "solidification"
+          }
+        },
+        {
+          "attr": 10,
+          "value": {
+            "talent": 1,
+            "key": "inflict_up"
+          },
+          "if": {
+            "all": [
+              {
+                "enemyInfliction": "cryst"
+              },
+              {
+                "not": {
+                  "enemyStatus": "solidification"
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "note": "buff_chr_0017_yvonne_talent_0 (lifeType 1, permanent) damageModifier, judged at each damage: target with Cryo Infliction and not Solidified -> Critical DMG +inflict_up; Solidified (with or without Cryo) -> +status_up (2 x inflict_up: 'doubled against enemies with Solidification'). P3 raises both (skillBbModifiers on the talent skill)."
+    },
+    {
+      "id": "barrage",
+      "label": "Barrage of Technology (talent 1): the next basic attack is a Final Strike (attack5), DMG +dmg_up",
+      "target": "self",
+      "gameBuff": "buff_chr_0017_yvonne_talent_1_valid",
+      "duration": 15,
+      "consumedBy": [
+        "basic"
+      ],
+      "modifiers": [
+        {
+          "zone": "damageBonus",
+          "value": {
+            "talent": 0,
+            "key": "dmg_up"
+          }
+        }
+      ],
+      "note": "buff_chr_0017_yvonne_talent_1_valid: 15 s (literal duration), stackingType 4. Its buffEvent 5 ComboCacheAction maps the basic-attack input to attack5 while it's enabled (the loader sets basicAttack from it: S8); abilityEvent 30 + CheckSkillId attack5 -> CreateBuffAttachingSkill _talent_1_valid_up (DamageScaleProcessor NormalCalcZone +dmg_up) for that cast; attack5 ends it at frame 21 (FinishBuffAction). Kit: consumed by the next basic cast, which the mapping makes attack5 (a finisher, also of kind basic and not mapped, would consume it too: an edge case, noted in the report). How long the mapping holds (the whole buff, or the ComboCacheAction's cacheTime 0.5 s): in-game test 79; the kit takes the whole buff."
+    },
+    {
+      "id": "ult_state",
+      "label": "Cryoblasting Pistolier (ultimate state: enhanced basic attacks)",
+      "target": "self",
+      "gameBuff": "buff_chr_0017_yvonne_ultimate_skill",
+      "duration": {
+        "key": "duration",
+        "skill": "chr_0017_yvonne_ultimate_skill"
+      },
+      "blocksEnergy": true,
+      "modifiers": [
+        {
+          "zone": "atk",
+          "value": {
+            "key": "atk_up",
+            "skill": "chr_0017_yvonne_ultimate_skill"
+          },
+          "if": {
+            "potentialAtLeast": 5
+          }
+        },
+        {
+          "attr": 10,
+          "value": {
+            "key": "crit_dmg_up",
+            "skill": "chr_0017_yvonne_ultimate_skill"
+          },
+          "if": {
+            "potentialAtLeast": 5
+          }
+        }
+      ],
+      "note": "buff_chr_0017_yvonne_ultimate_skill (from the ultimate's frame 61, `duration` 7 s): while enabled SwitchModeAction 'ult' (basic attacks become ult_attack1_1 -> 2_1 -> 2_2 -> 3_1 -> 3_2 ...: the attack skills' `available`) and RefrainObtainUsp (blocksEnergy). P5: child buff_chr_0017_yvonne_potential_5_new (ATK formulaItem 6 +atk_up, Critical DMG +crit_dmg_up) when has_potential5 >= 1, on this state and on the end state; its finish creates the end state."
+    },
+    {
+      "id": "ult_end",
+      "label": "Ultimate end state (the next basic attack is the enhanced Final Strike)",
+      "target": "self",
+      "gameBuff": "buff_chr_0017_yvonne_ultimate_skill_end",
+      "duration": 3,
+      "blocksEnergy": true,
+      "modifiers": [
+        {
+          "zone": "atk",
+          "value": {
+            "key": "atk_up",
+            "skill": "chr_0017_yvonne_ultimate_skill"
+          },
+          "if": {
+            "potentialAtLeast": 5
+          }
+        },
+        {
+          "attr": 10,
+          "value": {
+            "key": "crit_dmg_up",
+            "skill": "chr_0017_yvonne_ultimate_skill"
+          },
+          "if": {
+            "potentialAtLeast": 5
+          }
+        }
+      ],
+      "note": "buff_chr_0017_yvonne_ultimate_skill_end: 3 s (literal); while enabled ComboCacheAction -> ult_attack_end (the loader sets basicAttack: S8), RefrainObtainUsp, the P5 child buff; its finish ends the layers and sets the ultimate's cooldown to 10 s (SetSkillCdAtOnce skillTypeMask 128, functionType 1, value 10: trigger ult_cooldown)."
+    },
+    {
+      "id": "ult_layers",
+      "label": "Ultimate layers: Crit Rate per layer, Crit DMG per layer at 10",
+      "target": "self",
+      "gameBuff": "buff_chr_0017_yvonne_ultimate_skill_layer",
+      "duration": 4,
+      "maxStacks": {
+        "key": "layer",
+        "skill": "chr_0017_yvonne_ult_attack1_1"
+      },
+      "modifiers": [
+        {
+          "attr": 9,
+          "value": {
+            "key": "normal_dmg_up",
+            "skill": "chr_0017_yvonne_ult_attack1_1"
+          }
+        },
+        {
+          "attr": 10,
+          "value": {
+            "key": "crit_rate_up",
+            "skill": "chr_0017_yvonne_ult_attack1_1"
+          },
+          "if": {
+            "buffLayers": "ult_layers",
+            "atLeast": 10
+          }
+        }
+      ],
+      "note": "buff_chr_0017_yvonne_ultimate_skill_layer: stackingType 8 (layers on one timer that each new layer refreshes: the loader sets sharedTimer; batch-3 B3, test 62 / Y3), maxStackCnt 10 (= ult_attack1_1 `layer`), duration recycle_time 4 s (the buff's blackboard: literal). Critical Rate (attr 9) +normal_dmg_up per layer; Critical DMG (attr 10) +crit_rate_up_dynamic per layer, set to crit_rate_up by buffEvent 6 once at 10 layers (RefreshBuffAttrModifierValue). A layer comes with each enhanced shot's launch (not 2_1's at 21 nor 2_2's at 11) and at the end strike's frame 0."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_window",
+      "on": {
+        "event": "hit",
+        "finalStrike": true
+      },
+      "by": "controlled",
+      "if": {
+        "enemyStatus": "solidification"
+      },
+      "do": [
+        {
+          "kind": "openCombo"
+        }
+      ],
+      "note": "CharGrowthTable COMBO TRIGGER: 'When the controlled operator performs a Final Strike on an enemy with Solidification.'"
+    },
+    {
+      "id": "freezing_point",
+      "on": {
+        "event": "fightStart"
+      },
+      "by": "self",
+      "if": {
+        "talentAtLeast": [
+          1,
+          1
+        ]
+      },
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "freezing_point"
+        }
+      ]
+    },
+    {
+      "id": "barrage",
+      "on": {
+        "event": "reaction",
+        "statuses": [
+          "solidification"
+        ],
+        "fromKinds": [
+          "battle"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "talentAtLeast": [
+          0,
+          1
+        ]
+      },
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "barrage"
+        }
+      ],
+      "note": "buff_chr_0017_yvonne_talent_1: abilityEvent 102 on buff_chr_0017_yvonne_normal_skill_frozen, which her battle skill's listener (abilityEvent 206 + tag Solidification + CheckSkillCastId) puts on the enemy when that cast applies Solidification: 'After applying Solidification, the next basic attack directly becomes a Final Strike'. Only her battle skill's Solidification counts (the combo's explosion doesn't)."
+    },
+    {
+      "id": "ult_state",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0017_yvonne_ultimate_skill"
+        ]
+      },
+      "by": "self",
+      "delay": 61,
+      "skill": "chr_0017_yvonne_ultimate_skill",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "ult_state"
+        }
+      ],
+      "note": "chr_0017_yvonne_ultimate_skill frame 61: CreateBuff buff_chr_0017_yvonne_ultimate_skill (and the empty _full_effect)."
+    },
+    {
+      "id": "ult_end",
+      "on": {
+        "event": "buffEnded",
+        "buff": "ult_state"
+      },
+      "by": "self",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "ult_end"
+        }
+      ],
+      "note": "buff_chr_0017_yvonne_ultimate_skill finish (buffEvent 2) -> CreateBuff buff_chr_0017_yvonne_ultimate_skill_end."
+    },
+    {
+      "id": "ult_cooldown",
+      "on": {
+        "event": "buffEnded",
+        "buff": "ult_end"
+      },
+      "by": "self",
+      "do": [
+        {
+          "kind": "endBuff",
+          "buff": "ult_layers"
+        },
+        {
+          "kind": "cooldown",
+          "who": "self",
+          "skills": "ultimate",
+          "set": 10
+        }
+      ],
+      "note": "buff_chr_0017_yvonne_ultimate_skill_end finish: FinishBuff the layers (and shield / environment / potential4_valid / full_effect, no gameplay), SetSkillCdAtOnce ultimate 10 s (literal in the buff)."
+    },
+    {
+      "id": "end_strike_ends_state",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0017_yvonne_ult_attack_end"
+        ]
+      },
+      "by": "self",
+      "delay": 29,
+      "do": [
+        {
+          "kind": "endBuff",
+          "buff": "ult_end"
+        },
+        {
+          "kind": "endBuff",
+          "buff": "ult_layers"
+        }
+      ],
+      "note": "chr_0017_yvonne_ult_attack_end [28-31]: FinishBuffAction on the end state and the layers. It starts on the same frame as the strike's damage [28-60] (both hits); the kit runs the damage first (file order: the layers, P5 and the end state still act on both hits; row 26, open, a log decides), so the action comes one frame later, at 29: the engine runs a frame's delayed trigger actions before its hits."
+    },
+    {
+      "id": "end_strike_layer",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0017_yvonne_ult_attack_end"
+        ]
+      },
+      "by": "self",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "ult_layers"
+        }
+      ],
+      "note": "chr_0017_yvonne_ult_attack_end frame 0: CreateBuff buff_chr_0017_yvonne_ultimate_skill_layer (+1 layer)."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0017_yvonne_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "available": {
+        "not": {
+          "buffActive": "ult_state"
+        }
+      },
+      "note": "Projectiles (LaunchProjectile -> *_projhit, DamageAction atk_scale, mask 128) land at their launch frame. In the ultimate state the basic-attack input is the enhanced chain (SwitchModeAction 'ult' in buff_chr_0017_yvonne_ultimate_skill): `available` not ult_state. The talent-1 and end-state mappings (S8) need no `available`. Its window 0-27 listing attack5 makes no chain step (its ComboCacheAction maps the input to attack2 only: S8).",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            11
+          ],
+          "launch": 11,
+          "events": [
+            "chr_0017_yvonne_attack1_projhit"
+          ]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0017_yvonne_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "available": {
+        "not": {
+          "buffActive": "ult_state"
+        }
+      },
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            11
+          ],
+          "launch": 11,
+          "events": [
+            "chr_0017_yvonne_attack2_projhit"
+          ]
+        },
+        {
+          "id": "robot_projhit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            14
+          ],
+          "launch": 14,
+          "events": [
+            "chr_0017_yvonne_attack2_robot_projhit"
+          ]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0017_yvonne_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "available": {
+        "not": {
+          "buffActive": "ult_state"
+        }
+      },
+      "hits": [
+        {
+          "id": "projhit1",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            6
+          ],
+          "launch": 6,
+          "events": [
+            "chr_0017_yvonne_attack3_projhit"
+          ]
+        },
+        {
+          "id": "projhit2",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            9
+          ],
+          "launch": 9,
+          "events": [
+            "chr_0017_yvonne_attack3_projhit"
+          ]
+        },
+        {
+          "id": "projhit3",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            12
+          ],
+          "launch": 12,
+          "events": [
+            "chr_0017_yvonne_attack3_projhit"
+          ]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0017_yvonne_attack4",
+      "label": "Basic attack 4",
+      "damageType": "basic",
+      "available": {
+        "not": {
+          "buffActive": "ult_state"
+        }
+      },
+      "windows": [
+        {
+          "from": 0,
+          "if": {
+            "buffActive": "barrage"
+          }
+        }
+      ],
+      "note": "TogglableAction [0-24] -> AllowNextSkill attack5 while buff_chr_0017_yvonne_talent_1_valid (S9: judged at the cast, the toggle in the game follows the buff). The projectile's castSkillOnBlock is the same projhit (one landing, not a second).",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            11
+          ],
+          "launch": 11,
+          "events": [
+            "chr_0017_yvonne_attack4_projhit"
+          ]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0017_yvonne_attack5",
+      "label": "Basic attack 5 (Final Strike)",
+      "damageType": "basic",
+      "windows": [
+        {
+          "from": 34,
+          "if": {
+            "any": [
+              {
+                "buffActive": "ult_state"
+              },
+              {
+                "buffActive": "ult_end"
+              }
+            ]
+          }
+        },
+        {
+          "from": 37,
+          "if": {
+            "not": {
+              "any": [
+                {
+                  "buffActive": "ult_state"
+                },
+                {
+                  "buffActive": "ult_end"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "note": "A chain step after attack4 (attack4's ComboCacheAction maps it), or the talent-1 Final Strike while barrage maps the input. IfElse on the ultimate states: AllowNext 34-60 -> ult_attack2_1 in one, else 37-60 -> attack1.",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            21
+          ],
+          "events": [
+            "chr_0017_yvonne_attack5"
+          ],
+          "poise": "poise",
+          "poiseControlledOnly": true,
+          "sp": {
+            "if": {
+              "controlled": true
+            },
+            "then": "atb",
+            "else": 0
+          },
+          "note": "ChannelingAction 21-23 (once per target) -> DamageAction atk_scale (mask 2097280: Final Strike); IfElse CheckMainCharacter -> poise unit `poise` and ObtainCostAction atb (natural) once."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0017_yvonne_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": [
+            "atk_scale"
+          ],
+          "factor": 0.1,
+          "frames": [
+            8
+          ],
+          "launch": 8,
+          "events": [
+            "chr_0017_yvonne_power_attack_projhit"
+          ],
+          "note": "BreakingAttackCalculation multiplier 0.1."
+        },
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "factor": 0.9,
+          "frames": [
+            28
+          ],
+          "events": [
+            "chr_0017_yvonne_power_attack"
+          ],
+          "note": "BreakingAttackCalculation multiplier 0.9."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0017_yvonne_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "note": "IfElse on buff_chr_0017_yvonne_potential_5 (an orphan: no potential attaches it) -> the plain DamageAction atk_scale (mask 1152). Not castable until dive attacks are (batch-1 S10).",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            1
+          ],
+          "events": [
+            "chr_0017_yvonne_plunging_attack_end"
+          ]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0017_yvonne_normal_skill",
+      "label": "Battle skill: Brr-Brr-Bomb",
+      "damageType": "battle",
+      "teamEnergy": [
+        {
+          "frame": 35,
+          "ratio": 1,
+          "detached": true
+        }
+      ],
+      "note": "chr_0017_yvonne_normal_skill: buff _projectile (frame 5, 1 s, autoFinishByAction) launches the bomb at its finish (frame 35, or when her skill ends sooner: the kit lands it at 35 either way, detached). normal_skill_projhit: IfElse has_potential2 and one target: ForEach target: IfElse Cryo (1570888476) or Nature (-1411846745) Infliction >= 1: SaveBuffStackNum -> count, ForceSpellStatusAction Solidification consumedLayer count (consumption, then a forced Solidification at that level, before the DamageAction), atk_scale_final = atk_scale_layer x count + atk_scale + atk_scale2; else DamageAction atk_scale. After the loop: ObtainCostAction usp_base + usp_layer x max_count if max_count > 0 ('only 1 time'); P4: atb_return returned SP when it hits one enemy (the simulator's single target).",
+      "hits": [
+        {
+          "id": "bomb",
+          "scale": [],
+          "scaleValue": {
+            "sum": [
+              "atk_scale",
+              {
+                "if": {
+                  "consumedAtLeast": 1
+                },
+                "then": {
+                  "sum": [
+                    "atk_scale2",
+                    {
+                      "product": [
+                        "atk_scale_layer",
+                        {
+                          "consumed": true
+                        }
+                      ]
+                    }
+                  ]
+                },
+                "else": 0
+              }
+            ]
+          },
+          "frames": [
+            35
+          ],
+          "detached": true,
+          "events": [
+            "chr_0017_yvonne_normal_skill_projhit"
+          ],
+          "poise": "poise",
+          "applies": [
+            {
+              "kind": "consumeInfliction",
+              "elements": [
+                "cryst",
+                "natural"
+              ]
+            },
+            {
+              "kind": "forcedReaction",
+              "status": "solidification",
+              "level": {
+                "consumed": true
+              }
+            }
+          ],
+          "energy": {
+            "if": {
+              "consumedAtLeast": 1
+            },
+            "then": {
+              "sum": [
+                "usp_base",
+                {
+                  "product": [
+                    "usp_layer",
+                    {
+                      "consumed": true
+                    }
+                  ]
+                }
+              ]
+            },
+            "else": 0
+          },
+          "sp": {
+            "if": {
+              "potentialAtLeast": 4
+            },
+            "then": "atb_return",
+            "else": 0
+          }
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0017_yvonne_combo_skill",
+      "label": "Combo skill: Flashfreezer",
+      "damageType": "combo",
+      "note": "chr_0017_yvonne_combo_skill spawns abilityentity combo_skill_abilityrange (frame 0); entity frame 19: ObtainCostAction usp (a target in radius) and CreateBuff buff_chr_0017_yvonne_combo_skill (3 s, triggerInterval `interval`, maxTriggerCnt `maxcnt`, first tick at once: PullAction, DamageAction atk_scale_tick on three branches with identical damage, ObtainCostAction usp_extra once); its finish -> buff_chr_0017_yvonne_combo_skill_finish (first tick 0.5 s later, frame 124): CreateBuff buff_common_cryst_cryst_frozen_triggered (level 1, extra_duration 2) before DamageAction atk_scale_boom + poise; its energy only if no tick hit (never against one target in range). P1: interval 0.5, maxcnt 6.",
+      "hits": [
+        {
+          "id": "tick1",
+          "scale": [
+            "atk_scale_tick"
+          ],
+          "frames": [
+            19
+          ],
+          "launch": 0,
+          "events": [
+            "buff_chr_0017_yvonne_combo_skill"
+          ],
+          "energy": {
+            "sum": [
+              "usp",
+              "usp_extra"
+            ]
+          }
+        },
+        {
+          "id": "ticks",
+          "scale": [
+            "atk_scale_tick"
+          ],
+          "count": 3,
+          "frames": [
+            42,
+            64,
+            87
+          ],
+          "launch": 0,
+          "events": [
+            "buff_chr_0017_yvonne_combo_skill"
+          ],
+          "if": {
+            "not": {
+              "potentialAtLeast": 1
+            }
+          }
+        },
+        {
+          "id": "ticks_p1",
+          "scale": [
+            "atk_scale_tick"
+          ],
+          "count": 5,
+          "frames": [
+            34,
+            49,
+            64,
+            79,
+            94
+          ],
+          "launch": 0,
+          "events": [
+            "buff_chr_0017_yvonne_combo_skill"
+          ],
+          "if": {
+            "potentialAtLeast": 1
+          }
+        },
+        {
+          "id": "explosion",
+          "scale": [
+            "atk_scale_boom"
+          ],
+          "frames": [
+            124
+          ],
+          "launch": 0,
+          "events": [
+            "buff_chr_0017_yvonne_combo_skill_finish"
+          ],
+          "poise": "poise",
+          "applies": [
+            {
+              "kind": "forcedReaction",
+              "status": "solidification",
+              "level": 1,
+              "extraSeconds": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0017_yvonne_ultimate_skill",
+      "label": "Ultimate: Cryoblasting Pistolier",
+      "damageType": "ultimate",
+      "takesControl": true,
+      "energyBlockSeconds": 2.0333,
+      "note": "No hits of its own: FinishBuff of both states at 0, UltimateTimeAction and RefrainObtainUsp 0-61 (energyBlockSeconds 61 frames), damage immunity 0-64; at 61 the state (trigger ult_state). 'makes Yvonne the controlled operator'.",
+      "hits": []
+    },
+    {
+      "skillId": "chr_0017_yvonne_ult_attack1_1",
+      "label": "Enhanced basic attack 1",
+      "damageType": "basic",
+      "available": {
+        "buffActive": "ult_state"
+      },
+      "note": "Enhanced basic attack (ultimate group, basic-attack decorate mask 128): one entry per projectile at its launch frame; a layer with each launch (CreateBuff _ultimate_skill_layer beside the LaunchProjectile) where the data has one. The CheckHp / CheckEntityNum branches only pick the target.",
+      "hits": [
+        {
+          "id": "shot1",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            9
+          ],
+          "launch": 9,
+          "events": [
+            "chr_0017_yvonne_ult_attack1_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot2",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            15
+          ],
+          "launch": 15,
+          "events": [
+            "chr_0017_yvonne_ult_attack1_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot3",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            21
+          ],
+          "launch": 21,
+          "events": [
+            "chr_0017_yvonne_ult_attack1_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0017_yvonne_ult_attack2_1",
+      "label": "Enhanced basic attack 2",
+      "damageType": "basic",
+      "available": {
+        "buffActive": "ult_state"
+      },
+      "note": "Enhanced basic attack (ultimate group, basic-attack decorate mask 128): one entry per projectile at its launch frame; a layer with each launch (CreateBuff _ultimate_skill_layer beside the LaunchProjectile) where the data has one. The CheckHp / CheckEntityNum branches only pick the target. No layer with the frame-21 launch.",
+      "hits": [
+        {
+          "id": "shot1",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            11
+          ],
+          "launch": 11,
+          "events": [
+            "chr_0017_yvonne_ult_attack2_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot2",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            14
+          ],
+          "launch": 14,
+          "events": [
+            "chr_0017_yvonne_ult_attack1_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot3",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            17
+          ],
+          "launch": 17,
+          "events": [
+            "chr_0017_yvonne_ult_attack2_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot4",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            21
+          ],
+          "launch": 21,
+          "events": [
+            "chr_0017_yvonne_ult_attack1_projhit"
+          ]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0017_yvonne_ult_attack2_2",
+      "label": "Enhanced basic attack 3",
+      "damageType": "basic",
+      "available": {
+        "buffActive": "ult_state"
+      },
+      "note": "Enhanced basic attack (ultimate group, basic-attack decorate mask 128): one entry per projectile at its launch frame; a layer with each launch (CreateBuff _ultimate_skill_layer beside the LaunchProjectile) where the data has one. The CheckHp / CheckEntityNum branches only pick the target. Shots 1 and 3 can fly as either projectile (CheckHp branches: either key in a log). No layer with the frame-11 launch.",
+      "hits": [
+        {
+          "id": "shot1",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            1
+          ],
+          "launch": 1,
+          "events": [
+            "chr_0017_yvonne_ult_attack1_projhit",
+            "chr_0017_yvonne_ult_attack2_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot2",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            4
+          ],
+          "launch": 4,
+          "events": [
+            "chr_0017_yvonne_ult_attack1_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot3",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            7
+          ],
+          "launch": 7,
+          "events": [
+            "chr_0017_yvonne_ult_attack1_projhit",
+            "chr_0017_yvonne_ult_attack2_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot4",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            11
+          ],
+          "launch": 11,
+          "events": [
+            "chr_0017_yvonne_ult_attack1_projhit"
+          ]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0017_yvonne_ult_attack3_1",
+      "label": "Enhanced basic attack 4",
+      "damageType": "basic",
+      "available": {
+        "buffActive": "ult_state"
+      },
+      "note": "Enhanced basic attack (ultimate group, basic-attack decorate mask 128): one entry per projectile at its launch frame; a layer with each launch (CreateBuff _ultimate_skill_layer beside the LaunchProjectile) where the data has one. The CheckHp / CheckEntityNum branches only pick the target.",
+      "hits": [
+        {
+          "id": "shot1",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            13
+          ],
+          "launch": 13,
+          "events": [
+            "chr_0017_yvonne_ult_attack1_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot2",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            15
+          ],
+          "launch": 15,
+          "events": [
+            "chr_0017_yvonne_ult_attack2_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot3",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            17
+          ],
+          "launch": 17,
+          "events": [
+            "chr_0017_yvonne_ult_attack1_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot4",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            19
+          ],
+          "launch": 19,
+          "events": [
+            "chr_0017_yvonne_ult_attack2_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot5",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            21
+          ],
+          "launch": 21,
+          "events": [
+            "chr_0017_yvonne_ult_attack1_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot6",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            23
+          ],
+          "launch": 23,
+          "events": [
+            "chr_0017_yvonne_ult_attack2_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot7",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            25
+          ],
+          "launch": 25,
+          "events": [
+            "chr_0017_yvonne_ult_attack1_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot8",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            27
+          ],
+          "launch": 27,
+          "events": [
+            "chr_0017_yvonne_ult_attack2_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0017_yvonne_ult_attack3_2",
+      "label": "Enhanced basic attack 5 (repeats)",
+      "damageType": "basic",
+      "available": {
+        "buffActive": "ult_state"
+      },
+      "note": "Enhanced basic attack (ultimate group, basic-attack decorate mask 128): one entry per projectile at its launch frame; a layer with each launch (CreateBuff _ultimate_skill_layer beside the LaunchProjectile) where the data has one. The CheckHp / CheckEntityNum branches only pick the target.",
+      "hits": [
+        {
+          "id": "shot1",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            1
+          ],
+          "launch": 1,
+          "events": [
+            "chr_0017_yvonne_ult_attack1_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot2",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            3
+          ],
+          "launch": 3,
+          "events": [
+            "chr_0017_yvonne_ult_attack2_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot3",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            5
+          ],
+          "launch": 5,
+          "events": [
+            "chr_0017_yvonne_ult_attack1_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot4",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            7
+          ],
+          "launch": 7,
+          "events": [
+            "chr_0017_yvonne_ult_attack2_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot5",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            9
+          ],
+          "launch": 9,
+          "events": [
+            "chr_0017_yvonne_ult_attack1_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot6",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            11
+          ],
+          "launch": 11,
+          "events": [
+            "chr_0017_yvonne_ult_attack2_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot7",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            13
+          ],
+          "launch": 13,
+          "events": [
+            "chr_0017_yvonne_ult_attack1_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        },
+        {
+          "id": "shot8",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            15
+          ],
+          "launch": 15,
+          "events": [
+            "chr_0017_yvonne_ult_attack2_projhit"
+          ],
+          "buffs": [
+            {
+              "buff": "ult_layers",
+              "beforeDamage": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0017_yvonne_ult_attack_end",
+      "label": "Enhanced Final Strike",
+      "damageType": "basic",
+      "available": {
+        "buffActive": "ult_end"
+      },
+      "note": "The end state maps the basic-attack input to it (S8). [28-60] IfElse end state >= 1: DamageAction atk_scale (mask 2101376: Final Strike) + poise 20 (the kit's branch: it's cast in the end state, and the layers act on it), else the same with processors Crit Rate +normal_dmg_up x layers, Crit DMG +crit_rate_up (not reachable in the kit: row 26 is which branch the game takes); then ForEach Solidified target: DamageAction atk_scale_extra (mask 128) and FinishBuffAdvanced tag Solidification.",
+      "hits": [
+        {
+          "id": "end",
+          "scale": [
+            "atk_scale"
+          ],
+          "frames": [
+            28
+          ],
+          "events": [
+            "chr_0017_yvonne_ult_attack_end"
+          ],
+          "poise": "poise",
+          "poiseControlledOnly": true,
+          "finalStrike": true
+        },
+        {
+          "id": "end_extra",
+          "scale": [
+            "atk_scale_extra"
+          ],
+          "frames": [
+            28
+          ],
+          "events": [
+            "chr_0017_yvonne_ult_attack_end"
+          ],
+          "finalStrike": false,
+          "if": {
+            "enemyStatus": "solidification"
+          },
+          "applies": [
+            {
+              "kind": "consumeStatus",
+              "statuses": [
+                "solidification"
+              ],
+              "afterDamage": true
+            }
+          ],
+          "note": "'If the enemy is Solidified, Yvonne performs an additional attack ... and then consumes the enemy's Solidification' (FinishBuffAdvanced after the DamageAction)."
+        }
+      ]
+    }
+  ]
+}
