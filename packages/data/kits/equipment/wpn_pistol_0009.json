@@ -1,0 +1,193 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_pistol_0009",
+  "sources": [
+    "Clannibal (batch 4, written with Tangtang's kit: docs/kit-batches/batch-4/chr_0027_tangtang.md). rmxlinux Json/SkillData/sk_wpn_pistol_0009 (weapon skill 3, SkillPatchTable L1–L9: spell_dmg_up 0.12–0.336, dmg_taken_up 0.10–0.28, duration 15, cd 25): cardAttributeModifier attributes 51–54 formulaItem 5 +spell_dmg_up (Arts DMG, stat panel). passiveEventActions: four abilityEvent 208 listeners (the wielder consumes a buff), each CheckBuffIdInContext on one reaction tag (−1110095722 Combustion, 1466867135 Electrification, 1535684437 Solidification, −421286163 Corrosion) and CheckGlobalCDTimerAction on buff_wpn_pistol_0009_cd (one 25 s cooldown for all four) → buff_wpn_pistol_0009_dmg_taken_up_{f,p,c,n} on the target: DamageScaleProcessor side 1 NormalCalcZone +dmg_taken_up for damageType 2 / 3 / 4 / 6 (Heat, Electric, Cryo, Nature), `duration`; stackingType 1 priority lv.",
+    "\"After the wielder consumes an Arts Reaction, target enemy suffers Arts DMG Taken +{dmg_taken_up} (for the specified element) for {duration}s. Each effect applies separately and does not stack with itself. Effect only triggers once every {cd}s.\""
+  ],
+  "buffs": [
+    {
+      "id": "wpn_pistol_0009.cd",
+      "label": "Vicious Purge: cooldown",
+      "target": "self",
+      "gameBuff": "buff_wpn_pistol_0009_cd",
+      "duration": "cd",
+      "modifiers": [],
+      "note": "The shared 25 s cooldown (AddGlobalCDTimer) as a state: each trigger checks it at the event, so one cooldown covers the four reactions."
+    },
+    {
+      "id": "wpn_pistol_0009.taken_fire",
+      "label": "Vicious Purge: Heat DMG Taken",
+      "target": "enemy",
+      "gameBuff": "buff_wpn_pistol_0009_dmg_taken_up_f",
+      "duration": "duration",
+      "modifiers": [
+        {
+          "zone": "damageTaken",
+          "value": "dmg_taken_up",
+          "elements": [
+            "fire"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wpn_pistol_0009.taken_pulse",
+      "label": "Vicious Purge: Electric DMG Taken",
+      "target": "enemy",
+      "gameBuff": "buff_wpn_pistol_0009_dmg_taken_up_p",
+      "duration": "duration",
+      "modifiers": [
+        {
+          "zone": "damageTaken",
+          "value": "dmg_taken_up",
+          "elements": [
+            "pulse"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wpn_pistol_0009.taken_cryst",
+      "label": "Vicious Purge: Cryo DMG Taken",
+      "target": "enemy",
+      "gameBuff": "buff_wpn_pistol_0009_dmg_taken_up_c",
+      "duration": "duration",
+      "modifiers": [
+        {
+          "zone": "damageTaken",
+          "value": "dmg_taken_up",
+          "elements": [
+            "cryst"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "wpn_pistol_0009.taken_natural",
+      "label": "Vicious Purge: Nature DMG Taken",
+      "target": "enemy",
+      "gameBuff": "buff_wpn_pistol_0009_dmg_taken_up_n",
+      "duration": "duration",
+      "modifiers": [
+        {
+          "zone": "damageTaken",
+          "value": "dmg_taken_up",
+          "elements": [
+            "natural"
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_pistol_0009.combustion",
+      "on": {
+        "event": "statusConsumed",
+        "statuses": [
+          "combustion"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "not": {
+          "buffActive": "wpn_pistol_0009.cd"
+        }
+      },
+      "skill": "sk_wpn_pistol_0009",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "wpn_pistol_0009.cd"
+        },
+        {
+          "kind": "buff",
+          "buff": "wpn_pistol_0009.taken_fire"
+        }
+      ],
+      "note": "abilityEvent 208 (the wielder consumes a buff) + CheckBuffIdInContext checkType 1 on the combustion tag. One shared cooldown: CheckGlobalCDTimerAction / AddGlobalCDTimer buff_wpn_pistol_0009_cd (cd 25 s) in all four listeners."
+    },
+    {
+      "id": "wpn_pistol_0009.electrification",
+      "on": {
+        "event": "statusConsumed",
+        "statuses": [
+          "electrification"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "not": {
+          "buffActive": "wpn_pistol_0009.cd"
+        }
+      },
+      "skill": "sk_wpn_pistol_0009",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "wpn_pistol_0009.cd"
+        },
+        {
+          "kind": "buff",
+          "buff": "wpn_pistol_0009.taken_pulse"
+        }
+      ],
+      "note": "abilityEvent 208 (the wielder consumes a buff) + CheckBuffIdInContext checkType 1 on the electrification tag. One shared cooldown: CheckGlobalCDTimerAction / AddGlobalCDTimer buff_wpn_pistol_0009_cd (cd 25 s) in all four listeners."
+    },
+    {
+      "id": "wpn_pistol_0009.solidification",
+      "on": {
+        "event": "statusConsumed",
+        "statuses": [
+          "solidification"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "not": {
+          "buffActive": "wpn_pistol_0009.cd"
+        }
+      },
+      "skill": "sk_wpn_pistol_0009",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "wpn_pistol_0009.cd"
+        },
+        {
+          "kind": "buff",
+          "buff": "wpn_pistol_0009.taken_cryst"
+        }
+      ],
+      "note": "abilityEvent 208 (the wielder consumes a buff) + CheckBuffIdInContext checkType 1 on the solidification tag. Whether a Shatter consumes Solidification is open (A7). One shared cooldown: CheckGlobalCDTimerAction / AddGlobalCDTimer buff_wpn_pistol_0009_cd (cd 25 s) in all four listeners."
+    },
+    {
+      "id": "wpn_pistol_0009.corrosion",
+      "on": {
+        "event": "statusConsumed",
+        "statuses": [
+          "corrosion"
+        ]
+      },
+      "by": "self",
+      "if": {
+        "not": {
+          "buffActive": "wpn_pistol_0009.cd"
+        }
+      },
+      "skill": "sk_wpn_pistol_0009",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "wpn_pistol_0009.cd"
+        },
+        {
+          "kind": "buff",
+          "buff": "wpn_pistol_0009.taken_natural"
+        }
+      ],
+      "note": "abilityEvent 208 (the wielder consumes a buff) + CheckBuffIdInContext checkType 1 on the corrosion tag. One shared cooldown: CheckGlobalCDTimerAction / AddGlobalCDTimer buff_wpn_pistol_0009_cd (cd 25 s) in all four listeners."
+    }
+  ]
+}

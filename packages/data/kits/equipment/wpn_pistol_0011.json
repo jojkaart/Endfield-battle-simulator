@@ -1,0 +1,89 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_pistol_0011",
+  "sources": [
+    "Brigand's Calling (batch 4, written with Tangtang's kit: docs/kit-batches/batch-4/chr_0027_tangtang.md). rmxlinux Json/SkillData/sk_wpn_pistol_0011 (weapon skill 3, SkillPatchTable L1–L9: cryst_dmg_up 0.16–0.448, cryst_dmg_up2 0.20–0.56, spell_damage_taken_up 0.06–0.168, duration 20, duration2 20): cardAttributeModifier attribute 53 formulaItem 5 +cryst_dmg_up (Cryo DMG, stat panel). passiveEventActions: abilityEvent 126 (the wielder applies an Arts Infliction) + CheckOriginSkillType [2, 7] (battle skill, ultimate) + CheckSpellInflictionType mask 4 (Cryo) → buff_wpn_pistol_0011_valid on the wielder (attribute 53 +cryst_dmg_up2, `duration`, stackingType 2 max 1); abilityEvent 206 (the wielder applies a buff) + tag 1427729990 (Susceptibility) + CheckOriginSkillType [2, 7] → buff_wpn_pistol_0011_valid2 on the target (DamageScaleProcessor side 1 NormalCalcZone +spell_damage_taken_up, CheckDamageTypeMask 92: Heat, Electric, Cryo, Nature; `duration2`; stackingType 1, maxStackCnt 1).",
+    "\"When the wielder applies Cryo Infliction via battle skills or ultimates, the wielder gains Cryo DMG Dealt +{cryst_dmg_up2} for {duration}s. When the wielder's battle skill or ultimate applies Arts Susceptibility, the target enemy suffers Arts DMG Taken +{spell_damage_taken_up} for {duration2}s. The two effects apply separately and do not stack with themselves.\" fixtures/zmdlogs-b7b3762d5da8.json (Tangtang, skill level 5) lists both from her battle skill's first Waterspout tick on (boundary entries at 11276 ms, then on every hit)."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_pistol_0011.cryo_up",
+      "label": "Brigand's Bane: Cryo DMG",
+      "target": "self",
+      "gameBuff": "buff_wpn_pistol_0011_valid",
+      "duration": "duration",
+      "modifiers": [
+        {
+          "attr": 53,
+          "value": "cryst_dmg_up2"
+        }
+      ]
+    },
+    {
+      "id": "wpn_pistol_0011.arts_taken",
+      "label": "Brigand's Bane: Arts DMG Taken",
+      "target": "enemy",
+      "gameBuff": "buff_wpn_pistol_0011_valid2",
+      "duration": "duration2",
+      "modifiers": [
+        {
+          "zone": "damageTaken",
+          "value": "spell_damage_taken_up",
+          "elements": [
+            "fire",
+            "pulse",
+            "cryst",
+            "natural"
+          ]
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_pistol_0011.cryo_infliction",
+      "on": {
+        "event": "inflictionApplied",
+        "elements": [
+          "cryst"
+        ],
+        "fromKinds": [
+          "battle",
+          "ultimate"
+        ]
+      },
+      "by": "self",
+      "beforeDamage": true,
+      "skill": "sk_wpn_pistol_0011",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "wpn_pistol_0011.cryo_up"
+        }
+      ],
+      "note": "abilityEvent 126 (the wielder applies an Arts Infliction) + CheckOriginSkillType skillTypeList [2, 7] + CheckSpellInflictionType mask 4 (Cryo); before the inflicting hit's damage (its SpellInfliction precedes the DamageAction; b7b3 lists the buff on that hit as a boundary entry). An infliction that forms a reaction at once: in-game test 35's question."
+    },
+    {
+      "id": "wpn_pistol_0011.susceptibility",
+      "on": {
+        "event": "buffApplied",
+        "tags": [
+          1427729990
+        ],
+        "fromKinds": [
+          "battle",
+          "ultimate"
+        ]
+      },
+      "by": "self",
+      "skill": "sk_wpn_pistol_0011",
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "wpn_pistol_0011.arts_taken"
+        }
+      ],
+      "note": "abilityEvent 206 (the wielder applies a buff) + CheckBuffIdInContext checkType 1, tag 1427729990 (Arts Susceptibility: a Susceptibility reaching an Arts element) + CheckOriginSkillType skillTypeList [2, 7] (battle skill, ultimate). Not on Physical Susceptibility."
+    }
+  ]
+}

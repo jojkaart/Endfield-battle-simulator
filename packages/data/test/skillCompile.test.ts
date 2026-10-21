@@ -9,7 +9,7 @@ import type { KitHit } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill, type CompiledValue } from "../src/index.ts";
 
 const data = loadGameData();
-const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen", "chr_0006_wolfgd"];
+const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen", "chr_0006_wolfgd", "chr_0027_tangtang"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
   const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
@@ -444,6 +444,23 @@ const KNOWN: string[] = [
   // Batch 3, Wulfgard. Kit form, not a disagreement: the ChannelingAction's forced Combustion at 45 has no landing there, so the kit
   // applies it from a delayed cast trigger (wolven_fury_combustion, as kit-draft emits it); this check compares hits' applications only.
   "chr_0006_wolfgd_ultimate_skill applies at 45: kit [], data [forced combustion]",
+  // Batch 4, Tangtang. Compiler limit, kit right: the poise-only DamageAction (poise 18 / 10) is a landing of its own in the
+  // compiled skill (attack5_projhit's behind CheckMainCharacterCondition and CheckEntityNum); kit-draft folds it into the
+  // damage landing at the same frame (D6), as the kit writes it.
+  'chr_0027_tangtang_attack5/shot poise: kit "poise", data -',
+  "chr_0027_tangtang_attack5/shot poiseControlledOnly: kit true, data false",
+  'chr_0027_tangtang_combo_skill/jet poise: kit "poise", data -',
+  // Compiler limit (batch-4 D9e, Tangtang G3d, open), kit right: the Waterspouts' tornado_atk_scale01 is EntityBB_abilityentity_water01,
+  // which buff_chr_0027_tangtang_passive_0 sets to passive_0's normalskill_atk_scale01; the kit names that key (scaleValue).
+  "chr_0027_tangtang_normal_skill/spout1_first: no landing scaled by normalskill_atk_scale01 (data: $EntityBB_abilityentity_water01 | atk_scale_1)",
+  "chr_0027_tangtang_normal_skill/spout1: no landing scaled by normalskill_atk_scale01 (data: $EntityBB_abilityentity_water01 | atk_scale_1)",
+  "chr_0027_tangtang_normal_skill/spout2_first: no landing scaled by normalskill_atk_scale01 (data: $EntityBB_abilityentity_water01 | atk_scale_1)",
+  "chr_0027_tangtang_normal_skill/spout2: no landing scaled by normalskill_atk_scale01 (data: $EntityBB_abilityentity_water01 | atk_scale_1)",
+  "chr_0027_tangtang_normal_skill/spout3_first: no landing scaled by normalskill_atk_scale01 (data: $EntityBB_abilityentity_water01 | atk_scale_1)",
+  "chr_0027_tangtang_normal_skill/spout3: no landing scaled by normalskill_atk_scale01 (data: $EntityBB_abilityentity_water01 | atk_scale_1)",
+  // Kit form: the early rogue wave (entity frame 133, after the EventListenerAction's jump to 128) lands 5 frames after a
+  // controlled operator's dive, so it is a hit of the dive trigger olden_stare_dive, not of the skill at a fixed frame.
+  "chr_0027_tangtang_ultimate_skill: data lands chr_0027_tangtang_ultimate_skill_1 atk_scale_3 at [209], no kit hit",
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {
