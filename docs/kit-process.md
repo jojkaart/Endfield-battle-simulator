@@ -90,3 +90,6 @@ first.
    now"): the eleven 6-stars without a kit (Ember, Lifeng, Yvonne, Ardelia,
    Last Rite, Tangtang, Rossi, Pogranichnik, Zhuang Fangyi, Mi Fu, Camille)
    and the 41 weapons without one ([batch-4.md](kit-batches/batch-4.md)).
+   Owner (2026-10-21): 6-star operators default to P0 in team and loadout
+   searches (a player's own account data overrides it), and dive attacks
+   are part of rotations (batch-1 S10).
