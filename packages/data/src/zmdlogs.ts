@@ -35,6 +35,8 @@ export interface LogEffect {
 export interface LogHit {
   readonly t: number;
   readonly operator: string;
+  /** The enemy hit, in a fight against several (multi-target fixtures only; the log can't tell apart enemies of one type). */
+  readonly target?: string;
   readonly event: string;
   readonly value: number;
   /** Damage before the target's damage cap, when the cap cut it. */
@@ -75,16 +77,18 @@ export interface LogFixture {
 
 const UA = "EndfieldBattleSimulator/0.1 (https://github.com/jojkaart/Endfield-battle-simulator)";
 
-/** Fetches a battle's detail and export. Waits between requests (the API allows 60 per minute). */
-export async function fetchBattle(battleId: string): Promise<{ detail: unknown; exported: unknown }> {
+/** Fetches a battle's detail (unless given) and export. Waits between requests (the API allows 60 per minute). */
+export async function fetchBattle(battleId: string, detail?: unknown): Promise<{ detail: unknown; exported: unknown }> {
   if (!/^btl_[a-z0-9_]+$/.test(battleId)) throw new Error(`not a battle ID: ${battleId}`);
   const get = async (url: string) => {
     const res = await fetch(url, { headers: { "user-agent": UA, accept: "application/json" } });
     if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
     return (await res.json()) as unknown;
   };
-  const detail = await get(`https://zmdlogs.com/api/battles/${battleId}`);
-  await new Promise((r) => setTimeout(r, 2000));
+  if (detail === undefined) {
+    detail = await get(`https://zmdlogs.com/api/battles/${battleId}`);
+    await new Promise((r) => setTimeout(r, 2000));
+  }
   const exported = await get(`https://zmdlogs.com/api/v1/battles/${battleId}/export`);
   return { detail, exported };
 }
@@ -166,6 +170,15 @@ function rosterBuild(entry: unknown, lookups: BuildLookups): Build {
   };
 }
 
+/** The enemy IDs a battle's damage hits landed on (one in a single-target fight). */
+export function enemiesHit(detail: unknown): string[] {
+  const events = a(o(detail, "detail")["timelineEvents"], "timelineEvents").map((e) => o(e, "event"));
+  const ids = events
+    .filter((e) => typeof e["value"] === "number" && e["value"] > 0 && typeof e["targetCharacterKey"] === "string" && e["targetCharacterKey"].startsWith("eny_"))
+    .map((e) => e["targetCharacterKey"] as string);
+  return [...new Set(ids)].sort();
+}
+
 export function zmdlogsToFixture(battleId: string, detail: unknown, exported: unknown, lookups: BuildLookups, enemyLevel: number): LogFixture {
   const d = o(detail, "detail");
   const battle = o(d["battle"], "battle");
@@ -173,6 +186,7 @@ export function zmdlogsToFixture(battleId: string, detail: unknown, exported: un
   const ex = o(exported, "export");
   const team = a(ex["roster"], "roster").map((r) => rosterBuild(r, lookups));
   const boss = s(battle["bossKey"], "bossKey");
+  const enemies = enemiesHit(detail);
 
   const events = a(d["timelineEvents"], "timelineEvents").map((e) => o(e, "event"));
   const buffs = events.filter((e) => e["laneType"] === "buff");
@@ -190,8 +204,8 @@ export function zmdlogsToFixture(battleId: string, detail: unknown, exported: un
     if (typeof e["value"] !== "number" || e["value"] <= 0) continue;
     const t = n(e["tsMsFromStart"], "tsMsFromStart");
     const operator = s(e["sourceCharacterKey"], "sourceCharacterKey");
-    // Some logs don't record the target; in a single-target fight it's the boss.
-    const target = e["targetEnemyKey"] ?? boss;
+    // Hits name their target in targetCharacterKey (targetEnemyKey is often empty); in a single-target fight it's the boss.
+    const target = enemies.length > 1 ? s(e["targetCharacterKey"], "targetCharacterKey") : typeof e["targetEnemyKey"] === "string" ? e["targetEnemyKey"] : boss;
     const relevant = buffs.filter((b) => b["targetCharacterKey"] === operator || (b["targetEnemyKey"] !== null && b["targetEnemyKey"] === target));
     const start = (b: Json) => n(b["actualStartMsFromStart"], "actualStartMsFromStart");
     const end = (b: Json) => n(b["actualEndMsFromStart"], "actualEndMsFromStart");
@@ -203,6 +217,7 @@ export function zmdlogsToFixture(battleId: string, detail: unknown, exported: un
     hits.push({
       t,
       operator,
+      ...(enemies.length > 1 ? { target } : {}),
       event: s(e["eventKey"], "eventKey"),
       value: e["value"],
       ...(uncapped !== undefined ? { uncapped } : {}),

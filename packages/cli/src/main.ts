@@ -35,7 +35,9 @@ const USAGE = `Usage:
                 [--runs n]                Battles for the found rotation's distribution (default 50; 0: none)
                 [--seed n] [--dodge p] [--attack-every s]  As for simulate
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
-                [--enemy-level n]         (default: inferred from total damage on a clear)
+                                          (fixtures/multi-target/ when it hit several enemies)
+                [--enemy-level n]         (default: inferred from total damage on a clear; 90 assumed for multi-target)
+                [--detail file]           Use an already downloaded /api/battles/<id> response
                 [--note text]             Extra provenance note (repeatable)
   efsim zmdlogs check <fixture.json>      Predict every logged hit and compare
   efsim zmdlogs reactions <fixture.json>  Replay the kits' inflictions; compare bursts and reactions
@@ -67,6 +69,7 @@ async function main(argv: string[]): Promise<number> {
       buff: { type: "string", multiple: true, default: [] },
       weapon: { type: "string" },
       "enemy-level": { type: "string" },
+      detail: { type: "string" },
       note: { type: "string", multiple: true, default: [] },
       verbose: { type: "boolean", default: false },
       beam: { type: "string", default: "24" },
@@ -165,7 +168,7 @@ async function main(argv: string[]): Promise<number> {
         const fx = readLogFixture(arg);
         text = formatLogCheck(data, fx, checkLog(data, fx));
       } else {
-        const file = await importBattle(data, arg, values["enemy-level"] === undefined ? undefined : Number(values["enemy-level"]), values.note);
+        const file = await importBattle(data, arg, values["enemy-level"] === undefined ? undefined : Number(values["enemy-level"]), values.note, values.detail);
         text = `wrote ${file}`;
       }
       break;

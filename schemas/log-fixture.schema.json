@@ -41,6 +41,7 @@
         "properties": {
           "t": { "type": "number", "description": "Milliseconds from the battle timer's start." },
           "operator": { "type": "string" },
+          "target": { "type": "string", "description": "The enemy hit, in a fight against several (fixtures/multi-target only)." },
           "event": { "type": "string" },
           "value": { "type": "number" },
           "uncapped": { "type": "number" },

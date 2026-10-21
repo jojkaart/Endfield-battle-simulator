@@ -5,7 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import type { GameData } from "@efsim/engine";
-import { fetchBattle, sourceCommit, SOURCES, zmdlogsToFixture, type LogFixture } from "@efsim/data";
+import { enemiesHit, fetchBattle, sourceCommit, SOURCES, zmdlogsToFixture, type LogFixture } from "@efsim/data";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -36,9 +36,15 @@ function inferEnemyLevel(data: GameData, detail: unknown): number {
   return (matches[0] as { level: number }).level;
 }
 
-export async function importBattle(data: GameData, battleId: string, enemyLevel?: number, notes: readonly string[] = []): Promise<string> {
-  const { detail, exported } = await fetchBattle(battleId);
-  const level = enemyLevel ?? inferEnemyLevel(data, detail);
+/**
+ * Imports a battle as a log fixture. A fight against several enemies goes to fixtures/multi-target/ with each hit's
+ * target; its enemy level can't be inferred from the total, so 90 is assumed unless given.
+ */
+export async function importBattle(data: GameData, battleId: string, enemyLevel?: number, notes: readonly string[] = [], detailFile?: string): Promise<string> {
+  const { detail, exported } = await fetchBattle(battleId, detailFile === undefined ? undefined : (JSON.parse(readFileSync(detailFile, "utf8")) as unknown));
+  const enemies = enemiesHit(detail);
+  const multi = enemies.length > 1;
+  const level = enemyLevel ?? (multi ? 90 : inferEnemyLevel(data, detail));
   const fx = zmdlogsToFixture(
     battleId,
     detail,
@@ -54,12 +60,16 @@ export async function importBattle(data: GameData, battleId: string, enemyLevel?
     provenance: {
       ...fx.provenance,
       verifiedAgainst: Object.fromEntries(SOURCES.map((s) => [s, sourceCommit(s)])),
-      notes: [...fx.provenance.notes, ...notes],
+      notes: [
+        ...fx.provenance.notes,
+        ...(multi ? [`Multi-target: hits landed on ${enemies.join(", ")}; each hit names its target (enemies of one type aren't told apart). The engine doesn't model several targets yet, so the log check doesn't run this fixture.`] : []),
+        ...notes,
+      ],
     },
   };
   const { ajv, validate } = validator();
   if (!validate(withCommits)) throw new Error(`generated fixture is invalid: ${ajv.errorsText(validate.errors)}`);
-  const file = join(ROOT, "fixtures", `${fx.id}.json`);
+  const file = join(ROOT, "fixtures", ...(multi ? ["multi-target"] : []), `${fx.id}.json`);
   writeFileSync(file, JSON.stringify(withCommits, null, 1) + "\n");
   return file;
 }
