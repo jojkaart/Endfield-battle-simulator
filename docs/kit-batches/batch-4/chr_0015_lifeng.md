@@ -385,3 +385,130 @@ first, Vulnerable-only one), and at 18.8 s the P5-charged talent hit is
   G4, `{event: buffApplied, categories: [susceptibility], elements: [fire],
   fromKinds: [battle, combo, ultimate]}` (interim in the draft: `gameBuffs`
   [`buff_common_affixes_vulnerable_fire`, `_spell`, `_all`]).
+
+## Kit (2026-10-21)
+
+Files: `packages/data/kits/operators/chr_0015_lifeng.json`, equipment
+`wpn_lance_0009.json` (Opero 77), `wpn_lance_0011.json` (JET) and
+`wpn_lance_0012.json` (Mountain Bearer, moved here from Camille at the
+merge; batch-4.md "Weapon owners"); Beacon of Duty (`wpn_lance_0007`)
+moved to Camille, so its plan above is hers now. Example
+`examples/lifeng-solo.scenario.json` with the build
+`examples/lifeng-p5.json` (P5, Mountain Bearer, Swordmancer ×4). Tests
+`tests/kit-lifeng.test.ts`; Lifeng is in `OPERATORS` in
+`packages/data/test/skillCompile.test.ts` with no disagreement (no KNOWN
+entry). Started from a fresh `efsim kit-draft chr_0015_lifeng` and the
+draft above. No engine, loader or compiler change.
+
+### Re-analysis
+
+| Item | Now | How |
+|---|---|---|
+| G1 (the ultimate's third hit only after a Link) | **done** (C1) | `link_hit.if: {castLink: {}}`, judged from the hit's own cast, so the entity hit (`launch: 58`) sees the ultimate's Link. Tested with the combo's Link (three hits), without (two), and just after the Link ran out (two) |
+| G2 (Link only from ComboAction) | **done** (B1) | trigger `combo_link`: a cast trigger at combo frame 19 (`delay: 19`, `awaited`) with action `link {count: 1, seconds: duration}` (20 s). U2 (20 s or the Link buff's literal 15 s) stays open: in-game test 78 |
+| G3 (talent 1 in the stat panel) | **done** (D4) | nothing in the kit; tested in `tests/batch4-data.test.ts` (D4) and by an ATK check here. `efsim calc` shows it only inside the attribute bonus, with no line of its own (see "Shared layer") |
+| G4 (`buffApplied` by element) | **done** (T1) | used by Mountain Bearer (`tags: [1066759270]`, `fromKinds: [battle]`). Beacon of Duty, the weapon G4 was found on, is Camille's now |
+| Row 3 (attack5's literal-0 unit, its SP twice) | **done** (D8c) | kit-draft leaves the unit out and gives the SP once |
+| Row 5 (dive) | interim | the dive hit is written from the data, but it can't be scheduled until dive attacks land (S10, in progress). Her kit has no dive-triggered effect |
+| Row 6 (dash attack) | open | batch-3 S5 (deferred); not in the kit |
+| Row 8 (the battle skill's Vulnerable-count check) | interim (exact) | two `vulnerable` triggers with `beforeDamage` (P0: `fromNone`; P1: `rising` and fewer than 4 stacks after). The thresholds are literals behind `potentialAtLeast`, because comparing a stack count with a value is still open (batch-3 review). kit-draft still only notes the condition |
+| Row 9 (the slam takes its own Susceptibility) | supported | `beforeDamage`; this is test 51's question |
+| Row 10 (two Physical Susceptibility sources) | unknown | test 38's question. The kit buff names `buff_common_affixes_vulnerable_physical`, as Estella's does |
+| Row 16 (the entity's `isCombo` jump) | done with G1 | kit-draft still reports the jump as "not followed" and leaves the hit unconditional (compiler item, below) |
+| Rows 21, 26 (talent 2, P5's charge) | hand-written | trigger `subduer_of_evil` and buffs `p5_timer` / `p5_ready`, as planned. Talents' attached buffs that have handlers stay kit work (batch-3 D4, D9c) |
+| Row 22 / U1 (talent 2 on a Vulnerable-only Knock Down) | unknown | engine: no hit (batch-3 P1); test 39's variant |
+| Row 25 (P3 on talent 1) | **done** (D4) | stat panel |
+| Row 27 / U4 (log keys) | unknown | `chr_0015_lifeng_ultimate_skill_abentity` and `buff_chr_0015_lifeng_talent_2`, never the Valiant key `chr_0015_lifeng_ultimate_skill` |
+| W5 (Opero 77) | done | sources only (flat ATK is in the panel) |
+| W6, W7 (JET) | done | two self buffs on battle-skill and combo `cast` events |
+| Mountain Bearer (Camille rows 36–40) | done, one effect open | DMG +56% against a Vulnerable enemy (a buff from fightStart, `enemyVulnerable: 1`). All Attributes +22.4% when the wielder's battle skill applies Vulnerable (`vulnerable`, `fromKinds [battle]`) or Physical Susceptibility (T1 `tags`), with `cooldown: cd` for the 0.1 s timed markers. **Open:** the percentages don't reach ATK (batch-3 V4 residue) |
+
+Compiler items seen (data family, not fixed here):
+- kit-draft emits no `link` trigger for a ComboAction, so the kit writes it
+  by hand from the SkillData frame and keys.
+- The entity's IfElse on `isCombo` (which `buff_chr_0015_lifeng_passive`
+  sets from the Link buff) isn't compiled to `castLink`.
+- The CheckBuffStackNumByTag before the purify CreateBuff is only noted.
+
+### What the kit models
+
+- Every hit at its SkillData frame: battle skill 7, 20, 54; combo 19, 48;
+  ultimate 64, 124, 179 (from the entity spawned at 58); attack5 13, 24.
+  All hits are Physical. SP, stagger, team energy, the ultimate's two Knock
+  Downs and P4's cost (76.5) come from the data.
+- Turbid Avatar's Physical Susceptibility (0.12, 0.17 from P1; 12 s),
+  applied before the slam's damage to an enemy with no Vulnerable (from P1:
+  at most 2 stacks).
+- The combo trigger (a Final Strike by the controlled operator on an enemy
+  with Physical Susceptibility or Breach) and the combo's Link (one stack,
+  20 s).
+- Talent 2's hit on each real Knock Down (0.5 / 1.0 × ATK, no skill-type
+  bonus, no Link). P5: the first one after each 15 s charge deals
+  3.5 × ATK and 5 Stagger, and the charge restarts from it.
+- The equipment above.
+
+Left out:
+- the dash attack (S5);
+- talent 2 on a Vulnerable-only Knock Down (U1, the engine's reading);
+- Mountain Bearer's All Attributes reaching ATK (V4 residue). With the
+  example build that's about +17% ATK per All Attributes buff (0.224 × the
+  attribute bonus's Agility, Strength and talent-1 Intellect / Will parts:
+  about +0.79 on 4.51), or +35% with both, for 15 s after each battle
+  skill. It's the largest effect missing on her, and talent 1 makes it
+  larger for her than for an Agility-main wielder without it.
+
+### Verification
+
+- **Logs:** no fixture has Lifeng. `zmdlogs check` and `zmdlogs reactions`
+  give the same output on every fixture with her kits loaded (4e5e's
+  `chr_0015_lifeng_ultimate_skill` hits are still Estella's Valiant).
+- **Example** (`examples/lifeng-solo.scenario.json`, 30 s solo against
+  Rhodagn): 391,096 damage, 14,051 DPS (last hit at 27.83 s). Checked by
+  hand:
+  - the first slam: 14,960 = 3,662.9 ATK × 2.68 × (1.98 + 0.56 Mountain
+    Bearer) × 1.025 crit × 1.17 Susceptibility × 0.5 DEF;
+  - the ultimate's slams: 26,794 (the same zones, plus Link ×1.2);
+  - the Link hit: 40,191 (× 6 / 4);
+  - talent 2: 5,582 per Knock Down (1.0 × ATK);
+  - P5's hit: 16,699 at 18.57 s (3.5 × the plain hit without the
+    Susceptibility, which had ended by then).
+
+  Her later slams find 3–4 Vulnerable stacks (each lasts 20 s and is
+  refreshed), so solo she gets one Susceptibility and one combo per 30 s.
+  A Breach teammate consuming the stacks would open both again. Timings:
+  2.33 s from the battle skill to the next action, 1.6 s from the combo to
+  the ultimate, and the ultimate's hits 2.13 / 4.13 / 5.97 s after its cast
+  (time stop 0–56).
+- **Tests:** `tests/kit-lifeng.test.ts` (20 tests):
+  - frames, hits and scales; the combo window; P4's cost;
+  - the Susceptibility: P0 / P1 values, P1's threshold, its 12 s;
+  - Link: given at frame 19, lasts 20 s, used by the ultimate, or by a
+    battle skill cast before it;
+  - the third hit with and without Link;
+  - talent 2: levels, unlearned, no Link; P5: scale, Stagger, recharge;
+    talent 1 in the panel;
+  - Mountain Bearer: DMG against Vulnerable on the hit that adds the first
+    stack; both attribute buffs from the battle skill, none from the
+    ultimate; the tag trigger;
+  - Opero 77's flat ATK; JET on Lifeng (no effect) and on Avywenna (both
+    buffs on her Electric hits).
+
+### In-game tests the kit depends on
+
+- **8** (where Link comes from); its option (e) is Lifeng's combo: one
+  stack.
+- **78** (proposed): Lifeng's Link hit, and whether the Link lasts 20 s
+  or 15 s.
+- **39**'s variant (proposed): talent 2 on a Vulnerable-only Knock Down.
+- **75** / **55**'s variant (proposed): talent 1 in the stat panel, as an
+  attribute bonus or as ATK%.
+- **38** (two Physical Susceptibility sources), **51** (the slam's own
+  Susceptibility).
+
+### Shared layer (noted, not changed)
+
+- The batch-3 V4 residue (a main attribute's percentage reaching ATK) now
+  has a large user: Mountain Bearer on Lifeng (above).
+- `efsim calc` prints no line for attributes 76–79 (ATK per attribute
+  point). The ATK line's "× 4.5110 (Agi 363, Str 429)" hides talent 1's
+  +0.84 (design.md principle 10).

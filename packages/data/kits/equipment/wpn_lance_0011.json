@@ -1,0 +1,44 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_lance_0011",
+  "sources": [
+    "JET (6-star polearm), skill 3 sk_wpn_lance_0011 (rmxlinux Json/SkillData, game 1.6; SkillPatchTable L1–L9 spell_dmg_up / _up2 / _up3 0.12–0.336, duration / duration2 15 s): cardAttributeModifier attributes 51–54 +spell_dmg_up (Arts DMG, a stat-panel line). passiveEventActions abilityEvent 30 (the wielder casts a skill): CheckSkillType [2] (battle skill) → buff_wpn_lance_0011_normal_magic_up on the wielder (attributes 51–54 formulaItem 5 +spell_dmg_up2 for duration); CheckSkillType [6] (combo) → buff_wpn_lance_0011_combo_magic_up (+spell_dmg_up3 for duration2). Both stackingType 4 without a priority key: a recast refreshes; the two are separate buffs and add. Batch-4 report docs/kit-batches/batch-4/chr_0015_lifeng.md row W7.",
+    "Skills 1–2 (main attribute, ATK%) are stat-panel lines. Generic: on a Physical wielder (Lifeng) it does nothing to her own hits; it fits an Arts polearm (Liino, Avywenna, Camille). Not in any log."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_lance_0011.battle",
+      "label": "JET: Arts DMG after a battle skill",
+      "target": "self",
+      "gameBuff": "buff_wpn_lance_0011_normal_magic_up",
+      "duration": "duration",
+      "modifiers": [{ "zone": "damageBonus", "value": "spell_dmg_up2", "elements": ["fire", "pulse", "cryst", "natural"] }]
+    },
+    {
+      "id": "wpn_lance_0011.combo",
+      "label": "JET: Arts DMG after a combo skill",
+      "target": "self",
+      "gameBuff": "buff_wpn_lance_0011_combo_magic_up",
+      "duration": "duration2",
+      "modifiers": [{ "zone": "damageBonus", "value": "spell_dmg_up3", "elements": ["fire", "pulse", "cryst", "natural"] }]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_lance_0011.battle_cast",
+      "on": { "event": "cast", "kinds": ["battle"] },
+      "by": "self",
+      "skill": "sk_wpn_lance_0011",
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0011.battle" }],
+      "note": "abilityEvent 30 at the cast (CheckSkillType [2]): the buff acts on the cast's own hits."
+    },
+    {
+      "id": "wpn_lance_0011.combo_cast",
+      "on": { "event": "cast", "kinds": ["combo"] },
+      "by": "self",
+      "skill": "sk_wpn_lance_0011",
+      "do": [{ "kind": "buff", "buff": "wpn_lance_0011.combo" }],
+      "note": "abilityEvent 30, CheckSkillType [6]."
+    }
+  ]
+}
