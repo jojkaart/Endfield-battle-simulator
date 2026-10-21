@@ -123,6 +123,19 @@ describe("Purrchena's battle skill: the shield", () => {
   });
 });
 
+describe("Purrchena's blocks with dodging on", () => {
+  it("she doesn't dash at an attack a block listener takes (noDodge): the shield blocks it; with no shield up she dashes", () => {
+    const dodging = (attacks: TimelineScenario["enemyActions"]): TimelineScenario => ({ ...scenario({}, attacks), options: { ...example.options, dodge: { chance: 1 } } });
+    // Attacked at 1 s (normal_skill's listener [0, 50]) and at 4 s (loop_2's after the first block).
+    const shielded = run(dodging(attackAt(1, 4)), [op("normal_skill")], 200);
+    expect(shielded.casts.some((c) => c.skill === "dodge")).toBe(false);
+    expect(castsOf(shielded, "normal_skill_block_1")).toHaveLength(1);
+    expect(castsOf(shielded, "normal_skill_block_2")).toHaveLength(1);
+    // No shield: the attack is dodged.
+    expect(run(dodging(attackAt(1)), [op("attack1")], 60).casts.some((c) => c.skill === "dodge")).toBe(true);
+  });
+});
+
 describe("Purrchena's combo: the giftbox", () => {
   it("opens on an attack on the controlled operator; unshielded: heal and 10 energy at 61, the item at 62; she can act from MarkCanInterrupt 28", () => {
     const sc = scenario({}, attackAt(1));

@@ -194,7 +194,7 @@
           "skill": "chr_0038_purrche_normal_skill_block_1"
         }
       ],
-      "note": "EventListenerAction abilityEvent 101 (Purrchena is hit; CheckDamageDecorateMask checkType 3, mask 805306368, assumed to pass every enemy attack) → CastSkill normal_skill_block_1, in normal_skill [0–50], loop_1 [0–360] and the shielded combo [221–251]: wherever she is while the shield is up and no block has happened yet. The abilityEvent 9 branch (one enemy's grab, buff_eny_0018_lbtough_pre_catch) isn't modelled. Not seen by the dodge policy (E3 reads only `jump` counters): with dodging on she dashes, which ends the shield."
+      "note": "EventListenerAction abilityEvent 101 (Purrchena is hit; CheckDamageDecorateMask checkType 3, mask 805306368, assumed to pass every enemy attack) → CastSkill normal_skill_block_1, in normal_skill [0–50], loop_1 [0–360] and the shielded combo [221–251]: wherever she is while the shield is up and no block has happened yet. The abilityEvent 9 branch (one enemy's grab, buff_eny_0018_lbtough_pre_catch) isn't modelled. With dodging on she doesn't dash where a block listener runs (KitSkill.noDodge on normal_skill [0, 50], loop_1 and loop_2 [0, 360], the blocks [3, 24] / [2, 25]): the attack is blocked. The shielded combo's listener ranges [221–251] and [281–310] aren't covered (one range per skill; its path decides them)."
     },
     {
       "id": "block_later",
@@ -2459,6 +2459,7 @@
     },
     {
       "skillId": "chr_0038_purrche_normal_skill",
+      "noDodge": [0, 50],
       "label": "Battle skill: I'M NOT SLEEPING!",
       "damageType": "battle",
       "available": {
@@ -2471,6 +2472,7 @@
     },
     {
       "skillId": "chr_0038_purrche_normal_skill_loop_1",
+      "noDodge": [0, 360],
       "label": "Shield up (hold)",
       "damageType": "battle",
       "followUpOnly": true,
@@ -2489,6 +2491,7 @@
     },
     {
       "skillId": "chr_0038_purrche_normal_skill_loop_2",
+      "noDodge": [0, 360],
       "label": "Shield up (hold, after a block)",
       "damageType": "battle",
       "followUpOnly": true,
@@ -2507,6 +2510,7 @@
     },
     {
       "skillId": "chr_0038_purrche_normal_skill_block_1",
+      "noDodge": [3, 24],
       "label": "Shield: first block",
       "damageType": "battle",
       "followUpOnly": true,
@@ -2515,6 +2519,7 @@
     },
     {
       "skillId": "chr_0038_purrche_normal_skill_block_2",
+      "noDodge": [2, 25],
       "label": "Shield: later block",
       "damageType": "battle",
       "followUpOnly": true,

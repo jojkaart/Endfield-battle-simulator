@@ -134,8 +134,8 @@
           "frames": [83],
           "poise": "poise",
           "applies": [{ "kind": "vulnerable" }],
-          "sp": { "if": { "buffActive": "combo_shield" }, "then": "potential5_atb" },
-          "note": "Reached only through the counter's jump to 60 (not attacked, the jump 45 → 255 skips it). ChannelingAction [83–85]: CreateBuff buff_physical_no_guard (1 Vulnerable, before the DamageAction, as the engine applies it), DoOnce ObtainCostAction potential5_atb (P5: 10 returned SP while the combo shield, tag −1757502026, is on Catcher; 0 below P5), DamageAction atk_scale with poise."
+          "sp": { "if": { "operatorBuff": { "categories": ["shield"] } }, "then": "potential5_atb" },
+          "note": "Reached only through the counter's jump to 60 (not attacked, the jump 45 → 255 skips it). ChannelingAction [83–85]: CreateBuff buff_physical_no_guard (1 Vulnerable, before the DamageAction, as the engine applies it), DoOnce ObtainCostAction potential5_atb (P5: 10 returned SP while a shield, tag −1757502026, is on Catcher: her combo's or anyone's, e.g. Ember's or Thunderberge's (batch 4 C2); 0 below P5), DamageAction atk_scale with poise."
         }
       ],
       "note": "Team energy: CreateBuff buff_common_obtain_ultimate_sp ratio 0.5 at frame 0 and at frame 60; the second is skipped by the jump 45 → 255 unless the counter jumped to 60."
