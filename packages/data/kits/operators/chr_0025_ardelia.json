@@ -1,0 +1,241 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0025_ardelia",
+  "sources": [
+    "Kit plan: docs/kit-batches/batch-4/chr_0025_ardelia.md (analysis and its \"Kit (2026-10-21)\" section). Hit structure and frames: rmxlinux Json/SkillData chr_0025_ardelia_* (26 files) and Json/BuffData buff_chr_0025_ardelia_* (game 1.6), as compiled by efsim kit-draft v2 (2026-10-21) and corrected by hand where noted; values from SkillPatchTable (level 12: attack1 atk_scale 0.68, attack2 0.45 × 2, attack3 0.08 × 15, attack4 1.24 with poise 18 and atb 18, attack1–3 atb 0, finisher 9.0, dive 1.8; battle skill 3.2, poise 10, rate_vul_base 0.20, duration_vul 30, 100 SP; combo 1.0, atk_scale_boom 2.5, duration_corrupt 7, usp 10, poise 10, cooldown 17 s; ultimate 1.65, poise 3, interval 0.3, 90 energy). Talents and potentials from PotentialTalentEffectTable through the loader.",
+    "Skill descriptions (CharGrowthTable + I18nTextTable_EN). Battle skill \"Dolly Rush\": \"Hops on Mr. Dolly and rams the target to deal Nature DMG. If the target has Corrosion, then consume the Corrosion and apply Physical Susceptibility and Arts Susceptibility to the target.\" Combo \"Eruption Column\": \"COMBO TRIGGER: When the controlled operator performs a Final Strike on an enemy with no stacks of Vulnerability or Arts Infliction.\" Ultimate \"Wooly Party\": \"Multiple copies of Mr. Dolly are thrown in random directions. Each copy deals Nature DMG when hitting the enemy. Each enemy can only take 1 damaging hit every {interval}s.\"",
+    "Talents. Talent 1 \"Friendly Presence\" (talent_1_1–1_3: sheep_num 3, heal_scale / heal_value, the ultimate's effect_prob 0.1): Shadows of Mr. Dolly (normal_skill_gene_sheep / remain_loop_sheep, 10 s) heal the controlled operator who touches one, an untagged HealAction (healTags.predefinedTag []): no damage, and touching needs movement, so nothing is declared (heals aren't simulated, N2; no heal trigger with `kinds` would see an untagged heal). Talent 2 \"Mountainpeak Surfer\" (talent_2_1: talent1 = 1) recasts the battle skill when another Corroded enemy is within 12 m: see the battle skill's note.",
+    "Potentials (loader, PotentialTalentEffectTable): P1 rate_vul_base +0.08 (0.28); P2 the Shadows' half heal to the lowest-HP teammate (no damage); P3 the ultimate's channel +1 s (potential3_duration 1: the jump at 171 isn't taken) and effect_prob ×1.2 (Shadows, no damage); P4 ultimate cost ×0.85 (76.5); P5 combo cooldown −2 s (15 s), potential5_dmg_rate 1.2 on both combo hits, potential5_duration +4 s on the combo's Corrosion (11 s).",
+    "Not modelled: the Shadows' heals (above); talent 2's recast (one enemy); the dash shortcuts 25→32 and 214→221 (CheckDistanceCondition < 1 / 1.5 m: not taken, at most 7 frames); the combo bomb's half-damage hit on the other enemies (ExcludeTarget: one enemy); projectile travel (Ti2: hits at their launch frames); the dive attack in rotations (batch-1 S10). The ultimate's per-enemy cap stands in for the geometry (U1). No log has Ardelia."
+  ],
+  "element": "natural",
+  "buffs": [
+    {
+      "id": "arts_susceptibility",
+      "label": "Dolly Rush: Arts Susceptibility",
+      "target": "enemy",
+      "gameBuff": "buff_chr_0025_ardelia_affixes_vulnerable_spell_child",
+      "duration": "duration_vul",
+      "modifiers": [{ "zone": "susceptibility", "value": "rate_vul_base", "elements": ["fire", "pulse", "cryst", "natural"] }],
+      "note": "normal_skill frame 32 creates buff_chr_0025_ardelia_normal_skill_vulnerable on a Corroded target (duration ← duration_vul 30 s, rate ← rate_vul_base 0.20; P1 +0.08), whose VulnerableAction subType 1 (Arts) makes this child buff (priority key rate). Her own child buff, not the shared buff_common_affixes_vulnerable_spell: whether it adds to another operator's Arts Susceptibility is in-game test 38."
+    },
+    {
+      "id": "physical_susceptibility",
+      "label": "Dolly Rush: Physical Susceptibility",
+      "target": "enemy",
+      "gameBuff": "buff_chr_0025_ardelia_affixes_vulnerable_physic_child",
+      "duration": "duration_vul",
+      "modifiers": [{ "zone": "susceptibility", "value": "rate_vul_base", "elements": ["physical"] }],
+      "note": "The same buff's VulnerableAction subType 2 (Physical) → buff_chr_0025_ardelia_affixes_vulnerable_physic_child, same rate and duration."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_window",
+      "on": { "event": "hit", "finalStrike": true },
+      "by": "controlled",
+      "if": {
+        "not": {
+          "any": [
+            { "enemyVulnerable": 1 },
+            { "enemyInfliction": "fire" },
+            { "enemyInfliction": "pulse" },
+            { "enemyInfliction": "cryst" },
+            { "enemyInfliction": "natural" }
+          ]
+        }
+      },
+      "do": [{ "kind": "openCombo" }],
+      "note": "Combo trigger (description above): a Final Strike by the controlled operator (anyone's) on an enemy without Vulnerable or an Arts Infliction. Judged after the Final Strike lands; no kit's Final Strike applies Vulnerable or an infliction, so it can't change the answer today. Corrosion and other arts statuses don't block it. The data's passive_combo_skill and buff_chr_0025_ardelia_combo_skill_trigger_* are reached from no skill in a skill group: unused."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0025_ardelia_attack1",
+      "label": "Basic attack 1",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": ["atk_scale"],
+          "frames": [6],
+          "events": ["chr_0025_ardelia_attack1_projhit"],
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "detached": true,
+          "note": "LaunchProjectile at 6 → chr_0025_ardelia_attack1_projhit (mask 128; ObtainCostAction atb, controlled only, 0 at every level)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0025_ardelia_attack2",
+      "label": "Basic attack 2",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": ["atk_scale"],
+          "count": 2,
+          "frames": [8, 10],
+          "events": ["chr_0025_ardelia_attack1_projhit"],
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "detached": true,
+          "note": "Two LaunchProjectile (8, 10) with attack2's own atk_scale 0.45 into chr_0025_ardelia_attack1_projhit (projectileSkillId; chr_0025_ardelia_attack2_projhit is reached by nothing)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0025_ardelia_attack3",
+      "label": "Basic attack 3",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": ["atk_scale"],
+          "count": 15,
+          "frames": [11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39],
+          "events": ["chr_0025_ardelia_attack3_projhit"],
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "detached": true,
+          "note": "15 LaunchProjectile every 2 frames from 11 → chr_0025_ardelia_attack3_projhit (0.08 each). Its Probablity 0.3 has an empty branch: nothing."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0025_ardelia_attack4",
+      "label": "Basic attack 4 (Final Strike)",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "sheep",
+          "label": "Mr. Dolly's Final Strike",
+          "scale": ["atk_scale"],
+          "frames": [24],
+          "events": ["chr_0025_ardelia_attack4_sheep"],
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "poise": "poise",
+          "poiseControlledOnly": true,
+          "finalStrike": true,
+          "detached": false,
+          "note": "Frame 0: one of 8 SpawnAbilityEntity alternatives (CheckMainCharacterCondition, CheckDistanceCondition 10, Probablity 0.5) spawns the Dolly entity (abilityentity_chr_0025_ardelia_attack4 or _low); every one runs chr_0025_ardelia_attack4_sheep, whose frame 24 is this hit (mask 2097280, poise onlyEnableForMainChar, atb 18 controlled only). The alternatives only pick the entity and its animation, so kit-draft's 8 branch hits are one. Not detached, though the hit is the entity's: attack4's CreateBuff buff_chr_0025_ardelia_attack4_kill_sheep is a clip over the whole action (frames 0–198, autoFinishByAction, lifeType 1), and its finish (buffEvent 2) runs FindTarget OwnerSpawnedEntityFinder (tag −2043217379) → FinishOwnerAction: attack4 cut before 24 removes its Dolly before the hit. Assumed: the tag is the attack4 Dolly's (no table gives entity tags; it's the only damaging entity attack4 spawns)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0025_ardelia_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit1", "scale": ["atk_scale"], "frames": [18], "events": ["chr_0025_ardelia_power_attack"], "factor": 0.1, "note": "BreakingAttackCalculation × 0.1 at 18." },
+        {
+          "id": "ticks",
+          "scale": ["atk_scale"],
+          "count": 10,
+          "frames": [21, 24, 28, 31, 34, 37, 41, 44, 47, 51],
+          "events": ["chr_0025_ardelia_power_attack"],
+          "factor": 0.05,
+          "note": "TickIntervalAction from 21, 10 ticks × 0.05 (kit-draft's frames)."
+        },
+        { "id": "last", "scale": ["atk_scale"], "frames": [57], "events": ["chr_0025_ardelia_power_attack"], "factor": 0.4, "note": "BreakingAttackCalculation × 0.4 at 57. Finisher SP and multiplier gates are the engine's (GainBreakingAttackAtb)." }
+      ]
+    },
+    {
+      "skillId": "chr_0025_ardelia_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [
+        {
+          "id": "hit",
+          "scale": ["atk_scale"],
+          "frames": [1],
+          "events": ["chr_0025_ardelia_plunging_attack_end"],
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "note": "Mask 1152 (dive: decorate bit 1024). Needs mid-air: not castable in rotations until dive attacks land (batch-1 S10); kept for calc."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0025_ardelia_normal_skill",
+      "label": "Battle skill: Dolly Rush",
+      "damageType": "battle",
+      "teamEnergy": [{ "frame": 32, "ratio": 1 }],
+      "hits": [
+        {
+          "id": "ram_corroded",
+          "label": "Dolly Rush (Corroded target)",
+          "branch": "ram",
+          "if": { "enemyStatus": "corrosion" },
+          "scale": ["atk_scale"],
+          "frames": [32],
+          "events": ["chr_0025_ardelia_normal_skill"],
+          "poise": "poise",
+          "applies": [{ "kind": "consumeStatus", "statuses": ["corrosion"] }],
+          "buffs": [
+            { "buff": "arts_susceptibility", "beforeDamage": true },
+            { "buff": "physical_susceptibility", "beforeDamage": true }
+          ],
+          "note": "Frame 32: ForEach target {CheckBuffStackNumAdvanced tag −421286163 (Corrosion) ≥ 1 → CreateBuff normal_skill_vulnerable → FinishBuffByTag Corrosion (isFinishedEarly) → CreateTimedMarker talent1_mark 1 s}, then the DamageAction (mask 4352, poise). So the Susceptibility acts on this hit and the Corrosion's shred doesn't (consumed first); judged before the applications (as Estella's combo). The consumption is the wielder's statusConsumed (Dreams of the Starry Beach)."
+        },
+        {
+          "id": "ram",
+          "label": "Dolly Rush",
+          "branch": "ram",
+          "scale": ["atk_scale"],
+          "frames": [32],
+          "events": ["chr_0025_ardelia_normal_skill"],
+          "poise": "poise",
+          "note": "No Corrosion: the plain ram."
+        }
+      ],
+      "note": "Team energy for the 100 SP at 32 (buff_common_obtain_ultimate_sp after the DamageAction). Timing from the loader: MarkCanInterrupt 52 (window 47–52 for attack1), InterruptCurSkillAction 188, exclusive 239. Talent 2's recast (frames 33–36: CheckTimedMarker talent1_mark, CompareFloat talent1 ≥ 1, FindTarget another Corroded enemy within 12 m, CheckEntityNum ≥ 1, JumpToAction → 189; second ram at 221 and team energy at 221) needs a second Corroded enemy, since the only one's Corrosion was just consumed: the loader reads that jump as conditional (batch-4 D1) and the kit lists no jumps, so it's never taken. Neither are the dash shortcuts 25→32 and 214→221."
+    },
+    {
+      "skillId": "chr_0025_ardelia_combo_skill",
+      "label": "Combo skill: Eruption Column",
+      "damageType": "combo",
+      "hits": [
+        {
+          "id": "projhit",
+          "scale": ["atk_scale"],
+          "extraScale": [{ "value": "potential5_dmg_rate", "if": { "potentialAtLeast": 5 } }],
+          "frames": [20],
+          "events": ["chr_0025_ardelia_combo_skill_projhit"],
+          "energy": "usp",
+          "launch": 20,
+          "note": "LaunchProjectile at 20 (homing, castSkillOnHit) → chr_0025_ardelia_combo_skill_projhit: IfElse CompareFloat potential5_dmg_rate > 0 (a key only P5 sets: potentialAtLeast 5) → ModifyDynamicBlackboard atk_scale and atk_scale_boom ×= potential5_dmg_rate (1.2); DamageAction atk_scale (mask 12288, no poise); ObtainCostAction usp 10 (costType 0)."
+        },
+        {
+          "id": "bomb",
+          "scale": ["atk_scale_boom"],
+          "extraScale": [{ "value": "potential5_dmg_rate", "if": { "potentialAtLeast": 5 } }],
+          "frames": [72],
+          "events": ["chr_0025_ardelia_combo_skill_bomb"],
+          "poise": "poise",
+          "applies": [{ "kind": "forcedReaction", "status": "corrosion", "level": 1, "durationKey": "duration_corrupt", "extraSeconds": "potential5_duration" }],
+          "launch": 20,
+          "note": "The projhit spawns abilityentity combo_skill_bomb at the target; its frame 52 (72 from the cast): SimpleCalcBB duration_corrupt_final = duration_corrupt + potential5_duration → CreateBuff buff_common_natural_natural_corrupt_triggered (forced Corrosion level 1, 7 s; P5 11 s) → DamageAction atk_scale_boom (P5 ×1.2 from the projhit's ModifyDynamicBlackboard) with poise on the entity's target, so this hit already has its own Corrosion's initial shred. Then ×0.5 and ExcludeTarget: a DamageAction on the other enemies only, left out (one enemy). Launched with the projectile (20): a combo cut after 20 lands both. combo_skill_kill_sheep (a clip over the whole combo, autoFinishByAction; its finish removes owner-spawned entities tagged −1450079158) is read as removing only the combo's own Dolly, abilityentity_chr_0025_ardelia_combo_skill (chr_0025_ardelia_combo_skill_sheep: effects and animation only), not the bomb the projectile spawns (U3: no table gives entity tags)."
+        }
+      ],
+      "note": "Cooldown 17 s (P5 15 s); exclusive 40, window 23–40 for the battle skill. TimeDilationAction 0.8 s that ignores her and her spawned entities (the loader's slowdowns)."
+    },
+    {
+      "skillId": "chr_0025_ardelia_ultimate_skill",
+      "label": "Ultimate: Wooly Party",
+      "damageType": "ultimate",
+      "jumps": [{ "at": 171, "if": { "not": { "potentialAtLeast": 3 } } }],
+      "hits": [
+        {
+          "id": "sheep",
+          "label": "Mr. Dolly copy",
+          "scale": ["atk_scale"],
+          "count": 14,
+          "frames": [81, 90, 99, 108, 117, 126, 135, 144, 153, 162, 171, 180, 189, 198],
+          "events": ["chr_0025_ardelia_ultimate_skill_sheep_projhit"],
+          "poise": "poise",
+          "detached": false,
+          "note": "Two ChannelingActions 81–201 every 0.1 s each LaunchProjectile a copy to a random point (2–6 m around her; 1.5–6 m in a 120° cone toward the main target) → chr_0025_ardelia_ultimate_skill_sheep_projhit on landing: HitBox 1.5 m, ForEach target {CheckTimedMarkerCondition ArdeliaUltMark (returnTrueIfNotExists) → DamageAction atk_scale + poise (mask 4608) → CreateTimedMarker ArdeliaUltMark interval (0.3 s = 9 frames) on that target}. Interim (U1, in-game test 96): the cap is reached from the first tick, one hit every 9 frames from 81: 14 to 198 (P3+), 11 below P3, where the jump 171 → 201 (potential3_duration < 1) skips the last three. detached false on purpose: the loader's default for a hit in another file is detached, which would keep the landings the jump skips. kit-draft's 82 landings (every tick of both channels) ignore the marker. Frames are launch frames (Ti2)."
+        }
+      ],
+      "note": "Time stop 0–80 (UltimateTimeAction), channel 0–201 (cantCastSkill, cantSwitch), exclusive 223, window 209–226 for the battle and combo skills. P3 lengthens the channel by 1 s (the jump isn't taken), P4 lowers the cost (loader). Below P3 the frames after 171 come 30 sooner."
+    }
+  ]
+}

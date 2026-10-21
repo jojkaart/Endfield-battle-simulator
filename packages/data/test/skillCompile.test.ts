@@ -9,7 +9,7 @@ import type { KitHit } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill, type CompiledValue } from "../src/index.ts";
 
 const data = loadGameData();
-const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen", "chr_0006_wolfgd", "chr_0031_mifu", "chr_0033_camille", "chr_0026_lastrite", "chr_0017_yvonne", "chr_0015_lifeng"];
+const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen", "chr_0006_wolfgd", "chr_0031_mifu", "chr_0033_camille", "chr_0026_lastrite", "chr_0017_yvonne", "chr_0015_lifeng", "chr_0025_ardelia"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
   const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
@@ -480,6 +480,16 @@ const KNOWN: string[] = [
   "chr_0017_yvonne_combo_skill/tick1 energy: kit {\"sum\":[\"usp\",\"usp_extra\"]} at [19], data usp@19, usp_extra@19",
   // Potential: P1 sets the buff's interval 0.5 and maxcnt 6; the test compiles the skill's own values (0.75 s, 4 ticks: the kit's `ticks`).
   "chr_0017_yvonne_combo_skill/ticks_p1 frames: kit [34, 49, 64, 79, 94], data [19, 42, 64, 87] (if tag(tag 1535684437))",
+  // Batch 4, Ardelia. Kit right: the second ram at 221 is talent 2's recast, reached only by the conditional jump 33 → 189
+  // (another Corroded enemy within 12 m; batch-4 D1), which the kit doesn't list (one enemy); compiler limit D7c.
+  "chr_0025_ardelia_normal_skill: data lands chr_0025_ardelia_normal_skill atk_scale at [221], no kit hit",
+  // Compiler limit (batch-3 D3 open, ModifyDynamicBlackboard on a hit's scale): combo_skill_projhit multiplies atk_scale_boom by
+  // potential5_dmg_rate (a key only P5 sets) before spawning the bomb; the kit writes it as extraScale under potentialAtLeast 5.
+  "chr_0025_ardelia_combo_skill/bomb scale: kit atk_scale_boom, data $atk_scale_boom?",
+  // Kit interim (U1, in-game test 96), compiler limit D7e: ArdeliaUltMark (CheckTimedMarkerCondition returnTrueIfNotExists +
+  // CreateTimedMarker interval 0.3 s on the target) lets one enemy take one hit per 9 frames; the compiler lands every tick of both channels.
+  "chr_0025_ardelia_ultimate_skill/sheep count: kit 14, data 28 landings at its frames (chr_0025_ardelia_ultimate_skill_sheep_projhit)",
+  "chr_0025_ardelia_ultimate_skill: data lands chr_0025_ardelia_ultimate_skill_sheep_projhit atk_scale at [84, 84, 87, 87, 93, 93, 96, 96, 102, 102, 105, 105, 111, 111, 114, 114, 120, 120, 123, 123, 129, 129, 132, 132, 138, 138, 141, 141, 147, 147, 150, 150, 156, 156, 159, 159, 165, 165, 168, 168, 174, 174, 177, 177, 183, 183, 186, 186, 192, 192, 195, 195, 201, 201], no kit hit",
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {

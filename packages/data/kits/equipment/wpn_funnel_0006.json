@@ -1,0 +1,39 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_funnel_0006",
+  "sources": [
+    "Opus: Etch Figure (6-star Arts Unit), skill 3 \"Suppression: Tillite Etchings\": \"When the wielder's battle skill applies Nature Infliction, other operators in the team gain Arts DMG Dealt +{spell_dmg_up} for {duration}s. For every enemy suffering from Nature Infliction applied by the said battle skill, other operators in the team gain bonus Arts DMG Dealt +{spell_dmg_up2}, up to a max of +{spell_dmg_up2*max_stack}. Effects of the same name cannot stack.\" SkillPatchTable sk_wpn_funnel_0006: spell_dmg_up 0.05 (L1) to 0.14 (L9), spell_dmg_up2 0.02 to 0.056, duration 15, max_stack 3.",
+    "rmxlinux Json/SkillData sk_wpn_funnel_0006 passiveEventActions: abilityEvent 30 + CheckSkillType [2] (the wielder casts a battle skill) → child buff buff_wpn_funnel_0006 on the wielder (maxTriggerCnt 1: once per cast). That buff listens to abilityEvent 126 (an infliction the wielder applies) with CheckSpellInflictionType mask 8 (Nature), CheckSkillCastId (the same cast) and CheckOriginSkillType [2], merges the targets, counts them (≤ max_stack) and creates buff_wpn_funnel_0006_valid (attributes 51–54, formulaItem 5: spell_dmg_up + count × spell_dmg_up2; duration; stackingType 1 priority spell_dmg_up) on the team except the wielder (ExcludeOwnerValidator). Same pattern as Delivery Guaranteed (wpn_funnel_0011), whose order (before the hit's damage) fixtures/zmdlogs-4e5e1390085e.json confirms; here the wielder doesn't get the buff, so the order only matters for teammates' hits in the same frame.",
+    "ATK + atk_up (cardAttributeModifier) and the Will / Nature DMG lines are in the stat panel. toggleBuffs buff_wpn_lance_0003 (ATK + atk_up while CheckCurHpRatio ≥ hp_ratio, a key sk_wpn_funnel_0006 lacks) is left out: inert until in-game test 75's variant settles whether a missing key reads 0 (Ardelia U2; if it does, ATK +19.6% more at L9). Fits a Nature operator whose battle skill inflicts Nature (Gilberta's explosion); Ardelia's battle skill inflicts nothing. docs/kit-batches/batch-4/chr_0025_ardelia.md W1–W3."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_funnel_0006.arts_dmg",
+      "label": "Tillite Etchings: teammates' Arts DMG",
+      "target": "team",
+      "recipients": { "not": { "isOwner": true } },
+      "gameBuff": "buff_wpn_funnel_0006_valid",
+      "duration": "duration",
+      "modifiers": [
+        {
+          "zone": "damageBonus",
+          "elements": ["fire", "pulse", "cryst", "natural"],
+          "value": { "sum": ["spell_dmg_up", { "product": [{ "min": [{ "targetsHit": true }, "max_stack"] }, "spell_dmg_up2"] }] }
+        }
+      ],
+      "note": "spell_dmg_up + min(targets, max_stack) × spell_dmg_up2; one enemy: 0.14 + 0.056 = 0.196 at L9. Not on the wielder (ExcludeOwnerValidator)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_funnel_0006.nature",
+      "on": { "event": "inflictionApplied", "elements": ["natural"], "fromKinds": ["battle"] },
+      "by": "self",
+      "beforeDamage": true,
+      "maxPerCast": 1,
+      "skill": "sk_wpn_funnel_0006",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0006.arts_dmg" }],
+      "note": "abilityEvent 126 with Nature mask and the battle skill as origin, once per battle-skill cast (maxTriggerCnt 1). An infliction that reacts at once isn't an inflictionApplied (in-game test 35's question)."
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_funnel_0009",
+  "sources": [
+    "Oblivion (6-star Arts Unit), skill 3 \"Twilight: Humiliation\": \"When the wielder casts an ultimate, the wielder gains Arts DMG Dealt +{spell_dmg_up} for {duration}s. When the wielder casts a combo skill, the wielder gains Arts DMG Dealt +{spell_dmg_up2} for {duration2}s. The two effects apply separately and do not stack with themselves.\" SkillPatchTable sk_wpn_funnel_0009: spell_dmg_up 0.24 (L1) to 0.672 (L9), spell_dmg_up2 0.12 to 0.336, duration and duration2 15.",
+    "rmxlinux Json/SkillData sk_wpn_funnel_0009 passiveEventActions: abilityEvent 30 (the wielder casts a skill) + CheckSkillType [7] (ultimate) → buff_wpn_funnel_0009_magic_up_ult (spell_dmg_up, duration); CheckSkillType [6] (combo) → buff_wpn_funnel_0009_magic_up_combo (spell_dmg_up2, duration2). Both on the wielder, attributes 51–54 (Heat / Electric / Cryo / Nature DMG) formulaItem 5, stackingType 4 (one instance; a re-cast refreshes it).",
+    "The Intellect, Arts DMG and crit rate + crit_up lines (cardAttributeModifier) are in the stat panel; toggleBuffs names buff_wpn_passive_spirit_01, which has no BuffData file (inert). Works for any Arts wielder with an Arts combo or ultimate (Ardelia's are both Nature). docs/kit-batches/batch-4/chr_0025_ardelia.md W6–W7."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_funnel_0009.ult",
+      "label": "Twilight: Humiliation (ultimate): Arts DMG",
+      "target": "self",
+      "gameBuff": "buff_wpn_funnel_0009_magic_up_ult",
+      "duration": "duration",
+      "modifiers": [
+        { "attr": 51, "value": "spell_dmg_up" },
+        { "attr": 52, "value": "spell_dmg_up" },
+        { "attr": 53, "value": "spell_dmg_up" },
+        { "attr": 54, "value": "spell_dmg_up" }
+      ]
+    },
+    {
+      "id": "wpn_funnel_0009.combo",
+      "label": "Twilight: Humiliation (combo): Arts DMG",
+      "target": "self",
+      "gameBuff": "buff_wpn_funnel_0009_magic_up_combo",
+      "duration": "duration2",
+      "modifiers": [
+        { "attr": 51, "value": "spell_dmg_up2" },
+        { "attr": 52, "value": "spell_dmg_up2" },
+        { "attr": 53, "value": "spell_dmg_up2" },
+        { "attr": 54, "value": "spell_dmg_up2" }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_funnel_0009.on_ultimate",
+      "on": { "event": "cast", "kinds": ["ultimate"] },
+      "by": "self",
+      "skill": "sk_wpn_funnel_0009",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0009.ult" }],
+      "note": "At the cast (abilityEvent 30), so every hit of that ultimate has it."
+    },
+    {
+      "id": "wpn_funnel_0009.on_combo",
+      "on": { "event": "cast", "kinds": ["combo"] },
+      "by": "self",
+      "skill": "sk_wpn_funnel_0009",
+      "do": [{ "kind": "buff", "buff": "wpn_funnel_0009.combo" }],
+      "note": "At the combo's cast; separate from the ultimate's buff, so the two add."
+    }
+  ]
+}
