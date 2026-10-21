@@ -1,0 +1,77 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Tangtang alone (P5, Brigand's Calling, MI Security hand + 3 Bonekrusha: the build in fixtures/zmdlogs-b7b3762d5da8.json with weapon skill 3 at level 9) vs Rhodagn, ultimate charged. Battle skill with no Whirlpool: one Waterspout, whose first tick inflicts Cryo (Brigand's Calling: Cryo DMG +56%) and opens her combo; the combo leaves a Whirlpool (talent 1: team Haste 20%, which speeds up her frames in the engine); the next battle skill consumes it (25 SP back) for two Waterspouts and 10% Arts Susceptibility (Brigand's Calling: Arts DMG Taken +16.8%). Ultimate: OLDEN STARE (8 DoT ticks, Immobilization that freezes the enemy's clock 4 s, so the pending Cryo burst lands late) and the rogue wave; no dive attack (rotations can't cast one yet), so the early wave and Riot Bringer don't happen. Then a basic chain and two more battle skill / combo pairs as SP allows.",
+  "team": [
+    "tangtang-p5.json"
+  ],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0027_tangtang": "full"
+  },
+  "durationSeconds": 34,
+  "crit": "expected",
+  "rotation": [
+    {
+      "operator": "chr_0027_tangtang",
+      "skill": "chr_0027_tangtang_normal_skill"
+    },
+    {
+      "operator": "chr_0027_tangtang",
+      "skill": "chr_0027_tangtang_combo_skill"
+    },
+    {
+      "operator": "chr_0027_tangtang",
+      "skill": "chr_0027_tangtang_normal_skill"
+    },
+    {
+      "operator": "chr_0027_tangtang",
+      "skill": "chr_0027_tangtang_ultimate_skill"
+    },
+    {
+      "operator": "chr_0027_tangtang",
+      "skill": "chr_0027_tangtang_attack1"
+    },
+    {
+      "operator": "chr_0027_tangtang",
+      "skill": "chr_0027_tangtang_attack2"
+    },
+    {
+      "operator": "chr_0027_tangtang",
+      "skill": "chr_0027_tangtang_attack3"
+    },
+    {
+      "operator": "chr_0027_tangtang",
+      "skill": "chr_0027_tangtang_attack4"
+    },
+    {
+      "operator": "chr_0027_tangtang",
+      "skill": "chr_0027_tangtang_attack5"
+    },
+    {
+      "operator": "chr_0027_tangtang",
+      "skill": "chr_0027_tangtang_normal_skill",
+      "at": 11.5
+    },
+    {
+      "operator": "chr_0027_tangtang",
+      "skill": "chr_0027_tangtang_combo_skill"
+    },
+    {
+      "operator": "chr_0027_tangtang",
+      "skill": "chr_0027_tangtang_attack1",
+      "at": 24
+    },
+    {
+      "operator": "chr_0027_tangtang",
+      "skill": "chr_0027_tangtang_normal_skill",
+      "at": 25
+    },
+    {
+      "operator": "chr_0027_tangtang",
+      "skill": "chr_0027_tangtang_combo_skill"
+    }
+  ]
+}
