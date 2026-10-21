@@ -446,8 +446,20 @@ When an operator may act again after casting a skill (engine
   operator starts no skill, whatever its priority. Whether ultimates are
   an exception isn't in the data (in-game test 15). Follow-up casts
   (CastSkill) aren't held.
-- Dive attacks (`skillSpecification` 6) need mid-air; rotations have no
-  jumps yet, so they can't be cast.
+- Dive attacks (`skillSpecification` 6, `canCastInAir`): a rotation action
+  `{operator, skill: "<op>_plunging_attack_end"}` of the controlled
+  operator is a jump, the fall (`plunging_attack_start`, no damage) and the
+  landing (`_end`, its hits decorated `dive`). Jump physics aren't in the
+  data (native MovementSetting); `DIVE_MOTION` in constants.ts takes
+  Endaxis's values (read, not copied): the fall starts 2 frames after the
+  jump and the landing 22 frames after it (0.73 s). The jump ends the
+  current skill (plunging attacks always may); in the air the operator
+  starts nothing else. Assumptions for in-game tests: the dive's pace, a
+  jump cancelling a skill at once, no dash in the air, a swap mid-fall
+  keeping the landing, the chain cleared after a dive. The search dives
+  only outside a basic-attack chain and once the current skill is past its
+  exclusive frames (search rules, not game rules: unrestricted dives,
+  which give no SP, crowded SP-giving chains out of the beam).
 - Swapping doesn't wait for the controlled operator's action (which goes
   on), except during a `ChannelingCastingAction` with `cantSwitchPosition`.
   Endaxis ignores those channels; the data is explicit, so the engine

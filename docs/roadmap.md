@@ -27,14 +27,19 @@ the six favourites.
      [review](kit-abstractions.md#review-after-batch-3s-kits-2026-10-20)
      (S3's residue, the dodge policy for `cast` counters, loader warnings,
      compiler leftovers D3 / D4).
-   - Next batch: the eleven 6-stars without kits (Ember, Lifeng, Yvonne,
-     Ardelia, Last Rite, Tangtang, Rossi, Pogranichnik, Zhuang Fangyi, Mi
-     Fu, Camille); seven of them are on log fixtures' teams.
-2. **Rotation search** (`efsim search`, beam search on the stepping API) is
-   in, with an optional resource-aware ranking (`--resource-weight`), ranking
-   over seeded battles when a fight has random outcomes (`--seeds`,
-   `--percentile`) and the found rotation's spread (`--runs`). Next: team
-   runs for the favourites and a report of the best rotations found.
+   - Batch 4 is done (2026-10-21): the eleven 6-stars and 41 weapons, so
+     every playable operator and every weapon and gear set has a kit
+     ([batch-4.md](kit-batches/batch-4.md)). Dive attacks are rotation
+     actions. Open: the batch-4 review's items
+     ([kit-abstractions.md](kit-abstractions.md#review-after-batch-4s-kits-2026-10-21)),
+     in-game tests 77–97, compiler leftovers.
+2. **Rotation search** (`efsim search`, beam search on the stepping API):
+   resource-aware ranking, ranking over seeded battles for random outcomes
+   (crit-triggered kits ranked with rolled crits), the found rotation's
+   spread, dives. Next, the tool's purpose: team searches for the
+   owner's favourites (6-stars at P0, 4- and 5-stars at P5 unless the
+   owner's account data says otherwise) and a report of the best
+   rotations found.
 3. **Corrosion model:** time dilation, the applier's talents (Arcane), and
    carry-over on reapplication; in-game test 4.
 4. **Still open from setup:** a `Result` schema, `NOTICE` when MIT code is

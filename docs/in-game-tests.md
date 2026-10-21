@@ -1726,6 +1726,30 @@ only about 6, her ultimate is about 45% lower.
 count the Wooly Party damage numbers: 10–11 (engine: 11) or clearly fewer.
 A log settles it better.
 
+### 97. Dive attacks: their pace and what a jump can do (ready, any operator; higher priority: the search now uses dives)
+
+**Why:** the engine now lets rotations dive (jump, then attack in mid-air:
+the landing deals the damage). How fast a jump and fall are isn't in the
+game data; the engine takes it from another simulator (Endaxis): the
+landing comes about 0.73 s after the jump. Searches now put dives into
+rotations (e.g. three in Si + Laevatain, +4.5%), so these assumptions
+change which rotations are found.
+**How:** with Laevatain (any operator works), on a dummy:
+1. **Pace (stopwatch):** standing still, jump and attack at once, ten
+   times in a row as fast as the game allows. Time from the first jump to
+   the tenth landing. Engine: **about 11.3 s**. If the hover before the
+   fall lasted the start animation's full second, about 14.6 s.
+2. **Jump cancels a skill (by eye):** right after her battle skill's hit,
+   press jump. Does she jump at once (engine: yes, any skill can be cut
+   by a jump), or only after the skill's animation ends?
+3. **No dash in the air (by eye):** press dodge while falling. Engine:
+   nothing happens until the landing.
+4. **Swap in the air (by eye):** swap while falling. Does the swapped-out
+   operator's landing still show a damage number? Engine: yes.
+5. **Chain after a dive (by eye):** in the middle of her basic-attack
+   chain, dive, then attack again: is it attack 1 (engine: the dive clears
+   the chain) or the chain's next step?
+
 ## Results
 
 None yet.
