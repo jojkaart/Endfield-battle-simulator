@@ -41,7 +41,21 @@ Logs with these operators (ZMDLogs fixtures):
   fixtures/zmdlogs-4e5e1390085e.json;
 - none for Lifeng, Ardelia, Zhuang Fangyi, Mi Fu.
 
-Phase: **analysis 1 done (2026-10-20); merge below.** Reports:
+Phase: **kits done (2026-10-21).**
+
+**Kits done (2026-10-21):** all eleven, with the weapons of "Weapon
+owners", each with a test file and an example; each report ends with a
+"Kit (2026-10-21)" section. Logs: b7b3 matches every hit of all four
+operators (Arcane 13, Last Rite 5, Tangtang 46, Si 21); 7e19:
+Pogranichnik 29/29, Ember 14/21 (the rest outside her kit), reactions 7
+matched / 0 unexpected; 4e5e: no mismatch, reactions 18/0/0; abfd: Yvonne
+182/183 (the killing blow); 40d9: Camille 6/6 with her one Link stack on
+Gilberta's ultimate. Full check 1573 tests; the 21 earlier example
+totals unchanged. Pattern review:
+[kit-abstractions.md](../kit-abstractions.md#review-after-batch-4s-kits-2026-10-21).
+Dive attacks (batch-1 S10): in progress.
+
+Earlier phase: analysis 1 done (2026-10-20); merge below. Reports:
 [batch-4/](batch-4/), one per operator, each ending with a kit plan.
 
 ## Merged gaps

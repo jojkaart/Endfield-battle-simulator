@@ -388,3 +388,57 @@ added or substantially changed (also in CLAUDE.md). Checklist:
    Akekuri's P1 could use `sourceTypes: [3]` for "SP from a skill", but
    that isn't an exact swap (grants of type 0 or 1 inside skills), so
    they stay on `kinds` until a log decides.
+
+### Review after batch 4's kits (2026-10-21)
+
+1. **Census** (33 operator kits). Still hand-written although the data has
+   it, in every kit: hit frames, log event keys, energy grants and finisher
+   factors (kit-draft compiles them; loader defaults from the compiler
+   remain the way to remove them). Features one operator kit uses so far
+   are each a shared mechanism with one user in the data: `hit.zoneScale`
+   (Last Rite; only her data has a target-side zone scale),
+   `skill.comboWindow` (Camille's Hunter Pursuit), `trigger.do.choose`
+   (Purrchena), `hit.damageType` on a skill hit (Mi Fu's World Splitter).
+   `skill.noDodge` was Ember's only; Purrchena's blocks now use it too
+   (done at the review), and Catcher's P5 reads any shield on her through
+   `operatorBuff` (done).
+2. **Requests from the kit agents**, each in an existing family (open
+   unless marked):
+   - Timing: a ticking buff skips its tick on its end frame (`nextBuffTick`);
+     4e5e has Rossi's bleed ticking 26 times over 25 s (her kit lasts one
+     frame longer as an interim); delayed trigger actions run before hits
+     landing on the same frame (Yvonne's end-strike finish written a frame
+     late); a modifier's `if` is judged before the hit's own
+     `beforeDamage` buffs while their modifiers count (Yvonne's 10th
+     layer, under 0.2%); buffs tied to an animation clip shorter than the
+     cast (`autoFinishByAction` on a clip) have no kit field (Ember's
+     talent-1 Protection; written with delayed `endBuff`); windows that list
+     a button skill don't open for the skill the button casts (Camille's
+     Hunter Pursuit, 8–12 frames late); a beside cast still schedules its
+     timeline's items (Last Rite filters hers with `beside: false`).
+   - Values: a main attribute's percentage doesn't reach ATK (batch-3 V4
+     residue; Mountain Bearer's All Attributes +22.4% ×2 is about +35% ATK
+     on Lifeng for 15 s, the largest effect missing on her); `buffLayers`
+     takes only integer thresholds (data keys like `free_sword_limit`
+     written as literals).
+   - Buffs: stack caps read only for priority-keyed stackingType 1
+     (Suffering's End's literal `maxStackCnt` 4 hand-written; Camille's
+     talent-2 cap of 5, stackingType 2).
+   - Triggers: "the wielder gains Link" (Thermite Cutter reacts to Link,
+     it gives none; matters only with Lifeng or Camille, who can't wield a
+     sword); Junction Point (four tag triggers, exact) and Solemn Phalanx
+     (one `categories` interim from batch 3) now read Arts Susceptibility
+     differently: unify on tags.
+   - Display: `efsim calc` shows no line for attributes 76–79 (ATK per
+     attribute point; Lifeng's talent 1 is hidden in the ATK factor).
+   - Log tooling (an agent on it now): unquantified annotated buffs valued
+     from kits, repeated boundary buffs tried 1..n, cast placement under
+     time stops, the compiler test matching poise-only hits.
+   - Compiler (D3 / D4 / D7–D10 leftovers): ComboAction → `link`, CheckHp
+     → `enemyHpBelow`, ModifyDynamicBlackboard chains, Switch-chosen SP,
+     entity counts as stacks, EntityBB keys, once-per-cast inflictions,
+     calculated SP keys (Pogranichnik's `calc_atb_n`), heals gated by the
+     data's conditions.
+3. **One mechanism written two ways:** Junction Point and Solemn Phalanx
+   (above). Link sources are one action now (`link`), and the kits that
+   gave Link by the old every-combo rule needed nothing.
