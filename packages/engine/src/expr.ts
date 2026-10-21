@@ -120,6 +120,8 @@ export type ValueExpr =
   | { readonly buffLayers: string }
   /** The enemy's Vulnerable stacks (Gilberta's Arts Susceptibility per stack). */
   | { readonly enemyVulnerableStacks: true }
+  /** The enemy's infliction stacks of this element (0 when it has none, or another element's): the twin of `enemyVulnerableStacks`. */
+  | { readonly enemyInflictionStacks: ArtsElement }
   | { readonly if: Predicate; readonly then: ValueExpr; readonly else?: ValueExpr }
   /** Rounded down (the data's "per full 10 points": `{floor: {product: [{attr: 42}, 0.1]}}`). */
   | { readonly floor: ValueExpr }
@@ -327,6 +329,11 @@ export function evaluate(v: ValueExpr, c: EvalContext): number {
   if ("enemyVulnerableStacks" in v) {
     if (!c.enemy) throw new Error("value needs the enemy's Vulnerable stacks, which aren't known here");
     return c.enemy.vulnerable?.stacks ?? 0;
+  }
+  if ("enemyInflictionStacks" in v) {
+    if (!c.enemy) throw new Error("value needs the enemy's infliction stacks, which aren't known here");
+    const i = c.enemy.infliction;
+    return i !== null && i.element === v.enemyInflictionStacks ? i.stacks : 0;
   }
   if ("stackCount" in v) {
     if (!c.stacks) throw new Error(`value needs stack ${v.stackCount}, which isn't known here`);
