@@ -19,7 +19,12 @@ import type { Predicate } from "./expr.ts";
  * - ignoreResistance (ZMDLogs `res`): resistance points added back;
  * - critRate, critDamage: the crit zone's inputs;
  * - artsIntensity (ZMDLogs `arts_strength`): Arts Intensity points; acts on
- *   reactions and statuses only, not on direct hits.
+ *   reactions and statuses only, not on direct hits;
+ * - attribute: points of Strength, Agility, Intellect or Will (`attr`) a
+ *   buff adds, or a percentage of the panel line (`percent`), which raise
+ *   ATK's attribute bonus as the stat panel computes it (stats.ts
+ *   atkAttributeBonus). Not a kit zone: buffs write the attribute
+ *   (KitBuffModifier.attr), and buffModifiers turns it into this.
  */
 export const ZONES = [
   "atk",
@@ -32,6 +37,7 @@ export const ZONES = [
   "critRate",
   "critDamage",
   "artsIntensity",
+  "attribute",
 ] as const;
 export type Zone = (typeof ZONES)[number];
 
@@ -50,7 +56,7 @@ export type Zone = (typeof ZONES)[number];
  * side (not in those logs: in-game test 77 decides ATK); crit doesn't act on
  * ticks.
  */
-export const SNAPSHOT_ZONES: ReadonlySet<Zone> = new Set(["atk", "damageBonus", "amp", "critRate", "critDamage", "artsIntensity"]);
+export const SNAPSHOT_ZONES: ReadonlySet<Zone> = new Set(["atk", "attribute", "damageBonus", "amp", "critRate", "critDamage", "artsIntensity"]);
 
 /** What kind of damage a hit is: its skill type, or a reaction kind for reaction damage. */
 /** `none`: a hit of no skill type (some triggered hits, e.g. from weapons or gear sets). */
@@ -78,6 +84,10 @@ export interface Modifier {
   readonly decorations?: readonly HitDecoration[];
   /** Only while this holds at the hit, for the hitter (its target's state: Fluorite's DMG against Slowed enemies); judged by the damage pipeline. */
   readonly when?: Predicate;
+  /** Zone `attribute`: the attribute (Strength, Agility, Intellect, Will) it adds to… */
+  readonly attr?: AttrType;
+  /** …as a percentage of the hitter's panel line (KitBuffModifier.percent) instead of points. */
+  readonly percent?: true;
   readonly source: string;
 }
 
@@ -123,7 +133,7 @@ export const READ_ATTRS: ReadonlySet<AttrType> = new Set([
   // SP cost of the owner's skills (added at the cast) and its combo cooldown's recovery rate (over time): the timeline.
   Attr.AtbCostAddition,
   Attr.ComboSkillCooldownRecoveryScalar,
-  // Read by `attr` values and `attrAtLeast` (a buff's main attribute doesn't raise ATK through the attribute bonus: not modelled).
+  // Read by `attr` values and `attrAtLeast`; the four attributes also raise ATK through its attribute bonus (zone `attribute`).
   Attr.Def,
   Attr.Str,
   Attr.Agi,

@@ -13,9 +13,8 @@
       "target": "self",
       "gameBuff": "buff_wpn_funnel_0020_intensityup",
       "duration": "duration",
-      "maxStacks": 4,
       "modifiers": [{ "zone": "damageBonus", "elements": ["natural"], "value": "nature_dmg_up" }],
-      "note": "maxStacks: buff_wpn_funnel_0020_intensityup's literal maxStackCnt 4 (no maxStackCntKey)."
+      "note": "Layers: buff_wpn_funnel_0020_intensityup's literal maxStackCnt 4 (stackingType 11, no maxStackCntKey); the loader takes the cap from it."
     },
     {
       "id": "wpn_funnel_0020.max",

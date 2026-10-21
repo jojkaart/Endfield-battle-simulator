@@ -2,7 +2,7 @@
 // pipeline (docs/data-sources.md#3-damage-formula). Every zone is kept in the
 // result so a number can be compared zone by zone (design principle 10).
 
-import { Attr, attrName, type Element, type SkillType } from "./attributes.ts";
+import { Attr, attrName, type AttrType, type Element, type SkillType } from "./attributes.ts";
 import type { Build } from "./build.ts";
 import { STAGGER_DAMAGE_TAKEN } from "./constants.ts";
 import { applies, attrModifier, zoneProduct, zoneSum, type HitContext, type HitDecoration, type HitKind, type Modifier, type Zone } from "./effects.ts";
@@ -10,7 +10,7 @@ import { EngineError } from "./errors.ts";
 import type { Condition, GameData, KitHit, KitSkill } from "./model.ts";
 import { artsIntensityDamage, levelCoefficientOf, reactionBase, type ReactionKind } from "./reactions.ts";
 import { evaluate, test, type EvalContext, type Predicate } from "./expr.ts";
-import { computeStats, skillLevel, wornEquipment, type StatPanel } from "./stats.ts";
+import { ATK_ATTRIBUTES, atkAttributeBonus, computeStats, percentOfLine, skillLevel, wornEquipment, type StatPanel } from "./stats.ts";
 
 /** `expected`: the crit zone at its average; `rolled`: each hit crits or not, by a roll the caller makes (DamageOptions.critRoll). */
 export type CritMode = "never" | "always" | "expected" | "rolled";
@@ -268,6 +268,25 @@ export function activeModifiers(data: GameData, build: Build, panel: StatPanel, 
   return all.filter((m) => !m.when || (test(m.when, ec) ?? options.assumeUnknown ?? false));
 }
 
+/**
+ * ATK's attribute bonus with the attributes a hit's modifiers of zone
+ * `attribute` add (points, or a percentage of the panel line: buffs'
+ * Strength, Agility, Intellect, Will) to the panel's, as the stat panel
+ * computes it (stats.ts atkAttributeBonus); the panel's bonus without any.
+ */
+function buffedAttributeBonus(data: GameData, panel: StatPanel, mods: readonly Modifier[]): number {
+  const points = new Map<AttrType, number>();
+  for (const m of mods) {
+    if (m.zone !== "attribute") continue;
+    if (m.attr === undefined || !ATK_ATTRIBUTES.has(m.attr)) throw new EngineError(`${m.source}: an attribute modifier names Strength, Agility, Intellect or Will`);
+    const line = panel.attrs[m.attr];
+    if (m.percent && !line) throw new EngineError(`${m.source}: a percentage of attribute ${m.attr}, which ${panel.operator}'s panel hasn't`);
+    points.set(m.attr, (points.get(m.attr) ?? 0) + (m.percent && line ? percentOfLine(m.value, line) : m.value));
+  }
+  if (points.size === 0) return panel.atk.attributeBonus;
+  return atkAttributeBonus(data, panel, panel.atk.floorAttributes, (attr) => points.get(attr) ?? 0).attributeBonus;
+}
+
 /** The shared damage pipeline: ATK × multiplier × zones (docs/data-sources.md#3-damage-formula). */
 export function computeDamage(
   data: GameData,
@@ -298,10 +317,11 @@ export function computeDamage(
   // 2 − 0.99^(−DEF) below zero per the Talos Wiki; negative DEF isn't reachable in the game today.
   const defense = def >= 0 ? 1 / (1 + data.constants.efficiencyOfDEF * def) : 2 - Math.pow(0.99, -def);
 
-  // ATK% from buffs joins the panel's ATK% before the attribute bonus.
+  // ATK% from buffs joins the panel's ATK% before the attribute bonus; buffs' attributes join the panel's in it.
   const a = panel.atk;
   const atkBuff = sum("atk");
-  const atk = spec.base !== undefined ? spec.base : atkBuff === 0 ? a.total : ((a.operatorBase + a.weaponBase) * (1 + a.percent + atkBuff) + a.flat) * a.attributeBonus;
+  const attributeBonus = buffedAttributeBonus(data, panel, mods);
+  const atk = spec.base !== undefined ? spec.base : atkBuff === 0 && attributeBonus === a.attributeBonus ? a.total : ((a.operatorBase + a.weaponBase) * (1 + a.percent + atkBuff) + a.flat) * attributeBonus;
 
   const zones: Zones = {
     atk,

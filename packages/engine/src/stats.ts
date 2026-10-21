@@ -27,6 +27,16 @@ export interface StatLine {
   readonly contributions: readonly Contribution[];
 }
 
+/** One ATK-per-point attribute (76–79) in the attribute bonus: `factor` × the points of `attr` it reads = `bonus`. */
+export interface AtkPerPoint {
+  readonly factorAttr: AttrType;
+  readonly attr: AttrType;
+  readonly factor: number;
+  /** The attribute as used (whole-number part only, as for the main attribute). */
+  readonly points: number;
+  readonly bonus: number;
+}
+
 export interface AtkBreakdown {
   readonly operatorBase: number;
   readonly weaponBase: number;
@@ -35,8 +45,61 @@ export interface AtkBreakdown {
   /** Main and secondary attribute as used: whole-number part only (see {@link StatOptions}). */
   readonly mainAttribute: number;
   readonly secondaryAttribute: number;
+  /** The ATK-per-point attributes (76–79) the operator has (non-zero), each with its part of the attribute bonus. */
+  readonly perPoint: readonly AtkPerPoint[];
   readonly attributeBonus: number;
+  /** Whether attributes count by their whole-number part (StatOptions.floorAttributes), for bonuses recomputed with buffs (atkAttributeBonus). */
+  readonly floorAttributes: boolean;
   readonly total: number;
+}
+
+/**
+ * Extra ATK per attribute point (attributes 76–79, talents of some
+ * operators: Lifeng's talent 1) and the attribute each reads. Not yet
+ * verified in game.
+ */
+const ATK_PER_POINT: readonly (readonly [AttrType, AttrType])[] = [
+  [Attr.AtkIncreaseFactorFromStr, Attr.Str],
+  [Attr.AtkIncreaseFactorFromAgi, Attr.Agi],
+  [Attr.AtkIncreaseFactorFromWisd, Attr.Wisd],
+  [Attr.AtkIncreaseFactorFromWill, Attr.Will],
+];
+
+/** The attributes ATK's attribute bonus reads (a buff's points of them raise ATK: effects.ts zone `attribute`). */
+export const ATK_ATTRIBUTES: ReadonlySet<AttrType> = new Set(ATK_PER_POINT.map(([, a]) => a));
+
+/**
+ * ATK's attribute bonus: 1 + main attribute × atkRateOfMain + secondary ×
+ * atkRateOfSub + Σ ATK-per-point factor (76–79) × its attribute, each
+ * attribute by its whole-number part when `floor` (StatOptions). `extra`:
+ * points buffs add to an attribute on top of the panel's total (effects.ts
+ * zone `attribute`), floored with it: the buffed attribute is what the
+ * panel would show.
+ */
+export function atkAttributeBonus(
+  data: GameData, panel: Pick<StatPanel, "mainAttr" | "subAttr" | "attrs">, floor: boolean, extra: (attr: AttrType) => number = () => 0,
+): { readonly mainAttribute: number; readonly secondaryAttribute: number; readonly perPoint: readonly AtkPerPoint[]; readonly attributeBonus: number } {
+  const value = (attr: AttrType) => {
+    const v = (panel.attrs[attr]?.total ?? 0) + extra(attr);
+    return floor ? Math.floor(v) : v;
+  };
+  const mainAttribute = value(panel.mainAttr);
+  const secondaryAttribute = value(panel.subAttr);
+  let attributeBonus = 1 + mainAttribute * data.constants.atkRateOfMain + secondaryAttribute * data.constants.atkRateOfSub;
+  const perPoint: AtkPerPoint[] = [];
+  for (const [factorAttr, attr] of ATK_PER_POINT) {
+    const factor = panel.attrs[factorAttr]?.total ?? 0;
+    if (factor === 0) continue;
+    const points = value(attr);
+    perPoint.push({ factorAttr, attr, factor, points, bonus: factor * points });
+    attributeBonus += factor * points;
+  }
+  return { mainAttribute, secondaryAttribute, perPoint, attributeBonus };
+}
+
+/** A percentage of a panel line as the panel's percent slot adds it: ratio × (base + Σ add) × Π multiply (KitBuffModifier.percent). */
+export function percentOfLine(ratio: number, line: Pick<StatLine, "base" | "add" | "multiply">): number {
+  return ratio * (line.base + line.add) * line.multiply;
 }
 
 export interface SkillValueChange {
@@ -292,24 +355,7 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
   const atkLine = attrs[Attr.Atk];
   if (!atkLine) throw new EngineError(`${op.id} has no base ATK`);
   if (atkLine.add !== 0 || atkLine.multiply !== 1) throw new EngineError(`${op.id}: ATK add/multiply modifiers aren't supported yet`);
-  const attrValue = (attr: number) => {
-    const v = attrs[attr]?.total ?? 0;
-    return options.floorAttributes ? Math.floor(v) : v;
-  };
-  const mainAttribute = attrValue(op.mainAttr);
-  const secondaryAttribute = attrValue(op.subAttr);
-  let attributeBonus = 1 + mainAttribute * data.constants.atkRateOfMain + secondaryAttribute * data.constants.atkRateOfSub;
-  // Extra ATK per attribute point (talents of some operators). Not yet verified in game.
-  const factors: [number, number][] = [
-    [Attr.AtkIncreaseFactorFromStr, Attr.Str],
-    [Attr.AtkIncreaseFactorFromAgi, Attr.Agi],
-    [Attr.AtkIncreaseFactorFromWisd, Attr.Wisd],
-    [Attr.AtkIncreaseFactorFromWill, Attr.Will],
-  ];
-  for (const [factor, attr] of factors) {
-    const f = attrs[factor]?.total ?? 0;
-    if (f !== 0) attributeBonus += f * attrValue(attr);
-  }
+  const { mainAttribute, secondaryAttribute, perPoint, attributeBonus } = atkAttributeBonus(data, { mainAttr: op.mainAttr, subAttr: op.subAttr, attrs }, options.floorAttributes);
   const atkBase = atkLine.base + weaponBase;
   const atkTotal = (atkBase * (1 + atkLine.percent) + atkLine.flat) * attributeBonus;
 
@@ -325,7 +371,9 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
       flat: atkLine.flat,
       mainAttribute,
       secondaryAttribute,
+      perPoint,
       attributeBonus,
+      floorAttributes: options.floorAttributes,
       total: atkTotal,
     },
     skillValues,

@@ -41,8 +41,11 @@ export type Predicate =
   | { readonly stack: string; readonly atLeast?: number; readonly below?: number }
   /** One of the operator's own kit buffs is active. */
   | { readonly buffActive: string }
-  /** One of the operator's own kit buffs has at least / fewer than this many active layers (a plain buff: 1 or 0). */
-  | { readonly buffLayers: string; readonly atLeast?: number; readonly below?: number }
+  /**
+   * One of the operator's own kit buffs has at least / fewer than this many active layers (a plain buff: 1 or 0); the
+   * thresholds are values, so a kit can name the data's key (Zhuang Fangyi's `free_sword_limit`).
+   */
+  | { readonly buffLayers: string; readonly atLeast?: ValueExpr; readonly below?: ValueExpr }
   /** The hit itself consumed at least this many infliction stacks (default 1). */
   | { readonly consumedAtLeast: number }
   /** The operator is the controlled one (Typhoeus's 5th aerial shot is a Final Strike only then). */
@@ -246,7 +249,7 @@ export function test(p: Predicate, c: EvalContext): boolean | undefined {
   if ("buffLayers" in p) {
     if (!c.buffLayers) return undefined;
     const n = c.buffLayers(p.buffLayers);
-    return (p.atLeast === undefined || n >= p.atLeast) && (p.below === undefined || n < p.below);
+    return (p.atLeast === undefined || n >= evaluate(p.atLeast, c)) && (p.below === undefined || n < evaluate(p.below, c));
   }
   if ("consumedAtLeast" in p) return c.consumed === undefined ? undefined : c.consumed >= p.consumedAtLeast;
   if ("controlled" in p) return c.controlled === undefined ? undefined : c.controlled === c.build.operator;
@@ -378,9 +381,21 @@ export function predicateRefs(p: Predicate): { stacks: string[]; buffs: string[]
   // An eventOperator predicate names the event operator's stacks and buffs, not the kit's own.
   if ("stack" in p) return { stacks: [p.stack], buffs: [] };
   if ("buffActive" in p) return { stacks: [], buffs: [p.buffActive] };
-  if ("buffLayers" in p) return { stacks: [], buffs: [p.buffLayers] };
+  if ("buffLayers" in p) {
+    const refs = predicateValues(p).map(valueRefs);
+    return { stacks: refs.flatMap((x) => x.stacks), buffs: [p.buffLayers, ...refs.flatMap((x) => x.buffs)] };
+  }
   if ("enemyHpBelow" in p) return valueRefs(p.enemyHpBelow);
   return { stacks: [], buffs: [] };
+}
+
+/** The values a predicate compares with (its own and its parts', not an eventOperator's), for the loader to check their keys. */
+export function predicateValues(p: Predicate): ValueExpr[] {
+  if ("all" in p || "any" in p) return ("all" in p ? p.all : p.any).flatMap(predicateValues);
+  if ("not" in p) return predicateValues(p.not);
+  if ("buffLayers" in p) return [...(p.atLeast !== undefined ? [p.atLeast] : []), ...(p.below !== undefined ? [p.below] : [])];
+  if ("enemyHpBelow" in p) return [p.enemyHpBelow];
+  return [];
 }
 
 /** Own stacks and buffs a value names (its own and its conditions'), for the loader to check. */

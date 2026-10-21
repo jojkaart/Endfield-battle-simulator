@@ -1303,6 +1303,7 @@ function eventSourceOf(e: BattleEvent): EventSource | undefined {
 /** An event's count (ValueExpr `eventCount`): stacks inflicted or consumed, a reaction's level, a combo cast's window count, else 1. */
 function eventCountOf(e: BattleEvent): number {
   if (e.type === "cast") return e.count ?? 1;
+  if (e.type === "linkGained") return e.count;
   if (e.type !== "status") return 1;
   const s = e.event;
   return s.kind === "inflicted" || s.kind === "consumed" || s.kind === "vulnerable" ? s.stacks : s.kind === "reaction" || s.kind === "statusConsumed" || s.kind === "physical" || s.kind === "shatter" ? s.level : 1;
@@ -1507,6 +1508,8 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         const n = Math.max(0, Math.round(evaluate(a.count ?? 1, ec())));
         const until = frame + Math.round(evaluate(a.seconds ?? LINK_FRAMES / FPS, ec()) * FPS);
         st = { ...st, link: [...st.link.filter((f) => f > frame), ...Array.from({ length: n }, () => until)] };
+        // Link stacks are the team's: every member gains them (BattleEvent linkGained).
+        if (n > 0) events.push(...ctx.scenario.team.map((b): BattleEvent => ({ type: "linkGained", frame, operator: b.operator, from: owner, count: n })));
         break;
       }
       case "endAction": {

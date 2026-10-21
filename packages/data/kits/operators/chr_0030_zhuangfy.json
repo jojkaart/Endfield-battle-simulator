@@ -216,7 +216,7 @@
        },
        {
         "buffLayers": "sunderblade",
-        "below": 3
+        "below": "free_sword_limit"
        }
       ]
      }
@@ -258,7 +258,7 @@
      }
     }
    ],
-   "note": "normal_skill frame 6, in the data's order: FinishBuff of the previous cast's strikes (the stacks reset); without Electrification one Sunderblade if fewer than free_sword_limit (3) are out (CompareFloat EntityBB_SwordNum < free_sword_limit; the literal 3 in `below`: buffLayers takes an integer), one more with potential1_more_sword (in both branches); then the consumption (FinishBuffAdvanced finishAll on tag 1466867135, bs_consumed makes its blades); CreateBuff talent1 (t1_amp, its growth reset)."
+   "note": "normal_skill frame 6, in the data's order: FinishBuff of the previous cast's strikes (the stacks reset); without Electrification one Sunderblade if fewer than free_sword_limit (3) are out (CompareFloat EntityBB_SwordNum < free_sword_limit, 3), one more with potential1_more_sword (in both branches); then the consumption (FinishBuffAdvanced finishAll on tag 1466867135, bs_consumed makes its blades); CreateBuff talent1 (t1_amp, its growth reset)."
   },
   {
    "id": "bs_consumed",
@@ -379,7 +379,7 @@
          },
          {
           "buffLayers": "sunderblade",
-          "below": 3
+          "below": "free_sword_limit"
          }
         ]
        }
