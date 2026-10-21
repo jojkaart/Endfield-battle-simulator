@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0026",
+  "sources": [
+    "Farsight, skill 3 (Assault: Vision for Tomorrow): rmxlinux Json/SkillData sk_wpn_sword_0026 (game 1.6); values SkillPatchTable sk_wpn_sword_0026 (level 1 → 9: dmg_up 0.05 → 0.14, phy_spell_up 10 → 28, def_up 0.03 → 0.084; duration 20, hp_up_c 122 at every level). Skill 1 (main attribute) and skill 2 (Arts Intensity) are on the stat panel; skill 3 has no permanent line. Batch-4 report docs/kit-batches/batch-4/chr_0029_pograni.md W8.",
+    "passiveEventActions: abilityEvent 6 (entering battle) → buff_wpn_sword_0026_celebration on the team (attributes 50–54 formulaItem 5 + dmg_up, 87 formulaItem 5 + phy_spell_up, 3 formulaItem 6 + def_up: DEF as a percentage, the loader's `percent`; `duration` 20 s; stackingType 1 with priority dmg_up: one per team, the strongest, the loader's stack group). Its end (buffEvent 2) runs a HealAction on the team once (a 0.1 s marker). Description: \"When entering battle, the entire team gains the Dream Striving buff that grants DMG Dealt +{dmg_up}, Arts Intensity +{phy_spell_up}, and DEF +{def_up} for {duration}s. When Dream Striving ends, the wielder restores the entire team for {hp_up_c} HP.\"",
+    "The heal is an event only (operator HP isn't simulated: batch-3 N2). Not in any log or fixture yet."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_sword_0026.dream",
+      "label": "Dream Striving",
+      "target": "team",
+      "gameBuff": "buff_wpn_sword_0026_celebration",
+      "duration": "duration",
+      "modifiers": [{ "attr": 50, "value": "dmg_up" }, { "attr": 51, "value": "dmg_up" }, { "attr": 52, "value": "dmg_up" }, { "attr": 53, "value": "dmg_up" }, { "attr": 54, "value": "dmg_up" }, { "attr": 87, "value": "phy_spell_up" }, { "attr": 3, "value": "def_up" }]
+    }
+  ],
+  "triggers": [
+    { "id": "wpn_sword_0026.on_fight_start", "on": { "event": "fightStart" }, "by": "self", "skill": "sk_wpn_sword_0026", "do": [{ "kind": "buff", "buff": "wpn_sword_0026.dream" }] },
+    { "id": "wpn_sword_0026.heal", "on": { "event": "buffEnded", "buff": "wpn_sword_0026.dream" }, "by": "self", "skill": "sk_wpn_sword_0026", "do": [{ "kind": "heal", "target": "team" }], "note": "buff_wpn_sword_0026_celebration buffEvent 2: HealAction on the team (hp_up_c; amounts aren't modelled)." }
+  ]
+}

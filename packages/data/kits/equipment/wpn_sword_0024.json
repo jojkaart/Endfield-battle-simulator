@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0024",
+  "sources": [
+    "Complexed Industry, skill 3 (Detonate: Complexed Advantage): rmxlinux Json/SkillData sk_wpn_sword_0024 (game 1.6); values SkillPatchTable sk_wpn_sword_0024 (level 1 → 9: atk_up 0.07 → 0.196, phy_spell_up 15 → 42, pulse_dmg_up 0.08 → 0.224; duration 15 at every level). Skill 1 (Will), skill 2 (Electric DMG) and skill 3's cardAttributeModifier (ATK + atk_up) are on the stat panel. Batch-4 report docs/kit-batches/batch-4/chr_0029_pograni.md W7.",
+    "passiveEventActions: abilityEvent 126 (the wielder applies an infliction) + CheckOriginSkillType [6] (from a combo) + CheckSpellInflictionType mask 2 (Electric) → buff_wpn_sword_0024_intensityup (attribute 87 formulaItem 5 + phy_spell_up) and buff_wpn_sword_0024_pulseup (attribute 52 formulaItem 5 + pulse_dmg_up) on the wielder, `duration` 15 s each; both stackingType 11 with a priority key and maxStackCnt 1 (\"Effects of the same name cannot stack\": one per team, the strongest: the loader's stack group, so two wielders' copies don't add). Description: \"When the wielder's combo skill applies Electric Infliction, the wielder gains Arts Intensity +{phy_spell_up} and Electric DMG Dealt +{pulse_dmg_up} for {duration}s.\"",
+    "beforeDamage: abilityEvent 126 fires when the infliction is added, before the applying hit's damage (as Solemn Phalanx, wpn_funnel_0016). An Electric infliction that forms a reaction at once isn't an infliction applied here (in-game test 35's question). Not in any log or fixture yet; no sword user in the kits applies Electric with a combo except through a forced reaction."
+  ],
+  "buffs": [
+    { "id": "wpn_sword_0024.intensity", "label": "Complexed Industry: Arts Intensity", "target": "self", "gameBuff": "buff_wpn_sword_0024_intensityup", "duration": "duration", "modifiers": [{ "attr": 87, "value": "phy_spell_up" }] },
+    { "id": "wpn_sword_0024.electric", "label": "Complexed Industry: Electric DMG", "target": "self", "gameBuff": "buff_wpn_sword_0024_pulseup", "duration": "duration", "modifiers": [{ "attr": 52, "value": "pulse_dmg_up" }] }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_sword_0024.on_combo_electric",
+      "on": { "event": "inflictionApplied", "elements": ["pulse"], "fromKinds": ["combo"] },
+      "by": "self",
+      "beforeDamage": true,
+      "skill": "sk_wpn_sword_0024",
+      "do": [{ "kind": "buff", "buff": "wpn_sword_0024.intensity" }, { "kind": "buff", "buff": "wpn_sword_0024.electric" }]
+    }
+  ]
+}

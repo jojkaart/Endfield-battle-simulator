@@ -441,3 +441,135 @@ left), the recast leftover (row 17), dash and dive.
 Each needs a test file and the operator an example scenario at the kits
 phase; the 7e19 fixture can move from pending once the Endministrator's
 and Chen's builds are settled (his own hits all match).
+
+## Kit (2026-10-21)
+
+Files: `packages/data/kits/operators/chr_0029_pograni.json`;
+equipment `packages/data/kits/equipment/wpn_sword_0012.json` (Thermite
+Cutter), `wpn_sword_0016.json` (Never Rest), `wpn_sword_0017.json`
+(Glorious Memory), `wpn_sword_0021.json` (Grand Vision; the loader gives
+`wpn_sword_0021_ink` the same kit), `wpn_sword_0024.json` (Complexed
+Industry), `wpn_sword_0026.json` (Farsight) — the weapons batch-4.md
+"Weapon owners" gives this report (Thermite Cutter and Never Rest moved
+here, Lupine Scarlet moved to Rossi); tests `tests/kit-pogranichnik.test.ts`
+(22); example `examples/pogranichnik-chen.scenario.json` with
+`examples/pogranichnik-p5.json`; `chr_0029_pograni` added to the compiler
+test's OPERATORS (no disagreement: no KNOWN entry needed). No engine,
+loader or compiler code changed.
+
+### Re-analysis
+
+| Item | Now | How |
+|---|---|---|
+| G1 SP sources of reached files | **done** (D2) | `atb_trigger`, `atb_final` are natural, atbSourceType 3 in the ultimate's `spKinds` / `spSources`; the follow-up hits name the keys and need no `spKind` |
+| G2 several MarkCanInterrupt | **done** (S11) | combo timing `interruptibleFrom [80, 280, 450]`, ends `[191, 391, 545]` |
+| G3 one buff, two durations | **done** (B4) | one `fervent_morale` buff (cap `max_stack_owner`, 3 / P3 5); talent 2's applications on him carry `duration: {talent: 1, key: duration}` |
+| G4 reactions replay by landing | **done** (L1) | 7e19: his Breach at 14984 matches; Chen's 25479 Lift is no longer predicted |
+| G5 what a consumed buff reaches | **done** (B5) | the loader defaults `consumedScope: whileCasting` for Glorious Memory and Grand Vision; the Endministrator's battle skill, Crush and crystal hit all carry Grand Vision's +0.648 (test, as 7e19 t=33734) |
+| G6 weapon variants | **done** (D3) | `wpn_sword_0021_ink` loads Grand Vision's kit (test) |
+| row 6 Switch-chosen battle-skill SP | **interim** (exact) | trigger `battle_sp` on his own Breach (`beforeDamage`: SP before the hit's damage, as the data): atb_n for n stacks as a sum over `eventCount`; batch-3 D3's `{switch}` value would replace it |
+| row 10 combo count buffs | **interim** (exact) | four 6 s buffs with layers from `eventCount`, `jumps` on them, ended at the cast; V3 (deferred) would replace them |
+| row 23 talent 1's bank | **interim** (exact) | stack `sp_banked` filled by every skill-SP grant; V3 (deferred) |
+| row 22 the ultimate's event handlers | **done** (D9c) | kit-draft now reports them as event-driven landings; hand-written triggers |
+| row 17 points left at a recast | open (unknown, rare) | the kit sets 5 |
+| row 19 TakeDownAction | open (shared: Catcher, Snowshine) | not modelled |
+| row 20 entity-layer slow-downs | open (Ti1b) | not modelled; follow-ups land at +9 / +25 frames |
+| rows 11, 15 InterruptAction | open (batch-3 E1, deferred) | |
+| row 4 dive | written from the data; castable once batch-1 S10 lands | |
+| row 8 P1 | inert (one enemy) | |
+| **New: the combo's SP keys** | **interim** (exact), open | the slashes' ObtainCostActions grant `calc_atb_n`, which SimpleCalcBB sets to atb_n × atb_ratio at run time (0 in the table); kit-draft writes `{product: [atb_n, atb_ratio]}`, whose keys have no `spKinds` entry, so the grant would be returned SP of no source (no energy when spent, invisible to Thermite Cutter and talent 1's natural-SP reading). The kit writes `{sum: [calc_atb_n, {product: [atb_n, atb_ratio]}]}`: the first key gives the data's kind and source. Family data compilation (a general rule: an SP key computed by SimpleCalcBB); the compiler (or the loader's kind lookup) should follow the computed key |
+| **New: Thermite Cutter's Link half** | **open** | see below |
+
+**Thermite Cutter and Link.** The brief says its "combo-trigger buff gives
+Link: use the `link` trigger action", as engine/src/events.ts (the `link`
+action's comment) and docs/data-sources.md (Link paragraph) say. The data
+says otherwise: sk_wpn_sword_0012's second handler is abilityEvent 9 (a buff
+added to the holder) + CheckTargetsEqual (the holder is the wielder) +
+CheckBuffIdInContext `buff_common_affixes_combo_trigger` → CreateBuff
+`buff_wpn_sword_0012_atk_up` on the team. It *reacts* to a Link stack the
+wielder receives; nothing in sk_wpn_sword_0012 or buff_wpn_sword_0012* has a
+ComboAction or creates the combo-trigger buff (that buff's ID appears in no
+other SkillData or BuffData file than its own and this check). The text
+agrees ("After the wielder's skill recovers SP or grants a Link state, the
+entire team gains ATK"). A `link` action here would give every wielder's
+team Link stacks (+30–75% on the next battle skill, +20–50% on the next
+ultimate) that the game doesn't, so the kit doesn't write one. The engine
+has no event for Link given (the `link` action is silent), so the half is
+open: a trigger event "the owner gains a Link stack" (from `link` actions;
+KitBuff.link buffs are Akekuri's global buff, another ID). Impact: only
+with a Link source in the team (Lifeng's or Camille's combo); neither can
+wield a sword, so on the wielder's own skills it never fires, and with
+Pogranichnik's grants the two layers are up most of the time anyway
+(in-game test 94).
+
+### What the kit models
+
+- Skills from kit-draft (frames, keys, stagger, Breach, finisher factors,
+  SP before damage) with the combo's three paths by `jumps` on the count
+  buffs: one slash (≤ 1 stack), two, three (`atk_scale3`), three with
+  `atk_scale4` (4 stacks); the windows and ends per path are the loader's.
+- The banner (cast + 77, launch 74, 30 s) and Steel Oath (5); six follow-up
+  triggers (a physical status by him or a teammate, his combo's hits; with
+  2+ points a harass at +9, with the last point the Decisive Assault at +25),
+  the 0.1 s marker, talent 2's Morale (him: 10 s on his one buff; the
+  teammate: `fervent_morale_team`, `to: eventSubject`, cap 3).
+- Talent 1 (bank, threshold 80 / P3 60, 20 s layers); P2–P5 by the loader.
+- Equipment: Thermite Cutter (skill-SP half), Never Rest (wielder +
+  others, 0.1 s cooldown; assumes the ForEach copy doesn't also reach the
+  wielder, per the text), Glorious Memory (as Aspirant, whileCasting),
+  Grand Vision (crystals and Solidification halves, whileCasting),
+  Complexed Industry (combo Electric, before damage), Farsight (fight
+  start, heal event). Toggles naming keys their skills lack
+  (`buff_wpn_lance_0003`) aren't applied (test 75's variant).
+
+Left out: InterruptAction, TakeDownAction, entity-layer slow-downs, the
+state's end after the Assault, points left at a recast, P1 (one enemy),
+the dash, Thermite Cutter's Link half.
+
+### Verification
+
+**7e19** (`zmdlogs check`): Pogranichnik **29 hits, 29 match, 0 mismatch,
+0 not covered** (before: 1 match, 28 not covered). Assumptions taken: the
+Endministrator's unlogged crystal aura on four early hits (K6), boundary
+buffs where his Morale or Thermite Cutter started at that hit, and the
+checker's choice of landing (hit / hit_2 / harass / hit_3 /
+decisive_assault). The fixture's build for him needs no correction. Other
+lines: Ember unchanged; the Endministrator (0 / 34) and Chen (0 / 21) keep
+their counts and ratios, only their candidate lists change, because Grand
+Vision and Glorious Memory now have kits (e.g. her battle skill at 33734:
+a Grand Vision candidate of 59,906 against the logged 59,260; the Crush's
+×4.4 stays the unexplained late-fight factor of batch-4.md's log notes).
+`zmdlogs reactions`: 3 matched, 1 predicted, 4 unexpected (before 2 / 2 /
+5): his Breach matches, Chen's 25479 Lift is no longer predicted; the
+four unexpected are Ember's Knock Downs (no kit), the one predicted is the
+Endministrator's 33734 Crush, as before (now level 2, not 4: his replayed
+Breach at 14984 consumed the earlier stacks).
+
+The log fixture's proposed notes (batch-4.md "Log fixture notes") aren't
+applied: the fixture is shared with Ember's kit, written at the same time;
+they can go in at the merge.
+
+**Simulation** (`examples/pogranichnik-chen.scenario.json`, Pogranichnik
+P5 with Thermite Cutter, Chen P5): 244,384 damage, last hit 17.23 s
+(14,181 DPS; his 147,945). Chen's Lift, his Breach and his two slashes give
+four harasses 9 frames later, Chen's later Lift the Assault 25 frames
+later (25,781; 7e19's at P4 / L10: 25,036); harasses 3.9–5.7k (7e19: 5.25k
+average). Thermite Cutter's two layers from his first grants on, Fervent
+Morale 4 layers on him after the combo, Chen's 10 s layer from her Lift.
+
+**Example totals and other logs:** every `examples/*.scenario.json` total
+and every other `zmdlogs check` / `reactions` output is unchanged (the
+new kits only meet 7e19, the only fixture with these weapons).
+
+### In-game tests the kit depends on
+
+- **75** (variant): the copied `buff_wpn_lance_0003` toggle on Glorious
+  Memory (and Grand Vision, Never Rest with no `atk_up`).
+- **92**: CheckBuffIdInContext checkType 0 / 1 (Grand Vision's stray tags,
+  Glorious Memory's ignored ID).
+- **94**: Thermite Cutter's Link part (open in the kit).
+- **61**: what MarkCanInterrupt allows (the combo's paths).
+- **39**: a Vulnerable-only physical status on the applier's side (7e19
+  answers the receiving side: no follow-up).
+- **35**: Complexed Industry with an Electric infliction that reacts at once.
+- **60**: his own Breach while his combo is on cooldown (batch-3 T5).
