@@ -91,6 +91,15 @@ export function formatPanel(data: GameData, panel: StatPanel, verbose: boolean):
     `ATK ${num(Math.floor(a.total), 0)} (exact ${num(a.total, 3)}) = [(${a.operatorBase} operator + ${a.weaponBase} weapon) × (1 + ${pct(a.percent)}) + ${num(a.flat)} flat]` +
       ` × ${num(a.attributeBonus, 4)} (${attrName(panel.mainAttr)} ${a.mainAttribute}, ${attrName(panel.subAttr)} ${a.secondaryAttribute})`,
   );
+  // ATK per attribute point (attributes 76–79) is part of the attribute bonus: each its own line, with its sources.
+  if (a.perPoint.length) {
+    const rest = a.attributeBonus - a.perPoint.reduce((s, p) => s + p.bonus, 0);
+    out.push(`  attribute bonus ${num(a.attributeBonus, 4)} = ${num(rest, 4)} (1 + ${attrName(panel.mainAttr)} ${a.mainAttribute} × ${num(data.constants.atkRateOfMain, 4)} + ${attrName(panel.subAttr)} ${a.secondaryAttribute} × ${num(data.constants.atkRateOfSub, 4)})`);
+    for (const p of a.perPoint) {
+      const sources = (panel.attrs[p.factorAttr]?.contributions ?? []).map((c) => `${c.source} ${num(c.value, 4)}`).join("; ");
+      out.push(`    + ${num(p.bonus, 4)} = ${attrName(p.factorAttr)} (${p.factorAttr}) ${num(p.factor, 4)} × ${attrName(p.attr)} ${p.points}${sources ? ` [${sources}]` : ""}`);
+    }
+  }
   const rows: string[][] = [];
   for (const attr of PANEL_ATTRS) {
     const line = panel.attrs[attr];

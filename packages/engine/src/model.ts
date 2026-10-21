@@ -534,8 +534,9 @@ export interface KitBuffModifier {
    * receiver's panel line (× its Π multiply), the panel formula's percent
    * slot, summed with the panel's percentages, not compounded with them.
    * Only for attributes read where the game reads them (DEF, Strength, …),
-   * not those feeding a zone. A main attribute's percentage doesn't reach
-   * ATK through the attribute bonus (not modelled, as for flat ones).
+   * not those feeding a zone. Strength, Agility, Intellect and Will (flat
+   * or percentage) also raise ATK through its attribute bonus, as the
+   * panel computes it (effects.ts zone `attribute`).
    */
   readonly percent?: boolean;
   /**

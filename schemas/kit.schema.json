@@ -845,6 +845,19 @@
               {
                 "type": "object",
                 "required": [
+                  "event"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "event": {
+                    "const": "linkGained"
+                  }
+                },
+                "description": "Someone (`by`: the one who gains it; `self` for \"after the wielder gains Link\") gains Link stacks (abilityEvent 9 with CheckBuffIdInContext buff_common_affixes_combo_trigger) from anyone's trigger action `link`. Link stacks are the team's: every member gains them. `eventCount`: the stacks."
+              },
+              {
+                "type": "object",
+                "required": [
                   "event",
                   "categories"
                 ],
@@ -2486,15 +2499,17 @@
           "properties": {
             "buffLayers": {
               "type": "string",
-              "description": "One of the kit's own buffs: its active layers (a plain buff's: 1 or 0) are at least atLeast and below below."
+              "description": "One of the kit's own buffs: its active layers (a plain buff's: 1 or 0) are at least atLeast and below below. Each threshold is a whole number or a value (a data key such as free_sword_limit), judged for the predicate's skill."
             },
             "atLeast": {
-              "type": "integer",
-              "minimum": 0
+              "if": { "type": "number" },
+              "then": { "type": "integer", "minimum": 0 },
+              "else": { "$ref": "#/$defs/valueExpr" }
             },
             "below": {
-              "type": "integer",
-              "minimum": 1
+              "if": { "type": "number" },
+              "then": { "type": "integer", "minimum": 1 },
+              "else": { "$ref": "#/$defs/valueExpr" }
             }
           }
         },

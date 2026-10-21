@@ -13,7 +13,7 @@ import type { BuffCategory } from "./events.ts";
 import type { Predicate } from "./expr.ts";
 import { EngineError } from "./errors.ts";
 import type { GameData, KitBuff } from "./model.ts";
-import type { StatLine, StatPanel } from "./stats.ts";
+import { ATK_ATTRIBUTES, percentOfLine, type StatLine, type StatPanel } from "./stats.ts";
 import { FPS } from "./units.ts";
 
 export interface ActiveBuff {
@@ -124,7 +124,7 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
     const filters = { ...(m.skillType ? { skillType: m.skillType } : {}), ...(m.onlyKinds ? { onlyKinds: m.onlyKinds } : {}), ...(m.decorations ? { decorations: m.decorations } : {}), ...(m.if ? { when: m.if } : {}) };
     if (m.percent) {
       if (m.attr === undefined || attrFeedsZone(m.attr)) throw new EngineError(`${build.operator} buff ${buff.id}: a percentage needs an attribute read where the game reads it (DEF, Strength, …), not a zone`);
-      attrs.push({ attr: m.attr, value, percent: true });
+      attrs.push({ attr: m.attr, value, percent: true, ...(Object.keys(filters).length ? { filters: { ...filters, ...(m.elements ? { elements: m.elements } : {}) } } : {}) });
       continue;
     }
     if (m.attr !== undefined) {
@@ -259,7 +259,32 @@ export function reaches(b: ActiveBuff, operator: string): boolean {
 }
 
 /**
- * The modifiers active buffs give an operator's hits at a frame; a stack
+ * A buff's attributes that raise ATK through its attribute bonus
+ * (Strength, Agility, Intellect, Will: stats.ts ATK_ATTRIBUTES), as
+ * modifiers of zone `attribute` with their filters; the damage pipeline
+ * adds them to the hitter's panel attributes (a percentage of its line).
+ */
+function attributeModifiers(b: ActiveBuff): Modifier[] {
+  return (b.attrs ?? []).filter((a) => ATK_ATTRIBUTES.has(a.attr)).flatMap((a) => {
+    const f = a.filters;
+    const m: Modifier = {
+      zone: "attribute",
+      attr: a.attr,
+      value: a.value,
+      ...(a.percent ? { percent: true } : {}),
+      source: `${b.owner} ${b.id}`,
+      ...(f?.skillType ? { skillType: f.skillType } : {}),
+      ...(f?.onlyKinds ? { onlyKinds: f.onlyKinds } : {}),
+      ...(f?.decorations ? { decorations: f.decorations } : {}),
+      ...(f?.when ? { when: f.when } : {}),
+    };
+    return f?.elements ? f.elements.map((element) => ({ ...m, element })) : [m];
+  });
+}
+
+/**
+ * The modifiers active buffs give an operator's hits at a frame (its
+ * attributes that raise ATK as zone `attribute`: attributeModifiers); a stack
  * group counts only its strongest modifier of each kind. Buffs consumed by
  * a cast act only on that cast's hits (`cast`).
  */
@@ -272,13 +297,13 @@ export function buffModifiers(buffs: readonly ActiveBuff[], operator: string, fr
     if (b.cast !== undefined && b.cast !== cast && !(b.whileCasting && b.whileCasting.operator === operator && frame < b.whileCasting.until)) continue;
     // A buff a cast consumes acts only on that cast's hits: not before it's consumed.
     if (b.cast === undefined && b.consumedBy) continue;
-    for (const m of b.modifiers) {
+    for (const m of [...b.modifiers, ...attributeModifiers(b)]) {
       if (!b.stackGroup) {
         out.push(m);
         continue;
       }
       // A modifier that holds only in a situation competes only with ones under the same condition.
-      const k = JSON.stringify([b.stackGroup, m.zone, m.element ?? null, m.skillType ?? null, m.onlyKinds ?? null, m.when ?? null]);
+      const k = JSON.stringify([b.stackGroup, m.zone, m.attr ?? null, m.element ?? null, m.skillType ?? null, m.onlyKinds ?? null, m.when ?? null]);
       const cur = strongest.get(k);
       if (!cur || m.value > cur.value) strongest.set(k, m);
     }
@@ -304,7 +329,7 @@ export function buffAttr(
   const amount = (a: NonNullable<ActiveBuff["attrs"]>[number]) => {
     if (!a.percent) return a.value;
     if (!line) throw new EngineError(`a percentage buff on attribute ${attr} needs ${operator}'s panel line for it`);
-    return a.value * (line.base + line.add) * line.multiply;
+    return percentOfLine(a.value, line);
   };
   for (const b of buffs) {
     const ofCast = landing !== undefined && b.cast !== undefined && b.cast === landing.cast;

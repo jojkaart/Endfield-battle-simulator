@@ -80,7 +80,12 @@ export type BattleEvent =
   /** The enemy started charging a skill; `operator` is the controlled one. */
   | { readonly type: "enemyCharge"; readonly frame: number; readonly operator: string }
   /** An operator's own stacks were gained or used; `changed`: those whose count changed (a gain capped at the maximum changes none). */
-  | { readonly type: "stacks"; readonly frame: number; readonly operator: string; readonly changed?: readonly string[] };
+  | { readonly type: "stacks"; readonly frame: number; readonly operator: string; readonly changed?: readonly string[] }
+  /**
+   * `operator` gained `count` Link stacks (buff_common_affixes_combo_trigger) from `from`'s trigger action `link`. Link
+   * stacks are the team's, so one action gives one event per team member (abilityEvent 9 on each of them).
+   */
+  | { readonly type: "linkGained"; readonly frame: number; readonly operator: string; readonly from: string; readonly count: number };
 
 /**
  * What a buff is, for triggers on buffs of a kind and the `operatorBuff`
@@ -156,6 +161,11 @@ export type TriggerOn =
   | { readonly event: "enemyCharge" }
   /** Someone (`by`) perfectly dodges an enemy attack. */
   | { readonly event: "perfectDodge" }
+  /**
+   * Someone (`by`: the one who gains it, e.g. `self` for "after the wielder gains Link") gains Link stacks (abilityEvent 9
+   * with CheckBuffIdInContext buff_common_affixes_combo_trigger), from anyone's trigger action `link`; `eventCount`: the stacks.
+   */
+  | { readonly event: "linkGained" }
   /** The owner's own stack reaches a count. */
   | { readonly event: "stackAtLeast"; readonly stack: string; readonly atLeast: number };
 
@@ -412,6 +422,8 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
       return e.type === "enemyCharge";
     case "perfectDodge":
       return e.type === "perfectDodge";
+    case "linkGained":
+      return e.type === "linkGained";
   }
   if (e.type !== "status" || !has(on.fromKinds, e.fromKind)) return false;
   const s = e.event;

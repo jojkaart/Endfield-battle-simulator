@@ -35,9 +35,8 @@
       "target": "self",
       "gameBuff": "buff_chr_0033_camille_talent1_atkup",
       "duration": { "talent": 1, "key": "duration" },
-      "maxStacks": 5,
       "modifiers": [{ "zone": "damageBonus", "elements": ["fire"], "value": { "talent": 1, "key": "atk_up" } }],
-      "note": "buff_chr_0033_camille_talent1_atkup: attribute 51 (Heat DMG) formulaItem 5 atk_up; stackingType 2 (layers with their own timers); maxStackCntKey max_stack, which passive_talent1 doesn't have, so the buff's own blackboard value 5 (its literal maxStackCnt 3 is overridden by the key; the description says 5); duration 40 s from the talent."
+      "note": "buff_chr_0033_camille_talent1_atkup: attribute 51 (Heat DMG) formulaItem 5 atk_up; stackingType 2 (layers with their own timers); maxStackCntKey max_stack, which passive_talent1 doesn't have, so the buff's own blackboard value 5 (its literal maxStackCnt 3 is overridden by the key; the description says 5), which the loader takes as the cap; duration 40 s from the talent."
     },
     {
       "id": "bloodfount_team",
@@ -46,7 +45,6 @@
       "recipients": { "not": { "isOwner": true } },
       "gameBuff": "buff_chr_0033_camille_talent1_atkup",
       "duration": { "talent": 1, "key": "duration" },
-      "maxStacks": 5,
       "modifiers": [{ "zone": "damageBonus", "elements": ["fire"], "value": { "product": [{ "talent": 1, "key": "atk_up" }, { "talent": 1, "key": "teammate_rate" }] } }],
       "note": "passive_talent1: ForEach teammate (ExcludeOwnerValidator) the same buff with atk_up_teammate = atk_up × teammate_rate (0.25). Logged 0.01 per layer on Gilberta (40d9, talent level 2)."
     }

@@ -12,7 +12,7 @@ import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
 import { buffTagFilter, SHIELD_TAG } from "./buffTags.ts";
-import { Attr, attrFeedsZone, buffAttrHasEffect, buffReach, type BuffCategory, type TriggerOn, type KitBuffModifier, ELEMENTS, predicateRefs, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
+import { Attr, attrFeedsZone, buffAttrHasEffect, buffReach, type BuffCategory, type TriggerOn, type KitBuffModifier, ELEMENTS, predicateRefs, predicateValues, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
@@ -237,6 +237,38 @@ function gameBuffInstances(file: string, b: Pick<KitBuff, "id" | "maxStacks">, r
 }
 
 /**
+ * BuffData stacking types whose instances are layers (KitBuff.maxStacks):
+ * 2 and 11 each with its own timer, 8 and 10 on one shared timer
+ * (SHARED_TIMER_TYPES). Others (4: refreshed; 1: the strongest; 7, 9, 0)
+ * aren't layers.
+ */
+const LAYERED_TYPES: ReadonlySet<number> = new Set([2, 11, 8, 10]);
+
+/**
+ * A layered game buff's cap (KitBuff.maxStacks) as far as the data alone
+ * says it: its literal maxStackCnt without a maxStackCntKey (Suffering's
+ * End: 4), or with one the applying skills don't have
+ * (`applyingSkillHasKey` false), the buff's own blackboard value (Camille's
+ * talent 2: max_stack 5 over the literal 3). Undefined when the applying
+ * skill's value sets it (kits name that key), for no limit (0), a cap of 1
+ * (a plain buff) and buffs that aren't layers.
+ */
+function gameBuffLayers(raw: RawBuffFile, applyingSkillHasKey?: boolean): number | undefined {
+  const s = raw.stacking;
+  if (!LAYERED_TYPES.has(s.type) || (s.type === 11 && s.priorityKey !== null && s.maxStacksKey === null && s.maxStackCnt === 1)) return undefined;
+  const cap = s.maxStacksKey === null ? s.maxStackCnt : applyingSkillHasKey === false ? raw.blackboard[s.maxStacksKey] : undefined;
+  return cap !== undefined && cap > 1 ? cap : undefined;
+}
+
+/** Whether the skills applying a kit buff matter for its cap: the game buff's maxStackCntKey sets its instances or its layers (the kit names no cap). */
+function capKey(b: Pick<KitBuff, "maxStacks">, raw: RawBuffFile): string | null {
+  const s = raw.stacking;
+  if (s.maxStacksKey === null) return null;
+  if (s.type === 1 && s.priorityKey !== null) return s.maxStacksKey;
+  return LAYERED_TYPES.has(s.type) && b.maxStacks === undefined ? s.maxStacksKey : null;
+}
+
+/**
  * A kit buff with what the game buff it stands for (KitBuff.gameBuff) says.
  * Stacking: type 1 is one strongest instance per group (its stackingKey,
  * else its file), and with a priority key a reapplication keeps instances
@@ -244,9 +276,11 @@ function gameBuffInstances(file: string, b: Pick<KitBuff, "id" | "maxStacks">, r
  * maxStackCntKey); type 11 with a priority key and one instance is a group
  * too, so two wielders' copies don't add (layered type 11 stays per owner);
  * types 8 and 10: layers on one refreshed timer (SHARED_TIMER_TYPES). An attribute modifier the game
- * buff has in formulaItem 6 is a percentage (`percent`).
+ * buff has in formulaItem 6 is a percentage (`percent`). A layered one's
+ * cap (`maxStacks`) is the data's when it says one (gameBuffLayers); a
+ * kit's literal cap must agree with it.
  * `applyingSkillHasKey`: whether the skills that apply it have its
- * maxStackCntKey (gameBuffInstances; default: assumed).
+ * maxStackCntKey (gameBuffInstances, gameBuffLayers; default: assumed).
  */
 export function withGameBuff(file: string, b0: KitBuff, applyingSkillHasKey?: boolean): KitBuff {
   const { gameBuff } = b0;
@@ -260,7 +294,11 @@ export function withGameBuff(file: string, b0: KitBuff, applyingSkillHasKey?: bo
   const instances = gameBuffInstances(file, b, raw, applyingSkillHasKey);
   if (s.type === 1) return { ...b, modifiers, stackGroup: s.key ?? gameBuff, ...(instances !== undefined ? { instances } : {}) };
   if (s.type === 11 && s.priorityKey !== null && s.maxStacksKey === null && s.maxStackCnt === 1) return { ...b, modifiers, stackGroup: s.key ?? gameBuff };
-  return SHARED_TIMER_TYPES.has(s.type) && b.maxStacks !== undefined && b.sharedTimer === undefined ? { ...b, modifiers, sharedTimer: true } : { ...b, modifiers };
+  const cap = gameBuffLayers(raw, applyingSkillHasKey);
+  if (cap !== undefined && typeof b.maxStacks === "number" && b.maxStacks !== cap) throw new Error(`${file}: buff ${b.id}: ${raw.id} keeps ${cap} layers (stackingType ${s.type}${s.maxStacksKey === null ? ", its literal maxStackCnt" : `, its own ${s.maxStacksKey}`}), not ${b.maxStacks}`);
+  const maxStacks = b.maxStacks ?? cap;
+  const layered = maxStacks !== undefined ? { ...b, maxStacks } : b;
+  return SHARED_TIMER_TYPES.has(s.type) && maxStacks !== undefined && b.sharedTimer === undefined ? { ...layered, modifiers, sharedTimer: true } : { ...layered, modifiers };
 }
 
 /**
@@ -328,7 +366,7 @@ function defaultConsumedScope(b: KitBuff, skills: readonly string[]): KitBuff["c
 /** Checks and normalises the parts operator and equipment kits share: values, predicates, buffs, hits, triggers. */
 function kitChecker(scope: KitScope) {
   const { stackIds, buffDefs } = scope;
-  /** Per buff whose instances a maxStackCntKey sets: whether each skill applying it has the key (B2: else the buff's own value). */
+  /** Per buff whose instances or layers a maxStackCntKey sets: whether each skill applying it has the key (B2: else the buff's own value). */
   const instanceKeySites = new Map<string, boolean[]>();
   const hasKey = (skillId: string, key: string): boolean => {
     if (!scope.isSource(skillId)) return false;
@@ -356,11 +394,12 @@ function kitChecker(scope: KitScope) {
     for (const id of refs.stacks) if (!stackIds.has(id)) throw new Error(`${where}: unknown stack ${id}`);
     for (const id of refs.buffs) if (!buffDefs.has(id)) throw new Error(`${where}: unknown buff ${id}`);
   };
-  /** Every own stack and buff a predicate names must exist in the kit. */
-  const checkPredicate = (p: Predicate, where: string) => {
+  /** Every own stack and buff a predicate names must exist in the kit; with the skill it's judged for, the keys of the values it compares with too. */
+  const checkPredicate = (p: Predicate, where: string, skillId?: string) => {
     const refs = predicateRefs(p);
     for (const id of refs.stacks) if (!stackIds.has(id)) throw new Error(`${where}: unknown stack ${id}`);
     for (const id of refs.buffs) if (!buffDefs.has(id)) throw new Error(`${where}: unknown buff ${id}`);
+    if (skillId !== undefined) for (const v of predicateValues(p)) checkValue(v, skillId, where);
   };
   /** A forced reaction's level and extra seconds are values of the applying skill. */
   const checkApplicationValues = (a: KitApplication, skillId: string, where: string) => {
@@ -378,9 +417,9 @@ function kitChecker(scope: KitScope) {
     // Decorations filter what's judged per landing: a zone, an attribute feeding one, or Stagger efficiency (26).
     for (const m of b.modifiers) if (m.decorations && m.attr !== undefined && !attrFeedsZone(m.attr) && m.attr !== Attr.PoiseDamageOutputScalar) throw new Error(`${where}: buff ${b.id}: decorations filter landings: a zone, an attribute feeding one, or Stagger efficiency (26), not attribute ${m.attr}`);
     for (const m of b.modifiers) if (m.attr === Attr.PoiseDamageOutputScalar && m.percent) throw new Error(`${where}: buff ${b.id}: Stagger efficiency (26) is a ratio added to the panel's, not a percentage`);
-    // Instances kept by the applying skill's value (maxStackCntKey): whether this applier has the key (normalizeBuffs decides).
-    const instances = b.gameBuff ? gameBuffInstances(scope.file, b, gameBuffFile(scope.file, b.id, b.gameBuff)) : undefined;
-    if (typeof instances === "string") instanceKeySites.set(b.id, [...(instanceKeySites.get(b.id) ?? []), hasKey(skillId, instances)]);
+    // Instances or layers kept by the applying skill's value (maxStackCntKey): whether this applier has the key (normalizeBuffs decides).
+    const key = b.gameBuff ? capKey(b, gameBuffFile(scope.file, b.id, b.gameBuff)) : null;
+    if (key !== null) instanceKeySites.set(b.id, [...(instanceKeySites.get(b.id) ?? []), hasKey(skillId, key)]);
     if (b.recipients && b.target !== "team") throw new Error(`${where}: buff ${b.id}: only team buffs have recipients`);
     // Recipient filters judge the recipient; its own stacks and buffs aren't the kit's, so they aren't checked here.
   };
@@ -429,8 +468,8 @@ function kitChecker(scope: KitScope) {
         checkValue(h.fixedDamage, src.skillId, `${where} hit ${h.id} fixedDamage`);
         if (h.scale.length || h.scaleValue !== undefined || h.extraScale || h.factor !== undefined || h.reaction || h.bonuses || h.zoneScale || h.atkSnapshot) throw new Error(`${where} hit ${h.id}: a Fixed DMG hit has no scale, factor, reaction, bonuses, zoneScale or atkSnapshot`);
       }
-      if (h.if) checkPredicate(h.if, `${where} hit ${h.id}`);
-      for (const x of [...(h.applies ?? []), ...(h.buffs ?? []), ...(h.gains ?? [])]) if (x.if) checkPredicate(x.if, `${where} hit ${h.id}`);
+      if (h.if) checkPredicate(h.if, `${where} hit ${h.id}`, src.skillId);
+      for (const x of [...(h.applies ?? []), ...(h.buffs ?? []), ...(h.gains ?? [])]) if (x.if) checkPredicate(x.if, `${where} hit ${h.id}`, src.skillId);
       for (const a of h.applies ?? []) checkApplicationValues(a, src.skillId, `${where} hit ${h.id}`);
       for (const g of h.gains ?? []) if (g.amount !== undefined) checkValue(g.amount, src.skillId, `${where} hit ${h.id} gains`);
       const element = h.element ?? scope.element;
@@ -510,16 +549,16 @@ function kitChecker(scope: KitScope) {
     if (t.detached && !(t.delay && t.on.event === "cast")) throw new Error(`${where}: only a delayed cast trigger can be detached from its cast`);
     if (t.awaited && !(t.delay && t.on.event === "cast" && !t.detached)) throw new Error(`${where}: only a delayed cast trigger that belongs to its cast can be awaited`);
     if (t.launch !== undefined && !(t.detached && t.delay && Number.isInteger(t.launch) && t.launch >= 0 && t.launch <= t.delay)) throw new Error(`${where}: a launch frame needs a detached delayed cast trigger, at or before its delay`);
-    if (t.if) checkPredicate(t.if, where);
+    if (t.if) checkPredicate(t.if, where, skillId);
     if (t.cooldown !== undefined) checkValue(t.cooldown, skillId, `${where} cooldown`);
     if (t.chance !== undefined) checkValue(t.chance, skillId, `${where} chance`);
     for (const a of flatActions(t.do)) {
-      if (a.if) checkPredicate(a.if, where);
+      if (a.if) checkPredicate(a.if, where, skillId);
       switch (a.kind) {
         case "gain":
           for (const g of a.gains) {
             if (!stackIds.has(g.stack)) throw new Error(`${where}: gains unknown stack ${g.stack}`);
-            if (g.if) checkPredicate(g.if, where);
+            if (g.if) checkPredicate(g.if, where, skillId);
             if ((g.amount as ValueExpr | undefined) !== undefined) checkValue(g.amount, skillId, `${where} gains`);
           }
           break;
@@ -562,7 +601,7 @@ function kitChecker(scope: KitScope) {
         }
         case "apply":
           for (const x of a.applies) {
-            if (x.if) checkPredicate(x.if, where);
+            if (x.if) checkPredicate(x.if, where, skillId);
             if (x.afterDamage) throw new Error(`${where}: afterDamage is for a hit's applications (a trigger's apply action has no damage of its own)`);
             checkApplicationValues(x, skillId, where);
           }

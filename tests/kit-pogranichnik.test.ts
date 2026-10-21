@@ -299,8 +299,8 @@ describe("Pogranichnik's equipment", () => {
     // A chain's Final Strike (20 SP, source 1) adds none.
     const chain = run(scenario(), ["attack1", "attack2", "attack3", "attack4", "attack5"].map((x) => o(x)), 300);
     expect(chain.buffs.filter((b) => b.id === "wpn_sword_0012.team_atk")).toEqual([]);
-    // The Link half (abilityEvent 9 on buff_common_affixes_combo_trigger: Link the wielder receives) isn't modelled.
-    expect(data.kits.equipment["wpn_sword_0012"]?.triggers.map((t) => t.id)).toEqual(["wpn_sword_0012.skill_sp"]);
+    // The Link half (abilityEvent 9 on buff_common_affixes_combo_trigger: Link the wielder receives) is the linkGained trigger (tests/batch4-values2.test.ts).
+    expect(data.kits.equipment["wpn_sword_0012"]?.triggers.map((t) => t.id)).toEqual(["wpn_sword_0012.skill_sp", "wpn_sword_0012.link"]);
   });
 
   it("Never Rest: per skill-SP grant, Physical DMG +0.14 on the wielder and +0.07 on the others (L9) for 30 s, 5 layers at most, once per 0.1 s", () => {
