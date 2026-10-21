@@ -6,7 +6,7 @@
 
 import { describe, expect, it } from "vitest";
 import type { KitHit } from "@efsim/engine";
-import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill, type CompiledValue } from "../src/index.ts";
+import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledPoiseLanding, type CompiledSkill, type CompiledValue } from "../src/index.ts";
 
 const data = loadGameData();
 const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen", "chr_0006_wolfgd", "chr_0031_mifu", "chr_0033_camille", "chr_0026_lastrite", "chr_0017_yvonne", "chr_0015_lifeng", "chr_0025_ardelia", "chr_0029_pograni", "chr_0028_wulfa", "chr_0030_zhuangfy", "chr_0009_azrila", "chr_0027_tangtang"];
@@ -258,8 +258,30 @@ const grantText = (v: unknown) => (v !== null && typeof v === "object" && "then"
 const branchText = (b: readonly string[] | undefined) => (b?.length ? ` (${b.slice(0, 2).join(", ")}${b.length > 2 ? ", …" : ""})` : "");
 
 /**
+ * Stagger-only DamageActions as kit-draft writes them (D6): one goes with the
+ * landing at its frame in its file when that landing deals no stagger and the
+ * only extra condition is none or "controlled" (poiseControlledOnly); the rest
+ * are poise-only hits of their own.
+ */
+function foldPoise(c: CompiledSkill): CompiledSkill & { readonly poiseRest: readonly CompiledPoiseLanding[] } {
+  const landings = [...c.landings];
+  const poiseRest: CompiledPoiseLanding[] = [];
+  for (const p of c.poiseOnly) {
+    const l = p.landing === null ? undefined : landings[p.landing];
+    const extra = l && prefixOf(l.branch, p.branch) ? p.steps.slice(l.steps.length) : null;
+    const controlledGate = extra?.length === 1 && JSON.stringify(extra[0]?.pred) === JSON.stringify({ controlled: true });
+    if (l && p.landing !== null && l.file === p.file && l.frame === p.frame && !l.poise && extra && (extra.length === 0 || controlledGate)) {
+      landings[p.landing] = { ...l, poise: { value: p.poise.value, controlledOnly: p.poise.controlledOnly || controlledGate } };
+    } else poiseRest.push(p);
+  }
+  return { ...c, landings, poiseRest };
+}
+
+/**
  * Each kit hit is matched to the compiled landings scaled by its first key
  * (and logged under one of its events); its frames must be on one branch path.
+ * A poise-only hit (scale []) is matched to the stagger-only DamageActions
+ * that go with no landing (foldPoise) by frame.
  * Energy goes by frame, applications by frame across the skill's hits.
  */
 function kitDisagreements(): string[] {
@@ -268,7 +290,7 @@ function kitDisagreements(): string[] {
     const kit = data.kits.operators[op];
     if (!kit) throw new Error(`no kit for ${op}`);
     for (const s of kit.skills) {
-      const c = compiled(op, s.skillId);
+      const c = foldPoise(compiled(op, s.skillId));
       const where = s.skillId;
       const blocks = c.energyBlocks.filter((b) => b.branch.length === 0 && b.until !== null);
       const block = blocks.length ? round(Math.max(...blocks.map((b) => b.until as number)) / 30, 3) : null;
@@ -293,6 +315,28 @@ function kitDisagreements(): string[] {
         if (h.energy !== undefined) {
           const dataE = c.energy.filter((e) => (h.frames ?? []).includes(e.frame)).map((e) => formatCompiledValue(e.value));
           if (!dataE.includes(grantText(h.energy))) out.push(`${tag} energy: kit ${valueText(h.energy)} at [${(h.frames ?? []).join(", ")}], data ${c.energy.map((e) => `${formatCompiledValue(e.value)}@${e.frame}${branchText(e.branch)}`).join(", ") || "none"}`);
+        }
+        if (h.poiseOnly) {
+          const here = c.poiseRest.filter((p) => !h.events.length || h.events.includes(p.file));
+          const want = h.frames ?? [];
+          const have = new Map<number, number>();
+          for (const p of here) have.set(p.frame, (have.get(p.frame) ?? 0) + 1);
+          const covered = want.every((f) => {
+            const n = have.get(f) ?? 0;
+            have.set(f, n - 1);
+            return n > 0;
+          });
+          const dataFrames = here.map((p) => p.frame).sort((a, b) => a - b);
+          if (!h.frames || !covered) out.push(`${tag} frames: kit ${h.frames ? `[${want.join(", ")}]` : `none (count ${h.count})`}, data stagger-only [${dataFrames.join(", ")}]`);
+          const at = here.filter((p) => want.includes(p.frame));
+          if (at.length) {
+            const kitPoise = h.poise === undefined ? "-" : JSON.stringify(roundedValue(h.poise));
+            const dataPoise = [...new Set(at.map((p) => JSON.stringify(asKitValue(p.poise.value))))];
+            if (!dataPoise.includes(kitPoise)) out.push(`${tag} poise: kit ${kitPoise}, data ${dataPoise.join(" | ")}`);
+            const ctl = [...new Set(at.map((p) => p.poise.controlledOnly))];
+            if (!ctl.includes(h.poiseControlledOnly ?? false)) out.push(`${tag} poiseControlledOnly: kit ${String(h.poiseControlledOnly ?? false)}, data ${ctl.join(" | ")}`);
+          }
+          continue;
         }
         if (h.reaction) {
           // Damage computed as a reaction: the data creates the reaction's buff (no DamageAction of its own).
@@ -444,10 +488,7 @@ const KNOWN: string[] = [
   // Batch 3, Wulfgard. Kit form, not a disagreement: the ChannelingAction's forced Combustion at 45 has no landing there, so the kit
   // applies it from a delayed cast trigger (wolven_fury_combustion, as kit-draft emits it); this check compares hits' applications only.
   "chr_0006_wolfgd_ultimate_skill applies at 45: kit [], data [forced combustion]",
-  // Batch 4, Mi Fu. A limit of this test, kit right: World Splitter's two stagger-only DamageActions (f23, f25) are the kit's poiseOnly
-  // hit (scale []), which the compiler lists apart from landings (CompiledSkill.poiseOnly); this test matches hits to landings by scale key.
-  "chr_0031_mifu_normalskill_3/poise: no landing scaled by undefined (data: $atk_scale_runtime?)",
-  // Compiler limit (batch-3 D3 open item, a ModifyDynamicBlackboard chain on a scale): f26 atk_scale_runtime = atk_scale × yuanshi_multi
+  // Batch 4, Mi Fu. Compiler limit (batch-3 D3 open item, a ModifyDynamicBlackboard chain on a scale): f26 atk_scale_runtime = atk_scale × yuanshi_multi
   // (ReadSkillSettingData, its table not in the checkout: SkillData default 1) × crushmulti (talent 1: the kit's extraScale).
   "chr_0031_mifu_normalskill_3/split scale: kit atk_scale × yuanshi_multi, data $atk_scale_runtime?",
   // Batch 4, Last Rite. Kit right (batch-3 S6): buff_common_obtain_ultimate_sp at 32 (controlled path, jump 187 → 429 skips 300) and
@@ -459,11 +500,7 @@ const KNOWN: string[] = [
   // Compiler limit: FinishBuffByTag on the Cryo Infliction tag (all layers, after both frame-63 DamageActions) isn't read as a
   // consumption; the kit's slash consumes them afterDamage (verified on b7b3 t=11462).
   "chr_0026_lastrite_combo_skill applies at 63: kit [consume cryst], data []",
-  // Batch 4, Yvonne. Kit right (D6's fold): attack5's Stagger is a poise-only unit at frame 21 behind CheckMainCharacterCondition,
-  // which kit-draft folds into the Final Strike as poise + poiseControlledOnly; this test compares the damage landing alone.
-  "chr_0017_yvonne_attack5/hit poise: kit \"poise\", data -",
-  "chr_0017_yvonne_attack5/hit poiseControlledOnly: kit true, data false",
-  // Kit right: the dive's first IfElse side (with poise) reads buff_chr_0017_yvonne_potential_5, which nothing attaches (an orphan);
+  // Batch 4, Yvonne. Kit right: the dive's first IfElse side (with poise) reads buff_chr_0017_yvonne_potential_5, which nothing attaches (an orphan);
   // the side that runs is the plain DamageAction atk_scale without poise. The test matches the kit hit to the first side.
   "chr_0017_yvonne_plunging_attack_end/hit poise: kit -, data \"poise\"",
   // Compiler limitation (as Estella's): buff_common_obtain_ultimate_sp is in normal_skill_projhit (launched at 35) behind the
@@ -634,16 +671,7 @@ const KNOWN: string[] = [
   // Kit right: RefrainObtainUsp is buff ult_base's (the Empyrean, `duration` 25 s from frame 78: the kit buff empyrean's blocksEnergy, a key
   // this test doesn't read), not the skill's.
   "chr_0030_zhuangfy_ultimate_skill energyBlockSeconds: kit -, data 27.6",
-  // Batch 4, Ember. A limit of this test, kit as kit-draft emits it: the guard's landing at 38 is poise-only (KitHit.poiseOnly,
-  // `scale: []`, poise extrapoise behind the gpsuccess check), and this test matches kit hits to landings by their first scale key.
-  "chr_0009_azrila_normal_skill/slam_guard: no landing scaled by undefined (data: atk_scale | atk_scale2)",
-  // Batch 4, Tangtang. Compiler limit, kit right: the poise-only DamageAction (poise 18 / 10) is a landing of its own in the
-  // compiled skill (attack5_projhit's behind CheckMainCharacterCondition and CheckEntityNum); kit-draft folds it into the
-  // damage landing at the same frame (D6), as the kit writes it.
-  'chr_0027_tangtang_attack5/shot poise: kit "poise", data -',
-  "chr_0027_tangtang_attack5/shot poiseControlledOnly: kit true, data false",
-  'chr_0027_tangtang_combo_skill/jet poise: kit "poise", data -',
-  // Compiler limit (batch-4 D9e, Tangtang G3d, open), kit right: the Waterspouts' tornado_atk_scale01 is EntityBB_abilityentity_water01,
+  // Batch 4, Tangtang. Compiler limit (batch-4 D9e, Tangtang G3d, open), kit right: the Waterspouts' tornado_atk_scale01 is EntityBB_abilityentity_water01,
   // which buff_chr_0027_tangtang_passive_0 sets to passive_0's normalskill_atk_scale01; the kit names that key (scaleValue).
   "chr_0027_tangtang_normal_skill/spout1_first: no landing scaled by normalskill_atk_scale01 (data: $EntityBB_abilityentity_water01 | atk_scale_1)",
   "chr_0027_tangtang_normal_skill/spout1: no landing scaled by normalskill_atk_scale01 (data: $EntityBB_abilityentity_water01 | atk_scale_1)",

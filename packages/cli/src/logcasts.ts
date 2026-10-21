@@ -10,10 +10,41 @@ import type { LogFixture, LogHit } from "@efsim/data";
 
 /**
  * A logged cast whose next landing comes later than the key's landings span
- * plus this is a new cast: hit-stop, others' time stops and frame rounding
- * stretch a cast in the log (Haste shortens it).
+ * plus this is a new cast: hit-stop and frame rounding stretch a cast in the
+ * log (Haste shortens it). Other operators' logged time stops are taken out
+ * of the time between landings first (worldMs).
  */
 export const CAST_SLACK_MS = 1000;
+
+/** A global slow-down a logged cast caused (SkillTiming.slowdowns: UltimateTimeAction, global TimeDilationAction): from frame `start`, the world's time scale per frame. */
+export interface TimeStop {
+  readonly start: number;
+  readonly scales: readonly number[];
+  readonly operator: string;
+  readonly skillId: string;
+}
+
+/** The time stops of logged casts of skills that have them, each cast placed from its first logged hit. */
+export function castTimeStops(data: GameData, casts: readonly LoggedCast[]): TimeStop[] {
+  return distinctCasts({ hits: new Map(), casts }).flatMap((c) => {
+    const at = Math.round((c.start * FPS) / 1000);
+    return (data.skills[c.skillId]?.timing?.slowdowns ?? []).map((d) => ({ start: at + d.from, scales: d.scales, operator: c.operator, skillId: c.skillId }));
+  });
+}
+
+/** The world's time from `from` to `to` ms under time stops, in ms: each frame counts at the lowest scale of the stops then (1 without one). */
+export function worldMs(from: number, to: number, stops: readonly TimeStop[]): number {
+  const [a, b] = [Math.round((from * FPS) / 1000), Math.round((to * FPS) / 1000)];
+  const relevant = stops.filter((s) => s.start < b && s.start + s.scales.length > a);
+  if (relevant.length === 0) return to - from;
+  let held = 0;
+  for (let f = a; f < b; f++) {
+    let rate = 1;
+    for (const s of relevant) if (f >= s.start && f < s.start + s.scales.length) rate = Math.min(rate, s.scales[f - s.start] as number);
+    held += 1 - rate;
+  }
+  return to - from - msOf(held);
+}
 
 /** A kit skill's or trigger's hits: a skill's land on its cast's frames, a trigger's on its firing's. */
 interface Group {
@@ -112,7 +143,17 @@ function slotsOf(g: Group, key: string): Slot[] | null {
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
 
+/**
+ * Places every logged hit (see the file comment), twice: the second time,
+ * other operators' time stops from the first placement are taken out of the
+ * time between a cast's landings (b7b3762d5da8: Tangtang's battle skill from
+ * 11.3 s runs on across Jsspsi's combo and Last Rite's ultimate).
+ */
 export function placeHits(data: GameData, fx: LogFixture): Placement {
+  return placeWith(data, fx, castTimeStops(data, placeWith(data, fx, []).casts));
+}
+
+function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): Placement {
   const hits = new Map<LogHit, PlacedHit>();
   const casts: LoggedCast[] = [];
   const sorted = [...fx.hits].sort((a, b) => a.t - b.t);
@@ -120,6 +161,7 @@ export function placeHits(data: GameData, fx: LogFixture): Placement {
     const groups = groupsOf(data, build, computeStats(data, build), fx.team);
     if (groups.length === 0) continue;
     const mine = sorted.filter((h) => h.operator === build.operator);
+    const others = stops.filter((x) => x.operator !== build.operator);
     const slotCache = new Map<string, Slot[] | null>();
     const slots = (g: Group, key: string) => {
       const k = `${g.id}|${key}`;
@@ -138,8 +180,9 @@ export function placeHits(data: GameData, fx: LogFixture): Placement {
         const cur = current.get(h.event);
         // The same cast while within its landings' span, or while it has landings to come within the skill's whole action
         // (a landing after a wait: Rossi's Lift 2.2 s after her charge, where the logged span is 0.6 s).
-        const toCome = cur?.slots && cur.index + 1 < cur.slots.length && h.t - cur.first <= cur.longest + CAST_SLACK_MS;
-        if (cur && (h.t - cur.first <= cur.span + CAST_SLACK_MS || toCome)) {
+        const elapsed = cur ? worldMs(cur.first, h.t, others) : 0;
+        const toCome = cur?.slots && cur.index + 1 < cur.slots.length && elapsed <= cur.longest + CAST_SLACK_MS;
+        if (cur && (elapsed <= cur.span + CAST_SLACK_MS || toCome)) {
           cur.index++;
           const s = cur.slots;
           const slot = s ? s[Math.min(cur.index, s.length - 1)] : undefined;

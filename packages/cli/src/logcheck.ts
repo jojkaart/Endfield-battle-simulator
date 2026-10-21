@@ -216,24 +216,70 @@ function collapseRepeats(effects: readonly LogEffect[]): LogEffect[] {
   });
 }
 
+/** Above this many combinations of instance counts of repeated boundary buffs, only one buff at a time takes a count between none and all. */
+const MAX_BOUNDARY_COUNTS = 64;
+
 /**
  * Subsets of the buffs starting or ending at the hit (grouped by buff, since
  * a buff's effects go together). A buff listed twice with the same effects
  * may be one instance ending as its refresh starts (zmdlogs-b7b3762d5da8
  * t=5688: the Vulnerable susceptibilities), so each subset with such repeats
  * is also tried with them counted once.
+ *
+ * With `repeats`, instead the readings where a buff listed several times
+ * (n instances: its most repeated zone and element) has 1 up to n - 1 of
+ * them (its first k effects of each zone and element), in every
+ * combination with the other buffs' counts (above MAX_BOUNDARY_COUNTS, one
+ * buff at a time, the others none or all): several crits at one instant
+ * start several layers, and each hit there sees a different count
+ * (fixtures/zmdlogs-4e5e1390085e.json t=13314: three Lupine Scarlet
+ * layers, two hits used two of them).
+ * Readings that give effects an earlier one gave are left out.
  */
-export function boundarySubsets(effects: readonly LogEffect[]): { effects: LogEffect[]; label: string | null }[] {
+export function boundarySubsets(effects: readonly LogEffect[], repeats = false): { effects: LogEffect[]; label: string | null }[] {
   const buffs = [...new Set(effects.map((e) => e.buff))];
-  if (buffs.length === 0) return [{ effects: [], label: null }];
+  if (buffs.length === 0) return repeats ? [] : [{ effects: [], label: null }];
   const pick = (chosen: string[]) => {
     const picked = effects.filter((e) => chosen.includes(e.buff));
     const label = chosen.length === 0 ? null : chosen.length === buffs.length ? "boundary buffs applied" : `boundary buffs applied: ${chosen.join(", ")}`;
     const once = collapseRepeats(picked);
     return once.length < picked.length ? [{ effects: picked, label }, { effects: once, label: `${label} (refreshed instances once)` }] : [{ effects: picked, label }];
   };
-  if (buffs.length > MAX_BOUNDARY_SUBSET) return [...pick([]), ...pick(buffs)];
-  return Array.from({ length: 1 << buffs.length }, (_, mask) => pick(buffs.filter((_, i) => mask & (1 << i)))).flat();
+  const subsets = buffs.length > MAX_BOUNDARY_SUBSET ? [...pick([]), ...pick(buffs)] : Array.from({ length: 1 << buffs.length }, (_, mask) => pick(buffs.filter((_, i) => mask & (1 << i)))).flat();
+  if (!repeats) return subsets;
+  if (buffs.length > MAX_BOUNDARY_SUBSET) return [];
+  const key = (e: LogEffect) => `${e.zone}|${e.element}`;
+  const instances = buffs.map((b) => {
+    const n = new Map<string, number>();
+    for (const e of effects) if (e.buff === b) n.set(key(e), (n.get(key(e)) ?? 0) + 1);
+    return Math.max(...n.values());
+  });
+  if (instances.every((n) => n <= 1)) return [];
+  // Count vectors: each buff 0..n instances, at least one strictly between.
+  let vectors: number[][] = [[]];
+  for (const n of instances) vectors = vectors.flatMap((v) => Array.from({ length: n + 1 }, (_, k) => [...v, k]));
+  const between = (v: number[]) => v.filter((k, i) => k > 0 && k < (instances[i] as number)).length;
+  const total = instances.reduce((p, n) => p * (n + 1), 1);
+  vectors = vectors.filter((v) => between(v) >= 1 && (total <= MAX_BOUNDARY_COUNTS || between(v) === 1));
+  const sig = (es: readonly LogEffect[]) => JSON.stringify(es.map((e) => [e.buff, e.zone, e.element, e.value]).sort());
+  const seen = new Set(subsets.map((s) => sig(s.effects)));
+  const out: { effects: LogEffect[]; label: string | null }[] = [];
+  for (const v of vectors) {
+    const taken = new Map<string, number>();
+    const picked = effects.filter((e) => {
+      const i = buffs.indexOf(e.buff);
+      const k = `${e.buff}|${key(e)}`;
+      const n = taken.get(k) ?? 0;
+      taken.set(k, n + 1);
+      return n < (v[i] as number);
+    });
+    const s = sig(picked);
+    if (seen.has(s)) continue;
+    seen.add(s);
+    const parts = buffs.flatMap((b, i) => ((v[i] as number) === 0 ? [] : (v[i] as number) === instances[i] ? [b] : [`${b} ×${v[i]} of ${instances[i]}`]));
+    out.push({ effects: picked, label: `boundary buffs applied: ${parts.join(", ")}` });
+  }
+  return out;
 }
 
 /**
@@ -255,12 +301,12 @@ interface Candidate {
   readonly stacks: number;
 }
 
-/** Every combination of what the log leaves open for a hit. */
-function candidates(hit: LogHit, panels: ReadonlyMap<string, { panel: StatPanel }>, stackOptions: readonly number[]): Candidate[] {
+/** Every combination of what the log leaves open for a hit (with `repeats`, the boundary readings with part of a repeated buff's instances: boundarySubsets). */
+function candidates(hit: LogHit, panels: ReadonlyMap<string, { panel: StatPanel }>, stackOptions: readonly number[], repeats = false): Candidate[] {
   const out: Candidate[] = [];
   const corrosion = hit.unquantified.find((u) => isCorrosionBuff(u.buff));
   const corrosionLevels = corrosion ? [1, 2, 3, 4] : [0];
-  for (const boundary of boundarySubsets(hit.boundaryEffects)) {
+  for (const boundary of boundarySubsets(hit.boundaryEffects, repeats)) {
     const effects = [...hit.effects, ...boundary.effects];
     for (const level of corrosionLevels) {
       const extra: Modifier[] = [];
@@ -611,6 +657,43 @@ export function linkVariants(kind: SkillType | null, predicted: number): Variant
   ];
 }
 
+/** Most layers of an unquantified buff tried from a kit. */
+const MAX_KIT_LAYERS = 16;
+
+/**
+ * An unquantified buff (the log, or a hand annotation, says it acts but not
+ * how much) valued from its source's kit: the kit buff, among the source's
+ * own and what it wears, that stands for the game buff (KitBuff.gameBuff),
+ * with its modifiers at the source's build, 1 up to its maximum layers.
+ * Null when no kit buff stands for it (or its values need a fight).
+ */
+export function unquantifiedFromKit(data: GameData, panels: ReadonlyMap<string, { readonly build: Build; readonly panel: StatPanel }>, u: LogHit["unquantified"][number]): Variant[] | null {
+  const member = panels.get(u.source);
+  const kit = member ? effectiveKit(data, member.build) : undefined;
+  if (!member || !kit) return null;
+  for (const def of kit.buffs) {
+    if (def.gameBuff !== u.buff) continue;
+    const source = kitBuffSource(kit, def.id);
+    if (!source) continue;
+    const out: Variant[] = [];
+    const seen = new Set<string>();
+    try {
+      const max = applyBuff(data, member.build, member.panel, source, def, 0)?.maxLayers ?? 1;
+      for (let n = 1; n <= Math.min(max, MAX_KIT_LAYERS); n++) {
+        const modifiers = kitBuffModifiers(data, member.build, member.panel, def.id, n);
+        const k = signature(modifiers);
+        if (modifiers.length === 0 || seen.has(k)) continue;
+        seen.add(k);
+        out.push({ label: `unquantified ${u.buff} from kit ${def.id}${n > 1 ? ` ×${n}` : ""}`, modifiers, layers: new Map() });
+      }
+    } catch {
+      continue; // its values need a fight
+    }
+    if (out.length) return out;
+  }
+  return null;
+}
+
 export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
   const panels = new Map(fx.team.map((b) => [b.operator, { build: b, panel: computeStats(data, b) }]));
   const target = { enemy: fx.enemy.id, level: fx.enemy.level };
@@ -619,6 +702,12 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
   const finisher = finisherModifier(data, fx.enemy.id);
   const placement = placeHits(data, fx);
   const ownBuffs = new Map([...panels].map(([op, m]) => [op, unloggedOwnBuffs(data, fx, m.build, m.panel)]));
+  const fromKits = new Map<string, Variant[] | null>();
+  const valued = (u: LogHit["unquantified"][number]) => {
+    const k = `${u.source}|${u.buff}`;
+    if (!fromKits.has(k)) fromKits.set(k, unquantifiedFromKit(data, panels, u));
+    return fromKits.get(k) ?? null;
+  };
   return fx.hits.map((hit): HitVerdict => {
     const member = panels.get(hit.operator);
     const reaction = parseReactionEvent(hit.event);
@@ -637,10 +726,18 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
     const link = kind === "battle" || kind === "ultimate" ? linkVariants(kind, predictedLink(data, fx, placement, placed?.cast ?? { start: hit.t })) : [NO_VARIANT];
     const unloggedOwn = reaction ? [NO_VARIANT] : combine(ownBuffVariants(ownBuffs.get(hit.operator) ?? [], hit), link);
     const stackMax = (id: string) => kit?.stacks.find((x) => x.id === id)?.max ?? 4;
+    // Unquantified buffs a kit values (unquantifiedFromKit), each absent first; not one the hit also lists with values (those stand for it).
+    const listedHere = new Set([...hit.effects, ...hit.boundaryEffects].map((e) => e.buff));
+    const quantified = hit.unquantified
+      .filter((u) => !isCorrosionBuff(u.buff) && !listedHere.has(u.buff))
+      .map(valued)
+      .filter((v): v is Variant[] => v !== null)
+      .reduce<Variant[]>((acc, v) => combine(acc, [NO_VARIANT, ...v]), [NO_VARIANT]);
     // Whole-hit assumptions (enemy auras the log doesn't list, layers of a buff it lists once), the plain reading first:
-    // a hit that matches without them keeps matching as before.
-    for (const variant of combine(unloggedOwn, combine(auras, layerVariants(hit, caps)))) {
-      for (const c of candidates(withLayers(hit, variant.layers), panels, stackOptions)) {
+    // a hit that matches without them keeps matching as before; so do readings with part of a repeated boundary buff's instances, after all others.
+    const variants = combine(quantified, combine(unloggedOwn, combine(auras, layerVariants(hit, caps))));
+    for (const { repeats, variant } of [false, true].flatMap((repeats) => variants.map((variant) => ({ repeats, variant })))) {
+      for (const c of candidates(withLayers(hit, variant.layers), panels, stackOptions, repeats)) {
         const logged = (category: HitCategory) =>
           snapshotFrom
             ? [...logModifiers(c.effects, category, caps).filter((m) => !SNAPSHOT_ZONES.has(m.zone)), ...logModifiers(snapshotFrom.effects, category, caps).filter((m) => SNAPSHOT_ZONES.has(m.zone))]

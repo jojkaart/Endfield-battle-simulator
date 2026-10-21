@@ -18,7 +18,7 @@
    "Enemy level 90 is assumed, not logged.",
    "Battle from 2026-09-24 (game 1.5); data pins are game 1.6, so a mismatch could be a balance change.",
    "Hand annotation (not from the importer): every hit from t=49418 ms on lists buff_wpn_lance_0015_atkup (Camille's weapon, ATK +9.6% to the team) as unquantified. The log ends that buff at 49418 ms and records no later instance, but the hits say it stayed active to the end: from then on every logged hit is exactly what +9.6% ATK would give (Estella ×1.0800 on basic, combo, ultimate, battle skill and reaction hits; Rossi ×1.0735 with his 5% crit-set ATK; Camille's reaction ×1.0960), while the same hits before 49418 ms match with the logged buffs. Probably a refresh the log didn't capture. Hits that still match without it stay verified.",
-   "Rossi (batch-4 kit, docs/kit-batches/batch-4/chr_0028_wulfa.md): Rossi is \"her\" in the game's text, and the annotation's ×1.0735 assumes one MI Security layer as the log lists it; her hits carry five (zmdlogs check finds the cap), which make the +9.6% ATK ×1.064 on them. buff_wpn_lance_0015_dmgup (Camille's Heat DMG +9.6%) also drops out of the log from 65597 ms while the damage stays, as the atkup above. Hand annotation: at 13314 ms several of Rossi's crits land at once (a bleed tick, the Wolven Ambrage projectiles), so three Lupine Scarlet layers start at that instant (boundary effects) and each hit used a different count of them: projhit5 and one talent-2 hit one, projhit3 and the other talent-2 hit two (each ×1.0094 the one-layer reading, one layer of 0.016 on a Heat DMG bonus of about 0.70). zmdlogs check tries none, one or all of a repeated boundary buff, so those five hits list buff_wpn_sword_0022_layer as unquantified (the three that fit still match). Razor Clawmark ticks 26 times from one application (13314–39556 ms: at once, then each second, the last at its 25 s end). Rossi's finisher hit 3 (69142 ms) is the killing blow: its uncapped 261745 is the log's overkill estimate and matches no reading (×1.051 the plan in the batch-4 analysis). Link isn't logged: her battle skill at 10016 ms fits one stack, her ultimate at 61167 ms two (Camille's Link sources)."
+   "Rossi (batch-4 kit, docs/kit-batches/batch-4/chr_0028_wulfa.md): Rossi is \"her\" in the game's text, and the annotation's ×1.0735 assumes one MI Security layer as the log lists it; her hits carry five (zmdlogs check finds the cap), which make the +9.6% ATK ×1.064 on them. buff_wpn_lance_0015_dmgup (Camille's Heat DMG +9.6%) also drops out of the log from 65597 ms while the damage stays, as the atkup above. At 13314 ms several of Rossi's crits land at once (a bleed tick, the Wolven Ambrage projectiles), so three Lupine Scarlet layers start at that instant (boundary effects) and each hit used a different count of them: projhit5 and one talent-2 hit one, projhit3 and the other talent-2 hit two (each ×1.0094 the one-layer reading, one layer of 0.016 on a Heat DMG bonus of about 0.70). zmdlogs check tries 1 up to all of a repeated boundary buff's instances, so all five match (the hand annotation listing buff_wpn_sword_0022_layer as unquantified on them is removed). Razor Clawmark ticks 26 times from one application (13314–39556 ms: at once, then each second, the last at its 25 s end). Rossi's finisher hit 3 (69142 ms) is the killing blow: its uncapped 261745 is the log's overkill estimate and matches no reading (×1.051 the plan in the batch-4 analysis). Link isn't logged: her battle skill at 10016 ms fits one stack, her ultimate at 61167 ms two (Camille's Link sources)."
   ]
  },
  "enemy": {
@@ -4213,13 +4213,7 @@
      "value": 0.12
     }
    ],
-   "unquantified": [
-    {
-     "buff": "buff_wpn_sword_0022_layer",
-     "since": 13314,
-     "source": "chr_0028_wulfa"
-    }
-   ]
+   "unquantified": []
   },
   {
    "t": 13314,
@@ -4472,13 +4466,7 @@
      "value": 0.12
     }
    ],
-   "unquantified": [
-    {
-     "buff": "buff_wpn_sword_0022_layer",
-     "since": 13314,
-     "source": "chr_0028_wulfa"
-    }
-   ]
+   "unquantified": []
   },
   {
    "t": 13314,
@@ -4731,13 +4719,7 @@
      "value": 0.12
     }
    ],
-   "unquantified": [
-    {
-     "buff": "buff_wpn_sword_0022_layer",
-     "since": 13314,
-     "source": "chr_0028_wulfa"
-    }
-   ]
+   "unquantified": []
   },
   {
    "t": 13314,
@@ -5172,13 +5154,7 @@
      "value": 0.12
     }
    ],
-   "unquantified": [
-    {
-     "buff": "buff_wpn_sword_0022_layer",
-     "since": 13314,
-     "source": "chr_0028_wulfa"
-    }
-   ]
+   "unquantified": []
   },
   {
    "t": 13314,
@@ -5431,13 +5407,7 @@
      "value": 0.12
     }
    ],
-   "unquantified": [
-    {
-     "buff": "buff_wpn_sword_0022_layer",
-     "since": 13314,
-     "source": "chr_0028_wulfa"
-    }
-   ]
+   "unquantified": []
   },
   {
    "t": 13410,

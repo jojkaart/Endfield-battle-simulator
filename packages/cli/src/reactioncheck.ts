@@ -5,7 +5,7 @@
 
 import { applyToEnemy, computeStats, expireStatus, FPS, effectiveKit, hitAvailable, hitEffects, kitHitEntries, NO_STATUS, resolveApplication, statusEventKey, type EnemyStatus, type GameData, type KitHit, type Predicate, type StatusEvent } from "@efsim/engine";
 import type { LogFixture, LogHit } from "@efsim/data";
-import { distinctCasts, placeHits, type Placement } from "./logcasts.ts";
+import { castTimeStops, placeHits, type Placement, type TimeStop } from "./logcasts.ts";
 
 /**
  * Reactions show up in logs at the hit that caused them. A logged event
@@ -63,20 +63,11 @@ function kitHit(data: GameData, fixture: LogFixture, placement: Placement, h: Lo
   return null;
 }
 
-/** A global slow-down a logged cast caused (SkillTiming.slowdowns: UltimateTimeAction, global TimeDilationAction): from frame `start`, the world's time scale per frame. */
-export interface TimeStop {
-  readonly start: number;
-  readonly scales: readonly number[];
-  readonly operator: string;
-  readonly skillId: string;
-}
+export type { TimeStop };
 
 /** The time stops of the logged casts of skills that have them, each cast placed from its first logged hit (logcasts.ts). */
 export function loggedTimeStops(data: GameData, placement: Placement): TimeStop[] {
-  return distinctCasts(placement).flatMap((c) => {
-    const at = Math.round((c.start * FPS) / 1000);
-    return (data.skills[c.skillId]?.timing?.slowdowns ?? []).map((d) => ({ start: at + d.from, scales: d.scales, operator: c.operator, skillId: c.skillId }));
-  });
+  return castTimeStops(data, placement.casts);
 }
 
 /**
