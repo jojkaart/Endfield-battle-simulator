@@ -1,0 +1,28 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_pistol_0007",
+  "sources": [
+    "Home Longing. rmxlinux Json/SkillData/sk_wpn_pistol_0007 (weapon skill 3, SkillPatchTable: atk_up, dmg_up, duration, max_stack): cardAttributeModifier ATK formulaItem 6 +atk_up (stat panel, with skills 1 and 2: Agility, Cryo DMG); passiveEventActions abilityEvent 30 (the wielder casts) + CheckSkillType [6] (combo) -> CreateBuff buff_wpn_pistol_0007_valid on the wielder: stackingType 2 (layers, each with its own duration), maxStackCnt from max_stack, `duration`; damageModifier CheckDamageTypeMask 80 (Cryo, Nature) + CheckDamageDecorateMask 256 (battle skill) -> DamageScaleProcessor NormalCalcZone +dmg_up. toggleBuffs buff_wpn_passive_spirit_01 (no file: left out). \"For {duration}s after the wielder casts a combo skill, the wielder's next battle skill gains Cryo and Nature DMG Dealt +{dmg_up}. Max stacks ... {max_stack}. Duration of each stack is counted separately.\" Batch-4 report docs/kit-batches/batch-4/chr_0017_yvonne.md rows W4-W6."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_pistol_0007.valid",
+      "label": "Home Longing: Cryo and Nature battle-skill DMG",
+      "target": "self",
+      "gameBuff": "buff_wpn_pistol_0007_valid",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "modifiers": [{ "zone": "damageBonus", "value": "dmg_up", "elements": ["cryst", "natural"], "skillType": "battle" }],
+      "note": "Nothing in the data consumes it ('next battle skill' in the text): it acts on every Cryo or Nature battle-skill hit while it lasts (the data's reading; in-game test 80 decides, Yvonne W6). If the test says 'next', add consumedBy [battle]."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_pistol_0007.combo",
+      "on": { "event": "cast", "kinds": ["combo"] },
+      "by": "self",
+      "skill": "sk_wpn_pistol_0007",
+      "do": [{ "kind": "buff", "buff": "wpn_pistol_0007.valid" }]
+    }
+  ]
+}

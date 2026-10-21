@@ -9,7 +9,7 @@ import type { KitHit } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill, type CompiledValue } from "../src/index.ts";
 
 const data = loadGameData();
-const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen", "chr_0006_wolfgd"];
+const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen", "chr_0006_wolfgd", "chr_0017_yvonne"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
   const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
@@ -444,6 +444,27 @@ const KNOWN: string[] = [
   // Batch 3, Wulfgard. Kit form, not a disagreement: the ChannelingAction's forced Combustion at 45 has no landing there, so the kit
   // applies it from a delayed cast trigger (wolven_fury_combustion, as kit-draft emits it); this check compares hits' applications only.
   "chr_0006_wolfgd_ultimate_skill applies at 45: kit [], data [forced combustion]",
+  // Batch 4, Yvonne. Kit right (D6's fold): attack5's Stagger is a poise-only unit at frame 21 behind CheckMainCharacterCondition,
+  // which kit-draft folds into the Final Strike as poise + poiseControlledOnly; this test compares the damage landing alone.
+  "chr_0017_yvonne_attack5/hit poise: kit \"poise\", data -",
+  "chr_0017_yvonne_attack5/hit poiseControlledOnly: kit true, data false",
+  // Kit right: the dive's first IfElse side (with poise) reads buff_chr_0017_yvonne_potential_5, which nothing attaches (an orphan);
+  // the side that runs is the plain DamageAction atk_scale without poise. The test matches the kit hit to the first side.
+  "chr_0017_yvonne_plunging_attack_end/hit poise: kit -, data \"poise\"",
+  // Compiler limitation (as Estella's): buff_common_obtain_ultimate_sp is in normal_skill_projhit (launched at 35) behind the
+  // launch's CheckTagMatch on Yvonne's control tags, which the compiler leaves undecided.
+  "chr_0017_yvonne_normal_skill teamEnergy: kit 1@35, data 1@0",
+  // Kit form (batch-4 L4): the bomb as one hit whose values read the consumed stacks: the data's SaveBuffStackNumAdvanced count
+  // (and max_count for the energy) is ForceSpellStatusAction's consumedLayer, i.e. {consumed: true}; 0 consumed is the plain branch.
+  "chr_0017_yvonne_normal_skill/bomb energy: kit {\"if\":{\"consumedAtLeast\":1},\"then\":{\"sum\":[\"usp_base\",{\"product\":[\"usp_layer\",{\"consumed\":true}]}]},\"else\":0} at [35], data ((usp_layer × $max_count?) + usp_base)@35 (if tag(tag 430405417|tag 839947434|tag -1666491964|tag -1855674685|tag 1253324189|tag 1015258574|tag -1472906513), if $max_count? > 0), ((usp_layer × $max_count?) + usp_base)@35 (if tag(tag 430405417|tag 839947434|tag -1666491964|tag -1855674685|tag 1253324189|tag 1015258574|tag -1472906513), if projectile_chr_0017_yvonne_normal_skill is blocked, …)",
+  "chr_0017_yvonne_normal_skill/bomb scale: kit {\"sum\":[\"atk_scale\",{\"if\":{\"consumedAtLeast\":1},\"then\":{\"sum\":[\"atk_scale2\",{\"product\":[\"atk_scale_layer\",{\"consumed\":true}]}]},\"else\":0}]}, data (((atk_scale_layer × SaveBuffStackNumAdvanced→count) + atk_scale) + atk_scale2) | atk_scale",
+  // Compiler limitation (D3 open item, as Alesh's): ForceSpellStatusAction consumedType 2 / 3 with consumedLayer = count consumes the Cryo or
+  // Nature stacks and Solidifies at that level, only if a stack check holds; the compiler reads neither. The kit's level {consumed: true}.
+  "chr_0017_yvonne_normal_skill applies at 35: kit [consume cryst+natural, forced solidification], data []",
+  // Kit form: the two grants at the first tick (the entity's usp, the tick's usp_extra) as one sum.
+  "chr_0017_yvonne_combo_skill/tick1 energy: kit {\"sum\":[\"usp\",\"usp_extra\"]} at [19], data usp@19, usp_extra@19",
+  // Potential: P1 sets the buff's interval 0.5 and maxcnt 6; the test compiles the skill's own values (0.75 s, 4 ticks: the kit's `ticks`).
+  "chr_0017_yvonne_combo_skill/ticks_p1 frames: kit [34, 49, 64, 79, 94], data [19, 42, 64, 87] (if tag(tag 1535684437))",
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {
