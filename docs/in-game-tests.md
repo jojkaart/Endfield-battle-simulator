@@ -235,7 +235,7 @@ her ultimate (or combo) right after the battle skill. Does it start at
 once, or only after about 3.7 s? Does a teammate's combo still fire
 meanwhile? Liino's stance has the same question (test 28).
 
-### 16. Does a skill cancel the basic attack it interrupts? (ready)
+### 16. Does a skill cancel the basic attack it interrupts? (ready; optional variant with Ardelia)
 
 **Why:** the engine assumes a battle skill, combo or ultimate can start at
 any moment of a basic attack and cancels the attack's hits that haven't
@@ -245,6 +245,15 @@ under-counts damage and SP for players who cancel early.
 melee hit, start the 5th attack and press the battle skill immediately:
 does the Final Strike's damage number appear? (Its SP isn't visible on the
 bar; the damage number answers both.)
+
+With Ardelia (optional; batch 4, her kit): her attack 4 sends out Mr.
+Dolly, whose Final Strike lands about 0.8 s in. In the data the Dolly is
+removed when attack 4 ends early, so the engine drops that hit, its SP and
+her combo window if a skill cuts attack 4 before it lands. Basic chain to
+attack 4, then press her battle skill as soon as attack 4 starts. Does the
+Dolly's Final Strike number still appear, and does her combo light (a
+Final Strike on a clean dummy opens it)? Engine: neither. Both: the
+Dolly's hit is on its way once it's sent.
 
 ### 17. Do the jumps in Laevatain's battle skill skip time? (ready, if you have Laevatain or Wulfgard)
 
@@ -480,7 +489,7 @@ combo, can she basic attack? (d) After End Stance from Vocalist, how long
 until her battle skill can be cast again? The data says 3 s (the first
 report said 5).
 
-### 29. Do sub-skills count as a battle skill? (ready, if you have Si or Liino)
+### 29. Do sub-skills count as a battle skill? (ready, if you have Si, Liino or Mi Fu)
 
 **Why:** Si's Initial and Final Stroke and Liino's End Stance are
 battle-type skills in the data, but not the main battle skill. The engine
@@ -505,6 +514,11 @@ ultimate; see test 8), and Liino's talent-2 SP.
   let the hover end by itself (no input): does the weapon's Arts
   Intensity buff appear again as the hover ends? Her hover's idle and end
   steps are battle-type sub-skills too.
+- Mi Fu (optional; batch 4, her row 37): Trail and Mangle is a
+  battle-type sub-skill too. After Camille's or Lifeng's combo (Link up),
+  cast Trail and Mangle from the state her combo or ultimate leaves (not
+  right after Cloudtrapper, which would use the Link itself): is Link used
+  up? Engine: yes.
 
 ### 30. Arcane's talent-1 Susceptibility duration (ready, if you have Arcane)
 
@@ -618,7 +632,7 @@ That's about one earlier Arcane combo per second ultimate.
   11.7 s, too close to 11.4 s; the Arcane part separates that one.)
   Without the ultimate first: 19 s.
 
-### 37. Enemy timers while Imprisoned or Immobilized (ready, if you have Arcane; the Si part is not testable by hand)
+### 37. Enemy timers while Imprisoned or Immobilized (ready, if you have Arcane, Last Rite or Tangtang; the Si part is not testable by hand)
 
 **Why:** the engine freezes every status on the enemy while Si's
 Immobilization freezes it (1 s, 1.5 s at P1), which fits one log for
@@ -640,6 +654,27 @@ engine doesn't do that yet. This may also explain part of test 4.
   enemy. Each reading differs from the next by only 1–1.5 s on a 20–30 s
   timer, too close for a stopwatch or a phone video. Impact: 1–1.5 s of
   Artful Intent or Jade Vessel's debuff per battle skill, on bosses only.
+- Last Rite (optional; batch 4, her report D): her combo freezes the
+  enemy for 2 s in the data; the engine doesn't model that freeze. Run A:
+  put a timed debuff of 10 s or more that isn't an Arts Infliction on a
+  dummy (e.g. Corrosion, 15 s: Gilberta's battle skill on a dummy with a
+  Cryo stack), then bring it to 3 Cryo stacks with teammates' hits, and
+  time the debuff's icon from when it appears until it goes. Run B: the
+  same, plus Last Rite's combo as soon as it lights (at 3 Cryo stacks).
+  Keep everything else the same in both runs. B about 2 s longer than A:
+  her freeze holds the enemy's timers. The same: it doesn't (engine). Her
+  combo's cooldown is 8 s, so a 2 s freeze per combo would stretch every
+  enemy timer by about a quarter.
+- Tangtang (optional; batch 4, her U3): her ultimate (OLDEN STARE)
+  Immobilizes the enemy for 4 s; the engine stops the enemy's clock for
+  it, as for Si. On a dummy, her battle skill after one combo (two
+  Waterspouts: an Arts Susceptibility icon, 15 s). Start a stopwatch when
+  the icon appears. Run A: do nothing more; the icon goes at about 15 s.
+  Run B: her ultimate right after the battle skill, without diving.
+  Engine: about 21–22 s (her ultimate's 2.7 s time stop, test 18, plus
+  the 4 s Immobilization); about 19 s if only the Immobilization stops the
+  enemy's timers; about 17–18 s if only the time stop does; 15 s if
+  neither.
 
 ### 38. Two Arts Susceptibility sources (ready, if you have Gilberta and Ardelia, or Avywenna and Antal)
 
@@ -658,7 +693,7 @@ Focus. A teammate's Electric hit (same skill, no crits) with each alone
 and with both: is the gain with both the sum of the two gains (engine) or
 the larger one?
 
-### 39. Swordmancer's extra hit (ready, if you have 3 Swordmancer pieces, or Chen with Sundering Steel)
+### 39. Swordmancer's extra hit (ready, if you have 3 Swordmancer pieces, Chen with Sundering Steel, or Lifeng)
 
 **Why:** the 3-piece set deals an extra Physical hit when the wearer
 applies a Physical status, at most once per 15 s. Its scale (2.5 × ATK
@@ -684,6 +719,15 @@ Does the weapon's ATK buff icon appear? Then a second battle skill (now a
 real Lift): 1 or 2 stacks on the icon? Engine: no icon after the first, 1
 stack after the second. If it shows 1 then 2, a Vulnerable-only status
 counts.
+
+With Lifeng (optional; batch 4, her U1): her talent 2 deals an extra
+Physical hit (0.5 / 1.0 × ATK by talent level, below P5) on each Knock
+Down she causes. It listens to a different event from the effects above,
+so the answer may differ. Her battle skill on a dummy with no Vulnerable
+stacks: its Knock Down only adds a stack, so no Knock Down damage number
+comes. Does a separate small Physical number (about a third of the slam's
+or less) appear at the slam anyway? Engine: no. A second battle skill (now
+a real Knock Down) shows it in both readings, as the control.
 
 ### 40. Messenger's Song (ready, if you have Gilberta; lower priority)
 
@@ -801,7 +845,7 @@ Solidifications within 1 s should give one step, not two, but they can't
 be timed by hand reliably; skip that part.) If the gauge doesn't show such
 a small step, this one is not testable by hand.
 
-### 51. Does an effect a hit triggers count on that same hit? (ready, if you have Arcane with Solemn Phalanx, Hot Work, or Da Pan with Ancient Canal)
+### 51. Does an effect a hit triggers count on that same hit? (ready, if you have Arcane with Solemn Phalanx, Hot Work, Da Pan with Ancient Canal, or Ardelia with Dreams of the Starry Beach)
 
 **Why:** some weapon and gear-set effects start from something a hit does
 (an Arts Infliction, a Susceptibility it applies). The data creates some
@@ -825,6 +869,20 @@ each, against crits. About equal: the hit sees what its own Crush creates
 (engine). The second about 1.3–1.4× the first: it doesn't. The same
 question decides Wulfgard's Scorching Fangs on the hit that forms his
 Combustion, Perlica's P3 and Pulser Labs, and Seeker of Dark Lung.
+
+With Ardelia and Dreams of the Starry Beach (optional; batch 4, her
+report): her battle skill on a Corroded enemy consumes the Corrosion, and
+that gives the enemy her Arts Susceptibility (0.20 at P0, 30 s) and the
+weapon's Arts DMG Taken (+28% at level 9, 25 s). The data creates both
+before the hit's damage, so the engine puts both on that same hit. Basic
+chain to a Final Strike on a clean dummy (her combo lights), her combo,
+wait about 3 s for its bomb (the Corrosion icon), then battle skill A;
+within 25 s, battle skill B (no Corrosion left; both effects still up).
+No Hot Work (its Nature DMG lasts only 10 s from the Corrosion) and no
+teammates' buffs in between. Compare A with B, the lower of two tries
+each (crits): A/B about 1.00: both act on A (engine); about 0.78: only
+her Susceptibility does; about 0.83: only the weapon's does; about 0.65:
+neither.
 
 ### 52. SP from one perfect dodge (not testable by hand)
 
@@ -859,6 +917,14 @@ the engine assumes. If nothing appears, the dash may also have ended the
 shield (test 54), which looks the same.
 (With Catcher instead: perfectly dodge an enemy attack with another
 operator controlled; does Catcher's combo become castable?)
+
+With Ember (batch 4, her U3; the cleanest form, since her combo opens
+whenever the controlled operator is attacked, with no HP condition):
+another operator controlled, Ember's combo off cooldown. Control: let an
+enemy attack hit the controlled operator; Ember's combo button lights.
+Cast it (or let the window pass) and wait until it's ready and dark
+again. Then perfectly dodge the next attack: lit means a perfectly dodged
+hit counts as "attacked"; dark means it doesn't (engine).
 
 ### 54. Can a dash cancel a battle skill or combo at any moment? (ready; higher priority: affects every operator)
 
@@ -918,8 +984,8 @@ each.)
 
 **Why:** her talent 2 gives the team a Link stack during her ultimate
 (batch 2, B1): a teammate's battle skill then deals ×1.30 (one Link), ×1.45
-with a combo just before (two). A fixed +20% bonus instead would show
-×1.20.
+with Camille's or Lifeng's combo just before (two; an ordinary combo gives
+no Link, see test 8). A fixed +20% bonus instead would show ×1.20.
 **How:** a teammate's battle skill on a dummy without Akekuri's ultimate,
 then the same during it: compare the numbers (no crits: take the lower of
 two each). Report's other tests: docs/kit-batches/batch-2/chr_0019_karin.md.
@@ -994,7 +1060,7 @@ Alternatives (the owner doesn't use these two, so low priority):
   controlled): a swing within about 1 s (mark, engine), or only about 7 s
   later.
 
-### 62. Layers on one timer: does each new layer restart it? (ready, if you have Chen; or Akekuri at P1+)
+### 62. Layers on one timer: does each new layer restart it? (ready, if you have Chen; or Akekuri at P1+, Yvonne or Ember)
 
 **Why:** buffs whose layers share one timer (the data's stackingType 8:
 Chen's talent 1, Perlica's P3, Da Pan's talent 1, Akekuri's P1, Æthertech,
@@ -1020,6 +1086,20 @@ With Akekuri at P1+ (the same question, batch 2's U3): two combos about
 8 s apart, then wait. Does her ATK icon (4 layers) go about 10 s after the
 first combo, all at once about 10 s after the second (engine), or drop to
 2 layers about 8 s before that?
+
+With Yvonne (batch 4, her Y3): her ultimate's layers (up to 10) share one
+4 s timer of the same type. During her ultimate keep attacking and watch
+the layer counter: it stays at 10 to the end (each layer restarts the
+timer: engine; own timers look the same here), or it drops about 4 s
+after the first shot and builds up again (all expire with the first).
+
+With Ember (batch 4, her G3; low priority): her talent 2 (ATK +9% per
+layer at talent level 2, 7 s, up to 3) is of a related type that the
+engine also runs on one restarted timer. Let an enemy hit Ember once (1
+layer), again about 4 s later (2 layers), then avoid hits. From the first
+hit: both gone at about 7 s (they expire with the first); gone at about
+11 s (each layer restarts the timer: engine); down to 1 at about 7 s and
+gone at about 11 s (own timers).
 
 ### 63. Does a Shatter count as consuming a reaction? (ready, if you have Alesh and Estella; variants with OBJ Razorhorn or Twelve Questions)
 
@@ -1260,7 +1340,7 @@ in the last 45 s), cast his battle skill once. 2 Vulnerable stacks and no
 Lift damage number (the dummy isn't lifted): the data's order (engine). 2
 stacks and a Lift damage number: the extra stack came first.
 
-### 75. Chen's ATK: stat panel vs the engine (ready, if you have Chen)
+### 75. Chen's ATK: stat panel vs the engine (ready, if you have Chen; variants with Umbral Torch on Laevatain, higher priority, and with Lifeng)
 
 **Why:** her only log (fixtures/pending/zmdlogs-7e19489ae503.json)
 doesn't record her weapon and gear levels, and her hits drift as if her
@@ -1271,6 +1351,27 @@ build.
 weapon, gear and level as they are, and send the build (or a screenshot
 of the panel with weapon and gear) to compare with `efsim calc`. Any
 build of hers helps.
+
+The copied toggle (batch 4: Ardelia U2, Pogranichnik W3; higher priority,
+with Laevatain): Umbral Torch, Opus: Etch Figure and Glorious Memory carry
+a copy of another weapon's ATK buff (`buff_wpn_lance_0003`, +19.6% ATK at
+level 9) behind a condition on a value their skills don't have. The
+engine treats it as off. If the game reads the missing value as 0, it's
+always on and those weapons give their ATK% twice; that may be part of
+Chen's drift above (1.35 + 0.196 ≈ 1.55). Laevatain with Umbral Torch (or
+anyone with Opus: Etch Figure or Glorious Memory): her panel ATK against
+`efsim calc` for the same build. Equal: off (engine). About 0.196 more
+ATK% than calc shows: on. When the weapon is her only ATK% source that's
+about 1.16× calc's ATK (examples/laevatain-umbral-torch.json: 4,930 vs
+about 5,740). If the panel matches calc, the buff might still act only in
+battle; a log with one of these weapons would settle that.
+
+With Lifeng (batch 4, her U3): talent 1 gives ATK per Intellect and Will
+point, which the engine adds to her attribute bonus (calc includes it).
+Her panel ATK against calc for the same build: equal means that reading
+(engine). About 1.17× calc at P0 or 1.25× at P5 means the game reads it
+as ATK% (Opero 77 at level 90, no gear: calc 1,853 vs 2,176 at P0, 2,030
+vs 2,548 at P5).
 
 ### 76. Purrchena's shield, Giftbox and Handicraft (ready, if you have Purrchena; low priority; C and D are tedious)
 
@@ -1294,6 +1395,336 @@ docs/kit-batches/batch-3/chr_0038_purrche.md.
 - D: over ten ultimates without an Ambassador's Special (fewest at P0),
   count the vortexes each time. The data allows one at most; independent
   50/50 Prezzies would give two or more in about half of them.
+
+### 77. Combustion ticks and a later ATK buff (ready, if you have Laevatain and Liino; higher priority: every Heat team)
+
+**Why:** Combustion deals a tick of damage every second for 10 s. The data
+marks the ticks as taking the applier's ATK when Combustion is applied
+(`takeAtkSnapshot`). Since 2026-10-21 the engine keeps the applier's whole
+attacking side from then (ATK, DMG bonuses, Amp, Arts Intensity): one
+log's three ticks fit only with the DMG bonuses from the reaction (batch
+4, V2), but no log shows ATK changing mid-burn. If ATK is read at each
+tick instead, every Combustion that starts before a team ATK buff (or
+outlasts one) is off by that buff's share. Rossi's bleed has the same
+flag.
+**How:** on a training dummy, Laevatain with 4 Melting Flame: her
+empowered battle skill forces Combustion. Ticks don't crit, so they all
+show the same number. Note two or three ticks, then swap to Liino and cast
+her battle skill (Vocalist Stance: team ATK; its icon appears on
+Laevatain) while the dummy still burns, and note the ticks after it. No
+combos or other buffs in between.
+- The ticks stay the same: ATK is kept from the application (data,
+  engine).
+- The ticks rise by about 7% (Vocalist Stance's ATK +10% at skill level 12
+  on top of the 39% ATK% of examples/laevatain-forgeborn.json: e.g. 3,130
+  → about 3,350), and more as
+  Bedazzling Night Debut's ATK stacks build on her if Liino has it (test
+  25): ATK is read at each tick.
+
+Liino's ultimate (Cosmovoice: about +20% ATK on Laevatain) instead of her
+battle skill gives a bigger step. With Wulfgard instead of Laevatain: his
+ultimate's Combustion and the same buff.
+
+### 78. Lifeng's Link: her ultimate's third hit, and how long the Link lasts (ready, if you have Lifeng)
+
+**Why:** Lifeng's combo gives one Link stack (one of the few Link sources:
+test 8). Her ultimate deals a third big hit only when its cast uses Link
+(6.0 of its 14.0 × ATK). The engine gives that hit only then, and keeps
+her combo's Link for 20 s (the combo's data, and the skill panel's "Combo
+Duration 20 s"); the Link buff's own data says 15 s. Her combo opens on a
+Final Strike by the controlled operator on an enemy with Physical
+Susceptibility, which her battle skill gives for 12 s.
+**How:** on a training dummy, count the big damage numbers of her
+ultimate (its hits come about 2, 4 and 6 s after the cast). Cast her
+battle skill before the combo, never between the combo and the ultimate
+(a battle skill would use the Link up).
+1. With no combo in the last 20 s: 2 numbers.
+2. Right after her own combo: 3 (the third about 1.5× the others).
+3. Right after only Estella's combo (or anyone's but Camille's): 2 (data,
+   engine); 3 would mean every combo gives Link (the old rule).
+4. Her combo, then her ultimate 17–18 s later by stopwatch, with nothing
+   cast in between: a third hit means the Link lasts 20 s (engine); none
+   means 15 s.
+
+### 79. Yvonne's talent 1: how long the next basic attack stays a Final Strike (ready, if you have Yvonne and a Cryo or Nature teammate)
+
+**Why:** when her battle skill's bomb Solidifies an enemy, talent 1 turns
+her next basic attack into her Final Strike (attack 5) for up to 15 s. The
+data does it by remapping the basic-attack button; the engine keeps the
+remap for the buff's whole 15 s. The remap's own setting says 0.5 s, which
+would make it hard to use. Each such Final Strike also lights her combo
+(a Final Strike on a Solidified enemy).
+**How:** a teammate applies Cryo or Nature Infliction to a dummy; Yvonne's
+battle skill Solidifies it. Control: press basic attack at once after the
+bomb: one big shot (the Final Strike, about 2.4–3.5× attack 1's number),
+and her combo lights. Then repeat, but wait about 3 s after the bomb (no
+input) before pressing basic attack once:
+- one big shot and the combo lights: the remap lasts the buff (engine);
+- a small attack 1 shot and the combo stays dark: it lasts 0.5 s.
+
+### 80. Home Longing: the next battle skill, or every one for 20 s? (ready, if you have Home Longing on Yvonne or another Cryo or Nature handcannon user)
+
+**Why:** after the wielder's combo, Home Longing gives her "next battle
+skill" Cryo and Nature DMG +22.4% (level 9) for 20 s. Nothing in the data
+ends it at a battle skill, so the engine applies it to every Cryo or
+Nature battle-skill hit for the 20 s.
+**How:** with Yvonne: light her combo as in test 79 and cast it; after
+that the dummy has no infliction left, so her bombs deal their plain
+damage. Then two battle skills within about 10 s, then a third more than
+20 s after the combo, with no combo in between and no teammate's Cryo or
+Nature hit on the dummy. Compare the three bombs' non-crit numbers
+(repeat the run if one crits):
+- the first and second equal, both about 1.1–1.15× the third (her other
+  DMG bonuses set the exact step): every battle skill for 20 s (data,
+  engine);
+- only the first above the other two: the next battle skill only (the
+  description).
+
+### 81. Last Rite's Hypothermia from a reaction (ready, if you have Last Rite with talent 1)
+
+**Why:** talent 1 gives the enemy Cryo Susceptibility (Hypothermia: 4% per
+stack, 15 s) when Last Rite consumes Arts Infliction. Her combo consumes
+Cryo stacks; her Mirages' Cryo can also turn another element's infliction
+into a reaction, which consumes it too. The engine counts that (batch 4,
+A1); if the game doesn't, Hypothermia comes only from her combo. OBJ
+Velocitous has the same question.
+**How:** a Heat (or Electric, Nature) teammate applies an infliction to a
+dummy and stays controlled. Last Rite casts her battle skill off-field (her
+perfusion goes on the team). The teammate's next Final Strike brings her
+two Mirages, whose Cryo turns the infliction into Solidification. Don't
+cast her combo. Is there a Cryo Susceptibility icon on the dummy? Yes: a
+reaction's consumption counts (engine). No: only her combo's.
+
+### 82. Last Rite's battle skill inside her own chain (ready, if you have Last Rite)
+
+**Why:** pressed while she's controlled and early in a basic attack, her
+battle skill runs beside the attack (the description: it "does not reset
+her basic attack sequence"), so the chain goes on as if nothing happened.
+The engine follows the data since 2026-10-21 (batch 4, C4). If the game
+holds her like an ordinary skill, each such cast costs her about 1 s of
+her chain.
+**How:** Last Rite controlled on a dummy, SP bar full (three casts).
+Keep pressing basic attack and time from the first basic attack to the
+fourth Final Strike (attack 4):
+1. four plain chains;
+2. four chains, pressing her battle skill early in attack 2 of each of
+   the first three.
+The same time: the cast runs beside the attack (data, engine). About 3 s
+longer in run 2: it interrupts her like an ordinary skill. Also, in run 2:
+does attack 2's second hit still show its damage number? Data and engine:
+yes.
+
+### 83. Last Rite's Mirages after a swap (ready, if you have Last Rite)
+
+**Why:** her battle skill gives every team member a perfusion for 15 s;
+each member's first Final Strike while controlled brings two Mirages (3.84
+× her ATK in all at P5, and a Cryo stack) and ends that member's perfusion
+only. The engine follows the data. The description speaks only of "the
+controlled operator", which could mean one use for the whole team.
+**How:** operator X controlled; Last Rite casts her battle skill off-field.
+Swap to Y at once and finish Y's chain: Mirages on Y's Final Strike? Swap
+back to X and finish X's chain within the 15 s: Mirages again?
+- both times: each member's perfusion acts once (data, engine);
+- only on Y: one use for the whole team;
+- only on X: only the operator controlled at the cast has it.
+
+### 84. Tangtang's own Haste (ready, if you have Tangtang with talent 1)
+
+**Why:** talent 1 gives allies within 5 m of her Whirlpool Haste (10% /
+20%), and for 3 s after they leave. The data excludes the aura's "owner",
+which may be the Whirlpool or Tangtang herself. The engine gives the Haste
+to the whole team, Tangtang included. What Haste speeds up is test 19.
+**How:** light her combo (a teammate's Cryo hit does it) and cast it on a
+dummy: a Whirlpool appears. Stand Tangtang in it: does the Haste icon show
+on her? Then swap to a teammate standing in it: on the teammate? Engine:
+both.
+
+### 85. Rapid Ascent against a Staggered enemy (ready, if you have Rapid Ascent on any sword user)
+
+**Why:** the description gives battle skills and ultimates DMG +98%
+(level 9) against Staggered enemies. The data's condition has only "the
+target is Staggered", with no skill-type check, so the engine gives it to
+every hit. Basic attacks tell the two apart.
+**How:** on a dummy, compare basic attack 1's non-crit number before a
+Stagger with one during it:
+- about ×1.3 during the Stagger (the Stagger's own DMG taken): the
+  description;
+- about ×2.2–2.6 (×1.3 × (1 + 0.98 / (1 + the hit's DMG bonus)); about
+  ×2.2 for attack 1 of examples/laevatain-umbral-torch.json with Rapid
+  Ascent instead): the data (engine).
+A battle skill shows the bigger step in both readings.
+
+### 86. Rossi's combo cooldown, with and without sequence 2, and the perfect timing (ready, if you have Rossi)
+
+**Why:** sequence 1 of her combo opens a 6 s window for sequence 2. The
+data starts the combo's full cooldown (14 s) when sequence 2 is cast, or,
+if it isn't, when the 6 s window ends. The engine follows that since
+2026-10-21 (batch 4, S2); a cooldown from sequence 1 would give 14 s
+either way. A ring also shows briefly during sequence 1 (about 1.7 s in,
+for under half a second): sequence 2 pressed inside it takes a "perfect"
+path that adds one more Vulnerable stack. The engine has both paths;
+searches don't yet aim for the ring (owner item 3 of batch 4).
+**How:** her combo opens on an enemy with both Vulnerable stacks and an
+Arts Infliction.
+1. Stopwatch from sequence 1 until the combo button is ready again:
+   (a) with sequence 2 at once: about 15 s; (b) without sequence 2: about
+   21 s (data, engine), or 14 s if the cooldown runs from sequence 1.
+2. On a dummy with one Vulnerable stack and an Arts Infliction: sequence 1,
+   then sequence 2 inside the ring; again on a fresh dummy, with sequence 2
+   about a second after the ring. The Vulnerable counter rises by 2 with
+   the ring (her Lift and the extra stack) and by 1 without (engine).
+
+### 87. Zhuang Fangyi's Sunderblades (ready, if you have Zhuang Fangyi)
+
+**Why:** each battle skill creates a Sunderblade (more when it consumes
+Electrification), then every Sunderblade around deals a Thunder Strike
+(the last a big one). The engine lets the blades a cast creates strike in
+that same cast, and gives each blade its own 36 s timer (46 s at P3). If
+new blades aren't ready in time, every cast deals one strike fewer; with
+one shared, refreshed timer, old blades last longer.
+**How:** on a dummy, with no Electric teammate (no Electrification); a
+phone video helps with counting.
+1. Four battle skills about 5 s apart; count the Thunder Strike numbers of
+   each: 1, 2, 3, 3 (engine; 2, 3, 3, 3 from P1); 0, 1, 2, 3 if new blades
+   don't strike in their own cast.
+2. Battle skills at 0, 10 and 20 s by stopwatch, then a fourth at 50 s:
+   2 strikes on the fourth (own timers: the 0 s and 10 s blades are gone;
+   engine) or 3 (one shared timer, refreshed by each cast). At P3, cast
+   the fourth at 60 s instead.
+
+### 88. Zhuang Fangyi's Empyrean state (ready, if you have Zhuang Fangyi)
+
+**Why:** her ultimate gives her the Empyrean of Truth for 25 s: her first
+battle skill in it costs no SP, and her combo's cooldown runs 5 times
+faster (the description says 4: 3.4 s or 4.25 s of the 17 s, too close
+to tell by hand). The data also has a listener that may end the state
+early, perhaps on a swap. The engine follows the first two since
+2026-10-21 (batch 4, S4, S5) and never ends the state early.
+**How:**
+1. Spend the SP bar to empty, cast her ultimate, then her battle skill at
+   once: castable at once, with its Sunderblades (engine), or does it wait
+   for SP (about 12 s)?
+2. In the state: a battle skill (its last strike inflicts Electric), the
+   three-hit chain, then her combo; repeat the battle skill and the chain
+   at once. Is the combo ready again about 4 s after the first one
+   (engine), or only after about 17 s?
+3. Cast her ultimate, swap to a teammate about 5 s later, and back 3 s
+   after that: does she still have the Empyrean (its icon, the enhanced
+   attacks; engine), or is it gone?
+
+### 89. Zhuang Fangyi's talent 1 over one cast (ready, if you have Zhuang Fangyi with talent 1 at level 2+; needs nine Sunderblades)
+
+**Why:** talent 1 gives her Electric Amp with each battle skill and
+raises it by 2% before each Thunder Strike. The engine adds the raises up
+over the cast, so the eighth small strike is about 1.12× the first (Amp
+1.20 → 1.34). If each strike gets only one raise, they're equal.
+**How:** a battle skill with 9 Sunderblades (in her Empyrean, after a
+couple of battle skills that consumed Electrification; the strike count
+shows it), recorded with a phone. Compare the first and the eighth small
+strike's non-crit numbers: about 1.12×: the raises add up (engine). Equal:
+they don't.
+
+### 90. Mi Fu's combo trigger: a state? (ready, if you have Mi Fu at P1+ and a teammate who adds Vulnerable without Crush or Breach)
+
+**Why:** her combo opens "when an enemy has 3 or more Vulnerability
+stacks". The engine opens a 6 s window each time a stack is added at 3 or
+more, and ignores stacks added during the cooldown (batch 3 T5, test 60).
+If the game treats it as a state, the button lights again when the
+cooldown ends while 3+ stacks remain, and goes dark when a Crush consumes
+them. One combo more or less per Vulnerable build-up.
+**How:** the teammate adds the stacks (Da Pan's battle skill and ultimate,
+Chen or Estella).
+1. Bring a dummy to 3 Vulnerable stacks, cast her combo as soon as it
+   lights, then add no stacks and don't Crush (Vulnerable lasts 20 s from
+   the last stack; her cooldown is 17 s at P1+). Watch the button: lit
+   again about 17 s after the combo (a state), or dark until a new stack
+   (engine)?
+2. Bring the dummy to 3+ stacks (the combo lights) and don't cast it; cast
+   Cloudtrapper, then Trail and Mangle at once (its Crush consumes the
+   stacks). Does the button go dark at the Crush (a state), or stay lit
+   until about 6 s after it lit (engine)?
+
+### 91. World Splitter's damage type (ready, if you have Mi Fu)
+
+**Why:** "this DMG is not treated as Battle Skill DMG, but as Crush DMG":
+the engine gives World Splitter no Battle Skill DMG bonus. Its multiplier
+also has a factor from a table we don't have (`yuanshi_multi`, taken as
+1).
+**How:** below P5, without Amaranthine Tassel, Grizzled Edge or Ancient
+Canal, ideally with some Battle Skill DMG on her panel (gear or weapon). A
+teammate brings a dummy to 3 Vulnerable stacks without Susceptibility or
+Stagger (no Mi Fu or Estella combo). Then Cloudtrapper, Trail and Mangle,
+World Splitter. Compare World Splitter's number with Cloudtrapper's, the
+lower of two tries each (crits):
+- 4.0 × (1 + p) / (1 + p + b), with p her Physical DMG and b her Battle
+  Skill DMG from the panel (e.g. 3.25 with 30% each): no Battle Skill DMG
+  on it (engine);
+- 4.0: it takes the Battle Skill DMG bonus;
+- anything else: the table's factor isn't 1.
+
+### 92. Long Heritage and Si's Amp (ready, if you have Si with Long Heritage)
+
+**Why:** Long Heritage gives the team Arts DMG +11.2% for 20 s when an Amp
+the wielder gives, one reaching Cryo, reaches a teammate. Si's ultimate
+gives the team Cryo and Heat Amp. The data's check lists one Cryo Amp by
+name and the all-Arts Amps by a tag; which of the two the game reads
+(batch 4, T1) decides whether Si's Amp counts. The same reading decides
+checks in Grand Vision and Glorious Memory.
+**How:** Si with Long Heritage and a teammate: cast Si's ultimate. Does
+the weapon's team Arts DMG icon appear on the teammate? Yes: Si's Amp
+counts (engine). No: only all-Arts Amps count.
+
+### 93. Camille's talent 2 from a teammate's heal (ready, if you have Camille and Liino)
+
+**Why:** talent 2 gives Camille two layers of Heat DMG (+4% each at talent
+level 2, up to 5 layers, 40 s), and each teammate a quarter of that, each
+time she receives a skill heal. The data reads heals she receives from
+anyone, and the engine follows the data. The description ("Whenever
+Camille restores HP via a skill") could mean only her own heals. With
+Liino's soundwaves in the team that's 5 layers all the time (Heat DMG +20%,
++50% at P5), or 2 per Camille combo.
+**How:** Camille and Liino in the team, Camille's combo not cast. Liino's
+battle skill (its soundwaves heal every 3 s): does Camille's Heat DMG icon
+appear with 2 layers at the first soundwave and show 5 within about 6 s
+(engine)? Or does it stay away until Camille's own combo?
+
+### 94. Thermite Cutter's Link half (ready, if you have Thermite Cutter and Lifeng or Camille; low priority)
+
+**Why:** Thermite Cutter gives the team ATK (+14% at level 9, 20 s, up to 2
+layers) "after the wielder's skill recovers SP or grants a Link state".
+In the data the second half fires when a Link stack reaches the wielder.
+The engine models only the first half (SP from the wielder's own skills),
+so a Link source in the team gives nothing. Few teams have both.
+**How:** Thermite Cutter on a sword user (e.g. Laevatain) who casts no
+skill during the test, so the SP half stays quiet (Final Strike SP doesn't
+count). Then a Link source: Lifeng's combo (her battle skill first, then
+the wielder's Final Strike opens it), or Camille's combo on a dummy with
+hovering Vesperwings (test 8). Does Thermite Cutter's team ATK icon
+appear? Engine: no. Yes: a Link stack the wielder receives counts.
+
+### 95. A third Whirlpool (ready, if you have Tangtang at P1+; low priority, tedious)
+
+**Why:** each combo of Tangtang's leaves a Whirlpool for 30 s. The data
+counts at most 2 (a third replaces the oldest) but never removes the
+oldest one from the ground, and her battle skill, which consumes the
+Whirlpools and refunds SP, has no refund for 3. The engine: 2 Whirlpools
+and the refund (50 SP at P1+, a sixth of the bar).
+**How:** three combos about 10 s apart without a battle skill
+(teammates' Cryo hits light her combo; P1's 10 s cooldown allows it).
+Count the Whirlpools on the ground: 2 or 3? Then her battle skill: does
+the SP bar jump up by about a sixth (engine), or not (3 Whirlpools, no
+refund)?
+
+### 96. Ardelia's Wooly Party hits on one enemy (ready, if you have Ardelia; low priority, tedious)
+
+**Why:** her ultimate throws about 20 sheep a second, and each enemy takes
+at most one hit per 0.3 s. Whether the cap is reached depends on how many
+land near the enemy. The engine assumes it is: 11 hits below P3, 14 from
+P3 (more than half of her damage in the example). If a large enemy takes
+only about 6, her ultimate is about 45% lower.
+**How:** below P3, record her ultimate on a large dummy with a phone and
+count the Wooly Party damage numbers: 10–11 (engine: 11) or clearly fewer.
+A log settles it better.
 
 ## Results
 
