@@ -9,7 +9,7 @@ import type { KitHit } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledSkill, type CompiledValue } from "../src/index.ts";
 
 const data = loadGameData();
-const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen", "chr_0006_wolfgd"];
+const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen", "chr_0006_wolfgd", "chr_0028_wulfa"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
   const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
@@ -444,6 +444,37 @@ const KNOWN: string[] = [
   // Batch 3, Wulfgard. Kit form, not a disagreement: the ChannelingAction's forced Combustion at 45 has no landing there, so the kit
   // applies it from a delayed cast trigger (wolven_fury_combustion, as kit-draft emits it); this check compares hits' applications only.
   "chr_0006_wolfgd_ultimate_skill applies at 45: kit [], data [forced combustion]",
+  // Batch 4, Rossi. Compiler limit (batch-4 D7i), kit right: attack4's not-controlled path (JumpToAction 0 → 189) skips the × 0.2 SimpleCalcBB at
+  // frame 6; its own × 0.5 applies (the compiler multiplies both: 0.1). The 4e5e log has only the controlled path.
+  "chr_0028_wulfa_attack4/hit_ai factor: kit 0.5, data 0.2 | 0.1",
+  // Data quirk (batch-4 D7g), kit right: twelve Rossi buffs (normal_defup, normal_smarttarget, normal_bleed, normal_bleed_effect, combo_2_damage, tut_*) carry
+  // the same template timeline (TickIntervalAction 0.1 s at frames 10–20, a DamageAction on the default atk_scale 0.3) that the game doesn't run:
+  // 4e5e has no such hit (no defup / smarttarget / tut hit; bleed ticks 1 s apart; three combo_2_damage ticks per combo). The bleed's own
+  // per-second DamageAction is the kit buff razor_clawmark's buffTick trigger (D9b), not a skill hit.
+  "chr_0028_wulfa_normal_skill: data lands buff_chr_0028_wulfa_normal_defup atk_scale at [225, 228, 231, 234], no kit hit",
+  "chr_0028_wulfa_normal_skill: data lands buff_chr_0028_wulfa_normal_smarttarget atk_scale at [240, 243, 246, 249], no kit hit",
+  "chr_0028_wulfa_normal_skill: data lands buff_chr_0028_wulfa_normal_bleed atk_scale_bleed at [230, 230, 230, 230, 240, 240, 240, 240, 243, 243, 243, 243, 246, 246, 246, 246, 249, 249, 249, 249, 260, 260, 260, 260, 290, 290, 290, 290, 320, 320, 320, 320, 350, 350, 350, 350, 380, 380, 380, 380, 410, 410, 410, 410, 440, 440, 440, 440, 470, 470, 470, 470, 500, 500, 500, 500, 530, 530, 530, 530, 560, 560, 560, 560, 590, 590, 590, 590, 620, 620, 620, 620, 650, 650, 650, 650, 680, 680, 680, 680], no kit hit",
+  "chr_0028_wulfa_normal_skill: data lands buff_chr_0028_wulfa_normal_bleed_effect atk_scale at [240, 240, 240, 240, 243, 243, 243, 243, 246, 246, 246, 246, 249, 249, 249, 249, 270, 270, 270, 270, 273, 273, 273, 273, 276, 276, 276, 276, 279, 279, 279, 279, 300, 300, 300, 300, 303, 303, 303, 303, 306, 306, 306, 306, 309, 309, 309, 309, 330, 330, 330, 330, 333, 333, 333, 333, 336, 336, 336, 336, 339, 339, 339, 339, 360, 360, 360, 360, 363, 363, 363, 363, 366, 366, 366, 366, 369, 369, 369, 369, 390, 390, 390, 390, 393, 393, 393, 393, 396, 396, 396, 396, 399, 399, 399, 399, 420, 420, 420, 420, 423, 423, 423, 423, 426, 426, 426, 426, 429, 429, 429, 429, 450, 450, 450, 450, 453, 453, 453, 453, 456, 456, 456, 456, 459, 459, 459, 459, 480, 480, 480, 480, 483, 483, 483, 483, 486, 486, 486, 486, 489, 489, 489, 489, 510, 510, 510, 510, 513, 513, 513, 513, 516, 516, 516, 516, 519, 519, 519, 519, 540, 540, 540, 540, 543, 543, 543, 543, 546, 546, 546, 546, 549, 549, 549, 549, 570, 570, 570, 570, 573, 573, 573, 573, 576, 576, 576, 576, 579, 579, 579, 579, 600, 600, 600, 600, 603, 603, 603, 603, 606, 606, 606, 606, 609, 609, 609, 609, 630, 630, 630, 630, 633, 633, 633, 633, 636, 636, 636, 636, 639, 639, 639, 639, 660, 660, 660, 660, 663, 663, 663, 663, 666, 666, 666, 666, 669, 669, 669, 669, 690, 690, 690, 690, 693, 693, 693, 693, 696, 696, 696, 696, 699, 699, 699, 699], no kit hit",
+  "chr_0028_wulfa_normal_skill: data lands buff_chr_0028_wulfa_tut_normalskill_success atk_scale at [240, 243, 246, 249], no kit hit",
+  "chr_0028_wulfa_combo_2_skill: data lands buff_chr_0028_wulfa_normal_defup atk_scale at [10, 13, 16, 19], no kit hit",
+  "chr_0028_wulfa_combo_2_skill: data lands buff_chr_0028_wulfa_combo_2_damage atk_scale at [43, 46, 49, 52], no kit hit",
+  "chr_0028_wulfa_combo_2_skill: data lands buff_chr_0028_wulfa_tut_comboskill_failure atk_scale at [82, 85, 88, 91], no kit hit",
+  // Compiler limit (batch-4 D9f), kit right: sequence 2's scale is SaveBuffStackNumAdvanced of a buff created with count = the consumed
+  // infliction stacks: atk_scale_s + damage_add × {consumed}; potential_atk_multiply is 1 (P1 multiplies the keys). Its else-if chain of
+  // CheckBuffStackNumByTag (Heat, Nature, Electric, Cryo) is one consumeInfliction of the four elements (an enemy holds one element), and
+  // the Lift and the perfect path's buff_physical_no_guard (Vulnerable) only reach a target that had an infliction (consumedAtLeast 1).
+  "chr_0028_wulfa_combo_3_skill/perfect scale: kit {\"sum\":[\"atk_scale_s\",{\"product\":[\"damage_add\",{\"consumed\":true}]}]}, data ((((SaveBuffStackNumAdvanced→spellinflict_stack_max × damage_add) + $atk_scale_s?) × potential_atk_multiply) ÷ 1)",
+  "chr_0028_wulfa_combo_3_skill/late scale: kit {\"sum\":[\"atk_scale_s\",{\"product\":[\"damage_add\",{\"consumed\":true}]}]}, data ((((SaveBuffStackNumAdvanced→spellinflict_stack_max × damage_add) + $atk_scale_s?) × potential_atk_multiply) ÷ 1)",
+  "chr_0028_wulfa_combo_3_skill applies at 29: kit [consume fire+natural+pulse+cryst, lift, vulnerable], data [], conditionally [consume fire, consume natural, consume pulse, consume cryst]",
+  "chr_0028_wulfa_combo_3_skill applies at 227: kit [consume fire+natural+pulse+cryst, lift], data [], conditionally [consume fire, consume natural, consume pulse, consume cryst]",
+  // Sequence 2's buffs carry the same template timeline (D7g, as above).
+  "chr_0028_wulfa_combo_3_skill: data lands buff_chr_0028_wulfa_normal_defup atk_scale at [10, 13, 16, 19, 222, 225, 228, 231], no kit hit",
+  "chr_0028_wulfa_combo_3_skill: data lands buff_chr_0028_wulfa_tut_comboskill_finish atk_scale at [39, 42, 45, 48, 237, 240, 243, 246], no kit hit",
+  // Compiler limit (batch-3 D3 open item), kit right: at frame 58 IfElse potential_5 → SimpleCalcBB atk_scale_1/2/3 × potential_5_damage_scale;
+  // the compiler stops at the dynamic key. The kit's extraScale (potentialAtLeast 5) is that branch; 4e5e (P3) fits the plain keys.
+  "chr_0028_wulfa_ultimate_skill/stab scale: kit atk_scale_1, data $atk_scale_1?",
+  "chr_0028_wulfa_ultimate_skill/slash1 scale: kit atk_scale_2, data $atk_scale_2?",
+  "chr_0028_wulfa_ultimate_skill/slash2 scale: kit atk_scale_3, data $atk_scale_3?",
 ];
 
 describe("batch-1 kits against the compiled SkillData", () => {

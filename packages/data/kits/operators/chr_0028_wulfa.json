@@ -1,0 +1,394 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0028_wulfa",
+  "sources": [
+    "Kit plan: docs/kit-batches/batch-4/chr_0028_wulfa.md (analysis 1 kit plan, re-analysed in its \"Kit (2026-10-21)\" section). Hit structure and frames: rmxlinux Json/SkillData chr_0028_wulfa_* and Json/BuffData buff_chr_0028_wulfa_* (game 1.6), as compiled by efsim kit-draft and corrected by hand where noted; values from SkillPatchTable (level 12: attack1–5 atk_scale 0.61 / 0.71 / 0.77 / 0.91 / 1.13, attack5 poise 18 and atb 21, attack1–4 atb 0; finisher 9.0; dive 1.8; battle skill atk_scale_1 1.92, atk_scale_3 2.88, poise_1 5, poise_2 15, usp_2 10, cost 100 SP; combo_2 atk_scale 1.5, usp 10, cooldown 14 s; combo_3 atk_scale_s 3.0, damage_add 1.8, poise_s / poise_f 5, usp_s 10, crit_increase_rate 0.25, crit_damage_increase_rate 0.5, crit_increase_duration 15, cooldown 0; ultimate atk_scale_1 0.24, atk_scale_2 2.5, atk_scale_3 7.5, poise 25, crit_damage_up_to_bleed 0.6, cost 110).",
+    "Talents (PotentialTalentEffectTable; index 0 Nicks and Scratches, 1 Seething Blood). Talent 1 level 1 / 2 SETS (skillBbModifier) talent_1_x, atk_scale_bleed 0.25 / 0.30, duration_bleed 15 / 25, damage_up 0.06 / 0.12 on the battle skill, overriding SkillPatchTable's atk_scale_bleed 0.36–0.81 / duration_bleed 15 (the 4e5e log's 26 bleed ticks fit 0.30 exactly). Talent 2 level 1 / 2 sets bleed_critical_damage_scale 0.12 / 0.24 and heal_scale; P3 adds 0.08 (and bleed_critical_damage_interval −0.5, inert: hasAddingCooldown is false). Potentials: P1 Origin of Admiration ×1.15 on atk_scale_1 / atk_scale_3 (battle), atk_scale (combo_2), atk_scale_s, atk_scale_f, damage_add (combo_3) and atb_return 10; P2 Agility +20, Crit Rate +7% (stat panel); P4 ultimate cost ×0.85; P5 Legendary Destination (ultimate_skill f58: atk_scale_1/2/3 × potential_5_damage_scale 1.1 and crit_damage_up_to_bleed + potential_5_critical_damage 0.3). The loader applies all of them.",
+    "Skill descriptions (CharGrowthTable + I18nTextTable_EN). Battle skill Crimson Shadow: \"Charges to the target to deal Physical DMG and apply Lift. If the target already has Vulnerability stack(s), the skill also unleashes a Wolven Ambrage\" (four Heat projectiles). Combo Moment of Blazing Shadow: \"COMBO TRIGGER: When an enemy has both Vulnerability and Arts Infliction stacks.\"; \"Rossi's combo skill has 2 consecutive sequences\": sequence 2 consumes the target's Arts Infliction for more damage, Lift and (with perfect timing) one more Vulnerability, and gives Crit Rate / Crit DMG for 15 s. Ultimate \"Razorclaw\" Ambuscade: 25 stabs and two slashes of Heat DMG; \"When this skill successfully scores a critical hit, it deals higher Critical DMG\".",
+    "Not modelled: buff_chr_0028_wulfa_normal_defup (Rossi takes half damage during the follow-up and the combos: operator HP isn't tracked, batch-3 N2), the heals' amounts (talent 2's heal is an event only), the cape passive (cosmetic), the normal-rank ultimate stop (buff_chr_0028_wulfa_ult_stopenemy: an InterruptAction and tag 430405417 only, no time dilation; its effect on an enemy isn't known), and the 0.1 s template timeline (TickInterval frames 10–20 with a DamageAction on the default atk_scale 0.3) that twelve Rossi buffs carry: the logs never show it (batch-4 D7g). Dive attack: written from the data, castable once dive attacks are (batch-1 S10)."
+  ],
+  "element": "physical",
+  "buffs": [
+    {
+      "id": "razor_clawmark",
+      "label": "Razor Clawmark (talent 1)",
+      "target": "enemy",
+      "gameBuff": "buff_chr_0028_wulfa_normal_bleed",
+      "duration": { "sum": [{ "key": "duration_bleed", "skill": "chr_0028_wulfa_normal_skill" }, 0.034] },
+      "every": 1,
+      "tickOnApply": true,
+      "modifiers": [
+        { "zone": "damageTaken", "elements": ["physical", "fire"], "value": { "key": "damage_up", "skill": "chr_0028_wulfa_normal_skill" } }
+      ],
+      "note": "buff_chr_0028_wulfa_normal_bleed (created by the first Wolven Ambrage projectile's tree, assignItems duration_bleed, atk_scale_bleed, damage_up): damageModifier DamageScaleProcessor NormalCalcZone side 1 (taken) + damage_up for damageType 0 (Physical) and 2 (Heat); buffEventAction every damage_interval (1 s, waitFirstTriggerInterval false: the first tick at once) a DamageAction on atk_scale_bleed, mask 0x90000000 (no skill type), takeAtkSnapshot (trigger razor_clawmark_tick). stackingType 4 (\"This effect cannot stack\"): a new one replaces it (the engine ticks again at once; one 0.3 × ATK tick at most, not testable by hand). every: damage_interval 1 s, the game buff's own blackboard value (not a key of the applying skill), written as the literal. Interim (duration + 0.034 s, one frame): the 4e5e log has 26 ticks from one application at 13314 ms (the first at once, the last 25 s of game time later, at the end), while the engine doesn't tick a buff at the frame it ends (timeline.ts nextBuffTick); the extra frame gives the 26th tick and lengthens the DMG Taken by 1/30 s."
+    },
+    {
+      "id": "seq2_ready",
+      "label": "Combo sequence 2 available",
+      "target": "self",
+      "gameBuff": "buff_chr_0028_wulfa_combo_usetimer",
+      "duration": 6,
+      "modifiers": [],
+      "note": "combo_2_skill frame 37 (if a hit landed and can_trigger_combo): ChangeSkillAction combo slot → combo_3_skill (6 s), TriggerComboSkillAction, SetSkillCdAtOnce combo_2 0, CreateBuff buff_chr_0028_wulfa_combo_usetimer (its blackboard duration 6). Its end, unless combo_3 cleared need_set_cd (abilityEvent 150 / the cast), sets combo_2's full cooldown from then (seq2_timeout). The finisher pauses it (PauseBuffTime on abilityEvent 30 with chr_0028_wulfa_power_attack; resumed when buff_chr_0028_wulfa_powerattack_resumecombo ends): seq2_finisher_pause."
+    },
+    {
+      "id": "qte_ring",
+      "label": "Perfect-timing ring",
+      "target": "self",
+      "duration": { "key": "time_succeed", "skill": "chr_0028_wulfa_combo_2_skill" },
+      "modifiers": [],
+      "note": "buff_chr_0028_wulfa_combo_2_qte_timerlistening (from combo_2 frame 37): ShowComboRingQte earlyDuration time_warning (0.5 s), then activeDuration time_succeed: combo_2 frames 52 on. Pressing inside it sets EntityBB_Combo_QTE_Trigger, which combo_3 reads at frame 0 (its jump). No gameBuff: the timer listener itself lasts 6 s; this buff is only the ring's active part."
+    },
+    {
+      "id": "combo_crit",
+      "label": "Moment of Blazing Shadow: Crit Rate and Crit DMG",
+      "target": "self",
+      "gameBuff": "buff_chr_0028_wulfa_combo_criticalrate",
+      "duration": { "key": "crit_increase_duration", "skill": "chr_0028_wulfa_combo_3_skill" },
+      "modifiers": [
+        { "zone": "critRate", "value": { "key": "crit_increase_rate", "skill": "chr_0028_wulfa_combo_3_skill" } },
+        { "zone": "critDamage", "value": { "key": "crit_damage_increase_rate", "skill": "chr_0028_wulfa_combo_3_skill" } }
+      ],
+      "note": "combo_3_skill at the cast (frame 0, or 212 after the frame-0 jump: the same moment): CreateBuff buff_chr_0028_wulfa_combo_criticalrate (assigned crit_increase_rate, crit_damage_increase_rate, crit_increase_duration)."
+    },
+    {
+      "id": "ult_crit_damage",
+      "label": "Razorclaw Ambuscade: Crit DMG",
+      "target": "self",
+      "gameBuff": "buff_chr_0028_wulfa_ult_crit_damage_up_to_bleed",
+      "duration": 5,
+      "endsWithCast": true,
+      "modifiers": [
+        {
+          "zone": "critDamage",
+          "onlyKinds": ["ultimate"],
+          "value": { "sum": [{ "key": "crit_damage_up_to_bleed", "skill": "chr_0028_wulfa_ultimate_skill" }, { "key": "potential_5_critical_damage", "skill": "chr_0028_wulfa_ultimate_skill" }] }
+        }
+      ],
+      "note": "ultimate frame 58: (P5) SimpleCalcBB crit_damage_up_to_bleed += potential_5_critical_damage, then CreateBuff buff_chr_0028_wulfa_ult_crit_damage_up_to_bleed (autoFinishByAction: ends with the cast; its own duration 5 s) with InstantModifyAttribute attribute 10 (Crit DMG) + crit_damage_up_to_bleed under CheckDamageDecorateMask checkType 2 mask 512 (ultimate hits). potential_5_critical_damage is 0 below P5. 4e5e: crit / non-crit stabs = 2.6 = 1 + 0.5 + 0.5 (combo_crit) + 0.6."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_window_vulnerable",
+      "on": { "event": "vulnerable" },
+      "by": "anyone",
+      "if": { "any": [{ "enemyInfliction": "fire" }, { "enemyInfliction": "pulse" }, { "enemyInfliction": "cryst" }, { "enemyInfliction": "natural" }] },
+      "do": [{ "kind": "openCombo" }],
+      "note": "CharGrowthTable: \"COMBO TRIGGER: When an enemy has both Vulnerability and Arts Infliction stacks.\" (Vulnerable added while an Arts Infliction is there). Whether the window relights when the cooldown ends while the state still holds: batch-3 T5 (in-game test 60)."
+    },
+    {
+      "id": "combo_window_infliction",
+      "on": { "event": "inflictionApplied" },
+      "by": "anyone",
+      "if": { "enemyVulnerable": 1 },
+      "do": [{ "kind": "openCombo" }],
+      "note": "The trigger's other half: an Arts Infliction added to a Vulnerable enemy."
+    },
+    {
+      "id": "seq2_open",
+      "on": { "event": "cast", "skills": ["chr_0028_wulfa_combo_2_skill"] },
+      "by": "self",
+      "delay": 37,
+      "do": [
+        { "kind": "openCombo", "skills": ["chr_0028_wulfa_combo_3_skill"], "whileBuff": "seq2_ready" },
+        { "kind": "buff", "buff": "seq2_ready" }
+      ],
+      "note": "combo_2 frame 37: TriggerComboSkillAction and ChangeSkillAction (combo slot → combo_3 for 6 s, AllowNextSkillAction 37–65 lists combo_3): a window only sequence 2 uses, open while combo_usetimer lasts (batch-4 S1). The data's condition (a hit landed, can_trigger_combo) is assumed true: the kit's combo always hits its target."
+    },
+    {
+      "id": "qte_ring",
+      "on": { "event": "cast", "skills": ["chr_0028_wulfa_combo_2_skill"] },
+      "by": "self",
+      "delay": 52,
+      "do": [{ "kind": "buff", "buff": "qte_ring" }],
+      "note": "The ring's active part: combo_2 frame 37 + time_warning 0.5 s (15 frames). A rotation reaches it by giving sequence 2 an `at` inside it; search tries only the earliest start (the late path; batch-4 S3, owner item 3)."
+    },
+    {
+      "id": "seq2_cast",
+      "on": { "event": "cast", "skills": ["chr_0028_wulfa_combo_3_skill"] },
+      "by": "self",
+      "do": [
+        { "kind": "endBuff", "buff": "seq2_ready" },
+        { "kind": "cooldown", "who": "self", "skills": "combo", "setFraction": 1 },
+        { "kind": "buff", "buff": "combo_crit" }
+      ],
+      "note": "combo_3 frame 0: SetSkillCdAtOnce combo_2 isPercentage 1.0 functionType 1 (its full cooldown from now; combo_3's own cooldown is 0, so the same action on it does nothing), the slot back to combo_2 (seq2_ready ends; need_set_cd cleared, so seq2_timeout doesn't fire), and the crit buff."
+    },
+    {
+      "id": "seq2_timeout",
+      "on": { "event": "buffEnded", "gameBuffs": ["buff_chr_0028_wulfa_combo_usetimer"], "consumed": false },
+      "by": "self",
+      "do": [{ "kind": "cooldown", "who": "self", "skills": "combo", "setFraction": 1 }],
+      "note": "combo_usetimer runs out with need_set_cd 1 (sequence 2 not cast): its end (buffEvent 2) runs ChangeSkillAction back to combo_2 and SetSkillCdAtOnce combo_2 isPercentage 1.0 functionType 1: combo_2's full cooldown starts then, about 21 s after sequence 1 instead of 14 s (batch-4 S2; in-game test 86)."
+    },
+    {
+      "id": "seq2_finisher_pause",
+      "on": { "event": "cast", "skills": ["chr_0028_wulfa_power_attack"] },
+      "by": "self",
+      "if": { "buffActive": "seq2_ready" },
+      "do": [{ "kind": "extendBuff", "buff": "seq2_ready", "seconds": 2.1666667 }],
+      "note": "chr_0028_wulfa_power_attack timeline action 17 (frames 0–65): CheckBuffStackNumAdvanced buff_chr_0028_wulfa_combo_2_qte_timerlistening > 0.5, PauseComboSkillTime, CreateBuff buff_chr_0028_wulfa_powerattack_resumecombo (autoFinishByAction); combo_usetimer's abilityEvent 30 (the finisher's cast) pauses its time and abilityEvent 203 (resumecombo's end) resumes it. Interim: the window is extended by the whole 65 frames (2.1667 s) at the cast; a finisher cut short before frame 65 gives a few frames too many. The listener lives 6 s like the timer, so the check is the same as seq2_ready."
+    },
+    {
+      "id": "ult_crit",
+      "on": { "event": "cast", "skills": ["chr_0028_wulfa_ultimate_skill"] },
+      "by": "self",
+      "delay": 58,
+      "do": [{ "kind": "buff", "buff": "ult_crit_damage" }]
+    },
+    {
+      "id": "ult_stop_elite",
+      "on": { "event": "cast", "skills": ["chr_0028_wulfa_ultimate_skill"] },
+      "by": "self",
+      "delay": 57,
+      "do": [{ "kind": "apply", "applies": [{ "kind": "control", "status": "rossi_ultimate_stop", "seconds": 3.1, "freezes": true }], "if": { "enemyRank": [1] } }],
+      "note": "ultimate timeline action 12 (frames 57–150): CheckEnemyRank enemyRankSet 2 → InterruptAction and CreateBuff buff_chr_0028_wulfa_ult_stopenemy_elite (assigned duration 3.1, autoFinishByAction: frame 150 = 93 frames = 3.1 s), whose start runs a layer-1 TimeDilationAction on the enemy with an empty curve (its clock stops; as Si's Immobilization). enemyRankSet 2 read as a bit set over EnemyTemplateDisplayInfoTable displayType (bit 1: displayType 1 Elite): a claim (batch-4 E2). Bosses (Rhodagn) aren't affected; a scenario's controlImmune target isn't frozen. Its own status name, so Immobilization effects (Phantom Pain) don't see it. The normal-rank branch (action 13, enemyRankSet 1 → buff_chr_0028_wulfa_ult_stopenemy, tag 430405417, no time dilation) isn't modelled."
+    },
+    {
+      "id": "razor_clawmark_tick",
+      "on": { "event": "buffTick", "buff": "razor_clawmark" },
+      "by": "self",
+      "skill": "chr_0028_wulfa_normal_skill",
+      "do": [
+        {
+          "kind": "hits",
+          "hits": [
+            {
+              "id": "bleed",
+              "label": "Razor Clawmark tick",
+              "scale": ["atk_scale_bleed"],
+              "damageType": "none",
+              "atkSnapshot": true,
+              "events": ["buff_chr_0028_wulfa_normal_bleed"],
+              "note": "buff_chr_0028_wulfa_normal_bleed buffEventAction: DamageAction Physical on atk_scale_bleed (assigned from the battle skill: talent 1's value), decorate mask 0x90000000 (no skill type: no Battle Skill DMG bonus, no Link, not a battle-skill hit for triggers), takeAtkSnapshot true (the attacker's side from the application, batch-4 V2)."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "seething_blood",
+      "on": { "event": "hit", "kinds": ["battle", "combo", "ultimate"], "crit": true },
+      "by": "self",
+      "if": { "all": [{ "talentAtLeast": [1, 1] }, { "enemyBuff": "buff_chr_0028_wulfa_normal_bleed" }] },
+      "skill": "chr_0028_wulfa_normal_skill",
+      "do": [
+        {
+          "kind": "hits",
+          "hits": [
+            {
+              "id": "extra",
+              "label": "Seething Blood (talent 2)",
+              "scale": ["bleed_critical_damage_scale"],
+              "element": "fire",
+              "damageType": "none",
+              "heals": "self",
+              "extraScale": [{ "value": "talent2_burning_damage_scale", "if": { "enemyStatus": "combustion" } }],
+              "events": ["buff_chr_0028_wulfa_normal_bleed_crit_extra_damage"],
+              "note": "buff_chr_0028_wulfa_normal_bleed abilityEvent 43 (its holder takes Critical DMG) + CheckTargetsEqual + CheckDamageDecorateMask checkType 1 mask 8960 (battle, ultimate, combo) → buff_chr_0028_wulfa_normal_bleed_crit_extra_damage: frame 0 × burning_damage_scale (talent2_burning_damage_scale) if the target is Combusted, a Heat DamageAction on bleed_critical_damage_scale with mask 0x80000000 (no skill type), a HealAction (Intellect × heal_scale; amount not modelled). No cooldown: its addingCooldown names damage_cd but hasAddingCooldown is false (4e5e: three procs within 96 ms). Crits are only events with rolled crits (batch-4 T3: search ranks this kit over rolled-crit seeds)."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0028_wulfa_attack1",
+      "label": "Seething Wolfblood: attack 1",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [8], "events": ["chr_0028_wulfa_attack1"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+    },
+    {
+      "skillId": "chr_0028_wulfa_attack2",
+      "label": "Seething Wolfblood: attack 2",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [5, 9], "factor": 0.5, "events": ["chr_0028_wulfa_attack2"], "note": "SimpleCalcBB × 0.5 on the dynamic atk_scale before the first DamageAction: two landings at half each." }]
+    },
+    {
+      "skillId": "chr_0028_wulfa_attack3",
+      "label": "Seething Wolfblood: attack 3",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [4], "factor": 0.5, "events": ["chr_0028_wulfa_attack3"] },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [12], "factor": 0.5, "events": ["chr_0028_wulfa_attack3"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } }
+      ]
+    },
+    {
+      "skillId": "chr_0028_wulfa_attack4",
+      "label": "Seething Wolfblood: attack 4",
+      "damageType": "basic",
+      "jumps": [{ "at": 0, "to": 189, "if": { "not": { "controlled": true } } }],
+      "hits": [
+        { "id": "hit", "label": "Controlled", "scale": ["atk_scale"], "count": 5, "frames": [6, 8, 13, 15, 23], "factor": 0.2, "events": ["chr_0028_wulfa_attack4"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.25] } } },
+        {
+          "id": "hit_ai",
+          "label": "Not controlled (jump 0 → 189)",
+          "scale": ["atk_scale"],
+          "count": 5,
+          "frames": [195, 198, 203, 205, 213],
+          "factor": 0.5,
+          "events": ["chr_0028_wulfa_attack4"],
+          "note": "IfElse CheckMainCharacterCondition → JumpToAction 0 → 189 when not controlled; the × 0.2 SimpleCalcBB at frame 6 is skipped, the path's own × 0.5 applies (kit-draft multiplies both: 0.1, batch-4 D7i)."
+        }
+      ]
+    },
+    {
+      "skillId": "chr_0028_wulfa_attack5",
+      "label": "Seething Wolfblood: Final Strike",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [15], "finalStrike": true, "poise": "poise", "poiseControlledOnly": true, "sp": { "if": { "controlled": true }, "then": "atb" }, "spBeforeDamage": true, "events": ["chr_0028_wulfa_attack5"], "note": "Mask 2097280 (Final Strike). \"As the controlled operator, Final Strike also deals {poise} Stagger\": poise and atb only as the controlled operator (onlyEnableForMainChar / atbOnlyMainChar); the ObtainCostAction comes before the DamageAction." }
+      ]
+    },
+    {
+      "skillId": "chr_0028_wulfa_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "label": "Finisher: hits 1-2", "scale": ["atk_scale"], "count": 2, "frames": [6, 15], "factor": 0.1, "sp": 0, "events": ["chr_0028_wulfa_power_attack"], "note": "BreakingAttackCalculation multiplier 0.1 of atk_scale 9.0 at frames 6 and 15." },
+        { "id": "hit_2", "label": "Finisher: hit 3", "scale": ["atk_scale"], "frames": [36], "factor": 0.8, "events": ["chr_0028_wulfa_power_attack"], "note": "Multiplier 0.8 at frame 36, GainBreakingAttackAtb (the engine's finisher SP)." }
+      ]
+    },
+    {
+      "skillId": "chr_0028_wulfa_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "sp": { "if": { "controlled": true }, "then": "atb" }, "events": ["chr_0028_wulfa_plunging_attack_end"], "note": "Mask 1152 (dive). Not castable in rotations until dive attacks are (batch-1 S10)." }]
+    },
+    {
+      "skillId": "chr_0028_wulfa_normal_skill",
+      "label": "Crimson Shadow (battle skill)",
+      "damageType": "battle",
+      "teamEnergy": [{ "frame": 35, "ratio": 1 }],
+      "jumps": [{ "at": 37, "if": { "enemyVulnerable": 1 } }],
+      "hits": [
+        { "id": "charge", "label": "Charge", "scale": ["atk_scale_1"], "count": 2, "frames": [16, 22], "factor": 0.3, "events": ["chr_0028_wulfa_normal_skill"] },
+        {
+          "id": "lift",
+          "label": "Charge: Lift",
+          "scale": ["atk_scale_1"],
+          "frames": [35],
+          "factor": 0.4,
+          "poise": "poise_1",
+          "events": ["chr_0028_wulfa_normal_skill"],
+          "applies": [{ "kind": "physicalStatus", "status": "lift" }],
+          "note": "Frame 35: CheckBuffStackNumAdvanced tag 1075718177 (Vulnerable) ≥ 1 sets FollowAttackTrigger before this landing's AirborneAction (Lift, forceAirborne false), so the follow-up depends on Vulnerable from before the skill; its two IfElse sides land the same. ObtainUspInNormalSkill at 35 (teamEnergy)."
+        },
+        {
+          "id": "wolf_1",
+          "label": "Wolven Ambrage (first projectile)",
+          "scale": ["atk_scale_3"],
+          "factor": 0.25,
+          "element": "fire",
+          "frames": [230],
+          "launch": 230,
+          "poise": { "product": ["poise_2", 0.25] },
+          "energy": "usp_2",
+          "sp": { "if": { "potentialAtLeast": 1 }, "then": "atb_return", "else": 0 },
+          "events": ["chr_0028_wulfa_normal_skill_projhit3"],
+          "buffs": [{ "buff": "razor_clawmark", "beforeDamage": true, "if": { "talentAtLeast": [0, 1] } }],
+          "note": "Frame 37 JumpToAction → 215 when FollowAttackTrigger is set (jumps: judged at the cast, the data at frame 35: a Vulnerable stack added or expiring in those 35 frames flips it); frame 230 four LaunchProjectiles (projhit2–5), each atk_scale_3 × 0.25 Heat (damageType 2, mask 4352), poise_2 × 0.25. The first one to land (gate: buff_chr_0028_wulfa_normal_wolf_timer = 1, then finished) gives Rossi usp_2 and P1's atb_return (atbGainMethod 1: returned SP) and, with talent 1 (talent_1_x > 0.5), creates Razor Clawmark before its DamageAction. The log's first projectile is projhit3."
+        },
+        { "id": "wolf_2", "label": "Wolven Ambrage", "scale": ["atk_scale_3"], "factor": 0.25, "element": "fire", "frames": [230], "launch": 230, "poise": { "product": ["poise_2", 0.25] }, "events": ["chr_0028_wulfa_normal_skill_projhit5"] },
+        { "id": "wolf_3", "label": "Wolven Ambrage", "scale": ["atk_scale_3"], "factor": 0.25, "element": "fire", "frames": [230], "launch": 230, "poise": { "product": ["poise_2", 0.25] }, "events": ["chr_0028_wulfa_normal_skill_projhit2"] },
+        { "id": "wolf_4", "label": "Wolven Ambrage", "scale": ["atk_scale_3"], "factor": 0.25, "element": "fire", "frames": [230], "launch": 230, "poise": { "product": ["poise_2", 0.25] }, "events": ["chr_0028_wulfa_normal_skill_projhit4"] }
+      ]
+    },
+    {
+      "skillId": "chr_0028_wulfa_combo_2_skill",
+      "label": "Moment of Blazing Shadow: sequence 1",
+      "damageType": "combo",
+      "available": { "not": { "buffActive": "seq2_ready" } },
+      "hits": [
+        { "id": "hit", "label": "Sequence 1: hit 1", "scale": ["atk_scale"], "frames": [13], "factor": 0.35, "events": ["chr_0028_wulfa_combo_2_skill"] },
+        { "id": "hit_2", "label": "Sequence 1: hit 2", "scale": ["atk_scale"], "frames": [24], "factor": 0.35, "energy": "usp", "events": ["chr_0028_wulfa_combo_2_skill"] },
+        {
+          "id": "ticks",
+          "label": "Sequence 1: afterhits",
+          "scale": ["atk_scale"],
+          "count": 3,
+          "frames": [33, 37, 41],
+          "factor": 0.1,
+          "launch": 24,
+          "events": ["buff_chr_0028_wulfa_combo_2_damage"],
+          "note": "Frame 24: CreateBuff buff_chr_0028_wulfa_combo_2_damagewait (atk_scale_once = atk_scale × 0.1, trigger_times 3, damage_interval 0.125 s, after 0.3 s) → buff_chr_0028_wulfa_combo_2_damage: 3 ticks, landing even if the combo is cut (launch). kit-draft gives 7 landings (the template timeline, D7g); the log has 3 per cast."
+        }
+      ],
+      "note": "Its combo slot holds combo_3_skill while seq2_ready lasts (available). The cooldown starts at the cast (14 s); SetSkillCdAtOnce combo_2 0 at frame 37 is overridden at the sequence's end either way (seq2_cast, seq2_timeout)."
+    },
+    {
+      "skillId": "chr_0028_wulfa_combo_3_skill",
+      "label": "Moment of Blazing Shadow: sequence 2",
+      "damageType": "combo",
+      "jumps": [{ "at": 0, "if": { "not": { "buffActive": "qte_ring" } } }],
+      "hits": [
+        {
+          "id": "perfect",
+          "label": "Perfect timing",
+          "scale": [],
+          "scaleValue": { "sum": ["atk_scale_s", { "product": ["damage_add", { "consumed": true }] }] },
+          "frames": [29],
+          "poise": "poise_s",
+          "energy": "usp_s",
+          "events": ["chr_0028_wulfa_combo_3_skill", "chr_0028_wulfa_combo_2_skill"],
+          "applies": [
+            { "kind": "consumeInfliction", "elements": ["fire", "natural", "pulse", "cryst"] },
+            { "kind": "physicalStatus", "status": "lift", "if": { "consumedAtLeast": 1 } },
+            { "kind": "vulnerable", "stacks": 1, "if": { "consumedAtLeast": 1 } }
+          ],
+          "note": "combo_3 frame 0 IfElse EntityBB_Combo_QTE_Trigger (the ring pressed): timing_success 1, the hit at 29 with poise_s and a 0.4 s hit-stop. Frame 29: CheckBuffStackNumByTag Heat, Nature, Electric, Cryo in turn (else-if: the enemy holds one element) → SaveBuffStackNumAdvanced + FinishBuffAdvanced (consumption), scale (stacks × damage_add + atk_scale_s) × potential_atk_multiply (1; P1 multiplies the keys), ForEach AirborneAction (Lift, not forced) + CreateBuff buff_physical_no_guard (+1 Vulnerable) on a target that had an infliction, then the DamageAction; usp_s if a hit landed. Logged under chr_0028_wulfa_combo_2_skill (4e5e 57521 ms)."
+        },
+        {
+          "id": "late",
+          "label": "Not perfect (jump 0 → 212)",
+          "scale": [],
+          "scaleValue": { "sum": ["atk_scale_s", { "product": ["damage_add", { "consumed": true }] }] },
+          "frames": [227],
+          "poise": "poise_f",
+          "energy": "usp_s",
+          "events": ["chr_0028_wulfa_combo_3_skill", "chr_0028_wulfa_combo_2_skill"],
+          "applies": [
+            { "kind": "consumeInfliction", "elements": ["fire", "natural", "pulse", "cryst"] },
+            { "kind": "physicalStatus", "status": "lift", "if": { "consumedAtLeast": 1 } }
+          ],
+          "note": "Without the ring: timing_success 0, JumpToAction 0 → 212; the same consumption and scale at 227 (atk_scale_s: the data reads it on both paths; atk_scale_f is equal), poise_f, no extra Vulnerable."
+        }
+      ],
+      "note": "Cast only in its own window (seq2_open: openCombo skills, while seq2_ready lasts). Its cooldown is 0; casting it sets combo_2's full cooldown (seq2_cast)."
+    },
+    {
+      "skillId": "chr_0028_wulfa_ultimate_skill",
+      "label": "\"Razorclaw\" Ambuscade (ultimate)",
+      "damageType": "ultimate",
+      "hits": [
+        {
+          "id": "stab",
+          "label": "Stab",
+          "scale": ["atk_scale_1"],
+          "element": "fire",
+          "count": 25,
+          "frames": [63, 65, 66, 69, 71, 74, 75, 77, 78, 80, 83, 84, 87, 88, 90, 92, 94, 96, 97, 99, 102, 103, 106, 108, 111],
+          "extraScale": [{ "value": "potential_5_damage_scale", "if": { "potentialAtLeast": 5 } }],
+          "events": ["chr_0028_wulfa_ultimate_skill"],
+          "note": "25 Heat stabs (both sides of the RandomAction only pick the hurt animation; kit-draft emits both as branches, D3's identical-sides item). P5: SimpleCalcBB × potential_5_damage_scale on atk_scale_1/2/3 at frame 58 (extraScale; kit-draft leaves the scale as $atk_scale_1?)."
+        },
+        { "id": "slash1", "label": "Slash 1", "scale": ["atk_scale_2"], "element": "fire", "frames": [122], "extraScale": [{ "value": "potential_5_damage_scale", "if": { "potentialAtLeast": 5 } }], "events": ["chr_0028_wulfa_ultimate_skill"] },
+        {
+          "id": "slash2",
+          "label": "Slash 2",
+          "scale": ["atk_scale_3"],
+          "element": "fire",
+          "frames": [131],
+          "poise": "poise",
+          "applies": [{ "kind": "infliction", "element": "fire" }],
+          "extraScale": [{ "value": "potential_5_damage_scale", "if": { "potentialAtLeast": 5 } }],
+          "events": ["chr_0028_wulfa_ultimate_skill"],
+          "note": "SpellInfliction Heat (both sides of its Razor Clawmark check inflict the same)."
+        }
+      ],
+      "note": "Time stop 0–57 (UltimateTimeAction), damage immunity, ChannelingCasting 5.67 s; the enemy stop on elites: ult_stop_elite."
+    }
+  ]
+}

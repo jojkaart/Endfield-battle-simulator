@@ -528,3 +528,147 @@ casts only with G1.
   buff (others, attr 50 `phy_dmg_up3`), both `gameBuff`
   `buff_wpn_sword_0016_valid`, `duration`, `maxStacks: max_stack`; trigger
   `{on: sp, natural: true, sourceTypes: [3]}`, by self, `cooldown: cd`.
+
+## Kit (2026-10-21)
+
+Files: `packages/data/kits/operators/chr_0028_wulfa.json`; equipment
+`wpn_sword_0011.json` (Rapid Ascent), `wpn_sword_0013.json` (Eminent
+Repute), `wpn_sword_0014.json` (White Night Nova), `wpn_sword_0022.json`
+(Lupine Scarlet, moved here by the merge). Thermite Cutter and Never Rest
+went to Pogranichnik (batch-4.md "Weapon owners"): W3, W4, W7, W8 are his
+now. Example `examples/rossi-p5.json` (the 4e5e gear at P5, Lupine Scarlet
+[9, 9, 9]) and `examples/rossi-gilberta.scenario.json`; tests
+`tests/kit-rossi.test.ts` (19); Rossi added to
+`packages/data/test/skillCompile.test.ts` with 18 KNOWN entries; notes and
+a hand annotation in `fixtures/zmdlogs-4e5e1390085e.json` (below). No
+engine, loader, compiler or checker change.
+
+### Re-analysis
+
+| Row / gap | Now | How |
+|---|---|---|
+| 5, G1 (finisher pauses the sequence-2 window) | **interim** | S1's `whileBuff` window and `extendBuff`: `seq2_finisher_pause` adds the finisher's whole 65 frames (power_attack action 17: PauseComboSkillTime, resumecombo `autoFinishByAction`; usetimer pauses on its abilityEvent 30, resumes on 203) at its cast while `seq2_ready` lasts. A finisher cut before frame 65 gives a few frames too many |
+| 8 (ObtainUspInNormalSkill) | **done** | D8g: kit-draft compiles `teamEnergy 1@35`, equal to the kit's |
+| 9 (battle skill's Vulnerable jump) | done (by hand) | `jumps [{at: 37, if: {enemyVulnerable: 1}}]`, judged at the cast (the data at f35); kit-draft still emits the f35 IfElse as `branch` hits (D7b covers attack4 only) |
+| 14, G5 (bleed ATK snapshot) | **done** | V2: `atkSnapshot: true` on the tick hit (test: a later Lupine layer doesn't reach the ticks) |
+| 15 (Clawmark reapplied) | unknown | engine: replaced, a tick at once; not testable by hand (one 0.3 × ATK tick) |
+| 16, G3.1 (template timeline in 12 buffs) | data | left out; KNOWN entries (D7g open) |
+| 17, G6 (talent 2 on crits) | **done** | T3: `randomOutcomes` lists `seething_blood` (and Lupine Scarlet, MI Security); search ranks over rolled-crit seeds; `simulate` warns with expected crits |
+| 21, G1 (sequence 2) | **done** | S1: `seq2_open` → `openCombo {skills: [combo_3_skill], whileBuff: seq2_ready}`; combo_3 only in that window, combo_2 not while `seq2_ready` lasts (`available`) |
+| 22 (combo_3 sets combo_2's cooldown) | **done** | S2: `seq2_cast` → `cooldown {setFraction: 1}` (combo_3's own cooldown is 0 and stays 0). No `cooldownGroup`: a shared group puts combo_3 on cooldown, which keeps its own window shut |
+| 23, G2 (cooldown after a skipped sequence 2) | **done** | S2: `seq2_timeout` (usetimer's unconsumed end) → `setFraction: 1`; the 7.233 s literal is gone. Combo back 37 + 180 + 420 frames after sequence 1 (test) |
+| 24, G4 (perfect-timing ring) | **open** (S3, owner item 3) | both paths modelled (`qte_ring` from combo_2 f52, `time_succeed` 0.4 s: frames 52–63; tested at 51, 63, 64); a rotation reaches the ring with `at`; search tries only the earliest start (the late path) |
+| 25, G10 (consumed stacks) | **done** | L4: `calc` shows sequence 2 at one stack (5.52 × ATK at P1+); the checker tries 0–4 |
+| 27, G3.9 (sequence 2's log key) | done (by hand) | `events: [combo_3_skill, combo_2_skill]` |
+| 31, G7 (ultimate stops elites) | **done** (elite part) | E2: `ult_stop_elite`, cast + 57 → `control` `rossi_ultimate_stop` 3.1 s, `freezes`, `if: {enemyRank: [1]}` (enemyRankSet 2 read as displayType 1, Elite: E2's claim); not on bosses, not on a `controlImmune` target. The normal-rank branch (`ult_stopenemy`: InterruptAction and tag 430405417, no time dilation) isn't modelled: what it does isn't known |
+| W2 (Rapid Ascent vs Staggered) | unknown, **interim** | the data's reading (+0.98 on every hit); test 85 |
+| W9 (Lupine Scarlet) | **done** | moved here; a layer on any crit (the mask check is disabled), the final at 16, its end clears the layers |
+| L-a, G8 | **done** | L2: MI Security's five layers found on 4e5e |
+| L-b, L-c, G9 | **done** | L3: Link variants around the predicted Link-source stacks; unlogged `combo_crit` and `ult_crit_damage` tried |
+| L-d, G10 | **done** | L4 |
+| L-e, G11 | **done** | L1: Rossi's Lift at 12219 ms matches |
+| L-f | done | fixture note |
+| L-g | **open** (tooling) | not a missing layer: several crits at one instant (Verification); hand annotation in the fixture |
+| G3 (kit-draft) | partly | now right: attack4's jump (D7b), `teamEnergy` (D8g), SP on the basic attacks, `spBeforeDamage`; still off (KNOWN): attack4's not-controlled factor 0.1 (D7i), the template timelines (D7g), the bleed as landings (D9b), sequence 2's scale and else-if chain (D9f), the ultimate's P5 scale `$atk_scale_1?` (D3) |
+| new: a periodic buff's tick at its end | **interim**, open (shared) | 4e5e: one Razor Clawmark (13314 ms) ticks 26 times, the last 25 s of game time after the first; the engine doesn't tick a buff at the frame it ends (timeline.ts `nextBuffTick`), so 25 s give 25. Interim: the kit buff lasts `duration_bleed` + 0.034 s (one frame; the DMG Taken lasts 1/30 s longer). Every `every` + `tickOnApply` buff (Liino's stance) follows the engine rule; not changed here |
+
+The kit follows the plan except: no `cooldownGroup` (row 22), no literal
+cooldown (row 23), no hand-written `spKind` (wolf_1's `if` SP defaults to
+returned, tested), `every: 1` written as a literal (`damage_interval` is
+the game buff's own blackboard value, not a key of the battle skill), the
+tick interim and the elite stop.
+
+### What the kit models and leaves out
+
+Models: the basic chain (attack4's not-controlled path at × 0.5 behind its
+jump; basic attacks need the controlled operator, so it never plays),
+finisher, dive (written from the data; not castable until batch-1 S10);
+battle skill with the f37 Vulnerable jump, four Heat projectiles at cast
+\+ 52, wolf_1's energy, P1's returned SP and Razor Clawmark (talent 1:
+0.30 × ATK per second, 26 ticks, Physical and Heat DMG Taken +12%, ATK
+snapshot); talent 2 (0.24, 0.32 at P3+, × ATK Heat per battle-skill,
+combo or ultimate crit on a Clawmarked enemy, × 1.5 on Combustion); the
+combo trigger (two triggers), sequence 1 (two hits, three afterhits),
+sequence 2 in its own window (perfect path at 29 with one more Vulnerable
+stack, late path at 227; (3.45 + 2.07 × stacks) × ATK at P1+, Lift, Crit
+Rate +25% / Crit DMG +50% for 15 s), the combo cooldown from both ends,
+the finisher pause; the ultimate (25 stabs, two slashes, Heat infliction,
+Crit DMG +0.6, +0.9 at P5, on its own hits, P5 × 1.1, P4 cost, the elite
+freeze); P1–P5 through the loader.
+
+Leaves out: `normal_defup` (damage taken: N2), heal amounts, the cape, the
+normal-rank ultimate stop, the template timelines. Talent 2's × 1.5 on
+Combustion is in the kit but not tested in a timeline and not in the log.
+
+### Verification
+
+**`zmdlogs check` 4e5e** (Rossi P3, Lupine Scarlet [9, 9, 4]):
+
+| | match | mismatch | unmodelled | not covered |
+|---|---|---|---|---|
+| HEAD (no kit) | 1 | 0 | 0 | 161 |
+| with the kit | 118 | 2 | 42 | 0 |
+| with the kit and the 13314 ms annotation (committed) | 118 | 0 | 44 | 0 |
+| scratch: Camille's annotated ATK +9.6% (and from 65597 ms her Heat DMG, L-f) quantified | 133 | 29 | 0 | 0 |
+| scratch: the same and her analysis draft kit (her Link sources) | 159 | 3 | 0 | 0 |
+
+- The 42 unmodelled hits (from 49418 ms) are under the fixture's
+  hand-annotated `buff_wpn_lance_0015_atkup`, which the checker never
+  quantifies. **What waits on Camille's kit:** the 27 ultimate hits
+  (61167–66621 ms) need two Link stacks, which only her Link sources
+  (ComboAction at her combo and Hunter Pursuit, 54978 and 57424 ms)
+  predict: with her draft kit they match at Link 2, with her ATK +9.6%
+  and, from 65597 ms, her Heat DMG +9.6%. The other 15 need only the
+  annotated ATK quantified (a fixture or checker matter).
+- Left in the last row: the two 13314 ms hits (now annotated) and the
+  killing blow (69142 ms, finisher hit 3; the log's overkill estimate).
+- L-g, refined: at 13314 ms a bleed tick, both talent-2 hits and two
+  projectiles land together and three Lupine Scarlet layers start then
+  (boundary effects). The tick used none of them, projhit5 and one talent-2
+  hit one, projhit3 and the other talent-2 hit two (×1.0094 = one 0.016
+  layer on a Heat DMG bonus of about 0.70). The checker tries none, one or
+  all instances of a repeated boundary buff (`boundarySubsets`), so the
+  two mismatched and `tests/logs.test.ts` failed. I marked the five
+  13314 ms hits under those layers with `buff_wpn_sword_0022_layer` as
+  unquantified, a hand annotation described in the fixture's notes like
+  the existing one at 49418 ms (the three that fit still match). A checker
+  that tries 1..n instances of a repeated boundary buff would match them:
+  then the annotation can go.
+- Everything else as the analysis found: keys, landing counts, factors,
+  P1, the talents' set values (0.30 per tick, DMG Taken 0.12, talent 2
+  0.32), Link 1 on the battle skill, sequence 2 at 0 stacks.
+
+**`zmdlogs reactions` 4e5e:** 8 / 1 / 10 → 10 / 1 / 8 (matched / not
+logged / unexpected): Rossi's Lift at 12219 ms and Gilberta's Corrosion
+at 68873 ms (consuming Rossi's ultimate Heat) now match; Estella's
+Vulnerable count at 12219 ms reads 4 (was 3), Rossi's Lift adding its
+stack first. The rest is Camille's (no inflictions without her kit) and
+Estella's, as before.
+
+**Other outputs:** before (HEAD) and after, all 21 existing examples'
+`simulate` and `zmdlogs check` / `reactions` on the 10 committed and
+pending fixtures are identical, except 4e5e's Rossi line (check) and the
+reactions above; Camille's, Estella's and Gilberta's check lines on 4e5e
+are unchanged.
+
+**Simulation** (`examples/rossi-gilberta.scenario.json`, rolled crits):
+seed 1: 981,095 (Rossi 971,441) in 39.1 s; 20 seeds: mean 974,331 (σ
+6.2%, 872k–1,056k); with expected crits 413,056 (talent 2, Lupine Scarlet
+and MI Security never fire: T3's warning). Timings as the data: the
+battle skill's Vulnerable at f35, the combo at Gilberta's explosion
+(3.60 s), sequence 2 at sequence 1 + 37 (late path, hit 15 frames later),
+the projectiles at cast + 52 with the ultimate right after, bleed ticks
+each second, held through the ultimate's 1.9 s time stop. The ultimate's
+last slash (7.5 × 1.1 × ATK, a crit) is about a fifth of the total.
+
+### In-game tests the kit depends on
+
+- **85** Rapid Ascent against a Staggered enemy (W2's interim);
+- **86** Rossi's combo cooldown with and without sequence 2 (S2's
+  reading) and the perfect timing's extra Vulnerable stack;
+- **77** a DoT and a later ATK buff (V2's snapshot: the bleed's
+  `atkSnapshot` is the same question);
+- **8** (its batch-4 Link variant: the battle-skill and ultimate Link
+  fits) and **60** (the combo trigger as a state when the cooldown ends).
+- Not proposed (not testable by hand): whether a periodic buff ticks at
+  its end (25 or 26 small numbers); 4e5e says yes for Razor Clawmark.

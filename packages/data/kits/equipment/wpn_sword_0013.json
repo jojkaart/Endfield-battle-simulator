@@ -1,0 +1,40 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0013",
+  "sources": [
+    "Eminent Repute. rmxlinux Json/SkillData/sk_wpn_sword_0013 and Json/BuffData buff_wpn_sword_0013_atk_up (game 1.6); values SkillPatchTable sk_wpn_sword_0013 (level 9: atk_up 0.28, atk_up_add 0.14, atk_up_mult 0.07, duration 20). Skills 1–2 (main attribute, Physical DMG) and skill 3's ATK + atk_up (cardAttributeModifier attribute 2) are on the stat panel.",
+    "passiveEventActions abilityEvent 208 (the wielder consumes a buff) + CheckBuffIdInContext checkType 1 tag 1075718177 (Vulnerable) + CheckConsumeBuffLayer ≥ 1 (consume_layer) → atk_up_ex = atk_up_mult × consume_layer + atk_up_add → CreateBuff buff_wpn_sword_0013_atk_up on the wielder (attribute 2 formulaItem 6: ATK + atk_up_ex, `duration`); then atk_up_ex × 0.5 (base_atk_up literal) → the same buff on the team (CharacterTeamFinder). The game buff is stackingType 1 with priority key atk_up_ex and maxStackCnt 2: the loader keeps up to two instances per recipient and only the strongest acts (batch-3 B1), so the wielder's full-strength one wins over its half. As Ancient Canal (wpn_claym_0014). Description: \"After the wielder consumes Vulnerability stack(s), the wielder gains ATK +[{atk_up_add} + {atk_up_mult}×Stacks Consumed] while other operators in the team gain half of this buff for {duration}s. Effects of the same name cannot stack.\"",
+    "Crush and Breach are what consume Vulnerable (status.ts); the event's level is the stacks consumed (eventCount). beforeDamage: abilityEvent 208 comes from the status buff's FinishBuff of Vulnerable, before its DamageAction (in-game test 51, Da Pan part). toggleBuffs buff_wpn_passive_spirit_01: the template leftover (batch 1). Rossi consumes no Vulnerable; natural wielders are Pogranichnik (Breach) and the Endministrator (Crush). Not in any log."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_sword_0013.atk",
+      "label": "Eminent Repute: ATK (wielder)",
+      "target": "self",
+      "gameBuff": "buff_wpn_sword_0013_atk_up",
+      "duration": "duration",
+      "modifiers": [{ "zone": "atk", "value": { "sum": ["atk_up_add", { "product": ["atk_up_mult", { "eventCount": true }] }] } }],
+      "note": "Its value is taken at the event: 0.14 + 0.07 × stacks consumed at level 9 (0.42 after a 4-stack Crush)."
+    },
+    {
+      "id": "wpn_sword_0013.team",
+      "label": "Eminent Repute: ATK (other operators, half)",
+      "target": "team",
+      "recipients": { "not": { "isOwner": true } },
+      "gameBuff": "buff_wpn_sword_0013_atk_up",
+      "duration": "duration",
+      "modifiers": [{ "zone": "atk", "value": { "product": [0.5, { "sum": ["atk_up_add", { "product": ["atk_up_mult", { "eventCount": true }] }] }] } }],
+      "note": "0.5: the skill's SimpleCalc literal (ModifyDynamicBlackboard atk_up_ex × 0.5, base_atk_up not read from the blackboard). The wielder is left out: its own instance is stronger and the same game buff (only the strongest acts)."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_sword_0013.on_consume",
+      "on": { "event": "physicalStatus", "statuses": ["crush", "breach"] },
+      "by": "self",
+      "beforeDamage": true,
+      "skill": "sk_wpn_sword_0013",
+      "do": [{ "kind": "buff", "buff": "wpn_sword_0013.atk" }, { "kind": "buff", "buff": "wpn_sword_0013.team" }]
+    }
+  ]
+}
