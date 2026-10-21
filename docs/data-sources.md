@@ -512,7 +512,20 @@ nothing on a server. API documented in
   - No battle list or search. Find candidates through boards:
     `GET /api/home/hot-bosses` → `GET /api/bosses/{slug}/rankings` (each
     account's fastest run only) or
-    `GET /api/characters/{charId}/profile?range=all`.
+    `GET /api/characters/{charId}/profile?range=all`. The profile lists,
+    per boss, up to 20 battles with the operator (`bosses[].rows`:
+    `battleId`, `battleEndAt`, duration); the quickest way to find logs
+    for one operator (used 2026-10-21).
+  - A hit's target is in `targetCharacterKey` (`targetEnemyKey` is often
+    null); a fight with hits on several enemy IDs is multi-target
+    (fixtures/multi-target/). `battle.dungeonContextId` names the stage,
+    whose DungeonTable entry gives the enemy level; stage variants of an
+    enemy (`eny_0120_klbear_tower015`) use an attribute template through
+    EnemyTable. The total damage equals the boss's HP only on some stages
+    (Rhodagn), so the stage is the level's source.
+  - The Endministrator can appear as the game's virtual ID
+    `chr_9000_endmin`, without skill levels (the importer reads it as
+    `chr_0003_endminf` with 12 and says so in the notes).
 - **Caveats:** real fights include movement, damage caps and multi-part bosses;
   enemy stats must come from the datamine; older uploads lack crit flags.
   Logs are made with a packet-capture client, which may conflict with the

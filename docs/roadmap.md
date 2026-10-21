@@ -42,13 +42,18 @@ the six favourites.
    owner's favourites (6-stars at P0, 4- and 5-stars at P5 unless the
    owner's account data says otherwise) and a report of the best
    rotations found.
-3. **Food buffs:** consumables (UseItemTable, BuffData `buff_common_*_potion_*`)
+3. **The new logs** (fixtures/pending/README.md, 2026-10-21): 16
+   single-target fights for the operators that had none; find each
+   operator's constant factor (build values the log doesn't record, food,
+   enemy-side effects), then the kits' own mismatches. Six multi-target
+   fights wait in fixtures/multi-target/ for multi-target support.
+4. **Food buffs:** consumables (UseItemTable, BuffData `buff_common_*_potion_*`)
    as a per-operator build option, so simulations and searches can count
    them (one food buff per operator, 300 s). The Endministrator's +180 ATK
    in 7e19 was one (Ginseng Meat Stew).
-4. **Corrosion model:** time dilation, the applier's talents (Arcane), and
+5. **Corrosion model:** time dilation, the applier's talents (Arcane), and
    carry-over on reapplication; in-game test 4.
-5. **Still open from setup:** a `Result` schema, `NOTICE` when MIT code is
+6. **Still open from setup:** a `Result` schema, `NOTICE` when MIT code is
    first copied, the tie-break order.
 
 ## Later
