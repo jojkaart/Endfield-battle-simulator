@@ -1,0 +1,23 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0016",
+  "sources": [
+    "Never Rest, skill 3 (Flow: Reincarnation): rmxlinux Json/SkillData sk_wpn_sword_0016 (game 1.6); values SkillPatchTable sk_wpn_sword_0016 (level 1 → 9: phy_dmg_up 0.16 → 0.448, phy_dmg_up2 0.05 → 0.14, phy_dmg_up3 0.025 → 0.07; duration 30, max_stack 5 at every level; cd 0.1 from the SkillData blackboard). Skill 1 (Will), skill 2 (ATK) and skill 3's cardAttributeModifier (Physical DMG + phy_dmg_up, attribute 50) are on the stat panel. Batch-4 report docs/kit-batches/batch-4/chr_0028_wulfa.md W7, W8.",
+    "passiveEventActions: abilityEvent 142 + CheckObtainAtbType method [0] type [3] (natural SP from a skill) + CheckTimedMarkerCondition / CreateTimedMarker wpn_sword_0016 (`cd` 0.1 s) → buff_wpn_sword_0016_valid on the wielder (pd_up = phy_dmg_up2) and, ForEach team member, the same buff with pd_up = phy_dmg_up3 (attribute 50 formulaItem 5 + pd_up; `duration` 30 s; stackingType 11 with priority key pd_up and maxStackCntKey max_stack 5: layers with their own timers). Description: \"After the wielder's skill recovers SP, the wielder gains Physical DMG Dealt +{phy_dmg_up2} while other operators in the team gain Physical DMG Dealt +{phy_dmg_up3} for {duration}s. Max stacks … {max_stack}. Duration of each stack is counted separately. Effect only triggers once every 0.1s.\"",
+    "Assumption: the ForEach team loop's copy doesn't also reach the wielder (the description's \"other operators\"; if it did, the wielder would hold a phy_dmg_up3 layer beside each phy_dmg_up2 one of the same priority buff, which the data doesn't settle). buff_wpn_sword_0016 (skill 3's `buffs`) only ends buff_wpn_sword_0016_team, which nothing creates; toggleBuffs buff_wpn_lance_0003 names atk_up and hp_ratio, keys this skill doesn't have (inert, as Grand Vision's). Not in any log or fixture yet."
+  ],
+  "buffs": [
+    { "id": "wpn_sword_0016.self", "label": "Never Rest: Physical DMG (wielder)", "target": "self", "gameBuff": "buff_wpn_sword_0016_valid", "duration": "duration", "maxStacks": "max_stack", "modifiers": [{ "attr": 50, "value": "phy_dmg_up2" }] },
+    { "id": "wpn_sword_0016.team", "label": "Never Rest: Physical DMG (other operators)", "target": "team", "recipients": { "not": { "isOwner": true } }, "gameBuff": "buff_wpn_sword_0016_valid", "duration": "duration", "maxStacks": "max_stack", "modifiers": [{ "attr": 50, "value": "phy_dmg_up3" }] }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_sword_0016.skill_sp",
+      "on": { "event": "sp", "natural": true, "sourceTypes": [3] },
+      "by": "self",
+      "cooldown": "cd",
+      "skill": "sk_wpn_sword_0016",
+      "do": [{ "kind": "buff", "buff": "wpn_sword_0016.self" }, { "kind": "buff", "buff": "wpn_sword_0016.team" }]
+    }
+  ]
+}

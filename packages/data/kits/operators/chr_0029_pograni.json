@@ -1,0 +1,303 @@
+{
+  "$schema": "../../../../schemas/kit.schema.json",
+  "operator": "chr_0029_pograni",
+  "sources": [
+    "Kit plan: docs/kit-batches/batch-4/chr_0029_pograni.md (analysis 1, § Kit plan; re-analysed in § Kit (2026-10-21)). Hits, frames, keys, stagger, the finisher's factors, the Breach and the SP-before-damage order: rmxlinux Json/SkillData chr_0029_pograni_* (game 1.6) as compiled by efsim kit-draft, with the hand-written parts noted per item; values SkillPatchTable at the build's levels (level 12: attack1–5 atk_scale 0.52 / 0.32 / 0.37 / 0.14 / 0.97 with attack 5's poise 18 and atb 20, attacks 1–4 atb 0; finisher 9.0; dive 1.8; battle skill atk_scale 1.92 / atk_scale2 2.38, poise 5, atb1–4 5 / 15 / 25 / 35 (L1–9: 5 / 10 / 20 / 30), cost 100 SP; combo atk_scale 0.95 / atk_scale2 1.22 / atk_scale3 1.49 / atk_scale4 2.97, poise1 / poise3 / poise4 3 / 4 / 9, atb1–4 5 / 7 / 13 / 23, usp 10, cooldown 17 s; ultimate atk_scale_rush 3.0 with poise_rush 10, atk_scale_trigger 1.0, atk_scale_final 4.5 with poise_final 15, atb_trigger 10, atb_final 40, duration 30 s, cost 90). Timing (windows, exclusive frames, the combo's three MarkCanInterrupt and ends per path, its world slow-down per path, the ultimate's time stop) is the loader's, from SkillData.",
+    "Talent indices: 0 is The Living Banner (PotentialTalentEffectTable chr_0029_pograni_talent_1_1 / _1_2 attach skill chr_0029_pograni_talent1: atb_gain 80, duration 20, atk_up 0.04 / 0.08, physpell_up 4 / 8, max_stack_owner 3; P3 sets atb_gain 60 and max_stack_owner 5), 1 is Tactical Instruction (talent_2_1 / _2_2 attach buff_chr_0029_pograni_talent2 with duration 5 / 10). Talent 2's Morale needs talent 1 (buff_chr_0029_pograni_ultimate_skill_abilityentity_inaura reads atk_up / physpell_up from buff_chr_0029_pograni_talent1_exist).",
+    "The ultimate's follow-ups (the in-aura buff's event handlers: kit-draft reports them as event-driven landings, D9c) are hand-written triggers: buff_chr_0029_pograni_ultimate_skill_abilityentity_inaura on enemies within the banner's aura, abilityEvent 59 (a physical status suffered, anyone's: here `physicalStatus` by self or a teammate) and abilityEvent 101 (DMG taken, CheckTargetsEqual attacker = Pogranichnik, CheckDamageDecorateMask 8192: his combo's hits), the shared 0.1 s timed marker soldier_attacked, then count > 1 (FinishBuffAdvanced one layer, SpawnAbilityEntity _attack2: a harass) or count = 1 (the last point: CreateBuff _finall_rush → four _finish4 entities, only the first deals damage: the Decisive Assault), each followed by Fervent Morale on the event's operator (talent 2).",
+    "P1 (15 SP returned when the battle skill hits at least 2 enemies: CheckEntityNum ≥ 2) is inert with one enemy (`targetsHit` is 1), not written. P2 (Will +20, Physical DMG +10%), P3 (talent 1 values), P4 (ultimate cost ×0.85) and P5 (combo cooldown −2 s, atb_ratio 1.2) are the loader's (stat panel, skillBbModifier, skillParamModifier).",
+    "Not modelled: InterruptAction in the combo and the rush (batch-3 E1: enemy charges); the Assault's TakeDownAction 1.2 s (as Catcher's combo and Snowshine's ultimate); the entity-layer slow-downs of the harass (TimeDilationAction layer 1, 0.4 s per path: Ti1b, report row 20); the banner state's end 31 frames after the Assault (no points are left, so nothing reads it); points left from an earlier ultimate adding to the new 5 (report row 17: the kit sets 5); talent 1's bank reset out of battle (abilityEvent 150); the dash attack (S5). The dive attack's hit is written from its data (plunging_attack_end) like any skill."
+  ],
+  "element": "physical",
+  "stacks": [
+    { "id": "steel_oath", "label": "Steel Oath (the ultimate's points)", "max": 5 },
+    { "id": "sp_banked", "label": "The Living Banner: SP his skills recovered, not yet turned into Fervent Morale", "max": 1000 }
+  ],
+  "buffs": [
+    {
+      "id": "combo_count1",
+      "label": "Combo trigger: at least 1 Vulnerable stack consumed",
+      "target": "self",
+      "gameBuff": "buff_chr_0029_pograni_combo_skill_count1",
+      "duration": 6,
+      "modifiers": [],
+      "note": "buff_chr_0029_pograni_combo_skill_count1–4 (duration 6 s, stackingType 9) are created by game code at the combo trigger; the combo's frame 0 reads the highest one present (CheckBuffStackNumAdvanced → EntityBB_noguard_count) and finishes all four. Count k is present exactly when some Crush or Breach within the last 6 s consumed at least k stacks (the trigger applies one layer of each count up to the event's level). 6 s is the BuffData literal; the combo window lasts the engine's 6 s too."
+    },
+    { "id": "combo_count2", "label": "Combo trigger: at least 2 Vulnerable stacks consumed", "target": "self", "gameBuff": "buff_chr_0029_pograni_combo_skill_count2", "duration": 6, "modifiers": [] },
+    { "id": "combo_count3", "label": "Combo trigger: at least 3 Vulnerable stacks consumed", "target": "self", "gameBuff": "buff_chr_0029_pograni_combo_skill_count3", "duration": 6, "modifiers": [] },
+    { "id": "combo_count4", "label": "Combo trigger: 4 Vulnerable stacks consumed", "target": "self", "gameBuff": "buff_chr_0029_pograni_combo_skill_count4", "duration": 6, "modifiers": [] },
+    {
+      "id": "banner",
+      "label": "Shieldguard Banner (ultimate state)",
+      "target": "self",
+      "gameBuff": "buff_chr_0029_pograni_ultimate_skill",
+      "duration": { "key": "duration", "skill": "chr_0029_pograni_ultimate_skill" },
+      "modifiers": [],
+      "note": "Created by chr_0029_pograni_ultimate_skill_abilityentity (spawned at the skill's frame 74) at its frame 3 when no state exists, for the ultimate's `duration` (30 s); its buffEvent 0 creates 5 layers of _ultimate_skill_count (Steel Oath, the stack steel_oath) and its AuraAction gives enemies within 50 m the in-aura buff that runs the follow-ups. A recast ends the old state at frame 0 (FinishBuff), so the new one replaces it."
+    },
+    {
+      "id": "soldier_marker",
+      "label": "A Shieldguard was summoned (0.1 s marker)",
+      "target": "self",
+      "duration": 0.1,
+      "modifiers": [],
+      "note": "The in-aura buff's CheckTimedMarker / CreateTimedMarker soldier_attacked (0.1 s): at most one follow-up per 0.1 s, shared by both events. A literal: the marker's duration is in the in-aura BuffData, not a value the kit can read."
+    },
+    {
+      "id": "fervent_morale",
+      "label": "Fervent Morale (talents 1 and 2): ATK and Arts Intensity per layer",
+      "target": "self",
+      "gameBuff": "buff_chr_0029_pograni_talent1",
+      "duration": { "talent": 0, "key": "duration" },
+      "maxStacks": { "talent": 0, "key": "max_stack_owner" },
+      "modifiers": [{ "zone": "atk", "value": { "talent": 0, "key": "atk_up" } }, { "attr": 87, "value": { "talent": 0, "key": "physpell_up" } }],
+      "note": "\"Fervent Morale: ATK +{atk_up} and Arts Intensity +{physpell_up}. Duration of each stack is counted separately.\" buff_chr_0029_pograni_talent1: attribute 2 formulaItem 6 + atk_up, attribute 87 formulaItem 5 + physpell_up, stackingType 11 without a priority key (each layer its own timer), maxStackCntKey max_stack: talent 1 assigns max_stack_owner (3, P3 5) and duration (20 s); talent 2's follow-ups on him assign the same cap and talent 2's duration (5 / 10 s) as the application's own duration (B4), so one cap of 3 / 5 covers both sources."
+    },
+    {
+      "id": "fervent_morale_team",
+      "label": "Fervent Morale (talent 2) on the teammate who triggered a follow-up",
+      "target": "team",
+      "gameBuff": "buff_chr_0029_pograni_talent1",
+      "duration": { "talent": 1, "key": "duration" },
+      "maxStacks": 3,
+      "modifiers": [{ "zone": "atk", "value": { "talent": 0, "key": "atk_up" } }, { "attr": 87, "value": { "talent": 0, "key": "physpell_up" } }],
+      "note": "\"Any operator triggering the ultimate's subsequent effects also gains Fervent Morale for {duration}s\": the in-aura buff creates buff_chr_0029_pograni_talent1 on the event's operator with talent 2's duration and, for a teammate, max_stack_team. 3 is a literal: max_stack_team is only chr_0029_pograni_talent1's SkillData default (no talent level or potential sets it), which the kit can't read. Given only to the event's subject (`to: eventSubject`); 7e19 has it on Ember from 25812 ms and on Chen from 27753 ms, 10 s each."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "combo_window",
+      "on": { "event": "physicalStatus", "statuses": ["crush", "breach"] },
+      "by": "anyone",
+      "do": [
+        { "kind": "openCombo" },
+        { "kind": "buff", "buff": "combo_count1", "layers": { "min": [1, { "max": [0, { "eventCount": true }] }] } },
+        { "kind": "buff", "buff": "combo_count2", "layers": { "min": [1, { "max": [0, { "sum": [{ "eventCount": true }, -1] }] }] } },
+        { "kind": "buff", "buff": "combo_count3", "layers": { "min": [1, { "max": [0, { "sum": [{ "eventCount": true }, -2] }] }] } },
+        { "kind": "buff", "buff": "combo_count4", "layers": { "min": [1, { "max": [0, { "sum": [{ "eventCount": true }, -3] }] }] } }
+      ],
+      "note": "CharGrowthTable chr_0029_pograni_ComboSkill: \"When Crush or Breach consumes the enemy's Vulnerability stack(s)\" (game code), anyone's. eventCount is the status's level, the stacks it consumed; a Breach on an enemy without stacks only adds a Vulnerable stack (status.ts) and opens nothing. His own Breach while the combo is on cooldown (batch-3 T5) follows the engine's rule."
+    },
+    {
+      "id": "combo_cast",
+      "on": { "event": "cast", "skills": ["chr_0029_pograni_combo_skill"] },
+      "by": "self",
+      "do": [{ "kind": "endBuff", "buff": "combo_count1" }, { "kind": "endBuff", "buff": "combo_count2" }, { "kind": "endBuff", "buff": "combo_count3" }, { "kind": "endBuff", "buff": "combo_count4" }],
+      "note": "The combo's frame 0 FinishBuff of all four count buffs, after its jump is decided (the cast's jumps are judged before its cast triggers)."
+    },
+    {
+      "id": "battle_sp",
+      "on": { "event": "physicalStatus", "statuses": ["breach"], "fromKinds": ["battle"] },
+      "by": "self",
+      "skill": "chr_0029_pograni_normal_skill",
+      "beforeDamage": true,
+      "do": [
+        {
+          "kind": "sp",
+          "value": { "sum": ["atb1", { "product": [{ "sum": ["atb2", { "product": [-1, "atb1"] }] }, { "min": [1, { "max": [0, { "sum": [{ "eventCount": true }, -1] }] }] }] }, { "product": [{ "sum": ["atb3", { "product": [-1, "atb2"] }] }, { "min": [1, { "max": [0, { "sum": [{ "eventCount": true }, -2] }] }] }] }, { "product": [{ "sum": ["atb4", { "product": [-1, "atb3"] }] }, { "min": [1, { "max": [0, { "sum": [{ "eventCount": true }, -3] }] }] }] }] }
+        },
+        {
+          "kind": "gain",
+          "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": { "sum": ["atb1", { "product": [{ "sum": ["atb2", { "product": [-1, "atb1"] }] }, { "min": [1, { "max": [0, { "sum": [{ "eventCount": true }, -1] }] }] }] }, { "product": [{ "sum": ["atb3", { "product": [-1, "atb2"] }] }, { "min": [1, { "max": [0, { "sum": [{ "eventCount": true }, -2] }] }] }] }, { "product": [{ "sum": ["atb4", { "product": [-1, "atb3"] }] }, { "min": [1, { "max": [0, { "sum": [{ "eventCount": true }, -3] }] }] }] }] } }]
+        }
+      ],
+      "note": "\"Recovers SP based on the number of Vulnerability stacks consumed\": normal_skill frame 38 SaveBuffStackNumAdvanced of the Vulnerability tag (1075718177) on the targets → SwitchAction num 1–4 → ObtainCostAction atb1–atb4 (natural, atbSourceType 3: the data's spKinds / spSources), before the FractureAction and the DamageAction (beforeDamage); no stacks, no SP. The Breach's eventCount is the stacks it consumed, so the value is atb_n for n stacks (atb1 + each step's difference while n reaches it): a Switch-chosen value (batch-3 D3, open) as a sum. The same amount goes into talent 1's bank."
+    },
+    {
+      "id": "living_banner",
+      "on": { "event": "stackAtLeast", "stack": "sp_banked", "atLeast": 80 },
+      "by": "self",
+      "if": { "not": { "potentialAtLeast": 3 } },
+      "do": [{ "kind": "buff", "buff": "fervent_morale" }, { "kind": "gain", "gains": [{ "stack": "sp_banked", "amount": { "product": [-1, { "talent": 0, "key": "atb_gain" }] } }] }],
+      "note": "Talent 1: \"recovering {atb_gain} SP with his own skills grants Fervent Morale\". chr_0029_pograni_talent1 abilityEvent 142 + CheckObtainAtbType method [0] type [3] (natural skill SP) → EntityBB_atb_contain += the grant; at ≥ atb_gain it subtracts atb_gain and creates one layer (one per SP event at most: no grant is as large as the threshold). The bank is the stack sp_banked, filled by every grant of his skill SP (the battle skill's trigger, the combo slashes, the harasses and the Assault); 80 below P3 (a literal behind potentialAtLeast: the threshold is the talent's atb_gain)."
+    },
+    {
+      "id": "living_banner_p3",
+      "on": { "event": "stackAtLeast", "stack": "sp_banked", "atLeast": 60 },
+      "by": "self",
+      "if": { "potentialAtLeast": 3 },
+      "do": [{ "kind": "buff", "buff": "fervent_morale" }, { "kind": "gain", "gains": [{ "stack": "sp_banked", "amount": { "product": [-1, { "talent": 0, "key": "atb_gain" }] } }] }],
+      "note": "P3 sets atb_gain to 60 (PotentialTalentEffectTable chr_0029_pograni_potential_3)."
+    },
+    {
+      "id": "ultimate_state",
+      "on": { "event": "cast", "skills": ["chr_0029_pograni_ultimate_skill"] },
+      "by": "self",
+      "delay": 77,
+      "launch": 74,
+      "detached": true,
+      "do": [{ "kind": "buff", "buff": "banner" }, { "kind": "gain", "gains": [{ "stack": "steel_oath", "amount": { "sum": [5, { "product": [-1, { "stackCount": "steel_oath" }] }] } }] }],
+      "note": "SpawnAbilityEntity at the ultimate's frame 74; the entity creates the state at its frame 3 (skill frame 77): the banner and 5 Steel Oath points (`count` 5 of buff_chr_0029_pograni_ultimate_skill, a literal in its blackboard: \"generating 5 points of Steel Oath\"); the stack is set to 5."
+    },
+    {
+      "id": "oath_harass_status_self",
+      "on": { "event": "physicalStatus" },
+      "by": "self",
+      "skill": "chr_0029_pograni_ultimate_skill",
+      "if": { "all": [{ "buffActive": "banner" }, { "not": { "buffActive": "soldier_marker" } }, { "stack": "steel_oath", "atLeast": 2 }] },
+      "do": [
+        { "kind": "gain", "gains": [{ "stack": "steel_oath", "amount": -1 }] },
+        { "kind": "buff", "buff": "soldier_marker" },
+        { "kind": "hits", "hits": [{ "id": "harass", "label": "Shieldguard harass", "scale": ["atk_scale_trigger"], "damageType": "ultimate", "element": "physical", "events": ["chr_0029_pograni_ultimate_skill_abilityentity_attack2"], "frames": [9], "sp": "atb_trigger", "spBeforeDamage": true, "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": "atb_trigger" }] }] },
+        { "kind": "buff", "buff": "fervent_morale", "duration": { "talent": 1, "key": "duration" }, "if": { "all": [{ "talentAtLeast": [0, 1] }, { "talentAtLeast": [1, 1] }] } }
+      ],
+      "note": "\"After an enemy suffers a Physical Status or takes DMG from Pogranichnik's combo skill, Pogranichnik consumes 1 point of Steel Oath and summons 1 Shieldguard\": with 2+ points, a harass. chr_0029_pograni_ultimate_skill_abilityentity_attack2: its frame 0 jumps by the count left; each path's ObtainCostAction atb_trigger (natural, atbSourceType 3: reached by the loader, D2) and DamageAction atk_scale_trigger (mask 512: ultimate, no poise unit) at its frame 9 (the paths' 108 / 209 / 307 are 9 frames into theirs); SP before damage (the ObtainCostAction comes first). Talent 2's Morale on him from his own physical status."
+    },
+    {
+      "id": "oath_harass_status_mate",
+      "on": { "event": "physicalStatus" },
+      "by": "teammate",
+      "skill": "chr_0029_pograni_ultimate_skill",
+      "if": { "all": [{ "buffActive": "banner" }, { "not": { "buffActive": "soldier_marker" } }, { "stack": "steel_oath", "atLeast": 2 }] },
+      "do": [
+        { "kind": "gain", "gains": [{ "stack": "steel_oath", "amount": -1 }] },
+        { "kind": "buff", "buff": "soldier_marker" },
+        { "kind": "hits", "hits": [{ "id": "harass", "label": "Shieldguard harass", "scale": ["atk_scale_trigger"], "damageType": "ultimate", "element": "physical", "events": ["chr_0029_pograni_ultimate_skill_abilityentity_attack2"], "frames": [9], "sp": "atb_trigger", "spBeforeDamage": true, "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": "atb_trigger" }] }] },
+        { "kind": "buff", "buff": "fervent_morale_team", "to": "eventSubject", "if": { "all": [{ "talentAtLeast": [0, 1] }, { "talentAtLeast": [1, 1] }] } }
+      ],
+      "note": "As oath_harass_status_self, from a teammate's physical status (abilityEvent 59 is anyone's); talent 2's Morale goes to that teammate (7e19: Ember at 25812 ms, Chen at 27753 ms)."
+    },
+    {
+      "id": "oath_harass_combo",
+      "on": { "event": "hit", "kinds": ["combo"], "skills": ["chr_0029_pograni_combo_skill"] },
+      "by": "self",
+      "skill": "chr_0029_pograni_ultimate_skill",
+      "if": { "all": [{ "buffActive": "banner" }, { "not": { "buffActive": "soldier_marker" } }, { "stack": "steel_oath", "atLeast": 2 }] },
+      "do": [
+        { "kind": "gain", "gains": [{ "stack": "steel_oath", "amount": -1 }] },
+        { "kind": "buff", "buff": "soldier_marker" },
+        { "kind": "hits", "hits": [{ "id": "harass", "label": "Shieldguard harass", "scale": ["atk_scale_trigger"], "damageType": "ultimate", "element": "physical", "events": ["chr_0029_pograni_ultimate_skill_abilityentity_attack2"], "frames": [9], "sp": "atb_trigger", "spBeforeDamage": true, "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": "atb_trigger" }] }] },
+        { "kind": "buff", "buff": "fervent_morale", "duration": { "talent": 1, "key": "duration" }, "if": { "all": [{ "talentAtLeast": [0, 1] }, { "talentAtLeast": [1, 1] }] } }
+      ],
+      "note": "abilityEvent 101 with CheckTargetsEqual (the attacker is Pogranichnik) and CheckDamageDecorateMask 8192: his combo's hits (7e19: harasses after each of the three slashes at 20300 ms)."
+    },
+    {
+      "id": "oath_final_status_self",
+      "on": { "event": "physicalStatus" },
+      "by": "self",
+      "skill": "chr_0029_pograni_ultimate_skill",
+      "if": { "all": [{ "buffActive": "banner" }, { "not": { "buffActive": "soldier_marker" } }, { "stack": "steel_oath", "atLeast": 1, "below": 2 }] },
+      "do": [
+        { "kind": "gain", "gains": [{ "stack": "steel_oath", "amount": -1 }] },
+        { "kind": "buff", "buff": "soldier_marker" },
+        { "kind": "hits", "hits": [{ "id": "decisive_assault", "label": "Decisive Assault", "scale": ["atk_scale_final"], "damageType": "ultimate", "element": "physical", "events": ["chr_0029_pograni_ultimate_skill_abilityentity_finish4"], "frames": [25], "poise": "poise_final", "sp": "atb_final", "spBeforeDamage": true, "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": "atb_final" }] }] },
+        { "kind": "buff", "buff": "fervent_morale", "duration": { "talent": 1, "key": "duration" }, "if": { "all": [{ "talentAtLeast": [0, 1] }, { "talentAtLeast": [1, 1] }] } }
+      ],
+      "note": "\"When the last Steel Oath point is consumed, all 4 Shieldguards initiate a Decisive Assault\": count = 1 → CreateBuff _finall_rush → four _finish4 entities; at their frame 25 CheckTimedMarker ultimate_finalhit lets only the first deal damage: ObtainCostAction atb_final (natural, type 3) then DamageAction atk_scale_final with poise unit poise_final (mask 4608). TakeDownAction 1.2 s isn't modelled."
+    },
+    {
+      "id": "oath_final_status_mate",
+      "on": { "event": "physicalStatus" },
+      "by": "teammate",
+      "skill": "chr_0029_pograni_ultimate_skill",
+      "if": { "all": [{ "buffActive": "banner" }, { "not": { "buffActive": "soldier_marker" } }, { "stack": "steel_oath", "atLeast": 1, "below": 2 }] },
+      "do": [
+        { "kind": "gain", "gains": [{ "stack": "steel_oath", "amount": -1 }] },
+        { "kind": "buff", "buff": "soldier_marker" },
+        { "kind": "hits", "hits": [{ "id": "decisive_assault", "label": "Decisive Assault", "scale": ["atk_scale_final"], "damageType": "ultimate", "element": "physical", "events": ["chr_0029_pograni_ultimate_skill_abilityentity_finish4"], "frames": [25], "poise": "poise_final", "sp": "atb_final", "spBeforeDamage": true, "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": "atb_final" }] }] },
+        { "kind": "buff", "buff": "fervent_morale_team", "to": "eventSubject", "if": { "all": [{ "talentAtLeast": [0, 1] }, { "talentAtLeast": [1, 1] }] } }
+      ],
+      "note": "As oath_final_status_self, from a teammate's physical status (7e19: Chen's Lift at 27753 ms → the Assault at 28190 ms)."
+    },
+    {
+      "id": "oath_final_combo",
+      "on": { "event": "hit", "kinds": ["combo"], "skills": ["chr_0029_pograni_combo_skill"] },
+      "by": "self",
+      "skill": "chr_0029_pograni_ultimate_skill",
+      "if": { "all": [{ "buffActive": "banner" }, { "not": { "buffActive": "soldier_marker" } }, { "stack": "steel_oath", "atLeast": 1, "below": 2 }] },
+      "do": [
+        { "kind": "gain", "gains": [{ "stack": "steel_oath", "amount": -1 }] },
+        { "kind": "buff", "buff": "soldier_marker" },
+        { "kind": "hits", "hits": [{ "id": "decisive_assault", "label": "Decisive Assault", "scale": ["atk_scale_final"], "damageType": "ultimate", "element": "physical", "events": ["chr_0029_pograni_ultimate_skill_abilityentity_finish4"], "frames": [25], "poise": "poise_final", "sp": "atb_final", "spBeforeDamage": true, "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": "atb_final" }] }] },
+        { "kind": "buff", "buff": "fervent_morale", "duration": { "talent": 1, "key": "duration" }, "if": { "all": [{ "talentAtLeast": [0, 1] }, { "talentAtLeast": [1, 1] }] } }
+      ],
+      "note": "As oath_harass_combo, for the last point."
+    }
+  ],
+  "skills": [
+    {
+      "skillId": "chr_0029_pograni_attack1",
+      "label": "All-Out Offensive: basic attack 1",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [8], "events": ["chr_0029_pograni_attack1"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+    },
+    {
+      "skillId": "chr_0029_pograni_attack2",
+      "label": "All-Out Offensive: basic attack 2",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [7, 14], "events": ["chr_0029_pograni_attack2"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+    },
+    {
+      "skillId": "chr_0029_pograni_attack3",
+      "label": "All-Out Offensive: basic attack 3",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [9, 15], "events": ["chr_0029_pograni_attack3"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } }]
+    },
+    {
+      "skillId": "chr_0029_pograni_attack4",
+      "label": "All-Out Offensive: basic attack 4",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 6, "frames": [3, 5, 7, 11, 13, 15], "events": ["chr_0029_pograni_attack4"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.167] } } }],
+      "note": "atb is 0 at every level for attacks 1–4 (only attack 5 grants SP); the factors are the SkillData coefficients kit-draft reads."
+    },
+    {
+      "skillId": "chr_0029_pograni_attack5",
+      "label": "All-Out Offensive: basic attack 5 (Final Strike)",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [16], "events": ["chr_0029_pograni_attack5"], "sp": { "if": { "controlled": true }, "then": "atb" }, "poise": "poise", "poiseControlledOnly": true, "finalStrike": true }],
+      "note": "\"As the controlled operator, Final Strike also deals {poise} Stagger\": the poise unit and ObtainCostAction atb (atbSourceType 1) only for the controlled operator (decorate mask 2097280)."
+    },
+    {
+      "skillId": "chr_0029_pograni_power_attack",
+      "label": "Finisher",
+      "damageType": "basic",
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [7, 14], "events": ["chr_0029_pograni_power_attack"], "factor": 0.1 },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [25], "events": ["chr_0029_pograni_power_attack"], "factor": 0.8 }
+      ],
+      "note": "BreakingAttackCalculation 0.1, 0.1, 0.8 of atk_scale (9.0 at L12); the finisher's SP is the engine's."
+    },
+    {
+      "skillId": "chr_0029_pograni_plunging_attack_end",
+      "label": "Dive attack",
+      "damageType": "basic",
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [3], "events": ["chr_0029_pograni_plunging_attack_end"], "sp": { "if": { "controlled": true }, "then": "atb" } }],
+      "note": "plunging_attack_end (mask 1152: basic + dive); castable once dive attacks are rotation actions (batch-1 S10)."
+    },
+    {
+      "skillId": "chr_0029_pograni_normal_skill",
+      "label": "The Pulverizing Front (battle skill)",
+      "damageType": "battle",
+      "teamEnergy": [{ "frame": 38, "ratio": 1 }],
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "frames": [28], "events": ["chr_0029_pograni_normal_skill"], "poise": "poise" },
+        { "id": "hit_2", "scale": ["atk_scale2"], "frames": [38], "events": ["chr_0029_pograni_normal_skill"], "applies": [{ "kind": "physicalStatus", "status": "breach" }], "poise": "poise", "note": "FractureAction (Breach) before this hit's DamageAction; its SP (atb1–atb4 by the stacks the Breach consumed) is the trigger battle_sp, not this hit's sp (kit-draft's atb1 is one Switch case)." }
+      ],
+      "note": "Team energy: CreateBuff buff_common_obtain_ultimate_sp at frame 38."
+    },
+    {
+      "skillId": "chr_0029_pograni_combo_skill",
+      "label": "Full Moon Slash (combo skill)",
+      "damageType": "combo",
+      "jumps": [
+        { "at": 0, "to": 600, "if": { "not": { "buffActive": "combo_count2" } } },
+        { "at": 0, "to": 400, "if": { "all": [{ "buffActive": "combo_count2" }, { "not": { "buffActive": "combo_count3" } }] } },
+        { "at": 0, "to": 200, "if": { "all": [{ "buffActive": "combo_count3" }, { "not": { "buffActive": "combo_count4" } }] } }
+      ],
+      "hits": [
+        { "id": "hit", "scale": ["atk_scale"], "count": 4, "frames": [23, 223, 423, 623], "events": ["chr_0029_pograni_combo_skill"], "energy": "usp", "sp": { "sum": ["calc_atb1", { "product": ["atb1", "atb_ratio"] }] }, "spBeforeDamage": true, "poise": "poise1", "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": { "product": ["atb1", "atb_ratio"] } }] },
+        { "id": "hit_2", "scale": ["atk_scale2"], "count": 3, "frames": [37, 237, 437], "events": ["chr_0029_pograni_combo_skill"], "sp": { "sum": ["calc_atb2", { "product": ["atb2", "atb_ratio"] }] }, "spBeforeDamage": true, "poise": "poise1", "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": { "product": ["atb2", "atb_ratio"] } }] },
+        { "id": "hit_3", "scale": ["atk_scale4"], "frames": [61], "events": ["chr_0029_pograni_combo_skill"], "sp": { "sum": ["calc_atb4", { "product": ["atb4", "atb_ratio"] }] }, "spBeforeDamage": true, "poise": "poise4", "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": { "product": ["atb4", "atb_ratio"] } }] },
+        { "id": "hit_4", "scale": ["atk_scale3"], "frames": [261], "events": ["chr_0029_pograni_combo_skill"], "sp": { "sum": ["calc_atb3", { "product": ["atb3", "atb_ratio"] }] }, "spBeforeDamage": true, "poise": "poise3", "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": { "product": ["atb3", "atb_ratio"] } }] }
+      ],
+      "note": "\"Performs a number of slash sequences (up to 3) based on the max number of Vulnerability stacks consumed … Consuming 4 stacks enhances the 3rd\": frame 0 jumps by the highest count buff (≤ 1 → 600, 2 → 400, 3 → 200, 4 → none), so a path's slashes are at +23 (atk_scale, poise1, usp), +37 (atk_scale2, poise1), +61 (atk_scale3 with poise3 on the 3-stack path, atk_scale4 with poise4 on the 4-stack path) from its start. Each slash's SP is the data's calc_atb_n, which SimpleCalcBB sets to atb_n × atb_ratio before its ObtainCostAction (natural, atbSourceType 3; the ObtainCostAction comes before the DamageAction): the sum names calc_atb_n (0 in the table) first so the grant takes its kind and source from the data, and adds atb_n × atb_ratio as the value (kit-draft writes the product, whose keys have no SP kind: their grants would be returned SP of no source). The windows, MarkCanInterrupt 80 / 280 / 450 and ends 191 / 391 / 545 (649 for the 1-stack path) are the loader's per path (S11)."
+    },
+    {
+      "skillId": "chr_0029_pograni_ultimate_skill",
+      "label": "Shieldguard Banner, Forward (ultimate)",
+      "damageType": "ultimate",
+      "hits": [{ "id": "hit", "scale": ["atk_scale_rush"], "frames": [76], "events": ["chr_0029_pograni_ultimate_skill"], "poise": "poise_rush" }],
+      "note": "The rush (DamageAction atk_scale_rush, poise_rush, mask 4608) at 76; the banner, Steel Oath and the follow-ups are triggers (ultimate_state, oath_*)."
+    }
+  ]
+}

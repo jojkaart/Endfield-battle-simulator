@@ -1,0 +1,34 @@
+{
+  "$schema": "../../../../schemas/equipment-kit.schema.json",
+  "equipment": "wpn_sword_0017",
+  "sources": [
+    "Glorious Memory, skill 3 (Twilight: Lingering Glow): rmxlinux Json/SkillData sk_wpn_sword_0017 (game 1.6); values SkillPatchTable sk_wpn_sword_0017 (level 1 → 9: atk_up 0.07 → 0.196, dmg_up 0.12 → 0.336; max_stack 3, duration 30, cd 0.5 at every level). Skill 1 (Agility), skill 2 (Crit Rate) and skill 3's cardAttributeModifier (ATK + atk_up, attribute 2 formulaItem 6) are on the stat panel. Batch-4 report docs/kit-batches/batch-4/chr_0029_pograni.md W1–W3.",
+    "passiveEventActions: abilityEvent 206 (the wielder applies a buff) + CheckBuffIdInContext checkType 1 (a tag query: 1075718177, Vulnerability; its buffIdList entry buff_common_originum_frozen is ignored under checkType 1) + CheckOriginSkillType [2, 6, 7] (from a battle skill, combo or ultimate) + CheckTimedMarker / CreateTimedMarker cd (0.5 s) → buff_wpn_sword_0017_exist on the wielder (stackingType 2, maxStackCntKey max_stack: each layer its own `duration`). abilityEvent 30 + CheckSkillType [7] (an ultimate cast) with _exist → CreateBuffAttachingSkill buff_wpn_sword_0017_valid (attributes 50–54 formulaItem 5 + dmg_up × layers, for the cast); its end (buffEvent 2) finishes every _exist layer. Description: \"When the wielder's skill applies Vulnerability, during the next ultimate cast within {duration}s, the wielder gains DMG Dealt +{dmg_up}. Max stacks … {max_stack}. Duration of each stack is counted separately. Effect only triggers once every 0.5s.\"",
+    "Modelled as Aspirant (wpn_sword_0015): one layered buff, each layer dmg_up on all five elements, consumed by the wielder's next ultimate; _valid is attached to the cast (CreateBuffAttachingSkill), so the loader makes it act on every hit of the wielder while that cast runs (consumedScope whileCasting, B5): the Lift / Knock Down hits of a status the ultimate applies, trigger hits. Logged on Chen's ultimate (fixtures/pending/zmdlogs-7e19489ae503.json t=33152–36117: 1.008 = 3 × 0.336 on every element). Left out: layers added during the consuming ultimate end with it in the game (_valid's finish), here they wait for the next one (only for a wielder whose ultimate applies Vulnerability).",
+    "toggleBuffs buff_wpn_lance_0003 (Pathfinder's Beacon's ATK + atk_up, under CheckCurHpRatio ≥ hp_ratio, a key this skill doesn't define) isn't applied: the description has one ATK line. If the game applies it, the ATK counts twice (+19.6% at L9): in-game test 75's variant (the copied toggle)."
+  ],
+  "buffs": [
+    {
+      "id": "wpn_sword_0017.ready",
+      "label": "Glorious Memory: DMG Dealt during the next ultimate, per Vulnerability applied",
+      "target": "self",
+      "gameBuff": "buff_wpn_sword_0017_exist",
+      "duration": "duration",
+      "maxStacks": "max_stack",
+      "consumedBy": ["ultimate"],
+      "modifiers": [{ "attr": 50, "value": "dmg_up" }, { "attr": 51, "value": "dmg_up" }, { "attr": 52, "value": "dmg_up" }, { "attr": 53, "value": "dmg_up" }, { "attr": 54, "value": "dmg_up" }],
+      "note": "Each layer carries dmg_up, so the consuming ultimate gets dmg_up × layers (buff_wpn_sword_0017_valid); it uses up every layer."
+    }
+  ],
+  "triggers": [
+    {
+      "id": "wpn_sword_0017.on_vulnerable",
+      "on": { "event": "vulnerable", "fromKinds": ["battle", "combo", "ultimate"] },
+      "by": "self",
+      "cooldown": "cd",
+      "skill": "sk_wpn_sword_0017",
+      "do": [{ "kind": "buff", "buff": "wpn_sword_0017.ready" }],
+      "note": "Any Vulnerable stack the wielder's battle skill, combo or ultimate adds (a physical status's stack included; Crush and Breach consume stacks, so they count only where they add one: a Breach on an enemy without stacks). Once per 0.5 s (the timed marker cd)."
+    }
+  ]
+}

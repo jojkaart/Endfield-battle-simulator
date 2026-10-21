@@ -1,0 +1,36 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Pogranichnik (P5, examples/pogranichnik-p5.json: Thermite Cutter, Eternal Xiranite ×3) with Chen Qianyu (examples/chen-p5.json) vs Rhodagn; he starts with his ultimate charged. Chen's battle skill adds a Vulnerable stack, her combo's Lift a second. His ultimate raises the Shieldguard Banner (5 Steel Oath points, from frame 77). His battle skill's Breach consumes both stacks: 15 SP (atb2), a harass (a physical status in the banner), and his combo window with two stacks counted, so the combo plays the two-slash path, each slash bringing a harass. Chen's second battle skill and combo, after her cooldown, Lift the enemy again: the last two points (a harass, then the Decisive Assault), each giving her Fervent Morale (talent 2, 10 s). Every natural skill-SP grant of his adds a Thermite Cutter team ATK layer (two at most) and goes into talent 1's bank: Fervent Morale at 60 SP (P3).",
+  "team": [
+    "pogranichnik-p5.json",
+    "chen-p5.json"
+  ],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "startEnergy": {
+    "chr_0029_pograni": "full"
+  },
+  "durationSeconds": 30,
+  "crit": "expected",
+  "rotation": [
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_normal_skill" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_combo_skill" },
+    { "operator": "chr_0029_pograni", "skill": "chr_0029_pograni_ultimate_skill" },
+    { "operator": "chr_0029_pograni", "skill": "chr_0029_pograni_normal_skill" },
+    { "operator": "chr_0029_pograni", "skill": "chr_0029_pograni_combo_skill" },
+    { "operator": "chr_0029_pograni", "skill": "chr_0029_pograni_attack1" },
+    { "operator": "chr_0029_pograni", "skill": "chr_0029_pograni_attack2" },
+    { "operator": "chr_0029_pograni", "skill": "chr_0029_pograni_attack3" },
+    { "operator": "chr_0029_pograni", "skill": "chr_0029_pograni_attack4" },
+    { "operator": "chr_0029_pograni", "skill": "chr_0029_pograni_attack5" },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_normal_skill", "at": 14 },
+    { "operator": "chr_0005_chen", "skill": "chr_0005_chen_combo_skill" },
+    { "operator": "chr_0029_pograni", "skill": "chr_0029_pograni_attack1" },
+    { "operator": "chr_0029_pograni", "skill": "chr_0029_pograni_attack2" },
+    { "operator": "chr_0029_pograni", "skill": "chr_0029_pograni_attack3" },
+    { "operator": "chr_0029_pograni", "skill": "chr_0029_pograni_attack4" },
+    { "operator": "chr_0029_pograni", "skill": "chr_0029_pograni_attack5" }
+  ]
+}
