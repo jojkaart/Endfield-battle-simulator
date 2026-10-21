@@ -421,7 +421,7 @@ draft above. No engine, loader or compiler change.
 | Row 27 / U4 (log keys) | unknown | `chr_0015_lifeng_ultimate_skill_abentity` and `buff_chr_0015_lifeng_talent_2`, never the Valiant key `chr_0015_lifeng_ultimate_skill` |
 | W5 (Opero 77) | done | sources only (flat ATK is in the panel) |
 | W6, W7 (JET) | done | two self buffs on battle-skill and combo `cast` events |
-| Mountain Bearer (Camille rows 36–40) | done, one effect open | DMG +56% against a Vulnerable enemy (a buff from fightStart, `enemyVulnerable: 1`). All Attributes +22.4% when the wielder's battle skill applies Vulnerable (`vulnerable`, `fromKinds [battle]`) or Physical Susceptibility (T1 `tags`), with `cooldown: cd` for the 0.1 s timed markers. **Open:** the percentages don't reach ATK (batch-3 V4 residue) |
+| Mountain Bearer (Camille rows 36–40) | done | DMG +56% against a Vulnerable enemy (a buff from fightStart, `enemyVulnerable: 1`). All Attributes +22.4% when the wielder's battle skill applies Vulnerable (`vulnerable`, `fromKinds [battle]`) or Physical Susceptibility (T1 `tags`), with `cooldown: cd` for the 0.1 s timed markers. The percentages reach ATK through the `attribute` zone (follow-up after the kits): ×1.174 ATK per buff on the example build |
 
 Compiler items seen (data family, not fixed here):
 - kit-draft emits no `link` trigger for a ComboAction, so the kit writes it
@@ -449,13 +449,12 @@ Compiler items seen (data family, not fixed here):
 
 Left out:
 - the dash attack (S5);
-- talent 2 on a Vulnerable-only Knock Down (U1, the engine's reading);
-- Mountain Bearer's All Attributes reaching ATK (V4 residue). With the
-  example build that's about +17% ATK per All Attributes buff (0.224 × the
-  attribute bonus's Agility, Strength and talent-1 Intellect / Will parts:
-  about +0.79 on 4.51), or +35% with both, for 15 s after each battle
-  skill. It's the largest effect missing on her, and talent 1 makes it
-  larger for her than for an Agility-main wielder without it.
+- talent 2 on a Vulnerable-only Knock Down (U1, the engine's reading).
+
+Follow-up (after the kits): Mountain Bearer's All Attributes now reach ATK.
+On the example build one buff raises the attributes to 444 / 525 / 159 /
+354 (Agility, Strength, Intellect, Will), the attribute bonus from 4.511 to
+5.296: ×1.174 ATK, or ×1.35 with both, for 15 s after each battle skill.
 
 ### Verification
 
@@ -463,8 +462,9 @@ Left out:
   give the same output on every fixture with her kits loaded (4e5e's
   `chr_0015_lifeng_ultimate_skill` hits are still Estella's Valiant).
 - **Example** (`examples/lifeng-solo.scenario.json`, 30 s solo against
-  Rhodagn): 391,096 damage, 14,051 DPS (last hit at 27.83 s). Checked by
-  hand:
+  Rhodagn): 514,161 damage, 18,473 DPS (last hit at 27.83 s); 391,096
+  before Mountain Bearer's attributes reached ATK. Checked by hand at the
+  first value (the slams after a battle skill are now ×1.174 to ×1.35):
   - the first slam: 14,960 = 3,662.9 ATK × 2.68 × (1.98 + 0.56 Mountain
     Bearer) × 1.025 crit × 1.17 Susceptibility × 0.5 DEF;
   - the ultimate's slams: 26,794 (the same zones, plus Link ×1.2);
@@ -507,8 +507,8 @@ Left out:
 
 ### Shared layer (noted, not changed)
 
-- The batch-3 V4 residue (a main attribute's percentage reaching ATK) now
-  has a large user: Mountain Bearer on Lifeng (above).
-- `efsim calc` prints no line for attributes 76–79 (ATK per attribute
-  point). The ATK line's "× 4.5110 (Agi 363, Str 429)" hides talent 1's
-  +0.84 (design.md principle 10).
+- The batch-3 V4 residue (a main attribute's percentage reaching ATK) had
+  a large user: Mountain Bearer on Lifeng (above). Done after the kits.
+- `efsim calc` printed no line for attributes 76–79 (ATK per attribute
+  point), hiding talent 1's +0.84. Done after the kits: an "attribute
+  bonus" breakdown under the ATK line.

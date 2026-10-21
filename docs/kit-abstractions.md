@@ -416,29 +416,29 @@ added or substantially changed (also in CLAUDE.md). Checklist:
      a button skill don't open for the skill the button casts (Camille's
      Hunter Pursuit, 8–12 frames late); a beside cast still schedules its
      timeline's items (Last Rite filters hers with `beside: false`).
-   - Values: a main attribute's percentage doesn't reach ATK (batch-3 V4
-     residue; Mountain Bearer's All Attributes +22.4% ×2 is about +35% ATK
-     on Lifeng for 15 s, the largest effect missing on her); `buffLayers`
-     takes only integer thresholds (data keys like `free_sword_limit`
-     written as literals).
-   - Buffs: stack caps read only for priority-keyed stackingType 1
-     (Suffering's End's literal `maxStackCnt` 4 hand-written; Camille's
-     talent-2 cap of 5, stackingType 2).
-   - Triggers: "the wielder gains Link" (Thermite Cutter reacts to Link,
-     it gives none; matters only with Lifeng or Camille, who can't wield a
-     sword); Junction Point (four tag triggers, exact) and Solemn Phalanx
-     (one `categories` interim from batch 3) now read Arts Susceptibility
-     differently: unify on tags.
-   - Display: `efsim calc` shows no line for attributes 76–79 (ATK per
-     attribute point; Lifeng's talent 1 is hidden in the ATK factor).
-   - Log tooling (an agent on it now): unquantified annotated buffs valued
-     from kits, repeated boundary buffs tried 1..n, cast placement under
-     time stops, the compiler test matching poise-only hits.
+   - Values (done): a buff's main attributes (39–42, flat or a percentage
+     of the panel line) reach ATK through the `attribute` zone, with the
+     panel's floored attribute bonus (`stats.ts atkAttributeBonus`):
+     Mountain Bearer is ×1.174 ATK per buff on Lifeng, and `lifeng-solo`
+     went from 391,096 to 514,161. `buffLayers` thresholds are values, so
+     they can name data keys (Zhuang Fangyi's `free_sword_limit`).
+   - Buffs (done): stack caps of stackingTypes 2, 8, 10 and 11 come from
+     the buff's literal `maxStackCnt`, or its own value of the
+     `maxStackCntKey` when the applying skills lack it; a kit's number must
+     match. Suffering's End's and Camille's hand-written caps are gone.
+   - Triggers (done): `linkGained` event (`by` judges who gains Link);
+     Thermite Cutter's Link half uses it. Solemn Phalanx reads Arts
+     Susceptibility by its tag (1427729990), like Junction Point.
+   - Display (done): `efsim calc` breaks the attribute bonus down under
+     the ATK line, attributes 76–79 included.
+   - Log tooling (done): unquantified annotated buffs valued from kits,
+     repeated boundary buffs tried 1..n, cast placement under time stops,
+     the compiler test matching poise-only hits.
    - Compiler (D3 / D4 / D7–D10 leftovers): ComboAction → `link`, CheckHp
      → `enemyHpBelow`, ModifyDynamicBlackboard chains, Switch-chosen SP,
      entity counts as stacks, EntityBB keys, once-per-cast inflictions,
      calculated SP keys (Pogranichnik's `calc_atb_n`), heals gated by the
      data's conditions.
 3. **One mechanism written two ways:** Junction Point and Solemn Phalanx
-   (above). Link sources are one action now (`link`), and the kits that
+   (both on tags now). Link sources are one action now (`link`), and the kits that
    gave Link by the old every-combo rule needed nothing.
