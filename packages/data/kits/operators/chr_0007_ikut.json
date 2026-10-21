@@ -144,7 +144,7 @@
           "events": ["chr_0007_ikut_plunging_attack_end"],
           "element": "physical",
           "sp": { "if": { "controlled": true }, "then": "atb" },
-          "note": "Needs mid-air, so rotations don't cast it (S10); kept for calc."
+          "note": "A rotation's dive: a jump, then this landing (batch-1 S10)."
         }
       ]
     },

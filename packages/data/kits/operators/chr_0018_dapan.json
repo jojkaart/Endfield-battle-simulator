@@ -131,7 +131,7 @@
       "label": "Dive attack",
       "damageType": "basic",
       "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "sp": { "if": { "controlled": true }, "then": "atb" } }],
-      "note": "Not castable until rotations have jumps (S10)."
+      "note": "A rotation's dive: a jump, then this landing (batch-1 S10)."
     },
     {
       "skillId": "chr_0018_dapan_normal_skill",

@@ -438,7 +438,7 @@
           "sp": "atb"
         }
       ],
-      "note": "Not castable in rotations yet (S10: dive attacks need jumps)."
+      "note": "A rotation's dive: a jump, then this landing (batch-1 S10)."
     },
     {
       "skillId": "chr_0022_bounda_normal_skill",

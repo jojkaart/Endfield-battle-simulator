@@ -218,7 +218,7 @@
           "events": ["chr_0006_wolfgd_plunging_attack_end"]
         }
       ],
-      "note": "Not castable until rotations have jumps (S10)."
+      "note": "A rotation's dive: a jump, then this landing (batch-1 S10)."
     },
     {
       "skillId": "chr_0006_wolfgd_normal_skill",

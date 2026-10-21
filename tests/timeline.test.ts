@@ -1167,11 +1167,11 @@ describe("timeline: what ends with a cast, cast blocks, mid-air, control immunit
     expect(earliestStart(ctx, s, { operator: gb.operator, skill: G + "ultimate_skill", at: 10 })).toEqual({ frame: (s.casts[0]?.frame ?? NaN) + 111 });
   });
 
-  it("dive attacks need mid-air; control statuses don't freeze a control-immune enemy", () => {
+  it("a dive starts with a jump (tests/batch4-dive.test.ts); control statuses don't freeze a control-immune enemy", () => {
     const dive = kit.skills.find((s) => data.skills[s.skillId]?.timing?.specification === 6);
     if (dive) {
       const ctx = createContext(data, scenario([]));
-      expect(earliestStart(ctx, init(ctx), { operator: op, skill: dive.skillId })).toHaveProperty("error");
+      expect(earliestStart(ctx, init(ctx), { operator: op, skill: dive.skillId })).toEqual({ frame: 0 });
     }
     const imm: KitTrigger = { id: "imm", on: { event: "cast", kinds: ["basic"] }, by: "self", maxCount: 1, do: [{ kind: "apply", applies: [{ kind: "infliction", element: "fire" }, { kind: "control", status: "immobilization", seconds: 1, freezes: true }] }] };
     const g = withKit({ triggers: [...kit.triggers, imm] });

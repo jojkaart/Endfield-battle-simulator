@@ -233,7 +233,7 @@
           "frames": [1],
           "events": ["chr_0011_seraph_plunging_attack_end"],
           "sp": "atb",
-          "note": "Needs mid-air (S10); kept for calc. DamageAction at 1, mask 1152."
+          "note": "A rotation's dive: a jump, then this landing (batch-1 S10). DamageAction at 1, mask 1152."
         }
       ]
     },

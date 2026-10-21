@@ -20,6 +20,7 @@ import {
   apply,
   createContext,
   earliestStart,
+  exclusiveUntil,
   enemyActionsOf,
   init,
   memoAdvance,
@@ -42,8 +43,8 @@ export interface Candidate {
 /**
  * The basic attacks an attack input can be for an operator: the chain's
  * next step while it points at one, and the chain heads (basic attacks that
- * aren't chain steps), and finishers; not plunging attacks, which need a
- * jump the timeline doesn't have.
+ * aren't chain steps), and finishers; not the dive, which is a jump
+ * (actionsToJudge).
  */
 function nextBasics(data: GameData, state: TimelineState, operator: string): string[] {
   const out = new Set<string>();
@@ -64,22 +65,49 @@ function hasBasics(data: GameData, operator: string): boolean {
   return (data.kits.operators[operator]?.skills ?? []).some((s) => s.kind === "basic");
 }
 
-/** The actions to judge at a state, in a fixed order: each operator's non-basic skills, then the controlled one's next basic attacks, or a swap to the others. */
+/** The controlled operator's dive (its landing skill, when its kit has it: a jump, then the plunge). */
+function diveOf(data: GameData, operator: string): string | undefined {
+  const end = data.operators[operator]?.dive?.end;
+  return end !== undefined && data.kits.operators[operator]?.skills.some((s) => s.skillId === end) ? end : undefined;
+}
+
+/**
+ * Whether the operator's basic-attack chain points at a step still to come.
+ * The search dives only from outside a chain (a search policy, not a game
+ * rule): offered mid-chain, dives that give no SP replaced the chains'
+ * SP-giving Final Strikes in the beam, which ranks by damage so far, and
+ * starved the battle skills (typhoeus-gilberta: 3.76 M → 2.2–2.5 M).
+ */
+function midChain(state: TimelineState, operator: string): boolean {
+  const c = state.chainNext[operator];
+  return c !== undefined && [c, ...(c.alternatives ?? [])].some((x) => x.until >= state.frame);
+}
+
+/** The actions to judge at a state, in a fixed order: each operator's non-basic skills, then the controlled one's next basic attacks and its dive, or a swap to the others. */
 function actionsToJudge(ctx: TimelineContext, state: TimelineState): RotationAction[] {
   const out: RotationAction[] = [];
   for (const b of ctx.scenario.team) {
     const op = b.operator;
     // Follow-ups (cast only by their own skill) are never legal from a rotation: earliestStart would say so, at a cost.
     for (const s of ctx.data.kits.operators[op]?.skills ?? []) if (s.kind !== "basic" && !s.followUpOnly) out.push({ operator: op, skill: s.skillId });
-    if (op === state.controlled) for (const skill of nextBasics(ctx.data, state, op)) out.push({ operator: op, skill });
-    else if (hasBasics(ctx.data, op)) out.push({ operator: op, skill: "swap" });
+    if (op === state.controlled) {
+      for (const skill of nextBasics(ctx.data, state, op)) out.push({ operator: op, skill });
+      const dive = diveOf(ctx.data, op);
+      if (dive !== undefined && !midChain(state, op)) out.push({ operator: op, skill: dive });
+    } else if (hasBasics(ctx.data, op)) out.push({ operator: op, skill: "swap" });
   }
   return out;
 }
 
 /** An action's earliest legal start within the fight, or null. */
 function judge(ctx: TimelineContext, state: TimelineState, action: RotationAction): Candidate | null {
-  const s = earliestStart(ctx, state, action);
+  let s = earliestStart(ctx, state, action);
+  // A dive only once the current skill is past its exclusive frames: the search doesn't cancel a skill with a jump, which
+  // the timeline allows (a plunging attack may interrupt anything) but which isn't checked in game.
+  if (!("error" in s) && action.at === undefined && action.skill === diveOf(ctx.data, action.operator)) {
+    const free = exclusiveUntil(ctx, advance(ctx, state, s.frame), action.operator);
+    if (free > s.frame) s = earliestStart(ctx, state, { ...action, at: free });
+  }
   return !("error" in s) && s.frame <= ctx.scenario.durationFrames ? { action, frame: s.frame } : null;
 }
 
@@ -96,10 +124,13 @@ export function candidateActions(ctx: TimelineContext, state: TimelineState): Ca
 /**
  * The choices at the next decision point: the actions that can start
  * soonest, plus the controlled operator's next basic attack even if later
- * (taking it defers everything else).
+ * (taking it defers everything else), and its dive, which doesn't count
+ * for what's soonest: a jump may start as soon as the current skill is
+ * past its exclusive frames, so it would often be soonest and crowd the
+ * other skills out of the choices.
  *
- * The controlled operator's basic attacks and the swaps (kept even if
- * later, or cheap) are judged in full; of the others, first only whether
+ * The controlled operator's basic attacks, its dive and the swaps (kept
+ * even if later, or cheap) are judged in full; of the others, first only whether
  * they can start at the state's own frame (startsNow), which is much
  * cheaper than judging how much later they could. When any action can
  * start then, nothing starts sooner, and the others aren't choices; only
@@ -109,14 +140,16 @@ export function candidateActions(ctx: TimelineContext, state: TimelineState): Ca
 export function legalActions(ctx: TimelineContext, state: TimelineState): Candidate[] {
   const actions = actionsToJudge(ctx, state);
   const basics = new Set(nextBasics(ctx.data, state, state.controlled));
-  const early = (a: RotationAction) => a.skill === "swap" || (a.operator === state.controlled && basics.has(a.skill));
+  const dive = diveOf(ctx.data, state.controlled);
+  const isDive = (a: RotationAction) => a.operator === state.controlled && a.skill === dive;
+  const early = (a: RotationAction) => a.skill === "swap" || (a.operator === state.controlled && basics.has(a.skill)) || isDive(a);
   const judged: (Candidate | null | undefined)[] = actions.map((a) => (early(a) ? judge(ctx, state, a) : undefined));
   const inFight = state.frame <= ctx.scenario.durationFrames;
   // Then whether the others can start now: if any action can, the others that can't aren't choices.
   actions.forEach((a, i) => {
     if (judged[i] === undefined && inFight && startsNow(ctx, state, a)) judged[i] = { action: a, frame: state.frame };
   });
-  const now = judged.some((c) => c?.frame === state.frame);
+  const now = judged.some((c) => c?.frame === state.frame && !isDive(c.action));
   const all: Candidate[] = [];
   actions.forEach((a, i) => {
     // Only when nothing can start now: when the others could start.
@@ -124,8 +157,8 @@ export function legalActions(ctx: TimelineContext, state: TimelineState): Candid
     if (c) all.push(c);
   });
   if (all.length === 0) return [];
-  const soonest = Math.min(...all.map((c) => c.frame));
-  const out = all.filter((c) => c.frame === soonest || (c.action.operator === state.controlled && basics.has(c.action.skill)));
+  const soonest = Math.min(...all.filter((c) => !isDive(c.action)).map((c) => c.frame));
+  const out = all.filter((c) => c.frame === soonest || (c.action.operator === state.controlled && basics.has(c.action.skill)) || isDive(c.action));
   // Each choice also at the start of a short timing window it reads, when one is on its way (both the hit and the missed ring).
   return out.flatMap((c) => [c, ...timingChoices(ctx, state, c)]);
 }

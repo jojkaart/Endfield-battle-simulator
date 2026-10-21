@@ -192,7 +192,7 @@
           "scale": ["atk_scale"],
           "frames": [1],
           "sp": "atb",
-          "note": "Needs mid-air, so the engine won't schedule it (rotations have no jumps, S10); kept for calc."
+          "note": "A rotation's dive: a jump, then this landing (batch-1 S10)."
         }
       ]
     },
