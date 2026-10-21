@@ -487,7 +487,7 @@ Gaps:
 
 | Gap | Status | How |
 |---|---|---|
-| G1 Hunter Pursuit from the battle-skill button | **done** (S7) | `combo_skill_2`: `comboWindow: false`, `available: {buffActive: hunter_state}`; the button skill `normal_skill_2` and its `cast` trigger are gone. `normal_skill` keeps `available: {not: {buffActive: hunter_state}}`. The cast is a combo cast by the player (`followUp: false`), uses no Link and leaves the regular combo's window and cooldown alone. **Residue (open, small):** the combo's (51–63) and the ultimate's (125–150) AllowNextSkill windows list the button `normal_skill_2`, not `combo_skill_2`, so Hunter Pursuit right after them waits for their exclusive frames (63, 133): 12 / 8 frames late. Mapping a window's button skill to the skill its switchToBuffConfig casts would be a loader rule (shared code), not written here |
+| G1 Hunter Pursuit from the battle-skill button | **done** (S7) | `combo_skill_2`: `comboWindow: false`, `available: {buffActive: hunter_state}`; the button skill `normal_skill_2` and its `cast` trigger are gone. `normal_skill` keeps `available: {not: {buffActive: hunter_state}}`. The cast is a combo cast by the player (`followUp: false`), uses no Link and leaves the regular combo's window and cooldown alone. The combo's (51–63) and the ultimate's (125–150) AllowNextSkill windows list the button `normal_skill_2`; since the follow-up after the kits, the loader adds the skill a button's switchToBuffConfig casts to every window listing the button, so Hunter Pursuit opens at 51 / 125 (it waited for 63 / 133 before) |
 | G2 Link only from Link sources | **done** (B1) | trigger action `link` (`seconds: combo_duration`) at combo frame 47 (talent 1 and hovering Vesperwings) and Hunter Pursuit frame 70 (talent 1 only); the engine gives a combo no stack by itself |
 | G3 talent 2 from heals Camille receives | **done** (T2) | `on: {event: heal, kinds: [battle, combo, ultimate], toOwner: true}`, `by: anyone` (the data's OnReceiveHeal). U1 (does a teammate's heal count?) stays for test 93: with Liino in the team her battle skill's heals fill all 5 layers (tested) |
 | G4 Mountain Bearer's element filter | moved | T1 is done; the weapon is Lifeng's now. Beacon of Duty uses T1 here (`tags: [458037917]`) |
@@ -564,11 +564,15 @@ With the annotation applied it matches without Link. The 23 unquantified
 hits are the annotation's, as in the analysis (24 then: this one now fits a
 variant).
 
-Example `camille-gilberta` (P3, Gilberta P0, 20 s): 201,716 damage, 11,819
-DPS over 17.07 s, Camille 65%. Combo at 4.60 s on Gilberta's Corrosion,
+Example `camille-gilberta` (P3, Gilberta P0, 20 s): 200,535 damage, 11,937
+DPS over 16.80 s. Combo at 4.60 s on Gilberta's Corrosion,
 explosion 0.4 s after hit 3, Link used by Gilberta's ultimate at 7.00 s
-(×1.2), Hunter Pursuit at 11.43 s (133 frames after the ultimate: the
-residue above), its explosion at frame 82. Largest hits: Hunter Pursuit's last
+(×1.2), Hunter Pursuit at 11.17 s (125 frames after the ultimate), its
+explosion at frame 82. Before the window rule it was 201,716 over 17.07 s:
+Hunter Pursuit came 8 frames later, so its 0.6 s time stop fell after
+Gilberta's ultimate hit, and its first hit (11.83 s now) found her
+Anomalous Gravity Field and DMG Dealt +0.16 (5,061; now 3,786). A search
+can still order them that way; this example's fixed rotation doesn't. Largest hits: Hunter Pursuit's last
 (27k with Gilberta's field), the ultimate's last (9.7k), combo hit 3
 (10.6k).
 

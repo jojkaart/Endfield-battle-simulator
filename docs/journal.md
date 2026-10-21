@@ -40,6 +40,24 @@ Camille 6/6.
   15 GB, out-of-memory kills and test timeouts): typecheck, lint and the
   affected test files per merge, a full check once the load dropped.
 
+**Follow-ups after the review** (three agents, merged one at a time,
+each compared against a clean copy):
+- Log checker: unquantified hand-noted buffs valued from the kits; Rossi
+  on 4e5e 152/162.
+- Values and loader: a buff's main attributes reach ATK through the
+  panel's floored attribute bonus (`lifeng-solo` 391,096 → 514,161:
+  Mountain Bearer, ×1.17 ATK per buff); stack caps from the data;
+  Solemn Phalanx on the Arts Susceptibility tag; `linkGained` for
+  Thermite Cutter; `efsim calc` shows attributes 76–79.
+- Engine timing: ticks on a buff's end frame (4e5e's 26 bleed ticks);
+  `afterHits` for delayed actions (per trigger: Yvonne's and Mi Fu's
+  files order the same-frame clips oppositely); modifier conditions after
+  a hit's own buffs (`yvonne-fluorite` +544); `untilFrame` (Ember); a
+  button skill's windows open for the skill it casts (`camille-gilberta`
+  201,716 → 200,535: Hunter Pursuit 8 frames sooner, its first hit now
+  lands before Gilberta's field).
+- No log verdict moved in either of the last two.
+
 **Problems:** machine load with 12 agents (an agent's `pkill` may have
 hit others' runs; `npx tsx` runs were killed for memory, `node` directly
 works); several agents' worktree setup scripts were refused (links made by

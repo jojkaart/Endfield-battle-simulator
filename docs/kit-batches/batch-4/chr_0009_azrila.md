@@ -572,9 +572,9 @@ compiler code changed.
 New in this pass (data re-read): talent 1's frame-0 shelter is created
 with `autoFinishByAction` inside a clip of [0–38] (battle skill) and
 [0–26] (combo), so Protection ends at those frames, not with the cast
-as the draft's `endsWithCast` had it. The kit keeps `endsWithCast` (a cut
-cast ends it) and ends it at 38 / 26 with delayed `endBuff` triggers
-(`guard_listen_end`, `protection_end_combo`), like the listener. No damage
+as the draft's `endsWithCast` had it. The kit ends it there with
+`untilFrame: 38` / `26` (follow-up after the kits; it was delayed
+`endBuff` triggers before; a cut cast still ends it), like the listener. No damage
 effect (Protection only matters for categories and Former Finery). For
 comparison, reference/zero-sanity-timeline gives 1.7 s + 1.5 s on a hit
 at P1; the data's clip says 38 frames + `extratime` from the slam (to

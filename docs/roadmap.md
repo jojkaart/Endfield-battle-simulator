@@ -30,9 +30,11 @@ the six favourites.
    - Batch 4 is done (2026-10-21): the eleven 6-stars and 41 weapons, so
      every playable operator and every weapon and gear set has a kit
      ([batch-4.md](kit-batches/batch-4.md)). Dive attacks are rotation
-     actions. Open: the batch-4 review's items
+     actions. The review's follow-ups are done (log checker; attributes
+     reaching ATK, stack caps from the data, tags, `linkGained`; engine
+     timing). Open: a beside cast's timeline items, compiler leftovers
      ([kit-abstractions.md](kit-abstractions.md#review-after-batch-4s-kits-2026-10-21)),
-     in-game tests 77–97, compiler leftovers.
+     in-game tests 77–97.
 2. **Rotation search** (`efsim search`, beam search on the stepping API):
    resource-aware ranking, ranking over seeded battles for random outcomes
    (crit-triggered kits ranked with rolled crits), the found rotation's

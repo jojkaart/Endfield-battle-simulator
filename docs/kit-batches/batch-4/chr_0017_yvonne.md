@@ -127,7 +127,7 @@ S state, T timing / legality.
 | 20 | Ultimate: 220 energy, time stop 0–61, no energy 0–61, immunity, "makes Yvonne the controlled operator" | supported | `takesControl`, `energyBlockSeconds: 2.0333`; loader |
 | 21 | Ultimate state from frame 61 for `duration` (7 s): basic attacks become the enhanced chain (SwitchModeAction "ult"), no energy | supported | buff `ult_state` (`blocksEnergy`) by a cast trigger at delay 61; attack1–4 `available: not (ult_state or ult_end or barrage)`, ult attacks `available: ult_state and not barrage` (Laevatain's pattern) |
 | 22 | Enhanced chain 1_1 → 2_1 → 2_2 → 3_1 → 3_2 → 3_2 …: 3, 4, 4, 8, 8 shots of `atk_scale` | supported | one entry per projectile with `launch`; events ult_attack1/2_projhit (2_2's shots at 1 and 7 can be either key); log ✓ |
-| 23 | Layers: one per launch (not 2_1's last or 2_2's last; +1 at the end strike's frame 0), max 10, 4 s on one timer: Crit Rate +0.03 per layer; at 10 layers Crit DMG +0.06 per layer (+0.6) | supported | buff `ult_layers` (`maxStacks: 10`, the loader's `sharedTimer`), modifiers attr 9 `normal_dmg_up`, attr 10 `crit_rate_up` `if: {buffLayers: ult_layers, atLeast: 10}`; hits `buffs: [{buff: ult_layers, beforeDamage: true}]`. Log ✓ (+0.6 Crit DMG at 10 layers). Whether the timer restarts per layer: B3 (test 62) |
+| 23 | Layers: one per launch (not 2_1's last or 2_2's last; +1 at the end strike's frame 0), max 10, 4 s on one timer: Crit Rate +0.03 per layer; at 10 layers Crit DMG +0.06 per layer (+0.6) | supported | buff `ult_layers` (`maxStacks: 10`, the loader's `sharedTimer`), modifiers attr 9 `normal_dmg_up`, attr 10 `crit_rate_up` `if: {buffLayers: ult_layers, atLeast: 10}`; hits `buffs: [{buff: ult_layers, beforeDamage: true}]`. Log ✓ (+0.6 Crit DMG at 10 layers). The shot that adds the 10th layer gets the +0.6 too (follow-up after the kits: a modifier's `if` is judged after the hit's own `beforeDamage` buffs). Whether the timer restarts per layer: B3 (test 62) |
 | 24 | End state (3 s, from the state's end): the next basic-attack input becomes ult_attack_end (ComboCacheAction in the buff), no energy | gap | **G1** (a buff's input mapping). Interim: buff `ult_end` (`blocksEnergy`), ult_attack_end `available: ult_end`; cast inside an open chain window it waits for the window's end (up to 0.3 s) |
 | 25 | End strike at 28: `atk_scale` 3.0 Final Strike, poise 20; "If the enemy is Solidified, Yvonne performs an additional attack … and then consumes the enemy's Solidification" (`atk_scale_extra` 6.0, mask 128, FinishBuffAdvanced after it) | supported | hits `end` (`finalStrike`) and `end_extra` (`if` Solidified, `finalStrike: false`, `consumeStatus [solidification]` `afterDamage`); the end strike on a Solidified enemy opens her combo |
 | 26 | End strike: which IfElse branch and whether the layers still act. [28–60] (checks the end state) and [28–31] (FinishBuff end state and layers) start on the same frame; damage first: layers act (Crit Rate +0.3, Crit DMG +0.6 at 10), no processors; finish first: processors only (Crit Rate +0.03 × layers, Crit DMG +0.06) | unknown | interim: file order (damage first). About ±25% on the crits of her two biggest hits. A log only (row 23's log has no end strike) |
@@ -474,11 +474,11 @@ one-hit form). Changed or still open:
   0.2 × ATK per ultimate, below 0.2% of the example. Shared engine code:
   not changed, listed below.
 - **Row 26 (the end strike's order):** still unknown; interim damage
-  first (file order). The engine runs a frame's delayed trigger actions
-  before its hits, so `end_strike_ends_state` (FinishBuff of the end
-  state and the layers) is at frame **29**, one after the strike: the
-  layers, P5 and the end state act on both hits (with 28 they acted on
-  neither: 17,249 vs 33,360 in the example).
+  first (file order). `end_strike_ends_state` (FinishBuff of the end
+  state and the layers) is at frame 28 with `afterHits: true` (follow-up
+  after the kits; it was frame 29 while delayed actions always ran before
+  a frame's hits): the layers, P5 and the end state act on both hits.
+  Which order the game uses still needs a log.
 - **Row 29 / 30 (talent 1):** `barrage` keeps `consumedBy: [basic]`
   (the data ends it at attack5's frame 21; the mapping makes the next
   basic cast attack5). Edge case: a finisher is of kind basic and isn't
@@ -529,8 +529,8 @@ No engine, loader, compiler or checker code changed.
   its window's element (`element: event`), which a replay from a log
   can't repeat. Both point at the same missing Cryo stack; not Yvonne's
   kit.
-- **Example** `yvonne-fluorite.scenario.json` (expected crits): 369,933
-  damage in 19.33 s (19,134 DPS), Yvonne 97.7%. Fluorite's Nature at
+- **Example** `yvonne-fluorite.scenario.json` (expected crits): 370,477
+  damage in 19.33 s (369,933 before the 10th-layer shot got its +0.6 Crit DMG), Yvonne 97.7%. Fluorite's Nature at
   3.30 s; bomb at 4.67 s (consumes 1 Nature, Solidification level 1,
   6.0 × ATK: 34,510); attack5 at 4.70 s with Barrage (+0.5), its hit
   opens the combo (5.40 s; ticks every 0.5 s from 6.03 s, explosion at

@@ -570,13 +570,13 @@ engine, loader, compiler or checker change.
 | L-f | done | fixture note |
 | L-g | **open** (tooling) | not a missing layer: several crits at one instant (Verification); hand annotation in the fixture |
 | G3 (kit-draft) | partly | now right: attack4's jump (D7b), `teamEnergy` (D8g), SP on the basic attacks, `spBeforeDamage`; still off (KNOWN): attack4's not-controlled factor 0.1 (D7i), the template timelines (D7g), the bleed as landings (D9b), sequence 2's scale and else-if chain (D9f), the ultimate's P5 scale `$atk_scale_1?` (D3) |
-| new: a periodic buff's tick at its end | **interim**, open (shared) | 4e5e: one Razor Clawmark (13314 ms) ticks 26 times, the last 25 s of game time after the first; the engine doesn't tick a buff at the frame it ends (timeline.ts `nextBuffTick`), so 25 s give 25. Interim: the kit buff lasts `duration_bleed` + 0.034 s (one frame; the DMG Taken lasts 1/30 s longer). Every `every` + `tickOnApply` buff (Liino's stance) follows the engine rule; not changed here |
+| new: a periodic buff's tick at its end | **done** (follow-up after the kits) | 4e5e: one Razor Clawmark (13314 ms) ticks 26 times, the last 25 s of game time after the first; the engine doesn't tick a buff at the frame it ends (timeline.ts `nextBuffTick`), so 25 s give 25. The engine now ticks a buff on its end frame, before that frame's hits (the last tick has no DMG Taken in 4e5e), so the `+0.034 s` interim is gone; Liino's stance heals once more at its end |
 
 The kit follows the plan except: no `cooldownGroup` (row 22), no literal
 cooldown (row 23), no hand-written `spKind` (wolf_1's `if` SP defaults to
 returned, tested), `every: 1` written as a literal (`damage_interval` is
-the game buff's own blackboard value, not a key of the battle skill), the
-tick interim and the elite stop.
+the game buff's own blackboard value, not a key of the battle skill) and
+the elite stop (the tick interim is gone: see the table).
 
 ### What the kit models and leaves out
 

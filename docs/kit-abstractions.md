@@ -404,18 +404,20 @@ added or substantially changed (also in CLAUDE.md). Checklist:
    `operatorBuff` (done).
 2. **Requests from the kit agents**, each in an existing family (open
    unless marked):
-   - Timing: a ticking buff skips its tick on its end frame (`nextBuffTick`);
-     4e5e has Rossi's bleed ticking 26 times over 25 s (her kit lasts one
-     frame longer as an interim); delayed trigger actions run before hits
-     landing on the same frame (Yvonne's end-strike finish written a frame
-     late); a modifier's `if` is judged before the hit's own
-     `beforeDamage` buffs while their modifiers count (Yvonne's 10th
-     layer, under 0.2%); buffs tied to an animation clip shorter than the
-     cast (`autoFinishByAction` on a clip) have no kit field (Ember's
-     talent-1 Protection; written with delayed `endBuff`); windows that list
-     a button skill don't open for the skill the button casts (Camille's
-     Hunter Pursuit, 8–12 frames late); a beside cast still schedules its
-     timeline's items (Last Rite filters hers with `beside: false`).
+   - Timing (done after the kits): a ticking buff ticks on its end frame,
+     before that frame's hits (4e5e: Rossi's 26 bleed ticks; the kit's
+     one-frame interim is gone); `KitTrigger.afterHits` runs a delayed
+     action after the hits landing on its frame (Yvonne's end strike, at
+     frame 28 now; Mi Fu's data lists the FinishBuff first, so it is per
+     trigger, not global); a modifier's `if` is judged after the hit's own
+     `beforeDamage` buffs (Yvonne's 10th-layer shot gets the +0.6 Crit
+     DMG); `untilFrame` ends a buff at a frame of the cast
+     (`autoFinishByAction` clips; kit-draft reports them: Ember's 38 and
+     26); a window listing a button skill also opens for the skill the
+     button casts (Camille's Hunter Pursuit, 8–12 frames sooner;
+     `camille-gilberta` 201,716 → 200,535). Still open: a beside cast
+     still schedules its timeline's items (Last Rite filters hers with
+     `beside: false`).
    - Values (done): a buff's main attributes (39–42, flat or a percentage
      of the panel line) reach ATK through the `attribute` zone, with the
      panel's floored attribute bonus (`stats.ts atkAttributeBonus`):
