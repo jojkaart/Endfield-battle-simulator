@@ -12,8 +12,9 @@ yet, because something outside the kits doesn't match. Move a file up to
   with and without its boundary buffs. Something the log doesn't list acts
   on several operators; its Electrification *strength* (0.39571) does
   match (docs/data-sources.md). Si's ×1.139 is Ginseng Meat Stew (+180
-  flat ATK, a food buff the log doesn't list; 2026-10-21, hand-noted):
-  21 of her 22 hits match. No food fits Perlica's two hits.
+  flat ATK, a food buff the log doesn't list; 2026-10-21; since 2026-10-22
+  her build's `food`, set by hand): 21 of her 22 hits match. No food fits
+  Perlica's two hits.
 - `zmdlogs-7e19489ae503.json` (Rhodagn, game 1.6, imported 2026-10-19 for
   batch 2): the Endministrator (34% of the damage, P3) with Ember, Chen
   Qianyu and Pogranichnik; Ember and Pogranichnik have no kit yet. Chen's
@@ -26,7 +27,8 @@ yet, because something outside the kits doesn't match. Move a file up to
   log doesn't list talent 2's +20% Physical DMG taken on the sealed enemy,
   and her ATK is short by what +180 flat ATK (+21.98% ATK) gives. The ATK
   is Ginseng Meat Stew, a food buff the log doesn't list (2026-10-21,
-  the owner's suggestion; hand-noted in the fixture's notes and effects):
+  the owner's suggestion; since 2026-10-22 her build's `food`, set by hand
+  with a provenance note, instead of effects hand-added to her hits):
   all 34 of her hits match now.
 - `zmdlogs-abfd4b7478ec.json` (Rhodagn, imported 2026-10-19 for batch 2):
   Fluorite (P5) with Si, Yvonne and Seraph. Every Si hit was ×0.965 of the

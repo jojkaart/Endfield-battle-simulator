@@ -10,7 +10,7 @@ import type { GameData } from "./model.ts";
 import type { ArtsElement } from "./reactions.ts";
 import type { Modifier, Zone } from "./effects.ts";
 import type { EnemyStatus, PhysicalStatus, ReactionStatus } from "./status.ts";
-import type { StatPanel } from "./stats.ts";
+import { lineValue, type StatPanel } from "./stats.ts";
 
 export type Predicate =
   | { readonly all: readonly Predicate[] }
@@ -131,9 +131,10 @@ export type ValueExpr =
   /** The first divided by the second (1 / rate). */
   | { readonly div: readonly [ValueExpr, ValueExpr] };
 
-/** An operator's attribute: its panel's, plus what active buffs add. */
+/** An operator's attribute: its panel's, plus what active buffs add (a line with a part of unknown formula is refused: stats.ts lineValue). */
 function attrValue(c: EvalContext, attr: AttrType): number {
-  return (c.panel.attrs[attr]?.total ?? c.data.attributeDefaults[attr] ?? 0) + (c.attrBonus?.(attr) ?? 0);
+  const line = c.panel.attrs[attr];
+  return (line ? lineValue(line, c.panel.operator) : (c.data.attributeDefaults[attr] ?? 0)) + (c.attrBonus?.(attr) ?? 0);
 }
 
 /** A build's level of an operator's talent (0-based, in talent order): Build.talents, else the highest. */

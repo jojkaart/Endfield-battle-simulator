@@ -32,6 +32,8 @@ import { loadOperators } from "./tables/operators.ts";
 import { loadEffects, loadPotentials, type RawEffect } from "./tables/potentials.ts";
 import { loadSkills } from "./tables/skills.ts";
 import { loadWeaponCurves, loadWeapons } from "./tables/weapons.ts";
+import { loadUseItems } from "./tables/useItems.ts";
+import { loadFoods } from "./foods.ts";
 
 // CharGrowthTable skillGroupType → the build's skill level that applies.
 const SKILL_GROUP_TYPES: Record<number, SkillType> = { 0: "basic", 1: "battle", 2: "ultimate", 3: "combo" };
@@ -250,6 +252,8 @@ function build(): GameData {
     enemies[alias.id] = { ...template, id: alias.id, levels: template.levels.map(apply), staticAttrs: apply(template.staticAttrs) };
   }
 
+  const { foods, notFoods } = loadFoods(loadUseItems(PRIMARY), itemName);
+
   const c = loadBattleConst(PRIMARY);
   const kits = loadKits({ skills, operators, weapons, gearSets });
   return {
@@ -270,6 +274,8 @@ function build(): GameData {
     gearSets,
     enemies,
     stages: loadStageEnemies(PRIMARY),
+    foods,
+    notFoods,
     kits,
   };
 }

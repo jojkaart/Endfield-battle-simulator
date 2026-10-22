@@ -16,7 +16,7 @@
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
    "Enemy level 90 is assumed, not logged.",
-   "Hand annotation (not from the importer, 2026-10-21): every Endministrator hit lists buff_common_atk_buff_potion_2 as an atk effect of 0.219780. That is Ginseng Meat Stew (UseItemTable item_corp3_animal_1: ATK +180 flat, formulaItem 7, and Crit Rate +11.44%, 300 s, one operator), which the log doesn't list; the owner suggested a food buff. 180 flat ATK is 180 / 819 (her operator + weapon base ATK) in the ATK% sum. With it all 34 of her hits match (0 without); the log does list percentage food buffs elsewhere (40d9: Bottled Duskberry Juice 0.2934694; b7b3: Jakub's Legacy 0.27). The stew's Crit Rate doesn't change a logged hit's value."
+   "Hand annotation (not from the importer; 2026-10-21, as a build field since 2026-10-22): the Endministrator's build has \"food\": \"item_corp3_animal_1\", Ginseng Meat Stew (UseItemTable: ATK +180 flat, buff_common_atk_buff_potion_2 formulaItem 7, and Crit Rate +11.44%, buff_common_ctr_buff_potion_1; 300 s, one operator). The log doesn't record food or list this buff, so the field is set by hand; the owner suggested a food buff. The checker puts its lines in her stat panel (180 flat ATK in the ATK formula's flat slot). With it all 34 of her hits match (0 without); the log does list percentage food buffs elsewhere (40d9: Bottled Duskberry Juice 0.2934694; b7b3: Jakub's Legacy 0.27). The stew's Crit Rate doesn't change a logged hit's value. (2026-10-21 to 2026-10-22 this was an atk effect of 0.219780 = 180 / 819 hand-added to each of her hits.)"
   ]
  },
  "enemy": {
@@ -124,7 +124,8 @@
       3
      ]
     }
-   ]
+   ],
+   "food": "item_corp3_animal_1"
   },
   {
    "operator": "chr_0005_chen",
@@ -852,14 +853,7 @@
    "value": 5166,
    "crit": false,
    "element": "physical",
-   "effects": [
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
-    }
-   ],
+   "effects": [],
    "boundaryEffects": [],
    "unquantified": []
   },
@@ -969,14 +963,7 @@
    "value": 2634,
    "crit": false,
    "element": "physical",
-   "effects": [
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
-    }
-   ],
+   "effects": [],
    "boundaryEffects": [],
    "unquantified": []
   },
@@ -998,14 +985,7 @@
    "value": 3151,
    "crit": false,
    "element": "physical",
-   "effects": [
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
-    }
-   ],
+   "effects": [],
    "boundaryEffects": [],
    "unquantified": []
   },
@@ -1052,14 +1032,7 @@
    "value": 21763,
    "crit": false,
    "element": "physical",
-   "effects": [
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
-    }
-   ],
+   "effects": [],
    "boundaryEffects": [
     {
      "buff": "buff_chr_0003_endminf_talent_1_tirgger",
@@ -1119,14 +1092,7 @@
    "value": 2589,
    "crit": false,
    "element": "physical",
-   "effects": [
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
-    }
-   ],
+   "effects": [],
    "boundaryEffects": [
     {
      "buff": "buff_chr_0003_endminf_talent_1_tirgger",
@@ -1204,12 +1170,6 @@
      "zone": "damageTaken",
      "element": "physical",
      "value": 0.437314
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -1240,12 +1200,6 @@
      "zone": "damageTaken",
      "element": "physical",
      "value": 0.437314
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -1276,12 +1230,6 @@
      "zone": "damageTaken",
      "element": "physical",
      "value": 0.437314
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -1312,12 +1260,6 @@
      "zone": "damageTaken",
      "element": "physical",
      "value": 0.437314
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -1348,12 +1290,6 @@
      "zone": "damageTaken",
      "element": "physical",
      "value": 0.437314
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -1523,12 +1459,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -1698,12 +1628,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [
@@ -1838,12 +1762,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -1983,12 +1901,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [
@@ -2050,12 +1962,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -2303,12 +2209,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -2369,12 +2269,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -2556,12 +2450,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -2628,12 +2516,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -2778,12 +2660,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -3049,12 +2925,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -3314,12 +3184,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -3718,12 +3582,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -3904,12 +3762,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -4696,12 +4548,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [
@@ -5063,12 +4909,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -5527,12 +5367,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -5611,12 +5445,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -5695,12 +5523,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [
@@ -6172,12 +5994,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.09
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],
@@ -6652,12 +6468,6 @@
      "zone": "damageBonus",
      "element": "physical",
      "value": 0.648
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [
@@ -6755,12 +6565,6 @@
      "zone": "damageBonus",
      "element": "physical",
      "value": 0.648
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [
@@ -6858,12 +6662,6 @@
      "zone": "damageBonus",
      "element": "physical",
      "value": 0.648
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [
@@ -7225,12 +7023,6 @@
      "zone": "atk",
      "element": null,
      "value": 0.3
-    },
-    {
-     "buff": "buff_common_atk_buff_potion_2",
-     "zone": "atk",
-     "element": null,
-     "value": 0.21978
     }
    ],
    "boundaryEffects": [],

@@ -47,10 +47,13 @@ the six favourites.
    operator's constant factor (build values the log doesn't record, food,
    enemy-side effects), then the kits' own mismatches. Six multi-target
    fights wait in fixtures/multi-target/ for multi-target support.
-4. **Food buffs:** consumables (UseItemTable, BuffData `buff_common_*_potion_*`)
-   as a per-operator build option, so simulations and searches can count
-   them (one food buff per operator, 300 s). The Endministrator's +180 ATK
-   in 7e19 was one (Ginseng Meat Stew).
+4. **Food buffs** are done (2026-10-22): `Build.food`, an item ID; the 36
+   food buffs' stats are panel lines for 300 s from the fight's start
+   (design.md, Input), in simulations, searches, `efsim calc` and the log
+   checker (7e19's and e82d's stew set by hand). Next: a search over foods
+   per operator (a scenario option listing foods to try); the importer
+   could set a food the log lists (by its buffs and values); in-game test 98
+   (DEF +x%'s formula item 1, which DEF-reading kits refuse until then).
 5. **Corrosion model:** time dilation, the applier's talents (Arcane), and
    carry-over on reapplication; in-game test 4.
 6. **Still open from setup:** a `Result` schema, `NOTICE` when MIT code is

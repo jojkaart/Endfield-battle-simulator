@@ -1752,6 +1752,31 @@ change which rotations are found.
    chain, dive, then attack again: is it attack 1 (engine: the dive clears
    the chain) or the chain's next step?
 
+### 98. Food buffs on the stat panel (ready, any operator; a few minutes)
+
+**Why:** builds can now hold a food buff (UseItemTable: one per operator,
+300 s). The engine puts a food's stats into the operator's stat panel the
+way gear lines go in. Three of its formula slots aren't verified: flat ATK
+(Ginseng Meat Stew, +180), points of all four attributes (Pear Blossom Tea,
++27), and DEF +x% (Bottled Milk, +19.3%), whose formula the engine doesn't
+know at all (it leaves it out and refuses to compute a kit value that reads
+DEF, e.g. Catcher's P1 strike).
+**How:** on one operator, note ATK, DEF, the four attributes and Crit Rate
+on the stat panel; then eat the food and look again (if the panel doesn't
+change, a basic attack's damage number on a dummy before and after works
+for ATK).
+1. **Ginseng Meat Stew:** engine: Crit Rate +11.4 points, and ATK up by
+   180 × the attribute multiplier (for the Endministrator in
+   `examples/endministrator-p5.json`: 2,367 → 2,965). If ATK rises by only
+   180, the flat slot comes after the attribute multiplier.
+2. **Pear Blossom Tea:** engine: Strength, Agility, Intellect and Will
+   each +27, and ATK up by what 27 more main and secondary attribute give
+   (that example: 2,367 → 2,502).
+3. **Bottled Milk:** DEF +19.3% of what? With DEF all from gear (the
+   Endministrator's base DEF is 0; that example's 140): **140 → 167** if
+   it's a percentage of the whole DEF, **unchanged** if of the operator's
+   own base DEF.
+
 ## Results
 
 None yet.

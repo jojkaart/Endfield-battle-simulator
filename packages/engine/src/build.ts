@@ -34,4 +34,10 @@ export interface Build {
   readonly skillLevels: Readonly<Record<SkillType, number>>;
   readonly weapon: WeaponBuild | null;
   readonly gear: readonly GearPiece[];
+  /**
+   * A food buff's item ID (GameData.foods, UseItemTable), eaten before the
+   * fight: its stats are panel lines for its duration from the fight's start.
+   * One per operator, as in the game (every food shares one stacking key).
+   */
+  readonly food?: string;
 }

@@ -57,6 +57,11 @@
           }
         }
       }
+    },
+    "food": {
+      "type": "string",
+      "pattern": "^item_",
+      "description": "A food buff's item ID (UseItemTable, e.g. item_corp3_animal_1 Ginseng Meat Stew; efsim find lists them), eaten before the fight: its stats count for its duration (300 s) from the fight's start. One per operator, as in the game."
     }
   },
   "$defs": {

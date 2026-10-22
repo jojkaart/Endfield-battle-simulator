@@ -92,6 +92,10 @@ The combat data lives in the game's `TableCfg/` tables:
 - **Weapons**: `WeaponBasicTable`, `WeaponUpgradeTemplateTable`,
   `WeaponTalentTemplateTable`.
 - **Gear**: `EquipTable`, `EquipSuitTable`, `GemTable`.
+- **Food buffs**: `UseItemTable` (usable items: the 36 with `isPersistentBuff`
+  are food buffs for one operator, 300 s, stacking key `buff`; their
+  `useActions[].buffBBData` name BuffData `buff_common_*_potion_*` with the
+  values), names from `ItemTable`.
 - **Text**: `I18nTextTable_<lang>` (14 languages).
 
 Outside the tables, `Json/SkillData/*.json` holds skill timelines (hit frames,
