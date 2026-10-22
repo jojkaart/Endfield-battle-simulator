@@ -244,8 +244,26 @@ Loadout {
   operator: CharId, level, promotion, potential,
   skillLevels: { basic, battle, combo, ultimate },   // 1–12
   weapon: { id, level, refinement }, gear: GearPiece[]
+  food?: ItemId            // a food buff, eaten before the fight
 }
 ```
+
+**Food buffs** (`Build.food`, since 2026-10-22): one UseItemTable item per
+operator (all 36 food buffs share one stacking key, so the single field is
+the game's rule). The loader (`packages/data/src/foods.ts`) takes the items
+whose buffs persist on one operator and reads each buff's attribute
+modifiers (BuffData `buff_common_*_potion_*`) at the item's blackboard
+values; a buff that does anything else (dispel, heal, damage modifier) or
+lasts other than the item is refused. Their lines go into the stat panel
+like gear lines (`food <name> (<buff>)`, e.g. the stew's 180 ATK in the flat
+slot), for the food's duration (300 s) from the fight's start: the timeline
+switches to the panel without them at the end (`panelAt`), the log checker
+by hit time. Defensive lines (DMG taken, heal bonuses) are panel lines no
+damage reads. DEF +x% uses formula item 1, whose formula isn't known: it's
+kept out of DEF (`StatLine.unmodelled`), and whatever reads DEF (kit
+values) refuses it, so it never counts as nothing silently (in-game test
+98). Items used in battle for an instant effect (heals, ultimate energy)
+aren't foods; a build naming one gets the reason.
 
 ### Rotation
 
