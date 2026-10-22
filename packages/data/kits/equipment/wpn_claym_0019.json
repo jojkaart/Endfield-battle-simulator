@@ -34,7 +34,7 @@
   "triggers": [
     {
       "id": "wpn_claym_0019.on_infliction",
-      "on": { "event": "inflictionApplied", "elements": ["fire", "cryst"], "fromKinds": ["battle"] },
+      "on": { "event": "inflictionApplied", "reactions": true, "elements": ["fire", "cryst"], "fromKinds": ["battle"] },
       "by": "self",
       "beforeDamage": true,
       "skill": "sk_wpn_claym_0019",

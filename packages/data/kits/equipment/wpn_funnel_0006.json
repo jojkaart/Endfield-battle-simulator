@@ -27,7 +27,7 @@
   "triggers": [
     {
       "id": "wpn_funnel_0006.nature",
-      "on": { "event": "inflictionApplied", "elements": ["natural"], "fromKinds": ["battle"] },
+      "on": { "event": "inflictionApplied", "reactions": true, "elements": ["natural"], "fromKinds": ["battle"] },
       "by": "self",
       "beforeDamage": true,
       "maxPerCast": 1,

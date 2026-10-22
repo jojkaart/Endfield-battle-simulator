@@ -26,12 +26,12 @@
   "triggers": [
     {
       "id": "wpn_claym_0013.on_battle_cryo",
-      "on": { "event": "inflictionApplied", "elements": ["cryst"], "fromKinds": ["battle"] },
+      "on": { "event": "inflictionApplied", "reactions": true, "elements": ["cryst"], "fromKinds": ["battle"] },
       "by": "self",
       "cooldown": 0.1,
       "skill": "sk_wpn_claym_0013",
       "do": [{ "kind": "buff", "buff": "wpn_claym_0013.battle" }],
-      "note": "Whether an infliction that forms a reaction counts as applying one is open (in-game test 35); inflictionApplied excludes it."
+      "note": "An infliction that forms a reaction counts as applying one: the kit counts it since 2026-10-22 (`reactions: true`, the owner's reading; abilityEvent 126 fires before the game resolves the infliction; in-game test 35 can still confirm)."
     },
     {
       "id": "wpn_claym_0013.on_combo_cryo",

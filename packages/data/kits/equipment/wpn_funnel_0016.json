@@ -5,7 +5,7 @@
     "Solemn Phalanx (Arcane's signature arts unit). Skill 3, sk_wpn_funnel_0016 (rmxlinux Json/SkillData, values from SkillPatchTable at the weapon's skill-3 level), gated by the wearer's Array Arcana-style comparison CompareDeckAttr attribute 41 (Intellect) ≥ 42 (Will) for the INT effects and its negation for the WILL ones. The always-on stat bonuses of skills 1–3 stay in the panel.",
     "INT (buff_wpn_funnel_0016_wisd): abilityEvent 126 (the wearer applies an Arts Infliction) → buff_wpn_funnel_0016_wisd_natureup, Arts DMG (attributes 51–54) +spell_dmg_up for `duration`; abilityEvent 206 (the wearer applies an Arts Susceptibility: CheckBuffIdInContextAdvanced checkType 1 on the one tag 1427729990, which the Arts and all-element Susceptibilities have, not the Physical one; written as that tag, `buffApplied` tags) → buff_wpn_funnel_0016_wisd_atkup, ATK +atk_up2 for duration2. Logged: wisd_atkup 4 frames after her combo's Susceptibility (btl_upload_d9e59d0fb737).",
     "WILL (buff_wpn_funnel_0016_will): abilityEvent 127 (the wearer's Arts Burst) → buff_wpn_funnel_0016_will_atk on the enemy, Arts DMG Taken +spell_dmg_taken_up for duration3; abilityEvent 206 (tag 1427729990, as INT's) → buff_wpn_funnel_0016_will_dmg on the enemy, +spell_dmg_taken_up2 for duration4. Both priority-keyed game buffs (stackGroup from gameBuff). Logged: will_dmg on her WILL touch and ultimate (btl_upload_dbaee23b801d).",
-    "Every handler (126, 127, 206) checks CheckOriginSkillType skillTypeList [2, 6, 7]: only from battle skills, combos and ultimates (fromKinds). Whether an infliction that forms a reaction counts as 'applies Arts Infliction' is unknown (open list 'Arcane R3', test 35); inflictionApplied excludes it. W3 acts before its hit's damage (the battle skill's SpellInfliction comes before its DamageAction); W5 after (bursts credited to her come 1–1.5 s after the touch: test 33). Whether a same-hit buff counts on its own hit: test 51."
+    "Every handler (126, 127, 206) checks CheckOriginSkillType skillTypeList [2, 6, 7]: only from battle skills, combos and ultimates (fromKinds). Whether an infliction that forms a reaction counts as 'applies Arts Infliction' is unknown (open list 'Arcane R3', test 35); the kit counts it since 2026-10-22 (`reactions: true`, the owner's reading; abilityEvent 126 fires before the game resolves the infliction; in-game test 35 can still confirm). W3 acts before its hit's damage (the battle skill's SpellInfliction comes before its DamageAction); W5 after (bursts credited to her come 1–1.5 s after the touch: test 33). Whether a same-hit buff counts on its own hit: test 51."
   ],
   "buffs": [
     {
@@ -83,7 +83,7 @@
     {
       "id": "wpn_funnel_0016.int_infliction",
       "on": {
-        "event": "inflictionApplied",
+        "event": "inflictionApplied", "reactions": true,
         "fromKinds": [
           "battle",
           "combo",

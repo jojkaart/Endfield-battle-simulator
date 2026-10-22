@@ -175,8 +175,11 @@ export type StatusOn =
   | { readonly event: "reaction"; readonly statuses?: readonly ReactionStatus[] }
   /** An infliction is consumed or absorbed (a reaction consumes the one it lands on, too). */
   | { readonly event: "inflictionConsumed"; readonly elements?: readonly ArtsElement[] }
-  /** An infliction is applied without a reaction, leaving at least `minStacks`. */
-  | { readonly event: "inflictionApplied"; readonly elements?: readonly ArtsElement[]; readonly minStacks?: number }
+  /**
+   * An infliction is applied without a reaction, leaving at least `minStacks`; with `reactions`, also one that forms a
+   * reaction at once (forced reactions apply no infliction; a reaction leaves no stacks, so not with `minStacks` above 1).
+   */
+  | { readonly event: "inflictionApplied"; readonly elements?: readonly ArtsElement[]; readonly minStacks?: number; readonly reactions?: true }
   | { readonly event: "burst"; readonly elements?: readonly ArtsElement[] }
   /** A physical status lands (Lift, Knock Down, Crush, Breach); `forced` narrows it to forced ones. */
   | { readonly event: "physicalStatus"; readonly statuses?: readonly PhysicalStatus[]; readonly forced?: boolean }
@@ -447,6 +450,7 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
     case "inflictionConsumed":
       return (s.kind === "consumed" && has(on.elements, s.element)) || (s.kind === "reaction" && s.consumed !== null && has(on.elements, s.consumed));
     case "inflictionApplied":
+      if (on.reactions && s.kind === "reaction" && s.consumed !== null) return has(on.elements, s.element) && (on.minStacks ?? 1) <= 1;
       return s.kind === "inflicted" && has(on.elements, s.element) && s.stacks >= (on.minStacks ?? 1);
     case "burst":
       return s.kind === "burst" && has(on.elements, s.element);

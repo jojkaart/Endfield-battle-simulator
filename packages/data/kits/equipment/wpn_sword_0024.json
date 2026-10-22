@@ -13,7 +13,7 @@
   "triggers": [
     {
       "id": "wpn_sword_0024.on_combo_electric",
-      "on": { "event": "inflictionApplied", "elements": ["pulse"], "fromKinds": ["combo"] },
+      "on": { "event": "inflictionApplied", "reactions": true, "elements": ["pulse"], "fromKinds": ["combo"] },
       "by": "self",
       "beforeDamage": true,
       "skill": "sk_wpn_sword_0024",

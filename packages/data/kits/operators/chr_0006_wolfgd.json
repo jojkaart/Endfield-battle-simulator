@@ -41,7 +41,7 @@
   "triggers": [
     {
       "id": "combo_window",
-      "on": { "event": "inflictionApplied" },
+      "on": { "event": "inflictionApplied", "reactions": true },
       "by": "anyone",
       "do": [{ "kind": "openCombo" }],
       "note": "CharGrowthTable: \"COMBO TRIGGER: When an Arts Infliction is applied to an enemy.\" An infliction that forms a reaction at once doesn't count (the engine's inflictionApplied rule; in-game test 35, Wulfgard's part)."

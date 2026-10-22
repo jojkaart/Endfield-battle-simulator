@@ -464,6 +464,10 @@
                     "minimum": 1,
                     "maximum": 4
                   },
+                  "reactions": {
+                    "const": true,
+                    "description": "Also when the infliction forms a reaction at once (it is applied all the same; abilityEvent 126 fires before the game resolves it). A reaction leaves no stacks, so it never meets minStacks above 1."
+                  },
                   "fromKinds": {
                     "type": "array",
                     "items": {

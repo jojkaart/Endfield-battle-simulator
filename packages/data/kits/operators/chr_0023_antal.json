@@ -50,7 +50,7 @@
   "triggers": [
     {
       "id": "combo_infliction",
-      "on": { "event": "inflictionApplied" },
+      "on": { "event": "inflictionApplied", "reactions": true },
       "by": "anyone",
       "if": { "buffActive": "focus" },
       "do": [{ "kind": "openCombo" }],

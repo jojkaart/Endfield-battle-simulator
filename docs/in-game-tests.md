@@ -591,7 +591,7 @@ tenth (30 SP) at its hit, after the third the battle skill spent?
 **Why:** two open questions about the same moment. Gilberta's combo opens
 on any Arts Reaction; the engine also opens it when her own battle skill
 causes the reaction. Arcane's combo opens on an infliction; the engine
-doesn't count an infliction that turns into a reaction at once. Each is
+counts an infliction that turns into a reaction at once (since 2026-10-22, the owner's reading). Each is
 one combo more or less per such reaction.
 **How:** a Heat teammate applies Heat Infliction to a dummy; then a Nature
 hit forms Corrosion (Gilberta's battle skill explosion if you have her,
@@ -599,7 +599,7 @@ otherwise any Nature skill). Is Gilberta's combo button lit? Is Arcane's
 (both INT and WILL modes, if you can)?
 
 With Wulfgard (optional; batch 3, Wulfgard W4): his combo opens when an
-Arts Infliction is applied; the engine doesn't count one that forms a
+Arts Infliction is applied; the engine counts one that forms a
 reaction at once (as for Arcane). A teammate applies a non-Heat infliction
 (his combo lights); wait about 7 s until the button goes dark again (the
 window is 6 s; the infliction lasts 20 s); then a second teammate applies

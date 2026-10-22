@@ -79,7 +79,7 @@
     },
     {
       "id": "combo_window_infliction",
-      "on": { "event": "inflictionApplied" },
+      "on": { "event": "inflictionApplied", "reactions": true },
       "by": "anyone",
       "if": { "enemyVulnerable": 1 },
       "do": [{ "kind": "openCombo" }],

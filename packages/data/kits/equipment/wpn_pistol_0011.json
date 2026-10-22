@@ -43,7 +43,7 @@
     {
       "id": "wpn_pistol_0011.cryo_infliction",
       "on": {
-        "event": "inflictionApplied",
+        "event": "inflictionApplied", "reactions": true,
         "elements": [
           "cryst"
         ],
