@@ -206,13 +206,11 @@ describe("Camille's logs", () => {
     expect(g.map((v) => (v.kind === "match" ? v.assumed : v.kind))).toEqual([["Link 1 (predicted 1)"]]);
   });
 
-  it("4e5e: all 85 match, the fixture's hand-annotated Lustrous Carmine ATK (from 49418 ms) valued from her weapon kit or written in as a logged effect", () => {
+  it("4e5e: all 85 match, Lustrous Carmine's ATK after 49418 ms (which the log stops listing) from the kit-buff replay or written in as a logged effect", () => {
     const fx = fixture("4e5e1390085e");
     expect(kinds(fx)).toEqual({ match: 85 });
-    const quantified = {
-      ...fx,
-      hits: fx.hits.map((h) => (h.unquantified.some((u) => u.buff === "buff_wpn_lance_0015_atkup") ? { ...h, effects: [...h.effects, { buff: "buff_wpn_lance_0015_atkup", zone: "atk" as const, element: null, value: 0.096 }], unquantified: h.unquantified.filter((u) => u.buff !== "buff_wpn_lance_0015_atkup") } : h)),
-    };
+    const atk = { buff: "buff_wpn_lance_0015_atkup", zone: "atk" as const, element: null, value: 0.096 };
+    const quantified = { ...fx, hits: fx.hits.map((h) => (h.t >= 49418 && !h.effects.some((e) => e.buff === atk.buff) ? { ...h, effects: [...h.effects, atk] } : h)) };
     expect(kinds(quantified)).toEqual({ match: 85 });
   });
 });

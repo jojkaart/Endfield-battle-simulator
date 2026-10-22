@@ -10,7 +10,7 @@ import type { CritMode, TimelineScenario } from "@efsim/engine";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "./commands.ts";
 import { kitDraft } from "./kitdraft.ts";
 import { formatRuns, formatSimulation, readScenario, searchCommand } from "./simulate.ts";
-import { checkLog, findScales, formatLogCheck, impliedScales } from "./logcheck.ts";
+import { checkLog, findScales, formatLogCheck, impliedScales, logBuffReplay } from "./logcheck.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 import { importBattle, readLogFixture } from "./logs.ts";
@@ -39,7 +39,9 @@ const USAGE = `Usage:
                 [--enemy-level n]         (default: the stage's, else inferred from total damage on a clear)
                 [--detail file]           Use an already downloaded /api/battles/<id> response
                 [--note text]             Extra provenance note (repeatable)
-  efsim zmdlogs check <fixture.json>      Predict every logged hit and compare
+  efsim zmdlogs check <fixture.json>      Predict every logged hit and compare (kit buffs from the
+                                          replay of the logged casts; where it and the log disagree)
+                [--log-buffs]             Kit buffs as the log lists them instead (the check before 2026-10-22)
   efsim zmdlogs reactions <fixture.json>  Replay the kits' inflictions; compare bursts and reactions
   efsim zmdlogs scales <fixture> <op>     Multiplier each logged hit of an operator implies
   efsim zmdlogs find-scales <fixture> <op> Skill values (keys) that explain each logged event
@@ -72,6 +74,7 @@ async function main(argv: string[]): Promise<number> {
       detail: { type: "string" },
       note: { type: "string", multiple: true, default: [] },
       verbose: { type: "boolean", default: false },
+      "log-buffs": { type: "boolean", default: false },
       beam: { type: "string", default: "24" },
       "resource-weight": { type: "string" },
       seed: { type: "string" },
@@ -166,7 +169,8 @@ async function main(argv: string[]): Promise<number> {
         text = formatReactionCheck(checkReactions(data, readLogFixture(arg)));
       } else if (sub === "check") {
         const fx = readLogFixture(arg);
-        text = formatLogCheck(data, fx, checkLog(data, fx));
+        const replay = values["log-buffs"] ? null : logBuffReplay(data, fx);
+        text = formatLogCheck(data, fx, checkLog(data, fx, replay ? { replay } : { buffs: "log" }), replay ?? undefined);
       } else {
         const file = await importBattle(data, arg, values["enemy-level"] === undefined ? undefined : Number(values["enemy-level"]), values.note, values.detail);
         text = `wrote ${file}`;

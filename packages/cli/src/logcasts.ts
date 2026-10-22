@@ -83,6 +83,8 @@ export interface PlacedHit {
   readonly index: number;
   /** The kit hits it can be (the slot's), the likeliest first. */
   readonly hits: readonly KitHit[];
+  /** The slot's frame in its cast (absent when the key's landing order is unknown). */
+  readonly frame?: number;
 }
 
 export interface Placement {
@@ -107,7 +109,7 @@ function groupsOf(data: GameData, build: Build, panel: StatPanel, team: readonly
 }
 
 /** A hit's landing frames (a count past its frames repeats the last, `framesEvery` apart); null when it has none. */
-function landingFrames(h: KitHit): number[] | null {
+export function landingFrames(h: KitHit): number[] | null {
   if (!h.frames?.length) return null;
   const frames = [...h.frames];
   if (typeof h.count === "number") for (let i = frames.length; i < h.count; i++) frames.push((frames.at(-1) as number) + (h.framesEvery ?? 0));
@@ -186,7 +188,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
           cur.index++;
           const s = cur.slots;
           const slot = s ? s[Math.min(cur.index, s.length - 1)] : undefined;
-          placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event) });
+          placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame } : {}) });
           continue;
         }
         const g = choose(candidates, h, starts, slots);
@@ -196,7 +198,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
         const longest = Math.max(span, g.kind !== null ? msOf(data.skills[g.skillId]?.timing?.durationFrames ?? 0) : 0);
         current.set(h.event, { cast, first: h.t, index: 0, span, longest, slots: s });
-        placed.set(h, { cast, index: 0, hits: first ? first.hits : allHits(candidates, h.event) });
+        placed.set(h, { cast, index: 0, hits: first ? first.hits : allHits(candidates, h.event), ...(first ? { frame: first.frame } : {}) });
       }
       return placed;
     };
