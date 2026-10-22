@@ -183,6 +183,32 @@ Laevatain's Melting Flame are kit `stacks` that hits `gain` and `require`.
 `efsim zmdlogs reactions` replays a log through the state machine to check
 a kit's `applies` against the logged bursts and reactions.
 
+**Kit buffs in the log check** (2026-10-22, owner: the engine activates
+buffs from the events that trigger them, not from the log's listing).
+`efsim zmdlogs check` replays the logged casts on the timeline
+(`packages/cli/src/buffreplay.ts`, engine `replayCast`): each placed cast
+(logcasts.ts) starts at its logged frame without a rotation's checks, its
+logged landings land at their logged frames (pinned: later time stops
+don't move them, the log's time has them in), an operator's earlier cast
+keeps its hits when the log shows them after the next cast started. The
+kits' triggers, the enemy's statuses and SP then run as in a simulation,
+and the kit buffs that stand for a game buff the log lists
+(`KitBuff.gameBuff`) are read off the state: their instances per
+operator. Where the replay is sure (away from its own changes: ±0.5 s of
+a start, and an expiry also ±10% of the instance's life, since the
+timeline's time-stop and hit-stop accounting is off by about that), it
+decides: a buff it has off loses the log's entries, one it has on that
+the log doesn't list gets them (the values the log gives the buff
+elsewhere), one both have on keeps the log's entries. Buffs a trigger on
+crits, chances or enemy actions applies, buffs a cast consumes, and Link
+stay as the log lists them; so does everything near a change. A hit no
+reading of the replay's version fits is tried with the log's listing, and
+a match there is labelled "the log's buff listing (replay: …)": the replay
+doesn't see casts without logged damage yet (journal 2026-10-22). The
+report lists where the replay and the log disagree (on/off, instance
+counts) and which reading the damage fits: log gaps, or kit triggers that
+are wrong. `--log-buffs` checks with the log's listing alone.
+
 **Buffs from skills** are kit `buffs` (engine `buffs.ts`): target self,
 team or enemy, a duration (0: not applied; none: until ended) and
 modifiers on a zone or an attribute whose values are ValueExprs at the

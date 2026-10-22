@@ -180,6 +180,8 @@ interface PendingHit {
   readonly fixed?: number;
   /** A periodic hit with an ATK snapshot (KitHit.atkSnapshot): its owner's attacker-side modifiers when the ticking buff was applied. */
   readonly snapshot?: readonly Modifier[];
+  /** A replayed landing at its logged frame (replayCast `landings`): slow-downs don't move it (the log's time has them in already). */
+  readonly pinned?: true;
 }
 
 export interface Cast {
@@ -897,7 +899,7 @@ function shiftOperator(st: TimelineState, operator: string, start: number, n: nu
   const chain = st.chainNext[operator];
   return {
     ...st,
-    pending: st.pending.map((h) => (h.operator === operator && h.frame > start ? { ...h, frame: h.frame + n, ...(h.launchAt !== undefined ? { launchAt: later(h.launchAt) } : {}) } : h)),
+    pending: st.pending.map((h) => (h.operator === operator && h.frame > start && !h.pinned ? { ...h, frame: h.frame + n, ...(h.launchAt !== undefined ? { launchAt: later(h.launchAt) } : {}) } : h)),
     pendingActions: st.pendingActions.map((a) => (a.owner === operator && a.frame > start ? { ...a, frame: a.frame + n, ...(a.launchAt !== undefined ? { launchAt: later(a.launchAt) } : {}) } : a)),
     pendingJumps: st.pendingJumps.map((j) => (j.operator === operator && j.frame > start ? { ...j, frame: j.frame + n } : j)),
     ...(cur ? { acting: { ...st.acting, [operator]: { ...cur, frame: cur.frame + n, ...(cur.skips ? { skips: cur.skips.map((k) => ({ ...k, at: k.at + n })) } : {}) } } } : {}),
@@ -2336,6 +2338,54 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
 }
 
 /**
+ * A logged cast replayed (the log checker's kit-buff replay, cli
+ * buffreplay.ts): the skill starts at exactly `frame`, where the log places
+ * it, without a rotation's checks (cooldowns, combo windows, priorities,
+ * energy: the game allowed it). SP below its cost is raised to the cost
+ * first, so the team's SP doesn't go negative; a basic attack or a dive
+ * makes its operator the controlled one. The rest is a cast as `apply` makes
+ * it: its hits, what they do, and the triggers they start.
+ */
+export function replayCast(ctx: TimelineContext, state: TimelineState, operator: string, skillId: string, frame: number, opts: ReplayCastOptions = {}): TimelineState {
+  if (!ctx.builds.has(operator)) throw new EngineError(`${operator} isn't in the team`);
+  let advanced = advance(ctx, state, frame);
+  const costs = skillCosts(ctx, operator, skillId);
+  if (costs.kind === "basic" || costs.timing.specification === 6) advanced = { ...advanced, controlled: operator };
+  const cost = spCostAt(ctx, advanced, operator, costs, frame);
+  if (advanced.sp < cost) advanced = { ...advanced, sp: cost };
+  // A combo the log shows had its window open: one opened by an event the replay didn't see counts 1 (its count isn't logged).
+  const skill = kitSkill(ctx, operator, skillId);
+  if (costs.kind === "combo" && skill.comboWindow !== false) {
+    const key = windowKey(ctx, operator, skillId);
+    if (!windowOpen(advanced, operator, key, frame)) advanced = { ...advanced, comboWindow: { ...advanced.comboWindow, [key]: { from: frame, until: frame + 1, count: 1 } } };
+  }
+  const index = advanced.casts.length;
+  const r = castSkill(ctx, advanced, operator, skillId, frame, false, opts.keepPrevious ?? false);
+  let st = r.state;
+  if (opts.landings?.length) {
+    // The cast's own landings of each kit hit, in frame order: the n-th moves to its logged frame.
+    const own = new Map<string, PendingHit[]>();
+    for (const h of st.pending) if (h.cast === index && !h.trigger && h.operator === operator && h.skillId === skillId) own.set(h.hitId, [...(own.get(h.hitId) ?? []), h]);
+    for (const list of own.values()) list.sort((a, b) => a.frame - b.frame);
+    const moved = new Map<PendingHit, number>();
+    for (const l of opts.landings) {
+      const h = own.get(l.hitId)?.[l.nth];
+      if (h) moved.set(h, Math.max(frame, l.frame));
+    }
+    st = { ...st, pending: st.pending.map((h) => (moved.has(h) ? { ...h, frame: moved.get(h) as number, pinned: true as const } : h)) };
+  }
+  return runTriggers(ctx, st, r.events, r.origin);
+}
+
+/** How a logged cast is replayed (replayCast). */
+export interface ReplayCastOptions {
+  /** The operator's current skill keeps its hits still to come (the log shows them landing after this cast started). */
+  readonly keepPrevious?: boolean;
+  /** Landings at their logged frames: the `nth` landing (0: the first, in frame order) of the cast's kit hit `hitId` lands at `frame`. */
+  readonly landings?: readonly { readonly hitId: string; readonly nth: number; readonly frame: number }[];
+}
+
+/**
  * The jump a dive starts with: it ends the operator's current action as a
  * skill's start would (a plunging attack may interrupt anything:
  * priorityOf; assumed for the jump too, as Endaxis has it), and the
@@ -2367,11 +2417,12 @@ function jumpToDive(ctx: TimelineContext, advanced: TimelineState, operator: str
  * delayed cast-trigger actions; the buffs that end with it end (their
  * `buffEnded` events are returned).
  */
-function endCurrentSkill(advanced: TimelineState, operator: string, frame: number): { state: TimelineState; events: BattleEvent[] } {
+function endCurrentSkill(advanced: TimelineState, operator: string, frame: number, keepHits = false): { state: TimelineState; events: BattleEvent[] } {
   // The current skill's cast (a skill cast beside it isn't the current one).
   const prevCast = advanced.acting[operator]?.cast ?? advanced.casts.findLastIndex((c) => c.operator === operator);
   const endsNow = advanced.buffs.filter((b) => b.owner === operator && b.endsWithCast !== undefined && b.endsWithCast === prevCast && b.expiresAt > frame);
-  const state = {
+  // A replayed cast whose logged hits go on after the next one started (replayCast keepPrevious) keeps what's to come.
+  const state = keepHits ? { ...advanced, buffs: advanced.buffs.filter((b) => !endsNow.includes(b)) } : {
     ...advanced,
     pending: advanced.pending.filter((h) => !(h.operator === operator && h.cast === prevCast && h.frame > frame && (!h.detached || (h.launchAt !== undefined && h.launchAt > frame)))),
     pendingActions: advanced.pendingActions.filter((x) => !(x.cast && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame && (x.launchAt === undefined || x.launchAt > frame))),
@@ -2395,11 +2446,11 @@ function endCurrentSkill(advanced: TimelineState, operator: string, frame: numbe
  * cast (`followUp`: a skill casting another, CastSkill) costs nothing and
  * starts no cooldown.
  */
-function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: string, skillId: string, frame: number, followUp: boolean): { state: TimelineState; events: BattleEvent[]; origin: Origin } {
+function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: string, skillId: string, frame: number, followUp: boolean, keepPrevious = false): { state: TimelineState; events: BattleEvent[]; origin: Origin } {
   const skill = kitSkill(ctx, operator, skillId);
   // Starting a skill ends the operator's current one, unless it runs beside it (KitSkill.beside).
   const beside = skill.beside !== undefined && decide(skill.beside, evalContext(ctx.data, ctx.builds.get(operator) as Build, ctx.panels.get(operator) as StatPanel, skillId, situationAt(ctx, operator, advanced, frame)));
-  const ended = beside ? { state: advanced, events: [] } : endCurrentSkill(advanced, operator, frame);
+  const ended = beside ? { state: advanced, events: [] } : endCurrentSkill(advanced, operator, frame, keepPrevious);
   const s = rebaseCooldowns(ctx, advanced, ended.state, frame);
   const endsNowEvents = ended.events;
   const full = skillCosts(ctx, operator, skillId);

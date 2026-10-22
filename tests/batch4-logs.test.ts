@@ -184,7 +184,8 @@ describe("L3: what the log never lists", () => {
 
   it("matches Gilberta's ultimate after Camille's combo in 40d9 with one Link stack (the hand annotation's)", () => {
     const fx = readLogFixture(new URL("../fixtures/zmdlogs-40d9a3c1da37.json", import.meta.url).pathname);
-    const v = checkLog(data, { ...fx, hits: fx.hits.filter((h) => h.t === 12951 && h.operator === "chr_0013_aglina") });
+    // One hit out of the log: the casts that apply its buffs are gone, so the log's listing (no kit-buff replay).
+    const v = checkLog(data, { ...fx, hits: fx.hits.filter((h) => h.t === 12951 && h.operator === "chr_0013_aglina") }, { buffs: "log" });
     expect(v.map(assumed)).toEqual([["Link 1 (predicted 0)"]]);
   });
 });

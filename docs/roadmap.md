@@ -47,6 +47,13 @@ the six favourites.
    operator's constant factor (build values the log doesn't record, food,
    enemy-side effects), then the kits' own mismatches. Six multi-target
    fights wait in fixtures/multi-target/ for multi-target support.
+   - **Kit-buff replay** (2026-10-22, `zmdlogs check`): make the replay
+     final (drop the log-listing fallback) once it fits: casts the log
+     shows no damage of (Laevatain's ultimate, heal-only casts) need to be
+     inferred; then the "fits the log" disagreements in the report are
+     kit triggers to fix (Liino's ATK on herself, `wpn_sword_0012` counts,
+     Physical Susceptibility in d4fb / d572 / de6a); buff expiry across
+     time stops (in-game test 18).
 4. **Food buffs:** consumables (UseItemTable, BuffData `buff_common_*_potion_*`)
    as a per-operator build option, so simulations and searches can count
    them (one food buff per operator, 300 s). The Endministrator's +180 ATK

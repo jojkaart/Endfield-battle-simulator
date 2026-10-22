@@ -150,14 +150,12 @@ describe("V2: periodic damage keeps its applier's attacker side (takeAtkSnapshot
     expect(() => loadEquipment(on({ event: "fightStart" }, { atkSnapshot: true }))).toThrow(/atkSnapshot is for the hits of a buffTick trigger/);
   });
 
-  it("zmdlogs check: 4e5e's three Combustion ticks match with Camille's DMG bonuses at the reaction (the hand-annotated ATK applied)", () => {
+  it("zmdlogs check: 4e5e's three Combustion ticks match with Camille's DMG bonuses at the reaction (Lustrous Carmine's ATK applied)", () => {
     const fx = readLogFixture(new URL("../fixtures/zmdlogs-4e5e1390085e.json", import.meta.url).pathname);
-    // The fixture's annotation: Lustrous Carmine's ATK +9.6% (unquantified in the log) acts on every hit from 49418 ms.
-    const quantified = {
-      ...fx,
-      hits: fx.hits.map((h) => (h.unquantified.some((u) => u.buff === "buff_wpn_lance_0015_atkup") ? { ...h, effects: [...h.effects, { buff: "buff_wpn_lance_0015_atkup", zone: "atk" as const, element: null, value: 0.096 }], unquantified: h.unquantified.filter((u) => u.buff !== "buff_wpn_lance_0015_atkup") } : h)),
-    };
-    const ticks = checkLog(data, quantified).filter((v) => v.hit.event === "buff_common_burning_status");
+    // Lustrous Carmine's ATK +9.6% acts on every hit from 49418 ms, where the log stops listing it (the kit-buff replay keeps it on).
+    const atk = { buff: "buff_wpn_lance_0015_atkup", zone: "atk" as const, element: null, value: 0.096 };
+    const quantified = { ...fx, hits: fx.hits.map((h) => (h.t >= 49418 && !h.effects.some((e) => e.buff === atk.buff) ? { ...h, effects: [...h.effects, atk] } : h)) };
+    const ticks = checkLog(data, quantified, { buffs: "log" }).filter((v) => v.hit.event === "buff_common_burning_status");
     expect(ticks.map((v) => [v.hit.t, v.kind])).toEqual([[66004, "match"], [67447, "match"], [68449, "match"]]);
   });
 });

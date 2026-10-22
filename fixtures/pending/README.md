@@ -72,3 +72,23 @@ Avywenna has no log on the site since 1.6.
 | `zmdlogs-d5720d9ceb94` | eny_0120_klbear_tower015 | 2026-10-21, v59, 159 s | Rossi 457/520, Mi Fu 25/144, Camille 245/284, Gilberta 148/173 |
 | `zmdlogs-d774d0ce7bd3` | eny_0134_jsspsi | 2026-10-21, v59, 140 s | Zhuang Fangyi 88/172, Perlica 11/51, Liino 0/100, Arcane 161/161 |
 | `zmdlogs-de6a94e9cf6b` | eny_0134_jsspsi | 2026-10-19, v59, 156 s | Pogranichnik 0/84, Lifeng 0/71, Chen Qianyu 2/102, Mi Fu 0/91 |
+
+**With the kit-buff replay (2026-10-22;** `zmdlogs check` takes kit buffs
+from the replay of the logged casts, the log's listing where that fits
+nothing; docs/design.md, "Kit buffs in the log check"). Matches that went
+up: 012ae1c80ae6 Arcane 69 → 155/155, Camille 81 → 122, Laevatain 65 → 75
+(Camille's `buff_wpn_lance_0015_atkup` drops out of the log as in 4e5e,
+and the damage keeps it); 0c14fb3ce77d Rossi 11 → 12, Si 0 → 7;
+458b03609665 Wulfgard 54 → 56; 7e19489ae503 Ember 14 → 16; 99fb3c35fda2
+Rossi 0 → 1; a7a7a40c97ed Arcane 1 → 3; c6d80590f5ea Liino 8 → 13
+(`buff_chr_0035_liino_atkup` gaps); d5720d9ceb94 Camille 245 → 251. A
+fight's killing blow (its last hit, whose uncapped value is the log's
+overkill estimate) now counts as under unmodelled effects, not a mismatch:
+one hit each for Laevatain (012ae), Ember (04d4), Mi Fu (2fd9), Zhuang
+Fangyi (4bfc, c6d8), Wulfgard (4e36), Chen Qianyu (7e19), Rossi (d572).
+Nothing went down. The check's report lists, per buff and operator, where
+the replay and the log disagree and which the damage fits; the largest
+"fits the log" ones (the replay is wrong there) are casts the log shows
+no damage of (abfd's `buff_wpn_funnel_0010_atk_up` and
+`buff_equipsuit_usp_02_AddAttack`) and the enemy's
+`buff_common_affixes_vulnerable_physical` in d4fb, d572 and de6a.
