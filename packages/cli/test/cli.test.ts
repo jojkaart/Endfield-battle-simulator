@@ -127,7 +127,7 @@ describe("log check: what ZMDLogs leaves out (batch 2 K6, batch 3 L1)", () => {
     const auras = unloggedEnemyAuras(data, fx, panels);
     expect(auras.map((a) => a.label)).toEqual([null, "unlogged enemy buff originium_crystals (chr_0003_endminf)"]);
     expect(auras[1]?.modifiers.map((m) => [m.zone, Number(m.value.toFixed(6)), m.element])).toEqual([["damageTaken", 0.2, "physical"]]);
-    // With the fixture's hand-noted Ginseng Meat Stew (+180 flat ATK, batch 2 K4), her hits on the sealed enemy match with the aura.
+    // With her build's Ginseng Meat Stew (+180 flat ATK, batch 2 K4; the food set by hand), her hits on the sealed enemy match with the aura.
     const hits = fx.hits.filter((h) => h.operator === "chr_0003_endminf" && (h.t === 14260 || h.t === 14591));
     const verdicts = checkLog(data, { ...fx, hits });
     expect(verdicts.map((v) => (v.kind === "match" ? v.assumed.at(-1) : v.kind))).toEqual([

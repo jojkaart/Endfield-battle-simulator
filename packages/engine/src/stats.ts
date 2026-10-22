@@ -7,7 +7,7 @@ import { Attr, attrName, type AttrType } from "./attributes.ts";
 import type { Build } from "./build.ts";
 import { test } from "./expr.ts";
 import { EngineError } from "./errors.ts";
-import { Slot, Target, type Effect, type GameData, type GearSetData, type OperatorData, type SkillData, type SkillValueOp } from "./model.ts";
+import { Slot, Target, type Effect, type FoodData, type GameData, type GearSetData, type OperatorData, type SkillData, type SkillValueOp } from "./model.ts";
 
 export interface Contribution {
   readonly source: string;
@@ -25,6 +25,35 @@ export interface StatLine {
   readonly multiply: number;
   readonly total: number;
   readonly contributions: readonly Contribution[];
+  /**
+   * Contributions in a formula slot whose formula isn't known (a food's DEF
+   * +x%, formulaItem 1), left out of `total`; whatever reads the line's value
+   * refuses it (lineValue), so they never silently count as nothing.
+   */
+  readonly unmodelled?: readonly Contribution[];
+}
+
+/**
+ * Attributes a food may change in a formula slot the engine doesn't know,
+ * because every reader of them checks the line (lineValue): DEF, read only
+ * by kit values (expr.ts `attr`) and percentages of the line. Any other
+ * attribute in an unknown slot is an error when the panel is computed.
+ */
+const UNMODELLED_OK: ReadonlySet<AttrType> = new Set([Attr.Def]);
+
+/** Refuses a panel line with parts in an unknown formula slot (StatLine.unmodelled), for readers that need its value exact. */
+function checkModelled(line: Partial<Pick<StatLine, "attr" | "unmodelled">>, operator: string): void {
+  if (!line.unmodelled?.length) return;
+  throw new EngineError(
+    `${operator}'s ${line.attr === undefined ? "attribute" : attrName(line.attr)} has a part whose formula isn't known (${line.unmodelled.map((c) => `${c.source}: formula item ${c.slot}`).join("; ")}), ` +
+      "so it can't be read (docs/in-game-tests.md has the test that decides it)",
+  );
+}
+
+/** A panel line's total for a reader that needs it exact (kit values): refused when part of it is in an unknown formula slot. */
+export function lineValue(line: Pick<StatLine, "attr" | "total" | "unmodelled">, operator: string): number {
+  checkModelled(line, operator);
+  return line.total;
 }
 
 /** One ATK-per-point attribute (76–79) in the attribute bonus: `factor` × the points of `attr` it reads = `bonus`. */
@@ -98,7 +127,8 @@ export function atkAttributeBonus(
 }
 
 /** A percentage of a panel line as the panel's percent slot adds it: ratio × (base + Σ add) × Π multiply (KitBuffModifier.percent). */
-export function percentOfLine(ratio: number, line: Pick<StatLine, "base" | "add" | "multiply">): number {
+export function percentOfLine(ratio: number, line: Pick<StatLine, "base" | "add" | "multiply"> & Partial<Pick<StatLine, "attr" | "unmodelled">>): number {
+  checkModelled(line, "the operator");
   return ratio * (line.base + line.add) * line.multiply;
 }
 
@@ -146,6 +176,8 @@ export interface StatPanel {
   readonly warnings: readonly string[];
   /** Effects that aren't permanent stats (buffs from talents, potentials, weapons, gear sets) and so aren't in this panel. */
   readonly notApplied: readonly string[];
+  /** The build's food buff when its lines are in this panel (the fight's first `duration` seconds; StatOptions.withoutFood). */
+  readonly food?: { readonly id: string; readonly name: string; readonly duration: number };
 }
 
 export interface StatOptions {
@@ -156,6 +188,8 @@ export interface StatOptions {
    * research notes say the same.
    */
   readonly floorAttributes: boolean;
+  /** Leave the build's food buff out: the panel once it has ended (foodOf: its duration from the fight's start). */
+  readonly withoutFood?: boolean;
 }
 
 export const DEFAULT_STAT_OPTIONS: StatOptions = { floorAttributes: true };
@@ -165,6 +199,16 @@ const SLOTS: readonly number[] = [Slot.Add, Slot.Percent, Slot.Flat, Slot.Multip
 interface Accumulator {
   base: number;
   contributions: Contribution[];
+  unmodelled?: Contribution[];
+}
+
+/** The build's food buff (Build.food), or null without one; an unknown item, or one that isn't a food buff, is an error. */
+export function foodOf(data: GameData, build: Build): FoodData | null {
+  if (build.food === undefined) return null;
+  const food = data.foods?.[build.food];
+  if (food) return food;
+  const why = data.notFoods?.[build.food];
+  throw new EngineError(`${build.operator}: food ${build.food} ${why ?? "is unknown (try: efsim find <name>)"}`);
 }
 
 function levelRow(op: OperatorData, build: Build) {
@@ -327,6 +371,20 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
   }
   for (const { set, count } of activeGearSets(data, build)) applySkill(set.skillId, set.skillLevel, `${set.name} set (${count} pieces)`);
 
+  // The food buff, from the fight's start for its duration: its buffs' attribute modifiers are panel lines like the gear's.
+  const food = foodOf(data, build);
+  if (food && !options.withoutFood) {
+    for (const b of food.buffs) {
+      for (const m of b.modifiers) {
+        const source = `food ${food.name} (${b.buffId})`;
+        const attr = resolveTarget(m.attr, m.target);
+        if (SLOTS.includes(m.slot)) apply(m.attr, m.slot, m.target, m.value, source);
+        else if (UNMODELLED_OK.has(attr)) (line(attr).unmodelled ??= []).push({ source, slot: m.slot, value: m.value });
+        else throw new EngineError(`${source}: unsupported formula slot ${m.slot} for ${attrName(attr)}`);
+      }
+    }
+  }
+
   // Totals: ((base + Σ add) × (1 + Σ percent) + Σ flat) × Π multiply.
   const attrs: Record<number, StatLine> = {};
   // Every attribute in the level row or touched by a modifier, plus crit, which the damage formula always reads.
@@ -348,6 +406,7 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
       multiply,
       total: ((a.base + add) * (1 + percent) + flat) * multiply,
       contributions: a.contributions,
+      ...(a.unmodelled ? { unmodelled: a.unmodelled } : {}),
     };
   }
 
@@ -381,6 +440,7 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
     sources,
     notApplied,
     warnings,
+    ...(food && !options.withoutFood ? { food: { id: food.id, name: food.name, duration: food.duration } } : {}),
   };
   // Effects limited to a mode (activeCondition): the kit says what each condition means.
   const meaning = data.kits.operators[op.id]?.activeConditions ?? {};

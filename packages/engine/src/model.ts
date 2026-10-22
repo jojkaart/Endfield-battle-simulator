@@ -298,7 +298,27 @@ export interface GameData {
   readonly enemies: Readonly<Record<string, EnemyData>>;
   /** Each stage's enemies and their levels (DungeonTable), by stage ID; the log importer reads a fight's enemy level from it. */
   readonly stages?: Readonly<Record<string, readonly { readonly id: string; readonly level: number }[]>>;
+  /** Food buffs a build can hold (Build.food), by item ID (UseItemTable); absent: none loaded. */
+  readonly foods?: Readonly<Record<string, FoodData>>;
+  /** Usable items that aren't food buffs (heals, instant ultimate energy, vouchers), by item ID: why, for the error a build naming one gets. */
+  readonly notFoods?: Readonly<Record<string, string>>;
   readonly kits: Kits;
+}
+
+/**
+ * A food buff (UseItemTable: a consumable whose buffs persist on one
+ * operator; all of them share one stacking key, so an operator holds one at
+ * a time). Its buffs' attribute modifiers act like any other panel line
+ * from the fight's start for `duration` seconds (stats.ts computeStats).
+ */
+export interface FoodData {
+  /** The item ID, e.g. item_corp3_animal_1. */
+  readonly id: string;
+  readonly name: string;
+  /** Seconds every one of its buffs lasts (the loader checks they agree with the item). */
+  readonly duration: number;
+  /** Its buffs (BuffData), each with its attribute modifiers at the item's values. */
+  readonly buffs: readonly { readonly buffId: string; readonly modifiers: readonly AttrModifier[] }[];
 }
 
 // ── Kits: hand-written hit structure (docs/design.md#skills-and-buffs-from-skilldata--buffdata) ──

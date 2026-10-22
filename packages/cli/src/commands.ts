@@ -14,9 +14,11 @@ import {
   EngineError,
   hitAvailable,
   NOT_MODELLED,
+  Slot,
   type Build,
   type DamageOptions,
   type DamageTarget,
+  type FoodData,
   type GameData,
   type HitDamage,
   type StatPanel,
@@ -39,13 +41,14 @@ export function find(data: GameData, query: string): string {
   const q = query.toLowerCase();
   const rows: string[][] = [];
   const add = (kind: string, id: string, name: string, extra = "") => {
-    if (id.toLowerCase().includes(q) || name.toLowerCase().includes(q)) rows.push([kind, id, name, extra]);
+    if (kind === q || id.toLowerCase().includes(q) || name.toLowerCase().includes(q)) rows.push([kind, id, name, extra]);
   };
   for (const o of Object.values(data.operators)) add("operator", o.id, o.name, data.kits.operators[o.id] ? "kit: yes" : "kit: not yet");
   for (const w of Object.values(data.weapons)) add("weapon", w.id, w.name, `${w.rarity}★`);
   for (const g of Object.values(data.gear)) add("gear", g.id, g.name, g.setId ? `set ${data.gearSets[g.setId]?.name ?? g.setId}` : "");
   for (const s of Object.values(data.gearSets)) add("gear set", s.id, s.name, `${s.piecesRequired} pieces`);
   for (const e of Object.values(data.enemies)) add("enemy", e.id, e.name);
+  for (const f of Object.values(data.foods ?? {})) add("food", f.id, f.name, foodEffects(f));
   if (rows.length === 0) return `Nothing matches "${query}".`;
   return table(["type", "id", "name", ""], rows);
 }
@@ -82,6 +85,32 @@ function showStat(attr: number, v: number): string {
   return RATIO_ATTRS.has(attr) ? pct(v) : num(v);
 }
 
+/** A food's stat lines in words: attribute and value per formula slot (modifiers of one buff with the same slot and value share a line). */
+export function foodEffects(food: FoodData): string {
+  const parts: string[] = [];
+  for (const b of food.buffs) {
+    const groups = new Map<string, { slot: number; value: number; attrs: number[] }>();
+    for (const m of b.modifiers) {
+      const k = `${m.slot}|${m.value}`;
+      const g = groups.get(k) ?? { slot: m.slot, value: m.value, attrs: [] };
+      g.attrs.push(m.attr);
+      groups.set(k, g);
+    }
+    for (const g of groups.values()) {
+      const names = g.attrs.map(attrName).join(", ");
+      const first = g.attrs[0] as number;
+      const amount =
+        g.slot === Slot.Percent ? `+${pct(g.value)}`
+        : g.slot === Slot.Flat ? `+${num(g.value)} flat`
+        : g.slot === Slot.Multiply ? `×${num(g.value, 4)}`
+        : g.slot === Slot.Add || g.slot === Slot.AddUnverified ? `${g.value < 0 ? "" : "+"}${showStat(first, g.value)}`
+        : `${num(g.value, 4)} in formula item ${g.slot} (not counted: its formula isn't known)`;
+      parts.push(`${names} ${amount}`);
+    }
+  }
+  return parts.join("; ");
+}
+
 export function formatPanel(data: GameData, panel: StatPanel, verbose: boolean): string {
   const op = data.operators[panel.operator];
   const a = panel.atk;
@@ -91,6 +120,10 @@ export function formatPanel(data: GameData, panel: StatPanel, verbose: boolean):
     `ATK ${num(Math.floor(a.total), 0)} (exact ${num(a.total, 3)}) = [(${a.operatorBase} operator + ${a.weaponBase} weapon) × (1 + ${pct(a.percent)}) + ${num(a.flat)} flat]` +
       ` × ${num(a.attributeBonus, 4)} (${attrName(panel.mainAttr)} ${a.mainAttribute}, ${attrName(panel.subAttr)} ${a.secondaryAttribute})`,
   );
+  if (panel.food) {
+    const food = data.foods?.[panel.food.id];
+    out.push(`Food: ${panel.food.name} (${panel.food.id}), the fight's first ${num(panel.food.duration)} s${food ? `: ${foodEffects(food)}` : ""}`);
+  }
   // ATK per attribute point (attributes 76–79) is part of the attribute bonus: each its own line, with its sources.
   if (a.perPoint.length) {
     const rest = a.attributeBonus - a.perPoint.reduce((s, p) => s + p.bonus, 0);
@@ -106,11 +139,15 @@ export function formatPanel(data: GameData, panel: StatPanel, verbose: boolean):
     const total = line?.total ?? data.attributeDefaults[attr] ?? 0;
     if (!line && total === 0) continue;
     if (line && line.contributions.length === 0 && total === 0) continue;
-    const sources = line ? line.contributions.map((c) => `${c.source} ${showStat(attr, c.value)}`) : [];
+    const sources = line ? [...line.contributions.map((c) => `${c.source} ${showStat(attr, c.value)}`), ...(line.unmodelled ?? []).map((c) => `${c.source} ${num(c.value, 4)} in formula item ${c.slot}, not counted`)] : [];
     rows.push([attrName(attr), showStat(attr, total), line ? showStat(attr, line.base) : "", verbose ? sources.join("; ") : `${sources.length} source${sources.length === 1 ? "" : "s"}`]);
   }
   out.push("", table(["stat", "total", "base", verbose ? "contributions" : "modifiers"], rows, ["l", "r", "r", "l"]));
   if (panel.warnings.length) out.push("", ...panel.warnings.map((w) => `WARNING: ${w}`));
+  const unknown = Object.values(panel.attrs).filter((l) => l.unmodelled?.length);
+  if (unknown.length) {
+    out.push("", ...unknown.map((l) => `NOTE: ${l.name} leaves out ${l.unmodelled?.map((c) => `${c.source} (formula item ${c.slot})`).join(", ")}: that formula isn't known yet, so a kit value that reads ${l.name} is an error`));
+  }
   if (panel.notApplied.length) {
     out.push("", "Not in this panel (conditional effects; see --condition):");
     for (const n of panel.notApplied) out.push(`  - ${n}`);

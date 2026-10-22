@@ -21,6 +21,8 @@ import {
   type Build,
   computeStats,
   corrosionModifier,
+  DEFAULT_STAT_OPTIONS,
+  foodOf,
   parseReactionEvent,
   roundDamage,
   skillValue,
@@ -694,8 +696,49 @@ export function unquantifiedFromKit(data: GameData, panels: ReadonlyMap<string, 
   return null;
 }
 
-export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
+/**
+ * Food buffs in a log check. Logs don't record a build's food (Build.food),
+ * so a fixture's food is set by hand (with a provenance note). Its lines are
+ * in the member's panel for its duration from the fight's start (the panel
+ * without it afterwards: `at`); a food buff the log does list on a hit
+ * (percentage foods: 40d9's Bottled Duskberry Juice, b7b3's Jakub's Legacy)
+ * is dropped from the hit's effects when it is the hitter's food
+ * (withoutOwnFood), so setting the food doesn't count it twice. Those two
+ * fixtures leave food out: the log already lists it.
+ */
+export function teamPanels(data: GameData, fx: LogFixture): {
+  readonly panels: ReadonlyMap<string, { readonly build: Build; readonly panel: StatPanel }>;
+  /** A member's build and panel at a hit's time (ms). */
+  readonly at: (operator: string, t: number) => { readonly build: Build; readonly panel: StatPanel } | undefined;
+} {
   const panels = new Map(fx.team.map((b) => [b.operator, { build: b, panel: computeStats(data, b) }]));
+  const ends = new Map(fx.team.flatMap((b) => {
+    const food = foodOf(data, b);
+    return food ? [[b.operator, { ms: food.duration * 1000, member: { build: b, panel: computeStats(data, b, { ...DEFAULT_STAT_OPTIONS, withoutFood: true }) } }] as const] : [];
+  }));
+  return {
+    panels,
+    at: (operator, t) => {
+      const end = ends.get(operator);
+      return end && t >= end.ms ? end.member : panels.get(operator);
+    },
+  };
+}
+
+/** A hit without the logged effects that are its hitter's food buffs, which the hitter's panel has (teamPanels). */
+export function withoutOwnFood(data: GameData, fx: LogFixture, hit: LogHit): LogHit {
+  const build = fx.team.find((b) => b.operator === hit.operator);
+  const food = build ? foodOf(data, build) : null;
+  if (!food || hit.t >= food.duration * 1000) return hit;
+  const own = new Set(food.buffs.map((b) => b.buffId));
+  const keep = (e: LogEffect) => !own.has(e.buff);
+  if (hit.effects.every(keep) && hit.boundaryEffects.every(keep)) return hit;
+  return { ...hit, effects: hit.effects.filter(keep), boundaryEffects: hit.boundaryEffects.filter(keep) };
+}
+
+export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
+  const team = teamPanels(data, fx);
+  const panels = team.panels;
   const target = { enemy: fx.enemy.id, level: fx.enemy.level };
   const caps = kitStackCaps(data, panels);
   const auras = unloggedEnemyAuras(data, fx, panels);
@@ -709,14 +752,17 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
     return fromKits.get(k) ?? null;
   };
   return fx.hits.map((hit): HitVerdict => {
-    const member = panels.get(hit.operator);
+    const member = team.at(hit.operator, hit.t);
+    // The hit as read: without logged effects that are the hitter's food buffs (its panel has them).
+    const read = withoutOwnFood(data, fx, hit);
     const reaction = parseReactionEvent(hit.event);
     const found = reaction || !member ? [] : findHits(data, member.build, hit.event);
     if (!member || (found.length === 0 && !reaction)) return { kind: "uncovered", hit };
     const actual = hit.uncapped ?? hit.value;
     const stackOptions = reaction && reaction.kind !== "burst" ? [1, 2, 3, 4] : [1];
     // A Combustion tick's attacker side is its application's (takeAtkSnapshot; fixtures/zmdlogs-4e5e1390085e.json 66004–68449 ms).
-    const snapshotFrom = reaction?.kind === "combustionTick" ? combustionSource(fx, hit) : null;
+    const source = reaction?.kind === "combustionTick" ? combustionSource(fx, hit) : null;
+    const snapshotFrom = source ? withoutOwnFood(data, fx, source) : null;
     const predicted: number[] = [];
     // What the log never lists (batch 4 L3): the operator's own unlogged buffs and crit parts, and Link on a battle skill's or
     // ultimate's hits (around the stacks the logged Link sources predict), each tried after every reading without them.
@@ -727,7 +773,7 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
     const unloggedOwn = reaction ? [NO_VARIANT] : combine(ownBuffVariants(ownBuffs.get(hit.operator) ?? [], hit), link);
     const stackMax = (id: string) => kit?.stacks.find((x) => x.id === id)?.max ?? 4;
     // Unquantified buffs a kit values (unquantifiedFromKit), each absent first; not one the hit also lists with values (those stand for it).
-    const listedHere = new Set([...hit.effects, ...hit.boundaryEffects].map((e) => e.buff));
+    const listedHere = new Set([...read.effects, ...read.boundaryEffects].map((e) => e.buff));
     const quantified = hit.unquantified
       .filter((u) => !isCorrosionBuff(u.buff) && !listedHere.has(u.buff))
       .map(valued)
@@ -735,9 +781,9 @@ export function checkLog(data: GameData, fx: LogFixture): HitVerdict[] {
       .reduce<Variant[]>((acc, v) => combine(acc, [NO_VARIANT, ...v]), [NO_VARIANT]);
     // Whole-hit assumptions (enemy auras the log doesn't list, layers of a buff it lists once), the plain reading first:
     // a hit that matches without them keeps matching as before; so do readings with part of a repeated boundary buff's instances, after all others.
-    const variants = combine(quantified, combine(unloggedOwn, combine(auras, layerVariants(hit, caps))));
+    const variants = combine(quantified, combine(unloggedOwn, combine(auras, layerVariants(read, caps))));
     for (const { repeats, variant } of [false, true].flatMap((repeats) => variants.map((variant) => ({ repeats, variant })))) {
-      for (const c of candidates(withLayers(hit, variant.layers), panels, stackOptions, repeats)) {
+      for (const c of candidates(withLayers(read, variant.layers), panels, stackOptions, repeats)) {
         const logged = (category: HitCategory) =>
           snapshotFrom
             ? [...logModifiers(c.effects, category, caps).filter((m) => !SNAPSHOT_ZONES.has(m.zone)), ...logModifiers(snapshotFrom.effects, category, caps).filter((m) => SNAPSHOT_ZONES.has(m.zone))]
@@ -840,13 +886,15 @@ export interface ImpliedScale {
 export function impliedScales(data: GameData, fx: LogFixture, operator: string): ImpliedScale[] {
   const build = fx.team.find((b) => b.operator === operator);
   if (!build) throw new Error(`${operator} isn't in ${fx.id}`);
-  const panel = computeStats(data, build);
+  const team = teamPanels(data, fx);
   const anySkill = Object.keys(data.operators[operator]?.skillGroups ?? {})[0];
   if (!anySkill) throw new Error(`${operator} has no skills`);
   const skill: KitSkill = { skillId: anySkill, label: "", kind: "basic", hits: [] };
   return fx.hits
     .filter((h) => h.operator === operator && h.element !== null)
-    .map((h) => {
+    .map((logged) => {
+      const h = withoutOwnFood(data, fx, logged);
+      const panel = team.at(operator, h.t)?.panel as StatPanel;
       const bySkillType = {} as Record<SkillType, number>;
       for (const type of ["basic", "battle", "combo", "ultimate"] as const) {
         const hit: KitHit = { id: "x", label: "", scale: [], count: 1, events: [], damageType: type, element: h.element ?? "physical" };
@@ -878,8 +926,9 @@ export function findScales(data: GameData, fx: LogFixture, operator: string): Sc
   const build = fx.team.find((b) => b.operator === operator);
   const op = data.operators[operator];
   if (!build || !op) throw new Error(`${operator} isn't in ${fx.id}`);
-  const panel = computeStats(data, build);
-  const panels = new Map(fx.team.map((b) => [b.operator, { panel: computeStats(data, b) }]));
+  const team = teamPanels(data, fx);
+  const panel = team.panels.get(operator)?.panel as StatPanel;
+  const panels = team.panels;
   const target = { enemy: fx.enemy.id, level: fx.enemy.level };
   const values: { skillId: string; key: string; value: number }[] = [];
   for (const skillId of Object.keys(op.skillGroups)) {
@@ -891,7 +940,10 @@ export function findScales(data: GameData, fx: LogFixture, operator: string): Sc
     }
   }
   const byEvent = new Map<string, LogHit[]>();
-  for (const h of fx.hits) if (h.operator === operator && h.element && !parseReactionEvent(h.event)) byEvent.set(h.event, [...(byEvent.get(h.event) ?? []), h]);
+  for (const logged of fx.hits) {
+    const h = withoutOwnFood(data, fx, logged);
+    if (h.operator === operator && h.element && !parseReactionEvent(h.event)) byEvent.set(h.event, [...(byEvent.get(h.event) ?? []), h]);
+  }
   const out: ScaleMatch[] = [];
   for (const [event, hits] of [...byEvent].sort()) {
     const tally = new Map<string, { skillId: string; keys: string[]; damageType: SkillType; corrosion: number; agree: number }>();
@@ -899,7 +951,7 @@ export function findScales(data: GameData, fx: LogFixture, operator: string): Sc
       for (const damageType of ["basic", "battle", "combo", "ultimate"] as const) {
         const kitHit: KitHit = { id: "x", label: "", scale: [], count: 1, events: [], damageType, element: hit.element ?? "physical" };
         for (const c of candidates(hit, panels, [1])) {
-          const unit = computeHit(data, build, panel, target, { skillId: values[0]?.skillId ?? "" }, kitHit, {
+          const unit = computeHit(data, build, team.at(operator, hit.t)?.panel ?? panel, target, { skillId: values[0]?.skillId ?? "" }, kitHit, {
             crit: c.crit ? "always" : "never", staggered: false, conditions: [], modifiers: [...logModifiers(c.effects, damageType), ...c.extra],
           }).exact;
           const need = (hit.uncapped ?? hit.value) / unit;

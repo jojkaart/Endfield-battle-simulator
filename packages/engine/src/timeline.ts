@@ -35,7 +35,7 @@ import { effectiveKit } from "./triggers.ts";
 import { allActions, causeMatches, eventMatches, triggerActionAt, triggerSkillId, type BattleEvent, type BuffCategory, type KitTrigger } from "./events.ts";
 import { evaluate, test, valueKeys, type EvalContext, type Predicate, type ValueExpr } from "./expr.ts";
 import { applyBuff, buffAttr, buffModifiers, buffReach, endBuff, endBuffFor, extendBuff, reaches, recordedOf, remainingOf, resolveValue, withBuff, type ActiveBuff, type AttrFilters } from "./buffs.ts";
-import { computeStats, skillLevel, skillParam, type StatPanel } from "./stats.ts";
+import { computeStats, DEFAULT_STAT_OPTIONS, foodOf, skillLevel, skillParam, type StatPanel } from "./stats.ts";
 import { Attr } from "./attributes.ts";
 import { applyToEnemy, expireStatus, nextTick, NO_STATUS, statusModifiers, tickStatus, type EnemyStatus, type StatusEvent, type StatusTweaks } from "./status.ts";
 import { FPS } from "./units.ts";
@@ -275,7 +275,10 @@ export interface TimelineContext {
   readonly data: GameData;
   readonly scenario: TimelineScenario;
   readonly builds: ReadonlyMap<string, Build>;
+  /** Per operator: its stat panel at the fight's start (with its food buff: Build.food); panelAt gives the one at a frame. */
   readonly panels: ReadonlyMap<string, StatPanel>;
+  /** Per operator with a food buff: the frame it ends (its duration from the fight's start), and the panel without it from then on. */
+  readonly foodEnds?: ReadonlyMap<string, { readonly frame: number; readonly panel: StatPanel }>;
   /** Per operator: always-on condition modifiers plus the scenario's extra modifiers (not the panel's own; the damage pipeline adds those). */
   readonly modifiers: ReadonlyMap<string, readonly Modifier[]>;
   /** Per operator: its kit with what it wears (triggers.ts effectiveKit). */
@@ -295,6 +298,11 @@ export function createContext(data: GameData, scenario: TimelineScenario): Timel
   const builds = new Map(scenario.team.map((b) => [b.operator, b]));
   if (builds.size !== scenario.team.length) throw new EngineError("an operator appears twice in the team");
   const panels = new Map(scenario.team.map((b) => [b.operator, computeStats(data, b)]));
+  // A food buff lasts its duration from the fight's start; after it, the operator's panel is the one without it.
+  const foodEnds = new Map(scenario.team.flatMap((b) => {
+    const food = foodOf(data, b);
+    return food ? [[b.operator, { frame: Math.round(food.duration * FPS), panel: computeStats(data, b, { ...DEFAULT_STAT_OPTIONS, withoutFood: true }) }] as const] : [];
+  }));
   const modifiers = new Map(
     scenario.team.map((b) => [b.operator, [...conditionModifiers(data, b, scenario.options.conditions?.[b.operator] ?? []), ...(scenario.options.modifiers ?? [])]]),
   );
@@ -307,10 +315,20 @@ export function createContext(data: GameData, scenario: TimelineScenario): Timel
   const inputBuffs = [...kits.values()].some((k) => k.buffs.some((b) => b.basicAttack !== undefined));
   return {
     data, scenario, builds, panels, modifiers, kits, beforeDamage,
+    ...(foodEnds.size ? { foodEnds } : {}),
     ...(buffAttrs.has(Attr.ComboSkillCooldownRecoveryScalar) ? { comboRates: true } : {}),
     ...(buffAttrs.has(Attr.AtbCostAddition) ? { costBuffs: true } : {}),
     ...(inputBuffs ? { inputBuffs: true } : {}),
   };
+}
+
+/** An operator's stat panel at a frame: the fight's start's, until its food buff ends (TimelineContext.foodEnds). */
+export function panelAt(ctx: TimelineContext, operator: string, frame: number): StatPanel {
+  const end = ctx.foodEnds?.get(operator);
+  if (end && frame >= end.frame) return end.panel;
+  const panel = ctx.panels.get(operator);
+  if (!panel) throw new EngineError(`${operator} isn't in the team`);
+  return panel;
 }
 
 export function init(ctx: TimelineContext): TimelineState {
@@ -366,7 +384,7 @@ function spAt(state: TimelineState, frame: number): number {
 
 /** An operator's stacks at the start: the scenario's, else the kit's `initial` (0 when absent), within each stack's maximum. */
 function startStacks(ctx: TimelineContext, b: Build): Record<string, number> {
-  const panel = ctx.panels.get(b.operator) as StatPanel;
+  const panel = panelAt(ctx, b.operator, 0);
   const given = ctx.scenario.startStacks?.[b.operator] ?? {};
   const out: Record<string, number> = {};
   for (const x of ctx.kits.get(b.operator)?.stacks ?? []) {
@@ -392,7 +410,7 @@ function skillGroup(ctx: TimelineContext, operator: string, skillId: string): Sk
 }
 
 /** SP cost and cooldown frames of a skill at the operator's level, and its timing. */
-function skillCosts(ctx: TimelineContext, operator: string, skillId: string) {
+function skillCosts(ctx: TimelineContext, operator: string, skillId: string, frame: number) {
   const build = ctx.builds.get(operator) as Build;
   const skill = ctx.data.skills[skillId];
   if (!skill) throw new EngineError(`unknown skill ${skillId}`);
@@ -400,7 +418,7 @@ function skillCosts(ctx: TimelineContext, operator: string, skillId: string) {
   const level = skillLevel(skill, build.skillLevels[group]);
   const timing = skill.timing;
   if (!timing) throw new EngineError(`${skillId}: SkillData isn't loaded, so its timing is unknown`);
-  const panel = ctx.panels.get(operator) as StatPanel;
+  const panel = panelAt(ctx, operator, frame);
   const cost = skillParam(panel, skillId, "cost", level.costValue);
   const kind = kitSkill(ctx, operator, skillId).kind;
   // Combo cooldowns scale with attribute 47 (ComboSkillCooldownScalar: Frontiers, Qingbo ×0.85).
@@ -426,7 +444,7 @@ function skillCosts(ctx: TimelineContext, operator: string, skillId: string) {
  */
 function spCostAt(ctx: TimelineContext, st: TimelineState, operator: string, costs: { readonly paysSp: boolean; readonly spCost: number }, frame: number): number {
   if (!costs.paysSp) return 0;
-  const panel = ctx.panels.get(operator) as StatPanel;
+  const panel = panelAt(ctx, operator, frame);
   const extra = (panel.attrs[Attr.AtbCostAddition]?.total ?? 0) + buffAttr(st.buffs, operator, frame, Attr.AtbCostAddition, panel.attrs[Attr.AtbCostAddition]);
   return extra === 0 ? costs.spCost : Math.max(0, costs.spCost + extra);
 }
@@ -472,7 +490,7 @@ function needsWindow(ctx: TimelineContext, operator: string, skill: KitSkill): b
  * cooldown runs this many frames per frame.
  */
 function comboRate(ctx: TimelineContext, buffs: readonly ActiveBuff[], operator: string, frame: number): number {
-  const panel = ctx.panels.get(operator) as StatPanel;
+  const panel = panelAt(ctx, operator, frame);
   const line = panel.attrs[Attr.ComboSkillCooldownRecoveryScalar];
   const base = line?.total ?? ctx.data.attributeDefaults[Attr.ComboSkillCooldownRecoveryScalar] ?? 1;
   return base + buffAttr(buffs, operator, frame, Attr.ComboSkillCooldownRecoveryScalar, line ?? { base, add: 0, multiply: 1 });
@@ -907,7 +925,7 @@ function shiftOperator(st: TimelineState, operator: string, start: number, n: nu
 
 /** An operator's action speed: attribute 92 (KeywordSpeedUpScalar, default 1) plus haste buffs, within 0.1–1.3. */
 function actionSpeed(ctx: TimelineContext, st: TimelineState, operator: string, frame: number): number {
-  const panel = ctx.panels.get(operator) as StatPanel;
+  const panel = panelAt(ctx, operator, frame);
   const base = panel.attrs[Attr.KeywordSpeedUpScalar]?.total ?? ctx.data.attributeDefaults[Attr.KeywordSpeedUpScalar] ?? 1;
   return Math.max(0.1, Math.min(1.3, base + buffAttr(st.buffs, operator, frame, Attr.KeywordSpeedUpScalar, panel.attrs[Attr.KeywordSpeedUpScalar])));
 }
@@ -926,7 +944,7 @@ const CHAIN_CACHE_FRAMES = 30;
 /** Most ultimate energy an operator can hold: its kit's ultimate cost (the highest, if it has several). */
 function maxEnergy(ctx: TimelineContext, operator: string): number {
   const kit = ctx.kits.get(operator);
-  const costs = (kit?.skills ?? []).filter((s) => ctx.data.operators[operator]?.skillGroups[s.skillId] === "ultimate").map((s) => skillCosts(ctx, operator, s.skillId).energyCost);
+  const costs = (kit?.skills ?? []).filter((s) => ctx.data.operators[operator]?.skillGroups[s.skillId] === "ultimate").map((s) => skillCosts(ctx, operator, s.skillId, 0).energyCost); // energy costs don't change with time
   return costs.length ? Math.max(...costs) : 0;
 }
 
@@ -941,7 +959,7 @@ export interface EnergyGrantOptions {
 function gainEnergy(ctx: TimelineContext, st: TimelineState, operator: string, amount: number, frame: number, opts: EnergyGrantOptions = {}): TimelineState {
   const blocked = (st.energyBlockedUntil[operator] ?? -1) > frame || st.buffs.some((b) => b.blocksEnergy && b.owner === operator && b.appliedAt <= frame && b.expiresAt > frame);
   if (amount <= 0 || (!opts.ignoreBlock && blocked)) return st;
-  const panel = ctx.panels.get(operator) as StatPanel;
+  const panel = panelAt(ctx, operator, frame);
   const efficiency = opts.ignoreEfficiency ? 1 : (panel.attrs[Attr.UltimateSpGainScalar]?.total ?? ctx.data.attributeDefaults[Attr.UltimateSpGainScalar] ?? 1) + buffAttr(st.buffs, operator, frame, Attr.UltimateSpGainScalar, panel.attrs[Attr.UltimateSpGainScalar]);
   const now = st.energy[operator] ?? 0;
   return { ...st, energy: { ...st.energy, [operator]: Math.min(maxEnergy(ctx, operator), now + amount * efficiency) } };
@@ -989,7 +1007,7 @@ function spSourceOf(ctx: TimelineContext, skillId: string, value: ValueExpr): { 
 /** SP a skill returns (its blackboard `atb` at the operator's level, after potentials). */
 function skillSpGain(ctx: TimelineContext, operator: string, skillId: string): number {
   const build = ctx.builds.get(operator) as Build;
-  const panel = ctx.panels.get(operator) as StatPanel;
+  const panel = panelAt(ctx, operator, 0); // skill values: a food doesn't change them
   const skill = ctx.data.skills[skillId];
   const level = skill ? skillLevel(skill, build.skillLevels[skillGroup(ctx, operator, skillId)]) : undefined;
   if (level?.blackboard["atb"] === undefined && skill?.defaults["atb"] === undefined) return 0;
@@ -1053,7 +1071,7 @@ const isStaggered = (st: TimelineState, frame: number) => st.stagger.until !== n
  */
 function dealPoise(ctx: TimelineContext, st: TimelineState, operator: string, value: number, frame: number, landing?: { readonly hit: HitContext; readonly ec: EvalContext; readonly cast?: number }): { state: TimelineState; events: BattleEvent[] } {
   if (value <= 0 || isStaggered(st, frame)) return { state: st, events: [] };
-  const panel = ctx.panels.get(operator) as StatPanel;
+  const panel = panelAt(ctx, operator, frame);
   const accepts = (f: AttrFilters) => {
     if (!landing) return false;
     const { elements, when, ...rest } = f;
@@ -1088,7 +1106,7 @@ function situationAt(ctx: TimelineContext, operator: string, st: TimelineState, 
     staggered: isStaggered(st, frame),
     enemyHp: enemyHpAt(ctx.scenario, frame),
     enemyModifiers: st.buffs.filter((b) => b.target === "enemy" && active(b)).flatMap((b) => b.modifiers),
-    attrBonus: (attr) => buffAttr(st.buffs, operator, frame, attr, ctx.panels.get(operator)?.attrs[attr]),
+    attrBonus: (attr) => buffAttr(st.buffs, operator, frame, attr, panelAt(ctx, operator, frame).attrs[attr]),
     enemyGameBuffs: new Set(st.buffs.filter((b) => b.target === "enemy" && b.gameBuff && active(b)).map((b) => b.gameBuff as string)),
     operatorModifiers: st.buffs.filter((b) => b.target !== "enemy" && b.cast === undefined && reaches(b, operator) && active(b)).flatMap((b) => b.modifiers),
     operatorBuffs: st.buffs.filter((b) => b.target !== "enemy" && b.cast === undefined && reaches(b, operator) && active(b)).map((b) => ({ categories: b.categories ?? [], ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) })),
@@ -1148,7 +1166,7 @@ export function enemyHpAt(scenario: TimelineScenario, frame: number): number {
 /** An operator's Arts Intensity at a frame (panel, conditions and active buffs): it sets the strength of the statuses it applies. */
 function artsIntensity(ctx: TimelineContext, st: TimelineState, operator: string, frame: number): number {
   const build = ctx.builds.get(operator) as Build;
-  const mods = activeModifiers(ctx.data, build, ctx.panels.get(operator) as StatPanel, { crit: "never", staggered: false, conditions: [], modifiers: [...(ctx.modifiers.get(operator) ?? []), ...buffModifiers(st.buffs, operator, frame)] });
+  const mods = activeModifiers(ctx.data, build, panelAt(ctx, operator, frame), { crit: "never", staggered: false, conditions: [], modifiers: [...(ctx.modifiers.get(operator) ?? []), ...buffModifiers(st.buffs, operator, frame)] });
   return zoneSum(mods, "artsIntensity", { element: "physical", skillType: null, staggered: false });
 }
 
@@ -1175,14 +1193,14 @@ function buffAppliedEvent(ctx: TimelineContext, frame: number, operator: string,
  */
 function addBuff(ctx: TimelineContext, st: TimelineState, owner: string, skillId: string, def: KitBuff, frame: number, situation: Situation, only?: readonly string[], untilFrame?: number): { state: TimelineState; applied: boolean; buff: ActiveBuff | null } {
   const build = ctx.builds.get(owner) as Build;
-  const panel = ctx.panels.get(owner) as StatPanel;
+  const panel = panelAt(ctx, owner, frame);
   let recipients: readonly string[] | undefined = only;
   if (only && def.target !== "team") throw new EngineError(`${owner} buff ${def.id}: only a team buff can go to one operator`);
   if (def.recipients && def.target === "team") {
     const filter = def.recipients;
     recipients = ctx.scenario.team
       .filter((m) => !only || only.includes(m.operator))
-      .filter((m) => decide(filter, evalContext(ctx.data, m, ctx.panels.get(m.operator) as StatPanel, skillId, { ...situationAt(ctx, m.operator, st, frame), owner })))
+      .filter((m) => decide(filter, evalContext(ctx.data, m, panelAt(ctx, m.operator, frame), skillId, { ...situationAt(ctx, m.operator, st, frame), owner })))
       .map((m) => m.operator);
   }
   let b = applyBuff(ctx.data, build, panel, skillId, def, frame, situation, recipients);
@@ -1211,7 +1229,7 @@ function statusTweaks(ctx: TimelineContext, st: TimelineState, operator: string,
   const tweaks = ctx.kits.get(operator)?.statusTweaks;
   if (!tweaks?.length) return {};
   const build = ctx.builds.get(operator) as Build;
-  const panel = ctx.panels.get(operator) as StatPanel;
+  const panel = panelAt(ctx, operator, frame);
   const out: Record<string, { extraFrames: number; capScale: number }> = {};
   for (const t of tweaks) {
     const ec = evalContext(ctx.data, build, panel, t.skill ?? "", situationAt(ctx, operator, st, frame));
@@ -1235,7 +1253,7 @@ function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, s
   const build = ctx.builds.get(e.operator) as Build;
   // A Combustion tick keeps its applier's attacker side from the application (ActiveStatus.snapshot).
   const snapshot = e.kind === "combustionTick" ? e.snapshot : undefined;
-  const result = computeReaction(ctx.data, build, ctx.panels.get(e.operator) as StatPanel, ctx.scenario.target, reaction, { ...damageOptions(ctx, st, e.operator, enemy, e.frame, undefined, snapshot), ...(critRoll !== undefined ? { critRoll } : {}) });
+  const result = computeReaction(ctx.data, build, panelAt(ctx, e.operator, e.frame), ctx.scenario.target, reaction, { ...damageOptions(ctx, st, e.operator, enemy, e.frame, undefined, snapshot), ...(critRoll !== undefined ? { critRoll } : {}) });
   const scale = e.kind === "combustionTick" ? e.damageScale : e.kind === "physical" && e.multiplier !== undefined ? { key: "multiplier", value: e.multiplier } : undefined;
   if (!scale) return { ...result, frame: e.frame, operator: e.operator };
   const exact = result.exact * scale.value;
@@ -1349,7 +1367,7 @@ const MAX_CHAIN = 500;
 /** What a trigger's predicates and values see: its owner's situation, and the context of the operator who caused the event. */
 function triggerSituation(ctx: TimelineContext, owner: string, st: TimelineState, e: BattleEvent, consumed?: number): Situation {
   const cause = ctx.builds.get(e.operator);
-  const eventOperator = cause ? evalContext(ctx.data, cause, ctx.panels.get(e.operator) as StatPanel, "", situationAt(ctx, e.operator, st, e.frame)) : undefined;
+  const eventOperator = cause ? evalContext(ctx.data, cause, panelAt(ctx, e.operator, e.frame), "", situationAt(ctx, e.operator, st, e.frame)) : undefined;
   // The Link stacks the event's cast used (a hit's, a status event's, a cast's own); 0 for an event of no cast.
   const cast = e.type === "hit" || e.type === "status" || e.type === "cast" ? e.cast : undefined;
   const castLink = cast !== undefined ? (st.casts[cast]?.link ?? 0) : 0;
@@ -1425,7 +1443,7 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
         const cast = e.type === "hit" || e.type === "status" ? e.cast : undefined;
         const castKey = t.maxPerCast !== undefined && cast !== undefined ? `${owner}:${t.id}@${cast}` : undefined;
         if (castKey && (st.triggerState[castKey]?.count ?? 0) >= (t.maxPerCast as number)) continue;
-        const panel = ctx.panels.get(owner) as StatPanel;
+        const panel = panelAt(ctx, owner, e.frame);
         const ec = evalContext(ctx.data, b, panel, triggerSkillId(owner, t), triggerSituation(ctx, owner, atEvent, e));
         if (t.if && !decide(t.if, ec)) continue;
         if (t.chance !== undefined) {
@@ -1467,7 +1485,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
   const events: BattleEvent[] = [];
   const frame = e.frame;
   const build = ctx.builds.get(owner) as Build;
-  const panel = ctx.panels.get(owner) as StatPanel;
+  const panel = panelAt(ctx, owner, frame);
   let consumed = 0;
   const ec = () => evalContext(ctx.data, build, panel, triggerSkillId(owner, t), triggerSituation(ctx, owner, st, e, consumed));
   // Each action with its place in the trigger (triggerActionAt): a chosen option's actions run next, in place.
@@ -1607,13 +1625,13 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
           if (s.kind !== a.skills) continue;
           // Setting starts a cooldown whether one runs or not: of `set` seconds, or that fraction of the skill's own full cooldown.
           if ("set" in a || "setFraction" in a) {
-            readyAt[s.skillId] = cooldownEnd(ctx, st.buffs, who, s, frame, Math.round("set" in a ? v * FPS : v * skillCosts(ctx, who, s.skillId).cooldownFrames));
+            readyAt[s.skillId] = cooldownEnd(ctx, st.buffs, who, s, frame, Math.round("set" in a ? v * FPS : v * skillCosts(ctx, who, s.skillId, frame).cooldownFrames));
             continue;
           }
           // Changes apply only to a running one.
           if ((readyAt[s.skillId] ?? 0) <= frame) continue;
           // A fraction is of the skill's full cooldown (assumed; in-game test 36).
-          const change = Math.round("seconds" in a ? v * FPS : v * skillCosts(ctx, who, s.skillId).cooldownFrames);
+          const change = Math.round("seconds" in a ? v * FPS : v * skillCosts(ctx, who, s.skillId, frame).cooldownFrames);
           // At a recovery rate (attribute 93) the change is to what's left at rate 1.
           if (ctx.comboRates && s.kind === "combo") readyAt[s.skillId] = rateReady(ctx, st.buffs, who, frame, rateProgress(ctx, st.buffs, who, frame, readyAt[s.skillId] ?? 0) + change);
           else readyAt[s.skillId] = Math.max(frame, (readyAt[s.skillId] ?? 0) + change);
@@ -1737,7 +1755,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   }
   const build = ctx.builds.get(hit.operator) as Build;
   st = { ...st, enemy: expireStatus(st.enemy, hit.frame) };
-  const panel = ctx.panels.get(hit.operator) as StatPanel;
+  const panel = panelAt(ctx, hit.operator, hit.frame);
   // Its situation as it lands, before its own effects: whether it happens (KitHit.if) and its extra scale.
   // Who counts as controlled is who was when its skill was cast.
   const controlled = hit.controlledAtCast ?? st.controlled;
@@ -2100,7 +2118,7 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
     if (grant && first(grant.frame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
       st = { ...st, pendingEnergy: st.pendingEnergy.filter((g) => g !== grant) };
       const caster = grant.cast?.operator ?? grant.operator;
-      const holds = !grant.if || decide(grant.if, evalContext(ctx.data, ctx.builds.get(caster) as Build, ctx.panels.get(caster) as StatPanel, "", situationAt(ctx, caster, st, grant.frame)));
+      const holds = !grant.if || decide(grant.if, evalContext(ctx.data, ctx.builds.get(caster) as Build, panelAt(ctx, caster, grant.frame), "", situationAt(ctx, caster, st, grant.frame)));
       if (holds) st = gainEnergy(ctx, st, grant.operator, grant.amount, grant.frame);
       continue;
     }
@@ -2207,7 +2225,7 @@ function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
   let costs;
   try {
     if (kitSkill(ctx, action.operator, action.skill).followUpOnly) return { error: `${action.skill} is cast only by its own skill (a follow-up), not by a rotation` };
-    costs = skillCosts(ctx, action.operator, action.skill);
+    costs = skillCosts(ctx, action.operator, action.skill, frame);
   } catch (e) {
     return { error: e instanceof Error ? e.message : String(e) };
   }
@@ -2232,7 +2250,7 @@ function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
   }
   // Without a time, an action waits for the current skill's own hits (interrupting would cancel them); with one, it may
   // interrupt. A skill that runs beside the current one cancels nothing, so it doesn't wait.
-  const beside = ((s) => s.beside !== undefined && decide(s.beside, evalContext(ctx.data, ctx.builds.get(action.operator) as Build, ctx.panels.get(action.operator) as StatPanel, s.skillId, situationAt(ctx, action.operator, state, frame))))(kitSkill(ctx, action.operator, action.skill));
+  const beside = ((s) => s.beside !== undefined && decide(s.beside, evalContext(ctx.data, ctx.builds.get(action.operator) as Build, panelAt(ctx, action.operator, frame), s.skillId, situationAt(ctx, action.operator, state, frame))))(kitSkill(ctx, action.operator, action.skill));
   if (action.at === undefined && !beside) frame = Math.max(frame, ownHitsLanded(state, action.operator));
   // What the basic-attack input is at the start (a buff that maps it: KitBuff.basicAttack), judged again where the start moves.
   const mappedAt = (f: number) => {
@@ -2273,7 +2291,7 @@ function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
   if (skill.available) {
     const then = advance(ctx, state, frame);
     const build = ctx.builds.get(action.operator) as Build;
-    const ok = decide(skill.available, evalContext(ctx.data, build, ctx.panels.get(action.operator) as StatPanel, skill.skillId, situationAt(ctx, action.operator, then, frame)));
+    const ok = decide(skill.available, evalContext(ctx.data, build, panelAt(ctx, action.operator, frame), skill.skillId, situationAt(ctx, action.operator, then, frame)));
     if (!ok) return { error: `${action.skill} isn't available at frame ${frame} (${JSON.stringify(skill.available)})` };
   }
   const windowed = needsWindow(ctx, action.operator, skill);
@@ -2299,7 +2317,7 @@ function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
 
 /** Whether the operator's combo needs a window: some trigger of its kit opens one (for this build's modes; a window of its own skills aside). */
 function hasComboTrigger(ctx: TimelineContext, operator: string): boolean {
-  const panel = ctx.panels.get(operator) as StatPanel;
+  const panel = panelAt(ctx, operator, 0); // whether a trigger can open a window at all: judged on the fight-start panel
   const build = ctx.builds.get(operator) as Build;
   return (ctx.kits.get(operator)?.triggers ?? []).some(
     (t) => allActions(t.do).some((a) => a.kind === "openCombo" && !a.skills) && (!t.if || test(t.if, evalContext(ctx.data, build, panel, triggerSkillId(operator, t), { team: ctx.scenario.team })) !== false),
@@ -2313,7 +2331,7 @@ function castCooldowns(ctx: TimelineContext, readyAt: TimelineState["readyAt"], 
   if (skill.cooldownGroup) {
     for (const other of ctx.kits.get(operator)?.skills ?? []) {
       if (other.cooldownGroup !== skill.cooldownGroup || other.skillId === skill.skillId) continue;
-      const cd = skillCosts(ctx, operator, other.skillId).cooldownFrames;
+      const cd = skillCosts(ctx, operator, other.skillId, frame).cooldownFrames;
       if (cd > 0) out[other.skillId] = Math.max(out[other.skillId] ?? 0, cooldownEnd(ctx, buffs, operator, other, frame, cd));
     }
   }
@@ -2398,16 +2416,16 @@ function endCurrentSkill(advanced: TimelineState, operator: string, frame: numbe
 function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: string, skillId: string, frame: number, followUp: boolean): { state: TimelineState; events: BattleEvent[]; origin: Origin } {
   const skill = kitSkill(ctx, operator, skillId);
   // Starting a skill ends the operator's current one, unless it runs beside it (KitSkill.beside).
-  const beside = skill.beside !== undefined && decide(skill.beside, evalContext(ctx.data, ctx.builds.get(operator) as Build, ctx.panels.get(operator) as StatPanel, skillId, situationAt(ctx, operator, advanced, frame)));
+  const beside = skill.beside !== undefined && decide(skill.beside, evalContext(ctx.data, ctx.builds.get(operator) as Build, panelAt(ctx, operator, frame), skillId, situationAt(ctx, operator, advanced, frame)));
   const ended = beside ? { state: advanced, events: [] } : endCurrentSkill(advanced, operator, frame);
   const s = rebaseCooldowns(ctx, advanced, ended.state, frame);
   const endsNowEvents = ended.events;
-  const full = skillCosts(ctx, operator, skillId);
+  const full = skillCosts(ctx, operator, skillId, frame);
   // Its SP cost with the caster's cost buffs (attribute 45) as it starts.
   const costs = followUp ? { ...full, spCost: 0, energyCost: 0, cooldownFrames: 0 } : { ...full, spCost: spCostAt(ctx, advanced, operator, full, frame) };
   // Hits that need stacks happen only if the stacks are there at the cast; meeting a consuming requirement uses the stack up.
   const own = s.stacks[operator] ?? {};
-  const panel = ctx.panels.get(operator) as StatPanel;
+  const panel = panelAt(ctx, operator, frame);
   const castSituation: Situation = {
     team: ctx.scenario.team, controlled: s.controlled, stacks: own, buffActive: (id) => s.buffs.some((b) => b.id === id && b.owner === operator && b.cast === undefined && b.appliedAt <= frame && b.expiresAt > frame),
     buffLayers: (id) => s.buffs.filter((b) => b.id === id && b.owner === operator && b.cast === undefined && b.appliedAt <= frame && b.expiresAt > frame).length,
@@ -2640,7 +2658,7 @@ export function startsNow(ctx: TimelineContext, state: TimelineState, action: Ro
   if (action.skill !== "swap" && ctx.builds.has(action.operator)) {
     let costs;
     try {
-      costs = skillCosts(ctx, action.operator, action.skill);
+      costs = skillCosts(ctx, action.operator, action.skill, state.frame);
     } catch {
       return false;
     }
