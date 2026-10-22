@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/scenario.schema.json",
-  "description": "Antal (P5, Fluorescent Roc, Pulser Labs) with Gilberta and Laevatain vs Rhodagn, all ultimates charged; the enemy hits Antal with a Physical attack every 8 s.",
+  "description": "Antal (P5, Fluorescent Roc, Pulser Labs) with Gilberta and Laevatain vs Rhodagn, all ultimates charged; the enemy hits Antal with a Physical attack every 8 s. Antal's first combo waits until 9.23 s (after Gilberta's forced Lift, which it repeats); a Combustion-forming Heat infliction opens his window at 7.6 s, but a combo there hits before Gilberta's combo and loses the Lift (476,293 instead of 486,747).",
   "team": [
     "antal-p5-roc.json",
     "gilberta-usp02.json",
@@ -32,7 +32,7 @@
     { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_ult_attack4" },
     { "operator": "chr_0016_laevat", "skill": "chr_0016_laevat_normal_skill_during_ult" },
     { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_combo_skill" },
-    { "operator": "chr_0023_antal", "skill": "chr_0023_antal_combo_skill" },
+    { "operator": "chr_0023_antal", "skill": "chr_0023_antal_combo_skill", "at": 9.23 },
     { "operator": "chr_0013_aglina", "skill": "chr_0013_aglina_normal_skill", "at": 33 },
     { "operator": "chr_0023_antal", "skill": "chr_0023_antal_combo_skill" },
     { "operator": "chr_0023_antal", "skill": "swap" },
