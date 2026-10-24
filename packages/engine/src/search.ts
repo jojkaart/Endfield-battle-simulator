@@ -10,7 +10,7 @@
 // ranks it by a statistic of their damage, and reports the found rotation's
 // distribution over many more (docs/design.md#rotation-search).
 
-import type { ActiveBuff } from "./buffs.ts";
+import { activeAt, type ActiveBuff } from "./buffs.ts";
 import { EngineError } from "./errors.ts";
 import type { GameData } from "./model.ts";
 import type { CritMode } from "./damage.ts";
@@ -52,7 +52,7 @@ function nextBasics(data: GameData, state: TimelineState, operator: string): str
   const chain = state.chainNext[operator];
   for (const c of chain ? [chain, ...(chain.alternatives ?? [])] : []) if (c.until >= state.frame) out.add(c.skill);
   // What a buff maps the attack input to (KitBuff.basicAttack), while it's active.
-  for (const b of state.buffs) if (b.basicAttack && b.owner === operator && b.cast === undefined && b.appliedAt <= state.frame && b.expiresAt > state.frame) out.add(b.basicAttack);
+  for (const b of state.buffs) if (b.basicAttack && b.owner === operator && b.cast === undefined && activeAt(b, state.frame)) out.add(b.basicAttack);
   for (const s of data.kits.operators[operator]?.skills ?? []) {
     // Basic attacks that start a chain, and finishers (castable only on a Staggered enemy).
     const spec = data.skills[s.skillId]?.timing?.specification;

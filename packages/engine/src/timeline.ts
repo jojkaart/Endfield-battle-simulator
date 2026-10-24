@@ -34,7 +34,7 @@ import { landingFrames, resolveApplication, type EnemyData, type EventSource, ty
 import { effectiveKit } from "./triggers.ts";
 import { allActions, causeMatches, eventMatches, triggerActionAt, triggerSkillId, type BattleEvent, type BuffCategory, type KitTrigger } from "./events.ts";
 import { evaluate, test, valueKeys, type EvalContext, type Predicate, type ValueExpr } from "./expr.ts";
-import { applyBuff, buffAttr, buffModifiers, buffReach, endBuff, endBuffFor, extendBuff, reaches, recordedOf, remainingOf, resolveValue, withBuff, type ActiveBuff, type AttrFilters } from "./buffs.ts";
+import { activeAt, applyBuff, buffAttr, buffEndedEvent, buffEndedEvents, buffModifiers, buffReach, endBuff, endBuffFor, extendBuff, reaches, resolveValue, withBuff, type ActiveBuff, type AttrFilters } from "./buffs.ts";
 import { computeStats, DEFAULT_STAT_OPTIONS, foodOf, skillLevel, skillParam, type StatPanel } from "./stats.ts";
 import { Attr } from "./attributes.ts";
 import { applyToEnemy, ARTS_ELEMENTS, expireStatus, nextTick, NO_STATUS, statusModifiers, tickStatus, type EnemyStatus, type StatusEvent, type StatusTweaks } from "./status.ts";
@@ -1045,7 +1045,7 @@ export interface EnergyGrantOptions {
 }
 
 function gainEnergy(ctx: TimelineContext, st: TimelineState, operator: string, amount: number, frame: number, opts: EnergyGrantOptions = {}): TimelineState {
-  const blocked = (st.energyBlockedUntil[operator] ?? -1) > frame || st.buffs.some((b) => b.blocksEnergy && b.owner === operator && b.appliedAt <= frame && b.expiresAt > frame);
+  const blocked = (st.energyBlockedUntil[operator] ?? -1) > frame || st.buffs.some((b) => b.blocksEnergy && b.owner === operator && activeAt(b, frame));
   if (amount <= 0 || (!opts.ignoreBlock && blocked)) return st;
   const panel = panelAt(ctx, operator, frame);
   const efficiency = opts.ignoreEfficiency ? 1 : attrTotal(ctx, panel, Attr.UltimateSpGainScalar) + buffAttr(st.buffs, operator, frame, Attr.UltimateSpGainScalar, panel.attrs[Attr.UltimateSpGainScalar]);
@@ -1170,7 +1170,7 @@ function dealPoise(ctx: TimelineContext, st: TimelineState, operator: string, va
 
 /** What kit predicates and values see for an operator at a frame. */
 function situationAt(ctx: TimelineContext, operator: string, st: TimelineState, frame: number, consumed?: number): Situation {
-  const active = (b: ActiveBuff) => b.appliedAt <= frame && b.expiresAt > frame;
+  const active = (b: ActiveBuff) => activeAt(b, frame);
   return {
     team: ctx.scenario.team,
     enemy: expireStatus(st.enemy, frame),
@@ -1684,8 +1684,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         if (!r.ended && a.to === "eventSubject") st = { ...st, buffs: r.buffs };
         if (r.ended) {
           st = rebaseCooldowns(ctx, st, { ...st, buffs: r.buffs }, frame);
-          const gameBuff = ctx.kits.get(owner)?.buffs.find((x) => x.id === a.buff)?.gameBuff;
-          events.push({ type: "buffEnded", frame, operator: owner, buff: a.buff, remaining: r.remaining, ...(r.recorded !== undefined ? { recorded: r.recorded } : {}), consumed: true, ...(gameBuff ? { gameBuff } : {}) });
+          events.push(buffEndedEvent(r.gone, frame, true));
         }
         break;
       }
@@ -2063,7 +2062,7 @@ function takeJump(st: TimelineState, j: PendingJump): { state: TimelineState; ev
   const skip = <T extends { readonly frame: number }>(list: readonly T[], ownedBy: (x: T) => boolean): T[] =>
     list.flatMap((x) => (!ownedBy(x) || x.frame <= at ? [x] : x.frame < at + length ? [] : [{ ...x, frame: x.frame - length }]));
   const ending = st.buffs.filter((b) => b.owner === j.operator && b.endsWithCast === j.cast && b.expiresAt > at && b.expiresAt < at + length);
-  const events: BattleEvent[] = [...new Map(ending.map((b) => [b.id, { type: "buffEnded" as const, frame: at, operator: j.operator, buff: b.id, remaining: remainingOf(ending.filter((x) => x.id === b.id), at), ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) }])).values()];
+  const events: BattleEvent[] = buffEndedEvents(ending, at, false);
   return {
     state: {
       ...st,
@@ -2212,7 +2211,8 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
       const ended = st.buffs.filter((b) => ends(b) && b.cast === undefined).filter((b, i, all) => b.maxInstances === undefined || (all.findIndex((x) => x.id === b.id && x.owner === b.owner) === i && !st.buffs.some((x) => x.id === b.id && x.owner === b.owner && x.cast === undefined && (x.expiresAt > at || (x.expiresAt === at && !ends(x))))));
       st = { ...st, buffs: st.buffs.filter((b) => !ends(b)) };
       // Run out: nothing left, but what its cast's jumps took from it.
-      st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: at, operator: b.owner, buff: b.id, remaining: b.skipped ?? 0, ...(b.records ? { recorded: b.records.total } : {}), ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) })), null);
+      // Each instance its own event (layers ending together each end).
+      st = runTriggers(ctx, st, ended.map((b) => buffEndedEvent([b], at, false)), null);
       continue;
     }
     if (due && first(due.frame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
@@ -2365,7 +2365,7 @@ function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
   // What the basic-attack input is at the start (a buff that maps it: KitBuff.basicAttack), judged again where the start moves.
   const mappedAt = (f: number) => {
     if (!ctx.inputBuffs || costs.kind !== "basic" || costs.timing.specification !== 1) return undefined;
-    return advance(ctx, state, f).buffs.find((b) => b.basicAttack !== undefined && b.owner === action.operator && b.cast === undefined && b.appliedAt <= f && b.expiresAt > f)?.basicAttack;
+    return advance(ctx, state, f).buffs.find((b) => b.basicAttack !== undefined && b.owner === action.operator && b.cast === undefined && activeAt(b, f))?.basicAttack;
   };
   let mapped = mappedAt(frame);
   let gate = actionGate(ctx, state, action.operator, action.skill, frame, mapped);
@@ -2557,11 +2557,7 @@ function endCurrentSkill(advanced: TimelineState, operator: string, frame: numbe
     // A buff attached to the cast (consumedScope whileCasting) stops acting on the caster's other hits now.
     buffs: advanced.buffs.filter((b) => !endsNow.includes(b)).map((b) => (b.whileCasting && b.cast === prevCast && b.whileCasting.until > frame ? { ...b, whileCasting: { ...b.whileCasting, until: frame } } : b)),
   };
-  const events: BattleEvent[] = [...new Map(endsNow.map((b) => {
-    const same = endsNow.filter((x) => x.id === b.id);
-    const recorded = recordedOf(same);
-    return [b.id, { type: "buffEnded" as const, frame, operator, buff: b.id, remaining: remainingOf(same, frame), ...(recorded !== undefined ? { recorded } : {}), ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) }];
-  })).values()];
+  const events: BattleEvent[] = buffEndedEvents(endsNow, frame, false);
   return { state, events };
 }
 
@@ -2586,8 +2582,8 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   const own = s.stacks[operator] ?? {};
   const panel = panelAt(ctx, operator, frame);
   const castSituation: Situation = {
-    team: ctx.scenario.team, controlled: s.controlled, stacks: own, buffActive: (id) => s.buffs.some((b) => b.id === id && b.owner === operator && b.cast === undefined && b.appliedAt <= frame && b.expiresAt > frame),
-    buffLayers: (id) => s.buffs.filter((b) => b.id === id && b.owner === operator && b.cast === undefined && b.appliedAt <= frame && b.expiresAt > frame).length,
+    team: ctx.scenario.team, controlled: s.controlled, stacks: own, buffActive: (id) => s.buffs.some((b) => b.id === id && b.owner === operator && b.cast === undefined && activeAt(b, frame)),
+    buffLayers: (id) => s.buffs.filter((b) => b.id === id && b.owner === operator && b.cast === undefined && activeAt(b, frame)).length,
   };
   const castIndex = s.casts.length;
   // Haste (attribute 92, KeywordSpeedUpScalar, default 1, at most 1.3): the cast plays faster (assumed; in-game test 19).
@@ -2671,13 +2667,13 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   if (!followUp) {
     const live = next.link.filter((f) => f > frame);
     // Kit buffs that count as a Link stack (KitBuff.link) for the caster, used up with the combo stacks.
-    const linkBuffs = next.buffs.filter((b) => b.link && b.cast === undefined && reaches(b, operator) && b.appliedAt <= frame && b.expiresAt > frame);
+    const linkBuffs = next.buffs.filter((b) => b.link && b.cast === undefined && reaches(b, operator) && activeAt(b, frame));
     if ((costs.kind === "battle" || costs.kind === "ultimate") && live.length + linkBuffs.length > 0) {
       const n = Math.min(4, live.length + linkBuffs.length);
       linkUsed = n;
       if (linkBuffs.length) {
         next = { ...next, buffs: next.buffs.filter((b) => !linkBuffs.includes(b)) };
-        linkEnded.push(...new Map(linkBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id, remaining: remainingOf([b], frame), consumed: true, ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) }])).values());
+        linkEnded.push(...buffEndedEvents(linkBuffs, frame, true));
       }
       const value = linkValue(costs.kind, n);
       const lastHit = Math.max(frame, ...pending.map((h) => h.frame));
@@ -2687,7 +2683,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   }
   // Buffs this cast consumes (Jade Vessel's, …) now act on its hits only, until its last hit; one attached to the cast
   // (KitBuff.consumedScope whileCasting) also on every hit of the caster until the cast ends (endCurrentSkill cuts it short).
-  const consumedBuffs = next.buffs.filter((b) => b.cast === undefined && b.consumedBy?.includes(costs.kind) && reaches(b, operator) && b.appliedAt <= frame && b.expiresAt > frame);
+  const consumedBuffs = next.buffs.filter((b) => b.cast === undefined && b.consumedBy?.includes(costs.kind) && reaches(b, operator) && activeAt(b, frame));
   if (consumedBuffs.length) {
     const lastHit = Math.max(frame, ...pending.map((h) => h.frame));
     const castEnd = frame + scaled(full.timing.durationFrames);
@@ -2724,7 +2720,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     type: "cast", frame, operator, skillId, kind: costs.kind, finisher: full.timing.specification === 8, controlled: s.controlled === operator, cast: castIndex,
     ...(windowCount !== undefined ? { count: windowCount } : {}), ...(followUp ? { followUp: true } : {}), ...(beside ? { beside: true } : {}),
   };
-  const endedEvents: BattleEvent[] = [...new Map(consumedBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id, remaining: remainingOf([b], frame), consumed: true, ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) }])).values()];
+  const endedEvents: BattleEvent[] = buffEndedEvents(consumedBuffs, frame, true);
   // Buffs the cast used up (Link, consumed ones) may have set a combo's recovery rate.
   const spent = rebaseCooldowns(ctx, { ...cast, buffs: s.buffs }, cast, frame);
   return { state: slowDown(ctx, spent, operator, { ...costs.timing, slowdowns: plannedSlowdowns(costs.timing, planned) }, frame), events: [...endsNowEvents, castEvent, ...endedEvents, ...linkEnded], origin: { operator, kind: costs.kind } };

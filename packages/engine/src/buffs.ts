@@ -9,7 +9,7 @@ import type { Build } from "./build.ts";
 import { evalContext, type Situation } from "./damage.ts";
 import { evaluate, type ValueExpr } from "./expr.ts";
 import { attrFeedsZone, attrModifier, type HitDecoration, type HitKind, type Modifier } from "./effects.ts";
-import type { BuffCategory } from "./events.ts";
+import type { BattleEvent, BuffCategory } from "./events.ts";
 import type { Predicate } from "./expr.ts";
 import { EngineError } from "./errors.ts";
 import type { GameData, KitBuff } from "./model.ts";
@@ -67,6 +67,38 @@ export interface ActiveBuff {
   readonly records?: { readonly rate: number; readonly total: number };
   /** A ticking buff whose tick hits keep an ATK snapshot (KitHit.atkSnapshot): its owner's attacker-side modifiers when it was applied. */
   readonly snapshot?: readonly Modifier[];
+}
+
+/** Whether a buff is active at a frame: applied by then, not yet ended. */
+export function activeAt(b: ActiveBuff, frame: number): boolean {
+  return b.appliedAt <= frame && b.expiresAt > frame;
+}
+
+/** A buff's end, for triggers (BattleEvent buffEnded). */
+export type BuffEndedEvent = Extract<BattleEvent, { readonly type: "buffEnded" }>;
+
+/**
+ * The buffEnded event of instances of one owner's buff that end together at a frame: the longest time one had left
+ * (remainingOf), what they recorded (recordedOf), and `consumed` when an action ended them before they ran out.
+ */
+export function buffEndedEvent(instances: readonly ActiveBuff[], frame: number, consumed: boolean): BuffEndedEvent {
+  const b = instances[0];
+  if (!b) throw new EngineError("a buff's end needs an instance that ends");
+  const recorded = recordedOf(instances);
+  return {
+    type: "buffEnded", frame, operator: b.owner, buff: b.id, remaining: remainingOf(instances, frame),
+    ...(recorded !== undefined ? { recorded } : {}), ...(consumed ? { consumed: true } : {}), ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}),
+  };
+}
+
+/** One buffEnded event per owner and buff among instances that end together at a frame (buffEndedEvent), in order of first appearance. */
+export function buffEndedEvents(instances: readonly ActiveBuff[], frame: number, consumed: boolean): BuffEndedEvent[] {
+  const groups = new Map<string, ActiveBuff[]>();
+  for (const b of instances) {
+    const k = `${b.owner}:${b.id}`;
+    groups.set(k, [...(groups.get(k) ?? []), b]);
+  }
+  return [...groups.values()].map((g) => buffEndedEvent(g, frame, consumed));
 }
 
 /** A buff attribute's hit filters (its KitBuffModifier's), judged by readers of the attribute per landing. */
@@ -203,11 +235,11 @@ export function withBuff(buffs: readonly ActiveBuff[], b: ActiveBuff | null): Ac
 }
 
 /** Ends a buff from an owner: all of it, or its oldest `layers`. Returns the buffs left and whether any ended. */
-export function endBuff(buffs: readonly ActiveBuff[], id: string, owner: string, frame: number, layers?: number): { buffs: ActiveBuff[]; ended: boolean; remaining: number; recorded?: number } {
-  const active = buffs.filter((x) => x.id === id && x.owner === owner && x.cast === undefined && x.appliedAt <= frame && x.expiresAt > frame).sort((x, y) => x.appliedAt - y.appliedAt);
+export function endBuff(buffs: readonly ActiveBuff[], id: string, owner: string, frame: number, layers?: number): { buffs: ActiveBuff[]; ended: boolean; gone: ActiveBuff[]; remaining: number; recorded?: number } {
+  const active = buffs.filter((x) => x.id === id && x.owner === owner && x.cast === undefined && activeAt(x, frame)).sort((x, y) => x.appliedAt - y.appliedAt);
   const gone = [...new Set(layers === undefined ? active : active.slice(0, layers))];
   const recorded = recordedOf(gone);
-  return { buffs: buffs.filter((x) => !gone.includes(x)), ended: gone.length > 0, remaining: remainingOf(gone, frame), ...(recorded !== undefined ? { recorded } : {}) };
+  return { buffs: buffs.filter((x) => !gone.includes(x)), ended: gone.length > 0, gone, remaining: remainingOf(gone, frame), ...(recorded !== undefined ? { recorded } : {}) };
 }
 
 /**
@@ -216,16 +248,16 @@ export function endBuff(buffs: readonly ActiveBuff[], id: string, owner: string,
  * it and keeps the others; an instance that then reaches none of the team
  * ends. `ended`: whether the buff ended altogether (no instance left).
  */
-export function endBuffFor(buffs: readonly ActiveBuff[], id: string, owner: string, frame: number, member: string, team: readonly string[]): { buffs: ActiveBuff[]; ended: boolean; remaining: number; recorded?: number } {
-  const active = (x: ActiveBuff) => x.id === id && x.owner === owner && x.cast === undefined && x.appliedAt <= frame && x.expiresAt > frame;
+export function endBuffFor(buffs: readonly ActiveBuff[], id: string, owner: string, frame: number, member: string, team: readonly string[]): { buffs: ActiveBuff[]; ended: boolean; gone: ActiveBuff[]; remaining: number; recorded?: number } {
+  const active = (x: ActiveBuff) => x.id === id && x.owner === owner && x.cast === undefined && activeAt(x, frame);
   const touched = buffs.filter((x) => active(x) && reaches(x, member));
-  if (touched.length === 0) return { buffs: [...buffs], ended: false, remaining: 0 };
+  if (touched.length === 0) return { buffs: [...buffs], ended: false, gone: [], remaining: 0 };
   const narrowed = new Map(touched.map((x) => [x, { ...x, excluded: [...(x.excluded ?? []), member] }]));
   const gone = touched.filter((x) => team.every((m) => !reaches(narrowed.get(x) as ActiveBuff, m)));
   const out = buffs.flatMap((x) => (gone.includes(x) ? [] : [narrowed.get(x) ?? x]));
   const ended = gone.length > 0 && !out.some(active);
   const recorded = ended ? recordedOf(gone) : undefined;
-  return { buffs: out, ended, remaining: ended ? remainingOf(gone, frame) : 0, ...(recorded !== undefined ? { recorded } : {}) };
+  return { buffs: out, ended, gone: ended ? gone : [], remaining: ended ? remainingOf(gone, frame) : 0, ...(recorded !== undefined ? { recorded } : {}) };
 }
 
 /** The damage some recording buffs recorded, or undefined when none records. */
@@ -244,7 +276,7 @@ export function remainingOf(buffs: readonly ActiveBuff[], frame: number): number
 export function extendBuff(buffs: readonly ActiveBuff[], id: string, owner: string, frame: number, frames: number): ActiveBuff[] | null {
   let found = false;
   const out = buffs.map((x) => {
-    if (x.id !== id || x.owner !== owner || x.cast !== undefined || !(x.appliedAt <= frame && x.expiresAt > frame)) return x;
+    if (x.id !== id || x.owner !== owner || x.cast !== undefined || !activeAt(x, frame)) return x;
     found = true;
     return { ...x, expiresAt: Math.max(frame + 1, x.expiresAt + frames) };
   });
@@ -292,7 +324,7 @@ export function buffModifiers(buffs: readonly ActiveBuff[], operator: string, fr
   const out: Modifier[] = [];
   const strongest = new Map<string, Modifier>();
   for (const b of buffs) {
-    if (!(b.expiresAt > frame && b.appliedAt <= frame && reaches(b, operator))) continue;
+    if (!(activeAt(b, frame) && reaches(b, operator))) continue;
     // …and, attached to the cast (whileCasting), on its caster's other hits while the cast runs.
     if (b.cast !== undefined && b.cast !== cast && !(b.whileCasting && b.whileCasting.operator === operator && frame < b.whileCasting.until)) continue;
     // A buff a cast consumes acts only on that cast's hits: not before it's consumed.
@@ -333,7 +365,7 @@ export function buffAttr(
   };
   for (const b of buffs) {
     const ofCast = landing !== undefined && b.cast !== undefined && b.cast === landing.cast;
-    if (!(b.expiresAt > frame && b.appliedAt <= frame && reaches(b, operator) && ((b.cast === undefined && !b.consumedBy) || ofCast))) continue;
+    if (!(activeAt(b, frame) && reaches(b, operator) && ((b.cast === undefined && !b.consumedBy) || ofCast))) continue;
     for (const a of b.attrs ?? []) {
       if (a.attr !== attr) continue;
       if (landing && a.filters && !landing.accepts(a.filters)) continue;

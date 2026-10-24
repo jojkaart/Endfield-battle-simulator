@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, parseReactionEvent, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, simulateRuns, startsNow, enemyActionsOf, enemyHpAt, nextRandom, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, type TimelineState, wornEquipment } from "@efsim/engine";
+import { activeAt, advance, apply, buffEndedEvent, buffEndedEvents, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, parseReactionEvent, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, simulateRuns, startsNow, enemyActionsOf, enemyHpAt, nextRandom, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, type TimelineState, wornEquipment } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -2051,6 +2051,17 @@ describe("timeline: failures are loud (design principle 7)", () => {
     // An attribute the timeline reads without its default used to be taken as 1 (combo cooldown recovery rate, 93).
     const { 93: _rate, ...defaults } = data.attributeDefaults;
     expect(() => createContext({ ...data, attributeDefaults: defaults }, sc)).toThrow(/attribute 93/);
+  });
+
+  it("a buff's end is one event however it ends: the longest time left, what it recorded, whether an action ended it", () => {
+    const b = { id: "x", owner: op, target: "self" as const, appliedAt: 0, expiresAt: 100, modifiers: [], records: { rate: 1, total: 5 }, gameBuff: "buff_x" };
+    const layers = [b, { ...b, appliedAt: 10, expiresAt: 130, skipped: 4, records: { rate: 1, total: 7 } }, { ...b, id: "y", records: undefined }].map(({ records, ...rest }) => (records ? { ...rest, records } : rest));
+    expect(activeAt(b, 0) && activeAt(b, 99) && !activeAt(b, 100)).toBe(true);
+    expect(buffEndedEvents(layers, 50, true)).toEqual([
+      { type: "buffEnded", frame: 50, operator: op, buff: "x", remaining: 84, recorded: 12, consumed: true, gameBuff: "buff_x" },
+      { type: "buffEnded", frame: 50, operator: op, buff: "y", remaining: 50, gameBuff: "buff_x", consumed: true },
+    ]);
+    expect(buffEndedEvent([b], 100, false)).toEqual({ type: "buffEnded", frame: 100, operator: op, buff: "x", remaining: 0, recorded: 5, gameBuff: "buff_x" });
   });
 
   it("a combo cooldown whose end keeps moving with the rate buffs met on the way is an error, not a guess", () => {
