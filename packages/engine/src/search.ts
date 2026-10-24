@@ -396,6 +396,7 @@ function stateKey(s: TimelineState): string {
     r(s.sp),
     r(s.spReturned),
     s.spPausedUntil,
+    s.spStops,
     Object.entries(s.energy).map(([k, v]) => [k, r(v)]),
     s.energyBlockedUntil,
     s.acting,

@@ -224,8 +224,13 @@ export interface TimelineState {
    * buff of the operator is active.
    */
   readonly comboWindow: Readonly<Record<string, { readonly from: number; readonly until: number; readonly count: number; readonly source?: EventSource; readonly whileBuff?: string }>>;
-  /** Frame until which SP doesn't regenerate. */
+  /** Frame until which SP doesn't regenerate (after a spend: SP.pauseAfterSpendFrames). */
   readonly spPausedUntil: number;
+  /**
+   * Frames [from, until) in which SP doesn't regenerate either: the world's clock stands still (slow-downs, shiftWorld).
+   * Disjoint and in order; those over by the state's frame are dropped as it advances.
+   */
+  readonly spStops: readonly { readonly from: number; readonly until: number }[];
   readonly controlled: string;
   /** Per operator: its current (last) action, which gates its next one (actionGate); `skips`: the jumps it took (actionFrame). */
   readonly acting: Readonly<Record<string, Acting>>;
@@ -353,6 +358,7 @@ function initialState(ctx: TimelineContext): TimelineState {
     energyBlockedUntil: {},
     comboWindow: {},
     spPausedUntil: 0,
+    spStops: [],
     controlled,
     acting: {},
     chainNext: {},
@@ -377,11 +383,30 @@ function initialState(ctx: TimelineContext): TimelineState {
   };
 }
 
-/** SP at a later frame, with regeneration (whole frames, no fractions lost). */
+/** SP at a later frame, with regeneration (whole frames, no fractions lost): from the state's frame, after its pause, outside its stops. */
 function spAt(state: TimelineState, frame: number): number {
-  const from = Math.max(state.frame, state.spPausedUntil);
-  const regen = frame > from ? ((frame - from) * SP.perSecond) / FPS : 0;
-  return Math.min(SP.max, state.sp + regen);
+  return Math.min(SP.max, state.sp + (regenFrames(state, Math.max(state.frame, state.spPausedUntil), frame) * SP.perSecond) / FPS);
+}
+
+/** The frames in [from, to) SP regenerates in: those outside the state's stops (TimelineState.spStops). */
+function regenFrames(state: TimelineState, from: number, to: number): number {
+  if (to <= from) return 0;
+  let n = to - from;
+  for (const p of state.spStops) n -= Math.max(0, Math.min(to, p.until) - Math.max(from, p.from));
+  return n;
+}
+
+/** The frame by which SP has regenerated for `frames` frames from `from` (no earlier than the pause after a spend), skipping the stops. */
+function afterRegen(state: TimelineState, from: number, frames: number): number {
+  let f = Math.max(from, state.spPausedUntil);
+  let left = frames;
+  for (const p of state.spStops) {
+    if (p.until <= f) continue;
+    if (p.from >= f + left) break;
+    left -= Math.max(0, p.from - f);
+    f = p.until;
+  }
+  return f + left;
 }
 
 /** An operator's stacks at the start: the scenario's, else the kit's `initial` (0 when absent), within each stack's maximum. */
@@ -902,10 +927,24 @@ function shiftWorld(st: TimelineState, start: number, n: number): TimelineState 
     comboWindow: Object.fromEntries(Object.entries(st.comboWindow).map(([k, w]) => [k, { ...w, until: later(w.until) }])),
     energyBlockedUntil: Object.fromEntries(Object.entries(st.energyBlockedUntil).map(([k, f]) => [k, later(f)])),
     link: st.link.map(later),
-    // SP doesn't regenerate meanwhile (taken from the current frame: slow-downs start at their cast or soon after).
-    sp: spAt(st, st.frame),
-    spPausedUntil: st.spPausedUntil > start ? st.spPausedUntil + n : start + n,
+    // SP doesn't regenerate meanwhile: it does until `start` (which may be later than the state's frame: a slow-down
+    // some frames into its cast, or one cast by a trigger while an advance runs), then not for `n` frames.
+    spPausedUntil: later(st.spPausedUntil),
+    spStops: stopSp(st.spStops, start, n),
   };
+}
+
+/** SP stops after a slow-down from `start` adds `n` frames: what comes after it, `n` later, and [start, start + n) (merged). */
+function stopSp(stops: TimelineState["spStops"], start: number, n: number): TimelineState["spStops"] {
+  const later = (f: number) => (f > start ? f + n : f);
+  const all = [...stops.map((p) => ({ from: later(p.from), until: later(p.until) })), { from: start, until: start + n }].sort((a, b) => a.from - b.from);
+  const out: { from: number; until: number }[] = [];
+  for (const p of all) {
+    const last = out.at(-1);
+    if (last && p.from <= last.until) last.until = Math.max(last.until, p.until);
+    else out.push({ ...p });
+  }
+  return out;
 }
 
 /**
@@ -2172,6 +2211,7 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
     ...st,
     sp: spAt(st, frame),
     frame,
+    ...(st.spStops.some((p) => p.until <= frame) ? { spStops: st.spStops.filter((p) => p.until > frame) } : {}),
     enemy: expireStatus(st.enemy, frame),
   };
 }
@@ -2282,11 +2322,11 @@ function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
   let spCost = costAt(frame);
   for (let i = 0; i < 4; i++) {
     if (spCost > SP.max) return { error: `${action.skill} costs ${spCost} SP, more than the maximum` };
-    // Wait for SP: regen is linear after any pause.
+    // Wait for SP: regen is linear after the pause, outside the stops.
     const spThen = spAt(state, frame);
     if (spThen >= spCost) break;
     const from = Math.max(frame, state.spPausedUntil);
-    frame = from + Math.ceil(((spCost - spAt(state, from)) * FPS) / SP.perSecond);
+    frame = afterRegen(state, from, Math.ceil(((spCost - spAt(state, from)) * FPS) / SP.perSecond));
     const again = costAt(frame);
     if (again === spCost) break;
     spCost = again;
@@ -2604,7 +2644,8 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   const cast: TimelineState = {
     ...next,
     sp: s.sp - costs.spCost,
-    spPausedUntil: costs.spCost > 0 ? frame + SP.pauseAfterSpendFrames : s.spPausedUntil,
+    // A spend never shortens a pause running longer (one a slow-down lengthened).
+    spPausedUntil: costs.spCost > 0 ? Math.max(s.spPausedUntil, frame + SP.pauseAfterSpendFrames) : s.spPausedUntil,
     acting: beside ? s.acting : { ...s.acting, [operator]: { skill: skillId, frame, cast: castIndex, ...(speed !== 1 ? { speed } : {}), ...(openWindows.length ? { windows: openWindows } : {}) } },
     pendingJumps: beside ? next.pendingJumps : [...next.pendingJumps, ...planned],
     ...(full.timing.specification === 8 ? { stagger: { ...s.stagger, finisherUsed: true } } : {}),
