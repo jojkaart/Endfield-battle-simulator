@@ -1,0 +1,428 @@
+{
+ "equipment suit_agi01": {
+  "digest": "34f02d7a057c16ba"
+ },
+ "equipment suit_atb01": {
+  "digest": "0b9c4b8bad0c3d89"
+ },
+ "equipment suit_atk01": {
+  "digest": "6cf1a3d7c434f63b"
+ },
+ "equipment suit_atk02": {
+  "digest": "ca5b658369dd48df"
+ },
+ "equipment suit_attri01": {
+  "digest": "3a96cc65f78f8344"
+ },
+ "equipment suit_burst01": {
+  "digest": "e167b62383b47f0c"
+ },
+ "equipment suit_combo_cd01": {
+  "digest": "127bc27fca5ae927"
+ },
+ "equipment suit_criti01": {
+  "digest": "3f1e4b6cefb0da74"
+ },
+ "equipment suit_crush_fracture": {
+  "digest": "aea572a00abd7977"
+ },
+ "equipment suit_expend_spell01": {
+  "digest": "ed20584b1d9d7bca"
+ },
+ "equipment suit_fire_natr01": {
+  "digest": "08836ab1c1ce9a86"
+ },
+ "equipment suit_generaltype": {
+  "digest": "c05c14f5875579e3"
+ },
+ "equipment suit_heal01": {
+  "digest": "1345b8d25a6e3a43"
+ },
+ "equipment suit_phy01": {
+  "digest": "0fe07683a3254940"
+ },
+ "equipment suit_poise01": {
+  "digest": "2d7634aab7649e41"
+ },
+ "equipment suit_pulse_cryst01": {
+  "digest": "6f1dc3ec6106c478"
+ },
+ "equipment suit_spellburst": {
+  "digest": "4073fc9ba7b8f0a0"
+ },
+ "equipment suit_str01": {
+  "digest": "7205513979036d5f"
+ },
+ "equipment suit_stragi01": {
+  "digest": "3267843773268c8d"
+ },
+ "equipment suit_usp01": {
+  "digest": "b8afeb58f857f294"
+ },
+ "equipment suit_usp02": {
+  "digest": "b4e9cb2dd429f4de"
+ },
+ "equipment suit_will01": {
+  "digest": "fba96187c509bd28"
+ },
+ "equipment suit_wisd01": {
+  "digest": "8d6db6e577ceeeab"
+ },
+ "equipment suit_wisdwill01": {
+  "digest": "a83e66c0bc2cd2be"
+ },
+ "equipment wpn_claym_0003": {
+  "digest": "0dcd272a9810dcff"
+ },
+ "equipment wpn_claym_0004": {
+  "digest": "14a4c4aebba25922"
+ },
+ "equipment wpn_claym_0006": {
+  "digest": "e8d6814d629d8dce"
+ },
+ "equipment wpn_claym_0007": {
+  "digest": "0de80e4b1f3dd131"
+ },
+ "equipment wpn_claym_0008": {
+  "digest": "64086c1a854b1d2b"
+ },
+ "equipment wpn_claym_0009": {
+  "digest": "56df1a1ccc9c3e28"
+ },
+ "equipment wpn_claym_0010": {
+  "digest": "01b1a9c4623a583b"
+ },
+ "equipment wpn_claym_0011": {
+  "digest": "2988377006b6dfdc"
+ },
+ "equipment wpn_claym_0012": {
+  "digest": "e5d47ab7949e7527"
+ },
+ "equipment wpn_claym_0013": {
+  "digest": "232831e06c81b819"
+ },
+ "equipment wpn_claym_0014": {
+  "digest": "1f97df10f38adf8e"
+ },
+ "equipment wpn_claym_0015": {
+  "digest": "8d19159ca7be1ba9"
+ },
+ "equipment wpn_claym_0016": {
+  "digest": "6e320ca7d7ffb2e6"
+ },
+ "equipment wpn_claym_0017": {
+  "digest": "ba3299b011df901c"
+ },
+ "equipment wpn_claym_0018": {
+  "digest": "c00383372f67179b"
+ },
+ "equipment wpn_claym_0019": {
+  "digest": "6c5b6e1c741ea1c8"
+ },
+ "equipment wpn_funnel_0001": {
+  "digest": "09fb06f525ced54f"
+ },
+ "equipment wpn_funnel_0002": {
+  "digest": "517bafe4e439df20"
+ },
+ "equipment wpn_funnel_0003": {
+  "digest": "ba6919e0bf5118c1"
+ },
+ "equipment wpn_funnel_0004": {
+  "digest": "95d9104d81186c0d"
+ },
+ "equipment wpn_funnel_0005": {
+  "digest": "033c600669c89384"
+ },
+ "equipment wpn_funnel_0006": {
+  "digest": "c9b03e05ab27e970"
+ },
+ "equipment wpn_funnel_0007": {
+  "digest": "e5a8762fe76dca8c"
+ },
+ "equipment wpn_funnel_0008": {
+  "digest": "b45333545b534e53"
+ },
+ "equipment wpn_funnel_0009": {
+  "digest": "4c38775e8ffdb17c"
+ },
+ "equipment wpn_funnel_0010": {
+  "digest": "859bd3ed1eb0f252"
+ },
+ "equipment wpn_funnel_0011": {
+  "digest": "8f6b2eea700e75b6"
+ },
+ "equipment wpn_funnel_0012": {
+  "digest": "f500a57de3e8dc3b"
+ },
+ "equipment wpn_funnel_0013": {
+  "digest": "84212e8ded078d68"
+ },
+ "equipment wpn_funnel_0014": {
+  "digest": "7ba006d52248b0d1"
+ },
+ "equipment wpn_funnel_0015": {
+  "digest": "e288afdb75385fce"
+ },
+ "equipment wpn_funnel_0016": {
+  "digest": "944e162e8b5392a1"
+ },
+ "equipment wpn_funnel_0017": {
+  "digest": "cbbee458d777556b"
+ },
+ "equipment wpn_funnel_0018": {
+  "digest": "af135d7295eb803f"
+ },
+ "equipment wpn_funnel_0019": {
+  "digest": "ca0e1867ee7bf082"
+ },
+ "equipment wpn_funnel_0020": {
+  "digest": "ba53af09246da707"
+ },
+ "equipment wpn_lance_0003": {
+  "digest": "3054bc56d4b8944d"
+ },
+ "equipment wpn_lance_0004": {
+  "digest": "89dd8a3fd006008c"
+ },
+ "equipment wpn_lance_0006": {
+  "digest": "93e2bf9ddc057f12"
+ },
+ "equipment wpn_lance_0007": {
+  "digest": "921fe2cc4d8988fa"
+ },
+ "equipment wpn_lance_0008": {
+  "digest": "a0e44601d4b85632"
+ },
+ "equipment wpn_lance_0009": {
+  "digest": "596e8455b63d9c5b"
+ },
+ "equipment wpn_lance_0010": {
+  "digest": "4e573a83e675ff29"
+ },
+ "equipment wpn_lance_0011": {
+  "digest": "d0d3dfcb2f28aba3"
+ },
+ "equipment wpn_lance_0012": {
+  "digest": "b309e8cb0d48715c"
+ },
+ "equipment wpn_lance_0013": {
+  "digest": "c7c3f5e635945f2e"
+ },
+ "equipment wpn_lance_0014": {
+  "digest": "c6ec349d7943a3dc"
+ },
+ "equipment wpn_lance_0015": {
+  "digest": "74bb17fba9a24cf8"
+ },
+ "equipment wpn_lance_0016": {
+  "digest": "029b451a57d7317e"
+ },
+ "equipment wpn_pistol_0001": {
+  "digest": "a0a6ca5b5237f763"
+ },
+ "equipment wpn_pistol_0002": {
+  "digest": "69a7caa1736f7d31"
+ },
+ "equipment wpn_pistol_0003": {
+  "digest": "4e48a0bce37ff3dd"
+ },
+ "equipment wpn_pistol_0004": {
+  "digest": "5fb69abdf24a42e4"
+ },
+ "equipment wpn_pistol_0005": {
+  "digest": "f6cca979be14c62a"
+ },
+ "equipment wpn_pistol_0006": {
+  "digest": "76ba0b3ec6971105"
+ },
+ "equipment wpn_pistol_0007": {
+  "digest": "7831caeb6f344a34"
+ },
+ "equipment wpn_pistol_0008": {
+  "digest": "f3bd8b393f73efc0"
+ },
+ "equipment wpn_pistol_0009": {
+  "digest": "d3701fc2b339f85e"
+ },
+ "equipment wpn_pistol_0010": {
+  "digest": "306fb66edb57a907"
+ },
+ "equipment wpn_pistol_0011": {
+  "digest": "9e563c296dc9c9fb"
+ },
+ "equipment wpn_pistol_0012": {
+  "digest": "9b34c5423f1edb34"
+ },
+ "equipment wpn_sword_0003": {
+  "digest": "f47076e314c936a7"
+ },
+ "equipment wpn_sword_0005": {
+  "digest": "9a03be5e88fcc02c"
+ },
+ "equipment wpn_sword_0006": {
+  "digest": "e9ce8272a372d3dd"
+ },
+ "equipment wpn_sword_0007": {
+  "digest": "0cfb22f3c637c1d3"
+ },
+ "equipment wpn_sword_0008": {
+  "digest": "29bf9e8ebb2757ac"
+ },
+ "equipment wpn_sword_0009": {
+  "digest": "dc3fb93c7fdca17c"
+ },
+ "equipment wpn_sword_0010": {
+  "digest": "b9397c183864cd88"
+ },
+ "equipment wpn_sword_0011": {
+  "digest": "fc7060367fdd3015"
+ },
+ "equipment wpn_sword_0012": {
+  "digest": "6dedc88b80e773d3"
+ },
+ "equipment wpn_sword_0013": {
+  "digest": "5426542da34c9135"
+ },
+ "equipment wpn_sword_0014": {
+  "digest": "51e075ce3d9dca57"
+ },
+ "equipment wpn_sword_0015": {
+  "digest": "f0fa055543053d76"
+ },
+ "equipment wpn_sword_0016": {
+  "digest": "242cb49eb50daa51"
+ },
+ "equipment wpn_sword_0017": {
+  "digest": "3f88fcc3f36f51ac"
+ },
+ "equipment wpn_sword_0018": {
+  "digest": "b1d7dd177d13cd32"
+ },
+ "equipment wpn_sword_0019": {
+  "digest": "7ceaa259d35bafe5"
+ },
+ "equipment wpn_sword_0020": {
+  "digest": "0ec43381f94bee4c"
+ },
+ "equipment wpn_sword_0021": {
+  "digest": "10f7e92d0a666439"
+ },
+ "equipment wpn_sword_0021_ink": {
+  "digest": "3401f1bbabc3e390"
+ },
+ "equipment wpn_sword_0022": {
+  "digest": "2a38dfc1f3209ef1"
+ },
+ "equipment wpn_sword_0023": {
+  "digest": "3580e22523c2fde2"
+ },
+ "equipment wpn_sword_0024": {
+  "digest": "083aa4870d6a0208"
+ },
+ "equipment wpn_sword_0026": {
+  "digest": "1c247da2683287ad"
+ },
+ "operator chr_0002_endminm": {
+  "digest": "d1cfe5b2ef8442ce"
+ },
+ "operator chr_0003_endminf": {
+  "digest": "bb36d53c7c870439"
+ },
+ "operator chr_0004_pelica": {
+  "digest": "2e38e9f5104c493a"
+ },
+ "operator chr_0005_chen": {
+  "digest": "e787ce2bb2876de3"
+ },
+ "operator chr_0006_wolfgd": {
+  "digest": "d039cd34073f8f98"
+ },
+ "operator chr_0007_ikut": {
+  "digest": "c5cd01d3cbc03762"
+ },
+ "operator chr_0009_azrila": {
+  "digest": "c7c3368928efc1d0"
+ },
+ "operator chr_0011_seraph": {
+  "digest": "27c420cfe26ff23d"
+ },
+ "operator chr_0012_avywen": {
+  "digest": "9de7cd5ff2e9d452"
+ },
+ "operator chr_0013_aglina": {
+  "digest": "4a9c8a1dc0701146"
+ },
+ "operator chr_0014_aurora": {
+  "digest": "0479f69de7a9f572"
+ },
+ "operator chr_0015_lifeng": {
+  "digest": "5596a45233c4bdf2"
+ },
+ "operator chr_0016_laevat": {
+  "digest": "50b2b3afc4c7ab7c"
+ },
+ "operator chr_0017_yvonne": {
+  "digest": "cc73ea7d048e6260"
+ },
+ "operator chr_0018_dapan": {
+  "digest": "29ff654277e4292a"
+ },
+ "operator chr_0019_karin": {
+  "digest": "1cfb8942d3fa8083"
+ },
+ "operator chr_0020_meurs": {
+  "digest": "c3ffea864fe8df73"
+ },
+ "operator chr_0021_whiten": {
+  "digest": "c4b991aaee175484"
+ },
+ "operator chr_0022_bounda": {
+  "digest": "6b0283502ec67184"
+ },
+ "operator chr_0023_antal": {
+  "digest": "ddada4f912a66cdb"
+ },
+ "operator chr_0024_deepfin": {
+  "digest": "680a1424d7ce4bd0"
+ },
+ "operator chr_0025_ardelia": {
+  "digest": "4090cecaa42335c4"
+ },
+ "operator chr_0026_lastrite": {
+  "digest": "73f7387f6ee8cebe"
+ },
+ "operator chr_0027_tangtang": {
+  "digest": "6ca088abf1034f17"
+ },
+ "operator chr_0028_wulfa": {
+  "digest": "10178717d16658ff"
+ },
+ "operator chr_0029_pograni": {
+  "digest": "f916846a449fb0ef"
+ },
+ "operator chr_0030_zhuangfy": {
+  "digest": "245db0f60a91ab62"
+ },
+ "operator chr_0031_mifu": {
+  "digest": "aa846c149eea2645"
+ },
+ "operator chr_0032_lizhiyan": {
+  "digest": "8696d192eec43236"
+ },
+ "operator chr_0033_camille": {
+  "digest": "145f7dfcb6b1ea1f"
+ },
+ "operator chr_0034_typhoea": {
+  "digest": "ec7c4d4eba2aba18"
+ },
+ "operator chr_0035_liino": {
+  "digest": "d0cc89b08f01b448"
+ },
+ "operator chr_0036_jsspsi": {
+  "digest": "93c4dbb79a8bb9b0"
+ },
+ "operator chr_0038_purrche": {
+  "digest": "27f627e4b2f37683"
+ }
+}
