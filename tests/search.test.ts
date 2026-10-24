@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   FPS,
+  advance,
   apply,
   candidateActions,
   createContext,
@@ -16,8 +17,10 @@ import {
   searchRotation,
   simulate,
   simulateRuns,
+  stateKey,
   type Build,
   type Candidate,
+  type RotationAction,
   type TimelineContext,
   type TimelineScenario,
   type TimelineState,
@@ -119,6 +122,26 @@ describe("rotation search", () => {
     // Memoised or not, a battle comes out the same.
     expect(memoAdvance(() => simulate(data, example)).total).toBe(simulate(data, example).total);
   });
+
+  it("merges only states that are equal in everything that comes next (stateKey)", () => {
+    const ctx = createContext(data, { ...example, rotation: [] });
+    const s = advance(ctx, apply(ctx, init(ctx), handWritten[0] as RotationAction), 30);
+    const buff = { id: "test", owner: s.controlled, target: "self" as const, appliedAt: 0, expiresAt: 300, modifiers: [] };
+    const differ = (a: TimelineState, b: TimelineState) => expect(stateKey(a)).not.toBe(stateKey(b));
+    // What the key sampled by hand before left these out: a buff's layers and when they were applied, the enemy's stagger
+    // and freeze, a pending hit's snapshot, a delayed action's event.
+    differ({ ...s, buffs: [buff] }, { ...s, buffs: [buff, buff] });
+    differ({ ...s, buffs: [buff] }, { ...s, buffs: [{ ...buff, appliedAt: 10 }] });
+    differ(s, { ...s, stagger: { ...s.stagger, poise: s.stagger.poise - 1 } });
+    differ(s, { ...s, enemyFrozenUntil: 99 });
+    const hit = { frame: 99, operator: s.controlled, skillId: "x", hitId: "y", sp: 0 };
+    differ({ ...s, pending: [hit] }, { ...s, pending: [{ ...hit, snapshot: [{ zone: "atk" as const, value: 0.1, source: "test" }] }] });
+    // The order a path built a record in doesn't matter; Infinity isn't null.
+    expect(stateKey({ ...s, readyAt: { a: 1, b: 2 } })).toBe(stateKey({ ...s, readyAt: { b: 2, a: 1 } }));
+    const { id, ...rest } = buff;
+    expect(stateKey({ ...s, buffs: [buff] })).toBe(stateKey({ ...s, buffs: [{ ...rest, id }] }));
+    differ({ ...s, buffs: [{ ...buff, expiresAt: Infinity }] }, { ...s, buffs: [{ ...buff, expiresAt: Number.NaN }] });
+  });
 });
 
 describe("rotation search with random outcomes", () => {
@@ -184,5 +207,10 @@ describe("rotation search with random outcomes", () => {
   });
 });
 
-/** The two-operator search's total at beam 6, pinned with the beam-8 solo one (216,663.530 before dives; its rotation now has 19). */
-const DUO_TOTAL = 269470.9311;
+/**
+ * The two-operator search's total at beam 6, pinned with the beam-8 solo one (216,663.530 before dives; its rotation
+ * now has 19). Re-pinned 2026-10-24 when stateKey became exhaustive (269,470.931 → 264,948.959, 685 → 680 states):
+ * the old key left out a pending hit's controlledAtCast, so it merged states whose hits judge `controlled`
+ * differently; the beam keeps other states now (the old rotation is still legal; the beam doesn't reach it).
+ */
+const DUO_TOTAL = 264948.9594;
