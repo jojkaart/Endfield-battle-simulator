@@ -2036,4 +2036,21 @@ describe("timeline: failures are loud (design principle 7)", () => {
     expect(earliestStart(ctx, s, { operator: op, skill: "no_such_skill" })).toHaveProperty("error");
     expect(startsNow(ctx, s, { operator: op, skill: "no_such_skill" })).toBe(false);
   });
+
+  it("a combo cooldown whose end keeps moving with the rate buffs met on the way is an error, not a guess", () => {
+    // A ticker applies a 10-frame recovery rate 0 (attribute 93 −1) every 10 frames: each look further on finds the
+    // cooldown stopped longer, so its end never settles.
+    const kit = data.kits.operators[op] as OperatorKit;
+    const slow: KitBuff = { id: "test_slow", label: "slow", target: "self", duration: 1 / 3, modifiers: [{ attr: 93, value: -1 }] };
+    const ticker: KitBuff = { id: "test_ticker", label: "ticker", target: "self", every: 1 / 3, modifiers: [] };
+    const triggers: KitTrigger[] = [
+      { id: "test_start", on: { event: "fightStart" }, by: "self", do: [{ kind: "buff", buff: "test_ticker" }] },
+      { id: "test_tick", on: { event: "buffTick", buff: "test_ticker" }, by: "self", do: [{ kind: "buff", buff: "test_slow" }] },
+    ];
+    const d: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, buffs: [...kit.buffs, slow, ticker], triggers: [...kit.triggers, ...triggers] } } } };
+    const ctx = createContext(d, scenario([]));
+    const s0 = init(ctx);
+    const s = { ...s0, readyAt: { ...s0.readyAt, [L + "combo_skill"]: 30 } };
+    expect(earliestStart(ctx, s, { operator: op, skill: L + "combo_skill" })).toEqual({ error: expect.stringMatching(/cooldown's end keeps moving/) });
+  });
 });

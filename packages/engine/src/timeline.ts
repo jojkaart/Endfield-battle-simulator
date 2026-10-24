@@ -243,9 +243,11 @@ export interface TimelineState {
   /** Per skill ID: frame from which it's off cooldown (a combo cooldown run at a recovery rate may end within a frame: ready from the next whole one). */
   readonly readyAt: Readonly<Record<string, number>>;
   readonly pending: readonly PendingHit[];
-  /** Trigger actions due later (KitTrigger.delay), with the event that started them. */
-  /** Delayed trigger actions; `cast`: the cast they belong to (a cast trigger's), dropped when it's cut short. */
-  /** `launchAt`: a detached cast trigger's launch (KitTrigger.launch); the cast's own until then. */
+  /**
+   * Trigger actions due later (KitTrigger.delay), with the event that started them. `cast`: the cast they belong to
+   * (a cast trigger's), dropped when it's cut short; `launchAt`: a detached cast trigger's launch (KitTrigger.launch),
+   * the cast's own until then.
+   */
   readonly pendingActions: readonly { readonly frame: number; readonly owner: string; readonly trigger: string; readonly event: BattleEvent; readonly origin: Origin | null; readonly cast?: { readonly operator: string; readonly index: number }; readonly awaited?: boolean; readonly launchAt?: number; readonly afterHits?: boolean }[];
   /** Jumps and ends on casts' timelines still to come (SkillTiming.jumps and ends; a conditional jump only if the kit's condition held at the cast). */
   readonly pendingJumps: readonly PendingJump[];
@@ -261,8 +263,10 @@ export interface TimelineState {
   readonly stagger: { readonly poise: number; readonly until: number | null; readonly finisherUsed: boolean };
   /** Global time slow-downs (an ultimate's time stop, a combo's slow-down) still running or to come: per frame from `start`, all but `exempt` (the caster). */
   readonly slowdowns: readonly { readonly start: number; readonly scales: readonly number[]; readonly exempt: string }[];
-  /** Ultimate energy given later than the cast (a battle skill's team energy at its data frames, KitSkill.teamEnergy); `if` judged for the caster at the frame. */
-  /** Energy grants still to come; `cast`: the cast that grants it (a skill's team energy at its data frame), dropped if it's cut short first. */
+  /**
+   * Ultimate energy given later than the cast (a battle skill's team energy at its data frames, KitSkill.teamEnergy):
+   * `cast`, the cast that grants it, dropped if it's cut short first; `if` judged for the caster at the frame.
+   */
   readonly pendingEnergy: readonly { readonly frame: number; readonly operator: string; readonly amount: number; readonly cast?: { readonly operator: string; readonly index: number }; readonly if?: Predicate; readonly detached?: boolean }[];
   readonly enemy: EnemyStatus;
   /** Timed buffs and debuffs from skills. */
@@ -641,14 +645,6 @@ function timingOf(ctx: TimelineContext, skillId: string): SkillTiming {
   return t;
 }
 
-/**
- * The earliest frame from `base` at which an operator may start a skill,
- * given its current action: once that's over, inside a window of it that
- * lists the skill, at once if it has no windows or the skill outranks it,
- * else from its exclusive frame. A basic-attack chain step only while the
- * chain points at it; another basic attack not while the chain points
- * elsewhere (the input would resolve to the step).
- */
 /** An operator's current action. */
 export interface Acting {
   readonly skill: string;
@@ -737,7 +733,16 @@ export function exclusiveUntil(ctx: TimelineContext, state: TimelineState, opera
   return Math.max(state.frame, Math.min(actionFrame(cur, ct.durationFrames), actionFrame(cur, exclusiveOf(ct, cur))));
 }
 
-/** `mapped`: what the operator's basic-attack input is at the start (KitBuff.basicAttack), if a buff maps it. */
+/**
+ * The earliest frame from `base` at which an operator may start a skill,
+ * given its current action: once that's over, inside a window of it that
+ * lists the skill, at once if it has no windows or the skill outranks it,
+ * else from its exclusive frame. A basic-attack chain step only while the
+ * chain points at it; another basic attack not while the chain points
+ * elsewhere (the input would resolve to the step). `mapped`: what the
+ * operator's basic-attack input is at the start (KitBuff.basicAttack), if
+ * a buff maps it.
+ */
 function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, skillId: string, base: number, mapped?: string): { frame: number } | { error: string } {
   const next = kitSkill(ctx, operator, skillId);
   const nt = timingOf(ctx, skillId);
@@ -778,8 +783,10 @@ function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, s
   return { frame };
 }
 
-/** The chain's next step after a cast: a basic attack's window that lists a basic attack; kept for a moment by skills that don't interrupt the chain, cleared by others. */
-/** `openWindows`: its conditional windows open at this cast (Acting.windows). */
+/**
+ * The chain's next step after a cast: a basic attack's window that lists a basic attack; kept for a moment by skills
+ * that don't interrupt the chain, cleared by others. `openWindows`: its conditional windows open at this cast (Acting.windows).
+ */
 function chainAfter(ctx: TimelineContext, st: TimelineState, operator: string, skill: KitSkill, frame: number, speed = 1, openWindows: readonly number[] = []): TimelineState["chainNext"] {
   const t = timingOf(ctx, skill.skillId);
   const at = (x: number) => frame + Math.round(x / speed);
@@ -1350,8 +1357,10 @@ function addHits(st: TimelineState, landed: readonly LandedHit[]): TimelineState
   return { ...st, buffs, hits: [...st.hits, ...landed] };
 }
 
-/** Status events: recorded, and the damage they deal (bursts, reactions, ticks) lands. */
-/** `enemy` is the state their damage sees: after a hit's own applications, before a tick's change. */
+/**
+ * Status events: recorded, and the damage they deal (bursts, reactions, ticks) lands. `enemy` is the state their
+ * damage sees: after a hit's own applications, before a tick's change.
+ */
 function recordStatus(ctx: TimelineContext, st: TimelineState, events: readonly StatusEvent[], enemy: EnemyStatus): TimelineState {
   const records: ReactionRecord[] = [];
   const landed: LandedHit[] = [];
@@ -1528,9 +1537,9 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
   return st;
 }
 
-/** Does what a trigger says, as its owner, at the event's frame. Returns the events it caused. */
 /**
- * A trigger's actions, in order. `atEvent`: the state at its event, before
+ * Does what a trigger says, as its owner, at the event's frame: its actions, in order; returns the events they
+ * caused. `atEvent`: the state at its event, before
  * any trigger on it acted: a buff takes its values from it, as the
  * trigger's `if` does (Grizzled Edge sees the crystals its owner's Crush
  * consumes); delayed actions read the state when they run.
@@ -1904,11 +1913,12 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   let roll: number | undefined;
   if (ctx.scenario.options.crit === "rolled" && hit.fixed === undefined) ({ value: roll, state: st } = draw(ctx, st, "crit"));
   const decorations = hitDecorations(kitHit, finisher);
-  const result = hit.fixed !== undefined ? fixedHit(skill.skillId, kitHit, hit.fixed) : computeHit(ctx.data, build, panel, ctx.scenario.target, skill, kitHit, {
-    ...damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast, hit.snapshot),
+  const options = hit.fixed !== undefined ? null : damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast, hit.snapshot);
+  const result = !options ? fixedHit(skill.skillId, kitHit, hit.fixed as number) : computeHit(ctx.data, build, panel, ctx.scenario.target, skill, kitHit, {
+    ...options,
     decorations,
     ...(roll !== undefined ? { critRoll: roll } : {}),
-    ...(finisher ? { modifiers: [...damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast, hit.snapshot).modifiers, { zone: "multiplicative" as const, value: enemyAttr(ctx, Attr.BreakingAttackDamageTakenScalar) - 1, source: "Finisher" }] } : {}),
+    ...(finisher ? { modifiers: [...options.modifiers, { zone: "multiplicative" as const, value: enemyAttr(ctx, Attr.BreakingAttackDamageTakenScalar) - 1, source: "Finisher" }] } : {}),
     situation: { ...before, consumed },
     // Its modifiers' conditions see the enemy and the buffs as the damage is computed: after the hit's own applications and
     // beforeDamage buffs (whose modifiers count for it: Yvonne's 10th layer gives its Crit DMG to the shot that adds it).
@@ -2299,12 +2309,15 @@ function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
   frame = Math.max(frame, Math.ceil(state.readyAt[action.skill] ?? 0));
   // A combo cooldown at a recovery rate (attribute 93) follows the rate buffs, which may change before it ends: judged on the state then.
   if (ctx.comboRates && costs.kind === "combo") {
-    for (let i = 0; i < 8; i++) {
+    let settled = false;
+    for (let i = 0; i < 8 && !settled; i++) {
       const r = Math.max(state.frame, action.at ?? 0, Math.ceil(advance(ctx, state, frame).readyAt[action.skill] ?? 0));
-      if (r === frame) break;
+      settled = r === frame;
       frame = r;
     }
     if (!Number.isFinite(frame)) return { error: `${action.skill}: its cooldown doesn't end (recovery rate 0)` };
+    // As the SP and input-mapping loops below: one that doesn't settle is reported, not taken as it stands.
+    if (!settled) return { error: `${action.skill}: its cooldown's end keeps moving with the recovery-rate buffs on the way (frame ${frame} after 8 rounds)` };
   }
   // Without a time, an action waits for the current skill's own hits (interrupting would cancel them); with one, it may
   // interrupt. A skill that runs beside the current one cancels nothing, so it doesn't wait.
