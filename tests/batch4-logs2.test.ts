@@ -54,14 +54,17 @@ describe("unquantified buffs valued from the kit buff that stands for them", () 
     expect(assumed(v[1])).toEqual(["unquantified buff_test_layers from kit t_layers ×2"]);
   });
 
-  it("leaves a hit unquantified when no reading fits, when no kit buff stands for it, or when the hit lists the buff with values", () => {
+  it("makes a hit no reading fits a mismatch when a kit values the buff or the hit lists it with values, and unvalued when no kit values it", () => {
+    // Until 2026-10-24 all three were "unquantified" (under unmodelled effects), which a verified fixture allows.
     const v = checkLog(g, fixture([logHit(1000, "k", damage(g, h, atk(5)), { unquantified: unq })]));
-    expect(v[0]?.kind).toBe("unquantified");
+    expect(v[0]?.kind).toBe("mismatch");
     const other = [{ buff: "buff_test_other", since: 0, source: op }];
     // (The log names buff_test_layers elsewhere: else the kit buff counts as one the log never lists, tried on every hit.)
-    expect(checkLog(g, fixture([logHit(1000, "k", damage(g, h, atk(1)), { unquantified: other }), logHit(2000, "k", damage(g, h), { unquantified: unq })]))[0]?.kind).toBe("unquantified");
+    const unvalued = checkLog(g, fixture([logHit(1000, "k", damage(g, h, atk(1)), { unquantified: other }), logHit(2000, "k", damage(g, h), { unquantified: unq })]))[0];
+    expect(unvalued?.kind).toBe("unvalued");
+    expect(unvalued?.kind === "unvalued" && unvalued.buffs).toEqual(["buff_test_other"]);
     const listed: LogEffect = { buff: "buff_test_layers", zone: "damageBonus", element: null, value: 0.01 };
-    expect(checkLog(g, fixture([logHit(1000, "k", damage(g, h, atk(1)), { unquantified: unq, effects: [listed] })]))[0]?.kind).toBe("unquantified");
+    expect(checkLog(g, fixture([logHit(1000, "k", damage(g, h, atk(1)), { unquantified: unq, effects: [listed] })]))[0]?.kind).toBe("mismatch");
   });
 
   it("4e5e: Lustrous Carmine's ATK (once hand-annotated as unquantified), valued from Camille's weapon kit, matches all 85 of her hits", () => {

@@ -17,5 +17,5 @@
     "noEmit": true,
     "skipLibCheck": true
   },
-  "include": ["packages/*/src", "packages/*/test", "tests", "vitest.config.ts", "eslint.config.js"]
+  "include": ["packages/*/src", "packages/*/test", "tests", "vitest.config.ts", "vitest.logs.config.ts", "eslint.config.js"]
 }

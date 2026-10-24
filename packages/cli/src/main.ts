@@ -40,7 +40,9 @@ const USAGE = `Usage:
                 [--detail file]           Use an already downloaded /api/battles/<id> response
                 [--note text]             Extra provenance note (repeatable)
   efsim zmdlogs check <fixture.json>      Predict every logged hit and compare (kit buffs from the
-                                          replay of the logged casts; where it and the log disagree)
+                                          replay of the logged casts; where it and the log disagree;
+                                          whether it verifies the fixture, matches per operator as
+                                          plain / assumed / log-listing fallback, and their strength)
                 [--log-buffs]             Kit buffs as the log lists them instead (the check before 2026-10-22)
   efsim zmdlogs reactions <fixture.json>  Replay the kits' inflictions; compare bursts and reactions
   efsim zmdlogs scales <fixture> <op>     Multiplier each logged hit of an operator implies

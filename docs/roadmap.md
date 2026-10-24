@@ -61,8 +61,20 @@ the six favourites.
    per operator (a scenario option listing foods to try); the importer
    could set a food the log lists (by its buffs and values); in-game test 98
    (DEF +x%'s formula item 1, which DEF-reading kits refuse until then).
-5. **Corrosion model:** time dilation, the applier's talents (Arcane), and
-   carry-over on reapplication; in-game test 4.
+   - **A stricter log check** (2026-10-24; design.md, "What a log check
+     verifies"): 4 fixtures verify; d9e5, dbae and 0eef went back to
+     pending. Next: move dbae and 0eef back by making the replay fit
+     (their fallback-only operators: the replay's
+     `buff_wpn_funnel_0005_atk_up`, `buff_wpn_funnel_0016_will_atk`,
+     `buff_wpn_lance_0014_damageup`); tighten the negative control's 4%
+     bound by having the replay decide what is now a free count (layers
+     of a buff listed once: 4e5e's `buff_equipsuit_critsuitatk_01`;
+     Corrosion levels); see whether matches that are mostly assumed
+     (Wulfgard 158 of 161 in 4e5e) hold up hit by hit.
+5. **Corrosion model:** time dilation, the applier's talents (Arcane: the
+   log check doesn't apply her cap raise, the timeline does; with it Si's
+   two Corrosion matches in bdf2 no longer fit), and carry-over on
+   reapplication; in-game test 4.
 6. **Still open from setup:** a `Result` schema, `NOTICE` when MIT code is
    first copied, the tie-break order.
 

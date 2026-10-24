@@ -16,11 +16,13 @@ import {
   kitBuffModifiers,
   kitHitEntries,
   linkValue,
+  readingDoesNotApply,
   test,
   triggerSkillId,
   type Build,
   computeStats,
   corrosionModifier,
+  corrosionShred,
   DEFAULT_STAT_OPTIONS,
   foodOf,
   parseReactionEvent,
@@ -42,12 +44,116 @@ import { assumeValues, valueAssumptions, valueReads } from "./hitvalues.ts";
 import { distinctCasts, placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
 import { disagreementRuns, REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK, replayedHits, replayKitBuffs, type BuffReplay, type DisagreementRun, type ReplayedHits } from "./buffreplay.ts";
 
+/** What a reading of a logged hit takes for granted that the log doesn't say. */
+export type AssumptionKind =
+  /** The log couldn't tell whether the hit crit. */
+  | "crit"
+  | "noCrit"
+  /** Which buffs starting or ending at the hit applied (boundarySubsets). */
+  | "boundary"
+  /** Corrosion's level (the log lists Corrosion without a value). */
+  | "corrosion"
+  /** A status hit's stacks. */
+  | "stacks"
+  /** Which of several kit hits the logged event is. */
+  | "kitHit"
+  /** A hit's situational parts (KitHit.if, extraScale) taken as met. */
+  | "situational"
+  /** The count of the event behind a value (eventCount). */
+  | "eventCount"
+  /** What a value reads that only a fight knows (hitvalues.ts). */
+  | "value"
+  /** Buffs the hit's cast consumes, which the log doesn't list (unloggedCastBuffs). */
+  | "unloggedCastBuff"
+  /** The hitter's own kit buffs, or their crit parts, which the log doesn't list (unloggedOwnBuffs). */
+  | "unloggedOwnBuff"
+  /** Link stacks on the cast (linkVariants). */
+  | "link"
+  /** An enemy-side team aura the log doesn't list (unloggedEnemyAuras). */
+  | "enemyAura"
+  /** Layers of a layered buff the log lists once (layerVariants). */
+  | "layers"
+  /** An unquantified buff valued from a kit (unquantifiedFromKit). */
+  | "unquantifiedFromKit"
+  /** The log's own buff listing where the kit-buff replay's reading fits nothing (LOG_LISTING). */
+  | "logListing";
+
+export interface Assumption {
+  readonly kind: AssumptionKind;
+  /** How the report names it. */
+  readonly label: string;
+  /** The buffs (or the kit hit) it is about, if any. */
+  readonly buffs?: readonly string[];
+  /** Its count (a level, layers, stacks, an event count, Link stacks), if any. */
+  readonly n?: number;
+}
+
+/** How many readings of a hit gave a damage value, and how many of them were within ±1 of the log. */
+export interface Readings {
+  readonly tried: number;
+  readonly matching: number;
+}
+
+/** A match's class: no assumption, assumptions, or only with the log's buff listing (the replay's reading fitting nothing). */
+export type MatchClass = "plain" | "assumed" | "fallback";
+
+/** Why a covered hit can't be judged (an unquantified verdict). */
+export type UnquantifiedReason =
+  /**
+   * Under Corrosion, whose level no reading fits but whose least and most shred bracket the damage (corrosionBounds:
+   * its ramp isn't modelled for every log yet).
+   */
+  | "corrosion"
+  /** The fight's killing blow: its uncapped value is the log's overkill estimate. */
+  | "killingBlow"
+  /** Fixed DMG a fight computes. */
+  | "fixedDamage"
+  /** A status hit of an operator without a kit. */
+  | "noKit";
+
 export type HitVerdict =
-  | { readonly kind: "match"; readonly hit: LogHit; readonly predicted: number; readonly assumed: readonly string[] }
-  | { readonly kind: "mismatch"; readonly hit: LogHit; readonly predicted: readonly number[]; readonly ratio: number }
+  | {
+      readonly kind: "match";
+      readonly hit: LogHit;
+      readonly predicted: number;
+      /** The assumptions' labels (as the report shows them). */
+      readonly assumed: readonly string[];
+      readonly assumptions: readonly Assumption[];
+      readonly class: MatchClass;
+      readonly readings: Readings;
+    }
+  | { readonly kind: "mismatch"; readonly hit: LogHit; readonly predicted: readonly number[]; readonly ratio: number; readonly readings: Readings }
   | { readonly kind: "uncovered"; readonly hit: LogHit }
-  /** A covered hit under an effect the log can't quantify and the engine doesn't model yet. */
-  | { readonly kind: "unquantified"; readonly hit: LogHit; readonly predicted: number };
+  /** A covered hit under an effect the log can't quantify and the engine doesn't model yet (`reason`); not a mismatch. */
+  | { readonly kind: "unquantified"; readonly hit: LogHit; readonly predicted: number; readonly reason: UnquantifiedReason; readonly readings: Readings }
+  /**
+   * A covered hit no reading fits, under buffs the log lists without a value
+   * (not Corrosion) that no kit values (unquantifiedFromKit): the prediction
+   * lacks them, so the hit is neither verified nor a mismatch the kits are
+   * to blame for. A verified fixture has none (docs/design.md, "What a log
+   * check verifies").
+   */
+  | { readonly kind: "unvalued"; readonly hit: LogHit; readonly predicted: number; readonly buffs: readonly string[]; readonly readings: Readings };
+
+/** Every verdict kind, matches split by class: the counts a log check reports and its snapshot pins. */
+export type VerdictCount = MatchClass | Exclude<HitVerdict["kind"], "match">;
+export const VERDICT_COUNTS: readonly VerdictCount[] = ["plain", "assumed", "fallback", "mismatch", "unvalued", "unquantified", "uncovered"];
+
+/** A verdict's count: a match's class, else its kind. */
+export function verdictCount(v: HitVerdict): VerdictCount {
+  return v.kind === "match" ? v.class : v.kind;
+}
+
+/** Per operator (in team order), how many of its hits got each verdict count. */
+export function verdictCounts(fx: LogFixture, verdicts: readonly HitVerdict[]): Record<string, Record<VerdictCount, number>> {
+  const out: Record<string, Record<VerdictCount, number>> = {};
+  for (const b of fx.team) out[b.operator] = Object.fromEntries(VERDICT_COUNTS.map((k) => [k, 0])) as Record<VerdictCount, number>;
+  for (const v of verdicts) {
+    const o = (out[v.hit.operator] ??= Object.fromEntries(VERDICT_COUNTS.map((k) => [k, 0])) as Record<VerdictCount, number>);
+    o[verdictCount(v)]++;
+  }
+  return out;
+}
 
 const skillTypeCache = new Map<string, SkillType | null>();
 
@@ -152,8 +258,8 @@ export function kitStackCaps(data: GameData, panels: ReadonlyMap<string, { reado
           const b = applyBuff(data, build, panel, source, def, 0);
           const cap = b?.maxLayers ?? (b?.maxInstances ? b.maxInstances : undefined);
           if (cap !== undefined) return cap;
-        } catch {
-          // its values need a fight
+        } catch (e) {
+          if (!readingDoesNotApply(e)) throw e; // its values need a fight
         }
       }
     }
@@ -205,7 +311,7 @@ function findHits(data: GameData, build: Build, event: string): [{ skillId: stri
   return kitHitEntries(effectiveKit(data, build)).filter((e) => !e.hit.poiseOnly && e.hit.events.includes(event)).map((e) => [{ skillId: e.skillId }, e.hit]);
 }
 
-/** Above this many boundary buffs (64 subsets), only none or all are tried. A burst that triggers its wearer's weapon and gear-set buffs has six (fixtures/zmdlogs-dbaee23b801d.json t=8391). */
+/** Above this many boundary buffs (64 subsets), only none or all are tried. A burst that triggers its wearer's weapon and gear-set buffs has six (fixtures/pending/zmdlogs-dbaee23b801d.json t=8391). */
 const MAX_BOUNDARY_SUBSET = 6;
 
 /** Effects with repeats of the same buff, zone, element and value kept once. */
@@ -309,7 +415,7 @@ function killingBlows(fx: LogFixture): ReadonlySet<LogHit> {
 }
 
 interface Candidate {
-  readonly assumed: readonly string[];
+  readonly assumed: readonly Assumption[];
   /** Logged effects taken as active; they become modifiers per hit category (logModifiers). */
   readonly effects: readonly LogEffect[];
   /** Modelled extras, e.g. Corrosion. */
@@ -327,16 +433,22 @@ function candidates(hit: LogHit, panels: ReadonlyMap<string, { panel: StatPanel 
     const effects = [...hit.effects, ...boundary.effects];
     for (const level of corrosionLevels) {
       const extra: Modifier[] = [];
-      const assumed: string[] = boundary.label ? [boundary.label] : [];
+      const assumed: Assumption[] = boundary.label ? [{ kind: "boundary", label: boundary.label, buffs: [...new Set(boundary.effects.map((e) => e.buff))] }] : [];
       if (corrosion && level > 0) {
         const applierAi = panels.get(corrosion.source)?.panel.attrs[87]?.total ?? 0;
+        // Without the applier's talent cap (corrosionCapScale), which the timeline applies: with it, two of Si's
+        // matches in bdf223db8e49 no longer fit (2026-10-24; a lead, not settled).
         extra.push(corrosionModifier(level, hit.t - corrosion.since, applierAi));
-        assumed.push(`Corrosion level ${level}`);
+        assumed.push({ kind: "corrosion", label: `Corrosion level ${level}`, buffs: [corrosion.buff], n: level });
       }
       for (const crit of hit.crit === null ? [false, true] : [hit.crit]) {
         for (const stacks of stackOptions) {
           out.push({
-            assumed: [...assumed, ...(hit.crit === null ? [crit ? "crit" : "no crit"] : []), ...(stackOptions.length > 1 ? [`${stacks} stack(s)`] : [])],
+            assumed: [
+              ...assumed,
+              ...(hit.crit === null ? [crit ? { kind: "crit" as const, label: "crit" } : { kind: "noCrit" as const, label: "no crit" }] : []),
+              ...(stackOptions.length > 1 ? [{ kind: "stacks" as const, label: `${stacks} stack(s)`, n: stacks }] : []),
+            ],
             effects,
             extra,
             crit,
@@ -350,15 +462,55 @@ function candidates(hit: LogHit, panels: ReadonlyMap<string, { panel: StatPanel 
 }
 
 /**
+ * The most and least resistance Corrosion can shred (corrosionShred): level 1 as applied, and level 4 at its cap (the
+ * applier's talent cap included: corrosionCapScale), at the applier's Arts Intensity.
+ */
+function corrosionRange(data: GameData, panels: ReadonlyMap<string, { readonly build: Build; readonly panel: StatPanel }>, source: string): { low: number; high: number } {
+  const ai = panels.get(source)?.panel.attrs[87]?.total ?? 0;
+  return { low: corrosionShred(1, 0, ai), high: corrosionShred(4, Infinity, ai, corrosionCapScale(data, panels, source)) };
+}
+
+/** How the applier's kit raises Corrosion's cap (OperatorKit.statusTweaks capScale, as the timeline judges it; Arcane's talent 2), 1 without one. */
+export function corrosionCapScale(data: GameData, panels: ReadonlyMap<string, { readonly build: Build; readonly panel: StatPanel }>, source: string): number {
+  const member = panels.get(source);
+  const tweak = member ? data.kits.operators[member.build.operator]?.statusTweaks?.find((t) => t.status === "corrosion") : undefined;
+  if (!member || tweak?.capScale === undefined) return 1;
+  return evaluate(tweak.capScale, evalContext(data, member.build, member.panel, tweak.skill ?? "", {}));
+}
+
+/**
+ * For a hit under Corrosion that no level fits: each reading (boundary buffs, crit, stacks) with the least and the
+ * most shred Corrosion can give (corrosionRange), paired. The log's time may be off for Corrosion's ramp (time
+ * stops), so a hit whose damage lies between a pair's (±1) may be under a level and time the check doesn't find;
+ * one outside every pair can't be Corrosion's doing.
+ */
+function corrosionBounds(data: GameData, hit: LogHit, panels: ReadonlyMap<string, { readonly build: Build; readonly panel: StatPanel }>, stackOptions: readonly number[], repeats: boolean): { low: Candidate; high: Candidate }[] {
+  const corrosion = hit.unquantified.find((u) => isCorrosionBuff(u.buff));
+  if (!corrosion) return [];
+  const range = corrosionRange(data, panels, corrosion.source);
+  const out: { low: Candidate; high: Candidate }[] = [];
+  for (const boundary of boundarySubsets(hit.boundaryEffects, repeats)) {
+    const effects = [...hit.effects, ...boundary.effects];
+    for (const crit of hit.crit === null ? [false, true] : [hit.crit]) {
+      for (const stacks of stackOptions) {
+        const at = (shred: number): Candidate => ({ assumed: [], effects, extra: [{ zone: "ignoreResistance", value: shred, source: "Corrosion bound" }], crit, stacks });
+        out.push({ low: at(range.low), high: at(range.high) });
+      }
+    }
+  }
+  return out;
+}
+
+/**
  * ZMDLogs doesn't log the buffs a cast consumes and then carries on its own
  * hits (KitBuff.consumedBy: Jade Vessel's buff_wpn_claym_0018_normal_skill_comboimbue_atk,
  * Type 50 Yinglung's buff_equipsuit_atk_02_addcombodamage_buff), so for a
  * hit of a kind such buffs act on, every combination of them is tried: each
  * absent or with 1 up to its maximum layers. The first option is none.
  */
-function unloggedCastBuffs(data: GameData, build: Build, panel: StatPanel, kind: SkillType | "none"): { label: string | null; modifiers: Modifier[] }[] {
+function unloggedCastBuffs(data: GameData, build: Build, panel: StatPanel, kind: SkillType | "none"): { label: string | null; buffs: string[]; modifiers: Modifier[] }[] {
   const defs = (effectiveKit(data, build)?.buffs ?? []).filter((b) => kind !== "none" && b.consumedBy?.includes(kind));
-  let out: { label: string | null; modifiers: Modifier[] }[] = [{ label: null, modifiers: [] }];
+  let out: { label: string | null; buffs: string[]; modifiers: Modifier[] }[] = [{ label: null, buffs: [], modifiers: [] }];
   for (const def of defs) {
     const layers: { n: number; modifiers: Modifier[]; total: number }[] = [];
     for (let n = 1; n <= 8; n++) {
@@ -368,7 +520,7 @@ function unloggedCastBuffs(data: GameData, build: Build, panel: StatPanel, kind:
       if (modifiers.length === 0 || (layers.length && total === (layers.at(-1) as { total: number }).total)) break;
       layers.push({ n, modifiers, total });
     }
-    out = out.flatMap((o) => [o, ...layers.map((l) => ({ label: [o.label, `${def.id}${l.n > 1 ? ` ×${l.n}` : ""}`].filter((x) => x).join(", "), modifiers: [...o.modifiers, ...l.modifiers] }))]);
+    out = out.flatMap((o) => [o, ...layers.map((l) => ({ label: [o.label, `${def.id}${l.n > 1 ? ` ×${l.n}` : ""}`].filter((x) => x).join(", "), buffs: [...o.buffs, def.id], modifiers: [...o.modifiers, ...l.modifiers] }))]);
   }
   return out.map((o) => (o.label ? { ...o, label: `unlogged ${o.label}` } : o));
 }
@@ -387,19 +539,27 @@ function finisherModifier(data: GameData, enemy: string): Modifier {
 
 /** An assumption about a whole hit the log leaves open: what it adds and how the report names it. */
 export interface Variant {
+  /** Its assumptions' labels, joined (null: none). */
   readonly label: string | null;
+  readonly assumptions: readonly Assumption[];
   readonly modifiers: readonly Modifier[];
   /** Layer counts of layered buffs the log lists once, by buff. */
   readonly layers: ReadonlyMap<string, number>;
 }
 
-const NO_VARIANT: Variant = { label: null, modifiers: [], layers: new Map() };
+const NO_VARIANT: Variant = { label: null, assumptions: [], modifiers: [], layers: new Map() };
+
+/** A variant of one assumption. */
+function variant(a: Assumption, modifiers: readonly Modifier[], layers: ReadonlyMap<string, number> = new Map()): Variant {
+  return { label: a.label, assumptions: [a], modifiers, layers };
+}
 
 /** Every pair of a variant of each list, the first of each first. */
 function combine(a: readonly Variant[], b: readonly Variant[]): Variant[] {
   return a.flatMap((x) =>
     b.map((y) => ({
       label: [x.label, y.label].filter((l) => l).join(", ") || null,
+      assumptions: [...x.assumptions, ...y.assumptions],
       modifiers: [...x.modifiers, ...y.modifiers],
       layers: new Map([...x.layers, ...y.layers]),
     })),
@@ -424,13 +584,15 @@ export function unloggedEnemyAuras(data: GameData, fx: LogFixture, panels: Reado
     for (const def of effectiveKit(data, build)?.buffs ?? []) {
       if (def.target !== "enemy" || (def.gameBuff !== undefined && listed.has(def.gameBuff))) continue;
       if (!def.modifiers.some((m) => typeof m.value === "object" && "talent" in m.value)) continue;
+      if (!kitBuffSource(effectiveKit(data, build) as OperatorKit, def.id)) continue; // nothing in the kit applies it
       let modifiers: Modifier[];
       try {
         modifiers = kitBuffModifiers(data, build, panel, def.id, 1);
-      } catch {
-        continue; // nothing in the kit applies it, or its values need a fight
+      } catch (e) {
+        if (!readingDoesNotApply(e)) throw e;
+        continue; // its values need a fight
       }
-      if (modifiers.length > 0) out = combine(out, [NO_VARIANT, { label: `unlogged enemy buff ${def.id} (${build.operator})`, modifiers, layers: new Map() }]);
+      if (modifiers.length > 0) out = combine(out, [NO_VARIANT, variant({ kind: "enemyAura", label: `unlogged enemy buff ${def.id} (${build.operator})`, buffs: [def.id] }, modifiers)]);
     }
   }
   return out;
@@ -458,7 +620,7 @@ export function layerVariants(hit: LogHit, cap: StackCap = () => null, decided: 
     if (st?.type !== 8 || [...counts].some(([k, n]) => k.startsWith(`${buff}|`) && n !== 1)) continue;
     const max = st.maxStacks ?? (st.maxStacksKey ? (cap(buff, st.maxStacksKey) ?? (st.maxStackCnt > 1 ? st.maxStackCnt : null)) : null);
     if (max === null || max <= 1) continue;
-    const layers = Array.from({ length: max - 1 }, (_, i): Variant => ({ label: `${buff} ×${i + 2} layers`, modifiers: [], layers: new Map([[buff, i + 2]]) }));
+    const layers = Array.from({ length: max - 1 }, (_, i): Variant => variant({ kind: "layers", label: `${buff} ×${i + 2} layers`, buffs: [buff], n: i + 2 }, [], new Map([[buff, i + 2]])));
     out = combine(out, [NO_VARIANT, ...layers]);
   }
   return out;
@@ -493,6 +655,8 @@ function combustionSource(fx: LogFixture, tick: LogHit): LogHit | null {
 /** One way an unlogged buff may stand at a hit: its modifiers then. */
 export interface BuffOption {
   readonly label: string;
+  readonly buff: string;
+  readonly layers: number;
   readonly modifiers: readonly Modifier[];
 }
 
@@ -517,14 +681,16 @@ export function unloggedOwnBuffs(data: GameData, fx: LogFixture, build: Build, p
   const listed = new Set(fx.hits.flatMap((h) => [...h.effects, ...h.boundaryEffects, ...h.unquantified].map((e) => e.buff)));
   const out: BuffOption[][] = [];
   for (const def of kit.buffs) {
-    if (def.target === "enemy" || def.consumedBy || def.link) continue;
+    // A buff without modifiers (a timer: Lifeng's p5_timer, whose tick interval is 0 below P5) can't change a hit.
+    if (def.target === "enemy" || def.consumedBy || def.link || def.modifiers.length === 0) continue;
     const source = kitBuffSource(kit, def.id);
     if (!source) continue;
     const critOnly = !def.gameBuff || listed.has(def.gameBuff);
     let max: number;
     try {
       max = applyBuff(data, build, panel, source, def, 0)?.maxLayers ?? 1;
-    } catch {
+    } catch (e) {
+      if (!readingDoesNotApply(e)) throw e;
       continue; // its values need a fight
     }
     const options: BuffOption[] = [];
@@ -535,8 +701,9 @@ export function unloggedOwnBuffs(data: GameData, fx: LogFixture, build: Build, p
         const layers = (id: string) => (id === def.id ? n : others);
         try {
           return test(when, evalContext(data, build, panel, source, { team: fx.team, buffLayers: layers, buffActive: (id) => layers(id) > 0 }));
-        } catch {
-          return undefined;
+        } catch (e) {
+          if (!readingDoesNotApply(e)) throw e;
+          return undefined; // it reads what only a fight knows
         }
       };
       const decided = (m: Modifier): boolean | undefined => {
@@ -547,8 +714,9 @@ export function unloggedOwnBuffs(data: GameData, fx: LogFixture, build: Build, p
       let mods: Modifier[];
       try {
         mods = kitBuffModifiers(data, build, panel, def.id, n);
-      } catch {
-        break;
+      } catch (e) {
+        if (!readingDoesNotApply(e)) throw e;
+        break; // its values need a fight
       }
       mods = mods.filter((m) => m.zone !== "critRate" && (!critOnly || CRIT_ZONES.has(m.zone)) && decided(m) !== false);
       const strip = ({ when: _w, ...m }: Modifier): Modifier => m;
@@ -559,7 +727,7 @@ export function unloggedOwnBuffs(data: GameData, fx: LogFixture, build: Build, p
         const k = signature(s.mods);
         if (s.mods.length === 0 || seen.has(k)) continue;
         seen.add(k);
-        options.push({ label: `unlogged own ${def.id}${n > 1 ? ` ×${n}` : ""}${s.branch !== null ? ` (branch ${s.branch})` : ""}${critOnly ? " crit part" : ""}`, modifiers: s.mods });
+        options.push({ label: `unlogged own ${def.id}${n > 1 ? ` ×${n}` : ""}${s.branch !== null ? ` (branch ${s.branch})` : ""}${critOnly ? " crit part" : ""}`, buff: def.id, layers: n, modifiers: s.mods });
       }
     }
     if (options.length) out.push(options);
@@ -581,7 +749,7 @@ export function ownBuffVariants(options: readonly BuffOption[][], hit: LogHit): 
         const k = signature(modifiers);
         if (modifiers.length === 0 || seen.has(k)) return [];
         seen.add(k);
-        return [{ label: o.label, modifiers, layers: new Map() } as Variant];
+        return [variant({ kind: "unloggedOwnBuff", label: o.label, buffs: [o.buff], n: o.layers }, modifiers)];
       });
     })
     .filter((l) => l.length > 0);
@@ -647,8 +815,9 @@ function linkGrants(data: GameData, fx: LogFixture, placement: Placement): { cas
             const b = def ? applyBuff(data, build, panel, skillId, def, 0) : null;
             if (b) [count, ms] = [1, Number.isFinite(b.expiresAt) ? (b.expiresAt * 1000) / FPS : LINK_MS];
           }
-        } catch {
-          continue;
+        } catch (e) {
+          if (!readingDoesNotApply(e)) throw e;
+          continue; // its count or duration needs a fight
         }
         if (count <= 0) continue;
         for (const c of casts) {
@@ -672,7 +841,7 @@ export function linkVariants(kind: SkillType | null, predicted: number): Variant
   const counts = [...new Set([predicted, predicted - 1, predicted + 1])].filter((n) => n >= 1 && n <= 4);
   return [
     NO_VARIANT,
-    ...counts.map((n): Variant => ({ label: `Link ${n} (predicted ${predicted})`, modifiers: [{ zone: "multiplicative", value: linkValue(kind, n), source: `Link (${n})` }], layers: new Map() })),
+    ...counts.map((n): Variant => variant({ kind: "link", label: `Link ${n} (predicted ${predicted})`, n }, [{ zone: "multiplicative", value: linkValue(kind, n), source: `Link (${n})` }])),
   ];
 }
 
@@ -703,9 +872,10 @@ export function unquantifiedFromKit(data: GameData, panels: ReadonlyMap<string, 
         const k = signature(modifiers);
         if (modifiers.length === 0 || seen.has(k)) continue;
         seen.add(k);
-        out.push({ label: `unquantified ${u.buff} from kit ${def.id}${n > 1 ? ` ×${n}` : ""}`, modifiers, layers: new Map() });
+        out.push(variant({ kind: "unquantifiedFromKit", label: `unquantified ${u.buff} from kit ${def.id}${n > 1 ? ` ×${n}` : ""}`, buffs: [u.buff, def.id], n }, modifiers));
       }
-    } catch {
+    } catch (e) {
+      if (!readingDoesNotApply(e)) throw e;
       continue; // its values need a fight
     }
     if (out.length) return out;
@@ -818,8 +988,14 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
     const kind = placed ? placed.cast.kind : (kit?.skills.find((s) => found.some(([f]) => f.skillId === s.skillId))?.kind ?? null);
     const link = kind === "battle" || kind === "ultimate" ? linkVariants(kind, predictedLink(data, fx, placement, placed?.cast ?? { start: hit.t })) : [NO_VARIANT];
     const stackMax = (id: string) => kit?.stacks.find((x) => x.id === id)?.max ?? 4;
-    /** Every reading of one version of the hit (the replay's, or the log's), its match or none. */
-    const search = (version: LogHit, decided: ReadonlySet<string>, snapshotOf: LogHit | null): Extract<HitVerdict, { kind: "match" }> | null => {
+    /**
+     * Every reading of one version of the hit (the replay's, or the log's): the first that matches (its assumptions), and
+     * how many readings gave a value and how many of them matched (all are tried, so a match's strength shows).
+     */
+    const search = (version: LogHit, decided: ReadonlySet<string>, snapshotOf: LogHit | null): { first: { predicted: number; assumptions: Assumption[] } | null; tried: number; matching: number; corrosionBracket: () => boolean } => {
+      let first: { predicted: number; assumptions: Assumption[] } | null = null;
+      let tried = 0;
+      let matching = 0;
       // The hit as read: without logged effects that are the hitter's food buffs (its panel has them).
       const hit = withoutOwnFood(data, fx, version);
       const snapshotFrom = snapshotOf ? withoutOwnFood(data, fx, snapshotOf) : null;
@@ -834,102 +1010,220 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
       // Whole-hit assumptions (enemy auras the log doesn't list, layers of a buff it lists once), the plain reading first:
       // a hit that matches without them keeps matching as before; so do readings with part of a repeated boundary buff's instances, after all others.
       const variants = combine(quantified, combine(unloggedOwn, combine(auras, layerVariants(hit, caps, decided))));
-      for (const { repeats, variant } of [false, true].flatMap((repeats) => variants.map((variant) => ({ repeats, variant })))) {
-        for (const c of candidates(withLayers(hit, variant.layers), panels, stackOptions, repeats)) {
-          const loggedMods = (category: HitCategory) =>
-            snapshotFrom
-              ? [...logModifiers(c.effects, category, caps).filter((m) => !SNAPSHOT_ZONES.has(m.zone)), ...logModifiers(snapshotFrom.effects, category, caps).filter((m) => SNAPSHOT_ZONES.has(m.zone))]
-              : logModifiers(c.effects, category, caps);
-          const options = (category: HitCategory) => ({
-            crit: c.crit ? ("always" as const) : ("never" as const), staggered: false, conditions: [], modifiers: [...loggedMods(category), ...c.extra, ...variant.modifiers],
-          });
-          const results = reaction
-            ? [{ label: null, r: computeReaction(data, member.build, member.panel, target, { ...reaction, stacks: c.stacks }, options(reaction.kind)) }]
-            : found
-                .filter(([s, h]) => hitAvailable(data, member.build, member.panel, s.skillId, h, { team: fx.team }))
-                .flatMap(([s, h]) =>
-                  // A hit whose conditions or extra scale depend on what the log doesn't record (inflictions, stacks): try both outcomes;
-                  // one whose values read the count of the event behind it (Si's combo): try counts 1-4; buffs its cast would carry unlogged: try them.
-                  // A finisher takes the enemy's finisher multiplier, as in the timeline.
-                  unloggedCastBuffs(data, member.build, member.panel, h.damageType).flatMap((unlogged) =>
-                    (h.extraScale?.length || h.if ? [false, true] : [false]).flatMap((assume) =>
-                      (JSON.stringify(h).includes('"eventCount"') ? [1, 2, 3, 4] : [undefined]).flatMap((eventCount) =>
-                        // Values that read what only a fight knows (consumed stacks, own stacks, the enemy's stacks: L4, L6): over their range.
-                        [{ assumption: null, label: null }, ...valueAssumptions(valueReads(h), stackMax)].flatMap((va) => {
-                          try {
-                            const situation = { team: fx.team, ...(eventCount !== undefined ? { eventCount } : {}) };
-                            const base = options(h.reaction?.kind ?? h.damageType);
-                            const own = isFinisher(data, member.build, s.skillId, h) ? [finisher] : [];
-                            const kh = va.assumption ? assumeValues(h, va.assumption, true) : h;
-                            const r = computeHit(data, member.build, member.panel, target, s, kh, { ...base, modifiers: [...base.modifiers, ...unlogged.modifiers, ...own], situation, assumeUnknown: assume });
-                            const label = [found.length > 1 ? `kit hit ${h.id}` : null, assume ? "situational parts assumed" : null, eventCount !== undefined ? `event count ${eventCount}` : null, va.label, unlogged.label].filter((x) => x).join(", ");
-                            return [{ label: label || null, r }];
-                          } catch {
-                            return []; // the hit doesn't happen under this assumption
-                          }
-                        }),
-                      ),
+      /** The readings of one candidate under one variant: each with what it assumes beyond them, and its damage. */
+      const readingsOf = (c: Candidate, variant: Variant): { assumptions: Assumption[]; r: { exact: number } }[] => {
+        const loggedMods = (category: HitCategory) =>
+          snapshotFrom
+            ? [...logModifiers(c.effects, category, caps).filter((m) => !SNAPSHOT_ZONES.has(m.zone)), ...logModifiers(snapshotFrom.effects, category, caps).filter((m) => SNAPSHOT_ZONES.has(m.zone))]
+            : logModifiers(c.effects, category, caps);
+        const options = (category: HitCategory) => ({
+          crit: c.crit ? ("always" as const) : ("never" as const), staggered: false, conditions: [], modifiers: [...loggedMods(category), ...c.extra, ...variant.modifiers],
+        });
+        const results: { assumptions: Assumption[]; r: { exact: number } }[] = reaction
+          ? [{ assumptions: [], r: computeReaction(data, member.build, member.panel, target, { ...reaction, stacks: c.stacks }, options(reaction.kind)) }]
+          : found
+              .filter(([s, h]) => hitAvailable(data, member.build, member.panel, s.skillId, h, { team: fx.team }))
+              .flatMap(([s, h]) =>
+                // A hit whose conditions or extra scale depend on what the log doesn't record (inflictions, stacks): try both outcomes;
+                // one whose values read the count of the event behind it (Si's combo): try counts 1-4; buffs its cast would carry unlogged: try them.
+                // A finisher takes the enemy's finisher multiplier, as in the timeline.
+                unloggedCastBuffs(data, member.build, member.panel, h.damageType).flatMap((unlogged) =>
+                  (h.extraScale?.length || h.if ? [false, true] : [false]).flatMap((assume) =>
+                    (JSON.stringify(h).includes('"eventCount"') ? [1, 2, 3, 4] : [undefined]).flatMap((eventCount) =>
+                      // Values that read what only a fight knows (consumed stacks, own stacks, the enemy's stacks: L4, L6): over their range.
+                      [{ assumption: null, label: null }, ...valueAssumptions(valueReads(h), stackMax)].flatMap((va) => {
+                        try {
+                          const situation = { team: fx.team, ...(eventCount !== undefined ? { eventCount } : {}) };
+                          const base = options(h.reaction?.kind ?? h.damageType);
+                          const own = isFinisher(data, member.build, s.skillId, h) ? [finisher] : [];
+                          const kh = va.assumption ? assumeValues(h, va.assumption, true) : h;
+                          const r = computeHit(data, member.build, member.panel, target, s, kh, { ...base, modifiers: [...base.modifiers, ...unlogged.modifiers, ...own], situation, assumeUnknown: assume });
+                          const assumptions: Assumption[] = [
+                            ...(found.length > 1 ? [{ kind: "kitHit" as const, label: `kit hit ${h.id}`, buffs: [h.id] }] : []),
+                            ...(assume ? [{ kind: "situational" as const, label: "situational parts assumed" }] : []),
+                            ...(eventCount !== undefined ? [{ kind: "eventCount" as const, label: `event count ${eventCount}`, n: eventCount }] : []),
+                            ...(va.label !== null ? [{ kind: "value" as const, label: va.label }] : []),
+                            ...(unlogged.label !== null ? [{ kind: "unloggedCastBuff" as const, label: unlogged.label, buffs: unlogged.buffs }] : []),
+                          ];
+                          return [{ assumptions, r }];
+                        } catch (e) {
+                          if (!readingDoesNotApply(e)) throw e;
+                          return []; // the hit doesn't happen under this assumption, or a value needs what it doesn't say
+                        }
+                      }),
                     ),
                   ),
-                );
-          for (const { label, r } of results) {
+                ),
+              );
+        return results;
+      };
+      const all = [false, true].flatMap((repeats) => variants.map((variant) => ({ repeats, variant })));
+      for (const { repeats, variant } of all) {
+        for (const c of candidates(withLayers(hit, variant.layers), panels, stackOptions, repeats)) {
+          for (const { assumptions, r } of readingsOf(c, variant)) {
             const p = roundDamage(r.exact);
-            if (Math.abs(p - actual) <= 1) return { kind: "match", hit: logged, predicted: p, assumed: [...c.assumed, ...[label, variant.label].filter((l) => l !== null)] };
-            predicted.push(p);
+            tried++;
+            if (Math.abs(p - actual) <= 1) {
+              matching++;
+              first ??= { predicted: p, assumptions: [...c.assumed, ...assumptions, ...variant.assumptions] };
+            } else if (first === null) predicted.push(p);
           }
         }
       }
-      return null;
+      // Under Corrosion that no level fits: whether some reading's damage with the least and the most shred brackets the log's.
+      const corrosionBracket = (): boolean => {
+        for (const { repeats, variant } of all) {
+          for (const { low, high } of corrosionBounds(data, withLayers(hit, variant.layers), panels, stackOptions, repeats)) {
+            const [lo, hi] = [readingsOf(low, variant), readingsOf(high, variant)];
+            for (let i = 0; i < lo.length; i++) {
+              const [a, b] = [roundDamage((lo[i] as { r: { exact: number } }).r.exact), roundDamage((hi[i] as { r: { exact: number } }).r.exact)];
+              if (actual >= Math.min(a, b) - 1 && actual <= Math.max(a, b) + 1) return true;
+            }
+          }
+        }
+        return false;
+      };
+      return { first, tried, matching, corrosionBracket };
     };
-    const matched = search(hit, decided, applied ? asReplayed(applied) : null);
-    if (matched) return matched;
+    const match = (first: { predicted: number; assumptions: Assumption[] }, readings: Readings): HitVerdict => {
+      const fallback = first.assumptions.some((a) => a.kind === "logListing");
+      return {
+        kind: "match", hit: logged, predicted: first.predicted, assumed: first.assumptions.map((a) => a.label), assumptions: first.assumptions,
+        class: fallback ? "fallback" : first.assumptions.length > 0 ? "assumed" : "plain", readings,
+      };
+    };
+    const byReplay = search(hit, decided, applied ? asReplayed(applied) : null);
+    if (byReplay.first) return match(byReplay.first, { tried: byReplay.tried, matching: byReplay.matching });
+    let readings: Readings = { tried: byReplay.tried, matching: 0 };
+    let byLog: ReturnType<typeof search> | null = null;
     // The log's listing where the replay changed the hit, when the replay's reading fits no reading: reported, so the
     // disagreements it settles show (formatBuffReplay).
     if (decided.size > 0) {
-      const byLog = search(logged, noneDecided, applied);
-      if (byLog) return { ...byLog, assumed: [...byLog.assumed, `${LOG_LISTING} (replay: ${[...decided].sort().join(", ")})`] };
+      byLog = search(logged, noneDecided, applied);
+      readings = { tried: byReplay.tried + byLog.tried, matching: byLog.matching };
+      if (byLog.first) {
+        const buffs = [...decided].sort();
+        return match({ ...byLog.first, assumptions: [...byLog.first.assumptions, { kind: "logListing", label: `${LOG_LISTING} (replay: ${buffs.join(", ")})`, buffs }] }, readings);
+      }
     }
+    const nearest = predicted[0] ?? 0;
+    // The killing blow's value is the HP left and its uncapped damage the log's overkill estimate: it can't be judged.
+    if (killing.has(logged)) return { kind: "unquantified", hit: logged, predicted: nearest, reason: "killingBlow", readings };
+    // Buffs the log lists without a value (not Corrosion) that no kit values: the prediction lacks them. Not a match, and
+    // not a mismatch the kits are to blame for either (an unvalued verdict: a verified fixture has none).
+    const listedHere = new Set([...hit.effects, ...hit.boundaryEffects].map((e) => e.buff));
+    const unvalued = [...new Set(hit.unquantified.filter((u) => !isCorrosionBuff(u.buff) && !listedHere.has(u.buff) && valued(u) === null).map((u) => u.buff))];
+    if (unvalued.length > 0) return { kind: "unvalued", hit: logged, predicted: nearest, buffs: unvalued, readings };
     // Corrosion's ramp doesn't fit every log yet (time dilation may pause its ticks; talents change its cap and
-    // duration): a hit under Corrosion that matches no level counts as under an unmodelled effect, not a mismatch.
-    if (hit.unquantified.length > 0) return { kind: "unquantified", hit: logged, predicted: predicted[0] ?? 0 };
-    // Neither can the killing blow's overkill estimate.
-    if (killing.has(logged)) return { kind: "unquantified", hit: logged, predicted: predicted[0] ?? 0 };
+    // duration): a hit under Corrosion that matches no level counts as under an unmodelled effect, not a mismatch, when
+    // its damage lies between a reading's with the least and the most shred Corrosion can give (corrosionBounds); outside
+    // every such range Corrosion can't explain it, and it is a mismatch. Only Corrosion: any other unquantified buff is
+    // valued from a kit (a mismatch if no reading fits) or unvalued.
+    if (hit.unquantified.some((u) => isCorrosionBuff(u.buff)) && (byReplay.corrosionBracket() || byLog?.corrosionBracket())) {
+      return { kind: "unquantified", hit: logged, predicted: nearest, reason: "corrosion", readings };
+    }
     // Fixed DMG that a fight computes (Si's recorded damage) can't be judged from one logged hit.
-    if (found.some(([, h]) => h.fixedDamage !== undefined)) return { kind: "unquantified", hit: logged, predicted: predicted[0] ?? 0 };
+    if (found.some(([, h]) => h.fixedDamage !== undefined)) return { kind: "unquantified", hit: logged, predicted: nearest, reason: "fixedDamage", readings };
     // A status hit by an operator without a kit: its talents and potentials (which can change its statuses) aren't modelled.
-    if (reaction && !data.kits.operators[hit.operator]) return { kind: "unquantified", hit: logged, predicted: predicted[0] ?? 0 };
-    return { kind: "mismatch", hit: logged, predicted: [...new Set(predicted)].slice(0, 6), ratio: actual / (predicted[0] ?? 1) };
+    if (reaction && !data.kits.operators[hit.operator]) return { kind: "unquantified", hit: logged, predicted: nearest, reason: "noKit", readings };
+    return { kind: "mismatch", hit: logged, predicted: [...new Set(predicted)].slice(0, 6), ratio: actual / (predicted[0] ?? 1), readings };
   });
 }
 
 
+/**
+ * Why a log check doesn't verify its fixture (none: it does; docs/design.md, "What a log check verifies"): a
+ * mismatch or an unvalued hit, or an operator with a kit and hits the check can judge (covered, and not unmodelled
+ * for a reason other than Corrosion) without one plain or assumed match. A log-listing fallback match isn't a
+ * mismatch, but it shows the damage with the log's buffs, not the replay's: it doesn't verify an operator alone.
+ */
+export function verificationProblems(data: GameData, fx: LogFixture, verdicts: readonly HitVerdict[]): string[] {
+  const out: string[] = [];
+  const name = (op: string) => data.operators[op]?.name ?? op;
+  for (const b of fx.team) {
+    if (!data.kits.operators[b.operator]) continue;
+    const mine = verdicts.filter((v) => v.hit.operator === b.operator);
+    const judged = mine.filter((v) => v.kind !== "uncovered" && !(v.kind === "unquantified" && v.reason !== "corrosion"));
+    if (judged.length > 0 && !mine.some((v) => v.kind === "match" && v.class !== "fallback")) {
+      const n = verdictCounts(fx, mine)[b.operator] as Record<VerdictCount, number>;
+      out.push(`${name(b.operator)}: no plain or assumed match among ${judged.length} judged hits (${n.fallback} log-listing fallback, ${n.unquantified} unmodelled)`);
+    }
+  }
+  for (const v of verdicts) {
+    if (v.kind === "mismatch") out.push(`${name(v.hit.operator)} t=${v.hit.t} ${v.hit.event}: mismatch, logged ${v.hit.uncapped ?? v.hit.value}, predicted ${v.predicted.join("/")}`);
+    if (v.kind === "unvalued") out.push(`${name(v.hit.operator)} t=${v.hit.t} ${v.hit.event}: under ${v.buffs.join(", ")}, which no kit values`);
+  }
+  return out;
+}
+
 export function formatLogCheck(data: GameData, fx: LogFixture, verdicts: readonly HitVerdict[], replay?: LogBuffReplay): string {
-  const out: string[] = [`${fx.id}: ${fx.provenance.url}`];
+  const problems = verificationProblems(data, fx, verdicts);
+  const out: string[] = [
+    `${fx.id}: ${fx.provenance.url}`,
+    problems.length === 0
+      ? "Verified: no mismatch or unvalued hit, and every operator with a kit has a plain or assumed match."
+      : `Not verified (docs/design.md, "What a log check verifies"): ${problems.length} reason(s), e.g.\n${problems.slice(0, 5).map((p) => `  ${p}`).join("\n")}`,
+  ];
   for (const build of fx.team) {
     const mine = verdicts.filter((v) => v.hit.operator === build.operator);
-    const count = (k: HitVerdict["kind"]) => mine.filter((v) => v.kind === k).length;
+    const n = verdictCounts(fx, mine)[build.operator] as Record<VerdictCount, number>;
     const name = data.operators[build.operator]?.name ?? build.operator;
     const damage = mine.reduce((s, v) => s + v.hit.value, 0);
     const covered = mine.filter((v) => v.kind !== "uncovered").reduce((s, v) => s + v.hit.value, 0);
+    const matches = n.plain + n.assumed + n.fallback;
     out.push(
       "",
-      `${name} (${build.operator}): ${mine.length} hits, ${count("match")} match, ${count("mismatch")} mismatch, ` +
-        `${count("unquantified")} under unmodelled effects, ${count("uncovered")} not covered by a kit` +
+      `${name} (${build.operator}): ${mine.length} hits, ${matches} match (${n.plain} plain, ${n.assumed} assumed, ${n.fallback} log-listing fallback), ` +
+        `${n.mismatch} mismatch, ${n.unvalued} under unvalued buffs, ${n.unquantified} under unmodelled effects, ${n.uncovered} not covered by a kit` +
         ` (${damage ? Math.round((covered / damage) * 100) : 0}% of its damage covered)`,
     );
+    const strength = matchStrength(mine);
+    if (strength) out.push(`  ${strength}`);
     const assumptions = new Map<string, number>();
     for (const v of mine) if (v.kind === "match") for (const a of v.assumed) assumptions.set(a, (assumptions.get(a) ?? 0) + 1);
     if (assumptions.size) out.push(`  matched assuming: ${[...assumptions].map(([a, k]) => `${a} ×${k}`).join(", ")}`);
-    for (const v of mine.filter((x) => x.kind === "mismatch")) {
+    for (const v of mine) {
       if (v.kind !== "mismatch") continue;
       out.push(`  MISMATCH t=${v.hit.t} ${v.hit.event}: logged ${v.hit.uncapped ?? v.hit.value}, predicted ${v.predicted.join(" / ")} (ratio ${v.ratio.toFixed(4)})`);
     }
+    const unvalued = new Map<string, number>();
+    for (const v of mine) if (v.kind === "unvalued") for (const b of v.buffs) unvalued.set(b, (unvalued.get(b) ?? 0) + 1);
+    for (const [b, k] of [...unvalued].sort()) out.push(`  UNVALUED: ${k} hit(s) under ${b}, which the log lists without a value and no kit values`);
+    const unmodelled = new Map<string, number>();
+    for (const v of mine) if (v.kind === "unquantified") unmodelled.set(v.reason, (unmodelled.get(v.reason) ?? 0) + 1);
+    if (unmodelled.size) out.push(`  unmodelled: ${[...unmodelled].sort().map(([r, k]) => `${UNQUANTIFIED_REASONS[r as UnquantifiedReason]} ×${k}`).join(", ")}`);
     const uncovered = new Map<string, number>();
     for (const v of mine) if (v.kind === "uncovered") uncovered.set(v.hit.event, (uncovered.get(v.hit.event) ?? 0) + 1);
     for (const [event, k] of [...uncovered].sort()) out.push(`  not covered: ${event} ×${k}`);
   }
   if (replay) out.push("", ...formatBuffReplay(data, replay, verdicts));
   return out.join("\n");
+}
+
+const UNQUANTIFIED_REASONS: Readonly<Record<UnquantifiedReason, string>> = {
+  corrosion: "Corrosion within its range but at no level that fits",
+  killingBlow: "the killing blow",
+  fixedDamage: "Fixed DMG a fight computes",
+  noKit: "a status hit of an operator without a kit",
+};
+
+/** Below this share of plain matches, an operator's matches are flagged as mostly assumed (docs/design.md, "What a log check verifies"). */
+export const MOSTLY_ASSUMED = 0.5;
+
+/** How strong an operator's matches are, or null without one: readings per match, and a flag when most are assumed or fallback. */
+export function matchStrength(verdicts: readonly HitVerdict[]): string | null {
+  const matches = verdicts.filter((v): v is Extract<HitVerdict, { kind: "match" }> => v.kind === "match");
+  if (matches.length === 0) return null;
+  const median = (xs: number[]) => {
+    const s = [...xs].sort((a, b) => a - b);
+    return s[Math.floor((s.length - 1) / 2)] as number;
+  };
+  const tried = matches.map((m) => m.readings.tried);
+  const lone = matches.filter((m) => m.readings.matching === 1 && m.readings.tried >= 100).length;
+  const plain = matches.filter((m) => m.class === "plain").length;
+  const fallback = matches.filter((m) => m.class === "fallback").length;
+  const flag = fallback * 2 > matches.length ? " — FLAG: mostly log-listing fallback" : plain < matches.length * MOSTLY_ASSUMED ? " — FLAG: mostly assumed" : "";
+  return `strength: readings per match median ${median(tried)} tried (max ${Math.max(...tried)}), ${median(matches.map((m) => m.readings.matching))} matching; ${lone} matched by the only fitting reading of ≥100${flag}`;
 }
 
 const seconds = (ms: number) => (ms / 1000).toFixed(1);
@@ -959,8 +1253,9 @@ export function formatBuffReplay(data: GameData, r: LogBuffReplay, verdicts: rea
     for (const [h, judged] of r.replayed.judgedAt) {
       if (h.operator !== x.operator || h.t < x.from || h.t > x.to || !judged.has(x.buff) || !disputed.has(`${x.buff}|${h.operator}|${h.t}`)) continue;
       const v = byHit.get(h);
-      if (v?.kind === "match") fits[v.assumed.some((a) => a.startsWith(LOG_LISTING)) ? "log" : "replay"]++;
-      else if (v?.kind === "mismatch") fits.neither++;
+      if (v?.kind === "match") fits[v.class === "fallback" ? "log" : "replay"]++;
+      // A hit no reading fits (mismatch), or one under effects the check can't value (unvalued, unmodelled), fits neither.
+      else if (v && v.kind !== "uncovered") fits.neither++;
     }
     const fit = verdicts.length ? ` (fit the replay ${fits.replay}, the log ${fits.log}, neither ${fits.neither})` : "";
     out.push(`    ${x.buff} on ${name(x.operator)}: ${what}, ${x.hits} hit(s) ${span}${fit}`);
@@ -1056,7 +1351,7 @@ export function findScales(data: GameData, fx: LogFixture, operator: string): Sc
             crit: c.crit ? "always" : "never", staggered: false, conditions: [], modifiers: [...logModifiers(c.effects, damageType), ...c.extra],
           }).exact;
           const need = (hit.uncapped ?? hit.value) / unit;
-          const corrosion = Number(/Corrosion level (\d)/.exec(c.assumed.join(" "))?.[1] ?? 0);
+          const corrosion = c.assumed.find((a) => a.kind === "corrosion")?.n ?? 0;
           const consider = (skillId: string, keys: string[], v: number) => {
             if (Math.abs(Math.round(unit * v) - (hit.uncapped ?? hit.value)) > 1) return;
             const id = `${skillId}|${keys.join("*")}|${damageType}|${corrosion}`;

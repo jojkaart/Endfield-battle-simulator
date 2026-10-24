@@ -4,7 +4,7 @@
   "sources": [
     "Wild Wanderer (5-star Arts Unit). Skills 1-2 (wpn_attr_wisd_mid: Intellect; wpn_sp_attr_electrondam_mid: Electric DMG) and skill 3's Arts Intensity +phy_spell_up (sk_wpn_funnel_0004 cardAttributeModifier attribute 87; SkillPatchTable L1-L9 10-28) are in the stat panel.",
     "sk_wpn_funnel_0004 passiveEventActions: abilityEvent 206 + CheckBuffIdInContext checkType 1 tag 1466867135 (Electrification: the reaction buffs buff_common_pulse_<el>_triggered and the forced buff_common_pulse_pulse_conduct_triggered_do carry it) → CreateBuff buff_wpn_funnel_0004_up on the team (targetSource 3, wielder included; asChildBuff): attributes 50 (Physical DMG) and 52 (Electric DMG) + dmg_up (L1-L9 0.08-0.224) for duration (15 s), stackingType 11 with priority key dmg_up and maxStackCnt 1, so the loader puts it in one stack group across wielders (open list B2: the strongest acts). Description: \"When the wielder applies Electrification, the team gains Physical DMG Dealt and Electric DMG Dealt +{dmg_up} for {duration}s. Effects of the same name cannot stack.\"",
-    "Interims (U3, in-game test 68 part 2): a reaction Electrification and a forced one both fire it, and it acts after the applying hit's damage (no beforeDamage: abilityEvent 206 was logged 4 frames after its buff in Arcane's log fixtures/zmdlogs-d9e59d0fb737.json). Not in any log or fixture yet."
+    "Interims (U3, in-game test 68 part 2): a reaction Electrification and a forced one both fire it, and it acts after the applying hit's damage (no beforeDamage: abilityEvent 206 was logged 4 frames after its buff in Arcane's log fixtures/pending/zmdlogs-d9e59d0fb737.json). Not in any log or fixture yet."
   ],
   "buffs": [
     {

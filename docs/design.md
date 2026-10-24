@@ -209,6 +209,45 @@ report lists where the replay and the log disagree (on/off, instance
 counts) and which reading the damage fits: log gaps, or kit triggers that
 are wrong. `--log-buffs` checks with the log's listing alone.
 
+**What a log check verifies** (2026-10-24, after a review found matches
+that said little). A logged hit is read many ways (crit or not, boundary
+buffs, Corrosion levels, situational parts, event counts, value
+assumptions, layers, unlogged own and cast buffs, Link, auras, kit-valued
+unquantified buffs, and the log-listing fallback): median tens to hundreds
+of readings, up to ~11,000. A match is the first reading within ±1, so
+`checkLog` now tries them all and returns, per match, `readings` (tried,
+matching), the `assumptions` as data (`Assumption`: kind, label, buffs,
+count) and a `class`: **plain** (no assumption), **assumed**, or
+**fallback** (only the log's buff listing fits). Verdicts that aren't
+matches: **mismatch**; **unvalued** (no reading fits, under a buff the
+log lists without a value and no kit values: the prediction lacks it,
+so it neither verifies nor blames the kits); **unquantified** with a
+`reason`: under Corrosion whose damage no level fits but some reading's
+damage with the least and the most shred Corrosion can give brackets
+(outside every bracket Corrosion can't explain it: a mismatch), the
+killing blow, Fixed DMG a fight computes, a status hit of an operator
+without a kit; and **uncovered**. Until 2026-10-24 any hit under any
+unquantified buff counted as unmodelled, so a fixture could pass with no
+match at all (d9e59d0fb737: 0 of 98). A fixture is **verified**
+(`verificationProblems`, the rule `tests/logs.test.ts` holds every
+fixture in `fixtures/` to) when it has no mismatch and no unvalued hit,
+and every operator with a kit and hits the check can judge (covered, and
+not unmodelled for a reason other than Corrosion) has at least one plain
+or assumed match. Fallback matches aren't mismatches, but they show the
+damage with the log's buffs, not the engine's: they don't verify an
+operator alone. `zmdlogs check` prints the verdict, per operator the
+plain / assumed / fallback counts, and a strength line (readings per
+match; matches whose only fitting reading was one of ≥100; a FLAG when
+more than half are fallback, or fewer than half plain). How often a
+reading fits by chance is measured by the negative control
+(`tests/slow/negative-control.test.ts`): every verified fixture with all
+logged values ×0.97 and ×1.03 must give at most 4% of its judged hits
+as matches. It gives 0–3% (2026-10-24: 4e5e 11 of 345 at ×0.97), from
+readings with a free count in steps near 3% (a layered buff the log
+lists once, at 1 up to its maximum layers) or 1–2% (Corrosion levels):
+a single assumed match is weak evidence; a fixture whose hits match by
+the hundred, where ×0.97 matches a few, isn't chance.
+
 **Buffs from skills** are kit `buffs` (engine `buffs.ts`): target self,
 team or enemy, a duration (0: not applied; none: until ended) and
 modifiers on a zone or an attribute whose values are ValueExprs at the
@@ -626,6 +665,21 @@ exactly and additively across the operators whose effects contributed.
   gives the same result.
 - A fixture whose value changes after a data update is reviewed, never just
   re-recorded: balance change or bug.
+- **Snapshots** (`tests/snapshots/`, 2026-10-24) are a regression baseline,
+  not expected values with provenance (principle 11 doesn't apply to them,
+  and they never stand in for a fixture): `examples.json` pins every
+  `examples/*.scenario.json` result (total, hit and cast counts, damage per
+  operator, a digest of the hits, whole and per 10 s; a failure lists the
+  hits from the first window that moved), `log-verdicts.json` the verdict
+  counts per operator of every verified log fixture (a ratchet: no fewer
+  plain, plain + assumed or total matches, no more fallbacks), and
+  `log-verdicts-pending.json` those of every pending fixture (exactly: they
+  only pin the current state). A deliberate change: `npm run
+  snapshots:update` (`EFSIM_UPDATE_SNAPSHOTS=1`), and the file's diff goes
+  in the commit with the reason.
+- **`npm test`** runs everything but the slow log checks; **`npm run
+  test:logs`** (`tests/slow/`, a few minutes: the pending fixtures in two
+  shards, and the negative control) runs them, and `npm run check` runs both.
 
 ## Code layout (proposed)
 
