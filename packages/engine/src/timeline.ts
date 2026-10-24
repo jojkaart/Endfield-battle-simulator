@@ -184,6 +184,8 @@ interface PendingHit {
   readonly snapshot?: readonly Modifier[];
   /** A replayed landing at its logged frame (replayCast `landings`): slow-downs don't move it (the log's time has them in already). */
   readonly pinned?: true;
+  /** A replayed landing's reference (replayCast `landings`): its LandedHit carries it, with the facts it was computed on. */
+  readonly ref?: string;
 }
 
 export interface Cast {
@@ -202,6 +204,24 @@ export interface LandedHit extends HitDamage {
   readonly operator: string;
   /** Fixed DMG (KitHit.fixedDamage): recording buffs don't record it. */
   readonly fixed?: true;
+  /** A replayed landing's reference (replayCast `landings` ref), and what its values read as it landed. */
+  readonly ref?: string;
+  readonly facts?: LandingFacts;
+}
+
+/**
+ * What a landing's values and conditions read (the situation its damage was computed on), as data: its operator's
+ * stacks and the enemy's state before its own applications, the infliction stacks those consumed, its combo
+ * window's event count, the Link stacks its cast used. Recorded for replayed landings (the log check reads them
+ * instead of trying every count: cli logcheck.ts).
+ */
+export interface LandingFacts {
+  readonly stacks: Readonly<Record<string, number>>;
+  readonly enemy: EnemyStatus;
+  readonly consumed: number;
+  readonly eventCount?: number;
+  readonly castLink: number;
+  readonly controlled: string;
 }
 
 /** A status event with the frame it happened at; the record of what the enemy's arts state did. */
@@ -1960,7 +1980,8 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     // beforeDamage buffs (whose modifiers count for it: Yvonne's 10th layer gives its Crit DMG to the shot that adds it).
     ...(st.enemy !== before.enemy || st.buffs !== buffsAtLanding ? { modifierSituation: { ...before, consumed, ...buffSituation(at(consumed)) } } : {}),
   });
-  st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}) }]);
+  const facts = (): LandingFacts => ({ stacks: before.stacks ?? {}, enemy: before.enemy ?? NO_STATUS, consumed, ...(hit.eventCount !== undefined ? { eventCount: hit.eventCount } : {}), castLink, controlled });
+  st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}), ...(hit.ref !== undefined ? { ref: hit.ref, facts: facts() } : {}) }]);
   // The enemy the damage saw: the reactions of the applications before it see it too.
   const enemyAtDamage = st.enemy;
   const lateEvents = applyPhase(true);
@@ -2067,10 +2088,12 @@ function takeJump(st: TimelineState, j: PendingJump): { state: TimelineState; ev
     state: {
       ...st,
       pending: [
-        ...skip(st.pending.filter((h) => !h.detached || h.launchAt === undefined), (h) => h.operator === j.operator && h.cast === j.cast && !h.detached),
+        // A replayed landing pinned at its logged frame stays there (the log's time has the jumps in already).
+        ...st.pending.filter((h) => h.pinned),
+        ...skip(st.pending.filter((h) => !h.pinned && (!h.detached || h.launchAt === undefined)), (h) => h.operator === j.operator && h.cast === j.cast && !h.detached),
         // A detached hit not launched yet moves with its launch: dropped if the jump skips it, sooner if it comes after.
         ...st.pending
-          .filter((h) => h.detached && h.launchAt !== undefined)
+          .filter((h) => !h.pinned && h.detached && h.launchAt !== undefined)
           .flatMap((h) => (h.operator !== j.operator || h.cast !== j.cast || (h.launchAt as number) <= at ? [h] : (h.launchAt as number) < at + length ? [] : [{ ...h, frame: h.frame - length, launchAt: (h.launchAt as number) - length }])),
       ],
       pendingActions: [
@@ -2493,12 +2516,14 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     const own = new Map<string, PendingHit[]>();
     for (const h of st.pending) if (h.cast === index && !h.trigger && h.operator === operator && h.skillId === skillId) own.set(h.hitId, [...(own.get(h.hitId) ?? []), h]);
     for (const list of own.values()) list.sort((a, b) => a.frame - b.frame);
-    const moved = new Map<PendingHit, number>();
+    const moved = new Map<PendingHit, { frame: number; ref?: string }>();
     for (const l of opts.landings) {
       const h = own.get(l.hitId)?.[l.nth];
-      if (h) moved.set(h, Math.max(frame, l.frame));
+      if (h) moved.set(h, { frame: Math.max(frame, l.frame), ...(l.ref !== undefined ? { ref: l.ref } : {}) });
     }
-    st = { ...st, pending: st.pending.map((h) => (moved.has(h) ? { ...h, frame: moved.get(h) as number, pinned: true as const } : h)) };
+    // A pinned landing was launched by its logged frame (a detached one's launch, KitHit.launch, is on the kit's timeline, which jumps shorten).
+    const pin = (h: PendingHit, m: { frame: number; ref?: string }): PendingHit => ({ ...h, ...m, pinned: true, ...(h.launchAt !== undefined ? { launchAt: Math.min(h.launchAt, m.frame) } : {}) });
+    st = { ...st, pending: st.pending.map((h) => { const m = moved.get(h); return m ? pin(h, m) : h; }) };
   }
   return runTriggers(ctx, st, r.events, r.origin);
 }
@@ -2507,8 +2532,19 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
 export interface ReplayCastOptions {
   /** The operator's current skill keeps its hits still to come (the log shows them landing after this cast started). */
   readonly keepPrevious?: boolean;
-  /** Landings at their logged frames: the `nth` landing (0: the first, in frame order) of the cast's kit hit `hitId` lands at `frame`. */
-  readonly landings?: readonly { readonly hitId: string; readonly nth: number; readonly frame: number }[];
+  /**
+   * Landings at their logged frames: the `nth` landing (0: the first, in frame order) of the cast's kit hit `hitId` lands at `frame`;
+   * with `ref`, its LandedHit carries the reference and its facts (LandingFacts).
+   */
+  readonly landings?: readonly { readonly hitId: string; readonly nth: number; readonly frame: number; readonly ref?: string }[];
+}
+
+/** The count of the combo window a replayed combo would use at a frame (the state advanced to it), or null when none is open (replayCast then opens one, counting 1). */
+export function replayWindowCount(ctx: TimelineContext, state: TimelineState, operator: string, skillId: string, frame: number): number | null {
+  const skill = kitSkill(ctx, operator, skillId);
+  if (skill.kind !== "combo" || skill.comboWindow === false) return null;
+  const key = windowKey(ctx, operator, skillId);
+  return windowOpen(state, operator, key, frame) ? (state.comboWindow[key]?.count ?? 1) : null;
 }
 
 /**

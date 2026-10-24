@@ -175,6 +175,8 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
     const pass = (starts: ReadonlyMap<string, readonly number[]> | null) => {
       const placed = new Map<LogHit, PlacedHit>();
       const current = new Map<string, { cast: LoggedCast; first: number; index: number; span: number; longest: number; slots: Slot[] | null }>();
+      // Casts placed so far, per group: a key's first landing within an earlier cast's reach is that cast's (joinable).
+      const opened = new Map<string, LoggedCast[]>();
       for (const h of mine) {
         const candidates = groupsWith(h.event);
         if (candidates.length === 0) continue;
@@ -194,7 +196,8 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const g = choose(candidates, h, starts, slots);
         const s = slots(g, h.event);
         const first = s?.[0];
-        const cast: LoggedCast = { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, start: h.t - msOf(first?.frame ?? 0) };
+        const cast: LoggedCast = joinable(opened.get(g.id) ?? [], h, first?.frame ?? 0) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, start: h.t - msOf(first?.frame ?? 0) };
+        if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
         const longest = Math.max(span, g.kind !== null ? msOf(data.skills[g.skillId]?.timing?.durationFrames ?? 0) : 0);
         current.set(h.event, { cast, first: h.t, index: 0, span, longest, slots: s });
@@ -210,6 +213,22 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
     casts.push(...new Set([...placed.values()].map((p) => p.cast)));
   }
   return { hits, casts };
+}
+
+/**
+ * The cast of the same skill, placed from another key, that a key's first logged landing belongs to: the latest that
+ * started no later than the landing and no earlier than the landing's kit frame (plus CAST_SLACK_MS) before it. A
+ * skill's jumps shorten its timeline, so a late landing comes sooner than its kit frame says
+ * (fixtures/zmdlogs-4e5e1390085e.json: Rossi's wolves, kit frame 230, land 115 frames after her battle skill at 9483 ms;
+ * placed from their frame alone, they made a battle skill at 5647 ms the log doesn't have). Null: none, a new cast.
+ */
+function joinable(casts: readonly LoggedCast[], h: LogHit, frame: number): LoggedCast | null {
+  let best: LoggedCast | null = null;
+  for (const c of casts) {
+    if (c.key === h.event || c.start > h.t || c.start < h.t - msOf(frame) - CAST_SLACK_MS) continue;
+    if (!best || c.start > best.start) best = c;
+  }
+  return best;
 }
 
 /** Casts of one skill placed from different keys this close are one cast. */

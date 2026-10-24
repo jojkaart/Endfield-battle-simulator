@@ -6,7 +6,7 @@
 // log stops listing Camille's weapon buffs.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, computeHit, computeStats, createContext, FPS, init, replayCast, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
+import { advance, computeHit, computeStats, createContext, FPS, init, replayCast, replayWindowCount, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
 import { loadGameData, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
 import { checkLog, formatBuffReplay, LOG_LISTING, logBuffReplay, readLogFixture, type HitVerdict } from "@efsim/cli";
 
@@ -133,6 +133,34 @@ describe("replayCast: a logged cast at its logged frame", () => {
     const twice = (keepPrevious: boolean) => landed(advance(ctx, replayCast(ctx, replayCast(ctx, init(ctx), op, BATTLE, 0), op, BATTLE, 15, { keepPrevious }), 200));
     expect(twice(false)).toEqual([["h1", 10], ["h1", 25], ["h2", 35]]);
     expect(twice(true)).toEqual([["h1", 10], ["h2", 20], ["h1", 25], ["h2", 35]]);
+  });
+
+  it("keeps a pinned landing at its logged frame across the skill's jumps, a detached one's launch with it", () => {
+    // Frames 100 and 230 are past the jump at 37 (to 215): unpinned, the first is skipped and the second (a projectile
+    // launched at 230) comes 178 frames sooner. The log's frames have the jump in already (4e5e1390085e: Rossi's wolves).
+    const late = hit("late", ["k3"], { frames: [100] });
+    const wolf = hit("wolf", ["k4"], { frames: [230], launch: 230 });
+    const g2 = withKit({ skills: [battle([h1, late, wolf])] });
+    const ctx2 = createContext(g2, { team: [build], target, durationFrames: 10 * FPS, rotation: [], options: { crit: "never" } });
+    const run = (landings: { hitId: string; nth: number; frame: number; ref?: string }[]) => advance(ctx2, replayCast(ctx2, init(ctx2), op, BATTLE, 0, { landings }), 250);
+    expect(landed(run([]))).toEqual([["h1", 10], ["wolf", 52]]);
+    const st = run([{ hitId: "late", nth: 0, frame: 60, ref: "a" }, { hitId: "wolf", nth: 0, frame: 120, ref: "b" }]);
+    expect(landed(st)).toEqual([["h1", 10], ["late", 60], ["wolf", 120]]);
+    // A landing with a reference carries it, with what its values read (LandingFacts).
+    const wolfHit = st.hits.find((x) => x.hitId === "wolf");
+    expect([wolfHit?.ref, wolfHit?.facts?.castLink, wolfHit?.facts?.consumed]).toEqual(["b", 0, 0]);
+    expect(st.hits.find((x) => x.hitId === "h1")?.ref).toBeUndefined();
+  });
+
+  it("tells whether a replayed combo finds its window open, and its count (replayWindowCount)", () => {
+    const combo = kit.skills.find((s) => s.kind === "combo")?.skillId as string;
+    const full = createContext(data, { team: [build], target, durationFrames: 10 * FPS, rotation: [], options: { crit: "never" } });
+    const st = init(full);
+    const open = { ...st, comboWindow: { [op]: { from: 0, until: 100, count: 3 } } };
+    expect(replayWindowCount(full, st, op, combo, 0)).toBeNull();
+    expect(replayWindowCount(full, open, op, combo, 50)).toBe(3);
+    expect(replayWindowCount(full, open, op, combo, 150)).toBeNull();
+    expect(replayWindowCount(full, open, op, BATTLE, 50)).toBeNull();
   });
 });
 

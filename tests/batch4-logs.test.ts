@@ -25,9 +25,9 @@ import {
   type OperatorKit,
 } from "@efsim/engine";
 import { loadGameData, type LogFixture, type LogHit } from "@efsim/data";
-import { calc, checkLog, kitStackCaps, layerVariants, linkVariants, predictedLink, readLogFixture, teamStackCaps, type CalcOptions, type HitVerdict } from "@efsim/cli";
+import { calc, checkLog, kitStackCaps, layerVariants, linkVariants, logBuffReplay, readLogFixture, teamStackCaps, type CalcOptions, type HitVerdict } from "@efsim/cli";
 import { assumeValues, statedCounts, valueAssumptions, valueReads } from "../packages/cli/src/hitvalues.ts";
-import { placeHits } from "../packages/cli/src/logcasts.ts";
+import { placeHits, type LoggedCast } from "../packages/cli/src/logcasts.ts";
 import { checkReactions, enemyClockDue } from "../packages/cli/src/reactioncheck.ts";
 
 const data = loadGameData();
@@ -163,7 +163,7 @@ describe("L3: what the log never lists", () => {
     expect(assumed(v[1])).toContain("unlogged own t_hidden");
   });
 
-  it("predicts Link from the logged casts of a Link source and tries it ±1 on battle-skill hits", () => {
+  it("takes Link from the replay of the logged casts (the stacks each cast used), tries 1-4 only where the replay can't say", () => {
     const comboHit = hit("c", ["combo_key"], { damageType: "combo", frames: [30] });
     const battleHit = hit("b", ["battle_key"], { frames: [15] });
     const g = withKit({ skills: [{ skillId: COMBO, label: "combo", kind: "combo", hits: [comboHit] }, battle([battleHit])], triggers: [onCast("t_link", COMBO, { kind: "link" })] });
@@ -173,20 +173,29 @@ describe("L3: what the log never lists", () => {
     const placement = placeHits(g, fx);
     const cast = (t: number) => placement.hits.get(fx.hits.find((x) => x.t === t) as LogHit)?.cast;
     expect(cast(2000)?.start).toBeCloseTo(1000, 6);
-    expect(predictedLink(g, fx, placement, cast(4000) as { start: number })).toBe(1);
-    expect(predictedLink(g, fx, placement, cast(7000) as { start: number })).toBe(0);
-    const v = checkLog(g, fx);
-    expect(assumed(v[1])).toContain("Link 1 (predicted 1)");
-    expect(v[2]?.kind === "match" && v[2].assumed.some((a) => a.startsWith("Link"))).toBe(false);
-    expect(linkVariants("ultimate", 2).map((x) => x.label)).toEqual([null, "Link 2 (predicted 2)", "Link 1 (predicted 2)", "Link 3 (predicted 2)"]);
-    expect(linkVariants("combo", 2)).toHaveLength(1);
+    const r = logBuffReplay(g, fx, placement);
+    const link = (t: number) => {
+      const f = r.replay.castFacts(cast(t) as LoggedCast);
+      return "unknown" in f ? f : f.link;
+    };
+    expect([link(4000), link(7000)]).toEqual([{ value: 1 }, { value: 0 }]);
+    const v = checkLog(g, fx, { replay: r });
+    // The replay's Link is a fact, not an assumption: both battle-skill hits match plainly.
+    expect(v.slice(1).map((x) => (x.kind === "match" ? x.class : x.kind))).toEqual(["plain", "plain"]);
+    // Without the replay (the log's listing alone), Link is tried, labelled with why.
+    expect(assumed(checkLog(g, fx, { buffs: "log" })[1])).toContain("Link 1 (the replay can't say: no replay)");
+    expect(linkVariants("ultimate", { unknown: "x" }).map((x) => x.label)).toEqual([null, ...[1, 2, 3, 4].map((n) => `Link ${n} (the replay can't say: x)`)]);
+    expect(linkVariants("ultimate", { value: 2 }).map((x) => [x.label, x.modifiers.length])).toEqual([[null, 1]]);
+    expect(linkVariants("combo", { value: 2 })).toHaveLength(1);
   });
 
-  it("matches Gilberta's ultimate after Camille's combo in 40d9 with one Link stack (the hand annotation's)", () => {
+  it("leaves Link undecided where another cast that uses Link comes within REPLAY_EDGE_MS (40d9: Gilberta's and Si's ultimates, 86 ms apart)", () => {
     const fx = readLogFixture(new URL("../fixtures/zmdlogs-40d9a3c1da37.json", import.meta.url).pathname);
-    // One hit out of the log: the casts that apply its buffs are gone, so the log's listing (no kit-buff replay).
-    const v = checkLog(data, { ...fx, hits: fx.hits.filter((h) => h.t === 12951 && h.operator === "chr_0013_aglina") }, { buffs: "log" });
-    expect(v.map(assumed)).toEqual([["Link 1 (predicted 0)"]]);
+    const v = checkLog(data, fx).filter((x) => x.hit.t === 12951 && x.hit.operator === "chr_0013_aglina");
+    expect(v.map(assumed)).toEqual([["Link 1 (the replay can't say: Link stacks change within 500 ms of the cast)"]]);
+    // One hit out of the log: no casts to replay, the log's listing alone.
+    const one = checkLog(data, { ...fx, hits: fx.hits.filter((h) => h.t === 12951 && h.operator === "chr_0013_aglina") }, { buffs: "log" });
+    expect(one.map(assumed)).toEqual([["Link 1 (the replay can't say: no replay)"]]);
   });
 });
 
@@ -209,6 +218,20 @@ describe("L1: the n-th logged landing of a key in a cast is the n-th kit landing
     const c = checkReactions(g, fx);
     expect(c.matched.map((m) => [m.t, m.loggedT])).toEqual([[1333, 1333], [9333, 9333]]);
     expect(c.unpredicted).toEqual([]);
+  });
+
+  it("puts a key's late first landing in the cast of the same skill it can belong to, not a cast its kit frame alone implies", () => {
+    // A landing at kit frame 300 (10 s; jumps make it sooner in the game) logged 2 s after the skill's first one:
+    // the same cast (4e5e1390085e: Rossi's wolves, 3.8 s after her battle skill, kit frame 230).
+    const wolf = hit("wolf", ["w"], { frames: [300] });
+    const g2 = withKit({ skills: [battle([first, wolf])] });
+    const fx2 = fixture([logHit(1000, "k", 1), logHit(3000, "w", 1), logHit(30000, "w", 1)]);
+    const placement = placeHits(g2, fx2);
+    const [a, b, c] = fx2.hits.map((h) => placement.hits.get(h)?.cast);
+    expect(b).toBe(a);
+    // Too late for any cast's kit frame (plus CAST_SLACK_MS): a cast of its own.
+    expect(c).not.toBe(a);
+    expect(c?.start).toBeCloseTo(30000 - 10000, 6);
   });
 });
 

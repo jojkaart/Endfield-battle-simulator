@@ -41,8 +41,8 @@ import {
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit, type RawBuffFile } from "@efsim/data";
 import { assumeValues, valueAssumptions, valueReads } from "./hitvalues.ts";
-import { distinctCasts, placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
-import { disagreementRuns, REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK, replayedHits, replayKitBuffs, type BuffReplay, type DisagreementRun, type ReplayedHits } from "./buffreplay.ts";
+import { placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
+import { disagreementRuns, REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK, replayedHits, replayKitBuffs, type BuffReplay, type DisagreementRun, type Fact, type ReplayCastFacts, type ReplayedHits } from "./buffreplay.ts";
 
 /** What a reading of a logged hit takes for granted that the log doesn't say. */
 export type AssumptionKind =
@@ -758,91 +758,35 @@ export function ownBuffVariants(options: readonly BuffOption[][], hit: LogHit): 
   return perBuff.reduce<Variant[]>((acc, l) => combine(acc, [NO_VARIANT, ...l]), [NO_VARIANT]);
 }
 
-/** How long a Link stack lasts unless its source says (buff_common_affixes_combo_trigger: 15 s). */
-const LINK_MS = 15000;
+/** The replay doesn't know a fact about a logged hit (BuffReplay castFacts / landing): why, for the labels of the alternatives tried instead. */
+export interface Undecided {
+  readonly unknown: string;
+}
+
+/** The facts the replay has of a logged hit's cast, or why it has none (no replay: `zmdlogs check --log-buffs`). */
+function castFactsOf(replay: LogBuffReplay | null, cast: Pick<LoggedCast, "operator" | "skillId" | "start"> | undefined): ReplayCastFacts | Undecided {
+  if (!replay) return { unknown: "no replay" };
+  if (!cast) return { unknown: "a hit the placement doesn't place" };
+  return replay.replay.castFacts(cast);
+}
+
+/** One fact of a cast's (castFactsOf), or why the replay doesn't know it. */
+function castFact<K extends "link" | "windowCount" | "consumed">(facts: ReplayCastFacts | Undecided, key: K): ReplayCastFacts[K] {
+  return "unknown" in facts ? facts : facts[key];
+}
+
+/** Link's multiplier on a battle skill's or ultimate's hits at `n` stacks. */
+const linkModifier = (kind: "battle" | "ultimate", n: number): Modifier => ({ zone: "multiplicative", value: linkValue(kind, n), source: `Link (${n})` });
 
 /**
- * Link stacks a cast would use, from the Link sources the log's casts show
- * (batch 4 L3, after B1: Link comes only from Link sources): kit triggers on
- * a logged cast with a `link` action or a `link` kit buff (their `if`s
- * counted as met), until they run out or a battle skill or ultimate of a
- * logged cast uses them up; at most 4.
+ * Link stacks on a battle-skill or ultimate hit, which ZMDLogs doesn't list: the stacks its cast used in the replay
+ * of the logged casts (Cast.link: the timeline's Link sources, B1), no assumption. Where the replay can't say (`facts`
+ * undecided: a cast it couldn't make, or no replay), none and 1–4 are tried, labelled with why.
  */
-export function predictedLink(data: GameData, fx: LogFixture, placement: Placement, cast: Pick<LoggedCast, "start">): number {
-  let known = linkGrantCache.get(placement);
-  if (!known) linkGrantCache.set(placement, (known = linkGrants(data, fx, placement)));
-  const { casts, grants } = known;
-  // A battle skill or ultimate cast before this one uses up what was granted before it.
-  const users = casts.filter((c) => (c.kind === "battle" || c.kind === "ultimate") && c.start < cast.start - 1);
-  let n = 0;
-  for (const g of grants) {
-    if (!(g.at <= cast.start && g.until > cast.start)) continue;
-    if (users.some((u) => u.start >= g.at)) continue;
-    n += g.count;
-  }
-  return Math.min(4, Math.round(n));
-}
-
-interface LinkGrant {
-  readonly at: number;
-  readonly until: number;
-  readonly count: number;
-}
-
-const linkGrantCache = new WeakMap<Placement, { casts: LoggedCast[]; grants: LinkGrant[] }>();
-
-/** The Link stacks the logged casts grant (predictedLink), with when they run out, in ms. */
-function linkGrants(data: GameData, fx: LogFixture, placement: Placement): { casts: LoggedCast[]; grants: LinkGrant[] } {
-  const casts = distinctCasts(placement);
-  const grants: LinkGrant[] = [];
-  for (const build of fx.team) {
-    const kit = effectiveKit(data, build);
-    if (!kit) continue;
-    const panel = computeStats(data, build);
-    for (const t of kit.triggers) {
-      if (t.on.event !== "cast" || !t.on.skills?.length) continue;
-      const skillId = triggerSkillId(kit.operator, t);
-      for (const a of allActions(t.do)) {
-        let count = 0;
-        let ms = LINK_MS;
-        try {
-          if (a.kind === "link") {
-            const ec = evalContext(data, build, panel, skillId, { team: fx.team });
-            count = a.count === undefined ? 1 : evaluate(a.count, ec);
-            ms = a.seconds === undefined ? LINK_MS : evaluate(a.seconds, ec) * 1000;
-          } else if (a.kind === "buff") {
-            const def = kit.buffs.find((b) => b.id === a.buff && b.link);
-            const b = def ? applyBuff(data, build, panel, skillId, def, 0) : null;
-            if (b) [count, ms] = [1, Number.isFinite(b.expiresAt) ? (b.expiresAt * 1000) / FPS : LINK_MS];
-          }
-        } catch (e) {
-          if (!readingDoesNotApply(e)) throw e;
-          continue; // its count or duration needs a fight
-        }
-        if (count <= 0) continue;
-        for (const c of casts) {
-          if (c.operator !== build.operator || !t.on.skills.includes(c.skillId)) continue;
-          const at = c.start + ((t.delay ?? 0) * 1000) / FPS;
-          grants.push({ at, until: at + ms, count });
-        }
-      }
-    }
-  }
-  return { casts, grants };
-}
-
-/**
- * Link stacks on a battle-skill or ultimate hit, which ZMDLogs doesn't list:
- * none first, then the predicted stacks (predictedLink) and one either side,
- * each Link's multiplier for the cast's kind.
- */
-export function linkVariants(kind: SkillType | null, predicted: number): Variant[] {
+export function linkVariants(kind: SkillType | null, link: Fact<number>): Variant[] {
   if (kind !== "battle" && kind !== "ultimate") return [NO_VARIANT];
-  const counts = [...new Set([predicted, predicted - 1, predicted + 1])].filter((n) => n >= 1 && n <= 4);
-  return [
-    NO_VARIANT,
-    ...counts.map((n): Variant => variant({ kind: "link", label: `Link ${n} (predicted ${predicted})`, n }, [{ zone: "multiplicative", value: linkValue(kind, n), source: `Link (${n})` }])),
-  ];
+  if ("value" in link) return link.value > 0 ? [{ ...NO_VARIANT, modifiers: [linkModifier(kind, link.value)] }] : [NO_VARIANT];
+  return [NO_VARIANT, ...[1, 2, 3, 4].map((n): Variant => variant({ kind: "link", label: `Link ${n} (the replay can't say: ${link.unknown})`, n }, [linkModifier(kind, n)]))];
 }
 
 /** Most layers of an unquantified buff tried from a kit. */
@@ -958,7 +902,8 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
   const finisher = finisherModifier(data, fx.enemy.id);
   const placement = placeHits(data, fx);
   // The hits as the replay decides their kit buffs; with `buffs: "log"`, as logged.
-  const replayed = opts.buffs === "log" ? null : (opts.replay ?? logBuffReplay(data, fx, placement)).replayed;
+  const replay = opts.buffs === "log" ? null : (opts.replay ?? logBuffReplay(data, fx, placement));
+  const replayed = replay?.replayed ?? null;
   const asReplayed = (h: LogHit) => replayed?.hits.get(h) ?? h;
   const noneDecided: ReadonlySet<string> = new Set();
   const killing = killingBlows(fx);
@@ -986,7 +931,8 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
     const kit = effectiveKit(data, member.build);
     const placed = placement.hits.get(logged);
     const kind = placed ? placed.cast.kind : (kit?.skills.find((s) => found.some(([f]) => f.skillId === s.skillId))?.kind ?? null);
-    const link = kind === "battle" || kind === "ultimate" ? linkVariants(kind, predictedLink(data, fx, placement, placed?.cast ?? { start: hit.t })) : [NO_VARIANT];
+    const castFacts = castFactsOf(replay, placed?.cast);
+    const link = linkVariants(kind, castFact(castFacts, "link"));
     const stackMax = (id: string) => kit?.stacks.find((x) => x.id === id)?.max ?? 4;
     /**
      * Every reading of one version of the hit (the replay's, or the log's): the first that matches (its assumptions), and

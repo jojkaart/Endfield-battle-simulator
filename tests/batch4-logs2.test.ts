@@ -108,7 +108,8 @@ describe("repeated boundary buffs: 1 up to all of their instances", () => {
     const fx = fixtureFile("4e5e1390085e");
     const at = fx.hits.filter((x) => x.t === 13314 && x.operator === "chr_0028_wulfa");
     expect(at.every((x) => x.unquantified.length === 0)).toBe(true);
-    const v = checkLog(data, { ...fx, hits: at });
+    // The whole log: the replay takes the Link stack Rossi's battle skill carries from Camille's combo before.
+    const v = checkLog(data, fx).filter((x) => at.includes(x.hit));
     expect(v.map((x) => x.kind)).toEqual(["match", "match", "match", "match", "match"]);
   });
 });

@@ -198,12 +198,12 @@ describe("Camille's logs", () => {
     return out;
   };
 
-  it("40d9: all 6 of Camille's hits match; Gilberta's ultimate after her combo carries the one predicted Link stack", () => {
+  it("40d9: all 6 of Camille's hits match; Gilberta's ultimate after her combo carries one Link stack", () => {
     const fx = fixture("40d9a3c1da37");
     expect(kinds(fx)).toEqual({ match: 6 });
-    // The whole log places her combo's cast, so the checker predicts its stack (tests/batch4-logs.test.ts checks the hit alone: predicted 0).
+    // The replay has her combo's stack, but Si's ultimate 86 ms from Gilberta's could take it: there Link is tried (tests/batch4-logs.test.ts).
     const g = checkLog(data, fx).filter((v) => v.hit.t === 12951 && v.hit.operator === G);
-    expect(g.map((v) => (v.kind === "match" ? v.assumed : v.kind))).toEqual([["Link 1 (predicted 1)"]]);
+    expect(g.map((v) => (v.kind === "match" ? v.assumed : v.kind))).toEqual([["Link 1 (the replay can't say: Link stacks change within 500 ms of the cast)"]]);
   });
 
   it("4e5e: all 85 match, Lustrous Carmine's ATK after 49418 ms (which the log stops listing) from the kit-buff replay or written in as a logged effect", () => {
