@@ -65,6 +65,11 @@ the six favourites.
    carry-over on reapplication; in-game test 4.
 6. **Still open from setup:** a `Result` schema, `NOTICE` when MIT code is
    first copied, the tie-break order.
+7. **Engine review** (2026-10-22): the fixes are in (journal 2026-10-24).
+   Open: one scheduler for advanceFrom's event kinds and splitting
+   timeline.ts; slow-downs don't shift what's created between their cast
+   and their start or during them (buffs, spend pauses, a frozen
+   teammate's cast).
 
 ## Later
 

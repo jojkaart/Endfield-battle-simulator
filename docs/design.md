@@ -356,8 +356,14 @@ so the found rotation replays to exactly the searched states with
 `simulate`. Per half-second bucket the best `beamWidth` (24) nodes survive,
 ranked by committed damage (hits landed plus everything already on its
 way: the state advanced to the fight's end), optionally plus the worth of
-unspent SP and energy (`resourceWeight`); equivalent states (`stateKey`:
-resources, windows, buffs, pending hits…) keep only the best.
+unspent SP and energy (`resourceWeight`); equivalent states keep only the
+best. Equivalent means equal in every field of the state that what comes
+next reads (`stateKey`): each `TimelineState` field, and each field of a
+pending hit and a buff, is classified in a `KeyRules` record (in the key,
+a projection of it, or a reason it isn't: landed hits and the reaction
+record are the score and the log), so a new field doesn't compile until
+someone decides; the key is a canonical serialisation (sorted keys), with
+SP and energy rounded to 0.1 (floating-point noise between paths).
 
 **Random outcomes** (owner, 2026-10-20: "the result becomes not a number,
 but rather a random distribution and needs to be interpreted and tracked as
@@ -448,6 +454,10 @@ action) lose the frames the slow-down takes; skill cooldowns run on raw
 time. Overlapping slow-downs: the lowest scale counts. The engine shifts
 what comes after the slow-down's start by the lost frames, which is exact
 for a stop and, for a partial slow-down, for everything after it ends.
+SP regenerates until the slow-down starts (which may be frames into its
+cast, or inside an advance for a trigger's cast), not for the lost frames
+after it (`TimelineState.spStops`), then on; the pause after a spend is
+apart from these and a later spend never shortens it.
 Curves: inline Unity curves are evaluated (Hermite); of the named ones only
 `ComboSkill` (0.01 for 40% of the duration, up to 1 at 93%, ramp taken as
 linear) and `RESETto1` are known. Not modelled yet: entity-layer
