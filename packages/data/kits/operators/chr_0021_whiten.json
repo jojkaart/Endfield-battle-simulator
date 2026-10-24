@@ -127,6 +127,7 @@
           "bonuses": [{ "zone": "damageBonus", "key": "dmg_up" }],
           "applies": [{ "kind": "infliction", "element": "cryst" }],
           "frames": [21],
+          "dataOverride": { "detached": "Kit right: the projectile isn't launched when her combo or ultimate cuts the cast before frame 21, so the hit is the cast's own until it lands (see the hit's note)." },
           "note": "Lands as chr_0021_whiten_normal_skill_projhit (SpellInfliction type 2 in that file). The first target each projectile hits (EntityBB_first_hit) takes atk_scale with +dmg_up in the damage-bonus zone (DamageScaleProcessor, NormalCalcZone); dmg_up is 0 unless potential 3 sets it to 0.4 (\"DMG Dealt +{dmg_up:0%} to the first enemy hit\"). One enemy, so this is the first-target hit. detached false: the projectile isn't launched when her combo or ultimate cuts the cast before frame 21 (the loader would default a hit whose event names another file to detached). Travel time isn't in the data: it lands at its launch frame. Verified: 3 hits in zmdlogs-4e5e1390085e."
         }
       ]

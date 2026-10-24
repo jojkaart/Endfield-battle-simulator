@@ -115,13 +115,13 @@
       "skillId": "chr_0023_antal_attack1",
       "label": "Basic attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "projhit", "scale": ["atk_scale"], "events": ["chr_0023_antal_attack1_projhit"], "sp": "atb" }]
+      "hits": [{ "id": "projhit", "scale": ["atk_scale"], "events": ["chr_0023_antal_attack1_projhit"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
     },
     {
       "skillId": "chr_0023_antal_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
-      "hits": [{ "id": "projhit", "scale": ["atk_scale"], "events": ["chr_0023_antal_attack2_projhit"], "sp": "atb" }]
+      "hits": [{ "id": "projhit", "scale": ["atk_scale"], "events": ["chr_0023_antal_attack2_projhit"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
     },
     {
       "skillId": "chr_0023_antal_attack3",
@@ -132,7 +132,7 @@
           "id": "projhit",
           "scale": ["atk_scale"],
           "events": ["chr_0023_antal_attack3_projhit"],
-          "sp": "atb",
+          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "ModifyDynamicBlackboard atk_scale ×0.5 once, before both launches."
         }
       ]
@@ -147,7 +147,7 @@
           "label": "Final strike, first orb",
           "scale": ["atk_scale"],
           "frames": [27],
-          "sp": "atb",
+          "sp": { "if": { "controlled": true }, "then": "atb" },
           "finalStrike": true,
           "dataOverride": { "count": "Compiler limitation (D3), kit right: both projectiles launched at 27 run attack4_powerattack_projhit's IfElse on the timed marker have_recovered, which the first landing creates; the first takes the Final Strike branch (atb, poise), the second the plain one. The compiler counts both branches for each." },
           "note": "No have_recovered marker yet: the Final Strike branch (mask 2097280, atb, poise for the controlled operator), which sets the marker for 0.5 s."
@@ -184,7 +184,7 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "sp": "atb",
+          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "A rotation's dive: a jump, then this landing (batch-1 S10)."
         }
       ]

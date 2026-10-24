@@ -364,7 +364,7 @@
           "scale": [
             "atk_scale"
           ],
-          "sp": "atb",
+          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "SkillData attack5: ObtainCostAction costType 1 atb (20) when controlled, DamageAction mask 2097280 (Final Strike), DefiniteValueCalculation poise (18) onlyEnableForMainChar."
         }
       ]
@@ -428,7 +428,7 @@
           "scale": [
             "atk_scale"
           ],
-          "sp": "atb"
+          "sp": { "if": { "controlled": true }, "then": "atb" }
         }
       ]
     },

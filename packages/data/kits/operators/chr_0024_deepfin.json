@@ -174,6 +174,7 @@
               }
             }
           },
+          "dataOverride": { "sp": "Kit form: the data's SwitchAction on the consumed Cryo stacks (ObtainCostAction atb_1 ... atb_4, P1 adding potential_1_atb to each by ModifyDynamicBlackboard) as one value of the consumed count; the compiler gives each option on its own branch (see the hit's note).", "spBeforeDamage": "Kit form: the SP reads the consumed Cryo stacks ({consumed}), which the kit consumes after the damage (afterDamage, as the logs fit); before the damage it would read 0. In the data the stack count is saved before the ObtainCostAction, which comes before the DamageAction." },
           "note": "Frame 27, in data order: num = the target's Cryo Infliction stacks (SaveBuffStackNumAdvanced tag 1570888476); IfElse potential_1 ≥ 1 → atb_n += potential_1_atb (P1: +10); SwitchAction on num 1–4 → ObtainCostAction atb_1…atb_4 (15 / 25 / 35 / 45; atbSourceType 3, gain method 0: natural; num 0 matches no option: no SP; \"can only trigger 1 time\"); DamageAction atk_scale + poise (mask 4352); buff_common_obtain_ultimate_sp; ForceSpellStatusAction spellStatusType 2 (Solidification), count = consumedLayer = num, consumedType 2 (Cryo), only if CheckBuffStackNumByTag Cryo ≥ 1. The consumption and the Solidification come after the damage (afterDamage, batch-3 A4); its level is the stacks consumed (batch-3 A3: level {consumed: true}; 0 consumed applies nothing). The SP is judged after them, on the stacks consumed (the data's num, saved before; the same count)."
         }
       ]
@@ -184,14 +185,15 @@
       "damageType": "combo",
       "note": "Normal path: frames 0–64, then JumpToAction 64 → 120 (unconditional, read from SkillData). Rare Fin path: trigger rare_fin jumps 10 → 65. The jump at frame 0 (no target within 4.5 m → 4) isn't taken. buff_chr_0024_deepfin_combo_camera (f0) is a camera effect.",
       "hits": [
-        { "id": "hook", "label": "Hook", "scale": ["atk_scale_1"], "sp": "atb", "note": "ObtainCostAction atb (15; atbSourceType 3, natural) before the DamageAction (mask 8192)." },
+        { "id": "hook", "label": "Hook", "scale": ["atk_scale_1"], "sp": "atb", "spBeforeDamage": true, "note": "ObtainCostAction atb (15; atbSourceType 3, natural) before the DamageAction (mask 8192)." },
         { "id": "slam", "label": "Slam", "scale": ["atk_scale_2"], "note": "Mask 12288; ObtainCostAction costType 0 usp_normal (10) on hit." },
-        { "id": "hook_ex", "label": "Rare Fin: hook", "scale": ["atk_scale_1ex"], "sp": "atb", "note": "Rare Fin path only (skipped by the jump 64 → 120 otherwise)." },
+        { "id": "hook_ex", "label": "Rare Fin: hook", "scale": ["atk_scale_1ex"], "sp": "atb", "spBeforeDamage": true, "note": "Rare Fin path only (skipped by the jump 64 → 120 otherwise)." },
         {
           "id": "slam_ex",
           "label": "Rare Fin: slam",
           "scale": ["atk_scale_2ex"],
           "sp": "atb_sp",
+          "spBeforeDamage": true,
           "buffs": [{ "buff": "p3_atk", "if": { "potentialAtLeast": 3 } }],
           "note": "Rare Fin path only. ObtainCostAction atb_sp (10; atbSourceType 0, natural) before the DamageAction; usp_normal; P3's team ATK after it."
         }
@@ -209,6 +211,7 @@
           "applies": [{ "kind": "infliction", "element": "cryst" }],
           "extraScale": [{ "value": "atk_up", "if": { "all": [{ "potentialAtLeast": 5 }, { "enemyHpBelow": "hp_tar" }] } }],
           "sp": { "min": [{ "sum": [{ "product": ["atb_up", "kill_num"] }, "atb"] }, "atb_max"] },
+          "dataOverride": { "sp": "Kit interim: the data's ObtainCostAction is at frame 91, a frame after the hit, and its IfElse on the sum being at most atb_max is the kit's min; kill_num is 0 (kills deferred, batch-3 N2; see the hit's note)." },
           "note": "Frame 90: SpellInfliction Cryo; IfElse (potential_5 ≥ 1 and CheckHp isRatio < hp_tar) → DamageAction atk_scale × atk_up (1.5), else atk_scale (damage type 4, Cryo; mask 4608) + poise; BlowOff. P5 Mega Lunker Rumors through the scenario's enemy HP (batch-3 N1, enemyHpBelow reads hp_tar, 0.5). Frame 91: ObtainCostAction atb_up × kill_num + atb, at most atb_max (atbSourceType 3, natural): 25; kill_num counts targets defeated in frames 89–91 (EventListenerAction), 0 here (kills deferred: batch-3 N2). On the hit, one frame early."
         }
       ]

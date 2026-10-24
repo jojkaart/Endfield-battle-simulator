@@ -159,6 +159,7 @@
           "branch": "third",
           "if": { "enemyStatus": "electrification" },
           "sp": "atb",
+          "spBeforeDamage": true,
           "applies": [{ "kind": "consumeStatus", "statuses": ["electrification"], "afterDamage": true }],
           "gains": [{ "stack": "wildland_count", "amount": 1, "if": { "talentAtLeast": [0, 1] } }],
           "buffs": [
@@ -192,7 +193,7 @@
       "label": "Combo skill: Peal of Thunder",
       "damageType": "combo",
       "hits": [
-        { "id": "hit1", "scale": ["atk_scale"], "frames": [17], "sp": "atb", "note": "Frame 17: ObtainCostAction atb (atbSourceType 3), DamageAction mask 12288 + poise, ObtainCostAction costType 0 usp." },
+        { "id": "hit1", "scale": ["atk_scale"], "frames": [17], "sp": "atb", "spBeforeDamage": true, "note": "Frame 17: ObtainCostAction atb (atbSourceType 3), DamageAction mask 12288 + poise, ObtainCostAction costType 0 usp." },
         { "id": "hit2", "scale": ["atk_scale"], "frames": [21, 25], "note": "display_atk_scale 3 × atk_scale: three slashes in all." }
       ]
     },

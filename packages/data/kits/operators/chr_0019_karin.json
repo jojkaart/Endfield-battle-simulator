@@ -186,15 +186,15 @@
       "label": "Basic attack 2",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "sp": "atb" },
-        { "id": "hit_2", "scale": ["atk_scale_2"], "sp": "atb" }
+        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } },
+        { "id": "hit_2", "scale": ["atk_scale_2"], "sp": { "if": { "controlled": true }, "then": "atb" } }
       ]
     },
     {
       "skillId": "chr_0019_karin_attack3",
       "label": "Basic attack 3",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": "atb" }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
     },
     {
       "skillId": "chr_0019_karin_attack4",
@@ -202,7 +202,7 @@
       "damageType": "basic",
       "hits": [
         { "id": "hit", "scale": ["atk_scale"], "frames": [19, 20], "finalStrike": false },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [21], "sp": "atb", "finalStrike": true }
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [21], "sp": { "if": { "controlled": true }, "then": "atb" }, "finalStrike": true }
       ]
     },
     {
@@ -218,7 +218,7 @@
       "skillId": "chr_0019_karin_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": "atb" }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
     },
     {
       "skillId": "chr_0019_karin_normal_skill",
@@ -230,7 +230,7 @@
       "skillId": "chr_0019_karin_combo_skill",
       "label": "Combo skill",
       "damageType": "combo",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": 0 }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": 0, "dataOverride": { "sp": "Kit form: the combo's SP is dynamic (ModifyDynamicBlackboard sets atb from talent 1's sub_ratio, max_ratio and rate before each ObtainCostAction, before the damage); the cast triggers combo_sp_1 and combo_sp_2 give it, and sp 0 keeps the skill's atb off its first hit." } }]
     },
     {
       "skillId": "chr_0019_karin_ultimate_skill",

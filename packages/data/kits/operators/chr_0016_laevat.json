@@ -495,6 +495,7 @@
             }
           ],
           "sp": "atb",
+          "spBeforeDamage": true,
           "dataOverride": { "scale": "ModifyDynamicBlackboard atk_scale_3 ×= ratio at frame 104; extra_scaling only goes to the forced Combustion buff. Open question in batch-1 (in-game test 20)." },
           "note": "With 4 Melting Flame at the cast (CheckBuffStackNumAdvanced at frame 3): all stacks are consumed at this hit (FinishBuffAction at 104, after the explosion's +1), forced Combustion for `duration` with ticks × extra_scaling (P3 ×1.5 both), `extra_usp` energy, and the P1 SP return `atb` (its ObtainCostAction is inside this hit's channel). Scale: Zero Sanity's extra_scaling; the data has × ratio (in-game test 20)."
         }
@@ -555,6 +556,7 @@
             }
           ],
           "sp": "atb",
+          "spBeforeDamage": true,
           "note": "As the normal extra hit (consumed at 98, after hit 1's +1), no energy."
         }
       ]

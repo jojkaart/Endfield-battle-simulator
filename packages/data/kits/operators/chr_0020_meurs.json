@@ -132,6 +132,7 @@
           "scale": ["atk_scale"],
           "applies": [{ "kind": "vulnerable" }],
           "sp": { "if": { "operatorBuff": { "categories": ["shield"] } }, "then": "potential5_atb" },
+          "spBeforeDamage": true,
           "note": "Reached only through the counter's jump to 60 (not attacked, the jump 45 → 255 skips it). ChannelingAction [83–85]: CreateBuff buff_physical_no_guard (1 Vulnerable, before the DamageAction, as the engine applies it), DoOnce ObtainCostAction potential5_atb (P5: 10 returned SP while a shield, tag −1757502026, is on Catcher: her combo's or anyone's, e.g. Ember's or Thunderberge's (batch 4 C2); 0 below P5), DamageAction atk_scale with poise."
         }
       ],

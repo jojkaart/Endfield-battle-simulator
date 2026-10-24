@@ -154,7 +154,7 @@
           "events": [
             "chr_0013_aglina_attack1_projhit"
           ],
-          "sp": "atb"
+          "sp": { "if": { "controlled": true }, "then": "atb" }
         }
       ]
     },
@@ -171,12 +171,12 @@
           "events": [
             "chr_0013_aglina_attack2_projhit"
           ],
-          "sp": {
+          "sp": { "if": { "controlled": true }, "then": {
             "product": [
               "atb",
               0.5
             ]
-          }
+          } }
         }
       ]
     },
@@ -193,12 +193,12 @@
           "events": [
             "chr_0013_aglina_attack3_projhit"
           ],
-          "sp": {
+          "sp": { "if": { "controlled": true }, "then": {
             "product": [
               "atb",
               0.333333313
             ]
-          }
+          } }
         }
       ]
     },
@@ -216,12 +216,12 @@
           "events": [
             "chr_0013_aglina_attack4_projhit"
           ],
-          "sp": {
+          "sp": { "if": { "controlled": true }, "then": {
             "product": [
               "atb",
               0.333400011
             ]
-          }
+          } }
         },
         {
           "id": "projhit_2",
@@ -232,12 +232,12 @@
           "events": [
             "chr_0013_aglina_attack4_projhit_2"
           ],
-          "sp": {
+          "sp": { "if": { "controlled": true }, "then": {
             "product": [
               "atb",
               0.333400011
             ]
-          },
+          } },
           "note": "Only the centre orb is a Final Strike (attack4_projhit mask 2097280; projhit_2 mask 128)."
         }
       ]
@@ -360,7 +360,7 @@
           "scale": [
             "atk_scale"
           ],
-          "sp": "atb",
+          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "A rotation's dive: a jump, then this landing (batch-1 S10). Not yet checked against an in-game value (no logged plunging attack)."
         }
       ]

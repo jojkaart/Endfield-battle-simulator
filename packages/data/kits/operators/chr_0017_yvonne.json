@@ -638,7 +638,7 @@
             "then": "atb_return",
             "else": 0
           },
-          "dataOverride": { "energy": "Kit form (batch-4 L4): the bomb as one hit whose values read the consumed stacks: the data's SaveBuffStackNumAdvanced count (and max_count for the energy) is ForceSpellStatusAction's consumedLayer, i.e. {consumed: true}; 0 consumed is the plain branch.", "scale": "Kit form (batch-4 L4): the bomb as one hit whose values read the consumed stacks: the data's SaveBuffStackNumAdvanced count (and max_count for the energy) is ForceSpellStatusAction's consumedLayer, i.e. {consumed: true}; 0 consumed is the plain branch." }
+          "dataOverride": { "energy": "Kit form (batch-4 L4): the bomb as one hit whose values read the consumed stacks: the data's SaveBuffStackNumAdvanced count (and max_count for the energy) is ForceSpellStatusAction's consumedLayer, i.e. {consumed: true}; 0 consumed is the plain branch.", "scale": "Kit form (batch-4 L4): the bomb as one hit whose values read the consumed stacks: the data's SaveBuffStackNumAdvanced count (and max_count for the energy) is ForceSpellStatusAction's consumedLayer, i.e. {consumed: true}; 0 consumed is the plain branch.", "sp": "The compiler reports no SP grant at this landing: P4's ObtainCostAction atb_return (returned SP, when the bomb hits one enemy) is in normal_skill_projhit behind nested IfElses it doesn't reach; the kit's potentialAtLeast 4 is the description's (see the skill's note)." }
         }
       ]
     },

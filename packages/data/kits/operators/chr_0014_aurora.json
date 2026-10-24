@@ -112,7 +112,7 @@
       "skillId": "chr_0014_aurora_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": "atb" }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
     },
     {
       "skillId": "chr_0014_aurora_normal_skill",
@@ -125,6 +125,7 @@
           "scale": ["atk_scale"],
           "applies": [{ "kind": "infliction", "element": "cryst" }],
           "sp": "potential_5_atb",
+          "spBeforeDamage": true,
           "note": "Reached only through the counter's jump to 107. ChannelingAction [125–127]: SpellInfliction Cryo on the target (inflictionType 2, before the DamageAction, as the engine applies it), DoOnce ObtainCostAction costType 1 potential_5_atb (P5 \"Cold Disaster Specialist\": 10 returned SP; 0 below P5), DamageAction atk_scale (mask 4352, Cryo) with poise."
         }
       ],

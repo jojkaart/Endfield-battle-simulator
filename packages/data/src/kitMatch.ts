@@ -123,7 +123,7 @@ export function foldPoise(c: CompiledSkill): { skill: CompiledSkill; rest: Compi
 // Matching a kit skill's hits to the compiled landings.
 
 /** What the matcher reads of a kit hit (a loaded KitHit). */
-export type MatchHit = Pick<KitHit, "id" | "scale" | "scaleValue" | "events" | "frames" | "count" | "factor" | "element" | "poise" | "poiseControlledOnly" | "poiseOnly" | "finalStrike" | "reaction" | "energy" | "applies">;
+export type MatchHit = Pick<KitHit, "id" | "scale" | "scaleValue" | "events" | "frames" | "count" | "factor" | "element" | "poise" | "poiseControlledOnly" | "poiseOnly" | "finalStrike" | "reaction" | "energy" | "applies" | "detached" | "launch" | "sp" | "spBeforeDamage">;
 
 /** What the matcher reads of a kit skill. */
 export interface MatchSkill {
@@ -197,6 +197,22 @@ function firstValueKey(v: unknown): string | undefined {
 }
 /** A grant the kit gives only in a situation (`{if, then}`, no `else`): its value, which the data has on a branch of its own. */
 const grantText = (v: unknown) => (v !== null && typeof v === "object" && "then" in v && !("else" in v) ? valueText(v.then) : valueText(v));
+/** The frame a landing's file was launched from the skill's own timeline (its first hop: LaunchProjectile@f, SpawnAbilityEntity@f, CreateBuff@f, CastSkill@f), or null for the skill's own. */
+const launchFrame = (l: CompiledLanding): number | null => {
+  const m = /@(\d+)/.exec(l.via[0] ?? "");
+  return m ? Number(m[1]) : null;
+};
+
+/** A kit SP value as a grant: its value and whether it's only while controlled (`{if: {controlled: true}, then: v (, else: 0)}`), or null when its condition is another (the data has it on a branch). */
+function spGrant(v: unknown): { value: unknown; controlled: boolean | null } {
+  if (v !== null && typeof v === "object" && "then" in v && "if" in v) {
+    const o = v as { if: unknown; then: unknown; else?: unknown };
+    if (o.else !== undefined && o.else !== 0) return { value: v, controlled: false };
+    return { value: o.then, controlled: JSON.stringify(o.if) === JSON.stringify({ controlled: true }) ? true : null };
+  }
+  return { value: v, controlled: false };
+}
+
 /** The first two undecided conditions on the way, for a readable line. */
 const branchText = (b: readonly string[] | undefined) => (b?.length ? ` (${b.slice(0, 2).join(", ")}${b.length > 2 ? ", …" : ""})` : "");
 
@@ -326,6 +342,30 @@ export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: num
     const fs = at.map((l) => l.finalStrike);
     if (h.finalStrike && fs.includes(false)) hit(h.id, "finalStrike", `${tag} finalStrike: kit all ${valueText(h.count)} landings, data only at [${at.filter((l) => l.finalStrike).map((l) => l.frame).join(", ")}]`);
     if (!h.finalStrike && fs.includes(true)) hit(h.id, "finalStrike", `${tag} finalStrike: kit none, data at [${at.filter((l) => l.finalStrike).map((l) => l.frame).join(", ")}]`);
+    if (h.frames && path) {
+      // Dealt from another file (a projectile, entity, buff or helper skill), and when it left the skill's own timeline.
+      const det = [...new Set(at.map((l) => l.detached))];
+      if (det.length === 1 && det[0] !== (h.detached ?? false)) hit(h.id, "detached", `${tag} detached: kit ${String(h.detached ?? false)}, data ${String(det[0])}`);
+      if (h.launch !== undefined) {
+        const launches = [...new Set(at.map(launchFrame))];
+        if (!launches.includes(h.launch)) hit(h.id, "launch", `${tag} launch: kit ${h.launch}, data ${launches.map((x) => x ?? "-").join(" | ")}`);
+      }
+      // A hand-written SP grant: one at its frames with its value (a grant only while controlled, as `{if: {controlled: true}, then: v}`), and whether it comes before the damage.
+      if (h.sp !== undefined) {
+        const kit = spGrant(h.sp);
+        const here = c.sp.filter((e) => (h.frames ?? []).includes(e.frame));
+        // Only while controlled: atbOnlyMainChar, or a CheckMainCharacter condition on the way.
+        const controlled = (e: (typeof here)[number]) => e.controlledOnly || e.steps.some((x) => JSON.stringify(x.pred) === JSON.stringify({ controlled: true }));
+        const matching = here.filter((e) => JSON.stringify(valueExpr(e.value, e.coefficient)) === JSON.stringify(roundedValue(kit.value)) && (kit.controlled === null || kit.controlled === controlled(e)));
+        const grantsText = c.sp.map((e) => `${formatCompiledValue(e.value)}${e.coefficient !== 1 ? ` × ${round(e.coefficient)}` : ""}${e.controlledOnly ? " (controlled)" : ""}@${e.frame}${e.beforeDamage ? " before damage" : ""}${branchText(e.branch)}`).join(", ") || "none";
+        // A literal 0 says the hit gives none (and the skill's atb doesn't go to its first hit).
+        const none = kit.value === 0;
+        if (!(none && here.every((e) => valueExpr(e.value, e.coefficient) === 0)) && !matching.length) hit(h.id, "sp", `${tag} sp: kit ${valueText(h.sp)} at [${(h.frames ?? []).join(", ")}], data ${grantsText}`);
+        // Whether it comes before the damage: the grants with its value, else any at its frames.
+        const timed = matching.length ? matching : here;
+        if (!none && timed.length && !timed.some((e) => e.beforeDamage === (h.spBeforeDamage ?? false))) hit(h.id, "spBeforeDamage", `${tag} spBeforeDamage: kit ${String(h.spBeforeDamage ?? false)}, data ${String(timed[0]?.beforeDamage)}`);
+      }
+    }
   }
   // Applications by frame: what the kit applies must be in the data there; what the data applies unconditionally must be in the kit.
   const dataFrames = new Set([...kitApps.keys(), ...c.effects.filter((e) => e.branch.length === 0 && dataAppText(e)).map((e) => e.frame)]);

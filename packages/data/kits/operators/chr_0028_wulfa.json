@@ -282,6 +282,7 @@
           "sp": { "if": { "potentialAtLeast": 1 }, "then": "atb_return", "else": 0 },
           "events": ["chr_0028_wulfa_normal_skill_projhit3"],
           "buffs": [{ "buff": "razor_clawmark", "beforeDamage": true, "if": { "talentAtLeast": [0, 1] } }],
+          "dataOverride": { "sp": "The compiler reports no SP grant at this landing: P1's ObtainCostAction atb_return (returned SP, the first projectile to land, behind the wolf_timer gate) is in the projhit files behind an IfElse it doesn't reach; the kit's potentialAtLeast 1 is the description's (see the hit's note)." },
           "note": "Frame 37 JumpToAction → 215 when FollowAttackTrigger is set (jumps: judged at the cast, the data at frame 35: a Vulnerable stack added or expiring in those 35 frames flips it); frame 230 four LaunchProjectiles (projhit2–5), each atk_scale_3 × 0.25 Heat (damageType 2, mask 4352), poise_2 × 0.25. The first one to land (gate: buff_chr_0028_wulfa_normal_wolf_timer = 1, then finished) gives Rossi usp_2 and P1's atb_return (atbGainMethod 1: returned SP) and, with talent 1 (talent_1_x > 0.5), creates Razor Clawmark before its DamageAction. The log's first projectile is projhit3."
         },
         { "id": "wolf_2", "label": "Wolven Ambrage", "scale": ["atk_scale_3"], "frames": [230], "launch": 230, "events": ["chr_0028_wulfa_normal_skill_projhit5"] },

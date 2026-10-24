@@ -942,7 +942,8 @@
           "frames": [
             22
           ],
-          "sp": "atb",
+          "sp": { "if": { "controlled": true }, "then": "atb" },
+          "spBeforeDamage": true,
           "note": "One arrow launched at frame 22: attack5_01_projhit on a hit, or attack5_02_projhit on every target in range when the arrow is blocked (mask 2097280: Final Strike). SP atb (21, ObtainCostAction costType 1 on attack5_01_projhit); poise 17 (onlyEnableForMainChar)."
         }
       ]
@@ -1581,7 +1582,7 @@
           "if": {
             "controlled": true
           },
-          "sp": "atb",
+          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "floating_attack5_01_projhit: atk_scale_base (1.0 at level 12, P1 ×1.2) × atk_scale_enhence, launched at frame 0; normal_attack5_atb_recovered gives SP atb (23) only when controlled; poise 20 (onlyEnableForMainChar)."
         },
         {

@@ -252,10 +252,12 @@
           "launch": 141,
           "if": { "any": [{ "enemyStatus": "combustion" }, { "enemyStatus": "electrification" }] },
           "sp": { "if": { "talentAtLeast": [1, 1] }, "then": { "sum": ["returnskillpower", "potential_skillpower"] }, "else": 0 },
+          "spBeforeDamage": true,
           "applies": [
             { "kind": "consumeStatus", "statuses": ["electrification"], "if": { "not": { "enemyStatus": "combustion" } }, "afterDamage": true },
             { "kind": "consumeStatus", "statuses": ["combustion"], "afterDamage": true }
           ],
+          "dataOverride": { "sp": "Compiler limit (batch-3 D3, ModifyDynamicBlackboard on a key): inside talent2 > 0, P2 adds potential_skillpower to returnskillpower before the ObtainCostAction, which the compiler gives as the dynamic $returnskillpower; the kit writes the sum, gated on talent 2 (talent2 is set only by it)." },
           "note": "\"If the target has active Combustion or Electrification, consume the Arts Reaction to fire an additional shot that deals massive Heat DMG.\" Launched at 141 (the 31 -> 118 jump makes it real frame 54; the plain path's 117 -> 247 jump drops it). plus_projhit checks the target again at landing: with Burning / Conduct, talent 2's SP (\"return {returnskillpower} SP\", returned: atbGainMethod 1; P2 adds potential_skillpower inside talent2 > 0) and the DamageAction; after it, IfElse Burning -> FinishBuffByTag Burning, else Conduct -> FinishBuffByTag Conduct (afterDamage, A4: the shot keeps Electrification's Arts DMG Taken). The Electrification consumption comes first in the list, with the else as its `if`, because the second application's `if` is judged after the first ran."
         },
         {

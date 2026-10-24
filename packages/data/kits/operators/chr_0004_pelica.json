@@ -133,7 +133,7 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "sp": "atb",
+          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "DamageAction atk_scale (mask 1152) at 3-8; the four plunging_attack_projhit projectiles have no actions."
         }
       ],
