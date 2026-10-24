@@ -9,6 +9,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
+import { compileOperatorSkill, hitFacts, kitEnergyBlock, matchSkill, type CompileData, type DataField, type HitFacts } from "./kitMatch.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
 import { buffTagFilter, SHIELD_TAG } from "./buffTags.ts";
@@ -56,6 +57,8 @@ interface RawHit {
   /** Which skill-type bonus applies (`none`: no skill type): required on triggered hits; on a skill's hit, an override of the skill's. */
   damageType?: SkillType | "none";
   poiseOnly?: true;
+  /** Fields where the kit's value (or its leaving one out) differs from the compiled data's on purpose, each with the reason (kitMatch.ts). */
+  dataOverride?: Partial<Record<DataField, string>>;
 }
 
 type RawAction =
@@ -151,9 +154,9 @@ function condition(owner: string, c: RawCondition): Condition {
   };
 }
 
-export interface KitData {
+export interface KitData extends CompileData {
   readonly skills: Readonly<Record<string, SkillData>>;
-  readonly operators: Readonly<Record<string, { skillGroups: Readonly<Record<string, string>>; talentNodes?: readonly { index: number; effects: readonly Effect[] }[]; potentials?: readonly (readonly Effect[])[] }>>;
+  readonly operators: Readonly<Record<string, { skillGroups: Readonly<Record<string, string>>; talentNodes?: readonly { index: number; level: number; effects: readonly Effect[] }[]; potentials?: readonly (readonly Effect[])[] }>>;
   readonly weapons: Readonly<Record<string, { readonly skills: readonly string[] }>>;
   readonly gearSets: Readonly<Record<string, { readonly skillId: string }>>;
 }
@@ -439,7 +442,7 @@ function kitChecker(scope: KitScope) {
     for (const h of hits) {
       if (!h.branch) continue;
       const n = branches.get(h.branch);
-      const count = JSON.stringify(h.count ?? 1);
+      const count = JSON.stringify(h.count ?? h.frames?.length ?? 1);
       if (n !== undefined && n !== count) throw new Error(`${where} hit ${h.id}: the hits of branch ${h.branch} land a different number of times`);
       branches.set(h.branch, count);
     }
@@ -493,13 +496,14 @@ function kitChecker(scope: KitScope) {
         if (a.duration !== undefined) checkValue(a.duration, src.skillId, `${where} hit ${h.id} buff ${a.buff} duration`);
         if (a.untilFrame !== undefined && !(Number.isInteger(a.untilFrame) && a.untilFrame > 0)) throw new Error(`${where} hit ${h.id}: buff ${a.buff} untilFrame must be a skill frame > 0`);
       }
-      // A count that's a value is judged at the cast: its frames are the first landings', the rest repeat the last (framesEvery apart).
-      if (typeof (h.count ?? 1) === "number") {
-        if (h.frames && h.frames.length !== (h.count ?? 1)) throw new Error(`${where} hit ${h.id}: ${h.frames.length} frames for count ${JSON.stringify(h.count ?? 1)}`);
+      // A count that's a value is judged at the cast: its frames are the first landings', the rest repeat the last (framesEvery apart). Default: one per frame.
+      const count = h.count ?? h.frames?.length ?? 1;
+      if (typeof count === "number") {
+        if (h.frames && h.frames.length !== count) throw new Error(`${where} hit ${h.id}: ${h.frames.length} frames for count ${JSON.stringify(count)}`);
         if (h.framesEvery !== undefined) throw new Error(`${where} hit ${h.id}: framesEvery is for a count that's a value`);
       } else checkValue(h.count as ValueExpr, src.skillId, `${where} hit ${h.id} count`);
       return {
-        id: h.id, label: h.label ?? src.label, scale: h.scale, count: h.count ?? 1, damageType: h.damageType ?? src.damageType ?? "none", element, events,
+        id: h.id, label: h.label ?? src.label, scale: h.scale, count, damageType: h.damageType ?? src.damageType ?? "none", element, events,
         ...(h.frames ? { frames: h.frames } : {}),
         ...(h.framesEvery !== undefined ? { framesEvery: h.framesEvery } : {}),
         ...(h.applies ? { applies: h.applies } : {}),
@@ -682,6 +686,27 @@ function isChainStep(data: KitData, kit: RawKit, skillId: string): boolean {
   });
 }
 
+/**
+ * A skill hit with the fields it leaves out taken from what the data says of
+ * its landings (hitFacts): frames, events, factor, element (when it isn't the
+ * kit's), stagger and whether only while controlled, detached, energy.
+ */
+function withDataFacts(h: RawHit, all: HitFacts, kitElement: Element | undefined): RawHit {
+  const f = Object.fromEntries(Object.entries(all).filter(([k]) => h.dataOverride?.[k as DataField] === undefined)) as HitFacts;
+  const poise = h.poise ?? (f.poise !== undefined && f.poise !== null ? (f.poise as ValueExpr) : undefined);
+  return {
+    ...h,
+    ...(h.frames === undefined && f.frames ? { frames: [...f.frames] } : {}),
+    ...(h.events === undefined && f.events ? { events: [...f.events] } : {}),
+    ...(h.factor === undefined && f.factor !== undefined && f.factor !== 1 ? { factor: f.factor } : {}),
+    ...(h.element === undefined && f.element !== undefined && f.element !== kitElement ? { element: f.element } : {}),
+    ...(h.poise === undefined && poise !== undefined ? { poise } : {}),
+    ...(h.poiseControlledOnly === undefined && poise !== undefined && f.poiseControlledOnly ? { poiseControlledOnly: true } : {}),
+    ...(h.detached === undefined && f.detached !== undefined ? { detached: f.detached } : {}),
+    ...(h.energy === undefined && f.energy !== undefined && f.energy !== null ? { energy: f.energy as ValueExpr } : {}),
+  };
+}
+
 function idsOf(file: string, what: string, items: readonly { id: string }[]): Set<string> {
   const ids = new Set(items.map((x) => x.id));
   if (ids.size !== items.length) throw new Error(`${file}: duplicate ${what} ID`);
@@ -747,6 +772,15 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
       if (w.if) c.checkPredicate(w.if, `${where} window from ${w.from}`);
     }
     if (s.comboWindow === false && s.damageType !== "combo") throw new Error(`${where}: comboWindow: false is for a combo-kind skill`);
+    const hitSource = { skillId: s.skillId, damageType: s.damageType, label: s.label, checkScale: (key: string, w: string) => checkKey(skill, key, w), defaultEvent: s.skillId, finalStrike: (_h: RawHit, events: string[]) => isFinalStrike(s.skillId, events, s.hits.length), dive: (_h: RawHit, events: string[]) => isDive(s.skillId, events, s.hits.length) };
+    // What the kit leaves out, from the compiled SkillData where its landings say it (kitMatch.ts).
+    const compiled = compileOperatorSkill(data, kit.operator, s.skillId);
+    let rawHits = s.hits;
+    if (compiled) {
+      const first = c.normalizeHits(s.hits, hitSource, where);
+      const m = matchSkill(compiled, { skillId: s.skillId, hits: first, ...(s.teamEnergy ? { teamEnergy: s.teamEnergy } : {}), ...(s.energyBlockSeconds !== undefined ? { energyBlockSeconds: s.energyBlockSeconds } : {}) }, kitEnergyBlock(s, kit.triggers ?? [], kit.buffs ?? []));
+      rawHits = s.hits.map((h) => withDataFacts(h, h.poiseOnly || h.reaction ? {} : hitFacts(m.folded, m.hits.get(h.id)), kit.element));
+    }
     if (s.noDodge && !(s.noDodge[0] >= 0 && s.noDodge[0] < s.noDodge[1])) throw new Error(`${where}: noDodge is a range [from, until) of skill frames`);
     return {
       skillId: s.skillId,
@@ -764,7 +798,7 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
       ...(s.windows ? { windows: s.windows } : {}),
       ...(s.comboWindow === false ? { comboWindow: false as const } : {}),
       ...(s.noDodge ? { noDodge: s.noDodge } : {}),
-      hits: c.normalizeHits(s.hits, { skillId: s.skillId, damageType: s.damageType, label: s.label, checkScale: (key, w) => checkKey(skill, key, w), defaultEvent: s.skillId, finalStrike: (h, events) => isFinalStrike(s.skillId, events, s.hits.length), dive: (h, events) => isDive(s.skillId, events, s.hits.length) }, where),
+      hits: c.normalizeHits(rawHits, hitSource, where),
     };
   });
   // Triggers first: normalizeBuffs reads which skills apply each buff.

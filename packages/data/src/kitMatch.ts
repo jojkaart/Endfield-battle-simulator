@@ -5,7 +5,7 @@
 // timing values at the skill's highest level), shared by kit-draft, the
 // loader and the tests.
 
-import type { Effect, KitHit, Predicate, SkillData } from "@efsim/engine";
+import type { Effect, Element, KitHit, Predicate, SkillData } from "@efsim/engine";
 import { compileSkill, formatCompiledValue, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledPoiseLanding, type CompiledSkill, type CompiledValue } from "./skillCompile.ts";
 
 /** What compiling an operator's skill reads of the loaded data. */
@@ -140,6 +140,12 @@ export interface HitMatch {
   readonly poiseLandings: readonly CompiledPoiseLanding[];
   /** Whether every kit frame was found on one branch path. */
   readonly onPath: boolean;
+  /**
+   * For a hit without frames: its candidate landings (by key and events) are
+   * one branch path that no other hit of the skill takes landings of, so its
+   * landings are all of them.
+   */
+  readonly whole: boolean;
 }
 
 /** The undecided-branch paths through a skill: each distinct branch of a landing, with the landings on it (those whose branch encloses it). */
@@ -205,9 +211,10 @@ export function dataEnergyBlock(c: CompiledSkill): number | null {
  * its own cast trigger applies), in seconds.
  * Returns each disagreement as a line, and what each hit was matched to.
  */
-export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: number | null): { disagreements: string[]; hits: Map<string, HitMatch> } {
+export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: number | null): { disagreements: string[]; hits: Map<string, HitMatch>; folded: CompiledSkill } {
   const out: string[] = [];
   const matches = new Map<string, HitMatch>();
+  const none: HitMatch = { landings: [], poiseLandings: [], onPath: false, whole: false };
   const { skill: c, rest: poiseRest } = foldPoise(compiled);
   const where = s.skillId;
   const block = dataEnergyBlock(c);
@@ -241,7 +248,7 @@ export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: num
       });
       if (!h.frames || !covered) out.push(`${tag} frames: kit ${h.frames ? `[${want.join(", ")}]` : `none (count ${valueText(h.count)})`}, data stagger-only [${frames(here).join(", ")}]`);
       const at = here.filter((p) => want.includes(p.frame));
-      matches.set(h.id, { landings: [], poiseLandings: at, onPath: !!h.frames && covered });
+      matches.set(h.id, { landings: [], poiseLandings: at, onPath: !!h.frames && covered, whole: false });
       if (at.length) {
         const kitPoise = h.poise === undefined ? "-" : JSON.stringify(roundedValue(h.poise));
         const dataPoise = [...new Set(at.map((p) => JSON.stringify(asKitValue(p.poise.value))))];
@@ -255,7 +262,7 @@ export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: num
       // Damage computed as a reaction: the data creates the reaction's buff (no DamageAction of its own).
       const found = c.effects.filter((e) => (e.kind === "burst" || e.kind === "forcedReaction") && (h.frames ?? []).includes(e.frame));
       if (!found.length) out.push(`${tag}: kit ${h.reaction.kind} at [${(h.frames ?? []).join(", ")}], data none there (${c.effects.filter((e) => e.kind === "burst").map((e) => e.frame).join(", ") || "no bursts"})`);
-      matches.set(h.id, { landings: [], poiseLandings: [], onPath: false });
+      matches.set(h.id, none);
       continue;
     }
     // A hit whose multiplier is all scaleValue (Si's combo final hit) is matched by the first value key it names.
@@ -263,7 +270,7 @@ export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: num
     const byKey = c.landings.filter((l) => l.scale.keys.includes(key) || (l.scale.expr ?? "").includes(key));
     if (byKey.length === 0) {
       out.push(`${tag}: no landing scaled by ${key} (data: ${keysText(c.landings) || "no landings"})`);
-      matches.set(h.id, { landings: [], poiseLandings: [], onPath: false });
+      matches.set(h.id, none);
       continue;
     }
     const byEvent = h.events.length ? byKey.filter((l) => h.events.includes(l.file)) : byKey;
@@ -282,7 +289,7 @@ export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: num
     else if (!path) out.push(`${tag} frames: kit [${want.join(", ")}], data [${frames(best).join(", ")}]${branchText(best[0]?.branch)}`);
     const at = (best.length ? best : cand).filter((l) => !h.frames || h.frames.includes(l.frame));
     for (const l of at) claimed.add(l);
-    matches.set(h.id, { landings: at, poiseLandings: [], onPath: !!h.frames && !!path });
+    matches.set(h.id, { landings: at, poiseLandings: [], onPath: !!h.frames && !!path, whole: !h.frames && byEvent.length > 0 && all.length === 1 });
     if (h.frames && path && typeof h.count === "number" && at.length > h.count) out.push(`${tag} count: kit ${h.count}, data ${at.length} landings at its frames (${[...new Set(at.map((l) => l.file))].join(", ")})`);
     // Element and stagger of the landings the kit hit stands for (a landing without one: Fixed DMG, no poise unit).
     const els = [...new Set(at.map((l) => l.element).filter((x) => x !== null))];
@@ -316,7 +323,79 @@ export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: num
   const byFile = new Map<string, CompiledLanding[]>();
   for (const l of missed) byFile.set(`${l.file} ${keysText([l])}`, [...(byFile.get(`${l.file} ${keysText([l])}`) ?? []), l]);
   for (const [k, ls] of byFile) out.push(`${where}: data lands ${k} at [${frames(ls).join(", ")}], no kit hit`);
-  return { disagreements: out, hits: matches };
+  // A hit without frames takes its landings only when no other hit takes any of them.
+  for (const [id, m] of matches) {
+    if (!m.whole) continue;
+    const mine = new Set(m.landings);
+    if ([...matches].some(([other, x]) => other !== id && x.landings.some((l) => mine.has(l)))) matches.set(id, { ...m, whole: false });
+  }
+  return { disagreements: out, hits: matches, folded: c };
+}
+
+/** The value all items give, when they give one and the same (by its JSON); undefined when they differ or there are none. */
+function same<T>(items: readonly T[]): T | undefined {
+  if (!items.length) return undefined;
+  const first = JSON.stringify(items[0]);
+  return items.every((x) => JSON.stringify(x) === first) ? items[0] : undefined;
+}
+
+/** The hit fields the loader compares with the compiled data (and fills in where a kit leaves them out); a kit hit's `dataOverride` names the ones it differs in on purpose. */
+export const DATA_FIELDS = ["frames", "count", "events", "scale", "factor", "element", "poise", "poiseControlledOnly", "finalStrike", "detached", "launch", "energy", "sp", "spBeforeDamage"] as const;
+export type DataField = (typeof DATA_FIELDS)[number];
+
+/** What the data says of a kit hit, field by field, where its landings agree (HitMatch). */
+export interface HitFacts {
+  /** The landings' frames, for a hit without frames whose landings are a whole branch path (HitMatch.whole). */
+  readonly frames?: readonly number[];
+  /** The file all its landings are in. */
+  readonly events?: readonly string[];
+  readonly factor?: number;
+  readonly element?: Element;
+  /** Their stagger as a kit value, or null when none of them staggers. */
+  readonly poise?: unknown;
+  readonly poiseControlledOnly?: boolean;
+  /** Dealt from another file than the skill's own. */
+  readonly detached?: boolean;
+  /** Ultimate energy each landing grants (one unconditional ObtainCostAction costType 0 going with it, a kit value); null when none does. */
+  readonly energy?: unknown;
+}
+
+/**
+ * The facts of a hit's landings (HitMatch.landings, from matchSkill on the
+ * folded skill): each field only when every landing says the same. A hit
+ * with frames needs them on one branch path (HitMatch.onPath).
+ */
+export function hitFacts(folded: CompiledSkill, m: HitMatch | undefined): HitFacts {
+  if (!m || !(m.onPath || m.whole) || !m.landings.length) return {};
+  const ls = m.landings;
+  const out: { -readonly [K in keyof HitFacts]: HitFacts[K] } = {};
+  if (m.whole) out.frames = frames(ls);
+  const file = same(ls.map((l) => l.file));
+  if (file !== undefined) out.events = [file];
+  const factor = same(ls.map((l) => round(l.scale.factor)));
+  if (factor !== undefined) out.factor = factor;
+  const element = same(ls.map((l) => l.element));
+  if (element) out.element = element;
+  const poise = same(ls.map((l) => (l.poise ? valueExpr(l.poise.value) : null)));
+  if (poise !== undefined) out.poise = poise;
+  const ctl = same(ls.map((l) => l.poise?.controlledOnly ?? false));
+  if (ctl !== undefined) out.poiseControlledOnly = ctl;
+  const detached = same(ls.map((l) => l.detached));
+  if (detached !== undefined) out.detached = detached;
+  // Energy: one grant going with each landing, with no condition of its own.
+  const grants = ls.map((l) => {
+    const i = folded.landings.indexOf(l);
+    const here = folded.energy.filter((e) => e.landing === i);
+    if (here.length === 0) return null;
+    const e = here[0] as (typeof here)[number];
+    if (here.length > 1 || e.isPercent || e.controlledOnly || e.steps.length !== l.steps.length) return undefined;
+    return valueExpr(e.value, e.coefficient) ?? undefined;
+  });
+  if (!grants.includes(undefined)) {
+    const energy = same(grants);
+    if (energy !== undefined) out.energy = energy;
+  }
+  return out;
 }
 
 /** The energy block a kit gives a skill: its energyBlockSeconds, or the duration of an energy-blocking buff its own cast trigger applies (Laevatain's show_weapon). */

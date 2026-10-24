@@ -585,7 +585,10 @@
           ],
           "events": [
             "chr_0017_yvonne_plunging_attack_end"
-          ]
+          ],
+          "dataOverride": {
+            "poise": "Kit right: the dive's first IfElse side (with poise) reads buff_chr_0017_yvonne_potential_5, which nothing attaches (an orphan); the side that runs is the plain DamageAction atk_scale without poise. The match takes the first side."
+          }
         }
       ]
     },

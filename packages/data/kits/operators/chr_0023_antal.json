@@ -169,6 +169,9 @@
           "factor": 0.5,
           "finalStrike": false,
           "detached": true,
+          "dataOverride": {
+            "poise": "Compiler limitation (D3), kit right: both projectiles launched at 27 run attack4_powerattack_projhit's IfElse on the timed marker have_recovered, which the first landing creates; the first takes the Final Strike branch (atb, poise), the second the plain one. The compiler counts both branches for each."
+          },
           "note": "Marker present: the plain branch (mask 128), no SP, no stagger."
         }
       ]

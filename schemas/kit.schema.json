@@ -1826,6 +1826,17 @@
             "const": false,
             "description": "A combo-kind skill cast without the combo window (from another button), with its own cost and cooldown, gated by `available`; a combo for everything else (cast and hits of kind combo, no Link). It doesn't use up the combo window."
           },
+          "dataOverride": {
+            "type": "object",
+            "description": "Where this skill differs from the compiled SkillData on purpose, each with the reason: `teamEnergy`, `energyBlockSeconds`, `applies@<frame>` (what its hits apply at that frame), `lands <file>` (landings in that file no hit of the kit stands for). The loader neither fills these in nor refuses the difference.",
+            "propertyNames": {
+              "pattern": "^(teamEnergy|energyBlockSeconds|applies@[0-9]+|lands [a-z0-9_]+)$"
+            },
+            "additionalProperties": {
+              "type": "string",
+              "minLength": 10
+            }
+          },
           "noDodge": {
             "type": "array",
             "minItems": 2,
@@ -3457,6 +3468,17 @@
             }
           ],
           "description": "Which skill-type DMG bonus applies; none for no skill type. Required on triggered hits. On a skill's hit, an override of the skill's (a hit whose decorate mask lacks its skill's kind, e.g. one treated as another type): the hit takes that type's bonus and its hit event that kind, while the cast stays the skill's (SP, cast events, team energy)."
+        },
+        "dataOverride": {
+          "type": "object",
+          "description": "Fields in which this hit differs from the compiled SkillData on purpose (a value the kit writes that isn't the data's, or one it leaves out that the data has), each with the reason: the loader neither fills these in from the data nor refuses the difference (docs/design.md, \"Kits and the game data\").",
+          "propertyNames": {
+            "enum": ["frames", "count", "events", "scale", "factor", "element", "poise", "poiseControlledOnly", "finalStrike", "detached", "launch", "energy", "sp", "spBeforeDamage"]
+          },
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 10
+          }
         },
         "poiseOnly": {
           "const": true,
