@@ -10,22 +10,10 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
+import { canonicalJson as canonical } from "@efsim/cli";
 import { Snapshot, UPDATE_HINT, UPDATING } from "./snapshot.ts";
 
 const data = loadGameData();
-
-/** JSON with every object's keys sorted, so the digest doesn't depend on the order the loader writes fields in. */
-function canonical(x: unknown): string {
-  if (Array.isArray(x)) return `[${x.map(canonical).join(",")}]`;
-  if (x && typeof x === "object") {
-    return `{${Object.keys(x)
-      .filter((k) => (x as Record<string, unknown>)[k] !== undefined)
-      .sort()
-      .map((k) => `${JSON.stringify(k)}:${canonical((x as Record<string, unknown>)[k])}`)
-      .join(",")}}`;
-  }
-  return JSON.stringify(x);
-}
 
 interface KitSnapshot {
   readonly digest: string;

@@ -190,8 +190,8 @@ const grantText = (v: unknown) => (v !== null && typeof v === "object" && "then"
 const branchText = (b: readonly string[] | undefined) => (b?.length ? ` (${b.slice(0, 2).join(", ")}${b.length > 2 ? ", …" : ""})` : "");
 
 /** Team energy parts as kit-draft reads them: unconditional ones, the first alone when they add up to more than the whole. */
-export function dataTeamEnergy(c: CompiledSkill): { frame: number; ratio: number }[] {
-  const team = c.teamEnergy.filter((t) => t.branch.length === 0).map((t) => ({ frame: t.frame, ratio: t.ratio ?? 1 }));
+export function dataTeamEnergy(c: CompiledSkill): { frame: number; ratio: number; detached: boolean }[] {
+  const team = c.teamEnergy.filter((t) => t.branch.length === 0).map((t) => ({ frame: t.frame, ratio: t.ratio ?? 1, detached: t.detached }));
   return team.reduce((x, t) => x + t.ratio, 0) > 1 + 1e-9 ? team.slice(0, 1).map((t) => ({ ...t, ratio: 1 })) : team;
 }
 
@@ -199,6 +199,12 @@ export function dataTeamEnergy(c: CompiledSkill): { frame: number; ratio: number
 export function dataEnergyBlock(c: CompiledSkill): number | null {
   const blocks = c.energyBlocks.filter((b) => b.branch.length === 0 && b.until !== null);
   return blocks.length ? round(Math.max(...blocks.map((b) => b.until as number)) / 30, 3) : null;
+}
+
+/** The energy block in seconds as kit-draft writes it (4 places), or null. */
+export function dataEnergyBlockSeconds(c: CompiledSkill): number | null {
+  const blocks = c.energyBlocks.filter((b) => b.branch.length === 0 && b.until !== null);
+  return blocks.length ? round(Math.max(...blocks.map((b) => b.until as number)) / 30, 4) : null;
 }
 
 /**

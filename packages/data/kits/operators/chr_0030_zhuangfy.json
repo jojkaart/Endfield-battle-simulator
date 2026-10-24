@@ -2676,6 +2676,7 @@
    "skillId": "chr_0030_zhuangfy_ultimate_skill",
    "label": "Ultimate: Smiting Tempest",
    "damageType": "ultimate",
+   "dataOverride": { "energyBlockSeconds": "Kit right: RefrainObtainUsp is buff ult_base's (the Empyrean, duration 25 s from frame 78: the kit buff empyrean's blocksEnergy), not the skill's." },
    "note": "No damage: UltimateTimeAction 0-78, then the Empyrean (ult_state). Its energy block is the state's (blocksEnergy), not kit-draft's energyBlockSeconds.",
    "hits": []
   },

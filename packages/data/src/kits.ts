@@ -9,7 +9,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
-import { compileOperatorSkill, hitFacts, kitEnergyBlock, matchSkill, type CompileData, type DataField, type HitFacts } from "./kitMatch.ts";
+import { compileOperatorSkill, dataEnergyBlockSeconds, dataTeamEnergy, hitFacts, kitEnergyBlock, matchSkill, type CompileData, type DataField, type HitFacts } from "./kitMatch.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
 import { buffTagFilter, SHIELD_TAG } from "./buffTags.ts";
@@ -114,6 +114,8 @@ interface RawKit {
     windows?: { from: number; skills?: string[]; if?: Predicate }[];
     comboWindow?: false;
     noDodge?: [number, number];
+    /** Where the skill differs from the compiled data on purpose (teamEnergy, energyBlockSeconds, applies@<frame>, lands <file>), each with the reason. */
+    dataOverride?: Record<string, string>;
     hits: RawHit[];
   }[];
   conditions?: RawCondition[];
@@ -776,19 +778,30 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
     // What the kit leaves out, from the compiled SkillData where its landings say it (kitMatch.ts).
     const compiled = compileOperatorSkill(data, kit.operator, s.skillId);
     let rawHits = s.hits;
+    let teamEnergy = s.teamEnergy;
+    let energyBlockSeconds = s.energyBlockSeconds;
     if (compiled) {
       const first = c.normalizeHits(s.hits, hitSource, where);
       const m = matchSkill(compiled, { skillId: s.skillId, hits: first, ...(s.teamEnergy ? { teamEnergy: s.teamEnergy } : {}), ...(s.energyBlockSeconds !== undefined ? { energyBlockSeconds: s.energyBlockSeconds } : {}) }, kitEnergyBlock(s, kit.triggers ?? [], kit.buffs ?? []));
       rawHits = s.hits.map((h) => withDataFacts(h, h.poiseOnly || h.reaction ? {} : hitFacts(m.folded, m.hits.get(h.id)), kit.element));
+      // The skill's team energy and energy block, when it leaves them out (and gives no energy-blocking buff of its own).
+      if (s.teamEnergy === undefined && s.dataOverride?.["teamEnergy"] === undefined) {
+        const parts = dataTeamEnergy(m.folded);
+        if (parts.length && !(parts.length === 1 && parts[0]?.frame === 0 && parts[0].ratio === 1 && !parts[0].detached)) teamEnergy = parts.map((p) => ({ frame: p.frame, ratio: p.ratio, ...(p.detached ? { detached: true } : {}) }));
+      }
+      const block = dataEnergyBlockSeconds(m.folded);
+      if (s.energyBlockSeconds === undefined && s.dataOverride?.["energyBlockSeconds"] === undefined && block !== null && kitEnergyBlock(s, kit.triggers ?? [], kit.buffs ?? []) === null) energyBlockSeconds = block;
     }
     if (s.noDodge && !(s.noDodge[0] >= 0 && s.noDodge[0] < s.noDodge[1])) throw new Error(`${where}: noDodge is a range [from, until) of skill frames`);
+    // A skill hit lands at frames: its own, or the data's when its landings are one branch path no other hit takes landings of.
+    for (const h of rawHits) if (!h.frames) throw new Error(`${where} hit ${h.id}: no frames, and the data's landings for it ${compiled ? "aren't one branch path of its own (write its frames)" : "aren't known (no SkillData file)"}`);
     return {
       skillId: s.skillId,
       label: s.label,
       kind: s.damageType,
-      ...(s.energyBlockSeconds !== undefined ? { energyBlockSeconds: s.energyBlockSeconds } : {}),
+      ...(energyBlockSeconds !== undefined ? { energyBlockSeconds } : {}),
       ...(s.jumps ? { jumps: s.jumps } : {}),
-      ...(s.teamEnergy !== undefined ? { teamEnergy: s.teamEnergy } : {}),
+      ...(teamEnergy !== undefined ? { teamEnergy } : {}),
       ...(s.available ? { available: s.available } : {}),
       ...(s.followUpOnly ? { followUpOnly: true } : {}),
       ...(s.takesControl ? { takesControl: true } : {}),
@@ -936,19 +949,29 @@ function equipmentVariantOf(kit: RawEquipmentKit, id: string): RawEquipmentKit {
   return { ...(rename(kit) as RawEquipmentKit), equipment: id, sources: [...kit.sources, `Variant of ${kit.equipment} (same weapon skills): its kit, renamed.`] };
 }
 
+let validatorCache: ReturnType<typeof validator> | undefined;
+
+/**
+ * One operator kit file's contents (`raw`, as parsed), checked against the
+ * schema and loaded: the kit, and its variants after it.
+ */
+export function loadOperatorKitFile(data: KitData, file: string, raw: unknown): OperatorKit[] {
+  const v = (validatorCache ??= validator());
+  if (!v.kit) throw new Error("kit schema not registered");
+  if (!v.kit(raw)) throw new Error(`kits/operators/${file}: ${v.ajv.errorsText(v.kit.errors)}`);
+  const kit = raw as RawKit;
+  return [loadOperatorKit(data, file, kit), ...(kit.variants ?? []).map((variant) => loadOperatorKit(data, `${variant.operator}.json`, variantOf(kit, variant)))];
+}
+
 /** Loads the kits under `dir` (default packages/data/kits: its operators/ and equipment/ folders). */
 export function loadKits(data: KitData, dir: string = KITS): Kits {
-  const v = validator();
-  if (!v.kit) throw new Error("kit schema not registered");
+  const v = (validatorCache ??= validator());
   const operators: Record<string, OperatorKit> = {};
   const odir = join(dir, "operators");
   for (const file of existsSync(odir) ? readdirSync(odir).filter((f) => f.endsWith(".json")).sort() : []) {
-    const raw = readJson(join(odir, file));
-    if (!v.kit(raw)) throw new Error(`kits/operators/${file}: ${v.ajv.errorsText(v.kit.errors)}`);
-    const kit = loadOperatorKit(data, file, raw as RawKit);
+    const [kit, ...variants] = loadOperatorKitFile(data, file, readJson(join(odir, file))) as [OperatorKit, ...OperatorKit[]];
     operators[kit.operator] = kit;
-    for (const variant of (raw as RawKit).variants ?? []) {
-      const other = loadOperatorKit(data, `${variant.operator}.json`, variantOf(raw as RawKit, variant));
+    for (const other of variants) {
       if (operators[other.operator]) throw new Error(`kits/operators/${file}: ${other.operator} has a kit of its own too`);
       operators[other.operator] = other;
     }
