@@ -1269,18 +1269,42 @@ function statusTweaks(ctx: TimelineContext, st: TimelineState, operator: string,
   return out;
 }
 
-/** The damage a status event deals, if any (bursts, reactions with an initial hit, Combustion ticks). */
-/** Whether a status event deals damage (bursts, reactions with an initial hit, physical statuses, Shatter, Combustion ticks). */
-const dealsDamage = (e: StatusEvent): e is Extract<StatusEvent, { kind: "burst" | "reaction" | "physical" | "shatter" | "combustionTick" }> => !(e.kind === "consumed" || e.kind === "inflicted" || e.kind === "statusConsumed" || e.kind === "vulnerable" || e.kind === "control" || (e.kind === "reaction" && !e.initialHit));
+/**
+ * What a status event deals its damage as (computeReaction): bursts, reactions with an initial hit, physical statuses,
+ * Shatter and Combustion ticks; null for the others. Every kind is listed, so a new one doesn't compile until decided.
+ */
+function eventReaction(e: StatusEvent): Parameters<typeof computeReaction>[4] | null {
+  switch (e.kind) {
+    case "burst":
+      return { kind: "burst", element: e.element, stacks: 1 };
+    case "reaction":
+      // A forced reaction has no initial hit.
+      return e.initialHit ? { kind: "reaction", element: e.element, stacks: e.level } : null;
+    case "physical":
+      return { kind: e.status, element: "physical", stacks: e.level };
+    case "shatter":
+      return { kind: "shatter", element: "physical", stacks: e.level };
+    case "combustionTick":
+      return { kind: "combustionTick", element: "fire", stacks: e.level };
+    case "inflicted":
+    case "consumed":
+    case "statusConsumed":
+    case "vulnerable":
+    case "control":
+      return null;
+    default: {
+      const unknown: never = e;
+      throw new EngineError(`status event of unknown kind ${(unknown as { kind: string }).kind}`);
+    }
+  }
+}
+
+/** Whether a status event deals damage (eventReaction). */
+const dealsDamage = (e: StatusEvent): boolean => eventReaction(e) !== null;
 
 function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, st: TimelineState, critRoll?: number): LandedHit | null {
-  if (!dealsDamage(e)) return null;
-  const reaction =
-    e.kind === "burst" ? { kind: "burst" as const, element: e.element, stacks: 1 }
-    : e.kind === "reaction" ? { kind: "reaction" as const, element: e.element, stacks: e.level }
-    : e.kind === "physical" ? { kind: e.status, element: "physical" as const, stacks: e.level }
-    : e.kind === "shatter" ? { kind: "shatter" as const, element: "physical" as const, stacks: e.level }
-    : { kind: "combustionTick" as const, element: "fire" as const, stacks: e.level };
+  const reaction = eventReaction(e);
+  if (!reaction) return null;
   const build = ctx.builds.get(e.operator) as Build;
   // A Combustion tick keeps its applier's attacker side from the application (ActiveStatus.snapshot).
   const snapshot = e.kind === "combustionTick" ? e.snapshot : undefined;
