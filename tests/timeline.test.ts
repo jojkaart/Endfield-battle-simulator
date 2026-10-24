@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, parseReactionEvent, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, simulateRuns, enemyActionsOf, enemyHpAt, nextRandom, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, type TimelineState, wornEquipment } from "@efsim/engine";
+import { advance, apply, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, parseReactionEvent, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, simulateRuns, startsNow, enemyActionsOf, enemyHpAt, nextRandom, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, type TimelineState, wornEquipment } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -2020,5 +2020,20 @@ describe("enemy HP from the scenario", () => {
     expect(lands(0, [{ from: 30, fraction: 0.4 }])).toBe(false);
     expect(lands(40, [{ from: 30, fraction: 0.4 }])).toBe(true);
     expect(enemyHpAt({ ...scenario([]), enemyHp: [{ from: 30, fraction: 0.4 }, { from: 60, fraction: 0.2 }] }, 70)).toBe(0.2);
+  });
+});
+
+describe("timeline: failures are loud (design principle 7)", () => {
+  it("an error that isn't the engine's (a bug, broken data) isn't turned into 'not legal'", () => {
+    // SkillData without its level rows: reading them is a TypeError, not a reason the skill can't start.
+    const ns = L + "normal_skill";
+    const broken = { ...data, skills: { ...data.skills, [ns]: { ...data.skills[ns], levels: undefined } } } as unknown as GameData;
+    const ctx = createContext(broken, scenario([]));
+    const s = init(ctx);
+    expect(() => earliestStart(ctx, s, { operator: op, skill: ns })).toThrow(TypeError);
+    expect(() => startsNow(ctx, s, { operator: op, skill: ns })).toThrow(TypeError);
+    // An action the engine rules out is still an answer, not a throw.
+    expect(earliestStart(ctx, s, { operator: op, skill: "no_such_skill" })).toHaveProperty("error");
+    expect(startsNow(ctx, s, { operator: op, skill: "no_such_skill" })).toBe(false);
   });
 });

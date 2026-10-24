@@ -1019,35 +1019,20 @@ function gainSp(st: TimelineState, amount: number, frame: number, kind: SpKind):
   return { ...st, sp: after, spReturned: Math.min(after, st.spReturned + (kind === "returned" ? after - before : 0)), frame: Math.max(st.frame, frame) };
 }
 
-/** A grant's SP kind: the kit's, else what the data says for the first skill key its value reads (talent keys aside), else returned. */
-function spKindOf(ctx: TimelineContext, skillId: string, value: ValueExpr, given?: SpKind): SpKind {
-  if (given) return given;
-  let keys: { skill: string; key: string }[] = [];
-  try {
-    keys = valueKeys(value, skillId);
-  } catch {
-    // A talent value: no skill file to say.
+/**
+ * What the data says of an SP grant (SkillData atbGainMethod and atbSourceType): the kind and the source type of the
+ * first skill key its value reads that has one (talent keys aside: no skill file says); a kind the kit gives wins,
+ * and without either the grant is returned SP.
+ */
+function spGrantOf(ctx: TimelineContext, skillId: string, value: ValueExpr, given?: SpKind): { kind: SpKind; sourceType?: number } {
+  let kind = given;
+  let sourceType: number | undefined;
+  for (const k of valueKeys(value, skillId, "skipTalents")) {
+    const skill = ctx.data.skills[k.skill];
+    kind ??= skill?.spKinds[k.key];
+    sourceType ??= skill?.spSources[k.key];
   }
-  for (const k of keys) {
-    const kind = ctx.data.skills[k.skill]?.spKinds[k.key];
-    if (kind) return kind;
-  }
-  return "returned";
-}
-
-/** A grant's atbSourceType: what the data says for the first skill key its value reads that has one (talent keys aside), else none. */
-function spSourceOf(ctx: TimelineContext, skillId: string, value: ValueExpr): { sourceType?: number } {
-  let keys: { skill: string; key: string }[] = [];
-  try {
-    keys = valueKeys(value, skillId);
-  } catch {
-    // A talent value: no skill file to say.
-  }
-  for (const k of keys) {
-    const type = ctx.data.skills[k.skill]?.spSources[k.key];
-    if (type !== undefined) return { sourceType: type };
-  }
-  return {};
+  return { kind: kind ?? "returned", ...(sourceType !== undefined ? { sourceType } : {}) };
 }
 
 /** SP a skill returns (its blackboard `atb` at the operator's level, after potentials). */
@@ -1592,9 +1577,9 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
       case "sp":
         {
           const amount = evaluate(a.value, ec());
-          const spKind = spKindOf(ctx, triggerSkillId(owner, t), a.value, a.spKind);
-          st = gainSp(st, amount, frame, spKind);
-          if (amount > 0) events.push({ type: "sp", frame, operator: owner, amount, kind: origin && origin.operator === owner ? origin.kind : "none", natural: spKind === "natural", ...spSourceOf(ctx, triggerSkillId(owner, t), a.value) });
+          const grant = spGrantOf(ctx, triggerSkillId(owner, t), a.value, a.spKind);
+          st = gainSp(st, amount, frame, grant.kind);
+          if (amount > 0) events.push({ type: "sp", frame, operator: owner, amount, kind: origin && origin.operator === owner ? origin.kind : "none", natural: grant.kind === "natural", ...(grant.sourceType !== undefined ? { sourceType: grant.sourceType } : {}) });
         }
         break;
       case "buff": {
@@ -1880,9 +1865,9 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   const grantSp = (into: BattleEvent[]) => {
     if (kitHit.sp === undefined) return;
     const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.sp, at(consumed));
-    const spKind = spKindOf(ctx, hit.skillId, kitHit.sp, kitHit.spKind);
-    st = gainSp(st, amount, hit.frame, spKind);
-    if (amount > 0) into.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount, kind, natural: spKind === "natural", ...spSourceOf(ctx, hit.skillId, kitHit.sp) });
+    const grant = spGrantOf(ctx, hit.skillId, kitHit.sp, kitHit.spKind);
+    st = gainSp(st, amount, hit.frame, grant.kind);
+    if (amount > 0) into.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount, kind, natural: grant.kind === "natural", ...(grant.sourceType !== undefined ? { sourceType: grant.sourceType } : {}) });
   };
   // SP granted before the damage (KitHit.spBeforeDamage): its triggers act before it too (a buff they apply counts for the hit).
   if (kitHit.spBeforeDamage) {
@@ -2274,7 +2259,9 @@ function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
     if (kitSkill(ctx, action.operator, action.skill).followUpOnly) return { error: `${action.skill} is cast only by its own skill (a follow-up), not by a rotation` };
     costs = skillCosts(ctx, action.operator, action.skill, frame);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : String(e) };
+    // Not one of the operator's skills (or one without SkillData): not legal. Anything else is a bug, and is thrown.
+    if (!(e instanceof EngineError)) throw e;
+    return { error: e.message };
   }
   if (costs.kind === "basic" && state.controlled !== action.operator) return { error: `${action.operator} isn't the controlled operator (swap first)` };
   // A dive (skillSpecification 6): a rotation names its landing; it starts with a jump, which only the controlled operator makes (jumpToDive).
@@ -2574,9 +2561,10 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   if (spGain > 0 && pending.length > 0) {
     const first = pending.reduce((a, b) => (b.frame < a.frame ? b : a));
     // The skill's `atb` is of the kind its data gives; a finisher's SP (GainBreakingAttackAtb, atbGainMethod 0) is natural.
-    const spKind = ownGain > 0 ? spKindOf(ctx, skillId, "atb") : "natural";
+    const atb = spGrantOf(ctx, skillId, "atb");
+    const spKind = ownGain > 0 ? atb.kind : "natural";
     // Its atbSourceType likewise: the `atb` key's, a finisher's 0.
-    const spSource = ownGain > 0 ? spSourceOf(ctx, skillId, "atb").sourceType : FINISHER_SP_SOURCE_TYPE;
+    const spSource = ownGain > 0 ? atb.sourceType : FINISHER_SP_SOURCE_TYPE;
     pending[pending.indexOf(first)] = { ...first, sp: spGain, spKind, ...(spSource !== undefined ? { spSource } : {}) };
   }
   // Returned SP is spent first; only the natural part gives the team ultimate energy.
@@ -2756,7 +2744,9 @@ export function startsNow(ctx: TimelineContext, state: TimelineState, action: Ro
     let costs;
     try {
       costs = skillCosts(ctx, action.operator, action.skill, state.frame);
-    } catch {
+    } catch (e) {
+      // As startFrom: an action that isn't one of the operator's skills can't start; anything else is a bug.
+      if (!(e instanceof EngineError)) throw e;
       return false;
     }
     if ((state.readyAt[action.skill] ?? 0) > state.frame || spAt(state, state.frame) < spCostAt(ctx, state, action.operator, costs, state.frame)) return false;

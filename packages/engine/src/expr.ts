@@ -352,16 +352,16 @@ export function evaluate(v: ValueExpr, c: EvalContext): number {
   return t ? evaluate(v.then, c) : v.else === undefined ? 0 : evaluate(v.else, c);
 }
 
-/** Every skill key a value or predicate names, with its skill (default: the one in context), for the loader to check. */
 /**
- * The value keys an expression reads, with their sources; a talent value
- * reads its key from each source the talent attaches at some level
- * (`talentSources`; none known: an error).
+ * The value keys an expression reads, with their skill (default: `skillId`); a talent value reads its key from each
+ * source the talent attaches at some level (`talentSources`; none known: an error), or, with "skipTalents", from none
+ * (a reader that wants only the skill keys).
  */
-export function valueKeys(v: ValueExpr, skillId: string, talentSources?: (talent: number) => readonly string[]): { skill: string; key: string }[] {
+export function valueKeys(v: ValueExpr, skillId: string, talentSources?: ((talent: number) => readonly string[]) | "skipTalents"): { skill: string; key: string }[] {
   if (typeof v === "number") return [];
   if (typeof v === "string") return [{ skill: skillId, key: v }];
   if ("talent" in v) {
+    if (talentSources === "skipTalents") return [];
     const sources = talentSources?.(v.talent) ?? [];
     if (sources.length === 0) throw new Error(`no talent ${v.talent} to read ${v.key} from`);
     return sources.map((skill) => ({ skill, key: v.key }));
