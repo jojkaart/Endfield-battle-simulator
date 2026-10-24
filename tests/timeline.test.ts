@@ -1,7 +1,7 @@
 // Timeline engine invariants on real data (Laevatain's kit).
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, apply, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, parseReactionEvent, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, simulateRuns, enemyActionsOf, enemyHpAt, nextRandom, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, type TimelineState, wornEquipment } from "@efsim/engine";
+import { activeAt, advance, apply, buffEndedEvent, buffEndedEvents, buffModifiers, causeMatches, eventMatches, kitBuffModifiers, parseReactionEvent, evalContext, evaluate, test, withBuff, computeStats, createContext, earliestStart, EngineError, init, simulate, simulateRuns, startsNow, enemyActionsOf, enemyHpAt, nextRandom, skillValue, SP, type Build, type EquipmentKit, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type Predicate, type RotationAction, type TimelineScenario, type TimelineState, wornEquipment } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 
 const data = loadGameData();
@@ -838,6 +838,22 @@ describe("timeline: an ultimate's time stop", () => {
     expect(stopped).toEqual(plain.map((f) => (f > 10 ? f + 61 : f)));
   });
 
+  it("delays a frozen operator's team energy with its hits (a battle skill's teamEnergy at its data frame)", () => {
+    // Gilberta's battle skill with its team energy at frame 30 (as Dapan's at 43): Laevatain's stop at 10 moves it to 91.
+    const gs = "chr_0013_aglina_normal_skill";
+    const kit = data.kits.operators[g] as OperatorKit;
+    const d: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [g]: { ...kit, skills: kit.skills.map((s) => (s.skillId === gs ? { ...s, teamEnergy: [{ frame: 30, ratio: 1 }] } : s)) } } } };
+    const rotation = [{ operator: g, skill: gs }, { operator: op, skill: L + "ultimate_skill", at: 10 }];
+    const ctx = createContext(d, { ...scenario(rotation), team, controlled: g, startEnergy: { [op]: "full", [g]: "full" } });
+    let s = init(ctx);
+    s = apply(ctx, s, rotation[0] as RotationAction);
+    expect(s.pendingEnergy.map((x) => x.frame)).toEqual([30, 30]);
+    s = apply(ctx, s, rotation[1] as RotationAction);
+    expect(s.pendingEnergy.map((x) => x.frame)).toEqual([91, 91]);
+    const hit = s.pending.filter((h) => h.operator === g).map((h) => h.frame);
+    expect(Math.max(...hit)).toBeGreaterThan(91);
+  });
+
   it("freezes the world's timers and SP regen, but not cooldowns", () => {
     const gil = { operator: g, skill: "chr_0013_aglina_normal_skill" };
     const before = runTo([gil], 10).end;
@@ -847,11 +863,36 @@ describe("timeline: an ultimate's time stop", () => {
     expect(s.slowdowns).toEqual([{ start: 10, scales: Array.from({ length: 61 }, () => 0), exempt: op }]);
   });
 
+  it("SP regenerates until a stop starts, also one that starts later than its cast, or is cast inside an advance", () => {
+    const ult = L + "ultimate_skill";
+    const u = data.skills[ult];
+    const rate = SP.perSecond / 30;
+    // Her ultimate (no SP spent) with its 61-frame stop from frame 60 of the cast: regen runs 0–60, stops 60–121, runs on.
+    const late: GameData = { ...data, skills: { ...data.skills, [ult]: { ...u, timing: { ...u?.timing, slowdowns: [{ from: 60, scales: Array.from({ length: 61 }, () => 0) }] } } } as GameData["skills"] };
+    const ctx = createContext(late, scenario([]));
+    const s = apply(ctx, init(ctx), { operator: op, skill: ult });
+    expect(advance(ctx, s, 60).sp).toBeCloseTo(200 + 60 * rate, 6);
+    expect(advance(ctx, s, 121).sp).toBeCloseTo(200 + 60 * rate, 6);
+    expect(advance(ctx, s, 150).sp).toBeCloseTo(200 + (150 - 61) * rate, 6);
+    // The same stop from frame 0, cast by a trigger 100 frames after attack1 while one advance runs from frame 0 to 300.
+    const kit = data.kits.operators[op] as OperatorKit;
+    const t: KitTrigger = { id: "test_late_ult", on: { event: "cast", skills: [L + "attack1"] }, by: "self", delay: 100, do: [{ kind: "cast", skill: ult }] };
+    const d: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, triggers: [...kit.triggers, t] } } } };
+    const c2 = createContext(d, scenario([]));
+    const s2 = apply(c2, init(c2), { operator: op, skill: L + "attack1" });
+    const end = advance(c2, s2, 300);
+    expect(end.casts.map((c) => [c.skill, c.frame])).toEqual([[L + "attack1", 0], [ult, 100]]);
+    expect(end.sp).toBeCloseTo(200 + (300 - 61) * rate, 6);
+  });
+
   it("overlapping stops cost only what the new one adds", () => {
     // Gilberta's ultimate (0–52) right after Laevatain's (0–61): during the overlap Gilberta is frozen already; Laevatain loses Gilberta's 52 frames.
-    const both = runTo([{ operator: op, skill: L + "ultimate_skill" }, { operator: g, skill: "chr_0013_aglina_ultimate_skill", at: 0 }], 0).s;
+    const { ctx, s: both } = runTo([{ operator: op, skill: L + "ultimate_skill" }, { operator: g, skill: "chr_0013_aglina_ultimate_skill", at: 0 }], 0);
     expect(both.slowdowns.map((x) => [x.start, x.scales.length, x.exempt])).toEqual([[0, 61, op], [0, 52, g]]);
-    expect(both.spPausedUntil).toBe(61);
+    // The world (SP regen with it) stands still 61 frames, not 61 + 52.
+    expect(both.spStops).toEqual([{ from: 0, until: 61 }]);
+    expect(advance(ctx, both, 61).sp).toBe(both.sp);
+    expect(advance(ctx, both, 91).sp).toBeCloseTo(both.sp + SP.perSecond, 6);
   });
 });
 
@@ -1979,5 +2020,64 @@ describe("enemy HP from the scenario", () => {
     expect(lands(0, [{ from: 30, fraction: 0.4 }])).toBe(false);
     expect(lands(40, [{ from: 30, fraction: 0.4 }])).toBe(true);
     expect(enemyHpAt({ ...scenario([]), enemyHp: [{ from: 30, fraction: 0.4 }, { from: 60, fraction: 0.2 }] }, 70)).toBe(0.2);
+  });
+});
+
+describe("timeline: failures are loud (design principle 7)", () => {
+  it("an error that isn't the engine's (a bug, broken data) isn't turned into 'not legal'", () => {
+    // SkillData without its level rows: reading them is a TypeError, not a reason the skill can't start.
+    const ns = L + "normal_skill";
+    const broken = { ...data, skills: { ...data.skills, [ns]: { ...data.skills[ns], levels: undefined } } } as unknown as GameData;
+    const ctx = createContext(broken, scenario([]));
+    const s = init(ctx);
+    expect(() => earliestStart(ctx, s, { operator: op, skill: ns })).toThrow(TypeError);
+    expect(() => startsNow(ctx, s, { operator: op, skill: ns })).toThrow(TypeError);
+    // An action the engine rules out is still an answer, not a throw.
+    expect(earliestStart(ctx, s, { operator: op, skill: "no_such_skill" })).toHaveProperty("error");
+    expect(startsNow(ctx, s, { operator: op, skill: "no_such_skill" })).toBe(false);
+  });
+
+  it("a scenario whose enemy or required constants aren't in the data is refused at once, not run on defaults", () => {
+    const sc = scenario([]);
+    expect(() => createContext(data, { ...sc, target: { enemy: "eny_no_such_enemy", level: 90 } })).toThrow(/unknown enemy eny_no_such_enemy/);
+    // Dodging without the perfect-dodge settings used to mean no dodges at all.
+    const { perfectDodge: _pd, ...noDodgeData } = data.constants;
+    expect(() => createContext({ ...data, constants: noDodgeData }, { ...sc, options: { ...sc.options, dodge: { chance: 1 } } })).toThrow(/perfect dodge/);
+    expect(() => createContext({ ...data, constants: noDodgeData }, sc)).not.toThrow();
+    // Bursts without their delay used to land at once.
+    const { burstDelayFrames: _bd, ...noBurstData } = data.constants;
+    expect(() => createContext({ ...data, constants: noBurstData }, sc)).toThrow(/burst delay/);
+    expect(() => createContext({ ...data, constants: { ...data.constants, burstDelayFrames: { fire: 30 } } }, sc)).toThrow(/burst delay/);
+    // An attribute the timeline reads without its default used to be taken as 1 (combo cooldown recovery rate, 93).
+    const { 93: _rate, ...defaults } = data.attributeDefaults;
+    expect(() => createContext({ ...data, attributeDefaults: defaults }, sc)).toThrow(/attribute 93/);
+  });
+
+  it("a buff's end is one event however it ends: the longest time left, what it recorded, whether an action ended it", () => {
+    const b = { id: "x", owner: op, target: "self" as const, appliedAt: 0, expiresAt: 100, modifiers: [], records: { rate: 1, total: 5 }, gameBuff: "buff_x" };
+    const layers = [b, { ...b, appliedAt: 10, expiresAt: 130, skipped: 4, records: { rate: 1, total: 7 } }, { ...b, id: "y", records: undefined }].map(({ records, ...rest }) => (records ? { ...rest, records } : rest));
+    expect(activeAt(b, 0) && activeAt(b, 99) && !activeAt(b, 100)).toBe(true);
+    expect(buffEndedEvents(layers, 50, true)).toEqual([
+      { type: "buffEnded", frame: 50, operator: op, buff: "x", remaining: 84, recorded: 12, consumed: true, gameBuff: "buff_x" },
+      { type: "buffEnded", frame: 50, operator: op, buff: "y", remaining: 50, gameBuff: "buff_x", consumed: true },
+    ]);
+    expect(buffEndedEvent([b], 100, false)).toEqual({ type: "buffEnded", frame: 100, operator: op, buff: "x", remaining: 0, recorded: 5, gameBuff: "buff_x" });
+  });
+
+  it("a combo cooldown whose end keeps moving with the rate buffs met on the way is an error, not a guess", () => {
+    // A ticker applies a 10-frame recovery rate 0 (attribute 93 −1) every 10 frames: each look further on finds the
+    // cooldown stopped longer, so its end never settles.
+    const kit = data.kits.operators[op] as OperatorKit;
+    const slow: KitBuff = { id: "test_slow", label: "slow", target: "self", duration: 1 / 3, modifiers: [{ attr: 93, value: -1 }] };
+    const ticker: KitBuff = { id: "test_ticker", label: "ticker", target: "self", every: 1 / 3, modifiers: [] };
+    const triggers: KitTrigger[] = [
+      { id: "test_start", on: { event: "fightStart" }, by: "self", do: [{ kind: "buff", buff: "test_ticker" }] },
+      { id: "test_tick", on: { event: "buffTick", buff: "test_ticker" }, by: "self", do: [{ kind: "buff", buff: "test_slow" }] },
+    ];
+    const d: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, buffs: [...kit.buffs, slow, ticker], triggers: [...kit.triggers, ...triggers] } } } };
+    const ctx = createContext(d, scenario([]));
+    const s0 = init(ctx);
+    const s = { ...s0, readyAt: { ...s0.readyAt, [L + "combo_skill"]: 30 } };
+    expect(earliestStart(ctx, s, { operator: op, skill: L + "combo_skill" })).toEqual({ error: expect.stringMatching(/cooldown's end keeps moving/) });
   });
 });

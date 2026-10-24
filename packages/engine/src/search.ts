@@ -10,6 +10,7 @@
 // ranks it by a statistic of their damage, and reports the found rotation's
 // distribution over many more (docs/design.md#rotation-search).
 
+import { activeAt, type ActiveBuff } from "./buffs.ts";
 import { EngineError } from "./errors.ts";
 import type { GameData } from "./model.ts";
 import type { CritMode } from "./damage.ts";
@@ -23,7 +24,7 @@ import {
   exclusiveUntil,
   enemyActionsOf,
   init,
-  memoAdvance,
+  memoised,
   simulate,
   startsNow,
   type RotationAction,
@@ -51,7 +52,7 @@ function nextBasics(data: GameData, state: TimelineState, operator: string): str
   const chain = state.chainNext[operator];
   for (const c of chain ? [chain, ...(chain.alternatives ?? [])] : []) if (c.until >= state.frame) out.add(c.skill);
   // What a buff maps the attack input to (KitBuff.basicAttack), while it's active.
-  for (const b of state.buffs) if (b.basicAttack && b.owner === operator && b.cast === undefined && b.appliedAt <= state.frame && b.expiresAt > state.frame) out.add(b.basicAttack);
+  for (const b of state.buffs) if (b.basicAttack && b.owner === operator && b.cast === undefined && activeAt(b, state.frame)) out.add(b.basicAttack);
   for (const s of data.kits.operators[operator]?.skills ?? []) {
     // Basic attacks that start a chain, and finishers (castable only on a Staggered enemy).
     const spec = data.skills[s.skillId]?.timing?.specification;
@@ -199,7 +200,7 @@ const committed = new WeakMap<TimelineState, { readonly ctx: TimelineContext; re
 export function committedDamage(ctx: TimelineContext, state: TimelineState): number {
   const known = committed.get(state);
   if (known?.ctx === ctx) return known.total;
-  // Advanced from a copy, so memoAdvance doesn't keep the fight's end (every hit to come) for as long as the state lives.
+  // Advanced from a copy, so a memoised context doesn't keep the fight's end (every hit to come) for as long as the state lives.
   const end = advance(ctx, { ...state }, ctx.scenario.durationFrames);
   let total = 0;
   for (const h of end.hits) total += h.exact;
@@ -298,7 +299,7 @@ export function resourceValues(data: GameData, scenario: Omit<TimelineScenario, 
   const perEnergy: Record<string, number> = {};
   for (const b of scenario.team) {
     const op = b.operator;
-    const ctx = createContext(data, { ...scenario, rotation: [], startEnergy: { ...scenario.startEnergy, [op]: "full" }, enemyActions: [] });
+    const ctx = memoised(createContext(data, { ...scenario, rotation: [], startEnergy: { ...scenario.startEnergy, [op]: "full" }, enemyActions: [] }));
     const s0 = init(ctx);
     const base = committedDamage(ctx, s0);
     for (const skill of data.kits.operators[op]?.skills ?? []) {
@@ -377,43 +378,103 @@ export interface SearchResult {
 }
 
 /**
- * What makes two states equivalent for the rest of the fight (not how they
- * got there): resources, positions in chains, windows, buffs, the enemy's
- * arts state and when each operator is free again. Damage already committed
- * is the score, not part of the key.
+ * How a field takes part in the key that says when two states are equivalent
+ * for the rest of the fight (stateKey): `true`, all of it; a function, the
+ * part of it that counts; a string, the reason it doesn't count at all.
+ * Every field of TimelineState (and of the records nested in it that the key
+ * used to sample) must be classified, so a new field doesn't compile until
+ * someone decides whether the search may merge states that differ in it.
  */
-function stateKey(s: TimelineState): string {
-  const r = (x: number) => Math.round(x * 10) / 10;
-  const last: Record<string, string> = {};
-  for (const c of s.casts) last[c.operator] = c.skill;
-  return JSON.stringify([
-    s.frame,
-    s.rng,
-    s.enemyActions.length,
-    s.enemyActions[0]?.frame,
-    s.controlled,
-    last,
-    r(s.sp),
-    r(s.spReturned),
-    s.spPausedUntil,
-    Object.entries(s.energy).map(([k, v]) => [k, r(v)]),
-    s.energyBlockedUntil,
-    s.acting,
-    s.chainNext,
-    s.readyAt,
-    s.stacks,
-    s.comboWindow,
-    s.triggerState,
-    s.buffs.map((b) => [b.owner, b.id, b.expiresAt]),
-    s.enemy,
-    s.pending.map((p) => [p.frame, p.operator, p.skillId, p.hitId, p.trigger?.id]),
-    s.pendingEnergy,
-    s.pendingActions.map((x) => [x.frame, x.owner, x.trigger]),
-    s.pendingJumps,
-    s.pendingBursts.map((b) => [b.frame, b.event.operator, b.event.element]),
-    s.slowdowns.map((x) => [x.start, x.scales.length, x.exempt]),
-    s.link,
-  ]);
+type KeyRule<T> = true | string | ((v: T) => unknown);
+type KeyRules<T> = { readonly [K in keyof T]-?: KeyRule<T[K]> };
+
+/** Rounded to 0.1: SP and energy reached by different paths differ in floating-point noise (a search policy: states this close are one). */
+const round = (x: number) => Math.round(x * 10) / 10;
+
+/** A pending hit: everything about it decides what it does when it lands. */
+const PENDING_HIT_KEY: KeyRules<TimelineState["pending"][number]> = {
+  frame: true, operator: true, skillId: true, hitId: true, sp: true, spKind: true, spSource: true, usesUp: true, eventCount: true, eventSource: true,
+  detached: true, launchAt: true, cast: true, controlledAtCast: true, trigger: true, branch: true, fixed: true, snapshot: true, pinned: true,
+};
+
+/** A timed buff: everything about it decides what it does (its layers, ticks, records, recipients, the cast it belongs to). */
+const BUFF_KEY: KeyRules<ActiveBuff> = {
+  id: true, stackGroup: true, owner: true, target: true, appliedAt: true, expiresAt: true, modifiers: true, attrs: true, categories: true, recipients: true,
+  excluded: true, maxLayers: true, maxInstances: true, consumedBy: true, cast: true, whileCasting: true, blocksEnergy: true, every: true, nextTick: true,
+  endsWithCast: true, skipped: true, gameBuff: true, sharedTimer: true, link: true, basicAttack: true, records: true, snapshot: true,
+};
+
+const STATE_KEY: KeyRules<TimelineState> = {
+  frame: true,
+  rng: true,
+  sp: round,
+  spReturned: round,
+  energy: (e) => Object.fromEntries(Object.entries(e).map(([k, v]) => [k, round(v)])),
+  energyBlockedUntil: true,
+  comboWindow: true,
+  spPausedUntil: true,
+  spStops: true,
+  controlled: true,
+  acting: true,
+  chainNext: true,
+  readyAt: true,
+  pending: (p) => p.map((h) => project(h, PENDING_HIT_KEY)),
+  pendingActions: true,
+  pendingJumps: true,
+  link: true,
+  enemyFrozenUntil: true,
+  enemyActions: true,
+  pendingBursts: true,
+  stagger: true,
+  slowdowns: true,
+  pendingEnergy: true,
+  enemy: true,
+  buffs: (b) => b.map((x) => project(x, BUFF_KEY)),
+  triggerState: true,
+  stacks: true,
+  // What the engine reads back of the cast list: each operator's last cast (an action without one falls back to it) and
+  // the Link stacks a cast used (castLink, read by its hits and events); the next cast's index follows from the former.
+  casts: (casts) => {
+    const last: Record<string, [number, string]> = {};
+    casts.forEach((c, i) => (last[c.operator] = [i, c.skill]));
+    return { last, link: casts.flatMap((c, i) => (c.link !== undefined ? [[i, c.link]] : [])) };
+  },
+  hits: "what has landed is the score (committedDamage), not what comes next; recording buffs keep their own totals (ActiveBuff.records)",
+  reactions: "the record of what the enemy's arts state did; nothing reads it back",
+};
+
+/** The parts of a record its rules say count (KeyRules), by field name. */
+function project<T extends object>(v: T, rules: KeyRules<T>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const k of Object.keys(rules) as (keyof T & string)[]) {
+    const rule = rules[k] as KeyRule<T[keyof T]>;
+    if (typeof rule === "string" || v[k] === undefined) continue;
+    out[k] = rule === true ? v[k] : rule(v[k]);
+  }
+  return out;
+}
+
+/**
+ * A value as text that two values share exactly when they're equal as data: object keys sorted (the order a path
+ * built a record in doesn't matter), non-finite numbers kept (JSON would make Infinity null), absent fields absent.
+ */
+function canonical(v: unknown): string {
+  if (typeof v === "number") return Number.isFinite(v) ? String(v) : `"${String(v)}"`;
+  if (v === undefined) return "null";
+  if (v === null || typeof v !== "object") return JSON.stringify(v);
+  if (Array.isArray(v)) return `[${v.map(canonical).join(",")}]`;
+  if (Object.getPrototypeOf(v) !== Object.prototype) throw new EngineError(`stateKey: a state holds a ${Object.prototype.toString.call(v)}, which isn't plain data`);
+  const o = v as Record<string, unknown>;
+  return `{${Object.keys(o).filter((k) => o[k] !== undefined).sort().map((k) => `${JSON.stringify(k)}:${canonical(o[k])}`).join(",")}}`;
+}
+
+/**
+ * What makes two states equivalent for the rest of the fight (not how they
+ * got there): every field of the state that what comes next reads
+ * (STATE_KEY). Damage already committed is the score, not part of the key.
+ */
+export function stateKey(s: TimelineState): string {
+  return canonical(project(s, STATE_KEY));
 }
 
 /** The best node per equivalent state (in every seeded battle), best first, at most `n`. */
@@ -460,8 +521,7 @@ function statistic(values: readonly number[], percentile: number | undefined): n
  * (or SearchOptions.percentile) of the K battles' values.
  */
 export function searchRotation(data: GameData, scenario: Omit<TimelineScenario, "rotation">, options: SearchOptions = {}): SearchResult {
-  // Judging the candidates of one state advances it to the same frames over and over: memoised (exact, states are plain data).
-  return memoAdvance(() => search(data, scenario, options));
+  return search(data, scenario, options);
 }
 
 function search(data: GameData, given: Omit<TimelineScenario, "rotation">, options: SearchOptions): SearchResult {
@@ -479,7 +539,8 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
   const seed0 = scenario.options.seed ?? 1;
   const seeds = Array.from({ length: k }, (_, i) => (seed0 + i) >>> 0);
   // One battle: the scenario as given (bit for bit the search without seeds). More: the same with seed + i.
-  const ctxs = k === 1 ? [createContext(data, { ...scenario, rotation: [] })] : seeds.map((seed) => createContext(data, { ...scenario, rotation: [], options: { ...scenario.options, seed } }));
+  // Judging the candidates of one state advances it to the same frames over and over: memoised (exact, states are plain data).
+  const ctxs = (k === 1 ? [createContext(data, { ...scenario, rotation: [] })] : seeds.map((seed) => createContext(data, { ...scenario, rotation: [], options: { ...scenario.options, seed } }))).map(memoised);
   const ctx = ctxs[0] as TimelineContext;
   const weight = options.resourceWeight ?? 0;
   const values = weight > 0 ? resourceValues(data, scenario) : null;

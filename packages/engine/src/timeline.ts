@@ -30,14 +30,16 @@ import {
 } from "./damage.ts";
 import { applies, SNAPSHOT_ZONES, zoneSum, type HitContext, type Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
-import { landingFrames, resolveApplication, type EventSource, type GameData, type KitBuff, type KitHit, type KitSkill, type OperatorKit, type SkillTiming, type SpKind, type StackGain, type StackRequirement } from "./model.ts";
+import { landingFrames, resolveApplication, type EnemyData, type EventSource, type GameData, type KitBuff, type KitHit, type KitSkill, type OperatorKit, type SkillTiming, type SpKind, type StackGain, type StackRequirement } from "./model.ts";
 import { effectiveKit } from "./triggers.ts";
 import { allActions, causeMatches, eventMatches, triggerActionAt, triggerSkillId, type BattleEvent, type BuffCategory, type KitTrigger } from "./events.ts";
 import { evaluate, test, valueKeys, type EvalContext, type Predicate, type ValueExpr } from "./expr.ts";
-import { applyBuff, buffAttr, buffModifiers, buffReach, endBuff, endBuffFor, extendBuff, reaches, recordedOf, remainingOf, resolveValue, withBuff, type ActiveBuff, type AttrFilters } from "./buffs.ts";
+import { activeAt, applyBuff, buffAttr, buffEndedEvent, buffEndedEvents, buffModifiers, buffReach, endBuff, endBuffFor, extendBuff, reaches, resolveValue, withBuff, type ActiveBuff, type AttrFilters } from "./buffs.ts";
 import { computeStats, DEFAULT_STAT_OPTIONS, foodOf, skillLevel, skillParam, type StatPanel } from "./stats.ts";
 import { Attr } from "./attributes.ts";
-import { applyToEnemy, expireStatus, nextTick, NO_STATUS, statusModifiers, tickStatus, type EnemyStatus, type StatusEvent, type StatusTweaks } from "./status.ts";
+import { applyToEnemy, ARTS_ELEMENTS, expireStatus, nextTick, NO_STATUS, statusModifiers, tickStatus, type EnemyStatus, type StatusEvent, type StatusTweaks } from "./status.ts";
+import type { ArtsElement } from "./reactions.ts";
+import type { AttrType } from "./attributes.ts";
 import { FPS } from "./units.ts";
 import { DIVE_MOTION, FINISHER_SP_SOURCE_TYPE } from "./constants.ts";
 
@@ -224,8 +226,13 @@ export interface TimelineState {
    * buff of the operator is active.
    */
   readonly comboWindow: Readonly<Record<string, { readonly from: number; readonly until: number; readonly count: number; readonly source?: EventSource; readonly whileBuff?: string }>>;
-  /** Frame until which SP doesn't regenerate. */
+  /** Frame until which SP doesn't regenerate (after a spend: SP.pauseAfterSpendFrames). */
   readonly spPausedUntil: number;
+  /**
+   * Frames [from, until) in which SP doesn't regenerate either: the world's clock stands still (slow-downs, shiftWorld).
+   * Disjoint and in order; those over by the state's frame are dropped as it advances.
+   */
+  readonly spStops: readonly { readonly from: number; readonly until: number }[];
   readonly controlled: string;
   /** Per operator: its current (last) action, which gates its next one (actionGate); `skips`: the jumps it took (actionFrame). */
   readonly acting: Readonly<Record<string, Acting>>;
@@ -238,9 +245,11 @@ export interface TimelineState {
   /** Per skill ID: frame from which it's off cooldown (a combo cooldown run at a recovery rate may end within a frame: ready from the next whole one). */
   readonly readyAt: Readonly<Record<string, number>>;
   readonly pending: readonly PendingHit[];
-  /** Trigger actions due later (KitTrigger.delay), with the event that started them. */
-  /** Delayed trigger actions; `cast`: the cast they belong to (a cast trigger's), dropped when it's cut short. */
-  /** `launchAt`: a detached cast trigger's launch (KitTrigger.launch); the cast's own until then. */
+  /**
+   * Trigger actions due later (KitTrigger.delay), with the event that started them. `cast`: the cast they belong to
+   * (a cast trigger's), dropped when it's cut short; `launchAt`: a detached cast trigger's launch (KitTrigger.launch),
+   * the cast's own until then.
+   */
   readonly pendingActions: readonly { readonly frame: number; readonly owner: string; readonly trigger: string; readonly event: BattleEvent; readonly origin: Origin | null; readonly cast?: { readonly operator: string; readonly index: number }; readonly awaited?: boolean; readonly launchAt?: number; readonly afterHits?: boolean }[];
   /** Jumps and ends on casts' timelines still to come (SkillTiming.jumps and ends; a conditional jump only if the kit's condition held at the cast). */
   readonly pendingJumps: readonly PendingJump[];
@@ -256,8 +265,10 @@ export interface TimelineState {
   readonly stagger: { readonly poise: number; readonly until: number | null; readonly finisherUsed: boolean };
   /** Global time slow-downs (an ultimate's time stop, a combo's slow-down) still running or to come: per frame from `start`, all but `exempt` (the caster). */
   readonly slowdowns: readonly { readonly start: number; readonly scales: readonly number[]; readonly exempt: string }[];
-  /** Ultimate energy given later than the cast (a battle skill's team energy at its data frames, KitSkill.teamEnergy); `if` judged for the caster at the frame. */
-  /** Energy grants still to come; `cast`: the cast that grants it (a skill's team energy at its data frame), dropped if it's cut short first. */
+  /**
+   * Ultimate energy given later than the cast (a battle skill's team energy at its data frames, KitSkill.teamEnergy):
+   * `cast`, the cast that grants it, dropped if it's cut short first; `if` judged for the caster at the frame.
+   */
   readonly pendingEnergy: readonly { readonly frame: number; readonly operator: string; readonly amount: number; readonly cast?: { readonly operator: string; readonly index: number }; readonly if?: Predicate; readonly detached?: boolean }[];
   readonly enemy: EnemyStatus;
   /** Timed buffs and debuffs from skills. */
@@ -293,7 +304,21 @@ export interface TimelineContext {
   readonly costBuffs?: boolean;
   /** Whether any kit buff maps the basic-attack input (KitBuff.basicAttack). */
   readonly inputBuffs?: boolean;
+  /** The scenario's enemy (TimelineScenario.target). */
+  readonly enemy: EnemyData;
+  /** Per arts element: frames from an infliction to its Arts Burst (BattleConstants.burstDelayFrames). */
+  readonly burstDelayFrames: Readonly<Record<ArtsElement, number>>;
+  /** With `memoised`: `advance`'s results per state object and frame (exact: advance is pure and states are never changed in place). */
+  readonly advanceMemo?: WeakMap<TimelineState, Map<number, TimelineState>>;
 }
+
+/** Operator attributes the timeline reads from the panel, whose default (GameData.attributeDefaults) holds when no line sets them. */
+const TIMELINE_ATTRS: readonly AttrType[] = [
+  Attr.ComboSkillCooldownScalar, Attr.ComboSkillCooldownRecoveryScalar, Attr.KeywordSpeedUpScalar, Attr.UltimateSpGainScalar, Attr.PoiseDamageOutputScalar, Attr.AtbCostAddition,
+];
+
+/** Enemy attributes the timeline reads (enemyAttr): the enemy's own, else their default. */
+const ENEMY_ATTRS: readonly AttrType[] = [Attr.MaxPoise, Attr.PoiseDamageTakenScalar, Attr.PoiseRecTime, Attr.PoiseRecTimeScalar, Attr.BreakingAttackDamageTakenScalar];
 
 export function createContext(data: GameData, scenario: TimelineScenario): TimelineContext {
   if (scenario.team.length === 0 || scenario.team.length > 4) throw new EngineError("a team has 1–4 operators");
@@ -315,8 +340,17 @@ export function createContext(data: GameData, scenario: TimelineScenario): Timel
   const beforeDamage = [...kits.values()].some((k) => k.triggers.some((t) => t.beforeDamage));
   const buffAttrs = new Set([...kits.values()].flatMap((k) => k.buffs.flatMap((b) => b.modifiers.flatMap((m) => (m.attr !== undefined ? [m.attr] : [])))));
   const inputBuffs = [...kits.values()].some((k) => k.buffs.some((b) => b.basicAttack !== undefined));
+  // What the timeline needs from the data, checked once here (design principle 7: no defaults for missing data).
+  const enemy = data.enemies[scenario.target.enemy];
+  if (!enemy) throw new EngineError(`unknown enemy ${scenario.target.enemy}`);
+  for (const a of TIMELINE_ATTRS) if (data.attributeDefaults[a] === undefined) throw new EngineError(`attribute ${a} has no default in the data (AttributeTable), and the timeline reads it`);
+  for (const a of ENEMY_ATTRS) if (enemy.staticAttrs[a] === undefined && data.attributeDefaults[a] === undefined) throw new EngineError(`${enemy.id} has no attribute ${a}, nor has the data a default for it`);
+  const delays = data.constants.burstDelayFrames;
+  const noDelay = ARTS_ELEMENTS.filter((e) => delays?.[e] === undefined);
+  if (!delays || noDelay.length) throw new EngineError(`the data has no burst delay (BattleConstants burstDelayFrames) for ${noDelay.join(", ")}`);
+  if (scenario.options.dodge && !data.constants.perfectDodge) throw new EngineError("dodging needs the perfect dodge settings (BattleConstants perfectDodge), which the data doesn't have");
   return {
-    data, scenario, builds, panels, modifiers, kits, beforeDamage,
+    data, scenario, builds, panels, modifiers, kits, beforeDamage, enemy, burstDelayFrames: delays as Record<ArtsElement, number>,
     ...(foodEnds.size ? { foodEnds } : {}),
     ...(buffAttrs.has(Attr.ComboSkillCooldownRecoveryScalar) ? { comboRates: true } : {}),
     ...(buffAttrs.has(Attr.AtbCostAddition) ? { costBuffs: true } : {}),
@@ -331,6 +365,13 @@ export function panelAt(ctx: TimelineContext, operator: string, frame: number): 
   const panel = ctx.panels.get(operator);
   if (!panel) throw new EngineError(`${operator} isn't in the team`);
   return panel;
+}
+
+/** An attribute's total on a panel: its line's, else the attribute's default (one of TIMELINE_ATTRS, checked in createContext). */
+function attrTotal(ctx: TimelineContext, panel: StatPanel, attr: AttrType): number {
+  const v = panel.attrs[attr]?.total ?? ctx.data.attributeDefaults[attr];
+  if (v === undefined) throw new EngineError(`attribute ${attr} has no default in the data`);
+  return v;
 }
 
 export function init(ctx: TimelineContext): TimelineState {
@@ -353,6 +394,7 @@ function initialState(ctx: TimelineContext): TimelineState {
     energyBlockedUntil: {},
     comboWindow: {},
     spPausedUntil: 0,
+    spStops: [],
     controlled,
     acting: {},
     chainNext: {},
@@ -377,11 +419,30 @@ function initialState(ctx: TimelineContext): TimelineState {
   };
 }
 
-/** SP at a later frame, with regeneration (whole frames, no fractions lost). */
+/** SP at a later frame, with regeneration (whole frames, no fractions lost): from the state's frame, after its pause, outside its stops. */
 function spAt(state: TimelineState, frame: number): number {
-  const from = Math.max(state.frame, state.spPausedUntil);
-  const regen = frame > from ? ((frame - from) * SP.perSecond) / FPS : 0;
-  return Math.min(SP.max, state.sp + regen);
+  return Math.min(SP.max, state.sp + (regenFrames(state, Math.max(state.frame, state.spPausedUntil), frame) * SP.perSecond) / FPS);
+}
+
+/** The frames in [from, to) SP regenerates in: those outside the state's stops (TimelineState.spStops). */
+function regenFrames(state: TimelineState, from: number, to: number): number {
+  if (to <= from) return 0;
+  let n = to - from;
+  for (const p of state.spStops) n -= Math.max(0, Math.min(to, p.until) - Math.max(from, p.from));
+  return n;
+}
+
+/** The frame by which SP has regenerated for `frames` frames from `from` (no earlier than the pause after a spend), skipping the stops. */
+function afterRegen(state: TimelineState, from: number, frames: number): number {
+  let f = Math.max(from, state.spPausedUntil);
+  let left = frames;
+  for (const p of state.spStops) {
+    if (p.until <= f) continue;
+    if (p.from >= f + left) break;
+    left -= Math.max(0, p.from - f);
+    f = p.until;
+  }
+  return f + left;
 }
 
 /** An operator's stacks at the start: the scenario's, else the kit's `initial` (0 when absent), within each stack's maximum. */
@@ -424,7 +485,7 @@ function skillCosts(ctx: TimelineContext, operator: string, skillId: string, fra
   const cost = skillParam(panel, skillId, "cost", level.costValue);
   const kind = kitSkill(ctx, operator, skillId).kind;
   // Combo cooldowns scale with attribute 47 (ComboSkillCooldownScalar: Frontiers, Qingbo ×0.85).
-  const scalar = kind === "combo" ? (panel.attrs[Attr.ComboSkillCooldownScalar]?.total ?? ctx.data.attributeDefaults[Attr.ComboSkillCooldownScalar] ?? 1) : 1;
+  const scalar = kind === "combo" ? attrTotal(ctx, panel, Attr.ComboSkillCooldownScalar) : 1;
   return {
     group,
     /** The action's kind (KitSkill.kind), which basic-attack control and combo windows go by. */
@@ -447,7 +508,7 @@ function skillCosts(ctx: TimelineContext, operator: string, skillId: string, fra
 function spCostAt(ctx: TimelineContext, st: TimelineState, operator: string, costs: { readonly paysSp: boolean; readonly spCost: number }, frame: number): number {
   if (!costs.paysSp) return 0;
   const panel = panelAt(ctx, operator, frame);
-  const extra = (panel.attrs[Attr.AtbCostAddition]?.total ?? 0) + buffAttr(st.buffs, operator, frame, Attr.AtbCostAddition, panel.attrs[Attr.AtbCostAddition]);
+  const extra = attrTotal(ctx, panel, Attr.AtbCostAddition) + buffAttr(st.buffs, operator, frame, Attr.AtbCostAddition, panel.attrs[Attr.AtbCostAddition]);
   return extra === 0 ? costs.spCost : Math.max(0, costs.spCost + extra);
 }
 
@@ -494,7 +555,7 @@ function needsWindow(ctx: TimelineContext, operator: string, skill: KitSkill): b
 function comboRate(ctx: TimelineContext, buffs: readonly ActiveBuff[], operator: string, frame: number): number {
   const panel = panelAt(ctx, operator, frame);
   const line = panel.attrs[Attr.ComboSkillCooldownRecoveryScalar];
-  const base = line?.total ?? ctx.data.attributeDefaults[Attr.ComboSkillCooldownRecoveryScalar] ?? 1;
+  const base = attrTotal(ctx, panel, Attr.ComboSkillCooldownRecoveryScalar);
   return base + buffAttr(buffs, operator, frame, Attr.ComboSkillCooldownRecoveryScalar, line ?? { base, add: 0, multiply: 1 });
 }
 
@@ -606,7 +667,10 @@ export function diveFrames(m: { readonly maxJumpHeight: number; readonly gravity
 
 function timingOf(ctx: TimelineContext, skillId: string): SkillTiming {
   if (skillId === DODGE) {
-    const n = ctx.data.constants.perfectDodge?.busyFrames ?? 0;
+    const pd = ctx.data.constants.perfectDodge;
+    // Only a perfect dodge makes this the current action, and dodging needs the settings (createContext).
+    if (!pd) throw new EngineError("a perfect dodge without the perfect dodge settings in the data");
+    const n = pd.busyFrames;
     return { durationFrames: n, exclusiveFrames: n, windows: [], channels: [], specification: 2, keepsChain: true, slowdowns: [], jumps: [], ends: [] };
   }
   // In the air until the landing at the latest (a plunging action: nothing else of the operator's starts meanwhile).
@@ -616,14 +680,6 @@ function timingOf(ctx: TimelineContext, skillId: string): SkillTiming {
   return t;
 }
 
-/**
- * The earliest frame from `base` at which an operator may start a skill,
- * given its current action: once that's over, inside a window of it that
- * lists the skill, at once if it has no windows or the skill outranks it,
- * else from its exclusive frame. A basic-attack chain step only while the
- * chain points at it; another basic attack not while the chain points
- * elsewhere (the input would resolve to the step).
- */
 /** An operator's current action. */
 export interface Acting {
   readonly skill: string;
@@ -712,7 +768,16 @@ export function exclusiveUntil(ctx: TimelineContext, state: TimelineState, opera
   return Math.max(state.frame, Math.min(actionFrame(cur, ct.durationFrames), actionFrame(cur, exclusiveOf(ct, cur))));
 }
 
-/** `mapped`: what the operator's basic-attack input is at the start (KitBuff.basicAttack), if a buff maps it. */
+/**
+ * The earliest frame from `base` at which an operator may start a skill,
+ * given its current action: once that's over, inside a window of it that
+ * lists the skill, at once if it has no windows or the skill outranks it,
+ * else from its exclusive frame. A basic-attack chain step only while the
+ * chain points at it; another basic attack not while the chain points
+ * elsewhere (the input would resolve to the step). `mapped`: what the
+ * operator's basic-attack input is at the start (KitBuff.basicAttack), if
+ * a buff maps it.
+ */
 function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, skillId: string, base: number, mapped?: string): { frame: number } | { error: string } {
   const next = kitSkill(ctx, operator, skillId);
   const nt = timingOf(ctx, skillId);
@@ -753,8 +818,10 @@ function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, s
   return { frame };
 }
 
-/** The chain's next step after a cast: a basic attack's window that lists a basic attack; kept for a moment by skills that don't interrupt the chain, cleared by others. */
-/** `openWindows`: its conditional windows open at this cast (Acting.windows). */
+/**
+ * The chain's next step after a cast: a basic attack's window that lists a basic attack; kept for a moment by skills
+ * that don't interrupt the chain, cleared by others. `openWindows`: its conditional windows open at this cast (Acting.windows).
+ */
 function chainAfter(ctx: TimelineContext, st: TimelineState, operator: string, skill: KitSkill, frame: number, speed = 1, openWindows: readonly number[] = []): TimelineState["chainNext"] {
   const t = timingOf(ctx, skill.skillId);
   const at = (x: number) => frame + Math.round(x / speed);
@@ -902,13 +969,31 @@ function shiftWorld(st: TimelineState, start: number, n: number): TimelineState 
     comboWindow: Object.fromEntries(Object.entries(st.comboWindow).map(([k, w]) => [k, { ...w, until: later(w.until) }])),
     energyBlockedUntil: Object.fromEntries(Object.entries(st.energyBlockedUntil).map(([k, f]) => [k, later(f)])),
     link: st.link.map(later),
-    // SP doesn't regenerate meanwhile (taken from the current frame: slow-downs start at their cast or soon after).
-    sp: spAt(st, st.frame),
-    spPausedUntil: st.spPausedUntil > start ? st.spPausedUntil + n : start + n,
+    // SP doesn't regenerate meanwhile: it does until `start` (which may be later than the state's frame: a slow-down
+    // some frames into its cast, or one cast by a trigger while an advance runs), then not for `n` frames.
+    spPausedUntil: later(st.spPausedUntil),
+    spStops: stopSp(st.spStops, start, n),
   };
 }
 
-/** An operator's own timeline after `start` (its hits on the way, delayed actions, current action) happens `n` frames later. */
+/** SP stops after a slow-down from `start` adds `n` frames: what comes after it, `n` later, and [start, start + n) (merged). */
+function stopSp(stops: TimelineState["spStops"], start: number, n: number): TimelineState["spStops"] {
+  const later = (f: number) => (f > start ? f + n : f);
+  const all = [...stops.map((p) => ({ from: later(p.from), until: later(p.until) })), { from: start, until: start + n }].sort((a, b) => a.from - b.from);
+  const out: { from: number; until: number }[] = [];
+  for (const p of all) {
+    const last = out.at(-1);
+    if (last && p.from <= last.until) last.until = Math.max(last.until, p.until);
+    else out.push({ ...p });
+  }
+  return out;
+}
+
+/**
+ * An operator's own timeline after `start` (its hits on the way, delayed actions, its casts' team energy, current
+ * action) happens `n` frames later. What belongs to a cast goes with the cast's operator (as endCurrentSkill and
+ * takeJump treat it); a delayed action of no cast goes with its trigger's owner.
+ */
 function shiftOperator(st: TimelineState, operator: string, start: number, n: number): TimelineState {
   if (n <= 0) return st;
   const later = (f: number) => (f > start ? f + n : f);
@@ -918,7 +1003,8 @@ function shiftOperator(st: TimelineState, operator: string, start: number, n: nu
   return {
     ...st,
     pending: st.pending.map((h) => (h.operator === operator && h.frame > start && !h.pinned ? { ...h, frame: h.frame + n, ...(h.launchAt !== undefined ? { launchAt: later(h.launchAt) } : {}) } : h)),
-    pendingActions: st.pendingActions.map((a) => (a.owner === operator && a.frame > start ? { ...a, frame: a.frame + n, ...(a.launchAt !== undefined ? { launchAt: later(a.launchAt) } : {}) } : a)),
+    pendingActions: st.pendingActions.map((a) => ((a.cast?.operator ?? a.owner) === operator && a.frame > start ? { ...a, frame: a.frame + n, ...(a.launchAt !== undefined ? { launchAt: later(a.launchAt) } : {}) } : a)),
+    pendingEnergy: st.pendingEnergy.map((x) => (x.cast?.operator === operator && x.frame > start ? { ...x, frame: x.frame + n } : x)),
     pendingJumps: st.pendingJumps.map((j) => (j.operator === operator && j.frame > start ? { ...j, frame: j.frame + n } : j)),
     ...(cur ? { acting: { ...st.acting, [operator]: { ...cur, frame: cur.frame + n, ...(cur.skips ? { skips: cur.skips.map((k) => ({ ...k, at: k.at + n })) } : {}) } } } : {}),
     ...(chain ? { chainNext: { ...st.chainNext, [operator]: { ...shift(chain), ...(chain.alternatives ? { alternatives: chain.alternatives.map(shift) } : {}) } } } : {}),
@@ -928,7 +1014,7 @@ function shiftOperator(st: TimelineState, operator: string, start: number, n: nu
 /** An operator's action speed: attribute 92 (KeywordSpeedUpScalar, default 1) plus haste buffs, within 0.1–1.3. */
 function actionSpeed(ctx: TimelineContext, st: TimelineState, operator: string, frame: number): number {
   const panel = panelAt(ctx, operator, frame);
-  const base = panel.attrs[Attr.KeywordSpeedUpScalar]?.total ?? ctx.data.attributeDefaults[Attr.KeywordSpeedUpScalar] ?? 1;
+  const base = attrTotal(ctx, panel, Attr.KeywordSpeedUpScalar);
   return Math.max(0.1, Math.min(1.3, base + buffAttr(st.buffs, operator, frame, Attr.KeywordSpeedUpScalar, panel.attrs[Attr.KeywordSpeedUpScalar])));
 }
 
@@ -959,10 +1045,10 @@ export interface EnergyGrantOptions {
 }
 
 function gainEnergy(ctx: TimelineContext, st: TimelineState, operator: string, amount: number, frame: number, opts: EnergyGrantOptions = {}): TimelineState {
-  const blocked = (st.energyBlockedUntil[operator] ?? -1) > frame || st.buffs.some((b) => b.blocksEnergy && b.owner === operator && b.appliedAt <= frame && b.expiresAt > frame);
+  const blocked = (st.energyBlockedUntil[operator] ?? -1) > frame || st.buffs.some((b) => b.blocksEnergy && b.owner === operator && activeAt(b, frame));
   if (amount <= 0 || (!opts.ignoreBlock && blocked)) return st;
   const panel = panelAt(ctx, operator, frame);
-  const efficiency = opts.ignoreEfficiency ? 1 : (panel.attrs[Attr.UltimateSpGainScalar]?.total ?? ctx.data.attributeDefaults[Attr.UltimateSpGainScalar] ?? 1) + buffAttr(st.buffs, operator, frame, Attr.UltimateSpGainScalar, panel.attrs[Attr.UltimateSpGainScalar]);
+  const efficiency = opts.ignoreEfficiency ? 1 : attrTotal(ctx, panel, Attr.UltimateSpGainScalar) + buffAttr(st.buffs, operator, frame, Attr.UltimateSpGainScalar, panel.attrs[Attr.UltimateSpGainScalar]);
   const now = st.energy[operator] ?? 0;
   return { ...st, energy: { ...st.energy, [operator]: Math.min(maxEnergy(ctx, operator), now + amount * efficiency) } };
 }
@@ -975,35 +1061,20 @@ function gainSp(st: TimelineState, amount: number, frame: number, kind: SpKind):
   return { ...st, sp: after, spReturned: Math.min(after, st.spReturned + (kind === "returned" ? after - before : 0)), frame: Math.max(st.frame, frame) };
 }
 
-/** A grant's SP kind: the kit's, else what the data says for the first skill key its value reads (talent keys aside), else returned. */
-function spKindOf(ctx: TimelineContext, skillId: string, value: ValueExpr, given?: SpKind): SpKind {
-  if (given) return given;
-  let keys: { skill: string; key: string }[] = [];
-  try {
-    keys = valueKeys(value, skillId);
-  } catch {
-    // A talent value: no skill file to say.
+/**
+ * What the data says of an SP grant (SkillData atbGainMethod and atbSourceType): the kind and the source type of the
+ * first skill key its value reads that has one (talent keys aside: no skill file says); a kind the kit gives wins,
+ * and without either the grant is returned SP.
+ */
+function spGrantOf(ctx: TimelineContext, skillId: string, value: ValueExpr, given?: SpKind): { kind: SpKind; sourceType?: number } {
+  let kind = given;
+  let sourceType: number | undefined;
+  for (const k of valueKeys(value, skillId, "skipTalents")) {
+    const skill = ctx.data.skills[k.skill];
+    kind ??= skill?.spKinds[k.key];
+    sourceType ??= skill?.spSources[k.key];
   }
-  for (const k of keys) {
-    const kind = ctx.data.skills[k.skill]?.spKinds[k.key];
-    if (kind) return kind;
-  }
-  return "returned";
-}
-
-/** A grant's atbSourceType: what the data says for the first skill key its value reads that has one (talent keys aside), else none. */
-function spSourceOf(ctx: TimelineContext, skillId: string, value: ValueExpr): { sourceType?: number } {
-  let keys: { skill: string; key: string }[] = [];
-  try {
-    keys = valueKeys(value, skillId);
-  } catch {
-    // A talent value: no skill file to say.
-  }
-  for (const k of keys) {
-    const type = ctx.data.skills[k.skill]?.spSources[k.key];
-    if (type !== undefined) return { sourceType: type };
-  }
-  return {};
+  return { kind: kind ?? "returned", ...(sourceType !== undefined ? { sourceType } : {}) };
 }
 
 /** SP a skill returns (its blackboard `atb` at the operator's level, after potentials). */
@@ -1049,9 +1120,11 @@ function damageOptions(ctx: TimelineContext, st: TimelineState, operator: string
   };
 }
 
-/** An enemy attribute from its level-independent ones, else the attribute's default. */
-function enemyAttr(ctx: TimelineContext, attr: number): number {
-  return ctx.data.enemies[ctx.scenario.target.enemy]?.staticAttrs[attr] ?? ctx.data.attributeDefaults[attr] ?? 0;
+/** An enemy attribute from its level-independent ones, else the attribute's default (one of ENEMY_ATTRS, checked in createContext). */
+function enemyAttr(ctx: TimelineContext, attr: AttrType): number {
+  const v = ctx.enemy.staticAttrs[attr] ?? ctx.data.attributeDefaults[attr];
+  if (v === undefined) throw new EngineError(`${ctx.enemy.id} has no attribute ${attr}, nor has the data a default for it`);
+  return v;
 }
 
 /** The enemy's stagger HP (attribute 20); an enemy without one can't be staggered. */
@@ -1079,7 +1152,7 @@ function dealPoise(ctx: TimelineContext, st: TimelineState, operator: string, va
     const { elements, when, ...rest } = f;
     return (!elements || elements.includes(landing.hit.element)) && applies({ zone: "atk", value: 0, source: "", ...rest }, landing.hit) && (!when || (test(when, landing.ec) ?? false));
   };
-  const scalar = (panel.attrs[Attr.PoiseDamageOutputScalar]?.total ?? ctx.data.attributeDefaults[Attr.PoiseDamageOutputScalar] ?? 1) +
+  const scalar = attrTotal(ctx, panel, Attr.PoiseDamageOutputScalar) +
     buffAttr(st.buffs, operator, frame, Attr.PoiseDamageOutputScalar, undefined, { accepts, ...(landing?.cast !== undefined ? { cast: landing.cast } : {}) });
   const dealt = value * scalar * enemyAttr(ctx, Attr.PoiseDamageTakenScalar);
   // A stagger that has ended refilled the bar.
@@ -1087,7 +1160,7 @@ function dealPoise(ctx: TimelineContext, st: TimelineState, operator: string, va
   const poise = before - dealt;
   // Stagger Nodes (EnemyData poiseKnotPctList): the bar passing one, from above (once per cycle: the bar only falls until it refills).
   const max = maxPoise(ctx);
-  const nodes: BattleEvent[] = (ctx.data.enemies[ctx.scenario.target.enemy]?.staggerNodes ?? [])
+  const nodes: BattleEvent[] = ctx.enemy.staggerNodes
     .filter((n) => before > n * max && poise <= n * max)
     .map((node) => ({ type: "staggerNode", frame, operator, node }));
   if (poise > 0) return { state: { ...st, stagger: { poise, until: null, finisherUsed: false } }, events: nodes };
@@ -1097,7 +1170,7 @@ function dealPoise(ctx: TimelineContext, st: TimelineState, operator: string, va
 
 /** What kit predicates and values see for an operator at a frame. */
 function situationAt(ctx: TimelineContext, operator: string, st: TimelineState, frame: number, consumed?: number): Situation {
-  const active = (b: ActiveBuff) => b.appliedAt <= frame && b.expiresAt > frame;
+  const active = (b: ActiveBuff) => activeAt(b, frame);
   return {
     team: ctx.scenario.team,
     enemy: expireStatus(st.enemy, frame),
@@ -1134,10 +1207,10 @@ function currentActionOf(ctx: TimelineContext, st: TimelineState, operator: stri
 
 /** The enemy's super armor (its Staggered value while Staggered) and rank, where the data has them. */
 function enemyStanding(ctx: TimelineContext, staggered: boolean): Situation {
-  const e = ctx.data.enemies[ctx.scenario.target.enemy];
+  const e = ctx.enemy;
   return {
-    ...(e?.superArmor ? { enemySuperArmor: staggered ? e.superArmor.staggered : e.superArmor.initial } : {}),
-    ...(e?.rank !== undefined ? { enemyRank: e.rank } : {}),
+    ...(e.superArmor ? { enemySuperArmor: staggered ? e.superArmor.staggered : e.superArmor.initial } : {}),
+    ...(e.rank !== undefined ? { enemyRank: e.rank } : {}),
   };
 }
 
@@ -1240,18 +1313,42 @@ function statusTweaks(ctx: TimelineContext, st: TimelineState, operator: string,
   return out;
 }
 
-/** The damage a status event deals, if any (bursts, reactions with an initial hit, Combustion ticks). */
-/** Whether a status event deals damage (bursts, reactions with an initial hit, physical statuses, Shatter, Combustion ticks). */
-const dealsDamage = (e: StatusEvent): e is Extract<StatusEvent, { kind: "burst" | "reaction" | "physical" | "shatter" | "combustionTick" }> => !(e.kind === "consumed" || e.kind === "inflicted" || e.kind === "statusConsumed" || e.kind === "vulnerable" || e.kind === "control" || (e.kind === "reaction" && !e.initialHit));
+/**
+ * What a status event deals its damage as (computeReaction): bursts, reactions with an initial hit, physical statuses,
+ * Shatter and Combustion ticks; null for the others. Every kind is listed, so a new one doesn't compile until decided.
+ */
+function eventReaction(e: StatusEvent): Parameters<typeof computeReaction>[4] | null {
+  switch (e.kind) {
+    case "burst":
+      return { kind: "burst", element: e.element, stacks: 1 };
+    case "reaction":
+      // A forced reaction has no initial hit.
+      return e.initialHit ? { kind: "reaction", element: e.element, stacks: e.level } : null;
+    case "physical":
+      return { kind: e.status, element: "physical", stacks: e.level };
+    case "shatter":
+      return { kind: "shatter", element: "physical", stacks: e.level };
+    case "combustionTick":
+      return { kind: "combustionTick", element: "fire", stacks: e.level };
+    case "inflicted":
+    case "consumed":
+    case "statusConsumed":
+    case "vulnerable":
+    case "control":
+      return null;
+    default: {
+      const unknown: never = e;
+      throw new EngineError(`status event of unknown kind ${(unknown as { kind: string }).kind}`);
+    }
+  }
+}
+
+/** Whether a status event deals damage (eventReaction). */
+const dealsDamage = (e: StatusEvent): boolean => eventReaction(e) !== null;
 
 function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, st: TimelineState, critRoll?: number): LandedHit | null {
-  if (!dealsDamage(e)) return null;
-  const reaction =
-    e.kind === "burst" ? { kind: "burst" as const, element: e.element, stacks: 1 }
-    : e.kind === "reaction" ? { kind: "reaction" as const, element: e.element, stacks: e.level }
-    : e.kind === "physical" ? { kind: e.status, element: "physical" as const, stacks: e.level }
-    : e.kind === "shatter" ? { kind: "shatter" as const, element: "physical" as const, stacks: e.level }
-    : { kind: "combustionTick" as const, element: "fire" as const, stacks: e.level };
+  const reaction = eventReaction(e);
+  if (!reaction) return null;
   const build = ctx.builds.get(e.operator) as Build;
   // A Combustion tick keeps its applier's attacker side from the application (ActiveStatus.snapshot).
   const snapshot = e.kind === "combustionTick" ? e.snapshot : undefined;
@@ -1297,8 +1394,10 @@ function addHits(st: TimelineState, landed: readonly LandedHit[]): TimelineState
   return { ...st, buffs, hits: [...st.hits, ...landed] };
 }
 
-/** Status events: recorded, and the damage they deal (bursts, reactions, ticks) lands. */
-/** `enemy` is the state their damage sees: after a hit's own applications, before a tick's change. */
+/**
+ * Status events: recorded, and the damage they deal (bursts, reactions, ticks) lands. `enemy` is the state their
+ * damage sees: after a hit's own applications, before a tick's change.
+ */
 function recordStatus(ctx: TimelineContext, st: TimelineState, events: readonly StatusEvent[], enemy: EnemyStatus): TimelineState {
   const records: ReactionRecord[] = [];
   const landed: LandedHit[] = [];
@@ -1350,7 +1449,7 @@ export interface PendingBurst {
 
 /** An infliction's status events without its bursts, which are scheduled their element's delay later, on the enemy's clock (BattleConstants.burstDelayFrames). */
 function delayBursts(ctx: TimelineContext, st: TimelineState, events: readonly StatusEvent[], fromKind: SkillType | "none", cast?: number): { state: TimelineState; now: StatusEvent[] } {
-  const delay = (e: StatusEvent) => (e.kind === "burst" ? (ctx.data.constants.burstDelayFrames?.[e.element] ?? 0) : 0);
+  const delay = (e: StatusEvent) => (e.kind === "burst" ? ctx.burstDelayFrames[e.element] : 0);
   const now = events.filter((e) => delay(e) === 0);
   if (now.length === events.length) return { state: st, now };
   const later = events.flatMap((e) => (e.kind === "burst" && delay(e) > 0 ? [{ frame: e.frame + delay(e), event: { ...e, frame: e.frame + delay(e) }, fromKind, ...(cast !== undefined ? { cast } : {}) }] : []));
@@ -1475,9 +1574,9 @@ function runTriggers(ctx: TimelineContext, state: TimelineState, initial: readon
   return st;
 }
 
-/** Does what a trigger says, as its owner, at the event's frame. Returns the events it caused. */
 /**
- * A trigger's actions, in order. `atEvent`: the state at its event, before
+ * Does what a trigger says, as its owner, at the event's frame: its actions, in order; returns the events they
+ * caused. `atEvent`: the state at its event, before
  * any trigger on it acted: a buff takes its values from it, as the
  * trigger's `if` does (Grizzled Edge sees the crystals its owner's Crush
  * consumes); delayed actions read the state when they run.
@@ -1548,9 +1647,9 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
       case "sp":
         {
           const amount = evaluate(a.value, ec());
-          const spKind = spKindOf(ctx, triggerSkillId(owner, t), a.value, a.spKind);
-          st = gainSp(st, amount, frame, spKind);
-          if (amount > 0) events.push({ type: "sp", frame, operator: owner, amount, kind: origin && origin.operator === owner ? origin.kind : "none", natural: spKind === "natural", ...spSourceOf(ctx, triggerSkillId(owner, t), a.value) });
+          const grant = spGrantOf(ctx, triggerSkillId(owner, t), a.value, a.spKind);
+          st = gainSp(st, amount, frame, grant.kind);
+          if (amount > 0) events.push({ type: "sp", frame, operator: owner, amount, kind: origin && origin.operator === owner ? origin.kind : "none", natural: grant.kind === "natural", ...(grant.sourceType !== undefined ? { sourceType: grant.sourceType } : {}) });
         }
         break;
       case "buff": {
@@ -1585,8 +1684,7 @@ function runActions(ctx: TimelineContext, state: TimelineState, t: KitTrigger, o
         if (!r.ended && a.to === "eventSubject") st = { ...st, buffs: r.buffs };
         if (r.ended) {
           st = rebaseCooldowns(ctx, st, { ...st, buffs: r.buffs }, frame);
-          const gameBuff = ctx.kits.get(owner)?.buffs.find((x) => x.id === a.buff)?.gameBuff;
-          events.push({ type: "buffEnded", frame, operator: owner, buff: a.buff, remaining: r.remaining, ...(r.recorded !== undefined ? { recorded: r.recorded } : {}), consumed: true, ...(gameBuff ? { gameBuff } : {}) });
+          events.push(buffEndedEvent(r.gone, frame, true));
         }
         break;
       }
@@ -1836,9 +1934,9 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   const grantSp = (into: BattleEvent[]) => {
     if (kitHit.sp === undefined) return;
     const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.sp, at(consumed));
-    const spKind = spKindOf(ctx, hit.skillId, kitHit.sp, kitHit.spKind);
-    st = gainSp(st, amount, hit.frame, spKind);
-    if (amount > 0) into.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount, kind, natural: spKind === "natural", ...spSourceOf(ctx, hit.skillId, kitHit.sp) });
+    const grant = spGrantOf(ctx, hit.skillId, kitHit.sp, kitHit.spKind);
+    st = gainSp(st, amount, hit.frame, grant.kind);
+    if (amount > 0) into.push({ type: "sp", frame: hit.frame, operator: hit.operator, amount, kind, natural: grant.kind === "natural", ...(grant.sourceType !== undefined ? { sourceType: grant.sourceType } : {}) });
   };
   // SP granted before the damage (KitHit.spBeforeDamage): its triggers act before it too (a buff they apply counts for the hit).
   if (kitHit.spBeforeDamage) {
@@ -1851,11 +1949,12 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   let roll: number | undefined;
   if (ctx.scenario.options.crit === "rolled" && hit.fixed === undefined) ({ value: roll, state: st } = draw(ctx, st, "crit"));
   const decorations = hitDecorations(kitHit, finisher);
-  const result = hit.fixed !== undefined ? fixedHit(skill.skillId, kitHit, hit.fixed) : computeHit(ctx.data, build, panel, ctx.scenario.target, skill, kitHit, {
-    ...damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast, hit.snapshot),
+  const options = hit.fixed !== undefined ? null : damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast, hit.snapshot);
+  const result = !options ? fixedHit(skill.skillId, kitHit, hit.fixed as number) : computeHit(ctx.data, build, panel, ctx.scenario.target, skill, kitHit, {
+    ...options,
     decorations,
     ...(roll !== undefined ? { critRoll: roll } : {}),
-    ...(finisher ? { modifiers: [...damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast, hit.snapshot).modifiers, { zone: "multiplicative" as const, value: enemyAttr(ctx, Attr.BreakingAttackDamageTakenScalar) - 1, source: "Finisher" }] } : {}),
+    ...(finisher ? { modifiers: [...options.modifiers, { zone: "multiplicative" as const, value: enemyAttr(ctx, Attr.BreakingAttackDamageTakenScalar) - 1, source: "Finisher" }] } : {}),
     situation: { ...before, consumed },
     // Its modifiers' conditions see the enemy and the buffs as the damage is computed: after the hit's own applications and
     // beforeDamage buffs (whose modifiers count for it: Yvonne's 10th layer gives its Crit DMG to the shot that adds it).
@@ -1963,7 +2062,7 @@ function takeJump(st: TimelineState, j: PendingJump): { state: TimelineState; ev
   const skip = <T extends { readonly frame: number }>(list: readonly T[], ownedBy: (x: T) => boolean): T[] =>
     list.flatMap((x) => (!ownedBy(x) || x.frame <= at ? [x] : x.frame < at + length ? [] : [{ ...x, frame: x.frame - length }]));
   const ending = st.buffs.filter((b) => b.owner === j.operator && b.endsWithCast === j.cast && b.expiresAt > at && b.expiresAt < at + length);
-  const events: BattleEvent[] = [...new Map(ending.map((b) => [b.id, { type: "buffEnded" as const, frame: at, operator: j.operator, buff: b.id, remaining: remainingOf(ending.filter((x) => x.id === b.id), at), ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) }])).values()];
+  const events: BattleEvent[] = buffEndedEvents(ending, at, false);
   return {
     state: {
       ...st,
@@ -2003,9 +2102,11 @@ function takeJump(st: TimelineState, j: PendingJump): { state: TimelineState; ev
 function enemyAct(ctx: TimelineContext, state: TimelineState, a: EnemyAction): TimelineState {
   const events = enemyActionEvents(ctx, state, a);
   const dodge = ctx.scenario.options.dodge;
-  const pd = ctx.data.constants.perfectDodge;
   const op = state.controlled;
-  if (!dodge || !pd || !events.some((e) => e.type === "attacked" && e.operator === op)) return runTriggers(ctx, state, events, null);
+  if (!dodge || !events.some((e) => e.type === "attacked" && e.operator === op)) return runTriggers(ctx, state, events, null);
+  // createContext checked that dodging has its settings.
+  const pd = ctx.data.constants.perfectDodge;
+  if (!pd) throw new EngineError("dodging needs the perfect dodge settings (BattleConstants perfectDodge), which the data doesn't have");
   const cur = state.acting[op];
   if (cur) {
     const t = timingOf(ctx, cur.skill);
@@ -2110,7 +2211,8 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
       const ended = st.buffs.filter((b) => ends(b) && b.cast === undefined).filter((b, i, all) => b.maxInstances === undefined || (all.findIndex((x) => x.id === b.id && x.owner === b.owner) === i && !st.buffs.some((x) => x.id === b.id && x.owner === b.owner && x.cast === undefined && (x.expiresAt > at || (x.expiresAt === at && !ends(x))))));
       st = { ...st, buffs: st.buffs.filter((b) => !ends(b)) };
       // Run out: nothing left, but what its cast's jumps took from it.
-      st = runTriggers(ctx, st, ended.map((b) => ({ type: "buffEnded" as const, frame: at, operator: b.owner, buff: b.id, remaining: b.skipped ?? 0, ...(b.records ? { recorded: b.records.total } : {}), ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) })), null);
+      // Each instance its own event (layers ending together each end).
+      st = runTriggers(ctx, st, ended.map((b) => buffEndedEvent([b], at, false)), null);
       continue;
     }
     if (due && first(due.frame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
@@ -2167,6 +2269,7 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
     ...st,
     sp: spAt(st, frame),
     frame,
+    ...(st.spStops.some((p) => p.until <= frame) ? { spStops: st.spStops.filter((p) => p.until > frame) } : {}),
     enemy: expireStatus(st.enemy, frame),
   };
 }
@@ -2229,7 +2332,9 @@ function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
     if (kitSkill(ctx, action.operator, action.skill).followUpOnly) return { error: `${action.skill} is cast only by its own skill (a follow-up), not by a rotation` };
     costs = skillCosts(ctx, action.operator, action.skill, frame);
   } catch (e) {
-    return { error: e instanceof Error ? e.message : String(e) };
+    // Not one of the operator's skills (or one without SkillData): not legal. Anything else is a bug, and is thrown.
+    if (!(e instanceof EngineError)) throw e;
+    return { error: e.message };
   }
   if (costs.kind === "basic" && state.controlled !== action.operator) return { error: `${action.operator} isn't the controlled operator (swap first)` };
   // A dive (skillSpecification 6): a rotation names its landing; it starts with a jump, which only the controlled operator makes (jumpToDive).
@@ -2243,12 +2348,15 @@ function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
   frame = Math.max(frame, Math.ceil(state.readyAt[action.skill] ?? 0));
   // A combo cooldown at a recovery rate (attribute 93) follows the rate buffs, which may change before it ends: judged on the state then.
   if (ctx.comboRates && costs.kind === "combo") {
-    for (let i = 0; i < 8; i++) {
+    let settled = false;
+    for (let i = 0; i < 8 && !settled; i++) {
       const r = Math.max(state.frame, action.at ?? 0, Math.ceil(advance(ctx, state, frame).readyAt[action.skill] ?? 0));
-      if (r === frame) break;
+      settled = r === frame;
       frame = r;
     }
     if (!Number.isFinite(frame)) return { error: `${action.skill}: its cooldown doesn't end (recovery rate 0)` };
+    // As the SP and input-mapping loops below: one that doesn't settle is reported, not taken as it stands.
+    if (!settled) return { error: `${action.skill}: its cooldown's end keeps moving with the recovery-rate buffs on the way (frame ${frame} after 8 rounds)` };
   }
   // Without a time, an action waits for the current skill's own hits (interrupting would cancel them); with one, it may
   // interrupt. A skill that runs beside the current one cancels nothing, so it doesn't wait.
@@ -2257,7 +2365,7 @@ function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
   // What the basic-attack input is at the start (a buff that maps it: KitBuff.basicAttack), judged again where the start moves.
   const mappedAt = (f: number) => {
     if (!ctx.inputBuffs || costs.kind !== "basic" || costs.timing.specification !== 1) return undefined;
-    return advance(ctx, state, f).buffs.find((b) => b.basicAttack !== undefined && b.owner === action.operator && b.cast === undefined && b.appliedAt <= f && b.expiresAt > f)?.basicAttack;
+    return advance(ctx, state, f).buffs.find((b) => b.basicAttack !== undefined && b.owner === action.operator && b.cast === undefined && activeAt(b, f))?.basicAttack;
   };
   let mapped = mappedAt(frame);
   let gate = actionGate(ctx, state, action.operator, action.skill, frame, mapped);
@@ -2277,11 +2385,11 @@ function startFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
   let spCost = costAt(frame);
   for (let i = 0; i < 4; i++) {
     if (spCost > SP.max) return { error: `${action.skill} costs ${spCost} SP, more than the maximum` };
-    // Wait for SP: regen is linear after any pause.
+    // Wait for SP: regen is linear after the pause, outside the stops.
     const spThen = spAt(state, frame);
     if (spThen >= spCost) break;
     const from = Math.max(frame, state.spPausedUntil);
-    frame = from + Math.ceil(((spCost - spAt(state, from)) * FPS) / SP.perSecond);
+    frame = afterRegen(state, from, Math.ceil(((spCost - spAt(state, from)) * FPS) / SP.perSecond));
     const again = costAt(frame);
     if (again === spCost) break;
     spCost = again;
@@ -2449,11 +2557,7 @@ function endCurrentSkill(advanced: TimelineState, operator: string, frame: numbe
     // A buff attached to the cast (consumedScope whileCasting) stops acting on the caster's other hits now.
     buffs: advanced.buffs.filter((b) => !endsNow.includes(b)).map((b) => (b.whileCasting && b.cast === prevCast && b.whileCasting.until > frame ? { ...b, whileCasting: { ...b.whileCasting, until: frame } } : b)),
   };
-  const events: BattleEvent[] = [...new Map(endsNow.map((b) => {
-    const same = endsNow.filter((x) => x.id === b.id);
-    const recorded = recordedOf(same);
-    return [b.id, { type: "buffEnded" as const, frame, operator, buff: b.id, remaining: remainingOf(same, frame), ...(recorded !== undefined ? { recorded } : {}), ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) }];
-  })).values()];
+  const events: BattleEvent[] = buffEndedEvents(endsNow, frame, false);
   return { state, events };
 }
 
@@ -2478,8 +2582,8 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   const own = s.stacks[operator] ?? {};
   const panel = panelAt(ctx, operator, frame);
   const castSituation: Situation = {
-    team: ctx.scenario.team, controlled: s.controlled, stacks: own, buffActive: (id) => s.buffs.some((b) => b.id === id && b.owner === operator && b.cast === undefined && b.appliedAt <= frame && b.expiresAt > frame),
-    buffLayers: (id) => s.buffs.filter((b) => b.id === id && b.owner === operator && b.cast === undefined && b.appliedAt <= frame && b.expiresAt > frame).length,
+    team: ctx.scenario.team, controlled: s.controlled, stacks: own, buffActive: (id) => s.buffs.some((b) => b.id === id && b.owner === operator && b.cast === undefined && activeAt(b, frame)),
+    buffLayers: (id) => s.buffs.filter((b) => b.id === id && b.owner === operator && b.cast === undefined && activeAt(b, frame)).length,
   };
   const castIndex = s.casts.length;
   // Haste (attribute 92, KeywordSpeedUpScalar, default 1, at most 1.3): the cast plays faster (assumed; in-game test 19).
@@ -2523,15 +2627,16 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     );
   }
   // A skill whose kit names the hit that returns SP gets it there, not on its first hit; a finisher also gets the enemy's finisher SP (GainBreakingAttackAtb).
-  const finisherSp = full.timing.specification === 8 && !followUp ? (ctx.data.enemies[ctx.scenario.target.enemy]?.finisherSp ?? 0) : 0;
+  const finisherSp = full.timing.specification === 8 && !followUp ? ctx.enemy.finisherSp : 0;
   const ownGain = skill.hits.some((h) => h.sp !== undefined) ? 0 : skillSpGain(ctx, operator, skillId);
   const spGain = ownGain + finisherSp;
   if (spGain > 0 && pending.length > 0) {
     const first = pending.reduce((a, b) => (b.frame < a.frame ? b : a));
     // The skill's `atb` is of the kind its data gives; a finisher's SP (GainBreakingAttackAtb, atbGainMethod 0) is natural.
-    const spKind = ownGain > 0 ? spKindOf(ctx, skillId, "atb") : "natural";
+    const atb = spGrantOf(ctx, skillId, "atb");
+    const spKind = ownGain > 0 ? atb.kind : "natural";
     // Its atbSourceType likewise: the `atb` key's, a finisher's 0.
-    const spSource = ownGain > 0 ? spSourceOf(ctx, skillId, "atb").sourceType : FINISHER_SP_SOURCE_TYPE;
+    const spSource = ownGain > 0 ? atb.sourceType : FINISHER_SP_SOURCE_TYPE;
     pending[pending.indexOf(first)] = { ...first, sp: spGain, spKind, ...(spSource !== undefined ? { spSource } : {}) };
   }
   // Returned SP is spent first; only the natural part gives the team ultimate energy.
@@ -2562,13 +2667,13 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   if (!followUp) {
     const live = next.link.filter((f) => f > frame);
     // Kit buffs that count as a Link stack (KitBuff.link) for the caster, used up with the combo stacks.
-    const linkBuffs = next.buffs.filter((b) => b.link && b.cast === undefined && reaches(b, operator) && b.appliedAt <= frame && b.expiresAt > frame);
+    const linkBuffs = next.buffs.filter((b) => b.link && b.cast === undefined && reaches(b, operator) && activeAt(b, frame));
     if ((costs.kind === "battle" || costs.kind === "ultimate") && live.length + linkBuffs.length > 0) {
       const n = Math.min(4, live.length + linkBuffs.length);
       linkUsed = n;
       if (linkBuffs.length) {
         next = { ...next, buffs: next.buffs.filter((b) => !linkBuffs.includes(b)) };
-        linkEnded.push(...new Map(linkBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id, remaining: remainingOf([b], frame), consumed: true, ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) }])).values());
+        linkEnded.push(...buffEndedEvents(linkBuffs, frame, true));
       }
       const value = linkValue(costs.kind, n);
       const lastHit = Math.max(frame, ...pending.map((h) => h.frame));
@@ -2578,7 +2683,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   }
   // Buffs this cast consumes (Jade Vessel's, …) now act on its hits only, until its last hit; one attached to the cast
   // (KitBuff.consumedScope whileCasting) also on every hit of the caster until the cast ends (endCurrentSkill cuts it short).
-  const consumedBuffs = next.buffs.filter((b) => b.cast === undefined && b.consumedBy?.includes(costs.kind) && reaches(b, operator) && b.appliedAt <= frame && b.expiresAt > frame);
+  const consumedBuffs = next.buffs.filter((b) => b.cast === undefined && b.consumedBy?.includes(costs.kind) && reaches(b, operator) && activeAt(b, frame));
   if (consumedBuffs.length) {
     const lastHit = Math.max(frame, ...pending.map((h) => h.frame));
     const castEnd = frame + scaled(full.timing.durationFrames);
@@ -2599,7 +2704,8 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
   const cast: TimelineState = {
     ...next,
     sp: s.sp - costs.spCost,
-    spPausedUntil: costs.spCost > 0 ? frame + SP.pauseAfterSpendFrames : s.spPausedUntil,
+    // A spend never shortens a pause running longer (one a slow-down lengthened).
+    spPausedUntil: costs.spCost > 0 ? Math.max(s.spPausedUntil, frame + SP.pauseAfterSpendFrames) : s.spPausedUntil,
     acting: beside ? s.acting : { ...s.acting, [operator]: { skill: skillId, frame, cast: castIndex, ...(speed !== 1 ? { speed } : {}), ...(openWindows.length ? { windows: openWindows } : {}) } },
     pendingJumps: beside ? next.pendingJumps : [...next.pendingJumps, ...planned],
     ...(full.timing.specification === 8 ? { stagger: { ...s.stagger, finisherUsed: true } } : {}),
@@ -2614,7 +2720,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     type: "cast", frame, operator, skillId, kind: costs.kind, finisher: full.timing.specification === 8, controlled: s.controlled === operator, cast: castIndex,
     ...(windowCount !== undefined ? { count: windowCount } : {}), ...(followUp ? { followUp: true } : {}), ...(beside ? { beside: true } : {}),
   };
-  const endedEvents: BattleEvent[] = [...new Map(consumedBuffs.map((b) => [`${b.owner}:${b.id}`, { type: "buffEnded" as const, frame, operator: b.owner, buff: b.id, remaining: remainingOf([b], frame), consumed: true, ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}) }])).values()];
+  const endedEvents: BattleEvent[] = buffEndedEvents(consumedBuffs, frame, true);
   // Buffs the cast used up (Link, consumed ones) may have set a combo's recovery rate.
   const spent = rebaseCooldowns(ctx, { ...cast, buffs: s.buffs }, cast, frame);
   return { state: slowDown(ctx, spent, operator, { ...costs.timing, slowdowns: plannedSlowdowns(costs.timing, planned) }, frame), events: [...endsNowEvents, castEvent, ...endedEvents, ...linkEnded], origin: { operator, kind: costs.kind } };
@@ -2710,7 +2816,9 @@ export function startsNow(ctx: TimelineContext, state: TimelineState, action: Ro
     let costs;
     try {
       costs = skillCosts(ctx, action.operator, action.skill, state.frame);
-    } catch {
+    } catch (e) {
+      // As startFrom: an action that isn't one of the operator's skills can't start; anything else is a bug.
+      if (!(e instanceof EngineError)) throw e;
       return false;
     }
     if ((state.readyAt[action.skill] ?? 0) > state.frame || spAt(state, state.frame) < spCostAt(ctx, state, action.operator, costs, state.frame)) return false;
@@ -2721,34 +2829,29 @@ export function startsNow(ctx: TimelineContext, state: TimelineState, action: Ro
   return "frame" in r && r.frame === state.frame;
 }
 
-// memoAdvance: `advance` is a pure function of (context, state, frame) and
-// states are never changed in place, so while a driver runs inside
-// `memoAdvance` a repeated call with the same state object and frame returns
-// the first call's result. The rotation search needs it: judging each
-// candidate action from one state advances that state to the same frames
-// many times over (earliestStart's search for when the current action ends,
-// combo windows, finishers). Off outside `memoAdvance`, where `advance` is
-// `advanceFrom` as written above.
+// Memoised advance (memoised): `advance` is a pure function of (context,
+// state, frame) and states are never changed in place, so with a context
+// from `memoised` a repeated call with the same state object and frame
+// returns the first call's result. The rotation search needs it: judging
+// each candidate action from one state advances that state to the same
+// frames many times over (earliestStart's search for when the current
+// action ends, combo windows, finishers). The cache is the one piece of
+// mutable state the engine keeps, and it lives on the context the search
+// makes (TimelineContext.advanceMemo), not in the module: other contexts
+// and other callers never see it.
 
-let advanceMemo: WeakMap<TimelineState, { readonly ctx: TimelineContext; readonly byFrame: Map<number, TimelineState> }> | null = null;
-
-/** Processes every pending hit, status tick and buff expiry up to (and including) a frame, in frame order (advanceFrom; memoised inside memoAdvance). */
+/** Processes every pending hit, status tick and buff expiry up to (and including) a frame, in frame order (advanceFrom; memoised with a context from `memoised`). */
 export function advance(ctx: TimelineContext, state: TimelineState, frame: number): TimelineState {
-  if (!advanceMemo) return advanceFrom(ctx, state, frame);
-  let m = advanceMemo.get(state);
-  if (!m || m.ctx !== ctx) advanceMemo.set(state, (m = { ctx, byFrame: new Map() }));
-  let r = m.byFrame.get(frame);
-  if (!r) m.byFrame.set(frame, (r = advanceFrom(ctx, state, frame)));
+  const memo = ctx.advanceMemo;
+  if (!memo) return advanceFrom(ctx, state, frame);
+  let byFrame = memo.get(state);
+  if (!byFrame) memo.set(state, (byFrame = new Map()));
+  let r = byFrame.get(frame);
+  if (!r) byFrame.set(frame, (r = advanceFrom(ctx, state, frame)));
   return r;
 }
 
-/** Runs `f` with `advance` memoised per state object and frame (the cache lives as long as its states; nested calls share the outer one). */
-export function memoAdvance<T>(f: () => T): T {
-  const outer = advanceMemo;
-  advanceMemo ??= new WeakMap();
-  try {
-    return f();
-  } finally {
-    advanceMemo = outer;
-  }
+/** The context with `advance` memoised per state object and frame (the cache lives as long as this context and its states). */
+export function memoised(ctx: TimelineContext): TimelineContext {
+  return ctx.advanceMemo ? ctx : { ...ctx, advanceMemo: new WeakMap() };
 }
