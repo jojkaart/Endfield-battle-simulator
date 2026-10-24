@@ -9,7 +9,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
-import { compileOperatorSkill, dataEnergyBlockSeconds, dataTeamEnergy, hitFacts, kitEnergyBlock, matchSkill, type CompileData, type DataField, type HitFacts } from "./kitMatch.ts";
+import { compileOperatorSkill, dataEnergyBlockSeconds, dataTeamEnergy, hitFacts, kitEnergyBlock, matchSkill, type CompileData, type DataField, type Disagreement, type HitFacts } from "./kitMatch.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
 import { buffTagFilter, SHIELD_TAG } from "./buffTags.ts";
@@ -715,7 +715,17 @@ function idsOf(file: string, what: string, items: readonly { id: string }[]): Se
   return ids;
 }
 
-function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit {
+/** How to load a kit file. */
+export interface KitLoadOptions {
+  /**
+   * Receives each difference from the compiled data that the kit doesn't
+   * mark (and each mark where nothing differs, `stale`) instead of an error
+   * (for tools that write the marks).
+   */
+  readonly disagreements?: (d: Disagreement & { readonly skillId: string; readonly stale: boolean }) => void;
+}
+
+function loadOperatorKit(data: KitData, file: string, kit: RawKit, options: KitLoadOptions = {}): OperatorKit {
   const where0 = `kits/operators/${file}`;
   if (file !== `${kit.operator}.json`) throw new Error(`${where0}: file name must be ${kit.operator}.json`);
   const op = data.operators[kit.operator];
@@ -795,6 +805,21 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
     if (s.noDodge && !(s.noDodge[0] >= 0 && s.noDodge[0] < s.noDodge[1])) throw new Error(`${where}: noDodge is a range [from, until) of skill frames`);
     // A skill hit lands at frames: its own, or the data's when its landings are one branch path no other hit takes landings of.
     for (const h of rawHits) if (!h.frames) throw new Error(`${where} hit ${h.id}: no frames, and the data's landings for it ${compiled ? "aren't one branch path of its own (write its frames)" : "aren't known (no SkillData file)"}`);
+    const hits = c.normalizeHits(rawHits, hitSource, where);
+    // What still differs from the data must be marked, with the reason (dataOverride); a mark where nothing differs is stale.
+    if (compiled) {
+      const m = matchSkill(compiled, { skillId: s.skillId, hits, ...(teamEnergy ? { teamEnergy } : {}), ...(energyBlockSeconds !== undefined ? { energyBlockSeconds } : {}) }, kitEnergyBlock({ skillId: s.skillId, ...(energyBlockSeconds !== undefined ? { energyBlockSeconds } : {}) }, kit.triggers ?? [], kit.buffs ?? []));
+      const byId = new Map(s.hits.map((h) => [h.id, h]));
+      const reason = (d: Disagreement) => (d.hit !== undefined ? byId.get(d.hit)?.dataOverride?.[d.field as DataField] : s.dataOverride?.[d.field]);
+      const found = new Set(m.disagreements.map((d) => `${d.hit ?? ""} ${d.field}`));
+      const problems = [
+        ...m.disagreements.filter((d) => reason(d) === undefined).map((d) => ({ ...d, stale: false })),
+        ...Object.keys(s.dataOverride ?? {}).filter((f) => !found.has(` ${f}`)).map((field) => ({ field, text: `${s.skillId} ${field}: marked as differing from the data (dataOverride), but it agrees`, stale: true })),
+        ...s.hits.flatMap((h) => Object.keys(h.dataOverride ?? {}).filter((f) => !found.has(`${h.id} ${f}`)).map((field) => ({ hit: h.id, field, text: `${s.skillId}/${h.id} ${field}: marked as differing from the data (dataOverride), but it agrees`, stale: true }))),
+      ];
+      if (options.disagreements) for (const d of problems) options.disagreements({ ...d, skillId: s.skillId });
+      else if (problems.length) throw new Error(`${where}: differs from the compiled SkillData (fix the kit, or mark the field in dataOverride with the reason):\n  ${problems.map((d) => d.text).join("\n  ")}`);
+    }
     return {
       skillId: s.skillId,
       label: s.label,
@@ -811,7 +836,7 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
       ...(s.windows ? { windows: s.windows } : {}),
       ...(s.comboWindow === false ? { comboWindow: false as const } : {}),
       ...(s.noDodge ? { noDodge: s.noDodge } : {}),
-      hits: c.normalizeHits(rawHits, hitSource, where),
+      hits,
     };
   });
   // Triggers first: normalizeBuffs reads which skills apply each buff.
@@ -955,12 +980,12 @@ let validatorCache: ReturnType<typeof validator> | undefined;
  * One operator kit file's contents (`raw`, as parsed), checked against the
  * schema and loaded: the kit, and its variants after it.
  */
-export function loadOperatorKitFile(data: KitData, file: string, raw: unknown): OperatorKit[] {
+export function loadOperatorKitFile(data: KitData, file: string, raw: unknown, options: KitLoadOptions = {}): OperatorKit[] {
   const v = (validatorCache ??= validator());
   if (!v.kit) throw new Error("kit schema not registered");
   if (!v.kit(raw)) throw new Error(`kits/operators/${file}: ${v.ajv.errorsText(v.kit.errors)}`);
   const kit = raw as RawKit;
-  return [loadOperatorKit(data, file, kit), ...(kit.variants ?? []).map((variant) => loadOperatorKit(data, `${variant.operator}.json`, variantOf(kit, variant)))];
+  return [loadOperatorKit(data, file, kit, options), ...(kit.variants ?? []).map((variant) => loadOperatorKit(data, `${variant.operator}.json`, variantOf(kit, variant), options))];
 }
 
 /** Loads the kits under `dir` (default packages/data/kits: its operators/ and equipment/ folders). */

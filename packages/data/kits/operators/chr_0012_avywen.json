@@ -159,6 +159,7 @@
           "launch": 7,
           "energy": { "if": { "talentAtLeast": [0, 1] }, "then": "talent0_usp" },
           "extraScale": [{ "value": "potential_5_rate", "if": { "all": [{ "potentialAtLeast": 5 }, { "enemyModifier": { "zone": "susceptibility", "element": "pulse" } }] } }],
+          "dataOverride": { "energy": "Batch 3, Avywenna. Kit interim, energy timing: talent 1's energy for a returning lance is ObtainCostAction EntityBB_talent0 in chr_0012_avywen_combo_skill_lance_back_reach (when the lance reaches her, if it hit something: lance_back set EntityBB_talent0 = talent0_usp; with buff_chr_0012_avywen_talent_0 = talent 1). The kit grants talent0_usp at the lance's hit, gated on talent 1." },
           "note": "One landing per Thunderlance on the field at the cast (V3; the data's ForEach at frame 7 launches one chr_0012_avywen_combo_skill_lance_back per lance, which hits what it meets on the way back: every lance hits the one enemy, U1). Lands at frame 7, its launch: the flight back isn't in the data (U3). chr_0012_avywen_combo_skill_lance_back: IfElse (potential_5_rate > 0 and the target has tag −1640994543, carried by buff_common_affixes_vulnerable_pulse / _spell / _all) → atk_scale_lance × potential_5_rate (1.15 at P5; 0 below, the SkillData default), else × 1: the extraScale (enemyModifier counts all-element Susceptibility, as the tag does). DamageAction mask 4352, poise poise_lance. Talent 1's energy: ModifyDynamicBlackboard EntityBB_talent0 = talent0_usp, granted on reach (chr_0012_avywen_combo_skill_lance_back_reach) if the talent's buff is there; here at the hit."
         },
         {
@@ -172,6 +173,7 @@
           "extraScale": [{ "value": "potential_5_rate", "if": { "all": [{ "potentialAtLeast": 5 }, { "enemyModifier": { "zone": "susceptibility", "element": "pulse" } }] } }],
           "applies": [{ "kind": "infliction", "element": "pulse", "if": { "not": { "buffActive": "lance_pulse_check" } } }],
           "buffs": [{ "buff": "lance_pulse_check" }],
+          "dataOverride": { "energy": "Batch 3, Avywenna. Kit interim, energy timing: talent 1's energy for a returning lance is ObtainCostAction EntityBB_talent0 in chr_0012_avywen_combo_skill_lance_back_reach (when the lance reaches her, if it hit something: lance_back set EntityBB_talent0 = talent0_usp; with buff_chr_0012_avywen_talent_0 = talent 1). The kit grants talent0_usp at the lance's hit, gated on talent 1." },
           "note": "One landing per Thunderlance EX on the field (UltiLances), as lance with atk_scale_lance_ult and poise_lance_ult. Before its damage, CreateBuff buff_chr_0012_avywen_lance_pulse_check on the target, whose start event inflicts Electric only if no other check is active: the infliction with the not-buffActive condition, then the check (0.3 s), so EX lances landing together inflict once (U7). The compiler can't follow it (D4 open: the infliction is on another branch than the landing)."
         },
         {

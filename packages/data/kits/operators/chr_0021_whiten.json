@@ -116,6 +116,7 @@
       "skillId": "chr_0021_whiten_normal_skill",
       "label": "Battle skill",
       "damageType": "battle",
+      "dataOverride": { "teamEnergy": "Compiler limitation (D2), kit right: CreateBuff buff_common_obtain_ultimate_sp is in chr_0021_whiten_normal_skill_projhit (launched at 21) on the first-target branch (EntityBB_first_hit), which the compiler leaves undecided." },
       "teamEnergy": [{ "frame": 21, "ratio": 1 }],
       "note": "Description: \"A lance thrust that fires a stream of freezing sound waves that deal Cryo DMG and apply Cryo Infliction to all enemies along its straight path.\" LaunchProjectile at frame 21; the projectile hit creates buff_common_obtain_ultimate_sp on its first target (team energy from the SP spent), hence teamEnergy at frame 21. Talent 1's SP return is the talent1_sp trigger.",
       "hits": [

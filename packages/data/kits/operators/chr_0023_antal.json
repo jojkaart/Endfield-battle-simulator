@@ -149,6 +149,7 @@
           "frames": [27],
           "sp": "atb",
           "finalStrike": true,
+          "dataOverride": { "count": "Compiler limitation (D3), kit right: both projectiles launched at 27 run attack4_powerattack_projhit's IfElse on the timed marker have_recovered, which the first landing creates; the first takes the Final Strike branch (atb, poise), the second the plain one. The compiler counts both branches for each." },
           "note": "No have_recovered marker yet: the Final Strike branch (mask 2097280, atb, poise for the controlled operator), which sets the marker for 0.5 s."
         },
         {
@@ -158,7 +159,9 @@
           "frames": [27],
           "finalStrike": false,
           "dataOverride": {
-            "poise": "Compiler limitation (D3), kit right: both projectiles launched at 27 run attack4_powerattack_projhit's IfElse on the timed marker have_recovered, which the first landing creates; the first takes the Final Strike branch (atb, poise), the second the plain one. The compiler counts both branches for each."
+            "poise": "Compiler limitation (D3), kit right: both projectiles launched at 27 run attack4_powerattack_projhit's IfElse on the timed marker have_recovered, which the first landing creates; the first takes the Final Strike branch (atb, poise), the second the plain one. The compiler counts both branches for each.",
+            "count": "Compiler limitation (D3), kit right: both projectiles launched at 27 run attack4_powerattack_projhit's IfElse on the timed marker have_recovered, which the first landing creates; the first takes the Final Strike branch (atb, poise), the second the plain one. The compiler counts both branches for each.",
+            "finalStrike": "Compiler limitation (D3), kit right: both projectiles launched at 27 run attack4_powerattack_projhit's IfElse on the timed marker have_recovered, which the first landing creates; the first takes the Final Strike branch (atb, poise), the second the plain one. The compiler counts both branches for each."
           },
           "note": "Marker present: the plain branch (mask 128), no SP, no stagger."
         }
@@ -206,6 +209,7 @@
       "skillId": "chr_0023_antal_combo_skill",
       "label": "Combo skill: EMP Test Site",
       "damageType": "combo",
+      "dataOverride": { "applies@21": "The combo's SwitchAction on EntityBB_combo_type / _index (set natively from the event that opened the window) picks one infliction or one physical status; the kit repeats the window's event (element: event, status: event). The compiler lists every option as conditional (Breach, Lift, Knock Down, Crush; the inflictions)." },
       "hits": [
         {
           "id": "hit",

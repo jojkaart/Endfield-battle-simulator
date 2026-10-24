@@ -147,6 +147,7 @@
           "label": "Final slash",
           "scale": [],
           "scaleValue": { "sum": ["atk_scale2", { "product": ["potential5", "phy_up"] }] },
+          "dataOverride": { "scale": "Batch 3, Chen Qianyu. Compiler limit (D3 open): at frame 103, CompareFloat potential5 = 1 → ModifyDynamicBlackboard atk_scale2 += phy_up before the DamageAction; the compiler stops at the ModifyDynamicBlackboard ($atk_scale2?). The kit writes the data's branch as a sum (potential5 is 0 or 1; phy_up is 0)." },
           "note": "Frame 103: CompareFloat potential5 = 1 (P5 sets it) → ModifyDynamicBlackboard atk_scale2 += phy_up (operation 1), then the DamageAction atk_scale2 with poise_final. potential5 is 0 or 1, so the product is the data's branch; phy_up is 0 (file default, no table sets it). The compiler leaves the scale as $atk_scale2? (D3 open)."
         }
       ]

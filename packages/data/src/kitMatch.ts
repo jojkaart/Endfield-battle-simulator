@@ -133,6 +133,17 @@ export interface MatchSkill {
   readonly energyBlockSeconds?: number;
 }
 
+/**
+ * Where a kit skill differs from the compiled data: a hit's field (`hit` set:
+ * a DataField), or the skill's (`teamEnergy`, `energyBlockSeconds`,
+ * `applies@<frame>`, `lands <file>`), with a line saying both values.
+ */
+export interface Disagreement {
+  readonly hit?: string;
+  readonly field: string;
+  readonly text: string;
+}
+
 /** The compiled landings a kit hit stands for. */
 export interface HitMatch {
   /** Damage landings (by its first scale key, its events, on one branch path covering its frames), stagger-only landings for a poise-only hit; empty for a reaction hit or none found. */
@@ -217,19 +228,21 @@ export function dataEnergyBlockSeconds(c: CompiledSkill): number | null {
  * its own cast trigger applies), in seconds.
  * Returns each disagreement as a line, and what each hit was matched to.
  */
-export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: number | null): { disagreements: string[]; hits: Map<string, HitMatch>; folded: CompiledSkill } {
-  const out: string[] = [];
+export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: number | null): { disagreements: Disagreement[]; hits: Map<string, HitMatch>; folded: CompiledSkill } {
+  const out: Disagreement[] = [];
+  const skill = (field: string, text: string) => out.push({ field, text });
+  const hit = (id: string, field: DataField, text: string) => out.push({ hit: id, field, text });
   const matches = new Map<string, HitMatch>();
   const none: HitMatch = { landings: [], poiseLandings: [], onPath: false, whole: false };
   const { skill: c, rest: poiseRest } = foldPoise(compiled);
   const where = s.skillId;
   const block = dataEnergyBlock(c);
   const kitBlockR = kitBlock === null ? null : round(kitBlock, 3);
-  if (block !== kitBlockR) out.push(`${where} energyBlockSeconds: kit ${kitBlockR ?? "-"}, data ${block ?? "-"}`);
+  if (block !== kitBlockR) skill("energyBlockSeconds", `${where} energyBlockSeconds: kit ${kitBlockR ?? "-"}, data ${block ?? "-"}`);
   // All at the cast when none.
   const partsText = (parts: readonly { frame: number; ratio: number }[]) => (parts.length ? parts : [{ frame: 0, ratio: 1 }]).map((t) => `${t.ratio}@${t.frame}`).join(", ");
   const team = dataTeamEnergy(c);
-  if (partsText(team) !== partsText(s.teamEnergy ?? [])) out.push(`${where} teamEnergy: kit ${partsText(s.teamEnergy ?? [])}, data ${partsText(team)}`);
+  if (partsText(team) !== partsText(s.teamEnergy ?? [])) skill("teamEnergy", `${where} teamEnergy: kit ${partsText(s.teamEnergy ?? [])}, data ${partsText(team)}`);
   const claimed = new Set<CompiledLanding>();
   const kitApps = new Map<number, Set<string>>();
   for (const h of s.hits) {
@@ -240,7 +253,7 @@ export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: num
     }
     if (h.energy !== undefined) {
       const dataE = c.energy.filter((e) => (h.frames ?? []).includes(e.frame)).map((e) => formatCompiledValue(e.value));
-      if (!dataE.includes(grantText(h.energy))) out.push(`${tag} energy: kit ${valueText(h.energy)} at [${(h.frames ?? []).join(", ")}], data ${c.energy.map((e) => `${formatCompiledValue(e.value)}@${e.frame}${branchText(e.branch)}`).join(", ") || "none"}`);
+      if (!dataE.includes(grantText(h.energy))) hit(h.id, "energy", `${tag} energy: kit ${valueText(h.energy)} at [${(h.frames ?? []).join(", ")}], data ${c.energy.map((e) => `${formatCompiledValue(e.value)}@${e.frame}${branchText(e.branch)}`).join(", ") || "none"}`);
     }
     if (h.poiseOnly) {
       const here = poiseRest.filter((p) => !h.events.length || h.events.includes(p.file));
@@ -252,22 +265,22 @@ export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: num
         have.set(f, n - 1);
         return n > 0;
       });
-      if (!h.frames || !covered) out.push(`${tag} frames: kit ${h.frames ? `[${want.join(", ")}]` : `none (count ${valueText(h.count)})`}, data stagger-only [${frames(here).join(", ")}]`);
+      if (!h.frames || !covered) hit(h.id, "frames", `${tag} frames: kit ${h.frames ? `[${want.join(", ")}]` : `none (count ${valueText(h.count)})`}, data stagger-only [${frames(here).join(", ")}]`);
       const at = here.filter((p) => want.includes(p.frame));
       matches.set(h.id, { landings: [], poiseLandings: at, onPath: !!h.frames && covered, whole: false });
       if (at.length) {
         const kitPoise = h.poise === undefined ? "-" : JSON.stringify(roundedValue(h.poise));
         const dataPoise = [...new Set(at.map((p) => JSON.stringify(asKitValue(p.poise.value))))];
-        if (!dataPoise.includes(kitPoise)) out.push(`${tag} poise: kit ${kitPoise}, data ${dataPoise.join(" | ")}`);
+        if (!dataPoise.includes(kitPoise)) hit(h.id, "poise", `${tag} poise: kit ${kitPoise}, data ${dataPoise.join(" | ")}`);
         const ctl = [...new Set(at.map((p) => p.poise.controlledOnly))];
-        if (!ctl.includes(h.poiseControlledOnly ?? false)) out.push(`${tag} poiseControlledOnly: kit ${String(h.poiseControlledOnly ?? false)}, data ${ctl.join(" | ")}`);
+        if (!ctl.includes(h.poiseControlledOnly ?? false)) hit(h.id, "poiseControlledOnly", `${tag} poiseControlledOnly: kit ${String(h.poiseControlledOnly ?? false)}, data ${ctl.join(" | ")}`);
       }
       continue;
     }
     if (h.reaction) {
       // Damage computed as a reaction: the data creates the reaction's buff (no DamageAction of its own).
       const found = c.effects.filter((e) => (e.kind === "burst" || e.kind === "forcedReaction") && (h.frames ?? []).includes(e.frame));
-      if (!found.length) out.push(`${tag}: kit ${h.reaction.kind} at [${(h.frames ?? []).join(", ")}], data none there (${c.effects.filter((e) => e.kind === "burst").map((e) => e.frame).join(", ") || "no bursts"})`);
+      if (!found.length) hit(h.id, "frames", `${tag}: kit ${h.reaction.kind} at [${(h.frames ?? []).join(", ")}], data none there (${c.effects.filter((e) => e.kind === "burst").map((e) => e.frame).join(", ") || "no bursts"})`);
       matches.set(h.id, none);
       continue;
     }
@@ -275,41 +288,44 @@ export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: num
     const key = (h.scale[0] ?? firstValueKey(h.scaleValue)) as string;
     const byKey = c.landings.filter((l) => l.scale.keys.includes(key) || (l.scale.expr ?? "").includes(key));
     if (byKey.length === 0) {
-      out.push(`${tag}: no landing scaled by ${key} (data: ${keysText(c.landings) || "no landings"})`);
+      hit(h.id, "scale", `${tag}: no landing scaled by ${key} (data: ${keysText(c.landings) || "no landings"})`);
       matches.set(h.id, none);
       continue;
     }
     const byEvent = h.events.length ? byKey.filter((l) => h.events.includes(l.file)) : byKey;
-    if (byEvent.length === 0) out.push(`${tag} events: kit [${h.events.join(", ")}], data [${[...new Set(byKey.map((l) => l.file))].join(", ")}]`);
+    if (byEvent.length === 0) hit(h.id, "events", `${tag} events: kit [${h.events.join(", ")}], data [${[...new Set(byKey.map((l) => l.file))].join(", ")}]`);
     const cand = byEvent.length ? byEvent : byKey;
     const kitKeys = [...h.scale].sort().join(" × ");
-    if (!cand.some((l) => !l.scale.expr && [...l.scale.keys].sort().join(" × ") === kitKeys)) out.push(`${tag} scale: kit ${[...h.scale, ...(h.scaleValue !== undefined ? [valueText(h.scaleValue)] : [])].join(" × ")}, data ${keysText(cand)}`);
+    if (!cand.some((l) => !l.scale.expr && [...l.scale.keys].sort().join(" × ") === kitKeys)) hit(h.id, "scale", `${tag} scale: kit ${[...h.scale, ...(h.scaleValue !== undefined ? [valueText(h.scaleValue)] : [])].join(" × ")}, data ${keysText(cand)}`);
     const kitFactor = round(h.factor ?? 1);
     const factors = [...new Set(cand.map((l) => round(l.scale.factor)))];
-    if (!factors.includes(kitFactor)) out.push(`${tag} factor: kit ${kitFactor}, data ${factors.join(" | ")}`);
+    if (!factors.includes(kitFactor)) hit(h.id, "factor", `${tag} factor: kit ${kitFactor}, data ${factors.join(" | ")}`);
     const all = paths(cand);
     const want = h.frames ?? [];
     const path = all.find((p) => covers(p, want));
     const best = path ?? [...all].sort((a, b) => b.length - a.length)[0] ?? [];
-    if (!h.frames) out.push(`${tag} frames: kit none (count ${valueText(h.count)}), data [${frames(best).join(", ")}]${branchText(best[0]?.branch)}`);
-    else if (!path) out.push(`${tag} frames: kit [${want.join(", ")}], data [${frames(best).join(", ")}]${branchText(best[0]?.branch)}`);
+    if (!h.frames) hit(h.id, "frames", `${tag} frames: kit none (count ${valueText(h.count)}), data [${frames(best).join(", ")}]${branchText(best[0]?.branch)}`);
+    else if (!path) hit(h.id, "frames", `${tag} frames: kit [${want.join(", ")}], data [${frames(best).join(", ")}]${branchText(best[0]?.branch)}`);
     const at = (best.length ? best : cand).filter((l) => !h.frames || h.frames.includes(l.frame));
     for (const l of at) claimed.add(l);
     matches.set(h.id, { landings: at, poiseLandings: [], onPath: !!h.frames && !!path, whole: !h.frames && byEvent.length > 0 && all.length === 1 });
-    if (h.frames && path && typeof h.count === "number" && at.length > h.count) out.push(`${tag} count: kit ${h.count}, data ${at.length} landings at its frames (${[...new Set(at.map((l) => l.file))].join(", ")})`);
+    // No log keys where the data's landings are all in one file.
+    const files = [...new Set(at.map((l) => l.file))];
+    if (!h.events.length && h.frames && path && files.length === 1) hit(h.id, "events", `${tag} events: kit [], data [${files.join(", ")}]`);
+    if (h.frames && path && typeof h.count === "number" && at.length > h.count) hit(h.id, "count", `${tag} count: kit ${h.count}, data ${at.length} landings at its frames (${[...new Set(at.map((l) => l.file))].join(", ")})`);
     // Element and stagger of the landings the kit hit stands for (a landing without one: Fixed DMG, no poise unit).
     const els = [...new Set(at.map((l) => l.element).filter((x) => x !== null))];
-    if (els.length && !els.includes(h.element)) out.push(`${tag} element: kit ${h.element}, data ${els.join(" | ")}`);
+    if (els.length && !els.includes(h.element)) hit(h.id, "element", `${tag} element: kit ${h.element}, data ${els.join(" | ")}`);
     if (h.frames && path) {
       const kitPoise = h.poise === undefined ? "-" : JSON.stringify(roundedValue(h.poise));
       const dataPoise = [...new Set(at.map((l) => (l.poise ? JSON.stringify(asKitValue(l.poise.value)) : "-")))];
-      if (!dataPoise.includes(kitPoise)) out.push(`${tag} poise: kit ${kitPoise}, data ${dataPoise.join(" | ")}`);
+      if (!dataPoise.includes(kitPoise)) hit(h.id, "poise", `${tag} poise: kit ${kitPoise}, data ${dataPoise.join(" | ")}`);
       const ctl = [...new Set(at.map((l) => l.poise?.controlledOnly ?? false))];
-      if (h.poise !== undefined && !ctl.includes(h.poiseControlledOnly ?? false)) out.push(`${tag} poiseControlledOnly: kit ${String(h.poiseControlledOnly ?? false)}, data ${ctl.join(" | ")}`);
+      if (h.poise !== undefined && !ctl.includes(h.poiseControlledOnly ?? false)) hit(h.id, "poiseControlledOnly", `${tag} poiseControlledOnly: kit ${String(h.poiseControlledOnly ?? false)}, data ${ctl.join(" | ")}`);
     }
     const fs = at.map((l) => l.finalStrike);
-    if (h.finalStrike && fs.includes(false)) out.push(`${tag} finalStrike: kit all ${valueText(h.count)} landings, data only at [${at.filter((l) => l.finalStrike).map((l) => l.frame).join(", ")}]`);
-    if (!h.finalStrike && fs.includes(true)) out.push(`${tag} finalStrike: kit none, data at [${at.filter((l) => l.finalStrike).map((l) => l.frame).join(", ")}]`);
+    if (h.finalStrike && fs.includes(false)) hit(h.id, "finalStrike", `${tag} finalStrike: kit all ${valueText(h.count)} landings, data only at [${at.filter((l) => l.finalStrike).map((l) => l.frame).join(", ")}]`);
+    if (!h.finalStrike && fs.includes(true)) hit(h.id, "finalStrike", `${tag} finalStrike: kit none, data at [${at.filter((l) => l.finalStrike).map((l) => l.frame).join(", ")}]`);
   }
   // Applications by frame: what the kit applies must be in the data there; what the data applies unconditionally must be in the kit.
   const dataFrames = new Set([...kitApps.keys(), ...c.effects.filter((e) => e.branch.length === 0 && dataAppText(e)).map((e) => e.frame)]);
@@ -321,14 +337,14 @@ export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: num
     const onlyKit = [...kitSet].filter((x) => !any.has(x));
     const onlyData = [...always].filter((x) => !kitSet.has(x));
     const cond = [...any].filter((x) => !always.has(x) && !kitSet.has(x));
-    if (onlyKit.length || onlyData.length || cond.length) out.push(`${where} applies at ${f}: kit [${[...kitSet].join(", ")}], data [${[...always].join(", ")}]${cond.length ? `, conditionally [${cond.join(", ")}]` : ""}`);
+    if (onlyKit.length || onlyData.length || cond.length) skill(`applies@${f}`, `${where} applies at ${f}: kit [${[...kitSet].join(", ")}], data [${[...always].join(", ")}]${cond.length ? `, conditionally [${cond.join(", ")}]` : ""}`);
   }
   // Landings no kit hit accounts for: unconditional ones, and ones on the branch of a landing a kit hit has.
   const onPath = (l: CompiledLanding) => l.branch.length === 0 || [...claimed].some((x) => JSON.stringify(x.branch) === JSON.stringify(l.branch));
   const missed = c.landings.filter((l) => !claimed.has(l) && onPath(l));
   const byFile = new Map<string, CompiledLanding[]>();
   for (const l of missed) byFile.set(`${l.file} ${keysText([l])}`, [...(byFile.get(`${l.file} ${keysText([l])}`) ?? []), l]);
-  for (const [k, ls] of byFile) out.push(`${where}: data lands ${k} at [${frames(ls).join(", ")}], no kit hit`);
+  for (const [k, ls] of byFile) skill(`lands ${(ls[0] as CompiledLanding).file}`, `${where}: data lands ${k} at [${frames(ls).join(", ")}], no kit hit`);
   // A hit without frames takes its landings only when no other hit takes any of them.
   for (const [id, m] of matches) {
     if (!m.whole) continue;

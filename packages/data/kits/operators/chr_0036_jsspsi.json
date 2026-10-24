@@ -436,6 +436,7 @@
       "skillId": "chr_0036_jsspsi_normal_skill",
       "label": "Battle skill (Artful Intent)",
       "damageType": "battle",
+      "dataOverride": { "teamEnergy": "Both infliction branches create buff_common_obtain_ultimate_sp at 15 (after CheckEntityNum); the compiler doesn't merge exhaustive branches, so it finds none unconditional (batch-1 D2)." },
       "available": {
         "not": {
           "buffActive": "artful_intent"
@@ -581,6 +582,7 @@
           "frames": [
             49
           ],
+          "dataOverride": { "scale": "The kit's scaleValue is the data's expression with EntityBB_combo_count = the window's eventCount, +1 through potential5 (IfElse on potential5 ≥ 1); the test compares key products only." },
           "note": "SkillData combo_skill_abilityrange #85–#91: IfElse on potential5 ≥ 1 adds 1 to EntityBB_combo_count, then atk_scale_count = combo_count × atk_scale2_1 + atk_scale2; combo_count is the stacks consumed or absorbed to trigger the combo (the window's eventCount). Verified by hand: zmdlogs-40d9a3c1da37 t=14737 = 18.75 × the slash ×1.5 crit, i.e. 4.025 + (3 + 1) × 1.15 = 8.625; zmdlogs-0eef2474a26f t=9331 = 4.025 + 3 × 1.15 with crit and one more Corrosion tick (±1)."
         }
       ]

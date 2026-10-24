@@ -268,6 +268,7 @@
       "skillId": "chr_0026_lastrite_normal_skill",
       "label": "Esoteric Legacy of Seš'qa",
       "damageType": "battle",
+      "dataOverride": { "teamEnergy": "Batch 4, Last Rite. Kit right (batch-3 S6): buff_common_obtain_ultimate_sp at 32 (controlled path, jump 187 → 429 skips 300) and at 300 (off-field path, jump 0 → 300 skips 32) are exclusive parts; the test keeps the first when parts add up to more than 1." },
       "beside": { "all": [{ "controlled": true }, { "currentAction": { "kinds": ["basic"], "beforeExclusive": true } }] },
       "jumps": [{ "at": 0, "to": 300, "if": { "not": { "controlled": true } } }],
       "teamEnergy": [{ "frame": 32, "ratio": 1 }, { "frame": 300, "ratio": 1 }],
@@ -278,6 +279,7 @@
       "skillId": "chr_0026_lastrite_combo_skill",
       "label": "Winter's Devourer",
       "damageType": "combo",
+      "dataOverride": { "applies@63": "Compiler limit: FinishBuffByTag on the Cryo Infliction tag (all layers, after both frame-63 DamageActions) isn't read as a consumption; the kit's slash consumes them afterDamage (verified on b7b3 t=11462)." },
       "hits": [
         { "id": "shard", "label": "Ice shard", "scale": ["atk_scale"], "frames": [13], "note": "Mask 8192; simpleCalculation atkScale atk_scale (verified b7b3 t=10155: 1.6 × 1.15 at P3). Energy: trigger combo_energy." },
         {
@@ -286,6 +288,7 @@
           "if": { "enemyInfliction": "cryst" },
           "scale": ["atk_scale3"],
           "scaleValue": { "enemyInflictionStacks": "cryst" },
+          "dataOverride": { "scale": "Kit form: SaveBuffStackNumByTag (Cryo Infliction) → infliction_num is the enemy's Cryo stacks at frame 63, the ValueExpr enemyInflictionStacks (batch-4 L6); the test compares key products only." },
           "note": "Frame 63, ForEach target: SaveBuffStackNumByTag Cryo → final_combo_atkscale = atk_scale3 × n (mask 12288), judged before the slash consumes the stacks. Verified b7b3 t=11462 (n = 4)."
         },
         {

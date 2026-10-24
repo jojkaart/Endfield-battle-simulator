@@ -411,6 +411,7 @@
       "skillId": "chr_0022_bounda_normal_skill",
       "label": "Battle skill (Tiny Surprise)",
       "damageType": "battle",
+      "dataOverride": { "applies@159": "The entity's JumpToAction to 149 (the ultimate's marker on the target) is the other branch of the one explosion, not a second one (open list D3): the kit deals it from the trigger ultimate_detonates when an ultimate shot lands, and the frame-99 explosion then doesn't happen.", "lands chr_0022_bounda_normal_skill_abilityrange": "The entity's JumpToAction to 149 (the ultimate's marker on the target) is the other branch of the one explosion, not a second one (open list D3): the kit deals it from the trigger ultimate_detonates when an ultimate shot lands, and the frame-99 explosion then doesn't happen." },
       "hits": [
         {
           "id": "explosion",
@@ -447,6 +448,7 @@
       "skillId": "chr_0022_bounda_combo_skill",
       "label": "Combo skill (Free Giveaway)",
       "damageType": "combo",
+      "dataOverride": { "applies@15": "SwitchAction on EntityBB_combo_index (2 → Cryo, 3 → Nature), set natively when the window opens: the window's element (`element: event`)." },
       "hits": [
         {
           "id": "hit",

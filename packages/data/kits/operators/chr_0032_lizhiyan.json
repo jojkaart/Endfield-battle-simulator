@@ -1088,6 +1088,7 @@
       "skillId": "chr_0032_lizhiyan_combo_skill",
       "label": "Combo skill",
       "damageType": "combo",
+      "dataOverride": { "applies@15": "WILL: seal_total switches on EntityBB_consumed_type (set natively) for the element; the kit applies the enemy's current one (`element: enemy`, if WILL; open list A6)." },
       "note": "The cast creates buff_chr_0032_lizhiyan_combo_skill_seal_total at frame 9: Imprisonment and its Susceptibility (trigger imprison), the Tactical Doubles hit at the buff's frame 6 (frame 15 of the skill). Explosions and lasers come from triggers (explosion, int_early_end, int_late_hit). Can't be cut before frame 16.",
       "hits": [
         {
@@ -1121,6 +1122,7 @@
       "skillId": "chr_0032_lizhiyan_ultimate_skill",
       "label": "Ultimate (Gloompurger Array)",
       "damageType": "ultimate",
+      "dataOverride": { "energyBlockSeconds": "RefrainObtainUsp 0–47 is the skill's; the array's own block (listener_owner, 20 s) is the kit buff gloompurger_array's blocksEnergy, which ends early with two Cluster Strikes.", "applies@47": "WILL (EntityBB_wisd_greater_will < 1): an infliction of the enemy's current element (stack checks natural → cryst → pulse → fire), `element: enemy` in the kit; INT: the forced Corrosion." },
       "energyBlockSeconds": 1.567,
       "available": {
         "not": {

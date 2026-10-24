@@ -259,8 +259,7 @@
           "frames": [23, 25],
           "poiseOnly": true,
           "poise": "poise",
-          "note": "f23 and f25 DamageActions whose only unit is stagger (poise 5 each; SkillPatchTable \"Stagger 10\").",
-          "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." }
+          "note": "f23 and f25 DamageActions whose only unit is stagger (poise 5 each; SkillPatchTable \"Stagger 10\")."
         },
         {
           "id": "split",
@@ -274,7 +273,7 @@
             }
           ],
           "note": "f26 ForEach: atk_scale_runtime = atk_scale × yuanshi_multi × crushmulti, DamageAction mask 20480 (4096 + the Crush bit 16384, no battle-skill bit 256): \"this DMG is not treated as Battle Skill DMG, but as Crush DMG\", so no skill-type bonus (damageType none, D5). yuanshi_multi: ReadSkillSettingData \"弭弗特殊猛击\" column 1, a table not in our checkout; the SkillData default 1 (in-game test 91 checks it with the damage type). crushmulti = 1 + crushmultiadd_talent (talent 1 Stern Crackdown: 0.1 / 0.2) when talent > 0 and the target is Staggered (CheckPoiseValue = 0) or has tag 1066759270 (Physical Susceptibility: buff_common_affixes_vulnerable_physical and _all, as enemyModifier reads it). P5 multiplies atk_scale by 1.1 (\"can stack with Stern Crackdown\").",
-          "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." }
+          "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24).", "scale": "Batch 4, Mi Fu. Compiler limit (batch-3 D3 open item, a ModifyDynamicBlackboard chain on a scale): f26 atk_scale_runtime = atk_scale × yuanshi_multi (ReadSkillSettingData, its table not in the checkout: SkillData default 1) × crushmulti (talent 1: the kit's extraScale)." }
         }
       ],
       "note": "50 SP; a sub-skill as Trail and Mangle."

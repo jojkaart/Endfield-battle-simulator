@@ -951,6 +951,7 @@
               "element": "cryst"
             }
           ],
+          "dataOverride": { "scale": "Batch 4, Tangtang. Compiler limit (batch-4 D9e, Tangtang G3d, open), kit right: the Waterspouts' tornado_atk_scale01 is EntityBB_abilityentity_water01, which buff_chr_0027_tangtang_passive_0 sets to passive_0's normalskill_atk_scale01; the kit names that key (scaleValue)." },
           "note": "No Whirlpool: one Waterspout (normal_skill_water_projhit). Its first tick inflicts Cryo (buff_chr_0027_tangtang_comboskill_spelllnfliction < 1 per cast and target: once)."
         },
         {
@@ -985,6 +986,7 @@
           "events": [
             "chr_0027_tangtang_normal_skill_water_projhit"
           ],
+          "dataOverride": { "scale": "Batch 4, Tangtang. Compiler limit (batch-4 D9e, Tangtang G3d, open), kit right: the Waterspouts' tornado_atk_scale01 is EntityBB_abilityentity_water01, which buff_chr_0027_tangtang_passive_0 sets to passive_0's normalskill_atk_scale01; the kit names that key (scaleValue)." },
           "note": "The other ticks (every 0.26 s over 90 frames from the Waterspouts' spawn at frame 23, normal_skill_abilityentitymove's frame 12; all Waterspouts of a cast tick together): DamageAction mask 4352 (Battle Skill DMG), no infliction (the cast's marker buff_chr_0027_tangtang_comboskill_spelllnfliction is there)."
         },
         {
@@ -1026,6 +1028,7 @@
               }
             }
           ],
+          "dataOverride": { "scale": "Batch 4, Tangtang. Compiler limit (batch-4 D9e, Tangtang G3d, open), kit right: the Waterspouts' tornado_atk_scale01 is EntityBB_abilityentity_water01, which buff_chr_0027_tangtang_passive_0 sets to passive_0's normalskill_atk_scale01; the kit names that key (scaleValue)." },
           "note": "One Whirlpool: two Waterspouts (_projhit_1); the first one's first tick inflicts and applies Arts Susceptibility rate_spellvulnerable (5% at level 12, +5% at P3) for duration_spellvulnerable 15 s, once per cast."
         },
         {
@@ -1073,6 +1076,7 @@
           "events": [
             "chr_0027_tangtang_normal_skill_water_projhit_1"
           ],
+          "dataOverride": { "scale": "Batch 4, Tangtang. Compiler limit (batch-4 D9e, Tangtang G3d, open), kit right: the Waterspouts' tornado_atk_scale01 is EntityBB_abilityentity_water01, which buff_chr_0027_tangtang_passive_0 sets to passive_0's normalskill_atk_scale01; the kit names that key (scaleValue)." },
           "note": "The other ticks (every 0.26 s over 90 frames from the Waterspouts' spawn at frame 23, normal_skill_abilityentitymove's frame 12; all Waterspouts of a cast tick together): DamageAction mask 4352 (Battle Skill DMG), no infliction (the cast's marker buff_chr_0027_tangtang_comboskill_spelllnfliction is there)."
         },
         {
@@ -1108,6 +1112,7 @@
               "buff": "spout_susceptibility_3"
             }
           ],
+          "dataOverride": { "scale": "Batch 4, Tangtang. Compiler limit (batch-4 D9e, Tangtang G3d, open), kit right: the Waterspouts' tornado_atk_scale01 is EntityBB_abilityentity_water01, which buff_chr_0027_tangtang_passive_0 sets to passive_0's normalskill_atk_scale01; the kit names that key (scaleValue)." },
           "note": "Two Whirlpools or more (water_cnt ≥ 2): three Waterspouts (_projhit_2); the first one's first tick inflicts (once per cast and target, as for the others) and applies Arts Susceptibility rate_spellvulnerable_02 (10%, 15% from P3) for 15 s."
         },
         {
@@ -1166,6 +1171,7 @@
           "events": [
             "chr_0027_tangtang_normal_skill_water_projhit_2"
           ],
+          "dataOverride": { "scale": "Batch 4, Tangtang. Compiler limit (batch-4 D9e, Tangtang G3d, open), kit right: the Waterspouts' tornado_atk_scale01 is EntityBB_abilityentity_water01, which buff_chr_0027_tangtang_passive_0 sets to passive_0's normalskill_atk_scale01; the kit names that key (scaleValue)." },
           "note": "The other ticks (every 0.26 s over 90 frames from the Waterspouts' spawn at frame 23, normal_skill_abilityentitymove's frame 12; all Waterspouts of a cast tick together): DamageAction mask 4352 (Battle Skill DMG), no infliction (the cast's marker buff_chr_0027_tangtang_comboskill_spelllnfliction is there)."
         }
       ]
@@ -1174,6 +1180,7 @@
       "skillId": "chr_0027_tangtang_ultimate_skill",
       "label": "DA CHIEF SEES YOU!",
       "damageType": "ultimate",
+      "dataOverride": { "lands chr_0027_tangtang_ultimate_skill_1": "Kit form: the early rogue wave (entity frame 133, after the EventListenerAction's jump to 128) lands 5 frames after a controlled operator's dive, so it is a hit of the dive trigger olden_stare_dive, not of the skill at a fixed frame." },
       "hits": [
         {
           "id": "stare",

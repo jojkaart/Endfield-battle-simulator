@@ -556,6 +556,7 @@
       "skillId": "chr_0017_yvonne_normal_skill",
       "label": "Battle skill: Brr-Brr-Bomb",
       "damageType": "battle",
+      "dataOverride": { "teamEnergy": "Compiler limitation (as Estella's): buff_common_obtain_ultimate_sp is in normal_skill_projhit (launched at 35) behind the launch's CheckTagMatch on Yvonne's control tags, which the compiler leaves undecided.", "applies@35": "Compiler limitation (D3 open item, as Alesh's): ForceSpellStatusAction consumedType 2 / 3 with consumedLayer = count consumes the Cryo or Nature stacks and Solidifies at that level, only if a stack check holds; the compiler reads neither. The kit's level {consumed: true}." },
       "teamEnergy": [
         {
           "frame": 35,
@@ -636,7 +637,8 @@
             },
             "then": "atb_return",
             "else": 0
-          }
+          },
+          "dataOverride": { "energy": "Kit form (batch-4 L4): the bomb as one hit whose values read the consumed stacks: the data's SaveBuffStackNumAdvanced count (and max_count for the energy) is ForceSpellStatusAction's consumedLayer, i.e. {consumed: true}; 0 consumed is the plain branch.", "scale": "Kit form (batch-4 L4): the bomb as one hit whose values read the consumed stacks: the data's SaveBuffStackNumAdvanced count (and max_count for the energy) is ForceSpellStatusAction's consumedLayer, i.e. {consumed: true}; 0 consumed is the plain branch." }
         }
       ]
     },
@@ -660,7 +662,8 @@
               "usp",
               "usp_extra"
             ]
-          }
+          },
+          "dataOverride": { "energy": "Kit form: the two grants at the first tick (the entity's usp, the tick's usp_extra) as one sum." }
         },
         {
           "id": "ticks",
@@ -697,7 +700,8 @@
           ],
           "if": {
             "potentialAtLeast": 1
-          }
+          },
+          "dataOverride": { "frames": "Potential: P1 sets the buff's interval 0.5 and maxcnt 6; the test compiles the skill's own values (0.75 s, 4 ticks: the kit's `ticks`)." }
         },
         {
           "id": "explosion",

@@ -141,6 +141,7 @@
       "skillId": "chr_0025_ardelia_normal_skill",
       "label": "Battle skill: Dolly Rush",
       "damageType": "battle",
+      "dataOverride": { "lands chr_0025_ardelia_normal_skill": "Batch 4, Ardelia. Kit right: the second ram at 221 is talent 2's recast, reached only by the conditional jump 33 → 189 (another Corroded enemy within 12 m; batch-4 D1), which the kit doesn't list (one enemy); compiler limit D7c." },
       "hits": [
         {
           "id": "ram_corroded",
@@ -186,6 +187,7 @@
           "extraScale": [{ "value": "potential5_dmg_rate", "if": { "potentialAtLeast": 5 } }],
           "applies": [{ "kind": "forcedReaction", "status": "corrosion", "level": 1, "durationKey": "duration_corrupt", "extraSeconds": "potential5_duration" }],
           "launch": 20,
+          "dataOverride": { "scale": "Compiler limit (batch-3 D3 open, ModifyDynamicBlackboard on a hit's scale): combo_skill_projhit multiplies atk_scale_boom by potential5_dmg_rate (a key only P5 sets) before spawning the bomb; the kit writes it as extraScale under potentialAtLeast 5." },
           "note": "The projhit spawns abilityentity combo_skill_bomb at the target; its frame 52 (72 from the cast): SimpleCalcBB duration_corrupt_final = duration_corrupt + potential5_duration → CreateBuff buff_common_natural_natural_corrupt_triggered (forced Corrosion level 1, 7 s; P5 11 s) → DamageAction atk_scale_boom (P5 ×1.2 from the projhit's ModifyDynamicBlackboard) with poise on the entity's target, so this hit already has its own Corrosion's initial shred. Then ×0.5 and ExcludeTarget: a DamageAction on the other enemies only, left out (one enemy). Launched with the projectile (20): a combo cut after 20 lands both. combo_skill_kill_sheep (a clip over the whole combo, autoFinishByAction; its finish removes owner-spawned entities tagged −1450079158) is read as removing only the combo's own Dolly, abilityentity_chr_0025_ardelia_combo_skill (chr_0025_ardelia_combo_skill_sheep: effects and animation only), not the bomb the projectile spawns (U3: no table gives entity tags)."
         }
       ],
@@ -195,6 +197,7 @@
       "skillId": "chr_0025_ardelia_ultimate_skill",
       "label": "Ultimate: Wooly Party",
       "damageType": "ultimate",
+      "dataOverride": { "lands chr_0025_ardelia_ultimate_skill_sheep_projhit": "Kit interim (U1, in-game test 96), compiler limit D7e: ArdeliaUltMark (CheckTimedMarkerCondition returnTrueIfNotExists + CreateTimedMarker interval 0.3 s on the target) lets one enemy take one hit per 9 frames; the compiler lands every tick of both channels." },
       "jumps": [{ "at": 171, "if": { "not": { "potentialAtLeast": 3 } } }],
       "hits": [
         {
@@ -203,6 +206,7 @@
           "scale": ["atk_scale"],
           "frames": [81, 90, 99, 108, 117, 126, 135, 144, 153, 162, 171, 180, 189, 198],
           "detached": false,
+          "dataOverride": { "count": "Kit interim (U1, in-game test 96), compiler limit D7e: ArdeliaUltMark (CheckTimedMarkerCondition returnTrueIfNotExists + CreateTimedMarker interval 0.3 s on the target) lets one enemy take one hit per 9 frames; the compiler lands every tick of both channels." },
           "note": "Two ChannelingActions 81–201 every 0.1 s each LaunchProjectile a copy to a random point (2–6 m around her; 1.5–6 m in a 120° cone toward the main target) → chr_0025_ardelia_ultimate_skill_sheep_projhit on landing: HitBox 1.5 m, ForEach target {CheckTimedMarkerCondition ArdeliaUltMark (returnTrueIfNotExists) → DamageAction atk_scale + poise (mask 4608) → CreateTimedMarker ArdeliaUltMark interval (0.3 s = 9 frames) on that target}. Interim (U1, in-game test 96): the cap is reached from the first tick, one hit every 9 frames from 81: 14 to 198 (P3+), 11 below P3, where the jump 171 → 201 (potential3_duration < 1) skips the last three. detached false on purpose: the loader's default for a hit in another file is detached, which would keep the landings the jump skips. kit-draft's 82 landings (every tick of both channels) ignore the marker. Frames are launch frames (Ti2)."
         }
       ],

@@ -216,6 +216,7 @@
           "frames": [50],
           "if": { "buffActive": "originium_crystals" },
           "events": ["buff_common_originum_frozen"],
+          "dataOverride": { "scale": "Batch 2, the Endministrator (both IDs: chr_0002_endminm is the kit's variant). (The combo's first DamageAction at 23, a literal-0 scale, is left out by the compiler since batch 4's D8, as by the kit.) The ultimate's IgniteAction 6 runs buff_common_originum_frozen's own DamageAction (atk_scale_trigger from the combo), which the compiler doesn't follow (an ignite handler of a buff on the target); the kit's third hit on sealed targets." },
           "note": "igniteType 6 also runs the crystals' own DamageAction: atk_scale_trigger (the combo's level) with mask 4608 (ultimate kind). The description names only one extra hit: in-game test proposed in the report (E1)."
         }
       ]

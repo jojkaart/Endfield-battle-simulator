@@ -228,6 +228,7 @@
           "scale": ["atk_scale"],
           "frames": [195, 198, 203, 205, 213],
           "factor": 0.5,
+          "dataOverride": { "factor": "Batch 4, Rossi. Compiler limit (batch-4 D7i), kit right: attack4's not-controlled path (JumpToAction 0 → 189) skips the × 0.2 SimpleCalcBB at frame 6; its own × 0.5 applies (the compiler multiplies both: 0.1). The 4e5e log has only the controlled path." },
           "note": "IfElse CheckMainCharacterCondition → JumpToAction 0 → 189 when not controlled; the × 0.2 SimpleCalcBB at frame 6 is skipped, the path's own × 0.5 applies (kit-draft multiplies both: 0.1, batch-4 D7i)."
         }
       ]
@@ -259,6 +260,7 @@
       "skillId": "chr_0028_wulfa_normal_skill",
       "label": "Crimson Shadow (battle skill)",
       "damageType": "battle",
+      "dataOverride": { "lands buff_chr_0028_wulfa_normal_defup": "Data quirk (batch-4 D7g), kit right: twelve Rossi buffs (normal_defup, normal_smarttarget, normal_bleed, normal_bleed_effect, combo_2_damage, tut_*) carry the same template timeline (TickIntervalAction 0.1 s at frames 10–20, a DamageAction on the default atk_scale 0.3) that the game doesn't run: 4e5e has no such hit (no defup / smarttarget / tut hit; bleed ticks 1 s apart; three combo_2_damage ticks per combo). The bleed's own per-second DamageAction is the kit buff razor_clawmark's buffTick trigger (D9b), not a skill hit.", "lands buff_chr_0028_wulfa_normal_smarttarget": "Data quirk (batch-4 D7g), kit right: twelve Rossi buffs (normal_defup, normal_smarttarget, normal_bleed, normal_bleed_effect, combo_2_damage, tut_*) carry the same template timeline (TickIntervalAction 0.1 s at frames 10–20, a DamageAction on the default atk_scale 0.3) that the game doesn't run: 4e5e has no such hit (no defup / smarttarget / tut hit; bleed ticks 1 s apart; three combo_2_damage ticks per combo). The bleed's own per-second DamageAction is the kit buff razor_clawmark's buffTick trigger (D9b), not a skill hit.", "lands buff_chr_0028_wulfa_normal_bleed": "Data quirk (batch-4 D7g), kit right: twelve Rossi buffs (normal_defup, normal_smarttarget, normal_bleed, normal_bleed_effect, combo_2_damage, tut_*) carry the same template timeline (TickIntervalAction 0.1 s at frames 10–20, a DamageAction on the default atk_scale 0.3) that the game doesn't run: 4e5e has no such hit (no defup / smarttarget / tut hit; bleed ticks 1 s apart; three combo_2_damage ticks per combo). The bleed's own per-second DamageAction is the kit buff razor_clawmark's buffTick trigger (D9b), not a skill hit.", "lands buff_chr_0028_wulfa_normal_bleed_effect": "Data quirk (batch-4 D7g), kit right: twelve Rossi buffs (normal_defup, normal_smarttarget, normal_bleed, normal_bleed_effect, combo_2_damage, tut_*) carry the same template timeline (TickIntervalAction 0.1 s at frames 10–20, a DamageAction on the default atk_scale 0.3) that the game doesn't run: 4e5e has no such hit (no defup / smarttarget / tut hit; bleed ticks 1 s apart; three combo_2_damage ticks per combo). The bleed's own per-second DamageAction is the kit buff razor_clawmark's buffTick trigger (D9b), not a skill hit.", "lands buff_chr_0028_wulfa_tut_normalskill_success": "Data quirk (batch-4 D7g), kit right: twelve Rossi buffs (normal_defup, normal_smarttarget, normal_bleed, normal_bleed_effect, combo_2_damage, tut_*) carry the same template timeline (TickIntervalAction 0.1 s at frames 10–20, a DamageAction on the default atk_scale 0.3) that the game doesn't run: 4e5e has no such hit (no defup / smarttarget / tut hit; bleed ticks 1 s apart; three combo_2_damage ticks per combo). The bleed's own per-second DamageAction is the kit buff razor_clawmark's buffTick trigger (D9b), not a skill hit." },
       "jumps": [{ "at": 37, "if": { "enemyVulnerable": 1 } }],
       "hits": [
         { "id": "charge", "label": "Charge", "scale": ["atk_scale_1"], "frames": [16, 22] },
@@ -291,6 +293,7 @@
       "skillId": "chr_0028_wulfa_combo_2_skill",
       "label": "Moment of Blazing Shadow: sequence 1",
       "damageType": "combo",
+      "dataOverride": { "lands buff_chr_0028_wulfa_normal_defup": "Data quirk (batch-4 D7g), kit right: twelve Rossi buffs (normal_defup, normal_smarttarget, normal_bleed, normal_bleed_effect, combo_2_damage, tut_*) carry the same template timeline (TickIntervalAction 0.1 s at frames 10–20, a DamageAction on the default atk_scale 0.3) that the game doesn't run: 4e5e has no such hit (no defup / smarttarget / tut hit; bleed ticks 1 s apart; three combo_2_damage ticks per combo). The bleed's own per-second DamageAction is the kit buff razor_clawmark's buffTick trigger (D9b), not a skill hit.", "lands buff_chr_0028_wulfa_combo_2_damage": "Data quirk (batch-4 D7g), kit right: twelve Rossi buffs (normal_defup, normal_smarttarget, normal_bleed, normal_bleed_effect, combo_2_damage, tut_*) carry the same template timeline (TickIntervalAction 0.1 s at frames 10–20, a DamageAction on the default atk_scale 0.3) that the game doesn't run: 4e5e has no such hit (no defup / smarttarget / tut hit; bleed ticks 1 s apart; three combo_2_damage ticks per combo). The bleed's own per-second DamageAction is the kit buff razor_clawmark's buffTick trigger (D9b), not a skill hit.", "lands buff_chr_0028_wulfa_tut_comboskill_failure": "Data quirk (batch-4 D7g), kit right: twelve Rossi buffs (normal_defup, normal_smarttarget, normal_bleed, normal_bleed_effect, combo_2_damage, tut_*) carry the same template timeline (TickIntervalAction 0.1 s at frames 10–20, a DamageAction on the default atk_scale 0.3) that the game doesn't run: 4e5e has no such hit (no defup / smarttarget / tut hit; bleed ticks 1 s apart; three combo_2_damage ticks per combo). The bleed's own per-second DamageAction is the kit buff razor_clawmark's buffTick trigger (D9b), not a skill hit." },
       "available": { "not": { "buffActive": "seq2_ready" } },
       "hits": [
         { "id": "hit", "label": "Sequence 1: hit 1", "scale": ["atk_scale"], "frames": [13], "events": ["chr_0028_wulfa_combo_2_skill"] },
@@ -310,6 +313,7 @@
       "skillId": "chr_0028_wulfa_combo_3_skill",
       "label": "Moment of Blazing Shadow: sequence 2",
       "damageType": "combo",
+      "dataOverride": { "applies@29": "Compiler limit (batch-4 D9f), kit right: sequence 2's scale is SaveBuffStackNumAdvanced of a buff created with count = the consumed infliction stacks: atk_scale_s + damage_add × {consumed}; potential_atk_multiply is 1 (P1 multiplies the keys). Its else-if chain of CheckBuffStackNumByTag (Heat, Nature, Electric, Cryo) is one consumeInfliction of the four elements (an enemy holds one element), and the Lift and the perfect path's buff_physical_no_guard (Vulnerable) only reach a target that had an infliction (consumedAtLeast 1).", "applies@227": "Compiler limit (batch-4 D9f), kit right: sequence 2's scale is SaveBuffStackNumAdvanced of a buff created with count = the consumed infliction stacks: atk_scale_s + damage_add × {consumed}; potential_atk_multiply is 1 (P1 multiplies the keys). Its else-if chain of CheckBuffStackNumByTag (Heat, Nature, Electric, Cryo) is one consumeInfliction of the four elements (an enemy holds one element), and the Lift and the perfect path's buff_physical_no_guard (Vulnerable) only reach a target that had an infliction (consumedAtLeast 1).", "lands buff_chr_0028_wulfa_normal_defup": "Sequence 2's buffs carry the same template timeline (D7g, as above).", "lands buff_chr_0028_wulfa_tut_comboskill_finish": "Sequence 2's buffs carry the same template timeline (D7g, as above)." },
       "jumps": [{ "at": 0, "if": { "not": { "buffActive": "qte_ring" } } }],
       "hits": [
         {
@@ -325,6 +329,7 @@
             { "kind": "physicalStatus", "status": "lift", "if": { "consumedAtLeast": 1 } },
             { "kind": "vulnerable", "stacks": 1, "if": { "consumedAtLeast": 1 } }
           ],
+          "dataOverride": { "scale": "Compiler limit (batch-4 D9f), kit right: sequence 2's scale is SaveBuffStackNumAdvanced of a buff created with count = the consumed infliction stacks: atk_scale_s + damage_add × {consumed}; potential_atk_multiply is 1 (P1 multiplies the keys). Its else-if chain of CheckBuffStackNumByTag (Heat, Nature, Electric, Cryo) is one consumeInfliction of the four elements (an enemy holds one element), and the Lift and the perfect path's buff_physical_no_guard (Vulnerable) only reach a target that had an infliction (consumedAtLeast 1)." },
           "note": "combo_3 frame 0 IfElse EntityBB_Combo_QTE_Trigger (the ring pressed): timing_success 1, the hit at 29 with poise_s and a 0.4 s hit-stop. Frame 29: CheckBuffStackNumByTag Heat, Nature, Electric, Cryo in turn (else-if: the enemy holds one element) → SaveBuffStackNumAdvanced + FinishBuffAdvanced (consumption), scale (stacks × damage_add + atk_scale_s) × potential_atk_multiply (1; P1 multiplies the keys), ForEach AirborneAction (Lift, not forced) + CreateBuff buff_physical_no_guard (+1 Vulnerable) on a target that had an infliction, then the DamageAction; usp_s if a hit landed. Logged under chr_0028_wulfa_combo_2_skill (4e5e 57521 ms)."
         },
         {
@@ -338,6 +343,7 @@
             { "kind": "consumeInfliction", "elements": ["fire", "natural", "pulse", "cryst"] },
             { "kind": "physicalStatus", "status": "lift", "if": { "consumedAtLeast": 1 } }
           ],
+          "dataOverride": { "scale": "Compiler limit (batch-4 D9f), kit right: sequence 2's scale is SaveBuffStackNumAdvanced of a buff created with count = the consumed infliction stacks: atk_scale_s + damage_add × {consumed}; potential_atk_multiply is 1 (P1 multiplies the keys). Its else-if chain of CheckBuffStackNumByTag (Heat, Nature, Electric, Cryo) is one consumeInfliction of the four elements (an enemy holds one element), and the Lift and the perfect path's buff_physical_no_guard (Vulnerable) only reach a target that had an infliction (consumedAtLeast 1)." },
           "note": "Without the ring: timing_success 0, JumpToAction 0 → 212; the same consumption and scale at 227 (atk_scale_s: the data reads it on both paths; atk_scale_f is equal), poise_f, no extra Vulnerable."
         }
       ],
@@ -354,9 +360,10 @@
           "scale": ["atk_scale_1"],
           "frames": [63, 65, 66, 69, 71, 74, 75, 77, 78, 80, 83, 84, 87, 88, 90, 92, 94, 96, 97, 99, 102, 103, 106, 108, 111],
           "extraScale": [{ "value": "potential_5_damage_scale", "if": { "potentialAtLeast": 5 } }],
+          "dataOverride": { "scale": "Compiler limit (batch-3 D3 open item), kit right: at frame 58 IfElse potential_5 → SimpleCalcBB atk_scale_1/2/3 × potential_5_damage_scale; the compiler stops at the dynamic key. The kit's extraScale (potentialAtLeast 5) is that branch; 4e5e (P3) fits the plain keys." },
           "note": "25 Heat stabs (both sides of the RandomAction only pick the hurt animation; kit-draft emits both as branches, D3's identical-sides item). P5: SimpleCalcBB × potential_5_damage_scale on atk_scale_1/2/3 at frame 58 (extraScale; kit-draft leaves the scale as $atk_scale_1?)."
         },
-        { "id": "slash1", "label": "Slash 1", "scale": ["atk_scale_2"], "extraScale": [{ "value": "potential_5_damage_scale", "if": { "potentialAtLeast": 5 } }] },
+        { "id": "slash1", "label": "Slash 1", "scale": ["atk_scale_2"], "extraScale": [{ "value": "potential_5_damage_scale", "if": { "potentialAtLeast": 5 } }], "dataOverride": { "scale": "Compiler limit (batch-3 D3 open item), kit right: at frame 58 IfElse potential_5 → SimpleCalcBB atk_scale_1/2/3 × potential_5_damage_scale; the compiler stops at the dynamic key. The kit's extraScale (potentialAtLeast 5) is that branch; 4e5e (P3) fits the plain keys." } },
         {
           "id": "slash2",
           "label": "Slash 2",
@@ -364,6 +371,7 @@
           "frames": [131],
           "applies": [{ "kind": "infliction", "element": "fire" }],
           "extraScale": [{ "value": "potential_5_damage_scale", "if": { "potentialAtLeast": 5 } }],
+          "dataOverride": { "scale": "Compiler limit (batch-3 D3 open item), kit right: at frame 58 IfElse potential_5 → SimpleCalcBB atk_scale_1/2/3 × potential_5_damage_scale; the compiler stops at the dynamic key. The kit's extraScale (potentialAtLeast 5) is that branch; 4e5e (P3) fits the plain keys." },
           "note": "SpellInfliction Heat (both sides of its Razor Clawmark check inflict the same)."
         }
       ],

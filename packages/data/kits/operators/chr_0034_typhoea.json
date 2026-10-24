@@ -877,6 +877,7 @@
           "frames": [
             5
           ],
+          "dataOverride": { "count": "Compiler limitation, kit right: each of the three arrows' projhit deals damage only while buff attack_3_1/3_2_damagetaken is absent and then creates it, so one enemy takes one arrow; the compiler doesn't track buffs it creates." },
           "note": "3 arrows at frames 5–8 (SimpleCalcBB atk_scale ÷ 2); one damages a given target (attack_3_1_damagetaken gate). Several targets can take more."
         },
         {
@@ -888,6 +889,7 @@
           "frames": [
             14
           ],
+          "dataOverride": { "count": "Compiler limitation, kit right: each of the three arrows' projhit deals damage only while buff attack_3_1/3_2_damagetaken is absent and then creates it, so one enemy takes one arrow; the compiler doesn't track buffs it creates." },
           "note": "3 arrows at frames 14–17, as the first wave."
         }
       ]
@@ -967,6 +969,7 @@
       "skillId": "chr_0034_typhoea_normal_skill_floating_start",
       "label": "Battle skill: take flight (opening volley)",
       "damageType": "battle",
+      "dataOverride": { "teamEnergy": "ObtainUspInNormalSkill at 12 (window 12–18, only if a volley arrow hit), not the buff_common_obtain_ultimate_sp the compiler reads (D2); hand-written in the kit." },
       "teamEnergy": [{ "frame": 12, "ratio": 1 }],
       "note": "Starts a hover (triggers hover_start, battle_reset; follow-ups chain_start at 32 off-field, loop_start at 37). Team energy at frame 12 (ObtainUspInNormalSkill, window 12–18, only if a volley arrow hit; kit-draft doesn't compile it, D2). durationFrames: floating_attack1 is allowed from frame 26 (SkillData window 26–40).",
       "hits": [
@@ -1014,6 +1017,7 @@
       "skillId": "chr_0034_typhoea_floating_attack1",
       "label": "Aerial basic attack 1",
       "damageType": "basic",
+      "dataOverride": { "lands chr_0034_typhoea_floating_attack1_01_projhit": "Timeline sections reached through JumpToAction (destinations 45/75/105/135; 150/300/450/600 in attack4): jumps are reported, not followed, so every section is listed. Which one a cast plays depends on the jump conditions; the kit has the first." },
       "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). Castable while hovering as the 1st attempt (stack abatk 0); not a chain step (the attempt index, not the chain, picks the shot). durationFrames: the next shot's window opens at frame 18 (SkillData; the timeline reads it there). Conditional windows (batch 4 S9a): the next shot's windows sit under an IfElse whose two branches are the same SwitchAction on arrow_num, whose options differ only in which shot they allow, at the same frames; the attempt index (abatk, `available`) picks the shot, so every window is listed open (the engine's reading before S9).",
       "windows": [{ "from": 18 }, { "from": 63 }, { "from": 93 }, { "from": 123 }, { "from": 153 }],
       "available": {
@@ -1147,6 +1151,7 @@
       "skillId": "chr_0034_typhoea_floating_attack2",
       "label": "Aerial basic attack 2",
       "damageType": "basic",
+      "dataOverride": { "lands chr_0034_typhoea_floating_attack1_01_projhit": "Timeline sections reached through JumpToAction (destinations 45/75/105/135; 150/300/450/600 in attack4): jumps are reported, not followed, so every section is listed. Which one a cast plays depends on the jump conditions; the kit has the first." },
       "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). Castable while hovering as the 2nd attempt (stack abatk 1); not a chain step (the attempt index, not the chain, picks the shot). durationFrames: the next shot's window opens at frame 18 (SkillData; the timeline reads it there). Conditional windows (batch 4 S9a): the next shot's windows sit under an IfElse whose two branches are the same SwitchAction on arrow_num, whose options differ only in which shot they allow, at the same frames; the attempt index (abatk, `available`) picks the shot, so every window is listed open (the engine's reading before S9).",
       "windows": [{ "from": 18 }, { "from": 63 }, { "from": 93 }, { "from": 123 }, { "from": 153 }],
       "available": {
@@ -1280,6 +1285,7 @@
       "skillId": "chr_0034_typhoea_floating_attack3",
       "label": "Aerial basic attack 3",
       "damageType": "basic",
+      "dataOverride": { "lands chr_0034_typhoea_floating_attack1_01_projhit": "Timeline sections reached through JumpToAction (destinations 45/75/105/135; 150/300/450/600 in attack4): jumps are reported, not followed, so every section is listed. Which one a cast plays depends on the jump conditions; the kit has the first." },
       "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). Castable while hovering as the 3rd attempt (stack abatk 2); not a chain step (the attempt index, not the chain, picks the shot). durationFrames: the next shot's window opens at frame 18 (SkillData; the timeline reads it there). Conditional windows (batch 4 S9a): the next shot's window sits under an IfElse with the same window in both branches: listed open.",
       "windows": [{ "from": 18 }, { "from": 63 }, { "from": 93 }, { "from": 123 }, { "from": 153 }],
       "available": {
@@ -1413,6 +1419,7 @@
       "skillId": "chr_0034_typhoea_floating_attack4",
       "label": "Aerial basic attack 4",
       "damageType": "basic",
+      "dataOverride": { "lands chr_0034_typhoea_floating_attack1_01_projhit": "Timeline sections reached through JumpToAction (destinations 45/75/105/135; 150/300/450/600 in attack4): jumps are reported, not followed, so every section is listed. Which one a cast plays depends on the jump conditions; the kit has the first." },
       "note": "Floating shots use the battle skill's level but deal basic-attack damage (damageDecorateMask 128). Castable while hovering as the 4th attempt (stack abatk 3); not a chain step (the attempt index, not the chain, picks the shot). durationFrames: the next shot's window opens at frame 28 (SkillData; the timeline reads it there). Conditional windows (batch 4 S9a): the next shot's window sits under an IfElse with the same window in both branches: listed open.",
       "windows": [{ "from": 28 }, { "from": 178 }, { "from": 328 }, { "from": 478 }, { "from": 628 }],
       "available": {
@@ -1807,6 +1814,7 @@
             "potential_damge_up"
           ],
           "events": [],
+          "dataOverride": { "events": "Logged as chr_0034_typhoea_ultimate_skill_arrowrain, but the key is left off on purpose: fixtures/pending/zmdlogs-dbaee23b801d.json t=13975 matches, while fixtures/pending/zmdlogs-d9e59d0fb737.json t=4415 is x1.1585 above it, unexplained (see the hit's note)." },
           "note": "ultimate_skill_arrowrain, spawned at frame 61, damage at its frame 1 (mask 4608): atk_scale_main × potential_damge_up (P5 1.2); poise 20. Logged as chr_0034_typhoea_ultimate_skill_arrowrain, but the key is left off: it matches fixtures/pending/zmdlogs-dbaee23b801d.json t=13975 (103923, crit), while fixtures/pending/zmdlogs-d9e59d0fb737.json t=4415 (15716, no logged buff) is ×1.1585 above it, unexplained."
         }
       ]

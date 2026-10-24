@@ -152,6 +152,7 @@
       "skillId": "chr_0024_deepfin_normal_skill",
       "label": "Battle skill: Unconventional Lure",
       "damageType": "battle",
+      "dataOverride": { "applies@27": "Batch 3, Alesh. Compiler limitation, kit right: the battle skill's ForceSpellStatusAction consumes the Cryo stacks (consumedLayer = consumedType 2's count, SaveBuffStackNumAdvanced) and Solidifies at that level, only if CheckBuffStackNumByTag Cryo ≥ 1; the compiler reads no consumption and lists the forced Solidification only under that condition, which the kit's level {consumed: true} expresses (0 consumed applies nothing; batch-3 A3)." },
       "hits": [
         {
           "id": "hit",
