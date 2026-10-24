@@ -10,7 +10,7 @@ import {
   createContext,
   init,
   legalActions,
-  memoAdvance,
+  memoised,
   randomOutcomes,
   resourceValues,
   rotationSpread,
@@ -99,28 +99,35 @@ describe("rotation search", () => {
     expect(r.result.total).toBeCloseTo(DUO_TOTAL, 3);
   });
 
-  it("judges the choices at a state as judging every candidate in full would (startsNow and memoAdvance are exact)", () => {
+  it("judges the choices at a state as judging every candidate in full would (startsNow and a memoised advance are exact)", () => {
     for (const scenario of [open, duo]) {
       const r = scenario === open ? found : searchRotation(data, scenario, { beamWidth: 4 });
       const ctx = createContext(data, { ...scenario, rotation: [] });
+      const fastCtx = memoised(ctx);
       let state = init(ctx);
       let compared = 0;
       for (const step of r.rotation) {
-        const fast = memoAdvance(() => legalActions(ctx, state));
+        const fast = legalActions(fastCtx, state);
         const full = judgedInFull(ctx, state);
         expect(fast).toEqual(full);
         // Every choice's child too (states the search judged but didn't keep).
         for (const c of fast.slice(0, 3)) {
           const child = apply(ctx, state, { ...c.action, at: c.frame });
-          expect(memoAdvance(() => legalActions(ctx, child))).toEqual(judgedInFull(ctx, child));
+          expect(legalActions(fastCtx, child)).toEqual(judgedInFull(ctx, child));
           compared++;
         }
         state = apply(ctx, state, step);
       }
       expect(compared).toBeGreaterThan(20);
     }
-    // Memoised or not, a battle comes out the same.
-    expect(memoAdvance(() => simulate(data, example)).total).toBe(simulate(data, example).total);
+    // Memoised or not, a battle comes out the same; the cache is the memoised context's only.
+    const m = memoised(createContext(data, example));
+    expect(memoised(m)).toBe(m);
+    expect(createContext(data, example).advanceMemo).toBeUndefined();
+    let s = init(m);
+    for (const a of example.rotation) s = apply(m, s, a);
+    s = advance(m, s, example.durationFrames);
+    expect(s.hits.reduce((t, h) => t + h.exact, 0)).toBe(simulate(data, example).total);
   });
 
   it("merges only states that are equal in everything that comes next (stateKey)", () => {

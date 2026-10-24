@@ -398,8 +398,9 @@ current action ends (a kit's `endAction`, jumps, dodges), a combo replays
 to every pending hit looking for its window, and each replay starts from
 the node's state again. Now, all exact (same rotations and totals):
 
-- `memoAdvance` (timeline.ts): while the search runs, `advance` is
-  memoised per state object and frame. `advance` is a pure function and
+- `memoised` (timeline.ts): on the contexts the search makes, `advance`
+  is memoised per state object and frame (the cache is the context's own
+  `advanceMemo`, not module state). `advance` is a pure function and
   states are never changed in place, so a repeated call returns the first
   one's result; judging an operator's skills from one state shares the
   replays.

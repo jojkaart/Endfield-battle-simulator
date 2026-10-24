@@ -308,6 +308,8 @@ export interface TimelineContext {
   readonly enemy: EnemyData;
   /** Per arts element: frames from an infliction to its Arts Burst (BattleConstants.burstDelayFrames). */
   readonly burstDelayFrames: Readonly<Record<ArtsElement, number>>;
+  /** With `memoised`: `advance`'s results per state object and frame (exact: advance is pure and states are never changed in place). */
+  readonly advanceMemo?: WeakMap<TimelineState, Map<number, TimelineState>>;
 }
 
 /** Operator attributes the timeline reads from the panel, whose default (GameData.attributeDefaults) holds when no line sets them. */
@@ -2831,34 +2833,29 @@ export function startsNow(ctx: TimelineContext, state: TimelineState, action: Ro
   return "frame" in r && r.frame === state.frame;
 }
 
-// memoAdvance: `advance` is a pure function of (context, state, frame) and
-// states are never changed in place, so while a driver runs inside
-// `memoAdvance` a repeated call with the same state object and frame returns
-// the first call's result. The rotation search needs it: judging each
-// candidate action from one state advances that state to the same frames
-// many times over (earliestStart's search for when the current action ends,
-// combo windows, finishers). Off outside `memoAdvance`, where `advance` is
-// `advanceFrom` as written above.
+// Memoised advance (memoised): `advance` is a pure function of (context,
+// state, frame) and states are never changed in place, so with a context
+// from `memoised` a repeated call with the same state object and frame
+// returns the first call's result. The rotation search needs it: judging
+// each candidate action from one state advances that state to the same
+// frames many times over (earliestStart's search for when the current
+// action ends, combo windows, finishers). The cache is the one piece of
+// mutable state the engine keeps, and it lives on the context the search
+// makes (TimelineContext.advanceMemo), not in the module: other contexts
+// and other callers never see it.
 
-let advanceMemo: WeakMap<TimelineState, { readonly ctx: TimelineContext; readonly byFrame: Map<number, TimelineState> }> | null = null;
-
-/** Processes every pending hit, status tick and buff expiry up to (and including) a frame, in frame order (advanceFrom; memoised inside memoAdvance). */
+/** Processes every pending hit, status tick and buff expiry up to (and including) a frame, in frame order (advanceFrom; memoised with a context from `memoised`). */
 export function advance(ctx: TimelineContext, state: TimelineState, frame: number): TimelineState {
-  if (!advanceMemo) return advanceFrom(ctx, state, frame);
-  let m = advanceMemo.get(state);
-  if (!m || m.ctx !== ctx) advanceMemo.set(state, (m = { ctx, byFrame: new Map() }));
-  let r = m.byFrame.get(frame);
-  if (!r) m.byFrame.set(frame, (r = advanceFrom(ctx, state, frame)));
+  const memo = ctx.advanceMemo;
+  if (!memo) return advanceFrom(ctx, state, frame);
+  let byFrame = memo.get(state);
+  if (!byFrame) memo.set(state, (byFrame = new Map()));
+  let r = byFrame.get(frame);
+  if (!r) byFrame.set(frame, (r = advanceFrom(ctx, state, frame)));
   return r;
 }
 
-/** Runs `f` with `advance` memoised per state object and frame (the cache lives as long as its states; nested calls share the outer one). */
-export function memoAdvance<T>(f: () => T): T {
-  const outer = advanceMemo;
-  advanceMemo ??= new WeakMap();
-  try {
-    return f();
-  } finally {
-    advanceMemo = outer;
-  }
+/** The context with `advance` memoised per state object and frame (the cache lives as long as this context and its states). */
+export function memoised(ctx: TimelineContext): TimelineContext {
+  return ctx.advanceMemo ? ctx : { ...ctx, advanceMemo: new WeakMap() };
 }

@@ -24,7 +24,7 @@ import {
   exclusiveUntil,
   enemyActionsOf,
   init,
-  memoAdvance,
+  memoised,
   simulate,
   startsNow,
   type RotationAction,
@@ -200,7 +200,7 @@ const committed = new WeakMap<TimelineState, { readonly ctx: TimelineContext; re
 export function committedDamage(ctx: TimelineContext, state: TimelineState): number {
   const known = committed.get(state);
   if (known?.ctx === ctx) return known.total;
-  // Advanced from a copy, so memoAdvance doesn't keep the fight's end (every hit to come) for as long as the state lives.
+  // Advanced from a copy, so a memoised context doesn't keep the fight's end (every hit to come) for as long as the state lives.
   const end = advance(ctx, { ...state }, ctx.scenario.durationFrames);
   let total = 0;
   for (const h of end.hits) total += h.exact;
@@ -299,7 +299,7 @@ export function resourceValues(data: GameData, scenario: Omit<TimelineScenario, 
   const perEnergy: Record<string, number> = {};
   for (const b of scenario.team) {
     const op = b.operator;
-    const ctx = createContext(data, { ...scenario, rotation: [], startEnergy: { ...scenario.startEnergy, [op]: "full" }, enemyActions: [] });
+    const ctx = memoised(createContext(data, { ...scenario, rotation: [], startEnergy: { ...scenario.startEnergy, [op]: "full" }, enemyActions: [] }));
     const s0 = init(ctx);
     const base = committedDamage(ctx, s0);
     for (const skill of data.kits.operators[op]?.skills ?? []) {
@@ -521,8 +521,7 @@ function statistic(values: readonly number[], percentile: number | undefined): n
  * (or SearchOptions.percentile) of the K battles' values.
  */
 export function searchRotation(data: GameData, scenario: Omit<TimelineScenario, "rotation">, options: SearchOptions = {}): SearchResult {
-  // Judging the candidates of one state advances it to the same frames over and over: memoised (exact, states are plain data).
-  return memoAdvance(() => search(data, scenario, options));
+  return search(data, scenario, options);
 }
 
 function search(data: GameData, given: Omit<TimelineScenario, "rotation">, options: SearchOptions): SearchResult {
@@ -540,7 +539,8 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
   const seed0 = scenario.options.seed ?? 1;
   const seeds = Array.from({ length: k }, (_, i) => (seed0 + i) >>> 0);
   // One battle: the scenario as given (bit for bit the search without seeds). More: the same with seed + i.
-  const ctxs = k === 1 ? [createContext(data, { ...scenario, rotation: [] })] : seeds.map((seed) => createContext(data, { ...scenario, rotation: [], options: { ...scenario.options, seed } }));
+  // Judging the candidates of one state advances it to the same frames over and over: memoised (exact, states are plain data).
+  const ctxs = (k === 1 ? [createContext(data, { ...scenario, rotation: [] })] : seeds.map((seed) => createContext(data, { ...scenario, rotation: [], options: { ...scenario.options, seed } }))).map(memoised);
   const ctx = ctxs[0] as TimelineContext;
   const weight = options.resourceWeight ?? 0;
   const values = weight > 0 ? resourceValues(data, scenario) : null;
