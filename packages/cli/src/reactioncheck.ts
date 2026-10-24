@@ -3,7 +3,7 @@
 // the bursts and reactions it predicts with the ones the log records. Logs
 // don't record inflictions, so this is how a kit's `applies` gets verified.
 
-import { applyToEnemy, computeStats, expireStatus, FPS, effectiveKit, hitAvailable, hitEffects, kitHitEntries, NO_STATUS, resolveApplication, statusEventKey, type EnemyStatus, type GameData, type KitHit, type Predicate, type StatusEvent } from "@efsim/engine";
+import { applyToEnemy, computeStats, expireStatus, FPS, effectiveKit, hitAvailable, hitEffects, kitHitEntries, NO_STATUS, readingDoesNotApply, resolveApplication, statusEventKey, type EnemyStatus, type GameData, type KitHit, type Predicate, type StatusEvent } from "@efsim/engine";
 import type { LogFixture, LogHit } from "@efsim/data";
 import { castTimeStops, placeHits, type Placement, type TimeStop } from "./logcasts.ts";
 
@@ -99,8 +99,9 @@ function possible(data: GameData, fixture: LogFixture, operator: string, event: 
   const hit: KitHit = { id: "x", label: "", scale: [], count: 1, events: [event], damageType: "basic", element: "physical", if: p };
   try {
     return hitAvailable(data, build, computeStats(data, build), "", hit, { team: fixture.team, enemy });
-  } catch {
-    // It reads a skill value the replay doesn't know: undecided.
+  } catch (e) {
+    if (!readingDoesNotApply(e)) throw e;
+    // It reads what only a fight knows: undecided.
     return true;
   }
 }

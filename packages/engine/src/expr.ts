@@ -11,6 +11,7 @@ import type { ArtsElement } from "./reactions.ts";
 import type { Modifier, Zone } from "./effects.ts";
 import type { EnemyStatus, PhysicalStatus, ReactionStatus } from "./status.ts";
 import { lineValue, type StatPanel } from "./stats.ts";
+import { NeedsSituation } from "./errors.ts";
 
 export type Predicate =
   | { readonly all: readonly Predicate[] }
@@ -314,41 +315,41 @@ export function evaluate(v: ValueExpr, c: EvalContext): number {
     return evaluate(v.div[0], c) / d;
   }
   if ("consumed" in v) {
-    if (c.consumed === undefined) throw new Error("value needs the consumed infliction stacks, which aren't known here");
+    if (c.consumed === undefined) throw new NeedsSituation("value needs the consumed infliction stacks, which aren't known here");
     return c.consumed;
   }
   if ("eventRecorded" in v) {
-    if (c.eventRecorded === undefined) throw new Error("value needs the damage a buff recorded, which only a buffEnded trigger on a recording buff has");
+    if (c.eventRecorded === undefined) throw new NeedsSituation("value needs the damage a buff recorded, which only a buffEnded trigger on a recording buff has");
     return c.eventRecorded;
   }
   if ("eventRemaining" in v) {
-    if (c.eventRemaining === undefined) throw new Error("value needs the time left of an ended buff, which only a buffEnded trigger has");
+    if (c.eventRemaining === undefined) throw new NeedsSituation("value needs the time left of an ended buff, which only a buffEnded trigger has");
     return c.eventRemaining;
   }
   if ("eventCount" in v) {
-    if (c.eventCount === undefined) throw new Error("value needs the count of the event behind it, which isn't known here");
+    if (c.eventCount === undefined) throw new NeedsSituation("value needs the count of the event behind it, which isn't known here");
     return c.eventCount;
   }
   if ("targetsHit" in v) return 1;
   if ("enemyVulnerableStacks" in v) {
-    if (!c.enemy) throw new Error("value needs the enemy's Vulnerable stacks, which aren't known here");
+    if (!c.enemy) throw new NeedsSituation("value needs the enemy's Vulnerable stacks, which aren't known here");
     return c.enemy.vulnerable?.stacks ?? 0;
   }
   if ("enemyInflictionStacks" in v) {
-    if (!c.enemy) throw new Error("value needs the enemy's infliction stacks, which aren't known here");
+    if (!c.enemy) throw new NeedsSituation("value needs the enemy's infliction stacks, which aren't known here");
     const i = c.enemy.infliction;
     return i !== null && i.element === v.enemyInflictionStacks ? i.stacks : 0;
   }
   if ("stackCount" in v) {
-    if (!c.stacks) throw new Error(`value needs stack ${v.stackCount}, which isn't known here`);
+    if (!c.stacks) throw new NeedsSituation(`value needs stack ${v.stackCount}, which isn't known here`);
     return c.stacks[v.stackCount] ?? 0;
   }
   if ("buffLayers" in v) {
-    if (!c.buffLayers) throw new Error(`value needs the layers of buff ${v.buffLayers}, which aren't known here`);
+    if (!c.buffLayers) throw new NeedsSituation(`value needs the layers of buff ${v.buffLayers}, which aren't known here`);
     return c.buffLayers(v.buffLayers);
   }
   const t = test(v.if, c);
-  if (t === undefined) throw new Error("value depends on a condition that isn't known here");
+  if (t === undefined) throw new NeedsSituation("value depends on a condition that isn't known here");
   return t ? evaluate(v.then, c) : v.else === undefined ? 0 : evaluate(v.else, c);
 }
 

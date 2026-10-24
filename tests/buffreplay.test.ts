@@ -98,6 +98,15 @@ describe("kit buffs from the replay of the logged casts", () => {
     expect(formatBuffReplay(g, r, v).join("\n")).toContain("log lists it, replay off, 1 hit(s) at 30.0 s (fit the replay 0, the log 1, neither 0)");
   });
 
+  it("counts a disputed hit under effects it can't value as fitting neither (not only mismatches; 2026-10-24)", () => {
+    const unknown = { buff: "buff_test_unknown", since: 0, source: op };
+    const fx3 = fixture([...fx.hits.slice(0, 3), logHit(30000, Math.round(plain * 1.3), { event: "b", effects: [atk], unquantified: [unknown] })]);
+    const r = logBuffReplay(g, fx3);
+    const v = checkLog(g, fx3, { replay: r });
+    expect(v[3]?.kind).toBe("unvalued");
+    expect(formatBuffReplay(g, r, v).join("\n")).toContain("log lists it, replay off, 1 hit(s) at 30.0 s (fit the replay 0, the log 0, neither 1)");
+  });
+
   it("leaves a buff to the log when a trigger that applies it waits on what a log can't replay (crits)", () => {
     const onCrit: KitTrigger = { id: "t_on_crit", on: { event: "hit", crit: true }, by: "self", do: [{ kind: "buff", buff: "t_atk" }] };
     const g2 = withKit({ skills: [battle([h]), basic], buffs: [buff], triggers: [onCast, onCrit] });

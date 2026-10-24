@@ -1,8 +1,48 @@
 # Pending log fixtures
 
-Imported battle logs that the log test (`tests/logs.test.ts`) doesn't run
-yet, because something outside the kits doesn't match. Move a file up to
-`fixtures/` once it passes (`efsim zmdlogs check <file>`).
+Imported battle logs that the check doesn't verify yet (docs/design.md,
+"What a log check verifies"), because something outside the kits doesn't
+match. `npm run test:logs` (tests/slow/) pins each one's current verdict
+counts per operator (tests/snapshots/log-verdicts-pending.json), so any
+change shows. Move a file up to `fixtures/` once `efsim zmdlogs check
+<file>` says "Verified" (and move its snapshot entry: `npm run
+snapshots:update`).
+
+## Moved here from fixtures/, 2026-10-24 (stricter verification)
+
+The check used to count any hit under a buff the log lists without a
+value as "under unmodelled effects" (Corrosion's, here), whatever its
+damage, and an operator with only such hits, or only matches through the
+log's buff listing, passed. Now Corrosion excuses a hit only when its
+damage lies between a reading's with the least and the most shred
+Corrosion can give, and every operator with a kit needs a plain or
+assumed match (log-listing fallbacks show the damage with the log's
+buffs, not the engine's).
+
+- `zmdlogs-d9e59d0fb737.json` (0 of 98 hits matched): every hit after
+  Arcane's ultimate is ×1.7–2.0 the prediction (Typhoeus 42, Arcane 13,
+  Gilberta 8 of their hits are now mismatches; 34 stay under Corrosion
+  within its range, Liino's 24 among them). Arcane's kit notes already
+  say so: this INT battle predates the 1.6 tables (555me's commit
+  371c743), and all of it is under her ultimate's forced Corrosion. Not
+  a kit error the check can name; maybe the battle is from 1.5.
+- `zmdlogs-dbaee23b801d.json`: 75 of 78 matches only with the log's buff
+  listing; Liino (25) and Xaihi (7) have no other. The replay has
+  `buff_wpn_funnel_0005_atk_up` (Xaihi's Stanza of Memorials),
+  `buff_wpn_funnel_0016_will_atk` and Liino's
+  `buff_chr_0035_liino_atkup` / `buff_wpn_lance_0014_damageup` off or at
+  other instance counts where the log lists them and the damage has them
+  (`zmdlogs check`'s replay section): triggers the replay misses, likely
+  casts without logged damage (journal 2026-10-22).
+- `zmdlogs-0eef2474a26f.json`: Arcane's 3 matched hits fit only the
+  log's listing: the replay has Liino's `buff_wpn_lance_0014_damageup`
+  on Arcane at 2.7–3.7 s, which the log doesn't list and the damage
+  doesn't have. Typhoeus, Si and Liino verify (14, 5 and 12 matches;
+  16, 14 and 1 hits under Corrosion within its range).
+
+The Corrosion range moved hits from "unmodelled" to mismatch in two
+fixtures already pending: `04d401ad257e` Catcher 9, Purrchena 1;
+`4e3651100056` Ardelia 7.
 
 - `zmdlogs-e82d45c46040.json` (Rhodagn, game 1.6, parser v59): three
   unexplained factors in one fight. Perlica's Electrification reaction

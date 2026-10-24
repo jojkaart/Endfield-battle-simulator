@@ -53,7 +53,7 @@ describe("weapon type", () => {
 describe("effects limited to a mode (activeCondition)", () => {
   it("Arcane's talent cuts her combo cooldown by 6 s in INT mode only", () => {
     const will = JSON.parse(readFileSync(new URL("../examples/arcane-will.json", import.meta.url), "utf8")) as Build;
-    const fx = JSON.parse(readFileSync(new URL("../fixtures/zmdlogs-d9e59d0fb737.json", import.meta.url), "utf8")) as { team: Build[] };
+    const fx = JSON.parse(readFileSync(new URL("../fixtures/pending/zmdlogs-d9e59d0fb737.json", import.meta.url), "utf8")) as { team: Build[] };
     const int = fx.team.find((b) => b.operator === "chr_0032_lizhiyan") as Build;
     const id = "chr_0032_lizhiyan_combo_skill";
     const cd = (b: Build) => {

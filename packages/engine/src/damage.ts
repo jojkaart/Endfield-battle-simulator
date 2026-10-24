@@ -6,7 +6,7 @@ import { Attr, attrName, type AttrType, type Element, type SkillType } from "./a
 import type { Build } from "./build.ts";
 import { STAGGER_DAMAGE_TAKEN } from "./constants.ts";
 import { applies, attrModifier, zoneProduct, zoneSum, type HitContext, type HitDecoration, type HitKind, type Modifier, type Zone } from "./effects.ts";
-import { EngineError } from "./errors.ts";
+import { EngineError, HitRuledOut } from "./errors.ts";
 import type { Condition, GameData, KitHit, KitSkill } from "./model.ts";
 import { artsIntensityDamage, levelCoefficientOf, reactionBase, type ReactionKind } from "./reactions.ts";
 import { evaluate, test, type EvalContext, type Predicate } from "./expr.ts";
@@ -398,7 +398,7 @@ export function computeHit(
   options: DamageOptions = DEFAULT_DAMAGE_OPTIONS,
 ): HitDamage {
   const ec = evalContext(data, build, panel, skill.skillId, options.situation);
-  if (hit.if && !decide(hit.if, ec, options.assumeUnknown)) throw new EngineError(`${skill.skillId} ${hit.id} doesn't happen in this situation (${JSON.stringify(hit.if)})`);
+  if (hit.if && !decide(hit.if, ec, options.assumeUnknown)) throw new HitRuledOut(`${skill.skillId} ${hit.id} doesn't happen in this situation (${JSON.stringify(hit.if)})`);
   if (hit.fixedDamage !== undefined) return fixedHit(skill.skillId, hit, evaluate(hit.fixedDamage, ec));
   const extra = (hit.extraScale ?? []).filter((x) => decide(x.if, ec, options.assumeUnknown));
   const scaleParts = [
