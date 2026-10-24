@@ -5,16 +5,13 @@
 // new one, or one that goes away, fails the test so it gets looked at.
 
 import { describe, expect, it } from "vitest";
-import type { KitHit } from "@efsim/engine";
-import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledPoiseLanding, type CompiledSkill, type CompiledValue } from "../src/index.ts";
+import { compileOperatorSkill, compileSkill, formatCompiledValue, kitEnergyBlock, loadGameData, matchSkill, type CompiledLanding, type CompiledSkill } from "../src/index.ts";
 
 const data = loadGameData();
 const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen", "chr_0006_wolfgd", "chr_0031_mifu", "chr_0033_camille", "chr_0026_lastrite", "chr_0017_yvonne", "chr_0015_lifeng", "chr_0025_ardelia", "chr_0029_pograni", "chr_0028_wulfa", "chr_0030_zhuangfy", "chr_0009_azrila", "chr_0027_tangtang"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
-  const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
-  const values = data.skills[skillId]?.levels.at(-1)?.blackboard;
-  const c = compileSkill(skillId, { followCast: (s) => !top.has(s), ...(values ? { values } : {}) });
+  const c = compileOperatorSkill(data, operator, skillId);
   if (!c) throw new Error(`no SkillData file for ${skillId}`);
   return c;
 }
@@ -206,201 +203,14 @@ describe("compileSkill", () => {
 });
 
 // ---------------------------------------------------------------------------
-// The kits' hand-written values against the compiled ones.
+// The kits' hand-written values against the compiled ones (kitMatch.ts).
 
-const round = (n: number, d = 6) => Math.round(n * 10 ** d) / 10 ** d;
-const keysText = (ls: readonly CompiledLanding[]) => [...new Set(ls.map((l) => (l.scale.expr ? l.scale.expr : [...l.scale.keys].sort().join(" × "))))].join(" | ");
-
-/** The undecided-branch paths through a skill: each distinct branch of a landing, with the landings on it (those whose branch encloses it). */
-function paths(ls: readonly CompiledLanding[]): CompiledLanding[][] {
-  const branches = [...new Map(ls.map((l) => [JSON.stringify(l.branch), l.branch])).values()];
-  return branches.map((b) => ls.filter((l) => prefixOf(l.branch, b)));
-}
-
-/** Whether every kit frame (a multiset) is among the path's frames. */
-function covers(path: readonly CompiledLanding[], want: readonly number[]): boolean {
-  const have = new Map<number, number>();
-  for (const l of path) have.set(l.frame, (have.get(l.frame) ?? 0) + 1);
-  for (const f of want) {
-    const n = have.get(f) ?? 0;
-    if (n === 0) return false;
-    have.set(f, n - 1);
-  }
-  return true;
-}
-
-type KitApplication = NonNullable<KitHit["applies"]>[number];
-const physicalText = (status: string, forced: boolean | undefined) => `${status === "event" ? "physical event" : status}${forced ? " (forced)" : ""}`;
-const kitAppText = (a: KitApplication) =>
-  a.kind === "infliction" ? `infliction ${a.element}` : a.kind === "forcedReaction" ? `forced ${a.status}` : a.kind === "consumeInfliction" ? `consume ${(a.elements ?? []).join("+")}` : a.kind === "physicalStatus" ? physicalText(a.status, a.forced) : a.kind === "vulnerable" ? "vulnerable" : null;
-const dataAppText = (e: CompiledEffect) =>
-  e.kind === "infliction" ? `infliction ${e.element}` : e.kind === "forcedReaction" ? `forced ${e.status ?? "?"}` : e.kind === "consumeInfliction" ? `consume ${e.element ?? "?"}` : e.kind === "physicalStatus" ? physicalText(e.status, e.forced) : e.kind === "vulnerable" ? "vulnerable" : null;
-/** A compiled value as kit-draft writes it (a key, {product: [keys…, factor]}, a literal), for comparing with a kit's ValueExpr. */
-function asKitValue(v: CompiledValue): unknown {
-  if (v.expr) return v.expr;
-  if (v.keys.length === 0) return v.value === null ? null : round(v.value);
-  const terms: unknown[] = [...v.keys, ...(round(v.factor) === 1 ? [] : [round(v.factor)])];
-  return terms.length === 1 ? terms[0] : { product: terms };
-}
-/** A kit ValueExpr with its literals rounded as asKitValue rounds them. */
-const roundedValue = (v: unknown): unknown => (typeof v === "number" ? round(v) : Array.isArray(v) ? v.map(roundedValue) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, roundedValue(x)])) : v);
-const valueText = (v: unknown) => (typeof v === "string" ? v : JSON.stringify(v));
-/** The first plain value key a ValueExpr names (a string anywhere in it), if any. */
-function firstValueKey(v: unknown): string | undefined {
-  if (typeof v === "string") return v;
-  if (Array.isArray(v)) return v.map(firstValueKey).find((k) => k !== undefined);
-  if (v && typeof v === "object") return Object.values(v).map(firstValueKey).find((k) => k !== undefined);
-  return undefined;
-}
-/** A grant the kit gives only in a situation (`{if, then}`, no `else`): its value, which the data has on a branch of its own. */
-const grantText = (v: unknown) => (v !== null && typeof v === "object" && "then" in v && !("else" in v) ? valueText(v.then) : valueText(v));
-/** The first two undecided conditions on the way, for a readable line. */
-const branchText = (b: readonly string[] | undefined) => (b?.length ? ` (${b.slice(0, 2).join(", ")}${b.length > 2 ? ", …" : ""})` : "");
-
-/**
- * Stagger-only DamageActions as kit-draft writes them (D6): one goes with the
- * landing at its frame in its file when that landing deals no stagger and the
- * only extra condition is none or "controlled" (poiseControlledOnly); the rest
- * are poise-only hits of their own.
- */
-function foldPoise(c: CompiledSkill): CompiledSkill & { readonly poiseRest: readonly CompiledPoiseLanding[] } {
-  const landings = [...c.landings];
-  const poiseRest: CompiledPoiseLanding[] = [];
-  for (const p of c.poiseOnly) {
-    const l = p.landing === null ? undefined : landings[p.landing];
-    const extra = l && prefixOf(l.branch, p.branch) ? p.steps.slice(l.steps.length) : null;
-    const controlledGate = extra?.length === 1 && JSON.stringify(extra[0]?.pred) === JSON.stringify({ controlled: true });
-    if (l && p.landing !== null && l.file === p.file && l.frame === p.frame && !l.poise && extra && (extra.length === 0 || controlledGate)) {
-      landings[p.landing] = { ...l, poise: { value: p.poise.value, controlledOnly: p.poise.controlledOnly || controlledGate } };
-    } else poiseRest.push(p);
-  }
-  return { ...c, landings, poiseRest };
-}
-
-/**
- * Each kit hit is matched to the compiled landings scaled by its first key
- * (and logged under one of its events); its frames must be on one branch path.
- * A poise-only hit (scale []) is matched to the stagger-only DamageActions
- * that go with no landing (foldPoise) by frame.
- * Energy goes by frame, applications by frame across the skill's hits.
- */
 function kitDisagreements(): string[] {
   const out: string[] = [];
   for (const op of OPERATORS) {
     const kit = data.kits.operators[op];
     if (!kit) throw new Error(`no kit for ${op}`);
-    for (const s of kit.skills) {
-      const c = foldPoise(compiled(op, s.skillId));
-      const where = s.skillId;
-      const blocks = c.energyBlocks.filter((b) => b.branch.length === 0 && b.until !== null);
-      const block = blocks.length ? round(Math.max(...blocks.map((b) => b.until as number)) / 30, 3) : null;
-      // The kit's block: the skill's energyBlockSeconds, or an energy-blocking buff its own cast trigger applies (Laevatain's show_weapon).
-      const castBuffs = kit.triggers.filter((t) => t.on.event === "cast" && "skills" in t.on && t.on.skills?.includes(s.skillId)).flatMap((t) => t.do.flatMap((a) => (a.kind === "buff" ? [a.buff] : [])));
-      const blockBuff = kit.buffs.find((b) => b.blocksEnergy && castBuffs.includes(b.id) && typeof b.duration === "number");
-      const kitBlock = s.energyBlockSeconds !== undefined ? round(s.energyBlockSeconds, 3) : blockBuff ? round(blockBuff.duration as number, 3) : null;
-      if (block !== kitBlock) out.push(`${where} energyBlockSeconds: kit ${kitBlock ?? "-"}, data ${block ?? "-"}`);
-      // Team energy parts as kit-draft reads them: unconditional ones, the first alone when they add up to more than the whole; all at the cast when none.
-      let team = c.teamEnergy.filter((t) => t.branch.length === 0).map((t) => ({ frame: t.frame, ratio: t.ratio ?? 1 }));
-      if (team.reduce((x, t) => x + t.ratio, 0) > 1 + 1e-9) team = team.slice(0, 1).map((t) => ({ ...t, ratio: 1 }));
-      const partsText = (parts: readonly { frame: number; ratio: number }[]) => (parts.length ? parts : [{ frame: 0, ratio: 1 }]).map((t) => `${t.ratio}@${t.frame}`).join(", ");
-      if (partsText(team) !== partsText(s.teamEnergy ?? [])) out.push(`${where} teamEnergy: kit ${partsText(s.teamEnergy ?? [])}, data ${partsText(team)}`);
-      const claimed = new Set<CompiledLanding>();
-      const kitApps = new Map<number, Set<string>>();
-      for (const h of s.hits) {
-        const tag = `${where}/${h.id}`;
-        for (const f of h.frames ?? []) for (const a of h.applies ?? []) {
-          const t = kitAppText(a);
-          if (t) kitApps.set(f, new Set([...(kitApps.get(f) ?? []), t]));
-        }
-        if (h.energy !== undefined) {
-          const dataE = c.energy.filter((e) => (h.frames ?? []).includes(e.frame)).map((e) => formatCompiledValue(e.value));
-          if (!dataE.includes(grantText(h.energy))) out.push(`${tag} energy: kit ${valueText(h.energy)} at [${(h.frames ?? []).join(", ")}], data ${c.energy.map((e) => `${formatCompiledValue(e.value)}@${e.frame}${branchText(e.branch)}`).join(", ") || "none"}`);
-        }
-        if (h.poiseOnly) {
-          const here = c.poiseRest.filter((p) => !h.events.length || h.events.includes(p.file));
-          const want = h.frames ?? [];
-          const have = new Map<number, number>();
-          for (const p of here) have.set(p.frame, (have.get(p.frame) ?? 0) + 1);
-          const covered = want.every((f) => {
-            const n = have.get(f) ?? 0;
-            have.set(f, n - 1);
-            return n > 0;
-          });
-          const dataFrames = here.map((p) => p.frame).sort((a, b) => a - b);
-          if (!h.frames || !covered) out.push(`${tag} frames: kit ${h.frames ? `[${want.join(", ")}]` : `none (count ${h.count})`}, data stagger-only [${dataFrames.join(", ")}]`);
-          const at = here.filter((p) => want.includes(p.frame));
-          if (at.length) {
-            const kitPoise = h.poise === undefined ? "-" : JSON.stringify(roundedValue(h.poise));
-            const dataPoise = [...new Set(at.map((p) => JSON.stringify(asKitValue(p.poise.value))))];
-            if (!dataPoise.includes(kitPoise)) out.push(`${tag} poise: kit ${kitPoise}, data ${dataPoise.join(" | ")}`);
-            const ctl = [...new Set(at.map((p) => p.poise.controlledOnly))];
-            if (!ctl.includes(h.poiseControlledOnly ?? false)) out.push(`${tag} poiseControlledOnly: kit ${String(h.poiseControlledOnly ?? false)}, data ${ctl.join(" | ")}`);
-          }
-          continue;
-        }
-        if (h.reaction) {
-          // Damage computed as a reaction: the data creates the reaction's buff (no DamageAction of its own).
-          const found = c.effects.filter((e) => (e.kind === "burst" || e.kind === "forcedReaction") && (h.frames ?? []).includes(e.frame));
-          if (!found.length) out.push(`${tag}: kit ${h.reaction.kind} at [${(h.frames ?? []).join(", ")}], data none there (${c.effects.filter((e) => e.kind === "burst").map((e) => e.frame).join(", ") || "no bursts"})`);
-          continue;
-        }
-        // A hit whose multiplier is all scaleValue (Si's combo final hit) is matched by the first value key it names.
-        const key = (h.scale[0] ?? firstValueKey(h.scaleValue)) as string;
-        const byKey = c.landings.filter((l) => l.scale.keys.includes(key) || (l.scale.expr ?? "").includes(key));
-        if (byKey.length === 0) {
-          out.push(`${tag}: no landing scaled by ${key} (data: ${keysText(c.landings) || "no landings"})`);
-          continue;
-        }
-        const byEvent = h.events.length ? byKey.filter((l) => h.events.includes(l.file)) : byKey;
-        if (byEvent.length === 0) out.push(`${tag} events: kit [${h.events.join(", ")}], data [${[...new Set(byKey.map((l) => l.file))].join(", ")}]`);
-        const cand = byEvent.length ? byEvent : byKey;
-        const kitKeys = [...h.scale].sort().join(" × ");
-        if (!cand.some((l) => !l.scale.expr && [...l.scale.keys].sort().join(" × ") === kitKeys)) out.push(`${tag} scale: kit ${[...h.scale, ...(h.scaleValue !== undefined ? [valueText(h.scaleValue)] : [])].join(" × ")}, data ${keysText(cand)}`);
-        const kitFactor = round(h.factor ?? 1);
-        const factors = [...new Set(cand.map((l) => round(l.scale.factor)))];
-        if (!factors.includes(kitFactor)) out.push(`${tag} factor: kit ${kitFactor}, data ${factors.join(" | ")}`);
-        const all = paths(cand);
-        const want = h.frames ?? [];
-        const path = all.find((p) => covers(p, want));
-        const best = path ?? [...all].sort((a, b) => b.length - a.length)[0] ?? [];
-        if (!h.frames) out.push(`${tag} frames: kit none (count ${h.count}), data [${frames(best).join(", ")}]${branchText(best[0]?.branch)}`);
-        else if (!path) out.push(`${tag} frames: kit [${want.join(", ")}], data [${frames(best).join(", ")}]${branchText(best[0]?.branch)}`);
-        const at = (best.length ? best : cand).filter((l) => !h.frames || h.frames.includes(l.frame));
-        for (const l of at) claimed.add(l);
-        if (h.frames && path && typeof h.count === "number" && at.length > h.count) out.push(`${tag} count: kit ${h.count}, data ${at.length} landings at its frames (${[...new Set(at.map((l) => l.file))].join(", ")})`);
-        // Element and stagger of the landings the kit hit stands for (a landing without one: Fixed DMG, no poise unit).
-        const els = [...new Set(at.map((l) => l.element).filter((x) => x !== null))];
-        if (els.length && !els.includes(h.element)) out.push(`${tag} element: kit ${h.element}, data ${els.join(" | ")}`);
-        if (h.frames && path) {
-          const kitPoise = h.poise === undefined ? "-" : JSON.stringify(roundedValue(h.poise));
-          const dataPoise = [...new Set(at.map((l) => (l.poise ? JSON.stringify(asKitValue(l.poise.value)) : "-")))];
-          if (!dataPoise.includes(kitPoise)) out.push(`${tag} poise: kit ${kitPoise}, data ${dataPoise.join(" | ")}`);
-          const ctl = [...new Set(at.map((l) => l.poise?.controlledOnly ?? false))];
-          if (h.poise !== undefined && !ctl.includes(h.poiseControlledOnly ?? false)) out.push(`${tag} poiseControlledOnly: kit ${String(h.poiseControlledOnly ?? false)}, data ${ctl.join(" | ")}`);
-        }
-        const fs = at.map((l) => l.finalStrike);
-        if (h.finalStrike && fs.includes(false)) out.push(`${tag} finalStrike: kit all ${h.count} landings, data only at [${at.filter((l) => l.finalStrike).map((l) => l.frame).join(", ")}]`);
-        if (!h.finalStrike && fs.includes(true)) out.push(`${tag} finalStrike: kit none, data at [${at.filter((l) => l.finalStrike).map((l) => l.frame).join(", ")}]`);
-      }
-      // Applications by frame: what the kit applies must be in the data there; what the data applies unconditionally must be in the kit.
-      const dataFrames = new Set([...kitApps.keys(), ...c.effects.filter((e) => e.branch.length === 0 && dataAppText(e)).map((e) => e.frame)]);
-      for (const f of [...dataFrames].sort((a, b) => a - b)) {
-        const kitSet = kitApps.get(f) ?? new Set<string>();
-        const here = c.effects.filter((e) => e.frame === f && dataAppText(e));
-        const any = new Set(here.map((e) => dataAppText(e) as string));
-        const always = new Set(here.filter((e) => e.branch.length === 0).map((e) => dataAppText(e) as string));
-        const onlyKit = [...kitSet].filter((x) => !any.has(x));
-        const onlyData = [...always].filter((x) => !kitSet.has(x));
-        const cond = [...any].filter((x) => !always.has(x) && !kitSet.has(x));
-        if (onlyKit.length || onlyData.length || cond.length) out.push(`${where} applies at ${f}: kit [${[...kitSet].join(", ")}], data [${[...always].join(", ")}]${cond.length ? `, conditionally [${cond.join(", ")}]` : ""}`);
-      }
-      // Landings no kit hit accounts for: unconditional ones, and ones on the branch of a landing a kit hit has.
-      const onPath = (l: CompiledLanding) => l.branch.length === 0 || [...claimed].some((x) => JSON.stringify(x.branch) === JSON.stringify(l.branch));
-      const missed = c.landings.filter((l) => !claimed.has(l) && onPath(l));
-      const byFile = new Map<string, CompiledLanding[]>();
-      for (const l of missed) byFile.set(`${l.file} ${keysText([l])}`, [...(byFile.get(`${l.file} ${keysText([l])}`) ?? []), l]);
-      for (const [k, ls] of byFile) out.push(`${where}: data lands ${k} at [${frames(ls).join(", ")}], no kit hit`);
-    }
+    for (const s of kit.skills) out.push(...matchSkill(compiled(op, s.skillId), s, kitEnergyBlock(s, kit.triggers, kit.buffs)).disagreements);
   }
   return out;
 }

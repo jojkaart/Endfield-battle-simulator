@@ -22,3 +22,4 @@ export * from "./zmdlogs.ts";
 export * from "./skillGraph.ts";
 export * from "./skillCompile.ts";
 export * from "./buffTags.ts";
+export * from "./kitMatch.ts";
