@@ -11,7 +11,7 @@
 // the two disagree (leads: a log gap, or a kit trigger that's wrong).
 
 import {
-  activeAt, advance, allActions, Attr, createContext, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
+  activeAt, advance, allActions, Attr, buffModifiers, createContext, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
   type ActiveBuff, type GameData, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type SkillType, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
@@ -72,7 +72,7 @@ export interface BuffReplay {
   /** Replayed instances of a decided game buff reaching a logged hit's operator (or on the enemy) at it; null near a change (REPLAY_EDGE_MS). */
   instances(hit: Pick<LogHit, "t" | "operator">, gameBuff: string): number | null;
   /** What the replay knows of a logged cast (placed: logcasts.ts), or why it knows nothing. */
-  castFacts(cast: Pick<LoggedCast, "operator" | "skillId" | "start">): ReplayCastFacts | { readonly unknown: string };
+  castFacts(cast: Pick<LoggedCast, "operator" | "skillId" | "start" | "kind">): ReplayCastFacts | { readonly unknown: string };
   /** A logged hit's landing in the replay (its damage, modifiers and LandingFacts), or why there is none. */
   landing(hit: LogHit): LandedHit | { readonly unknown: string };
 }
@@ -80,10 +80,9 @@ export interface BuffReplay {
 /** A fact the replay knows, or why it doesn't (the log check then tries alternatives, labelled with the reason). */
 export type Fact<T> = { readonly value: T } | { readonly unknown: string };
 
-/** One consumed buff instance a cast carries (ActiveBuff with `cast`): its kit buff, owner and modifiers. */
-export interface ConsumedBuff {
-  readonly id: string;
-  readonly owner: string;
+/** The kit buffs a cast consumed (ActiveBuff with `cast`: they act on its hits only): their IDs (an ID per instance) and their modifiers on the caster's hits (buffModifiers). */
+export interface ConsumedBuffs {
+  readonly buffs: readonly string[];
   readonly modifiers: readonly Modifier[];
 }
 
@@ -99,9 +98,12 @@ export interface ReplayCastFacts {
   readonly link: Fact<number>;
   /** A combo's window count as the replay had it open (unknown when the replay saw no window: replayCast opens one counting 1). */
   readonly windowCount: Fact<number>;
-  /** The kit buffs it consumed (KitBuff.consumedBy: they act on its hits only), each instance. */
-  readonly consumed: Fact<readonly ConsumedBuff[]>;
+  /** The kit buffs it consumed (KitBuff.consumedBy: they act on its hits only). */
+  readonly consumed: Fact<ConsumedBuffs>;
 }
+
+/** The facts of a trigger's hits: of no cast (timeline.ts: a trigger's `hits` action lands hits without one). */
+const TRIGGERED: ReplayCastFacts = { index: -1, link: { value: 0 }, windowCount: { unknown: "a trigger's hits, of no cast" }, consumed: { value: { buffs: [], modifiers: [] } } };
 
 /** The game buffs the log lists with values somewhere (effects or boundary effects). */
 function listedWithValues(fx: LogFixture): Set<string> {
@@ -285,7 +287,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     ].sort((a, b) => a.frame - b.frame || (a.cast ? 0 : 1) - (b.cast ? 0 : 1));
     // The state after each step, for the facts' check at REPLAY_EDGE_MS either side of a cast (stateAt).
     const checkpoints: TimelineState[] = [st];
-    const made: { c: ReplayedCast; f: number; pre: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuff[] }[] = [];
+    const made: { c: ReplayedCast; f: number; pre: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs }[] = [];
     for (const s of steps) {
       if (checkpoints.at(-1) !== st) checkpoints.push(st);
       if (s.cast) {
@@ -297,7 +299,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
           const pre = st;
           st = replayCast(ctx, st, c.operator, c.skillId, f, { keepPrevious: c.keepPrevious, landings: c.landings });
           const index = st.casts.findLastIndex((x) => x.frame === f && x.operator === c.operator && x.skill === c.skillId);
-          const consumed = st.buffs.filter((b) => b.cast === index && b.id !== "link").map((b) => ({ id: b.id, owner: b.owner, modifiers: b.modifiers }));
+          const carried = st.buffs.filter((b) => b.cast === index && b.id !== "link");
+          const consumed: ConsumedBuffs = { buffs: carried.map((b) => b.id).sort(), modifiers: buffModifiers(carried, c.operator, f, index) };
           made.push({ c, f, pre, index, link: st.casts[index]?.link ?? 0, windowCount, consumed });
         } catch (e) {
           failedCasts.add(c);
@@ -328,11 +331,14 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       x.link.filter((e) => e > frame).length + x.buffs.filter((b) => b.link && b.cast === undefined && reaches(b, op) && activeAt(b, frame)).length;
     const consumable = (x: TimelineState, op: string, kind: SkillType | "none", frame: number) =>
       kind === "none" ? [] : x.buffs.filter((b) => b.cast === undefined && b.consumedBy?.includes(kind) && reaches(b, op) && activeAt(b, frame)).map((b) => b.id).sort();
+    /** Whether a cast of this kind consumes a buff of the operator's (own or worn) without a duration (KitBuff.duration absent). */
+    const preLogLayers = (op: string, kind: SkillType | "none") =>
+      kind !== "none" && kits.some((k) => k.operator === op && k.buffs.some((b) => b.consumedBy?.includes(kind) && b.duration === undefined));
     for (const m of made) {
       const kind = m.c.kind ?? "none";
       const [a, b] = [Math.max(0, m.f - edge), m.f + edge];
       let link: Fact<number> = { value: m.link };
-      let consumed: Fact<readonly ConsumedBuff[]> = { value: m.consumed };
+      let consumed: Fact<ConsumedBuffs> = { value: m.consumed };
       if (brokenAt !== null && b >= brokenAt) [link, consumed] = [{ unknown: "after the replay stopped" }, { unknown: "after the replay stopped" }];
       else {
         // What the cast found is the same REPLAY_EDGE_MS either side of it on the timeline without it (its own time
@@ -345,9 +351,15 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
           const rival = others.some((o) => o.c.kind === "battle" || o.c.kind === "ultimate");
           if (live.some((n) => n !== m.link) || (rival && m.link > 0)) link = { unknown: `Link stacks change within ${REPLAY_EDGE_MS} ms of the cast` };
         }
-        const ids = JSON.stringify(m.consumed.map((x) => x.id).sort());
+        const ids = JSON.stringify(m.consumed.buffs);
         const sameAround = [consumable(before, m.c.operator, kind, a), consumable(after, m.c.operator, kind, b)].every((x) => JSON.stringify(x) === ids);
-        if (!sameAround || (m.consumed.length > 0 && others.some((o) => o.c.kind === m.c.kind))) consumed = { unknown: `buffs a cast consumes change within ${REPLAY_EDGE_MS} ms of it` };
+        if (!sameAround || (m.consumed.buffs.length > 0 && others.some((o) => o.c.kind === m.c.kind))) consumed = { unknown: `buffs a cast consumes change within ${REPLAY_EDGE_MS} ms of it` };
+        // Layers without a duration that the operator's first such cast consumes may come from casts before the log's start
+        // (fixtures/zmdlogs-b7b3762d5da8.json: Si's first combo carries three Yinglung's Edge layers, the logged battle skills
+        // before it two).
+        else if (preLogLayers(m.c.operator, kind) && !made.some((o) => o.f < m.f && o.c.operator === m.c.operator && o.c.kind === m.c.kind)) {
+          consumed = { unknown: "layers without a duration casts before the log may have built" };
+        }
       }
       facts.set(m.c, { index: m.index, link, consumed, windowCount: m.windowCount !== null ? { value: m.windowCount } : { unknown: "a combo window the replay didn't see open" } });
     }
@@ -355,8 +367,10 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const hitIndex = new Map(fx.hits.map((h, i) => [h, i]));
   const broken = (ms: number) => brokenAt !== null && frameOf(ms) >= brokenAt - edge;
   const replayedCast = (c: Pick<LoggedCast, "operator" | "skillId" | "start">) => casts.find((d) => d.operator === c.operator && d.skillId === c.skillId && Math.abs(d.start - c.start) <= 1000);
-  const castFacts = (c: Pick<LoggedCast, "operator" | "skillId" | "start">): ReplayCastFacts | { unknown: string } => {
+  const castFacts = (c: Pick<LoggedCast, "operator" | "skillId" | "start" | "kind">): ReplayCastFacts | { unknown: string } => {
     if (kits.length === 0) return { unknown: "no kit to replay" };
+    // A trigger's hits (a placed group of kind null) belong to no cast in the timeline: no Link, no consumed buffs.
+    if (c.kind === null) return TRIGGERED;
     const d = replayedCast(c);
     if (!d) return { unknown: "a cast the replay doesn't make" };
     if (failedCasts.has(d)) return { unknown: "a cast the replay couldn't make" };

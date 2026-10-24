@@ -42,7 +42,7 @@ import {
 import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit, type RawBuffFile } from "@efsim/data";
 import { assumeValues, valueAssumptions, valueReads } from "./hitvalues.ts";
 import { placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
-import { disagreementRuns, REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK, replayedHits, replayKitBuffs, type BuffReplay, type DisagreementRun, type Fact, type ReplayCastFacts, type ReplayedHits } from "./buffreplay.ts";
+import { disagreementRuns, REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK, replayedHits, replayKitBuffs, type BuffReplay, type ConsumedBuffs, type DisagreementRun, type Fact, type ReplayCastFacts, type ReplayedHits } from "./buffreplay.ts";
 
 /** What a reading of a logged hit takes for granted that the log doesn't say. */
 export type AssumptionKind =
@@ -508,7 +508,7 @@ function corrosionBounds(data: GameData, hit: LogHit, panels: ReadonlyMap<string
  * hit of a kind such buffs act on, every combination of them is tried: each
  * absent or with 1 up to its maximum layers. The first option is none.
  */
-function unloggedCastBuffs(data: GameData, build: Build, panel: StatPanel, kind: SkillType | "none"): { label: string | null; buffs: string[]; modifiers: Modifier[] }[] {
+function unloggedCastBuffs(data: GameData, build: Build, panel: StatPanel, kind: SkillType | "none", why: string): { label: string | null; buffs: string[]; modifiers: Modifier[] }[] {
   const defs = (effectiveKit(data, build)?.buffs ?? []).filter((b) => kind !== "none" && b.consumedBy?.includes(kind));
   let out: { label: string | null; buffs: string[]; modifiers: Modifier[] }[] = [{ label: null, buffs: [], modifiers: [] }];
   for (const def of defs) {
@@ -522,7 +522,17 @@ function unloggedCastBuffs(data: GameData, build: Build, panel: StatPanel, kind:
     }
     out = out.flatMap((o) => [o, ...layers.map((l) => ({ label: [o.label, `${def.id}${l.n > 1 ? ` ×${l.n}` : ""}`].filter((x) => x).join(", "), buffs: [...o.buffs, def.id], modifiers: [...o.modifiers, ...l.modifiers] }))]);
   }
-  return out.map((o) => (o.label ? { ...o, label: `unlogged ${o.label}` } : o));
+  return out.map((o) => (o.label ? { ...o, label: `unlogged ${o.label} (the replay can't say: ${why})` } : o));
+}
+
+/**
+ * The buffs a hit's cast consumed and carries on its hits, which ZMDLogs doesn't list: the replay's (ReplayCastFacts
+ * consumed: the kit buffs the cast found and used up, with their modifiers as the timeline applies them), no assumption.
+ * Where the replay can't say, every combination of the hitter's own such buffs is tried (unloggedCastBuffs).
+ */
+function castBuffVariants(data: GameData, build: Build, panel: StatPanel, kind: SkillType | "none", consumed: Fact<ConsumedBuffs>): { label: string | null; buffs: string[]; modifiers: readonly Modifier[] }[] {
+  if ("value" in consumed) return [{ label: null, buffs: [], modifiers: consumed.value.modifiers }];
+  return unloggedCastBuffs(data, build, panel, kind, consumed.unknown);
 }
 
 /** Whether a kit hit is a finisher's (SkillData skillSpecification 8), as the timeline judges it: a skill's own hit, not a trigger's. */
@@ -764,7 +774,7 @@ export interface Undecided {
 }
 
 /** The facts the replay has of a logged hit's cast, or why it has none (no replay: `zmdlogs check --log-buffs`). */
-function castFactsOf(replay: LogBuffReplay | null, cast: Pick<LoggedCast, "operator" | "skillId" | "start"> | undefined): ReplayCastFacts | Undecided {
+function castFactsOf(replay: LogBuffReplay | null, cast: Pick<LoggedCast, "operator" | "skillId" | "start" | "kind"> | undefined): ReplayCastFacts | Undecided {
   if (!replay) return { unknown: "no replay" };
   if (!cast) return { unknown: "a hit the placement doesn't place" };
   return replay.replay.castFacts(cast);
@@ -973,7 +983,7 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
                 // A hit whose conditions or extra scale depend on what the log doesn't record (inflictions, stacks): try both outcomes;
                 // one whose values read the count of the event behind it (Si's combo): try counts 1-4; buffs its cast would carry unlogged: try them.
                 // A finisher takes the enemy's finisher multiplier, as in the timeline.
-                unloggedCastBuffs(data, member.build, member.panel, h.damageType).flatMap((unlogged) =>
+                castBuffVariants(data, member.build, member.panel, h.damageType, castFact(castFacts, "consumed")).flatMap((unlogged) =>
                   (h.extraScale?.length || h.if ? [false, true] : [false]).flatMap((assume) =>
                     (JSON.stringify(h).includes('"eventCount"') ? [1, 2, 3, 4] : [undefined]).flatMap((eventCount) =>
                       // Values that read what only a fight knows (consumed stacks, own stacks, the enemy's stacks: L4, L6): over their range.

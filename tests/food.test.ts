@@ -149,13 +149,15 @@ describe("log checker", () => {
     return `${mine.filter((v) => v.kind === "match").length}/${mine.length}`;
   };
 
-  it("7e19: the Endministrator's food, set by hand, makes all 34 of her hits match (none without)", () => {
+  // 32: her two crystal shatters (buff_common_originum_frozen, kit hits of her ultimate) carry the Grand Vision her
+  // ultimate consumed in the replay, and the damage doesn't have it (2026-10-24, journal: cast-consumed buffs from the replay).
+  it("7e19: the Endministrator's food, set by hand, makes 32 of her 34 hits match (none without)", () => {
     const fx = fixture("pending/zmdlogs-7e19489ae503.json");
     const op = "chr_0003_endminf";
     expect(fx.team.find((b) => b.operator === op)?.food).toBe(STEW);
     expect(fx.hits.some((h) => h.effects.some((e) => e.buff === "buff_common_atk_buff_potion_2"))).toBe(false);
     const mine = { ...fx, hits: fx.hits.filter((h) => h.operator === op) };
-    expect(tally(checkLog(data, mine), op)).toBe("34/34");
+    expect(tally(checkLog(data, mine), op)).toBe("32/34");
     const unfed = { ...mine, team: mine.team.map((b): Build => (b.operator === op ? (({ food: _food, ...rest }) => rest)(b) : b)) };
     expect(tally(checkLog(data, unfed), op)).toBe("0/34");
   });

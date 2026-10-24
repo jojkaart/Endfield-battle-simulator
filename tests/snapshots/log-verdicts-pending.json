@@ -55,7 +55,7 @@
  },
  "pending/zmdlogs-7e19489ae503.json": {
   "chr_0009_azrila": {"plain":2,"assumed":14,"fallback":0,"mismatch":5,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0003_endminf": {"plain":23,"assumed":11,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0003_endminf": {"plain":23,"assumed":9,"fallback":0,"mismatch":2,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0005_chen": {"plain":0,"assumed":0,"fallback":0,"mismatch":20,"unvalued":0,"unquantified":1,"uncovered":0},
   "chr_0029_pograni": {"plain":14,"assumed":15,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
  },
@@ -78,8 +78,8 @@
   "chr_0035_liino": {"plain":0,"assumed":0,"fallback":0,"mismatch":49,"unvalued":0,"unquantified":0,"uncovered":0}
  },
  "pending/zmdlogs-abfd4b7478ec.json": {
-  "chr_0036_jsspsi": {"plain":17,"assumed":15,"fallback":158,"mismatch":0,"unvalued":0,"unquantified":3,"uncovered":0},
-  "chr_0017_yvonne": {"plain":0,"assumed":27,"fallback":155,"mismatch":1,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0036_jsspsi": {"plain":17,"assumed":15,"fallback":147,"mismatch":11,"unvalued":0,"unquantified":3,"uncovered":0},
+  "chr_0017_yvonne": {"plain":0,"assumed":24,"fallback":158,"mismatch":1,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0011_seraph": {"plain":9,"assumed":2,"fallback":64,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0022_bounda": {"plain":2,"assumed":1,"fallback":53,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
  },
@@ -90,8 +90,8 @@
   "chr_0035_liino": {"plain":6,"assumed":7,"fallback":0,"mismatch":89,"unvalued":0,"unquantified":0,"uncovered":0}
  },
  "pending/zmdlogs-d4fb69b036fe.json": {
-  "chr_0003_endminf": {"plain":0,"assumed":5,"fallback":10,"mismatch":9,"unvalued":0,"unquantified":0,"uncovered":286},
-  "chr_0005_chen": {"plain":15,"assumed":143,"fallback":53,"mismatch":9,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0003_endminf": {"plain":0,"assumed":4,"fallback":8,"mismatch":12,"unvalued":0,"unquantified":0,"uncovered":286},
+  "chr_0005_chen": {"plain":15,"assumed":122,"fallback":46,"mismatch":37,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0015_lifeng": {"plain":0,"assumed":0,"fallback":0,"mismatch":189,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0029_pograni": {"plain":82,"assumed":67,"fallback":109,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
  },

@@ -189,6 +189,23 @@ describe("L3: what the log never lists", () => {
     expect(linkVariants("combo", { value: 2 })).toHaveLength(1);
   });
 
+  it("takes the buffs a cast consumes from the replay (no assumption); tries them where it can't say", () => {
+    const comboHit = hit("c", ["combo_key"], { damageType: "combo", frames: [30] });
+    const battleHit = hit("b", ["battle_key"], { frames: [15] });
+    const ready = (duration?: number): KitBuff => ({ id: "t_ready", label: "ready", target: "self", consumedBy: ["battle"], ...(duration !== undefined ? { duration } : {}), modifiers: [{ zone: "damageBonus", value: 0.3 }] });
+    const g = (duration?: number) => withKit({ skills: [{ skillId: COMBO, label: "combo", kind: "combo", hits: [comboHit] }, battle([battleHit])], buffs: [ready(duration)], triggers: [onCast("t_r", COMBO, { kind: "buff", buff: "t_ready" })] });
+    const carried = damage(g(10), battleHit, [{ zone: "damageBonus", value: 0.3, source: "kit" }]);
+    // The combo at 1000 ms readies the buff; the battle skill at 3500 consumes it; the one at 6500 finds none.
+    const fx = fixture([logHit(2000, "combo_key", 1, { element: null }), logHit(4000, "battle_key", carried), logHit(7000, "battle_key", damage(g(10), battleHit))]);
+    const v = checkLog(g(10), fx);
+    expect(v.slice(1).map((x) => (x.kind === "match" ? x.class : x.kind))).toEqual(["plain", "plain"]);
+    expect(assumed(checkLog(g(10), fx, { buffs: "log" })[1])).toContain("unlogged t_ready (the replay can't say: no replay)");
+    // Without a duration, layers from casts before the log may stand at the operator's first such cast: tried there.
+    const first = checkLog(g(), fx);
+    expect(assumed(first[1])).toContain("unlogged t_ready (the replay can't say: layers without a duration casts before the log may have built)");
+    expect(first[2]?.kind === "match" && first[2].class).toBe("plain");
+  });
+
   it("leaves Link undecided where another cast that uses Link comes within REPLAY_EDGE_MS (40d9: Gilberta's and Si's ultimates, 86 ms apart)", () => {
     const fx = readLogFixture(new URL("../fixtures/zmdlogs-40d9a3c1da37.json", import.meta.url).pathname);
     const v = checkLog(data, fx).filter((x) => x.hit.t === 12951 && x.hit.operator === "chr_0013_aglina");
