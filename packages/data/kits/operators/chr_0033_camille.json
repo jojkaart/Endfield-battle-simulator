@@ -190,8 +190,8 @@
       "label": "Basic attack 1",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale_1"], "frames": [4], "events": ["chr_0033_camille_attack1"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } },
-        { "id": "hit_2", "scale": ["atk_scale_2"], "frames": [10], "events": ["chr_0033_camille_attack1"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } }
+        { "id": "hit", "scale": ["atk_scale_1"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } },
+        { "id": "hit_2", "scale": ["atk_scale_2"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } }
       ]
     },
     {
@@ -199,8 +199,8 @@
       "label": "Basic attack 2",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale_1"], "frames": [10], "events": ["chr_0033_camille_attack2"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } },
-        { "id": "hit_2", "scale": ["atk_scale_2"], "frames": [14], "events": ["chr_0033_camille_attack2"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } }
+        { "id": "hit", "scale": ["atk_scale_1"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } },
+        { "id": "hit_2", "scale": ["atk_scale_2"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } }
       ]
     },
     {
@@ -211,9 +211,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "count": 4,
-          "frames": [7, 8, 9, 10],
-          "events": ["chr_0033_camille_attack3"],
           "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } },
           "note": "ChannelingAction ticks from frame 7 to 22, at most 4 per target (logged 4 per attack 3)."
         }
@@ -224,13 +221,10 @@
       "label": "Basic attack 4",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale_1"], "frames": [11], "events": ["chr_0033_camille_attack4"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } },
+        { "id": "hit", "scale": ["atk_scale_1"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } },
         {
           "id": "projhit",
           "scale": ["atk_scale_2"],
-          "count": 7,
-          "frames": [20, 22, 24, 26, 28, 30, 32],
-          "events": ["chr_0033_camille_attack4_projhit"],
           "launch": 20,
           "note": "LaunchProjectile at 20 → attack4_projhit: 7 DamageActions 2 frames apart; travel isn't in the data (Ti2)."
         }
@@ -241,7 +235,7 @@
       "label": "Basic attack 5 (Final Strike)",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [21], "events": ["chr_0033_camille_attack5"], "sp": { "if": { "controlled": true }, "then": "atb" }, "poise": "poise", "poiseControlledOnly": true }
+        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }
       ]
     },
     {
@@ -249,9 +243,9 @@
       "label": "Finisher",
       "damageType": "basic",
       "hits": [
-        { "id": "projhit_witheff", "scale": ["atk_scale"], "frames": [3], "events": ["chr_0033_camille_power_attack_projhit_witheff"], "factor": 0.05, "launch": 3 },
-        { "id": "projhit", "scale": ["atk_scale"], "count": 6, "frames": [3, 4, 5, 6, 7, 8], "events": ["chr_0033_camille_power_attack_projhit"], "factor": 0.05, "launch": 3 },
-        { "id": "hit", "scale": ["atk_scale"], "frames": [43], "events": ["chr_0033_camille_power_attack"], "factor": 0.65 }
+        { "id": "projhit_witheff", "scale": ["atk_scale"], "events": ["chr_0033_camille_power_attack_projhit_witheff"], "launch": 3 },
+        { "id": "projhit", "scale": ["atk_scale"], "events": ["chr_0033_camille_power_attack_projhit"], "launch": 3 },
+        { "id": "hit", "scale": ["atk_scale"], "events": ["chr_0033_camille_power_attack"] }
       ]
     },
     {
@@ -259,7 +253,7 @@
       "label": "Dive attack",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [1], "events": ["chr_0033_camille_plunging_attack_end"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Decorate mask 1152 (dive): castable once dive attacks are rotation steps (batch-1 S10)." }
+        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Decorate mask 1152 (dive): castable once dive attacks are rotation steps (batch-1 S10)." }
       ]
     },
     {
@@ -272,11 +266,9 @@
         {
           "id": "abilityrange_first",
           "scale": ["atk_scale"],
-          "frames": [12],
           "launch": 12,
           "events": ["chr_0033_camille_normal_skill_abilityrange_first"],
           "applies": [{ "kind": "infliction", "element": "fire" }],
-          "poise": "poise",
           "buffs": [{ "buff": "vesperwings", "beforeDamage": true }],
           "note": "LaunchProjectile at 12 → normal_skill_projhit (CreateBuff buff_common_obtain_ultimate_sp: the team energy) → SpawnAbilityEntity abilityentity_chr_0033_camille_normal_skill: abilityrange_first frame 0 SpellInfliction (Heat), CreateBuff buff_chr_0033_camille_normal_skill_weak and DamageAction EntityBB_atk_scale (= atk_scale), poise EntityBB_poise. The debuff is on the hit itself (4 of 4 logged battle-skill hits match only with it). Projectile travel isn't in the data (Ti2)."
         }
@@ -287,17 +279,13 @@
       "label": "Heartstake Thorn",
       "damageType": "combo",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale_1_1"], "frames": [19], "events": ["chr_0033_camille_combo_skill"] },
-        { "id": "hit_2", "scale": ["atk_scale_1_2"], "frames": [27], "events": ["chr_0033_camille_combo_skill"], "note": "Its LaunchUpward is displacement only (no Lift)." },
+        { "id": "hit", "scale": ["atk_scale_1_1"] },
+        { "id": "hit_2", "scale": ["atk_scale_1_2"], "note": "Its LaunchUpward is displacement only (no Lift)." },
         {
           "id": "hit_3",
           "scale": ["atk_scale_1_3"],
-          "frames": [47],
-          "events": ["chr_0033_camille_combo_skill"],
-          "energy": "usp",
           "sp": "atb",
           "spBeforeDamage": true,
-          "poise": "poise",
           "note": "Frame 47: DoOnce ObtainCostAction atb (natural, atbSourceType 3) before the DamageAction (spBeforeDamage: Blessing of Lustrous Carmine's ATK is logged on this hit, 40d9 9240, 4e5e 7982 / 30769 ms); ObtainCostAction costType 0 usp after it. Link, the explosion and the heal: triggers combo_f47, combo_f47_explosion, combo_f48_heal."
         }
       ]
@@ -309,18 +297,14 @@
       "comboWindow": false,
       "available": { "buffActive": "hunter_state" },
       "hits": [
-        { "id": "hit", "scale": ["atk_scale_2_1"], "frames": [20], "events": ["chr_0033_camille_combo_skill_2"] },
-        { "id": "hit_2", "scale": ["atk_scale_2_2"], "frames": [33], "events": ["chr_0033_camille_combo_skill_2"], "sp": "atb", "spBeforeDamage": true, "poise": "poise", "note": "Frame 33: DoOnce ObtainCostAction atb before the DamageAction." },
-        { "id": "hit_3", "scale": ["atk_scale_2_3"], "frames": [49], "events": ["chr_0033_camille_combo_skill_2"] },
+        { "id": "hit", "scale": ["atk_scale_2_1"] },
+        { "id": "hit_2", "scale": ["atk_scale_2_2"], "sp": "atb", "spBeforeDamage": true, "note": "Frame 33: DoOnce ObtainCostAction atb before the DamageAction." },
+        { "id": "hit_3", "scale": ["atk_scale_2_3"] },
         {
           "id": "hit_4",
           "scale": ["atk_scale_2_4"],
-          "frames": [70],
-          "events": ["chr_0033_camille_combo_skill_2"],
-          "energy": "usp",
           "sp": "atb_ex",
           "spBeforeDamage": true,
-          "poise": "poise_2",
           "note": "Frame 70: DoOnce ObtainCostAction atb_ex before the DamageAction, usp after it. Link, the explosion and the heal: triggers pursuit_f70, pursuit_f70_explosion, pursuit_f71_heal."
         }
       ],
@@ -331,17 +315,14 @@
       "label": "Sanguine Downpour",
       "damageType": "ultimate",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale_1"], "count": 7, "frames": [75, 77, 78, 80, 81, 83, 84], "events": ["chr_0033_camille_ultimate_skill"], "note": "ChannelingAction ticks every 0.05 s from 75 to 91, at most 7 per target." },
-        { "id": "hit_2", "scale": ["atk_scale_2"], "frames": [104], "events": ["chr_0033_camille_ultimate_skill"] },
+        { "id": "hit", "scale": ["atk_scale_1"], "note": "ChannelingAction ticks every 0.05 s from 75 to 91, at most 7 per target." },
+        { "id": "hit_2", "scale": ["atk_scale_2"] },
         {
           "id": "hit_3",
           "scale": ["atk_scale_3"],
-          "frames": [120],
-          "events": ["chr_0033_camille_ultimate_skill"],
           "applies": [{ "kind": "infliction", "element": "fire" }],
           "sp": "atb",
           "spBeforeDamage": true,
-          "poise": "poise",
           "note": "Frame 120: Heat Infliction once per target (CreateBuff buff_chr_0033_camille_ult_hit, only if its stacks ≤ 0: one target, always), DoOnce ObtainCostAction atb before the DamageAction."
         }
       ]

@@ -198,21 +198,21 @@
       "skillId": "chr_0028_wulfa_attack1",
       "label": "Seething Wolfblood: attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [8], "events": ["chr_0028_wulfa_attack1"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
     },
     {
       "skillId": "chr_0028_wulfa_attack2",
       "label": "Seething Wolfblood: attack 2",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [5, 9], "factor": 0.5, "events": ["chr_0028_wulfa_attack2"], "note": "SimpleCalcBB × 0.5 on the dynamic atk_scale before the first DamageAction: two landings at half each." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "SimpleCalcBB × 0.5 on the dynamic atk_scale before the first DamageAction: two landings at half each." }]
     },
     {
       "skillId": "chr_0028_wulfa_attack3",
       "label": "Seething Wolfblood: attack 3",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [4], "factor": 0.5, "events": ["chr_0028_wulfa_attack3"] },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [12], "factor": 0.5, "events": ["chr_0028_wulfa_attack3"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } }
+        { "id": "hit", "scale": ["atk_scale"], "frames": [4] },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [12], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } }
       ]
     },
     {
@@ -221,15 +221,13 @@
       "damageType": "basic",
       "jumps": [{ "at": 0, "to": 189, "if": { "not": { "controlled": true } } }],
       "hits": [
-        { "id": "hit", "label": "Controlled", "scale": ["atk_scale"], "count": 5, "frames": [6, 8, 13, 15, 23], "factor": 0.2, "events": ["chr_0028_wulfa_attack4"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.25] } } },
+        { "id": "hit", "label": "Controlled", "scale": ["atk_scale"], "frames": [6, 8, 13, 15, 23], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.25] } } },
         {
           "id": "hit_ai",
           "label": "Not controlled (jump 0 → 189)",
           "scale": ["atk_scale"],
-          "count": 5,
           "frames": [195, 198, 203, 205, 213],
           "factor": 0.5,
-          "events": ["chr_0028_wulfa_attack4"],
           "note": "IfElse CheckMainCharacterCondition → JumpToAction 0 → 189 when not controlled; the × 0.2 SimpleCalcBB at frame 6 is skipped, the path's own × 0.5 applies (kit-draft multiplies both: 0.1, batch-4 D7i)."
         }
       ]
@@ -239,7 +237,7 @@
       "label": "Seething Wolfblood: Final Strike",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [15], "finalStrike": true, "poise": "poise", "poiseControlledOnly": true, "sp": { "if": { "controlled": true }, "then": "atb" }, "spBeforeDamage": true, "events": ["chr_0028_wulfa_attack5"], "note": "Mask 2097280 (Final Strike). \"As the controlled operator, Final Strike also deals {poise} Stagger\": poise and atb only as the controlled operator (onlyEnableForMainChar / atbOnlyMainChar); the ObtainCostAction comes before the DamageAction." }
+        { "id": "hit", "scale": ["atk_scale"], "finalStrike": true, "sp": { "if": { "controlled": true }, "then": "atb" }, "spBeforeDamage": true, "note": "Mask 2097280 (Final Strike). \"As the controlled operator, Final Strike also deals {poise} Stagger\": poise and atb only as the controlled operator (onlyEnableForMainChar / atbOnlyMainChar); the ObtainCostAction comes before the DamageAction." }
       ]
     },
     {
@@ -247,32 +245,28 @@
       "label": "Finisher",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "label": "Finisher: hits 1-2", "scale": ["atk_scale"], "count": 2, "frames": [6, 15], "factor": 0.1, "sp": 0, "events": ["chr_0028_wulfa_power_attack"], "note": "BreakingAttackCalculation multiplier 0.1 of atk_scale 9.0 at frames 6 and 15." },
-        { "id": "hit_2", "label": "Finisher: hit 3", "scale": ["atk_scale"], "frames": [36], "factor": 0.8, "events": ["chr_0028_wulfa_power_attack"], "note": "Multiplier 0.8 at frame 36, GainBreakingAttackAtb (the engine's finisher SP)." }
+        { "id": "hit", "label": "Finisher: hits 1-2", "scale": ["atk_scale"], "frames": [6, 15], "sp": 0, "note": "BreakingAttackCalculation multiplier 0.1 of atk_scale 9.0 at frames 6 and 15." },
+        { "id": "hit_2", "label": "Finisher: hit 3", "scale": ["atk_scale"], "frames": [36], "note": "Multiplier 0.8 at frame 36, GainBreakingAttackAtb (the engine's finisher SP)." }
       ]
     },
     {
       "skillId": "chr_0028_wulfa_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "sp": { "if": { "controlled": true }, "then": "atb" }, "events": ["chr_0028_wulfa_plunging_attack_end"], "note": "Mask 1152 (dive). Not castable in rotations until dive attacks are (batch-1 S10)." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Mask 1152 (dive). Not castable in rotations until dive attacks are (batch-1 S10)." }]
     },
     {
       "skillId": "chr_0028_wulfa_normal_skill",
       "label": "Crimson Shadow (battle skill)",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 35, "ratio": 1 }],
       "jumps": [{ "at": 37, "if": { "enemyVulnerable": 1 } }],
       "hits": [
-        { "id": "charge", "label": "Charge", "scale": ["atk_scale_1"], "count": 2, "frames": [16, 22], "factor": 0.3, "events": ["chr_0028_wulfa_normal_skill"] },
+        { "id": "charge", "label": "Charge", "scale": ["atk_scale_1"], "frames": [16, 22] },
         {
           "id": "lift",
           "label": "Charge: Lift",
           "scale": ["atk_scale_1"],
           "frames": [35],
-          "factor": 0.4,
-          "poise": "poise_1",
-          "events": ["chr_0028_wulfa_normal_skill"],
           "applies": [{ "kind": "physicalStatus", "status": "lift" }],
           "note": "Frame 35: CheckBuffStackNumAdvanced tag 1075718177 (Vulnerable) ≥ 1 sets FollowAttackTrigger before this landing's AirborneAction (Lift, forceAirborne false), so the follow-up depends on Vulnerable from before the skill; its two IfElse sides land the same. ObtainUspInNormalSkill at 35 (teamEnergy)."
         },
@@ -280,20 +274,17 @@
           "id": "wolf_1",
           "label": "Wolven Ambrage (first projectile)",
           "scale": ["atk_scale_3"],
-          "factor": 0.25,
-          "element": "fire",
           "frames": [230],
           "launch": 230,
-          "poise": { "product": ["poise_2", 0.25] },
           "energy": "usp_2",
           "sp": { "if": { "potentialAtLeast": 1 }, "then": "atb_return", "else": 0 },
           "events": ["chr_0028_wulfa_normal_skill_projhit3"],
           "buffs": [{ "buff": "razor_clawmark", "beforeDamage": true, "if": { "talentAtLeast": [0, 1] } }],
           "note": "Frame 37 JumpToAction → 215 when FollowAttackTrigger is set (jumps: judged at the cast, the data at frame 35: a Vulnerable stack added or expiring in those 35 frames flips it); frame 230 four LaunchProjectiles (projhit2–5), each atk_scale_3 × 0.25 Heat (damageType 2, mask 4352), poise_2 × 0.25. The first one to land (gate: buff_chr_0028_wulfa_normal_wolf_timer = 1, then finished) gives Rossi usp_2 and P1's atb_return (atbGainMethod 1: returned SP) and, with talent 1 (talent_1_x > 0.5), creates Razor Clawmark before its DamageAction. The log's first projectile is projhit3."
         },
-        { "id": "wolf_2", "label": "Wolven Ambrage", "scale": ["atk_scale_3"], "factor": 0.25, "element": "fire", "frames": [230], "launch": 230, "poise": { "product": ["poise_2", 0.25] }, "events": ["chr_0028_wulfa_normal_skill_projhit5"] },
-        { "id": "wolf_3", "label": "Wolven Ambrage", "scale": ["atk_scale_3"], "factor": 0.25, "element": "fire", "frames": [230], "launch": 230, "poise": { "product": ["poise_2", 0.25] }, "events": ["chr_0028_wulfa_normal_skill_projhit2"] },
-        { "id": "wolf_4", "label": "Wolven Ambrage", "scale": ["atk_scale_3"], "factor": 0.25, "element": "fire", "frames": [230], "launch": 230, "poise": { "product": ["poise_2", 0.25] }, "events": ["chr_0028_wulfa_normal_skill_projhit4"] }
+        { "id": "wolf_2", "label": "Wolven Ambrage", "scale": ["atk_scale_3"], "frames": [230], "launch": 230, "events": ["chr_0028_wulfa_normal_skill_projhit5"] },
+        { "id": "wolf_3", "label": "Wolven Ambrage", "scale": ["atk_scale_3"], "frames": [230], "launch": 230, "events": ["chr_0028_wulfa_normal_skill_projhit2"] },
+        { "id": "wolf_4", "label": "Wolven Ambrage", "scale": ["atk_scale_3"], "frames": [230], "launch": 230, "events": ["chr_0028_wulfa_normal_skill_projhit4"] }
       ]
     },
     {
@@ -302,17 +293,14 @@
       "damageType": "combo",
       "available": { "not": { "buffActive": "seq2_ready" } },
       "hits": [
-        { "id": "hit", "label": "Sequence 1: hit 1", "scale": ["atk_scale"], "frames": [13], "factor": 0.35, "events": ["chr_0028_wulfa_combo_2_skill"] },
-        { "id": "hit_2", "label": "Sequence 1: hit 2", "scale": ["atk_scale"], "frames": [24], "factor": 0.35, "energy": "usp", "events": ["chr_0028_wulfa_combo_2_skill"] },
+        { "id": "hit", "label": "Sequence 1: hit 1", "scale": ["atk_scale"], "frames": [13], "events": ["chr_0028_wulfa_combo_2_skill"] },
+        { "id": "hit_2", "label": "Sequence 1: hit 2", "scale": ["atk_scale"], "frames": [24] },
         {
           "id": "ticks",
           "label": "Sequence 1: afterhits",
           "scale": ["atk_scale"],
-          "count": 3,
           "frames": [33, 37, 41],
-          "factor": 0.1,
           "launch": 24,
-          "events": ["buff_chr_0028_wulfa_combo_2_damage"],
           "note": "Frame 24: CreateBuff buff_chr_0028_wulfa_combo_2_damagewait (atk_scale_once = atk_scale × 0.1, trigger_times 3, damage_interval 0.125 s, after 0.3 s) → buff_chr_0028_wulfa_combo_2_damage: 3 ticks, landing even if the combo is cut (launch). kit-draft gives 7 landings (the template timeline, D7g); the log has 3 per cast."
         }
       ],
@@ -330,7 +318,6 @@
           "scale": [],
           "scaleValue": { "sum": ["atk_scale_s", { "product": ["damage_add", { "consumed": true }] }] },
           "frames": [29],
-          "poise": "poise_s",
           "energy": "usp_s",
           "events": ["chr_0028_wulfa_combo_3_skill", "chr_0028_wulfa_combo_2_skill"],
           "applies": [
@@ -346,8 +333,6 @@
           "scale": [],
           "scaleValue": { "sum": ["atk_scale_s", { "product": ["damage_add", { "consumed": true }] }] },
           "frames": [227],
-          "poise": "poise_f",
-          "energy": "usp_s",
           "events": ["chr_0028_wulfa_combo_3_skill", "chr_0028_wulfa_combo_2_skill"],
           "applies": [
             { "kind": "consumeInfliction", "elements": ["fire", "natural", "pulse", "cryst"] },
@@ -367,24 +352,18 @@
           "id": "stab",
           "label": "Stab",
           "scale": ["atk_scale_1"],
-          "element": "fire",
-          "count": 25,
           "frames": [63, 65, 66, 69, 71, 74, 75, 77, 78, 80, 83, 84, 87, 88, 90, 92, 94, 96, 97, 99, 102, 103, 106, 108, 111],
           "extraScale": [{ "value": "potential_5_damage_scale", "if": { "potentialAtLeast": 5 } }],
-          "events": ["chr_0028_wulfa_ultimate_skill"],
           "note": "25 Heat stabs (both sides of the RandomAction only pick the hurt animation; kit-draft emits both as branches, D3's identical-sides item). P5: SimpleCalcBB × potential_5_damage_scale on atk_scale_1/2/3 at frame 58 (extraScale; kit-draft leaves the scale as $atk_scale_1?)."
         },
-        { "id": "slash1", "label": "Slash 1", "scale": ["atk_scale_2"], "element": "fire", "frames": [122], "extraScale": [{ "value": "potential_5_damage_scale", "if": { "potentialAtLeast": 5 } }], "events": ["chr_0028_wulfa_ultimate_skill"] },
+        { "id": "slash1", "label": "Slash 1", "scale": ["atk_scale_2"], "extraScale": [{ "value": "potential_5_damage_scale", "if": { "potentialAtLeast": 5 } }] },
         {
           "id": "slash2",
           "label": "Slash 2",
           "scale": ["atk_scale_3"],
-          "element": "fire",
           "frames": [131],
-          "poise": "poise",
           "applies": [{ "kind": "infliction", "element": "fire" }],
           "extraScale": [{ "value": "potential_5_damage_scale", "if": { "potentialAtLeast": 5 } }],
-          "events": ["chr_0028_wulfa_ultimate_skill"],
           "note": "SpellInfliction Heat (both sides of its Razor Clawmark check inflict the same)."
         }
       ],

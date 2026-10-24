@@ -326,9 +326,6 @@
           "id": "hit",
           "scale": [
             "atk_scale"
-          ],
-          "frames": [
-            6
           ]
         }
       ]
@@ -347,11 +344,6 @@
           "id": "hit",
           "scale": [
             "atk_scale"
-          ],
-          "count": 2,
-          "frames": [
-            6,
-            13
           ]
         }
       ]
@@ -370,9 +362,6 @@
           "id": "hit",
           "scale": [
             "atk_scale"
-          ],
-          "frames": [
-            9
           ]
         }
       ]
@@ -392,9 +381,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            6
-          ],
           "events": [
             "chr_0016_laevat_attack4"
           ]
@@ -405,15 +391,9 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 2,
-          "frames": [
-            12,
-            19
-          ],
           "events": [
             "chr_0016_laevat_attack_5_projhit"
           ],
-          "detached": true,
           "note": "LaunchProjectile at 12 and 19 → chr_0016_laevat_attack_5_projhit (atk_scale of attack4); travel time isn't in the data, so the launch frame is a lower bound (in-game test 47)."
         }
       ]
@@ -436,10 +416,7 @@
           "frames": [
             23
           ],
-          "finalStrike": false,
-          "events": [
-            "chr_0016_laevat_attack5"
-          ]
+          "finalStrike": false
         },
         {
           "id": "hit_2",
@@ -458,11 +435,6 @@
             "then": "atb",
             "else": 0
           },
-          "poise": "poise",
-          "poiseControlledOnly": true,
-          "events": [
-            "chr_0016_laevat_attack5"
-          ],
           "note": "Only this landing has decorate-mask bit 2097152; ObtainCostAction `atb` (20 SP) and the poise unit are main-character only."
         }
       ]
@@ -485,20 +457,12 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            22
-          ],
-          "events": [
-            "chr_0016_laevat_normal_skill_abilityentity"
-          ],
-          "detached": true,
           "launch": 4,
           "gains": [
             {
               "stack": "melting_flame"
             }
           ],
-          "poise": "poise",
           "note": "The Magma Fragment (SpawnAbilityEntity at 4, its DamageAction at 18). Its first hit that lands grants 1 Melting Flame (CreateBuff buff_chr_0016_laevat_energy) and the team's ultimate energy (buff_common_obtain_ultimate_sp, teamEnergy)."
         },
         {
@@ -507,23 +471,6 @@
           "scale": [
             "atk_scale_2"
           ],
-          "count": 10,
-          "frames": [
-            29,
-            33,
-            37,
-            41,
-            45,
-            49,
-            54,
-            58,
-            62,
-            66
-          ],
-          "events": [
-            "chr_0016_laevat_normal_skill_abilityentity"
-          ],
-          "detached": true,
           "launch": 4
         },
         {
@@ -532,12 +479,6 @@
           "scale": [
             "atk_scale_3",
             "extra_scaling"
-          ],
-          "frames": [
-            104
-          ],
-          "events": [
-            "chr_0016_laevat_normal_skill"
           ],
           "requires": {
             "stack": "melting_flame",
@@ -553,9 +494,7 @@
               "scaleKey": "extra_scaling"
             }
           ],
-          "energy": "extra_usp",
           "sp": "atb",
-          "poise": "poise_extra",
           "note": "With 4 Melting Flame at the cast (CheckBuffStackNumAdvanced at frame 3): all stacks are consumed at this hit (FinishBuffAction at 104, after the explosion's +1), forced Combustion for `duration` with ticks × extra_scaling (P3 ×1.5 both), `extra_usp` energy, and the P1 SP return `atb` (its ObtainCostAction is inside this hit's channel). Scale: Zero Sanity's extra_scaling; the data has × ratio (in-game test 20)."
         }
       ]
@@ -565,7 +504,6 @@
       "jumps": [{ "at": 24, "if": { "stack": "melting_flame", "atLeast": 4 } }],
       "label": "Battle skill (Twilight)",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 13, "ratio": 1 }],
       "available": {
         "buffActive": "twilight"
       },
@@ -577,17 +515,10 @@
             "atk_scale",
             "ratio"
           ],
-          "frames": [
-            13
-          ],
           "gains": [
             {
               "stack": "melting_flame"
             }
-          ],
-          "poise": "poise",
-          "events": [
-            "chr_0016_laevat_normal_skill_during_ult"
           ],
           "note": "Grants 1 Melting Flame (CreateBuff buff_chr_0016_laevat_energy). × ratio from Zero Sanity's table; the data has none (in-game test 20)."
         },
@@ -597,13 +528,6 @@
           "scale": [
             "atk_scale_2",
             "ratio"
-          ],
-          "frames": [
-            23
-          ],
-          "poise": "poise",
-          "events": [
-            "chr_0016_laevat_normal_skill_during_ult"
           ]
         },
         {
@@ -612,9 +536,6 @@
           "scale": [
             "atk_scale_3",
             "ratio"
-          ],
-          "frames": [
-            98
           ],
           "requires": {
             "stack": "melting_flame",
@@ -631,10 +552,6 @@
             }
           ],
           "sp": "atb",
-          "poise": "poise",
-          "events": [
-            "chr_0016_laevat_normal_skill_during_ult"
-          ],
           "note": "As the normal extra hit (consumed at 98, after hit 1's +1), no energy."
         }
       ]
@@ -649,20 +566,15 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            41
-          ],
           "events": [
             "buff_chr_0016_laevat_combo_skill_hit"
           ],
-          "detached": true,
           "energy": "usp_1_display",
           "gains": [
             {
               "stack": "melting_flame"
             }
           ],
-          "poise": "poise",
           "if": {
             "any": [
               {
@@ -698,9 +610,6 @@
           "scale": [
             "atk_scale",
             "ratio"
-          ],
-          "frames": [
-            12
           ]
         }
       ]
@@ -718,11 +627,6 @@
           "scale": [
             "atk_scale",
             "ratio"
-          ],
-          "count": 2,
-          "frames": [
-            10,
-            21
           ]
         }
       ]
@@ -740,9 +644,6 @@
           "scale": [
             "atk_scale",
             "ratio"
-          ],
-          "frames": [
-            9
           ],
           "applies": [
             {
@@ -771,10 +672,7 @@
           "frames": [
             22
           ],
-          "finalStrike": false,
-          "events": [
-            "chr_0016_laevat_ult_attack4"
-          ]
+          "finalStrike": false
         },
         {
           "id": "hit_2",
@@ -794,11 +692,6 @@
             "then": "atb",
             "else": 0
           },
-          "poise": "poise",
-          "poiseControlledOnly": true,
-          "events": [
-            "chr_0016_laevat_ult_attack4"
-          ],
           "note": "As attack5: only this landing is a Final Strike; `atb` (22 SP) and poise main-character only."
         }
       ]
@@ -816,11 +709,7 @@
           "frames": [
             5
           ],
-          "factor": 0.2,
-          "sp": 0,
-          "events": [
-            "chr_0016_laevat_power_attack"
-          ]
+          "sp": 0
         },
         {
           "id": "hit_2",
@@ -829,10 +718,6 @@
           ],
           "frames": [
             42
-          ],
-          "factor": 0.8,
-          "events": [
-            "chr_0016_laevat_power_attack"
           ]
         }
       ],
@@ -847,9 +732,6 @@
           "id": "hit",
           "scale": [
             "atk_scale"
-          ],
-          "frames": [
-            1
           ]
         }
       ],

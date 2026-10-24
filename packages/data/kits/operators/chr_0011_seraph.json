@@ -133,10 +133,8 @@
         {
           "id": "projhit",
           "scale": ["atk_scale"],
-          "frames": [10],
           "events": ["chr_0011_seraph_attack1_projhit"],
           "sp": { "if": { "controlled": true }, "then": "atb" },
-          "detached": true,
           "note": "LaunchProjectile at 10 → chr_0011_seraph_attack1_projhit: DamageAction atk_scale (mask 128, Cryo); ObtainCostAction atb (0 in SkillPatchTable) if controlled. Travel not counted (Ti2)."
         }
       ]
@@ -149,10 +147,8 @@
         {
           "id": "projhit",
           "scale": ["atk_scale"],
-          "frames": [7],
           "events": ["chr_0011_seraph_attack2_projhit"],
           "sp": { "if": { "controlled": true }, "then": "atb" },
-          "detached": true,
           "note": "LaunchProjectile at 7 → chr_0011_seraph_attack2_projhit."
         }
       ]
@@ -165,10 +161,8 @@
         {
           "id": "projhit",
           "scale": ["atk_scale"],
-          "frames": [8],
           "events": ["chr_0011_seraph_attack3_projhit"],
           "sp": { "if": { "controlled": true }, "then": "atb" },
-          "detached": true,
           "note": "LaunchProjectile at 8 → chr_0011_seraph_attack3_projhit."
         }
       ]
@@ -181,11 +175,8 @@
         {
           "id": "projhit",
           "scale": ["atk_scale"],
-          "count": 2,
-          "frames": [7, 12],
           "events": ["chr_0011_seraph_attack4_projhit"],
           "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } },
-          "detached": true,
           "note": "Two launches (7, 12), each one atk_scale landing (0.37 at level 12; display_atk_scale 0.74 is the sum; both logs have two equal hits per attack4); SP atb × 0.5 per landing (the projhit's ObtainCostAction literal 0.5)."
         }
       ]
@@ -198,11 +189,7 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [19],
-          "events": ["chr_0011_seraph_attack5"],
           "sp": { "if": { "controlled": true }, "then": "atb" },
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "finalStrike": true,
           "note": "DamageAction at 19, mask 2097280 (Final Strike: the crystal's treatment trigger); ObtainCostAction atb (15) if controlled; stagger poise (15) onlyEnableForMainChar."
         }
@@ -216,8 +203,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [32],
-          "events": ["chr_0011_seraph_power_attack"],
           "note": "DamageAction at 32, mask 132; BreakingAttackCalculation multiplier 1.0 (no factor)."
         }
       ]
@@ -230,8 +215,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [1],
-          "events": ["chr_0011_seraph_plunging_attack_end"],
           "sp": "atb",
           "note": "A rotation's dive: a jump, then this landing (batch-1 S10). DamageAction at 1, mask 1152."
         }
@@ -258,12 +241,8 @@
           "if": { "all": [{ "talentAtLeast": [0, 1] }, { "any": [{ "enemyInfliction": "cryst" }, { "enemyStatus": "solidification" }] }] },
           "scale": ["atk_scale"],
           "frames": [24],
-          "events": ["chr_0011_seraph_combo_skill_projhit"],
           "applies": [{ "kind": "infliction", "element": "cryst" }],
           "buffs": [{ "buff": "cryo_fragility", "beforeDamage": true }],
-          "energy": "usp",
-          "poise": "poise",
-          "detached": true,
           "note": "combo_skill_projhit, first action: IfElse exist_talent_1 ≥ 1 and CheckTagMatch on the target (1570888476 Cryo Infliction, 1535684437 Solidified) → CreateBuff buff_chr_0011_seraph_talent_1_crystup on the target. It runs before this hit's own SpellInfliction, so it reads the enemy before the hit (a hit's `if`), and the debuff counts for this hit: zmdlogs-abfd4b7478ec combos at 19487, 57934, 99947 ms are ×1.089 = (1.12 + 0.10) / 1.12 over the one at 85032."
         },
         {
@@ -272,11 +251,7 @@
           "branch": "target",
           "scale": ["atk_scale"],
           "frames": [24],
-          "events": ["chr_0011_seraph_combo_skill_projhit"],
           "applies": [{ "kind": "infliction", "element": "cryst" }],
-          "energy": "usp",
-          "poise": "poise",
-          "detached": true,
           "note": "SpellInfliction type 2 (Cryo) before the DamageAction atk_scale (mask 12288, Cryo); poise unit poise (10); ObtainCostAction usp (10) if it hit. On a Cryo-inflicted enemy the infliction is an Arts Burst (a second later on the enemy's clock: A5)."
         }
       ]

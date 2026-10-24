@@ -219,32 +219,32 @@
       "skillId": "chr_0029_pograni_attack1",
       "label": "All-Out Offensive: basic attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [8], "events": ["chr_0029_pograni_attack1"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
     },
     {
       "skillId": "chr_0029_pograni_attack2",
       "label": "All-Out Offensive: basic attack 2",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [7, 14], "events": ["chr_0029_pograni_attack2"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
     },
     {
       "skillId": "chr_0029_pograni_attack3",
       "label": "All-Out Offensive: basic attack 3",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [9, 15], "events": ["chr_0029_pograni_attack3"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } }]
     },
     {
       "skillId": "chr_0029_pograni_attack4",
       "label": "All-Out Offensive: basic attack 4",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 6, "frames": [3, 5, 7, 11, 13, 15], "events": ["chr_0029_pograni_attack4"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.167] } } }],
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.167] } } }],
       "note": "atb is 0 at every level for attacks 1–4 (only attack 5 grants SP); the factors are the SkillData coefficients kit-draft reads."
     },
     {
       "skillId": "chr_0029_pograni_attack5",
       "label": "All-Out Offensive: basic attack 5 (Final Strike)",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [16], "events": ["chr_0029_pograni_attack5"], "sp": { "if": { "controlled": true }, "then": "atb" }, "poise": "poise", "poiseControlledOnly": true, "finalStrike": true }],
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "finalStrike": true }],
       "note": "\"As the controlled operator, Final Strike also deals {poise} Stagger\": the poise unit and ObtainCostAction atb (atbSourceType 1) only for the controlled operator (decorate mask 2097280)."
     },
     {
@@ -252,8 +252,8 @@
       "label": "Finisher",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [7, 14], "events": ["chr_0029_pograni_power_attack"], "factor": 0.1 },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [25], "events": ["chr_0029_pograni_power_attack"], "factor": 0.8 }
+        { "id": "hit", "scale": ["atk_scale"], "frames": [7, 14] },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [25] }
       ],
       "note": "BreakingAttackCalculation 0.1, 0.1, 0.8 of atk_scale (9.0 at L12); the finisher's SP is the engine's."
     },
@@ -261,17 +261,16 @@
       "skillId": "chr_0029_pograni_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [3], "events": ["chr_0029_pograni_plunging_attack_end"], "sp": { "if": { "controlled": true }, "then": "atb" } }],
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }],
       "note": "plunging_attack_end (mask 1152: basic + dive); castable once dive attacks are rotation actions (batch-1 S10)."
     },
     {
       "skillId": "chr_0029_pograni_normal_skill",
       "label": "The Pulverizing Front (battle skill)",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 38, "ratio": 1 }],
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [28], "events": ["chr_0029_pograni_normal_skill"], "poise": "poise" },
-        { "id": "hit_2", "scale": ["atk_scale2"], "frames": [38], "events": ["chr_0029_pograni_normal_skill"], "applies": [{ "kind": "physicalStatus", "status": "breach" }], "poise": "poise", "note": "FractureAction (Breach) before this hit's DamageAction; its SP (atb1–atb4 by the stacks the Breach consumed) is the trigger battle_sp, not this hit's sp (kit-draft's atb1 is one Switch case)." }
+        { "id": "hit", "scale": ["atk_scale"] },
+        { "id": "hit_2", "scale": ["atk_scale2"], "applies": [{ "kind": "physicalStatus", "status": "breach" }], "note": "FractureAction (Breach) before this hit's DamageAction; its SP (atb1–atb4 by the stacks the Breach consumed) is the trigger battle_sp, not this hit's sp (kit-draft's atb1 is one Switch case)." }
       ],
       "note": "Team energy: CreateBuff buff_common_obtain_ultimate_sp at frame 38."
     },
@@ -285,10 +284,10 @@
         { "at": 0, "to": 200, "if": { "all": [{ "buffActive": "combo_count3" }, { "not": { "buffActive": "combo_count4" } }] } }
       ],
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "count": 4, "frames": [23, 223, 423, 623], "events": ["chr_0029_pograni_combo_skill"], "energy": "usp", "sp": { "sum": ["calc_atb1", { "product": ["atb1", "atb_ratio"] }] }, "spBeforeDamage": true, "poise": "poise1", "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": { "product": ["atb1", "atb_ratio"] } }] },
-        { "id": "hit_2", "scale": ["atk_scale2"], "count": 3, "frames": [37, 237, 437], "events": ["chr_0029_pograni_combo_skill"], "sp": { "sum": ["calc_atb2", { "product": ["atb2", "atb_ratio"] }] }, "spBeforeDamage": true, "poise": "poise1", "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": { "product": ["atb2", "atb_ratio"] } }] },
-        { "id": "hit_3", "scale": ["atk_scale4"], "frames": [61], "events": ["chr_0029_pograni_combo_skill"], "sp": { "sum": ["calc_atb4", { "product": ["atb4", "atb_ratio"] }] }, "spBeforeDamage": true, "poise": "poise4", "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": { "product": ["atb4", "atb_ratio"] } }] },
-        { "id": "hit_4", "scale": ["atk_scale3"], "frames": [261], "events": ["chr_0029_pograni_combo_skill"], "sp": { "sum": ["calc_atb3", { "product": ["atb3", "atb_ratio"] }] }, "spBeforeDamage": true, "poise": "poise3", "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": { "product": ["atb3", "atb_ratio"] } }] }
+        { "id": "hit", "scale": ["atk_scale"], "sp": { "sum": ["calc_atb1", { "product": ["atb1", "atb_ratio"] }] }, "spBeforeDamage": true, "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": { "product": ["atb1", "atb_ratio"] } }] },
+        { "id": "hit_2", "scale": ["atk_scale2"], "sp": { "sum": ["calc_atb2", { "product": ["atb2", "atb_ratio"] }] }, "spBeforeDamage": true, "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": { "product": ["atb2", "atb_ratio"] } }] },
+        { "id": "hit_3", "scale": ["atk_scale4"], "sp": { "sum": ["calc_atb4", { "product": ["atb4", "atb_ratio"] }] }, "spBeforeDamage": true, "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": { "product": ["atb4", "atb_ratio"] } }] },
+        { "id": "hit_4", "scale": ["atk_scale3"], "sp": { "sum": ["calc_atb3", { "product": ["atb3", "atb_ratio"] }] }, "spBeforeDamage": true, "gains": [{ "stack": "sp_banked", "if": { "talentAtLeast": [0, 1] }, "amount": { "product": ["atb3", "atb_ratio"] } }] }
       ],
       "note": "\"Performs a number of slash sequences (up to 3) based on the max number of Vulnerability stacks consumed … Consuming 4 stacks enhances the 3rd\": frame 0 jumps by the highest count buff (≤ 1 → 600, 2 → 400, 3 → 200, 4 → none), so a path's slashes are at +23 (atk_scale, poise1, usp), +37 (atk_scale2, poise1), +61 (atk_scale3 with poise3 on the 3-stack path, atk_scale4 with poise4 on the 4-stack path) from its start. Each slash's SP is the data's calc_atb_n, which SimpleCalcBB sets to atb_n × atb_ratio before its ObtainCostAction (natural, atbSourceType 3; the ObtainCostAction comes before the DamageAction): the sum names calc_atb_n (0 in the table) first so the grant takes its kind and source from the data, and adds atb_n × atb_ratio as the value (kit-draft writes the product, whose keys have no SP kind: their grants would be returned SP of no source). The windows, MarkCanInterrupt 80 / 280 / 450 and ends 191 / 391 / 545 (649 for the 1-stack path) are the loader's per path (S11)."
     },
@@ -296,7 +295,7 @@
       "skillId": "chr_0029_pograni_ultimate_skill",
       "label": "Shieldguard Banner, Forward (ultimate)",
       "damageType": "ultimate",
-      "hits": [{ "id": "hit", "scale": ["atk_scale_rush"], "frames": [76], "events": ["chr_0029_pograni_ultimate_skill"], "poise": "poise_rush" }],
+      "hits": [{ "id": "hit", "scale": ["atk_scale_rush"] }],
       "note": "The rush (DamageAction atk_scale_rush, poise_rush, mask 4608) at 76; the banner, Steel Oath and the follow-ups are triggers (ultimate_state, oath_*)."
     }
   ]

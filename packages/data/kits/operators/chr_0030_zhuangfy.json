@@ -580,15 +580,9 @@
      "scale": [
       "atk_scale"
      ],
-     "count": 2,
-     "frames": [
-      6,
-      8
-     ],
      "events": [
       "chr_0030_zhuangfy_attack1_projhit"
-     ],
-     "detached": true
+     ]
     }
    ]
   },
@@ -607,31 +601,18 @@
      "id": "sword",
      "scale": [
       "atk_scale_sword"
-     ],
-     "count": 2,
-     "frames": [
-      2,
-      2
-     ],
-     "events": [
-      "chr_0030_zhuangfy_attack2_sword_projhit"
-     ],
-     "detached": true
+     ]
     },
     {
      "id": "range",
      "scale": [
       "atk_scale"
      ],
-     "count": 4,
      "frames": [
       15,
       24,
       27,
       30
-     ],
-     "events": [
-      "chr_0030_zhuangfy_attack2_abilityrange"
      ],
      "launch": 15
     }
@@ -652,17 +633,9 @@
      "scale": [
       "atk_scale_sword"
      ],
-     "count": 4,
-     "frames": [
-      14,
-      14,
-      16,
-      16
-     ],
      "events": [
       "chr_0030_zhuangfy_attack3_sword_projhit"
-     ],
-     "detached": true
+     ]
     }
    ]
   },
@@ -682,15 +655,11 @@
      "scale": [
       "atk_scale"
      ],
-     "count": 4,
      "frames": [
       11,
       20,
       23,
       26
-     ],
-     "events": [
-      "chr_0030_zhuangfy_attack2_abilityrange"
      ],
      "launch": 11
     }
@@ -715,9 +684,6 @@
      "frames": [
       20
      ],
-     "events": [
-      "chr_0030_zhuangfy_attack5_abilityrange"
-     ],
      "launch": 20,
      "sp": {
       "if": {
@@ -725,8 +691,6 @@
       },
       "then": "atb"
      },
-     "poise": "poise",
-     "poiseControlledOnly": true,
      "finalStrike": true
     }
    ]
@@ -744,11 +708,7 @@
      ],
      "frames": [
       11
-     ],
-     "events": [
-      "chr_0030_zhuangfy_power_attack"
-     ],
-     "factor": 0.1
+     ]
     },
     {
      "id": "hit_2",
@@ -757,11 +717,7 @@
      ],
      "frames": [
       40
-     ],
-     "events": [
-      "chr_0030_zhuangfy_power_attack"
-     ],
-     "factor": 0.9
+     ]
     }
    ]
   },
@@ -775,12 +731,6 @@
      "id": "hit",
      "scale": [
       "atk_scale"
-     ],
-     "frames": [
-      1
-     ],
-     "events": [
-      "chr_0030_zhuangfy_plunging_attack_end"
      ],
      "sp": {
       "if": {
@@ -808,9 +758,6 @@
      "frames": [
       15
      ],
-     "events": [
-      "chr_0030_zhuangfy_attack1_ult_1_abilityrange"
-     ],
      "launch": 12
     }
    ]
@@ -831,9 +778,6 @@
      ],
      "frames": [
       13
-     ],
-     "events": [
-      "chr_0030_zhuangfy_attack1_ult_1_abilityrange"
      ],
      "launch": 10
     }
@@ -856,9 +800,6 @@
      "frames": [
       33
      ],
-     "events": [
-      "chr_0030_zhuangfy_attack3_ult_abilityrange"
-     ],
      "launch": 3,
      "sp": {
       "if": {
@@ -866,8 +807,6 @@
       },
       "then": "atb"
      },
-     "poise": "poise",
-     "poiseControlledOnly": true,
      "finalStrike": true
     }
    ]
@@ -952,7 +891,6 @@
        }
       ]
      },
-     "count": 1,
      "frames": [
       25
      ],
@@ -1042,7 +980,6 @@
        }
       ]
      },
-     "count": 2,
      "frames": [
       24,
       32
@@ -1133,7 +1070,6 @@
        }
       ]
      },
-     "count": 3,
      "frames": [
       24,
       32,
@@ -1225,7 +1161,6 @@
        }
       ]
      },
-     "count": 4,
      "frames": [
       24,
       31,
@@ -1318,7 +1253,6 @@
        }
       ]
      },
-     "count": 5,
      "frames": [
       23,
       30,
@@ -1412,7 +1346,6 @@
        }
       ]
      },
-     "count": 6,
      "frames": [
       23,
       30,
@@ -1507,7 +1440,6 @@
        }
       ]
      },
-     "count": 7,
      "frames": [
       23,
       29,
@@ -1603,7 +1535,6 @@
        }
       ]
      },
-     "count": 8,
      "frames": [
       22,
       28,
@@ -1768,12 +1699,8 @@
        }
       ]
      },
-     "count": 1,
      "frames": [
       27
-     ],
-     "events": [
-      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
      ],
      "launch": 15,
      "if": {
@@ -1862,7 +1789,6 @@
        }
       ]
      },
-     "count": 2,
      "frames": [
       27,
       33
@@ -1957,7 +1883,6 @@
        }
       ]
      },
-     "count": 3,
      "frames": [
       27,
       33,
@@ -2053,7 +1978,6 @@
        }
       ]
      },
-     "count": 4,
      "frames": [
       27,
       33,
@@ -2150,7 +2074,6 @@
        }
       ]
      },
-     "count": 5,
      "frames": [
       27,
       33,
@@ -2248,7 +2171,6 @@
        }
       ]
      },
-     "count": 6,
      "frames": [
       27,
       33,
@@ -2347,7 +2269,6 @@
        }
       ]
      },
-     "count": 7,
      "frames": [
       27,
       33,
@@ -2447,7 +2368,6 @@
        }
       ]
      },
-     "count": 8,
      "frames": [
       27,
       33,
@@ -2550,12 +2470,6 @@
      "scale": [
       "atk_scale"
      ],
-     "frames": [
-      24
-     ],
-     "events": [
-      "chr_0030_zhuangfy_combo_skill"
-     ],
      "applies": [
       {
        "kind": "consumeInfliction",
@@ -2593,7 +2507,6 @@
        }
       }
      ],
-     "poise": "poise",
      "energy": {
       "sum": [
        "usp",
@@ -2625,12 +2538,6 @@
      "scale": [
       "atk_scale"
      ],
-     "frames": [
-      24
-     ],
-     "events": [
-      "chr_0030_zhuangfy_combo_skill_ult"
-     ],
      "applies": [
       {
        "kind": "consumeInfliction",
@@ -2667,8 +2574,7 @@
         "else": 0
        }
       }
-     ],
-     "poise": "poise"
+     ]
     }
    ]
   },

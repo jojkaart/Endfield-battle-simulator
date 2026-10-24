@@ -837,14 +837,8 @@
           "scale": [
             "atk_scale"
           ],
-          "factor": 0.5,
-          "count": 2,
           "events": [
             "chr_0034_typhoea_attack1_01_projhit"
-          ],
-          "frames": [
-            5,
-            8
           ],
           "note": "Two arrows launched at frames 5 and 8; SimpleCalcBB atk_scale ÷ 2."
         }
@@ -864,9 +858,6 @@
           "events": [
             "chr_0034_typhoea_attack1_01_projhit"
           ],
-          "frames": [
-            9
-          ],
           "note": "One arrow, launched at frame 9; logged under attack1's projectile skill chr_0034_typhoea_attack1_01_projhit."
         }
       ]
@@ -883,10 +874,6 @@
           "scale": [
             "atk_scale"
           ],
-          "factor": 0.5,
-          "events": [
-            "chr_0034_typhoea_attack3_01_projhit"
-          ],
           "frames": [
             5
           ],
@@ -897,10 +884,6 @@
           "label": "Second arrow wave",
           "scale": [
             "atk_scale"
-          ],
-          "factor": 0.5,
-          "events": [
-            "chr_0034_typhoea_attack3_02_projhit"
           ],
           "frames": [
             14
@@ -921,12 +904,8 @@
           "scale": [
             "atk_scale"
           ],
-          "factor": 0.35,
           "events": [
             "chr_0034_typhoea_attack4_01_projhit"
-          ],
-          "frames": [
-            5
           ],
           "note": "SimpleCalcBB atk_scale_1 = atk_scale × 0.35, launched at frame 5."
         },
@@ -936,17 +915,8 @@
           "scale": [
             "atk_scale"
           ],
-          "factor": 0.13,
-          "count": 5,
           "events": [
             "chr_0034_typhoea_attack4_02_projhit"
-          ],
-          "frames": [
-            15,
-            18,
-            21,
-            24,
-            27
           ],
           "note": "SimpleCalcBB atk_scale_2 = atk_scale × 0.13, launched at frames 15, 18, 21, 24, 27."
         }
@@ -971,8 +941,6 @@
             22
           ],
           "sp": "atb",
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "note": "One arrow launched at frame 22: attack5_01_projhit on a hit, or attack5_02_projhit on every target in range when the arrow is blocked (mask 2097280: Final Strike). SP atb (21, ObtainCostAction costType 1 on attack5_01_projhit); poise 17 (onlyEnableForMainChar)."
         }
       ]
@@ -991,9 +959,6 @@
           "events": [
             "chr_0034_typhoea_power_attack_projhit"
           ],
-          "frames": [
-            38
-          ],
           "note": "power_attack_projhit, on reach of the projectile launched at frame 38: BreakingAttackCalculation atk_scale (9 at every level) × multiplier 1.0 (the damage unit's literal 4 is unused). Unverified."
         }
       ]
@@ -1011,10 +976,6 @@
           "scale": [
             "atk_scale"
           ],
-          "factor": 0.5,
-          "events": [
-            "chr_0034_typhoea_normal_skill_attack1_projhit"
-          ],
           "frames": [
             2
           ],
@@ -1025,10 +986,6 @@
           "label": "Second arrow",
           "scale": [
             "atk_scale"
-          ],
-          "factor": 0.5,
-          "events": [
-            "chr_0034_typhoea_normal_skill_attack2_projhit"
           ],
           "frames": [
             7
@@ -1079,9 +1036,6 @@
           "scale": [
             "atk_scale_base",
             "atk_scale_enhence"
-          ],
-          "events": [
-            "chr_0034_typhoea_floating_attack1_01_projhit"
           ],
           "frames": [
             1
@@ -1153,9 +1107,6 @@
           "label": "Plain arrow",
           "scale": [
             "atk_scale_base"
-          ],
-          "events": [
-            "chr_0034_typhoea_floating_attack1_01_projhit"
           ],
           "frames": [
             1
@@ -1219,9 +1170,6 @@
             "atk_scale_base",
             "atk_scale_enhence"
           ],
-          "events": [
-            "chr_0034_typhoea_floating_attack1_01_projhit"
-          ],
           "frames": [
             1
           ],
@@ -1292,9 +1240,6 @@
           "label": "Plain arrow",
           "scale": [
             "atk_scale_base"
-          ],
-          "events": [
-            "chr_0034_typhoea_floating_attack1_01_projhit"
           ],
           "frames": [
             1
@@ -1358,9 +1303,6 @@
             "atk_scale_base",
             "atk_scale_enhence"
           ],
-          "events": [
-            "chr_0034_typhoea_floating_attack1_01_projhit"
-          ],
           "frames": [
             1
           ],
@@ -1431,9 +1373,6 @@
           "label": "Plain arrow",
           "scale": [
             "atk_scale_base"
-          ],
-          "events": [
-            "chr_0034_typhoea_floating_attack1_01_projhit"
           ],
           "frames": [
             1
@@ -1497,9 +1436,6 @@
             "atk_scale_base",
             "atk_scale_enhence"
           ],
-          "events": [
-            "chr_0034_typhoea_floating_attack1_01_projhit"
-          ],
           "frames": [
             1
           ],
@@ -1571,9 +1507,6 @@
           "scale": [
             "atk_scale_base"
           ],
-          "events": [
-            "chr_0034_typhoea_floating_attack1_01_projhit"
-          ],
           "frames": [
             1
           ],
@@ -1635,9 +1568,6 @@
             "atk_scale_base",
             "atk_scale_enhence"
           ],
-          "events": [
-            "chr_0034_typhoea_floating_attack5_01_projhit"
-          ],
           "frames": [
             0
           ],
@@ -1645,8 +1575,6 @@
             "controlled": true
           },
           "sp": "atb",
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "note": "floating_attack5_01_projhit: atk_scale_base (1.0 at level 12, P1 ×1.2) × atk_scale_enhence, launched at frame 0; normal_attack5_atb_recovered gives SP atb (23) only when controlled; poise 20 (onlyEnableForMainChar)."
         },
         {
@@ -1776,11 +1704,6 @@
           "events": [
             "chr_0034_typhoea_combo_01_projhit"
           ],
-          "frames": [
-            35
-          ],
-          "energy": "usp",
-          "poise": "poise",
           "buffs": [
             {
               "buff": "barrage_array"
@@ -1795,17 +1718,8 @@
             "atk_scale"
           ],
           "factor": 0.14285714285714285,
-          "count": 6,
           "events": [
             "chr_0034_typhoea_combo_02_projhit"
-          ],
-          "frames": [
-            40,
-            43,
-            44,
-            45,
-            47,
-            49
           ],
           "note": "combo_02_projhit, atk_scale ÷ 7."
         },
@@ -1816,30 +1730,6 @@
             "atk_scale_persistent"
           ],
           "factor": 0.05555555555555555,
-          "count": 18,
-          "events": [
-            "chr_0034_typhoea_combo_persistentdamage"
-          ],
-          "frames": [
-            35,
-            45,
-            55,
-            65,
-            75,
-            85,
-            95,
-            105,
-            115,
-            125,
-            135,
-            145,
-            155,
-            165,
-            175,
-            185,
-            195,
-            205
-          ],
           "note": "combo_persistentdamage ability entity spawned by the first arrow's hit: ChannelingAction every 1/3 s, up to 18 ticks (atk_scale_persistent ÷ 18) while the target stays inside; the first tick lands with the arrow (fixtures/zmdlogs-bdf223db8e49.json t=12171)."
         }
       ]
@@ -1872,11 +1762,6 @@
           "events": [
             "chr_0034_typhoea_combo_01_projhit"
           ],
-          "frames": [
-            35
-          ],
-          "energy": "usp",
-          "poise": "poise",
           "buffs": [
             {
               "buff": "barrage_array"
@@ -1891,17 +1776,8 @@
             "atk_scale"
           ],
           "factor": 0.14285714285714285,
-          "count": 6,
           "events": [
             "chr_0034_typhoea_combo_02_projhit"
-          ],
-          "frames": [
-            39,
-            43,
-            44,
-            45,
-            47,
-            49
           ],
           "note": "combo_02_projhit, atk_scale ÷ 7."
         },
@@ -1912,30 +1788,6 @@
             "atk_scale_persistent"
           ],
           "factor": 0.05555555555555555,
-          "count": 18,
-          "events": [
-            "chr_0034_typhoea_combo_persistentdamage"
-          ],
-          "frames": [
-            35,
-            45,
-            55,
-            65,
-            75,
-            85,
-            95,
-            105,
-            115,
-            125,
-            135,
-            145,
-            155,
-            165,
-            175,
-            185,
-            195,
-            205
-          ],
           "note": "combo_persistentdamage ability entity spawned by the first arrow's hit: ChannelingAction every 1/3 s, up to 18 ticks (atk_scale_persistent ÷ 18) while the target stays inside; the first tick lands with the arrow (fixtures/zmdlogs-bdf223db8e49.json t=12171)."
         }
       ]
@@ -1955,11 +1807,6 @@
             "potential_damge_up"
           ],
           "events": [],
-          "frames": [
-            62
-          ],
-          "poise": "poise",
-          "detached": true,
           "note": "ultimate_skill_arrowrain, spawned at frame 61, damage at its frame 1 (mask 4608): atk_scale_main × potential_damge_up (P5 1.2); poise 20. Logged as chr_0034_typhoea_ultimate_skill_arrowrain, but the key is left off: it matches fixtures/pending/zmdlogs-dbaee23b801d.json t=13975 (103923, crit), while fixtures/pending/zmdlogs-d9e59d0fb737.json t=4415 (15716, no logged buff) is ×1.1585 above it, unexplained."
         }
       ]
@@ -1974,9 +1821,6 @@
           "id": "hit",
           "scale": [
             "atk_scale"
-          ],
-          "frames": [
-            0
           ],
           "note": "DamageAction at frames 0–4 (mask 1152); plunging_attack_end_projhit is an alternative landing hit with the same value. Unverified."
         }

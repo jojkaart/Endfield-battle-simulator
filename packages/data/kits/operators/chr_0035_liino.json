@@ -574,7 +574,6 @@
       "skillId": "chr_0035_liino_normal_skill",
       "label": "Battle skill",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 15, "ratio": 1 }],
       "available": {
         "not": {
           "any": [
@@ -595,14 +594,9 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            12
-          ],
           "events": [
             "chr_0035_liino_normal_skill_projhit"
           ],
-          "detached": true,
-          "poise": "poise",
           "buffs": [
             {
               "buff": "vocalist_stance",
@@ -617,19 +611,9 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 5,
-          "frames": [
-            12,
-            14,
-            14,
-            16,
-            16
-          ],
           "events": [
             "chr_0035_liino_normal_skill_projhit_02"
-          ],
-          "detached": true,
-          "poise": "poise"
+          ]
         }
       ]
     },
@@ -673,9 +657,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            9
-          ],
           "events": [
             "chr_0035_liino_combo_skill",
             "buff_chr_0035_liino_comboskill_ultskill_hit"
@@ -687,16 +668,11 @@
           "scale": [
             "atk_scale_2"
           ],
-          "frames": [
-            33
-          ],
           "events": [
             "chr_0035_liino_combo_skill",
             "buff_chr_0035_liino_comboskill_ultskill_hit"
           ],
-          "energy": "usp",
           "heals": "controlled",
-          "poise": "poise",
           "note": "ObtainCostAction costType 0 usp (20) and HealAction (controlled operator, combo heal tag −1517158118) at the DamageAction's frame. The Cosmovoice variant's log key is assumed to be its buff file (not yet seen in a log)."
         }
       ]
@@ -714,15 +690,10 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 2,
           "frames": [
             76,
             76
           ],
-          "events": [
-            "chr_0035_liino_ultimate_skill_projhit"
-          ],
-          "detached": true,
           "buffs": [
             {
               "buff": "cosmovoice_atk",
@@ -745,7 +716,6 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 14,
           "frames": [
             79,
             79,
@@ -762,10 +732,6 @@
             104,
             104
           ],
-          "events": [
-            "chr_0035_liino_ultimate_skill_projhit"
-          ],
-          "detached": true,
           "note": "20 × atk_scale = display_atk_scale with the first pair and the four side shots. Verified: zmdlogs-dbaee23b801d 20/20 (16 projhit, 2 projhit_l, 2 projhit_r)."
         },
         {
@@ -774,15 +740,9 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 2,
-          "frames": [
-            84,
-            87
-          ],
           "events": [
             "chr_0035_liino_ultimate_skill_projhit_l"
-          ],
-          "detached": true
+          ]
         },
         {
           "id": "projectiles_r",
@@ -790,15 +750,9 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 2,
-          "frames": [
-            84,
-            87
-          ],
           "events": [
             "chr_0035_liino_ultimate_skill_projhit_r"
-          ],
-          "detached": true
+          ]
         },
         {
           "id": "bomb",
@@ -806,14 +760,6 @@
           "scale": [
             "atk_scale_2"
           ],
-          "frames": [
-            116
-          ],
-          "events": [
-            "chr_0035_liino_ultimate_skill_projhit_damage_02"
-          ],
-          "detached": true,
-          "poise": "poise",
           "applies": [
             {
               "kind": "forcedReaction",
@@ -835,11 +781,6 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 2,
-          "frames": [
-            3,
-            7
-          ],
           "note": "2 × atk_scale = display_atk_scale. Not in any log."
         }
       ]
@@ -855,14 +796,6 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 5,
-          "frames": [
-            7,
-            9,
-            11,
-            12,
-            14
-          ],
           "note": "ChannelingAction: 5 × atk_scale = display_atk_scale. Not in any log."
         }
       ]
@@ -877,12 +810,6 @@
           "label": "Hit",
           "scale": [
             "atk_scale"
-          ],
-          "frames": [
-            12
-          ],
-          "events": [
-            "chr_0035_liino_attack3"
           ]
         },
         {
@@ -891,18 +818,6 @@
           "scale": [
             "atk_scale_2"
           ],
-          "count": 5,
-          "frames": [
-            12,
-            14,
-            16,
-            18,
-            20
-          ],
-          "events": [
-            "chr_0035_liino_attack3_projhit"
-          ],
-          "detached": true,
           "note": "atk_scale + 5 × atk_scale_2 = display_atk_scale. Not in any log."
         }
       ]
@@ -918,23 +833,9 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 10,
-          "frames": [
-            5,
-            5,
-            7,
-            7,
-            10,
-            10,
-            13,
-            13,
-            16,
-            16
-          ],
           "events": [
             "chr_0035_liino_attack4_projhit"
           ],
-          "detached": true,
           "note": "10 × atk_scale = display_atk_scale; SkillData launches 4 per frame at 5/7/10/13/16, of which 2 per frame land on one enemy (as compiled). Not in any log."
         }
       ]
@@ -950,11 +851,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            17
-          ],
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "note": "Final Strike (mask 2097280); ObtainCostAction atb (20 SP) on its only hit; poise onlyEnableForMainChar. Not in any log."
         }
       ]
@@ -969,12 +865,6 @@
           "label": "Landing",
           "scale": [
             "atk_scale"
-          ],
-          "frames": [
-            2
-          ],
-          "events": [
-            "chr_0035_liino_plunging_attack_end"
           ]
         },
         {
@@ -982,12 +872,6 @@
           "label": "Aftershock",
           "scale": [
             "atk_scale_2"
-          ],
-          "frames": [
-            8
-          ],
-          "events": [
-            "chr_0035_liino_plunging_attack_end"
           ],
           "note": "atk_scale + atk_scale_2 = display_atk_scale. Not in any log."
         }
@@ -1004,15 +888,10 @@
           "scale": [
             "atk_scale"
           ],
-          "factor": 0.1,
-          "count": 3,
           "frames": [
             12,
             15,
             18
-          ],
-          "events": [
-            "chr_0035_liino_power_attack"
           ]
         },
         {
@@ -1021,12 +900,8 @@
           "scale": [
             "atk_scale"
           ],
-          "factor": 0.7,
           "frames": [
             34
-          ],
-          "events": [
-            "chr_0035_liino_power_attack"
           ],
           "note": "BreakingAttackCalculation multipliers 0.1 (frames 12/15/18) and 0.7 (34): 3 × 0.1 + 0.7 = 1 × atk_scale (9.0). The compiler doesn't read these multipliers yet (it lands 4 × atk_scale). Not in any log."
         }

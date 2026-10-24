@@ -276,13 +276,9 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            13
-          ],
           "events": [
             "chr_0022_bounda_attack1_projhit"
-          ],
-          "detached": true
+          ]
         }
       ]
     },
@@ -296,13 +292,9 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            9
-          ],
           "events": [
             "chr_0022_bounda_attack2_projhit"
-          ],
-          "detached": true
+          ]
         }
       ]
     },
@@ -316,13 +308,9 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            9
-          ],
           "events": [
             "chr_0022_bounda_attack3_projhit"
           ],
-          "detached": true,
           "sp": {
             "if": {
               "controlled": true
@@ -354,10 +342,6 @@
           "frames": [
             29
           ],
-          "events": [
-            "chr_0022_bounda_attack4_projhit"
-          ],
-          "detached": true,
           "sp": {
             "if": {
               "controlled": true
@@ -365,8 +349,6 @@
             "then": "atb",
             "else": 0
           },
-          "poise": "attack_poise",
-          "poiseControlledOnly": true,
           "note": "One projectile (its hit and block routes are one landing). Final Strike (mask 2097280); `atb` SP (atbOnlyMainChar) and stagger `attack_poise` only as the controlled operator. display_atk_scale (3 × atk_scale) is the tooltip only: the log's attack4 hits are one atk_scale landing."
         }
       ]
@@ -385,10 +367,6 @@
           "frames": [
             26
           ],
-          "events": [
-            "chr_0022_bounda_attack4_projhit"
-          ],
-          "detached": true,
           "sp": {
             "if": {
               "controlled": true
@@ -396,8 +374,6 @@
             "then": "atb",
             "else": 0
           },
-          "poise": "attack_poise",
-          "poiseControlledOnly": true,
           "note": "attack4 from an input in attack3's later window (24–30): the same projectile and values, launched at 26."
         }
       ]
@@ -411,12 +387,6 @@
           "id": "hit",
           "scale": [
             "atk_scale"
-          ],
-          "frames": [
-            20
-          ],
-          "events": [
-            "chr_0022_bounda_power_attack"
           ]
         }
       ],
@@ -432,9 +402,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            1
-          ],
           "sp": "atb"
         }
       ],
@@ -444,13 +411,6 @@
       "skillId": "chr_0022_bounda_normal_skill",
       "label": "Battle skill (Tiny Surprise)",
       "damageType": "battle",
-      "teamEnergy": [
-        {
-          "frame": 99,
-          "ratio": 1,
-          "detached": true
-        }
-      ],
       "hits": [
         {
           "id": "explosion",
@@ -461,14 +421,9 @@
           "frames": [
             99
           ],
-          "events": [
-            "chr_0022_bounda_normal_skill_abilityrange"
-          ],
-          "detached": true,
           "if": {
             "buffActive": "improvised_explosive"
           },
-          "poise": "poise",
           "applies": [
             {
               "kind": "infliction",
@@ -498,14 +453,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            15
-          ],
-          "events": [
-            "chr_0022_bounda_combo_skill"
-          ],
-          "energy": "usp",
-          "poise": "poise",
           "applies": [
             {
               "kind": "infliction",
@@ -526,57 +473,25 @@
           "id": "shot1",
           "scale": [
             "atk_scale1"
-          ],
-          "frames": [
-            59
-          ],
-          "events": [
-            "chr_0022_bounda_ultimate_skill_1_projhit"
-          ],
-          "detached": true,
-          "poise": "poise"
+          ]
         },
         {
           "id": "shot2",
           "scale": [
             "atk_scale2"
-          ],
-          "frames": [
-            63
-          ],
-          "events": [
-            "chr_0022_bounda_ultimate_skill_2_projhit"
-          ],
-          "detached": true,
-          "poise": "poise"
+          ]
         },
         {
           "id": "shot3",
           "scale": [
             "atk_scale3"
-          ],
-          "frames": [
-            67
-          ],
-          "events": [
-            "chr_0022_bounda_ultimate_skill_3_projhit"
-          ],
-          "detached": true,
-          "poise": "poise"
+          ]
         },
         {
           "id": "shot4",
           "scale": [
             "atk_scale4"
           ],
-          "frames": [
-            72
-          ],
-          "events": [
-            "chr_0022_bounda_ultimate_skill_4_projhit"
-          ],
-          "detached": true,
-          "poise": "poise",
           "applies": [
             {
               "kind": "infliction",

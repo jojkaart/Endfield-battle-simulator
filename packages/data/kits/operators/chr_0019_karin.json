@@ -179,30 +179,30 @@
       "skillId": "chr_0019_karin_attack1",
       "label": "Basic attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [9] }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0019_karin_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [8], "events": ["chr_0019_karin_attack2"], "sp": "atb" },
-        { "id": "hit_2", "scale": ["atk_scale_2"], "frames": [16], "events": ["chr_0019_karin_attack2"], "sp": "atb" }
+        { "id": "hit", "scale": ["atk_scale"], "sp": "atb" },
+        { "id": "hit_2", "scale": ["atk_scale_2"], "sp": "atb" }
       ]
     },
     {
       "skillId": "chr_0019_karin_attack3",
       "label": "Basic attack 3",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [10], "sp": "atb" }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": "atb" }]
     },
     {
       "skillId": "chr_0019_karin_attack4",
       "label": "Basic attack 4 (Final Strike)",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [19, 20], "events": ["chr_0019_karin_attack4"], "finalStrike": false },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [21], "events": ["chr_0019_karin_attack4"], "sp": "atb", "poise": "poise", "poiseControlledOnly": true, "finalStrike": true }
+        { "id": "hit", "scale": ["atk_scale"], "frames": [19, 20], "finalStrike": false },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [21], "sp": "atb", "finalStrike": true }
       ]
     },
     {
@@ -210,28 +210,27 @@
       "label": "Finisher",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [13], "factor": 0.2, "events": ["chr_0019_karin_power_attack"] },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [36], "factor": 0.8, "events": ["chr_0019_karin_power_attack"] }
+        { "id": "hit", "scale": ["atk_scale"], "frames": [13] },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [36] }
       ]
     },
     {
       "skillId": "chr_0019_karin_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "sp": "atb" }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": "atb" }]
     },
     {
       "skillId": "chr_0019_karin_normal_skill",
       "label": "Battle skill",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 20, "ratio": 1 }],
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "element": "fire", "frames": [20], "poise": "poise", "applies": [{ "kind": "infliction", "element": "fire" }] }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "applies": [{ "kind": "infliction", "element": "fire" }] }]
     },
     {
       "skillId": "chr_0019_karin_combo_skill",
       "label": "Combo skill",
       "damageType": "combo",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [22, 31], "energy": "usp", "poise": "poise", "sp": 0 }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": 0 }]
     },
     {
       "skillId": "chr_0019_karin_ultimate_skill",

@@ -73,13 +73,13 @@
       "skillId": "chr_0021_whiten_attack1",
       "label": "Basic attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [6], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e." }]
     },
     {
       "skillId": "chr_0021_whiten_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [6], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e." }]
     },
     {
       "skillId": "chr_0021_whiten_attack3",
@@ -87,8 +87,8 @@
       "damageType": "basic",
       "note": "Two DamageActions, both logged under the event key chr_0021_whiten_attack3; the log checker tries both.",
       "hits": [
-        { "id": "hit1", "label": "Basic attack 3, first hit", "scale": ["atk_scale"], "events": ["chr_0021_whiten_attack3"], "frames": [7], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e." },
-        { "id": "hit2", "label": "Basic attack 3, second hit", "scale": ["atk_scale2"], "events": ["chr_0021_whiten_attack3"], "frames": [18], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e." }
+        { "id": "hit1", "label": "Basic attack 3, first hit", "scale": ["atk_scale"], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e." },
+        { "id": "hit2", "label": "Basic attack 3, second hit", "scale": ["atk_scale2"], "note": "Verified: 2 hits in zmdlogs-4e5e1390085e." }
       ]
     },
     {
@@ -96,21 +96,21 @@
       "label": "Basic attack 4 (final strike)",
       "damageType": "basic",
       "note": "Final Strike (decorate mask 2097280) and its atb 19 come from the data. \"As the controlled operator, Final Strike also deals {poise:0} Stagger\": its poise unit has onlyEnableForMainChar.",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [21], "poise": "poise", "poiseControlledOnly": true, "note": "Verified: 1 hit in zmdlogs-4e5e1390085e." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Verified: 1 hit in zmdlogs-4e5e1390085e." }]
     },
     {
       "skillId": "chr_0021_whiten_power_attack",
       "label": "Heavy attack (finisher)",
       "damageType": "basic",
       "note": "BreakingAttackCalculation (skillSpecification 8): the engine makes it castable only on a Staggered enemy, once per stagger, multiplies it by the enemy's finisher multiplier and adds the finisher SP at the cast.",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [30], "note": "Not in a committed log fixture. The one logged hit (btl_upload_39e3cddab245, t=71860) is ×1.215 of atk_scale 9 with the logged buffs and stagger, before the finisher multiplier." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Not in a committed log fixture. The one logged hit (btl_upload_39e3cddab245, t=71860) is ×1.215 of atk_scale 9 with the logged buffs and stagger, before the finisher multiplier." }]
     },
     {
       "skillId": "chr_0021_whiten_plunging_attack_end",
       "label": "Plunging attack",
       "damageType": "basic",
       "note": "canCastInAir (skillSpecification 6). A rotation's dive: a jump, then this landing (batch-1 S10).",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "note": "Not logged yet." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Not logged yet." }]
     },
     {
       "skillId": "chr_0021_whiten_normal_skill",
@@ -122,13 +122,10 @@
         {
           "id": "projectile",
           "scale": ["atk_scale"],
-          "element": "cryst",
-          "events": ["chr_0021_whiten_normal_skill_projhit"],
           "detached": false,
           "bonuses": [{ "zone": "damageBonus", "key": "dmg_up" }],
           "applies": [{ "kind": "infliction", "element": "cryst" }],
           "frames": [21],
-          "poise": "poise",
           "note": "Lands as chr_0021_whiten_normal_skill_projhit (SpellInfliction type 2 in that file). The first target each projectile hits (EntityBB_first_hit) takes atk_scale with +dmg_up in the damage-bonus zone (DamageScaleProcessor, NormalCalcZone); dmg_up is 0 unless potential 3 sets it to 0.4 (\"DMG Dealt +{dmg_up:0%} to the first enemy hit\"). One enemy, so this is the first-target hit. detached false: the projectile isn't launched when her combo or ultimate cuts the cast before frame 21 (the loader would default a hit whose event names another file to detached). Travel time isn't in the data: it lands at its launch frame. Verified: 3 hits in zmdlogs-4e5e1390085e."
         }
       ]
@@ -145,12 +142,10 @@
           "branch": "target",
           "if": { "enemyStatus": "solidification" },
           "scale": ["atk_scale2"],
-          "events": ["chr_0021_whiten_combo_skill"],
           "frames": [19],
           "buffs": [{ "buff": "physical_susceptibility", "beforeDamage": true }],
           "applies": [{ "kind": "physicalStatus", "status": "lift", "forced": true }],
           "energy": "usp",
-          "poise": "poise",
           "note": "Verified in zmdlogs-4e5e1390085e with its own susceptibility applied (logged as a boundary buff); the Lift and Shatter it causes are under it too."
         },
         {
@@ -158,11 +153,8 @@
           "label": "Combo skill (target not Solidified)",
           "branch": "target",
           "scale": ["atk_scale"],
-          "events": ["chr_0021_whiten_combo_skill"],
-          "frames": [19],
           "applies": [{ "kind": "physicalStatus", "status": "lift", "forced": true }],
           "energy": "usp",
-          "poise": "poise",
           "note": "Not in a log yet (in-game test 11): a Lift damage number and a Vulnerable stack, no Shatter, no Susceptibility. Lands when Solidification has run out or a teammate's physical status Shattered it first."
         }
       ]
@@ -176,8 +168,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [54],
-          "poise": "poise",
           "applies": [{ "kind": "physicalStatus", "status": "lift", "forced": true, "if": { "enemyModifier": { "zone": "susceptibility", "element": "physical" } } }],
           "note": "The DamageAction reads atk_scale_total = atk_scale + dmg_up_total, and nothing in the file ever writes dmg_up_total (the blackboard's dmg_up 0.5 is unused), so it is atk_scale. Verified: 2 hits in zmdlogs-4e5e1390085e (11.0 exactly), both Lifting under her Susceptibility."
         }

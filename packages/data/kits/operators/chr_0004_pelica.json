@@ -62,10 +62,8 @@
         {
           "id": "projhit",
           "scale": ["atk_scale"],
-          "frames": [8],
           "events": ["chr_0004_pelica_attack1_projhit"],
           "sp": { "if": { "controlled": true }, "then": "atb" },
-          "detached": true,
           "note": "LaunchProjectile@8 → attack1_projhit: DamageAction atk_scale (mask 128); ObtainCostAction atb while controlled (atb is 0 at every level)."
         }
       ]
@@ -78,11 +76,8 @@
         {
           "id": "projhit",
           "scale": ["atk_scale"],
-          "count": 2,
-          "frames": [9, 12],
           "events": ["chr_0004_pelica_attack2_projhit"],
           "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.333333313] } },
-          "detached": true,
           "note": "Two LaunchProjectile (9, 12), each one atk_scale landing (display_atk_scale = 2 × atk_scale is the tooltip); ObtainCostAction atb × coefficient 1/3 while controlled (atb is 0)."
         }
       ]
@@ -95,11 +90,8 @@
         {
           "id": "projhit",
           "scale": ["atk_scale"],
-          "count": 3,
-          "frames": [16, 19, 22],
           "events": ["chr_0004_pelica_attack3_projhit"],
           "sp": { "if": { "controlled": true }, "then": "atb" },
-          "detached": true,
           "note": "Three LaunchProjectile (16, 19, 22), each atk_scale (display_atk_scale = 3 × atk_scale)."
         }
       ]
@@ -113,13 +105,9 @@
           "id": "projhit",
           "label": "Final Strike",
           "scale": ["atk_scale"],
-          "frames": [27],
           "events": ["chr_0004_pelica_attack4_projhit"],
           "sp": { "if": { "controlled": true }, "then": "atb" },
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "finalStrike": true,
-          "detached": true,
           "note": "LaunchProjectile@27 → attack4_projhit: DamageAction mask 2097280 (Final Strike), poise unit `poise` (onlyEnableForMainChar), ObtainCostAction atb 15 (atbSourceType 1) while controlled."
         }
       ]
@@ -132,8 +120,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [35],
-          "events": ["chr_0004_pelica_power_attack"],
           "note": "BreakingAttackCalculation atk_scale × multiplier 1 (mask 132) at 35; the engine gates it on a Staggered enemy and adds the enemy's finisher multiplier and SP. Interim (compiler's reading): no Knock Down. After the DamageAction, IfElse CheckMainCharacter → KnockDownAction forceKnockDown with deadOption 2, which the compiler reads as acting on a dying target only; the report's row 7 read it as a forced Knock Down on every finished enemy while she is controlled (a Knock Down hit and +1 Vulnerable). In-game test 67 settles it."
         }
       ],
@@ -147,8 +133,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [3],
-          "events": ["chr_0004_pelica_plunging_attack_end"],
           "sp": "atb",
           "note": "DamageAction atk_scale (mask 1152) at 3-8; the four plunging_attack_projhit projectiles have no actions."
         }
@@ -159,15 +143,11 @@
       "skillId": "chr_0004_pelica_normal_skill",
       "label": "Battle skill (Protocol ω: Strike)",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 13, "ratio": 1 }],
       "hits": [
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [13],
-          "events": ["chr_0004_pelica_normal_skill"],
           "applies": [{ "kind": "infliction", "element": "pulse" }],
-          "poise": "poise",
           "note": "Frame 13: SpellInfliction inflictionType 1 (Electric) before the DamageAction (atk_scale, mask 4352; a second unit with poise), then buff_common_obtain_ultimate_sp (team energy)."
         }
       ]
@@ -180,12 +160,8 @@
         {
           "id": "projhit",
           "scale": ["atk_scale"],
-          "frames": [24],
           "events": ["chr_0004_pelica_combo_skill_projhit"],
           "applies": [{ "kind": "forcedReaction", "status": "electrification", "durationKey": "duration", "scaleKey": "extra_scaling" }],
-          "energy": "usp",
-          "poise": "poise",
-          "detached": true,
           "note": "LaunchProjectile@24 → combo_skill_projhit: CreateBuff buff_common_pulse_pulse_conduct_triggered on the target (count 1: level I; assigns duration 5 s, P1 ×1.75 = 8.75 s, and extra_scaling 1, P4 1.33) before the DamageAction (atk_scale, mask 12288, poise unit `poise`), so the combo hit already takes it; then ObtainCostAction usp (its atb key doesn't exist: 0). conduct_triggered_do multiplies final_spell_resistance_decrease by extra_scaling (ModifyDynamicBlackboard operation 2): Arts DMG Taken = level I × AI curve × 1.33 at P4 (open list A1; btl_upload_b6082588d600 logged 0.272665 = 0.12 × 1.33 × 1.70843). On an enemy with a stronger Electrification the forced one replaces it (stacking key pulse_triggered, stackingType 2 max 1; in-game test 66). Talent 2's bounce (EntityBB_bounced, FindTarget excluding the hit target) goes to another enemy: nothing against one."
         }
       ],
@@ -199,10 +175,7 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [58],
-          "events": ["chr_0004_pelica_ultimate_skill"],
           "bonuses": [{ "zone": "critRate", "key": "crit" }],
-          "poise": "poise",
           "note": "Frames 58-63: DamageAction atk_scale (mask 4608) with an InstantModifyAttribute damage processor: attribute 9 (crit rate) + crit for this hit only (0; P5 +0.3); poise unit `poise`."
         }
       ],

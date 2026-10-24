@@ -911,15 +911,6 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 3,
-          "frames": [
-            10,
-            10,
-            10
-          ],
-          "events": [
-            "chr_0032_lizhiyan_attack1"
-          ],
           "note": "Three ChannelingActions at frame 10, one hit per target each (display_atk_scale = 3 × atk_scale). Verified on btl_upload_b7b3762d5da8 (3 hits of 537, basic Lv11 0.129)."
         }
       ]
@@ -933,15 +924,6 @@
           "id": "hit",
           "scale": [
             "atk_scale"
-          ],
-          "count": 3,
-          "frames": [
-            11,
-            12,
-            13
-          ],
-          "events": [
-            "chr_0032_lizhiyan_attack2"
           ],
           "note": "Verified on btl_upload_b7b3762d5da8 (3 hits of 712, 0.147 at Lv11)."
         }
@@ -957,11 +939,6 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 2,
-          "frames": [
-            5,
-            13
-          ],
           "note": "display_atk_scale 0.75 ≈ 2 × 0.38."
         }
       ]
@@ -975,17 +952,6 @@
           "id": "hit",
           "scale": [
             "atk_scale"
-          ],
-          "count": 8,
-          "frames": [
-            2,
-            2,
-            5,
-            5,
-            8,
-            8,
-            11,
-            11
           ],
           "note": "Two damage actions at each of frames 2, 5, 8, 11 (display_atk_scale 0.8 = 8 × 0.1)."
         }
@@ -1001,9 +967,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            1
-          ],
           "note": "Uses the basic attack level. Verified on btl_upload_b7b3762d5da8 (8037, 1.66 at Lv11)."
         }
       ]
@@ -1018,17 +981,12 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            22
-          ],
           "sp": {
             "if": {
               "controlled": true
             },
             "then": "atb"
           },
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "note": "Final Strike (decorate mask 2097152 + basic): triggers Cluster Strike inside the array when Arcane is controlled. SP atb only if controlled; Stagger `poise` (10) too (its DamageAction's poise unit, onlyEnableForMainChar)."
         }
       ]
@@ -1044,15 +1002,10 @@
           "scale": [
             "atk_scale"
           ],
-          "factor": 0.1,
-          "count": 3,
           "frames": [
             7,
             10,
             13
-          ],
-          "events": [
-            "chr_0032_lizhiyan_power_attack"
           ],
           "note": "BreakingAttackCalculation multiplier 0.1. No Stagger: no damage unit is a poise one (the 5 / 20 / 10 literals are hitEnvData, damage to scenery)."
         },
@@ -1061,14 +1014,9 @@
           "scale": [
             "atk_scale"
           ],
-          "factor": 0.1,
-          "count": 2,
           "frames": [
             32,
             34
-          ],
-          "events": [
-            "chr_0032_lizhiyan_power_attack"
           ],
           "note": "Multiplier 0.1, no Stagger (the two share one action, to verify)."
         },
@@ -1077,14 +1025,10 @@
           "scale": [
             "atk_scale"
           ],
-          "factor": 0.5,
           "frames": [
             36
           ],
           "sp": 0,
-          "events": [
-            "chr_0032_lizhiyan_power_attack"
-          ],
           "note": "Multiplier 0.5, no Stagger; GainBreakingAttackAtb here. sp 0: the skill's unread `atb` 8 isn't SP (open list D2, test 31)."
         }
       ]
@@ -1102,9 +1046,6 @@
           "scale": [
             "atk_scale_will"
           ],
-          "frames": [
-            20
-          ],
           "if": {
             "not": {
               "attrAtLeast": [
@@ -1119,10 +1060,6 @@
               "element": "natural"
             }
           ],
-          "poise": "poise",
-          "events": [
-            "chr_0032_lizhiyan_normal_skill_abilityrange2"
-          ],
           "note": "Verified on btl_upload_0eef2474a26f (18470, crit, under Corrosion level 2)."
         },
         {
@@ -1130,9 +1067,6 @@
           "label": "Battle skill (Array Arcana: INT)",
           "scale": [
             "atk_scale_wisd"
-          ],
-          "frames": [
-            20
           ],
           "if": {
             "attrAtLeast": [
@@ -1145,10 +1079,6 @@
               "kind": "infliction",
               "element": "natural"
             }
-          ],
-          "poise": "poise",
-          "events": [
-            "chr_0032_lizhiyan_normal_skill_abilityrange2"
           ],
           "note": "conditionPostDesc1: \"Array Arcana: INT: - Deals more DMG.\" Only in btl_upload_d9e59d0fb737 (under Corrosion, ×2.23 unexplained)."
         }
@@ -1166,11 +1096,6 @@
           "scale": [
             "atk_scale_touch"
           ],
-          "frames": [
-            15
-          ],
-          "energy": "usp",
-          "poise": "poise_touch",
           "events": [
             "buff_chr_0032_lizhiyan_combo_skill_seal_total"
           ],
@@ -1216,13 +1141,6 @@
           "label": "Array creation",
           "scale": [
             "atk_scale"
-          ],
-          "frames": [
-            47
-          ],
-          "poise": "poise",
-          "events": [
-            "chr_0032_lizhiyan_ultimate_skill"
           ],
           "applies": [
             {
@@ -1314,9 +1232,6 @@
           "scale": [
             "atk_scale_will"
           ],
-          "frames": [
-            58
-          ],
           "if": {
             "not": {
               "attrAtLeast": [
@@ -1325,10 +1240,6 @@
               ]
             }
           },
-          "poise": "poise",
-          "events": [
-            "chr_0032_lizhiyan_ultimate_skill2"
-          ],
           "buffs": [
             {
               "buff": "t1_susceptibility",
@@ -1366,19 +1277,12 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            58
-          ],
           "if": {
             "attrAtLeast": [
               41,
               42
             ]
           },
-          "poise": "poise",
-          "events": [
-            "chr_0032_lizhiyan_ultimate_skill2"
-          ],
           "note": "Potential 5 multiplies atk_scale by 1.3. Not in any log yet."
         }
       ]

@@ -765,9 +765,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            3
-          ],
           "launch": 3,
           "events": [
             "chr_0027_tangtang_attack1_projhit"
@@ -785,26 +782,14 @@
           "scale": [
             "atk_scale_1"
           ],
-          "frames": [
-            6
-          ],
-          "launch": 6,
-          "events": [
-            "chr_0027_tangtang_attack2_projhit"
-          ]
+          "launch": 6
         },
         {
           "id": "shot_2",
           "scale": [
             "atk_scale_2"
           ],
-          "frames": [
-            10
-          ],
           "launch": 10,
-          "events": [
-            "chr_0027_tangtang_attack2_02_projhit"
-          ],
           "note": "ObtainCostAction atb × 0.5 if controlled: atb is 0 at every level (SkillPatchTable), so no SP."
         }
       ]
@@ -818,33 +803,12 @@
           "id": "spray",
           "scale": [
             "atk_scale_1"
-          ],
-          "count": 5,
-          "frames": [
-            5,
-            7,
-            9,
-            10,
-            12
-          ],
-          "events": [
-            "chr_0027_tangtang_attack3"
           ]
         },
         {
           "id": "shot",
           "scale": [
             "atk_scale_2"
-          ],
-          "count": 4,
-          "frames": [
-            17,
-            17,
-            18,
-            18
-          ],
-          "events": [
-            "chr_0027_tangtang_attack3_projhit"
           ],
           "launch": 17
         }
@@ -859,26 +823,12 @@
           "id": "hit",
           "scale": [
             "atk_scale_1"
-          ],
-          "count": 2,
-          "frames": [
-            6,
-            10
-          ],
-          "events": [
-            "chr_0027_tangtang_attack4"
           ]
         },
         {
           "id": "hit_2",
           "scale": [
             "atk_scale_2"
-          ],
-          "frames": [
-            23
-          ],
-          "events": [
-            "chr_0027_tangtang_attack4"
           ]
         }
       ]
@@ -893,9 +843,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            22
-          ],
           "launch": 22,
           "events": [
             "chr_0027_tangtang_attack5_projhit"
@@ -906,8 +853,6 @@
             },
             "then": "atb"
           },
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "finalStrike": true,
           "note": "attack5_projhit: DamageAction atk_scale (mask 2097280), then if controlled a poise-only DamageAction (poise 18: \"As the controlled operator, Final Strike also deals 18 Stagger\"; kit-draft folds it in, D6) and, in the same branch, ObtainCostAction atb once per projectile (EntityBB_atk05_cnt)."
         }
@@ -925,10 +870,6 @@
           ],
           "frames": [
             9
-          ],
-          "factor": 0.3,
-          "events": [
-            "chr_0027_tangtang_power_attack"
           ]
         },
         {
@@ -938,10 +879,6 @@
           ],
           "frames": [
             21
-          ],
-          "factor": 0.7,
-          "events": [
-            "chr_0027_tangtang_power_attack"
           ]
         }
       ]
@@ -955,16 +892,6 @@
           "id": "hit",
           "scale": [
             "atk_scale"
-          ],
-          "count": 4,
-          "frames": [
-            3,
-            5,
-            7,
-            9
-          ],
-          "events": [
-            "chr_0027_tangtang_plunging_attack_end"
           ],
           "note": "TickIntervalAction 0.07 s over frames 3–11 (0.267 s): 4 ticks, as display_atk_scale 1.8 = 4 × 0.45 says (batch 4 D9a). A dive landing (decorate mask 1152: bit 1024), which ends an OLDEN STARE (trigger olden_stare_dive). A rotation action of the controlled operator (batch-1 S10): the landing 22 frames after the jump."
         }
@@ -980,14 +907,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            26
-          ],
-          "events": [
-            "chr_0027_tangtang_combo_skill"
-          ],
-          "energy": "usp",
-          "poise": "poise",
           "note": "Frame 26: DamageAction atk_scale (mask 12288) and a poise-only DamageAction (poise 10; kit-draft folds it in, D6); usp once per cast (tar_cnt)."
         }
       ]
@@ -996,30 +915,12 @@
       "skillId": "chr_0027_tangtang_normal_skill",
       "label": "IMA WAVERIDAAH!",
       "damageType": "battle",
-      "teamEnergy": [
-        {
-          "frame": 27,
-          "ratio": 1
-        }
-      ],
       "hits": [
         {
           "id": "shot",
           "scale": [
             "atk_scale_1"
           ],
-          "count": 5,
-          "frames": [
-            27,
-            29,
-            32,
-            34,
-            36
-          ],
-          "events": [
-            "chr_0027_tangtang_normal_skill"
-          ],
-          "poise": "poise1",
           "note": "ChannelingAction frames 27–39, one target every 0.075 s, at most 5: 5 × atk_scale_1 = \"Shooting DMG Multiplier\" 180%, 5 × poise1 2 = \"Shot Stagger\" 10. buff_common_obtain_ultimate_sp once (DoOnce) at the first tick."
         },
         {
@@ -1279,21 +1180,7 @@
           "scale": [
             "atk_scale_1"
           ],
-          "count": 8,
-          "frames": [
-            76,
-            91,
-            106,
-            121,
-            136,
-            151,
-            166,
-            181
-          ],
           "launch": 76,
-          "events": [
-            "chr_0027_tangtang_ultimate_skill_1"
-          ],
           "if": {
             "not": {
               "buffActive": "olden_stare_over"
@@ -1306,14 +1193,7 @@
           "scale": [
             "atk_scale_2"
           ],
-          "frames": [
-            196
-          ],
           "launch": 76,
-          "poise": "poise2",
-          "events": [
-            "chr_0027_tangtang_ultimate_skill_1"
-          ],
           "if": {
             "not": {
               "buffActive": "olden_stare_over"

@@ -115,13 +115,13 @@
       "skillId": "chr_0023_antal_attack1",
       "label": "Basic attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "projhit", "scale": ["atk_scale"], "frames": [8], "events": ["chr_0023_antal_attack1_projhit"], "sp": "atb", "detached": true }]
+      "hits": [{ "id": "projhit", "scale": ["atk_scale"], "events": ["chr_0023_antal_attack1_projhit"], "sp": "atb" }]
     },
     {
       "skillId": "chr_0023_antal_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
-      "hits": [{ "id": "projhit", "scale": ["atk_scale"], "frames": [12], "events": ["chr_0023_antal_attack2_projhit"], "sp": "atb", "detached": true }]
+      "hits": [{ "id": "projhit", "scale": ["atk_scale"], "events": ["chr_0023_antal_attack2_projhit"], "sp": "atb" }]
     },
     {
       "skillId": "chr_0023_antal_attack3",
@@ -131,12 +131,8 @@
         {
           "id": "projhit",
           "scale": ["atk_scale"],
-          "count": 2,
-          "frames": [14, 18],
           "events": ["chr_0023_antal_attack3_projhit"],
-          "factor": 0.5,
           "sp": "atb",
-          "detached": true,
           "note": "ModifyDynamicBlackboard atk_scale ×0.5 once, before both launches."
         }
       ]
@@ -151,13 +147,8 @@
           "label": "Final strike, first orb",
           "scale": ["atk_scale"],
           "frames": [27],
-          "events": ["chr_0023_antal_attack4_powerattack_projhit"],
-          "factor": 0.5,
           "sp": "atb",
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "finalStrike": true,
-          "detached": true,
           "note": "No have_recovered marker yet: the Final Strike branch (mask 2097280, atb, poise for the controlled operator), which sets the marker for 0.5 s."
         },
         {
@@ -165,10 +156,7 @@
           "label": "Final strike, second orb",
           "scale": ["atk_scale"],
           "frames": [27],
-          "events": ["chr_0023_antal_attack4_powerattack_projhit"],
-          "factor": 0.5,
           "finalStrike": false,
-          "detached": true,
           "dataOverride": {
             "poise": "Compiler limitation (D3), kit right: both projectiles launched at 27 run attack4_powerattack_projhit's IfElse on the timed marker have_recovered, which the first landing creates; the first takes the Final Strike branch (atb, poise), the second the plain one. The compiler counts both branches for each."
           },
@@ -181,8 +169,8 @@
       "label": "Finisher",
       "damageType": "basic",
       "hits": [
-        { "id": "small", "scale": ["atk_scale"], "count": 5, "frames": [10, 12, 14, 15, 16], "events": ["chr_0023_antal_power_attack02_projhit"], "factor": 0.06, "detached": true },
-        { "id": "final", "scale": ["atk_scale"], "frames": [25], "events": ["chr_0023_antal_power_attack_projhit"], "factor": 0.7, "detached": true }
+        { "id": "small", "scale": ["atk_scale"], "events": ["chr_0023_antal_power_attack02_projhit"] },
+        { "id": "final", "scale": ["atk_scale"], "events": ["chr_0023_antal_power_attack_projhit"] }
       ]
     },
     {
@@ -193,7 +181,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [1],
           "sp": "atb",
           "note": "A rotation's dive: a jump, then this landing (batch-1 S10)."
         }
@@ -203,12 +190,10 @@
       "skillId": "chr_0023_antal_normal_skill",
       "label": "Battle skill: Specified Research Subject",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 20, "ratio": 1 }],
       "hits": [
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [20],
           "buffs": [
             { "buff": "focus", "beforeDamage": true },
             { "buff": "focus_p5_timer", "beforeDamage": true }
@@ -225,9 +210,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [21],
-          "energy": "usp",
-          "poise": "poise",
           "applies": [
             { "kind": "infliction", "element": "event" },
             { "kind": "physicalStatus", "status": "event" }

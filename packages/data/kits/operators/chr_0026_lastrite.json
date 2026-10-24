@@ -214,7 +214,7 @@
       "label": "Basic attack 1",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [12], "events": ["chr_0026_lastrite_attack1"], "sp": { "if": { "controlled": true }, "then": "atb" } }
+        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }
       ]
     },
     {
@@ -222,7 +222,7 @@
       "label": "Basic attack 2",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [10, 24], "events": ["chr_0026_lastrite_attack2"], "sp": { "if": { "controlled": true }, "then": "atb" } }
+        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }
       ]
     },
     {
@@ -230,8 +230,8 @@
       "label": "Basic attack 3",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [9], "events": ["chr_0026_lastrite_attack3"], "sp": { "if": { "controlled": true }, "then": "atb" } },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [27], "events": ["chr_0026_lastrite_attack3"], "sp": 0, "note": "The SP grant is attached once, to the first landing." }
+        { "id": "hit", "scale": ["atk_scale"], "frames": [9], "sp": { "if": { "controlled": true }, "then": "atb" } },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [27], "sp": 0, "note": "The SP grant is attached once, to the first landing." }
       ]
     },
     {
@@ -242,11 +242,7 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [21],
-          "events": ["chr_0026_lastrite_attack4"],
           "sp": { "if": { "controlled": true }, "then": "atb" },
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "finalStrike": true,
           "note": "Mask 2097280 (Final Strike); poise unit onlyEnableForMainChar."
         }
@@ -257,7 +253,7 @@
       "label": "Finisher",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [40], "events": ["chr_0026_lastrite_power_attack"], "note": "BreakingAttackCalculation multiplier 1.0; GainBreakingAttackAtb (the enemy's finisher SP, engine)." }
+        { "id": "hit", "scale": ["atk_scale"], "note": "BreakingAttackCalculation multiplier 1.0; GainBreakingAttackAtb (the enemy's finisher SP, engine)." }
       ]
     },
     {
@@ -265,7 +261,7 @@
       "label": "Dive attack",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [2], "events": ["chr_0026_lastrite_plunging_attack_end"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Mask 1152 (dive). Rotations don't schedule dives yet (batch-1 S10)." }
+        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Mask 1152 (dive). Rotations don't schedule dives yet (batch-1 S10)." }
       ]
     },
     {
@@ -283,24 +279,19 @@
       "label": "Winter's Devourer",
       "damageType": "combo",
       "hits": [
-        { "id": "shard", "label": "Ice shard", "scale": ["atk_scale"], "frames": [13], "events": ["chr_0026_lastrite_combo_skill"], "note": "Mask 8192; simpleCalculation atkScale atk_scale (verified b7b3 t=10155: 1.6 × 1.15 at P3). Energy: trigger combo_energy." },
+        { "id": "shard", "label": "Ice shard", "scale": ["atk_scale"], "frames": [13], "note": "Mask 8192; simpleCalculation atkScale atk_scale (verified b7b3 t=10155: 1.6 × 1.15 at P3). Energy: trigger combo_energy." },
         {
           "id": "bonus",
           "label": "Bonus per Cryo stack",
           "if": { "enemyInfliction": "cryst" },
           "scale": ["atk_scale3"],
           "scaleValue": { "enemyInflictionStacks": "cryst" },
-          "frames": [63],
-          "events": ["chr_0026_lastrite_combo_skill"],
           "note": "Frame 63, ForEach target: SaveBuffStackNumByTag Cryo → final_combo_atkscale = atk_scale3 × n (mask 12288), judged before the slash consumes the stacks. Verified b7b3 t=11462 (n = 4)."
         },
         {
           "id": "slash",
           "label": "Slash",
           "scale": ["atk_scale2"],
-          "frames": [63],
-          "events": ["chr_0026_lastrite_combo_skill"],
-          "poise": "poise",
           "applies": [{ "kind": "consumeInfliction", "elements": ["cryst"], "afterDamage": true }],
           "note": "Then FinishBuffByTag Cryo Infliction (all layers) after both DamageActions: talent 1 sees the consumption after the combo's damage (b7b3: its 0.16 is a boundary buff on these hits)."
         }
@@ -315,18 +306,13 @@
         {
           "id": "slash",
           "scale": ["atk_scale"],
-          "count": 2,
           "frames": [86, 105],
-          "events": ["chr_0026_lastrite_ultimate_skill"],
-          "poise": "poise1",
           "zoneScale": [{ "zone": "susceptibility", "value": { "if": { "talentAtLeast": [1, 1] }, "then": "rate", "else": 1 } }]
         },
         {
           "id": "slash_3",
           "scale": ["atk_scale2"],
           "frames": [134],
-          "events": ["chr_0026_lastrite_ultimate_skill"],
-          "poise": "poise2",
           "zoneScale": [{ "zone": "susceptibility", "value": { "if": { "talentAtLeast": [1, 1] }, "then": "rate", "else": 1 } }]
         }
       ]

@@ -92,27 +92,27 @@
       "skillId": "chr_0012_avywen_attack1",
       "label": "Basic attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "element": "physical", "frames": [7], "events": ["chr_0012_avywen_attack1"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "DamageAction damageType 0 (Physical), mask 128. ObtainCostAction atb with atbOnlyMainChar (atb 0 at every level)." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "DamageAction damageType 0 (Physical), mask 128. ObtainCostAction atb with atbOnlyMainChar (atb 0 at every level)." }]
     },
     {
       "skillId": "chr_0012_avywen_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "element": "physical", "frames": [7], "events": ["chr_0012_avywen_attack2"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
     },
     {
       "skillId": "chr_0012_avywen_attack3",
       "label": "Basic attack 3",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "element": "physical", "frames": [7], "events": ["chr_0012_avywen_attack3"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
     },
     {
       "skillId": "chr_0012_avywen_attack4",
       "label": "Basic attack 4",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "element": "physical", "frames": [5], "events": ["chr_0012_avywen_attack4"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } },
-        { "id": "hit_2", "scale": ["atk_scale_2"], "element": "physical", "frames": [18], "events": ["chr_0012_avywen_attack4"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "note": "ObtainCostAction atb coefficient 0.5 at each of the two DamageActions." }
+        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } },
+        { "id": "hit_2", "scale": ["atk_scale_2"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "note": "ObtainCostAction atb coefficient 0.5 at each of the two DamageActions." }
       ]
     },
     {
@@ -123,12 +123,7 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "element": "physical",
-          "frames": [24],
-          "events": ["chr_0012_avywen_attack5"],
           "sp": { "if": { "controlled": true }, "then": "atb" },
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "finalStrike": true,
           "note": "Mask 2097280 (Final Strike); poise unit onlyEnableForMainChar."
         }
@@ -139,22 +134,21 @@
       "label": "Finisher",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "element": "physical", "frames": [27], "events": ["chr_0012_avywen_power_attack"], "factor": 0.3, "note": "BreakingAttackCalculation multiplier 0.3 (mask 132); GainBreakingAttackAtb here: the finisher SP is the engine's." },
-        { "id": "hit_2", "scale": ["atk_scale"], "element": "physical", "frames": [28], "events": ["chr_0012_avywen_power_attack"], "factor": 0.2, "sp": 0, "note": "Multiplier 0.2; an ObtainCostAction costType 1 without a value (0 SP)." },
-        { "id": "hit_3", "scale": ["atk_scale"], "element": "physical", "frames": [29], "events": ["chr_0012_avywen_power_attack"], "factor": 0.5, "sp": 0, "note": "Multiplier 0.5; an ObtainCostAction costType 1 without a value (0 SP)." }
+        { "id": "hit", "scale": ["atk_scale"], "frames": [27], "note": "BreakingAttackCalculation multiplier 0.3 (mask 132); GainBreakingAttackAtb here: the finisher SP is the engine's." },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [28], "sp": 0, "note": "Multiplier 0.2; an ObtainCostAction costType 1 without a value (0 SP)." },
+        { "id": "hit_3", "scale": ["atk_scale"], "frames": [29], "sp": 0, "note": "Multiplier 0.5; an ObtainCostAction costType 1 without a value (0 SP)." }
       ]
     },
     {
       "skillId": "chr_0012_avywen_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "element": "physical", "frames": [1], "events": ["chr_0012_avywen_plunging_attack_end"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "A rotation's dive: a jump, then this landing (batch-1 S10)." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "A rotation's dive: a jump, then this landing (batch-1 S10)." }]
     },
     {
       "skillId": "chr_0012_avywen_normal_skill",
       "label": "Battle skill: Thunderlance: Interdiction",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 18, "ratio": 1 }],
       "hits": [
         {
           "id": "lance",
@@ -163,8 +157,6 @@
           "count": { "buffLayers": "thunderlance" },
           "frames": [7],
           "launch": 7,
-          "events": ["chr_0012_avywen_combo_skill_lance_back"],
-          "poise": "poise_lance",
           "energy": { "if": { "talentAtLeast": [0, 1] }, "then": "talent0_usp" },
           "extraScale": [{ "value": "potential_5_rate", "if": { "all": [{ "potentialAtLeast": 5 }, { "enemyModifier": { "zone": "susceptibility", "element": "pulse" } }] } }],
           "note": "One landing per Thunderlance on the field at the cast (V3; the data's ForEach at frame 7 launches one chr_0012_avywen_combo_skill_lance_back per lance, which hits what it meets on the way back: every lance hits the one enemy, U1). Lands at frame 7, its launch: the flight back isn't in the data (U3). chr_0012_avywen_combo_skill_lance_back: IfElse (potential_5_rate > 0 and the target has tag −1640994543, carried by buff_common_affixes_vulnerable_pulse / _spell / _all) → atk_scale_lance × potential_5_rate (1.15 at P5; 0 below, the SkillData default), else × 1: the extraScale (enemyModifier counts all-element Susceptibility, as the tag does). DamageAction mask 4352, poise poise_lance. Talent 1's energy: ModifyDynamicBlackboard EntityBB_talent0 = talent0_usp, granted on reach (chr_0012_avywen_combo_skill_lance_back_reach) if the talent's buff is there; here at the hit."
@@ -176,8 +168,6 @@
           "count": { "buffLayers": "thunderlance_ex" },
           "frames": [7],
           "launch": 7,
-          "events": ["chr_0012_avywen_ultimate_skill_lance_back"],
-          "poise": "poise_lance_ult",
           "energy": { "if": { "talentAtLeast": [0, 1] }, "then": "talent0_usp" },
           "extraScale": [{ "value": "potential_5_rate", "if": { "all": [{ "potentialAtLeast": 5 }, { "enemyModifier": { "zone": "susceptibility", "element": "pulse" } }] } }],
           "applies": [{ "kind": "infliction", "element": "pulse", "if": { "not": { "buffActive": "lance_pulse_check" } } }],
@@ -188,9 +178,6 @@
           "id": "hit",
           "label": "Thunderlance: Interdiction",
           "scale": ["atk_scale"],
-          "frames": [18],
-          "events": ["chr_0012_avywen_normal_skill"],
-          "poise": "poise",
           "note": "DamageAction mask 4352 at frame 18, poise poise; CreateBuff buff_common_obtain_ultimate_sp at 18 (teamEnergy). No P5 branch on this hit (only the lance_back files have potential_5_rate). Window 34–60 to itself."
         }
       ]
@@ -203,9 +190,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [14],
-          "events": ["chr_0012_avywen_combo_skill"],
-          "poise": "poise",
           "energy": { "if": { "talentAtLeast": [0, 1] }, "then": "talent0_usp" },
           "note": "DamageAction mask 12288 at frame 14, poise poise; then, with buff_chr_0012_avywen_talent_0, ObtainCostAction talent0_usp per target (talent 1). No usp (see sources). Its three lances: trigger combo_lances."
         }
@@ -219,9 +203,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [51],
-          "events": ["chr_0012_avywen_ultimate_skill"],
-          "poise": "poise",
           "energy": { "if": { "talentAtLeast": [0, 1] }, "then": "talent0_usp" },
           "buffs": [{ "buff": "tactful_approach", "beforeDamage": true }],
           "note": "Frame 51: the talent-2 debuff (if pulse_vul_duration > 0) is created before the DamageAction (mask 4608, poise poise), so this hit already has its Susceptibility (in-game test 51's question); then talent0_usp per target with talent 1. Its EX lance: trigger ult_lance."

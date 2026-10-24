@@ -82,21 +82,21 @@
       "skillId": "chr_0018_dapan_attack1",
       "label": "Basic attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [13], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
     },
     {
       "skillId": "chr_0018_dapan_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [7], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
     },
     {
       "skillId": "chr_0018_dapan_attack3",
       "label": "Basic attack 3",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [10], "events": [], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
-        { "id": "hit_2", "scale": ["atk_scale_2"], "frames": [23], "events": [], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } }
+        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
+        { "id": "hit_2", "scale": ["atk_scale_2"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } }
       ],
       "note": "The first hit is a ChannelingAction of one tick (10–13). atb is 0 for attacks 1–3 (as compiled)."
     },
@@ -108,10 +108,7 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [32],
           "sp": { "if": { "controlled": true }, "then": "atb" },
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "finalStrike": true,
           "note": "Mask 2097280 (Final Strike); atb 21; \"As the controlled operator, Final Strike also deals {poise} Stagger\" (poise 20, onlyEnableForMainChar)."
         }
@@ -122,30 +119,26 @@
       "label": "Finisher",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [16], "events": [], "factor": 0.4, "note": "BreakingAttackCalculation atk_scale × multiplier 0.4.", "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [35], "events": [], "factor": 0.6, "note": "BreakingAttackCalculation atk_scale × multiplier 0.6.", "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } }
+        { "id": "hit", "scale": ["atk_scale"], "frames": [16], "note": "BreakingAttackCalculation atk_scale × multiplier 0.4.", "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [35], "note": "BreakingAttackCalculation atk_scale × multiplier 0.6.", "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } }
       ]
     },
     {
       "skillId": "chr_0018_dapan_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "sp": { "if": { "controlled": true }, "then": "atb" } }],
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }],
       "note": "A rotation's dive: a jump, then this landing (batch-1 S10)."
     },
     {
       "skillId": "chr_0018_dapan_normal_skill",
       "label": "Battle skill: Flip Da Wok!",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 43, "ratio": 1 }],
       "hits": [
-        { "id": "charge", "scale": ["atk_scale_pre"], "frames": [8], "events": [], "note": "After InterruptAction 1 s (no effect: enemy actions come from the scenario).", "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
+        { "id": "charge", "scale": ["atk_scale_pre"], "note": "After InterruptAction 1 s (no effect: enemy actions come from the scenario).", "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
         {
           "id": "flip",
           "scale": ["atk_scale"],
-          "frames": [43],
-          "events": [],
-          "poise": "poise",
           "applies": [
             { "kind": "physicalStatus", "status": "lift" },
             { "kind": "vulnerable", "if": { "all": [{ "potentialAtLeast": 5 }, { "not": { "buffActive": "p5_interval" } }] } }
@@ -164,9 +157,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [23],
-          "energy": "usp",
-          "poise": "poise",
           "applies": [{ "kind": "physicalStatus", "status": "crush", "multiplierKey": "crush_multi" }],
           "note": "Frame 23: CrushAction (damageMultiplier crush_multi 1.2: \"This Crush also deals more DMG\") before the DamageAction (mask 12288), then ObtainCostAction usp. Cooldown 19 s at level 12 (SkillPatchTable)."
         }
@@ -180,17 +170,12 @@
         {
           "id": "flurry",
           "scale": ["atk_scale_loop"],
-          "count": 6,
-          "frames": [42, 46, 50, 54, 58, 61],
-          "events": [],
           "note": "ChannelingAction 42–64, targetTriggerInterval 0.13 s, maxCountPerTarget 8: the compiler's six landings (\"6-sequence flurry\").",
           "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." }
         },
         {
           "id": "dunk",
           "scale": ["atk_scale_end"],
-          "frames": [80],
-          "events": [],
           "applies": [{ "kind": "physicalStatus", "status": "knockdown", "forced": true }],
           "buffs": [{ "buff": "prep_ingredients", "if": { "talentAtLeast": [1, 1] } }],
           "note": "Frame 80: IfElse talent_1 ≥ 1 → ForEach target CreateBuff buff_chr_0018_dapan_talent_1_preparation, then KnockDownAction forceKnockDown (\"forcibly Knock Down\"), then DamageAction atk_scale_end (no poise).",

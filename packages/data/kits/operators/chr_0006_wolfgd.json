@@ -102,7 +102,6 @@
         {
           "id": "projhit01",
           "scale": ["atk_scale"],
-          "frames": [7],
           "launch": 7,
           "events": ["chr_0006_wolfgd_attack1_projhit01"],
           "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] }, "else": 0 },
@@ -111,7 +110,6 @@
         {
           "id": "projhit",
           "scale": ["atk_scale"],
-          "frames": [14],
           "launch": 14,
           "events": ["chr_0006_wolfgd_attack1_projhit"],
           "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] }, "else": 0 }
@@ -128,7 +126,6 @@
           "scale": ["atk_scale"],
           "frames": [10],
           "launch": 10,
-          "events": ["chr_0006_wolfgd_attack2_projhit"],
           "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] }, "else": 0 }
         },
         {
@@ -136,7 +133,6 @@
           "scale": ["atk_scale"],
           "frames": [16],
           "launch": 16,
-          "events": ["chr_0006_wolfgd_attack2_projhit"],
           "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] }, "else": 0 }
         }
       ],
@@ -152,7 +148,6 @@
           "scale": ["atk_scale"],
           "frames": [12],
           "launch": 12,
-          "events": ["chr_0006_wolfgd_attack3_projhit"],
           "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.333333] }, "else": 0 }
         },
         {
@@ -160,7 +155,6 @@
           "scale": ["atk_scale"],
           "frames": [18],
           "launch": 18,
-          "events": ["chr_0006_wolfgd_attack3_projhit"],
           "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.333333] }, "else": 0 }
         },
         {
@@ -168,7 +162,6 @@
           "scale": ["atk_scale"],
           "frames": [24],
           "launch": 24,
-          "events": ["chr_0006_wolfgd_attack3_projhit"],
           "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.333333] }, "else": 0 }
         }
       ]
@@ -182,12 +175,9 @@
           "id": "projhit",
           "label": "Final Strike",
           "scale": ["atk_scale"],
-          "frames": [23],
           "launch": 23,
           "events": ["chr_0006_wolfgd_attack4_projhit"],
           "sp": { "if": { "controlled": true }, "then": "atb", "else": 0 },
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "note": "Final Strike (mask 2097280, from the data). \"As the controlled operator, Final Strike also deals {poise} Stagger\": the poise unit is onlyEnableForMainChar; SP `atb` (18, natural: atbGainMethod 0) for the controlled operator."
         }
       ]
@@ -200,8 +190,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [34],
-          "events": ["chr_0006_wolfgd_power_attack"],
           "note": "BreakingAttackCalculation at 34, multiplier 1 (no factor)."
         }
       ]
@@ -213,9 +201,7 @@
       "hits": [
         {
           "id": "hit",
-          "scale": ["atk_scale"],
-          "frames": [2],
-          "events": ["chr_0006_wolfgd_plunging_attack_end"]
+          "scale": ["atk_scale"]
         }
       ],
       "note": "A rotation's dive: a jump, then this landing (batch-1 S10)."
@@ -225,33 +211,26 @@
       "label": "Battle skill (Thermite Tracers)",
       "damageType": "battle",
       "jumps": [{ "at": 31, "if": { "any": [{ "enemyStatus": "combustion" }, { "enemyStatus": "electrification" }] } }],
-      "teamEnergy": [{ "frame": 23, "ratio": 1 }],
       "hits": [
         {
           "id": "shot1",
           "scale": ["atk_scale"],
           "frames": [6],
-          "launch": 6,
-          "events": ["chr_0006_wolfgd_normal_skill_projhit"],
-          "poise": "poise_first_bullet"
+          "launch": 6
         },
         {
           "id": "shot2",
           "scale": ["atk_scale"],
           "frames": [16],
-          "launch": 16,
-          "events": ["chr_0006_wolfgd_normal_skill_projhit"],
-          "poise": "poise_first_bullet"
+          "launch": 16
         },
         {
           "id": "shot3_reaction",
           "label": "Final shot (the target had a reaction)",
           "branch": "shot3",
           "scale": ["atk_scale"],
-          "frames": [23],
           "launch": 23,
           "events": ["chr_0006_wolfgd_normal_skill_projhit_1"],
-          "poise": "poise_first_bullet",
           "if": { "buffActive": "spell_inflict" },
           "note": "Frame 23: IfElse SpellInflict >= 1 -> projhit_1 (no infliction)."
         },
@@ -260,10 +239,8 @@
           "label": "Final shot (Heat Infliction)",
           "branch": "shot3",
           "scale": ["atk_scale"],
-          "frames": [23],
           "launch": 23,
           "events": ["chr_0006_wolfgd_normal_skill_projhit_FireSpellInfiction"],
-          "poise": "poise_first_bullet",
           "applies": [{ "kind": "infliction", "element": "fire" }],
           "note": "\"The final shot also applies Heat Infliction\": the else branch, projhit_FireSpellInfiction (SpellInfliction Heat, then its DamageAction)."
         },
@@ -272,10 +249,7 @@
           "label": "Additional shot (consumes the reaction)",
           "branch": "extra",
           "scale": ["atk_scale_plus"],
-          "frames": [141],
           "launch": 141,
-          "events": ["chr_0006_wolfgd_normal_skill_plus_projhit"],
-          "poise": "poise_extra_bullet",
           "if": { "any": [{ "enemyStatus": "combustion" }, { "enemyStatus": "electrification" }] },
           "sp": { "if": { "talentAtLeast": [1, 1] }, "then": { "sum": ["returnskillpower", "potential_skillpower"] }, "else": 0 },
           "applies": [
@@ -289,9 +263,7 @@
           "label": "Additional shot (the reaction ran out meanwhile)",
           "branch": "extra",
           "scale": ["atk_scale_plus_fail"],
-          "frames": [141],
           "launch": 141,
-          "events": ["chr_0006_wolfgd_normal_skill_plus_projhit"],
           "applies": [{ "kind": "infliction", "element": "fire" }],
           "note": "plus_projhit's fail branch: SpellInfliction (Heat), DamageAction atk_scale_plus_fail; its poise key poise_extra_bullet_fail is 0 at every level (no stagger)."
         }
@@ -306,11 +278,8 @@
         {
           "id": "grenade",
           "scale": ["atk_scale"],
-          "frames": [12],
           "launch": 12,
           "events": ["chr_0006_wolfgd_combo_skill_abilityrange"],
-          "poise": "poise",
-          "energy": "usp",
           "applies": [{ "kind": "infliction", "element": "fire" }],
           "note": "LaunchProjectile at 12 -> combo_skill_projhit -> SpawnAbilityEntity abilityentity_chr_0006_wolfgd_combo_skill -> combo_skill_abilityrange at entity frame 0: SpellInfliction (Heat), DamageAction atk_scale + poise, ObtainCostAction costType 0 usp. Travel unknown (Zero Sanity's 0.9 s would be about 15 frames later)."
         }
@@ -324,10 +293,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "count": 5,
-          "frames": [46, 52, 59, 64, 69],
-          "events": ["chr_0006_wolfgd_ultimate_skill"],
-          "poise": "poise",
           "note": "\"dealing 5 hits of Heat DMG\": DamageActions in the skill at 46, 52, 59, 64, 69 (mask 4608). The six wolf projectiles at 45-65 cast nothing (every castSkillOn... flag false)."
         }
       ]

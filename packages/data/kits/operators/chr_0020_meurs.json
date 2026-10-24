@@ -102,37 +102,34 @@
     }
   ],
   "skills": [
-    { "skillId": "chr_0020_meurs_attack1", "label": "Basic attack 1", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [12] }] },
-    { "skillId": "chr_0020_meurs_attack2", "label": "Basic attack 2", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [10] }] },
-    { "skillId": "chr_0020_meurs_attack3", "label": "Basic attack 3", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [16] }] },
+    { "skillId": "chr_0020_meurs_attack1", "label": "Basic attack 1", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"] }] },
+    { "skillId": "chr_0020_meurs_attack2", "label": "Basic attack 2", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"] }] },
+    { "skillId": "chr_0020_meurs_attack3", "label": "Basic attack 3", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"] }] },
     {
       "skillId": "chr_0020_meurs_attack4",
       "label": "Basic attack 4 (Final Strike)",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [23], "poise": "poise", "poiseControlledOnly": true, "note": "Mask 2097280 (Final Strike); \"As the controlled operator, Final Strike also deals {poise} Stagger\" (onlyEnableForMainChar)." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Mask 2097280 (Final Strike); \"As the controlled operator, Final Strike also deals {poise} Stagger\" (onlyEnableForMainChar)." }]
     },
     {
       "skillId": "chr_0020_meurs_power_attack",
       "label": "Finisher",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [15], "factor": 0.4, "events": ["chr_0020_meurs_power_attack"], "note": "BreakingAttackCalculation atk_scale × multiplier 0.4 (the compiler doesn't read the multiplier, D2)." },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [35], "factor": 0.6, "events": ["chr_0020_meurs_power_attack"], "note": "BreakingAttackCalculation atk_scale × multiplier 0.6." }
+        { "id": "hit", "scale": ["atk_scale"], "frames": [15], "note": "BreakingAttackCalculation atk_scale × multiplier 0.4 (the compiler doesn't read the multiplier, D2)." },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [35], "note": "BreakingAttackCalculation atk_scale × multiplier 0.6." }
       ]
     },
-    { "skillId": "chr_0020_meurs_plunging_attack_end", "label": "Dive attack", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1] }] },
+    { "skillId": "chr_0020_meurs_plunging_attack_end", "label": "Dive attack", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"] }] },
     {
       "skillId": "chr_0020_meurs_normal_skill",
       "label": "Battle skill",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 0, "ratio": 0.5 }, { "frame": 60, "ratio": 0.5 }],
       "hits": [
         {
           "id": "bash",
           "label": "Retaliation bash",
           "scale": ["atk_scale"],
-          "frames": [83],
-          "poise": "poise",
           "applies": [{ "kind": "vulnerable" }],
           "sp": { "if": { "operatorBuff": { "categories": ["shield"] } }, "then": "potential5_atb" },
           "note": "Reached only through the counter's jump to 60 (not attacked, the jump 45 → 255 skips it). ChannelingAction [83–85]: CreateBuff buff_physical_no_guard (1 Vulnerable, before the DamageAction, as the engine applies it), DoOnce ObtainCostAction potential5_atb (P5: 10 returned SP while a shield, tag −1757502026, is on Catcher: her combo's or anyone's, e.g. Ember's or Thunderberge's (batch 4 C2); 0 below P5), DamageAction atk_scale with poise."
@@ -145,8 +142,8 @@
       "label": "Combo skill",
       "damageType": "combo",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [17], "energy": "usp", "events": ["chr_0020_meurs_combo_skill"] },
-        { "id": "hit_2", "scale": ["atk_scale_1"], "frames": [20], "poise": "poise", "events": ["chr_0020_meurs_combo_skill"], "buffs": [{ "buff": "combo_shield" }] }
+        { "id": "hit", "scale": ["atk_scale"] },
+        { "id": "hit_2", "scale": ["atk_scale_1"], "buffs": [{ "buff": "combo_shield" }] }
       ],
       "note": "Its window opens on an enemy's skill charge (trigger combo_window)."
     },
@@ -155,24 +152,18 @@
       "label": "Ultimate",
       "damageType": "ultimate",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [46], "poise": "poise", "events": ["chr_0020_meurs_ultimate_skill"], "buffs": [{ "buff": "weakness" }] },
-        { "id": "hit_2", "scale": ["atk_scale_1"], "frames": [64], "poise": "poise", "events": ["chr_0020_meurs_ultimate_skill"] },
+        { "id": "hit", "scale": ["atk_scale"], "buffs": [{ "buff": "weakness" }] },
+        { "id": "hit_2", "scale": ["atk_scale_1"] },
         {
           "id": "hit_3",
           "scale": ["atk_scale_2"],
-          "frames": [85],
-          "poise": "poise1",
-          "events": ["chr_0020_meurs_ultimate_skill"],
           "applies": [{ "kind": "physicalStatus", "status": "knockdown" }],
           "note": "KnockDownAction (knockdown_time 2, not forced) before the DamageAction: on an enemy without Vulnerable it only adds a stack."
         },
         {
           "id": "shockwave",
           "scale": ["atk_scale_shockwave"],
-          "count": 2,
           "frames": [105, 120],
-          "events": ["chr_0020_meurs_talent_shockwave"],
-          "detached": true,
           "if": { "talentAtLeast": [1, 1] },
           "note": "Talent 2: SpawnAbilityEntity at 102 if talent_1 ≥ 1; its waves at its frames 3 / 18 / 33."
         },
@@ -180,8 +171,6 @@
           "id": "shockwave_3",
           "scale": ["atk_scale_shockwave"],
           "frames": [135],
-          "events": ["chr_0020_meurs_talent_shockwave"],
-          "detached": true,
           "if": { "talentAtLeast": [1, 2] },
           "note": "The entity's InterruptCurSkillAction at its frame 29 stops the third wave if talent_1 < 2 (\"{talent_1+1} shockwave(s)\")."
         }

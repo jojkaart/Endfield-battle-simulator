@@ -143,28 +143,28 @@
       "label": "Basic attack 1",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [9, 17], "events": ["chr_0015_lifeng_attack1"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "note": "Two DamageActions (display_atk_scale = 2 × atk_scale); ObtainCostAction atb × 0.5 each, controlled only (atb 0 otherwise)." }
+        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "note": "Two DamageActions (display_atk_scale = 2 × atk_scale); ObtainCostAction atb × 0.5 each, controlled only (atb 0 otherwise)." }
       ]
     },
     {
       "skillId": "chr_0015_lifeng_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [4], "events": ["chr_0015_lifeng_attack2"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
     },
     {
       "skillId": "chr_0015_lifeng_attack3",
       "label": "Basic attack 3",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [11], "events": ["chr_0015_lifeng_attack3"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
     },
     {
       "skillId": "chr_0015_lifeng_attack5",
       "label": "Basic attack 4 (Final Strike)",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [13], "events": ["chr_0015_lifeng_attack5"], "finalStrike": false },
-        { "id": "hit_2", "scale": ["atk_scale2"], "frames": [24], "events": ["chr_0015_lifeng_attack5"], "sp": { "if": { "controlled": true }, "then": "atb" }, "poise": "poise", "poiseControlledOnly": true, "finalStrike": true, "note": "Mask 2097280 (Final Strike); poise onlyEnableForMainChar; SP atb 21, controlled only." }
+        { "id": "hit", "scale": ["atk_scale"], "finalStrike": false },
+        { "id": "hit_2", "scale": ["atk_scale2"], "sp": { "if": { "controlled": true }, "then": "atb" }, "finalStrike": true, "note": "Mask 2097280 (Final Strike); poise onlyEnableForMainChar; SP atb 21, controlled only." }
       ]
     },
     {
@@ -172,29 +172,25 @@
       "label": "Finisher",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [6], "events": ["chr_0015_lifeng_power_attack"], "factor": 0.1, "note": "BreakingAttackCalculation multiplier 0.1 (mask 132); GainBreakingAttackAtb: the finisher SP is the engine's." },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [33], "events": ["chr_0015_lifeng_power_attack"], "factor": 0.9, "note": "Multiplier 0.9." }
+        { "id": "hit", "scale": ["atk_scale"], "frames": [6], "note": "BreakingAttackCalculation multiplier 0.1 (mask 132); GainBreakingAttackAtb: the finisher SP is the engine's." },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [33], "note": "Multiplier 0.9." }
       ]
     },
     {
       "skillId": "chr_0015_lifeng_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "events": ["chr_0015_lifeng_plunging_attack_end"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Mask 1152 (dive). Needs mid-air: schedulable once dive attacks are (batch-1 S10); kept for calc." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Mask 1152 (dive). Needs mid-air: schedulable once dive attacks are (batch-1 S10); kept for calc." }]
     },
     {
       "skillId": "chr_0015_lifeng_normal_skill",
       "label": "Battle skill: Turbid Avatar",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 54, "ratio": 1 }],
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [7, 20], "events": ["chr_0015_lifeng_normal_skill"], "note": "Two swings (mask 4352), main target only." },
+        { "id": "hit", "scale": ["atk_scale"], "note": "Two swings (mask 4352), main target only." },
         {
           "id": "slam",
           "scale": ["atk_scale2"],
-          "frames": [54],
-          "events": ["chr_0015_lifeng_normal_skill"],
-          "poise": "poise",
           "applies": [{ "kind": "physicalStatus", "status": "knockdown" }],
           "note": "Frame 54: the Susceptibility check (triggers turbid_susceptibility*), then KnockDownAction (1.5 s, not forced) and the DamageAction (poise), then buff_common_obtain_ultimate_sp (teamEnergy)."
         }
@@ -206,8 +202,8 @@
       "damageType": "combo",
       "note": "ComboAction at frame 19 gives Link (trigger combo_link). TimeDilation curve ComboSkill from SkillData. buff_chr_0015_lifeng_combo_skill_tutorial_marker (f48) is tutorial only.",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [19], "events": ["chr_0015_lifeng_combo_skill"] },
-        { "id": "hit_2", "scale": ["atk_scale2"], "frames": [48], "events": ["chr_0015_lifeng_combo_skill"], "energy": "usp", "poise": "poise" }
+        { "id": "hit", "scale": ["atk_scale"] },
+        { "id": "hit_2", "scale": ["atk_scale2"] }
       ]
     },
     {
@@ -216,9 +212,9 @@
       "damageType": "ultimate",
       "note": "Time stop (UltimateTimeAction 0–56) from SkillData. SpawnAbilityEntity at 58: chr_0015_lifeng_ultimate_skill_abentity (its frames + 58). At its frame 67 (cast frame 125): if isCombo = 0, JumpToAction 150 (skips the third hit); else EntityBB_isCombo = 0. isCombo is copied at cast frames 1–3 from EntityBB_isCombo, which buff_chr_0015_lifeng_passive sets to 1 when buff_common_affixes_skillimbue_atk (the Link this cast used) is added to her (abilityEvent 9), and to 0 on abilityEvent 31. Event keys: the entity file holds all three DamageActions, so never chr_0015_lifeng_ultimate_skill (which ZMDLogs uses for Valiant's hit, wpn_lance_0010).",
       "hits": [
-        { "id": "slam", "scale": ["atk_scale1"], "frames": [64], "launch": 58, "events": ["chr_0015_lifeng_ultimate_skill_abentity"], "poise": "poise", "applies": [{ "kind": "physicalStatus", "status": "knockdown" }], "note": "Entity frame 6: KnockDownAction (2.1 s, not forced), PullAction, DamageAction mask 4608." },
-        { "id": "slam_2", "scale": ["atk_scale2"], "frames": [124], "launch": 58, "events": ["chr_0015_lifeng_ultimate_skill_abentity"], "poise": "poise2", "applies": [{ "kind": "physicalStatus", "status": "knockdown" }], "note": "Entity frame 66." },
-        { "id": "link_hit", "scale": ["atk_scale3"], "frames": [179], "launch": 58, "events": ["chr_0015_lifeng_ultimate_skill_abentity"], "poise": "poise3", "if": { "castLink": {} }, "note": "Entity frame 121, only if the cast used a Link (\"If the skill consumes a Link, then it deals an additional hit of massive Physical DMG\"): castLink, judged from the hit's own cast." }
+        { "id": "slam", "scale": ["atk_scale1"], "launch": 58, "applies": [{ "kind": "physicalStatus", "status": "knockdown" }], "note": "Entity frame 6: KnockDownAction (2.1 s, not forced), PullAction, DamageAction mask 4608." },
+        { "id": "slam_2", "scale": ["atk_scale2"], "launch": 58, "applies": [{ "kind": "physicalStatus", "status": "knockdown" }], "note": "Entity frame 66." },
+        { "id": "link_hit", "scale": ["atk_scale3"], "launch": 58, "if": { "castLink": {} }, "note": "Entity frame 121, only if the cast used a Link (\"If the skill consumes a Link, then it deals an additional hit of massive Physical DMG\"): castLink, judged from the hit's own cast." }
       ]
     }
   ]

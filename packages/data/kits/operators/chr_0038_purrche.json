@@ -2300,10 +2300,6 @@
           ],
           "frames": [
             10
-          ],
-          "factor": 0.4,
-          "events": [
-            "chr_0038_purrche_attack1"
           ]
         },
         {
@@ -2313,10 +2309,6 @@
           ],
           "frames": [
             17
-          ],
-          "factor": 0.6,
-          "events": [
-            "chr_0038_purrche_attack1"
           ]
         }
       ],
@@ -2334,10 +2326,6 @@
           ],
           "frames": [
             11
-          ],
-          "factor": 0.2,
-          "events": [
-            "chr_0038_purrche_attack2"
           ]
         },
         {
@@ -2347,10 +2335,6 @@
           ],
           "frames": [
             14
-          ],
-          "factor": 0.3,
-          "events": [
-            "chr_0038_purrche_attack2"
           ]
         },
         {
@@ -2360,10 +2344,6 @@
           ],
           "frames": [
             22
-          ],
-          "factor": 0.5,
-          "events": [
-            "chr_0038_purrche_attack2"
           ]
         }
       ]
@@ -2381,10 +2361,6 @@
           "frames": [
             18
           ],
-          "factor": 0.2,
-          "events": [
-            "chr_0038_purrche_attack3"
-          ],
           "finalStrike": false
         },
         {
@@ -2395,18 +2371,12 @@
           "frames": [
             21
           ],
-          "factor": 0.8,
-          "events": [
-            "chr_0038_purrche_attack3"
-          ],
           "sp": {
             "if": {
               "controlled": true
             },
             "then": "atb"
           },
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "finalStrike": true,
           "note": "Mask 2097280 (Final Strike); \"As the controlled operator, Final Strike also deals {poise} Stagger\" (onlyEnableForMainChar); atb 23 (atbOnlyMainChar)."
         }
@@ -2422,12 +2392,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            24
-          ],
-          "events": [
-            "chr_0038_purrche_power_attack"
-          ],
           "note": "BreakingAttackCalculation atk_scale (9.0) × multiplier 1.0."
         }
       ]
@@ -2441,12 +2405,6 @@
           "id": "hit",
           "scale": [
             "atk_scale"
-          ],
-          "frames": [
-            1
-          ],
-          "events": [
-            "chr_0038_purrche_plunging_attack_end"
           ],
           "sp": {
             "if": {
@@ -2539,13 +2497,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            9
-          ],
-          "events": [
-            "chr_0038_purrche_normal_skill_counter"
-          ],
-          "element": "natural",
           "applies": [
             {
               "kind": "infliction",
@@ -2553,7 +2504,6 @@
             }
           ],
           "sp": "atb_return",
-          "poise": "poise",
           "note": "ChannelingAction [9–13]: SpellInfliction 3 (Nature), DamageAction atk_scale (4.0; damageType 6, mask 4352) with poise (20), BlowOffAction, ObtainCostAction atb_return / potential_5_atb (0 at every level) if a block happened. \"headbutts a target in front of her to deal Nature DMG and apply Nature Infliction\"."
         }
       ],

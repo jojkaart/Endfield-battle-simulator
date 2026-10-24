@@ -149,37 +149,35 @@
     }
   ],
   "skills": [
-    { "skillId": "chr_0003_endminf_attack1", "label": "Basic attack 1", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [6] }] },
-    { "skillId": "chr_0003_endminf_attack2", "label": "Basic attack 2", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [5] }] },
-    { "skillId": "chr_0003_endminf_attack3", "label": "Basic attack 3", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [5, 12], "events": ["chr_0003_endminf_attack3"] }] },
-    { "skillId": "chr_0003_endminf_attack4", "label": "Basic attack 4", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 4, "frames": [7, 9, 18, 19], "events": ["chr_0003_endminf_attack4"] }] },
+    { "skillId": "chr_0003_endminf_attack1", "label": "Basic attack 1", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"] }] },
+    { "skillId": "chr_0003_endminf_attack2", "label": "Basic attack 2", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"] }] },
+    { "skillId": "chr_0003_endminf_attack3", "label": "Basic attack 3", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"] }] },
+    { "skillId": "chr_0003_endminf_attack4", "label": "Basic attack 4", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"] }] },
     {
       "skillId": "chr_0003_endminf_attack5",
       "label": "Basic attack 5 (Final Strike)",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [18], "finalStrike": true, "poise": "poise", "poiseControlledOnly": true, "note": "\"As the controlled operator, Final Strike also deals {poise} Stagger\" (mask 2097280); its atb (20) is the skill's SP." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "finalStrike": true, "note": "\"As the controlled operator, Final Strike also deals {poise} Stagger\" (mask 2097280); its atb (20) is the skill's SP." }]
     },
     {
       "skillId": "chr_0003_endminf_power_attack2",
       "label": "Finisher",
       "damageType": "basic",
       "hits": [
-        { "id": "hit1", "scale": ["atk_scale"], "factor": 0.1, "frames": [9], "events": ["chr_0003_endminf_power_attack2"], "note": "BreakingAttackCalculation multiplier 0.1." },
-        { "id": "hit2", "scale": ["atk_scale"], "factor": 0.9, "frames": [27], "events": ["chr_0003_endminf_power_attack2"], "note": "BreakingAttackCalculation multiplier 0.9." }
+        { "id": "hit1", "scale": ["atk_scale"], "frames": [9], "note": "BreakingAttackCalculation multiplier 0.1." },
+        { "id": "hit2", "scale": ["atk_scale"], "frames": [27], "note": "BreakingAttackCalculation multiplier 0.9." }
       ]
     },
-    { "skillId": "chr_0003_endminf_plunging_attack_end", "label": "Dive attack", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1] }] },
+    { "skillId": "chr_0003_endminf_plunging_attack_end", "label": "Dive attack", "damageType": "basic", "hits": [{ "id": "hit", "scale": ["atk_scale"] }] },
     {
       "skillId": "chr_0003_endminf_normal_skill",
       "label": "Constructive Sequence (battle skill)",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 11, "ratio": 1 }],
       "hits": [
         {
           "id": "hit",
           "scale": ["atk_scale"],
           "frames": [11],
-          "poise": "poise",
           "applies": [{ "kind": "physicalStatus", "status": "crush" }],
           "note": "\"Deals Physical DMG and applies Crush\": ChannelingAction at frame 11, one hit per target (maxCountPerTarget 1); its CrushAction runs before the DamageAction. The data's two branches (with P1 on a sealed target, without) deal the same hit; P1's SP is the p1_sp trigger."
         }
@@ -193,9 +191,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [23],
-          "poise": "poise",
-          "energy": "usp",
           "buffs": [{ "buff": "originium_crystals", "beforeDamage": true }],
           "events": ["chr_0003_endminf_combo_skill", "chr_0002_endminm_combo_skill"],
           "note": "The second DamageAction at frame 23 (the first names atk_scale without useBlackboardKey: a literal 0, left out; the log has one combo hit per cast). The crystals are created between the two, so talent 2 counts for this hit. Logged under chr_0002_endminm_combo_skill for the female too (7e19)."
@@ -207,13 +202,11 @@
       "label": "Bombardment Sequence (ultimate)",
       "damageType": "ultimate",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [50], "poise": "poise", "events": ["chr_0003_endminf_ultimate_skill"] },
+        { "id": "hit", "scale": ["atk_scale"] },
         {
           "id": "break",
           "scale": ["originum_ult_break_scale"],
-          "frames": [50],
           "if": { "buffActive": "originium_crystals" },
-          "events": ["chr_0003_endminf_ultimate_skill"],
           "note": "\"deals one more hit\" on a sealed enemy: ForEach target with buff_common_originum_frozen → DamageAction originum_ult_break_scale (mask 512), then IgniteAction 6."
         },
         {
