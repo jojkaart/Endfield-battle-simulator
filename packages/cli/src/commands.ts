@@ -149,7 +149,7 @@ export function formatPanel(data: GameData, panel: StatPanel, verbose: boolean):
     out.push("", ...unknown.map((l) => `NOTE: ${l.name} leaves out ${l.unmodelled?.map((c) => `${c.source} (formula item ${c.slot})`).join(", ")}: that formula isn't known yet, so a kit value that reads ${l.name} is an error`));
   }
   if (panel.notApplied.length) {
-    out.push("", "Not in this panel (conditional effects; see --condition):");
+    out.push("", "Not in this panel (conditional effects; count a kit buff with --buff <id>[:<layers>]):");
     for (const n of panel.notApplied) out.push(`  - ${n}`);
   }
   return out.join("\n");
@@ -233,7 +233,7 @@ export function calc(data: GameData, build: Build, options: CalcOptions): string
     out.push("", "Conditions available (--condition <id>):");
     for (const c of conditions) out.push(`  ${options.conditions.includes(c.id) ? "[on] " : "[off]"} ${c.id}: ${c.label}`);
   }
-  out.push("", `Not modelled yet (×1): ${NOT_MODELLED.join(", ")}.`);
+  out.push("", `Left at ×1 in a single hit (a fight, efsim simulate, applies what the kits model of them): ${NOT_MODELLED.join(", ")}.`);
   return out.join("\n");
 }
 

@@ -3,32 +3,38 @@
 A utility for automatically evaluating team compositions and rotations in
 *Arknights: Endfield* and comparing them against each other.
 
-Status: early development. A **damage calculator** works: stat panel and
-damage per hit for an operator build, verified against in-game values
-(Laevatain: 10 stat panel values and 25 hits, all exact). Hit structure
-("kits") exists for Laevatain so far; stats work for every operator. No
-rotations or team search yet. Next steps: [`docs/roadmap.md`](docs/roadmap.md).
+Status: in development, not yet verified enough to trust its rankings.
+Every playable operator, weapon and gear set has a kit; a team's rotation
+runs on a frame timeline (reactions, statuses, buffs, SP, energy, Link, time
+stops, enemy attacks and dodges, food), and a beam search finds rotations
+for a fixed team. The numbers are checked against in-game values (one
+Laevatain build: 10 stat-panel values and 25 hits, exact) and against
+ZMDLogs battle logs (fixtures/), with the open questions as in-game tests
+for the owner (docs/in-game-tests.md). Progress and next steps:
+[`docs/roadmap.md`](docs/roadmap.md).
 
-## Damage calculator
+## Commands
 
 ```sh
-npm run efsim -- find laevatain                       # look up IDs by name
+npm run efsim -- find laevatain                       # look up IDs by name (operators, weapons, gear, foods)
 npm run efsim -- template chr_0016_laevat --weapon wpn_sword_0006 > my-build.json
-npm run efsim -- calc examples/laevatain-forgeborn.json
-npm run efsim -- calc examples/laevatain-forgeborn.json --crit never --condition wpn_sword_0006.after_ultimate
+npm run efsim -- calc examples/laevatain-forgeborn.json                  # stat panel and every hit's damage
+npm run efsim -- calc examples/laevatain-forgeborn.json --crit never --buff wpn_sword_0006.valid
 npm run efsim -- compare examples/laevatain-forgeborn.json examples/laevatain-umbral-torch.json
+npm run efsim -- simulate examples/laevatain-solo.scenario.json --verbose  # a rotation on the timeline
+npm run efsim -- search examples/laevatain-solo.scenario.json              # find a rotation for its team
+npm run efsim -- zmdlogs check fixtures/zmdlogs-40d9a3c1da37.json         # predict a logged fight's hits
 ```
 
 Build files follow [`schemas/build.schema.json`](schemas/build.schema.json):
 operator, level, promotion, potential, skill levels, weapon (level and the
-levels of its three skills) and up to four gear pieces with the artificing
-level of each stat line. `calc --verbose` lists every contribution to every
-stat and the damage zones of a hit.
-
-Limits today: conditional effects (most weapon and gear set passives,
-talent buffs) are only included where a kit or weapon kit defines them as a
-`--condition`; susceptibility, link, finisher, weakness, protection and arts
-reactions aren't modelled yet. The output says so.
+levels of its three skills), up to four gear pieces with the artificing
+level of each stat line, and an optional food. Scenarios
+([`schemas/scenario.schema.json`](schemas/scenario.schema.json)) name a
+team, an enemy and a rotation. `calc --verbose` lists every contribution
+to every stat and the damage zones of a hit; `calc` covers one hit at a
+time, so effects that need a fight (Link, statuses, triggered buffs) are
+`simulate`'s, or counted by hand with `--buff`.
 
 ## Goals
 
