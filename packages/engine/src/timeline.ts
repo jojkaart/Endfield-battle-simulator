@@ -30,14 +30,16 @@ import {
 } from "./damage.ts";
 import { applies, SNAPSHOT_ZONES, zoneSum, type HitContext, type Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
-import { landingFrames, resolveApplication, type EventSource, type GameData, type KitBuff, type KitHit, type KitSkill, type OperatorKit, type SkillTiming, type SpKind, type StackGain, type StackRequirement } from "./model.ts";
+import { landingFrames, resolveApplication, type EnemyData, type EventSource, type GameData, type KitBuff, type KitHit, type KitSkill, type OperatorKit, type SkillTiming, type SpKind, type StackGain, type StackRequirement } from "./model.ts";
 import { effectiveKit } from "./triggers.ts";
 import { allActions, causeMatches, eventMatches, triggerActionAt, triggerSkillId, type BattleEvent, type BuffCategory, type KitTrigger } from "./events.ts";
 import { evaluate, test, valueKeys, type EvalContext, type Predicate, type ValueExpr } from "./expr.ts";
 import { applyBuff, buffAttr, buffModifiers, buffReach, endBuff, endBuffFor, extendBuff, reaches, recordedOf, remainingOf, resolveValue, withBuff, type ActiveBuff, type AttrFilters } from "./buffs.ts";
 import { computeStats, DEFAULT_STAT_OPTIONS, foodOf, skillLevel, skillParam, type StatPanel } from "./stats.ts";
 import { Attr } from "./attributes.ts";
-import { applyToEnemy, expireStatus, nextTick, NO_STATUS, statusModifiers, tickStatus, type EnemyStatus, type StatusEvent, type StatusTweaks } from "./status.ts";
+import { applyToEnemy, ARTS_ELEMENTS, expireStatus, nextTick, NO_STATUS, statusModifiers, tickStatus, type EnemyStatus, type StatusEvent, type StatusTweaks } from "./status.ts";
+import type { ArtsElement } from "./reactions.ts";
+import type { AttrType } from "./attributes.ts";
 import { FPS } from "./units.ts";
 import { DIVE_MOTION, FINISHER_SP_SOURCE_TYPE } from "./constants.ts";
 
@@ -302,7 +304,19 @@ export interface TimelineContext {
   readonly costBuffs?: boolean;
   /** Whether any kit buff maps the basic-attack input (KitBuff.basicAttack). */
   readonly inputBuffs?: boolean;
+  /** The scenario's enemy (TimelineScenario.target). */
+  readonly enemy: EnemyData;
+  /** Per arts element: frames from an infliction to its Arts Burst (BattleConstants.burstDelayFrames). */
+  readonly burstDelayFrames: Readonly<Record<ArtsElement, number>>;
 }
+
+/** Operator attributes the timeline reads from the panel, whose default (GameData.attributeDefaults) holds when no line sets them. */
+const TIMELINE_ATTRS: readonly AttrType[] = [
+  Attr.ComboSkillCooldownScalar, Attr.ComboSkillCooldownRecoveryScalar, Attr.KeywordSpeedUpScalar, Attr.UltimateSpGainScalar, Attr.PoiseDamageOutputScalar, Attr.AtbCostAddition,
+];
+
+/** Enemy attributes the timeline reads (enemyAttr): the enemy's own, else their default. */
+const ENEMY_ATTRS: readonly AttrType[] = [Attr.MaxPoise, Attr.PoiseDamageTakenScalar, Attr.PoiseRecTime, Attr.PoiseRecTimeScalar, Attr.BreakingAttackDamageTakenScalar];
 
 export function createContext(data: GameData, scenario: TimelineScenario): TimelineContext {
   if (scenario.team.length === 0 || scenario.team.length > 4) throw new EngineError("a team has 1–4 operators");
@@ -324,8 +338,17 @@ export function createContext(data: GameData, scenario: TimelineScenario): Timel
   const beforeDamage = [...kits.values()].some((k) => k.triggers.some((t) => t.beforeDamage));
   const buffAttrs = new Set([...kits.values()].flatMap((k) => k.buffs.flatMap((b) => b.modifiers.flatMap((m) => (m.attr !== undefined ? [m.attr] : [])))));
   const inputBuffs = [...kits.values()].some((k) => k.buffs.some((b) => b.basicAttack !== undefined));
+  // What the timeline needs from the data, checked once here (design principle 7: no defaults for missing data).
+  const enemy = data.enemies[scenario.target.enemy];
+  if (!enemy) throw new EngineError(`unknown enemy ${scenario.target.enemy}`);
+  for (const a of TIMELINE_ATTRS) if (data.attributeDefaults[a] === undefined) throw new EngineError(`attribute ${a} has no default in the data (AttributeTable), and the timeline reads it`);
+  for (const a of ENEMY_ATTRS) if (enemy.staticAttrs[a] === undefined && data.attributeDefaults[a] === undefined) throw new EngineError(`${enemy.id} has no attribute ${a}, nor has the data a default for it`);
+  const delays = data.constants.burstDelayFrames;
+  const noDelay = ARTS_ELEMENTS.filter((e) => delays?.[e] === undefined);
+  if (!delays || noDelay.length) throw new EngineError(`the data has no burst delay (BattleConstants burstDelayFrames) for ${noDelay.join(", ")}`);
+  if (scenario.options.dodge && !data.constants.perfectDodge) throw new EngineError("dodging needs the perfect dodge settings (BattleConstants perfectDodge), which the data doesn't have");
   return {
-    data, scenario, builds, panels, modifiers, kits, beforeDamage,
+    data, scenario, builds, panels, modifiers, kits, beforeDamage, enemy, burstDelayFrames: delays as Record<ArtsElement, number>,
     ...(foodEnds.size ? { foodEnds } : {}),
     ...(buffAttrs.has(Attr.ComboSkillCooldownRecoveryScalar) ? { comboRates: true } : {}),
     ...(buffAttrs.has(Attr.AtbCostAddition) ? { costBuffs: true } : {}),
@@ -340,6 +363,13 @@ export function panelAt(ctx: TimelineContext, operator: string, frame: number): 
   const panel = ctx.panels.get(operator);
   if (!panel) throw new EngineError(`${operator} isn't in the team`);
   return panel;
+}
+
+/** An attribute's total on a panel: its line's, else the attribute's default (one of TIMELINE_ATTRS, checked in createContext). */
+function attrTotal(ctx: TimelineContext, panel: StatPanel, attr: AttrType): number {
+  const v = panel.attrs[attr]?.total ?? ctx.data.attributeDefaults[attr];
+  if (v === undefined) throw new EngineError(`attribute ${attr} has no default in the data`);
+  return v;
 }
 
 export function init(ctx: TimelineContext): TimelineState {
@@ -453,7 +483,7 @@ function skillCosts(ctx: TimelineContext, operator: string, skillId: string, fra
   const cost = skillParam(panel, skillId, "cost", level.costValue);
   const kind = kitSkill(ctx, operator, skillId).kind;
   // Combo cooldowns scale with attribute 47 (ComboSkillCooldownScalar: Frontiers, Qingbo ×0.85).
-  const scalar = kind === "combo" ? (panel.attrs[Attr.ComboSkillCooldownScalar]?.total ?? ctx.data.attributeDefaults[Attr.ComboSkillCooldownScalar] ?? 1) : 1;
+  const scalar = kind === "combo" ? attrTotal(ctx, panel, Attr.ComboSkillCooldownScalar) : 1;
   return {
     group,
     /** The action's kind (KitSkill.kind), which basic-attack control and combo windows go by. */
@@ -476,7 +506,7 @@ function skillCosts(ctx: TimelineContext, operator: string, skillId: string, fra
 function spCostAt(ctx: TimelineContext, st: TimelineState, operator: string, costs: { readonly paysSp: boolean; readonly spCost: number }, frame: number): number {
   if (!costs.paysSp) return 0;
   const panel = panelAt(ctx, operator, frame);
-  const extra = (panel.attrs[Attr.AtbCostAddition]?.total ?? 0) + buffAttr(st.buffs, operator, frame, Attr.AtbCostAddition, panel.attrs[Attr.AtbCostAddition]);
+  const extra = attrTotal(ctx, panel, Attr.AtbCostAddition) + buffAttr(st.buffs, operator, frame, Attr.AtbCostAddition, panel.attrs[Attr.AtbCostAddition]);
   return extra === 0 ? costs.spCost : Math.max(0, costs.spCost + extra);
 }
 
@@ -523,7 +553,7 @@ function needsWindow(ctx: TimelineContext, operator: string, skill: KitSkill): b
 function comboRate(ctx: TimelineContext, buffs: readonly ActiveBuff[], operator: string, frame: number): number {
   const panel = panelAt(ctx, operator, frame);
   const line = panel.attrs[Attr.ComboSkillCooldownRecoveryScalar];
-  const base = line?.total ?? ctx.data.attributeDefaults[Attr.ComboSkillCooldownRecoveryScalar] ?? 1;
+  const base = attrTotal(ctx, panel, Attr.ComboSkillCooldownRecoveryScalar);
   return base + buffAttr(buffs, operator, frame, Attr.ComboSkillCooldownRecoveryScalar, line ?? { base, add: 0, multiply: 1 });
 }
 
@@ -635,7 +665,10 @@ export function diveFrames(m: { readonly maxJumpHeight: number; readonly gravity
 
 function timingOf(ctx: TimelineContext, skillId: string): SkillTiming {
   if (skillId === DODGE) {
-    const n = ctx.data.constants.perfectDodge?.busyFrames ?? 0;
+    const pd = ctx.data.constants.perfectDodge;
+    // Only a perfect dodge makes this the current action, and dodging needs the settings (createContext).
+    if (!pd) throw new EngineError("a perfect dodge without the perfect dodge settings in the data");
+    const n = pd.busyFrames;
     return { durationFrames: n, exclusiveFrames: n, windows: [], channels: [], specification: 2, keepsChain: true, slowdowns: [], jumps: [], ends: [] };
   }
   // In the air until the landing at the latest (a plunging action: nothing else of the operator's starts meanwhile).
@@ -979,7 +1012,7 @@ function shiftOperator(st: TimelineState, operator: string, start: number, n: nu
 /** An operator's action speed: attribute 92 (KeywordSpeedUpScalar, default 1) plus haste buffs, within 0.1–1.3. */
 function actionSpeed(ctx: TimelineContext, st: TimelineState, operator: string, frame: number): number {
   const panel = panelAt(ctx, operator, frame);
-  const base = panel.attrs[Attr.KeywordSpeedUpScalar]?.total ?? ctx.data.attributeDefaults[Attr.KeywordSpeedUpScalar] ?? 1;
+  const base = attrTotal(ctx, panel, Attr.KeywordSpeedUpScalar);
   return Math.max(0.1, Math.min(1.3, base + buffAttr(st.buffs, operator, frame, Attr.KeywordSpeedUpScalar, panel.attrs[Attr.KeywordSpeedUpScalar])));
 }
 
@@ -1013,7 +1046,7 @@ function gainEnergy(ctx: TimelineContext, st: TimelineState, operator: string, a
   const blocked = (st.energyBlockedUntil[operator] ?? -1) > frame || st.buffs.some((b) => b.blocksEnergy && b.owner === operator && b.appliedAt <= frame && b.expiresAt > frame);
   if (amount <= 0 || (!opts.ignoreBlock && blocked)) return st;
   const panel = panelAt(ctx, operator, frame);
-  const efficiency = opts.ignoreEfficiency ? 1 : (panel.attrs[Attr.UltimateSpGainScalar]?.total ?? ctx.data.attributeDefaults[Attr.UltimateSpGainScalar] ?? 1) + buffAttr(st.buffs, operator, frame, Attr.UltimateSpGainScalar, panel.attrs[Attr.UltimateSpGainScalar]);
+  const efficiency = opts.ignoreEfficiency ? 1 : attrTotal(ctx, panel, Attr.UltimateSpGainScalar) + buffAttr(st.buffs, operator, frame, Attr.UltimateSpGainScalar, panel.attrs[Attr.UltimateSpGainScalar]);
   const now = st.energy[operator] ?? 0;
   return { ...st, energy: { ...st.energy, [operator]: Math.min(maxEnergy(ctx, operator), now + amount * efficiency) } };
 }
@@ -1085,9 +1118,11 @@ function damageOptions(ctx: TimelineContext, st: TimelineState, operator: string
   };
 }
 
-/** An enemy attribute from its level-independent ones, else the attribute's default. */
-function enemyAttr(ctx: TimelineContext, attr: number): number {
-  return ctx.data.enemies[ctx.scenario.target.enemy]?.staticAttrs[attr] ?? ctx.data.attributeDefaults[attr] ?? 0;
+/** An enemy attribute from its level-independent ones, else the attribute's default (one of ENEMY_ATTRS, checked in createContext). */
+function enemyAttr(ctx: TimelineContext, attr: AttrType): number {
+  const v = ctx.enemy.staticAttrs[attr] ?? ctx.data.attributeDefaults[attr];
+  if (v === undefined) throw new EngineError(`${ctx.enemy.id} has no attribute ${attr}, nor has the data a default for it`);
+  return v;
 }
 
 /** The enemy's stagger HP (attribute 20); an enemy without one can't be staggered. */
@@ -1115,7 +1150,7 @@ function dealPoise(ctx: TimelineContext, st: TimelineState, operator: string, va
     const { elements, when, ...rest } = f;
     return (!elements || elements.includes(landing.hit.element)) && applies({ zone: "atk", value: 0, source: "", ...rest }, landing.hit) && (!when || (test(when, landing.ec) ?? false));
   };
-  const scalar = (panel.attrs[Attr.PoiseDamageOutputScalar]?.total ?? ctx.data.attributeDefaults[Attr.PoiseDamageOutputScalar] ?? 1) +
+  const scalar = attrTotal(ctx, panel, Attr.PoiseDamageOutputScalar) +
     buffAttr(st.buffs, operator, frame, Attr.PoiseDamageOutputScalar, undefined, { accepts, ...(landing?.cast !== undefined ? { cast: landing.cast } : {}) });
   const dealt = value * scalar * enemyAttr(ctx, Attr.PoiseDamageTakenScalar);
   // A stagger that has ended refilled the bar.
@@ -1123,7 +1158,7 @@ function dealPoise(ctx: TimelineContext, st: TimelineState, operator: string, va
   const poise = before - dealt;
   // Stagger Nodes (EnemyData poiseKnotPctList): the bar passing one, from above (once per cycle: the bar only falls until it refills).
   const max = maxPoise(ctx);
-  const nodes: BattleEvent[] = (ctx.data.enemies[ctx.scenario.target.enemy]?.staggerNodes ?? [])
+  const nodes: BattleEvent[] = ctx.enemy.staggerNodes
     .filter((n) => before > n * max && poise <= n * max)
     .map((node) => ({ type: "staggerNode", frame, operator, node }));
   if (poise > 0) return { state: { ...st, stagger: { poise, until: null, finisherUsed: false } }, events: nodes };
@@ -1170,10 +1205,10 @@ function currentActionOf(ctx: TimelineContext, st: TimelineState, operator: stri
 
 /** The enemy's super armor (its Staggered value while Staggered) and rank, where the data has them. */
 function enemyStanding(ctx: TimelineContext, staggered: boolean): Situation {
-  const e = ctx.data.enemies[ctx.scenario.target.enemy];
+  const e = ctx.enemy;
   return {
-    ...(e?.superArmor ? { enemySuperArmor: staggered ? e.superArmor.staggered : e.superArmor.initial } : {}),
-    ...(e?.rank !== undefined ? { enemyRank: e.rank } : {}),
+    ...(e.superArmor ? { enemySuperArmor: staggered ? e.superArmor.staggered : e.superArmor.initial } : {}),
+    ...(e.rank !== undefined ? { enemyRank: e.rank } : {}),
   };
 }
 
@@ -1412,7 +1447,7 @@ export interface PendingBurst {
 
 /** An infliction's status events without its bursts, which are scheduled their element's delay later, on the enemy's clock (BattleConstants.burstDelayFrames). */
 function delayBursts(ctx: TimelineContext, st: TimelineState, events: readonly StatusEvent[], fromKind: SkillType | "none", cast?: number): { state: TimelineState; now: StatusEvent[] } {
-  const delay = (e: StatusEvent) => (e.kind === "burst" ? (ctx.data.constants.burstDelayFrames?.[e.element] ?? 0) : 0);
+  const delay = (e: StatusEvent) => (e.kind === "burst" ? ctx.burstDelayFrames[e.element] : 0);
   const now = events.filter((e) => delay(e) === 0);
   if (now.length === events.length) return { state: st, now };
   const later = events.flatMap((e) => (e.kind === "burst" && delay(e) > 0 ? [{ frame: e.frame + delay(e), event: { ...e, frame: e.frame + delay(e) }, fromKind, ...(cast !== undefined ? { cast } : {}) }] : []));
@@ -2066,9 +2101,11 @@ function takeJump(st: TimelineState, j: PendingJump): { state: TimelineState; ev
 function enemyAct(ctx: TimelineContext, state: TimelineState, a: EnemyAction): TimelineState {
   const events = enemyActionEvents(ctx, state, a);
   const dodge = ctx.scenario.options.dodge;
-  const pd = ctx.data.constants.perfectDodge;
   const op = state.controlled;
-  if (!dodge || !pd || !events.some((e) => e.type === "attacked" && e.operator === op)) return runTriggers(ctx, state, events, null);
+  if (!dodge || !events.some((e) => e.type === "attacked" && e.operator === op)) return runTriggers(ctx, state, events, null);
+  // createContext checked that dodging has its settings.
+  const pd = ctx.data.constants.perfectDodge;
+  if (!pd) throw new EngineError("dodging needs the perfect dodge settings (BattleConstants perfectDodge), which the data doesn't have");
   const cur = state.acting[op];
   if (cur) {
     const t = timingOf(ctx, cur.skill);
@@ -2592,7 +2629,7 @@ function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: stri
     );
   }
   // A skill whose kit names the hit that returns SP gets it there, not on its first hit; a finisher also gets the enemy's finisher SP (GainBreakingAttackAtb).
-  const finisherSp = full.timing.specification === 8 && !followUp ? (ctx.data.enemies[ctx.scenario.target.enemy]?.finisherSp ?? 0) : 0;
+  const finisherSp = full.timing.specification === 8 && !followUp ? ctx.enemy.finisherSp : 0;
   const ownGain = skill.hits.some((h) => h.sp !== undefined) ? 0 : skillSpGain(ctx, operator, skillId);
   const spGain = ownGain + finisherSp;
   if (spGain > 0 && pending.length > 0) {

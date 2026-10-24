@@ -2037,6 +2037,22 @@ describe("timeline: failures are loud (design principle 7)", () => {
     expect(startsNow(ctx, s, { operator: op, skill: "no_such_skill" })).toBe(false);
   });
 
+  it("a scenario whose enemy or required constants aren't in the data is refused at once, not run on defaults", () => {
+    const sc = scenario([]);
+    expect(() => createContext(data, { ...sc, target: { enemy: "eny_no_such_enemy", level: 90 } })).toThrow(/unknown enemy eny_no_such_enemy/);
+    // Dodging without the perfect-dodge settings used to mean no dodges at all.
+    const { perfectDodge: _pd, ...noDodgeData } = data.constants;
+    expect(() => createContext({ ...data, constants: noDodgeData }, { ...sc, options: { ...sc.options, dodge: { chance: 1 } } })).toThrow(/perfect dodge/);
+    expect(() => createContext({ ...data, constants: noDodgeData }, sc)).not.toThrow();
+    // Bursts without their delay used to land at once.
+    const { burstDelayFrames: _bd, ...noBurstData } = data.constants;
+    expect(() => createContext({ ...data, constants: noBurstData }, sc)).toThrow(/burst delay/);
+    expect(() => createContext({ ...data, constants: { ...data.constants, burstDelayFrames: { fire: 30 } } }, sc)).toThrow(/burst delay/);
+    // An attribute the timeline reads without its default used to be taken as 1 (combo cooldown recovery rate, 93).
+    const { 93: _rate, ...defaults } = data.attributeDefaults;
+    expect(() => createContext({ ...data, attributeDefaults: defaults }, sc)).toThrow(/attribute 93/);
+  });
+
   it("a combo cooldown whose end keeps moving with the rate buffs met on the way is an error, not a guess", () => {
     // A ticker applies a 10-frame recovery rate 0 (attribute 93 −1) every 10 frames: each look further on finds the
     // cooldown stopped longer, so its end never settles.
