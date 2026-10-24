@@ -908,7 +908,11 @@ function shiftWorld(st: TimelineState, start: number, n: number): TimelineState 
   };
 }
 
-/** An operator's own timeline after `start` (its hits on the way, delayed actions, current action) happens `n` frames later. */
+/**
+ * An operator's own timeline after `start` (its hits on the way, delayed actions, its casts' team energy, current
+ * action) happens `n` frames later. What belongs to a cast goes with the cast's operator (as endCurrentSkill and
+ * takeJump treat it); a delayed action of no cast goes with its trigger's owner.
+ */
 function shiftOperator(st: TimelineState, operator: string, start: number, n: number): TimelineState {
   if (n <= 0) return st;
   const later = (f: number) => (f > start ? f + n : f);
@@ -918,7 +922,8 @@ function shiftOperator(st: TimelineState, operator: string, start: number, n: nu
   return {
     ...st,
     pending: st.pending.map((h) => (h.operator === operator && h.frame > start && !h.pinned ? { ...h, frame: h.frame + n, ...(h.launchAt !== undefined ? { launchAt: later(h.launchAt) } : {}) } : h)),
-    pendingActions: st.pendingActions.map((a) => (a.owner === operator && a.frame > start ? { ...a, frame: a.frame + n, ...(a.launchAt !== undefined ? { launchAt: later(a.launchAt) } : {}) } : a)),
+    pendingActions: st.pendingActions.map((a) => ((a.cast?.operator ?? a.owner) === operator && a.frame > start ? { ...a, frame: a.frame + n, ...(a.launchAt !== undefined ? { launchAt: later(a.launchAt) } : {}) } : a)),
+    pendingEnergy: st.pendingEnergy.map((x) => (x.cast?.operator === operator && x.frame > start ? { ...x, frame: x.frame + n } : x)),
     pendingJumps: st.pendingJumps.map((j) => (j.operator === operator && j.frame > start ? { ...j, frame: j.frame + n } : j)),
     ...(cur ? { acting: { ...st.acting, [operator]: { ...cur, frame: cur.frame + n, ...(cur.skips ? { skips: cur.skips.map((k) => ({ ...k, at: k.at + n })) } : {}) } } } : {}),
     ...(chain ? { chainNext: { ...st.chainNext, [operator]: { ...shift(chain), ...(chain.alternatives ? { alternatives: chain.alternatives.map(shift) } : {}) } } } : {}),

@@ -838,6 +838,22 @@ describe("timeline: an ultimate's time stop", () => {
     expect(stopped).toEqual(plain.map((f) => (f > 10 ? f + 61 : f)));
   });
 
+  it("delays a frozen operator's team energy with its hits (a battle skill's teamEnergy at its data frame)", () => {
+    // Gilberta's battle skill with its team energy at frame 30 (as Dapan's at 43): Laevatain's stop at 10 moves it to 91.
+    const gs = "chr_0013_aglina_normal_skill";
+    const kit = data.kits.operators[g] as OperatorKit;
+    const d: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [g]: { ...kit, skills: kit.skills.map((s) => (s.skillId === gs ? { ...s, teamEnergy: [{ frame: 30, ratio: 1 }] } : s)) } } } };
+    const rotation = [{ operator: g, skill: gs }, { operator: op, skill: L + "ultimate_skill", at: 10 }];
+    const ctx = createContext(d, { ...scenario(rotation), team, controlled: g, startEnergy: { [op]: "full", [g]: "full" } });
+    let s = init(ctx);
+    s = apply(ctx, s, rotation[0] as RotationAction);
+    expect(s.pendingEnergy.map((x) => x.frame)).toEqual([30, 30]);
+    s = apply(ctx, s, rotation[1] as RotationAction);
+    expect(s.pendingEnergy.map((x) => x.frame)).toEqual([91, 91]);
+    const hit = s.pending.filter((h) => h.operator === g).map((h) => h.frame);
+    expect(Math.max(...hit)).toBeGreaterThan(91);
+  });
+
   it("freezes the world's timers and SP regen, but not cooldowns", () => {
     const gil = { operator: g, skill: "chr_0013_aglina_normal_skill" };
     const before = runTo([gil], 10).end;
