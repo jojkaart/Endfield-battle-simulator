@@ -512,7 +512,13 @@ nothing on a server. API documented in
     buff events: `effects[{zone, element, rate, …}]` with zones `dmg_inc`,
     `vuln_taken`, `fragile`, `atk`, `res`, `prod_vuln_taken` (mapping to our
     zones inferred, not documented). No stat panel (`initialBaseline.attrs`
-    empty), so stats must be computed from the loadout.
+    empty), so stats must be computed from the loadout. Skill events
+    without a `value` (laneType `skill`) are casts whose key isn't a damage
+    key: an ultimate that only buffs, a battle skill's cast before its
+    projectiles; their time can precede the skill's first effect (0eef:
+    Liino's battle skill at 760 ms, its buffs at 1314 ms). The importer
+    keeps them as `casts` (2026-10-25; `efsim zmdlogs casts` adds them to
+    an older fixture from a downloaded detail).
   - No battle list or search. Find candidates through boards:
     `GET /api/home/hot-bosses` → `GET /api/bosses/{slug}/rankings` (each
     account's fastest run only) or

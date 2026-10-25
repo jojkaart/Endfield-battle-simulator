@@ -1,5 +1,7 @@
 // Checks a log fixture: predicts every logged hit that a kit covers from the
-// stored build and the logged buff effects, and compares with the real damage.
+// stored build, the logged buff effects and what the replay of the logged
+// casts decides (buffreplay.ts; docs/design.md, "What the replay decides"),
+// and compares with the real damage.
 
 import {
   allActions,
@@ -54,7 +56,7 @@ export type AssumptionKind =
   | "noCrit"
   /** Which buffs starting or ending at the hit applied (boundarySubsets). */
   | "boundary"
-  /** Corrosion's level (the log lists Corrosion without a value). */
+  /** Corrosion's level (the log lists Corrosion without a value), where the replay's landing has none (corrosionAt). */
   | "corrosion"
   /** A status hit's stacks. */
   | "stacks"
@@ -62,15 +64,15 @@ export type AssumptionKind =
   | "kitHit"
   /** A hit's situational parts (KitHit.if, extraScale) taken as met. */
   | "situational"
-  /** The count of the event behind a value (eventCount). */
+  /** The count of the event behind a value (eventCounts), where the replay saw no window. */
   | "eventCount"
-  /** What a value reads that only a fight knows (hitvalues.ts). */
+  /** What a value reads that only a fight knows (hitvalues.ts), where the replay's landing doesn't say. */
   | "value"
-  /** Buffs the hit's cast consumes, which the log doesn't list (unloggedCastBuffs). */
+  /** Buffs the hit's cast consumes, which the log doesn't list, where the replay can't say (castBuffVariants). */
   | "unloggedCastBuff"
   /** The hitter's own kit buffs, or their crit parts, which the log doesn't list (unloggedOwnBuffs). */
   | "unloggedOwnBuff"
-  /** Link stacks on the cast (linkVariants). */
+  /** Link stacks on the cast, where the replay can't say (linkVariants). */
   | "link"
   /** An enemy-side team aura the log doesn't list (unloggedEnemyAuras). */
   | "enemyAura"
@@ -973,7 +975,7 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
     const applied = reaction?.kind === "combustionTick" ? combustionSource(fx, logged) : null;
     const predicted: number[] = [];
     // What the log never lists (batch 4 L3): the operator's own unlogged buffs and crit parts, and Link on a battle skill's or
-    // ultimate's hits (around the stacks the logged Link sources predict), each tried after every reading without them.
+    // ultimate's hits (the replay's, or tried where it can't say), each tried after every reading without them.
     const kit = effectiveKit(data, member.build);
     const placed = placement.hits.get(logged);
     const kind = placed ? placed.cast.kind : (kit?.skills.find((s) => found.some(([f]) => f.skillId === s.skillId))?.kind ?? null);

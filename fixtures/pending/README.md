@@ -26,19 +26,23 @@ buffs, not the engine's).
   say so: this INT battle predates the 1.6 tables (555me's commit
   371c743), and all of it is under her ultimate's forced Corrosion. Not
   a kit error the check can name; maybe the battle is from 1.5.
-- `zmdlogs-dbaee23b801d.json`: 75 of 78 matches only with the log's buff
-  listing; Liino (25) and Xaihi (7) have no other. The replay has
-  `buff_wpn_funnel_0005_atk_up` (Xaihi's Stanza of Memorials),
-  `buff_wpn_funnel_0016_will_atk` and Liino's
-  `buff_chr_0035_liino_atkup` / `buff_wpn_lance_0014_damageup` off or at
-  other instance counts where the log lists them and the damage has them
-  (`zmdlogs check`'s replay section): triggers the replay misses, likely
-  casts without logged damage (journal 2026-10-22).
-- `zmdlogs-0eef2474a26f.json`: Arcane's 3 matched hits fit only the
-  log's listing: the replay has Liino's `buff_wpn_lance_0014_damageup`
-  on Arcane at 2.7–3.7 s, which the log doesn't list and the damage
-  doesn't have. Typhoeus, Si and Liino verify (14, 5 and 12 matches;
-  16, 14 and 1 hits under Corrosion within its range).
+- `zmdlogs-dbaee23b801d.json` (back in fixtures/ since 2026-10-25): 75
+  of 78 matches were only with the log's buff listing; Liino (25) and
+  Xaihi (7) had no other. The replay had `buff_wpn_funnel_0005_atk_up`
+  (Xaihi's Stanza of Memorials) off: it comes from her ultimate, which has
+  no damage. The replay now infers that cast from the buff's lane
+  (castsFromBuffLanes; journal 2026-10-25): Liino 20 plain, 2 assumed,
+  3 fallback; Xaihi 1 plain, 6 fallback (Arcane's weapon's
+  `buff_wpn_funnel_0016_will_atk` the replay still has off where the log
+  lists it); negative control 0.
+- `zmdlogs-0eef2474a26f.json` (back in fixtures/ since 2026-10-25):
+  Arcane's 3 matched hits fit only the log's listing: the replay had
+  Liino's `buff_wpn_lance_0014_damageup` on Arcane at 2.7–3.7 s, which the
+  log doesn't list and the damage doesn't have. That buff goes to whom her
+  combo heals (the controlled operator, which the log doesn't record): the
+  replay leaves it to the log now, and Arcane has 2 plain and 1 assumed
+  matches. With the replay's Corrosion (its landings' shred) the negative
+  control gives 0 (×1.03 gave 6: Corrosion level 4 on Liino's volley).
 
 The Corrosion range moved hits from "unmodelled" to mismatch in two
 fixtures already pending: `04d401ad257e` Catcher 9, Purrchena 1;
@@ -134,3 +138,23 @@ the replay and the log disagree and which the damage fits; the largest
 no damage of (abfd's `buff_wpn_funnel_0010_atk_up` and
 `buff_equipsuit_usp_02_AddAttack`) and the enemy's
 `buff_common_affixes_vulnerable_physical` in d4fb, d572 and de6a.
+
+**With the replay's facts (2026-10-25;** docs/design.md, "What the replay
+decides": Link, cast-consumed buffs, event counts, own stacks, layers,
+Corrosion, crits and casts without damage from the replay of the logged
+casts). Gains: d572 Camille plain 121 → 223, Rossi 2 → 35; 458b Laevatain
+65 → 148 (fallback 154 → 78); 4bfc Liino 98 → 164; d4fb Chen 14 → 53,
+Pogranichnik 82 → 147 (fallback 109 → 53); 012ae Laevatain 21 → 37
+(mismatch 37 → 23), Camille 28 → 65 (mismatch 8 → 0); 4e36 Si 33 → 60,
+Wulfgard 4 → 26 (mismatch 19 → 13); 3aa6 Arclight 29 → 44. Losses, each a
+disagreement the replay now shows instead of a count tried until one fit:
+d4fb Chen 8 → 41 mismatches (Glorious Memory instances on her ultimate,
+talent layers), Endministrator 9 → 12 and 7e19 Endministrator 0 → 2 (the
+Grand Vision her ultimate consumes acts on her crystal shatter in the
+timeline, not in the damage), abfd Si 0 → 11 (one Yinglung's Edge layer
+short, as in b7b3), 458b Akekuri 147 → 156 (attack 1/2), 0c14 Rossi
+256 → 260 and de6a Chen 100 → 102 (matches that fit only with Link one off
+the logged sources' count), 458b Laevatain 1 → 7 and c6d8 Zhuang Fangyi
+154 → 156, d9e5 Arcane 13 → 15 (no Link: her two battle skills leave the
+Corrosion bracket).
+
