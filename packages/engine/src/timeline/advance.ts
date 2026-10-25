@@ -117,6 +117,24 @@ function nextDue(st: TimelineState, frame: number): Due | null {
   return due;
 }
 
+/**
+ * The first frame after `frame` at which anything is due (nextDue's sources: what's scheduled, of every kind; the enemy's
+ * status ticks; buffs' ends and periodic ticks), or null: the frames at which a state can change on its own.
+ */
+export function nextEventAfter(st: TimelineState, frame: number): number | null {
+  let next: number | null = null;
+  const consider = (f: number | null | undefined) => {
+    if (f !== null && f !== undefined && Number.isFinite(f) && f > frame && (next === null || f < next)) next = f;
+  };
+  for (const x of st.scheduled) consider(x.frame);
+  for (const x of st.enemy.statuses) if (x.nextTickAt !== undefined && x.nextTickAt <= x.expiresAt) consider(x.nextTickAt);
+  for (const b of st.buffs) {
+    consider(b.expiresAt);
+    if (b.nextTick !== undefined && b.nextTick <= b.expiresAt) consider(b.nextTick);
+  }
+  return next;
+}
+
 /** Runs everything due up to (and including) a frame, in order (nextDue). */
 function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number): TimelineState {
   if (frame < state.frame) throw new EngineError(`can't go back from frame ${state.frame} to ${frame}`);

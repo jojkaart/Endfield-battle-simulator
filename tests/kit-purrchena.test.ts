@@ -140,7 +140,8 @@ describe("Purrchena's combo: the giftbox", () => {
   it("opens on an attack on the controlled operator; unshielded: heal and 10 energy at 61, the item at 62; she can act from MarkCanInterrupt 28", () => {
     const sc = scenario({}, attackAt(1));
     const ctx = createContext(data, sc);
-    expect(earliestStart(ctx, init(ctx), op("combo_skill"))).toHaveProperty("error");
+    // One asked for earlier waits for the attack that opens it (until 2026-10-25 an error: a combo waited only for hits and delayed actions).
+    expect(earliestStart(ctx, init(ctx), op("combo_skill"))).toEqual({ frame: 30 });
     const s = run(sc, [op("combo_skill", 1.5), op("attack1")], 300);
     expect(castAt(s, "attack1") - 45).toBe(28);
     const at = firstSeed((seed) => run(withSeed(sc, seed), [op("combo_skill", 1.5)], 300), (x) => x.hits.find((h) => h.skillId === P + "combo_skill")?.frame);

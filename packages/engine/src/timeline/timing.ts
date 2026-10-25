@@ -13,7 +13,7 @@ import { CHAIN_CACHE_FRAMES, priorityOf, SP, hasteFrames, skillFramesOf } from "
 import { kitSkill, panelAt, skillCosts, timingOf } from "./context.ts";
 import { afterRegen, isStaggered, spAt, spCostAt } from "./resources.ts";
 import { situationAt } from "./situation.ts";
-import { advance } from "./advance.ts";
+import { advance, nextEventAfter } from "./advance.ts";
 import { castBound, ofCast, ofKind } from "./schedule.ts";
 
 /**
@@ -302,6 +302,27 @@ export function startFrom(ctx: TimelineContext, state: TimelineState, action: Ro
     if (dive?.end !== action.skill) return { error: `${action.skill} is a plunging skill, not ${action.operator}'s dive` };
     if (state.controlled !== action.operator) return { error: `${action.operator} isn't the controlled operator: only it jumps (swap first)` };
   }
+  // Every gate below may move the start; one that does (waiting for a combo's window above all) is judged again from
+  // there with all of them, until the start stops moving (round-two review: a wait for the window wasn't re-checked).
+  for (let round = 0; round < MAX_GATE_ROUNDS; round++) {
+    const r = gatesFrom(ctx, state, action, costs, frame);
+    if ("error" in r || r.frame === frame) return r;
+    frame = r.frame;
+  }
+  return { error: `${action.skill}: its start keeps moving as its gates are judged again (frame ${frame} after ${MAX_GATE_ROUNDS} rounds)` };
+}
+
+/** Rounds of startFrom's gates before a start that keeps moving is reported. */
+const MAX_GATE_ROUNDS = 16;
+
+/**
+ * startFrom's gates from a frame on, in order: the cooldown (at a recovery rate, settled), the current skill's own hits,
+ * the action gate (with the basic-attack input's mapping), a channel forbidding casts, a finisher's Stagger, the SP cost
+ * (waited for), availability, ultimate energy and the combo window (waited for: the first frame at which anything is due
+ * that opens it). The frame they give, or an error; startFrom judges again from a frame that moved.
+ */
+function gatesFrom(ctx: TimelineContext, state: TimelineState, action: RotationAction, costs: ReturnType<typeof skillCosts>, start: number): { frame: number } | { error: string } {
+  let frame = start;
   // (A cooldown run at a recovery rate may end within a frame: the skill is ready from the next whole one.)
   frame = Math.max(frame, Math.ceil(state.readyAt[action.skill] ?? 0));
   // A combo cooldown at a recovery rate (attribute 93) follows the rate buffs, which may change before it ends: judged on the state then.
@@ -371,11 +392,18 @@ export function startFrom(ctx: TimelineContext, state: TimelineState, action: Ro
     if (windowed) {
       const key = windowKey(ctx, action.operator, action.skill);
       if (!windowOpen(then, action.operator, key, frame)) {
-        // Not open yet: wait for a hit already on its way to open it (a recorded rotation's combo follows its trigger), or for
-        // a delayed trigger action to (a combo opening its own next sequence some frames in).
-        const later = [...new Set(state.scheduled.filter((x) => (x.kind === "hit" || x.kind === "action") && x.frame > frame).map((x) => x.frame))].sort((a, b) => a - b);
-        const opens = later.find((f) => windowOpen(advance(ctx, state, f), action.operator, key, f));
-        if (opens === undefined || opens > ctx.scenario.durationFrames) return { error: `${action.skill}: its combo trigger hasn't happened (no open window at frame ${frame})` };
+        // Not open yet: wait for whatever is due to open it (a hit already on its way, a delayed trigger action, the enemy's
+        // action, a burst, a status tick, a buff's end or tick: nextEventAfter), each frame judged on the state then.
+        let s = then;
+        let opens: number | null = null;
+        for (let f = nextEventAfter(s, frame); f !== null && f <= ctx.scenario.durationFrames; f = nextEventAfter(s, f)) {
+          s = advance(ctx, s, f);
+          if (windowOpen(s, action.operator, key, f)) {
+            opens = f;
+            break;
+          }
+        }
+        if (opens === null) return { error: `${action.skill}: its combo trigger hasn't happened (no open window at frame ${frame})` };
         frame = opens;
       }
     }
