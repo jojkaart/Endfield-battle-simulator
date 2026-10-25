@@ -1,130 +1,50 @@
 # Roadmap
 
+Only what's next; what's done is in the [journal](journal.md) (older:
+[archive](journal-archive.md)) and the batch docs. Every playable operator,
+weapon and gear set has a kit (batches 1–4,
+[kit-process.md](kit-process.md)); the October review's two rounds are
+done but for the items below ([review-2026-10.md](review-2026-10.md)).
+
 ## Next steps
 
-Done 2026-10-18: TypeScript project, CI, data loader with cross-checks, stat
-aggregation, single-hit damage, Laevatain's kit, the Zero Sanity fixture (35
-in-game values, all exact), the `efsim` damage calculator, ZMDLogs fixtures
-and checker, the timeline (v1) with arts reactions and stacks, and kits for
-the six favourites.
-
-1. **Kit batches** ([kit-process.md](kit-process.md)): analysis → shared
-   features per family → re-analysis, until nothing is missing; then kits.
-   Batch 1: Laevatain and the six favourites with their weapons and gear
-   sets (absorbs the remaining steps of
-   [kit-abstractions.md](kit-abstractions.md#4-order-of-work)). Batch 2: the
-   Endministrator and the 4- and 5-star operators nearly every player has.
-   - Batch 1 is done: the seven kits and 17 equipment kits are in, with no
-     log mismatches ([kits](kit-batches/batch-1.md#kits-2026-10-19)); what's
-     left waits on in-game tests
-     ([open](kit-batches/batch-1.md#pass-2-whats-still-open)).
-   - Batch 2 is done: five kits and 27 equipment kits, and the leftovers
-     K1–K8 ([batch-2.md](kit-batches/batch-2.md)); K3 and K7 wait on
-     in-game tests.
-   - Batch 3 is done: the ten 5-star kits with 23 equipment kits
-     ([batch-3.md](kit-batches/batch-3.md)); what's left waits on in-game
-     tests 60–76 or is listed as open in the
-     [review](kit-abstractions.md#review-after-batch-3s-kits-2026-10-20)
-     (S3's residue, the dodge policy for `cast` counters, loader warnings,
-     compiler leftovers D3 / D4).
-   - Batch 4 is done (2026-10-21): the eleven 6-stars and 41 weapons, so
-     every playable operator and every weapon and gear set has a kit
-     ([batch-4.md](kit-batches/batch-4.md)). Dive attacks are rotation
-     actions. The review's follow-ups are done (log checker; attributes
-     reaching ATK, stack caps from the data, tags, `linkGained`; engine
-     timing). Open: a beside cast's timeline items, compiler leftovers
-     ([kit-abstractions.md](kit-abstractions.md#review-after-batch-4s-kits-2026-10-21)),
-     in-game tests 77–97.
-2. **Rotation search** (`efsim search`, beam search on the stepping API):
-   ranking over seeded battles for random outcomes, the found rotation's
-   spread, dives. Since 2026-10-25 (review round two): skills a few frames
-   after a swap are choices, an exact key without past deadlines, one
-   state per family in pruning, beams w/2, w, 2w with their spread, a
-   4-operator example (si-laevatain-liino-gilberta, 20 s: 36 / 85 / 172 s
-   at beams 6 / 12 / 24). Next: a score closer to the final damage (the
-   widths still disagree by 4–14%: the beam drops rotations that pay off
-   later; a cheap rollout or a value for what a state holds), then the
-   tool's purpose: team searches for the owner's favourites (6-stars at
-   P0, 4- and 5-stars at P5 unless the owner's account data says
-   otherwise) and a report of the best rotations found; in-game test 15
-   (two basic-attack chains through swaps) decides how real the team
-   rotations are.
-3. **The new logs** (fixtures/pending/README.md, 2026-10-21): 16
-   single-target fights for the operators that had none; find each
-   operator's constant factor (build values the log doesn't record, food,
-   enemy-side effects), then the kits' own mismatches. Six multi-target
-   fights wait in fixtures/multi-target/ for multi-target support.
-   - **Kit-buff replay** (2026-10-22, `zmdlogs check`): since 2026-10-25
-     the check reads facts from it (Link, cast-consumed buffs, combo event
-     counts, own stacks and buff layers, the kit hit, Corrosion, layers of
-     buffs listed once, crit-triggered buffs from the log's crits, casts
-     from cast events and buff lanes; design.md, "What the replay
-     decides"). Next: the enemy's side of a landing (inflictions,
-     Vulnerable, consumed stacks), once the replay's inflictions are checked
-     against the log's reactions (one enemy replay: reactioncheck.ts still
-     runs its own); reaction hits' levels from the replay's reactions;
-     the "fits the log" disagreements the report lists are kit questions
-     (Liino's ATK on herself, `wpn_sword_0012` counts, Physical
-     Susceptibility in d4fb / d572 / de6a, Si's Yinglung's Edge one layer
-     short in b7b3 / abfd, the Endministrator's Grand Vision on her
-     shatter); buff expiry across time stops (in-game test 18).
-   - **The check runs through the engine** (2026-10-25; design.md, "The
-     log check's rule"): plain and assumed matches are the engine's own
-     readings at the replay's landing, the log's listing a labelled
-     fallback, and every check compares the fight's totals with the log's.
-     Next, the leads its report names, largest first: the replay's Stagger
-     (Staggered at 23–34 s in 4e5e and 19–24 s in bdf2 where the log has
-     none: poise per hit or its recovery; the log's API has `poiseDamage`
-     per hit, which the fixtures don't keep yet: re-import to compare),
-     Rossi's Wolven Blood layers (crit-triggered: the log's crits on
-     trigger landings), Typhoeus's hover through her combo (the replay's
-     controlled operator), Arcane's Solemn Phalanx WILL buffs, Camille's
-     weapon ATK the log stops listing, the replay's inflictions (40d9's
-     Corrosion; check them against the log's reactions, one enemy replay),
-     statuses it doesn't deal near the logged time, landings it doesn't
-     make; then tighten the totals' bound (45% today). 458b's six
-     Laevatain `normal_skill_during_ult` hits stay ×1.3 off with the
-     log's own Stagger and listing (×1.69 of the engine's, which isn't
-     Staggered there): an unexplained factor.
-4. **Food buffs** are done (2026-10-22): `Build.food`, an item ID; the 36
-   food buffs' stats are panel lines for 300 s from the fight's start
-   (design.md, Input), in simulations, searches, `efsim calc` and the log
-   checker (7e19's and e82d's stew set by hand). Next: a search over foods
-   per operator (a scenario option listing foods to try); the importer
-   could set a food the log lists (by its buffs and values); in-game test 98
-   (DEF +x%'s formula item 1, which DEF-reading kits refuse until then).
-   - **A stricter log check** (2026-10-24; design.md, "What a log check
-     verifies"): 6 fixtures verify (0eef and dbae back on 2026-10-25);
-     the negative control's bound is 1% (4e5e 2 of 345 at ×0.97, the rest
-     0). Next: d9e5 (a 1.5-era battle, ×1.7–2.0 after Arcane's ultimate);
-     see whether matches that are mostly assumed (Rossi 123 of 161 in 4e5e:
-     unlogged own crit parts, Link near a grant) hold up hit by hit.
-5. **Corrosion model:** the log check takes Corrosion from the replay's
-   landings since 2026-10-25 (the timeline's ramp with Arcane's cap raise
-   fits bdf2: hits left within Corrosion's range 93 → 26). Open: time
-   dilation, carry-over on reapplication; in-game test 4.
-6. **Still open from setup:** a `Result` schema, `NOTICE` when MIT code is
-   first copied. (The tie-break order is documented since 2026-10-25:
-   design.md, "Order within a frame"; what the game does at ties isn't
-   known, and the owner judged it too rare to matter, 2026-10-25.)
-7. **Kit values from the data** (review 3.1, done 2026-10-25; design.md
-   "Kits and the game data"): the loader fills frames, events, factors,
-   stagger, energy, SP and more from the compiled SkillData and refuses an
-   unmarked difference (`dataOverride`). Next: fill launch frames,
-   applications and bonuses too; SP of hitless skills as cast triggers;
-   Mi Fu's per-fixture factor in 2fd9 / 99fb / de6a (her hits are judged
-   now: nearly all mismatch there, d572 fits).
-8. **Engine review** (2026-10-22): the fixes are in (journal 2026-10-24);
-   the restructuring (review 3.3) is done (2026-10-25: timeline/ modules,
-   one scheduled list, one in-frame order; design.md "Engine modules").
-   Open: slow-downs don't shift what's created between their cast and
-   their start or during them (buffs, spend pauses, a frozen teammate's
-   cast) — with the scheduled list that's now one place (`shiftClock`'s
-   caller in clock.ts); buffs could become scheduled items' kin (their
-   expiry and ticks on the world's clock) so shifting them is the same
-   pass; which order the game runs simultaneous hits and one event's
-   listeners in (an in-game test would need two operators' hits at one
-   frame that interact).
+1. **The tool's purpose: team rotations for the owner's favourites**
+   (Typhoeus, Arcane, Si, Gilberta, Liino, Estella, Laevatain; 6-stars P0,
+   4- and 5-stars P5 unless the owner's account says otherwise; no swaps by
+   default, the owner's call 2026-10-25). The search's beams still disagree
+   by 4–14%: a score closer to the final damage (a cheap rollout, or a value
+   for what a state holds), then searches of the favourites' teams and a
+   report of the best rotations found. Ask the owner for their roster.
+2. **Log check leads** (design.md "The log check's rule"; the report names
+   them, largest first): the replay's Stagger (Staggered in 4e5e 23–34 s and
+   bdf2 19–24 s where the log has none; re-import with `poiseDamage` per
+   hit to compare), Rossi's Wolven Blood layers, Typhoeus's hover through
+   her combo, Arcane's Solemn Phalanx WILL buffs, Camille's weapon ATK the
+   log stops listing, the replay's inflictions against the log's reactions
+   (one enemy replay instead of reactioncheck.ts's own), statuses and
+   landings the replay misses (Arcane's Final Strike in b6aa, 9555's casts);
+   458b's ×1.3 on Laevatain's `normal_skill_during_ult`; then tighten the
+   totals' bound (45%). The fallbacks in verified fixtures (~300) are the
+   work queue; a build fitter with structured `buildOverrides` instead of
+   hand fits in notes; the negative control on the unscaled replay; d9e5
+   (×1.7–2.0 after Arcane's ultimate); whether mostly-assumed matches (Rossi
+   in 4e5e) hold hit by hit.
+3. **Kit values from the data** (design.md "Kits and the game data"): fill
+   launch frames, applications and bonuses; SP of hitless skills as cast
+   triggers; the Typhoeus arrowrain `dataOverride` that hides dbae's
+   verified hits; Mi Fu's per-fixture factor (2fd9 / 99fb / de6a).
+4. **Engine:** slow-downs don't shift what's created between their cast and
+   their start (`shiftClock`'s caller in clock.ts); buffs' expiry and ticks
+   as scheduled items; `Modifier` with an attacker / defender side instead
+   of `SNAPSHOT_ZONES`; Solidification durations (in-game test 71);
+   Corrosion's time dilation and carry-over (test 4).
+5. **Food:** a search over foods per operator; the importer setting a food
+   the log lists; in-game test 98 (DEF +x%'s formula item 1).
+6. **Process:** a generated table of which mechanics are verified against
+   real data and which only against the engine's own reading; the in-game
+   tests as a top-10 queue with steps, predictions and a one-line reply
+   format; shared test helpers. Still open from setup: a `Result` schema,
+   `NOTICE` when MIT code is first copied.
 
 ## Later
 
