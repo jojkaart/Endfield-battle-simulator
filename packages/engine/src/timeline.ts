@@ -2024,7 +2024,9 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
       buffLayers: layers, staggered: before.staggered ?? false, enemyHp: before.enemyHp ?? 1,
     };
   };
-  st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}), ...(hit.ref !== undefined ? { ref: hit.ref, facts: facts() } : {}), ...(loggedCrit !== undefined ? { loggedCrit } : {}) }]);
+  st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}), ...(hit.ref !== undefined ? { ref: hit.ref } : {}),
+    // A replay's landings carry their facts (a pinned one with its reference; one a trigger lands, matched to the log by time).
+    ...(hit.ref !== undefined || ctx.loggedCrits ? { facts: facts() } : {}), ...(loggedCrit !== undefined ? { loggedCrit } : {}) }]);
   // The enemy the damage saw: the reactions of the applications before it see it too.
   const enemyAtDamage = st.enemy;
   const lateEvents = applyPhase(true);

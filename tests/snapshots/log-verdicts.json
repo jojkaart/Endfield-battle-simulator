@@ -1,4 +1,10 @@
 {
+ "zmdlogs-0eef2474a26f.json": {
+  "chr_0034_typhoea": {"plain":12,"assumed":5,"fallback":2,"mismatch":0,"unvalued":0,"unquantified":12,"uncovered":0},
+  "chr_0032_lizhiyan": {"plain":2,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":1},
+  "chr_0036_jsspsi": {"plain":5,"assumed":4,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":10,"uncovered":0},
+  "chr_0035_liino": {"plain":11,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":2,"uncovered":0}
+ },
  "zmdlogs-40d9a3c1da37.json": {
   "chr_0016_laevat": {"plain":1,"assumed":5,"fallback":11,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0036_jsspsi": {"plain":4,"assumed":19,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
@@ -7,7 +13,7 @@
  },
  "zmdlogs-4e5e1390085e.json": {
   "chr_0028_wulfa": {"plain":38,"assumed":123,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
-  "chr_0033_camille": {"plain":67,"assumed":18,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0033_camille": {"plain":70,"assumed":15,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0021_whiten": {"plain":21,"assumed":20,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0013_aglina": {"plain":52,"assumed":6,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":1}
  },
@@ -18,9 +24,9 @@
   "chr_0036_jsspsi": {"plain":9,"assumed":12,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
  },
  "zmdlogs-bdf223db8e49.json": {
-  "chr_0034_typhoea": {"plain":43,"assumed":11,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":8,"uncovered":0},
-  "chr_0032_lizhiyan": {"plain":33,"assumed":0,"fallback":18,"mismatch":0,"unvalued":0,"unquantified":7,"uncovered":1},
-  "chr_0036_jsspsi": {"plain":10,"assumed":11,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":5,"uncovered":0},
+  "chr_0034_typhoea": {"plain":44,"assumed":10,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":8,"uncovered":0},
+  "chr_0032_lizhiyan": {"plain":50,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":7,"uncovered":1},
+  "chr_0036_jsspsi": {"plain":11,"assumed":11,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":5,"uncovered":0},
   "chr_0035_liino": {"plain":14,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":6,"uncovered":0}
  }
 }

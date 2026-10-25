@@ -11,7 +11,7 @@
 // the two disagree (leads: a log gap, or a kit trigger that's wrong).
 
 import {
-  activeAt, advance, allActions, Attr, buffModifiers, createContext, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
+  activeAt, advance, allActions, Attr, buffModifiers, createContext, kitHitEntries, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
   type ActiveBuff, type GameData, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type SkillType, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
@@ -30,6 +30,9 @@ import { distinctCasts, landingFrames, type LoggedCast, type Placement } from ".
  * stands.
  */
 export const REPLAY_EDGE_MS = 500;
+
+/** How far (frames) a landing a trigger made may be from a logged hit it is taken for (its trigger's own timing drifts from the log's). */
+const NEAR_FRAMES = 16;
 export const REPLAY_EXPIRY_SLACK = 0.1;
 
 /** Trigger events a log doesn't let the replay judge: the enemy's own actions. */
@@ -40,10 +43,19 @@ const UNJUDGED_EVENTS: ReadonlySet<string> = new Set(["attacked", "perfectDodge"
  * (TimelineScenario.loggedCrits); where a landing's crit isn't logged, the buffs crits apply are undecided for a while
  * (critTriggers, BuffReplay.instances).
  */
-function unjudged(t: KitTrigger): string | null {
+function unjudged(t: KitTrigger, kit: OperatorKit): string | null {
   if (UNJUDGED_EVENTS.has(t.on.event)) return `${t.id}: on ${t.on.event}`;
   if (t.chance !== undefined) return `${t.id}: a chance`;
+  // Whom a heal reaches when it heals the controlled operator: the log doesn't record who's controlled (the replay takes
+  // the last to make a basic attack; 0eef2474a26f: Liino's weapon buff on her heals' targets, Typhoeus and Si in the log,
+  // Arcane in the replay).
+  if (t.on.event === "heal" && (t.by !== "self" || healsControlled(kit))) return `${t.id}: on heals of the controlled operator, whom the log doesn't name`;
   return null;
+}
+
+/** Whether any of a kit's heals (its hits', its triggers') heals the controlled operator. */
+function healsControlled(kit: OperatorKit): boolean {
+  return kitHitEntries(kit).some((e) => e.hit.heals === "controlled") || kit.triggers.some((t) => allActions(t.do).some((a) => a.kind === "heal" && a.target === "controlled"));
 }
 
 /**
@@ -67,7 +79,7 @@ function undecidedBuff(kit: OperatorKit, buffId: string, depth = 0): string | nu
   if (depth > 4) return null;
   for (const t of kit.triggers) {
     if (!allActions(t.do).some((a) => a.kind === "buff" && a.buff === buffId)) continue;
-    const own = unjudged(t);
+    const own = unjudged(t, kit);
     if (own) return own;
     if ("buff" in t.on && t.on.buff !== buffId) {
       const via = undecidedBuff(kit, t.on.buff, depth + 1);
@@ -356,6 +368,24 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       if (!e.error.startsWith("the replay stops")) failedCasts.add(e.cast);
     }
     for (const h of st.hits) if (h.ref !== undefined) landed.set(h.ref, h);
+    // Landings a trigger made (not pinned): each logged hit without a pinned landing takes the nearest of its operator's
+    // with its event, within NEAR_FRAMES, in time order (each landing once).
+    const eventsOf = new Map(kits.flatMap((k) => kitHitEntries(k).map((e) => [`${k.operator}|${e.skillId}|${e.hit.id}`, e.hit.events] as const)));
+    const free = st.hits.filter((h) => h.ref === undefined && h.facts);
+    const taken = new Set<LandedHit>();
+    for (const [i, h] of [...fx.hits.entries()].sort((a, b) => a[1].t - b[1].t)) {
+      if (landed.has(String(i))) continue;
+      const f = frameOf(h.t);
+      let best: LandedHit | null = null;
+      for (const x of free) {
+        if (taken.has(x) || x.operator !== h.operator || Math.abs(x.frame - f) > NEAR_FRAMES || !eventsOf.get(`${x.operator}|${x.skillId}|${x.hitId}`)?.includes(h.event)) continue;
+        if (!best || Math.abs(x.frame - f) < Math.abs(best.frame - f)) best = x;
+      }
+      if (best) {
+        taken.add(best);
+        landed.set(String(i), best);
+      }
+    }
     /** The replay's state at a frame: its latest step at or before it, advanced (pure). */
     const stateAt = (frame: number): TimelineState => {
       let cp = checkpoints[0] as TimelineState;

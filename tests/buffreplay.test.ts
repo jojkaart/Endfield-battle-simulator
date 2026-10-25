@@ -168,6 +168,24 @@ describe("replayCast: a logged cast at its logged frame", () => {
   });
 });
 
+describe("0eef2474a26f: what the replay can't know, and landings a trigger makes", () => {
+  const fx = readLogFixture(new URL("../fixtures/zmdlogs-0eef2474a26f.json", import.meta.url).pathname);
+  const r = logBuffReplay(data, fx);
+
+  it("leaves a buff on heals of the controlled operator to the log (who's controlled isn't logged)", () => {
+    // Liino's weapon buff goes to whom her combo heals: Typhoeus and Si in the log, Arcane in the replay.
+    expect(r.replay.decided.has("buff_wpn_lance_0014_damageup")).toBe(false);
+    expect(r.replay.undecided.get("buff_wpn_lance_0014_damageup")).toContain("controlled operator");
+  });
+
+  it("takes a trigger's landing within NEAR_FRAMES for a logged hit (Liino's volley at 4187 ms: the replay's Corrosion there)", () => {
+    const volley = fx.hits.filter((h) => h.event === "chr_0035_liino_normal_skill_projhit_hit");
+    const landings = volley.map((h) => r.replay.landing(h));
+    expect(landings.every((l) => !("unknown" in l) && l.hitId === "volley")).toBe(true);
+    expect(new Set(landings).size).toBe(volley.length);
+  });
+});
+
 describe("bdf223db8e49: Corrosion from the replay's landings", () => {
   it("reads hits under Corrosion at the engine's level and shred where the replay landed them (levels tried only elsewhere)", () => {
     const fx = readLogFixture(new URL("../fixtures/zmdlogs-bdf223db8e49.json", import.meta.url).pathname);

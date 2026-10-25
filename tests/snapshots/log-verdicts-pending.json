@@ -3,7 +3,7 @@
   "chr_0016_laevat": {"plain":29,"assumed":12,"fallback":41,"mismatch":31,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0019_karin": {"plain":0,"assumed":0,"fallback":0,"mismatch":37,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0032_lizhiyan": {"plain":120,"assumed":11,"fallback":24,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0033_camille": {"plain":53,"assumed":10,"fallback":59,"mismatch":8,"unvalued":0,"unquantified":0,"uncovered":0}
+  "chr_0033_camille": {"plain":57,"assumed":6,"fallback":59,"mismatch":8,"unvalued":0,"unquantified":0,"uncovered":0}
  },
  "pending/zmdlogs-04d401ad257e.json": {
   "chr_0009_azrila": {"plain":0,"assumed":0,"fallback":0,"mismatch":312,"unvalued":0,"unquantified":12,"uncovered":0},
@@ -16,12 +16,6 @@
   "chr_0003_endminf": {"plain":0,"assumed":0,"fallback":0,"mismatch":128,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0036_jsspsi": {"plain":0,"assumed":7,"fallback":0,"mismatch":183,"unvalued":0,"unquantified":4,"uncovered":0},
   "chr_0024_deepfin": {"plain":0,"assumed":0,"fallback":0,"mismatch":54,"unvalued":0,"unquantified":0,"uncovered":0}
- },
- "pending/zmdlogs-0eef2474a26f.json": {
-  "chr_0034_typhoea": {"plain":11,"assumed":6,"fallback":2,"mismatch":0,"unvalued":0,"unquantified":12,"uncovered":0},
-  "chr_0032_lizhiyan": {"plain":0,"assumed":0,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":1},
-  "chr_0036_jsspsi": {"plain":5,"assumed":4,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":10,"uncovered":0},
-  "chr_0035_liino": {"plain":7,"assumed":6,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
  },
  "pending/zmdlogs-2fd915292bb7.json": {
   "chr_0028_wulfa": {"plain":0,"assumed":0,"fallback":2,"mismatch":221,"unvalued":0,"unquantified":0,"uncovered":0},
@@ -43,9 +37,9 @@
  },
  "pending/zmdlogs-4bfc6f3e84b8.json": {
   "chr_0030_zhuangfy": {"plain":95,"assumed":104,"fallback":9,"mismatch":204,"unvalued":0,"unquantified":1,"uncovered":16},
-  "chr_0004_pelica": {"plain":17,"assumed":3,"fallback":5,"mismatch":132,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0004_pelica": {"plain":20,"assumed":3,"fallback":2,"mismatch":132,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0007_ikut": {"plain":0,"assumed":0,"fallback":0,"mismatch":182,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0035_liino": {"plain":149,"assumed":26,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
+  "chr_0035_liino": {"plain":166,"assumed":9,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
  },
  "pending/zmdlogs-4e3651100056.json": {
   "chr_0036_jsspsi": {"plain":60,"assumed":14,"fallback":78,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
@@ -57,10 +51,10 @@
   "chr_0009_azrila": {"plain":10,"assumed":6,"fallback":0,"mismatch":5,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0003_endminf": {"plain":24,"assumed":8,"fallback":0,"mismatch":2,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0005_chen": {"plain":0,"assumed":0,"fallback":0,"mismatch":20,"unvalued":0,"unquantified":1,"uncovered":0},
-  "chr_0029_pograni": {"plain":16,"assumed":13,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
+  "chr_0029_pograni": {"plain":17,"assumed":12,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
  },
  "pending/zmdlogs-92b450306768.json": {
-  "chr_0032_lizhiyan": {"plain":1,"assumed":0,"fallback":2,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0032_lizhiyan": {"plain":1,"assumed":1,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0034_typhoea": {"plain":20,"assumed":12,"fallback":2,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0035_liino": {"plain":0,"assumed":0,"fallback":0,"mismatch":12,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0038_purrche": {"plain":0,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
@@ -93,19 +87,19 @@
   "chr_0003_endminf": {"plain":0,"assumed":4,"fallback":8,"mismatch":12,"unvalued":0,"unquantified":0,"uncovered":286},
   "chr_0005_chen": {"plain":53,"assumed":93,"fallback":33,"mismatch":41,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0015_lifeng": {"plain":0,"assumed":3,"fallback":0,"mismatch":186,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0029_pograni": {"plain":145,"assumed":60,"fallback":53,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
+  "chr_0029_pograni": {"plain":147,"assumed":58,"fallback":53,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
  },
  "pending/zmdlogs-d5720d9ceb94.json": {
   "chr_0028_wulfa": {"plain":35,"assumed":168,"fallback":254,"mismatch":62,"unvalued":0,"unquantified":1,"uncovered":0},
   "chr_0031_mifu": {"plain":2,"assumed":0,"fallback":23,"mismatch":4,"unvalued":0,"unquantified":0,"uncovered":115},
-  "chr_0033_camille": {"plain":217,"assumed":31,"fallback":3,"mismatch":33,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0033_camille": {"plain":223,"assumed":25,"fallback":3,"mismatch":33,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0013_aglina": {"plain":142,"assumed":2,"fallback":4,"mismatch":24,"unvalued":0,"unquantified":0,"uncovered":1}
  },
  "pending/zmdlogs-d774d0ce7bd3.json": {
   "chr_0030_zhuangfy": {"plain":16,"assumed":7,"fallback":65,"mismatch":75,"unvalued":0,"unquantified":0,"uncovered":9},
   "chr_0004_pelica": {"plain":10,"assumed":0,"fallback":1,"mismatch":40,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0035_liino": {"plain":0,"assumed":0,"fallback":0,"mismatch":100,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0032_lizhiyan": {"plain":35,"assumed":15,"fallback":111,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
+  "chr_0032_lizhiyan": {"plain":39,"assumed":12,"fallback":110,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
  },
  "pending/zmdlogs-d9e59d0fb737.json": {
   "chr_0034_typhoea": {"plain":0,"assumed":0,"fallback":0,"mismatch":42,"unvalued":0,"unquantified":6,"uncovered":1},
@@ -117,7 +111,7 @@
   "chr_0034_typhoea": {"plain":2,"assumed":0,"fallback":40,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":1},
   "chr_0032_lizhiyan": {"plain":0,"assumed":1,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0035_liino": {"plain":0,"assumed":0,"fallback":25,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0011_seraph": {"plain":0,"assumed":0,"fallback":7,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
+  "chr_0011_seraph": {"plain":1,"assumed":0,"fallback":6,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
  },
  "pending/zmdlogs-de6a94e9cf6b.json": {
   "chr_0029_pograni": {"plain":0,"assumed":0,"fallback":0,"mismatch":84,"unvalued":0,"unquantified":0,"uncovered":0},
