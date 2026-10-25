@@ -234,6 +234,15 @@ describe("kits against the compiled SkillData", () => {
     expect(loadOperatorKitFile(data, file, marked)[0]?.skills.find((s) => s.skillId === "chr_0016_laevat_attack1")?.hits[0]?.frames).toEqual([7]);
   });
 
+  it("compares a buff's duration with its game buff's CreateBuff", () => {
+    const k = JSON.parse(readFileSync(join(KITS, file), "utf8")) as { buffs: Record<string, unknown>[] };
+    const twilight = k.buffs.find((b) => b["id"] === "twilight") as Record<string, unknown>;
+    twilight["duration"] = 16;
+    expect(() => loadOperatorKitFile(data, file, k)).toThrow(/buff twilight \(buff_chr_0016_laevat_ult_end\) duration: kit 16 s, data 15 s/);
+    twilight["dataOverride"] = { duration: "A test of the mark: 16 s on purpose." };
+    expect(loadOperatorKitFile(data, file, k)[0]?.buffs.find((b) => b.id === "twilight")?.duration).toBe(16);
+  });
+
   it("refuses a mark where nothing differs", () => {
     const k = raw();
     hitOf(k, "chr_0016_laevat_attack1", "hit")["dataOverride"] = { poise: "A test of a stale mark: nothing differs." };

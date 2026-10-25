@@ -45,12 +45,9 @@
       "label": "I'M NOT SLEEPING!: shield up",
       "target": "self",
       "gameBuff": "buff_chr_0038_purrche_aura_block",
-      "duration": {
-        "key": "display_time_1",
-        "skill": "chr_0038_purrche_normal_skill"
-      },
+      "duration": 3,
       "modifiers": [],
-      "note": "buff_chr_0038_purrche_aura_block, created at normal_skill frame 0 (duration ← display_time_1, 3 s). PauseBuffTime while block_1 / block_2 / a shielded combo play, until their pause_block ends (block_1 0–9, block_2 0–11, combo 210–251 / 270–310): written as extendBuff by those lengths (triggers block_1_cast, block_2_cast, combo_shielded*). At the first block (block_counter reaching 2) SetBuffDuration 3.0 (a literal): the block_1_cast trigger re-applies it. It ends with a dash (buff_common_dash), an ultimate (CheckSkillType 7) and any skill that doesn't inherit it (inheritSkillIdList: block_1/2, loop_1/2, combo, counter; the counter finishes it at its frame 0). Its end creates block_end, on which the loops jump to 360 (trigger shield_end). Swaps (its swap events 2/3) aren't modelled."
+      "note": "buff_chr_0038_purrche_aura_block, created at normal_skill frame 0 with its own duration (3 s; the skill's display_time_1, 3 at every level, is the description's). PauseBuffTime while block_1 / block_2 / a shielded combo play, until their pause_block ends (block_1 0–9, block_2 0–11, combo 210–251 / 270–310): written as extendBuff by those lengths (triggers block_1_cast, block_2_cast, combo_shielded*). At the first block (block_counter reaching 2) SetBuffDuration 3.0 (a literal): the block_1_cast trigger re-applies it. It ends with a dash (buff_common_dash), an ultimate (CheckSkillType 7) and any skill that doesn't inherit it (inheritSkillIdList: block_1/2, loop_1/2, combo, counter; the counter finishes it at its frame 0). Its end creates block_end, on which the loops jump to 360 (trigger shield_end). Swaps (its swap events 2/3) aren't modelled."
     },
     {
       "id": "protection",
@@ -61,6 +58,7 @@
         "key": "display_time_1",
         "skill": "chr_0038_purrche_normal_skill"
       },
+      "dataOverride": { "duration": "The instance buff is the shield aura's (buff_chr_0038_purrche_block, an AuraAction on nearby operators): it lasts while the shield is up, so the kit follows shield_up rather than the instance file's 40 s (see the buff's note)." },
       "modifiers": [
         {
           "attr": 63,

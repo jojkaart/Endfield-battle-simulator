@@ -22,10 +22,10 @@
       "id": "twilight",
       "label": "Twilight (ultimate)",
       "target": "self",
-      "duration": "duration",
+      "duration": 15,
       "modifiers": [],
       "gameBuff": "buff_chr_0016_laevat_ult_end",
-      "note": "Her ultimate's state: enhanced basic attacks and battle skill for `duration` (15 s) from the cast's frame 0 (show_weapon creates ult_end at once). Paused by the enhanced battle skill and held by the combo (triggers below)."
+      "note": "Her ultimate's state: enhanced basic attacks and battle skill for 15 s (buff_chr_0016_laevat_ult_end's own duration; the ultimate's `duration`, 15 at every level, is the description's) from the cast's frame 0 (show_weapon creates ult_end at once). Paused by the enhanced battle skill and held by the combo (triggers below)."
     },
     {
       "id": "show_weapon",

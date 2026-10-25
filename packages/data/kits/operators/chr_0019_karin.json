@@ -24,6 +24,7 @@
       "label": "SQUAD! ON ME! team ATK (P3)",
       "target": "team",
       "gameBuff": "buff_chr_0019_karin_potential_3",
+      "dataOverride": { "duration": "lifeType 1 (until ended): the ultimate's CreateBuff has autoFinishByAction, so it lasts while her ultimate does; the file's 10 s isn't reached (see the buff's note)." },
       "endsWithCast": true,
       "modifiers": [{ "zone": "atk", "value": "atk" }],
       "note": "buff_chr_0019_karin_potential_3 (attr 2 formulaItem 6 atk; lifeType 1), CreateBuff autoFinishByAction on the team at ultimate frame 0 when potential_3 > 0: lasts while her ultimate does."
@@ -33,6 +34,7 @@
       "label": "Staying in the Zone (while the ultimate lasts)",
       "target": "self",
       "gameBuff": "buff_chr_0019_karin_talent_2",
+      "dataOverride": { "duration": "lifeType 1 (until ended): the ultimate's CreateBuff has autoFinishByAction, so it lasts while her ultimate does; the file's 3 s isn't reached (see the buff's note)." },
       "endsWithCast": true,
       "modifiers": [],
       "note": "buff_chr_0019_karin_talent_2 (autoFinishByAction, lifeType 1): its end (buffEvent 2) starts the P5 tail, or below P5 ends the Link (trigger zone_end)."

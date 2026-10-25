@@ -68,6 +68,7 @@
       "label": "The Steel Oath (P5): ATK while shielded",
       "target": "team",
       "duration": { "key": "duration", "skill": "chr_0009_azrila_ultimate_skill" },
+      "dataOverride": { "duration": "The data's 0.1 s is the buff file's own: the ultimate shield's start creates it as a child buff of the shield (asChildBuff), which the kit reads as lasting as long as the shield, the ultimate's duration (see the buff's note; shields don't break, report U2)." },
       "modifiers": [{ "zone": "atk", "value": { "key": "extraattack", "skill": "chr_0009_azrila_ultimate_skill" } }],
       "gameBuff": "buff_chr_0009_azrila_ultimate_skill_shield_extraattack",
       "note": "ultimateshield's start event: if potential_5 > 0, CreateBuff (asChildBuff, targetSource 0: the shield's holder) buff_chr_0009_azrila_ultimate_skill_shield_extraattack (attribute 2 formulaItem 6 + extraattack 0.1); a child buff ends with its shield, so it has the shield's duration here (shields don't break: report U2)."

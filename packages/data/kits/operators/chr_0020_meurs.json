@@ -13,6 +13,7 @@
       "label": "Rigid Interdiction: Protection (self and nearby operators)",
       "target": "team",
       "duration": 2,
+      "dataOverride": { "duration": "The data's buff is an AuraAction's (until ended in its file: frames 0-83, cut at 45 by the jump when not attacked), then reduce_damage_remain 0.5 s: the kit writes the two as one 2 s buff (see the buff's note)." },
       "modifiers": [{ "attr": 63, "value": { "key": "taken_dmg", "skill": "chr_0020_meurs_normal_skill" } }],
       "gameBuff": "buff_chr_0020_meurs_reduce_damage",
       "note": "AuraAction [0–83] of buff_chr_0020_meurs_reduce_damage (ShelterAction taken_dmg), cut at frame 45 by the jump to 255 when not attacked, then buff_chr_0020_meurs_reduce_damage_remain 0.5 s: 1.5 + 0.5 s (on the counter path a little longer, plus buff_chr_0014_aurora_reduce_damage_remain 1 s at frame 60). Damage taken isn't simulated. Its modifier (attribute 63, ShelterAction taken_dmg) makes it a Protection-category buff for buffApplied triggers (Eternal Xiranite, suit_usp02); damage taken isn't simulated, so it has no other effect."

@@ -10,7 +10,7 @@ import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { compileEquipmentSkill, compileOperatorSkill, dataEnergyBlockSeconds, dataTeamEnergy, hitFacts, kitEnergyBlock, matchSkill, spPlaced, type CompileData, type CastAction, type DataField, type Disagreement, type HitFacts } from "./kitMatch.ts";
-import type { CompiledSkill } from "./skillCompile.ts";
+import type { CompiledSkill, CompiledValue } from "./skillCompile.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { buffFilePath, isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
 import { buffTagFilter, SHIELD_TAG } from "./buffTags.ts";
@@ -131,7 +131,7 @@ interface RawEquipmentKit {
   conditions?: RawCondition[];
 }
 
-type RawBuff = KitBuff & { note?: string };
+type RawBuff = KitBuff & { note?: string; dataOverride?: { duration?: string } };
 
 function validator() {
   const ajv = new Ajv2020({ allErrors: true, strict: true });
@@ -664,7 +664,7 @@ function kitChecker(scope: KitScope) {
   };
   /** The kit's buffs with their game buffs' rules; after every hit and trigger is checked (which skills apply each buff). */
   const normalizeBuffs = (buffs: readonly RawBuff[]): KitBuff[] =>
-    buffs.map(({ note: _note, ...b }) => {
+    buffs.map(({ note: _note, dataOverride: _d, ...b }) => {
       const sites = instanceKeySites.get(b.id);
       if (sites && sites.some((x) => x) && sites.some((x) => !x)) throw new Error(`${scope.file}: buff ${b.id}: some skills applying it have its game buff's maxStackCntKey and some don't`);
       if (b.consumedScope && !b.consumedBy) throw new Error(`${scope.file}: buff ${b.id}: consumedScope is for a buff a cast consumes (consumedBy)`);
@@ -749,6 +749,60 @@ function checkSkillData(compiled: CompiledSkill, s: RawSkill, hits: readonly Kit
   ];
   if (options.disagreements) for (const d of problems) options.disagreements({ ...d, skillId: s.skillId });
   else if (problems.length) throw new Error(`${where}: differs from the compiled SkillData (fix the kit, or mark the field in dataOverride with the reason):\n  ${problems.map((d) => d.text).join("\n  ")}`);
+}
+
+/** A buff duration as the comparison reads it: a key of a skill, a literal number of seconds, until ended, or null when it can't be said. */
+type DurationRef = { readonly key: string; readonly skill: string } | { readonly seconds: number } | "untilEnded" | null;
+
+const durationText = (d: DurationRef) => (d === null ? "?" : d === "untilEnded" ? "until ended" : "seconds" in d ? `${d.seconds} s` : `${d.key} of ${d.skill}`);
+
+/** A kit duration (an application's, else its buff's) for the skill applying it: a key names that skill's value; talent keys and expressions can't be compared. */
+function kitDuration(v: ValueExpr | undefined, skillId: string): DurationRef {
+  if (v === undefined) return "untilEnded";
+  if (typeof v === "number") return { seconds: v };
+  if (typeof v === "string") return { key: v, skill: skillId };
+  if (v && typeof v === "object" && "key" in v && "skill" in v && typeof v.key === "string" && typeof v.skill === "string" && Object.keys(v).length === 2) return { key: v.key, skill: v.skill };
+  return null;
+}
+
+/** The data's duration of a buff a skill creates: a key the CreateBuff assigns from the skill, the buff file's own value (a literal), 9999 or less than 0 until ended; null when it's runtime state or an expression. */
+function dataDuration(d: CompiledValue | null, buffFile: string): DurationRef {
+  if (!d || d.expr || d.value === null) return null;
+  if (d.value < 0 || d.value >= 9999) return "untilEnded";
+  if (d.keys.length === 0) return { seconds: Math.round(d.value * 1e6) / 1e6 };
+  if (d.keys.length !== 1 || d.factor !== 1 || d.dynamic) return null;
+  const origin = d.origins[0] as string;
+  return origin === buffFile ? { seconds: Math.round(d.value * 1e6) / 1e6 } : { key: d.keys[0] as string, skill: origin };
+}
+
+/**
+ * The durations of the kit buffs standing for a game buff (`gameBuff`)
+ * against the data's CreateBuff of it, where a skill's hit or own cast
+ * trigger applies it and the skill's compiled data creates it: each
+ * difference marked on the buff (dataOverride.duration, with the reason),
+ * each mark a difference. Errors, or `options.disagreements`.
+ */
+function checkBuffDurations(data: KitData, kit: RawKit, skills: readonly { skillId: string; hits: readonly KitHit[] }[], triggers: readonly KitTrigger[], where: string, options: KitLoadOptions): void {
+  const raws = new Map((kit.buffs ?? []).map((b) => [b.id, b]));
+  const apps: { skill: string; buff: string; duration: ValueExpr | undefined; at: string }[] = [];
+  for (const s of skills) for (const h of s.hits) for (const a of h.buffs ?? []) apps.push({ skill: s.skillId, buff: a.buff, duration: a.duration ?? raws.get(a.buff)?.duration, at: `${s.skillId}/${h.id}` });
+  for (const s of skills) for (const t of castTriggers(s.skillId, triggers)) for (const a of t.do) if (a.kind === "buff") apps.push({ skill: s.skillId, buff: a.buff, duration: a.duration ?? raws.get(a.buff)?.duration, at: `${s.skillId} trigger ${t.id}` });
+  const found = new Map<string, string>();
+  for (const a of apps) {
+    const b = raws.get(a.buff);
+    if (!b?.gameBuff) continue;
+    const c = compileOperatorSkill(data, kit.operator, a.skill);
+    const made = (c?.buffs ?? []).filter((x) => x.buff === b.gameBuff).map((x) => dataDuration(x.duration, b.gameBuff as string)).filter((x) => x !== null);
+    const mine = kitDuration(a.duration, a.skill);
+    if (!made.length || mine === null) continue;
+    if (!made.some((x) => JSON.stringify(x) === JSON.stringify(mine)) && !found.has(b.id)) found.set(b.id, `${a.at}: buff ${b.id} (${b.gameBuff}) duration: kit ${durationText(mine)}, data ${[...new Set(made.map(durationText))].join(" | ")}`);
+  }
+  const problems = [
+    ...[...found].filter(([id]) => raws.get(id)?.dataOverride?.duration === undefined).map(([, text]) => ({ text, stale: false })),
+    ...[...raws.values()].filter((b) => b.dataOverride?.duration !== undefined && !found.has(b.id)).map((b) => ({ text: `buff ${b.id} duration: marked as differing from the data (dataOverride), but it agrees or isn't compared`, stale: true })),
+  ];
+  if (options.disagreements) for (const d of problems) options.disagreements({ field: "duration", text: d.text, stale: d.stale, skillId: "" });
+  else if (problems.length) throw new Error(`${where}: buff durations differ from the compiled SkillData (fix the kit, or mark the buff's dataOverride.duration with the reason):\n  ${problems.map((d) => d.text).join("\n  ")}`);
 }
 
 /**
@@ -935,6 +989,7 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit, options: KitL
   // Triggers first: normalizeBuffs reads which skills apply each buff.
   const triggers = c.checkTriggers((kit.triggers ?? []).map(({ note: _note, dataOverride: _d, ...t }) => t));
   for (const check of dataChecks) check(triggers);
+  checkBuffDurations(data, kit, skills, triggers, where0, options);
   const buffs = c.normalizeBuffs(kit.buffs ?? []);
   // A buff that maps the basic-attack input maps it to one of the kit's basic attacks.
   for (const b of buffs) {

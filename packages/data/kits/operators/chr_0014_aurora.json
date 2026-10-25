@@ -14,6 +14,7 @@
       "label": "Saturated Defense: Protection (self and nearby operators)",
       "target": "team",
       "duration": 2.2,
+      "dataOverride": { "duration": "The data's buff is an AuraAction's (until ended in its file: it lasts while the aura does, frames 0-51), then reduce_damage_remain 0.5 s: the kit writes the two as one 2.2 s buff (see the buff's note)." },
       "modifiers": [{ "attr": 63, "value": { "key": "taken_dmg", "skill": "chr_0014_aurora_normal_skill" } }],
       "gameBuff": "buff_chr_0014_aurora_reduce_damage",
       "note": "AuraAction [0–51] of buff_chr_0014_aurora_reduce_damage (ShelterAction taken_dmg, the skill's SkillData default 0.9 passed by buffInput; SkillPatchTable names it dmg_reduce, same value), then on its finish buff_chr_0014_aurora_reduce_damage_remain 0.5 s: 51/30 + 0.5 = 2.2 s, a literal (the remain buff's duration isn't a skill value). On the counter path the aura ends at the attack's frame in the game; the buff keeps its 2.2 s here, which changes nothing while damage taken isn't simulated. Its modifier (attribute 63) makes it a Protection-category buff for buffApplied triggers (suit_usp02, Eternal Xiranite)."
@@ -23,6 +24,7 @@
       "label": "Saturated Defense: Protection (counter)",
       "target": "team",
       "duration": 1.1,
+      "dataOverride": { "duration": "The data's buff is an AuraAction's on the counter path (frames 107-125, until ended in its file) plus reduce_damage_remain 0.5 s, and a 1 s copy at 107 inside it: one 1.1 s buff in the kit (see the buff's note)." },
       "modifiers": [{ "attr": 63, "value": { "key": "taken_dmg", "skill": "chr_0014_aurora_normal_skill" } }],
       "gameBuff": "buff_chr_0014_aurora_reduce_damage",
       "note": "Counter path: AuraAction [107–125] (0.6 s) + buff_chr_0014_aurora_reduce_damage_remain 0.5 s = 1.1 s; Snowshine's own 1 s copy at 107 (CreateBuff on self, duration assigned 1) lies inside it."

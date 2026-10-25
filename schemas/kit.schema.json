@@ -89,6 +89,12 @@
             "type": "string",
             "description": "The BuffData buff this stands for; when it is priority-keyed (stackingType 1), instances from different operators don't add up (only the strongest counts)."
           },
+          "dataOverride": {
+            "type": "object",
+            "description": "Its duration differs on purpose from what the data's CreateBuff of its game buff gives (where a skill's hit or own cast trigger applies it), with the reason (docs/design.md, \"Kits and the game data\").",
+            "properties": { "duration": { "type": "string", "minLength": 10 } },
+            "additionalProperties": false
+          },
           "duration": {
             "$ref": "#/$defs/valueExpr",
             "description": "Seconds; 0: not applied (a buff a potential unlocks has 0 below it). Absent: until a trigger ends it or a cast consumes it."
