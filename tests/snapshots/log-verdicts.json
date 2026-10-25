@@ -6,7 +6,7 @@
   "chr_0033_camille": {"plain":3,"assumed":3,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
  },
  "zmdlogs-4e5e1390085e.json": {
-  "chr_0028_wulfa": {"plain":5,"assumed":156,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
+  "chr_0028_wulfa": {"plain":38,"assumed":123,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
   "chr_0033_camille": {"plain":67,"assumed":18,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0021_whiten": {"plain":21,"assumed":20,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0013_aglina": {"plain":51,"assumed":7,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":1}
@@ -19,7 +19,7 @@
  },
  "zmdlogs-bdf223db8e49.json": {
   "chr_0034_typhoea": {"plain":17,"assumed":10,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":35,"uncovered":0},
-  "chr_0032_lizhiyan": {"plain":0,"assumed":10,"fallback":22,"mismatch":0,"unvalued":0,"unquantified":26,"uncovered":1},
+  "chr_0032_lizhiyan": {"plain":4,"assumed":10,"fallback":18,"mismatch":0,"unvalued":0,"unquantified":26,"uncovered":1},
   "chr_0036_jsspsi": {"plain":0,"assumed":2,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":24,"uncovered":0},
   "chr_0035_liino": {"plain":12,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":8,"uncovered":0}
  }

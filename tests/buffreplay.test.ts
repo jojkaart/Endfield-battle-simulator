@@ -107,13 +107,17 @@ describe("kit buffs from the replay of the logged casts", () => {
     expect(formatBuffReplay(g, r, v).join("\n")).toContain("log lists it, replay off, 1 hit(s) at 30.0 s (fit the replay 0, the log 0, neither 1)");
   });
 
-  it("leaves a buff to the log when a trigger that applies it waits on what a log can't replay (crits)", () => {
+  it("decides a buff a trigger on crits applies from the log's crits, and not where a landing's crit isn't logged", () => {
     const onCrit: KitTrigger = { id: "t_on_crit", on: { event: "hit", crit: true }, by: "self", do: [{ kind: "buff", buff: "t_atk" }] };
-    const g2 = withKit({ skills: [battle([h]), basic], buffs: [buff], triggers: [onCast, onCrit] });
-    const r = logBuffReplay(g2, fx);
-    expect(r.replay.decided.size).toBe(0);
-    expect(r.replay.undecided.get(GAME_BUFF)).toContain("on crits");
-    expect(checkLog(g2, fx).map(kind)).toEqual(["match", "match", "mismatch", "mismatch"]);
+    const g2 = withKit({ skills: [battle([h]), basic], buffs: [buff], triggers: [onCrit] });
+    // A crit at 1 s applies it (after its own damage) to 11 s; the hits at 4 s and 8 s are under it, the one at 15 s isn't.
+    const crits = (first: boolean | null) => fixture([logHit(1000, 1, { crit: first }), logHit(4000, dmg(BATTLE, h, plus10), { effects: [atk] }), logHit(8000, dmg(BATTLE, h, plus10), { effects: [atk] }), logHit(15000, 1)]);
+    const r = logBuffReplay(g2, crits(true));
+    expect([...r.replay.decided.keys()]).toEqual([GAME_BUFF]);
+    expect(crits(true).hits.map((x) => r.replay.instances(x, GAME_BUFF))).toEqual([null, 1, 1, 0]);
+    // Its crit not logged: a crit or not there changes the buff (the replay with such landings critting disagrees), undecided.
+    const unknown = logBuffReplay(g2, crits(null));
+    expect(crits(null).hits.map((x) => unknown.replay.instances(x, GAME_BUFF))).toEqual([null, null, null, 0]);
   });
 });
 
@@ -167,6 +171,15 @@ describe("replayCast: a logged cast at its logged frame", () => {
 describe("4e5e1390085e: Camille's weapon buffs after the log stops listing them", () => {
   const fx = readLogFixture(new URL("../fixtures/zmdlogs-4e5e1390085e.json", import.meta.url).pathname);
   const r = logBuffReplay(data, fx);
+
+  it("gives Rossi's MI Security layers (on her logged crits) where the log lists one, and counts layers that push each other out", () => {
+    const at = (t: number) => fx.hits.find((x) => x.t === t && x.operator === "chr_0028_wulfa" && x.event === "chr_0028_wulfa_attack4") as LogHit;
+    // 15015 ms: five layers on one timer (the oldest pushed out by each new one: an instance ends at the newest layer's start).
+    expect(r.replay.instances(at(15015), "buff_equipsuit_critsuitatk_01")).toBe(5);
+    expect(r.replayed.layersAt.get(at(15015))?.get("buff_equipsuit_critsuitatk_01")).toBe(5);
+    const v = checkLog(data, fx, { replay: r }).find((x) => x.hit === at(15015));
+    expect(v?.kind === "match" && v.assumed.some((a) => a.includes("critsuitatk"))).toBe(false);
+  });
 
   it("has both on to the end by Camille's casts, and reports the log's gaps", () => {
     const late = fx.hits.filter((x) => x.t > 66000);

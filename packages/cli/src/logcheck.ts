@@ -44,7 +44,7 @@ import {
 import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit, type RawBuffFile } from "@efsim/data";
 import { assumeValues, valueAssumptions, valueReads } from "./hitvalues.ts";
 import { placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
-import { disagreementRuns, REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK, replayedHits, replayKitBuffs, type BuffReplay, type ConsumedBuffs, type DisagreementRun, type Fact, type ReplayCastFacts, type ReplayedHits } from "./buffreplay.ts";
+import { atLayers, disagreementRuns, REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK, replayedHits, replayKitBuffs, type BuffReplay, type ConsumedBuffs, type DisagreementRun, type Fact, type ReplayCastFacts, type ReplayedHits } from "./buffreplay.ts";
 
 /** What a reading of a logged hit takes for granted that the log doesn't say. */
 export type AssumptionKind =
@@ -903,6 +903,8 @@ export function logBuffReplay(data: GameData, fx: LogFixture, placement: Placeme
   return { replay, replayed, runs: disagreementRuns(fx, replayed) };
 }
 
+const NO_LAYERS: ReadonlyMap<string, number> = new Map();
+
 /** The assumption a match carries when only the log's own buff listing fits it, not the kit-buff replay's. */
 export const LOG_LISTING = "the log's buff listing";
 
@@ -939,7 +941,9 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
   };
   return fx.hits.map((logged): HitVerdict => {
     const hit = asReplayed(logged);
-    const decided = replayed?.decidedAt.get(logged) ?? noneDecided;
+    // The buffs the replay sets at the hit (decidedAt) and those it gives layers (layersAt): their layers aren't tried.
+    const layersHere = replayed?.layersAt.get(logged) ?? NO_LAYERS;
+    const decided = layersHere.size ? new Set([...(replayed?.decidedAt.get(logged) ?? []), ...layersHere.keys()]) : (replayed?.decidedAt.get(logged) ?? noneDecided);
     const member = team.at(hit.operator, hit.t);
     const reaction = parseReactionEvent(hit.event);
     const found = reaction || !member ? [] : findHits(data, member.build, hit.event);
@@ -1130,11 +1134,13 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
     let byLog: ReturnType<typeof search> | null = null;
     // The log's listing where the replay changed the hit, when the replay's reading fits no reading: reported, so the
     // disagreements it settles show (formatBuffReplay).
-    if (decided.size > 0) {
-      byLog = search(logged, noneDecided, applied);
+    const setHere = replayed?.decidedAt.get(logged) ?? noneDecided;
+    if (setHere.size > 0) {
+      // The log's listing, with the layers the replay gives a buff both have on (not tried: layerVariants).
+      byLog = search(atLayers(logged, layersHere), new Set(layersHere.keys()), applied);
       readings = { tried: byReplay.tried + byLog.tried, matching: byLog.matching };
       if (byLog.first) {
-        const buffs = [...decided].sort();
+        const buffs = [...setHere].sort();
         return match({ ...byLog.first, assumptions: [...byLog.first.assumptions, { kind: "logListing", label: `${LOG_LISTING} (replay: ${buffs.join(", ")})`, buffs }] }, readings);
       }
     }
