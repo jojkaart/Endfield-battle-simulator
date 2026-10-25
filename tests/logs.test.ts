@@ -9,8 +9,8 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { loadGameData, sourceCommit, SOURCES } from "@efsim/data";
-import { checkLog, readLogFixture, simulateLog, verdictCounts, verificationProblems, type HitVerdict } from "@efsim/cli";
-import { changes, logFixtures, regressions, ROOT, type FixtureCounts } from "./logverdicts.ts";
+import { checkLog, engineHits, engineReport, logBuffReplay, readLogFixture, simulateLog, verdictCounts, verificationProblems, type EngineHits, type HitVerdict, type LogBuffReplay } from "@efsim/cli";
+import { changes, entry, logFixtures, regressions, ROOT, totalsChanges, totalsOf, type FixtureCounts } from "./logverdicts.ts";
 import { Snapshot, UPDATE_HINT, UPDATING } from "./snapshot.ts";
 
 const data = loadGameData();
@@ -25,26 +25,22 @@ it("has a verdict snapshot for every verified fixture and none for a fixture tha
 });
 
 /**
- * Plain matches the simulation doesn't reproduce on 2026-10-25, when this test was written (journal: the round-two
- * review's Stagger bug, which the check missed because it computed each hit through its own options, not the
- * simulation's). A baseline that only shrinks, to 0: each fix lowers it.
+ * The largest error of a verified fixture's total damage, simulated (the replay of the logged casts through the engine:
+ * engineReport) against the log's, in % (2026-10-25: dbae −43.9%, bdf2 −28.0%, 0eef −27.1%, b7b3 +21.3%, 40d9 −12.9%,
+ * 4e5e −12.5%; journal). A bound to tighten as the leads the report lists are fixed; each fixture's error is also in
+ * the snapshot and mustn't grow.
  */
-const UNREPRODUCED_TODAY: Readonly<Record<string, number>> = {
-  "zmdlogs-0eef2474a26f.json": 26,
-  "zmdlogs-40d9a3c1da37.json": 10,
-  "zmdlogs-4e5e1390085e.json": 109,
-  "zmdlogs-b7b3762d5da8.json": 14,
-  "zmdlogs-bdf223db8e49.json": 105,
-  "zmdlogs-dbaee23b801d.json": 27,
-};
+const MAX_DAMAGE_ERROR = 45;
 
 /**
  * The plain matches (no assumption) whose hit the simulation of the logged casts doesn't reproduce: its landing's damage
- * through the simulation's own damage path (simulateLog: the timeline's damageOptions at the landing, with only crits,
- * the enemy's HP and effects no kit models from the log) more than ±1 from the log, another crit, or no landing.
+ * through the simulation's own damage path (simulateLog: the timeline's damageOptions at the landing, with only the
+ * crit, effects no kit models, the enemy's HP and what the replay can't judge from the log) more than ±1 from the log,
+ * or no landing. Written 2026-10-25 against the round-two review's Stagger bug, which the check missed because it
+ * computed each hit through its own options, not the simulation's: then 291 of 396 plain matches failed it.
  */
-function unreproduced(fx: ReturnType<typeof readLogFixture>, verdicts: readonly HitVerdict[]): string[] {
-  const simulated = new Map(simulateLog(data, fx).map((s) => [s.hit, s]));
+function unreproduced(fx: ReturnType<typeof readLogFixture>, verdicts: readonly HitVerdict[], replay: LogBuffReplay, byHit: EngineHits): string[] {
+  const simulated = new Map(simulateLog(data, fx, undefined, replay, byHit).map((s) => [s.hit, s]));
   const out: string[] = [];
   for (const v of verdicts) {
     if (v.kind !== "match" || v.class !== "plain") continue;
@@ -55,22 +51,26 @@ function unreproduced(fx: ReturnType<typeof readLogFixture>, verdicts: readonly 
       out.push(`${where}, no landing in the simulation (${s && typeof s.simulated !== "number" ? s.simulated.unknown : "not simulated"})`);
       continue;
     }
-    const crit = s.landing?.loggedCrit ?? null;
-    if (Math.abs(s.simulated - actual) > 1 || crit !== v.hit.crit) out.push(`${where}, simulated ${s.simulated} (×${(actual / s.simulated).toFixed(4)})${crit !== v.hit.crit ? `, crit ${crit} (logged ${v.hit.crit})` : ""}`);
+    if (Math.abs(s.simulated - actual) > 1) out.push(`${where}, simulated ${s.simulated} (×${(actual / s.simulated).toFixed(4)})`);
   }
   return out;
 }
 
 describe.each(files)("%s", (file) => {
   const fx = readLogFixture(join(ROOT, "fixtures", file));
-  let cached: HitVerdict[] | undefined;
-  const verdictsOf = () => (cached ??= checkLog(data, fx));
+  let cached: { replay: LogBuffReplay; byHit: EngineHits; verdicts: HitVerdict[] } | undefined;
+  const checked = () => {
+    if (cached) return cached;
+    const replay = logBuffReplay(data, fx);
+    const byHit = engineHits(data, fx, replay);
+    return (cached = { replay, byHit, verdicts: checkLog(data, fx, { replay, engineHits: byHit }) });
+  };
+  const verdictsOf = () => checked().verdicts;
 
   it("reproduces each plain match through the simulation's damage path (the replay's landing, as simulate computes it)", () => {
-    const missed = unreproduced(fx, verdictsOf());
-    const allowed = UNREPRODUCED_TODAY[file] ?? 0;
-    if (missed.length) console.info(`${file}: ${missed.length} plain match(es) the simulation doesn't reproduce (baseline ${allowed}):\n  ${missed.join("\n  ")}`);
-    expect(missed.length, `${missed.length} plain match(es) the simulation doesn't reproduce:\n${missed.join("\n")}`).toBeLessThanOrEqual(allowed);
+    const { replay, byHit, verdicts } = checked();
+    const missed = unreproduced(fx, verdicts, replay, byHit);
+    expect(missed, `${missed.length} plain match(es) the simulation doesn't reproduce`).toEqual([]);
   });
 
   it("was verified against the current data commits", () => {
@@ -80,11 +80,17 @@ describe.each(files)("%s", (file) => {
   it("is verified, and its verdict counts don't fall behind the snapshot", () => {
     const verdicts = verdictsOf();
     expect(verificationProblems(data, fx, verdicts)).toEqual([]);
+    const { replay, byHit } = checked();
+    const totals = engineReport(data, fx, replay, byHit, verdicts).errors;
+    expect(Math.abs(totals["damage"] ?? Infinity), `total damage error ${totals["damage"]}%`).toBeLessThanOrEqual(MAX_DAMAGE_ERROR);
     const now = verdictCounts(fx, verdicts);
-    const stored = snapshot.record(file, now);
+    const stored = snapshot.record(file, entry(now, totals));
     if (UPDATING || stored === undefined) return;
     expect(regressions(now, stored), `verdict counts fell behind the snapshot (${UPDATE_HINT}); all changes: ${changes(now, stored).join("; ")}`).toEqual([]);
-    const gained = changes(now, stored);
-    if (gained.length) console.info(`${file}: counts moved past the snapshot (update it to keep the gain): ${gained.join("; ")}`);
+    // The total damage's error mustn't grow (the other totals show in the snapshot's diff).
+    const was = totalsOf(stored)["damage"];
+    if (was !== undefined && was !== null) expect(Math.abs(totals["damage"] ?? Infinity), `total damage error ${was}% → ${totals["damage"]}% (${UPDATE_HINT})`).toBeLessThanOrEqual(Math.abs(was) + 0.1);
+    const gained = [...changes(now, stored), ...totalsChanges(totals, totalsOf(stored))];
+    if (gained.length) console.info(`${file}: counts or totals moved from the snapshot (update it to keep the gain): ${gained.join("; ")}`);
   });
 });

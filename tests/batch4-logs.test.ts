@@ -25,7 +25,7 @@ import {
   type OperatorKit,
 } from "@efsim/engine";
 import { loadGameData, type LogFixture, type LogHit } from "@efsim/data";
-import { calc, checkLog, eventCounts, kitStackCaps, layerVariants, linkVariants, logBuffReplay, readLogFixture, teamStackCaps, type CalcOptions, type HitVerdict } from "@efsim/cli";
+import { calc, checkLog, eventCounts, kitStackCaps, layerVariants, linkVariants, logBuffReplay, readLogFixture, simulateLog, teamStackCaps, type CalcOptions, type HitVerdict } from "@efsim/cli";
 import { assumeValues, statedCounts, valueAssumptions, valueReads } from "../packages/cli/src/hitvalues.ts";
 import { placeHits, type LoggedCast } from "../packages/cli/src/logcasts.ts";
 import { checkReactions, enemyClockDue } from "../packages/cli/src/reactioncheck.ts";
@@ -170,7 +170,12 @@ describe("L3: what the log never lists", () => {
     const listed = { buff: "buff_listed", zone: "atk" as const, element: null, value: 0.1 };
     const critHit = logHit(1000, "k", damage(g, h, [{ zone: "atk", value: 0.1, source: "log" }, { zone: "critDamage", value: 0.5, source: "kit" }], true), { crit: true, effects: [listed] });
     const hiddenHit = logHit(5000, "k", damage(g, h, [{ zone: "damageBonus", value: 0.3, source: "kit" }]));
-    const v = checkLog(g, fixture([critHit, hiddenHit]));
+    // The engine has both on at both hits (each battle cast applies both): its reading is the kit's, which this synthetic
+    // log (each hit with one of them) doesn't have; the fallback's readings below find each.
+    const both = [{ zone: "atk" as const, value: 0.1, source: "kit" }, { zone: "critDamage" as const, value: 0.5, source: "kit" }, { zone: "damageBonus" as const, value: 0.3, source: "kit" }];
+    expect(simulateLog(g, fixture([critHit, hiddenHit])).map((s) => s.simulated)).toEqual([damage(g, h, both, true), damage(g, h, both)]);
+    // The fallback's readings (the log's listing) try them, labelled.
+    const v = checkLog(g, fixture([critHit, hiddenHit]), { engine: false });
     expect(assumed(v[0])).toContain("unlogged own t_crit crit part");
     expect(assumed(v[1])).toContain("unlogged own t_hidden");
   });
@@ -212,10 +217,11 @@ describe("L3: what the log never lists", () => {
     const v = checkLog(g(10), fx);
     expect(v.slice(1).map((x) => (x.kind === "match" ? x.class : x.kind))).toEqual(["plain", "plain"]);
     expect(assumed(checkLog(g(10), fx, { buffs: "log" })[1])).toContain("unlogged t_ready (the replay can't say: no replay)");
-    // Without a duration, layers from casts before the log may stand at the operator's first such cast: tried there.
+    // Without a duration, layers from casts before the log may stand at the operator's first such cast: the engine's own
+    // state (the combo readied it) matches plainly; the fallback's readings try them there.
     const first = checkLog(g(), fx);
-    expect(assumed(first[1])).toContain("unlogged t_ready (the replay can't say: layers without a duration casts before the log may have built)");
-    expect(first[2]?.kind === "match" && first[2].class).toBe("plain");
+    expect(first.slice(1).map((x) => (x.kind === "match" ? x.class : x.kind))).toEqual(["plain", "plain"]);
+    expect(assumed(checkLog(g(), fx, { engine: false })[1])).toContain("unlogged t_ready (the replay can't say: layers without a duration casts before the log may have built)");
   });
 
   it("reads a value's event count at the replay's window count; tries 1-4 only where the replay saw no window", () => {
@@ -227,8 +233,13 @@ describe("L3: what the log never lists", () => {
 
   it("leaves Link undecided where another cast that uses Link comes within REPLAY_EDGE_MS (40d9: Gilberta's and Si's ultimates, 86 ms apart)", () => {
     const fx = readLogFixture(new URL("../fixtures/zmdlogs-40d9a3c1da37.json", import.meta.url).pathname);
-    const v = checkLog(data, fx).filter((x) => x.hit.t === 12951 && x.hit.operator === "chr_0013_aglina");
+    // The fallback's readings (the log's listing with the replay's facts) try Link 1-4 there, labelled with why.
+    const v = checkLog(data, fx, { engine: false }).filter((x) => x.hit.t === 12951 && x.hit.operator === "chr_0013_aglina");
     expect(v.map(assumed)).toEqual([["Link 1 (the replay can't say: Link stacks change within 500 ms of the cast)"]]);
+    // So do the engine's: none fits, as the replay has Corrosion on the enemy there that the log doesn't list (a lead: its
+    // inflictions aren't checked against the log's reactions), and the hit falls back on the log's listing, saying why.
+    const e = checkLog(data, fx).filter((x) => x.hit.t === 12951 && x.hit.operator === "chr_0013_aglina");
+    expect(e.map(assumed)).toEqual([["Link 1 (the replay can't say: Link stacks change within 500 ms of the cast)", "the log's buff listing (no engine reading fits (26003))"]]);
     // One hit out of the log: no casts to replay, the log's listing alone.
     const one = checkLog(data, { ...fx, hits: fx.hits.filter((h) => h.t === 12951 && h.operator === "chr_0013_aglina") }, { buffs: "log" });
     expect(one.map(assumed)).toEqual([["Link 1 (the replay can't say: no replay)"]]);

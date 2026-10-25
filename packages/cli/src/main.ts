@@ -10,7 +10,7 @@ import type { CritMode, TimelineScenario } from "@efsim/engine";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "./commands.ts";
 import { kitDraft } from "./kitdraft.ts";
 import { formatRuns, formatSimulation, readScenario, searchCommand } from "./simulate.ts";
-import { checkLog, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, simulateLog } from "./logcheck.ts";
+import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, simulateLog } from "./logcheck.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 import { addLoggedCasts, importBattle, readLogFixture } from "./logs.ts";
@@ -185,7 +185,9 @@ async function main(argv: string[]): Promise<number> {
           break;
         }
         const replay = values["log-buffs"] ? null : logBuffReplay(data, fx);
-        text = formatLogCheck(data, fx, checkLog(data, fx, replay ? { replay } : { buffs: "log" }), replay ?? undefined);
+        const byHit = replay ? engineHits(data, fx, replay) : undefined;
+        const verdicts = checkLog(data, fx, replay ? { replay, ...(byHit ? { engineHits: byHit } : {}) } : { buffs: "log" });
+        text = formatLogCheck(data, fx, verdicts, replay ?? undefined, replay && byHit ? engineReport(data, fx, replay, byHit, verdicts) : undefined);
       } else {
         const file = await importBattle(data, arg, values["enemy-level"] === undefined ? undefined : Number(values["enemy-level"]), values.note, values.detail);
         text = `wrote ${file}`;

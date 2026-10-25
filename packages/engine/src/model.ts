@@ -665,6 +665,12 @@ export interface KitBuff {
   /** The BuffData buff it stands for (kits name it; predicates and triggers by game buff read it). */
   readonly gameBuff?: string;
   /**
+   * Further BuffData buffs a battle log lists its effects under (beside gameBuff and the affix buffs the game buff's
+   * Susceptibility and Amp actions create): the game gives them in its place to some recipients. The log check
+   * verifies its modifiers against them rather than adding them (cli logcheck.ts); the engine doesn't read it.
+   */
+  readonly loggedAs?: readonly string[];
+  /**
    * What it is for category triggers and the `operatorBuff` predicate, in
    * place of what its modifiers say (buffs.ts buffReach): e.g. `[]` for a
    * buff that only raises an active Amp's rate (an EnhancedAction), which

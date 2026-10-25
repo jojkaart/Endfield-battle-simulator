@@ -263,6 +263,81 @@ listing, and a match there is labelled "the log's buff listing (replay:
 instance counts) and which reading the damage fits: log gaps, or kit
 triggers that are wrong. `--log-buffs` checks with the log's listing alone.
 
+**The log check's rule** (owner, 2026-10-25: "if our engine can simulate
+something, the log [check] should run that and compare the result with
+what the log says"). Wherever the engine models something (buffs and
+their layers, Link, statuses and reactions, Stagger, the finisher,
+consumed buffs, crit-independent damage, timing), the check computes it
+with the engine and compares the result with the log; the log supplies
+only inputs the engine can't produce, and is otherwise what's compared
+against. A logged hit's reading is the engine's damage path at its
+landing in the replay of the logged casts (`packages/cli/src/enginecheck.ts`
+`engineReadings`: engine `landingDamage` with the timeline's own
+`damageOptions` there, which the replay records per landing as
+`LandedHit.inputs`), so the check and a simulation share every rule; a
+kit hit lands where the placement pins it, a status hit (burst,
+reaction, physical status, Combustion tick) is the replay's status
+damage of its operator, kind and element nearest the logged one. What
+still comes from the log, and why:
+- the **crit flag** (the replay can't know the roll; `loggedCrits` also
+  feed crit-triggered buffs, a pinned landing its own hit's flag);
+- **buffs no team kit defines** (`logOnly`: their entries become
+  modifiers), and the hitter's **food** when its build doesn't set it;
+- the **enemy's HP** over the fight (`TimelineScenario.enemyHp`);
+- the outcome of what the replay **can't judge**: kit buffs whose
+  triggers depend on chances, the enemy's actions or heals of the
+  controlled operator (`BuffReplay.unjudgedKitBuffs`; the log's entries
+  replace the engine's for them);
+- the **build values** the log records (levels, gear, potentials).
+The log's entries under a buff the engine models are compared with the
+engine's modifiers, not added: a kit buff stands for the game buffs a log
+lists it under (`loggedNames`: its `gameBuff`, its `loggedAs`, and the
+affix buffs its file's VulnerableAction / EnhancedAction create,
+`buff_common_affixes_{vulnerable,enhance}_<element>` by the action's
+subType, which is how ZMDLogs lists most Susceptibility and Amp); the
+timeline's statuses (reactions, Corrosion, Electrification, Breach,
+Stagger, Link) are the engine's too. Where the replay isn't sure (a kit
+buff or Stagger changing within REPLAY_EDGE_MS of the hit, or a buff
+whose instances depend on crits the log doesn't give; Link, consumed
+buffs or a combo's count it can't say; the event's other kit hits; an
+unlogged crit; the enemy's side of a hit's conditions, as its
+inflictions aren't checked against the log yet; a Corrosion or a
+reaction level the replay lacks; log-only buffs at the hit's boundary),
+readings are tried, labelled: a match there is **assumed**, one with
+none **plain**. Where no engine reading fits, or the replay has no
+landing for the hit, the old reading of the log's own listing (with the
+replay's decisions, "What the replay decides" below) is the **fallback**,
+labelled with why the engine didn't serve (`the log's buff listing (no
+engine reading fits (n))`, or the landing's reason); a fallback doesn't
+verify an operator. Its Stagger is the pipeline's own (DamageOptions
+`staggered` from the log's `buff_common_poise_break_damage_taken_scale`,
+so Staggered-only modifiers apply). Gaps the fallback still covers
+(2026-10-25; the report's "engine against the log's listing" names them
+per buff and operator): the replay's Stagger (Staggered at 23–34 s in
+4e5e and 19–24 s in bdf2, where the log has none: poise or its recovery),
+its inflictions (40d9: a Corrosion after Gilberta's ultimate the log
+never lists), Wolven Blood's layers on Rossi, Typhoeus's hover through
+her combo, statuses it doesn't deal near the logged time, and a few
+landings it doesn't make. `--log-buffs` checks with the log's listing
+alone (`buffs: "log"`, no replay); `engine: false` the fallback's
+readings alone (for testing them).
+
+Every check also reports the fight's **totals** simulated against the
+log's (`engineReport`: the replay's landings, its own included, matched
+landings at their primary reading): total damage, per operator and per
+kind (basic, battle, combo, ultimate, status, none), hits, status hits,
+hits under Stagger, the last hit's time and the crit share, each as a
+percentage error; the verdict snapshots pin them to 0.1%.
+
+**Why the check missed the Stagger bug** (journal 2026-10-25): until then
+`checkLog` computed every hit through options of its own (`staggered:
+false` and the log's listed ×1.3, its own finisher, Link, Corrosion and
+situation) and took only kit buffs' on/off from the replay, so the
+simulation's `damageOptions` (where Stagger counted twice) was never
+compared with a log. The rule above removes that: the check's plain
+matches are the simulation's own landings (tests/logs.test.ts holds each
+to it).
+
 **What the replay decides** (2026-10-25, review 3.2: the checker reads
 facts from the replay instead of trying alternatives). The replay records
 per logged cast (`BuffReplay.castFacts`) and per logged landing
@@ -340,6 +415,18 @@ layers) or 1–2% (Corrosion levels); with the replay deciding those
 0. Readings per hit fell with it (4e5e 91,895 in all to 25,936; median
 3). A single assumed match is still weak evidence; a fixture whose hits
 match by the hundred, where ×0.97 matches a few, isn't chance.
+
+Since 2026-10-25 ("The log check's rule", above) plain and assumed
+matches are the engine's readings at the landing, and fallback the log's
+listing; tests/logs.test.ts also holds every plain match to the
+simulation's own landing (`simulateLog`, ±1) and every verified fixture's
+total damage, simulated against the log's, to within MAX_DAMAGE_ERROR
+(45%: today dbae −43.9%, bdf2 −28.0%, 0eef −27.1%, b7b3 +21.3%, 40d9
+−12.9%, 4e5e −12.5%); a fixture's error mustn't grow past its snapshot's.
+That bound is loose because the engine's own state still differs from the
+games' in the ways the report lists (Stagger, inflictions, layers);
+tightening it is the measure of those fixes. The negative control gives
+4e5e 3 of 345 at ×0.97 (two through the fallback), every other 0.
 
 **Buffs from skills** are kit `buffs` (engine `buffs.ts`): target self,
 team or enemy, a duration (0: not applied; none: until ended) and

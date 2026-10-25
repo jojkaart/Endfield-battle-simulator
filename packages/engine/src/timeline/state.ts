@@ -2,15 +2,15 @@
 
 import type { Element, SkillType } from "../attributes.ts";
 import type { Build } from "../build.ts";
-import type { CritMode, DamageTarget, HitDamage } from "../damage.ts";
+import type { CritMode, DamageOptions, DamageTarget, HitDamage } from "../damage.ts";
 import type { Modifier } from "../effects.ts";
-import type { EnemyData, EventSource, GameData, OperatorKit, SpKind } from "../model.ts";
+import type { EnemyData, EventSource, GameData, KitHit, KitSkill, OperatorKit, SpKind } from "../model.ts";
 import type { BattleEvent } from "../events.ts";
 import type { Predicate } from "../expr.ts";
 import type { ActiveBuff } from "../buffs.ts";
 import type { StatPanel } from "../stats.ts";
 import type { EnemyStatus, StatusEvent } from "../status.ts";
-import type { ArtsElement } from "../reactions.ts";
+import type { ArtsElement, ReactionKind } from "../reactions.ts";
 
 export interface RotationAction {
   readonly operator: string;
@@ -244,7 +244,26 @@ export interface LandedHit extends HitDamage {
   readonly facts?: LandingFacts;
   /** With TimelineScenario.loggedCrits: the crit the log gives this kit hit's landing, or null when the log doesn't say (not set otherwise). */
   readonly loggedCrit?: boolean | null;
+  /** With TimelineScenario.loggedCrits (a replayed fight): what its damage was computed from (landing.ts landingDamage), so the log check computes it again, with a change, through the same path. */
+  readonly inputs?: LandingInputs;
 }
+
+/**
+ * The damage path's arguments of a landing (LandedHit.inputs): a kit hit's (computeHit) or a status event's
+ * (computeReaction, and the scale a Combustion tick or a physical status multiplies it by). `options` are the
+ * timeline's own at the landing (damageOptions: its modifiers with their sources, Stagger, the situation).
+ */
+export type LandingInputs =
+  | { readonly kind: "hit"; readonly operator: string; readonly build: Build; readonly panel: StatPanel; readonly skill: Pick<KitSkill, "skillId">; readonly hit: KitHit; readonly options: DamageOptions }
+  | {
+      readonly kind: "status";
+      readonly operator: string;
+      readonly build: Build;
+      readonly panel: StatPanel;
+      readonly reaction: { readonly kind: ReactionKind; readonly element: Element; readonly stacks: number };
+      readonly options: DamageOptions;
+      readonly scale?: { readonly key: string; readonly value: number };
+    };
 
 /**
  * What a landing's values and conditions read (the situation its damage was computed on), as data: its operator's

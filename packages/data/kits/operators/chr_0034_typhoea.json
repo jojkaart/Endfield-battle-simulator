@@ -53,6 +53,7 @@
       "id": "hovering_atk",
       "label": "Hovering ATK (P1)",
       "target": "self",
+      "gameBuff": "buff_chr_0034_typhoea_potential_atkup",
       "modifiers": [
         {
           "zone": "atk",
