@@ -49,7 +49,8 @@ After a batch's kits are in, repeat the pattern review in
 
 In a git worktree (sub-agents' `.claude/worktrees/…`), run
 `source scripts/setup-worktree.sh` first: otherwise the CLI and tests use
-the main checkout's packages and kits, and find no game data.
+the main checkout's packages and kits, and find no game data. Before
+merging a branch into `main`, run `scripts/premerge.sh`.
 
 ## Data and reference code
 

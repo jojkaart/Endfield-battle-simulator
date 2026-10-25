@@ -69,6 +69,20 @@ describe("cli process", () => {
     expect(out).toContain("1,952");
   });
 
+  it("checks arguments and input files before loading the game data", () => {
+    const run = (...args: string[]) => {
+      try {
+        execFileSync("node", [join(ROOT, "packages/cli/src/main.ts"), ...args], { encoding: "utf8", stdio: "pipe" });
+      } catch (e) {
+        return { message: String((e as { stderr?: string }).stderr) };
+      }
+      throw new Error("expected an error");
+    };
+    expect(run("calc", "no-such-build.json").message).toMatch(/no-such-build\.json/);
+    expect(run("search", "no-such.scenario.json", "--beam", "0").message).toMatch(/--beam must be a whole number/);
+    expect(run("nonsense").message).toMatch(/unknown command nonsense/);
+  });
+
   it("reports errors and exits 1", () => {
     expect(() => execFileSync("node", [join(ROOT, "packages/cli/src/main.ts"), "calc"], { encoding: "utf8", stdio: "pipe" })).toThrow(/calc takes 1 argument/);
   });

@@ -139,20 +139,25 @@ async function main(argv: string[]): Promise<number> {
       ...(every !== undefined ? { enemyActions: [...(scenario.enemyActions ?? []), { kind: "attack" as const, every: every * 30 }] } : {}),
     };
   };
-  const data = loadGameData();
+  // Loaded on first use, after the arguments and input files are checked (a mistake is reported without the load's wait).
+  let loaded: ReturnType<typeof loadGameData> | undefined;
+  const data = () => (loaded ??= loadGameData());
   let text: string;
   switch (command) {
     case "find":
       need(1);
-      text = find(data, args[0] as string);
+      text = find(data(), args[0] as string);
       break;
     case "template":
       need(1);
-      text = template(data, args[0] as string, values.weapon);
+      text = template(data(), args[0] as string, values.weapon);
       break;
     case "calc":
       need(1);
-      text = calc(data, readBuild(args[0] as string), options);
+      {
+        const build = readBuild(args[0] as string);
+        text = calc(data(), build, options);
+      }
       break;
     case "zmdlogs": {
       const [sub, arg, op] = args;
@@ -160,7 +165,7 @@ async function main(argv: string[]): Promise<number> {
         const fx = readLogFixture(arg);
         if (sub === "scales") {
           const lines: string[] = [];
-          for (const r of impliedScales(data, fx, op)) {
+          for (const r of impliedScales(data(), fx, op)) {
             const s = r.bySkillType;
             lines.push(`${r.event} t=${r.t}${r.unquantified.length ? ` [${r.unquantified.join(",")}]` : ""} crit=${r.crit} value=${r.value}` +
               ` basic=${s.basic.toFixed(4)} battle=${s.battle.toFixed(4)} combo=${s.combo.toFixed(4)} ultimate=${s.ultimate.toFixed(4)}`);
@@ -168,7 +173,7 @@ async function main(argv: string[]): Promise<number> {
           text = lines.join("\n");
         } else {
           const lines: string[] = [];
-          for (const m of findScales(data, fx, op)) {
+          for (const m of findScales(data(), fx, op)) {
             lines.push(`${m.event} (${m.hits} hits)`);
             for (const x of m.matches) lines.push(`   ${x.agree}/${m.hits}  ${x.skillId} ${x.keys.join(" * ")} ${x.damageType}${x.corrosion ? ` corrosion L${x.corrosion}` : ""}`);
           }
@@ -181,19 +186,20 @@ async function main(argv: string[]): Promise<number> {
         if (!values.detail) throw new Error("zmdlogs casts needs --detail <file> (an already downloaded /api/battles/<id> response)");
         text = `added ${addLoggedCasts(arg, values.detail)} cast(s) to ${arg}`;
       } else if (sub === "reactions") {
-        text = formatReactionCheck(checkReactions(data, readLogFixture(arg)));
+        const fx = readLogFixture(arg);
+        text = formatReactionCheck(checkReactions(data(), fx));
       } else if (sub === "check") {
         const fx = readLogFixture(arg);
         if (values.simulate) {
-          text = formatSimulatedLog(data, fx, simulateLog(data, fx));
+          text = formatSimulatedLog(data(), fx, simulateLog(data(), fx));
           break;
         }
-        const replay = values["log-buffs"] ? null : logBuffReplay(data, fx);
-        const byHit = replay ? engineHits(data, fx, replay) : undefined;
-        const verdicts = checkLog(data, fx, replay ? { replay, ...(byHit ? { engineHits: byHit } : {}) } : { buffs: "log" });
-        text = formatLogCheck(data, fx, verdicts, replay ?? undefined, replay && byHit ? engineReport(data, fx, replay, byHit, verdicts) : undefined);
+        const replay = values["log-buffs"] ? null : logBuffReplay(data(), fx);
+        const byHit = replay ? engineHits(data(), fx, replay) : undefined;
+        const verdicts = checkLog(data(), fx, replay ? { replay, ...(byHit ? { engineHits: byHit } : {}) } : { buffs: "log" });
+        text = formatLogCheck(data(), fx, verdicts, replay ?? undefined, replay && byHit ? engineReport(data(), fx, replay, byHit, verdicts) : undefined);
       } else {
-        const file = await importBattle(data, arg, values["enemy-level"] === undefined ? undefined : Number(values["enemy-level"]), values.note, values.detail);
+        const file = await importBattle(data(), arg, values["enemy-level"] === undefined ? undefined : Number(values["enemy-level"]), values.note, values.detail);
         text = `wrote ${file}`;
       }
       break;
@@ -204,7 +210,7 @@ async function main(argv: string[]): Promise<number> {
         const seeded = withBattleOptions(readScenario(args[0] as string));
         const runs = values.runs === undefined ? undefined : Number(values.runs);
         if (runs !== undefined && !(Number.isInteger(runs) && runs >= 1)) throw new Error(`--runs must be a whole number ≥ 1`);
-        text = runs === undefined ? formatSimulation(data, seeded, values.verbose) : formatRuns(data, seeded, runs);
+        text = runs === undefined ? formatSimulation(data(), seeded, values.verbose) : formatRuns(data(), seeded, runs);
       }
       break;
     case "search":
@@ -218,7 +224,8 @@ async function main(argv: string[]): Promise<number> {
         if (runs !== undefined && !(Number.isInteger(runs) && runs >= 0)) throw new Error(`--runs must be a whole number ≥ 0`);
         const beam = Number(values.beam);
         if (!(Number.isInteger(beam) && beam >= 1)) throw new Error(`--beam must be a whole number ≥ 1`);
-        text = searchCommand(data, withBattleOptions(readScenario(args[0] as string)), {
+        const scenario = withBattleOptions(readScenario(args[0] as string));
+        text = searchCommand(data(), scenario, {
           beam,
           single: values.single,
           swaps: values.swaps,
@@ -234,7 +241,7 @@ async function main(argv: string[]): Promise<number> {
       text = formatCensus(kitCensus());
       break;
     case "kit-trim":
-      text = formatTrim(kitTrim(data, values.write), values.write);
+      text = formatTrim(kitTrim(data(), values.write), values.write);
       break;
     case "kit-draft": {
       need(1);
@@ -243,12 +250,15 @@ async function main(argv: string[]): Promise<number> {
       for (const f of readdirSync(join(ROOT, "fixtures")).filter((x) => x.startsWith("zmdlogs-"))) {
         for (const h of readLogFixture(join(ROOT, "fixtures", f)).hits) if (h.operator === op) logged.set(h.event, (logged.get(h.event) ?? 0) + 1);
       }
-      text = kitDraft(data, op, logged);
+      text = kitDraft(data(), op, logged);
       break;
     }
     case "compare":
       need(2);
-      text = compare(data, readBuild(args[0] as string), readBuild(args[1] as string), options, [basename(args[0] as string), basename(args[1] as string)]);
+      {
+        const builds = [readBuild(args[0] as string), readBuild(args[1] as string)] as const;
+        text = compare(data(), builds[0], builds[1], options, [basename(args[0] as string), basename(args[1] as string)]);
+      }
       break;
     default:
       throw new Error(`unknown command ${command}\n\n${USAGE}`);

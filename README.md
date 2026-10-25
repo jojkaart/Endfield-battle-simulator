@@ -93,10 +93,11 @@ Node 22 or newer.
 ./scripts/fetch-data.sh
 npm install
 npm run check                 # typecheck, lint, all tests
+scripts/premerge.sh           # before merging a branch: clean tree, journal entry, check
 ```
 
 Packages: [`packages/data`](packages/data) (reads and cross-checks the game
 tables) and [`packages/engine`](packages/engine) (the simulator; no
 dependencies). Design: [`docs/design.md`](docs/design.md). CI runs
-`npm run check` on every push. Cloud sessions run
+`npm run check` on pushes to main and on pull requests. Cloud sessions run
 `.claude/hooks/session-start.sh`, which does the first two steps.
