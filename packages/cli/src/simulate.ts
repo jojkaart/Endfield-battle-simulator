@@ -136,7 +136,7 @@ export function searchWidths(beam: number, single: boolean): number[] {
 export function searchCommand(
   data: GameData,
   scenario: TimelineScenario,
-  options: { beam: number; single?: boolean; out?: string; seeds?: number; percentile?: number; runs?: number; verbose: boolean },
+  options: { beam: number; single?: boolean; swaps?: boolean; out?: string; seeds?: number; percentile?: number; runs?: number; verbose: boolean },
 ): string {
   const { rotation: _ignored, ...rest } = scenario;
   const widths = searchWidths(options.beam, options.single ?? false);
@@ -144,6 +144,7 @@ export function searchCommand(
   let t = Date.now();
   const found = searchBeams(data, rest, {
     beams: widths,
+    swaps: options.swaps ?? false,
     ...(options.seeds !== undefined ? { seeds: options.seeds } : {}),
     ...(options.percentile !== undefined ? { percentile: options.percentile } : {}),
     ...(options.runs !== undefined ? { runs: options.runs } : {}),

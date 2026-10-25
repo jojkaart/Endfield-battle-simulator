@@ -93,12 +93,16 @@ describe("rotation search", () => {
     expect(found.expanded).toBe(523);
   });
 
-  it("works for a team: casts of both operators interleave, all legal", () => {
+  it("works for a team: casts of both operators interleave, all legal; no swaps unless asked for", () => {
     const r = searchRotation(data, duo, { beamWidth: 6 });
     expect(new Set(r.rotation.map((a) => a.operator)).size).toBe(2);
+    expect(r.rotation.some((a) => a.skill === "swap")).toBe(false);
     expect(simulate(data, { ...duo, rotation: r.rotation }).total).toBe(r.result.total);
     // Pinned as above.
-    expect(r.result.total).toBeCloseTo(DUO_TOTAL, 3);
+    expect(r.result.total).toBeCloseTo(DUO_NO_SWAPS_TOTAL, 3);
+    const swapping = searchRotation(data, duo, { beamWidth: 6, swaps: true });
+    expect(simulate(data, { ...duo, rotation: swapping.rotation }).total).toBe(swapping.result.total);
+    expect(swapping.result.total).toBeCloseTo(DUO_TOTAL, 3);
   });
 
   it("judges the choices at a state as judging every candidate in full would (startsNow and a memoised advance are exact)", () => {
@@ -329,3 +333,9 @@ describe("rotation search with random outcomes", () => {
  * by chance is the old key's total; the key's dead deadlines on their own move neither.
  */
 const DUO_TOTAL = 269470.9311;
+/**
+ * The same search without swaps, the default since 2026-10-25 (the owner doesn't swap in battle): the controlled
+ * operator does every basic attack, the teammate casts its skills. Lower than with swaps (the swaps let both chains
+ * run), as expected.
+ */
+const DUO_NO_SWAPS_TOTAL = 259112.7416;

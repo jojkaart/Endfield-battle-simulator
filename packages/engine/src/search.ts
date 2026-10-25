@@ -288,6 +288,12 @@ export interface SearchOptions {
   readonly percentile?: number;
   /** Battles the found rotation is replayed in for its distribution, when the scenario has random outcomes (default 50; 0: none). */
   readonly runs?: number;
+  /**
+   * Whether the rotation may swap the controlled operator (default false: the owner doesn't swap in battle, 2026-10-25).
+   * Without swaps the scenario's controlled operator does every basic attack and dive; teammates still cast their
+   * battle skills, combos and ultimates.
+   */
+  readonly swaps?: boolean;
 }
 
 /**
@@ -742,6 +748,7 @@ export function searchRotation(data: GameData, scenario: Omit<TimelineScenario, 
 
 function search(data: GameData, given: Omit<TimelineScenario, "rotation">, options: SearchOptions): SearchResult {
   const beam = options.beamWidth ?? 24;
+  const swaps = options.swaps ?? false;
   const bucketFrames = options.bucketFrames ?? 15;
   const maxExpansions = options.maxExpansions ?? 200_000;
   const percentile = options.percentile;
@@ -790,9 +797,9 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
       for (const n of nodes) {
         expanded++;
         const first = n.states[0] as TimelineState;
-        // A swap takes no time: never two in a row (they'd loop within a frame).
+        // A swap takes no time: never two in a row (they'd loop within a frame); none at all unless asked for.
         const lastSwap = n.rotation.at(-1)?.skill === "swap";
-        const choices = legalActions(ctx, first).filter((c) => !(lastSwap && c.action.skill === "swap"));
+        const choices = legalActions(ctx, first).filter((c) => c.action.skill !== "swap" || (swaps && !lastSwap));
         if (choices.length === 0 && n.score > best.score) best = n;
         for (const c of choices) {
           // Applied as recorded, with `at` the frame it starts, so the rotation replays to exactly these states.

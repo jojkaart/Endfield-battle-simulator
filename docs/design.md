@@ -481,7 +481,11 @@ evaluate(state) → partial Result        // damage so far, resources, timings
 ### Rotation search
 
 `efsim search` (engine `searchRotation`, `searchBeams`) is a beam search on
-the stepping API. At each decision point every legal action is tried
+the stepping API. By default it never swaps (`SearchOptions.swaps`, CLI
+`--swaps`; the owner, 2026-10-25: "I don't intend to do operator swaps
+during battles"): the scenario's controlled operator does every basic
+attack and dive, and the teammates cast their battle skills, combos and
+ultimates. At each decision point every legal action is tried
 (`legalActions`: the actions that can start soonest, plus the controlled
 operator's next basic attacks even if later, plus the *asides* whenever
 legal: the swaps and the controlled operator's dive, which don't count for
@@ -590,10 +594,10 @@ landing hits (`landHit` 40% of a profile at beam 4: the situation and
 trigger scans per hit, the damage path, which grow with four kits and
 their gear) inside advance (56%), for judging the choices (`earliestStart`
 37%) and committed damage (17%); the key is 3%. Nothing cheap was left on
-the search's side. Its rotations lean on two assumptions: an operator's
+the search's side. With `--swaps`, its rotations lean on two assumptions: an operator's
 basic attack goes on after a swap (two chains run at once, swapping
 between their steps: in-game test 15) and a swap mid-fall keeps the
-landing (test 97).
+landing (test 97); the default search makes neither.
 
 **Random outcomes** (owner, 2026-10-20: "the result becomes not a number,
 but rather a random distribution and needs to be interpreted and tracked as

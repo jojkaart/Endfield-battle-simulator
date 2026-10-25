@@ -32,6 +32,8 @@ const USAGE = `Usage:
                 [--beam n] [--out file]   Beam width w (default 24): runs w/2, w and 2w, keeps the best and
                                           shows how far apart they are; save the rotation as a scenario
                 [--single]                Only beam w (a third of the time, no spread)
+                [--swaps]                 Let the rotation swap the controlled operator (default: never; the
+                                          scenario's controlled operator does every basic attack and dive)
                 [--seeds k]               With random outcomes: battles each candidate is ranked over (default 4)
                 [--percentile p]          Rank by that percentile (0–100) of them instead of the mean
                 [--runs n]                Battles for the found rotation's distribution (default 50; 0: none)
@@ -86,6 +88,7 @@ async function main(argv: string[]): Promise<number> {
       simulate: { type: "boolean", default: false },
       beam: { type: "string", default: "24" },
       single: { type: "boolean", default: false },
+      swaps: { type: "boolean", default: false },
       seed: { type: "string" },
       runs: { type: "string" },
       seeds: { type: "string" },
@@ -216,6 +219,7 @@ async function main(argv: string[]): Promise<number> {
         text = searchCommand(data, withBattleOptions(readScenario(args[0] as string)), {
           beam,
           single: values.single,
+          swaps: values.swaps,
           ...(values.out ? { out: values.out } : {}),
           ...(seeds !== undefined ? { seeds } : {}),
           ...(percentile !== undefined ? { percentile } : {}),
