@@ -36,12 +36,19 @@ the six favourites.
      ([kit-abstractions.md](kit-abstractions.md#review-after-batch-4s-kits-2026-10-21)),
      in-game tests 77–97.
 2. **Rotation search** (`efsim search`, beam search on the stepping API):
-   resource-aware ranking, ranking over seeded battles for random outcomes
-   (crit-triggered kits ranked with rolled crits), the found rotation's
-   spread, dives. Next, the tool's purpose: team searches for the
-   owner's favourites (6-stars at P0, 4- and 5-stars at P5 unless the
-   owner's account data says otherwise) and a report of the best
-   rotations found.
+   ranking over seeded battles for random outcomes, the found rotation's
+   spread, dives. Since 2026-10-25 (review round two): skills a few frames
+   after a swap are choices, an exact key without past deadlines, one
+   state per family in pruning, beams w/2, w, 2w with their spread, a
+   4-operator example (si-laevatain-liino-gilberta, 20 s: 36 / 85 / 172 s
+   at beams 6 / 12 / 24). Next: a score closer to the final damage (the
+   widths still disagree by 4–14%: the beam drops rotations that pay off
+   later; a cheap rollout or a value for what a state holds), then the
+   tool's purpose: team searches for the owner's favourites (6-stars at
+   P0, 4- and 5-stars at P5 unless the owner's account data says
+   otherwise) and a report of the best rotations found; in-game test 15
+   (two basic-attack chains through swaps) decides how real the team
+   rotations are.
 3. **The new logs** (fixtures/pending/README.md, 2026-10-21): 16
    single-target fights for the operators that had none; find each
    operator's constant factor (build values the log doesn't record, food,

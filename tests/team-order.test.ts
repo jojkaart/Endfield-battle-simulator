@@ -28,7 +28,7 @@ function outcome(s: TimelineScenario): string {
 
 describe("team order", () => {
   it("is read by the examples' kits only through team positions (Si)", () => {
-    expect(examples.filter(([, s]) => readsSlots(s)).map(([f]) => f)).toEqual(["lastrite-si.scenario.json", "si-laevatain.scenario.json", "xaihi-si.scenario.json"]);
+    expect(examples.filter(([, s]) => readsSlots(s)).map(([f]) => f)).toEqual(["lastrite-si.scenario.json", "si-laevatain-liino-gilberta.scenario.json", "si-laevatain.scenario.json", "xaihi-si.scenario.json"]);
   });
 
   it.each(examples.filter(([, s]) => !readsSlots(s)))("%s gives the same hits under every order of its team", (_f, s) => {

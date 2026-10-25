@@ -480,23 +480,120 @@ evaluate(state) → partial Result        // damage so far, resources, timings
 
 ### Rotation search
 
-`efsim search` (engine `searchRotation`) is a beam search on the stepping
-API. At each decision point every legal action is tried (`legalActions`:
-the actions that can start soonest, plus the controlled operator's next
-basic attacks even if later), each applied with `at` the frame it starts,
-so the found rotation replays to exactly the searched states with
-`simulate`. Per half-second bucket the best `beamWidth` (24) nodes survive,
-ranked by committed damage (hits landed plus everything already on its
-way: the state advanced to the fight's end), optionally plus the worth of
-unspent SP and energy (`resourceWeight`); equivalent states keep only the
-best. Equivalent means equal in every field of the state that what comes
-next reads (`stateKey`): each `TimelineState` field, and each field of
+`efsim search` (engine `searchRotation`, `searchBeams`) is a beam search on
+the stepping API. At each decision point every legal action is tried
+(`legalActions`: the actions that can start soonest, plus the controlled
+operator's next basic attacks even if later, plus the *asides* whenever
+legal: the swaps and the controlled operator's dive, which don't count for
+what's soonest — a swap can nearly always start at the state's own frame
+and a jump as soon as the current skill's exclusive frames end, so counted
+they hid every skill that could start a few frames later: review round
+two, 2026-10-25), each applied with `at` the frame it starts, so the found
+rotation replays to exactly the searched states with `simulate`. Per
+half-second bucket the best `beamWidth` nodes survive, ranked by committed
+damage (hits landed plus everything already on its way: the state advanced
+to the fight's end).
+
+**Pruning** (`prune`): of equivalent states only the best is kept (below);
+then the best of each *family* in score order, then, if there's room, the
+best of the rest. A family is the states that are the same but for who's
+controlled (now, and when each hit on its way was cast) and the order of
+the buff list (`stateKeyer(ctx, true)`): a swap is free and takes no time,
+so every state came in up to one variant per team member, all with one
+score, and in a team they filled the beam (the 4-operator example at beam
+12: at one bucket all 12 nodes scored 671,349, and the rotation the beam of
+6 had found was dropped). A search policy, not an exact merge (the others
+are a swap away). Capping nodes per coarser macro state (controlled
+operator, SP band, ultimates ready, combos off cooldown; or ultimates cast
+so far), with or without a reserve for the best of each, was tried and
+dropped: it moved results both ways (laevatain-solo at beam 12: 1,165,844
+→ 1,006,745; the 4-operator example still fell to 1,576,033 at beam 6).
+`resourceWeight` (unspent SP and energy worth what one cast deals per
+point) was removed for the same reason: it hoards (si-laevatain at weight
+1: 468,743), and with families a weight of 0.2 lowered every result
+measured (liino-laevatain 1,510,467 → 1,436,660 at beam 12, the 4-operator
+example 3,554,349 → 3,316,409 at beam 6); its one-cast prices can't value
+an ultimate whose worth is what it enables (Laevatain's).
+
+**Equivalent states** (`stateKey(ctx, state)`) are equal in every field
+that what comes next reads: each `TimelineState` field, and each field of
 each kind of scheduled item and of a buff, is classified in a `KeyRules`
 record (in the key, a projection of it, or a reason it isn't: landed hits
 and the reaction record are the score and the log), so a new field doesn't
 compile until someone decides; scheduled items are keyed per kind, in
-order (the order within a kind is what ties go by); the key is a canonical serialisation (sorted keys), with
-SP and energy rounded to 0.1 (floating-point noise between paths).
+order (the order within a kind is what ties go by); the key is a canonical
+serialisation (sorted keys), with SP and energy rounded to 0.1
+(floating-point noise between paths). Exact by construction, it leaves
+out (`KeyEnv`, 2026-10-25):
+
+- *Deadlines already past.* Everything after a state happens at its frame
+  or later (advance only moves forward, an action starts no sooner than
+  the state's frame, a slow-down shifts only what's after its start, which
+  is no sooner either), so a deadline the engine reads only as "is it
+  later than now" is none once it's at or before the frame: `readyAt`
+  (read as `> frame` or max(frame, ⌈it⌉); cooldown changes skip ended
+  ones), `energyBlockedUntil` (`> frame`, set anew), `spPausedUntil`
+  (max(frame, it), raised with max), Link expiries (`> frame`),
+  `enemyFrozenUntil` (max(event frame, it)), a stagger that's over (the bar
+  counts as full, `finisherUsed` is read only while Staggered), slow-downs
+  that have ended, chain steps whose window closed (a dead step that was
+  next isn't promoted: `chainAfter` keeps only a live one), a buff's ended
+  `whileCasting`, combo windows that closed — except those a follow-up
+  combo of the team may cast into (`castSkill` reads a follow-up's window
+  count without checking it's open) — and a trigger's cooldown once ready
+  (its count only when it has a `maxCount`).
+- *Cast indices* count from the end of the cast list (the engine only
+  tells casts apart, looks one up and numbers the next by the list's
+  length): in scheduled items' cast references, bursts' `fromCast`, a hit's
+  `branch`, a delayed action's event, actions, buffs, per-cast trigger
+  counts and each operator's last cast; a cast nothing refers to any more
+  drops out (its Link, its per-cast trigger counts).
+
+Tests: a state with dead deadlines added has the state's key and the same
+future (the same choices, damage and keys for 40 steps); every pair of
+different states a small beam merges (40 pairs) plays on the same.
+Merges gained (beam 24, nodes compared → merged): si-laevatain 8,943 →
+1,533 before, 9,190 → 1,701 after; laevatain-solo 3,463 → 76 before,
+3,465 → 176 after. Few: paths that meet again mostly differ in what's to
+come, not in what's past.
+
+**How far to trust a result** (`searchBeams`). A beam search isn't
+monotone in its width: what survives a bucket is ranked by damage so far,
+so a rotation that pays off later (Si's Initial Stroke deals nothing
+itself; Laevatain's ultimate deals little, its enhanced attacks a lot) can
+be dropped when a wider beam brings in more nodes that are ahead for now.
+`efsim search --beam w` (default 24) therefore runs w/2, w and 2w, keeps
+the best and prints each width's result and the spread, (best − worst) /
+best; above 1% it says to treat the best as a lower bound. `--single` runs
+w alone. A search stopped by `maxExpansions` (200,000) says so (`capped`,
+and a warning). Beam widths 12 / 24 / 48 (single widths; 2026-10-25):
+
+| example | before | after |
+|---|---|---|
+| si-laevatain (20 s) | 2,142,022 / 2,147,903 / 2,064,639 (16: 2,051,398; spread 4.5%) | 2,094,656 / 2,156,233 / 2,185,220 (4.1%) |
+| laevatain-solo (30 s) | 1,165,844 / 1,194,306 / 1,196,307 (2.5%) | 1,165,844 / 1,165,844 / 1,196,307 (2.5%) |
+| liino-laevatain (30 s) | 1,510,467 / 1,514,664 / 1,526,692 (1.1%, swap fix only) | 1,510,467 / 1,402,446 / 1,511,305 (7.2%) |
+| si-laevatain-liino-gilberta (20 s, beams 6 / 12 / 24) | 3,016,009 / 1,557,958 (swap fix and key) | 3,554,349 / 3,701,403 / 3,173,136 (14.3%) |
+
+So the gap left is the ranking, not the key or the choices: what the
+beam needs is a score closer to the final damage (a rollout, or a value
+for what a state holds: ready skills, a running ultimate, a set-up
+sequence), which nothing tried so far gave cheaply. Ratchets
+(tests/slow/search-beams.test.ts): the best of w/2, w, 2w at 2w within 1%
+of that at w; one width alone, 2w within 2% of w (duo and si-laevatain's
+first 10 s at w = 4).
+
+**A full team** (si-laevatain-liino-gilberta, 20 s): beams 6 / 12 / 24
+took 36 / 85 / 172 s (1,306 / 3,050 / 5,283 states, heap under 400 MB),
+about 26 ms a state against 4 ms for si-laevatain. The time goes to
+landing hits (`landHit` 40% of a profile at beam 4: the situation and
+trigger scans per hit, the damage path, which grow with four kits and
+their gear) inside advance (56%), for judging the choices (`earliestStart`
+37%) and committed damage (17%); the key is 3%. Nothing cheap was left on
+the search's side. Its rotations lean on two assumptions: an operator's
+basic attack goes on after a swap (two chains run at once, swapping
+between their steps: in-game test 15) and a swap mid-fall keeps the
+landing (test 97).
 
 **Random outcomes** (owner, 2026-10-20: "the result becomes not a number,
 but rather a random distribution and needs to be interpreted and tracked as
@@ -544,13 +641,15 @@ the node's state again. Now, all exact (same rotations and totals):
   one's result; judging an operator's skills from one state shares the
   replays.
 - `legalActions` judges the controlled operator's basic attacks and the
-  swaps first. When one can start at the state's own frame (most decision
-  points), nothing starts sooner, so the other actions are choices only if
-  they can start right then: `startsNow` (timeline/drivers.ts) judges that without
+  asides first. When a basic attack can start at the state's own frame
+  (most decision points), nothing starts sooner, so the other actions are
+  choices only if they can start right then: `startsNow` (timeline/drivers.ts) judges that without
   how much later they could (`startFrom`'s frame is the state's own, and a
   combo that needs a window has one open).
-- Of the others, `startsNow` is asked first; only when no action at all
-  can start at the state's frame are they judged in full.
+- Of the others, `startsNow` is asked first; only when no action but an
+  aside can start at the state's frame are they judged in full (more often
+  since the swap fix: si-laevatain at beam 24 went from 2.3 to 3.9 ms a
+  state).
 - Follow-up skills (`followUpOnly`) aren't judged (never legal from a
   rotation); committed damage is cached per state (its advance to the end
   isn't kept by the memo).

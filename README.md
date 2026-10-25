@@ -22,7 +22,7 @@ npm run efsim -- calc examples/laevatain-forgeborn.json                  # stat 
 npm run efsim -- calc examples/laevatain-forgeborn.json --crit never --buff wpn_sword_0006.valid
 npm run efsim -- compare examples/laevatain-forgeborn.json examples/laevatain-umbral-torch.json
 npm run efsim -- simulate examples/laevatain-solo.scenario.json --verbose  # a rotation on the timeline
-npm run efsim -- search examples/laevatain-solo.scenario.json              # find a rotation for its team
+npm run efsim -- search examples/laevatain-solo.scenario.json              # find a rotation for its team (beams 12, 24, 48 and their spread)
 npm run efsim -- zmdlogs check fixtures/zmdlogs-40d9a3c1da37.json         # predict a logged fight's hits
 ```
 

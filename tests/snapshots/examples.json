@@ -345,6 +345,22 @@
    "0cc4259fdc9f"
   ]
  },
+ "si-laevatain-liino-gilberta.scenario.json": {
+  "total": 3701402.638,
+  "hits": 153,
+  "casts": 62,
+  "perOperator": {
+   "chr_0036_jsspsi": 1024114.512,
+   "chr_0016_laevat": 2409041.413,
+   "chr_0035_liino": 162001.503,
+   "chr_0013_aglina": 106245.21
+  },
+  "digest": "ee59f98ab8c8",
+  "windows": [
+   "4604f4b28686",
+   "915161573069"
+  ]
+ },
  "si-laevatain.scenario.json": {
   "total": 985293.722,
   "hits": 47,

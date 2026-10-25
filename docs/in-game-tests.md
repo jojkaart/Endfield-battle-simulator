@@ -227,6 +227,13 @@ agrees decides how fast swap-heavy rotations are.
 key at once, holding it: note roughly when the swap happens (about 3.7 s
 expected). Then try swapping during one of her basic attacks: it should
 swap at once, and the attack's hit should still land.
+*Higher priority since 2026-10-25:* team searches lean on that last part.
+The 4-operator example's found rotation swaps between two operators'
+basic-attack steps, so both chains run at once (Laevatain's enhanced
+attacks and Si's chain, 7.4 s into examples/si-laevatain-liino-gilberta).
+Also check, with any two operators: start a basic attack, swap at once,
+and attack with the other: do both attacks' hits land, and does the
+swapped-out one's chain go on if you swap back within its window?
 The same 3.7 s of the data also forbid her casting another skill
 (`cantCastSkill`); the engine now holds all of her casts until it ends,
 ultimates included (the data doesn't say whether they're an exception).
