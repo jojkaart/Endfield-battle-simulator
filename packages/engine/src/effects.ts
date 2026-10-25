@@ -1,6 +1,6 @@
 // One representation for everything that changes a hit's damage: stat panel
-// attributes, kit and weapon conditions, buffs from a battle log, and later
-// the timeline's buffs. All of them become Modifiers, and one function sums
+// attributes, kit and equipment buffs, buffs from a battle log, and the
+// timeline's buffs. All of them become Modifiers, and one function sums
 // them per zone, so effects that do the same thing share one implementation
 // (design principle 15).
 

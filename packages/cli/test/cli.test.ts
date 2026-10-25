@@ -12,7 +12,7 @@ import { formatCensus, kitCensus } from "../src/census.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const data = loadGameData();
-const options: CalcOptions = { target: { enemy: "eny_0051_rodin", level: 90 }, crit: "never", staggered: false, conditions: [], verbose: false };
+const options: CalcOptions = { target: { enemy: "eny_0051_rodin", level: 90 }, crit: "never", staggered: false, verbose: false };
 const forgeborn = readBuild(join(ROOT, "examples/laevatain-forgeborn.json"));
 
 describe("cli commands", () => {

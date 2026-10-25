@@ -75,7 +75,7 @@ breaks one needs a recorded reason (in this document or the journal).
 14. **Green before merge.** Lint, typecheck and all tests pass locally and in
     CI before anything reaches `main`. A failing test is fixed, not skipped.
 15. **Effects share primitives.** Everything that changes damage (stat
-    panel attributes, kit and weapon conditions, battle-log buffs, timeline
+    panel attributes, kit and equipment buffs, battle-log buffs, timeline
     buffs) becomes the same `Modifier` (zone, value, element / skill-type /
     staggered filters, source), summed by one function per zone
     (`packages/engine/src/effects.ts`). Similar effects in the game are data

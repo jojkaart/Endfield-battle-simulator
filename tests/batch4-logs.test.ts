@@ -57,7 +57,7 @@ const fixture = (hits: LogHit[], team: Build[] = [build]): LogFixture => ({
 });
 /** The engine's own number for a hit (no crit unless asked). */
 const damage = (g: GameData, h: KitHit, modifiers: Modifier[] = [], crit = false) =>
-  roundDamage(computeHit(g, build, panel, target, { skillId: BATTLE }, h, { crit: crit ? "always" : "never", staggered: false, conditions: [], modifiers }).exact);
+  roundDamage(computeHit(g, build, panel, target, { skillId: BATTLE }, h, { crit: crit ? "always" : "never", staggered: false, modifiers }).exact);
 const assumed = (v: HitVerdict | undefined) => (v?.kind === "match" ? v.assumed : [v?.kind ?? "none"]);
 
 describe("L4 and L6: hit values that read what only a fight knows", () => {
@@ -134,7 +134,7 @@ describe("L4 and L6: hit values that read what only a fight knows", () => {
 
   it("calc shows such a hit at a stated count instead of failing", () => {
     const g = withKit({ skills: [battle([consumedHit, hit("plain", ["k2"])])] });
-    const options: CalcOptions = { target, crit: "never", staggered: false, conditions: [], verbose: false };
+    const options: CalcOptions = { target, crit: "never", staggered: false, verbose: false };
     const text = calc(g, build, options);
     expect(text).toContain("shown at 1 of each");
     expect(text).toMatch(/value [\d.]+/);

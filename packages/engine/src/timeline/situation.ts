@@ -36,7 +36,6 @@ export function damageOptions(ctx: TimelineContext, st: TimelineState, operator:
   return {
     crit: ctx.scenario.options.crit,
     staggered,
-    conditions: [],
     // What modifiers that hold only in a situation judge (KitBuffModifier.if); a hit passes its own.
     situation: situationAt(ctx, operator, { ...st, enemy }, frame),
     modifiers: [
@@ -112,10 +111,10 @@ export function buffSituation(s: Situation): Situation {
   };
 }
 
-/** An operator's Arts Intensity at a frame (panel, conditions and active buffs): it sets the strength of the statuses it applies. */
+/** An operator's Arts Intensity at a frame (panel, given modifiers and active buffs): it sets the strength of the statuses it applies. */
 export function artsIntensity(ctx: TimelineContext, st: TimelineState, operator: string, frame: number): number {
   const build = ctx.builds.get(operator) as Build;
-  const mods = activeModifiers(ctx.data, build, panelAt(ctx, operator, frame), { crit: "never", staggered: false, conditions: [], modifiers: [...(ctx.modifiers.get(operator) ?? []), ...buffModifiers(st.buffs, operator, frame)] });
+  const mods = activeModifiers(ctx.data, build, panelAt(ctx, operator, frame), { crit: "never", staggered: false, modifiers: [...(ctx.modifiers.get(operator) ?? []), ...buffModifiers(st.buffs, operator, frame)] });
   return zoneSum(mods, "artsIntensity", { element: "physical", skillType: null, staggered: false });
 }
 

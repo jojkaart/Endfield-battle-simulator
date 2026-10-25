@@ -31,8 +31,6 @@ export interface TimelineOptions {
    * less skilled one). A missed one is an ordinary hit. Absent: no dodges.
    */
   readonly dodge?: { readonly chance: number };
-  /** Conditions treated as always on (kit or weapon condition IDs, per operator). */
-  readonly conditions?: Readonly<Record<string, readonly string[]>>;
   /** Extra modifiers on every hit (e.g. a fixed external buff). */
   readonly modifiers?: readonly Modifier[];
 }
@@ -343,7 +341,7 @@ export interface TimelineContext {
   readonly panels: ReadonlyMap<string, StatPanel>;
   /** Per operator with a food buff: the frame it ends (its duration from the fight's start), and the panel without it from then on. */
   readonly foodEnds?: ReadonlyMap<string, { readonly frame: number; readonly panel: StatPanel }>;
-  /** Per operator: always-on condition modifiers plus the scenario's extra modifiers (not the panel's own; the damage pipeline adds those). */
+  /** Per operator: the scenario's extra modifiers (not the panel's own; the damage pipeline adds those). */
   readonly modifiers: ReadonlyMap<string, readonly Modifier[]>;
   /** Per operator: its kit with what it wears (triggers.ts effectiveKit). */
   readonly kits: ReadonlyMap<string, OperatorKit>;

@@ -19,7 +19,7 @@ const target = { enemy: "eny_0051_rodin", level: 90 };
 const lifeng = readBuild("lifeng-p5.json");
 const LF = "chr_0015_lifeng_";
 const lifengPanel = computeStats(data, lifeng);
-const options = { crit: "never" as const, staggered: false, conditions: [] };
+const options = { crit: "never" as const, staggered: false };
 const attack1 = data.kits.operators["chr_0015_lifeng"]?.skills.find((s) => s.skillId === LF + "attack1");
 const attack1Hit = attack1?.hits[0] as KitHit;
 const run = (sc: TimelineScenario, rotation: readonly RotationAction[], until: number): TimelineState => {
@@ -166,7 +166,7 @@ describe("Solemn Phalanx reads Arts Susceptibility by its one tag (1427729990), 
 });
 
 describe("efsim calc shows ATK per attribute point (76–79) as its own lines", () => {
-  const opts = { target, crit: "never" as const, staggered: false, conditions: [], verbose: false };
+  const opts = { target, crit: "never" as const, staggered: false, verbose: false };
 
   it("Lifeng's talent 1: Intellect and Will at 0.002 each, with their source; the bonus adds up", () => {
     const text = calc(data, lifeng, opts);

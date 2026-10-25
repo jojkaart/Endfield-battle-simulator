@@ -33,7 +33,7 @@ const fixture = (hits: LogHit[]): LogFixture => ({
 const h = hit("h");
 const g = withKit([battle([h])]);
 const damage = (x: KitHit, modifiers: Modifier[] = [], crit: "never" | "always" = "never") =>
-  roundDamage(computeHit(g, build, panel, target, { skillId: BATTLE }, x, { crit, staggered: false, conditions: [], modifiers, assumeUnknown: true }).exact);
+  roundDamage(computeHit(g, build, panel, target, { skillId: BATTLE }, x, { crit, staggered: false, modifiers, assumeUnknown: true }).exact);
 
 describe("a match's class, readings and assumptions", () => {
   it("plain: no assumption; assumed: what it takes for granted, as data; every reading is tried and counted", () => {

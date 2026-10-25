@@ -49,7 +49,7 @@ export function kitCensus(dir: string = KITS): Map<string, Map<string, number>> 
     const kit = JSON.parse(readFileSync(join(dir, file), "utf8")) as Json;
     const c = new Map<string, number>();
     const add = (k: string, n = 1) => c.set(k, (c.get(k) ?? 0) + n);
-    for (const key of ["stacks", "buffs", "triggers", "conditions"]) {
+    for (const key of ["stacks", "buffs", "triggers"]) {
       const v = kit[key];
       if (Array.isArray(v) && v.length) add(`kit.${key}`, v.length);
     }

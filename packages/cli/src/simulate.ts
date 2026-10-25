@@ -18,7 +18,6 @@ interface RawScenario {
   crit?: CritMode;
   seed?: number;
   dodge?: { chance: number };
-  conditions?: Record<string, string[]>;
   startEnergy?: Record<string, number | "full">;
   startStacks?: Record<string, Record<string, number>>;
   rotation: { operator: string; skill: string; at?: number; repeat?: number }[];
@@ -42,7 +41,7 @@ export function readScenario(file: string): TimelineScenario {
     target: s.target,
     durationFrames: Math.round(s.durationSeconds * FPS),
     rotation,
-    options: { crit: s.crit ?? "expected", ...(s.seed !== undefined ? { seed: s.seed } : {}), ...(s.dodge ? { dodge: s.dodge } : {}), ...(s.conditions ? { conditions: s.conditions } : {}) },
+    options: { crit: s.crit ?? "expected", ...(s.seed !== undefined ? { seed: s.seed } : {}), ...(s.dodge ? { dodge: s.dodge } : {}) },
     ...(s.controlled ? { controlled: s.controlled } : {}),
     ...(s.startEnergy ? { startEnergy: s.startEnergy } : {}),
     ...(s.startStacks ? { startStacks: s.startStacks } : {}),
@@ -166,7 +165,6 @@ export function searchCommand(
       ...(scenario.options.dodge ? { dodge: scenario.options.dodge } : {}),
       ...(scenario.enemyHp ? { enemyHp: scenario.enemyHp.map((e) => ({ at: e.from / FPS, fraction: e.fraction })) } : {}),
       ...(scenario.enemyActions ? { enemyActions: scenario.enemyActions.map((a) => ({ ...a, ...(a.at ? { at: a.at.map((f) => f / FPS) } : {}), ...(a.every !== undefined ? { every: a.every / FPS } : {}), ...(a.from !== undefined ? { from: a.from / FPS } : {}) })) } : {}),
-      ...(scenario.options.conditions ? { conditions: scenario.options.conditions } : {}),
       rotation: found.rotation.map((a) => ({ operator: a.operator, skill: a.skill, ...(a.at !== undefined ? { at: a.at / FPS } : {}) })),
     };
     writeFileSync(options.out, JSON.stringify(doc, null, 2) + "\n");

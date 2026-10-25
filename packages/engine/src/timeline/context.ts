@@ -2,7 +2,6 @@
 
 import { Attr, type AttrType, type SkillType } from "../attributes.ts";
 import type { Build } from "../build.ts";
-import { conditionModifiers } from "../damage.ts";
 import { EngineError } from "../errors.ts";
 import type { GameData, KitSkill, SkillTiming } from "../model.ts";
 import { effectiveKit } from "../triggers.ts";
@@ -44,9 +43,7 @@ export function createContext(data: GameData, scenario: TimelineScenario): Timel
     const food = foodOf(data, b);
     return food ? [[b.operator, { frame: Math.round(food.duration * FPS), panel: computeStats(data, b, { ...DEFAULT_STAT_OPTIONS, withoutFood: true }) }] as const] : [];
   }));
-  const modifiers = new Map(
-    scenario.team.map((b) => [b.operator, [...conditionModifiers(data, b, scenario.options.conditions?.[b.operator] ?? []), ...(scenario.options.modifiers ?? [])]]),
-  );
+  const modifiers = new Map(scenario.team.map((b) => [b.operator, scenario.options.modifiers ?? []]));
   const kits = new Map(scenario.team.flatMap((b) => {
     const kit = effectiveKit(data, b);
     return kit ? [[b.operator, kit] as const] : [];

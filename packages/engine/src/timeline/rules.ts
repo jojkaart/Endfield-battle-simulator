@@ -33,7 +33,7 @@ export const TIMELINE_ASSUMPTIONS = [
   `Dives: a rotation's dive (the operator's plunging_attack_end) is a jump by the controlled operator, which may interrupt its current skill as a plunging attack may; the fall (plunging_attack_start) starts ${DIVE.rise} frames later and the landing ${DIVE.fall} after that (the native movement settings as Endaxis reads them; unverified). In the air the operator neither casts nor dodges.`,
   "Projectile hits land at the frames their kit gives (travel time isn't in the data; kits read it from logs where they can).",
   "SP gain: a skill's blackboard value `atb` (e.g. a final strike's 20) is added when its first hit lands (unverified timing).",
-  "Buffs and debuffs from skills apply only where a kit declares them (OperatorKit.buffs); always-on conditions, given modifiers and the enemy's reaction statuses apply too.",
+  "Buffs and debuffs from skills apply only where a kit declares them (OperatorKit.buffs); given modifiers and the enemy's reaction statuses apply too.",
   "Inflictions and reactions follow the Talos Wiki rules (status.ts). What a hit applies takes effect before its own damage and the reaction's initial hit (logs: Gilberta's explosion and Arcane's battle skill include the Corrosion they trigger), unless its kit says afterDamage; buff modifiers' conditions on the enemy see it too.",
   "Physical statuses (Vulnerable, Lift, Knock Down, Crush, Breach), Shatter and stagger follow the Talos Wiki tutorial tables (status.ts). Hit-stop and entity-layer slow-downs aren't modelled.",
   "One enemy; every hit lands on it.",

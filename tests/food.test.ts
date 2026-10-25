@@ -102,7 +102,7 @@ describe("stat panel", () => {
   });
 
   it("efsim calc names the food and its lines; efsim find finds foods by name", () => {
-    const options: CalcOptions = { target: { enemy: "eny_0051_rodin", level: 90 }, crit: "never", staggered: false, conditions: [], verbose: true };
+    const options: CalcOptions = { target: { enemy: "eny_0051_rodin", level: 90 }, crit: "never", staggered: false, verbose: true };
     const text = calc(data, { ...endmin, food: STEW }, options);
     expect(text).toContain("180 flat]");
     expect(text).toContain("Food: Ginseng Meat Stew (item_corp3_animal_1), the fight's first 300 s: Atk +180 flat; CriticalRate +11.4%");

@@ -780,31 +780,6 @@ export interface KitSkill {
   readonly hits: readonly KitHit[];
 }
 
-/** Where a condition's value comes from, so it follows the build's levels. */
-export type ConditionSource =
-  | { readonly kind: "talent"; readonly index: number; readonly buffId: string; readonly key: string; readonly scale: number }
-  | { readonly kind: "weaponSkill"; readonly skill: number; readonly key: string; readonly scale: number }
-  /** A value of one of the operator's own skills at the build's skill level, after potentials. */
-  | { readonly kind: "skill"; readonly skillId: string; readonly key: string; readonly scale: number };
-
-/**
- * What a condition does: change an attribute (mapped to its zone like any
- * stat, see effects.ts), or add directly to a damage zone with optional
- * element and skill-type filters.
- */
-export type ConditionEffect =
-  | { readonly kind: "attr"; readonly attr: AttrType }
-  | { readonly kind: "zone"; readonly zone: Zone; readonly element?: Element; readonly skillType?: SkillType };
-
-/** A state the user (later: the timeline) switches on, e.g. a talent buff at full stacks. */
-export interface Condition {
-  /** Globally unique: `<operator or weapon ID>.<name>`. */
-  readonly id: string;
-  readonly label: string;
-  readonly source: ConditionSource;
-  readonly effect: ConditionEffect;
-}
-
 export interface OperatorKit {
   readonly operator: string;
   readonly stacks: readonly StackDef[];
@@ -820,7 +795,6 @@ export interface OperatorKit {
   /** How the statuses this operator applies differ from the standard ones. */
   readonly statusTweaks?: readonly StatusTweak[];
   readonly skills: readonly KitSkill[];
-  readonly conditions: readonly Condition[];
 }
 
 /**
@@ -835,7 +809,6 @@ export interface EquipmentKit {
   readonly stacks: readonly StackDef[];
   readonly buffs: readonly KitBuff[];
   readonly triggers: readonly KitTrigger[];
-  readonly conditions: readonly Condition[];
 }
 
 export interface Kits {

@@ -2,7 +2,7 @@
 // the game data: every skill, level group and blackboard key must exist.
 // Operator kits (kits/operators) hold skills, stacks, buffs and triggers;
 // equipment kits (kits/equipment: weapons and gear sets) hold stacks, buffs,
-// triggers and conditions that act for whoever wears them.
+// and triggers that act for whoever wears them.
 
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
@@ -14,20 +14,10 @@ import type { CompiledSkill, CompiledValue } from "./skillCompile.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { buffFilePath, isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
 import { buffTagFilter, SHIELD_TAG } from "./buffTags.ts";
-import { Attr, attrFeedsZone, buffAttrHasEffect, buffReach, type BuffCategory, type TriggerOn, type KitBuffModifier, ELEMENTS, predicateRefs, predicateValues, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
+import { Attr, attrFeedsZone, buffAttrHasEffect, buffReach, type BuffCategory, type TriggerOn, type KitBuffModifier, ELEMENTS, predicateRefs, predicateValues, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type KitTrigger, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
-
-interface RawCondition {
-  id: string;
-  label: string;
-  source:
-    | { kind: "talent"; index: number; buffId: string; key: string; scale?: number }
-    | { kind: "weaponSkill"; skill: number; key: string; scale?: number }
-    | { kind: "skill"; skillId: string; key: string; scale?: number };
-  effect: { kind: "attr"; attr: number } | { kind: "zone"; zone: Zone; element?: Element; skillType?: SkillType };
-}
 
 interface RawHit {
   id: string; label?: string; scale: string[]; count?: ValueExpr; framesEvery?: number; element?: Element; events?: string[]; frames?: number[];
@@ -119,7 +109,6 @@ interface RawKit {
     dataOverride?: Record<string, string>;
     hits: RawHit[];
   }[];
-  conditions?: RawCondition[];
 }
 
 interface RawEquipmentKit {
@@ -128,7 +117,6 @@ interface RawEquipmentKit {
   stacks?: StackDef[];
   buffs?: RawBuff[];
   triggers?: RawTrigger[];
-  conditions?: RawCondition[];
 }
 
 type RawBuff = KitBuff & { note?: string; dataOverride?: { duration?: string } };
@@ -146,15 +134,6 @@ function validator() {
 
 function readJson(file: string): unknown {
   return JSON.parse(readFileSync(file, "utf8"));
-}
-
-function condition(owner: string, c: RawCondition): Condition {
-  return {
-    id: `${owner}.${c.id}`,
-    label: c.label,
-    source: { ...c.source, scale: c.source.scale ?? 1 },
-    effect: c.effect,
-  };
 }
 
 export interface KitData extends CompileData {
@@ -1016,15 +995,6 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit, options: KitL
         }
       : {}),
     skills,
-    conditions: (kit.conditions ?? []).map((x) => {
-      if (x.source.kind === "skill") {
-        const where = `${where0}: condition ${x.id}`;
-        const skill = data.skills[x.source.skillId];
-        if (!skill || op.skillGroups[x.source.skillId] === undefined) throw new Error(`${where}: ${x.source.skillId} isn't one of ${kit.operator}'s skills`);
-        checkKey(skill, x.source.key, where);
-      }
-      return condition(kit.operator, x);
-    }),
   };
 }
 
@@ -1069,10 +1039,6 @@ function loadEquipmentKit(data: KitData, file: string, kit: RawEquipmentKit): Eq
     }),
     triggers,
     buffs,
-    conditions: (kit.conditions ?? []).map((x) => {
-      if (x.source.kind !== "weaponSkill" || !weapon) throw new Error(`${where0}: condition ${x.id}: equipment conditions use weaponSkill sources (weapons only)`);
-      return condition(id, x);
-    }),
   };
 }
 

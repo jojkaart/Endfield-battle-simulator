@@ -7,10 +7,10 @@ import type { Build } from "./build.ts";
 import { STAGGER_DAMAGE_TAKEN } from "./constants.ts";
 import { applies, attrModifier, zoneProduct, zoneSum, type HitContext, type HitDecoration, type HitKind, type Modifier, type Zone } from "./effects.ts";
 import { EngineError, HitRuledOut } from "./errors.ts";
-import type { Condition, GameData, KitHit, KitSkill } from "./model.ts";
+import type { GameData, KitHit, KitSkill } from "./model.ts";
 import { artsIntensityDamage, levelCoefficientOf, reactionBase, type ReactionKind } from "./reactions.ts";
 import { evaluate, test, type EvalContext, type Predicate } from "./expr.ts";
-import { ATK_ATTRIBUTES, atkAttributeBonus, computeStats, percentOfLine, skillLevel, wornEquipment, type StatPanel } from "./stats.ts";
+import { ATK_ATTRIBUTES, atkAttributeBonus, percentOfLine, skillLevel, type StatPanel } from "./stats.ts";
 
 /** `expected`: the crit zone at its average; `rolled`: each hit crits or not, by a roll the caller makes (DamageOptions.critRoll). */
 export type CritMode = "never" | "always" | "expected" | "rolled";
@@ -20,8 +20,6 @@ export interface DamageOptions {
   /** With rolled crits: a uniform draw in [0, 1); the hit crits when it's below its crit rate. */
   readonly critRoll?: number;
   readonly staggered: boolean;
-  /** Active condition IDs (kit or weapon conditions). */
-  readonly conditions: readonly string[];
   /** Further active buffs and debuffs, e.g. from a battle log or the timeline. */
   readonly modifiers?: readonly Modifier[];
   /** What's known about the moment of the hit, for kit predicates (KitHit.if, extraScale); unknown parts are left out. */
@@ -55,7 +53,7 @@ export function decide(p: Predicate, c: EvalContext, assume?: boolean): boolean 
   return assume;
 }
 
-export const DEFAULT_DAMAGE_OPTIONS: DamageOptions = { crit: "expected", staggered: false, conditions: [] };
+export const DEFAULT_DAMAGE_OPTIONS: DamageOptions = { crit: "expected", staggered: false };
 
 export interface DamageTarget {
   readonly enemy: string;
@@ -179,56 +177,6 @@ export function panelModifiers(data: GameData, panel: StatPanel): Modifier[] {
   return out;
 }
 
-function conditionValue(data: GameData, build: Build, c: Condition, panel: () => StatPanel): number {
-  const s = c.source;
-  if (s.kind === "skill") return skillValue(data, panel(), build, s.skillId, s.key) * s.scale;
-  if (s.kind === "talent") {
-    const op = data.operators[build.operator];
-    const nodes = op?.talentNodes.filter((n) => n.index === s.index) ?? [];
-    const level = build.talents?.[s.index] ?? Math.max(0, ...nodes.map((n) => n.level));
-    const node = nodes.find((n) => n.level === level);
-    if (!node) throw new EngineError(`${c.id}: talent ${s.index + 1} isn't unlocked (level ${level})`);
-    const buff = node.effects.find((e) => e.kind === "buff" && e.buffId === s.buffId);
-    if (!buff || buff.kind !== "buff") throw new EngineError(`${c.id}: talent ${s.index + 1} level ${level} has no buff ${s.buffId}`);
-    const v = buff.blackboard[s.key];
-    if (v === undefined) throw new EngineError(`${c.id}: ${s.buffId} has no value ${s.key}`);
-    return v * s.scale;
-  }
-  if (!build.weapon) throw new EngineError(`${c.id}: no weapon equipped`);
-  const w = data.weapons[build.weapon.id];
-  const skillId = w?.skills[s.skill];
-  const level = build.weapon.skillLevels[s.skill];
-  const skill = skillId === undefined ? undefined : data.skills[skillId];
-  if (!skill || level === undefined) throw new EngineError(`${c.id}: weapon has no skill ${s.skill + 1}`);
-  const v = skillLevel(skill, level).blackboard[s.key];
-  if (v === undefined) throw new EngineError(`${c.id}: ${skill.id} level ${level} has no value ${s.key}`);
-  return v * s.scale;
-}
-
-/** Conditions available to a build: its operator's kit conditions and those of what it wears. */
-export function availableConditions(data: GameData, build: Build): readonly Condition[] {
-  return [...(data.kits.operators[build.operator]?.conditions ?? []), ...wornEquipment(data, build).flatMap((id) => data.kits.equipment[id]?.conditions ?? [])];
-}
-
-/** The active conditions as modifiers, with values at the build's levels. */
-export function conditionModifiers(data: GameData, build: Build, ids: readonly string[], panel?: StatPanel): Modifier[] {
-  const available = availableConditions(data, build);
-  let p = panel;
-  const getPanel = () => (p ??= computeStats(data, build));
-  return ids.map((id) => {
-    const c = available.find((x) => x.id === id);
-    if (!c) throw new EngineError(`unknown condition ${id} for this build (available: ${available.map((x) => x.id).join(", ") || "none"})`);
-    const value = conditionValue(data, build, c, getPanel);
-    if (c.effect.kind === "attr") {
-      const m = attrModifier(c.effect.attr, value, `condition ${c.id}`);
-      if (!m) throw new EngineError(`${c.id}: attribute ${attrName(c.effect.attr)} doesn't act on hits directly; conditions on panel attributes aren't supported yet`);
-      return m;
-    }
-    const { kind: _kind, ...filters } = c.effect;
-    return { ...filters, value, source: `condition ${c.id}` };
-  });
-}
-
 /** What is being hit with: everything a damage calculation needs besides the attacker and target. */
 export interface DamageSpec {
   readonly skillId: string;
@@ -259,9 +207,9 @@ function scaleZones(mods: readonly Modifier[], scales: DamageSpec["zoneScale"]):
   });
 }
 
-/** All modifiers acting on a build's hits: stat panel, active conditions, and external ones. */
+/** All modifiers acting on a build's hits: stat panel and external ones (kit buffs, a log's, the scenario's). */
 export function activeModifiers(data: GameData, build: Build, panel: StatPanel, options: DamageOptions): Modifier[] {
-  const all = [...panelModifiers(data, panel), ...conditionModifiers(data, build, options.conditions, panel), ...(options.modifiers ?? [])];
+  const all = [...panelModifiers(data, panel), ...(options.modifiers ?? [])];
   if (!all.some((m) => m.when)) return all;
   // A modifier that holds only in a situation (KitBuffModifier.if): judged on the hit's situation; one it can't decide counts as assumeUnknown says (default: not).
   const ec = evalContext(data, build, panel, "", options.modifierSituation ?? options.situation);

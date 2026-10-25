@@ -32,13 +32,6 @@
     },
     "triggers": {
       "$ref": "kit.schema.json#/properties/triggers"
-    },
-    "conditions": {
-      "type": "array",
-      "items": {
-        "$ref": "kit.schema.json#/$defs/condition"
-      },
-      "description": "Legacy always-on states the user switches on (weapons only, weaponSkill sources); triggers replace them."
     }
   }
 }

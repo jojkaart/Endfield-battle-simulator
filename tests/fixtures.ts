@@ -19,7 +19,6 @@ export interface StatExpectation {
 export interface DamageExpectation {
   label: string;
   hits: { skill: string; hit: string; times?: number }[];
-  conditions?: string[];
   /** Kit buffs (own or equipment) active for the hit: an ID, or an ID with layers. */
   buffs?: (string | { buff: string; layers?: number })[];
   crit?: "never" | "always" | "expected";

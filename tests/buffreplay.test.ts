@@ -47,7 +47,7 @@ describe("kit buffs from the replay of the logged casts", () => {
   const buff: KitBuff = { id: "t_atk", label: "test ATK", target: "team", gameBuff: GAME_BUFF, duration: 10, modifiers: [{ zone: "atk", value: 0.1 }] };
   const onCast: KitTrigger = { id: "t_on_cast", on: { event: "cast", skills: [BATTLE] }, by: "self", do: [{ kind: "buff", buff: "t_atk" }] };
   const g = withKit({ skills: [battle([h]), basic], buffs: [buff], triggers: [onCast] });
-  const dmg = (skillId: string, x: KitHit, modifiers: Modifier[]) => roundDamage(computeHit(g, build, panel, target, { skillId }, x, { crit: "never", staggered: false, conditions: [], modifiers }).exact);
+  const dmg = (skillId: string, x: KitHit, modifiers: Modifier[]) => roundDamage(computeHit(g, build, panel, target, { skillId }, x, { crit: "never", staggered: false, modifiers }).exact);
   const plus10: Modifier[] = [{ zone: "atk", value: 0.1, source: "test" }];
   const buffed = dmg(BATTLE, h, plus10);
   const plain = dmg(BASIC, b, []);

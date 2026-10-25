@@ -58,7 +58,7 @@ export function kitHitEntries(kit: OperatorKit | undefined): { readonly skillId:
 
 /**
  * An operator's kit with what it wears added: the weapon's and active gear
- * sets' stacks, buffs and triggers act as the operator's own (conditions: availableConditions)
+ * sets' stacks, buffs and triggers act as the operator's own
  * (their IDs are prefixed, so they can't clash). Undefined without a kit.
  */
 export function effectiveKit(data: GameData, build: Build): OperatorKit | undefined {

@@ -8,7 +8,6 @@ import { Ajv2020 } from "ajv/dist/2020.js";
 import {
   Attr,
   attrName,
-  availableConditions,
   computeHit,
   computeStats,
   EngineError,
@@ -209,11 +208,9 @@ export function calc(data: GameData, build: Build, options: CalcOptions): string
   const panel = computeStats(data, build);
   const out = [formatPanel(data, panel, options.verbose)];
   const enemy = data.enemies[options.target.enemy];
-  const conditions = availableConditions(data, build);
   out.push(
     "",
     `Damage per hit vs ${enemy?.name ?? options.target.enemy} Lv${options.target.level}, crit: ${options.crit}${options.staggered ? ", staggered" : ""}` +
-      (options.conditions.length ? `, conditions: ${options.conditions.join(", ")}` : "") +
       (options.buffs?.length ? `, buffs: ${options.buffs.map((b) => (b.layers > 1 ? `${b.buff} ×${b.layers}` : b.buff)).join(", ")}` : ""),
   );
   if (!data.kits.operators[build.operator]) {
@@ -228,10 +225,6 @@ export function calc(data: GameData, build: Build, options: CalcOptions): string
       const z = hits[0]?.zones;
       if (z) out.push("", `Zones of the first hit: ${Object.entries(z).map(([k, v]) => `${k} ${num(v, 4)}`).join(", ")}`);
     }
-  }
-  if (conditions.length) {
-    out.push("", "Conditions available (--condition <id>):");
-    for (const c of conditions) out.push(`  ${options.conditions.includes(c.id) ? "[on] " : "[off]"} ${c.id}: ${c.label}`);
   }
   out.push("", `Left at ×1 in a single hit (a fight, efsim simulate, applies what the kits model of them): ${NOT_MODELLED.join(", ")}.`);
   return out.join("\n");
@@ -257,7 +250,7 @@ export function compare(data: GameData, a: Build, b: Build, options: CalcOptions
       const other = hb[i] as HitDamage;
       return [h.skillId.replace(/^chr_\d+_[a-z]+_/, ""), h.label, num(h.damage, 0), num(other.damage, 0), signedPct(other.exact / h.exact - 1)];
     });
-    out.push("", `Damage per hit (crit: ${options.crit}${options.conditions.length ? `, conditions: ${options.conditions.join(", ")}` : ""})`);
+    out.push("", `Damage per hit (crit: ${options.crit})`);
     out.push(table(["skill", "hit", "A", "B", "B vs A"], rows, ["l", "l", "r", "r", "r"]));
   }
   // Conditional effects aren't in either side's numbers, so a weapon or set that relies on them looks worse than it is.

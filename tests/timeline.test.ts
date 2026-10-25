@@ -407,7 +407,6 @@ describe("timeline: equipment kits act for the wearer", () => {
     stacks: [],
     buffs: [{ id: `${W}.after_ultimate`, label: "after ultimate", target: "self", duration: "duration", modifiers: [{ zone: "damageBonus", value: "normal_atk_up", skillType: "basic" }] }],
     triggers: [{ id: `${W}.on_ultimate`, on: { event: "cast", kinds: ["ultimate"] }, by: "self", skill: "sk_wpn_sword_0006", do: [{ kind: "buff", buff: `${W}.after_ultimate` }] }],
-    conditions: [],
   };
   // The data has Forgeborn's own kit now (wpn_sword_0006.json): compare with no kit for it.
   const { [W]: _real, ...otherKits } = data.kits.equipment;

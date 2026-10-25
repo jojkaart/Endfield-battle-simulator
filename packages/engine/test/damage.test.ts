@@ -47,7 +47,7 @@ const build: Build = {
 };
 const skill: KitSkill = { skillId: "op_skill", label: "Skill", kind: "battle", hits: [] };
 const hit: KitHit = { id: "hit", label: "Hit", scale: ["atk_scale", "ratio"], count: 1, events: [], damageType: "battle", element: "fire" };
-const never: DamageOptions = { crit: "never", staggered: false, conditions: [] };
+const never: DamageOptions = { crit: "never", staggered: false };
 
 function damage(data: GameData, options: DamageOptions = never) {
   return computeHit(data, build, computeStats(data, build), { enemy: "eny", level: 1 }, skill, hit, options);

@@ -73,7 +73,7 @@ describe("V1: a hit scales a zone's modifiers (KitHit.zoneScale)", () => {
   const hit = kit.skills.find((s) => s.skillId === L + "attack1")?.hits[0] as KitHit;
   const susc = (value: number, element?: "fire" | "cryst"): Modifier => ({ zone: "susceptibility", value, ...(element ? { element } : {}), source: `susc ${element ?? "all"}` });
   const mods = [susc(0.2), susc(0.1, "fire"), susc(0.3, "cryst"), { zone: "damageBonus" as const, value: 0.4, source: "dmg" }];
-  const dmg = (h: KitHit) => computeHit(data, build, panel, target, { skillId: L + "attack1" }, h, { crit: "never", staggered: false, conditions: [], modifiers: mods });
+  const dmg = (h: KitHit) => computeHit(data, build, panel, target, { skillId: L + "attack1" }, h, { crit: "never", staggered: false, modifiers: mods });
 
   it("every modifier of the zone that reaches the hit (all-element and its element, anyone's) × the value; others untouched", () => {
     const plain = dmg(hit);

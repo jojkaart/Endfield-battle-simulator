@@ -1010,7 +1010,7 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
       // Whole-hit assumptions (enemy auras the log doesn't list, layers of a buff it lists once), the plain reading first:
       // a hit that matches without them keeps matching as before; so do readings with part of a repeated boundary buff's instances, after all others.
       const variants = combine(quantified, combine(unloggedOwn, combine(auras, layerVariants(hit, caps, decided))));
-      type Options = (category: HitCategory) => { crit: "always" | "never"; staggered: boolean; conditions: never[]; modifiers: Modifier[] };
+      type Options = (category: HitCategory) => { crit: "always" | "never"; staggered: boolean; modifiers: Modifier[] };
       type Reading = { assumptions: Assumption[]; r: { exact: number } };
       /** One reading of a kit hit with its situation, cast buffs and finisher; null when it doesn't apply (the hit is ruled out, or a value needs what the situation doesn't say). */
       const reading = (s: { skillId: string }, h: KitHit, options: Options, mods: readonly Modifier[], situation: Situation, assume: boolean): HitDamage | null => {
@@ -1108,7 +1108,7 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
             ? [...logModifiers(c.effects, category, caps).filter((m) => !SNAPSHOT_ZONES.has(m.zone)), ...logModifiers(snapshotFrom.effects, category, caps).filter((m) => SNAPSHOT_ZONES.has(m.zone))]
             : logModifiers(c.effects, category, caps);
         const options = (category: HitCategory) => ({
-          crit: c.crit ? ("always" as const) : ("never" as const), staggered: false, conditions: [], modifiers: [...loggedMods(category), ...c.extra, ...variant.modifiers],
+          crit: c.crit ? ("always" as const) : ("never" as const), staggered: false, modifiers: [...loggedMods(category), ...c.extra, ...variant.modifiers],
         });
         const results: { assumptions: Assumption[]; r: { exact: number } }[] = reaction
           ? [{ assumptions: [], r: computeReaction(data, member.build, member.panel, target, { ...reaction, stacks: c.stacks }, options(reaction.kind)) }]
@@ -1357,7 +1357,6 @@ export function impliedScales(data: GameData, fx: LogFixture, operator: string):
         const unit = computeHit(data, build, panel, { enemy: fx.enemy.id, level: fx.enemy.level }, skill, hit, {
           crit: h.crit ? "always" : "never",
           staggered: false,
-          conditions: [],
           modifiers: logModifiers(h.effects, type),
         }).exact;
         bySkillType[type] = (h.uncapped ?? h.value) / unit;
@@ -1408,7 +1407,7 @@ export function findScales(data: GameData, fx: LogFixture, operator: string): Sc
         const kitHit: KitHit = { id: "x", label: "", scale: [], count: 1, events: [], damageType, element: hit.element ?? "physical" };
         for (const c of candidates(hit, panels, [1])) {
           const unit = computeHit(data, build, team.at(operator, hit.t)?.panel ?? panel, target, { skillId: values[0]?.skillId ?? "" }, kitHit, {
-            crit: c.crit ? "always" : "never", staggered: false, conditions: [], modifiers: [...logModifiers(c.effects, damageType), ...c.extra],
+            crit: c.crit ? "always" : "never", staggered: false, modifiers: [...logModifiers(c.effects, damageType), ...c.extra],
           }).exact;
           const need = (hit.uncapped ?? hit.value) / unit;
           const corrosion = c.assumed.find((a) => a.kind === "corrosion")?.n ?? 0;

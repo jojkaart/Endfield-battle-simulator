@@ -35,7 +35,7 @@ const fixture = (hits: LogHit[]): LogFixture => ({
   hits,
 });
 const damage = (g: GameData, h: KitHit, modifiers: Modifier[] = []) =>
-  roundDamage(computeHit(g, build, panel, target, { skillId: BATTLE }, h, { crit: "never", staggered: false, conditions: [], modifiers }).exact);
+  roundDamage(computeHit(g, build, panel, target, { skillId: BATTLE }, h, { crit: "never", staggered: false, modifiers }).exact);
 const assumed = (v: HitVerdict | undefined) => (v?.kind === "match" ? v.assumed : [v?.kind ?? "none"]);
 const fixtureFile = (id: string) => readLogFixture(new URL(`../fixtures/zmdlogs-${id}.json`, import.meta.url).pathname);
 

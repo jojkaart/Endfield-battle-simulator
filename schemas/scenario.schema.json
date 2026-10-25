@@ -39,11 +39,6 @@
     "durationSeconds": { "type": "number", "exclusiveMinimum": 0 },
     "crit": { "enum": ["never", "always", "expected", "rolled"], "description": "expected: the crit zone at its average; rolled: each hit crits or not by a seeded roll (crit-triggered effects need it)." },
     "seed": { "type": "integer", "minimum": 0, "maximum": 4294967295, "description": "Seed of the battle's random draws (rolled crits); default 1." },
-    "conditions": {
-      "type": "object",
-      "description": "Always-on conditions per operator ID.",
-      "additionalProperties": { "type": "array", "items": { "type": "string" } }
-    },
     "enemyHp": {
       "type": "array",
       "description": "The enemy's HP over the fight: from each time (seconds), its fraction of Max HP; full before the first. For effects that need the enemy below an HP threshold.",
