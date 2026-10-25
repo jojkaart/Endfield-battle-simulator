@@ -67,10 +67,25 @@ the six favourites.
      (Liino's ATK on herself, `wpn_sword_0012` counts, Physical
      Susceptibility in d4fb / d572 / de6a, Si's Yinglung's Edge one layer
      short in b7b3 / abfd, the Endministrator's Grand Vision on her
-     shatter); buff expiry across time stops (in-game test 18). Then make
-     the replay final (the end point, `zmdlogs check --simulate`, matches
-     a third of 4e5e's hits so far: kit buffs named after other game
-     buffs than the log's are counted twice there).
+     shatter); buff expiry across time stops (in-game test 18).
+   - **The check runs through the engine** (2026-10-25; design.md, "The
+     log check's rule"): plain and assumed matches are the engine's own
+     readings at the replay's landing, the log's listing a labelled
+     fallback, and every check compares the fight's totals with the log's.
+     Next, the leads its report names, largest first: the replay's Stagger
+     (Staggered at 23–34 s in 4e5e and 19–24 s in bdf2 where the log has
+     none: poise per hit or its recovery; the log's API has `poiseDamage`
+     per hit, which the fixtures don't keep yet: re-import to compare),
+     Rossi's Wolven Blood layers (crit-triggered: the log's crits on
+     trigger landings), Typhoeus's hover through her combo (the replay's
+     controlled operator), Arcane's Solemn Phalanx WILL buffs, Camille's
+     weapon ATK the log stops listing, the replay's inflictions (40d9's
+     Corrosion; check them against the log's reactions, one enemy replay),
+     statuses it doesn't deal near the logged time, landings it doesn't
+     make; then tighten the totals' bound (45% today). 458b's six
+     Laevatain `normal_skill_during_ult` hits stay ×1.3 off with the
+     log's own Stagger and listing (×1.69 of the engine's, which isn't
+     Staggered there): an unexplained factor.
 4. **Food buffs** are done (2026-10-22): `Build.food`, an item ID; the 36
    food buffs' stats are panel lines for 300 s from the fight's start
    (design.md, Input), in simulations, searches, `efsim calc` and the log

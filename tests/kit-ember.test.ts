@@ -95,7 +95,8 @@ describe("Ember's combo (Frontline Support), talent 2 and ultimate", () => {
   it("the combo opens when the controlled operator is attacked; its hit at 26 Knocks Down, deals 10 Stagger and gives energy", () => {
     const sc = scenario({}, attackAtFrames(30));
     const ctx = createContext(data, sc);
-    expect(earliestStart(ctx, init(ctx), op("combo_skill"))).toHaveProperty("error");
+    // One asked for earlier waits for the attack that opens it (until 2026-10-25 an error: a combo waited only for hits and delayed actions).
+    expect(earliestStart(ctx, init(ctx), op("combo_skill"))).toEqual({ frame: 30 });
     const s = run(sc, [op("combo_skill", 1)], 90);
     expect(castAt(s, "combo_skill")).toBe(30);
     expect(hitsOf(s, "combo_skill").map((h) => [h.frame, h.element])).toEqual([[56, "physical"]]);

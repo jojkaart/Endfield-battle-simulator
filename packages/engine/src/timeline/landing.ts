@@ -2,15 +2,15 @@
 
 import { Attr, type SkillType } from "../attributes.ts";
 import type { Build } from "../build.ts";
-import { computeHit, computeReaction, decide, evalContext, fixedHit, hitDecorations, roundDamage, type Situation, skillValue } from "../damage.ts";
+import { computeHit, computeReaction, decide, type DamageOptions, type DamageTarget, evalContext, fixedHit, type HitDamage, hitDecorations, roundDamage, type Situation, skillValue } from "../damage.ts";
 import type { Modifier } from "../effects.ts";
 import { EngineError } from "../errors.ts";
-import { type KitHit, type KitSkill, resolveApplication } from "../model.ts";
+import { type GameData, type KitHit, type KitSkill, resolveApplication } from "../model.ts";
 import { type BattleEvent, triggerActionAt } from "../events.ts";
 import { evaluate } from "../expr.ts";
 import { activeAt, resolveValue } from "../buffs.ts";
 import { applyToEnemy, type EnemyStatus, expireStatus, NO_STATUS, type StatusEvent } from "../status.ts";
-import type { LandedHit, LandingFacts, PendingBurst, PendingHit, ReactionRecord, TimelineContext, TimelineState } from "./state.ts";
+import type { LandedHit, LandingFacts, LandingInputs, PendingBurst, PendingHit, ReactionRecord, TimelineContext, TimelineState } from "./state.ts";
 import { enemyAttr, kitSkill, panelAt } from "./context.ts";
 import { dealPoise, gainEnergy, gainSp, isStaggered, spGrantOf } from "./resources.ts";
 import { artsIntensity, attackerSide, buffSituation, damageOptions, healEvents, situationAt, statusTweaks } from "./situation.ts";
@@ -25,13 +25,16 @@ function loggedModifiersAt(ctx: TimelineContext, operator: string, events: reado
 }
 
 /**
- * The crit a logged fight gives a kit hit's landing (TimelineScenario.loggedCrits): of a logged landing of its
- * operator with one of its events within a frame of it; null when there is none, or both crit and not at once
- * (several landings at one frame). Undefined without logged crits (a simulation).
+ * The crit a logged fight gives a kit hit's landing (TimelineScenario.loggedCrits): a pinned landing's own logged hit's
+ * (its `ref`), else of a logged landing of its operator with one of its events within a frame of it; null when there
+ * is none, or both crit and not at once (several landings at one frame). Undefined without logged crits (a simulation).
  */
-function loggedCritAt(ctx: TimelineContext, operator: string, events: readonly string[], frame: number): boolean | null | undefined {
+function loggedCritAt(ctx: TimelineContext, operator: string, events: readonly string[], frame: number, ref?: string): boolean | null | undefined {
   if (!ctx.loggedCrits) return undefined;
-  const near = events.flatMap((e) => (ctx.loggedCrits?.get(`${operator}|${e}`) ?? []).filter((x) => Math.abs(x.frame - frame) <= 1));
+  const all = events.flatMap((e) => ctx.loggedCrits?.get(`${operator}|${e}`) ?? []);
+  const own = ref !== undefined ? all.find((x) => x.ref === ref) : undefined;
+  if (own) return own.crit;
+  const near = all.filter((x) => Math.abs(x.frame - frame) <= 1);
   if (near.length === 0) return null;
   return near.every((x) => x.crit === near[0]?.crit) ? (near[0] as { crit: boolean }).crit : null;
 }
@@ -69,17 +72,35 @@ function eventReaction(e: StatusEvent): Parameters<typeof computeReaction>[4] | 
 /** Whether a status event deals damage (eventReaction). */
 const dealsDamage = (e: StatusEvent): boolean => eventReaction(e) !== null;
 
+/**
+ * A landing's damage from its inputs (LandedHit.inputs): the damage path the timeline takes for it (computeHit for a
+ * kit hit, computeReaction and the event's scale for a status event), with `options` in place of the inputs' own and
+ * another kit hit (and the skill its values come from) in place of the landed one when given. The log check computes its readings of a logged hit with it,
+ * so they and the simulation share every rule.
+ */
+export function landingDamage(data: GameData, target: DamageTarget, inputs: LandingInputs, options: DamageOptions = inputs.options, other?: { readonly skill: Pick<KitSkill, "skillId">; readonly hit: KitHit }): HitDamage {
+  if (inputs.kind === "hit") return computeHit(data, inputs.build, inputs.panel, target, other?.skill ?? inputs.skill, other?.hit ?? inputs.hit, options);
+  const result = computeReaction(data, inputs.build, inputs.panel, target, inputs.reaction, options);
+  const scale = inputs.scale;
+  if (!scale) return result;
+  const exact = result.exact * scale.value;
+  return { ...result, scaleParts: [...result.scaleParts, scale], zones: { ...result.zones, scale: result.zones.scale * scale.value }, exact, damage: roundDamage(exact) };
+}
+
 function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, st: TimelineState, critRoll?: number): LandedHit | null {
   const reaction = eventReaction(e);
   if (!reaction) return null;
   const build = ctx.builds.get(e.operator) as Build;
   // A Combustion tick keeps its applier's attacker side from the application (ActiveStatus.snapshot).
   const snapshot = e.kind === "combustionTick" ? e.snapshot : undefined;
-  const result = computeReaction(ctx.data, build, panelAt(ctx, e.operator, e.frame), ctx.scenario.target, reaction, { ...damageOptions(ctx, st, e.operator, enemy, e.frame, undefined, snapshot), ...(critRoll !== undefined ? { critRoll } : {}) });
   const scale = e.kind === "combustionTick" ? e.damageScale : e.kind === "physical" && e.multiplier !== undefined ? { key: "multiplier", value: e.multiplier } : undefined;
-  if (!scale) return { ...result, frame: e.frame, operator: e.operator };
-  const exact = result.exact * scale.value;
-  return { ...result, scaleParts: [...result.scaleParts, scale], zones: { ...result.zones, scale: result.zones.scale * scale.value }, exact, damage: roundDamage(exact), frame: e.frame, operator: e.operator };
+  const inputs: LandingInputs = {
+    kind: "status", operator: e.operator, build, panel: panelAt(ctx, e.operator, e.frame), reaction,
+    options: { ...damageOptions(ctx, st, e.operator, enemy, e.frame, undefined, snapshot), ...(critRoll !== undefined ? { critRoll } : {}) },
+    ...(scale ? { scale } : {}),
+  };
+  // A replayed fight's landings keep their inputs (LandedHit.inputs: the log check computes them again).
+  return { ...landingDamage(ctx.data, ctx.scenario.target, inputs), frame: e.frame, operator: e.operator, ...(ctx.loggedCrits ? { inputs } : {}) };
 }
 
 /** Landed hits, and what the recording buffs active at their frames record of them (KitBuff.records; not Fixed DMG). */
@@ -284,10 +305,10 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   let roll: number | undefined;
   if (ctx.scenario.options.crit === "rolled" && hit.fixed === undefined) ({ value: roll, state: st } = draw(ctx, st, "crit"));
   // A replayed fight's logged crit for this landing (TimelineScenario.loggedCrits), which decides it.
-  const loggedCrit = hit.fixed === undefined ? loggedCritAt(ctx, hit.operator, kitHit.events, hit.frame) : undefined;
+  const loggedCrit = hit.fixed === undefined ? loggedCritAt(ctx, hit.operator, kitHit.events, hit.frame, hit.ref) : undefined;
   const decorations = hitDecorations(kitHit, finisher);
   const options = hit.fixed !== undefined ? null : damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, castIndex, hit.snapshot);
-  const result = !options ? fixedHit(skill.skillId, kitHit, hit.fixed as number) : computeHit(ctx.data, build, panel, ctx.scenario.target, skill, kitHit, {
+  const inputs: LandingInputs | null = !options ? null : { kind: "hit", operator: hit.operator, build, panel, skill, hit: kitHit, options: {
     ...options,
     decorations,
     ...(roll !== undefined ? { critRoll: roll } : {}),
@@ -301,7 +322,8 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     // Its modifiers' conditions see the enemy and the buffs as the damage is computed: after the hit's own applications and
     // beforeDamage buffs (whose modifiers count for it: Yvonne's 10th layer gives its Crit DMG to the shot that adds it).
     ...(st.enemy !== before.enemy || st.buffs !== buffsAtLanding ? { modifierSituation: { ...before, consumed, ...buffSituation(at(consumed)) } } : {}),
-  });
+  } };
+  const result = !inputs ? fixedHit(skill.skillId, kitHit, hit.fixed as number) : landingDamage(ctx.data, ctx.scenario.target, inputs);
   const facts = (): LandingFacts => {
     const layers: Record<string, number> = {};
     for (const b of buffsAtLanding) if (b.owner === hit.operator && b.cast === undefined && activeAt(b, hit.frame)) layers[b.id] = (layers[b.id] ?? 0) + 1;
@@ -312,7 +334,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   };
   st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}), ...(hit.ref !== undefined ? { ref: hit.ref } : {}),
     // A replay's landings carry their facts (a pinned one with its reference; one a trigger lands, matched to the log by time).
-    ...(hit.ref !== undefined || ctx.loggedCrits ? { facts: facts() } : {}), ...(loggedCrit !== undefined ? { loggedCrit } : {}) }]);
+    ...(hit.ref !== undefined || ctx.loggedCrits ? { facts: facts() } : {}), ...(loggedCrit !== undefined ? { loggedCrit } : {}), ...(ctx.loggedCrits && inputs ? { inputs } : {}) }]);
   // The enemy the damage saw: the reactions of the applications before it see it too.
   const enemyAtDamage = st.enemy;
   const lateEvents = applyPhase(true);

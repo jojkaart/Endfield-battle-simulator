@@ -35,6 +35,7 @@ export function damageOptions(ctx: TimelineContext, st: TimelineState, operator:
   const buffs = buffModifiers(st.buffs, operator, frame, cast);
   return {
     crit: ctx.scenario.options.crit,
+    // Stagger's multiplier comes with it (damage.ts staggerModifier), as do modifiers limited to Staggered enemies.
     staggered,
     // What modifiers that hold only in a situation judge (KitBuffModifier.if); a hit passes its own.
     situation: situationAt(ctx, operator, { ...st, enemy }, frame),
@@ -42,8 +43,6 @@ export function damageOptions(ctx: TimelineContext, st: TimelineState, operator:
       ...(ctx.modifiers.get(operator) ?? []),
       ...statusModifiers(enemy, frame),
       ...(snapshot ? [...buffs.filter((m) => !SNAPSHOT_ZONES.has(m.zone)), ...snapshot] : buffs),
-      // buff_common_poise_break_damage_taken_scale: defender ProdCalcZone ×1.3 while Staggered.
-      ...(staggered ? [{ zone: "multiplicative" as const, value: 0.3, source: "Staggered" }] : []),
     ],
   };
 }

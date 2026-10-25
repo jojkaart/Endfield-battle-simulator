@@ -149,6 +149,8 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
   if (seconds === 0) return null;
   if (!(seconds > 0)) throw new EngineError(`${build.operator} buff ${buff.id}: duration ${seconds} s`);
   const source = `${build.operator} ${buff.label}`;
+  // Where its modifiers come from (Modifier.kitBuff, gameBuff).
+  const origin = { kitBuff: { owner: build.operator, id: buff.id }, ...(buff.gameBuff ? { gameBuff: buff.gameBuff } : {}) };
   const modifiers: Modifier[] = [];
   const attrs: { attr: AttrType; value: number; percent?: true; filters?: AttrFilters }[] = [];
   for (const m of buff.modifiers) {
@@ -161,7 +163,7 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
     }
     if (m.attr !== undefined) {
       const mapped = attrModifier(m.attr, value, source);
-      if (mapped) modifiers.push({ ...mapped, ...filters });
+      if (mapped) modifiers.push({ ...mapped, ...filters, ...origin });
       else {
         const attrFilters: AttrFilters = { ...filters, ...(m.elements ? { elements: m.elements } : {}) };
         attrs.push({ attr: m.attr, value, ...(Object.keys(attrFilters).length ? { filters: attrFilters } : {}) });
@@ -169,7 +171,7 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
       continue;
     }
     if (!m.zone) throw new EngineError(`${build.operator} buff ${buff.id}: a modifier needs a zone or an attribute`);
-    const base = { zone: m.zone, value, source, ...filters };
+    const base = { zone: m.zone, value, source, ...filters, ...origin };
     if (m.elements) for (const element of m.elements) modifiers.push({ ...base, element });
     else modifiers.push(base);
   }
@@ -305,6 +307,8 @@ function attributeModifiers(b: ActiveBuff): Modifier[] {
       value: a.value,
       ...(a.percent ? { percent: true } : {}),
       source: `${b.owner} ${b.id}`,
+      kitBuff: { owner: b.owner, id: b.id },
+      ...(b.gameBuff ? { gameBuff: b.gameBuff } : {}),
       ...(f?.skillType ? { skillType: f.skillType } : {}),
       ...(f?.onlyKinds ? { onlyKinds: f.onlyKinds } : {}),
       ...(f?.decorations ? { decorations: f.decorations } : {}),

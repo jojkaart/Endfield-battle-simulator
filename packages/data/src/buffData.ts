@@ -52,7 +52,23 @@ export interface RawBuffFile {
    * (Yvonne's talent-1 Final Strike: attack5).
    */
   readonly basicAttack: string | null;
+  /**
+   * The common affix buffs its enabled VulnerableAction and EnhancedAction create
+   * (`buff_common_affixes_{vulnerable,enhance}_<element>`, by the action's subType: AFFIX_ELEMENTS): the buffs a battle
+   * log lists its Susceptibility and Amp under (ZMDLogs names the affix, not the buff that created it:
+   * buff_chr_0032_lizhiyan_talent1_vulnerable's Nature and Cryo Susceptibility are logged as
+   * buff_common_affixes_vulnerable_natural / _crystal).
+   */
+  readonly affixes: readonly string[];
 }
+
+/**
+ * The element of a VulnerableAction's or EnhancedAction's subType, as the affix buff it creates names it. From the
+ * actions whose child buff names it (Li Zhiyan 3 natural, 5 crystal; Zhuang Fangyi 6 pulse; Si's soul_max 0 all) and
+ * the skill descriptions of the rest (Estella's combo 2 Physical; Gilberta's, Tangtang's, Liino's 1 Arts; Camille's
+ * 4 Heat; Avywenna's 6 Electric); each is checked against the affix buff's own attribute where it has one.
+ */
+const AFFIX_ELEMENTS: Readonly<Record<number, string>> = { 0: "all", 1: "spell", 2: "physical", 3: "natural", 4: "fire", 5: "crystal", 6: "pulse" };
 
 const ALLOWED = DATA_FILES.json.BuffData.map(globToRegExp);
 
@@ -101,6 +117,22 @@ export function readBuffFile(buffId: string): RawBuffFile | null {
     for (const v of Object.values(o)) walk(v);
   };
   for (const e of (Array.isArray(j["buffEventAction"]) ? j["buffEventAction"] : []) as Record<string, unknown>[]) if (e["buffEvent"] === 5) walk(e["actions"]);
+  // Affix buffs its Susceptibility and Amp actions create (RawBuffFile.affixes).
+  const affixes = new Set<string>();
+  const affixWalk = (node: unknown): void => {
+    if (Array.isArray(node)) return node.forEach(affixWalk);
+    if (typeof node !== "object" || node === null) return;
+    const o = node as Record<string, unknown>;
+    const t = typeof o["$type"] === "string" ? o["$type"] : "";
+    const kind = t.includes("Core.VulnerableAction+") ? "vulnerable" : t.includes("Core.EnhancedAction+") ? "enhance" : null;
+    if (kind && o["isEnable"] === true) {
+      const element = AFFIX_ELEMENTS[get(o, "subType", ctx, int)];
+      if (element === undefined) throw new DataError("rmxlinux", `BuffData/${buffId}`, `a ${kind} action of unknown subType ${String(o["subType"])}`);
+      affixes.add(`buff_common_affixes_${kind}_${element}`);
+    }
+    for (const v of Object.values(o)) affixWalk(v);
+  };
+  affixWalk(j);
   if (mapped.size > 1) throw new DataError("rmxlinux", `BuffData/${buffId}`, `maps the basic-attack input to several skills (${[...mapped].join(", ")})`);
   const shared = masks.length > 0 && masks.every((m) => m === masks[0]) && masks[0] !== "" && masks[0] !== "many" ? (masks[0] as string).split(":").map(Number) : null;
   return {
@@ -124,6 +156,7 @@ export function readBuffFile(buffId: string): RawBuffFile | null {
       }),
     ),
     basicAttack: [...mapped][0] ?? null,
+    affixes: [...affixes].sort(),
     attributeModifiers: mods.map((m, i) => {
       const mc = at(at(ac, "attributeModifiers"), i);
       const mo = obj(m, mc);
@@ -284,6 +317,31 @@ export function burstDelays(): Partial<Record<"fire" | "pulse" | "cryst" | "natu
     out[e] = b.waitFirstTriggerInterval ? Math.round((b.triggerInterval?.value ?? 0) * 30) : 0;
   }
   return out;
+}
+
+/**
+ * What a Staggered enemy takes (BuffData buff_common_poise_break_damage_taken_scale, on the enemy while Staggered):
+ * its one damage processor, a DamageScaleProcessor on the defender's side (side 1) in ProdCalcZone, adds its
+ * blackboard's dmg_up (0.3): the multiplicative zone × (1 + 0.3). Talos Wiki, 666bj and GameKee agree on ×1.3, and so
+ * do the logs (ZMDLogs lists it as prod_vuln_taken 0.3 on hits while Staggered). Any other shape is an error.
+ */
+export function staggerDamageTaken(): number {
+  const id = "buff_common_poise_break_damage_taken_scale";
+  const file = join(sourceDir("rmxlinux"), "Json", "BuffData", `${id}.json`);
+  if (!existsSync(file)) throw new DataError("rmxlinux", `BuffData/${id}`, "not fetched (the Stagger multiplier comes from it)");
+  const ctx: Ctx = { source: "rmxlinux", path: `BuffData/${id}` };
+  const j = obj(parseJsonExact(readFileSync(file, "utf8")), ctx);
+  const mods = get(j, "damageModifier", ctx, arr);
+  const procs = mods.flatMap((m, i) => get(obj(m, at(at(ctx, "damageModifier"), i)), "damageProcessors", at(at(ctx, "damageModifier"), i), arr));
+  const p = procs.length === 1 ? obj(procs[0], at(ctx, "damageProcessors")) : null;
+  if (!p || !String(p["$type"]).includes("DamageScaleProcessor") || p["side"] !== 1 || p["zoneName"] !== "ProdCalcZone") {
+    throw new DataError("rmxlinux", `BuffData/${id}`, "expected one DamageScaleProcessor on the defender's side in ProdCalcZone");
+  }
+  const add = obj(p["addition"], at(ctx, "addition"));
+  const key = add["useBlackboardKey"] ? str(add["blackboardKey"], at(ctx, "addition.blackboardKey")) : null;
+  const value = key === null ? num(add["value"], at(ctx, "addition.value")) : (get(j, "blackboard", ctx, arr) as Record<string, unknown>[]).find((b) => b["key"] === key)?.["valueDouble"];
+  if (typeof value !== "number" || !(value > 0)) throw new DataError("rmxlinux", `BuffData/${id}`, `no positive value for ${key ?? "addition"}`);
+  return value;
 }
 
 /** Frames the perfect-dodge skill holds the dodger (common_character_perfect_dodge: durationFrame 15, exclusiveFrame 15; its SkillData isn't fetched). */

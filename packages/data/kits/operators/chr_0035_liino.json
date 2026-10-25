@@ -17,6 +17,7 @@
       "label": "Vocalist Stance (battle skill): team ATK",
       "target": "team",
       "gameBuff": "buff_chr_0035_liino_atkup",
+      "loggedAs": ["buff_chr_0035_liino_atkup_owner"],
       "duration": "music_duration",
       "dataOverride": { "duration": "The team buff is an aura's (until ended in its file): it lasts while the stance's music_tag aura does, music_duration (see the buff's note)." },
       "every": "music_trigger",
@@ -49,6 +50,7 @@
       "label": "Cosmovoice Stance (ultimate): team ATK",
       "target": "team",
       "gameBuff": "buff_chr_0035_liino_atkup",
+      "loggedAs": ["buff_chr_0035_liino_atkup_owner"],
       "duration": "ultmusic_duration",
       "dataOverride": { "duration": "The team buff is an aura's (until ended in its file): it lasts while the ultimate's music_tag aura does, ultmusic_duration (see the buff's note)." },
       "modifiers": [

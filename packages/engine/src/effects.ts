@@ -89,6 +89,10 @@ export interface Modifier {
   /** …as a percentage of the hitter's panel line (KitBuffModifier.percent) instead of points. */
   readonly percent?: true;
   readonly source: string;
+  /** The kit buff it comes from (buffs.ts applyBuff): which buff of whose, for tracing a number and for the log check's mapping to the game buffs a log lists. */
+  readonly kitBuff?: { readonly owner: string; readonly id: string };
+  /** The BuffData buff it stands for: its kit buff's (KitBuff.gameBuff), or the buff a battle log lists it under (the log check's modifiers from a log). */
+  readonly gameBuff?: string;
 }
 
 /** What a modifier is matched against. */

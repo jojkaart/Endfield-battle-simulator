@@ -11,8 +11,8 @@
 // the two disagree (leads: a log gap, or a kit trigger that's wrong).
 
 import {
-  activeAt, advance, allActions, applyBuff, Attr, buffModifiers, computeStats, createContext, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
-  type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type SkillType, type TimelineScenario, type TimelineState,
+  activeAt, advance, allActions, applyBuff, Attr, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
+  type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
 import { distinctCasts, landingFrames, type LoggedCast, type Placement } from "./logcasts.ts";
@@ -102,6 +102,28 @@ export interface BuffReplay {
   castFacts(cast: Pick<LoggedCast, "operator" | "skillId" | "start" | "kind">): ReplayCastFacts | { readonly unknown: string };
   /** A logged hit's landing in the replay (its damage, modifiers and LandingFacts), or why there is none. */
   landing(hit: LogHit): LandedHit | { readonly unknown: string };
+  /**
+   * A logged status hit's landing (a burst, reaction, physical status or Combustion tick): the replay's status damage of
+   * its operator, kind and element nearest it within NEAR_FRAMES (each landing once), or why there is none.
+   */
+  statusLanding(hit: LogHit): LandedHit | { readonly unknown: string };
+  /**
+   * Whether the replay's instances of a kit buff (`owner:id`, every kit buff of the team, KitBuff.gameBuff or not)
+   * reaching a logged hit's operator change near the hit (REPLAY_EDGE_MS, and an expiry's REPLAY_EXPIRY_SLACK of its
+   * life): its timing could be the replay's, not the game's.
+   */
+  kitBuffNearChange(hit: Pick<LogHit, "t" | "operator">, kitBuff: string): boolean;
+  /** Whether the replay's Stagger starts or ends within REPLAY_EDGE_MS of a time (ms). */
+  staggerNearChange(t: number): boolean;
+  /** Kit buffs (`owner:id`) the replay can't judge, whatever the log lists: a trigger behind them it can't judge (undecidedBuff), and why. */
+  readonly unjudgedKitBuffs: ReadonlyMap<string, string>;
+  /** Every landing of the replay (its own included: hits the log may not have), for the totals' comparison. */
+  readonly hits: readonly LandedHit[];
+  /** The replay's status events (reactions, bursts, statuses), and the frames the enemy became Staggered. */
+  readonly reactions: readonly ReactionRecord[];
+  readonly staggers: readonly number[];
+  /** The frame the replay stopped at, if it couldn't go on (BuffReplay.failed says why). */
+  readonly brokenAt: number | null;
 }
 
 /** A fact the replay knows, or why it doesn't (the log check then tries alternatives, labelled with the reason). */
@@ -345,6 +367,12 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     }
   }
   for (const g of undecided.keys()) decided.delete(g);
+  // Every kit buff the replay can't judge, listed or not (the log check takes those from the log: logcheck.ts).
+  const unjudgedKitBuffs = new Map<string, string>();
+  for (const kit of kits) for (const def of kit.buffs) {
+    const why = undecidedBuff(kit, def.id);
+    if (why) unjudgedKitBuffs.set(`${kit.operator}:${def.id}`, why);
+  }
   const failed: { cast: ReplayedCast; error: string }[] = [];
   const edge = frameOf(REPLAY_EDGE_MS);
   const team = fx.team.map((b) => b.operator);
@@ -367,6 +395,9 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const run = (crit: "never" | "always") => {
     // Per game buff and operator: its instances (summed over the kit buffs standing for it: theirs don't overlap at one recipient).
     const instances = new Map<string, Instance[]>();
+    // Every kit buff's instances per recipient (`owner:id|operator`), and the Stagger windows (frames).
+    const kitInstances = new Map<string, Instance[]>();
+    const staggerWindows: Instance[] = [];
     let brokenAt: number | null = null;
     const firstBasic = casts.find((c) => c.kind === "basic");
     const enemyHp = loggedEnemyHp(data, fx);
@@ -378,7 +409,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       options: { crit },
       ...(firstBasic ? { controlled: firstBasic.operator } : {}),
       ...(enemyHp?.length ? { enemyHp } : {}),
-      loggedCrits: fx.hits.flatMap((h) => (h.crit === null ? [] : [{ operator: h.operator, event: h.event, frame: frameOf(h.t), crit: h.crit }])),
+      // Each with its logged hit's index: a pinned landing (replayCast landings `ref`) takes its own hit's crit.
+      loggedCrits: fx.hits.flatMap((h, i) => (h.crit === null ? [] : [{ operator: h.operator, event: h.event, frame: frameOf(h.t), crit: h.crit, ref: String(i) }])),
       ...(opts.loggedModifiers ? { loggedModifiers: fx.hits.flatMap((h) => {
         const modifiers = (opts.loggedModifiers as NonNullable<ReplayOptions["loggedModifiers"]>)(h);
         return modifiers.length ? [{ operator: h.operator, event: h.event, frame: frameOf(h.t), modifiers }] : [];
@@ -389,6 +421,9 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     // The instances seen at the last sample, by identity (kit buff, owner, start, recipients, and which of several at one start).
     const open = new Map<string, { key: string; owner: string; id: string; start: number; expiresAt: number }>();
     const close = (key: string, start: number, end: number, expired: boolean) => instances.set(key, [...(instances.get(key) ?? []), { start, end, expired }]);
+    const openKit = new Map<string, { key: string; start: number; expiresAt: number }>();
+    const closeKit = (key: string, start: number, end: number, expired: boolean) => kitInstances.set(key, [...(kitInstances.get(key) ?? []), { start, end, expired }]);
+    let staggerOpen: { start: number; until: number } | null = null;
     const sample = (frame: number) => {
       const seen = new Map<string, { key: string; owner: string; id: string; start: number; expiresAt: number }>();
       for (const { g, owner, id } of kitIds) {
@@ -404,6 +439,28 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
           }
         }
       }
+      // Every kit buff (KitBuff.gameBuff or not), by identity as above.
+      const seenKit = new Map<string, { key: string; start: number; expiresAt: number }>();
+      for (const b of st.buffs) {
+        if (b.cast !== undefined || !activeAt(b, frame)) continue;
+        for (const op of team) {
+          if (!reaches(b, op)) continue;
+          const base = `${b.owner}:${b.id}|${op}#${b.appliedAt}|${b.recipients?.join(",") ?? ""}`;
+          let n = 0;
+          while (seenKit.has(`${base}|${n}`)) n++;
+          seenKit.set(`${base}|${n}`, { key: `${b.owner}:${b.id}|${op}`, start: b.appliedAt, expiresAt: b.expiresAt });
+        }
+      }
+      for (const [k, rec] of openKit) if (!seenKit.has(k)) closeKit(rec.key, rec.start, rec.expiresAt <= frame ? rec.expiresAt : frame, rec.expiresAt <= frame);
+      openKit.clear();
+      for (const [k, v] of seenKit) openKit.set(k, v);
+      // The Stagger window (TimelineState.stagger: until when the enemy is Staggered).
+      const until = st.stagger.until !== null && st.stagger.until > frame ? st.stagger.until : null;
+      if (staggerOpen && (until === null || until !== staggerOpen.until)) {
+        staggerWindows.push({ start: staggerOpen.start, end: Math.min(staggerOpen.until, frame), expired: staggerOpen.until <= frame });
+        staggerOpen = null;
+      }
+      if (until !== null && !staggerOpen) staggerOpen = { start: Math.max(0, until - staggerFrames(ctx)), until };
       for (const [k, rec] of open) {
         if (seen.has(k)) continue;
         // Gone: it ran out, or ended early (used up, or replaced by a new instance at its start: the replacement's start is its end).
@@ -453,12 +510,17 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       sample(s.frame);
     }
     for (const rec of open.values()) close(rec.key, rec.start, brokenAt ?? rec.expiresAt, brokenAt === null && Number.isFinite(rec.expiresAt));
+    for (const rec of openKit.values()) closeKit(rec.key, rec.start, brokenAt ?? rec.expiresAt, brokenAt === null && Number.isFinite(rec.expiresAt));
+    const lastStagger = staggerOpen as { start: number; until: number } | null;
+    if (lastStagger) staggerWindows.push({ start: lastStagger.start, end: brokenAt ?? lastStagger.until, expired: brokenAt === null });
     if (checkpoints.at(-1) !== st) checkpoints.push(st);
-    return { ctx, st, instances, brokenAt, made, checkpoints, castErrors, changes: countChanges(instances, edge) };
+    return { ctx, st, instances, brokenAt, made, checkpoints, castErrors, changes: countChanges(instances, edge), kitInstances, kitChanges: countChanges(kitInstances, edge), staggerWindows };
   };
   const main = kits.length > 0 ? run("never") : null;
   // The bound for buffs a trigger on crits is behind: only needed where some landing's crit isn't logged.
-  const bound = main && critDependent.size > 0 && main.st.hits.some((h) => h.loggedCrit === null) ? run("always") : null;
+  // …and for every kit buff a trigger on crits is behind (BuffReplay.kitBuffNearChange: the log check's engine readings).
+  const anyCritTrigger = kits.some((k) => k.triggers.some((t) => t.on.event === "hit" && t.on.crit !== undefined));
+  const bound = main && (critDependent.size > 0 || anyCritTrigger) && main.st.hits.some((h) => h.loggedCrit === null) ? run("always") : null;
   const brokenAt = main ? (bound?.brokenAt !== null && bound?.brokenAt !== undefined ? Math.min(main.brokenAt ?? Infinity, bound.brokenAt) : main.brokenAt) : null;
   if (main) {
     const { ctx, st, made, checkpoints } = main;
@@ -546,10 +608,58 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     if ((r.changes.get(key) ?? []).some((c) => Math.abs(c.frame - f) <= c.slack)) return null;
     return (r.instances.get(key) ?? []).filter((i) => i.start <= f && f < i.end).length;
   };
+  // Status landings matched to the log's status hits: per logged hit, its operator's status damage of its kind and element nearest it.
+  const statusLanded = new Map<LogHit, LandedHit>();
+  if (main) {
+    const free = main.st.hits.filter((h) => h.skillId.startsWith("reaction:"));
+    const taken = new Set<LandedHit>();
+    for (const h of [...fx.hits].sort((a, b) => a.t - b.t)) {
+      const r = parseReactionEvent(h.event);
+      if (!r) continue;
+      const f = frameOf(h.t);
+      let best: LandedHit | null = null;
+      for (const x of free) {
+        if (taken.has(x) || x.operator !== h.operator || x.skillId !== `reaction:${r.kind}` || x.element !== r.element || Math.abs(x.frame - f) > NEAR_FRAMES) continue;
+        if (!best || Math.abs(x.frame - f) < Math.abs(best.frame - f)) best = x;
+      }
+      if (best) {
+        taken.add(best);
+        statusLanded.set(h, best);
+      }
+    }
+  }
+  const nearIn = (changes: ReadonlyMap<string, readonly Change[]>, key: string, f: number) => (changes.get(key) ?? []).some((c) => Math.abs(c.frame - f) <= c.slack);
   return {
     decided,
     undecided,
     failed,
+    unjudgedKitBuffs,
+    hits: main?.st.hits ?? [],
+    reactions: main?.st.reactions ?? [],
+    staggers: main ? main.staggerWindows.map((w) => w.start) : [],
+    brokenAt,
+    statusLanding(hit) {
+      const found = statusLanded.get(hit);
+      if (found) return found;
+      if (kits.length === 0) return { unknown: "no kit to replay" };
+      if (broken(hit.t)) return { unknown: "after the replay stopped" };
+      return { unknown: "a status the replay didn't deal near the logged hit" };
+    },
+    kitBuffNearChange(hit, kitBuff) {
+      if (!main) return false;
+      const f = frameOf(hit.t);
+      const key = `${kitBuff}|${hit.operator}`;
+      if (nearIn(main.kitChanges, key, f)) return true;
+      // Where the landings whose crit the log doesn't give matter (the replay with them critting has other instances), it isn't sure either.
+      if (!bound) return false;
+      const count = (r: NonNullable<typeof main>) => (r.kitInstances.get(key) ?? []).filter((i) => i.start <= f && f < i.end).length;
+      return nearIn(bound.kitChanges, key, f) || count(bound) !== count(main);
+    },
+    staggerNearChange(t) {
+      if (!main) return false;
+      const f = frameOf(t);
+      return main.staggerWindows.some((w) => Math.abs(w.start - f) <= edge || (Number.isFinite(w.end) && Math.abs(w.end - f) <= edge));
+    },
     instances(hit, gameBuff) {
       if (!decided.has(gameBuff) || !main) return null;
       const f = frameOf(hit.t);

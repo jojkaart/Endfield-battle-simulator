@@ -158,3 +158,40 @@ the logged sources' count), 458b Laevatain 1 → 7 and c6d8 Zhuang Fangyi
 154 → 156, d9e5 Arcane 13 → 15 (no Link: her two battle skills leave the
 Corrosion bracket).
 
+
+## Through the engine's damage path, 2026-10-25
+
+The check now computes each hit through the engine at its landing in the
+replay of the logged casts (docs/design.md, "The log check's rule"):
+plain and assumed matches are the engine's readings, and a match only the
+log's own listing gives is a fallback. Across the 20 pending fixtures
+plain 1947 → 1332, assumed 1123 → 346, fallback 1100 → 2736, mismatch
+6004 → 5759 (the engine's readings fit hits the log-listing readings
+didn't). Every check also compares the fight's totals simulated against
+the log's (`zmdlogs check` prints them; the snapshot pins them): the
+table gives each fixture's verdicts per operator (plain / assumed /
+fallback / mismatch) and its total damage's error (simulated / logged −
+1), over all and per operator.
+
+| Fixture | Plain / assumed / fallback / mismatch per operator | Total damage | Per operator |
+|---|---|---|---|
+| `zmdlogs-012ae1c80ae6` | Laevatain 25/13/52/23, Akekuri 0/0/0/37, Arcane 69/4/82/0, Camille 40/11/79/0 | -14.9% | Laevatain -18.4%, Akekuri +13.8%, Arcane -1.0%, Camille +3.5% |
+| `zmdlogs-04d401ad257e` | Ember 0/0/0/312, Snowshine 0/0/0/218, Purrchena 0/0/0/242, Catcher 0/0/0/252 | -8.3% | Ember -14.0%, Snowshine -6.0%, Purrchena -30.0%, Catcher +104.5% |
+| `zmdlogs-0c14fb3ce77d` | Rossi 0/0/8/260, Endministrator 0/0/0/128, Si 0/0/7/183, Alesh 0/0/0/54 | -24.0% | Rossi -56.3%, Endministrator +38.6%, Si -5.6%, Alesh +10.5% |
+| `zmdlogs-2fd915292bb7` | Rossi 0/1/2/220, Mi Fu 0/0/0/89, Snowshine 0/0/0/25, Ember 0/0/0/21 | -52.3% | Rossi -59.0%, Mi Fu -46.2%, Snowshine +18.1%, Ember -7.4% |
+| `zmdlogs-3aa6ab93bad4` | Zhuang Fangyi 14/0/56/114, Perlica 24/5/2/11, Arclight 55/9/5/6, Arcane 86/18/82/0 | -44.4% | Zhuang Fangyi -50.9%, Perlica -29.8%, Arclight +42.6%, Arcane +5.0% |
+| `zmdlogs-458b03609665` | Laevatain 171/65/141/7, Wulfgard 129/42/19/57, Akekuri 0/7/2/156, Si 0/0/0/383 | -15.0% | Laevatain -21.5%, Wulfgard -5.2%, Akekuri +9.4%, Si -3.4% |
+| `zmdlogs-4bfc6f3e84b8` | Zhuang Fangyi 46/19/160/187, Perlica 45/12/13/87, Arclight 0/0/0/182, Liino 30/8/137/0 | -41.4% | Zhuang Fangyi -48.7%, Perlica -11.4%, Arclight +15.4%, Liino +17.7% |
+| `zmdlogs-4e3651100056` | Si 6/3/143/0, Ardelia 0/0/0/130, Wulfgard 4/2/74/13, Alesh 0/0/0/34 | +16.8% | Si +14.5%, Ardelia +158.0%, Wulfgard +18.0%, Alesh +0.0% |
+| `zmdlogs-7e19489ae503` | Ember 15/0/1/5, Endministrator 9/7/16/2, Chen Qianyu 0/0/0/20, Pogranichnik 18/5/6/0 | +48.1% | Ember -3.1%, Endministrator +129.8%, Chen Qianyu +10.4%, Pogranichnik +16.1% |
+| `zmdlogs-92b450306768` | Arcane 1/1/1/0, Typhoeus 2/1/31/0, Liino 0/0/0/12, Purrchena 0/0/0/0 | -34.8% | Arcane -14.8%, Typhoeus -35.3%, Liino -40.7%, Purrchena n/a |
+| `zmdlogs-99fb3c35fda2` | Rossi 0/0/0/181, Mi Fu 0/0/0/72, Purrchena 0/0/0/39, Ember 0/0/0/22 | -62.3% | Rossi -63.9%, Mi Fu -61.2%, Purrchena -75.5%, Ember -18.3% |
+| `zmdlogs-a7a7a40c97ed` | Wulfgard 0/0/0/45, Arcane 0/0/1/264, Si 0/0/1/91, Liino 0/0/0/49 | -39.9% | Wulfgard -25.5%, Arcane -33.3%, Si -64.0%, Liino -33.6% |
+| `zmdlogs-abfd4b7478ec` | Si 17/3/159/11, Yvonne 3/3/176/1, Xaihi 8/2/65/0, Fluorite 3/0/53/0 | -46.4% | Si -38.0%, Yvonne -63.6%, Xaihi -10.3%, Fluorite -21.6% |
+| `zmdlogs-c6d80590f5ea` | Zhuang Fangyi 0/0/16/156, Perlica 0/0/3/49, Arcane 0/0/24/220, Liino 0/0/13/89 | -20.0% | Zhuang Fangyi -33.1%, Perlica +131.8%, Arcane +140.5%, Liino +10.3% |
+| `zmdlogs-d4fb69b036fe` | Endministrator 2/1/13/8, Chen Qianyu 31/8/140/41, Lifeng 0/0/3/186, Pogranichnik 90/9/159/0 | -13.2% | Endministrator -38.0%, Chen Qianyu -1.4%, Lifeng +11.8%, Pogranichnik +21.4% |
+| `zmdlogs-d5720d9ceb94` | Rossi 94/36/328/61, Mi Fu 23/7/93/21, Camille 143/21/87/33, Gilberta 105/12/31/24 | -44.1% | Rossi -48.2%, Mi Fu -46.2%, Camille -21.5%, Gilberta +13.5% |
+| `zmdlogs-d774d0ce7bd3` | Zhuang Fangyi 11/0/77/75, Perlica 8/3/1/39, Liino 0/0/0/100, Arcane 3/2/156/0 | -24.4% | Zhuang Fangyi -37.3%, Perlica -5.5%, Liino +144.7%, Arcane -17.8% |
+| `zmdlogs-d9e59d0fb737` | Typhoeus 0/0/0/40, Arcane 0/0/0/15, Liino 0/0/0/0, Gilberta 0/0/0/8 | -26.2% | Typhoeus -37.6%, Arcane -12.3%, Liino -16.4%, Gilberta -15.2% |
+| `zmdlogs-de6a94e9cf6b` | Pogranichnik 0/0/0/84, Lifeng 0/0/0/71, Chen Qianyu 0/0/0/102, Mi Fu 0/0/0/90 | -23.2% | Pogranichnik -17.8%, Lifeng -26.5%, Chen Qianyu -0.7%, Mi Fu -30.9% |
+| `zmdlogs-e82d45c46040` | Arcane 1/2/2/0, Perlica 0/0/0/2, Si 1/4/16/0, Xaihi 0/0/0/0 | -61.1% | Arcane -44.3%, Perlica +14.8%, Si -63.5%, Xaihi n/a |

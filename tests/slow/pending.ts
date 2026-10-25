@@ -8,8 +8,8 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
-import { checkLog, readLogFixture, verdictCounts } from "@efsim/cli";
-import { changes, logFixtures, ROOT, shard, type FixtureCounts } from "../logverdicts.ts";
+import { checkLog, engineHits, engineReport, logBuffReplay, readLogFixture, verdictCounts } from "@efsim/cli";
+import { changes, entry, logFixtures, ROOT, shard, totalsChanges, totalsOf, type FixtureCounts } from "../logverdicts.ts";
 import { Snapshot, UPDATE_HINT, UPDATING } from "../snapshot.ts";
 
 export const PENDING_SHARDS = 2;
@@ -32,10 +32,15 @@ export function pendingSuite(index: number): void {
   describe.each(files)("%s", (file) => {
     it("checks as its snapshot says", () => {
       const fx = readLogFixture(join(ROOT, "fixtures", file));
-      const now = verdictCounts(fx, checkLog(data, fx));
-      const stored = snapshot.record(file, now);
+      const replay = logBuffReplay(data, fx);
+      const byHit = engineHits(data, fx, replay);
+      const verdicts = checkLog(data, fx, { replay, engineHits: byHit });
+      const now = verdictCounts(fx, verdicts);
+      // Its totals' errors too (the simulation of the logged casts against the log: engineReport).
+      const totals = engineReport(data, fx, replay, byHit, verdicts).errors;
+      const stored = snapshot.record(file, entry(now, totals));
       if (UPDATING || stored === undefined) return;
-      expect(changes(now, stored), `verdict counts moved from the snapshot (${UPDATE_HINT})`).toEqual([]);
+      expect([...changes(now, stored), ...totalsChanges(totals, totalsOf(stored))], `verdict counts or totals moved from the snapshot (${UPDATE_HINT})`).toEqual([]);
     });
   });
 }

@@ -21,9 +21,9 @@ const TIMELINE_ATTRS: readonly AttrType[] = [
 /** Enemy attributes the timeline reads (enemyAttr): the enemy's own, else their default. */
 const ENEMY_ATTRS: readonly AttrType[] = [Attr.MaxPoise, Attr.PoiseDamageTakenScalar, Attr.PoiseRecTime, Attr.PoiseRecTimeScalar, Attr.BreakingAttackDamageTakenScalar];
 
-function loggedCritsByKey(list: NonNullable<TimelineScenario["loggedCrits"]>): Map<string, { frame: number; crit: boolean }[]> {
-  const out = new Map<string, { frame: number; crit: boolean }[]>();
-  for (const x of list) out.set(`${x.operator}|${x.event}`, [...(out.get(`${x.operator}|${x.event}`) ?? []), { frame: x.frame, crit: x.crit }]);
+function loggedCritsByKey(list: NonNullable<TimelineScenario["loggedCrits"]>): Map<string, { frame: number; crit: boolean; ref?: string }[]> {
+  const out = new Map<string, { frame: number; crit: boolean; ref?: string }[]>();
+  for (const x of list) out.set(`${x.operator}|${x.event}`, [...(out.get(`${x.operator}|${x.event}`) ?? []), { frame: x.frame, crit: x.crit, ...(x.ref !== undefined ? { ref: x.ref } : {}) }]);
   return out;
 }
 

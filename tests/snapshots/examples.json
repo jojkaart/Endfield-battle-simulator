@@ -346,19 +346,19 @@
   ]
  },
  "si-laevatain-liino-gilberta.scenario.json": {
-  "total": 3701402.638,
+  "total": 3464381.137,
   "hits": 153,
   "casts": 62,
   "perOperator": {
-   "chr_0036_jsspsi": 1024114.512,
-   "chr_0016_laevat": 2409041.413,
+   "chr_0036_jsspsi": 939186.579,
+   "chr_0016_laevat": 2258106.658,
    "chr_0035_liino": 162001.503,
-   "chr_0013_aglina": 106245.21
+   "chr_0013_aglina": 105086.398
   },
-  "digest": "ee59f98ab8c8",
+  "digest": "73c20b7e4009",
   "windows": [
    "4604f4b28686",
-   "915161573069"
+   "e98f269da1e0"
   ]
  },
  "si-laevatain.scenario.json": {

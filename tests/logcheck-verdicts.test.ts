@@ -5,7 +5,7 @@
 // computes itself.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { computeHit, computeStats, corrosionShred, roundDamage, type Build, type GameData, type KitHit, type KitSkill, type Modifier, type OperatorKit } from "@efsim/engine";
+import { computeHit, computeStats, corrosionShred, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit } from "@efsim/engine";
 import { loadGameData, type LogFixture, type LogHit } from "@efsim/data";
 import { checkLog, formatLogCheck, verdictCounts, verificationProblems } from "@efsim/cli";
 
@@ -88,6 +88,20 @@ describe("buffs the log lists without a value and no kit values", () => {
     expect(v[1]).toMatchObject({ kind: "unvalued", buffs: ["buff_test_unknown"] });
     expect(verificationProblems(g, fx, v)).toEqual(["Laevatain t=2000 k: under buff_test_unknown, which no kit values"]);
     expect(formatLogCheck(g, fx, v)).toContain("UNVALUED: 1 hit(s) under buff_test_unknown");
+  });
+});
+
+describe("Stagger in the log's listing (the fallback's readings)", () => {
+  it("is the pipeline's own Stagger: its ×1.3 once, and modifiers limited to Staggered enemies apply", () => {
+    // A buff of the hitter's the log never names, with DMG vs Staggered (attribute 61, staggeredOnly): until 2026-10-25 the
+    // check read every hit with `staggered: false` and the log's ×1.3 entry, so it never applied and this hit mismatched.
+    const vsStaggered: KitBuff = { id: "t_broken", label: "vs Staggered", target: "self", gameBuff: "buff_never_listed", duration: 10, modifiers: [{ attr: 61, value: 0.2 }] };
+    const onCast: KitTrigger = { id: "t_on", on: { event: "cast", skills: [BATTLE] }, by: "self", do: [{ kind: "buff", buff: "t_broken" }] };
+    const g2: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills: [battle([h])], buffs: [vsStaggered], triggers: [onCast] } } } };
+    const staggered = roundDamage(computeHit(g2, build, panel, target, { skillId: BATTLE }, h, { crit: "never", staggered: true, modifiers: [{ zone: "damageBonus", value: 0.2, staggeredOnly: true, source: "test" }] }).exact);
+    const poiseBreak = { buff: "buff_common_poise_break_damage_taken_scale", zone: "multiplicative" as const, element: null, value: 0.3 };
+    const v = checkLog(g2, fixture([logHit(1000, staggered, { effects: [poiseBreak] })]), { buffs: "log" });
+    expect(v[0]).toMatchObject({ kind: "match", assumed: ["unlogged own t_broken"] });
   });
 });
 

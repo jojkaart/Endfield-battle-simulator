@@ -2,7 +2,7 @@
 // suit_poise01 Æthertech, suit_criti01 MI Security): the mechanics the kit plan
 // (docs/kit-batches/batch-2/chr_0020_meurs.md, § Kit plan and § Kit) says must fire, on the example's build.
 import { describe, expect, it } from "vitest";
-import { advance, apply, createContext, earliestStart, init, type Build, type RotationAction, type TimelineScenario, type TimelineState } from "@efsim/engine";
+import { advance, apply, createContext, earliestStart, init, type Build, type GameData, type KitBuff, type OperatorKit, type RotationAction, type TimelineScenario, type TimelineState } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { readScenario } from "@efsim/cli";
 
@@ -79,13 +79,37 @@ describe("Catcher's battle skill", () => {
 });
 
 describe("Catcher's combo, ultimate, talents and P1", () => {
-  it("the combo opens on an enemy's skill charge, not before", () => {
+  it("the combo opens on an enemy's skill charge, not before: one asked for earlier waits for the charge", () => {
     const sc = scenario({}, chargeAt(2));
     const ctx = createContext(data, sc);
-    expect(earliestStart(ctx, init(ctx), op("combo_skill"))).toEqual({ error: `${P}combo_skill: its combo trigger hasn't happened (no open window at frame 0)` });
+    // Until 2026-10-25 a combo waited only for hits and delayed actions to open its window (round-two review), so this was
+    // an error ("its combo trigger hasn't happened"): the charge is an enemy action.
+    expect(earliestStart(ctx, init(ctx), op("combo_skill"))).toEqual({ frame: 60 });
+    expect(earliestStart(ctx, init(createContext(data, scenario({}, []))), op("combo_skill"))).toEqual({ error: `${P}combo_skill: its combo trigger hasn't happened (no open window at frame 0)` });
     const s = run(sc, [op("combo_skill", 2)], 120);
     expect(s.casts.find((c) => c.skill === P + "combo_skill")?.frame).toBe(60);
     expect(s.buffs.some((b) => b.id === "combo_shield")).toBe(true);
+  });
+
+  it("after waiting for its window, the combo is judged again where it would start (its availability, cooldown and gates)", () => {
+    // A combo available only within the first second: waiting for the charge at 2 s moves it past that, which the start
+    // must see (until 2026-10-25 the checks before the wait weren't made again).
+    const kit = data.kits.operators[C] as OperatorKit;
+    const early: KitBuff = { id: "t_early", label: "early", target: "self", duration: 1, modifiers: [] };
+    const d: GameData = {
+      ...data,
+      kits: { ...data.kits, operators: { ...data.kits.operators, [C]: {
+        ...kit,
+        buffs: [...kit.buffs, early],
+        triggers: [...kit.triggers, { id: "t_start", on: { event: "fightStart" }, by: "self", do: [{ kind: "buff", buff: "t_early" }] }],
+        skills: kit.skills.map((s) => (s.skillId === P + "combo_skill" ? { ...s, available: { buffActive: "t_early" } } : s)),
+      } } },
+    };
+    const ctx = createContext(d, scenario({}, chargeAt(2)));
+    expect(earliestStart(ctx, init(ctx), op("combo_skill"))).toEqual({ error: `${P}combo_skill isn't available at frame 60 ({"buffActive":"t_early"})` });
+    // Available all along, it starts at the charge.
+    const always = createContext(d, scenario({}, chargeAt(0.5)));
+    expect(earliestStart(always, init(always), op("combo_skill"))).toEqual({ frame: 15 });
   });
 
   it("the ultimate: Weakness on the enemy, a Knock Down stack, shockwaves by talent 2's level, and a P1 strike on every hit", () => {

@@ -4,7 +4,6 @@ import {
   Attr,
   computeHit,
   computeStats,
-  STAGGER_DAMAGE_TAKEN,
   type Build,
   type DamageOptions,
   type GameData,
@@ -17,7 +16,7 @@ import {
 function gameData(over: { def?: number; fireRes?: number; atkPercent?: number } = {}): GameData {
   return {
     provenance: { sources: [] },
-    constants: { atkRateOfMain: 0.005, atkRateOfSub: 0.002, efficiencyOfDEF: 0.01, maxUltimateSp: 100 },
+    constants: { atkRateOfMain: 0.005, atkRateOfSub: 0.002, efficiencyOfDEF: 0.01, maxUltimateSp: 100, staggerDamageTaken: 0.3 },
     attributeDefaults: { [Attr.CriticalDamageIncrease]: 0.5 },
     operators: {
       op: {
@@ -86,15 +85,19 @@ describe("damage zones", () => {
     expect(damage(data, { ...never, crit: "expected" }).zones.crit).toBeCloseTo(1.025);
   });
 
-  it("stagger multiplies separately", () => {
-    expect(damage(gameData(), { ...never, staggered: true }).zones.stagger).toBe(STAGGER_DAMAGE_TAKEN);
+  it("Stagger multiplies once, as a multiplicative modifier (its buff's ProdCalcZone)", () => {
+    const data = gameData();
+    const [plain, staggered] = [damage(data, never), damage(data, { ...never, staggered: true })];
+    expect(staggered.zones.multiplicative).toBeCloseTo(1.3, 12);
+    expect(staggered.modifiers.filter((m) => m.source === "Staggered")).toEqual([{ zone: "multiplicative", value: 0.3, source: "Staggered" }]);
+    expect(staggered.exact / plain.exact).toBeCloseTo(1.3, 12);
   });
 
   it("damage is the product of the zones, rounded to the nearest whole number", () => {
     const d = damage(gameData());
     const z = d.zones;
     expect(d.exact).toBeCloseTo(
-      z.atk * z.scale * z.damageBonus * z.crit * z.amp * z.susceptibility * z.damageTaken * z.multiplicative * z.stagger * z.defense * z.resistance,
+      z.atk * z.scale * z.damageBonus * z.crit * z.amp * z.susceptibility * z.damageTaken * z.multiplicative * z.defense * z.resistance,
     );
     expect(d.damage).toBe(Math.round(d.exact));
     expect(d.scaleParts).toEqual([{ key: "atk_scale", value: 2 }, { key: "ratio", value: 1 }]);

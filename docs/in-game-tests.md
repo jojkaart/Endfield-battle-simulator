@@ -1784,6 +1784,23 @@ for ATK).
    it's a percentage of the whole DEF, **unchanged** if of the operator's
    own base DEF.
 
+### 99. Does the Stagger bar refill when the enemy isn't hit? (ready, any operator; higher priority: every log since 2026-10-25)
+
+**Why:** the log check now runs the engine's own Stagger (journal
+2026-10-25), and in two logs the engine has the enemy Staggered long
+before the game did: Rhodagn in 4e5e at 23 s (the log: 67 s), and in
+bdf2 the engine at 19 s where the game never staggered in 24 s (its bar,
+160, was only just reached). The engine's bar only falls, and refills
+after a Stagger; if the game's also refills on its own while the enemy
+isn't hit, that would explain both.
+**How:** against a training enemy with a Stagger bar, hit it until the
+bar is about half empty, then stop attacking (stay near, don't swap)
+for 15 s and watch the bar.
+1. Engine: **the bar stays where it was** for the whole 15 s.
+2. If it creeps back up (or snaps back full after some seconds), note
+   about how long it waits before refilling and how fast it refills
+   (seconds, by stopwatch or a phone video).
+
 ## Results
 
 None yet.

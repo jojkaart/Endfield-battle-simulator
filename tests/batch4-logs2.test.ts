@@ -48,23 +48,24 @@ describe("unquantified buffs valued from the kit buff that stands for them", () 
   const atk = (n: number): Modifier[] => [{ zone: "atk", value: 0.1 * n, source: "test" }];
 
   it("tries the kit buff's modifiers at the source's build, 1 up to its maximum layers, after the reading without it", () => {
+    // The fallback's readings (the log's listing): the engine has the kit buff's own layers on these casts.
     const fx = fixture([logHit(1000, "k", damage(g, h), { unquantified: unq }), logHit(2000, "k", damage(g, h, atk(2)), { unquantified: unq })]);
-    const v = checkLog(g, fx);
+    const v = checkLog(g, fx, { engine: false });
     expect(assumed(v[0])).toEqual([]);
     expect(assumed(v[1])).toEqual(["unquantified buff_test_layers from kit t_layers ×2"]);
   });
 
   it("makes a hit no reading fits a mismatch when a kit values the buff or the hit lists it with values, and unvalued when no kit values it", () => {
     // Until 2026-10-24 all three were "unquantified" (under unmodelled effects), which a verified fixture allows.
-    const v = checkLog(g, fixture([logHit(1000, "k", damage(g, h, atk(5)), { unquantified: unq })]));
+    const v = checkLog(g, fixture([logHit(1000, "k", damage(g, h, atk(5)), { unquantified: unq })]), { engine: false });
     expect(v[0]?.kind).toBe("mismatch");
     const other = [{ buff: "buff_test_other", since: 0, source: op }];
     // (The log names buff_test_layers elsewhere: else the kit buff counts as one the log never lists, tried on every hit.)
-    const unvalued = checkLog(g, fixture([logHit(1000, "k", damage(g, h, atk(1)), { unquantified: other }), logHit(2000, "k", damage(g, h), { unquantified: unq })]))[0];
+    const unvalued = checkLog(g, fixture([logHit(1000, "k", damage(g, h, atk(1)), { unquantified: other }), logHit(2000, "k", damage(g, h), { unquantified: unq })]), { engine: false })[0];
     expect(unvalued?.kind).toBe("unvalued");
     expect(unvalued?.kind === "unvalued" && unvalued.buffs).toEqual(["buff_test_other"]);
     const listed: LogEffect = { buff: "buff_test_layers", zone: "damageBonus", element: null, value: 0.01 };
-    expect(checkLog(g, fixture([logHit(1000, "k", damage(g, h, atk(1)), { unquantified: unq, effects: [listed] })]))[0]?.kind).toBe("mismatch");
+    expect(checkLog(g, fixture([logHit(1000, "k", damage(g, h, atk(1)), { unquantified: unq, effects: [listed] })]), { engine: false })[0]?.kind).toBe("mismatch");
   });
 
   it("4e5e: Lustrous Carmine's ATK (once hand-annotated as unquantified), valued from Camille's weapon kit, matches all 85 of her hits", () => {

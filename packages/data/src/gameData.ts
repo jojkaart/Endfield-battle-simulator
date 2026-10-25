@@ -20,7 +20,7 @@ import { at, get, obj, type Ctx } from "./fields.ts";
 import { loadKits } from "./kits.ts";
 import { Names } from "./names.ts";
 import { diveOf, isSkillFileListed, passiveBuffModifiers, reachedSp, readSkillFile } from "./skillData.ts";
-import { burstDelays, castHelpers, perfectDodgeData, switchedSkills } from "./buffData.ts";
+import { burstDelays, castHelpers, perfectDodgeData, staggerDamageTaken, switchedSkills } from "./buffData.ts";
 import { PRIMARY, readTable, sourceCommit, SOURCES } from "./sources.ts";
 import { loadAttributeDefaults } from "./tables/attributeMeta.ts";
 import { loadBattleConst } from "./tables/battleConst.ts";
@@ -265,6 +265,7 @@ function build(): GameData {
       maxUltimateSp: c.maxUltimateSp,
       ...((p) => (p ? { perfectDodge: p } : {}))(perfectDodgeData()),
       burstDelayFrames: burstDelays(),
+      staggerDamageTaken: staggerDamageTaken(),
     },
     attributeDefaults: loadAttributeDefaults(PRIMARY),
     operators,

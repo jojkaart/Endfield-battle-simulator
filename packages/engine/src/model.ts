@@ -269,6 +269,12 @@ export interface BattleConstants {
   readonly perfectDodge?: PerfectDodge;
   /** Frames from a same-element infliction to its Arts Burst's damage and event, per element (BuffData buff_common_<e>_<e>_triggered: its first tick); 0 when not fetched. */
   readonly burstDelayFrames?: Partial<Record<ArtsElement, number>>;
+  /**
+   * What a Staggered enemy takes on top, in the multiplicative zone (BuffData
+   * buff_common_poise_break_damage_taken_scale: a defender-side ProdCalcZone
+   * DamageScaleProcessor, dmg_up 0.3): the damage pipeline's one representation of Stagger (damage.ts).
+   */
+  readonly staggerDamageTaken: number;
 }
 
 /** A perfect dodge (BuffData; docs/kit-batches/batch-2.md, E1). */
@@ -658,6 +664,12 @@ export interface KitBuff {
   readonly instances?: ValueExpr;
   /** The BuffData buff it stands for (kits name it; predicates and triggers by game buff read it). */
   readonly gameBuff?: string;
+  /**
+   * Further BuffData buffs a battle log lists its effects under (beside gameBuff and the affix buffs the game buff's
+   * Susceptibility and Amp actions create): the game gives them in its place to some recipients. The log check
+   * verifies its modifiers against them rather than adding them (cli logcheck.ts); the engine doesn't read it.
+   */
+  readonly loggedAs?: readonly string[];
   /**
    * What it is for category triggers and the `operatorBuff` predicate, in
    * place of what its modifiers say (buffs.ts buffReach): e.g. `[]` for a

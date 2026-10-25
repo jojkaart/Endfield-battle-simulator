@@ -89,6 +89,12 @@
             "type": "string",
             "description": "The BuffData buff this stands for; when it is priority-keyed (stackingType 1), instances from different operators don't add up (only the strongest counts)."
           },
+          "loggedAs": {
+            "type": "array",
+            "items": { "type": "string" },
+            "minItems": 1,
+            "description": "Further BuffData buffs a battle log lists this buff's effects under, beside gameBuff and the affix buffs its file's Susceptibility and Amp actions create (which the log check finds itself): the game gives them in its place to some recipients (Liino's stance ATK is buff_chr_0035_liino_atkup_owner on Liino herself). The log check verifies the kit buff's modifiers against these entries instead of adding them; each must be a fetched BuffData file."
+          },
           "dataOverride": {
             "type": "object",
             "description": "Its duration differs on purpose from what the data's CreateBuff of its game buff gives (where a skill's hit or own cast trigger applies it), with the reason (docs/design.md, \"Kits and the game data\").",

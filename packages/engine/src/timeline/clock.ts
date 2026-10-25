@@ -42,7 +42,10 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
   return rebaseCooldowns(ctx, st, s, frame);
 }
 
-/** The enemy's own clock after `start` (its statuses, inflictions, Vulnerable, physical and control statuses, debuffs on it, its stagger, its actions) runs `n` frames later. */
+/**
+ * The enemy's own clock after `start` (its statuses, inflictions, Vulnerable, physical and control statuses, debuffs on
+ * it, its stagger, its actions, the end of a freeze: TimelineState.enemyFrozenUntil) runs `n` frames later.
+ */
 export function shiftEnemy(st: TimelineState, start: number, n: number): TimelineState {
   if (n <= 0) return st;
   const later = (f: number) => (f > start ? f + n : f);
@@ -64,6 +67,8 @@ export function shiftEnemy(st: TimelineState, start: number, n: number): Timelin
     },
     buffs: st.buffs.map((b) => (b.target === "enemy" ? shiftBuff(b, start, n) : b)),
     stagger: st.stagger.until !== null ? { ...st.stagger, until: later(st.stagger.until) } : st.stagger,
+    // A freeze running at `start` ends that much later (a freeze that overlaps it then counts what it adds: runTriggers).
+    enemyFrozenUntil: later(st.enemyFrozenUntil),
     scheduled: shiftClock(st.scheduled, (c) => c === "enemy", start, n),
   };
 }

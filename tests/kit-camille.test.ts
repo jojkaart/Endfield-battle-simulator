@@ -202,7 +202,8 @@ describe("Camille's logs", () => {
     const fx = fixture("40d9a3c1da37");
     expect(kinds(fx)).toEqual({ match: 6 });
     // The replay has her combo's stack, but Si's ultimate 86 ms from Gilberta's could take it: there Link is tried (tests/batch4-logs.test.ts).
-    const g = checkLog(data, fx).filter((v) => v.hit.t === 12951 && v.hit.operator === G);
+    // (The fallback's readings: the engine's reading there has a Corrosion the log doesn't list, tests/batch4-logs.test.ts.)
+    const g = checkLog(data, fx, { engine: false }).filter((v) => v.hit.t === 12951 && v.hit.operator === G);
     expect(g.map((v) => (v.kind === "match" ? v.assumed : v.kind))).toEqual([["Link 1 (the replay can't say: Link stacks change within 500 ms of the cast)"]]);
   });
 

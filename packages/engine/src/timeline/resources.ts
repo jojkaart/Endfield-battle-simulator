@@ -195,6 +195,11 @@ export function skillSpGain(ctx: TimelineContext, operator: string, skillId: str
 
 export const isStaggered = (st: TimelineState, frame: number) => st.stagger.until !== null && st.stagger.until > frame;
 
+/** How long a Stagger lasts (frames): the enemy's attribute 21 × 31 seconds. */
+export function staggerFrames(ctx: TimelineContext): number {
+  return Math.round(enemyAttr(ctx, Attr.PoiseRecTime) * enemyAttr(ctx, Attr.PoiseRecTimeScalar) * FPS);
+}
+
 /**
  * Stagger damage to the enemy (docs/data-sources.md "Physical state"):
  * value × the attacker's attribute 26 × the enemy's 24. At 0 it's Staggered
@@ -224,7 +229,7 @@ export function dealPoise(ctx: TimelineContext, st: TimelineState, operator: str
     .filter((n) => before > n * max && poise <= n * max)
     .map((node) => ({ type: "staggerNode", frame, operator, node }));
   if (poise > 0) return { state: { ...st, stagger: { poise, until: null, finisherUsed: false } }, events: nodes };
-  const until = frame + Math.round(enemyAttr(ctx, Attr.PoiseRecTime) * enemyAttr(ctx, Attr.PoiseRecTimeScalar) * FPS);
+  const until = frame + staggerFrames(ctx);
   return { state: { ...st, stagger: { poise: 0, until, finisherUsed: false } }, events: [...nodes, { type: "staggered", frame, operator }] };
 }
 

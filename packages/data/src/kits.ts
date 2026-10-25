@@ -298,6 +298,11 @@ export function withGameBuff(file: string, b0: KitBuff, applyingSkillHasKey?: bo
  * the tag.
  */
 export function withCategories(file: string, b: KitBuff): KitBuff {
+  // The buffs a log lists it under (KitBuff.loggedAs) are fetched BuffData files, and say something gameBuff doesn't.
+  for (const id of b.loggedAs ?? []) {
+    if (id === b.gameBuff) throw new Error(`${file}: buff ${b.id}: loggedAs repeats its gameBuff ${id}`);
+    gameBuffFile(file, b.id, id);
+  }
   const shield = b.gameBuff ? gameBuffFile(file, b.id, b.gameBuff).applyTags.includes(SHIELD_TAG) : undefined;
   if (b.categories) {
     if (shield !== undefined && shield !== b.categories.includes("shield")) throw new Error(`${file}: buff ${b.id}: ${b.gameBuff} ${shield ? "has" : "hasn't"} the shield tag (${SHIELD_TAG}), so its categories ${shield ? "include" : "don't include"} shield`);
