@@ -69,6 +69,14 @@ const dreams = (patch: Record<string, unknown> = {}, triggers?: unknown[]) => ({
   triggers: triggers ?? [{ id: `${DREAMS}.on`, on: { event: "statusConsumed", statuses: ["corrosion"] }, by: "self", skill: `sk_${DREAMS}`, do: [{ kind: "buff", buff: `${DREAMS}.taken` }] }],
 });
 
+describe("the loader refuses Arts Intensity with a filter (status strength reads it for no element or kind; round-two review)", () => {
+  it("an element filter on zone artsIntensity is an error; the same modifier without one loads", () => {
+    const ai = (extra: object) => dreams({ target: "self", modifiers: [{ zone: "artsIntensity", value: "spell_dmg_taken_up", ...extra }] });
+    expect(() => loadEquipment(ai({ elements: ["fire"] }))).toThrow(/Arts Intensity takes no element, skill-type, kind or decoration filter/);
+    expect(() => loadEquipment(ai({}))).not.toThrow();
+  });
+});
+
 describe("V1: a hit scales a zone's modifiers (KitHit.zoneScale)", () => {
   const hit = kit.skills.find((s) => s.skillId === L + "attack1")?.hits[0] as KitHit;
   const susc = (value: number, element?: "fire" | "cryst"): Modifier => ({ zone: "susceptibility", value, ...(element ? { element } : {}), source: `susc ${element ?? "all"}` });

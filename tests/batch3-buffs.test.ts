@@ -177,6 +177,18 @@ describe("B1: instances of a buff with a priority (stackingType 1, priority key)
     expect(withBuff(withBuff(withBuff([], mk(0.1, 0, 0)), mk(0.2, 1, 0)), mk(0.3, 2, 0))).toHaveLength(3);
   });
 
+  it("a stack group's strongest instance acts whole, not the strongest value of each modifier (round-two review)", () => {
+    const two = (a: number, b: number, appliedAt: number): ActiveBuff => ({
+      id: "p", owner: op, target: "self", appliedAt, expiresAt: appliedAt + 600, stackGroup: "g",
+      modifiers: [{ zone: "damageBonus", value: a, source: "p" }, { zone: "amp", value: b, source: "p" }],
+    });
+    // A: 0.5 + 0.1, B: 0.2 + 0.3. The old rule took 0.5 and 0.3; now A whole (0.6 > 0.5).
+    const buffs = [two(0.5, 0.1, 0), two(0.2, 0.3, 10)];
+    expect(buffModifiers(buffs, op, 20).map((m) => [m.zone, m.value])).toEqual([["damageBonus", 0.5], ["amp", 0.1]]);
+    // Equal strength: the latest applied.
+    expect(buffModifiers([two(0.5, 0.1, 0), two(0.1, 0.5, 10)], op, 20).map((m) => m.value)).toEqual([0.1, 0.5]);
+  });
+
   it("on the timeline: each instance keeps its own timer, and the buff ends with its last one", () => {
     const inst: KitBuff = { id: "inst", label: "inst", target: "self", duration: 5, instances: 2, stackGroup: "inst", modifiers: [{ zone: "amp", value: { if: { buffActive: "inst" }, then: 0.1, else: 0.3 } }] };
     const triggers: KitTrigger[] = [

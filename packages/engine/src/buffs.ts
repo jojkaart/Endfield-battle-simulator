@@ -319,32 +319,36 @@ function attributeModifiers(b: ActiveBuff): Modifier[] {
 }
 
 /**
+ * The buffs that act among some active ones: each stack group's strongest
+ * instance (instanceStrength; ties: the latest applied) whole, as the game
+ * keeps one instance of an effect that doesn't stack; until 2026-10-25 the
+ * strongest value of each modifier, which could mix two instances (every
+ * group's buffs have the same modifiers today, so nothing moved).
+ */
+function acting(buffs: readonly ActiveBuff[]): ActiveBuff[] {
+  const best = new Map<string, ActiveBuff>();
+  for (const b of buffs) {
+    if (!b.stackGroup) continue;
+    const cur = best.get(b.stackGroup);
+    if (!cur || instanceStrength(b) > instanceStrength(cur) || (instanceStrength(b) === instanceStrength(cur) && b.appliedAt >= cur.appliedAt)) best.set(b.stackGroup, b);
+  }
+  return buffs.filter((b) => !b.stackGroup || best.get(b.stackGroup) === b);
+}
+
+/**
  * The modifiers active buffs give an operator's hits at a frame (its
  * attributes that raise ATK as zone `attribute`: attributeModifiers); a stack
- * group counts only its strongest modifier of each kind. Buffs consumed by
- * a cast act only on that cast's hits (`cast`).
+ * group counts only its strongest instance (acting). Buffs consumed by a
+ * cast act only on that cast's hits (`cast`).
  */
 export function buffModifiers(buffs: readonly ActiveBuff[], operator: string, frame: number, cast?: number): Modifier[] {
-  const out: Modifier[] = [];
-  const strongest = new Map<string, Modifier>();
-  for (const b of buffs) {
-    if (!(activeAt(b, frame) && reaches(b, operator))) continue;
+  const on = buffs.filter((b) =>
+    activeAt(b, frame) && reaches(b, operator) &&
     // …and, attached to the cast (whileCasting), on its caster's other hits while the cast runs.
-    if (b.cast !== undefined && b.cast !== cast && !(b.whileCasting && b.whileCasting.operator === operator && frame < b.whileCasting.until)) continue;
+    !(b.cast !== undefined && b.cast !== cast && !(b.whileCasting && b.whileCasting.operator === operator && frame < b.whileCasting.until)) &&
     // A buff a cast consumes acts only on that cast's hits: not before it's consumed.
-    if (b.cast === undefined && b.consumedBy) continue;
-    for (const m of [...b.modifiers, ...attributeModifiers(b)]) {
-      if (!b.stackGroup) {
-        out.push(m);
-        continue;
-      }
-      // A modifier that holds only in a situation competes only with ones under the same condition.
-      const k = JSON.stringify([b.stackGroup, m.zone, m.attr ?? null, m.element ?? null, m.skillType ?? null, m.onlyKinds ?? null, m.when ?? null]);
-      const cur = strongest.get(k);
-      if (!cur || m.value > cur.value) strongest.set(k, m);
-    }
-  }
-  return [...out, ...strongest.values()];
+    !(b.cast === undefined && b.consumedBy));
+  return acting(on).flatMap((b) => [...b.modifiers, ...attributeModifiers(b)]);
 }
 
 /**
@@ -361,22 +365,21 @@ export function buffAttr(
   landing?: { readonly accepts: (f: AttrFilters) => boolean; readonly cast?: number },
 ): number {
   let sum = 0;
-  const strongest = new Map<string, number>();
   const amount = (a: NonNullable<ActiveBuff["attrs"]>[number]) => {
     if (!a.percent) return a.value;
     if (!line) throw new EngineError(`a percentage buff on attribute ${attr} needs ${operator}'s panel line for it`);
     return percentOfLine(a.value, line);
   };
-  for (const b of buffs) {
+  const on = buffs.filter((b) => {
     const ofCast = landing !== undefined && b.cast !== undefined && b.cast === landing.cast;
-    if (!(activeAt(b, frame) && reaches(b, operator) && ((b.cast === undefined && !b.consumedBy) || ofCast))) continue;
+    return activeAt(b, frame) && reaches(b, operator) && ((b.cast === undefined && !b.consumedBy) || ofCast);
+  });
+  for (const b of acting(on)) {
     for (const a of b.attrs ?? []) {
       if (a.attr !== attr) continue;
       if (landing && a.filters && !landing.accepts(a.filters)) continue;
-      if (b.stackGroup) strongest.set(b.stackGroup, Math.max(strongest.get(b.stackGroup) ?? -Infinity, amount(a)));
-      else sum += amount(a);
+      sum += amount(a);
     }
   }
-  for (const v of strongest.values()) sum += v;
   return sum;
 }

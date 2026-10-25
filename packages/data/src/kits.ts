@@ -424,6 +424,8 @@ function kitChecker(scope: KitScope) {
     // Decorations filter what's judged per landing: a zone, an attribute feeding one, or Stagger efficiency (26).
     for (const m of b.modifiers) if (m.decorations && m.attr !== undefined && !attrFeedsZone(m.attr) && m.attr !== Attr.PoiseDamageOutputScalar) throw new Error(`${where}: buff ${b.id}: decorations filter landings: a zone, an attribute feeding one, or Stagger efficiency (26), not attribute ${m.attr}`);
     for (const m of b.modifiers) if (m.attr === Attr.PoiseDamageOutputScalar && m.percent) throw new Error(`${where}: buff ${b.id}: Stagger efficiency (26) is a ratio added to the panel's, not a percentage`);
+    // Status strength reads Arts Intensity for no element or kind (timeline/situation.ts artsIntensity): a filter would be lost there.
+    for (const m of b.modifiers) if ((m.zone === "artsIntensity" || m.attr === Attr.PhysicalAndSpellInflictionEnhance) && (m.elements || m.skillType || m.onlyKinds || m.decorations)) throw new Error(`${where}: buff ${b.id}: Arts Intensity takes no element, skill-type, kind or decoration filter (status strength reads it for none)`);
     // Instances or layers kept by the applying skill's value (maxStackCntKey): whether this applier has the key (normalizeBuffs decides).
     const key = b.gameBuff ? capKey(b, gameBuffFile(scope.file, b.id, b.gameBuff)) : null;
     if (key !== null) instanceKeySites.set(b.id, [...(instanceKeySites.get(b.id) ?? []), hasKey(skillId, key)]);

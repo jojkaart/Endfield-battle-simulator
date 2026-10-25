@@ -32,6 +32,13 @@ entry first. Keep entries short; details belong in the docs they produced.
   processor only in the Add slot (formulaItem 5; anything else is noted);
   a kit modifier of zone `atk` (ATK%) requires its game buff's ATK in
   formulaItem 6. No result moved.
+- **Stacking:** a stack group's strongest instance acts whole
+  (`acting` in buffs.ts; ties: the latest), not the strongest value per
+  modifier, which could mix two instances. Every group's buffs have the
+  same modifiers today, so nothing moved.
+- **Arts Intensity for status strength** is read for no element or kind;
+  the loader now refuses a filtered Arts Intensity modifier (none exists)
+  instead of the context losing it.
 
 ## 2026-10-25: Last Rite's battle skill acts once per cast
 
