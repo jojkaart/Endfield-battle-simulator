@@ -71,18 +71,23 @@ describe("Last Rite's battle skill and Mirages", () => {
     expect(run(scenario({ potential: 4 }), [op("normal_skill")], 0).spReturned).toBeCloseTo(30, 9);
   });
 
-  it("a holder's Final Strike while controlled brings two Mirages 9 frames later (one Cryo stack), once per holder; Last Rite's own at +21", () => {
+  it("a holder's Final Strike while controlled brings two Mirages 9 frames later (one Cryo stack), once per cast for the whole team; Last Rite's own at +21", () => {
     const twice = [op("normal_skill"), ...siChain, ...siChain];
     const [siFs, siFs2] = finalStrikes(run(scenario(), twice), SI, `${SI}_attack5`);
     const rotation = [...twice, swap(L, (siFs2 ?? NaN) + 1), ...ownChain];
     const s = run(scenario(), rotation);
-    const ownFs = finalStrikes(s, L, P + "attack4")[0] ?? NaN;
-    // Si's first Final Strike only (her perfusion is used up); then Last Rite's own, which she still holds.
-    expect(mirages(s)).toEqual([["mirage_1", (siFs ?? NaN) + 9], ["mirage_2", (siFs ?? NaN) + 9], ["mirage_main_1", ownFs + 21], ["mirage_main_2", ownFs + 21]]);
+    // Si's first Final Strike only: it uses the perfusion up for every member (the owner's call, 2026-10-25; b6aa's log
+    // has one pair from two holders' Final Strikes), so neither Si's second nor Last Rite's own brings more.
+    expect(mirages(s)).toEqual([["mirage_1", (siFs ?? NaN) + 9], ["mirage_2", (siFs ?? NaN) + 9]]);
+    expect(s.buffs.some((b) => b.id === "perfusion" && b.expiresAt > (siFs ?? NaN) + 1)).toBe(false);
     expect(siFs2).toBeGreaterThan(siFs ?? NaN);
     expect(mine(s, "normal_skill").every((h) => h.element === "cryst")).toBe(true);
-    // Two Cryo stacks from two pairs; each pair applies one.
-    expect(run(scenario(), rotation, ownFs + 22).enemy.infliction).toMatchObject({ element: "cryst", stacks: 2 });
+    // Last Rite's own Final Strike, as the first holder to use it.
+    const own = run(scenario(), [op("normal_skill"), swap(L, 1), ...ownChain]);
+    const ownFs = finalStrikes(own, L, P + "attack4")[0] ?? NaN;
+    expect(mirages(own)).toEqual([["mirage_main_1", ownFs + 21], ["mirage_main_2", ownFs + 21]]);
+    // One Cryo stack per pair.
+    expect(run(scenario(), [op("normal_skill"), ...siChain], (siFs ?? NaN) + 10).enemy.infliction).toMatchObject({ element: "cryst", stacks: 1 });
     // P5: atk_scale (× 1.2) × 0.5.
     const hit = mine(s, "normal_skill")[0];
     expect(hit?.zones.scale).toBeCloseTo(1.92, 4);

@@ -102,14 +102,14 @@
   "chr_0026_lastrite": {"plain":4,"assumed":0,"fallback":10,"mismatch":0,"unvalued":0,"unquantified":21,"uncovered":0},
   "chr_0032_lizhiyan": {"plain":36,"assumed":1,"fallback":0,"mismatch":65,"unvalued":0,"unquantified":18,"uncovered":1},
   "chr_0011_seraph": {"plain":2,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":27,"uncovered":0},
-  "totals": {"damage":-30.5,"operator chr_0036_jsspsi":-39.2,"operator chr_0032_lizhiyan":-21.8,"operator chr_0026_lastrite":-19,"operator chr_0011_seraph":5.1,"kind basic":-12.7,"kind battle":-79.1,"kind combo":-20.4,"kind status":-16.9,"kind ultimate":-23.7,"kind uncovered":-100,"hits":-2.8,"status hits":-16.7,"staggered hits":977.8,"last hit":0.1,"crit share (points)":0.3}
+  "totals": {"damage":-30.5,"operator chr_0036_jsspsi":-39.3,"operator chr_0032_lizhiyan":-21.8,"operator chr_0026_lastrite":-19,"operator chr_0011_seraph":4.3,"kind basic":-13.4,"kind battle":-79.1,"kind combo":-20.4,"kind status":-16.9,"kind ultimate":-23.7,"kind uncovered":-100,"hits":-2.8,"status hits":-16.7,"staggered hits":977.8,"last hit":0.1,"crit share (points)":0.3}
  },
  "pending/zmdlogs-c3c735dbb022.json": {
   "chr_0036_jsspsi": {"plain":55,"assumed":24,"fallback":100,"mismatch":2,"unvalued":0,"unquantified":4,"uncovered":0},
   "chr_0026_lastrite": {"plain":7,"assumed":2,"fallback":39,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0011_seraph": {"plain":0,"assumed":0,"fallback":0,"mismatch":57,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0025_ardelia": {"plain":0,"assumed":0,"fallback":0,"mismatch":182,"unvalued":0,"unquantified":2,"uncovered":0},
-  "totals": {"damage":-12.8,"operator chr_0036_jsspsi":-16.4,"operator chr_0025_ardelia":51.9,"operator chr_0026_lastrite":-11.8,"operator chr_0011_seraph":203.3,"kind basic":12.2,"kind battle":-67.4,"kind combo":-8.2,"kind status":-17.7,"kind ultimate":-0.1,"hits":6.3,"status hits":-25,"staggered hits":null,"last hit":0,"crit share (points)":-1.9}
+  "totals": {"damage":-12.9,"operator chr_0036_jsspsi":-16.5,"operator chr_0025_ardelia":51.3,"operator chr_0026_lastrite":-11.8,"operator chr_0011_seraph":202.2,"kind basic":11.6,"kind battle":-67.4,"kind combo":-8.2,"kind status":-17.7,"kind ultimate":-0.1,"hits":6.3,"status hits":-25,"staggered hits":null,"last hit":0,"crit share (points)":-1.9}
  },
  "pending/zmdlogs-c6d80590f5ea.json": {
   "chr_0030_zhuangfy": {"plain":0,"assumed":0,"fallback":16,"mismatch":156,"unvalued":0,"unquantified":1,"uncovered":2},

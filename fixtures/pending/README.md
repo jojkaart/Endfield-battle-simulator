@@ -218,14 +218,14 @@ brings one Mirage pair (`buff_chr_0026_lastrite_normal_skill_phantom` at
 18.66 s, the kit's +9 frames); Si's (22.92 s) and Last Rite's own
 (26.82 s) controlled Final Strikes within the perfusion's 15 s bring
 none. The kit's `mirage` gives each member's perfusion one use, so it
-predicts Mirages on both: the log points to one use per cast for the
-team. 9555 (Last Rite controlled throughout) and c3c7 (Si controlled
+predicted Mirages on both: the log points to one use per cast for the
+team (the kit since 2026-10-25, the owner's call). 9555 (Last Rite controlled throughout) and c3c7 (Si controlled
 throughout; 6 casts, 6 pairs) don't test a swap but agree. Read from the
-site's detail, not yet confirmed by the check; the kit is unchanged.
+site's detail.
 
 **Mirages, engine-first check (2026-10-25).** The replay of the logged
-casts with Last Rite's kit (`mirage`: every member's perfusion acts once,
-batch-4 G4) against the logs:
+casts with Last Rite's kit as it was then (`mirage`: every member's
+perfusion acts once, batch-4 G4) against the logs:
 - b6aa15281db4 (one battle skill, 15.40 s): the log has one Mirage pair,
   at Arcane's Final Strike (18.36 s); none at Si's (22.92 s) or Last
   Rite's own (26.82 s). The engine has one pair at Si's (22.77 s): it
@@ -237,4 +237,7 @@ batch-4 G4) against the logs:
   at other Final Strikes for three of them (which Final Strike is first
   differs). 9555de54bb3d: the engine makes none (its casts aren't all
   replayed; open).
-Not changed in the kit: the owner decides (test 83, or these logs).
+The owner's call (2026-10-25): one use per cast for the whole team; the
+kit's `mirage` now ends the perfusion for everyone. The engine's Mirage
+counts in these logs didn't move (b6aa 1 pair, c3c7 5, 9555 none): the
+gaps are casts and Final Strikes the replay misses, still open.

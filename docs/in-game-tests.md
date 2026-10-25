@@ -1523,18 +1523,24 @@ longer in run 2: it interrupts her like an ordinary skill. Also, in run 2:
 does attack 2's second hit still show its damage number? Data and engine:
 yes.
 
-### 83. Last Rite's Mirages after a swap (ready, if you have Last Rite)
+### 83. Last Rite's Mirages after a swap (decided by the owner, 2026-10-25; still worth a look)
+
+**Decided:** the owner: "It just makes more sense that the battle skill
+can only be activated once." The engine gives one use per cast for the
+whole team since 2026-10-25 (the first controlled Final Strike of any
+holder ends everyone's perfusion); b6aa's log agrees (one pair after two
+holders' Final Strikes). The test below would still confirm it.
 
 **Why:** her battle skill gives every team member a perfusion for 15 s;
-each member's first Final Strike while controlled brings two Mirages (3.84
-× her ATK in all at P5, and a Cryo stack) and ends that member's perfusion
-only. The engine follows the data. The description speaks only of "the
-controlled operator", which could mean one use for the whole team.
+a Final Strike while controlled brings two Mirages (3.84 × her ATK in all
+at P5, and a Cryo stack). The data ends only that member's perfusion (each
+member's acts once); the description speaks only of "the controlled
+operator", which could mean one use for the whole team.
 **How:** operator X controlled; Last Rite casts her battle skill off-field.
 Swap to Y at once and finish Y's chain: Mirages on Y's Final Strike? Swap
 back to X and finish X's chain within the 15 s: Mirages again?
-- both times: each member's perfusion acts once (data, engine);
-- only on Y: one use for the whole team;
+- both times: each member's perfusion acts once (data);
+- only on Y: one use for the whole team (the engine);
 - only on X: only the operator controlled at the cast has it.
 
 ### 84. Tangtang's own Haste (ready, if you have Tangtang with talent 1)

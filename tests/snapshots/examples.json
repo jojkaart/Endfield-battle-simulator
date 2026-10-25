@@ -231,7 +231,7 @@
  "lastrite-si.scenario.json": {
   "total": 823680.266,
   "hits": 51,
-  "casts": 23,
+  "casts": 24,
   "perOperator": {
    "chr_0036_jsspsi": 42066.081,
    "chr_0026_lastrite": 781614.186

@@ -32,7 +32,7 @@
           "if": { "controlled": true }
         }
       ],
-      "note": "buff_chr_0026_lastrite_normal_skill, created by buff_..._normal_skill_self on CharacterTeamFinder (every member), `duration` 15 s, stackingType 2 max 1. P1: its damageModifier (CheckMainCharacterCondition, CheckDamageDecorateMask checkType 1 mask 2097152, CompareFloat potential_1 = 1) → DamageScaleProcessor NormalCalcZone +atk_up on the holder's Final Strikes while controlled (batch-4 C3). potential_1 is 0 below P1 (SkillData default) and 1 from P1 (PotentialTalentEffectTable). Each holder's use ends that holder's buff only: trigger mirage (batch-4 B6). In the game the holder's _tag ends it at the next buff the holder gains; here it ends at once after that Final Strike's first landing, so a Final Strike with several landings gets P1's +20% on the first only."
+      "note": "buff_chr_0026_lastrite_normal_skill, created by buff_..._normal_skill_self on CharacterTeamFinder (every member), `duration` 15 s, stackingType 2 max 1. P1: its damageModifier (CheckMainCharacterCondition, CheckDamageDecorateMask checkType 1 mask 2097152, CompareFloat potential_1 = 1) → DamageScaleProcessor NormalCalcZone +atk_up on the holder's Final Strikes while controlled (batch-4 C3). potential_1 is 0 below P1 (SkillData default) and 1 from P1 (PotentialTalentEffectTable). The first holder's use ends it for the whole team: trigger mirage (the owner's call, 2026-10-25: one Mirage pair per cast; the data's _tag would end only that holder's, batch-4 B6). It ends at once after that Final Strike's first landing, so a Final Strike with several landings gets P1's +20% on the first only."
     },
     {
       "id": "talent1_vul",
@@ -110,7 +110,6 @@
       "by": "controlled",
       "if": { "eventOperator": { "operatorBuff": "buff_chr_0026_lastrite_normal_skill" } },
       "cooldown": 0.1,
-      "cooldownPer": "eventSubject",
       "skill": "chr_0026_lastrite_normal_skill",
       "do": [
         {
@@ -185,9 +184,9 @@
             }
           ]
         },
-        { "kind": "endBuff", "buff": "perfusion", "to": "eventSubject" }
+        { "kind": "endBuff", "buff": "perfusion" }
       ],
-      "note": "The perfusion's abilityEvent 302 (the holder deals damage): [CheckHp, the 0.1 s marker, Final Strike mask 2097152, holder controlled] → IfElse CheckTagMatch 264623624 on the holder → buff_..._phantom_main else _phantom on the target, then _tag on the holder, which ends that holder's perfusion (abilityEvent 9): each member's first Final Strike while controlled (batch-4 C2 operatorBuff, B6 endBuff to eventSubject). `controlled` here is the owner: she is controlled exactly when she is the hitter (by: controlled). The Mirages are her trigger hits (her stats): the phantom buffs are hers, on the enemy; no log has them yet (report row 14)."
+      "note": "The perfusion's abilityEvent 302 (the holder deals damage): [CheckHp, the 0.1 s marker, Final Strike mask 2097152, holder controlled] → IfElse CheckTagMatch 264623624 on the holder → buff_..._phantom_main else _phantom on the target, then _tag on the holder, which in the data ends that holder's perfusion only (abilityEvent 9; batch-4 B6). Here the first Final Strike while controlled by any holder ends it for the whole team (endBuff without `to`): one Mirage pair per cast, the owner's call (2026-10-25: \"the battle skill can only be activated once\"), which b6aa's log supports (one pair after Arcane's Final Strike, none after Si's 4.6 s later). batch-4 C2 operatorBuff. `controlled` here is the owner: she is controlled exactly when she is the hitter (by: controlled). The Mirages are her trigger hits (her stats): the phantom buffs are hers, on the enemy; no log has them yet (report row 14)."
     },
     {
       "id": "combo_energy",

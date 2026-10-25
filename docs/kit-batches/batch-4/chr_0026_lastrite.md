@@ -586,7 +586,7 @@ Gaps:
 | G1 talent 2 (zone scale) | **done** (V1) | `zoneScale: [{zone: susceptibility, value: {if: {talentAtLeast: [1, 1]}, then: rate, else: 1}}]` on all three slashes |
 | G2 P1's +20% DMG on Final Strikes; Sundered Prince's Stagger | **done** (C3) | the perfusion's modifier `{zone: damageBonus, value: atk_up × potential_1, decorations: [finalStrike], if: {controlled: true}}`; Sundered Prince's permanent `{attr: 26, value: poise_up, decorations: [finalStrike], if: {controlled: true}}` |
 | G3 battle skill beside her own basic attack | **done** (C4) | `beside: {all: [{controlled: true}, {currentAction: {kinds: [basic], beforeExclusive: true}}]}`; three cast triggers split by the cast filter `beside` (at the cast / delay 32 / delay 300). Plus the one-line engine fix below |
-| G4 each holder's perfusion | **done** (C2, B6) | the Mirage trigger's `if: {eventOperator: {operatorBuff: buff_chr_0026_lastrite_normal_skill}}` and `{kind: endBuff, buff: perfusion, to: eventSubject}`; a new cast gives it back to everyone |
+| G4 each holder's perfusion | **done** (C2, B6), then **changed** 2026-10-25 | the Mirage trigger's `if: {eventOperator: {operatorBuff: buff_chr_0026_lastrite_normal_skill}}` and, since the owner's call ("the battle skill can only be activated once"; b6aa's log agrees), `{kind: endBuff, buff: perfusion}`: the first holder's use ends it for the whole team, one Mirage pair per cast (before: `to: eventSubject`, each holder once, as the data's `_tag`); a new cast gives it back to everyone |
 | G5a NotNextCheckAction | **done** (D7a) | kit-draft labels the f0 jump "not controlled" |
 | G5b hitless SP, second team-energy part, detached | **partly** (D8e) | kit-draft emits both cast triggers with `atb` and `usp`, but still marks them `detached`, without `ignoreBlock`, and keeps only the first team-energy part (a KNOWN entry). The SP kind comes from `_self` (D2: returned): nothing hand-written |
 | G5c Mirages compiled as skill hits | **done** (D9c) | kit-draft reports them as event-driven landings for a trigger |
@@ -644,11 +644,12 @@ skill-type field to confirm whether the game counts those.
 - **Hypothermic Perfusion:** a team buff (15 s). Each holder's first Final
   Strike while controlled gets P1's +20% DMG and +5 Stagger, then two
   Mirages (`atk_scale` × 0.5 each, ×1.2 at P5; battle, Cryo; one Cryo
-  stack) 9 frames later, 21 when Last Rite holds it; that holder's
-  perfusion ends, the others keep theirs. Approximation: the game ends it
-  when the holder next gains a buff (`_tag`, abilityEvent 9), so a Final
-  Strike with several landings may get P1's +20% on more than its first;
-  the kit ends it at once.
+  stack) 9 frames later, 21 when Last Rite holds it; the perfusion then
+  ends for the whole team (the owner's call, 2026-10-25: one use per cast;
+  the data's `_tag` would end only that holder's). Approximation: the game
+  ends it when the holder next gains a buff (`_tag`, abilityEvent 9), so a
+  Final Strike with several landings may get P1's +20% on more than its
+  first; the kit ends it at once.
 - **Combo:** opens at 3 Cryo stacks; shard (f13), bonus `atk_scale3 × n`
   and slash (f63), then every Cryo stack consumed; energy 40 + 15 × n at
   f13. Talent 1: Cryo Susceptibility 0.04 × n for 15 s (the strongest

@@ -291,8 +291,9 @@ current behaviour, which changed some predictions here: with B1 a combo
 gives no Link (Ardelia's test 51 part recomputed: A/B ≈ 1.00 / 0.78 /
 0.83 / 0.65), V2 keeps Combustion's ATK (test 77's engine side is now
 "unchanged"), C4 runs Last Rite's battle skill beside her attack (test 82:
-the engine says "same time"), B6 gives each member's perfusion one use
-(test 83), S2, S4, S5 and T2 are in (tests 86, 88, 93), and calc now
+the engine says "same time"), B6 gave each member's perfusion one use
+(test 83; since 2026-10-25, the owner's call, one use per cast for the
+team again), S2, S4, S5 and T2 are in (tests 86, 88, 93), and calc now
 includes Lifeng's talent 1 (test 75's part: panel = calc, or ×1.17 /
 ×1.25).
 Priority: **high** affects many operators or a favourite (Typhoeus,
@@ -314,7 +315,7 @@ use her), or matters little.
 | **An effect on its own hit, Ardelia's form** (Ardelia 1): Final Strike, her combo, wait ~3 s, battle skill A (consumes Corrosion, Link if B1 gives one), within 25 s battle skill B; A/B ≈ 1.30 (both act on A: engine), 1.02, 1.08 or 0.85 per reading (the report's table; recompute A's Link factor under B1) | Ardelia with Dreams of the Starry Beach | test 51's question for W11 and her Susceptibility | medium → part of test 51 |
 | **Hypothermia on a reaction** (Last Rite A): a Heat (Electric, Nature) teammate inflicts and stays controlled; Last Rite's battle skill off-field; the teammate's Final Strike brings a Mirage whose Cryo forms a reaction: Cryo Susceptibility icon on the dummy (engine) or not | Last Rite with talent 1 | A1; OBJ Velocitous W7 | medium → test 81 |
 | **Last Rite's battle skill inside her chain** (Last Rite B): stopwatch from the first basic attack to the third Final Strike: three plain chains, then three with the battle skill pressed during attack 2 of the first two: same time (data) or about 2.2 s longer (engine, ~1.1 s per cast; just above the 2 s floor: a phone video is safer, or a third cast if the SP bar allows); also: does attack 2's second hit still show its number (test 16's question) | Last Rite | C4 | medium → test 82 |
-| **Mirages after a swap** (Last Rite C): X controlled, her battle skill off-field, swap to Y and finish Y's chain (Mirages?), back to X and finish within 15 s (again?): both (data), only the first (engine interim), or only X's (controlled operator only) | Last Rite | B6 | medium → test 83 |
+| **Mirages after a swap** (Last Rite C): X controlled, her battle skill off-field, swap to Y and finish Y's chain (Mirages?), back to X and finish within 15 s (again?): both (data), only the first (the engine: the owner's call, 2026-10-25), or only X's (controlled operator only) | Last Rite | B6 | medium → test 83 (decided) |
 | **Enemy timers under Last Rite's freeze and Tangtang's Immobilization** (Last Rite D, Tangtang 1): (a) a debuff icon of 10 s or more on a dummy, then 3 Cryo stacks and Last Rite's combo within it: about 2 s longer than without (freeze holds enemy timers) or unchanged (engine); (b) Tangtang's battle skill after one combo (Arts Susceptibility icon, 15 s): alone it goes at ~15 s; with her ultimate right after: ~21–22 s (engine: time stop + 4 s Immobilization), ~17–18 s (Immobilization doesn't stop timers), 15 s (neither) | Last Rite; Tangtang | Ti1b's enemy-layer freezes; Tangtang U3; informs test 37's Si part | medium → part of test 37 |
 | **Tangtang's own Haste** (Tangtang 2): combo, stand her in her Whirlpool: Haste icon on her? then on a teammate standing in it? Engine: both | Tangtang with talent 1 | Tangtang U2 | medium → test 84 (with test 19 for what Haste does) |
 | **Rapid Ascent against a Staggered enemy** (R1): basic attack 1 before and during a Stagger, non-crit numbers: ×1.3 (the Stagger's own DMG Taken: the description) or about ×2.2–2.6 (the data: the 98% on every hit) | Rapid Ascent on any sword user | Rossi W2 | medium (6-star weapon; the report said low) → test 85 |
