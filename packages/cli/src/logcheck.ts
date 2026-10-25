@@ -1436,6 +1436,8 @@ export interface SimulatedHit {
   readonly hit: LogHit;
   /** Its landing's damage in the replay (crit as logged, the log's effects no kit models added), or why there is none. */
   readonly simulated: number | { readonly unknown: string };
+  /** Its landing in the simulation (damage, zones, modifiers by source, facts), when there is one. */
+  readonly landing?: LandedHit;
 }
 
 /** Logged effects the timeline models itself (its statuses: reactions, physical statuses, Stagger), which the simulation doesn't add. */
@@ -1455,7 +1457,7 @@ export function simulateLog(data: GameData, fx: LogFixture, placement: Placement
   const replay = replayKitBuffs(data, fx, placement, { loggedModifiers });
   return fx.hits.map((hit) => {
     const l = replay.landing(hit);
-    return { hit, simulated: "unknown" in l ? l : l.damage };
+    return "unknown" in l ? { hit, simulated: l } : { hit, simulated: l.damage, landing: l };
   });
 }
 
