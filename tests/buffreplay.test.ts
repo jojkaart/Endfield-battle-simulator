@@ -168,6 +168,18 @@ describe("replayCast: a logged cast at its logged frame", () => {
   });
 });
 
+describe("bdf223db8e49: Corrosion from the replay's landings", () => {
+  it("reads hits under Corrosion at the engine's level and shred where the replay landed them (levels tried only elsewhere)", () => {
+    const fx = readLogFixture(new URL("../fixtures/zmdlogs-bdf223db8e49.json", import.meta.url).pathname);
+    const under = checkLog(data, fx).filter((v) => v.hit.unquantified.some((u) => u.buff.startsWith("buff_common_natural")));
+    const matched = under.filter((v): v is Extract<HitVerdict, { kind: "match" }> => v.kind === "match");
+    const tried = matched.filter((v) => v.assumptions.some((a) => a.kind === "corrosion"));
+    expect(matched.length).toBeGreaterThan(60);
+    expect(tried.length).toBeLessThanOrEqual(3);
+    expect(tried.every((v) => v.assumed.some((a) => a.includes("the replay can't say")))).toBe(true);
+  });
+});
+
 describe("4e5e1390085e: Camille's weapon buffs after the log stops listing them", () => {
   const fx = readLogFixture(new URL("../fixtures/zmdlogs-4e5e1390085e.json", import.meta.url).pathname);
   const r = logBuffReplay(data, fx);

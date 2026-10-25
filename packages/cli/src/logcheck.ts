@@ -33,6 +33,7 @@ import {
   type GameData,
   type HitDamage,
   type KitHit,
+  type LandedHit,
   type KitSkill,
   type Modifier,
   type OperatorKit,
@@ -426,11 +427,28 @@ interface Candidate {
   readonly stacks: number;
 }
 
+/** Corrosion at a hit as the replay's landing has it (its level, and the engine's shred then), or why the replay can't say. */
+type CorrosionFact = Fact<{ readonly level: number; readonly modifier: Modifier }>;
+
+/**
+ * Corrosion's level at a logged hit, which the log lists without a value: the level of the Corrosion the engine's
+ * damage of the hit's landing in the replay had (LandedHit.modifiers), no assumption. Unknown where the replay has no
+ * landing, or has no Corrosion there (its Nature inflictions aren't checked against the log yet): levels 1-4 are tried.
+ */
+function corrosionAt(landing: LandedHit | Undecided | null): CorrosionFact {
+  if (!landing) return { unknown: "a status hit" };
+  if ("unknown" in landing) return landing;
+  const m = landing.modifiers.find((x) => x.zone === "ignoreResistance" && x.source.startsWith("Corrosion level "));
+  if (!m) return { unknown: "the replay has no Corrosion at the hit" };
+  return { value: { level: Number(m.source.slice("Corrosion level ".length)), modifier: m } };
+}
+
 /** Every combination of what the log leaves open for a hit (with `repeats`, the boundary readings with part of a repeated buff's instances: boundarySubsets). */
-function candidates(hit: LogHit, panels: ReadonlyMap<string, { panel: StatPanel }>, stackOptions: readonly number[], repeats = false): Candidate[] {
+function candidates(hit: LogHit, panels: ReadonlyMap<string, { panel: StatPanel }>, stackOptions: readonly number[], repeats = false, corrosionFact: CorrosionFact = { unknown: "no replay" }): Candidate[] {
   const out: Candidate[] = [];
   const corrosion = hit.unquantified.find((u) => isCorrosionBuff(u.buff));
-  const corrosionLevels = corrosion ? [1, 2, 3, 4] : [0];
+  const known = corrosion && "value" in corrosionFact ? corrosionFact.value : null;
+  const corrosionLevels = known ? [known.level] : corrosion ? [1, 2, 3, 4] : [0];
   for (const boundary of boundarySubsets(hit.boundaryEffects, repeats)) {
     const effects = [...hit.effects, ...boundary.effects];
     for (const level of corrosionLevels) {
@@ -438,10 +456,11 @@ function candidates(hit: LogHit, panels: ReadonlyMap<string, { panel: StatPanel 
       const assumed: Assumption[] = boundary.label ? [{ kind: "boundary", label: boundary.label, buffs: [...new Set(boundary.effects.map((e) => e.buff))] }] : [];
       if (corrosion && level > 0) {
         const applierAi = panels.get(corrosion.source)?.panel.attrs[87]?.total ?? 0;
-        // Without the applier's talent cap (corrosionCapScale), which the timeline applies: with it, two of Si's
-        // matches in bdf223db8e49 no longer fit (2026-10-24; a lead, not settled).
-        extra.push(corrosionModifier(level, hit.t - corrosion.since, applierAi));
-        assumed.push({ kind: "corrosion", label: `Corrosion level ${level}`, buffs: [corrosion.buff], n: level });
+        // The replay's: the engine's shred at the landing (its ramp from the replay's application, the applier's talent cap:
+        // corrosionCapScale). Tried levels ramp from the log's start of it, without the cap (as before 2026-10-25).
+        if (known) extra.push(known.modifier);
+        else extra.push(corrosionModifier(level, hit.t - corrosion.since, applierAi));
+        if (!known) assumed.push({ kind: "corrosion", label: `Corrosion level ${level} (the replay can't say: ${(corrosionFact as Undecided).unknown})`, buffs: [corrosion.buff], n: level });
       }
       for (const crit of hit.crit === null ? [false, true] : [hit.crit]) {
         for (const stacks of stackOptions) {
@@ -966,6 +985,7 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
     const landedHits = landedHit && !("unknown" in landedHit) ? found.filter(([s, h]) => h.id === landedHit.hitId && s.skillId === landedHit.skillId) : [];
     const landing = landedHit && !("unknown" in landedHit) && landedHit.facts && landedHits.length ? { facts: landedHit.facts } : null;
     const landingWhy = landedHit && "unknown" in landedHit ? landedHit.unknown : "a landing the kit hits don't name";
+    const corrosionHere = corrosionAt(landedHit);
     /**
      * Every reading of one version of the hit (the replay's, or the log's): the first that matches (its assumptions), and
      * how many readings gave a value and how many of them matched (all are tried, so a match's strength shows).
@@ -1095,7 +1115,7 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
       };
       const all = [false, true].flatMap((repeats) => variants.map((variant) => ({ repeats, variant })));
       for (const { repeats, variant } of all) {
-        for (const c of candidates(withLayers(hit, variant.layers), panels, stackOptions, repeats)) {
+        for (const c of candidates(withLayers(hit, variant.layers), panels, stackOptions, repeats, corrosionHere)) {
           for (const { assumptions, r } of readingsOf(c, variant)) {
             const p = roundDamage(r.exact);
             tried++;

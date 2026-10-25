@@ -14,12 +14,11 @@ const FACTORS = [0.97, 1.03];
 
 /**
  * Chance matches allowed per fixture and factor: this share of its judged hits (at least 1). Measured 2026-10-24
- * (journal): 40d9 0 / 0, 4e5e 11 / 0 of 345, b7b3 0 / 0, bdf2 3 / 5 of 166 (×0.97 / ×1.03). Not "close to none"
- * yet: readings with a free count in steps of about 3% (a layered buff the log lists once, buff_equipsuit_critsuitatk_01
- * ×4 instead of ×5 layers on Wulfgard's small attack-4 hits in 4e5e) or of 1–2% (Corrosion levels in bdf2) fit a
- * value 3% off. A bound to tighten as the replay decides those counts (docs/roadmap.md).
+ * (journal): 40d9 0 / 0, 4e5e 11 / 0 of 345, b7b3 0 / 0, bdf2 3 / 5 of 166 (×0.97 / ×1.03), from free counts the replay
+ * now reads instead (MI Security's layers on Rossi's attack 4 in 4e5e; Corrosion levels in bdf2). 2026-10-25, with the
+ * replay's facts (journal): 40d9 0 / 0, 4e5e 2 / 0, b7b3 0 / 0, bdf2 0 / 0: the bound tightened from 4% to 1%.
  */
-const MAX_CHANCE_SHARE = 0.04;
+const MAX_CHANCE_SHARE = 0.01;
 
 /** The fixture with every logged damage value (and uncapped value) scaled by `k`, rounded as the log rounds. */
 function scaled(fx: LogFixture, k: number): LogFixture {
