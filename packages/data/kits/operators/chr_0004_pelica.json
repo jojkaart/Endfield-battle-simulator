@@ -63,7 +63,6 @@
           "id": "projhit",
           "scale": ["atk_scale"],
           "events": ["chr_0004_pelica_attack1_projhit"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "LaunchProjectile@8 → attack1_projhit: DamageAction atk_scale (mask 128); ObtainCostAction atb while controlled (atb is 0 at every level)."
         }
       ]
@@ -91,7 +90,6 @@
           "id": "projhit",
           "scale": ["atk_scale"],
           "events": ["chr_0004_pelica_attack3_projhit"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "Three LaunchProjectile (16, 19, 22), each atk_scale (display_atk_scale = 3 × atk_scale)."
         }
       ]
@@ -106,7 +104,6 @@
           "label": "Final Strike",
           "scale": ["atk_scale"],
           "events": ["chr_0004_pelica_attack4_projhit"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "finalStrike": true,
           "note": "LaunchProjectile@27 → attack4_projhit: DamageAction mask 2097280 (Final Strike), poise unit `poise` (onlyEnableForMainChar), ObtainCostAction atb 15 (atbSourceType 1) while controlled."
         }
@@ -133,7 +130,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "DamageAction atk_scale (mask 1152) at 3-8; the four plunging_attack_projhit projectiles have no actions."
         }
       ],

@@ -78,13 +78,13 @@
       "skillId": "chr_0014_aurora_attack1",
       "label": "Basic attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "DamageAction damageType 0 (Physical; the operator is Cryo). atb is 0 at every level (SkillPatchTable)." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "DamageAction damageType 0 (Physical; the operator is Cryo). atb is 0 at every level (SkillPatchTable)." }]
     },
     {
       "skillId": "chr_0014_aurora_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Physical; atb 0." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Physical; atb 0." }]
     },
     {
       "skillId": "chr_0014_aurora_attack3",
@@ -96,7 +96,6 @@
           "id": "hit_2",
           "scale": ["atk_scale"],
           "frames": [39],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "finalStrike": true,
           "note": "ChannelingAction [39–43]: atk_scale × 0.6, mask 2097280 (Final Strike); \"As the controlled operator, Final Strike also deals {poise} Stagger\" (onlyEnableForMainChar); DoOnce SP atb (25)."
         }
@@ -112,7 +111,7 @@
       "skillId": "chr_0014_aurora_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0014_aurora_normal_skill",

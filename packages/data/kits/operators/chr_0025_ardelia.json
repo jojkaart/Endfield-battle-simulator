@@ -59,7 +59,6 @@
           "id": "projhit",
           "scale": ["atk_scale"],
           "events": ["chr_0025_ardelia_attack1_projhit"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "LaunchProjectile at 6 → chr_0025_ardelia_attack1_projhit (mask 128; ObtainCostAction atb, controlled only, 0 at every level)."
         }
       ]
@@ -73,7 +72,6 @@
           "id": "projhit",
           "scale": ["atk_scale"],
           "events": ["chr_0025_ardelia_attack1_projhit"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "Two LaunchProjectile (8, 10) with attack2's own atk_scale 0.45 into chr_0025_ardelia_attack1_projhit (projectileSkillId; chr_0025_ardelia_attack2_projhit is reached by nothing)."
         }
       ]
@@ -87,7 +85,6 @@
           "id": "projhit",
           "scale": ["atk_scale"],
           "events": ["chr_0025_ardelia_attack3_projhit"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "15 LaunchProjectile every 2 frames from 11 → chr_0025_ardelia_attack3_projhit (0.08 each). Its Probablity 0.3 has an empty branch: nothing."
         }
       ]
@@ -133,7 +130,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "Mask 1152 (dive: decorate bit 1024). Needs mid-air: not castable in rotations until dive attacks land (batch-1 S10); kept for calc."
         }
       ]

@@ -143,20 +143,20 @@
       "label": "Basic attack 1",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "note": "Two DamageActions (display_atk_scale = 2 × atk_scale); ObtainCostAction atb × 0.5 each, controlled only (atb 0 otherwise)." }
+        { "id": "hit", "scale": ["atk_scale"], "note": "Two DamageActions (display_atk_scale = 2 × atk_scale); ObtainCostAction atb × 0.5 each, controlled only (atb 0 otherwise)." }
       ]
     },
     {
       "skillId": "chr_0015_lifeng_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0015_lifeng_attack3",
       "label": "Basic attack 3",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0015_lifeng_attack5",
@@ -164,7 +164,7 @@
       "damageType": "basic",
       "hits": [
         { "id": "hit", "scale": ["atk_scale"], "finalStrike": false },
-        { "id": "hit_2", "scale": ["atk_scale2"], "sp": { "if": { "controlled": true }, "then": "atb" }, "finalStrike": true, "note": "Mask 2097280 (Final Strike); poise onlyEnableForMainChar; SP atb 21, controlled only." }
+        { "id": "hit_2", "scale": ["atk_scale2"], "finalStrike": true, "note": "Mask 2097280 (Final Strike); poise onlyEnableForMainChar; SP atb 21, controlled only." }
       ]
     },
     {
@@ -180,7 +180,7 @@
       "skillId": "chr_0015_lifeng_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Mask 1152 (dive). Needs mid-air: schedulable once dive attacks are (batch-1 S10); kept for calc." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Mask 1152 (dive). Needs mid-air: schedulable once dive attacks are (batch-1 S10); kept for calc." }]
     },
     {
       "skillId": "chr_0015_lifeng_normal_skill",

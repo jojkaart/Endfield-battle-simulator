@@ -190,8 +190,8 @@
       "label": "Basic attack 1",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale_1"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } },
-        { "id": "hit_2", "scale": ["atk_scale_2"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } }
+        { "id": "hit", "scale": ["atk_scale_1"] },
+        { "id": "hit_2", "scale": ["atk_scale_2"] }
       ]
     },
     {
@@ -199,8 +199,8 @@
       "label": "Basic attack 2",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale_1"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } },
-        { "id": "hit_2", "scale": ["atk_scale_2"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } }
+        { "id": "hit", "scale": ["atk_scale_1"] },
+        { "id": "hit_2", "scale": ["atk_scale_2"] }
       ]
     },
     {
@@ -211,7 +211,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } },
           "note": "ChannelingAction ticks from frame 7 to 22, at most 4 per target (logged 4 per attack 3)."
         }
       ]
@@ -221,7 +220,7 @@
       "label": "Basic attack 4",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale_1"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } },
+        { "id": "hit", "scale": ["atk_scale_1"] },
         {
           "id": "projhit",
           "scale": ["atk_scale_2"],
@@ -235,7 +234,7 @@
       "label": "Basic attack 5 (Final Strike)",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }
+        { "id": "hit", "scale": ["atk_scale"] }
       ]
     },
     {
@@ -253,7 +252,7 @@
       "label": "Dive attack",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Decorate mask 1152 (dive): castable once dive attacks are rotation steps (batch-1 S10)." }
+        { "id": "hit", "scale": ["atk_scale"], "note": "Decorate mask 1152 (dive): castable once dive attacks are rotation steps (batch-1 S10)." }
       ]
     },
     {
@@ -284,8 +283,6 @@
         {
           "id": "hit_3",
           "scale": ["atk_scale_1_3"],
-          "sp": "atb",
-          "spBeforeDamage": true,
           "note": "Frame 47: DoOnce ObtainCostAction atb (natural, atbSourceType 3) before the DamageAction (spBeforeDamage: Blessing of Lustrous Carmine's ATK is logged on this hit, 40d9 9240, 4e5e 7982 / 30769 ms); ObtainCostAction costType 0 usp after it. Link, the explosion and the heal: triggers combo_f47, combo_f47_explosion, combo_f48_heal."
         }
       ]
@@ -298,13 +295,11 @@
       "available": { "buffActive": "hunter_state" },
       "hits": [
         { "id": "hit", "scale": ["atk_scale_2_1"] },
-        { "id": "hit_2", "scale": ["atk_scale_2_2"], "sp": "atb", "spBeforeDamage": true, "note": "Frame 33: DoOnce ObtainCostAction atb before the DamageAction." },
+        { "id": "hit_2", "scale": ["atk_scale_2_2"], "note": "Frame 33: DoOnce ObtainCostAction atb before the DamageAction." },
         { "id": "hit_3", "scale": ["atk_scale_2_3"] },
         {
           "id": "hit_4",
           "scale": ["atk_scale_2_4"],
-          "sp": "atb_ex",
-          "spBeforeDamage": true,
           "note": "Frame 70: DoOnce ObtainCostAction atb_ex before the DamageAction, usp after it. Link, the explosion and the heal: triggers pursuit_f70, pursuit_f70_explosion, pursuit_f71_heal."
         }
       ],
@@ -321,8 +316,6 @@
           "id": "hit_3",
           "scale": ["atk_scale_3"],
           "applies": [{ "kind": "infliction", "element": "fire" }],
-          "sp": "atb",
-          "spBeforeDamage": true,
           "note": "Frame 120: Heat Infliction once per target (CreateBuff buff_chr_0033_camille_ult_hit, only if its stacks ≤ 0: one target, always), DoOnce ObtainCostAction atb before the DamageAction."
         }
       ]

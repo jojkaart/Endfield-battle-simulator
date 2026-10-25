@@ -92,27 +92,27 @@
       "skillId": "chr_0012_avywen_attack1",
       "label": "Basic attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "DamageAction damageType 0 (Physical), mask 128. ObtainCostAction atb with atbOnlyMainChar (atb 0 at every level)." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "DamageAction damageType 0 (Physical), mask 128. ObtainCostAction atb with atbOnlyMainChar (atb 0 at every level)." }]
     },
     {
       "skillId": "chr_0012_avywen_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0012_avywen_attack3",
       "label": "Basic attack 3",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0012_avywen_attack4",
       "label": "Basic attack 4",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } },
-        { "id": "hit_2", "scale": ["atk_scale_2"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "note": "ObtainCostAction atb coefficient 0.5 at each of the two DamageActions." }
+        { "id": "hit", "scale": ["atk_scale"] },
+        { "id": "hit_2", "scale": ["atk_scale_2"], "note": "ObtainCostAction atb coefficient 0.5 at each of the two DamageActions." }
       ]
     },
     {
@@ -123,7 +123,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "finalStrike": true,
           "note": "Mask 2097280 (Final Strike); poise unit onlyEnableForMainChar."
         }
@@ -143,7 +142,7 @@
       "skillId": "chr_0012_avywen_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "A rotation's dive: a jump, then this landing (batch-1 S10)." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "A rotation's dive: a jump, then this landing (batch-1 S10)." }]
     },
     {
       "skillId": "chr_0012_avywen_normal_skill",

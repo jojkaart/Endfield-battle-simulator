@@ -142,7 +142,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "finalStrike": true,
           "note": "ChannelingAction [26–29]: mask 2097280 (Final Strike); poise 25 for the controlled operator (onlyEnableForMainChar); DoOnce ObtainCostAction atb (28) when controlled."
         }
@@ -161,7 +160,7 @@
       "skillId": "chr_0009_azrila_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Mask 1152 (basic + dive); ObtainCostAction atb (0 at every level) when controlled." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Mask 1152 (basic + dive); ObtainCostAction atb (0 at every level) when controlled." }]
     },
     {
       "skillId": "chr_0009_azrila_normal_skill",

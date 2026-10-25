@@ -216,7 +216,7 @@
       "label": "Basic attack 1",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }
+        { "id": "hit", "scale": ["atk_scale"] }
       ]
     },
     {
@@ -224,7 +224,7 @@
       "label": "Basic attack 2",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }
+        { "id": "hit", "scale": ["atk_scale"] }
       ]
     },
     {
@@ -232,7 +232,7 @@
       "label": "Basic attack 3",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [9], "sp": { "if": { "controlled": true }, "then": "atb" } },
+        { "id": "hit", "scale": ["atk_scale"], "frames": [9] },
         { "id": "hit_2", "scale": ["atk_scale"], "frames": [27], "sp": 0, "note": "The SP grant is attached once, to the first landing." }
       ]
     },
@@ -244,7 +244,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "finalStrike": true,
           "note": "Mask 2097280 (Final Strike); poise unit onlyEnableForMainChar."
         }
@@ -263,7 +262,7 @@
       "label": "Dive attack",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Mask 1152 (dive). Rotations don't schedule dives yet (batch-1 S10)." }
+        { "id": "hit", "scale": ["atk_scale"], "note": "Mask 1152 (dive). Rotations don't schedule dives yet (batch-1 S10)." }
       ]
     },
     {

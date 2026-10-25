@@ -198,7 +198,7 @@
       "skillId": "chr_0028_wulfa_attack1",
       "label": "Seething Wolfblood: attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0028_wulfa_attack2",
@@ -212,7 +212,7 @@
       "damageType": "basic",
       "hits": [
         { "id": "hit", "scale": ["atk_scale"], "frames": [4] },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [12], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } } }
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [12] }
       ]
     },
     {
@@ -221,7 +221,7 @@
       "damageType": "basic",
       "jumps": [{ "at": 0, "to": 189, "if": { "not": { "controlled": true } } }],
       "hits": [
-        { "id": "hit", "label": "Controlled", "scale": ["atk_scale"], "frames": [6, 8, 13, 15, 23], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.25] } } },
+        { "id": "hit", "label": "Controlled", "scale": ["atk_scale"], "frames": [6, 8, 13, 15, 23] },
         {
           "id": "hit_ai",
           "label": "Not controlled (jump 0 → 189)",
@@ -238,7 +238,7 @@
       "label": "Seething Wolfblood: Final Strike",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "finalStrike": true, "sp": { "if": { "controlled": true }, "then": "atb" }, "spBeforeDamage": true, "note": "Mask 2097280 (Final Strike). \"As the controlled operator, Final Strike also deals {poise} Stagger\": poise and atb only as the controlled operator (onlyEnableForMainChar / atbOnlyMainChar); the ObtainCostAction comes before the DamageAction." }
+        { "id": "hit", "scale": ["atk_scale"], "finalStrike": true, "note": "Mask 2097280 (Final Strike). \"As the controlled operator, Final Strike also deals {poise} Stagger\": poise and atb only as the controlled operator (onlyEnableForMainChar / atbOnlyMainChar); the ObtainCostAction comes before the DamageAction." }
       ]
     },
     {
@@ -254,7 +254,7 @@
       "skillId": "chr_0028_wulfa_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Mask 1152 (dive). Not castable in rotations until dive attacks are (batch-1 S10)." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Mask 1152 (dive). Not castable in rotations until dive attacks are (batch-1 S10)." }]
     },
     {
       "skillId": "chr_0028_wulfa_normal_skill",

@@ -104,25 +104,25 @@
       "skillId": "chr_0024_deepfin_attack1",
       "label": "Basic attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "atb is 0 at every level; ObtainCostAction atbSourceType 1, only while controlled." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "atb is 0 at every level; ObtainCostAction atbSourceType 1, only while controlled." }]
     },
     {
       "skillId": "chr_0024_deepfin_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0024_deepfin_attack3",
       "label": "Basic attack 3",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0024_deepfin_attack4",
       "label": "Basic attack 4",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "note": "The data's ObtainCostAction has coefficient 0.5 here; atb is 0 anyway." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "The data's ObtainCostAction has coefficient 0.5 here; atb is 0 anyway." }]
     },
     {
       "skillId": "chr_0024_deepfin_attack5",
@@ -130,7 +130,7 @@
       "damageType": "basic",
       "hits": [
         { "id": "hit", "scale": ["atk_scale"], "frames": [18], "finalStrike": true, "note": "Mask 2097280 (Final Strike); its stagger unit (poise 17) onlyEnableForMainChar: \"As the controlled operator, Final Strike also deals {poise} Stagger\"." },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [19], "finalStrike": false, "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Mask 128 (not a Final Strike); ObtainCostAction atb 19 (atbSourceType 1) if controlled. 0.62 + 0.62 = the displayed atk_scale_display 1.24." }
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [19], "finalStrike": false, "note": "Mask 128 (not a Final Strike); ObtainCostAction atb 19 (atbSourceType 1) if controlled. 0.62 + 0.62 = the displayed atk_scale_display 1.24." }
       ]
     },
     {
@@ -146,7 +146,7 @@
       "skillId": "chr_0024_deepfin_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "A rotation's dive: a jump, then this landing (batch-1 S10)." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "A rotation's dive: a jump, then this landing (batch-1 S10)." }]
     },
     {
       "skillId": "chr_0024_deepfin_normal_skill",
@@ -185,15 +185,13 @@
       "damageType": "combo",
       "note": "Normal path: frames 0–64, then JumpToAction 64 → 120 (unconditional, read from SkillData). Rare Fin path: trigger rare_fin jumps 10 → 65. The jump at frame 0 (no target within 4.5 m → 4) isn't taken. buff_chr_0024_deepfin_combo_camera (f0) is a camera effect.",
       "hits": [
-        { "id": "hook", "label": "Hook", "scale": ["atk_scale_1"], "sp": "atb", "spBeforeDamage": true, "note": "ObtainCostAction atb (15; atbSourceType 3, natural) before the DamageAction (mask 8192)." },
+        { "id": "hook", "label": "Hook", "scale": ["atk_scale_1"], "note": "ObtainCostAction atb (15; atbSourceType 3, natural) before the DamageAction (mask 8192)." },
         { "id": "slam", "label": "Slam", "scale": ["atk_scale_2"], "note": "Mask 12288; ObtainCostAction costType 0 usp_normal (10) on hit." },
-        { "id": "hook_ex", "label": "Rare Fin: hook", "scale": ["atk_scale_1ex"], "sp": "atb", "spBeforeDamage": true, "note": "Rare Fin path only (skipped by the jump 64 → 120 otherwise)." },
+        { "id": "hook_ex", "label": "Rare Fin: hook", "scale": ["atk_scale_1ex"], "note": "Rare Fin path only (skipped by the jump 64 → 120 otherwise)." },
         {
           "id": "slam_ex",
           "label": "Rare Fin: slam",
           "scale": ["atk_scale_2ex"],
-          "sp": "atb_sp",
-          "spBeforeDamage": true,
           "buffs": [{ "buff": "p3_atk", "if": { "potentialAtLeast": 3 } }],
           "note": "Rare Fin path only. ObtainCostAction atb_sp (10; atbSourceType 0, natural) before the DamageAction; usp_normal; P3's team ATK after it."
         }

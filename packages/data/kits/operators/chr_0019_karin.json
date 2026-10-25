@@ -191,15 +191,15 @@
       "label": "Basic attack 2",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } },
-        { "id": "hit_2", "scale": ["atk_scale_2"], "sp": { "if": { "controlled": true }, "then": "atb" } }
+        { "id": "hit", "scale": ["atk_scale"] },
+        { "id": "hit_2", "scale": ["atk_scale_2"] }
       ]
     },
     {
       "skillId": "chr_0019_karin_attack3",
       "label": "Basic attack 3",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0019_karin_attack4",
@@ -207,7 +207,7 @@
       "damageType": "basic",
       "hits": [
         { "id": "hit", "scale": ["atk_scale"], "frames": [19, 20], "finalStrike": false },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [21], "sp": { "if": { "controlled": true }, "then": "atb" }, "finalStrike": true }
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [21], "finalStrike": true }
       ]
     },
     {
@@ -223,7 +223,7 @@
       "skillId": "chr_0019_karin_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0019_karin_normal_skill",

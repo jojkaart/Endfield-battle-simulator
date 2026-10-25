@@ -89,7 +89,6 @@
           "id": "hit",
           "scale": ["atk_scale"],
           "finalStrike": true,
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "ChannelingAction 16–21, maxCountPerTarget 1: one landing at 16 (mask 2097280, Final Strike). \"As the controlled operator, Final Strike also deals {poise} Stagger\" (onlyEnableForMainChar); its atb 18 likewise only when controlled (CheckMainCharacterCondition before the ObtainCostAction). The third unit (hitEnvData 25) is environment damage."
         }
       ]

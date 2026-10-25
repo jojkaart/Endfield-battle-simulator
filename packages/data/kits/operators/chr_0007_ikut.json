@@ -68,7 +68,7 @@
       "label": "Basic attack 1",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "atb is 0 (SkillPatchTable)." }
+        { "id": "hit", "scale": ["atk_scale"], "note": "atb is 0 (SkillPatchTable)." }
       ]
     },
     {
@@ -76,7 +76,7 @@
       "label": "Basic attack 2",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }
+        { "id": "hit", "scale": ["atk_scale"] }
       ]
     },
     {
@@ -84,7 +84,7 @@
       "label": "Basic attack 3",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "note": "display_atk_scale is 2 × atk_scale: two landings." }
+        { "id": "hit", "scale": ["atk_scale"], "note": "display_atk_scale is 2 × atk_scale: two landings." }
       ]
     },
     {
@@ -95,7 +95,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "ChannelingAction from frame 5 every 0.033 s, at most 3 per target (display_atk_scale 3 × atk_scale)."
         }
       ]
@@ -108,7 +107,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "finalStrike": true,
           "note": "Mask 2097280 (Final Strike); SP atb (17) and stagger poise (16) as the controlled operator only."
         }
@@ -131,7 +129,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "A rotation's dive: a jump, then this landing (batch-1 S10)."
         }
       ]
@@ -158,8 +155,6 @@
           "scale": ["atk_scale2"],
           "branch": "third",
           "if": { "enemyStatus": "electrification" },
-          "sp": "atb",
-          "spBeforeDamage": true,
           "applies": [{ "kind": "consumeStatus", "statuses": ["electrification"], "afterDamage": true }],
           "gains": [{ "stack": "wildland_count", "amount": 1, "if": { "talentAtLeast": [0, 1] } }],
           "buffs": [

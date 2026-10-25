@@ -153,8 +153,7 @@
           ],
           "events": [
             "chr_0013_aglina_attack1_projhit"
-          ],
-          "sp": { "if": { "controlled": true }, "then": "atb" }
+          ]
         }
       ]
     },
@@ -170,13 +169,7 @@
           ],
           "events": [
             "chr_0013_aglina_attack2_projhit"
-          ],
-          "sp": { "if": { "controlled": true }, "then": {
-            "product": [
-              "atb",
-              0.5
-            ]
-          } }
+          ]
         }
       ]
     },
@@ -360,7 +353,6 @@
           "scale": [
             "atk_scale"
           ],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "A rotation's dive: a jump, then this landing (batch-1 S10). Not yet checked against an in-game value (no logged plunging attack)."
         }
       ]

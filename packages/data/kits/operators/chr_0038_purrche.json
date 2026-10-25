@@ -2371,12 +2371,6 @@
           "frames": [
             21
           ],
-          "sp": {
-            "if": {
-              "controlled": true
-            },
-            "then": "atb"
-          },
           "finalStrike": true,
           "note": "Mask 2097280 (Final Strike); \"As the controlled operator, Final Strike also deals {poise} Stagger\" (onlyEnableForMainChar); atb 23 (atbOnlyMainChar)."
         }
@@ -2405,13 +2399,7 @@
           "id": "hit",
           "scale": [
             "atk_scale"
-          ],
-          "sp": {
-            "if": {
-              "controlled": true
-            },
-            "then": "atb"
-          }
+          ]
         }
       ]
     },

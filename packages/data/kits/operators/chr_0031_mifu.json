@@ -177,7 +177,6 @@
         {
           "id": "hit_2",
           "scale": ["atk_scale2"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "finalStrike": true,
           "note": "f30 DamageAction mask 2097280 (Final Strike bit), poise 25 onlyEnableForMainChar; ObtainCostAction atb 28 only while controlled (atbOnlyMainChar). The f7 hit (mask 128) isn't the Final Strike.",
           "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." }
@@ -203,7 +202,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "mask 1152 (basic + dive bit 1024: the hit's dive decoration comes from the data). atb is 0 at every level. Castable once dives are rotation steps (batch-1 S10)."
         }
       ]

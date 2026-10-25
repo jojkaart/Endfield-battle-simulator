@@ -981,12 +981,6 @@
           "scale": [
             "atk_scale"
           ],
-          "sp": {
-            "if": {
-              "controlled": true
-            },
-            "then": "atb"
-          },
           "note": "Final Strike (decorate mask 2097152 + basic): triggers Cluster Strike inside the array when Arcane is controlled. SP atb only if controlled; Stagger `poise` (10) too (its DamageAction's poise unit, onlyEnableForMainChar)."
         }
       ]

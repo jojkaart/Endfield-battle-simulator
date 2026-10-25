@@ -401,8 +401,7 @@
           "id": "hit",
           "scale": [
             "atk_scale"
-          ],
-          "sp": { "if": { "controlled": true }, "then": "atb" }
+          ]
         }
       ],
       "note": "A rotation's dive: a jump, then this landing (batch-1 S10)."

@@ -134,7 +134,6 @@
           "id": "projhit",
           "scale": ["atk_scale"],
           "events": ["chr_0011_seraph_attack1_projhit"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "LaunchProjectile at 10 → chr_0011_seraph_attack1_projhit: DamageAction atk_scale (mask 128, Cryo); ObtainCostAction atb (0 in SkillPatchTable) if controlled. Travel not counted (Ti2)."
         }
       ]
@@ -148,7 +147,6 @@
           "id": "projhit",
           "scale": ["atk_scale"],
           "events": ["chr_0011_seraph_attack2_projhit"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "LaunchProjectile at 7 → chr_0011_seraph_attack2_projhit."
         }
       ]
@@ -162,7 +160,6 @@
           "id": "projhit",
           "scale": ["atk_scale"],
           "events": ["chr_0011_seraph_attack3_projhit"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "LaunchProjectile at 8 → chr_0011_seraph_attack3_projhit."
         }
       ]
@@ -176,7 +173,6 @@
           "id": "projhit",
           "scale": ["atk_scale"],
           "events": ["chr_0011_seraph_attack4_projhit"],
-          "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } },
           "note": "Two launches (7, 12), each one atk_scale landing (0.37 at level 12; display_atk_scale 0.74 is the sum; both logs have two equal hits per attack4); SP atb × 0.5 per landing (the projhit's ObtainCostAction literal 0.5)."
         }
       ]
@@ -189,7 +185,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "finalStrike": true,
           "note": "DamageAction at 19, mask 2097280 (Final Strike: the crystal's treatment trigger); ObtainCostAction atb (15) if controlled; stagger poise (15) onlyEnableForMainChar."
         }
@@ -215,7 +210,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "A rotation's dive: a jump, then this landing (batch-1 S10). DamageAction at 1, mask 1152."
         }
       ]

@@ -82,21 +82,21 @@
       "skillId": "chr_0018_dapan_attack1",
       "label": "Basic attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0018_dapan_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0018_dapan_attack3",
       "label": "Basic attack 3",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
-        { "id": "hit_2", "scale": ["atk_scale_2"], "sp": { "if": { "controlled": true }, "then": { "product": ["atb", 0.5] } }, "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } }
+        { "id": "hit", "scale": ["atk_scale"], "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
+        { "id": "hit_2", "scale": ["atk_scale_2"], "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } }
       ],
       "note": "The first hit is a ChannelingAction of one tick (10–13). atb is 0 for attacks 1–3 (as compiled)."
     },
@@ -108,7 +108,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "finalStrike": true,
           "note": "Mask 2097280 (Final Strike); atb 21; \"As the controlled operator, Final Strike also deals {poise} Stagger\" (poise 20, onlyEnableForMainChar)."
         }
@@ -127,7 +126,7 @@
       "skillId": "chr_0018_dapan_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": { "if": { "controlled": true }, "then": "atb" } }],
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }],
       "note": "A rotation's dive: a jump, then this landing (batch-1 S10)."
     },
     {
