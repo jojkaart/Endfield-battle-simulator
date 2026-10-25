@@ -3,7 +3,7 @@
 // buff files assign them at runtime), so they live here with their sources,
 // each verified against logged hits (fixtures/zmdlogs-*.json).
 
-import type { Element } from "./attributes.ts";
+import { Attr, type AttrType, type Element } from "./attributes.ts";
 import type { Modifier } from "./effects.ts";
 
 export type ArtsElement = Exclude<Element, "physical" | "ether">;
@@ -45,14 +45,14 @@ const CRUSH = [3, 4.5, 6, 7.5] as const;
 const BREACH = [1, 1.5, 2, 2.5] as const;
 const SHATTER = [2.4, 3.6, 4.8, 6] as const;
 
-/** Physical statuses' hits scale with operator level by 1 + (Lv − 1) / 392; Shatter, like arts reactions, by / 196. */
-export function levelCoefficientOf(kind: ReactionKind, level: number): number {
-  return kind === "lift" || kind === "knockdown" || kind === "crush" || kind === "breach" ? 1 + (level - 1) / 392 : artsLevelCoefficient(level);
-}
-
-/** Operator level scaling of arts reactions and bursts: 1 + (Lv − 1) / 196 (verified: Lv90 → 1.4541). */
-export function artsLevelCoefficient(level: number): number {
-  return 1 + (level - 1) / 196;
+/**
+ * The panel line a reaction's operator-level scaling is: physical statuses'
+ * hits PhysicalInflictionDamageScalar (25), arts reactions, bursts and
+ * Shatter IgniteDamageScalar (49). CharacterTable gives both per level (all
+ * 3,605 rows: 1 + (Lv − 1) / 392 and / 196; Lv90 → 1.2270, 1.4541).
+ */
+export function levelCoefficientAttr(kind: ReactionKind): AttrType {
+  return kind === "lift" || kind === "knockdown" || kind === "crush" || kind === "breach" ? Attr.PhysicalInflictionDamageScalar : Attr.IgniteDamageScalar;
 }
 
 /** Arts Intensity on reaction and burst damage: × (1 + AI / 100). */

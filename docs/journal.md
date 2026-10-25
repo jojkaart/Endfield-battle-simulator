@@ -4,6 +4,27 @@ A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 
+## 2026-10-25: formulas from the data (review round two, 6)
+
+- **Burst and reaction DMG (35–38, 56–59):** no equippable source writes
+  them (the gear sets behind buff_equipsuit_fireup_01 and kin aren't in
+  EquipSuitTable; 56–59 are only read by the reaction buffs'
+  StoreAttributeValue). The panel now refuses a nonzero one
+  (`UNMODELLED_DAMAGE_ATTRS`) instead of dropping it; a test walks the
+  data for any (with ATK and Crit Rate as its control).
+- **Level coefficient:** read from the panel's attributes 49 (arts) and 25
+  (physical) instead of a formula; all 3,605 CharacterTable rows equal
+  1 + (Lv − 1) / 196 and / 392, so no number moved.
+- **Resistance:** the table has it three ways (fields, attributes 94–99,
+  scalars 80–85 = 1 − points / 100). Points now come from 94–99 (ether
+  from the data, was 0 by hand); the loader refuses fields or scalars that
+  disagree. One exception: eny_0125_fdcentur's scalars are 1 at 20 points;
+  c3c7's 55 plain Si matches at × 0.8 say the points count.
+- **Limits:** AttributeMetaTable's min / max loaded (`attributeLimits`,
+  `clampAttr`): panel totals and the timeline's Haste (was 0.1–1.3 by
+  hand), combo-cooldown rate and Stagger efficiency with buffs. Crit Rate
+  has no limit in the table; its 0–1 stays a probability rule.
+
 ## 2026-10-25: Last Rite's battle skill acts once per cast
 
 The owner: "It just makes more sense that the battle skill can only be

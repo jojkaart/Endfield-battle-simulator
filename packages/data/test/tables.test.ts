@@ -15,6 +15,7 @@ import {
   loadSkills,
   loadWeaponCurves,
   loadWeapons,
+  normalizeEnemies,
   readSkillFile,
   readTable,
   sourceCommit,
@@ -134,6 +135,22 @@ describe("assembled game data", () => {
     expect(e?.levels[89]).toEqual({ 0: 90, 1: 2292909, 2: 4130, 3: 100 });
     expect(e?.resistance.fire).toBe(0);
     expect(e?.staticAttrs[20]).toBe(280);
+  });
+
+  it("resistance points from attributes 94–99, checked against the fields and the scalars 80–85", () => {
+    expect(data.enemies["eny_0120_klbear"]?.resistance).toEqual({ physical: 20, natural: 0, cryst: 0, pulse: 35, fire: 0, ether: 0 });
+    // Its scalars are 1 where the points say 20: the points count (c3c735dbb022's matches; enemies.ts RESIST_SCALAR_STALE).
+    expect(data.enemies["eny_0125_fdcentur"]?.resistance.cryst).toBe(20);
+    const raw = readTable("rmxlinux", "EnemyAttributeTemplateTable") as Record<string, { levelIndependentAttributes: { attrs: { attrType: number; attrValue: number }[] }; fireResistance: number }>;
+    const one = (edit: (e: (typeof raw)[string]) => void, id = "eny_0120_klbear") => {
+      const e = structuredClone(raw[id]);
+      if (!e) throw new Error(`no ${id}`);
+      edit(e);
+      return () => normalizeEnemies({ [id]: e }, "rmxlinux");
+    };
+    expect(one(() => {})).not.toThrow();
+    expect(one((e) => (e.fireResistance = 5))).toThrow(/fireResistance 5 but attribute 98 0/);
+    expect(one((e) => e.levelIndependentAttributes.attrs.filter((a) => a.attrType === 80).forEach((a) => (a.attrValue = 1)))).toThrow(/attribute 80 1 isn't 1 − 20 \/ 100/);
   });
 
   it("stage variants of an enemy use their template's stats (EnemyTable), with its modifiers; stages give enemy levels (DungeonTable)", () => {

@@ -150,6 +150,26 @@ export const READ_ATTRS: ReadonlySet<AttrType> = new Set([
   Attr.PoiseDamageOutputScalar,
 ]);
 
+/**
+ * Attributes that change damage dealt but whose zone the engine doesn't
+ * model: Arts Burst DMG by element (35–38) and Arts reaction DMG by element
+ * (56–59, which the reaction buffs read with StoreAttributeValue). No
+ * equippable source writes them in the current data (the gear sets with
+ * buff_equipsuit_fireup_01 and its kin aren't in EquipSuitTable); a stat
+ * panel with one is refused instead of losing it (panelModifiers), as a kit
+ * buff with one is at load (buffAttrHasEffect).
+ */
+export const UNMODELLED_DAMAGE_ATTRS: ReadonlySet<AttrType> = new Set([
+  Attr.FireBurstDamageIncrease,
+  Attr.PulseBurstDamageIncrease,
+  Attr.CrystBurstDamageIncrease,
+  Attr.NaturalBurstDamageIncrease,
+  Attr.FireAbnormalDamageIncrease,
+  Attr.PulseAbnormalDamageIncrease,
+  Attr.CrystAbnormalDamageIncrease,
+  Attr.NaturalAbnormalDamageIncrease,
+]);
+
 /** Whether a kit buff's attribute does something: it feeds a damage zone, or the engine reads it. */
 export function buffAttrHasEffect(attr: AttrType): boolean {
   return ATTR_ZONES.has(attr) || READ_ATTRS.has(attr);

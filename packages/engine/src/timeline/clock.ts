@@ -6,6 +6,7 @@ import { type ActiveBuff, buffAttr } from "../buffs.ts";
 import type { ChainStep, TimelineContext, TimelineState } from "./state.ts";
 import { attrTotal, panelAt } from "./context.ts";
 import { rebaseCooldowns } from "./resources.ts";
+import { clampAttr } from "../stats.ts";
 import { onOperator, shiftClock } from "./schedule.ts";
 
 /**
@@ -129,9 +130,9 @@ export function shiftOperator(st: TimelineState, operator: string, start: number
   };
 }
 
-/** An operator's action speed: attribute 92 (KeywordSpeedUpScalar, default 1) plus haste buffs, within 0.1–1.3. */
+/** An operator's action speed: attribute 92 (KeywordSpeedUpScalar, default 1) plus haste buffs, within its limits (0.1–1.3, AttributeMetaTable). */
 export function actionSpeed(ctx: TimelineContext, st: TimelineState, operator: string, frame: number): number {
   const panel = panelAt(ctx, operator, frame);
   const base = attrTotal(ctx, panel, Attr.KeywordSpeedUpScalar);
-  return Math.max(0.1, Math.min(1.3, base + buffAttr(st.buffs, operator, frame, Attr.KeywordSpeedUpScalar, panel.attrs[Attr.KeywordSpeedUpScalar])));
+  return clampAttr(ctx.data, Attr.KeywordSpeedUpScalar, base + buffAttr(st.buffs, operator, frame, Attr.KeywordSpeedUpScalar, panel.attrs[Attr.KeywordSpeedUpScalar]));
 }

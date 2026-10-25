@@ -1,6 +1,6 @@
 // Damage expectations from the fixtures.
 import { describe, expect, it } from "vitest";
-import { Attr, computeHit, kitBuffModifiers, computeReaction, NO_STATUS, resolveValue, computeStats, hitAvailable, roundDamage, skillValue, type KitHit } from "@efsim/engine";
+import { Attr, computeHit, kitBuffModifiers, computeReaction, NO_STATUS, resolveValue, computeStats, hitAvailable, roundDamage, skillValue, type KitHit, UNMODELLED_DAMAGE_ATTRS, panelModifiers } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { loadFixtures } from "./fixtures.ts";
 
@@ -110,5 +110,35 @@ describe("buff values (ValueExpr)", () => {
     expect(resolveValue(data, b, panel, sid, { product: ["atk_scale", 3] })).toBeCloseTo(3 * k, 12);
     expect(resolveValue(data, b, panel, sid, { product: ["atk_scale", { attr: Attr.Will }] })).toBeCloseTo(k * will, 9);
     expect(resolveValue(data, b, panel, sid, { min: [{ product: ["atk_scale", { attr: Attr.Will }] }, "atk_scale"] })).toBeCloseTo(Math.min(k * will, k), 12);
+  });
+});
+
+describe("damage attributes without a modelled zone (round-two review: Burst and reaction DMG)", () => {
+  it("no weapon, gear piece, gear set, potential or food in the data writes one", () => {
+    const seen = new Map<number, string>();
+    const walk = (v: unknown, path: string): void => {
+      if (Array.isArray(v)) v.forEach((x, i) => walk(x, `${path}[${i}]`));
+      else if (v && typeof v === "object") {
+        const o = v as Record<string, unknown>;
+        if (typeof o["attr"] === "number" && !seen.has(o["attr"])) seen.set(o["attr"], path);
+        for (const [k, x] of Object.entries(o)) walk(x, `${path}.${k}`);
+      }
+    };
+    for (const key of ["operators", "weapons", "gear", "gearSets", "foods"] as const) walk(data[key], key);
+    // The walk finds attribute lines (a control: ATK and Crit Rate are written by weapons and gear)...
+    expect(seen.has(Attr.Atk) && seen.has(Attr.CriticalRate)).toBe(true);
+    // ...and none of the unmodelled ones.
+    expect([...seen].filter(([a]) => UNMODELLED_DAMAGE_ATTRS.has(a))).toEqual([]);
+  });
+
+  it("a stat panel with one is refused, not dropped", () => {
+    const [first] = loadFixtures();
+    if (!first) throw new Error("no fixtures");
+    const panel = computeStats(data, first.fixture.build);
+    const atk = panel.attrs[Attr.Atk];
+    if (!atk) throw new Error("no ATK line");
+    const withBurst = { ...panel, attrs: { ...panel.attrs, [Attr.CrystAbnormalDamageIncrease]: { ...atk, attr: Attr.CrystAbnormalDamageIncrease, total: 0.2 } } };
+    expect(() => panelModifiers(data, withBurst)).toThrow(/CrystAbnormalDamageIncrease 0.2: a damage zone the engine doesn't model/);
+    expect(() => panelModifiers(data, panel)).not.toThrow();
   });
 });

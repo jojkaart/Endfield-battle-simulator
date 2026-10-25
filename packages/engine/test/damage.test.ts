@@ -18,6 +18,7 @@ function gameData(over: { def?: number; fireRes?: number; atkPercent?: number } 
     provenance: { sources: [] },
     constants: { atkRateOfMain: 0.005, atkRateOfSub: 0.002, efficiencyOfDEF: 0.01, maxUltimateSp: 100, staggerDamageTaken: 0.3 },
     attributeDefaults: { [Attr.CriticalDamageIncrease]: 0.5 },
+    attributeLimits: {},
     operators: {
       op: {
         id: "op", name: "Op", rarity: 6, element: "fire", profession: 1, weaponType: 1, mainAttr: Attr.Wisd, subAttr: Attr.Str,

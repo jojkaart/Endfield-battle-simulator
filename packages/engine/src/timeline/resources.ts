@@ -8,7 +8,7 @@ import type { KitSkill, SpKind } from "../model.ts";
 import type { BattleEvent } from "../events.ts";
 import { type EvalContext, test, type ValueExpr, valueKeys } from "../expr.ts";
 import { activeAt, type ActiveBuff, type AttrFilters, buffAttr, reaches } from "../buffs.ts";
-import { skillLevel } from "../stats.ts";
+import { clampAttr, skillLevel } from "../stats.ts";
 import { FPS } from "../units.ts";
 import type { TimelineContext, TimelineState } from "./state.ts";
 import { SP } from "./rules.ts";
@@ -61,7 +61,7 @@ function comboRate(ctx: TimelineContext, buffs: readonly ActiveBuff[], operator:
   const panel = panelAt(ctx, operator, frame);
   const line = panel.attrs[Attr.ComboSkillCooldownRecoveryScalar];
   const base = attrTotal(ctx, panel, Attr.ComboSkillCooldownRecoveryScalar);
-  return base + buffAttr(buffs, operator, frame, Attr.ComboSkillCooldownRecoveryScalar, line ?? { base, add: 0, multiply: 1 });
+  return clampAttr(ctx.data, Attr.ComboSkillCooldownRecoveryScalar, base + buffAttr(buffs, operator, frame, Attr.ComboSkillCooldownRecoveryScalar, line ?? { base, add: 0, multiply: 1 }));
 }
 
 /** The combo cooldown rate from a frame on, in constant pieces (by the rate buffs' starts and ends): each piece's first frame and rate. */
@@ -217,8 +217,8 @@ export function dealPoise(ctx: TimelineContext, st: TimelineState, operator: str
     const { elements, when, ...rest } = f;
     return (!elements || elements.includes(landing.hit.element)) && applies({ zone: "atk", value: 0, source: "", ...rest }, landing.hit) && (!when || (test(when, landing.ec) ?? false));
   };
-  const scalar = attrTotal(ctx, panel, Attr.PoiseDamageOutputScalar) +
-    buffAttr(st.buffs, operator, frame, Attr.PoiseDamageOutputScalar, undefined, { accepts, ...(landing?.cast !== undefined ? { cast: landing.cast } : {}) });
+  const scalar = clampAttr(ctx.data, Attr.PoiseDamageOutputScalar, attrTotal(ctx, panel, Attr.PoiseDamageOutputScalar) +
+    buffAttr(st.buffs, operator, frame, Attr.PoiseDamageOutputScalar, undefined, { accepts, ...(landing?.cast !== undefined ? { cast: landing.cast } : {}) }));
   const dealt = value * scalar * enemyAttr(ctx, Attr.PoiseDamageTakenScalar);
   // A stagger that has ended refilled the bar.
   const before = st.stagger.until !== null ? maxPoise(ctx) : st.stagger.poise;

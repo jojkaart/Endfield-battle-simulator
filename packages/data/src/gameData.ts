@@ -22,7 +22,7 @@ import { Names } from "./names.ts";
 import { diveOf, isSkillFileListed, passiveBuffModifiers, reachedSp, readSkillFile } from "./skillData.ts";
 import { burstDelays, castHelpers, perfectDodgeData, staggerDamageTaken, switchedSkills } from "./buffData.ts";
 import { PRIMARY, readTable, sourceCommit, SOURCES } from "./sources.ts";
-import { loadAttributeDefaults } from "./tables/attributeMeta.ts";
+import { loadAttributeDefaults, loadAttributeLimits } from "./tables/attributeMeta.ts";
 import { loadBattleConst } from "./tables/battleConst.ts";
 import type { RawAttrModifier } from "./tables/common.ts";
 import { loadEnemies, loadEnemyAliases, loadStageEnemies } from "./tables/enemies.ts";
@@ -235,7 +235,7 @@ function build(): GameData {
     const displayType = display === undefined ? undefined : obj(display, { source: PRIMARY, path: `EnemyTemplateDisplayInfoTable.${e.id}` })["displayType"];
     if (displayType !== undefined && !Number.isInteger(displayType)) throw new DataError(PRIMARY, `EnemyTemplateDisplayInfoTable.${e.id}.displayType`, "not a whole number");
     enemies[e.id] = {
-      id: e.id, name, levels: e.levels, staticAttrs: e.staticAttrs, resistance: { ...e.resistance, ether: 0 }, finisherSp: e.finisherSp, staggerNodes: e.staggerNodes, superArmor: e.superArmor,
+      id: e.id, name, levels: e.levels, staticAttrs: e.staticAttrs, resistance: e.resistance, finisherSp: e.finisherSp, staggerNodes: e.staggerNodes, superArmor: e.superArmor,
       ...(displayType !== undefined ? { rank: displayType as number } : {}),
     };
   }
@@ -268,6 +268,7 @@ function build(): GameData {
       staggerDamageTaken: staggerDamageTaken(),
     },
     attributeDefaults: loadAttributeDefaults(PRIMARY),
+    attributeLimits: loadAttributeLimits(PRIMARY),
     operators,
     skills,
     weapons,

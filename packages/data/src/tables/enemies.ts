@@ -10,7 +10,7 @@ export interface RawEnemy {
   readonly id: string;
   readonly levels: readonly Record<number, number>[];
   readonly staticAttrs: Record<number, number>;
-  readonly resistance: { physical: number; fire: number; pulse: number; cryst: number; natural: number };
+  readonly resistance: { physical: number; fire: number; pulse: number; cryst: number; natural: number; ether: number };
   /** SP the team gets for a finisher on it (breakingAttackedAtbObtain). */
   readonly finisherSp: number;
   /** Stagger nodes: fractions of its stagger HP that trigger a small stagger (poiseKnotPctList). */
@@ -31,6 +31,46 @@ function attrs(raw: unknown, ctx: Ctx): Record<number, number> {
   return out;
 }
 
+/**
+ * Resistance is in the table three ways: the `<element>Resistance` fields,
+ * attributes 94–99 (the same points, ether included) and attributes 80–85
+ * (DmgResistScalar, 1 − points / 100). The points are read from the
+ * attributes; the fields must agree, and so must the scalars, except where
+ * a log shows the points are what counts (RESIST_SCALAR_STALE).
+ */
+const RESIST = [
+  ["physical", 94, 80],
+  ["natural", 95, 81],
+  ["cryst", 96, 82],
+  ["pulse", 97, 83],
+  ["fire", 98, 84],
+  ["ether", 99, 85],
+] as const;
+
+/**
+ * Templates whose scalars (80–85) are 1 while their points say otherwise. eny_0125_fdcentur: 20 points, scalar 1.0;
+ * c3c735dbb022's hits on it match at × 0.8 (Si's 55 plain matches), so the points count.
+ */
+const RESIST_SCALAR_STALE: ReadonlySet<string> = new Set(["eny_0125_fdcentur"]);
+
+function resistance(id: string, r: Record<string, unknown>, statics: Record<number, number>, source: SourceName, c: Ctx): RawEnemy["resistance"] {
+  const out = {} as Record<(typeof RESIST)[number][0], number>;
+  for (const [element, pointsAttr, scalarAttr] of RESIST) {
+    const points = statics[pointsAttr];
+    if (points === undefined) throw new DataError(source, c.path, `no resistance attribute ${pointsAttr} (${element})`);
+    if (element !== "ether") {
+      const field = get(r, `${element}Resistance`, c, num);
+      if (field !== points) throw new DataError(source, c.path, `${element}Resistance ${field} but attribute ${pointsAttr} ${points}`);
+    }
+    const scalar = statics[scalarAttr];
+    if (scalar !== undefined && Math.abs(scalar - (1 - points / 100)) > 1e-9 && !(RESIST_SCALAR_STALE.has(id) && scalar === 1)) {
+      throw new DataError(source, c.path, `${element}: attribute ${scalarAttr} ${scalar} isn't 1 − ${points} / 100 (attribute ${pointsAttr}): which one counts?`);
+    }
+    out[element] = points;
+  }
+  return out;
+}
+
 export function normalizeEnemies(raw: unknown, source: SourceName): Record<string, RawEnemy> {
   const out: Record<string, RawEnemy> = {};
   for (const [id, r, c] of records(raw, { source, path: "EnemyAttributeTemplateTable" })) {
@@ -38,17 +78,12 @@ export function normalizeEnemies(raw: unknown, source: SourceName): Record<strin
     levels.forEach((l, i) => {
       if (l[0] !== i + 1) throw new DataError(source, c.path, `level row ${i} is level ${l[0]}`);
     });
+    const staticAttrs = attrs(r["levelIndependentAttributes"], at(c, "levelIndependentAttributes"));
     out[id] = {
       id,
       levels,
-      staticAttrs: attrs(r["levelIndependentAttributes"], at(c, "levelIndependentAttributes")),
-      resistance: {
-        physical: get(r, "physicalResistance", c, num),
-        fire: get(r, "fireResistance", c, num),
-        pulse: get(r, "pulseResistance", c, num),
-        cryst: get(r, "crystResistance", c, num),
-        natural: get(r, "naturalResistance", c, num),
-      },
+      staticAttrs,
+      resistance: resistance(id, r, staticAttrs, source, c),
       finisherSp: get(r, "breakingAttackedAtbObtain", c, num),
       superArmor: { initial: get(r, "initialSuperArmor", c, num), staggered: get(r, "zeroPoiseSuperArmor", c, num) },
       staggerNodes: get(r, "poiseKnotPctList", c, arr).map((x, i) => {

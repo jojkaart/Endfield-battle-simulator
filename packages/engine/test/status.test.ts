@@ -13,7 +13,8 @@ import {
   statusModifiers,
   tickStatus,
   reactionBase,
-  levelCoefficientOf,
+  levelCoefficientAttr,
+  Attr,
   type EnemyStatus,
   type HitApplication,
   type StatusEvent,
@@ -202,8 +203,8 @@ describe("physical state (Vulnerable, Lift, Knock Down, Crush, Breach, Shatter)"
 
   it("their hits' multipliers and log keys", () => {
     expect([reactionBase("lift", 1), reactionBase("crush", 4), reactionBase("breach", 1), reactionBase("shatter", 2)]).toEqual([1.2, 7.5, 1, 3.6]);
-    expect(levelCoefficientOf("lift", 90)).toBeCloseTo(1 + 89 / 392, 12);
-    expect(levelCoefficientOf("shatter", 90)).toBeCloseTo(1 + 89 / 196, 12);
+    expect(levelCoefficientAttr("lift")).toBe(Attr.PhysicalInflictionDamageScalar);
+    expect(levelCoefficientAttr("shatter")).toBe(Attr.IgniteDamageScalar);
     expect(statusEventKey({ kind: "physical", frame: 0, operator: "a", status: "lift", level: 1, forced: true })).toBe("buff_physical_airborne");
     expect(statusEventKey({ kind: "shatter", frame: 0, operator: "a", level: 1 })).toBe("buff_common_cryst_triggered_physical_break");
   });

@@ -296,6 +296,8 @@ export interface GameData {
   readonly constants: BattleConstants;
   /** Default value per attribute type (AttributeMetaTable), used where a level row has none (e.g. crit DMG 0.5). */
   readonly attributeDefaults: Readonly<Record<number, number>>;
+  /** Limits per attribute type where AttributeMetaTable sets them (stats.ts clampAttr): a total outside them is held at the limit. */
+  readonly attributeLimits: Readonly<Record<number, { readonly min?: number; readonly max?: number }>>;
   readonly operators: Readonly<Record<string, OperatorData>>;
   readonly skills: Readonly<Record<string, SkillData>>;
   readonly weapons: Readonly<Record<string, WeaponData>>;

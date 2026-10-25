@@ -50,6 +50,11 @@ export function int(value: unknown, ctx: Ctx): number {
   return n;
 }
 
+export function bool(value: unknown, ctx: Ctx): boolean {
+  if (typeof value === "boolean") return value;
+  return fail(ctx, `expected a boolean, got ${JSON.stringify(value)}`);
+}
+
 export function str(value: unknown, ctx: Ctx): string {
   if (typeof value !== "string") fail(ctx, `expected a string, got ${JSON.stringify(value)}`);
   return value;

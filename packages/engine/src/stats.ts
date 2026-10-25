@@ -50,6 +50,13 @@ function checkModelled(line: Partial<Pick<StatLine, "attr" | "unmodelled">>, ope
   );
 }
 
+/** An attribute's value held within its AttributeMetaTable limits (GameData.attributeLimits): a panel total, or one with buffs' points added. */
+export function clampAttr(data: Pick<GameData, "attributeLimits">, attr: AttrType, value: number): number {
+  const l = data.attributeLimits[attr];
+  if (!l) return value;
+  return Math.min(l.max ?? Infinity, Math.max(l.min ?? -Infinity, value));
+}
+
 /** A panel line's total for a reader that needs it exact (kit values): refused when part of it is in an unknown formula slot. */
 export function lineValue(line: Pick<StatLine, "attr" | "total" | "unmodelled">, operator: string): number {
   checkModelled(line, operator);
@@ -404,7 +411,7 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
       percent,
       flat,
       multiply,
-      total: ((a.base + add) * (1 + percent) + flat) * multiply,
+      total: clampAttr(data, attr, ((a.base + add) * (1 + percent) + flat) * multiply),
       contributions: a.contributions,
       ...(a.unmodelled ? { unmodelled: a.unmodelled } : {}),
     };

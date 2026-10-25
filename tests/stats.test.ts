@@ -1,7 +1,7 @@
 // Stat panel expectations from the fixtures.
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
-import { computeStats, Attr, skillLevel, skillParam, skillValue, type Build, type SkillData, type StatPanel } from "@efsim/engine";
+import { clampAttr, computeStats, Attr, skillLevel, skillParam, skillValue, type Build, type SkillData, type StatPanel } from "@efsim/engine";
 import { loadGameData, sourceCommit, SOURCES } from "@efsim/data";
 import { loadFixtures } from "./fixtures.ts";
 
@@ -81,5 +81,27 @@ describe("value sources beyond the operator's skills", () => {
     const wSkill = data.weapons[fixture.build.weapon?.id ?? ""]?.skills[2] as string;
     expect(Object.keys(lp.sources)).toContain(wSkill);
     expect(() => skillValue(data, lp, fixture.build, "nope", "x")).toThrow(/isn't one of/);
+  });
+});
+
+describe("reaction level coefficients from the panel (round-two review)", () => {
+  it("CharacterTable's attributes 25 and 49 are 1 + (Lv − 1) / 392 and / 196 at the operator's level", () => {
+    const [first] = loadFixtures();
+    if (!first) throw new Error("no fixtures");
+    for (const level of [80, 85, 90]) {
+      const panel = computeStats(data, { ...first.fixture.build, level });
+      expect(panel.attrs[Attr.PhysicalInflictionDamageScalar]?.total).toBeCloseTo(1 + (level - 1) / 392, 12);
+      expect(panel.attrs[Attr.IgniteDamageScalar]?.total).toBeCloseTo(1 + (level - 1) / 196, 12);
+    }
+  });
+});
+
+describe("attribute limits from AttributeMetaTable (round-two review)", () => {
+  it("loads Haste's 0.1–1.3 and the floors, and holds a value within them", () => {
+    expect(data.attributeLimits[Attr.KeywordSpeedUpScalar]).toEqual({ min: 0.1, max: 1.3 });
+    expect(data.attributeLimits[Attr.PoiseDamageOutputScalar]).toEqual({ min: 0 });
+    expect(data.attributeLimits[Attr.CriticalRate]).toBeUndefined();
+    expect([0, 1, 2].map((v) => clampAttr(data, Attr.KeywordSpeedUpScalar, v))).toEqual([0.1, 1, 1.3]);
+    expect(clampAttr(data, Attr.CriticalRate, 1.5)).toBe(1.5);
   });
 });

@@ -4,10 +4,10 @@
 
 import { Attr, attrName, type AttrType, type Element, type SkillType } from "./attributes.ts";
 import type { Build } from "./build.ts";
-import { applies, attrModifier, zoneProduct, zoneSum, type HitContext, type HitDecoration, type HitKind, type Modifier, type Zone } from "./effects.ts";
+import { applies, attrModifier, UNMODELLED_DAMAGE_ATTRS, zoneProduct, zoneSum, type HitContext, type HitDecoration, type HitKind, type Modifier, type Zone } from "./effects.ts";
 import { EngineError, HitRuledOut } from "./errors.ts";
 import type { GameData, KitHit, KitSkill } from "./model.ts";
-import { artsIntensityDamage, levelCoefficientOf, reactionBase, type ReactionKind } from "./reactions.ts";
+import { artsIntensityDamage, levelCoefficientAttr, reactionBase, type ReactionKind } from "./reactions.ts";
 import { evaluate, test, type EvalContext, type Predicate } from "./expr.ts";
 import { ATK_ATTRIBUTES, atkAttributeBonus, percentOfLine, skillLevel, type StatPanel } from "./stats.ts";
 
@@ -170,6 +170,7 @@ export function panelModifiers(data: GameData, panel: StatPanel): Modifier[] {
   for (const attr of attrs) {
     const total = panel.attrs[attr]?.total ?? data.attributeDefaults[attr] ?? 0;
     if (total === 0) continue;
+    if (UNMODELLED_DAMAGE_ATTRS.has(attr)) throw new EngineError(`${panel.operator}'s stat panel has ${attrName(attr)} ${total}: a damage zone the engine doesn't model (effects.ts UNMODELLED_DAMAGE_ATTRS)`);
     const m = attrModifier(attr, total, `stat panel: ${attrName(attr)}`);
     if (m) out.push(m);
   }
@@ -316,6 +317,14 @@ export function hitAvailable(data: GameData, build: Build, panel: StatPanel, ski
   return !hit.if || test(hit.if, evalContext(data, build, panel, skillId, situation)) !== false;
 }
 
+/** The operator-level scaling of a reaction's damage: its panel line (reactions.ts levelCoefficientAttr), never a default. */
+function levelCoefficient(panel: StatPanel, kind: ReactionKind): number {
+  const attr = levelCoefficientAttr(kind);
+  const v = panel.attrs[attr]?.total;
+  if (v === undefined) throw new EngineError(`${panel.operator}'s stat panel has no ${attrName(attr)} (the level coefficient of ${kind} damage)`);
+  return v;
+}
+
 /** A reaction's own multiplier parts: base by kind and level, operator level, Arts Intensity. */
 function reactionScaleParts(
   data: GameData,
@@ -328,7 +337,7 @@ function reactionScaleParts(
   const ai = zoneSum(activeModifiers(data, build, panel, options), "artsIntensity", ctx);
   return [
     { key: `${reaction.kind} base`, value: reactionBase(reaction.kind, reaction.stacks) },
-    { key: "level coefficient", value: levelCoefficientOf(reaction.kind, build.level) },
+    { key: "level coefficient", value: levelCoefficient(panel, reaction.kind) },
     { key: "arts intensity", value: artsIntensityDamage(ai) },
   ];
 }
