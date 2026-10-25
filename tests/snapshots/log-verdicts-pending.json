@@ -69,6 +69,13 @@
   "chr_0038_purrche": {"plain":0,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "totals": {"damage":-34.8,"operator chr_0034_typhoea":-35.3,"operator chr_0032_lizhiyan":-14.8,"operator chr_0035_liino":-40.7,"kind basic":-36.2,"kind battle":-26.1,"kind combo":-10,"kind status":-20.1,"hits":-22.4,"status hits":0,"staggered hits":0,"last hit":-2.1,"crit share (points)":-0.6}
  },
+ "pending/zmdlogs-9555de54bb3d.json": {
+  "chr_0036_jsspsi": {"plain":0,"assumed":0,"fallback":0,"mismatch":82,"unvalued":0,"unquantified":3,"uncovered":0},
+  "chr_0026_lastrite": {"plain":3,"assumed":4,"fallback":61,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0032_lizhiyan": {"plain":79,"assumed":25,"fallback":64,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0011_seraph": {"plain":28,"assumed":8,"fallback":22,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "totals": {"damage":-26.9,"operator chr_0026_lastrite":-37,"operator chr_0032_lizhiyan":-12,"operator chr_0011_seraph":3.5,"operator chr_0036_jsspsi":-19.2,"kind basic":-13.1,"kind battle":-44.2,"kind combo":-28.2,"kind status":-66.4,"kind ultimate":-12.7,"hits":-5.8,"status hits":-50,"staggered hits":null,"last hit":0,"crit share (points)":-1.2}
+ },
  "pending/zmdlogs-99fb3c35fda2.json": {
   "chr_0028_wulfa": {"plain":0,"assumed":0,"fallback":0,"mismatch":181,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0031_mifu": {"plain":0,"assumed":0,"fallback":0,"mismatch":72,"unvalued":0,"unquantified":1,"uncovered":0},
@@ -89,6 +96,20 @@
   "chr_0011_seraph": {"plain":8,"assumed":2,"fallback":65,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0022_bounda": {"plain":3,"assumed":0,"fallback":53,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "totals": {"damage":-46.4,"operator chr_0011_seraph":-10.3,"operator chr_0036_jsspsi":-38,"operator chr_0017_yvonne":-63.6,"operator chr_0022_bounda":-21.6,"kind basic":-55.6,"kind battle":-46.6,"kind combo":-37.2,"kind status":-23.9,"kind ultimate":-27.1,"hits":-8.7,"status hits":-12.5,"staggered hits":3.1,"last hit":-0.1,"crit share (points)":0.2}
+ },
+ "pending/zmdlogs-b6aa15281db4.json": {
+  "chr_0036_jsspsi": {"plain":20,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":84,"uncovered":0},
+  "chr_0026_lastrite": {"plain":4,"assumed":0,"fallback":10,"mismatch":0,"unvalued":0,"unquantified":21,"uncovered":0},
+  "chr_0032_lizhiyan": {"plain":36,"assumed":1,"fallback":0,"mismatch":65,"unvalued":0,"unquantified":18,"uncovered":1},
+  "chr_0011_seraph": {"plain":2,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":27,"uncovered":0},
+  "totals": {"damage":-30.5,"operator chr_0036_jsspsi":-39.2,"operator chr_0032_lizhiyan":-21.8,"operator chr_0026_lastrite":-19,"operator chr_0011_seraph":5.1,"kind basic":-12.7,"kind battle":-79.1,"kind combo":-20.4,"kind status":-16.9,"kind ultimate":-23.7,"kind uncovered":-100,"hits":-2.8,"status hits":-16.7,"staggered hits":977.8,"last hit":0.1,"crit share (points)":0.3}
+ },
+ "pending/zmdlogs-c3c735dbb022.json": {
+  "chr_0036_jsspsi": {"plain":55,"assumed":24,"fallback":100,"mismatch":2,"unvalued":0,"unquantified":4,"uncovered":0},
+  "chr_0026_lastrite": {"plain":7,"assumed":2,"fallback":39,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0011_seraph": {"plain":0,"assumed":0,"fallback":0,"mismatch":57,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0025_ardelia": {"plain":0,"assumed":0,"fallback":0,"mismatch":182,"unvalued":0,"unquantified":2,"uncovered":0},
+  "totals": {"damage":-12.8,"operator chr_0036_jsspsi":-16.4,"operator chr_0025_ardelia":51.9,"operator chr_0026_lastrite":-11.8,"operator chr_0011_seraph":203.3,"kind basic":12.2,"kind battle":-67.4,"kind combo":-8.2,"kind status":-17.7,"kind ultimate":-0.1,"hits":6.3,"status hits":-25,"staggered hits":null,"last hit":0,"crit share (points)":-1.9}
  },
  "pending/zmdlogs-c6d80590f5ea.json": {
   "chr_0030_zhuangfy": {"plain":0,"assumed":0,"fallback":16,"mismatch":156,"unvalued":0,"unquantified":1,"uncovered":2},

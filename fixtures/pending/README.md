@@ -195,3 +195,46 @@ fallback / mismatch) and its total damage's error (simulated / logged −
 | `zmdlogs-d9e59d0fb737` | Typhoeus 0/0/0/40, Arcane 0/0/0/15, Liino 0/0/0/0, Gilberta 0/0/0/8 | -26.2% | Typhoeus -37.6%, Arcane -12.3%, Liino -16.4%, Gilberta -15.2% |
 | `zmdlogs-de6a94e9cf6b` | Pogranichnik 0/0/0/84, Lifeng 0/0/0/71, Chen Qianyu 0/0/0/102, Mi Fu 0/0/0/90 | -23.2% | Pogranichnik -17.8%, Lifeng -26.5%, Chen Qianyu -0.7%, Mi Fu -30.9% |
 | `zmdlogs-e82d45c46040` | Arcane 1/2/2/0, Perlica 0/0/0/2, Si 1/4/16/0, Xaihi 0/0/0/0 | -61.1% | Arcane -44.3%, Perlica +14.8%, Si -63.5%, Xaihi n/a |
+
+## The owner's team, 2026-10-25 (not investigated yet)
+
+Si, Last Rite, Arcane and Xaihi, the owner's team, found by intersecting
+the four operators' ZMDLogs character profiles (docs/data-sources.md#zmdlogs),
+and one more with Ardelia instead of Arcane. All parser v59, single
+target; enemy levels from the stages' DungeonTable entries. First
+`zmdlogs check` (match / hits):
+
+| Fixture | Enemy | Date, length | First check |
+|---|---|---|---|
+| `zmdlogs-b6aa15281db4` | eny_0120_klbear_tower015 (Lv90) | 2026-10-19, 48 s | Si 20/104 (84 unmodelled), Last Rite 14/35, Arcane 0/121 (102 mismatch, ×0.71–0.86), Xaihi 2/29 (27 unmodelled) |
+| `zmdlogs-9555de54bb3d` | eny_0127_bigents_hdg032 (Lv90) | 2026-10-22, 97 s | Si 0/85 (82 mismatch), Last Rite 68/68, Arcane 168/168, Xaihi 58/58 |
+| `zmdlogs-c3c735dbb022` | eny_0125_fdcentur (Lv80) | 2026-10-25, 115 s | Si 174/185, Last Rite 48/48, Xaihi 0/57, Ardelia 0/184 |
+
+**Last Rite's Mirages (batch 4 G4, in-game test 83).** In b6aa the player
+swaps (Xaihi's crystal Amp, which only the controlled operator's Final
+Strike gets, goes to Si at 23.15 s and to Last Rite at 27.07 s). After
+Last Rite's battle skill at 15.40 s, Arcane's Final Strike at 18.36 s
+brings one Mirage pair (`buff_chr_0026_lastrite_normal_skill_phantom` at
+18.66 s, the kit's +9 frames); Si's (22.92 s) and Last Rite's own
+(26.82 s) controlled Final Strikes within the perfusion's 15 s bring
+none. The kit's `mirage` gives each member's perfusion one use, so it
+predicts Mirages on both: the log points to one use per cast for the
+team. 9555 (Last Rite controlled throughout) and c3c7 (Si controlled
+throughout; 6 casts, 6 pairs) don't test a swap but agree. Read from the
+site's detail, not yet confirmed by the check; the kit is unchanged.
+
+**Mirages, engine-first check (2026-10-25).** The replay of the logged
+casts with Last Rite's kit (`mirage`: every member's perfusion acts once,
+batch-4 G4) against the logs:
+- b6aa15281db4 (one battle skill, 15.40 s): the log has one Mirage pair,
+  at Arcane's Final Strike (18.36 s); none at Si's (22.92 s) or Last
+  Rite's own (26.82 s). The engine has one pair at Si's (22.77 s): it
+  takes Si's Final Strike as a trigger, but not Arcane's (a replay gap,
+  open). With Arcane's counted, the kit's rule would give two pairs
+  (Arcane's and Si's) where the log has one: the log points to one use per
+  cast for the whole team, the interim before G4 (test 83).
+- c3c735dbb022: six battle skills, six logged pairs; the engine has five,
+  at other Final Strikes for three of them (which Final Strike is first
+  differs). 9555de54bb3d: the engine makes none (its casts aren't all
+  replayed; open).
+Not changed in the kit: the owner decides (test 83, or these logs).
