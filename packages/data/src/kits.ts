@@ -12,7 +12,7 @@ import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
 import { compileEquipmentSkill, compileOperatorSkill, dataEnergyBlockSeconds, dataTeamEnergy, hitFacts, kitEnergyBlock, matchSkill, type CompileData, type CastAction, type DataField, type Disagreement, type HitFacts } from "./kitMatch.ts";
 import type { CompiledSkill } from "./skillCompile.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
-import { isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
+import { buffFilePath, isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
 import { buffTagFilter, SHIELD_TAG } from "./buffTags.ts";
 import { Attr, attrFeedsZone, buffAttrHasEffect, buffReach, type BuffCategory, type TriggerOn, type KitBuffModifier, ELEMENTS, predicateRefs, predicateValues, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
@@ -174,7 +174,12 @@ const FINAL_STRIKE_BIT = 2097152;
  */
 function isFinalStrike(skillId: string, events: readonly string[], hitEntries: number, bit = FINAL_STRIKE_BIT): boolean {
   const files = events.length ? events : hitEntries === 1 ? operatorSkillFiles(skillId.replace(/^(chr_\d+_[a-z]+)_.*$/, "$1")).filter((f) => f === skillId || f.startsWith(`${skillId}_`)) : [];
-  return files.some((f) => isSkillFileListed(f) && existsSync(skillFilePath(f)) && damageSites(f).some((d) => (Math.floor(d.decorateMask / bit) & 1) === 1));
+  return files.some((f) => damageSites(f).some((d) => (Math.floor(d.decorateMask / bit) & 1) === 1));
+}
+
+/** Whether a log event key names a fetched SkillData or BuffData file (the file holding the damage). */
+function isDataFile(id: string): boolean {
+  return (isSkillFileListed(id) && existsSync(skillFilePath(id))) || (isBuffFileListed(id) && existsSync(buffFilePath(id)));
 }
 
 /** SkillData decorate-mask bit of a dive attack's landing (the plunging attacks' masks are 1152: 1024 + the basic attack's 128). */
@@ -409,6 +414,13 @@ function kitChecker(scope: KitScope) {
   };
   /** A forced reaction's level and extra seconds are values of the applying skill. */
   const checkApplicationValues = (a: KitApplication, skillId: string, where: string) => {
+    // Keys naming the applying skill's values, checked here rather than when the hit lands.
+    for (const k of ["durationKey", "scaleKey", "multiplierKey"] as const) {
+      const key = (a as Partial<Record<typeof k, string>>)[k];
+      if (key !== undefined) checkValue(key, skillId, `${where} ${a.kind} ${k}`);
+    }
+    // Only Breach has a strength for scaleKey to scale (status.ts), or the window's status when it's one.
+    if (a.kind === "physicalStatus" && a.scaleKey !== undefined && a.status !== "breach" && a.status !== "event") throw new Error(`${where}: a ${a.status} has no strength for scaleKey ${a.scaleKey} to scale (only Breach's DMG Taken)`);
     if (a.kind !== "forcedReaction") return;
     if (a.level !== undefined) checkValue(a.level, skillId, `${where} forcedReaction level`);
     if (a.extraSeconds !== undefined) checkValue(a.extraSeconds, skillId, `${where} forcedReaction extraSeconds`);
@@ -481,6 +493,7 @@ function kitChecker(scope: KitScope) {
       const element = h.element ?? scope.element;
       if (!element || !ELEMENTS.includes(element)) throw new Error(`${where} hit ${h.id}: no element`);
       const events = h.events ?? (src.defaultEvent && hits.length === 1 ? [src.defaultEvent] : []);
+      for (const e of events) if (!isDataFile(e)) throw new Error(`${where} hit ${h.id}: event ${e} is no fetched SkillData or BuffData file (a log event key is the file holding the damage)`);
       if (!src.damageType && h.requires) throw new Error(`${where} hit ${h.id}: triggered hits can't require stacks (use the trigger's if)`);
       const consume = h.requires?.consume;
       if (consume !== undefined && typeof consume !== "boolean") checkValue(consume, src.skillId, `${where} hit ${h.id} requires.consume`);
@@ -552,6 +565,7 @@ function kitChecker(scope: KitScope) {
     if (t.on.event === "stackAtLeast" && !stackIds.has(t.on.stack)) throw new Error(`${where}: unknown stack ${t.on.stack}`);
     if ((t.on.event === "buffApplied" || t.on.event === "buffEnded" || t.on.event === "buffTick") && "buff" in t.on && !buffDefs.has(t.on.buff)) throw new Error(`${where}: unknown buff ${t.on.buff}`);
     if (t.on.event === "buffApplied" && "categories" in t.on && "buff" in t.on) throw new Error(`${where}: a buffApplied trigger names a buff or categories, not both`);
+    if ("gameBuffs" in t.on) for (const id of t.on.gameBuffs) if (!isBuffFileListed(id) || !existsSync(buffFilePath(id))) throw new Error(`${where}: ${id} is no fetched BuffData file`);
     if (t.beforeDamage && !(STATUS_EVENTS as readonly string[]).includes(t.on.event)) throw new Error(`${where}: only status-event triggers can act before their hit's damage`);
     if (t.maxPerCast !== undefined && !(t.maxPerCast >= 1)) throw new Error(`${where}: maxPerCast must be at least 1`);
     if (t.detached && !(t.delay && t.on.event === "cast")) throw new Error(`${where}: only a delayed cast trigger can be detached from its cast`);

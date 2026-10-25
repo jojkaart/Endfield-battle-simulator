@@ -3,7 +3,7 @@
 // loops, jumps); it lists where damage happens, with the blackboard key that
 // scales it, so a kit can be drafted and then verified against logs.
 
-import { readdirSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseJsonExact } from "./json.ts";
 import { sourceDir } from "./sources.ts";
@@ -64,16 +64,30 @@ export function operatorSkillFiles(operator: string): string[] {
     .sort();
 }
 
-export function damageSites(file: string): DamageSite[] {
-  const path = join(sourceDir("rmxlinux"), "Json", "SkillData", `${file}.json`);
-  const j = parseJsonExact(readFileSync(path, "utf8")) as Record<string, unknown>;
+const sitesCache = new Map<string, readonly DamageSite[]>();
+
+/**
+ * The damage actions in a SkillData file (its timeline's, with their frames,
+ * and its passive event actions'), or anywhere in a BuffData file (no
+ * frames). An error for an ID that is neither. Cached.
+ */
+export function damageSites(file: string): readonly DamageSite[] {
+  const cached = sitesCache.get(file);
+  if (cached) return cached;
+  const skillPath = join(sourceDir("rmxlinux"), "Json", "SkillData", `${file}.json`);
+  const buffPath = join(sourceDir("rmxlinux"), "Json", "BuffData", `${file}.json`);
   const out: DamageSite[] = [];
-  const group = (j["actionGroupData"] ?? {}) as Record<string, unknown>;
-  for (const ta of (group["timelineActions"] ?? []) as Record<string, unknown>[]) {
-    const frames: [number, number] = [Number(ta["_startFrame"]), Number(ta["_endFrame"])];
-    walk(ta["_sequenceActionData"], [], frames, file, out);
-  }
-  walk(group["passiveEventActions"], ["passive"], null, file, out);
+  if (existsSync(skillPath)) {
+    const j = parseJsonExact(readFileSync(skillPath, "utf8")) as Record<string, unknown>;
+    const group = (j["actionGroupData"] ?? {}) as Record<string, unknown>;
+    for (const ta of (group["timelineActions"] ?? []) as Record<string, unknown>[]) {
+      const frames: [number, number] = [Number(ta["_startFrame"]), Number(ta["_endFrame"])];
+      walk(ta["_sequenceActionData"], [], frames, file, out);
+    }
+    walk(group["passiveEventActions"], ["passive"], null, file, out);
+  } else if (existsSync(buffPath)) walk(parseJsonExact(readFileSync(buffPath, "utf8")), [], null, file, out);
+  else throw new Error(`no SkillData or BuffData file ${file}`);
+  sitesCache.set(file, out);
   return out;
 }
 

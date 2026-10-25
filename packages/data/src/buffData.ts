@@ -60,6 +60,11 @@ export function isBuffFileListed(buffId: string): boolean {
   return ALLOWED.some((re) => re.test(buffId));
 }
 
+/** Where a BuffData file is. */
+export function buffFilePath(buffId: string): string {
+  return join(sourceDir("rmxlinux"), "Json", "BuffData", `${buffId}.json`);
+}
+
 /** Reads a buff file, or returns null when the game has none for this ID. */
 export function readBuffFile(buffId: string): RawBuffFile | null {
   if (!isBuffFileListed(buffId)) {
