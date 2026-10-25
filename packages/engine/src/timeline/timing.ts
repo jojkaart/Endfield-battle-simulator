@@ -3,7 +3,7 @@
 import type { Build } from "../build.ts";
 import { decide, evalContext } from "../damage.ts";
 import { EngineError } from "../errors.ts";
-import type { KitSkill, OperatorKit, SkillTiming } from "../model.ts";
+import type { KitSkill, SkillTiming } from "../model.ts";
 import { allActions, triggerSkillId } from "../events.ts";
 import { test } from "../expr.ts";
 import { activeAt } from "../buffs.ts";
@@ -19,16 +19,10 @@ import { castBound, ofCast, ofKind } from "./schedule.ts";
 /**
  * Combo-kind skills of an operator that an `openCombo` with `skills` names:
  * each uses only a window of its own (windowKey), which its own combo may
- * open (Rossi's sequence 2).
+ * open (Rossi's sequence 2). From the context (TimelineContext.ownWindows).
  */
-const ownWindowCache = new WeakMap<OperatorKit, ReadonlySet<string>>();
-
 export function ownWindowSkills(ctx: TimelineContext, operator: string): ReadonlySet<string> {
-  const kit = ctx.kits.get(operator);
-  if (!kit) return new Set();
-  let s = ownWindowCache.get(kit);
-  if (!s) ownWindowCache.set(kit, (s = new Set(kit.triggers.flatMap((t) => allActions(t.do).flatMap((a) => (a.kind === "openCombo" ? (a.skills ?? []) : []))))));
-  return s;
+  return ctx.ownWindows.get(operator) ?? new Set();
 }
 
 /** The combo window a skill uses: one of its own (ownWindowSkills), else its operator's. */

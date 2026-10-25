@@ -6,7 +6,7 @@ import { EngineError } from "../errors.ts";
 import type { BattleEvent } from "../events.ts";
 import { type ActiveBuff, buffEndedEvent } from "../buffs.ts";
 import { expireStatus, nextTick, tickStatus } from "../status.ts";
-import type { Cast, PendingAction, PendingBurst, PendingEnemyAction, PendingEnergy, PendingHit, PendingJump, TimelineContext, TimelineState } from "./state.ts";
+import type { Cast, PendingEnemyAction, Scheduled, TimelineContext, TimelineState } from "./state.ts";
 import { DIVE, DODGE, SP } from "./rules.ts";
 import { panelAt, timingOf } from "./context.ts";
 import { shiftOperator, slowDown } from "./clock.ts";
@@ -16,7 +16,7 @@ import { situationAt } from "./situation.ts";
 import { runActions, runTriggers } from "./actions.ts";
 import { asEvents, draw, landBurst, landHit, recordStatus } from "./landing.ts";
 import { castSkill, endCurrentSkill, takeJump } from "./casting.ts";
-import { ofCast, schedule, unschedule } from "./schedule.ts";
+import { dueBefore, IN_FRAME_RANK, ofCast, schedule, stepOf, unschedule } from "./schedule.ts";
 
 /**
  * The earliest periodic tick of an active buff at or before `frame`. A tick
@@ -90,141 +90,70 @@ function enemyActionEvents(ctx: TimelineContext, st: TimelineState, a: PendingEn
   return targets.map((operator) => ({ type: "attacked", frame: a.frame, operator, element: a.element, controlled: operator === st.controlled }));
 }
 
-/** Processes every pending hit, status tick and buff expiry up to (and including) a frame, in frame order. */
+/** What runs next (nextDue): a scheduled item, or what the state's own times make due. */
+type Due =
+  | { readonly step: "statusTick" | "buffExpiry"; readonly frame: number }
+  | { readonly step: "buffTick"; readonly frame: number; readonly buff: ActiveBuff }
+  | { readonly step: "scheduled"; readonly frame: number; readonly item: Scheduled };
+
+/**
+ * The first thing due by a frame, in the in-frame order (schedule.ts IN_FRAME, dueBefore): of what's scheduled, and of
+ * what the state's own times make due (the enemy's status ticks, buffs' ends and periodic ticks); null when nothing is.
+ */
+function nextDue(st: TimelineState, frame: number): Due | null {
+  let item: Scheduled | null = null;
+  for (const x of st.scheduled) if (x.frame <= frame && (!item || dueBefore(x, item))) item = x;
+  let due: Due | null = item ? { step: "scheduled", frame: item.frame, item } : null;
+  const rank = (d: Due) => IN_FRAME_RANK[d.step === "scheduled" ? stepOf(d.item) : d.step];
+  const consider = (d: Due) => {
+    if (!due || d.frame < due.frame || (d.frame === due.frame && rank(d) < rank(due))) due = d;
+  };
+  const tick = nextTick(st.enemy);
+  if (tick !== null && tick <= frame) consider({ step: "statusTick", frame: tick });
+  const expiry = nextExpiry(st.buffs, frame);
+  if (expiry !== null) consider({ step: "buffExpiry", frame: expiry });
+  const buffTick = nextBuffTick(st.buffs, frame);
+  if (buffTick) consider({ step: "buffTick", frame: buffTick.frame, buff: buffTick.b });
+  return due;
+}
+
+/** Runs everything due up to (and including) a frame, in order (nextDue). */
 function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number): TimelineState {
   if (frame < state.frame) throw new EngineError(`can't go back from frame ${state.frame} to ${frame}`);
   let st = state;
-  for (;;) {
-    // The next scheduled item of each kind due by the frame (triggers can schedule more while this runs): the earliest,
-    // the first scheduled among equals; hits at one frame by operator ID.
-    let hit: PendingHit | null = null;
-    let due: PendingAction | null = null;
-    // Delayed actions after their frame's hits (KitTrigger.afterHits).
-    let late: PendingAction | null = null;
-    let grant: PendingEnergy | null = null;
-    let enemyAction: PendingEnemyAction | null = null;
-    let burst: PendingBurst | null = null;
-    let jump: PendingJump | null = null;
-    for (const x of st.scheduled) {
-      if (x.frame > frame) continue;
-      switch (x.kind) {
-        case "hit":
-          if (!hit || x.frame < hit.frame || (x.frame === hit.frame && x.operator < hit.operator)) hit = x;
-          break;
-        case "action":
-          if (x.afterHits) {
-            if (!late || x.frame < late.frame) late = x;
-          } else if (!due || x.frame < due.frame) due = x;
-          break;
-        case "energy":
-          if (!grant || x.frame < grant.frame) grant = x;
-          break;
-        case "enemyAction":
-          if (!enemyAction || x.frame < enemyAction.frame) enemyAction = x;
-          break;
-        case "burst":
-          if (!burst || x.frame < burst.frame) burst = x;
-          break;
-        case "jump":
-          if (!jump || x.frame < jump.frame) jump = x;
-          break;
+  for (let due = nextDue(st, frame); due; due = nextDue(st, frame)) {
+    const at = due.frame;
+    switch (due.step) {
+      case "statusTick": {
+        const before = st.enemy;
+        const t = tickStatus(st.enemy, at);
+        st = recordStatus(ctx, { ...st, enemy: t.state }, t.events, before);
+        st = runTriggers(ctx, st, asEvents(t.events, "none"), null);
+        break;
       }
-    }
-    const tick = nextTick(st.enemy);
-    const expiry = nextExpiry(st.buffs, frame);
-    const tickDue = tick !== null && tick <= frame ? tick : null;
-    const buffTick = nextBuffTick(st.buffs, frame);
-    const lateFrame = late?.frame ?? null;
-    const runDue = (x: PendingAction) => {
-      const t = ctx.kits.get(x.owner)?.triggers.find((y) => y.id === x.trigger);
-      if (!t) throw new EngineError(`${x.owner} has no trigger ${x.trigger}`);
-      const r = runActions(ctx, unschedule(st, x), t, x.owner, { ...x.event, frame: x.frame }, x.origin);
-      return runTriggers(ctx, r.state, r.events, x.origin);
-    };
-    // At one frame: Arts Bursts landing, ticks of a status already on the enemy, then buffs ending, then delayed trigger actions, energy grants,
-    // the enemy's actions, buffs' periodic ticks, then hits, then delayed actions marked afterHits. Each kind waits for everything earlier.
-    const first = (x: number | null, ...later: (number | null)[]) => x !== null && later.every((y) => y === null || x <= y);
-    const hitFrame = hit ? hit.frame : null;
-    const dueFrame = due?.frame ?? null;
-    const grantFrame = grant?.frame ?? null;
-    const enemyFrame = enemyAction?.frame ?? null;
-    // A jump comes after everything else at its frame (what's at its skill frame still happens).
-    const jumpFrame = jump?.frame ?? null;
-    if (burst && first(burst.frame, tickDue, expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
-      st = landBurst(ctx, unschedule(st, burst), burst);
-      continue;
-    }
-    if (first(tickDue, expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
-      const tickFrame = tickDue as number;
-      const before = st.enemy;
-      const t = tickStatus(st.enemy, tickFrame);
-      st = recordStatus(ctx, { ...st, enemy: t.state }, t.events, before);
-      st = runTriggers(ctx, st, asEvents(t.events, "none"), null);
-      continue;
-    }
-    if (first(expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
-      const at = expiry as number;
-      // A buff a cast consumed already ended when it was consumed.
-      // A buff that keeps instances (KitBuff.instances) ends with its last one.
-      // One with its last tick still due at this frame ends after that tick (nextBuffTick).
-      const ends = (b: ActiveBuff) => b.expiresAt === at && !tickDueBeforeEnd(b);
-      const ended = st.buffs.filter((b) => ends(b) && b.cast === undefined).filter((b, i, all) => b.maxInstances === undefined || (all.findIndex((x) => x.id === b.id && x.owner === b.owner) === i && !st.buffs.some((x) => x.id === b.id && x.owner === b.owner && x.cast === undefined && (x.expiresAt > at || (x.expiresAt === at && !ends(x))))));
-      st = { ...st, buffs: st.buffs.filter((b) => !ends(b)) };
-      // Run out: nothing left, but what its cast's jumps took from it.
-      // Each instance its own event (layers ending together each end).
-      st = runTriggers(ctx, st, ended.map((b) => buffEndedEvent([b], at, false)), null);
-      continue;
-    }
-    if (due && first(due.frame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
-      st = runDue(due);
-      continue;
-    }
-    if (grant && first(grant.frame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
-      st = unschedule(st, grant);
-      const caster = grant.cast.operator;
-      const holds = !grant.if || decide(grant.if, evalContext(ctx.data, ctx.builds.get(caster) as Build, panelAt(ctx, caster, grant.frame), "", situationAt(ctx, caster, st, grant.frame)));
-      if (holds) st = gainEnergy(ctx, st, grant.operator, grant.amount, grant.frame);
-      continue;
-    }
-    if (enemyAction && first(enemyAction.frame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
-      st = enemyAct(ctx, unschedule(st, enemyAction), enemyAction);
-      continue;
-    }
-    if (buffTick && first(buffTick.frame, hitFrame, jumpFrame, lateFrame)) {
-      const { b, frame: at } = buffTick;
-      const every = b.every as number;
-      st = { ...st, buffs: st.buffs.map((x) => (x === b ? { ...b, nextTick: at + every } : x)) };
-      st = runTriggers(ctx, st, [{ type: "buffTick", frame: at, operator: b.owner, buff: b.id, ...(b.snapshot ? { snapshot: b.snapshot } : {}) }], null);
-      continue;
-    }
-    if (late && (hitFrame === null || late.frame < hitFrame) && (jumpFrame === null || late.frame <= jumpFrame)) {
-      st = runDue(late);
-      continue;
-    }
-    if (jump && (hitFrame === null || jump.frame < hitFrame) && (lateFrame === null || jump.frame < lateFrame)) {
-      st = unschedule(st, jump);
-      // Only while that cast is still the operator's current action.
-      if (st.acting[jump.operator]?.cast !== jump.cast.index) continue;
-      if (jump.then !== undefined) {
-        // A dive's fall or landing (jumpToDive): cast now; after the fall, the landing.
-        const r = castSkill(ctx, st, jump.operator, jump.then, jump.frame, false);
-        const cast = r.state.acting[jump.operator]?.cast;
-        const op = jump.operator;
-        const next = jump.landing === undefined || cast === undefined ? r.state : schedule(r.state, [{ kind: "jump", frame: jump.frame + DIVE.fall, clock: { operator: op }, cast: { operator: op, index: cast }, operator: op, from: 0, to: 0, then: jump.landing }]);
-        st = runTriggers(ctx, next, r.events, r.origin);
-      } else if (jump.end) {
-        const r = endCurrentSkill(st, jump.operator, jump.frame);
-        st = rebaseCooldowns(ctx, st, { ...r.state, acting: Object.fromEntries(Object.entries(r.state.acting).filter(([k]) => k !== jump.operator)) }, jump.frame);
-        st = runTriggers(ctx, st, r.events, null);
-      } else {
-        const r = takeJump(st, jump);
-        st = runTriggers(ctx, rebaseCooldowns(ctx, st, r.state, jump.frame), r.events, null);
+      case "buffExpiry": {
+        // A buff a cast consumed already ended when it was consumed.
+        // A buff that keeps instances (KitBuff.instances) ends with its last one.
+        // One with its last tick still due at this frame ends after that tick (nextBuffTick).
+        const ends = (b: ActiveBuff) => b.expiresAt === at && !tickDueBeforeEnd(b);
+        const ended = st.buffs.filter((b) => ends(b) && b.cast === undefined).filter((b, i, all) => b.maxInstances === undefined || (all.findIndex((x) => x.id === b.id && x.owner === b.owner) === i && !st.buffs.some((x) => x.id === b.id && x.owner === b.owner && x.cast === undefined && (x.expiresAt > at || (x.expiresAt === at && !ends(x))))));
+        st = { ...st, buffs: st.buffs.filter((b) => !ends(b)) };
+        // Run out: nothing left, but what its cast's jumps took from it.
+        // Each instance its own event (layers ending together each end).
+        st = runTriggers(ctx, st, ended.map((b) => buffEndedEvent([b], at, false)), null);
+        break;
       }
-      continue;
+      case "buffTick": {
+        const b = due.buff;
+        const every = b.every as number;
+        st = { ...st, buffs: st.buffs.map((x) => (x === b ? { ...b, nextTick: at + every } : x)) };
+        st = runTriggers(ctx, st, [{ type: "buffTick", frame: at, operator: b.owner, buff: b.id, ...(b.snapshot ? { snapshot: b.snapshot } : {}) }], null);
+        break;
+      }
+      case "scheduled":
+        st = runScheduled(ctx, unschedule(st, due.item), due.item);
+        break;
     }
-    if (!hit) break;
-    const h = hit;
-    st = landHit(ctx, unschedule(st, h), h);
   }
   return {
     ...st,
@@ -233,6 +162,48 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
     ...(st.spStops.some((p) => p.until <= frame) ? { spStops: st.spStops.filter((p) => p.until > frame) } : {}),
     enemy: expireStatus(st.enemy, frame),
   };
+}
+
+/** Runs a scheduled item at its frame (the state without it). */
+function runScheduled(ctx: TimelineContext, st: TimelineState, x: Scheduled): TimelineState {
+  switch (x.kind) {
+    case "burst":
+      return landBurst(ctx, st, x);
+    case "action": {
+      const t = ctx.kits.get(x.owner)?.triggers.find((y) => y.id === x.trigger);
+      if (!t) throw new EngineError(`${x.owner} has no trigger ${x.trigger}`);
+      const r = runActions(ctx, st, t, x.owner, { ...x.event, frame: x.frame }, x.origin);
+      return runTriggers(ctx, r.state, r.events, x.origin);
+    }
+    case "energy": {
+      const caster = x.cast.operator;
+      const holds = !x.if || decide(x.if, evalContext(ctx.data, ctx.builds.get(caster) as Build, panelAt(ctx, caster, x.frame), "", situationAt(ctx, caster, st, x.frame)));
+      return holds ? gainEnergy(ctx, st, x.operator, x.amount, x.frame) : st;
+    }
+    case "enemyAction":
+      return enemyAct(ctx, st, x);
+    case "hit":
+      return landHit(ctx, st, x);
+    case "jump": {
+      // Only while that cast is still the operator's current action.
+      if (st.acting[x.operator]?.cast !== x.cast.index) return st;
+      if (x.then !== undefined) {
+        // A dive's fall or landing (jumpToDive): cast now; after the fall, the landing.
+        const r = castSkill(ctx, st, x.operator, x.then, x.frame, false);
+        const cast = r.state.acting[x.operator]?.cast;
+        const op = x.operator;
+        const next = x.landing === undefined || cast === undefined ? r.state : schedule(r.state, [{ kind: "jump", frame: x.frame + DIVE.fall, clock: { operator: op }, cast: { operator: op, index: cast }, operator: op, from: 0, to: 0, then: x.landing }]);
+        return runTriggers(ctx, next, r.events, r.origin);
+      }
+      if (x.end) {
+        const r = endCurrentSkill(st, x.operator, x.frame);
+        const ended = rebaseCooldowns(ctx, st, { ...r.state, acting: Object.fromEntries(Object.entries(r.state.acting).filter(([k]) => k !== x.operator)) }, x.frame);
+        return runTriggers(ctx, ended, r.events, null);
+      }
+      const r = takeJump(st, x);
+      return runTriggers(ctx, rebaseCooldowns(ctx, st, r.state, x.frame), r.events, null);
+    }
+  }
 }
 
 // Memoised advance (memoised): `advance` is a pure function of (context,
@@ -257,7 +228,7 @@ export function advance(ctx: TimelineContext, state: TimelineState, frame: numbe
   return r;
 }
 
-/** The context with `advance` memoised per state object and frame (the cache lives as long as this context and its states). */
+/** The context with `advance` (and the search's committed damage) memoised per state object and frame (the caches live as long as this context and its states). */
 export function memoised(ctx: TimelineContext): TimelineContext {
-  return ctx.advanceMemo ? ctx : { ...ctx, advanceMemo: new WeakMap() };
+  return ctx.advanceMemo ? ctx : { ...ctx, advanceMemo: new WeakMap(), committedMemo: new WeakMap() };
 }

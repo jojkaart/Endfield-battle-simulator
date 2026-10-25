@@ -6,6 +6,7 @@ import { conditionModifiers } from "../damage.ts";
 import { EngineError } from "../errors.ts";
 import type { GameData, KitSkill, SkillTiming } from "../model.ts";
 import { effectiveKit } from "../triggers.ts";
+import { allActions } from "../events.ts";
 import { computeStats, DEFAULT_STAT_OPTIONS, foodOf, skillLevel, skillParam, type StatPanel } from "../stats.ts";
 import { ARTS_ELEMENTS } from "../status.ts";
 import type { ArtsElement } from "../reactions.ts";
@@ -53,6 +54,7 @@ export function createContext(data: GameData, scenario: TimelineScenario): Timel
   const beforeDamage = [...kits.values()].some((k) => k.triggers.some((t) => t.beforeDamage));
   const buffAttrs = new Set([...kits.values()].flatMap((k) => k.buffs.flatMap((b) => b.modifiers.flatMap((m) => (m.attr !== undefined ? [m.attr] : [])))));
   const inputBuffs = [...kits.values()].some((k) => k.buffs.some((b) => b.basicAttack !== undefined));
+  const ownWindows = new Map([...kits].map(([op, k]) => [op, new Set(k.triggers.flatMap((t) => allActions(t.do).flatMap((a) => (a.kind === "openCombo" ? (a.skills ?? []) : []))))] as const));
   // What the timeline needs from the data, checked once here (design principle 7: no defaults for missing data).
   const enemy = data.enemies[scenario.target.enemy];
   if (!enemy) throw new EngineError(`unknown enemy ${scenario.target.enemy}`);
@@ -63,7 +65,7 @@ export function createContext(data: GameData, scenario: TimelineScenario): Timel
   if (!delays || noDelay.length) throw new EngineError(`the data has no burst delay (BattleConstants burstDelayFrames) for ${noDelay.join(", ")}`);
   if (scenario.options.dodge && !data.constants.perfectDodge) throw new EngineError("dodging needs the perfect dodge settings (BattleConstants perfectDodge), which the data doesn't have");
   return {
-    data, scenario, builds, panels, modifiers, kits, beforeDamage, enemy, burstDelayFrames: delays as Record<ArtsElement, number>,
+    data, scenario, builds, panels, modifiers, kits, beforeDamage, enemy, burstDelayFrames: delays as Record<ArtsElement, number>, ownWindows,
     ...(foodEnds.size ? { foodEnds } : {}),
     ...(scenario.loggedCrits ? { loggedCrits: loggedCritsByKey(scenario.loggedCrits) } : {}),
     ...(scenario.loggedModifiers ? { loggedModifiers: byOperatorEvent(scenario.loggedModifiers) } : {}),

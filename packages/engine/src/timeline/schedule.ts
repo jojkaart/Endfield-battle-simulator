@@ -3,6 +3,47 @@
 
 import type { Clock, Scheduled, TimelineState } from "./state.ts";
 
+/**
+ * The order of what's due at one frame (docs/design.md "Order within a frame"): each step runs once everything before
+ * it at that frame (and everything at earlier frames) has, and what it does may add to any step still to come. The
+ * enemy's status ticks and buffs' ends and periodic ticks come from their own state (status.ts, buffs); the rest is
+ * scheduled (Scheduled, by its kind; a delayed action marked afterHits is the step after hits).
+ *
+ *  1. burst        Arts Bursts landing (BattleConstants.burstDelayFrames after their infliction)
+ *  2. statusTick   ticks of a status already on the enemy (Combustion, Corrosion…)
+ *  3. buffExpiry   buffs running out (all that end at the frame at once)
+ *  4. action       delayed trigger actions (KitTrigger.delay)
+ *  5. energy       team energy a cast gives later (KitSkill.teamEnergy)
+ *  6. enemyAction  the enemy's actions (attacks, charges)
+ *  7. buffTick     buffs' periodic ticks
+ *  8. hit          hits landing
+ *  9. afterHits    delayed trigger actions after their frame's hits (KitTrigger.afterHits)
+ * 10. jump         jumps and ends on casts' timelines, a dive's next part: what's at the jump's own skill frame happens first
+ *
+ * Within a step at one frame: hits by their operator's ID (an arbitrary order the game's isn't known to follow; it
+ * keeps a hit's order apart from the team's order), then everything in the order it was scheduled (`dueBefore`).
+ */
+export const IN_FRAME = ["burst", "statusTick", "buffExpiry", "action", "energy", "enemyAction", "buffTick", "hit", "afterHits", "jump"] as const;
+export type Step = (typeof IN_FRAME)[number];
+export const IN_FRAME_RANK = Object.fromEntries(IN_FRAME.map((s, i) => [s, i])) as Readonly<Record<Step, number>>;
+
+/** A scheduled item's step in a frame (IN_FRAME). */
+export function stepOf(x: Scheduled): Step {
+  return x.kind === "action" ? (x.afterHits ? "afterHits" : "action") : x.kind;
+}
+
+/**
+ * Whether a scheduled item runs before another (both due): the earlier frame, else the earlier step (IN_FRAME), else
+ * for two hits the lower operator ID; else neither does, and the one scheduled first (earlier in the list) runs first.
+ */
+export function dueBefore(a: Scheduled, b: Scheduled): boolean {
+  if (a.frame !== b.frame) return a.frame < b.frame;
+  const ra = IN_FRAME_RANK[stepOf(a)];
+  const rb = IN_FRAME_RANK[stepOf(b)];
+  if (ra !== rb) return ra < rb;
+  return a.kind === "hit" && b.kind === "hit" && a.operator < b.operator;
+}
+
 /** A scheduled list's items of one kind, in order. */
 export function ofKind<K extends Scheduled["kind"]>(list: readonly Scheduled[], kind: K): Extract<Scheduled, { kind: K }>[] {
   return list.filter((x): x is Extract<Scheduled, { kind: K }> => x.kind === kind);

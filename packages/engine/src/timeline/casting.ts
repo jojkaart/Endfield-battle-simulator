@@ -8,7 +8,7 @@ import { type EvalContext, evaluate } from "../expr.ts";
 import { activeAt, type ActiveBuff, buffEndedEvents, reaches } from "../buffs.ts";
 import { FPS } from "../units.ts";
 import { FINISHER_SP_SOURCE_TYPE } from "../constants.ts";
-import type { Acting, Cast, Origin, PendingEnergy, PendingHit, PendingJump, Scheduled, TimelineContext, TimelineState } from "./state.ts";
+import type { Acting, Cast, Origin, PendingEnergy, PendingHit, PendingJump, TimelineContext, TimelineState } from "./state.ts";
 import { DIVE, ENERGY, JUMP, linkValue, SP, hasteFrames } from "./rules.ts";
 import { kitSkill, panelAt, skillCosts } from "./context.ts";
 import { actionSpeed, slowDown } from "./clock.ts";
@@ -66,7 +66,7 @@ export function takeJump(st: TimelineState, j: PendingJump): { state: TimelineSt
       ...st,
       // What's scheduled for the cast in the skipped frames is dropped, what's after comes sooner (a detached hit or
       // action not launched yet moves with its launch; a replayed landing pinned at its logged frame stays there).
-      scheduled: legacyJumpOrder(jumpCast(st.scheduled, j.operator, index, at, length)),
+      scheduled: jumpCast(st.scheduled, j.operator, index, at, length),
       buffs: st.buffs.flatMap((b) => (ending.includes(b) ? [] : b.owner === j.operator && b.endsWithCast === index && b.expiresAt >= at + length ? [{ ...b, expiresAt: b.expiresAt - length, skipped: (b.skipped ?? 0) + length }] : [b]))
         // A buff attached to the cast (whileCasting) ends with it, that much sooner.
         .map((b) => (b.whileCasting && b.cast === index && b.whileCasting.until > at ? { ...b, whileCasting: { ...b.whileCasting, until: Math.max(at, b.whileCasting.until - length) } } : b)),
@@ -74,20 +74,6 @@ export function takeJump(st: TimelineState, j: PendingJump): { state: TimelineSt
     },
     events,
   };
-}
-
-/** TEMPORARY (one commit): the order the separate hit and action lists had after a jump (pinned hits, the others, those with a launch; actions without a launch, then with). */
-function legacyJumpOrder(list: readonly Scheduled[]): Scheduled[] {
-  const hits = list.filter((x) => x.kind === "hit");
-  const actions = list.filter((x) => x.kind === "action");
-  return [
-    ...list.filter((x) => x.kind !== "hit" && x.kind !== "action"),
-    ...hits.filter((h) => h.pinned),
-    ...hits.filter((h) => !h.pinned && (!h.detached || h.launchAt === undefined)),
-    ...hits.filter((h) => !h.pinned && h.detached && h.launchAt !== undefined),
-    ...actions.filter((x) => x.launchAt === undefined),
-    ...actions.filter((x) => x.launchAt !== undefined),
-  ];
 }
 
 /**

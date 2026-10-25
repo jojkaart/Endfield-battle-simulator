@@ -392,7 +392,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     const sample = (frame: number) => {
       const seen = new Map<string, { key: string; owner: string; id: string; start: number; expiresAt: number }>();
       for (const { g, owner, id } of kitIds) {
-        const live = st.buffs.filter((b: ActiveBuff) => b.id === id && b.owner === owner && b.cast === undefined && b.appliedAt <= frame && b.expiresAt > frame);
+        const live = st.buffs.filter((b: ActiveBuff) => b.id === id && b.owner === owner && b.cast === undefined && activeAt(b, frame));
         for (const op of team) {
           const counted = new Map<string, number>();
           for (const b of live) {

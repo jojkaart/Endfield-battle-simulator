@@ -359,8 +359,12 @@ export interface TimelineContext {
   readonly enemy: EnemyData;
   /** Per arts element: frames from an infliction to its Arts Burst (BattleConstants.burstDelayFrames). */
   readonly burstDelayFrames: Readonly<Record<ArtsElement, number>>;
+  /** Per operator: the combo-kind skills an `openCombo` with `skills` names, each using only a window of its own (timing.ts windowKey). */
+  readonly ownWindows: ReadonlyMap<string, ReadonlySet<string>>;
   /** With `memoised`: `advance`'s results per state object and frame (exact: advance is pure and states are never changed in place). */
   readonly advanceMemo?: WeakMap<TimelineState, Map<number, TimelineState>>;
+  /** With `memoised`: each state's committed damage (search.ts committedDamage), on the same grounds. */
+  readonly committedMemo?: WeakMap<TimelineState, number>;
   /** TimelineScenario.loggedCrits by `operator|event`: the logged landings' frames and crits. */
   readonly loggedCrits?: ReadonlyMap<string, readonly { readonly frame: number; readonly crit: boolean }[]>;
   /** TimelineScenario.loggedModifiers by `operator|event`. */

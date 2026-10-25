@@ -195,18 +195,18 @@ function timingChoices(ctx: TimelineContext, state: TimelineState, c: Candidate)
   return out;
 }
 
-/** Per state: its committed damage (states are never changed in place, so it's computed once per context). */
-const committed = new WeakMap<TimelineState, { readonly ctx: TimelineContext; readonly total: number }>();
-
-/** Damage the state has committed within the fight: landed hits plus everything already on its way. */
+/**
+ * Damage the state has committed within the fight: landed hits plus everything already on its way. With a context from
+ * `memoised`, once per state (states are never changed in place: TimelineContext.committedMemo).
+ */
 export function committedDamage(ctx: TimelineContext, state: TimelineState): number {
-  const known = committed.get(state);
-  if (known?.ctx === ctx) return known.total;
+  const known = ctx.committedMemo?.get(state);
+  if (known !== undefined) return known;
   // Advanced from a copy, so a memoised context doesn't keep the fight's end (every hit to come) for as long as the state lives.
   const end = advance(ctx, { ...state }, ctx.scenario.durationFrames);
   let total = 0;
   for (const h of end.hits) total += h.exact;
-  committed.set(state, { ctx, total });
+  ctx.committedMemo?.set(state, total);
   return total;
 }
 
@@ -394,7 +394,12 @@ type KeyRules<T> = { readonly [K in keyof T]-?: KeyRule<T[K]> };
 const round = (x: number) => Math.round(x * 10) / 10;
 
 /** A scheduled item's header (ScheduledHeader): when it's due, on which clock, what it belongs to. */
-const HEADER_KEY = { kind: true, frame: true, clock: true, cast: true, detached: true, launchAt: true, pinned: true } as const;
+const HEADER_KEY = {
+  kind: "the key groups the items by kind (scheduledKey)",
+  frame: true,
+  clock: "follows from the operator, the cast or the kind (the enemy's for bursts and enemy actions)",
+  cast: true, detached: true, launchAt: true, pinned: true,
+} as const;
 
 /** Each kind of scheduled item: everything about it decides what it does when it's due, but a replayed landing's reference. */
 const SCHEDULED_KEY: { readonly [K in Scheduled["kind"]]: KeyRules<Extract<Scheduled, { kind: K }>> } = {
