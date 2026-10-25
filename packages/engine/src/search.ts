@@ -14,7 +14,7 @@ import { activeAt, type ActiveBuff } from "./buffs.ts";
 import { EngineError } from "./errors.ts";
 import type { GameData } from "./model.ts";
 import type { CritMode } from "./damage.ts";
-import { allActions } from "./events.ts";
+import { allActions, type BattleEvent } from "./events.ts";
 import { predicateRefs } from "./expr.ts";
 import {
   advance,
@@ -34,8 +34,10 @@ import {
   type TimelineScenario,
   type TimelineState,
 } from "./timeline.ts";
-import type { Scheduled } from "./timeline/state.ts";
+import type { CastRef, ChainStep, Scheduled } from "./timeline/state.ts";
 import { ofKind } from "./timeline/schedule.ts";
+import { maxPoise } from "./timeline/context.ts";
+import { windowKey } from "./timeline/timing.ts";
 
 export interface Candidate {
   readonly action: RotationAction;
@@ -127,32 +129,37 @@ export function candidateActions(ctx: TimelineContext, state: TimelineState): Ca
 /**
  * The choices at the next decision point: the actions that can start
  * soonest, plus the controlled operator's next basic attack even if later
- * (taking it defers everything else), and its dive, which doesn't count
- * for what's soonest: a jump may start as soon as the current skill is
- * past its exclusive frames, so it would often be soonest and crowd the
- * other skills out of the choices.
+ * (taking it defers everything else), and the asides: its dive and the
+ * swaps, which are choices whenever legal and don't count for what's
+ * soonest. A jump may start as soon as the current skill is past its
+ * exclusive frames and a swap nearly always at the state's own frame, so
+ * either would often be soonest and crowd the other skills out of the
+ * choices (review round two: with the swaps counted, skills in a team
+ * started only on frames where a basic attack or swap did).
  *
  * The controlled operator's basic attacks, its dive and the swaps (kept
  * even if later, or cheap) are judged in full; of the others, first only whether
  * they can start at the state's own frame (startsNow), which is much
- * cheaper than judging how much later they could. When any action can
- * start then, nothing starts sooner, and the others aren't choices; only
- * when none can are they judged in full. The same choices, in the same
- * order, as judging them all.
+ * cheaper than judging how much later they could. When any of them or a
+ * basic attack can start then, nothing starts sooner, and the others aren't
+ * choices; only when none can are they judged in full. The same choices,
+ * in the same order, as judging them all.
  */
 export function legalActions(ctx: TimelineContext, state: TimelineState): Candidate[] {
   const actions = actionsToJudge(ctx, state);
   const basics = new Set(nextBasics(ctx.data, state, state.controlled));
   const dive = diveOf(ctx.data, state.controlled);
   const isDive = (a: RotationAction) => a.operator === state.controlled && a.skill === dive;
-  const early = (a: RotationAction) => a.skill === "swap" || (a.operator === state.controlled && basics.has(a.skill)) || isDive(a);
+  // Swaps and the dive are choices whenever they're legal, and don't count for what's soonest (asides).
+  const aside = (a: RotationAction) => a.skill === "swap" || isDive(a);
+  const early = (a: RotationAction) => aside(a) || (a.operator === state.controlled && basics.has(a.skill));
   const judged: (Candidate | null | undefined)[] = actions.map((a) => (early(a) ? judge(ctx, state, a) : undefined));
   const inFight = state.frame <= ctx.scenario.durationFrames;
   // Then whether the others can start now: if any action can, the others that can't aren't choices.
   actions.forEach((a, i) => {
     if (judged[i] === undefined && inFight && startsNow(ctx, state, a)) judged[i] = { action: a, frame: state.frame };
   });
-  const now = judged.some((c) => c?.frame === state.frame && !isDive(c.action));
+  const now = judged.some((c) => c?.frame === state.frame && !aside(c.action));
   const all: Candidate[] = [];
   actions.forEach((a, i) => {
     // Only when nothing can start now: when the others could start.
@@ -160,8 +167,8 @@ export function legalActions(ctx: TimelineContext, state: TimelineState): Candid
     if (c) all.push(c);
   });
   if (all.length === 0) return [];
-  const soonest = Math.min(...all.filter((c) => !isDive(c.action)).map((c) => c.frame));
-  const out = all.filter((c) => c.frame === soonest || (c.action.operator === state.controlled && basics.has(c.action.skill)) || isDive(c.action));
+  const soonest = Math.min(...all.filter((c) => !aside(c.action)).map((c) => c.frame));
+  const out = all.filter((c) => c.frame === soonest || (c.action.operator === state.controlled && basics.has(c.action.skill)) || aside(c.action));
   // Each choice also at the start of a short timing window it reads, when one is on its way (both the hit and the missed ring).
   return out.flatMap((c) => [c, ...timingChoices(ctx, state, c)]);
 }
@@ -268,13 +275,6 @@ export interface SearchOptions {
   /** Stop after expanding this many nodes (default 200,000). */
   readonly maxExpansions?: number;
   /**
-   * How much unspent SP and ultimate energy count when the beam compares
-   * states (0: committed damage only). Each point is worth what the team's
-   * own skills deal per point (resourceValues), fading out toward the
-   * fight's end; the result is still ranked by damage alone.
-   */
-  readonly resourceWeight?: number;
-  /**
    * Seeded battles each candidate is played in when the scenario has random
    * outcomes (randomOutcomes; default 4): seeds `seed`, `seed` + 1, … from
    * the scenario's seed (default 1). Without random outcomes it's always 1.
@@ -288,40 +288,6 @@ export interface SearchOptions {
   readonly percentile?: number;
   /** Battles the found rotation is replayed in for its distribution, when the scenario has random outcomes (default 50; 0: none). */
   readonly runs?: number;
-}
-
-/**
- * What a point of team SP and of each operator's ultimate energy is worth:
- * the best damage per point of a battle skill / ultimate cast alone at the
- * start. An ultimate whose worth is what it enables (Laevatain's Twilight)
- * deals little itself, so its energy is priced low.
- */
-export function resourceValues(data: GameData, scenario: Omit<TimelineScenario, "rotation">): { readonly perSp: number; readonly perEnergy: Readonly<Record<string, number>> } {
-  let perSp = 0;
-  const perEnergy: Record<string, number> = {};
-  for (const b of scenario.team) {
-    const op = b.operator;
-    const ctx = memoised(createContext(data, { ...scenario, rotation: [], startEnergy: { ...scenario.startEnergy, [op]: "full" }, enemyActions: [] }));
-    const s0 = init(ctx);
-    const base = committedDamage(ctx, s0);
-    for (const skill of data.kits.operators[op]?.skills ?? []) {
-      if ((skill.kind !== "battle" && skill.kind !== "ultimate") || skill.followUpOnly) continue;
-      const action: RotationAction = { operator: op, skill: skill.skillId };
-      if ("error" in earliestStart(ctx, s0, action)) continue;
-      const s1 = apply(ctx, s0, action);
-      const cast = s1.casts.at(-1);
-      if (!cast) continue;
-      const dealt = committedDamage(ctx, s1) - base;
-      if (skill.kind === "battle") {
-        const spent = s0.sp - cast.spAfter;
-        if (spent > 0) perSp = Math.max(perSp, dealt / spent);
-      } else {
-        const spent = (s0.energy[op] ?? 0) - cast.energyAfter;
-        if (spent > 0) perEnergy[op] = Math.max(perEnergy[op] ?? 0, dealt / spent);
-      }
-    }
-  }
-  return { perSp, perEnergy };
 }
 
 /**
@@ -367,6 +333,14 @@ export interface SearchResult {
   /** The best rotation replayed with `simulate`: one battle, with the scenario's own seed. */
   readonly result: TimelineResult;
   readonly expanded: number;
+  /** The search stopped at SearchOptions.maxExpansions with states left to expand: the rotation is the best found by then. */
+  readonly capped: boolean;
+  /**
+   * Nodes the beam compared (`compared`), of which equivalent to a better one (`merged`: stateKey) and, of the rest,
+   * cut by the beam width (`pruned`); `family`: those the best by score alone would have kept, dropped for a better
+   * one of their family (prune).
+   */
+  readonly counts: { readonly compared: number; readonly merged: number; readonly family: number; readonly pruned: number };
   /** The scenario's random outcomes (randomOutcomes); empty: deterministic, one battle is the result. */
   readonly random: readonly string[];
   /** Seeds of the battles every candidate was ranked over (one seed without random outcomes). */
@@ -375,42 +349,134 @@ export interface SearchResult {
   readonly crit: CritMode;
   /** What the beam ranked by: the mean of the seeded battles, or a percentile (SearchOptions.percentile). */
   readonly rankedBy: "mean" | { readonly percentile: number };
+  /** What the found rotation scored as the beam ranked it: its damage, or with random outcomes the statistic of its seeded battles. */
+  readonly score: number;
   /** With random outcomes: the found rotation's distribution over SearchOptions.runs battles (rotationSpread). */
   readonly spread?: RotationSpread;
+}
+
+/** One beam width's search in searchBeams. */
+export interface BeamRun {
+  readonly beamWidth: number;
+  /** SearchResult.score of its rotation. */
+  readonly score: number;
+  readonly expanded: number;
+  readonly capped: boolean;
+}
+
+/** The best of several beam widths' searches (searchBeams), with what each found. */
+export interface BeamsResult extends SearchResult {
+  /** The beam width that found it. */
+  readonly beamWidth: number;
+  /** Every width's search, in the order run. */
+  readonly beams: readonly BeamRun[];
+  /** How far apart the widths' scores are: (best − worst) / best (0: all found the same). */
+  readonly beamSpread: number;
+}
+
+/**
+ * The search at several beam widths (e.g. w/2, w, 2w: efsim search's default), the best result and how far the others
+ * fell short. A beam search's result isn't monotone in its width (review round two: si-laevatain moved ±4.5% between
+ * widths 12 and 48): the spread is how much one width's answer can be trusted to be the best this search finds.
+ * `onBeam` sees each width's result as it's done (the CLI times them).
+ */
+export function searchBeams(data: GameData, scenario: Omit<TimelineScenario, "rotation">, options: SearchOptions & { readonly beams: readonly number[] }, onBeam?: (r: SearchResult, beamWidth: number) => void): BeamsResult {
+  const { beams: widths, ...rest } = options;
+  if (widths.length === 0) throw new EngineError("searchBeams: no beam widths");
+  let best: { r: SearchResult; w: number } | undefined;
+  const beams: BeamRun[] = [];
+  for (const w of widths) {
+    if (!Number.isInteger(w) || w < 1) throw new EngineError(`beam width must be a whole number ≥ 1, not ${w}`);
+    const r = search(data, scenario, { ...rest, beamWidth: w });
+    onBeam?.(r, w);
+    beams.push({ beamWidth: w, score: r.score, expanded: r.expanded, capped: r.capped });
+    if (!best || r.score > best.r.score) best = { r, w };
+  }
+  const b = best as { r: SearchResult; w: number };
+  const worst = Math.min(...beams.map((x) => x.score));
+  return { ...b.r, beamWidth: b.w, beams, beamSpread: b.r.score > 0 ? (b.r.score - worst) / b.r.score : 0 };
 }
 
 /**
  * How a field takes part in the key that says when two states are equivalent
  * for the rest of the fight (stateKey): `true`, all of it; a function, the
- * part of it that counts; a string, the reason it doesn't count at all.
- * Every field of TimelineState (and of the records nested in it that the key
- * used to sample) must be classified, so a new field doesn't compile until
- * someone decides whether the search may merge states that differ in it.
+ * part of it that counts (given the state's KeyEnv); a string, the reason it
+ * doesn't count at all. Every field of TimelineState (and of the records
+ * nested in it that the key used to sample) must be classified, so a new
+ * field doesn't compile until someone decides whether the search may merge
+ * states that differ in it.
  */
-type KeyRule<T> = true | string | ((v: T) => unknown);
+// A function gets the value only when it is there (project skips absent fields).
+type KeyRule<T> = true | string | ((v: Exclude<T, undefined>, env: KeyEnv) => unknown);
 type KeyRules<T> = { readonly [K in keyof T]-?: KeyRule<T[K]> };
+
+/**
+ * What the key reads besides a field itself. Dead deadlines: everything that
+ * happens after a state happens at its frame or later (advance only moves
+ * forward, an action starts no sooner than the state's frame, a slow-down's
+ * shift moves only what's after its start), so a deadline the engine reads
+ * only as "is it later than the frame now" is the same as none once it's at
+ * or before the state's frame (`frame`), whatever its value. Cast indices:
+ * the engine reads them only to tell casts apart, look a cast up and number
+ * the next one (`casts.length`), so they're keyed from the end (`rel`), and
+ * casts nothing refers to any more (`live`) drop out.
+ */
+interface KeyEnv {
+  readonly frame: number;
+  readonly rel: (index: number) => number;
+  /** Cast indices the state still refers to (scheduled items, actions, buffs, each operator's last cast). */
+  readonly live: ReadonlySet<number>;
+  readonly scenario: ScenarioKeyFacts;
+  /** The family key (stateKeyer `loose`, prune): who's controlled, now and at each pending hit's cast, and the buffs' order left out. */
+  readonly loose?: boolean;
+}
+
+/** What the key needs of the scenario (stateKeyer: once per search). */
+interface ScenarioKeyFacts {
+  /** Combo window keys a follow-up combo reads even after the window ended (castSkill reads a follow-up's window count unchecked). */
+  readonly endedWindowsRead: ReadonlySet<string>;
+  /** Per trigger (`owner:triggerId`): whether how often it fired is read (KitTrigger.maxCount). */
+  readonly counted: ReadonlyMap<string, boolean>;
+  /** The enemy's full stagger HP: a stagger that ended refilled the bar (dealPoise). */
+  readonly maxPoise: number;
+}
 
 /** Rounded to 0.1: SP and energy reached by different paths differ in floating-point noise (a search policy: states this close are one). */
 const round = (x: number) => Math.round(x * 10) / 10;
+
+/** A record's entries that hold (absent: none). */
+const entries = <V>(r: Readonly<Record<string, V>>, keep: (v: V, k: string) => boolean): Record<string, V> => Object.fromEntries(Object.entries(r).filter(([k, v]) => keep(v, k)));
+
+/** A deadline read only as "later than now" (see KeyEnv): absent once past. */
+const deadline = (f: number, env: KeyEnv) => (f > env.frame ? f : undefined);
+
+/** A cast reference, from the end of the cast list. */
+const castRef = (c: CastRef, env: KeyEnv) => ({ operator: c.operator, index: env.rel(c.index) });
 
 /** A scheduled item's header (ScheduledHeader): when it's due, on which clock, what it belongs to. */
 const HEADER_KEY = {
   kind: "the key groups the items by kind (scheduledKey)",
   frame: true,
   clock: "follows from the operator, the cast or the kind (the enemy's for bursts and enemy actions)",
-  cast: true, detached: true, launchAt: true, pinned: true,
+  cast: castRef, detached: true, launchAt: true, pinned: true,
 } as const;
+
+/** An event with a cast index in it (hit, status and cast events), from the end of the cast list. */
+const eventKey = (e: BattleEvent, env: KeyEnv) => ("cast" in e && e.cast !== undefined ? { ...e, cast: env.rel(e.cast) } : e);
+
+/** A cast's alternatives (castSkill: `<cast index>:<branch>:<n>`; a trigger's start with its owner instead). */
+const branchKey = (b: string, env: KeyEnv) => b.replace(/^(\d+):/, (_, i: string) => `${env.rel(Number(i))}:`);
 
 /** Each kind of scheduled item: everything about it decides what it does when it's due, but a replayed landing's reference. */
 const SCHEDULED_KEY: { readonly [K in Scheduled["kind"]]: KeyRules<Extract<Scheduled, { kind: K }>> } = {
   hit: {
     ...HEADER_KEY, operator: true, skillId: true, hitId: true, sp: true, spKind: true, spSource: true, usesUp: true, eventCount: true, eventSource: true,
-    controlledAtCast: true, trigger: true, branch: true, fixed: true, snapshot: true, ref: "a replayed landing's reference, which no search sets",
+    controlledAtCast: (c, env) => (env.loose ? undefined : c), trigger: true, branch: branchKey, fixed: true, snapshot: true, ref: "a replayed landing's reference, which no search sets",
   },
-  action: { ...HEADER_KEY, owner: true, trigger: true, event: true, origin: true, awaited: true, afterHits: true },
+  action: { ...HEADER_KEY, owner: true, trigger: true, event: eventKey, origin: true, awaited: true, afterHits: true },
   energy: { ...HEADER_KEY, operator: true, amount: true, if: true },
   jump: { ...HEADER_KEY, operator: true, from: true, to: true, end: true, then: true, landing: true },
-  burst: { ...HEADER_KEY, event: true, fromKind: true, fromCast: true },
+  burst: { ...HEADER_KEY, event: true, fromKind: true, fromCast: (i, env) => env.rel(i) },
   enemyAction: { ...HEADER_KEY, act: true, target: true, element: true },
 };
 const SCHEDULED_KINDS = Object.keys(SCHEDULED_KEY) as Scheduled["kind"][];
@@ -419,16 +485,49 @@ const SCHEDULED_KINDS = Object.keys(SCHEDULED_KEY) as Scheduled["kind"][];
  * The scheduled list as each kind's items, in order: the order within a kind is what advance's ties go by (the first
  * scheduled), how kinds interleave isn't (each kind has its own place in a frame: docs/design.md "Order within a frame").
  */
-function scheduledKey(list: readonly Scheduled[]): Record<string, unknown> {
-  return Object.fromEntries(SCHEDULED_KINDS.map((k) => [k, list.filter((x) => x.kind === k).map((x) => project(x, SCHEDULED_KEY[k] as KeyRules<typeof x>))]));
+function scheduledKey(list: readonly Scheduled[], env: KeyEnv): Record<string, unknown> {
+  return Object.fromEntries(SCHEDULED_KINDS.map((k) => [k, list.filter((x) => x.kind === k).map((x) => project(x, SCHEDULED_KEY[k] as KeyRules<typeof x>, env))]));
 }
 
 /** A timed buff: everything about it decides what it does (its layers, ticks, records, recipients, the cast it belongs to). */
 const BUFF_KEY: KeyRules<ActiveBuff> = {
   id: true, stackGroup: true, owner: true, target: true, appliedAt: true, expiresAt: true, modifiers: true, attrs: true, categories: true, recipients: true,
-  excluded: true, maxLayers: true, maxInstances: true, consumedBy: true, cast: true, whileCasting: true, blocksEnergy: true, every: true, nextTick: true,
-  endsWithCast: true, skipped: true, gameBuff: true, sharedTimer: true, link: true, basicAttack: true, records: true, snapshot: true,
+  excluded: true, maxLayers: true, maxInstances: true, consumedBy: true, cast: (i, env) => env.rel(i),
+  // Read only while `frame < until` (buffs.ts modifiersAt) or to cut it shorter (casting.ts): over, it's as if it had none.
+  whileCasting: (w, env) => (w.until > env.frame ? w : undefined),
+  blocksEnergy: true, every: true, nextTick: true, endsWithCast: (i, env) => env.rel(i), skipped: true, gameBuff: true, sharedTimer: true, link: true,
+  basicAttack: true, records: true, snapshot: true,
 };
+
+/** A chain step's window, read only while the attack input's frame is within it (timing.ts actionGate, chainAfter; search nextBasics). */
+const stepLive = (c: ChainStep, env: KeyEnv) => c.until >= env.frame;
+
+/**
+ * Per kit trigger: when it can fire again, read only as "later than the event" (actions.ts runTriggers); how often it
+ * has, read only against its maxCount; per cast (`…@<cast>`), how often for that cast, read only for events of that
+ * cast. Entries left with nothing that's read drop out; one of a trigger the key doesn't know is kept whole.
+ */
+function triggerStateKey(ts: TimelineState["triggerState"], env: KeyEnv): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, v] of Object.entries(ts)) {
+    const perCast = /^(.*)@(\d+)$/.exec(key);
+    if (perCast) {
+      const cast = Number(perCast[2]);
+      if (env.live.has(cast)) out[`${perCast[1]}@${env.rel(cast)}`] = v.count;
+      continue;
+    }
+    // `owner:trigger`, or `owner:trigger:subject` (KitTrigger.cooldownPer eventSubject).
+    const [owner, trigger] = key.split(":");
+    const counted = env.scenario.counted.get(`${owner}:${trigger}`);
+    if (counted === undefined) {
+      out[key] = v;
+      continue;
+    }
+    const kept = { readyAt: deadline(v.readyAt, env), count: counted ? v.count : undefined };
+    if (kept.readyAt !== undefined || kept.count !== undefined) out[key] = kept;
+  }
+  return out;
+}
 
 const STATE_KEY: KeyRules<TimelineState> = {
   frame: true,
@@ -436,41 +535,62 @@ const STATE_KEY: KeyRules<TimelineState> = {
   sp: round,
   spReturned: round,
   energy: (e) => Object.fromEntries(Object.entries(e).map(([k, v]) => [k, round(v)])),
-  energyBlockedUntil: true,
-  comboWindow: true,
-  spPausedUntil: true,
+  // Read as "> frame" (resources.ts gainEnergy) and set anew (casting.ts).
+  energyBlockedUntil: (e, env) => entries(e, (f) => f > env.frame),
+  // Read through windowOpen (`until < frame`: closed) or with `until >= frame`, but a follow-up combo's count (endedWindowsRead).
+  comboWindow: (w, env) => entries(w, (x, k) => x.until >= env.frame || env.scenario.endedWindowsRead.has(k)),
+  // Read as max(frame, it) (resources.ts spAt, afterRegen; timing.ts) and raised with max (casting.ts).
+  spPausedUntil: deadline,
   spStops: true,
-  controlled: true,
-  acting: true,
-  chainNext: true,
-  readyAt: true,
+  controlled: (c, env) => (env.loose ? undefined : c),
+  acting: (a, env) => Object.fromEntries(Object.entries(a).map(([op, x]) => [op, x.cast !== undefined ? { ...x, cast: env.rel(x.cast) } : x])),
+  chainNext: (c, env) => {
+    const out: Record<string, unknown> = {};
+    for (const [op, x] of Object.entries(c)) {
+      const { alternatives, ...main } = x;
+      const alts = (alternatives ?? []).filter((y) => stepLive(y, env));
+      // The step that was next is kept by a skill that doesn't interrupt the chain only while it's live (chainAfter): a dead one isn't promoted.
+      if (stepLive(main, env) || alts.length) out[op] = { main: stepLive(main, env) ? main : null, alts };
+    }
+    return out;
+  },
+  // Read as `> frame` or max(frame, ⌈it⌉) (timing.ts startFrom, drivers.ts startsNow; resources.ts, actions.ts skip ended ones).
+  readyAt: (r, env) => entries(r, (f) => Math.ceil(f) > env.frame),
   scheduled: scheduledKey,
-  link: true,
-  enemyFrozenUntil: true,
-  stagger: true,
-  slowdowns: true,
+  // Read only as `> frame` (casting.ts Link use, actions.ts link gain).
+  link: (l, env) => l.filter((f) => f > env.frame),
+  // Read as max(event frame, it) (actions.ts freeze).
+  enemyFrozenUntil: deadline,
+  // Staggered while `until > frame`; once it's over the bar counts as full (dealPoise); finisherUsed is read only while Staggered.
+  stagger: (s, env) => (s.until !== null && s.until > env.frame ? s : { poise: s.until !== null ? env.scenario.maxPoise : s.poise }),
+  // Read only from their start to their end (clock.ts slowDown, which drops the ended ones).
+  slowdowns: (d, env) => d.filter((x) => x.start + x.scales.length > env.frame),
   enemy: true,
-  buffs: (b) => b.map((x) => project(x, BUFF_KEY)),
-  triggerState: true,
+  // In order (the engine reads the first of several matches in places); a family (loose) doesn't care which came first.
+  buffs: (b, env) => {
+    const out = b.map((x) => project(x, BUFF_KEY, env));
+    return env.loose ? out.map(canonical).sort() : out;
+  },
+  triggerState: triggerStateKey,
   stacks: true,
   // What the engine reads back of the cast list: each operator's last cast (an action without one falls back to it) and
   // the Link stacks a cast used (castLink, read by its hits and events); the next cast's index follows from the former.
-  casts: (casts) => {
+  casts: (casts, env) => {
     const last: Record<string, [number, string]> = {};
-    casts.forEach((c, i) => (last[c.operator] = [i, c.skill]));
-    return { last, link: casts.flatMap((c, i) => (c.link !== undefined ? [[i, c.link]] : [])) };
+    casts.forEach((c, i) => (last[c.operator] = [env.rel(i), c.skill]));
+    return { last, link: casts.flatMap((c, i) => (c.link !== undefined && env.live.has(i) ? [[env.rel(i), c.link]] : [])) };
   },
   hits: "what has landed is the score (committedDamage), not what comes next; recording buffs keep their own totals (ActiveBuff.records)",
   reactions: "the record of what the enemy's arts state did; nothing reads it back",
 };
 
 /** The parts of a record its rules say count (KeyRules), by field name. */
-function project<T extends object>(v: T, rules: KeyRules<T>): Record<string, unknown> {
+function project<T extends object>(v: T, rules: KeyRules<T>, env: KeyEnv): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const k of Object.keys(rules) as (keyof T & string)[]) {
     const rule = rules[k] as KeyRule<T[keyof T]>;
     if (typeof rule === "string" || v[k] === undefined) continue;
-    out[k] = rule === true ? v[k] : rule(v[k]);
+    out[k] = rule === true ? v[k] : rule(v[k] as Exclude<T[keyof T], undefined>, env);
   }
   return out;
 }
@@ -489,23 +609,98 @@ function canonical(v: unknown): string {
   return `{${Object.keys(o).filter((k) => o[k] !== undefined).sort().map((k) => `${JSON.stringify(k)}:${canonical(o[k])}`).join(",")}}`;
 }
 
+/** The cast indices a state still refers to: what's scheduled, the operators' actions, buffs, each operator's last cast. */
+function liveCasts(s: TimelineState): Set<number> {
+  const live = new Set<number>();
+  for (const x of s.scheduled) {
+    if (x.cast) live.add(x.cast.index);
+    if (x.kind === "burst" && x.fromCast !== undefined) live.add(x.fromCast);
+    if (x.kind === "action" && "cast" in x.event && x.event.cast !== undefined) live.add(x.event.cast);
+    if (x.kind === "hit" && x.branch) {
+      const m = /^(\d+):/.exec(x.branch);
+      if (m) live.add(Number(m[1]));
+    }
+  }
+  for (const a of Object.values(s.acting)) if (a.cast !== undefined) live.add(a.cast);
+  for (const b of s.buffs) {
+    if (b.cast !== undefined) live.add(b.cast);
+    if (b.endsWithCast !== undefined) live.add(b.endsWithCast);
+  }
+  const last = new Map<string, number>();
+  s.casts.forEach((c, i) => last.set(c.operator, i));
+  for (const i of last.values()) live.add(i);
+  return live;
+}
+
+/**
+ * What the key needs of a scenario: computed once, then each state's key (stateKey) is cheap. `loose`: the family
+ * key instead (prune), which leaves out who's controlled, now and at each pending hit's cast, and the buffs' order.
+ */
+export function stateKeyer(ctx: TimelineContext, loose = false): (s: TimelineState) => string {
+  const endedWindowsRead = new Set<string>();
+  const counted = new Map<string, boolean>();
+  for (const b of ctx.scenario.team) {
+    const op = b.operator;
+    for (const t of ctx.kits.get(op)?.triggers ?? []) {
+      counted.set(`${op}:${t.id}`, (counted.get(`${op}:${t.id}`) ?? false) || t.maxCount !== undefined);
+      for (const a of allActions(t.do)) {
+        if (a.kind !== "cast") continue;
+        const skill = ctx.kits.get(op)?.skills.find((s) => s.skillId === a.skill);
+        if (skill?.kind === "combo" && skill.comboWindow !== false) endedWindowsRead.add(windowKey(ctx, op, a.skill));
+      }
+    }
+  }
+  const scenario: ScenarioKeyFacts = { endedWindowsRead, counted, maxPoise: maxPoise(ctx) };
+  return (s) => {
+    const n = s.casts.length;
+    return canonical(project(s, STATE_KEY, { frame: s.frame, rel: (i) => n - i, live: liveCasts(s), scenario, loose }));
+  };
+}
+
 /**
  * What makes two states equivalent for the rest of the fight (not how they
  * got there): every field of the state that what comes next reads
- * (STATE_KEY). Damage already committed is the score, not part of the key.
+ * (STATE_KEY), less deadlines already past and casts nothing refers to
+ * (KeyEnv). Damage already committed is the score, not part of the key.
  */
-export function stateKey(s: TimelineState): string {
-  return canonical(project(s, STATE_KEY));
+export function stateKey(ctx: TimelineContext, s: TimelineState): string {
+  return stateKeyer(ctx)(s);
 }
 
-/** The best node per equivalent state (in every seeded battle), best first, at most `n`. */
-function prune(nodes: readonly Node[], n: number): Node[] {
+/**
+ * The nodes a layer keeps, best first, at most `n`: the best of each set of equivalent states (stateKey: in every
+ * seeded battle), then the best of each family (familyKey) in score order, then, if there's room, the best of the
+ * rest. A family is the states that differ only in who's controlled (now, and when each hit on its way was cast):
+ * a swap is free and takes no time, so each state comes in up to one variant per team member, all with one score,
+ * and in a team they filled the beam (si-laevatain: half the beam; the 4-operator example: 12 of 12 nodes at one
+ * point, all 671,349, and the best rotation was dropped). A search policy, not an exact merge: the others are
+ * reached by swapping later.
+ */
+function prune(nodes: readonly Node[], n: number, counts: { merged: number; family: number; pruned: number }): Node[] {
   const byKey = new Map<string, Node>();
   for (const x of nodes) {
     const y = byKey.get(x.key);
     if (!y || x.score > y.score) byKey.set(x.key, x);
   }
-  return [...byKey.values()].sort((a, b) => b.score - a.score).slice(0, n);
+  counts.merged += nodes.length - byKey.size;
+  // Stable: ties keep generation order (deterministic).
+  const sorted = [...byKey.values()].sort((a, b) => b.score - a.score);
+  if (sorted.length <= n) return sorted;
+  const kept: Node[] = [];
+  const rest: Node[] = [];
+  const families = new Set<string>();
+  for (const x of sorted) {
+    if (kept.length < n && !families.has(x.family)) {
+      kept.push(x);
+      families.add(x.family);
+    } else rest.push(x);
+  }
+  for (const x of rest) if (kept.length < n) kept.push(x);
+  counts.pruned += sorted.length - n;
+  // Those the best n by score would have kept.
+  const chosen = new Set(kept);
+  counts.family += sorted.slice(0, n).filter((x) => !chosen.has(x)).length;
+  return kept.sort((a, b) => b.score - a.score);
 }
 
 interface Node {
@@ -514,10 +709,10 @@ interface Node {
   readonly rotation: readonly RotationAction[];
   /** stateKey of every state. */
   readonly key: string;
-  /** What the beam ranks it by: the statistic of committed damage plus resources' worth (SearchOptions.resourceWeight) over the battles. */
+  /** familyKey of the first state (prune). */
+  readonly family: string;
+  /** What the beam ranks it by: the statistic of committed damage over the battles. */
   readonly score: number;
-  /** The statistic of committed damage over the battles. */
-  readonly damage: number;
 }
 
 /** The mean of the values, or their percentile (0–100, nearest rank). One value is itself either way. */
@@ -563,18 +758,12 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
   // Judging the candidates of one state advances it to the same frames over and over: memoised (exact, states are plain data).
   const ctxs = (k === 1 ? [createContext(data, { ...scenario, rotation: [] })] : seeds.map((seed) => createContext(data, { ...scenario, rotation: [], options: { ...scenario.options, seed } }))).map(memoised);
   const ctx = ctxs[0] as TimelineContext;
-  const weight = options.resourceWeight ?? 0;
-  const values = weight > 0 ? resourceValues(data, scenario) : null;
-  const scoreOf = (c: TimelineContext, state: TimelineState, damage: number): number => {
-    if (!values) return damage;
-    const left = Math.max(0, 1 - state.frame / c.scenario.durationFrames);
-    const worth = state.sp * values.perSp + Object.entries(state.energy).reduce((t, [op, e]) => t + e * (values.perEnergy[op] ?? 0), 0);
-    return damage + weight * left * worth;
-  };
+  const keyers = ctxs.map((c) => stateKeyer(c));
+  // Families by the proposing battle (the others played the same actions).
+  const familyKey = stateKeyer(ctx, true);
   const node = (states: readonly TimelineState[], rotation: readonly RotationAction[]): Node => {
     const damages = states.map((s, i) => committedDamage(ctxs[i] as TimelineContext, s));
-    const scores = values ? states.map((s, i) => scoreOf(ctxs[i] as TimelineContext, s, damages[i] as number)) : damages;
-    return { states, rotation, key: states.map(stateKey).join("\n"), score: statistic(scores, percentile), damage: statistic(damages, percentile) };
+    return { states, rotation, family: familyKey(states[0] as TimelineState), key: states.map((s, i) => (keyers[i] as (s: TimelineState) => string)(s)).join("\n"), score: statistic(damages, percentile) };
   };
   const buckets = new Map<number, Node[]>();
   const push = (n: Node) => {
@@ -587,13 +776,16 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
   push(root);
   let best: Node = root;
   let expanded = 0;
+  const counts = { compared: 0, merged: 0, family: 0, pruned: 0 };
+  let capped = false;
   while (buckets.size > 0 && expanded < maxExpansions) {
     const b = Math.min(...buckets.keys());
     let layer = buckets.get(b) as Node[];
     buckets.delete(b);
     // Children that stay in this bucket (casts at the same frame) are expanded in further rounds, under the same beam.
     while (layer.length > 0 && expanded < maxExpansions) {
-      const nodes = prune(layer, beam);
+      counts.compared += layer.length;
+      const nodes = prune(layer, beam, counts);
       layer = [];
       for (const n of nodes) {
         expanded++;
@@ -601,7 +793,7 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
         // A swap takes no time: never two in a row (they'd loop within a frame).
         const lastSwap = n.rotation.at(-1)?.skill === "swap";
         const choices = legalActions(ctx, first).filter((c) => !(lastSwap && c.action.skill === "swap"));
-        if (choices.length === 0 && n.damage > best.damage) best = n;
+        if (choices.length === 0 && n.score > best.score) best = n;
         for (const c of choices) {
           // Applied as recorded, with `at` the frame it starts, so the rotation replays to exactly these states.
           const step = { ...c.action, at: c.frame };
@@ -615,23 +807,28 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
           }
           if (states.length < k) continue;
           const child = node(states, [...n.rotation, step]);
-          if (child.damage > best.damage) best = child;
+          if (child.score > best.score) best = child;
           if (Math.floor((states[0] as TimelineState).frame / bucketFrames) === b) layer.push(child);
           else push(child);
         }
       }
     }
+    if (layer.length > 0) capped = true;
   }
+  if (buckets.size > 0) capped = true;
   const full: TimelineScenario = { ...scenario, rotation: best.rotation };
   const runs = options.runs ?? 50;
   return {
     rotation: best.rotation,
     result: simulate(data, full),
     expanded,
+    capped,
+    counts,
     random,
     seeds,
     crit,
     rankedBy: percentile === undefined ? "mean" : { percentile },
+    score: best.score,
     ...(random.length > 0 && runs > 0 ? { spread: rotationSpread(data, full, runs, seed0) } : {}),
   };
 }

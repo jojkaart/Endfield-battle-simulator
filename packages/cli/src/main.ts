@@ -29,8 +29,9 @@ const USAGE = `Usage:
                 [--attack-every s]        The enemy attacks the controlled operator every s seconds
                 [--dodge p]               Dash at every enemy attack, perfect with chance p (0–1)
   efsim search <scenario.json>            Find a rotation for the scenario's team (its rotation is ignored)
-                [--beam n] [--out file]   Beam width (default 24); save the rotation as a scenario
-                [--resource-weight w]     How much unspent SP and energy count while searching (default 0)
+                [--beam n] [--out file]   Beam width w (default 24): runs w/2, w and 2w, keeps the best and
+                                          shows how far apart they are; save the rotation as a scenario
+                [--single]                Only beam w (a third of the time, no spread)
                 [--seeds k]               With random outcomes: battles each candidate is ranked over (default 4)
                 [--percentile p]          Rank by that percentile (0–100) of them instead of the mean
                 [--runs n]                Battles for the found rotation's distribution (default 50; 0: none)
@@ -84,7 +85,7 @@ async function main(argv: string[]): Promise<number> {
       "log-buffs": { type: "boolean", default: false },
       simulate: { type: "boolean", default: false },
       beam: { type: "string", default: "24" },
-      "resource-weight": { type: "string" },
+      single: { type: "boolean", default: false },
       seed: { type: "string" },
       runs: { type: "string" },
       seeds: { type: "string" },
@@ -210,10 +211,12 @@ async function main(argv: string[]): Promise<number> {
         if (percentile !== undefined && !(percentile >= 0 && percentile <= 100)) throw new Error(`--percentile must be 0–100`);
         const runs = values.runs === undefined ? undefined : Number(values.runs);
         if (runs !== undefined && !(Number.isInteger(runs) && runs >= 0)) throw new Error(`--runs must be a whole number ≥ 0`);
+        const beam = Number(values.beam);
+        if (!(Number.isInteger(beam) && beam >= 1)) throw new Error(`--beam must be a whole number ≥ 1`);
         text = searchCommand(data, withBattleOptions(readScenario(args[0] as string)), {
-          beam: Number(values.beam),
+          beam,
+          single: values.single,
           ...(values.out ? { out: values.out } : {}),
-          ...(values["resource-weight"] !== undefined ? { resourceWeight: Number(values["resource-weight"]) } : {}),
           ...(seeds !== undefined ? { seeds } : {}),
           ...(percentile !== undefined ? { percentile } : {}),
           ...(runs !== undefined ? { runs } : {}),

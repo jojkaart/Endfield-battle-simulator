@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { FPS, critTriggers, randomOutcomes, searchRotation, simulate, simulateRuns, type RotationSpread, type TimelineResult, type Build, type CritMode, type Element, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { FPS, critTriggers, randomOutcomes, searchBeams, simulate, simulateRuns, type RotationSpread, type TimelineResult, type Build, type CritMode, type Element, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
 import { readBuild } from "./commands.ts";
 import { num, table } from "./format.ts";
 
@@ -123,28 +123,52 @@ export function formatSpread(data: GameData, scenario: TimelineScenario, spread:
   ].join("\n");
 }
 
-/** Search a rotation for the scenario's team (its own rotation is ignored); optionally save it as a scenario that `simulate` replays. */
+/** The beam widths `efsim search` runs for `--beam w`: w/2, w and 2w (searchBeams), or w alone with `single`. */
+export function searchWidths(beam: number, single: boolean): number[] {
+  return single ? [beam] : [...new Set([Math.max(1, Math.round(beam / 2)), beam, beam * 2])];
+}
+
+/**
+ * Search a rotation for the scenario's team (its own rotation is ignored) at beam widths w/2, w and 2w (or w alone:
+ * `single`), keep the best, and say how far apart the widths' results are; optionally save it as a scenario that
+ * `simulate` replays.
+ */
 export function searchCommand(
   data: GameData,
   scenario: TimelineScenario,
-  options: { beam: number; out?: string; resourceWeight?: number; seeds?: number; percentile?: number; runs?: number; verbose: boolean },
+  options: { beam: number; single?: boolean; out?: string; seeds?: number; percentile?: number; runs?: number; verbose: boolean },
 ): string {
   const { rotation: _ignored, ...rest } = scenario;
-  const t0 = Date.now();
-  const found = searchRotation(data, rest, {
-    beamWidth: options.beam,
-    ...(options.resourceWeight !== undefined ? { resourceWeight: options.resourceWeight } : {}),
+  const widths = searchWidths(options.beam, options.single ?? false);
+  const seconds = new Map<number, number>();
+  let t = Date.now();
+  const found = searchBeams(data, rest, {
+    beams: widths,
     ...(options.seeds !== undefined ? { seeds: options.seeds } : {}),
     ...(options.percentile !== undefined ? { percentile: options.percentile } : {}),
     ...(options.runs !== undefined ? { runs: options.runs } : {}),
+  }, (_r, w) => {
+    const now = Date.now();
+    seconds.set(w, (now - t) / 1000);
+    t = now;
   });
-  const seconds = ((Date.now() - t0) / 1000).toFixed(1);
+  const total = [...seconds.values()].reduce((a, b) => a + b, 0);
+  const states = found.beams.reduce((a, b) => a + b.expanded, 0);
   const seeds = found.seeds.length === 1 ? `seed ${found.seeds[0]}` : `seeds ${found.seeds[0]}–${found.seeds.at(-1)}`;
   const ranked = typeof found.rankedBy === "string" ? "the mean" : `percentile ${found.rankedBy.percentile}`;
   // Played in the search's crit mode (rolled for crit-triggered effects under expected crits: searchCritMode).
   const full = { ...scenario, rotation: found.rotation, options: { ...scenario.options, crit: found.crit } };
+  const what = found.random.length > 0 ? `${ranked} of ${found.seeds.length} battles` : "damage";
+  const capped = found.beams.filter((b) => b.capped);
   const lines = [
-    `Searched ${found.expanded} states (beam ${options.beam}) in ${seconds} s.`,
+    widths.length === 1
+      ? `Searched ${states} states (beam ${widths[0]}) in ${total.toFixed(1)} s.`
+      : `Searched beams ${widths.join(", ")} (${states} states, ${total.toFixed(1)} s); the best at beam ${found.beamWidth}:`,
+    ...(widths.length === 1 ? [] : [
+      ...found.beams.map((b) => `  beam ${String(b.beamWidth).padStart(3)}: ${num(Math.round(b.score), 0)} (${what}; ${b.expanded} states, ${(seconds.get(b.beamWidth) ?? 0).toFixed(1)} s)${b.beamWidth === found.beamWidth ? "  best" : ""}`),
+      `  Spread ${(found.beamSpread * 100).toFixed(1)}%: ${found.beamSpread < 0.01 ? "the widths agree within 1%." : "the widths disagree; the beam ranks by damage so far, so a rotation that pays off later can be dropped. Treat the best as a lower bound."}`,
+    ]),
+    ...capped.map((b) => `Warning: beam ${b.beamWidth} stopped at the expansion cap (${b.expanded} states) before the fight's end: its rotation is the best found by then.`),
     ...(found.random.length > 0 ? [`Random outcomes (${found.random.join("; ")}): each candidate ranked by ${ranked} of ${found.seeds.length} battle${found.seeds.length === 1 ? "" : "s"} (${seeds}).`] : []),
     "",
     formatResult(data, full, found.result, options.verbose),
@@ -153,7 +177,7 @@ export function searchCommand(
   if (options.out) {
     const doc = {
       $schema: "../schemas/scenario.schema.json",
-      description: `Rotation found by efsim search (beam ${options.beam}${found.random.length > 0 ? `, ranked by ${ranked} of ${found.seeds.length} seeded battles` : ""}); replays with efsim simulate.`,
+      description: `Rotation found by efsim search (beam ${found.beamWidth} of ${widths.join(", ")}${found.random.length > 0 ? `, ranked by ${ranked} of ${found.seeds.length} seeded battles` : ""}); replays with efsim simulate.`,
       team: scenario.team,
       target: scenario.target,
       ...(scenario.controlled ? { controlled: scenario.controlled } : {}),

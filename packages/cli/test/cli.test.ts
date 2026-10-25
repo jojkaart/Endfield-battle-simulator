@@ -9,6 +9,7 @@ import { readLogFixture } from "../src/logs.ts";
 import { checkReactions } from "../src/reactioncheck.ts";
 import { computeStats, type StatPanel } from "@efsim/engine";
 import { formatCensus, kitCensus } from "../src/census.ts";
+import { readScenario, searchCommand, searchWidths } from "../src/simulate.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const data = loadGameData();
@@ -16,6 +17,18 @@ const options: CalcOptions = { target: { enemy: "eny_0051_rodin", level: 90 }, c
 const forgeborn = readBuild(join(ROOT, "examples/laevatain-forgeborn.json"));
 
 describe("cli commands", () => {
+  it("search runs beams w/2, w and 2w, keeps the best and shows how far apart they are", () => {
+    expect(searchWidths(24, false)).toEqual([12, 24, 48]);
+    expect(searchWidths(1, false)).toEqual([1, 2]);
+    expect(searchWidths(24, true)).toEqual([24]);
+    const solo = readScenario(join(ROOT, "examples/laevatain-solo.scenario.json"));
+    const text = searchCommand(data, { ...solo, durationFrames: 6 * 30 }, { beam: 2, verbose: false });
+    expect(text).toMatch(/^Searched beams 1, 2, 4 \(\d+ states, [\d.]+ s\); the best at beam \d:/);
+    expect(text).toMatch(/beam {3}4: [\d,]+ \(damage; \d+ states/);
+    expect(text).toMatch(/Spread \d+\.\d%/);
+    expect(searchCommand(data, { ...solo, durationFrames: 6 * 30 }, { beam: 2, single: true, verbose: false })).toMatch(/^Searched \d+ states \(beam 2\)/);
+  });
+
   it("find looks up IDs by name", () => {
     expect(find(data, "laevatain")).toContain("chr_0016_laevat");
     expect(find(data, "forgeborn")).toContain("wpn_sword_0006");
