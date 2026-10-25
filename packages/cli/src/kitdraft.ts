@@ -11,7 +11,7 @@
 // log fixtures.
 
 import type { GameData, Predicate } from "@efsim/engine";
-import { allOf, compileSkill, formatCompiledValue, prefixOf, type BranchStep, type CompiledCost, type CompiledEffect, type CompiledJump, type CompiledLanding, type CompiledPoiseLanding, type CompiledSkill, type CompiledValue, type Placement } from "@efsim/data";
+import { allOf, compileOperatorSkill, foldPoise, formatCompiledValue, prefixOf, valueExpr as dataValueExpr, type BranchStep, type CompiledCost, type CompiledEffect, type CompiledJump, type CompiledLanding, type CompiledPoiseLanding, type CompiledSkill, type CompiledValue, type Placement } from "@efsim/data";
 
 const FPS = 30;
 const round = (n: number, d = 4) => Math.round(n * 10 ** d) / 10 ** d;
@@ -21,14 +21,8 @@ type Json = string | number | boolean | null | Json[] | { [k: string]: Json };
 /** Puts arrays of plain values (frames, keys, events) on one line. */
 const compactArrays = (text: string) => text.replace(/\[\n\s+([^[\]{}]*?)\n\s*\]/g, (_m, inner: string) => `[${inner.split(/,\n\s+/).join(", ")}]`);
 
-/** A value as a kit ValueExpr: a key, key × literal, a product of keys, or a literal; null when it's an expression. Literals are rounded to 6 places (the data's are float32: 0.300000012). */
-function valueExpr(v: CompiledValue, coefficient = 1): Json | null {
-  if (v.expr) return null;
-  const factor = round(v.factor * coefficient, 6);
-  if (v.keys.length === 0) return v.value === null ? null : round(v.value * coefficient, 6);
-  const terms: Json[] = [...v.keys, ...(factor === 1 ? [] : [factor])];
-  return terms.length === 1 ? (terms[0] as Json) : { product: terms };
-}
+/** A value as a kit ValueExpr (kitMatch.ts valueExpr), or null when it's an expression. */
+const valueExpr = (v: CompiledValue, coefficient = 1): Json | null => dataValueExpr(v, coefficient) as Json | null;
 
 /** The single key a value is (factor 1), or null. */
 const singleKey = (v: CompiledValue | null | undefined): string | null => (v && !v.expr && v.keys.length === 1 && v.factor === 1 ? (v.keys[0] as string) : null);
@@ -276,27 +270,6 @@ function draftHits(c: CompiledSkill, skillType: string, logged: ReadonlyMap<stri
   return { hits, used, eventDriven };
 }
 
-/**
- * Stagger-only DamageActions (CompiledSkill.poiseOnly): one is folded into
- * the landing it goes with when that landing deals no stagger of its own
- * and the only extra condition is none or "controlled" (then
- * poiseControlledOnly, as CheckMainCharacterCondition gates it); the others
- * become poise-only hits of their own.
- */
-function foldPoise(c: CompiledSkill): { skill: CompiledSkill; rest: CompiledPoiseLanding[] } {
-  const landings = [...c.landings];
-  const rest: CompiledPoiseLanding[] = [];
-  for (const p of c.poiseOnly) {
-    const l = p.landing === null ? undefined : landings[p.landing];
-    const extra = l && prefixOf(l.branch, p.branch) ? p.steps.slice(l.steps.length) : null;
-    const controlledGate = extra?.length === 1 && JSON.stringify(extra[0]?.pred) === JSON.stringify({ controlled: true });
-    if (l && p.landing !== null && l.file === p.file && l.frame === p.frame && !l.poise && extra && (extra.length === 0 || controlledGate)) {
-      landings[p.landing] = { ...l, poise: { value: p.poise.value, controlledOnly: p.poise.controlledOnly || controlledGate } };
-    } else rest.push(p);
-  }
-  return { skill: { ...c, landings }, rest };
-}
-
 /** Poise-only landings that fold into no hit: hits with `poiseOnly`, alike ones grouped. */
 function poiseHits(c: CompiledSkill, rest: readonly CompiledPoiseLanding[], taken: ReadonlySet<string>, logged: ReadonlyMap<string, number>): Record<string, Json>[] {
   const groups = new Map<string, CompiledPoiseLanding[]>();
@@ -489,59 +462,16 @@ function draftSkill(compiled: CompiledSkill, groupType: string, logged: Readonly
   };
 }
 
-/** Buffs the operator's talents and potentials attach, with the predicate that holds while each is attached (the lowest talent level or potential). */
-function attachedBuffs(data: GameData, operator: string): Map<string, Predicate> {
-  const op = data.operators[operator];
-  const out = new Map<string, Predicate>();
-  if (!op) return out;
-  for (const n of [...op.talentNodes].sort((a, b) => a.level - b.level))
-    for (const e of n.effects) if (e.kind === "buff" && !out.has(e.buffId)) out.set(e.buffId, { talentAtLeast: [n.index, n.level] });
-  op.potentials.forEach((effects, i) => {
-    for (const e of effects) if (e.kind === "buff" && !out.has(e.buffId)) out.set(e.buffId, { potentialAtLeast: i + 1 });
-  });
-  return out;
-}
-
-/**
- * A skill's keys that are 0 at every level and only set (op set, > 0) by one
- * talent's levels or by potentials, with the predicate under which they're
- * set: Wulfgard's talent2, Alesh's exist_talent_1. A key another source also
- * changes (Avywenna's talent0_usp, which P1 adds to) isn't a gate.
- */
-function valueGates(data: GameData, operator: string, skillId: string, values: Readonly<Record<string, number>> | undefined): Map<string, { pred: Predicate; min: number; max: number }> {
-  const op = data.operators[operator];
-  const out = new Map<string, { pred: Predicate; min: number; max: number }>();
-  if (!op) return out;
-  type Source = { pred: Predicate; source: string; level: number; op: string; value: number };
-  const byKey = new Map<string, Source[]>();
-  const add = (key: string, s: Source) => byKey.set(key, [...(byKey.get(key) ?? []), s]);
-  for (const n of op.talentNodes)
-    for (const e of n.effects) if (e.kind === "skillValue" && e.skillId === skillId) add(e.key, { pred: { talentAtLeast: [n.index, n.level] }, source: `talent ${n.index}`, level: n.level, op: e.op, value: e.value });
-  op.potentials.forEach((effects, i) => {
-    for (const e of effects) if (e.kind === "skillValue" && e.skillId === skillId) add(e.key, { pred: { potentialAtLeast: i + 1 }, source: "potential", level: i + 1, op: e.op, value: e.value });
-  });
-  const levels = data.skills[skillId]?.levels ?? [];
-  for (const [key, sources] of byKey) {
-    const base = [values?.[key], data.skills[skillId]?.defaults[key], ...levels.map((l) => l.blackboard[key])].filter((x): x is number => x !== undefined);
-    if (base.some((x) => x !== 0) || new Set(sources.map((s) => s.source)).size !== 1 || sources.some((s) => s.op !== "set" || !(s.value > 0))) continue;
-    const first = [...sources].sort((a, b) => a.level - b.level)[0] as Source;
-    out.set(key, { pred: first.pred, min: Math.min(...sources.map((s) => s.value)), max: Math.max(...sources.map((s) => s.value)) });
-  }
-  return out;
-}
-
 export function kitDraft(data: GameData, operator: string, loggedEvents: ReadonlyMap<string, number>): string {
   const op = data.operators[operator];
   if (!op) throw new Error(`unknown operator ${operator}`);
   const top = new Set(Object.keys(op.skillGroups));
-  const attached = attachedBuffs(data, operator);
   const skills: Record<string, Json>[] = [];
   const triggers: Record<string, Json>[] = [];
   const empty: string[] = [];
   const covered = new Set<string>();
   for (const id of [...top].sort()) {
-    const values = data.skills[id]?.levels.at(-1)?.blackboard;
-    const c = compileSkill(id, { followCast: (s) => !top.has(s), attachedBuffs: attached, valueGates: valueGates(data, operator, id, values), ...(values ? { values } : {}) });
+    const c = compileOperatorSkill(data, operator, id);
     if (!c || (c.landings.length === 0 && c.poiseOnly.length === 0 && c.energy.length === 0 && c.sp.length === 0 && c.teamEnergy.length === 0 && c.energyBlocks.length === 0 && !c.effects.length)) {
       empty.push(c ? id : `${id} (no SkillData file)`);
       continue;

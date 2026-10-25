@@ -16,6 +16,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 import { importBattle, readLogFixture } from "./logs.ts";
 import { checkReactions, formatReactionCheck } from "./reactioncheck.ts";
 import { formatCensus, kitCensus } from "./census.ts";
+import { formatTrim, kitTrim } from "./kittrim.ts";
 
 const USAGE = `Usage:
   efsim find <text>                       Look up operator, weapon, gear and enemy IDs by name
@@ -49,6 +50,7 @@ const USAGE = `Usage:
   efsim zmdlogs find-scales <fixture> <op> Skill values (keys) that explain each logged event
   efsim kit-draft <operator>              Draft a kit from SkillData (to verify against logs)
   efsim kit-census                        Kit features per operator, for the review after each new kit
+  efsim kit-trim [--write]                Kit values the loader takes from the data anyway (--write removes them)
 
 Options for calc and compare:
   --enemy <id>        Target (default eny_0051_rodin, Rhodagn)
@@ -86,6 +88,7 @@ async function main(argv: string[]): Promise<number> {
       dodge: { type: "string" },
       "attack-every": { type: "string" },
       out: { type: "string" },
+      write: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
     },
   });
@@ -210,6 +213,9 @@ async function main(argv: string[]): Promise<number> {
       break;
     case "kit-census":
       text = formatCensus(kitCensus());
+      break;
+    case "kit-trim":
+      text = formatTrim(kitTrim(data, values.write), values.write);
       break;
     case "kit-draft": {
       need(1);

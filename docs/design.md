@@ -168,6 +168,60 @@ trigger conditions, which come from data we don't have) goes in a small
 format. Each hand-written rule cites its source and has a test. Unknown
 action types or enum values fail the build, so coverage gaps are visible.
 
+**Kits and the game data** (2026-10-25, review 3.1). The loader
+(`packages/data/src/kits.ts`) compiles each kit skill once
+(`kitMatch.ts` `compileOperatorSkill`, with kit-draft's options: the
+talents' and potentials' attached buffs and value gates, timing values at
+the highest level; cached per loaded data) and matches its hits to the
+compiled landings (`matchSkill`: by first scale key, log events, frames on
+one branch path). Then:
+
+- **What a kit leaves out comes from the data** where every landing the
+  hit stands for agrees (`hitFacts`, `withDataFacts`): frames (a hit
+  without frames takes the landings of its key and events when they are
+  one branch path no other hit takes landings of; a skill hit must end up
+  with frames), events, factor, element, poise and poiseControlledOnly,
+  detached, energy; `count` defaults to the number of frames; the skill's
+  teamEnergy and energyBlockSeconds (unless an energy-blocking buff of its
+  own cast trigger blocks it); SP: the grant going with each landing (one
+  only while controlled as `{if: {controlled: true}, then: v}`,
+  `spBeforeDamage` when it comes first), when every grant of the skill
+  goes with a kit hit's landing or the kit names SP elsewhere in it.
+  `efsim kit-trim` removes hand-written values equal to these, each only
+  when the file loads exactly as before.
+- **What a kit writes must be the data's**, or the load fails: every
+  field above, the scale keys, Final Strike, a hand-written SP grant (its
+  value, only-while-controlled, before or after the damage), launch, the
+  applications by frame, landings no hit stands for; a cast trigger on one
+  skill with that skill's values is part of its timeline (its hits at
+  delay + frame, its energy, SP and applications at the delay; one with a
+  random choice is left out); an equipment kit's triggered hits against
+  their skill's landings where it has some; a kit buff's duration against
+  the data's CreateBuff of its game buff where a skill's hit or own cast
+  trigger applies it (a key of that skill, the buff file's own literal,
+  or until ended). A difference on purpose is
+  marked where it is, with the reason: `dataOverride: {field: "reason"}` on
+  the hit, the trigger, the buff (`duration`), or the skill (`teamEnergy`,
+  `energyBlockSeconds`, `applies@<frame>`, `lands <file>`). A mark where nothing differs fails
+  too, so a fixed kit or compiler drops its marks. What the compiler can't
+  say (dynamic keys, conditions it can't decide, jumps it doesn't follow)
+  shows as a difference; its mark says so.
+- **References** are checked as the kit loads: log event keys name fetched
+  SkillData or BuffData files, a trigger's `gameBuffs` fetched BuffData,
+  an application's `durationKey` / `scaleKey` / `multiplierKey` values of
+  the applying skill (`scaleKey` on a physical status only for Breach).
+- **Every node type** in the fetched SkillData and BuffData is listed in
+  `skillTypes.ts` (interpreted by the compiler, the timing reader or the
+  buff reader; a condition the compiler leaves undecided; or walked
+  without interpretation, with why): a patch that adds one fails
+  `skillTypes.test.ts`.
+
+Not yet from the data (compared where written): launch frames,
+applications, bonuses, buff durations (a kit buff without one lasts until
+ended, so "left out" can't mean "the data's"); SP where the data doesn't
+place all of a skill's grants on its hits (hitless skills, grants on
+branches): there the engine still adds the skill's `atb` on its first hit.
+
 **Arts state and stacks.** Kits list per hit what it `applies`
 (inflictions, forced reactions, consumption). Which hits inflict is in
 SkillData: an enabled `SpellInfliction` action next to the hit, with

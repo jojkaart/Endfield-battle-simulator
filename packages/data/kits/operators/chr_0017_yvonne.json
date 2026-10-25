@@ -340,9 +340,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            11
-          ],
           "launch": 11,
           "events": [
             "chr_0017_yvonne_attack1_projhit"
@@ -365,9 +362,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            11
-          ],
           "launch": 11,
           "events": [
             "chr_0017_yvonne_attack2_projhit"
@@ -377,9 +371,6 @@
           "id": "robot_projhit",
           "scale": [
             "atk_scale"
-          ],
-          "frames": [
-            14
           ],
           "launch": 14,
           "events": [
@@ -406,10 +397,7 @@
           "frames": [
             6
           ],
-          "launch": 6,
-          "events": [
-            "chr_0017_yvonne_attack3_projhit"
-          ]
+          "launch": 6
         },
         {
           "id": "projhit2",
@@ -419,10 +407,7 @@
           "frames": [
             9
           ],
-          "launch": 9,
-          "events": [
-            "chr_0017_yvonne_attack3_projhit"
-          ]
+          "launch": 9
         },
         {
           "id": "projhit3",
@@ -432,10 +417,7 @@
           "frames": [
             12
           ],
-          "launch": 12,
-          "events": [
-            "chr_0017_yvonne_attack3_projhit"
-          ]
+          "launch": 12
         }
       ]
     },
@@ -466,10 +448,7 @@
           "frames": [
             11
           ],
-          "launch": 11,
-          "events": [
-            "chr_0017_yvonne_attack4_projhit"
-          ]
+          "launch": 11
         }
       ]
     },
@@ -514,14 +493,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            21
-          ],
-          "events": [
-            "chr_0017_yvonne_attack5"
-          ],
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "sp": {
             "if": {
               "controlled": true
@@ -543,10 +514,6 @@
           "scale": [
             "atk_scale"
           ],
-          "factor": 0.1,
-          "frames": [
-            8
-          ],
           "launch": 8,
           "events": [
             "chr_0017_yvonne_power_attack_projhit"
@@ -557,10 +524,6 @@
           "id": "hit",
           "scale": [
             "atk_scale"
-          ],
-          "factor": 0.9,
-          "frames": [
-            28
           ],
           "events": [
             "chr_0017_yvonne_power_attack"
@@ -583,9 +546,9 @@
           "frames": [
             1
           ],
-          "events": [
-            "chr_0017_yvonne_plunging_attack_end"
-          ]
+          "dataOverride": {
+            "poise": "Kit right: the dive's first IfElse side (with poise) reads buff_chr_0017_yvonne_potential_5, which nothing attaches (an orphan); the side that runs is the plain DamageAction atk_scale without poise. The match takes the first side."
+          }
         }
       ]
     },
@@ -593,6 +556,7 @@
       "skillId": "chr_0017_yvonne_normal_skill",
       "label": "Battle skill: Brr-Brr-Bomb",
       "damageType": "battle",
+      "dataOverride": { "teamEnergy": "Compiler limitation (as Estella's): buff_common_obtain_ultimate_sp is in normal_skill_projhit (launched at 35) behind the launch's CheckTagMatch on Yvonne's control tags, which the compiler leaves undecided.", "applies@35": "Compiler limitation (D3 open item, as Alesh's): ForceSpellStatusAction consumedType 2 / 3 with consumedLayer = count consumes the Cryo or Nature stacks and Solidifies at that level, only if a stack check holds; the compiler reads neither. The kit's level {consumed: true}." },
       "teamEnergy": [
         {
           "frame": 35,
@@ -632,11 +596,6 @@
           "frames": [
             35
           ],
-          "detached": true,
-          "events": [
-            "chr_0017_yvonne_normal_skill_projhit"
-          ],
-          "poise": "poise",
           "applies": [
             {
               "kind": "consumeInfliction",
@@ -678,7 +637,8 @@
             },
             "then": "atb_return",
             "else": 0
-          }
+          },
+          "dataOverride": { "energy": "Kit form (batch-4 L4): the bomb as one hit whose values read the consumed stacks: the data's SaveBuffStackNumAdvanced count (and max_count for the energy) is ForceSpellStatusAction's consumedLayer, i.e. {consumed: true}; 0 consumed is the plain branch.", "scale": "Kit form (batch-4 L4): the bomb as one hit whose values read the consumed stacks: the data's SaveBuffStackNumAdvanced count (and max_count for the energy) is ForceSpellStatusAction's consumedLayer, i.e. {consumed: true}; 0 consumed is the plain branch.", "sp": "The compiler reports no SP grant at this landing: P4's ObtainCostAction atb_return (returned SP, when the bomb hits one enemy) is in normal_skill_projhit behind nested IfElses it doesn't reach; the kit's potentialAtLeast 4 is the description's (see the skill's note)." }
         }
       ]
     },
@@ -697,31 +657,25 @@
             19
           ],
           "launch": 0,
-          "events": [
-            "buff_chr_0017_yvonne_combo_skill"
-          ],
           "energy": {
             "sum": [
               "usp",
               "usp_extra"
             ]
-          }
+          },
+          "dataOverride": { "energy": "Kit form: the two grants at the first tick (the entity's usp, the tick's usp_extra) as one sum." }
         },
         {
           "id": "ticks",
           "scale": [
             "atk_scale_tick"
           ],
-          "count": 3,
           "frames": [
             42,
             64,
             87
           ],
           "launch": 0,
-          "events": [
-            "buff_chr_0017_yvonne_combo_skill"
-          ],
           "if": {
             "not": {
               "potentialAtLeast": 1
@@ -733,7 +687,6 @@
           "scale": [
             "atk_scale_tick"
           ],
-          "count": 5,
           "frames": [
             34,
             49,
@@ -747,21 +700,15 @@
           ],
           "if": {
             "potentialAtLeast": 1
-          }
+          },
+          "dataOverride": { "frames": "Potential: P1 sets the buff's interval 0.5 and maxcnt 6; the test compiles the skill's own values (0.75 s, 4 ticks: the kit's `ticks`)." }
         },
         {
           "id": "explosion",
           "scale": [
             "atk_scale_boom"
           ],
-          "frames": [
-            124
-          ],
           "launch": 0,
-          "events": [
-            "buff_chr_0017_yvonne_combo_skill_finish"
-          ],
-          "poise": "poise",
           "applies": [
             {
               "kind": "forcedReaction",
@@ -778,7 +725,6 @@
       "label": "Ultimate: Cryoblasting Pistolier",
       "damageType": "ultimate",
       "takesControl": true,
-      "energyBlockSeconds": 2.0333,
       "note": "No hits of its own: FinishBuff of both states at 0, UltimateTimeAction and RefrainObtainUsp 0-61 (energyBlockSeconds 61 frames), damage immunity 0-64; at 61 the state (trigger ult_state). 'makes Yvonne the controlled operator'.",
       "hits": []
     },
@@ -800,9 +746,6 @@
             9
           ],
           "launch": 9,
-          "events": [
-            "chr_0017_yvonne_ult_attack1_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -819,9 +762,6 @@
             15
           ],
           "launch": 15,
-          "events": [
-            "chr_0017_yvonne_ult_attack1_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -838,9 +778,6 @@
             21
           ],
           "launch": 21,
-          "events": [
-            "chr_0017_yvonne_ult_attack1_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -868,9 +805,6 @@
             11
           ],
           "launch": 11,
-          "events": [
-            "chr_0017_yvonne_ult_attack2_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -887,9 +821,6 @@
             14
           ],
           "launch": 14,
-          "events": [
-            "chr_0017_yvonne_ult_attack1_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -906,9 +837,6 @@
             17
           ],
           "launch": 17,
-          "events": [
-            "chr_0017_yvonne_ult_attack2_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -924,10 +852,7 @@
           "frames": [
             21
           ],
-          "launch": 21,
-          "events": [
-            "chr_0017_yvonne_ult_attack1_projhit"
-          ]
+          "launch": 21
         }
       ]
     },
@@ -969,9 +894,6 @@
             4
           ],
           "launch": 4,
-          "events": [
-            "chr_0017_yvonne_ult_attack1_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -1007,10 +929,7 @@
           "frames": [
             11
           ],
-          "launch": 11,
-          "events": [
-            "chr_0017_yvonne_ult_attack1_projhit"
-          ]
+          "launch": 11
         }
       ]
     },
@@ -1032,9 +951,6 @@
             13
           ],
           "launch": 13,
-          "events": [
-            "chr_0017_yvonne_ult_attack1_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -1051,9 +967,6 @@
             15
           ],
           "launch": 15,
-          "events": [
-            "chr_0017_yvonne_ult_attack2_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -1070,9 +983,6 @@
             17
           ],
           "launch": 17,
-          "events": [
-            "chr_0017_yvonne_ult_attack1_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -1089,9 +999,6 @@
             19
           ],
           "launch": 19,
-          "events": [
-            "chr_0017_yvonne_ult_attack2_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -1108,9 +1015,6 @@
             21
           ],
           "launch": 21,
-          "events": [
-            "chr_0017_yvonne_ult_attack1_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -1127,9 +1031,6 @@
             23
           ],
           "launch": 23,
-          "events": [
-            "chr_0017_yvonne_ult_attack2_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -1146,9 +1047,6 @@
             25
           ],
           "launch": 25,
-          "events": [
-            "chr_0017_yvonne_ult_attack1_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -1165,9 +1063,6 @@
             27
           ],
           "launch": 27,
-          "events": [
-            "chr_0017_yvonne_ult_attack2_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -1195,9 +1090,6 @@
             1
           ],
           "launch": 1,
-          "events": [
-            "chr_0017_yvonne_ult_attack1_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -1214,9 +1106,6 @@
             3
           ],
           "launch": 3,
-          "events": [
-            "chr_0017_yvonne_ult_attack2_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -1233,9 +1122,6 @@
             5
           ],
           "launch": 5,
-          "events": [
-            "chr_0017_yvonne_ult_attack1_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -1252,9 +1138,6 @@
             7
           ],
           "launch": 7,
-          "events": [
-            "chr_0017_yvonne_ult_attack2_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -1271,9 +1154,6 @@
             9
           ],
           "launch": 9,
-          "events": [
-            "chr_0017_yvonne_ult_attack1_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -1290,9 +1170,6 @@
             11
           ],
           "launch": 11,
-          "events": [
-            "chr_0017_yvonne_ult_attack2_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -1309,9 +1186,6 @@
             13
           ],
           "launch": 13,
-          "events": [
-            "chr_0017_yvonne_ult_attack1_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -1328,9 +1202,6 @@
             15
           ],
           "launch": 15,
-          "events": [
-            "chr_0017_yvonne_ult_attack2_projhit"
-          ],
           "buffs": [
             {
               "buff": "ult_layers",
@@ -1357,11 +1228,6 @@
           "frames": [
             28
           ],
-          "events": [
-            "chr_0017_yvonne_ult_attack_end"
-          ],
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "finalStrike": true
         },
         {
@@ -1371,9 +1237,6 @@
           ],
           "frames": [
             28
-          ],
-          "events": [
-            "chr_0017_yvonne_ult_attack_end"
           ],
           "finalStrike": false,
           "if": {

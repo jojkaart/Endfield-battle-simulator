@@ -68,6 +68,7 @@
       "label": "The Steel Oath (P5): ATK while shielded",
       "target": "team",
       "duration": { "key": "duration", "skill": "chr_0009_azrila_ultimate_skill" },
+      "dataOverride": { "duration": "The data's 0.1 s is the buff file's own: the ultimate shield's start creates it as a child buff of the shield (asChildBuff), which the kit reads as lasting as long as the shield, the ultimate's duration (see the buff's note; shields don't break, report U2)." },
       "modifiers": [{ "zone": "atk", "value": { "key": "extraattack", "skill": "chr_0009_azrila_ultimate_skill" } }],
       "gameBuff": "buff_chr_0009_azrila_ultimate_skill_shield_extraattack",
       "note": "ultimateshield's start event: if potential_5 > 0, CreateBuff (asChildBuff, targetSource 0: the shield's holder) buff_chr_0009_azrila_ultimate_skill_shield_extraattack (attribute 2 formulaItem 6 + extraattack 0.1); a child buff ends with its shield, so it has the shield's duration here (shields don't break: report U2)."
@@ -120,19 +121,19 @@
       "skillId": "chr_0009_azrila_attack1",
       "label": "Basic attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [13], "events": ["chr_0009_azrila_attack1"], "element": "physical", "note": "ChannelingAction [13–18], at most one tick per target: DamageAction damageType 0 (Physical; the operator is Heat), mask 128." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "ChannelingAction [13–18], at most one tick per target: DamageAction damageType 0 (Physical; the operator is Heat), mask 128." }]
     },
     {
       "skillId": "chr_0009_azrila_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [6], "events": ["chr_0009_azrila_attack2"], "element": "physical", "note": "ChannelingAction [6–12]." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "ChannelingAction [6–12]." }]
     },
     {
       "skillId": "chr_0009_azrila_attack3",
       "label": "Basic attack 3",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [18], "events": ["chr_0009_azrila_attack3"], "element": "physical", "note": "ChannelingAction [18–22]." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "ChannelingAction [18–22]." }]
     },
     {
       "skillId": "chr_0009_azrila_attack4",
@@ -142,12 +143,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [26],
-          "events": ["chr_0009_azrila_attack4"],
-          "element": "physical",
-          "sp": { "if": { "controlled": true }, "then": "atb" },
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "finalStrike": true,
           "note": "ChannelingAction [26–29]: mask 2097280 (Final Strike); poise 25 for the controlled operator (onlyEnableForMainChar); DoOnce ObtainCostAction atb (28) when controlled."
         }
@@ -158,32 +153,28 @@
       "label": "Finisher",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [9], "factor": 0.1, "events": ["chr_0009_azrila_power_attack"], "element": "physical", "note": "BreakingAttackCalculation multiplier 0.1." },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [23], "factor": 0.9, "events": ["chr_0009_azrila_power_attack"], "element": "physical", "note": "BreakingAttackCalculation multiplier 0.9; finisher SP from the enemy (GainBreakingAttackAtb, the engine's)." }
+        { "id": "hit", "scale": ["atk_scale"], "frames": [9], "note": "BreakingAttackCalculation multiplier 0.1." },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [23], "note": "BreakingAttackCalculation multiplier 0.9; finisher SP from the enemy (GainBreakingAttackAtb, the engine's)." }
       ]
     },
     {
       "skillId": "chr_0009_azrila_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "events": ["chr_0009_azrila_plunging_attack_end"], "element": "physical", "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Mask 1152 (basic + dive); ObtainCostAction atb (0 at every level) when controlled." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Mask 1152 (basic + dive); ObtainCostAction atb (0 at every level) when controlled." }]
     },
     {
       "skillId": "chr_0009_azrila_normal_skill",
       "label": "Battle skill (Forward March)",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 38, "ratio": 1 }],
       "noDodge": [0, 38],
       "hits": [
-        { "id": "leap", "label": "Leap", "scale": ["atk_scale"], "frames": [10], "events": ["chr_0009_azrila_normal_skill"], "note": "ChannelingAction [10–15]: DamageAction atk_scale (Heat, damageType 2, mask 4352), no Stagger; HitStopAction 0.16 s." },
+        { "id": "leap", "label": "Leap", "scale": ["atk_scale"], "note": "ChannelingAction [10–15]: DamageAction atk_scale (Heat, damageType 2, mask 4352), no Stagger; HitStopAction 0.16 s." },
         {
           "id": "slam",
           "label": "Slam",
           "scale": ["atk_scale2"],
-          "frames": [38],
-          "events": ["chr_0009_azrila_normal_skill"],
           "applies": [{ "kind": "physicalStatus", "status": "knockdown" }],
-          "poise": "poise",
           "buffs": [{ "buff": "protection_hit", "if": { "all": [{ "talentAtLeast": [0, 1] }, { "potentialAtLeast": 1 }] } }],
           "note": "Clip [38–41]: P1's shelter (CompareFloat potential_1, CheckEntityNum, CompareFloat talent1), KnockDownAction 1.5 s, DamageAction atk_scale2 (Heat) with a poise-only unit poise (10); team energy (buff_common_obtain_ultimate_sp if a target was hit); HitStopAction 0.2 s."
         },
@@ -209,12 +200,7 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [26],
-          "events": ["chr_0009_azrila_combo_skill"],
-          "element": "physical",
           "applies": [{ "kind": "physicalStatus", "status": "knockdown" }],
-          "energy": "usp",
-          "poise": "poise",
           "heals": "controlled",
           "buffs": [{ "buff": "protection_hit", "if": { "all": [{ "talentAtLeast": [0, 1] }, { "potentialAtLeast": 1 }] } }],
           "note": "Clip [26–27]: InterruptAction (E1), P1's shelter, KnockDownAction 1.5 s, DamageAction atk_scale (Physical, mask 12288) with poise, HealAction on the controlled operator (CharacterTeamFinder + MainCharacterValidator; heal_base + Will × will_additive, healTags −1517158118: the combo heal, so the heal event's kind is combo), ObtainCostAction usp if a target was hit. P3's second heal (× extracure, group CureTarget) isn't an event (report U1)."
@@ -230,9 +216,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [50],
-          "events": ["chr_0009_azrila_ultimate_skill"],
-          "poise": "poise",
           "buffs": [{ "buff": "ult_shield" }, { "buff": "p5_atk", "if": { "potentialAtLeast": 5 } }],
           "note": "Frame 50: InterruptAction (E1), DamageAction atk_scale (Heat, mask 4608) with a poise-only unit poise (25), the team shield and P5's ATK on each holder. Damage immunity [0–90] (buff_common_damage_immune_ult_skill) is defensive. P4's energy cost × 0.85 is the loader's (skill parameters)."
         }

@@ -299,12 +299,6 @@
           "scale": [
             "atk_scale1"
           ],
-          "frames": [
-            6
-          ],
-          "events": [
-            "chr_0036_jsspsi_attack1"
-          ],
           "note": "Logged as chr_0036_jsspsi_attack1; matches in zmdlogs-40d9a3c1da37 (t=9147, 9334). Unmapped: see sources (Corrosion tick vs log timestamp in zmdlogs-0eef2474a26f t=4646)."
         },
         {
@@ -312,12 +306,6 @@
           "label": "Basic attack 1, hit 2",
           "scale": [
             "atk_scale2"
-          ],
-          "frames": [
-            15
-          ],
-          "events": [
-            "chr_0036_jsspsi_attack1"
           ],
           "note": "Same event key as hit 1 (atk_scale1 = atk_scale2 at every level)."
         }
@@ -332,12 +320,6 @@
           "id": "hit",
           "scale": [
             "atk_scale"
-          ],
-          "frames": [
-            5
-          ],
-          "events": [
-            "chr_0036_jsspsi_attack2"
           ]
         }
       ]
@@ -351,12 +333,6 @@
           "id": "hit",
           "scale": [
             "atk_scale"
-          ],
-          "frames": [
-            9
-          ],
-          "events": [
-            "chr_0036_jsspsi_attack3"
           ],
           "note": "Logged as chr_0036_jsspsi_attack3; zmdlogs-0eef2474a26f t=5659 (2.04 s into Corrosion) shows 1 tick, the floor-of-seconds model says 2. Unmapped until the log check allows for timestamp granularity."
         }
@@ -373,18 +349,6 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 6,
-          "frames": [
-            5,
-            8,
-            11,
-            14,
-            17,
-            20
-          ],
-          "events": [
-            "chr_0036_jsspsi_attack4"
-          ],
           "note": "At most 6 hits per target, 0.1 s apart (display_atk_scale = 6 × atk_scale). Logged as chr_0036_jsspsi_attack4 (only 3 hits in zmdlogs-0eef2474a26f; the third is stamped at the following combo cast). chr_0036_jsspsi_attack4_abilityrange isn't spawned from any file and was never logged."
         }
       ]
@@ -400,12 +364,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            25
-          ],
-          "sp": "atb",
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "note": "SkillData attack5: ObtainCostAction costType 1 atb (20) when controlled, DamageAction mask 2097280 (Final Strike), DefiniteValueCalculation poise (18) onlyEnableForMainChar."
         }
       ]
@@ -422,12 +380,8 @@
           "scale": [
             "atk_scale"
           ],
-          "factor": 0.07,
           "frames": [
             3
-          ],
-          "events": [
-            "chr_0036_jsspsi_power_attack"
           ]
         },
         {
@@ -436,12 +390,8 @@
           "scale": [
             "atk_scale"
           ],
-          "factor": 0.1,
           "frames": [
             12
-          ],
-          "events": [
-            "chr_0036_jsspsi_power_attack"
           ]
         },
         {
@@ -450,12 +400,8 @@
           "scale": [
             "atk_scale"
           ],
-          "factor": 0.13,
           "frames": [
             21
-          ],
-          "events": [
-            "chr_0036_jsspsi_power_attack"
           ]
         },
         {
@@ -464,12 +410,8 @@
           "scale": [
             "atk_scale"
           ],
-          "factor": 0.7,
           "frames": [
             37
-          ],
-          "events": [
-            "chr_0036_jsspsi_power_attack"
           ]
         }
       ]
@@ -484,11 +426,7 @@
           "id": "hit",
           "scale": [
             "atk_scale"
-          ],
-          "frames": [
-            1
-          ],
-          "sp": "atb"
+          ]
         }
       ]
     },
@@ -496,6 +434,7 @@
       "skillId": "chr_0036_jsspsi_normal_skill",
       "label": "Battle skill (Artful Intent)",
       "damageType": "battle",
+      "dataOverride": { "teamEnergy": "Both infliction branches create buff_common_obtain_ultimate_sp at 15 (after CheckEntityNum); the compiler doesn't merge exhaustive branches, so it finds none unconditional (batch-1 D2)." },
       "available": {
         "not": {
           "buffActive": "artful_intent"
@@ -512,10 +451,6 @@
           "frames": [
             15
           ],
-          "events": [
-            "chr_0036_jsspsi_normal_skill_abilityrange_1"
-          ],
-          "poise": "poise",
           "buffs": [
             {
               "buff": "artful_intent",
@@ -600,10 +535,6 @@
           "frames": [
             14
           ],
-          "events": [
-            "chr_0036_jsspsi_combo_skill_abilityrange"
-          ],
-          "energy": "usp",
           "note": "Separate from the other slashes only because the energy grant comes with it."
         },
         {
@@ -612,7 +543,6 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 9,
           "frames": [
             17,
             20,
@@ -623,9 +553,6 @@
             35,
             38,
             41
-          ],
-          "events": [
-            "chr_0036_jsspsi_combo_skill_abilityrange"
           ]
         },
         {
@@ -653,10 +580,7 @@
           "frames": [
             49
           ],
-          "poise": "poise",
-          "events": [
-            "chr_0036_jsspsi_combo_skill_abilityrange"
-          ],
+          "dataOverride": { "scale": "The kit's scaleValue is the data's expression with EntityBB_combo_count = the window's eventCount, +1 through potential5 (IfElse on potential5 ≥ 1); the test compares key products only." },
           "note": "SkillData combo_skill_abilityrange #85–#91: IfElse on potential5 ≥ 1 adds 1 to EntityBB_combo_count, then atk_scale_count = combo_count × atk_scale2_1 + atk_scale2; combo_count is the stacks consumed or absorbed to trigger the combo (the window's eventCount). Verified by hand: zmdlogs-40d9a3c1da37 t=14737 = 18.75 × the slash ×1.5 crit, i.e. 4.025 + (3 + 1) × 1.15 = 8.625; zmdlogs-0eef2474a26f t=9331 = 4.025 + 3 × 1.15 with crit and one more Corrosion tick (±1)."
         }
       ]
@@ -673,7 +597,6 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 8,
           "frames": [
             63,
             66,
@@ -699,7 +622,6 @@
           "frames": [
             100
           ],
-          "poise": "poise_2",
           "events": [
             "chr_0036_jsspsi_ultimate_skill_abilityrange",
             "chr_0036_jsspsi_ultimate_skill_abilityrange_1"

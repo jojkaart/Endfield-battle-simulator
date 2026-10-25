@@ -580,15 +580,9 @@
      "scale": [
       "atk_scale"
      ],
-     "count": 2,
-     "frames": [
-      6,
-      8
-     ],
      "events": [
       "chr_0030_zhuangfy_attack1_projhit"
-     ],
-     "detached": true
+     ]
     }
    ]
   },
@@ -607,31 +601,18 @@
      "id": "sword",
      "scale": [
       "atk_scale_sword"
-     ],
-     "count": 2,
-     "frames": [
-      2,
-      2
-     ],
-     "events": [
-      "chr_0030_zhuangfy_attack2_sword_projhit"
-     ],
-     "detached": true
+     ]
     },
     {
      "id": "range",
      "scale": [
       "atk_scale"
      ],
-     "count": 4,
      "frames": [
       15,
       24,
       27,
       30
-     ],
-     "events": [
-      "chr_0030_zhuangfy_attack2_abilityrange"
      ],
      "launch": 15
     }
@@ -652,17 +633,9 @@
      "scale": [
       "atk_scale_sword"
      ],
-     "count": 4,
-     "frames": [
-      14,
-      14,
-      16,
-      16
-     ],
      "events": [
       "chr_0030_zhuangfy_attack3_sword_projhit"
-     ],
-     "detached": true
+     ]
     }
    ]
   },
@@ -682,15 +655,11 @@
      "scale": [
       "atk_scale"
      ],
-     "count": 4,
      "frames": [
       11,
       20,
       23,
       26
-     ],
-     "events": [
-      "chr_0030_zhuangfy_attack2_abilityrange"
      ],
      "launch": 11
     }
@@ -715,9 +684,6 @@
      "frames": [
       20
      ],
-     "events": [
-      "chr_0030_zhuangfy_attack5_abilityrange"
-     ],
      "launch": 20,
      "sp": {
       "if": {
@@ -725,8 +691,6 @@
       },
       "then": "atb"
      },
-     "poise": "poise",
-     "poiseControlledOnly": true,
      "finalStrike": true
     }
    ]
@@ -744,11 +708,7 @@
      ],
      "frames": [
       11
-     ],
-     "events": [
-      "chr_0030_zhuangfy_power_attack"
-     ],
-     "factor": 0.1
+     ]
     },
     {
      "id": "hit_2",
@@ -757,11 +717,7 @@
      ],
      "frames": [
       40
-     ],
-     "events": [
-      "chr_0030_zhuangfy_power_attack"
-     ],
-     "factor": 0.9
+     ]
     }
    ]
   },
@@ -775,19 +731,7 @@
      "id": "hit",
      "scale": [
       "atk_scale"
-     ],
-     "frames": [
-      1
-     ],
-     "events": [
-      "chr_0030_zhuangfy_plunging_attack_end"
-     ],
-     "sp": {
-      "if": {
-       "controlled": true
-      },
-      "then": "atb"
-     }
+     ]
     }
    ]
   },
@@ -807,9 +751,6 @@
      ],
      "frames": [
       15
-     ],
-     "events": [
-      "chr_0030_zhuangfy_attack1_ult_1_abilityrange"
      ],
      "launch": 12
     }
@@ -832,9 +773,6 @@
      "frames": [
       13
      ],
-     "events": [
-      "chr_0030_zhuangfy_attack1_ult_1_abilityrange"
-     ],
      "launch": 10
     }
    ]
@@ -856,9 +794,6 @@
      "frames": [
       33
      ],
-     "events": [
-      "chr_0030_zhuangfy_attack3_ult_abilityrange"
-     ],
      "launch": 3,
      "sp": {
       "if": {
@@ -866,8 +801,6 @@
       },
       "then": "atb"
      },
-     "poise": "poise",
-     "poiseControlledOnly": true,
      "finalStrike": true
     }
    ]
@@ -876,6 +809,7 @@
    "skillId": "chr_0030_zhuangfy_normal_skill",
    "label": "Battle skill: Mantra of Sundering",
    "damageType": "battle",
+   "dataOverride": { "teamEnergy": "Batch 4, Zhuang Fangyi. Compiler limit (batch-1 D2): buff_common_obtain_ultimate_sp at frame 6 is on both sides of the IfElse on the Electrification tag (consume or not); the compiler doesn't merge exhaustive branches, so it finds none unconditional. Same for normal_skill_ult at 5." },
    "available": {
     "not": {
      "buffActive": "empyrean"
@@ -933,7 +867,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "energy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "scale": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "frames": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame." }
     },
     {
      "id": "strike_2",
@@ -952,7 +887,6 @@
        }
       ]
      },
-     "count": 1,
      "frames": [
       25
      ],
@@ -977,7 +911,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "energy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "scale": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "frames": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame." }
     },
     {
      "id": "final_2",
@@ -1023,7 +958,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "energy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "scale": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "frames": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame." }
     },
     {
      "id": "strike_3",
@@ -1042,7 +978,6 @@
        }
       ]
      },
-     "count": 2,
      "frames": [
       24,
       32
@@ -1068,7 +1003,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "energy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "scale": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "frames": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame." }
     },
     {
      "id": "final_3",
@@ -1114,7 +1050,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "energy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "scale": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "frames": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame." }
     },
     {
      "id": "strike_4",
@@ -1133,7 +1070,6 @@
        }
       ]
      },
-     "count": 3,
      "frames": [
       24,
       32,
@@ -1160,7 +1096,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "energy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "scale": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "frames": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame." }
     },
     {
      "id": "final_4",
@@ -1206,7 +1143,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "energy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "scale": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "frames": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame." }
     },
     {
      "id": "strike_5",
@@ -1225,7 +1163,6 @@
        }
       ]
      },
-     "count": 4,
      "frames": [
       24,
       31,
@@ -1253,7 +1190,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "energy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "scale": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "frames": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame." }
     },
     {
      "id": "final_5",
@@ -1299,7 +1237,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "energy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "scale": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "frames": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame." }
     },
     {
      "id": "strike_6",
@@ -1318,7 +1257,6 @@
        }
       ]
      },
-     "count": 5,
      "frames": [
       23,
       30,
@@ -1347,7 +1285,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "energy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "scale": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "frames": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame." }
     },
     {
      "id": "final_6",
@@ -1393,7 +1332,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "energy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "scale": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "frames": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame." }
     },
     {
      "id": "strike_7",
@@ -1412,7 +1352,6 @@
        }
       ]
      },
-     "count": 6,
      "frames": [
       23,
       30,
@@ -1442,7 +1381,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "energy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "scale": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "frames": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame." }
     },
     {
      "id": "final_7",
@@ -1488,7 +1428,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "energy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "scale": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "frames": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame." }
     },
     {
      "id": "strike_8",
@@ -1507,7 +1448,6 @@
        }
       ]
      },
-     "count": 7,
      "frames": [
       23,
       29,
@@ -1538,7 +1478,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "energy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "scale": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "frames": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame." }
     },
     {
      "id": "final_8",
@@ -1584,7 +1525,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "energy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "scale": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "frames": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame." }
     },
     {
      "id": "strike_9",
@@ -1603,7 +1545,6 @@
        }
       ]
      },
-     "count": 8,
      "frames": [
       22,
       28,
@@ -1635,7 +1576,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "energy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "scale": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "frames": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame." }
     },
     {
      "id": "final_9",
@@ -1681,7 +1623,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "energy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "scale": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "frames": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame." }
     }
    ]
   },
@@ -1689,6 +1632,7 @@
    "skillId": "chr_0030_zhuangfy_normal_skill_ult",
    "label": "Empyrean battle skill: Mantra of Sundering",
    "damageType": "battle",
+   "dataOverride": { "teamEnergy": "Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key products only); usp_extra on every strike, at its frame.", "applies@32": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "applies@38": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "applies@44": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "applies@50": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "applies@56": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "applies@62": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "applies@68": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "applies@74": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "applies@80": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "applies@84": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "lands chr_0030_zhuangfy_normal_skill_ult_abilityrange": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." },
    "available": {
     "buffActive": "empyrean"
    },
@@ -1749,7 +1693,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "scale": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "frames": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." }
     },
     {
      "id": "strike_2",
@@ -1768,12 +1713,8 @@
        }
       ]
      },
-     "count": 1,
      "frames": [
       27
-     ],
-     "events": [
-      "chr_0030_zhuangfy_normal_skill_ult_abilityrange"
      ],
      "launch": 15,
      "if": {
@@ -1792,7 +1733,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "scale": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." }
     },
     {
      "id": "final_2",
@@ -1843,7 +1785,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "scale": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "frames": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." }
     },
     {
      "id": "strike_3",
@@ -1862,7 +1805,6 @@
        }
       ]
      },
-     "count": 2,
      "frames": [
       27,
       33
@@ -1887,7 +1829,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "scale": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "frames": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." }
     },
     {
      "id": "final_3",
@@ -1938,7 +1881,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "scale": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "frames": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." }
     },
     {
      "id": "strike_4",
@@ -1957,7 +1901,6 @@
        }
       ]
      },
-     "count": 3,
      "frames": [
       27,
       33,
@@ -1983,7 +1926,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "scale": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "frames": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." }
     },
     {
      "id": "final_4",
@@ -2034,7 +1978,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "scale": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "frames": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." }
     },
     {
      "id": "strike_5",
@@ -2053,7 +1998,6 @@
        }
       ]
      },
-     "count": 4,
      "frames": [
       27,
       33,
@@ -2080,7 +2024,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "scale": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "frames": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." }
     },
     {
      "id": "final_5",
@@ -2131,7 +2076,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "scale": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "frames": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." }
     },
     {
      "id": "strike_6",
@@ -2150,7 +2096,6 @@
        }
       ]
      },
-     "count": 5,
      "frames": [
       27,
       33,
@@ -2178,7 +2123,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "scale": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "frames": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." }
     },
     {
      "id": "final_6",
@@ -2229,7 +2175,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "scale": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "frames": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." }
     },
     {
      "id": "strike_7",
@@ -2248,7 +2195,6 @@
        }
       ]
      },
-     "count": 6,
      "frames": [
       27,
       33,
@@ -2277,7 +2223,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "scale": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "frames": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." }
     },
     {
      "id": "final_7",
@@ -2328,7 +2275,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "scale": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "frames": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." }
     },
     {
      "id": "strike_8",
@@ -2347,7 +2295,6 @@
        }
       ]
      },
-     "count": 7,
      "frames": [
       27,
       33,
@@ -2377,7 +2324,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "scale": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "frames": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." }
     },
     {
      "id": "final_8",
@@ -2428,7 +2376,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "scale": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "frames": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." }
     },
     {
      "id": "strike_9",
@@ -2447,7 +2396,6 @@
        }
       ]
      },
-     "count": 8,
      "frames": [
       27,
       33,
@@ -2478,7 +2426,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "scale": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "frames": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." }
     },
     {
      "id": "final_9",
@@ -2529,7 +2478,8 @@
         ]
        }
       }
-     ]
+     ],
+     "dataOverride": { "scale": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).", "frames": "Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings). The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26)." }
     }
    ]
   },
@@ -2550,12 +2500,6 @@
      "scale": [
       "atk_scale"
      ],
-     "frames": [
-      24
-     ],
-     "events": [
-      "chr_0030_zhuangfy_combo_skill"
-     ],
      "applies": [
       {
        "kind": "consumeInfliction",
@@ -2593,7 +2537,6 @@
        }
       }
      ],
-     "poise": "poise",
      "energy": {
       "sum": [
        "usp",
@@ -2606,7 +2549,8 @@
         ]
        }
       ]
-     }
+     },
+     "dataOverride": { "energy": "Kit right (D8f's form): ObtainCostAction usp and usp_extra × inflictCnt (the Electric stacks the combo consumes) as one grant, {consumed: true}." }
     }
    ]
   },
@@ -2625,12 +2569,6 @@
      "scale": [
       "atk_scale"
      ],
-     "frames": [
-      24
-     ],
-     "events": [
-      "chr_0030_zhuangfy_combo_skill_ult"
-     ],
      "applies": [
       {
        "kind": "consumeInfliction",
@@ -2667,8 +2605,7 @@
         "else": 0
        }
       }
-     ],
-     "poise": "poise"
+     ]
     }
    ]
   },
@@ -2676,6 +2613,7 @@
    "skillId": "chr_0030_zhuangfy_ultimate_skill",
    "label": "Ultimate: Smiting Tempest",
    "damageType": "ultimate",
+   "dataOverride": { "energyBlockSeconds": "Kit right: RefrainObtainUsp is buff ult_base's (the Empyrean, duration 25 s from frame 78: the kit buff empyrean's blocksEnergy), not the skill's." },
    "note": "No damage: UltimateTimeAction 0-78, then the Empyrean (ult_state). Its energy block is the state's (blocksEnergy), not kit-draft's energyBlockSeconds.",
    "hits": []
   },

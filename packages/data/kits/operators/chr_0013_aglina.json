@@ -153,11 +153,7 @@
           ],
           "events": [
             "chr_0013_aglina_attack1_projhit"
-          ],
-          "frames": [
-            7
-          ],
-          "sp": "atb"
+          ]
         }
       ]
     },
@@ -171,20 +167,9 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 2,
           "events": [
             "chr_0013_aglina_attack2_projhit"
-          ],
-          "frames": [
-            4,
-            8
-          ],
-          "sp": {
-            "product": [
-              "atb",
-              0.5
-            ]
-          }
+          ]
         }
       ]
     },
@@ -198,21 +183,15 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 3,
           "events": [
             "chr_0013_aglina_attack3_projhit"
           ],
-          "frames": [
-            7,
-            10,
-            14
-          ],
-          "sp": {
+          "sp": { "if": { "controlled": true }, "then": {
             "product": [
               "atb",
               0.333333313
             ]
-          }
+          } }
         }
       ]
     },
@@ -230,22 +209,12 @@
           "events": [
             "chr_0013_aglina_attack4_projhit"
           ],
-          "frames": [
-            23
-          ],
-          "sp": {
+          "sp": { "if": { "controlled": true }, "then": {
             "product": [
               "atb",
               0.333400011
             ]
-          },
-          "poise": {
-            "product": [
-              "poise",
-              0.34
-            ]
-          },
-          "poiseControlledOnly": true
+          } }
         },
         {
           "id": "projhit_2",
@@ -253,27 +222,15 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 2,
           "events": [
             "chr_0013_aglina_attack4_projhit_2"
           ],
-          "frames": [
-            25,
-            27
-          ],
-          "sp": {
+          "sp": { "if": { "controlled": true }, "then": {
             "product": [
               "atb",
               0.333400011
             ]
-          },
-          "poise": {
-            "product": [
-              "poise",
-              0.33
-            ]
-          },
-          "poiseControlledOnly": true,
+          } },
           "note": "Only the centre orb is a Final Strike (attack4_projhit mask 2097280; projhit_2 mask 128)."
         }
       ]
@@ -289,10 +246,6 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 6,
-          "events": [
-            "chr_0013_aglina_power_attack"
-          ],
           "frames": [
             12,
             15,
@@ -301,7 +254,6 @@
             24,
             29
           ],
-          "factor": 0.05,
           "note": "BreakingAttackCalculation multiplier 0.05 on each of the first six DamageActions."
         },
         {
@@ -310,13 +262,9 @@
           "scale": [
             "atk_scale"
           ],
-          "events": [
-            "chr_0013_aglina_power_attack"
-          ],
           "frames": [
             43
           ],
-          "factor": 0.7,
           "note": "BreakingAttackCalculation multiplier 0.7 on the seventh DamageAction."
         }
       ]
@@ -325,7 +273,6 @@
       "skillId": "chr_0013_aglina_normal_skill",
       "label": "Battle skill",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 29, "ratio": 1 }],
       "note": "btl_upload_4e5e1390085e (level 12, one cast): pulls 2777, 2777, 3611, 3611 are atk_scale_pull (0.55) ×1.0960 (the fixture's annotated ATK buff), the last two under the logged stagger ×1.3. The explosion 8972 is atk_scale_explosion (1.30) ×1.0960 ×1.0513: its own Nature infliction triggered Corrosion on the logged Heat infliction first (buff_common_natural_triggered at the same time), and Corrosion level 1's initial shred at her Arts Intensity 80.7 is 3.6 × 1.424 = 5.13 points, ×1.0513. So the infliction, and the reaction it causes, come before the hit's damage.",
       "hits": [
         {
@@ -333,16 +280,6 @@
           "label": "Gravity pull",
           "scale": [
             "atk_scale_pull"
-          ],
-          "count": 4,
-          "events": [
-            "chr_0013_aglina_normal_skill"
-          ],
-          "frames": [
-            29,
-            46,
-            62,
-            78
           ]
         },
         {
@@ -351,19 +288,12 @@
           "scale": [
             "atk_scale_explosion"
           ],
-          "events": [
-            "chr_0013_aglina_normal_skill"
-          ],
-          "frames": [
-            108
-          ],
           "applies": [
             {
               "kind": "infliction",
               "element": "natural"
             }
-          ],
-          "poise": "poise"
+          ]
         }
       ]
     },
@@ -377,14 +307,6 @@
           "scale": [
             "atk_scale"
           ],
-          "events": [
-            "chr_0013_aglina_combo_skill"
-          ],
-          "frames": [
-            48
-          ],
-          "energy": "usp",
-          "poise": "poise",
           "applies": [
             {
               "kind": "physicalStatus",
@@ -406,12 +328,6 @@
           "scale": [
             "atk_scale"
           ],
-          "events": [
-            "chr_0013_aglina_ultimate_skill"
-          ],
-          "frames": [
-            60
-          ],
           "applies": [
             {
               "kind": "infliction",
@@ -423,7 +339,6 @@
               "buff": "arts_susceptibility"
             }
           ],
-          "poise": "poise",
           "note": "Her own Arts Susceptibility (the aura's buff_common_affixes_vulnerable_spell, logged as starting at the hit) comes after the hit and doesn't count for it, so the kit applies it after the damage. btl_upload_4e5e1390085e: exact apart from the annotated +9.6% ATK. btl_upload_40d9a3c1da37: exactly ×1.2000, Link at 1 stack from Camille's combo (the engine's built-in Link). btl_upload_d9e59d0fb737 needs ×1.2689 under Corrosion: in that log's pre-1.6 anomaly window, not used for values."
         }
       ]
@@ -438,13 +353,6 @@
           "scale": [
             "atk_scale"
           ],
-          "events": [
-            "chr_0013_aglina_plunging_attack_end"
-          ],
-          "frames": [
-            0
-          ],
-          "sp": "atb",
           "note": "A rotation's dive: a jump, then this landing (batch-1 S10). Not yet checked against an in-game value (no logged plunging attack)."
         }
       ]

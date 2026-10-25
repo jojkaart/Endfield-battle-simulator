@@ -148,15 +148,15 @@
       "skillId": "chr_0031_mifu_attack1",
       "label": "Basic attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [9] }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0031_mifu_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale1"], "frames": [9] },
-        { "id": "hit_2", "scale": ["atk_scale2"], "frames": [16] }
+        { "id": "hit", "scale": ["atk_scale1"] },
+        { "id": "hit_2", "scale": ["atk_scale2"] }
       ]
     },
     {
@@ -164,8 +164,8 @@
       "label": "Basic attack 3",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale1"], "count": 2, "frames": [10, 16] },
-        { "id": "hit_2", "scale": ["atk_scale2"], "frames": [30] }
+        { "id": "hit", "scale": ["atk_scale1"] },
+        { "id": "hit_2", "scale": ["atk_scale2"] }
       ]
     },
     {
@@ -173,14 +173,10 @@
       "label": "Basic attack 4 (Final Strike)",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale1"], "frames": [7], "finalStrike": false },
+        { "id": "hit", "scale": ["atk_scale1"], "finalStrike": false },
         {
           "id": "hit_2",
           "scale": ["atk_scale2"],
-          "frames": [30],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "finalStrike": true,
           "note": "f30 DamageAction mask 2097280 (Final Strike bit), poise 25 onlyEnableForMainChar; ObtainCostAction atb 28 only while controlled (atbOnlyMainChar). The f7 hit (mask 128) isn't the Final Strike."
         }
@@ -191,9 +187,9 @@
       "label": "Finisher",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [6], "factor": 0.3 },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [17], "factor": 0.2 },
-        { "id": "hit_3", "scale": ["atk_scale"], "frames": [37], "factor": 0.5 }
+        { "id": "hit", "scale": ["atk_scale"], "frames": [6] },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [17] },
+        { "id": "hit_3", "scale": ["atk_scale"], "frames": [37] }
       ],
       "note": "BreakingAttackCalculation multipliers 0.3 / 0.2 / 0.5 of atk_scale 9.0 (900% shown). Each landing sits in an IfElse on CheckTargetContains whose two sides are the same DamageAction: one hit each (kit-draft emits them twice as branch alternatives; batch-3 D3, identical sides not merged)."
     },
@@ -205,8 +201,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [2],
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "mask 1152 (basic + dive bit 1024: the hit's dive decoration comes from the data). atb is 0 at every level. Castable once dives are rotation steps (batch-1 S10)."
         }
       ]
@@ -217,8 +211,7 @@
       "damageType": "battle",
       "available": { "all": [{ "not": { "buffActive": "trail_ready" } }, { "not": { "buffActive": "splitter_ready" } }] },
       "jumps": [{ "at": 7, "if": { "enemySuperArmor": { "atLeast": 30 } } }],
-      "teamEnergy": [{ "frame": 7, "ratio": 1 }],
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [7] }],
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }],
       "note": "f7: DamageAction atk_scale (mask 4352), buff_common_obtain_ultimate_sp, then IfElse CheckSuperArmor (target, compareType 3 ≥, 30) → JumpToAction 105 (the heavy path: no pull, she closes in; windows 115–131, i.e. real frames 17–33), else PullAction (the pull path: windows 11–30, MarkCanInterrupt 25, JumpToAction 104 → 204). Rhodagn (initialSuperArmor 30) and 62 of 149 enemy templates take the jump. The 11–30 windows a jump skips stay closed (S9b)."
     },
     {
@@ -226,16 +219,14 @@
       "label": "Battle skill: Trail and Mangle",
       "damageType": "battle",
       "available": { "buffActive": "trail_ready" },
-      "teamEnergy": [{ "frame": 24, "ratio": 1 }],
       "hits": [
-        { "id": "flurry", "scale": ["atk_scale"], "count": 2, "frames": [3, 10] },
+        { "id": "flurry", "scale": ["atk_scale"] },
         {
           "id": "mangle_splitter",
           "branch": "mangle",
           "if": { "enemyVulnerable": 3 },
           "scale": ["atk_scale2"],
           "frames": [24],
-          "poise": "poise",
           "applies": [{ "kind": "physicalStatus", "status": "crush" }],
           "buffs": [{ "buff": "splitter_ready" }],
           "note": "f24 CrushAction (damageMultiplier 1.0), DamageAction atk_scale2 + poise; buff_chr_0031_mifu_listen_crush (f22–27) turns a Crush from a battle skill on a target with ≥ 3 Vulnerable stacks into World Splitter's state: judged on the stacks before this Crush consumes them (a Crush on 0 stacks only adds one). \"If this Crush consumes at least 3 Vulnerability stacks from a single target\"."
@@ -245,7 +236,6 @@
           "branch": "mangle",
           "scale": ["atk_scale2"],
           "frames": [24],
-          "poise": "poise",
           "applies": [{ "kind": "physicalStatus", "status": "crush" }],
           "note": "As mangle_splitter, on fewer than 3 Vulnerable stacks: no World Splitter."
         }
@@ -257,12 +247,10 @@
       "label": "Battle skill: World Splitter",
       "damageType": "battle",
       "available": { "buffActive": "splitter_ready" },
-      "teamEnergy": [{ "frame": 26, "ratio": 1 }],
       "hits": [
         {
           "id": "poise",
           "scale": [],
-          "count": 2,
           "frames": [23, 25],
           "poiseOnly": true,
           "poise": "poise",
@@ -272,7 +260,6 @@
           "id": "split",
           "label": "World Splitter",
           "scale": ["atk_scale", "yuanshi_multi"],
-          "frames": [26],
           "damageType": "none",
           "extraScale": [
             {
@@ -280,7 +267,8 @@
               "if": { "all": [{ "talentAtLeast": [0, 1] }, { "any": [{ "enemyStaggered": true }, { "enemyModifier": { "zone": "susceptibility", "element": "physical" } }] }] }
             }
           ],
-          "note": "f26 ForEach: atk_scale_runtime = atk_scale × yuanshi_multi × crushmulti, DamageAction mask 20480 (4096 + the Crush bit 16384, no battle-skill bit 256): \"this DMG is not treated as Battle Skill DMG, but as Crush DMG\", so no skill-type bonus (damageType none, D5). yuanshi_multi: ReadSkillSettingData \"弭弗特殊猛击\" column 1, a table not in our checkout; the SkillData default 1 (in-game test 91 checks it with the damage type). crushmulti = 1 + crushmultiadd_talent (talent 1 Stern Crackdown: 0.1 / 0.2) when talent > 0 and the target is Staggered (CheckPoiseValue = 0) or has tag 1066759270 (Physical Susceptibility: buff_common_affixes_vulnerable_physical and _all, as enemyModifier reads it). P5 multiplies atk_scale by 1.1 (\"can stack with Stern Crackdown\")."
+          "note": "f26 ForEach: atk_scale_runtime = atk_scale × yuanshi_multi × crushmulti, DamageAction mask 20480 (4096 + the Crush bit 16384, no battle-skill bit 256): \"this DMG is not treated as Battle Skill DMG, but as Crush DMG\", so no skill-type bonus (damageType none, D5). yuanshi_multi: ReadSkillSettingData \"弭弗特殊猛击\" column 1, a table not in our checkout; the SkillData default 1 (in-game test 91 checks it with the damage type). crushmulti = 1 + crushmultiadd_talent (talent 1 Stern Crackdown: 0.1 / 0.2) when talent > 0 and the target is Staggered (CheckPoiseValue = 0) or has tag 1066759270 (Physical Susceptibility: buff_common_affixes_vulnerable_physical and _all, as enemyModifier reads it). P5 multiplies atk_scale by 1.1 (\"can stack with Stern Crackdown\").",
+          "dataOverride": { "scale": "Batch 4, Mi Fu. Compiler limit (batch-3 D3 open item, a ModifyDynamicBlackboard chain on a scale): f26 atk_scale_runtime = atk_scale × yuanshi_multi (ReadSkillSettingData, its table not in the checkout: SkillData default 1) × crushmulti (talent 1: the kit's extraScale)." }
         }
       ],
       "note": "50 SP; a sub-skill as Trail and Mangle."
@@ -290,13 +278,11 @@
       "label": "Combo skill",
       "damageType": "combo",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale1"], "count": 2, "frames": [8, 10] },
+        { "id": "hit", "scale": ["atk_scale1"] },
         {
           "id": "uppercut",
           "scale": ["atk_scale2"],
-          "frames": [31],
           "energy": "usp",
-          "poise": "poise",
           "buffs": [{ "buff": "combo_susceptibility", "beforeDamage": true }],
           "note": "f31: the Physical Susceptibility is created before the DamageAction (it acts on this hit, as Estella's); ObtainCostAction usp after CheckSkillHasHit."
         }
@@ -308,8 +294,8 @@
       "label": "Ultimate: Pile of No Mercy",
       "damageType": "ultimate",
       "hits": [
-        { "id": "lift", "scale": ["atk_scale"], "frames": [75], "applies": [{ "kind": "physicalStatus", "status": "lift", "forced": true }], "note": "f75 AirborneAction forceAirborne, then the DamageAction." },
-        { "id": "slam", "scale": ["atk_scale2"], "frames": [102], "poise": "poise2", "note": "f102 atk_scale2 + poise2 (20, P5 +5)." }
+        { "id": "lift", "scale": ["atk_scale"], "applies": [{ "kind": "physicalStatus", "status": "lift", "forced": true }], "note": "f75 AirborneAction forceAirborne, then the DamageAction." },
+        { "id": "slam", "scale": ["atk_scale2"], "note": "f102 atk_scale2 + poise2 (20, P5 +5)." }
       ],
       "note": "Cost 80 (P4 ×0.85), cooldown 15 s, time stop 0–71, channel 0–103 (tables, SkillData). The f98 DamageAction with a literal-0 multiplier is left out: whether a 0-damage DamageAction counts as a hit for on-hit effects isn't known, and none of hers needs it."
     }

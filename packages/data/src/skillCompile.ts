@@ -221,6 +221,8 @@ export interface CompiledBuff extends Placement {
   readonly target: BuffTarget;
   /** Its duration in seconds (BuffData, with assigned keys), or null when it lasts until ended or isn't known. */
   readonly seconds: number | null;
+  /** Its BuffData duration as a value: a key of the creating skill when CreateBuff assigns it one (its value at the compiled level), else the buff's own; null without a BuffData file. */
+  readonly duration: CompiledValue | null;
   /** What it does, in short (damage modifiers, attribute modifiers, susceptibility), from its BuffData; empty when it has none of these. */
   readonly summary: string;
   /**
@@ -1217,7 +1219,7 @@ class Compiler {
       if (id.startsWith("buff_common_")) continue; // shared mechanics (reactions, immunity, …): not the skill's own
       if (!isBuffFileListed(id) || !existsSync(buffPath(id))) {
         this.notes.add(`${ctx.file}@${frame}: buff ${id} ${isBuffFileListed(id) ? "has no BuffData file" : "isn't listed in packages/data/tables.json"}`);
-        this.buffs.push({ ...this.place(ctx, frame), buff: id, target, seconds: null, summary: "", ...until });
+        this.buffs.push({ ...this.place(ctx, frame), buff: id, target, seconds: null, duration: null, summary: "", ...until });
         continue;
       }
       const c = this.enter(ctx, id, how);
@@ -1225,8 +1227,9 @@ class Compiler {
       const j = readJson(buffPath(id));
       const bb = this.defaults(id, j);
       for (const [k, v] of assigned) bb.set(k, v);
+      const duration = this.value(j["duration"], bb);
       const span = this.walkBuff(id, j, frame, { ...c, bb }, auraEnd, target);
-      this.buffs.push({ ...this.place(ctx, frame), buff: id, target, seconds: span === null ? null : (span - frame) / FPS, summary: this.buffSummary(j, bb), ...until });
+      this.buffs.push({ ...this.place(ctx, frame), buff: id, target, seconds: span === null ? null : (span - frame) / FPS, duration, summary: this.buffSummary(j, bb), ...until });
     }
   }
 

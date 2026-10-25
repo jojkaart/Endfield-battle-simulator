@@ -60,25 +60,25 @@
       "skillId": "chr_0005_chen_attack1",
       "label": "Soaring Break: basic attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [8, 11], "events": ["chr_0005_chen_attack1"], "note": "Two landings (display_atk_scale = 2 × atk_scale); mask 128; atb 0." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Two landings (display_atk_scale = 2 × atk_scale); mask 128; atb 0." }]
     },
     {
       "skillId": "chr_0005_chen_attack2",
       "label": "Soaring Break: basic attack 2",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [7], "events": ["chr_0005_chen_attack2"], "note": "Mask 128; atb 0." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Mask 128; atb 0." }]
     },
     {
       "skillId": "chr_0005_chen_attack3",
       "label": "Soaring Break: basic attack 3",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [9, 12], "events": ["chr_0005_chen_attack3"], "note": "Two landings (display_atk_scale = 2 × atk_scale); mask 128; atb 0." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Two landings (display_atk_scale = 2 × atk_scale); mask 128; atb 0." }]
     },
     {
       "skillId": "chr_0005_chen_attack4",
       "label": "Soaring Break: basic attack 4",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [4, 10], "events": ["chr_0005_chen_attack4"], "note": "Two landings (display_atk_scale = 2 × atk_scale); mask 128; atb 0." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Two landings (display_atk_scale = 2 × atk_scale); mask 128; atb 0." }]
     },
     {
       "skillId": "chr_0005_chen_attack5",
@@ -88,12 +88,7 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [16],
-          "events": ["chr_0005_chen_attack5"],
           "finalStrike": true,
-          "poise": "poise",
-          "poiseControlledOnly": true,
-          "sp": { "if": { "controlled": true }, "then": "atb" },
           "note": "ChannelingAction 16–21, maxCountPerTarget 1: one landing at 16 (mask 2097280, Final Strike). \"As the controlled operator, Final Strike also deals {poise} Stagger\" (onlyEnableForMainChar); its atb 18 likewise only when controlled (CheckMainCharacterCondition before the ObtainCostAction). The third unit (hitEnvData 25) is environment damage."
         }
       ]
@@ -103,28 +98,24 @@
       "label": "Finisher",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [5], "events": ["chr_0005_chen_power_attack"], "factor": 0.2, "note": "BreakingAttackCalculation atk_scale × multiplier 0.2 (mask 132)." },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [29], "events": ["chr_0005_chen_power_attack"], "factor": 0.8, "note": "BreakingAttackCalculation atk_scale × multiplier 0.8; GainBreakingAttackAtb at 29 (the engine gives finisher SP at the first hit)." }
+        { "id": "hit", "scale": ["atk_scale"], "frames": [5], "note": "BreakingAttackCalculation atk_scale × multiplier 0.2 (mask 132)." },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [29], "note": "BreakingAttackCalculation atk_scale × multiplier 0.8; GainBreakingAttackAtb at 29 (the engine gives finisher SP at the first hit)." }
       ]
     },
     {
       "skillId": "chr_0005_chen_plunging_attack_end",
       "label": "Soaring Break: dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "events": ["chr_0005_chen_plunging_attack_end"], "note": "Mask 1152; atb 0. A rotation's dive: a jump, then this landing (batch-1 S10)." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Mask 1152; atb 0. A rotation's dive: a jump, then this landing (batch-1 S10)." }]
     },
     {
       "skillId": "chr_0005_chen_normal_skill",
       "label": "Ascending Strike (battle skill)",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 13, "ratio": 1 }],
       "hits": [
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [13],
-          "events": ["chr_0005_chen_normal_skill"],
-          "poise": "poise",
           "applies": [{ "kind": "physicalStatus", "status": "lift" }],
           "note": "Frame 13: StoreAttributeValue airborne, AirborneAction (Lift, not forced: on an enemy without Vulnerable it only adds a stack) before the DamageAction (atk_scale, poise; mask 4352), then buff_common_obtain_ultimate_sp. The second AirborneAction after the damage (forceAirborne, deadOption 2) launches a dying target."
         }
@@ -138,9 +129,6 @@
         {
           "id": "hit",
           "scale": ["atk_scale"],
-          "frames": [17],
-          "events": ["chr_0005_chen_combo_skill"],
-          "energy": "usp",
           "applies": [{ "kind": "physicalStatus", "status": "lift" }],
           "note": "AuraAction 17–27 along the dash, once per target: AirborneAction (floatingDuration 0) then DamageAction atk_scale (mask 12288, no poise unit), then ObtainCostAction usp once per cast. The aura's action is taken at its start (one enemy). Its window: trigger combo_window."
         }
@@ -151,16 +139,14 @@
       "label": "Blade Gale (ultimate)",
       "damageType": "ultimate",
       "hits": [
-        { "id": "slash1", "label": "First slash", "scale": ["atk_scale1"], "frames": [58], "events": ["chr_0005_chen_ultimate_skill"], "poise": "poise_start", "note": "\"First Strike Stagger\": only the first slash has a poise unit (poise_start 15)." },
-        { "id": "slash", "label": "Slashes 2–6", "scale": ["atk_scale1"], "count": 5, "frames": [63, 68, 72, 76, 80], "events": ["chr_0005_chen_ultimate_skill"], "note": "Their poise units are 0." },
+        { "id": "slash1", "label": "First slash", "scale": ["atk_scale1"], "frames": [58], "note": "\"First Strike Stagger\": only the first slash has a poise unit (poise_start 15)." },
+        { "id": "slash", "label": "Slashes 2–6", "scale": ["atk_scale1"], "frames": [63, 68, 72, 76, 80], "note": "Their poise units are 0." },
         {
           "id": "final",
           "label": "Final slash",
           "scale": [],
           "scaleValue": { "sum": ["atk_scale2", { "product": ["potential5", "phy_up"] }] },
-          "frames": [103],
-          "events": ["chr_0005_chen_ultimate_skill"],
-          "poise": "poise_final",
+          "dataOverride": { "scale": "Batch 3, Chen Qianyu. Compiler limit (D3 open): at frame 103, CompareFloat potential5 = 1 → ModifyDynamicBlackboard atk_scale2 += phy_up before the DamageAction; the compiler stops at the ModifyDynamicBlackboard ($atk_scale2?). The kit writes the data's branch as a sum (potential5 is 0 or 1; phy_up is 0)." },
           "note": "Frame 103: CompareFloat potential5 = 1 (P5 sets it) → ModifyDynamicBlackboard atk_scale2 += phy_up (operation 1), then the DamageAction atk_scale2 with poise_final. potential5 is 0 or 1, so the product is the data's branch; phy_up is 0 (file default, no table sets it). The compiler leaves the scale as $atk_scale2? (D3 open)."
         }
       ]

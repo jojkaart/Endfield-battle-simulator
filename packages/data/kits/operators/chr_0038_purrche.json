@@ -45,12 +45,9 @@
       "label": "I'M NOT SLEEPING!: shield up",
       "target": "self",
       "gameBuff": "buff_chr_0038_purrche_aura_block",
-      "duration": {
-        "key": "display_time_1",
-        "skill": "chr_0038_purrche_normal_skill"
-      },
+      "duration": 3,
       "modifiers": [],
-      "note": "buff_chr_0038_purrche_aura_block, created at normal_skill frame 0 (duration ← display_time_1, 3 s). PauseBuffTime while block_1 / block_2 / a shielded combo play, until their pause_block ends (block_1 0–9, block_2 0–11, combo 210–251 / 270–310): written as extendBuff by those lengths (triggers block_1_cast, block_2_cast, combo_shielded*). At the first block (block_counter reaching 2) SetBuffDuration 3.0 (a literal): the block_1_cast trigger re-applies it. It ends with a dash (buff_common_dash), an ultimate (CheckSkillType 7) and any skill that doesn't inherit it (inheritSkillIdList: block_1/2, loop_1/2, combo, counter; the counter finishes it at its frame 0). Its end creates block_end, on which the loops jump to 360 (trigger shield_end). Swaps (its swap events 2/3) aren't modelled."
+      "note": "buff_chr_0038_purrche_aura_block, created at normal_skill frame 0 with its own duration (3 s; the skill's display_time_1, 3 at every level, is the description's). PauseBuffTime while block_1 / block_2 / a shielded combo play, until their pause_block ends (block_1 0–9, block_2 0–11, combo 210–251 / 270–310): written as extendBuff by those lengths (triggers block_1_cast, block_2_cast, combo_shielded*). At the first block (block_counter reaching 2) SetBuffDuration 3.0 (a literal): the block_1_cast trigger re-applies it. It ends with a dash (buff_common_dash), an ultimate (CheckSkillType 7) and any skill that doesn't inherit it (inheritSkillIdList: block_1/2, loop_1/2, combo, counter; the counter finishes it at its frame 0). Its end creates block_end, on which the loops jump to 360 (trigger shield_end). Swaps (its swap events 2/3) aren't modelled."
     },
     {
       "id": "protection",
@@ -61,6 +58,7 @@
         "key": "display_time_1",
         "skill": "chr_0038_purrche_normal_skill"
       },
+      "dataOverride": { "duration": "The instance buff is the shield aura's (buff_chr_0038_purrche_block, an AuraAction on nearby operators): it lasts while the shield is up, so the kit follows shield_up rather than the instance file's 40 s (see the buff's note)." },
       "modifiers": [
         {
           "attr": 63,
@@ -2300,10 +2298,6 @@
           ],
           "frames": [
             10
-          ],
-          "factor": 0.4,
-          "events": [
-            "chr_0038_purrche_attack1"
           ]
         },
         {
@@ -2313,10 +2307,6 @@
           ],
           "frames": [
             17
-          ],
-          "factor": 0.6,
-          "events": [
-            "chr_0038_purrche_attack1"
           ]
         }
       ],
@@ -2334,10 +2324,6 @@
           ],
           "frames": [
             11
-          ],
-          "factor": 0.2,
-          "events": [
-            "chr_0038_purrche_attack2"
           ]
         },
         {
@@ -2347,10 +2333,6 @@
           ],
           "frames": [
             14
-          ],
-          "factor": 0.3,
-          "events": [
-            "chr_0038_purrche_attack2"
           ]
         },
         {
@@ -2360,10 +2342,6 @@
           ],
           "frames": [
             22
-          ],
-          "factor": 0.5,
-          "events": [
-            "chr_0038_purrche_attack2"
           ]
         }
       ]
@@ -2381,10 +2359,6 @@
           "frames": [
             18
           ],
-          "factor": 0.2,
-          "events": [
-            "chr_0038_purrche_attack3"
-          ],
           "finalStrike": false
         },
         {
@@ -2395,18 +2369,6 @@
           "frames": [
             21
           ],
-          "factor": 0.8,
-          "events": [
-            "chr_0038_purrche_attack3"
-          ],
-          "sp": {
-            "if": {
-              "controlled": true
-            },
-            "then": "atb"
-          },
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "finalStrike": true,
           "note": "Mask 2097280 (Final Strike); \"As the controlled operator, Final Strike also deals {poise} Stagger\" (onlyEnableForMainChar); atb 23 (atbOnlyMainChar)."
         }
@@ -2422,12 +2384,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            24
-          ],
-          "events": [
-            "chr_0038_purrche_power_attack"
-          ],
           "note": "BreakingAttackCalculation atk_scale (9.0) × multiplier 1.0."
         }
       ]
@@ -2441,19 +2397,7 @@
           "id": "hit",
           "scale": [
             "atk_scale"
-          ],
-          "frames": [
-            1
-          ],
-          "events": [
-            "chr_0038_purrche_plunging_attack_end"
-          ],
-          "sp": {
-            "if": {
-              "controlled": true
-            },
-            "then": "atb"
-          }
+          ]
         }
       ]
     },
@@ -2539,13 +2483,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            9
-          ],
-          "events": [
-            "chr_0038_purrche_normal_skill_counter"
-          ],
-          "element": "natural",
           "applies": [
             {
               "kind": "infliction",
@@ -2553,7 +2490,6 @@
             }
           ],
           "sp": "atb_return",
-          "poise": "poise",
           "note": "ChannelingAction [9–13]: SpellInfliction 3 (Nature), DamageAction atk_scale (4.0; damageType 6, mask 4352) with poise (20), BlowOffAction, ObtainCostAction atb_return / potential_5_atb (0 at every level) if a block happened. \"headbutts a target in front of her to deal Nature DMG and apply Nature Infliction\"."
         }
       ],

@@ -11,16 +11,34 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits/operators");
 
 /**
- * Fields kits write by hand that the game data has (docs/kit-abstractions.md
- * section 1): the review's target is to compile these instead.
+ * Fields the loader fills in from the compiled SkillData where a kit leaves
+ * them out (kits.ts withDataFacts; docs/design.md, "Kits and the game
+ * data"). One a kit still writes is one the data can't say alone (its
+ * landings aren't one path of the hit's own) or a marked difference;
+ * `efsim kit-trim` removes the rest.
  */
 export const DATA_DERIVABLE: ReadonlySet<string> = new Set([
   "hit.frames",
-  "hit.energy",
-  "skill.energyBlockSeconds",
-  "hit.factor",
+  "hit.count",
   "hit.events",
+  "hit.factor",
+  "hit.element",
+  "hit.poise",
+  "hit.poiseControlledOnly",
+  "hit.detached",
+  "hit.energy",
+  "hit.sp",
+  "hit.spBeforeDamage",
+  "skill.teamEnergy",
+  "skill.energyBlockSeconds",
 ]);
+
+/**
+ * Fields kits still write by hand that the loader compares with the
+ * compiled data (a difference is an error unless marked) but doesn't fill
+ * in yet: the review's next target.
+ */
+export const DATA_COMPARED: ReadonlySet<string> = new Set(["hit.launch", "hit.finalStrike", "applies.infliction", "applies.forcedReaction", "applies.consumeInfliction", "applies.physicalStatus", "applies.vulnerable"]);
 
 type Json = Record<string, unknown>;
 
@@ -59,12 +77,13 @@ export function formatCensus(census: Map<string, Map<string, number>>): string {
   const ops = [...census.keys()];
   const features = [...new Set([...census.values()].flatMap((c) => [...c.keys()]))].sort();
   const short = (op: string) => op.replace(/^chr_\d+_/, "");
-  const rows = features.map((f) => [`${f}${DATA_DERIVABLE.has(f) ? " *" : ""}`, ...ops.map((op) => String(census.get(op)?.get(f) ?? ""))]);
+  const rows = features.map((f) => [`${f}${DATA_DERIVABLE.has(f) ? " *" : DATA_COMPARED.has(f) ? " +" : ""}`, ...ops.map((op) => String(census.get(op)?.get(f) ?? ""))]);
   const usedOnce = features.filter((f) => ops.filter((op) => census.get(op)?.has(f)).length === 1);
   return [
     table(["feature", ...ops.map(short)], rows, ["l", ...ops.map(() => "r" as const)]),
     "",
-    "* hand-written although the game data has it (docs/kit-abstractions.md section 1): compile it instead.",
+    "* the loader takes it from the data where a kit leaves it out: a written one is where the data's landings can't say it alone, or a marked difference (efsim kit-trim removes the rest).",
+    "+ hand-written, compared with the data as the kit loads (differences marked in dataOverride): the next to take from the data.",
     `Used by one kit only (check it isn't a one-off for a shared mechanism): ${usedOnce.join(", ") || "none"}`,
   ].join("\n");
 }

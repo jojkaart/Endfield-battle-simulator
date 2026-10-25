@@ -178,7 +178,8 @@ describe("D6: poise-only landings", () => {
     mkdirSync(join(dir, "operators"));
     const raw = JSON.parse(readFileSync(join(ROOT, "packages/data/kits/operators/chr_0016_laevat.json"), "utf8")) as { skills: { skillId: string; hits: Record<string, unknown>[] }[] };
     const a1 = raw.skills.find((s) => s.skillId === `${L}attack1`) as { hits: Record<string, unknown>[] };
-    a1.hits.push({ id: "stagger", scale: [], frames: [2], poise: 10, poiseOnly: true });
+    // A landing the data doesn't have: marked as the kit's own (else the loader refuses it).
+    a1.hits.push({ id: "stagger", scale: [], frames: [2], poise: 10, poiseOnly: true, dataOverride: { frames: "A test's stagger-only landing." } });
     writeFileSync(join(dir, "operators", "chr_0016_laevat.json"), JSON.stringify(raw));
     expect(loadKits(data, dir).operators[op]?.skills.find((s) => s.skillId === `${L}attack1`)?.hits.at(-1)?.poiseOnly).toBe(true);
     a1.hits[a1.hits.length - 1] = { id: "stagger", scale: [], frames: [2], poise: 10, poiseOnly: true, sp: 5 };

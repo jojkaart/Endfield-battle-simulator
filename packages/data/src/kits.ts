@@ -9,8 +9,10 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
+import { compileEquipmentSkill, compileOperatorSkill, dataEnergyBlockSeconds, dataTeamEnergy, hitFacts, kitEnergyBlock, matchSkill, spPlaced, type CompileData, type CastAction, type DataField, type Disagreement, type HitFacts } from "./kitMatch.ts";
+import type { CompiledSkill, CompiledValue } from "./skillCompile.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
-import { isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
+import { buffFilePath, isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
 import { buffTagFilter, SHIELD_TAG } from "./buffTags.ts";
 import { Attr, attrFeedsZone, buffAttrHasEffect, buffReach, type BuffCategory, type TriggerOn, type KitBuffModifier, ELEMENTS, predicateRefs, predicateValues, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type Condition, type KitTrigger, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
@@ -56,6 +58,8 @@ interface RawHit {
   /** Which skill-type bonus applies (`none`: no skill type): required on triggered hits; on a skill's hit, an override of the skill's. */
   damageType?: SkillType | "none";
   poiseOnly?: true;
+  /** Fields where the kit's value (or its leaving one out) differs from the compiled data's on purpose, each with the reason (kitMatch.ts). */
+  dataOverride?: Partial<Record<DataField, string>>;
 }
 
 type RawAction =
@@ -69,7 +73,7 @@ type RawAction =
  */
 export type RawOn = TriggerOn | { event: "buffApplied"; tags: number[]; fromKinds?: (SkillType | "none")[]; toOthers?: boolean; received?: boolean };
 
-type RawTrigger = Omit<KitTrigger, "do" | "on"> & { note?: string; on: RawOn; do: RawAction[] };
+type RawTrigger = Omit<KitTrigger, "do" | "on"> & { note?: string; on: RawOn; do: RawAction[]; dataOverride?: Partial<Record<"energy" | "sp" | "apply", string>> };
 
 /** A trigger's event with buff tags turned into their category filter. */
 export function triggerOn(on: RawOn, where: string): TriggerOn {
@@ -111,6 +115,8 @@ interface RawKit {
     windows?: { from: number; skills?: string[]; if?: Predicate }[];
     comboWindow?: false;
     noDodge?: [number, number];
+    /** Where the skill differs from the compiled data on purpose (teamEnergy, energyBlockSeconds, applies@<frame>, lands <file>), each with the reason. */
+    dataOverride?: Record<string, string>;
     hits: RawHit[];
   }[];
   conditions?: RawCondition[];
@@ -125,7 +131,7 @@ interface RawEquipmentKit {
   conditions?: RawCondition[];
 }
 
-type RawBuff = KitBuff & { note?: string };
+type RawBuff = KitBuff & { note?: string; dataOverride?: { duration?: string } };
 
 function validator() {
   const ajv = new Ajv2020({ allErrors: true, strict: true });
@@ -151,9 +157,9 @@ function condition(owner: string, c: RawCondition): Condition {
   };
 }
 
-export interface KitData {
+export interface KitData extends CompileData {
   readonly skills: Readonly<Record<string, SkillData>>;
-  readonly operators: Readonly<Record<string, { skillGroups: Readonly<Record<string, string>>; talentNodes?: readonly { index: number; effects: readonly Effect[] }[]; potentials?: readonly (readonly Effect[])[] }>>;
+  readonly operators: Readonly<Record<string, { skillGroups: Readonly<Record<string, string>>; talentNodes?: readonly { index: number; level: number; effects: readonly Effect[] }[]; potentials?: readonly (readonly Effect[])[] }>>;
   readonly weapons: Readonly<Record<string, { readonly skills: readonly string[] }>>;
   readonly gearSets: Readonly<Record<string, { readonly skillId: string }>>;
 }
@@ -168,7 +174,12 @@ const FINAL_STRIKE_BIT = 2097152;
  */
 function isFinalStrike(skillId: string, events: readonly string[], hitEntries: number, bit = FINAL_STRIKE_BIT): boolean {
   const files = events.length ? events : hitEntries === 1 ? operatorSkillFiles(skillId.replace(/^(chr_\d+_[a-z]+)_.*$/, "$1")).filter((f) => f === skillId || f.startsWith(`${skillId}_`)) : [];
-  return files.some((f) => isSkillFileListed(f) && existsSync(skillFilePath(f)) && damageSites(f).some((d) => (Math.floor(d.decorateMask / bit) & 1) === 1));
+  return files.some((f) => damageSites(f).some((d) => (Math.floor(d.decorateMask / bit) & 1) === 1));
+}
+
+/** Whether a log event key names a fetched SkillData or BuffData file (the file holding the damage). */
+function isDataFile(id: string): boolean {
+  return (isSkillFileListed(id) && existsSync(skillFilePath(id))) || (isBuffFileListed(id) && existsSync(buffFilePath(id)));
 }
 
 /** SkillData decorate-mask bit of a dive attack's landing (the plunging attacks' masks are 1152: 1024 + the basic attack's 128). */
@@ -403,6 +414,13 @@ function kitChecker(scope: KitScope) {
   };
   /** A forced reaction's level and extra seconds are values of the applying skill. */
   const checkApplicationValues = (a: KitApplication, skillId: string, where: string) => {
+    // Keys naming the applying skill's values, checked here rather than when the hit lands.
+    for (const k of ["durationKey", "scaleKey", "multiplierKey"] as const) {
+      const key = (a as Partial<Record<typeof k, string>>)[k];
+      if (key !== undefined) checkValue(key, skillId, `${where} ${a.kind} ${k}`);
+    }
+    // Only Breach has a strength for scaleKey to scale (status.ts), or the window's status when it's one.
+    if (a.kind === "physicalStatus" && a.scaleKey !== undefined && a.status !== "breach" && a.status !== "event") throw new Error(`${where}: a ${a.status} has no strength for scaleKey ${a.scaleKey} to scale (only Breach's DMG Taken)`);
     if (a.kind !== "forcedReaction") return;
     if (a.level !== undefined) checkValue(a.level, skillId, `${where} forcedReaction level`);
     if (a.extraSeconds !== undefined) checkValue(a.extraSeconds, skillId, `${where} forcedReaction extraSeconds`);
@@ -439,7 +457,7 @@ function kitChecker(scope: KitScope) {
     for (const h of hits) {
       if (!h.branch) continue;
       const n = branches.get(h.branch);
-      const count = JSON.stringify(h.count ?? 1);
+      const count = JSON.stringify(h.count ?? h.frames?.length ?? 1);
       if (n !== undefined && n !== count) throw new Error(`${where} hit ${h.id}: the hits of branch ${h.branch} land a different number of times`);
       branches.set(h.branch, count);
     }
@@ -475,6 +493,7 @@ function kitChecker(scope: KitScope) {
       const element = h.element ?? scope.element;
       if (!element || !ELEMENTS.includes(element)) throw new Error(`${where} hit ${h.id}: no element`);
       const events = h.events ?? (src.defaultEvent && hits.length === 1 ? [src.defaultEvent] : []);
+      for (const e of events) if (!isDataFile(e)) throw new Error(`${where} hit ${h.id}: event ${e} is no fetched SkillData or BuffData file (a log event key is the file holding the damage)`);
       if (!src.damageType && h.requires) throw new Error(`${where} hit ${h.id}: triggered hits can't require stacks (use the trigger's if)`);
       const consume = h.requires?.consume;
       if (consume !== undefined && typeof consume !== "boolean") checkValue(consume, src.skillId, `${where} hit ${h.id} requires.consume`);
@@ -493,13 +512,14 @@ function kitChecker(scope: KitScope) {
         if (a.duration !== undefined) checkValue(a.duration, src.skillId, `${where} hit ${h.id} buff ${a.buff} duration`);
         if (a.untilFrame !== undefined && !(Number.isInteger(a.untilFrame) && a.untilFrame > 0)) throw new Error(`${where} hit ${h.id}: buff ${a.buff} untilFrame must be a skill frame > 0`);
       }
-      // A count that's a value is judged at the cast: its frames are the first landings', the rest repeat the last (framesEvery apart).
-      if (typeof (h.count ?? 1) === "number") {
-        if (h.frames && h.frames.length !== (h.count ?? 1)) throw new Error(`${where} hit ${h.id}: ${h.frames.length} frames for count ${JSON.stringify(h.count ?? 1)}`);
+      // A count that's a value is judged at the cast: its frames are the first landings', the rest repeat the last (framesEvery apart). Default: one per frame.
+      const count = h.count ?? h.frames?.length ?? 1;
+      if (typeof count === "number") {
+        if (h.frames && h.frames.length !== count) throw new Error(`${where} hit ${h.id}: ${h.frames.length} frames for count ${JSON.stringify(count)}`);
         if (h.framesEvery !== undefined) throw new Error(`${where} hit ${h.id}: framesEvery is for a count that's a value`);
       } else checkValue(h.count as ValueExpr, src.skillId, `${where} hit ${h.id} count`);
       return {
-        id: h.id, label: h.label ?? src.label, scale: h.scale, count: h.count ?? 1, damageType: h.damageType ?? src.damageType ?? "none", element, events,
+        id: h.id, label: h.label ?? src.label, scale: h.scale, count, damageType: h.damageType ?? src.damageType ?? "none", element, events,
         ...(h.frames ? { frames: h.frames } : {}),
         ...(h.framesEvery !== undefined ? { framesEvery: h.framesEvery } : {}),
         ...(h.applies ? { applies: h.applies } : {}),
@@ -545,6 +565,7 @@ function kitChecker(scope: KitScope) {
     if (t.on.event === "stackAtLeast" && !stackIds.has(t.on.stack)) throw new Error(`${where}: unknown stack ${t.on.stack}`);
     if ((t.on.event === "buffApplied" || t.on.event === "buffEnded" || t.on.event === "buffTick") && "buff" in t.on && !buffDefs.has(t.on.buff)) throw new Error(`${where}: unknown buff ${t.on.buff}`);
     if (t.on.event === "buffApplied" && "categories" in t.on && "buff" in t.on) throw new Error(`${where}: a buffApplied trigger names a buff or categories, not both`);
+    if ("gameBuffs" in t.on) for (const id of t.on.gameBuffs) if (!isBuffFileListed(id) || !existsSync(buffFilePath(id))) throw new Error(`${where}: ${id} is no fetched BuffData file`);
     if (t.beforeDamage && !(STATUS_EVENTS as readonly string[]).includes(t.on.event)) throw new Error(`${where}: only status-event triggers can act before their hit's damage`);
     if (t.maxPerCast !== undefined && !(t.maxPerCast >= 1)) throw new Error(`${where}: maxPerCast must be at least 1`);
     if (t.detached && !(t.delay && t.on.event === "cast")) throw new Error(`${where}: only a delayed cast trigger can be detached from its cast`);
@@ -643,7 +664,7 @@ function kitChecker(scope: KitScope) {
   };
   /** The kit's buffs with their game buffs' rules; after every hit and trigger is checked (which skills apply each buff). */
   const normalizeBuffs = (buffs: readonly RawBuff[]): KitBuff[] =>
-    buffs.map(({ note: _note, ...b }) => {
+    buffs.map(({ note: _note, dataOverride: _d, ...b }) => {
       const sites = instanceKeySites.get(b.id);
       if (sites && sites.some((x) => x) && sites.some((x) => !x)) throw new Error(`${scope.file}: buff ${b.id}: some skills applying it have its game buff's maxStackCntKey and some don't`);
       if (b.consumedScope && !b.consumedBy) throw new Error(`${scope.file}: buff ${b.id}: consumedScope is for a buff a cast consumes (consumedBy)`);
@@ -682,13 +703,172 @@ function isChainStep(data: KitData, kit: RawKit, skillId: string): boolean {
   });
 }
 
+type RawSkill = RawKit["skills"][number];
+
+/**
+ * The cast triggers that belong to a skill's timeline: on its cast alone,
+ * with its values (`skill`), without a random choice. Their hits land at the
+ * delay plus their frames; their energy, SP and applications happen at the
+ * delay. Only top-level actions count (not an action's alternatives).
+ */
+function castTriggers(skillId: string, triggers: readonly KitTrigger[]): KitTrigger[] {
+  // One with a random choice (Purrchena's prezzies) has alternatives the data has as branches of one landing: left out.
+  return triggers.filter((t) => t.on.event === "cast" && t.on.skills?.length === 1 && t.on.skills[0] === skillId && t.skill === skillId && !t.do.some((a) => a.kind === "choose"));
+}
+
+/**
+ * A skill's (and its cast triggers') differences from the compiled data:
+ * each must be marked in the kit (dataOverride, with the reason), and each
+ * mark must be of a difference. Errors, or `options.disagreements`.
+ */
+function checkSkillData(compiled: CompiledSkill, s: RawSkill, hits: readonly KitHit[], teamEnergy: RawSkill["teamEnergy"], energyBlockSeconds: number | undefined, triggers: readonly KitTrigger[], kit: RawKit, where: string, options: KitLoadOptions): void {
+  const own = castTriggers(s.skillId, triggers);
+  const rawTriggers = new Map((kit.triggers ?? []).map((t) => [t.id, t]));
+  const rawTriggerHit = (tid: string, hid: string): RawHit | undefined => {
+    const list = (acts: readonly RawAction[]): RawHit[] => acts.flatMap((a) => (a.kind === "hits" ? a.hits : a.kind === "choose" ? a.options.flatMap((o) => list(o.do)) : []));
+    return list(rawTriggers.get(tid)?.do ?? []).find((h) => h.id === hid);
+  };
+  // Top-level actions only: a choose action's options are alternatives the data has as branches.
+  const triggerHits = own.flatMap((t) => t.do.flatMap((a) => (a.kind === "hits" ? a.hits.map((h) => ({ ...h, id: `${t.id}/${h.id}`, ...(h.frames ? { frames: h.frames.map((f) => f + (t.delay ?? 0)) } : {}) })) : [])));
+  const actions: CastAction[] = own.flatMap((t) =>
+    t.do.flatMap((a): CastAction[] =>
+      a.kind === "energy" || a.kind === "sp" ? [{ trigger: t.id, frame: t.delay ?? 0, kind: a.kind, value: a.value }] : a.kind === "apply" ? [{ trigger: t.id, frame: t.delay ?? 0, kind: "apply", applies: a.applies }] : [],
+    ),
+  );
+  const m = matchSkill(compiled, { skillId: s.skillId, hits, ...(teamEnergy ? { teamEnergy } : {}), ...(energyBlockSeconds !== undefined ? { energyBlockSeconds } : {}) }, kitEnergyBlock({ skillId: s.skillId, ...(energyBlockSeconds !== undefined ? { energyBlockSeconds } : {}) }, kit.triggers ?? [], kit.buffs ?? []), { triggerHits, actions });
+  const byId = new Map(s.hits.map((h) => [h.id, h]));
+  const hitOf = (id: string) => (id.includes("/") ? rawTriggerHit(id.slice(0, id.indexOf("/")), id.slice(id.indexOf("/") + 1)) : byId.get(id));
+  const reason = (d: Disagreement) => (d.trigger !== undefined ? rawTriggers.get(d.trigger)?.dataOverride?.[d.field as "energy" | "sp" | "apply"] : d.hit !== undefined ? hitOf(d.hit)?.dataOverride?.[d.field as DataField] : s.dataOverride?.[d.field]);
+  const found = new Set(m.disagreements.map((d) => `${d.trigger ?? ""}|${d.hit ?? ""}|${d.field}`));
+  const stale = (text: string) => `${text}: marked as differing from the data (dataOverride), but it agrees`;
+  const problems = [
+    ...m.disagreements.filter((d) => reason(d) === undefined).map((d) => ({ ...d, stale: false })),
+    ...Object.keys(s.dataOverride ?? {}).filter((f) => !found.has(`||${f}`)).map((field) => ({ field, text: stale(`${s.skillId} ${field}`), stale: true })),
+    ...[...s.hits.map((h) => ({ id: h.id, h })), ...triggerHits.map((x) => ({ id: x.id, h: hitOf(x.id) }))].flatMap(({ id, h }) => Object.keys(h?.dataOverride ?? {}).filter((f) => !found.has(`|${id}|${f}`)).map((field) => ({ hit: id, field, text: stale(`${s.skillId}/${id} ${field}`), stale: true }))),
+    ...own.flatMap((t) => Object.keys(rawTriggers.get(t.id)?.dataOverride ?? {}).filter((f) => !found.has(`${t.id}||${f}`)).map((field) => ({ trigger: t.id, field, text: stale(`${s.skillId} trigger ${t.id} ${field}`), stale: true }))),
+  ];
+  if (options.disagreements) for (const d of problems) options.disagreements({ ...d, skillId: s.skillId });
+  else if (problems.length) throw new Error(`${where}: differs from the compiled SkillData (fix the kit, or mark the field in dataOverride with the reason):\n  ${problems.map((d) => d.text).join("\n  ")}`);
+}
+
+/** A buff duration as the comparison reads it: a key of a skill, a literal number of seconds, until ended, or null when it can't be said. */
+type DurationRef = { readonly key: string; readonly skill: string } | { readonly seconds: number } | "untilEnded" | null;
+
+const durationText = (d: DurationRef) => (d === null ? "?" : d === "untilEnded" ? "until ended" : "seconds" in d ? `${d.seconds} s` : `${d.key} of ${d.skill}`);
+
+/** A kit duration (an application's, else its buff's) for the skill applying it: a key names that skill's value; talent keys and expressions can't be compared. */
+function kitDuration(v: ValueExpr | undefined, skillId: string): DurationRef {
+  if (v === undefined) return "untilEnded";
+  if (typeof v === "number") return { seconds: v };
+  if (typeof v === "string") return { key: v, skill: skillId };
+  if (v && typeof v === "object" && "key" in v && "skill" in v && typeof v.key === "string" && typeof v.skill === "string" && Object.keys(v).length === 2) return { key: v.key, skill: v.skill };
+  return null;
+}
+
+/** The data's duration of a buff a skill creates: a key the CreateBuff assigns from the skill, the buff file's own value (a literal), 9999 or less than 0 until ended; null when it's runtime state or an expression. */
+function dataDuration(d: CompiledValue | null, buffFile: string): DurationRef {
+  if (!d || d.expr || d.value === null) return null;
+  if (d.value < 0 || d.value >= 9999) return "untilEnded";
+  if (d.keys.length === 0) return { seconds: Math.round(d.value * 1e6) / 1e6 };
+  if (d.keys.length !== 1 || d.factor !== 1 || d.dynamic) return null;
+  const origin = d.origins[0] as string;
+  return origin === buffFile ? { seconds: Math.round(d.value * 1e6) / 1e6 } : { key: d.keys[0] as string, skill: origin };
+}
+
+/**
+ * The durations of the kit buffs standing for a game buff (`gameBuff`)
+ * against the data's CreateBuff of it, where a skill's hit or own cast
+ * trigger applies it and the skill's compiled data creates it: each
+ * difference marked on the buff (dataOverride.duration, with the reason),
+ * each mark a difference. Errors, or `options.disagreements`.
+ */
+function checkBuffDurations(data: KitData, kit: RawKit, skills: readonly { skillId: string; hits: readonly KitHit[] }[], triggers: readonly KitTrigger[], where: string, options: KitLoadOptions): void {
+  const raws = new Map((kit.buffs ?? []).map((b) => [b.id, b]));
+  const apps: { skill: string; buff: string; duration: ValueExpr | undefined; at: string }[] = [];
+  for (const s of skills) for (const h of s.hits) for (const a of h.buffs ?? []) apps.push({ skill: s.skillId, buff: a.buff, duration: a.duration ?? raws.get(a.buff)?.duration, at: `${s.skillId}/${h.id}` });
+  for (const s of skills) for (const t of castTriggers(s.skillId, triggers)) for (const a of t.do) if (a.kind === "buff") apps.push({ skill: s.skillId, buff: a.buff, duration: a.duration ?? raws.get(a.buff)?.duration, at: `${s.skillId} trigger ${t.id}` });
+  const found = new Map<string, string>();
+  for (const a of apps) {
+    const b = raws.get(a.buff);
+    if (!b?.gameBuff) continue;
+    const c = compileOperatorSkill(data, kit.operator, a.skill);
+    const made = (c?.buffs ?? []).filter((x) => x.buff === b.gameBuff).map((x) => dataDuration(x.duration, b.gameBuff as string)).filter((x) => x !== null);
+    const mine = kitDuration(a.duration, a.skill);
+    if (!made.length || mine === null) continue;
+    if (!made.some((x) => JSON.stringify(x) === JSON.stringify(mine)) && !found.has(b.id)) found.set(b.id, `${a.at}: buff ${b.id} (${b.gameBuff}) duration: kit ${durationText(mine)}, data ${[...new Set(made.map(durationText))].join(" | ")}`);
+  }
+  const problems = [
+    ...[...found].filter(([id]) => raws.get(id)?.dataOverride?.duration === undefined).map(([, text]) => ({ text, stale: false })),
+    ...[...raws.values()].filter((b) => b.dataOverride?.duration !== undefined && !found.has(b.id)).map((b) => ({ text: `buff ${b.id} duration: marked as differing from the data (dataOverride), but it agrees or isn't compared`, stale: true })),
+  ];
+  if (options.disagreements) for (const d of problems) options.disagreements({ field: "duration", text: d.text, stale: d.stale, skillId: "" });
+  else if (problems.length) throw new Error(`${where}: buff durations differ from the compiled SkillData (fix the kit, or mark the buff's dataOverride.duration with the reason):\n  ${problems.map((d) => d.text).join("\n  ")}`);
+}
+
+/**
+ * An equipment kit's triggered hits against the compiled skill they take
+ * their values from (`skill`), where it has landings in the files they're
+ * logged under (a weapon skill's ability-event handler); each difference
+ * marked in the hit's dataOverride, each mark a difference.
+ */
+function checkEquipmentData(data: KitData, kit: RawEquipmentKit, triggers: readonly KitTrigger[], where: string): void {
+  const raws = new Map((kit.triggers ?? []).map((t) => [t.id, t]));
+  for (const t of triggers) {
+    const hits = t.do.flatMap((a) => (a.kind === "hits" ? a.hits : []));
+    const c = t.skill && hits.length ? compileEquipmentSkill(data, t.skill) : null;
+    if (!c) continue;
+    const files = new Set(c.landings.map((l) => l.file));
+    const compared = hits.filter((h) => h.events.some((e) => files.has(e)));
+    const rawHits = (raws.get(t.id)?.do ?? []).flatMap((a) => (a.kind === "hits" ? a.hits : []));
+    const m = matchSkill(c, { skillId: t.skill as string, hits: compared }, null, { hitsOnly: true });
+    const found = new Set(m.disagreements.map((d) => `${d.hit ?? ""} ${d.field}`));
+    const problems = [
+      ...m.disagreements.filter((d) => rawHits.find((h) => h.id === d.hit)?.dataOverride?.[d.field as DataField] === undefined).map((d) => d.text),
+      ...rawHits.flatMap((h) => Object.keys(h.dataOverride ?? {}).filter((f) => !found.has(`${h.id} ${f}`)).map((f) => `${t.id}/${h.id} ${f}: marked as differing from the data (dataOverride), but it agrees`)),
+    ];
+    if (problems.length) throw new Error(`${where}: trigger ${t.id} differs from the compiled SkillData of ${t.skill} (fix the kit, or mark the field in dataOverride with the reason):\n  ${problems.join("\n  ")}`);
+  }
+}
+
+/**
+ * A skill hit with the fields it leaves out taken from what the data says of
+ * its landings (hitFacts): frames, events, factor, element (when it isn't the
+ * kit's), stagger and whether only while controlled, detached, energy.
+ */
+function withDataFacts(h: RawHit, all: HitFacts, kitElement: Element | undefined): RawHit {
+  const f = Object.fromEntries(Object.entries(all).filter(([k]) => h.dataOverride?.[k as DataField] === undefined)) as HitFacts;
+  const poise = h.poise ?? (f.poise !== undefined && f.poise !== null ? (f.poise as ValueExpr) : undefined);
+  return {
+    ...h,
+    ...(h.frames === undefined && f.frames ? { frames: [...f.frames] } : {}),
+    ...(h.events === undefined && f.events ? { events: [...f.events] } : {}),
+    ...(h.factor === undefined && f.factor !== undefined && f.factor !== 1 ? { factor: f.factor } : {}),
+    ...(h.element === undefined && f.element !== undefined && f.element !== kitElement ? { element: f.element } : {}),
+    ...(h.poise === undefined && poise !== undefined ? { poise } : {}),
+    ...(h.poiseControlledOnly === undefined && poise !== undefined && f.poiseControlledOnly ? { poiseControlledOnly: true } : {}),
+    ...(h.detached === undefined && f.detached !== undefined ? { detached: f.detached } : {}),
+    ...(h.energy === undefined && f.energy !== undefined && f.energy !== null ? { energy: f.energy as ValueExpr } : {}),
+    ...(h.sp === undefined && f.sp !== undefined && f.sp !== null ? { sp: f.sp as ValueExpr, ...(h.spBeforeDamage === undefined && f.spBeforeDamage ? { spBeforeDamage: true as const } : {}) } : {}),
+  };
+}
+
 function idsOf(file: string, what: string, items: readonly { id: string }[]): Set<string> {
   const ids = new Set(items.map((x) => x.id));
   if (ids.size !== items.length) throw new Error(`${file}: duplicate ${what} ID`);
   return ids;
 }
 
-function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit {
+/** How to load a kit file. */
+export interface KitLoadOptions {
+  /**
+   * Receives each difference from the compiled data that the kit doesn't
+   * mark (and each mark where nothing differs, `stale`) instead of an error
+   * (for tools that write the marks).
+   */
+  readonly disagreements?: (d: Disagreement & { readonly skillId: string; readonly stale: boolean }) => void;
+}
+
+function loadOperatorKit(data: KitData, file: string, kit: RawKit, options: KitLoadOptions = {}): OperatorKit {
   const where0 = `kits/operators/${file}`;
   if (file !== `${kit.operator}.json`) throw new Error(`${where0}: file name must be ${kit.operator}.json`);
   const op = data.operators[kit.operator];
@@ -722,6 +902,7 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
     },
   });
   idsOf(where0, "buff", kit.buffs ?? []);
+  const dataChecks: ((triggers: readonly KitTrigger[]) => void)[] = [];
   const skills = kit.skills.map((s) => {
     const where = `${where0}: ${s.skillId}`;
     const skill = data.skills[s.skillId];
@@ -747,14 +928,52 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
       if (w.if) c.checkPredicate(w.if, `${where} window from ${w.from}`);
     }
     if (s.comboWindow === false && s.damageType !== "combo") throw new Error(`${where}: comboWindow: false is for a combo-kind skill`);
+    const hitSource = { skillId: s.skillId, damageType: s.damageType, label: s.label, checkScale: (key: string, w: string) => checkKey(skill, key, w), defaultEvent: s.skillId, finalStrike: (_h: RawHit, events: string[]) => isFinalStrike(s.skillId, events, s.hits.length), dive: (_h: RawHit, events: string[]) => isDive(s.skillId, events, s.hits.length) };
+    // What the kit leaves out, from the compiled SkillData where its landings say it (kitMatch.ts).
+    const compiled = compileOperatorSkill(data, kit.operator, s.skillId);
+    let rawHits = s.hits;
+    let teamEnergy = s.teamEnergy;
+    let energyBlockSeconds = s.energyBlockSeconds;
+    if (compiled) {
+      const first = c.normalizeHits(s.hits, hitSource, where);
+      const m = matchSkill(compiled, { skillId: s.skillId, hits: first, ...(s.teamEnergy ? { teamEnergy: s.teamEnergy } : {}), ...(s.energyBlockSeconds !== undefined ? { energyBlockSeconds: s.energyBlockSeconds } : {}) }, kitEnergyBlock(s, kit.triggers ?? [], kit.buffs ?? []));
+      // SP from the data only where it says all of the skill's (else, unless the kit names SP, the engine's first-hit atb stays).
+      const spFromData = s.hits.some((h) => h.sp !== undefined) || spPlaced(m.folded, m.hits);
+      rawHits = s.hits.map((h) => {
+        const f = h.poiseOnly || h.reaction ? {} : hitFacts(m.folded, m.hits.get(h.id));
+        const { sp: _sp, spBeforeDamage: _b, ...noSp } = f;
+        // An SP key without a value at every level of the skill (Antal's finisher's atb) isn't one to fill in.
+        const spKnown = (() => {
+          try {
+            if (f.sp !== undefined && f.sp !== null) c.checkValue(f.sp as ValueExpr, s.skillId, where);
+            return true;
+          } catch {
+            return false;
+          }
+        })();
+        return withDataFacts(h, spFromData && spKnown ? f : noSp, kit.element);
+      });
+      // The skill's team energy and energy block, when it leaves them out (and gives no energy-blocking buff of its own).
+      if (s.teamEnergy === undefined && s.dataOverride?.["teamEnergy"] === undefined) {
+        const parts = dataTeamEnergy(m.folded);
+        if (parts.length && !(parts.length === 1 && parts[0]?.frame === 0 && parts[0].ratio === 1 && !parts[0].detached)) teamEnergy = parts.map((p) => ({ frame: p.frame, ratio: p.ratio, ...(p.detached ? { detached: true } : {}) }));
+      }
+      const block = dataEnergyBlockSeconds(m.folded);
+      if (s.energyBlockSeconds === undefined && s.dataOverride?.["energyBlockSeconds"] === undefined && block !== null && kitEnergyBlock(s, kit.triggers ?? [], kit.buffs ?? []) === null) energyBlockSeconds = block;
+    }
     if (s.noDodge && !(s.noDodge[0] >= 0 && s.noDodge[0] < s.noDodge[1])) throw new Error(`${where}: noDodge is a range [from, until) of skill frames`);
+    // A skill hit lands at frames: its own, or the data's when its landings are one branch path no other hit takes landings of.
+    for (const h of rawHits) if (!h.frames) throw new Error(`${where} hit ${h.id}: no frames, and the data's landings for it ${compiled ? "aren't one branch path of its own (write its frames)" : "aren't known (no SkillData file)"}`);
+    const hits = c.normalizeHits(rawHits, hitSource, where);
+    // What still differs from the data must be marked, with the reason (dataOverride): checked once the triggers are (a cast trigger's hits and actions are the skill's).
+    if (compiled) dataChecks.push((triggers) => checkSkillData(compiled, s, hits, teamEnergy, energyBlockSeconds, triggers, kit, where, options));
     return {
       skillId: s.skillId,
       label: s.label,
       kind: s.damageType,
-      ...(s.energyBlockSeconds !== undefined ? { energyBlockSeconds: s.energyBlockSeconds } : {}),
+      ...(energyBlockSeconds !== undefined ? { energyBlockSeconds } : {}),
       ...(s.jumps ? { jumps: s.jumps } : {}),
-      ...(s.teamEnergy !== undefined ? { teamEnergy: s.teamEnergy } : {}),
+      ...(teamEnergy !== undefined ? { teamEnergy } : {}),
       ...(s.available ? { available: s.available } : {}),
       ...(s.followUpOnly ? { followUpOnly: true } : {}),
       ...(s.takesControl ? { takesControl: true } : {}),
@@ -764,11 +983,13 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit): OperatorKit 
       ...(s.windows ? { windows: s.windows } : {}),
       ...(s.comboWindow === false ? { comboWindow: false as const } : {}),
       ...(s.noDodge ? { noDodge: s.noDodge } : {}),
-      hits: c.normalizeHits(s.hits, { skillId: s.skillId, damageType: s.damageType, label: s.label, checkScale: (key, w) => checkKey(skill, key, w), defaultEvent: s.skillId, finalStrike: (h, events) => isFinalStrike(s.skillId, events, s.hits.length), dive: (h, events) => isDive(s.skillId, events, s.hits.length) }, where),
+      hits,
     };
   });
   // Triggers first: normalizeBuffs reads which skills apply each buff.
-  const triggers = c.checkTriggers((kit.triggers ?? []).map(({ note: _note, ...t }) => t));
+  const triggers = c.checkTriggers((kit.triggers ?? []).map(({ note: _note, dataOverride: _d, ...t }) => t));
+  for (const check of dataChecks) check(triggers);
+  checkBuffDurations(data, kit, skills, triggers, where0, options);
   const buffs = c.normalizeBuffs(kit.buffs ?? []);
   // A buff that maps the basic-attack input maps it to one of the kit's basic attacks.
   for (const b of buffs) {
@@ -839,6 +1060,7 @@ function loadEquipmentKit(data: KitData, file: string, kit: RawEquipmentKit): Eq
   const triggers = c.checkTriggers((kit.triggers ?? []).map(({ note: _note, ...t }) => t));
   const buffs = c.normalizeBuffs(kit.buffs ?? []);
   for (const b of buffs) if (b.basicAttack !== undefined) throw new Error(`${where0}: buff ${b.id}: equipment can't map its wearer's basic-attack input (${b.basicAttack})`);
+  checkEquipmentData(data, kit, triggers, where0);
   return {
     id,
     stacks: (kit.stacks ?? []).map((x) => {
@@ -902,19 +1124,29 @@ function equipmentVariantOf(kit: RawEquipmentKit, id: string): RawEquipmentKit {
   return { ...(rename(kit) as RawEquipmentKit), equipment: id, sources: [...kit.sources, `Variant of ${kit.equipment} (same weapon skills): its kit, renamed.`] };
 }
 
+let validatorCache: ReturnType<typeof validator> | undefined;
+
+/**
+ * One operator kit file's contents (`raw`, as parsed), checked against the
+ * schema and loaded: the kit, and its variants after it.
+ */
+export function loadOperatorKitFile(data: KitData, file: string, raw: unknown, options: KitLoadOptions = {}): OperatorKit[] {
+  const v = (validatorCache ??= validator());
+  if (!v.kit) throw new Error("kit schema not registered");
+  if (!v.kit(raw)) throw new Error(`kits/operators/${file}: ${v.ajv.errorsText(v.kit.errors)}`);
+  const kit = raw as RawKit;
+  return [loadOperatorKit(data, file, kit, options), ...(kit.variants ?? []).map((variant) => loadOperatorKit(data, `${variant.operator}.json`, variantOf(kit, variant), options))];
+}
+
 /** Loads the kits under `dir` (default packages/data/kits: its operators/ and equipment/ folders). */
 export function loadKits(data: KitData, dir: string = KITS): Kits {
-  const v = validator();
-  if (!v.kit) throw new Error("kit schema not registered");
+  const v = (validatorCache ??= validator());
   const operators: Record<string, OperatorKit> = {};
   const odir = join(dir, "operators");
   for (const file of existsSync(odir) ? readdirSync(odir).filter((f) => f.endsWith(".json")).sort() : []) {
-    const raw = readJson(join(odir, file));
-    if (!v.kit(raw)) throw new Error(`kits/operators/${file}: ${v.ajv.errorsText(v.kit.errors)}`);
-    const kit = loadOperatorKit(data, file, raw as RawKit);
+    const [kit, ...variants] = loadOperatorKitFile(data, file, readJson(join(odir, file))) as [OperatorKit, ...OperatorKit[]];
     operators[kit.operator] = kit;
-    for (const variant of (raw as RawKit).variants ?? []) {
-      const other = loadOperatorKit(data, `${variant.operator}.json`, variantOf(raw as RawKit, variant));
+    for (const other of variants) {
       if (operators[other.operator]) throw new Error(`kits/operators/${file}: ${other.operator} has a kit of its own too`);
       operators[other.operator] = other;
     }

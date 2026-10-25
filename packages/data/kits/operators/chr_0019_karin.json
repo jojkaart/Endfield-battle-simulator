@@ -24,6 +24,7 @@
       "label": "SQUAD! ON ME! team ATK (P3)",
       "target": "team",
       "gameBuff": "buff_chr_0019_karin_potential_3",
+      "dataOverride": { "duration": "lifeType 1 (until ended): the ultimate's CreateBuff has autoFinishByAction, so it lasts while her ultimate does; the file's 10 s isn't reached (see the buff's note)." },
       "endsWithCast": true,
       "modifiers": [{ "zone": "atk", "value": "atk" }],
       "note": "buff_chr_0019_karin_potential_3 (attr 2 formulaItem 6 atk; lifeType 1), CreateBuff autoFinishByAction on the team at ultimate frame 0 when potential_3 > 0: lasts while her ultimate does."
@@ -33,6 +34,7 @@
       "label": "Staying in the Zone (while the ultimate lasts)",
       "target": "self",
       "gameBuff": "buff_chr_0019_karin_talent_2",
+      "dataOverride": { "duration": "lifeType 1 (until ended): the ultimate's CreateBuff has autoFinishByAction, so it lasts while her ultimate does; the file's 3 s isn't reached (see the buff's note)." },
       "endsWithCast": true,
       "modifiers": [],
       "note": "buff_chr_0019_karin_talent_2 (autoFinishByAction, lifeType 1): its end (buffEvent 2) starts the P5 tail, or below P5 ends the Link (trigger zone_end)."
@@ -78,6 +80,7 @@
       "delay": 22,
       "awaited": true,
       "skill": "chr_0019_karin_combo_skill",
+      "dataOverride": { "sp": "Kit form: the combo's SP is dynamic (atb, isDynamic, set by ModifyDynamicBlackboard from talent 1's sub_ratio, max_ratio and rate before each ObtainCostAction), which the compiler can't value; the kit writes the calculation." },
       "do": [
         { "kind": "sp", "value": { "product": ["atb", { "min": [{ "sum": [1, { "product": [{ "attr": 41 }, { "div": ["sub_ratio", "rate"] }] }] }, { "sum": [1, "max_ratio"] }] }] } }
       ],
@@ -90,6 +93,7 @@
       "delay": 31,
       "awaited": true,
       "skill": "chr_0019_karin_combo_skill",
+      "dataOverride": { "sp": "Kit form: the combo's SP is dynamic (atb, isDynamic, set by ModifyDynamicBlackboard from talent 1's sub_ratio, max_ratio and rate before each ObtainCostAction), which the compiler can't value; the kit writes the calculation." },
       "do": [
         { "kind": "sp", "value": { "product": ["atb", { "min": [{ "sum": [1, { "product": [{ "attr": 41 }, { "div": ["sub_ratio", "rate"] }] }] }, { "sum": [1, "max_ratio"] }] }] } }
       ],
@@ -102,6 +106,7 @@
       "delay": 59,
       "awaited": true,
       "skill": "chr_0019_karin_ultimate_skill",
+      "dataOverride": { "sp": "atb_1 ... atb_3 are dynamic keys in the ultimate's file (isDynamic, 0 there), set by ModifyDynamicBlackboard before each ObtainCostAction, so the compiler can't value them; the kit names the level table's values." },
       "do": [{ "kind": "sp", "value": "atb_1" }],
       "note": "First Rallying Flare: ObtainCostAction atb_1 (26 at L12) at frame 59 (atbGainMethod 0, atbSourceType 3). The ultimate scales atb_n by its own atb_up, which is 1 (its sub_ratio is never set)."
     },
@@ -112,6 +117,7 @@
       "delay": 86,
       "awaited": true,
       "skill": "chr_0019_karin_ultimate_skill",
+      "dataOverride": { "sp": "atb_1 ... atb_3 are dynamic keys in the ultimate's file (isDynamic, 0 there), set by ModifyDynamicBlackboard before each ObtainCostAction, so the compiler can't value them; the kit names the level table's values." },
       "do": [{ "kind": "sp", "value": "atb_2" }],
       "note": "Second flare: atb_2 (27) at frame 86."
     },
@@ -122,6 +128,7 @@
       "delay": 119,
       "awaited": true,
       "skill": "chr_0019_karin_ultimate_skill",
+      "dataOverride": { "sp": "atb_1 ... atb_3 are dynamic keys in the ultimate's file (isDynamic, 0 there), set by ModifyDynamicBlackboard before each ObtainCostAction, so the compiler can't value them; the kit names the level table's values." },
       "do": [{ "kind": "sp", "value": "atb_3" }],
       "note": "Third flare: atb_3 (27) at frame 119."
     },
@@ -179,30 +186,30 @@
       "skillId": "chr_0019_karin_attack1",
       "label": "Basic attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [9] }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0019_karin_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [8], "events": ["chr_0019_karin_attack2"], "sp": "atb" },
-        { "id": "hit_2", "scale": ["atk_scale_2"], "frames": [16], "events": ["chr_0019_karin_attack2"], "sp": "atb" }
+        { "id": "hit", "scale": ["atk_scale"] },
+        { "id": "hit_2", "scale": ["atk_scale_2"] }
       ]
     },
     {
       "skillId": "chr_0019_karin_attack3",
       "label": "Basic attack 3",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [10], "sp": "atb" }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0019_karin_attack4",
       "label": "Basic attack 4 (Final Strike)",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [19, 20], "events": ["chr_0019_karin_attack4"], "finalStrike": false },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [21], "events": ["chr_0019_karin_attack4"], "sp": "atb", "poise": "poise", "poiseControlledOnly": true, "finalStrike": true }
+        { "id": "hit", "scale": ["atk_scale"], "frames": [19, 20], "finalStrike": false },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [21], "finalStrike": true }
       ]
     },
     {
@@ -210,28 +217,27 @@
       "label": "Finisher",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [13], "factor": 0.2, "events": ["chr_0019_karin_power_attack"] },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [36], "factor": 0.8, "events": ["chr_0019_karin_power_attack"] }
+        { "id": "hit", "scale": ["atk_scale"], "frames": [13] },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [36] }
       ]
     },
     {
       "skillId": "chr_0019_karin_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "sp": "atb" }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0019_karin_normal_skill",
       "label": "Battle skill",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 20, "ratio": 1 }],
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "element": "fire", "frames": [20], "poise": "poise", "applies": [{ "kind": "infliction", "element": "fire" }] }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "applies": [{ "kind": "infliction", "element": "fire" }] }]
     },
     {
       "skillId": "chr_0019_karin_combo_skill",
       "label": "Combo skill",
       "damageType": "combo",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "count": 2, "frames": [22, 31], "energy": "usp", "poise": "poise", "sp": 0 }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "sp": 0, "dataOverride": { "sp": "Kit form: the combo's SP is dynamic (ModifyDynamicBlackboard sets atb from talent 1's sub_ratio, max_ratio and rate before each ObtainCostAction, before the damage); the cast triggers combo_sp_1 and combo_sp_2 give it, and sp 0 keeps the skill's atb off its first hit." } }]
     },
     {
       "skillId": "chr_0019_karin_ultimate_skill",

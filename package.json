@@ -14,7 +14,7 @@
     "test": "vitest run",
     "test:logs": "vitest run --config vitest.logs.config.ts",
     "test:tools": "node --test tools/skport-capture/test/*.test.js",
-    "snapshots:update": "EFSIM_UPDATE_SNAPSHOTS=1 vitest run tests/examples.test.ts tests/logs.test.ts && EFSIM_UPDATE_SNAPSHOTS=1 vitest run --config vitest.logs.config.ts tests/slow/logs-pending",
+    "snapshots:update": "EFSIM_UPDATE_SNAPSHOTS=1 vitest run tests/examples.test.ts tests/logs.test.ts tests/kits.test.ts && EFSIM_UPDATE_SNAPSHOTS=1 vitest run --config vitest.logs.config.ts tests/slow/logs-pending",
     "check": "npm run typecheck && npm run lint && npm test && npm run test:logs && npm run test:tools",
     "efsim": "node packages/cli/src/main.ts"
   },

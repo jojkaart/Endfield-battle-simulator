@@ -14,6 +14,7 @@
       "label": "Saturated Defense: Protection (self and nearby operators)",
       "target": "team",
       "duration": 2.2,
+      "dataOverride": { "duration": "The data's buff is an AuraAction's (until ended in its file: it lasts while the aura does, frames 0-51), then reduce_damage_remain 0.5 s: the kit writes the two as one 2.2 s buff (see the buff's note)." },
       "modifiers": [{ "attr": 63, "value": { "key": "taken_dmg", "skill": "chr_0014_aurora_normal_skill" } }],
       "gameBuff": "buff_chr_0014_aurora_reduce_damage",
       "note": "AuraAction [0–51] of buff_chr_0014_aurora_reduce_damage (ShelterAction taken_dmg, the skill's SkillData default 0.9 passed by buffInput; SkillPatchTable names it dmg_reduce, same value), then on its finish buff_chr_0014_aurora_reduce_damage_remain 0.5 s: 51/30 + 0.5 = 2.2 s, a literal (the remain buff's duration isn't a skill value). On the counter path the aura ends at the attack's frame in the game; the buff keeps its 2.2 s here, which changes nothing while damage taken isn't simulated. Its modifier (attribute 63) makes it a Protection-category buff for buffApplied triggers (suit_usp02, Eternal Xiranite)."
@@ -23,6 +24,7 @@
       "label": "Saturated Defense: Protection (counter)",
       "target": "team",
       "duration": 1.1,
+      "dataOverride": { "duration": "The data's buff is an AuraAction's on the counter path (frames 107-125, until ended in its file) plus reduce_damage_remain 0.5 s, and a 1 s copy at 107 inside it: one 1.1 s buff in the kit (see the buff's note)." },
       "modifiers": [{ "attr": 63, "value": { "key": "taken_dmg", "skill": "chr_0014_aurora_normal_skill" } }],
       "gameBuff": "buff_chr_0014_aurora_reduce_damage",
       "note": "Counter path: AuraAction [107–125] (0.6 s) + buff_chr_0014_aurora_reduce_damage_remain 0.5 s = 1.1 s; Snowshine's own 1 s copy at 107 (CreateBuff on self, duration assigned 1) lies inside it."
@@ -78,30 +80,24 @@
       "skillId": "chr_0014_aurora_attack1",
       "label": "Basic attack 1",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [19], "events": ["chr_0014_aurora_attack1"], "element": "physical", "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "DamageAction damageType 0 (Physical; the operator is Cryo). atb is 0 at every level (SkillPatchTable)." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "DamageAction damageType 0 (Physical; the operator is Cryo). atb is 0 at every level (SkillPatchTable)." }]
     },
     {
       "skillId": "chr_0014_aurora_attack2",
       "label": "Basic attack 2",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [19], "events": ["chr_0014_aurora_attack2"], "element": "physical", "sp": { "if": { "controlled": true }, "then": "atb" }, "note": "Physical; atb 0." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "Physical; atb 0." }]
     },
     {
       "skillId": "chr_0014_aurora_attack3",
       "label": "Basic attack 3 (Final Strike)",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [21], "factor": 0.4, "events": ["chr_0014_aurora_attack3"], "element": "physical", "finalStrike": false, "note": "ChannelingAction [21–27]: SimpleCalcBB atk_scale × 0.4." },
+        { "id": "hit", "scale": ["atk_scale"], "frames": [21], "finalStrike": false, "note": "ChannelingAction [21–27]: SimpleCalcBB atk_scale × 0.4." },
         {
           "id": "hit_2",
           "scale": ["atk_scale"],
           "frames": [39],
-          "factor": 0.6,
-          "events": ["chr_0014_aurora_attack3"],
-          "element": "physical",
-          "sp": { "if": { "controlled": true }, "then": "atb" },
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "finalStrike": true,
           "note": "ChannelingAction [39–43]: atk_scale × 0.6, mask 2097280 (Final Strike); \"As the controlled operator, Final Strike also deals {poise} Stagger\" (onlyEnableForMainChar); DoOnce SP atb (25)."
         }
@@ -111,29 +107,26 @@
       "skillId": "chr_0014_aurora_power_attack",
       "label": "Finisher",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [41], "events": ["chr_0014_aurora_power_attack"], "element": "physical", "note": "BreakingAttackCalculation multiplier 1.0; finisher SP from the enemy (GainBreakingAttackAtb, the engine's)." }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"], "note": "BreakingAttackCalculation multiplier 1.0; finisher SP from the enemy (GainBreakingAttackAtb, the engine's)." }]
     },
     {
       "skillId": "chr_0014_aurora_plunging_attack_end",
       "label": "Dive attack",
       "damageType": "basic",
-      "hits": [{ "id": "hit", "scale": ["atk_scale"], "frames": [1], "events": ["chr_0014_aurora_plunging_attack_end"], "element": "physical", "sp": "atb" }]
+      "hits": [{ "id": "hit", "scale": ["atk_scale"] }]
     },
     {
       "skillId": "chr_0014_aurora_normal_skill",
       "label": "Battle skill",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 0, "ratio": 0.5 }, { "frame": 107, "ratio": 0.5 }],
       "hits": [
         {
           "id": "bash",
           "label": "Retaliation bash",
           "scale": ["atk_scale"],
-          "frames": [125],
-          "events": ["chr_0014_aurora_normal_skill"],
-          "poise": "poise",
           "applies": [{ "kind": "infliction", "element": "cryst" }],
           "sp": "potential_5_atb",
+          "spBeforeDamage": true,
           "note": "Reached only through the counter's jump to 107. ChannelingAction [125–127]: SpellInfliction Cryo on the target (inflictionType 2, before the DamageAction, as the engine applies it), DoOnce ObtainCostAction costType 1 potential_5_atb (P5 \"Cold Disaster Specialist\": 10 returned SP; 0 below P5), DamageAction atk_scale (mask 4352, Cryo) with poise."
         }
       ],
@@ -151,15 +144,12 @@
       "label": "Ultimate",
       "damageType": "ultimate",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [62], "events": ["chr_0014_aurora_ultimate_skill"], "poise": "poise", "note": "DamageAction atk_scale (mask 4608, Cryo) with poise; its InterruptAction and TakeDownAction 0.5 s on the target aren't modelled." },
+        { "id": "hit", "scale": ["atk_scale"], "note": "DamageAction atk_scale (mask 4608, Cryo) with poise; its InterruptAction and TakeDownAction 0.5 s on the target aren't modelled." },
         {
           "id": "snow_zone",
           "label": "Snow Zone",
           "scale": ["atk_scale_loop"],
-          "count": 9,
           "frames": [81, 96, 111, 141, 156, 171, 186, 201, 216],
-          "events": ["buff_chr_0014_aurora_ultimate_skill_dmg"],
-          "detached": true,
           "note": "SpawnAbilityEntity at 62 (chr_0014_aurora_ultimate_skill_abilityrange, or _potential2 at P2+: same ticks) → AuraAction from its frame 4 on enemies → buff_chr_0014_aurora_ultimate_skill_dmg (5 s, triggerInterval 0.5 s, waitFirstTriggerInterval: DamageAction atk_scale_loop, mask 512, Cryo) from frame 66: ticks at 66 + 15k, k = 1–10, the 10th at the buff's 5 s end (9 or 10: report row 31, a log settles it). The tick at 126 is snow_zone_solidify. Assumes the enemy stays in the zone."
         },
         {
@@ -167,8 +157,6 @@
           "label": "Snow Zone (forced Solidification)",
           "scale": ["atk_scale_loop"],
           "frames": [126],
-          "events": ["buff_chr_0014_aurora_ultimate_skill_dmg"],
-          "detached": true,
           "applies": [{ "kind": "forcedReaction", "status": "solidification", "level": 1, "extraSeconds": "extra_duration" }],
           "note": "The zone's 4th tick, and with it buff_chr_0014_aurora_ultimate_skill_frost (from the same aura at 66; triggerInterval 2 s, waitFirstTriggerInterval, maxTriggerCnt 1) → CreateBuff buff_common_cryst_cryst_frozen_triggered at 126 (count 1: a level-1 Solidification for its table duration, ModifyDynamicBlackboard duration += extra_duration). \"Forcibly applies Solidification to enemies caught within it\". P3 (Polar Survival Guide): extra_duration += 2 (skillBbModifier add; 0 in SkillData below P3), on this application only (batch-3 A2). Put before the tick's damage; the two buffs' order at that frame isn't in the data, and Solidification changes no damage of the tick."
         }

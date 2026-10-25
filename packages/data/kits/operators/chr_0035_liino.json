@@ -18,6 +18,7 @@
       "target": "team",
       "gameBuff": "buff_chr_0035_liino_atkup",
       "duration": "music_duration",
+      "dataOverride": { "duration": "The team buff is an aura's (until ended in its file): it lasts while the stance's music_tag aura does, music_duration (see the buff's note)." },
       "every": "music_trigger",
       "tickOnApply": true,
       "modifiers": [
@@ -49,6 +50,7 @@
       "target": "team",
       "gameBuff": "buff_chr_0035_liino_atkup",
       "duration": "ultmusic_duration",
+      "dataOverride": { "duration": "The team buff is an aura's (until ended in its file): it lasts while the ultimate's music_tag aura does, ultmusic_duration (see the buff's note)." },
       "modifiers": [
         {
           "zone": "atk",
@@ -63,6 +65,7 @@
       "target": "team",
       "gameBuff": "buff_chr_0035_liino_spellenhance",
       "duration": "ultmusic_duration",
+      "dataOverride": { "duration": "The buff is an aura's (until ended in its file): it lasts while the ultimate's music_tag aura does, ultmusic_duration (see the buff's note)." },
       "modifiers": [
         {
           "zone": "amp",
@@ -377,6 +380,7 @@
               "if": {
                 "buffActive": "cosmovoice_amp"
               },
+              "dataOverride": { "count": "Each beat launches two soundwave projectiles (two LaunchProjectileActions in buff ultskill_music_damage's event); the logs show one hit per beat on one enemy (zmdlogs-dbaee23b801d: 4 of 4), so the kit has one." },
               "note": "buff ultskill_music_damage: a soundwave every ultmusic_trigger (1.5 s) from frame 77 (first at once: waitFirstTriggerInterval false) until its CreateBuffAction (autoFinishByAction) ends at 477: 9 beats. Each also heals (ultimate heal tag). Only enemies in the AOE are hit: the logs have 4 beats in ~7.4 s (dbaee23) and 3 (d9e59). Verified per beat: zmdlogs-dbaee23b801d 4/4."
             },
             {
@@ -574,7 +578,6 @@
       "skillId": "chr_0035_liino_normal_skill",
       "label": "Battle skill",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 15, "ratio": 1 }],
       "available": {
         "not": {
           "any": [
@@ -595,14 +598,9 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            12
-          ],
           "events": [
             "chr_0035_liino_normal_skill_projhit"
           ],
-          "detached": true,
-          "poise": "poise",
           "buffs": [
             {
               "buff": "vocalist_stance",
@@ -617,19 +615,9 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 5,
-          "frames": [
-            12,
-            14,
-            14,
-            16,
-            16
-          ],
           "events": [
             "chr_0035_liino_normal_skill_projhit_02"
-          ],
-          "detached": true,
-          "poise": "poise"
+          ]
         }
       ]
     },
@@ -673,9 +661,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            9
-          ],
           "events": [
             "chr_0035_liino_combo_skill",
             "buff_chr_0035_liino_comboskill_ultskill_hit"
@@ -687,16 +672,11 @@
           "scale": [
             "atk_scale_2"
           ],
-          "frames": [
-            33
-          ],
           "events": [
             "chr_0035_liino_combo_skill",
             "buff_chr_0035_liino_comboskill_ultskill_hit"
           ],
-          "energy": "usp",
           "heals": "controlled",
-          "poise": "poise",
           "note": "ObtainCostAction costType 0 usp (20) and HealAction (controlled operator, combo heal tag −1517158118) at the DamageAction's frame. The Cosmovoice variant's log key is assumed to be its buff file (not yet seen in a log)."
         }
       ]
@@ -705,6 +685,7 @@
       "skillId": "chr_0035_liino_ultimate_skill",
       "label": "Ultimate",
       "damageType": "ultimate",
+      "dataOverride": { "energyBlockSeconds": "buff_chr_0035_liino_ultskill_refrainobtainusp has duration 1 s but lifeType 1 (until ended) and is created by a 77–527 autoFinishByAction clip: the kit blocks energy with the cosmovoice_block buff for the whole stance (in-game test 27). The compiler reads the 1 s.", "lands chr_0035_liino_ultimate_skill_soundwave_projhit": "Compiler limit: the beats' buff ends at its autoFinishByAction clip (frame 477, 9 beats); the compiler keeps it ticking to its duration (beats at 482 and 527)." },
       "note": "Ability entity chr_0035_liino_ultimate_skill_projhit_abilityentity spawned at frame 76 (two projectiles at each of its frames 0/3/6/8/11/15/18/21/25/28, the bomb at 40); beats from buff ultskill_music_damage (frame 77, every ultmusic_trigger until its autoFinishByAction clip ends at 477: 9 beats); finale launched at 508. Every hit is a projectile or entity already on its way: detached. The beats and finale are the ult_song trigger's hits (interim: the engine judges a skill hit's if at the cast, when Cosmovoice hasn't started yet). Energy block: buff cosmovoice_block.",
       "hits": [
         {
@@ -713,15 +694,10 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 2,
           "frames": [
             76,
             76
           ],
-          "events": [
-            "chr_0035_liino_ultimate_skill_projhit"
-          ],
-          "detached": true,
           "buffs": [
             {
               "buff": "cosmovoice_atk",
@@ -744,7 +720,6 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 14,
           "frames": [
             79,
             79,
@@ -761,10 +736,6 @@
             104,
             104
           ],
-          "events": [
-            "chr_0035_liino_ultimate_skill_projhit"
-          ],
-          "detached": true,
           "note": "20 × atk_scale = display_atk_scale with the first pair and the four side shots. Verified: zmdlogs-dbaee23b801d 20/20 (16 projhit, 2 projhit_l, 2 projhit_r)."
         },
         {
@@ -773,15 +744,9 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 2,
-          "frames": [
-            84,
-            87
-          ],
           "events": [
             "chr_0035_liino_ultimate_skill_projhit_l"
-          ],
-          "detached": true
+          ]
         },
         {
           "id": "projectiles_r",
@@ -789,15 +754,9 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 2,
-          "frames": [
-            84,
-            87
-          ],
           "events": [
             "chr_0035_liino_ultimate_skill_projhit_r"
-          ],
-          "detached": true
+          ]
         },
         {
           "id": "bomb",
@@ -805,14 +764,6 @@
           "scale": [
             "atk_scale_2"
           ],
-          "frames": [
-            116
-          ],
-          "events": [
-            "chr_0035_liino_ultimate_skill_projhit_damage_02"
-          ],
-          "detached": true,
-          "poise": "poise",
           "applies": [
             {
               "kind": "forcedReaction",
@@ -834,11 +785,6 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 2,
-          "frames": [
-            3,
-            7
-          ],
           "note": "2 × atk_scale = display_atk_scale. Not in any log."
         }
       ]
@@ -854,14 +800,6 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 5,
-          "frames": [
-            7,
-            9,
-            11,
-            12,
-            14
-          ],
           "note": "ChannelingAction: 5 × atk_scale = display_atk_scale. Not in any log."
         }
       ]
@@ -876,12 +814,6 @@
           "label": "Hit",
           "scale": [
             "atk_scale"
-          ],
-          "frames": [
-            12
-          ],
-          "events": [
-            "chr_0035_liino_attack3"
           ]
         },
         {
@@ -890,18 +822,6 @@
           "scale": [
             "atk_scale_2"
           ],
-          "count": 5,
-          "frames": [
-            12,
-            14,
-            16,
-            18,
-            20
-          ],
-          "events": [
-            "chr_0035_liino_attack3_projhit"
-          ],
-          "detached": true,
           "note": "atk_scale + 5 × atk_scale_2 = display_atk_scale. Not in any log."
         }
       ]
@@ -917,23 +837,9 @@
           "scale": [
             "atk_scale"
           ],
-          "count": 10,
-          "frames": [
-            5,
-            5,
-            7,
-            7,
-            10,
-            10,
-            13,
-            13,
-            16,
-            16
-          ],
           "events": [
             "chr_0035_liino_attack4_projhit"
           ],
-          "detached": true,
           "note": "10 × atk_scale = display_atk_scale; SkillData launches 4 per frame at 5/7/10/13/16, of which 2 per frame land on one enemy (as compiled). Not in any log."
         }
       ]
@@ -949,11 +855,6 @@
           "scale": [
             "atk_scale"
           ],
-          "frames": [
-            17
-          ],
-          "poise": "poise",
-          "poiseControlledOnly": true,
           "note": "Final Strike (mask 2097280); ObtainCostAction atb (20 SP) on its only hit; poise onlyEnableForMainChar. Not in any log."
         }
       ]
@@ -968,12 +869,6 @@
           "label": "Landing",
           "scale": [
             "atk_scale"
-          ],
-          "frames": [
-            2
-          ],
-          "events": [
-            "chr_0035_liino_plunging_attack_end"
           ]
         },
         {
@@ -981,12 +876,6 @@
           "label": "Aftershock",
           "scale": [
             "atk_scale_2"
-          ],
-          "frames": [
-            8
-          ],
-          "events": [
-            "chr_0035_liino_plunging_attack_end"
           ],
           "note": "atk_scale + atk_scale_2 = display_atk_scale. Not in any log."
         }
@@ -1003,15 +892,10 @@
           "scale": [
             "atk_scale"
           ],
-          "factor": 0.1,
-          "count": 3,
           "frames": [
             12,
             15,
             18
-          ],
-          "events": [
-            "chr_0035_liino_power_attack"
           ]
         },
         {
@@ -1020,12 +904,8 @@
           "scale": [
             "atk_scale"
           ],
-          "factor": 0.7,
           "frames": [
             34
-          ],
-          "events": [
-            "chr_0035_liino_power_attack"
           ],
           "note": "BreakingAttackCalculation multipliers 0.1 (frames 12/15/18) and 0.7 (34): 3 × 0.1 + 0.7 = 1 × atk_scale (9.0). The compiler doesn't read these multipliers yet (it lands 4 × atk_scale). Not in any log."
         }

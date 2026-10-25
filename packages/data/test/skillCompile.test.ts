@@ -1,20 +1,23 @@
-// The SkillData compiler (src/skillCompile.ts) against the data it reads and
-// against the kits in OPERATORS (batch 1, and batch 2 as they come), whose hand-written frames, counts, keys,
-// factors, elements, stagger, energy, inflictions and physical statuses are claims to check (docs/kit-abstractions.md
-// section 3). Every disagreement is listed in KNOWN with a short reason; a
-// new one, or one that goes away, fails the test so it gets looked at.
+// The SkillData compiler (src/skillCompile.ts) against the data it reads, and
+// the loader's use of it: the kits' hand-written frames, counts, keys, factors,
+// elements, stagger, energy, inflictions and physical statuses are claims the
+// loader checks against it (docs/kit-abstractions.md section 1). Every
+// difference is marked in its kit (dataOverride) with the reason; a new one,
+// or a mark where nothing differs, fails the load so it gets looked at.
 
 import { describe, expect, it } from "vitest";
-import type { KitHit } from "@efsim/engine";
-import { compileSkill, formatCompiledValue, loadGameData, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledPoiseLanding, type CompiledSkill, type CompiledValue } from "../src/index.ts";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { compileOperatorSkill, compileSkill, formatCompiledValue, loadGameData, loadKits, loadOperatorKitFile, type CompiledLanding, type CompiledSkill } from "../src/index.ts";
 
 const data = loadGameData();
+const KITS = join(resolve(dirname(fileURLToPath(import.meta.url)), "../kits/operators"));
 const OPERATORS = ["chr_0016_laevat", "chr_0034_typhoea", "chr_0032_lizhiyan", "chr_0036_jsspsi", "chr_0013_aglina", "chr_0035_liino", "chr_0021_whiten", "chr_0023_antal", "chr_0019_karin", "chr_0020_meurs", "chr_0022_bounda", "chr_0003_endminf", "chr_0002_endminm", "chr_0004_pelica", "chr_0018_dapan", "chr_0012_avywen", "chr_0014_aurora", "chr_0007_ikut", "chr_0038_purrche", "chr_0024_deepfin", "chr_0011_seraph", "chr_0005_chen", "chr_0006_wolfgd", "chr_0031_mifu", "chr_0033_camille", "chr_0026_lastrite", "chr_0017_yvonne", "chr_0015_lifeng", "chr_0025_ardelia", "chr_0029_pograni", "chr_0028_wulfa", "chr_0030_zhuangfy", "chr_0009_azrila", "chr_0027_tangtang"];
 
 function compiled(operator: string, skillId: string): CompiledSkill {
-  const top = new Set(Object.keys(data.operators[operator]?.skillGroups ?? {}));
-  const values = data.skills[skillId]?.levels.at(-1)?.blackboard;
-  const c = compileSkill(skillId, { followCast: (s) => !top.has(s), ...(values ? { values } : {}) });
+  const c = compileOperatorSkill(data, operator, skillId);
   if (!c) throw new Error(`no SkillData file for ${skillId}`);
   return c;
 }
@@ -206,486 +209,67 @@ describe("compileSkill", () => {
 });
 
 // ---------------------------------------------------------------------------
-// The kits' hand-written values against the compiled ones.
+// The loader against the compiled data (kitMatch.ts matchSkill, kits.ts): a
+// kit's hand-written value that differs from the data's is an error unless
+// the kit marks it (dataOverride, with the reason), and so is a mark where
+// nothing differs.
 
-const round = (n: number, d = 6) => Math.round(n * 10 ** d) / 10 ** d;
-const keysText = (ls: readonly CompiledLanding[]) => [...new Set(ls.map((l) => (l.scale.expr ? l.scale.expr : [...l.scale.keys].sort().join(" × "))))].join(" | ");
+describe("kits against the compiled SkillData", () => {
+  const file = "chr_0016_laevat.json";
+  const raw = () => JSON.parse(readFileSync(join(KITS, file), "utf8")) as { skills: { skillId: string; dataOverride?: Record<string, string>; hits: Record<string, unknown>[] }[] };
+  const hitOf = (k: ReturnType<typeof raw>, skillId: string, id: string) => k.skills.find((s) => s.skillId === skillId)?.hits.find((h) => h["id"] === id) as Record<string, unknown>;
 
-/** The undecided-branch paths through a skill: each distinct branch of a landing, with the landings on it (those whose branch encloses it). */
-function paths(ls: readonly CompiledLanding[]): CompiledLanding[][] {
-  const branches = [...new Map(ls.map((l) => [JSON.stringify(l.branch), l.branch])).values()];
-  return branches.map((b) => ls.filter((l) => prefixOf(l.branch, b)));
-}
+  it("loads every operator kit, each difference marked", () => {
+    expect(Object.keys(data.kits.operators).sort()).toEqual([...OPERATORS].sort());
+  });
 
-/** Whether every kit frame (a multiset) is among the path's frames. */
-function covers(path: readonly CompiledLanding[], want: readonly number[]): boolean {
-  const have = new Map<number, number>();
-  for (const l of path) have.set(l.frame, (have.get(l.frame) ?? 0) + 1);
-  for (const f of want) {
-    const n = have.get(f) ?? 0;
-    if (n === 0) return false;
-    have.set(f, n - 1);
-  }
-  return true;
-}
+  it("refuses a hand-written value that isn't the data's", () => {
+    const k = raw();
+    hitOf(k, "chr_0016_laevat_attack1", "hit")["frames"] = [7];
+    expect(() => loadOperatorKitFile(data, file, k)).toThrow(/chr_0016_laevat_attack1\/hit frames: kit \[7\], data \[6\]/);
+    const marked = raw();
+    Object.assign(hitOf(marked, "chr_0016_laevat_attack1", "hit"), { frames: [7], dataOverride: { frames: "A test of the mark: the kit's frame on purpose." } });
+    // The data's landing at 6 is then no hit's: marked too.
+    Object.assign(marked.skills.find((x) => x.skillId === "chr_0016_laevat_attack1") ?? {}, { dataOverride: { "lands chr_0016_laevat_attack1": "A test of the mark: the kit's hit is at 7." } });
+    expect(loadOperatorKitFile(data, file, marked)[0]?.skills.find((s) => s.skillId === "chr_0016_laevat_attack1")?.hits[0]?.frames).toEqual([7]);
+  });
 
-type KitApplication = NonNullable<KitHit["applies"]>[number];
-const physicalText = (status: string, forced: boolean | undefined) => `${status === "event" ? "physical event" : status}${forced ? " (forced)" : ""}`;
-const kitAppText = (a: KitApplication) =>
-  a.kind === "infliction" ? `infliction ${a.element}` : a.kind === "forcedReaction" ? `forced ${a.status}` : a.kind === "consumeInfliction" ? `consume ${(a.elements ?? []).join("+")}` : a.kind === "physicalStatus" ? physicalText(a.status, a.forced) : a.kind === "vulnerable" ? "vulnerable" : null;
-const dataAppText = (e: CompiledEffect) =>
-  e.kind === "infliction" ? `infliction ${e.element}` : e.kind === "forcedReaction" ? `forced ${e.status ?? "?"}` : e.kind === "consumeInfliction" ? `consume ${e.element ?? "?"}` : e.kind === "physicalStatus" ? physicalText(e.status, e.forced) : e.kind === "vulnerable" ? "vulnerable" : null;
-/** A compiled value as kit-draft writes it (a key, {product: [keys…, factor]}, a literal), for comparing with a kit's ValueExpr. */
-function asKitValue(v: CompiledValue): unknown {
-  if (v.expr) return v.expr;
-  if (v.keys.length === 0) return v.value === null ? null : round(v.value);
-  const terms: unknown[] = [...v.keys, ...(round(v.factor) === 1 ? [] : [round(v.factor)])];
-  return terms.length === 1 ? terms[0] : { product: terms };
-}
-/** A kit ValueExpr with its literals rounded as asKitValue rounds them. */
-const roundedValue = (v: unknown): unknown => (typeof v === "number" ? round(v) : Array.isArray(v) ? v.map(roundedValue) : v && typeof v === "object" ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, roundedValue(x)])) : v);
-const valueText = (v: unknown) => (typeof v === "string" ? v : JSON.stringify(v));
-/** The first plain value key a ValueExpr names (a string anywhere in it), if any. */
-function firstValueKey(v: unknown): string | undefined {
-  if (typeof v === "string") return v;
-  if (Array.isArray(v)) return v.map(firstValueKey).find((k) => k !== undefined);
-  if (v && typeof v === "object") return Object.values(v).map(firstValueKey).find((k) => k !== undefined);
-  return undefined;
-}
-/** A grant the kit gives only in a situation (`{if, then}`, no `else`): its value, which the data has on a branch of its own. */
-const grantText = (v: unknown) => (v !== null && typeof v === "object" && "then" in v && !("else" in v) ? valueText(v.then) : valueText(v));
-/** The first two undecided conditions on the way, for a readable line. */
-const branchText = (b: readonly string[] | undefined) => (b?.length ? ` (${b.slice(0, 2).join(", ")}${b.length > 2 ? ", …" : ""})` : "");
+  it("compares a buff's duration with its game buff's CreateBuff", () => {
+    const k = JSON.parse(readFileSync(join(KITS, file), "utf8")) as { buffs: Record<string, unknown>[] };
+    const twilight = k.buffs.find((b) => b["id"] === "twilight") as Record<string, unknown>;
+    twilight["duration"] = 16;
+    expect(() => loadOperatorKitFile(data, file, k)).toThrow(/buff twilight \(buff_chr_0016_laevat_ult_end\) duration: kit 16 s, data 15 s/);
+    twilight["dataOverride"] = { duration: "A test of the mark: 16 s on purpose." };
+    expect(loadOperatorKitFile(data, file, k)[0]?.buffs.find((b) => b.id === "twilight")?.duration).toBe(16);
+  });
 
-/**
- * Stagger-only DamageActions as kit-draft writes them (D6): one goes with the
- * landing at its frame in its file when that landing deals no stagger and the
- * only extra condition is none or "controlled" (poiseControlledOnly); the rest
- * are poise-only hits of their own.
- */
-function foldPoise(c: CompiledSkill): CompiledSkill & { readonly poiseRest: readonly CompiledPoiseLanding[] } {
-  const landings = [...c.landings];
-  const poiseRest: CompiledPoiseLanding[] = [];
-  for (const p of c.poiseOnly) {
-    const l = p.landing === null ? undefined : landings[p.landing];
-    const extra = l && prefixOf(l.branch, p.branch) ? p.steps.slice(l.steps.length) : null;
-    const controlledGate = extra?.length === 1 && JSON.stringify(extra[0]?.pred) === JSON.stringify({ controlled: true });
-    if (l && p.landing !== null && l.file === p.file && l.frame === p.frame && !l.poise && extra && (extra.length === 0 || controlledGate)) {
-      landings[p.landing] = { ...l, poise: { value: p.poise.value, controlledOnly: p.poise.controlledOnly || controlledGate } };
-    } else poiseRest.push(p);
-  }
-  return { ...c, landings, poiseRest };
-}
+  it("refuses a mark where nothing differs", () => {
+    const k = raw();
+    hitOf(k, "chr_0016_laevat_attack1", "hit")["dataOverride"] = { poise: "A test of a stale mark: nothing differs." };
+    expect(() => loadOperatorKitFile(data, file, k)).toThrow(/attack1\/hit poise: marked as differing from the data \(dataOverride\), but it agrees/);
+  });
 
-/**
- * Each kit hit is matched to the compiled landings scaled by its first key
- * (and logged under one of its events); its frames must be on one branch path.
- * A poise-only hit (scale []) is matched to the stagger-only DamageActions
- * that go with no landing (foldPoise) by frame.
- * Energy goes by frame, applications by frame across the skill's hits.
- */
-function kitDisagreements(): string[] {
-  const out: string[] = [];
-  for (const op of OPERATORS) {
-    const kit = data.kits.operators[op];
-    if (!kit) throw new Error(`no kit for ${op}`);
-    for (const s of kit.skills) {
-      const c = foldPoise(compiled(op, s.skillId));
-      const where = s.skillId;
-      const blocks = c.energyBlocks.filter((b) => b.branch.length === 0 && b.until !== null);
-      const block = blocks.length ? round(Math.max(...blocks.map((b) => b.until as number)) / 30, 3) : null;
-      // The kit's block: the skill's energyBlockSeconds, or an energy-blocking buff its own cast trigger applies (Laevatain's show_weapon).
-      const castBuffs = kit.triggers.filter((t) => t.on.event === "cast" && "skills" in t.on && t.on.skills?.includes(s.skillId)).flatMap((t) => t.do.flatMap((a) => (a.kind === "buff" ? [a.buff] : [])));
-      const blockBuff = kit.buffs.find((b) => b.blocksEnergy && castBuffs.includes(b.id) && typeof b.duration === "number");
-      const kitBlock = s.energyBlockSeconds !== undefined ? round(s.energyBlockSeconds, 3) : blockBuff ? round(blockBuff.duration as number, 3) : null;
-      if (block !== kitBlock) out.push(`${where} energyBlockSeconds: kit ${kitBlock ?? "-"}, data ${block ?? "-"}`);
-      // Team energy parts as kit-draft reads them: unconditional ones, the first alone when they add up to more than the whole; all at the cast when none.
-      let team = c.teamEnergy.filter((t) => t.branch.length === 0).map((t) => ({ frame: t.frame, ratio: t.ratio ?? 1 }));
-      if (team.reduce((x, t) => x + t.ratio, 0) > 1 + 1e-9) team = team.slice(0, 1).map((t) => ({ ...t, ratio: 1 }));
-      const partsText = (parts: readonly { frame: number; ratio: number }[]) => (parts.length ? parts : [{ frame: 0, ratio: 1 }]).map((t) => `${t.ratio}@${t.frame}`).join(", ");
-      if (partsText(team) !== partsText(s.teamEnergy ?? [])) out.push(`${where} teamEnergy: kit ${partsText(s.teamEnergy ?? [])}, data ${partsText(team)}`);
-      const claimed = new Set<CompiledLanding>();
-      const kitApps = new Map<number, Set<string>>();
-      for (const h of s.hits) {
-        const tag = `${where}/${h.id}`;
-        for (const f of h.frames ?? []) for (const a of h.applies ?? []) {
-          const t = kitAppText(a);
-          if (t) kitApps.set(f, new Set([...(kitApps.get(f) ?? []), t]));
-        }
-        if (h.energy !== undefined) {
-          const dataE = c.energy.filter((e) => (h.frames ?? []).includes(e.frame)).map((e) => formatCompiledValue(e.value));
-          if (!dataE.includes(grantText(h.energy))) out.push(`${tag} energy: kit ${valueText(h.energy)} at [${(h.frames ?? []).join(", ")}], data ${c.energy.map((e) => `${formatCompiledValue(e.value)}@${e.frame}${branchText(e.branch)}`).join(", ") || "none"}`);
-        }
-        if (h.poiseOnly) {
-          const here = c.poiseRest.filter((p) => !h.events.length || h.events.includes(p.file));
-          const want = h.frames ?? [];
-          const have = new Map<number, number>();
-          for (const p of here) have.set(p.frame, (have.get(p.frame) ?? 0) + 1);
-          const covered = want.every((f) => {
-            const n = have.get(f) ?? 0;
-            have.set(f, n - 1);
-            return n > 0;
-          });
-          const dataFrames = here.map((p) => p.frame).sort((a, b) => a - b);
-          if (!h.frames || !covered) out.push(`${tag} frames: kit ${h.frames ? `[${want.join(", ")}]` : `none (count ${h.count})`}, data stagger-only [${dataFrames.join(", ")}]`);
-          const at = here.filter((p) => want.includes(p.frame));
-          if (at.length) {
-            const kitPoise = h.poise === undefined ? "-" : JSON.stringify(roundedValue(h.poise));
-            const dataPoise = [...new Set(at.map((p) => JSON.stringify(asKitValue(p.poise.value))))];
-            if (!dataPoise.includes(kitPoise)) out.push(`${tag} poise: kit ${kitPoise}, data ${dataPoise.join(" | ")}`);
-            const ctl = [...new Set(at.map((p) => p.poise.controlledOnly))];
-            if (!ctl.includes(h.poiseControlledOnly ?? false)) out.push(`${tag} poiseControlledOnly: kit ${String(h.poiseControlledOnly ?? false)}, data ${ctl.join(" | ")}`);
-          }
-          continue;
-        }
-        if (h.reaction) {
-          // Damage computed as a reaction: the data creates the reaction's buff (no DamageAction of its own).
-          const found = c.effects.filter((e) => (e.kind === "burst" || e.kind === "forcedReaction") && (h.frames ?? []).includes(e.frame));
-          if (!found.length) out.push(`${tag}: kit ${h.reaction.kind} at [${(h.frames ?? []).join(", ")}], data none there (${c.effects.filter((e) => e.kind === "burst").map((e) => e.frame).join(", ") || "no bursts"})`);
-          continue;
-        }
-        // A hit whose multiplier is all scaleValue (Si's combo final hit) is matched by the first value key it names.
-        const key = (h.scale[0] ?? firstValueKey(h.scaleValue)) as string;
-        const byKey = c.landings.filter((l) => l.scale.keys.includes(key) || (l.scale.expr ?? "").includes(key));
-        if (byKey.length === 0) {
-          out.push(`${tag}: no landing scaled by ${key} (data: ${keysText(c.landings) || "no landings"})`);
-          continue;
-        }
-        const byEvent = h.events.length ? byKey.filter((l) => h.events.includes(l.file)) : byKey;
-        if (byEvent.length === 0) out.push(`${tag} events: kit [${h.events.join(", ")}], data [${[...new Set(byKey.map((l) => l.file))].join(", ")}]`);
-        const cand = byEvent.length ? byEvent : byKey;
-        const kitKeys = [...h.scale].sort().join(" × ");
-        if (!cand.some((l) => !l.scale.expr && [...l.scale.keys].sort().join(" × ") === kitKeys)) out.push(`${tag} scale: kit ${[...h.scale, ...(h.scaleValue !== undefined ? [valueText(h.scaleValue)] : [])].join(" × ")}, data ${keysText(cand)}`);
-        const kitFactor = round(h.factor ?? 1);
-        const factors = [...new Set(cand.map((l) => round(l.scale.factor)))];
-        if (!factors.includes(kitFactor)) out.push(`${tag} factor: kit ${kitFactor}, data ${factors.join(" | ")}`);
-        const all = paths(cand);
-        const want = h.frames ?? [];
-        const path = all.find((p) => covers(p, want));
-        const best = path ?? [...all].sort((a, b) => b.length - a.length)[0] ?? [];
-        if (!h.frames) out.push(`${tag} frames: kit none (count ${h.count}), data [${frames(best).join(", ")}]${branchText(best[0]?.branch)}`);
-        else if (!path) out.push(`${tag} frames: kit [${want.join(", ")}], data [${frames(best).join(", ")}]${branchText(best[0]?.branch)}`);
-        const at = (best.length ? best : cand).filter((l) => !h.frames || h.frames.includes(l.frame));
-        for (const l of at) claimed.add(l);
-        if (h.frames && path && typeof h.count === "number" && at.length > h.count) out.push(`${tag} count: kit ${h.count}, data ${at.length} landings at its frames (${[...new Set(at.map((l) => l.file))].join(", ")})`);
-        // Element and stagger of the landings the kit hit stands for (a landing without one: Fixed DMG, no poise unit).
-        const els = [...new Set(at.map((l) => l.element).filter((x) => x !== null))];
-        if (els.length && !els.includes(h.element)) out.push(`${tag} element: kit ${h.element}, data ${els.join(" | ")}`);
-        if (h.frames && path) {
-          const kitPoise = h.poise === undefined ? "-" : JSON.stringify(roundedValue(h.poise));
-          const dataPoise = [...new Set(at.map((l) => (l.poise ? JSON.stringify(asKitValue(l.poise.value)) : "-")))];
-          if (!dataPoise.includes(kitPoise)) out.push(`${tag} poise: kit ${kitPoise}, data ${dataPoise.join(" | ")}`);
-          const ctl = [...new Set(at.map((l) => l.poise?.controlledOnly ?? false))];
-          if (h.poise !== undefined && !ctl.includes(h.poiseControlledOnly ?? false)) out.push(`${tag} poiseControlledOnly: kit ${String(h.poiseControlledOnly ?? false)}, data ${ctl.join(" | ")}`);
-        }
-        const fs = at.map((l) => l.finalStrike);
-        if (h.finalStrike && fs.includes(false)) out.push(`${tag} finalStrike: kit all ${h.count} landings, data only at [${at.filter((l) => l.finalStrike).map((l) => l.frame).join(", ")}]`);
-        if (!h.finalStrike && fs.includes(true)) out.push(`${tag} finalStrike: kit none, data at [${at.filter((l) => l.finalStrike).map((l) => l.frame).join(", ")}]`);
-      }
-      // Applications by frame: what the kit applies must be in the data there; what the data applies unconditionally must be in the kit.
-      const dataFrames = new Set([...kitApps.keys(), ...c.effects.filter((e) => e.branch.length === 0 && dataAppText(e)).map((e) => e.frame)]);
-      for (const f of [...dataFrames].sort((a, b) => a - b)) {
-        const kitSet = kitApps.get(f) ?? new Set<string>();
-        const here = c.effects.filter((e) => e.frame === f && dataAppText(e));
-        const any = new Set(here.map((e) => dataAppText(e) as string));
-        const always = new Set(here.filter((e) => e.branch.length === 0).map((e) => dataAppText(e) as string));
-        const onlyKit = [...kitSet].filter((x) => !any.has(x));
-        const onlyData = [...always].filter((x) => !kitSet.has(x));
-        const cond = [...any].filter((x) => !always.has(x) && !kitSet.has(x));
-        if (onlyKit.length || onlyData.length || cond.length) out.push(`${where} applies at ${f}: kit [${[...kitSet].join(", ")}], data [${[...always].join(", ")}]${cond.length ? `, conditionally [${cond.join(", ")}]` : ""}`);
-      }
-      // Landings no kit hit accounts for: unconditional ones, and ones on the branch of a landing a kit hit has.
-      const onPath = (l: CompiledLanding) => l.branch.length === 0 || [...claimed].some((x) => JSON.stringify(x.branch) === JSON.stringify(l.branch));
-      const missed = c.landings.filter((l) => !claimed.has(l) && onPath(l));
-      const byFile = new Map<string, CompiledLanding[]>();
-      for (const l of missed) byFile.set(`${l.file} ${keysText([l])}`, [...(byFile.get(`${l.file} ${keysText([l])}`) ?? []), l]);
-      for (const [k, ls] of byFile) out.push(`${where}: data lands ${k} at [${frames(ls).join(", ")}], no kit hit`);
-    }
-  }
-  return out;
-}
+  it("matches a cast trigger's hits and actions as its skill's", () => {
+    const liino = JSON.parse(readFileSync(join(KITS, "chr_0035_liino.json"), "utf8")) as { triggers: { id: string; do: { kind: string; hits?: Record<string, unknown>[] }[] }[] };
+    const finale = liino.triggers.find((t) => t.id === "ult_song")?.do[0]?.hits?.find((h) => h["id"] === "finale") as Record<string, unknown>;
+    finale["frames"] = [509];
+    expect(() => loadOperatorKitFile(data, "chr_0035_liino.json", liino)).toThrow(/ult_song\/finale frames: kit \[509\], data \[508\]/);
+  });
 
-/** Every disagreement found, with what the data says (rmxlinux Json/SkillData and BuffData). */
-const KNOWN: string[] = [
-  // ModifyDynamicBlackboard atk_scale_3 ×= ratio at frame 104; extra_scaling only goes to the forced Combustion buff. Open question in batch-1 (in-game test 20).
-  "chr_0016_laevat_normal_skill/empowered_extra scale: kit atk_scale_3 × extra_scaling, data atk_scale_3 × ratio",
-  // Only atk_scale_3 is multiplied by ratio (frame 98); the hits at 13 and 23 use atk_scale and atk_scale_2 as they are. The kit's ratio on them comes from Zero Sanity's table (in-game test 20).
-  "chr_0016_laevat_normal_skill_during_ult/hit1 scale: kit atk_scale × ratio, data atk_scale",
-  "chr_0016_laevat_normal_skill_during_ult/hit2 scale: kit atk_scale_2 × ratio, data atk_scale_2",
-  // buff_chr_0016_laevat_combo_skill_usp (at 41) grants usp_1…usp_4 by a Switch on a saved stack count; its usp_1 (25) equals the skill's usp_1_display (the buff's keys aren't the skill's).
-  "chr_0016_laevat_combo_skill/hit energy: kit usp_1_display at [41], data usp_1@41 (switch SaveBuffStackNumAdvanced→count = 0), usp_2@41 (switch SaveBuffStackNumAdvanced→count = 1), usp_3@41 (switch SaveBuffStackNumAdvanced→count = 2), usp_4@41 (switch SaveBuffStackNumAdvanced→count = 3)",
-  // Compiler limitation, kit right: each of the three arrows' projhit deals damage only while buff attack_3_1/3_2_damagetaken is absent and then creates it, so one enemy takes one arrow; the compiler doesn't track buffs it creates.
-  "chr_0034_typhoea_attack3/wave1 count: kit 1, data 3 landings at its frames (chr_0034_typhoea_attack3_01_projhit)",
-  "chr_0034_typhoea_attack3/wave2 count: kit 1, data 3 landings at its frames (chr_0034_typhoea_attack3_02_projhit)",
-  // ObtainUspInNormalSkill at 12 (window 12–18, only if a volley arrow hit), not the buff_common_obtain_ultimate_sp the compiler reads (D2); hand-written in the kit.
-  "chr_0034_typhoea_normal_skill_floating_start teamEnergy: kit 1@12, data 1@0",
-  // Timeline sections reached through JumpToAction (destinations 45/75/105/135; 150/300/450/600 in attack4): jumps are reported, not followed, so every section is listed. Which one a cast plays depends on the jump conditions; the kit has the first.
-  "chr_0034_typhoea_floating_attack1: data lands chr_0034_typhoea_floating_attack1_01_projhit atk_scale_base × atk_scale_enhence at [46, 76, 106, 136], no kit hit",
-  "chr_0034_typhoea_floating_attack2: data lands chr_0034_typhoea_floating_attack1_01_projhit atk_scale_base × atk_scale_enhence at [46, 76, 106, 136], no kit hit",
-  "chr_0034_typhoea_floating_attack3: data lands chr_0034_typhoea_floating_attack1_01_projhit atk_scale_base × atk_scale_enhence at [46, 76, 106, 136], no kit hit",
-  "chr_0034_typhoea_floating_attack4: data lands chr_0034_typhoea_floating_attack1_01_projhit atk_scale_base × atk_scale_enhence at [151, 301, 451, 601], no kit hit",
-  // WILL: seal_total switches on EntityBB_consumed_type (set natively) for the element; the kit applies the enemy's current one (`element: enemy`, if WILL; open list A6).
-  "chr_0032_lizhiyan_combo_skill applies at 15: kit [infliction enemy], data [], conditionally [infliction natural, infliction cryst, infliction pulse, infliction fire]",
-  // RefrainObtainUsp 0–47 is the skill's; the array's own block (listener_owner, 20 s) is the kit buff gloompurger_array's blocksEnergy, which ends early with two Cluster Strikes.
-  "chr_0032_lizhiyan_ultimate_skill energyBlockSeconds: kit 1.567, data 21.567",
-  // WILL (EntityBB_wisd_greater_will < 1): an infliction of the enemy's current element (stack checks natural → cryst → pulse → fire), `element: enemy` in the kit; INT: the forced Corrosion.
-  "chr_0032_lizhiyan_ultimate_skill applies at 47: kit [infliction enemy, forced corrosion], data [], conditionally [infliction natural, infliction cryst, infliction pulse, infliction fire]",
-  // Both infliction branches create buff_common_obtain_ultimate_sp at 15 (after CheckEntityNum); the compiler doesn't merge exhaustive branches, so it finds none unconditional (batch-1 D2).
-  "chr_0036_jsspsi_normal_skill teamEnergy: kit 1@15, data 1@0",
-  // The kit's scaleValue is the data's expression with EntityBB_combo_count = the window's eventCount, +1 through potential5 (IfElse on potential5 ≥ 1); the test compares key products only.
-  'chr_0036_jsspsi_combo_skill/final scale: kit {"sum":["atk_scale2",{"product":[{"sum":[{"eventCount":true},"potential5"]},"atk_scale2_1"]}]}, data ((($EntityBB_combo_count + 1) × atk_scale2_1) + atk_scale2) | (($EntityBB_combo_count × atk_scale2_1) + atk_scale2)',
-  // buff_chr_0035_liino_ultskill_refrainobtainusp has duration 1 s but lifeType 1 (until ended) and is created by a 77–527 autoFinishByAction clip: the kit blocks energy with the cosmovoice_block buff for the whole stance (in-game test 27). The compiler reads the 1 s.
-  "chr_0035_liino_ultimate_skill energyBlockSeconds: kit -, data 3.567",
-  // The finale (and the beats, whose landings are on a branch) are hits of the kit's ult_song cast trigger, not of the skill: the engine judges a skill hit's `if` (buffActive cosmovoice_amp) at the cast, before the stance exists.
-  "chr_0035_liino_ultimate_skill: data lands chr_0035_liino_ultimate_skill_soundwave_02_projhit atk_scale_3 × final_value at [508], no kit hit",
-  // Compiler limitation (D2), kit right: CreateBuff buff_common_obtain_ultimate_sp is in chr_0021_whiten_normal_skill_projhit (launched at 21) on the first-target branch (EntityBB_first_hit), which the compiler leaves undecided.
-  "chr_0021_whiten_normal_skill teamEnergy: kit 1@21, data 1@0",
-  // Compiler limitation (D3), kit right: both projectiles launched at 27 run attack4_powerattack_projhit's IfElse on the timed marker have_recovered,
-  // which the first landing creates; the first takes the Final Strike branch (atb, poise), the second the plain one. The compiler counts both branches for each.
-  "chr_0023_antal_attack4/first count: kit 1, data 2 landings at its frames (chr_0023_antal_attack4_powerattack_projhit)",
-  "chr_0023_antal_attack4/second count: kit 1, data 2 landings at its frames (chr_0023_antal_attack4_powerattack_projhit)",
-  "chr_0023_antal_attack4/second poise: kit -, data \"poise\"",
-  "chr_0023_antal_attack4/second finalStrike: kit none, data at [27, 27]",
-  // The combo's SwitchAction on EntityBB_combo_type / _index (set natively from the event that opened the window) picks one infliction or one physical status;
-  // the kit repeats the window's event (element: event, status: event). The compiler lists every option as conditional (Breach, Lift, Knock Down, Crush; the inflictions).
-  "chr_0023_antal_combo_skill applies at 21: kit [infliction event, physical event], data [], conditionally [breach, lift, knockdown, crush, infliction fire, infliction cryst, infliction pulse, infliction natural]",
-  // The entity's JumpToAction to 149 (the ultimate's marker on the target) is the other branch of the one explosion, not a second one (open list D3):
-  // the kit deals it from the trigger ultimate_detonates when an ultimate shot lands, and the frame-99 explosion then doesn't happen.
-  "chr_0022_bounda_normal_skill applies at 159: kit [], data [infliction natural]",
-  "chr_0022_bounda_normal_skill: data lands chr_0022_bounda_normal_skill_abilityrange atk_scale at [159], no kit hit",
-  // SwitchAction on EntityBB_combo_index (2 → Cryo, 3 → Nature), set natively when the window opens: the window's element (`element: event`).
-  "chr_0022_bounda_combo_skill applies at 15: kit [infliction event], data [], conditionally [infliction cryst, infliction natural]",
-  // Batch 2, the Endministrator (both IDs: chr_0002_endminm is the kit's variant).
-  // (The combo's first DamageAction at 23, a literal-0 scale, is left out by the compiler since batch 4's D8, as by the kit.)
-  // The ultimate's IgniteAction 6 runs buff_common_originum_frozen's own DamageAction (atk_scale_trigger from the combo), which the compiler doesn't follow (an ignite handler of a buff on the target); the kit's third hit on sealed targets.
-  "chr_0003_endminf_ultimate_skill/shatter: no landing scaled by atk_scale_trigger (data: atk_scale | originum_ult_break_scale)",
-  "chr_0002_endminm_ultimate_skill/shatter: no landing scaled by atk_scale_trigger (data: atk_scale | originum_ult_break_scale)",
-  // Batch 3, Da Pan. Kit right, a limit of this test: the frame-0 forced Lift (AirborneAction forceAirborne, no damage landing there) is the
-  // kit's cast trigger ultimate_skill_f0, as kit-draft compiles it; this test only reads applications on a skill's hits.
-  "chr_0018_dapan_ultimate_skill applies at 0: kit [], data [lift (forced)]",
-  // Batch 3, Avywenna. Kit interim, energy timing: talent 1's energy for a returning lance is ObtainCostAction EntityBB_talent0 in
-  // chr_0012_avywen_combo_skill_lance_back_reach (when the lance reaches her, if it hit something: lance_back set EntityBB_talent0 =
-  // talent0_usp; with buff_chr_0012_avywen_talent_0 = talent 1). The kit grants talent0_usp at the lance's hit, gated on talent 1.
-  'chr_0012_avywen_normal_skill/lance energy: kit {"if":{"talentAtLeast":[0,1]},"then":"talent0_usp"} at [7], data $EntityBB_talent0@7 (if CheckDistanceCondition(distance=50), if $EntityBB_talent0 > 0, …), $EntityBB_talent0@7 (if CheckDistanceCondition(distance=50), if $EntityBB_talent0 > 0, …)',
-  'chr_0012_avywen_normal_skill/lance_ex energy: kit {"if":{"talentAtLeast":[0,1]},"then":"talent0_usp"} at [7], data $EntityBB_talent0@7 (if CheckDistanceCondition(distance=50), if $EntityBB_talent0 > 0, …), $EntityBB_talent0@7 (if CheckDistanceCondition(distance=50), if $EntityBB_talent0 > 0, …)',
-  // Batch 3, Arclight.
-  // Kit right (batch-3 S6): buff_common_obtain_ultimate_sp at 24 is on the plain path (jump 95 → 204 skips 136), the ones at 136 on the
-  // Electrification path (jump 4 → 96 skips 24): exclusive parts. The test keeps the first when parts add up to more than 1, as kit-draft does.
-  "chr_0007_ikut_normal_skill teamEnergy: kit 1@24, 1@136, data 1@24",
-  // Kit right: at 136 the CheckTagMatch-false side's DamageAction on the smart target has poise2 (the data has poise2 on two DamageActions:
-  // the extra attack and this one); the test matches the kit hit to another atk_scale landing there (the `tar` hits, the out-of-range branch).
-  "chr_0007_ikut_normal_skill/third poise: kit \"poise2\", data -",
-  // Compiler limit: ForceSpellStatusAction consumedType 1 with consumedLayer = count (the Electric stacks) consumes the infliction; the compiler
-  // reports only the forced Electrification (conditional on the infliction's tag). The kit consumes, then forces at the consumed level (batch-3 A3).
-  "chr_0007_ikut_ultimate_skill applies at 117: kit [consume pulse, forced electrification], data []",
-  // Batch 3, Alesh. Compiler limitation, kit right: the battle skill's ForceSpellStatusAction consumes the Cryo stacks (consumedLayer = consumedType 2's
-  // count, SaveBuffStackNumAdvanced) and Solidifies at that level, only if CheckBuffStackNumByTag Cryo ≥ 1; the compiler reads no consumption and lists
-  // the forced Solidification only under that condition, which the kit's level {consumed: true} expresses (0 consumed applies nothing; batch-3 A3).
-  "chr_0024_deepfin_normal_skill applies at 27: kit [consume cryst, forced solidification], data []",
-  // Batch 3, Chen Qianyu. Compiler limit (D3 open): at frame 103, CompareFloat potential5 = 1 → ModifyDynamicBlackboard atk_scale2 += phy_up
-  // before the DamageAction; the compiler stops at the ModifyDynamicBlackboard ($atk_scale2?). The kit writes the data's branch as a sum (potential5 is 0 or 1; phy_up is 0).
-  'chr_0005_chen_ultimate_skill/final scale: kit {"sum":["atk_scale2",{"product":["potential5","phy_up"]}]}, data $atk_scale2?',
-  // Batch 3, Wulfgard. Kit form, not a disagreement: the ChannelingAction's forced Combustion at 45 has no landing there, so the kit
-  // applies it from a delayed cast trigger (wolven_fury_combustion, as kit-draft emits it); this check compares hits' applications only.
-  "chr_0006_wolfgd_ultimate_skill applies at 45: kit [], data [forced combustion]",
-  // Batch 4, Mi Fu. Compiler limit (batch-3 D3 open item, a ModifyDynamicBlackboard chain on a scale): f26 atk_scale_runtime = atk_scale × yuanshi_multi
-  // (ReadSkillSettingData, its table not in the checkout: SkillData default 1) × crushmulti (talent 1: the kit's extraScale).
-  "chr_0031_mifu_normalskill_3/split scale: kit atk_scale × yuanshi_multi, data $atk_scale_runtime?",
-  // Batch 4, Last Rite. Kit right (batch-3 S6): buff_common_obtain_ultimate_sp at 32 (controlled path, jump 187 → 429 skips 300) and
-  // at 300 (off-field path, jump 0 → 300 skips 32) are exclusive parts; the test keeps the first when parts add up to more than 1.
-  "chr_0026_lastrite_normal_skill teamEnergy: kit 1@32, 1@300, data 1@32",
-  // Kit form: SaveBuffStackNumByTag (Cryo Infliction) → infliction_num is the enemy's Cryo stacks at frame 63, the ValueExpr
-  // enemyInflictionStacks (batch-4 L6); the test compares key products only.
-  'chr_0026_lastrite_combo_skill/bonus scale: kit atk_scale3 × {"enemyInflictionStacks":"cryst"}, data (atk_scale3 × SaveBuffStackNumByTag→infliction_num)',
-  // Compiler limit: FinishBuffByTag on the Cryo Infliction tag (all layers, after both frame-63 DamageActions) isn't read as a
-  // consumption; the kit's slash consumes them afterDamage (verified on b7b3 t=11462).
-  "chr_0026_lastrite_combo_skill applies at 63: kit [consume cryst], data []",
-  // Batch 4, Yvonne. Kit right: the dive's first IfElse side (with poise) reads buff_chr_0017_yvonne_potential_5, which nothing attaches (an orphan);
-  // the side that runs is the plain DamageAction atk_scale without poise. The test matches the kit hit to the first side.
-  "chr_0017_yvonne_plunging_attack_end/hit poise: kit -, data \"poise\"",
-  // Compiler limitation (as Estella's): buff_common_obtain_ultimate_sp is in normal_skill_projhit (launched at 35) behind the
-  // launch's CheckTagMatch on Yvonne's control tags, which the compiler leaves undecided.
-  "chr_0017_yvonne_normal_skill teamEnergy: kit 1@35, data 1@0",
-  // Kit form (batch-4 L4): the bomb as one hit whose values read the consumed stacks: the data's SaveBuffStackNumAdvanced count
-  // (and max_count for the energy) is ForceSpellStatusAction's consumedLayer, i.e. {consumed: true}; 0 consumed is the plain branch.
-  "chr_0017_yvonne_normal_skill/bomb energy: kit {\"if\":{\"consumedAtLeast\":1},\"then\":{\"sum\":[\"usp_base\",{\"product\":[\"usp_layer\",{\"consumed\":true}]}]},\"else\":0} at [35], data ((usp_layer × $max_count?) + usp_base)@35 (if tag(tag 430405417|tag 839947434|tag -1666491964|tag -1855674685|tag 1253324189|tag 1015258574|tag -1472906513), if $max_count? > 0), ((usp_layer × $max_count?) + usp_base)@35 (if tag(tag 430405417|tag 839947434|tag -1666491964|tag -1855674685|tag 1253324189|tag 1015258574|tag -1472906513), if projectile_chr_0017_yvonne_normal_skill is blocked, …)",
-  "chr_0017_yvonne_normal_skill/bomb scale: kit {\"sum\":[\"atk_scale\",{\"if\":{\"consumedAtLeast\":1},\"then\":{\"sum\":[\"atk_scale2\",{\"product\":[\"atk_scale_layer\",{\"consumed\":true}]}]},\"else\":0}]}, data (((atk_scale_layer × SaveBuffStackNumAdvanced→count) + atk_scale) + atk_scale2) | atk_scale",
-  // Compiler limitation (D3 open item, as Alesh's): ForceSpellStatusAction consumedType 2 / 3 with consumedLayer = count consumes the Cryo or
-  // Nature stacks and Solidifies at that level, only if a stack check holds; the compiler reads neither. The kit's level {consumed: true}.
-  "chr_0017_yvonne_normal_skill applies at 35: kit [consume cryst+natural, forced solidification], data []",
-  // Kit form: the two grants at the first tick (the entity's usp, the tick's usp_extra) as one sum.
-  "chr_0017_yvonne_combo_skill/tick1 energy: kit {\"sum\":[\"usp\",\"usp_extra\"]} at [19], data usp@19, usp_extra@19",
-  // Potential: P1 sets the buff's interval 0.5 and maxcnt 6; the test compiles the skill's own values (0.75 s, 4 ticks: the kit's `ticks`).
-  "chr_0017_yvonne_combo_skill/ticks_p1 frames: kit [34, 49, 64, 79, 94], data [19, 42, 64, 87] (if tag(tag 1535684437))",
-  // Batch 4, Ardelia. Kit right: the second ram at 221 is talent 2's recast, reached only by the conditional jump 33 → 189
-  // (another Corroded enemy within 12 m; batch-4 D1), which the kit doesn't list (one enemy); compiler limit D7c.
-  "chr_0025_ardelia_normal_skill: data lands chr_0025_ardelia_normal_skill atk_scale at [221], no kit hit",
-  // Compiler limit (batch-3 D3 open, ModifyDynamicBlackboard on a hit's scale): combo_skill_projhit multiplies atk_scale_boom by
-  // potential5_dmg_rate (a key only P5 sets) before spawning the bomb; the kit writes it as extraScale under potentialAtLeast 5.
-  "chr_0025_ardelia_combo_skill/bomb scale: kit atk_scale_boom, data $atk_scale_boom?",
-  // Kit interim (U1, in-game test 96), compiler limit D7e: ArdeliaUltMark (CheckTimedMarkerCondition returnTrueIfNotExists +
-  // CreateTimedMarker interval 0.3 s on the target) lets one enemy take one hit per 9 frames; the compiler lands every tick of both channels.
-  "chr_0025_ardelia_ultimate_skill/sheep count: kit 14, data 28 landings at its frames (chr_0025_ardelia_ultimate_skill_sheep_projhit)",
-  "chr_0025_ardelia_ultimate_skill: data lands chr_0025_ardelia_ultimate_skill_sheep_projhit atk_scale at [84, 84, 87, 87, 93, 93, 96, 96, 102, 102, 105, 105, 111, 111, 114, 114, 120, 120, 123, 123, 129, 129, 132, 132, 138, 138, 141, 141, 147, 147, 150, 150, 156, 156, 159, 159, 165, 165, 168, 168, 174, 174, 177, 177, 183, 183, 186, 186, 192, 192, 195, 195, 201, 201], no kit hit",
-  // Batch 4, Rossi. Compiler limit (batch-4 D7i), kit right: attack4's not-controlled path (JumpToAction 0 → 189) skips the × 0.2 SimpleCalcBB at
-  // frame 6; its own × 0.5 applies (the compiler multiplies both: 0.1). The 4e5e log has only the controlled path.
-  "chr_0028_wulfa_attack4/hit_ai factor: kit 0.5, data 0.2 | 0.1",
-  // Data quirk (batch-4 D7g), kit right: twelve Rossi buffs (normal_defup, normal_smarttarget, normal_bleed, normal_bleed_effect, combo_2_damage, tut_*) carry
-  // the same template timeline (TickIntervalAction 0.1 s at frames 10–20, a DamageAction on the default atk_scale 0.3) that the game doesn't run:
-  // 4e5e has no such hit (no defup / smarttarget / tut hit; bleed ticks 1 s apart; three combo_2_damage ticks per combo). The bleed's own
-  // per-second DamageAction is the kit buff razor_clawmark's buffTick trigger (D9b), not a skill hit.
-  "chr_0028_wulfa_normal_skill: data lands buff_chr_0028_wulfa_normal_defup atk_scale at [225, 228, 231, 234], no kit hit",
-  "chr_0028_wulfa_normal_skill: data lands buff_chr_0028_wulfa_normal_smarttarget atk_scale at [240, 243, 246, 249], no kit hit",
-  "chr_0028_wulfa_normal_skill: data lands buff_chr_0028_wulfa_normal_bleed atk_scale_bleed at [230, 230, 230, 230, 240, 240, 240, 240, 243, 243, 243, 243, 246, 246, 246, 246, 249, 249, 249, 249, 260, 260, 260, 260, 290, 290, 290, 290, 320, 320, 320, 320, 350, 350, 350, 350, 380, 380, 380, 380, 410, 410, 410, 410, 440, 440, 440, 440, 470, 470, 470, 470, 500, 500, 500, 500, 530, 530, 530, 530, 560, 560, 560, 560, 590, 590, 590, 590, 620, 620, 620, 620, 650, 650, 650, 650, 680, 680, 680, 680], no kit hit",
-  "chr_0028_wulfa_normal_skill: data lands buff_chr_0028_wulfa_normal_bleed_effect atk_scale at [240, 240, 240, 240, 243, 243, 243, 243, 246, 246, 246, 246, 249, 249, 249, 249, 270, 270, 270, 270, 273, 273, 273, 273, 276, 276, 276, 276, 279, 279, 279, 279, 300, 300, 300, 300, 303, 303, 303, 303, 306, 306, 306, 306, 309, 309, 309, 309, 330, 330, 330, 330, 333, 333, 333, 333, 336, 336, 336, 336, 339, 339, 339, 339, 360, 360, 360, 360, 363, 363, 363, 363, 366, 366, 366, 366, 369, 369, 369, 369, 390, 390, 390, 390, 393, 393, 393, 393, 396, 396, 396, 396, 399, 399, 399, 399, 420, 420, 420, 420, 423, 423, 423, 423, 426, 426, 426, 426, 429, 429, 429, 429, 450, 450, 450, 450, 453, 453, 453, 453, 456, 456, 456, 456, 459, 459, 459, 459, 480, 480, 480, 480, 483, 483, 483, 483, 486, 486, 486, 486, 489, 489, 489, 489, 510, 510, 510, 510, 513, 513, 513, 513, 516, 516, 516, 516, 519, 519, 519, 519, 540, 540, 540, 540, 543, 543, 543, 543, 546, 546, 546, 546, 549, 549, 549, 549, 570, 570, 570, 570, 573, 573, 573, 573, 576, 576, 576, 576, 579, 579, 579, 579, 600, 600, 600, 600, 603, 603, 603, 603, 606, 606, 606, 606, 609, 609, 609, 609, 630, 630, 630, 630, 633, 633, 633, 633, 636, 636, 636, 636, 639, 639, 639, 639, 660, 660, 660, 660, 663, 663, 663, 663, 666, 666, 666, 666, 669, 669, 669, 669, 690, 690, 690, 690, 693, 693, 693, 693, 696, 696, 696, 696, 699, 699, 699, 699], no kit hit",
-  "chr_0028_wulfa_normal_skill: data lands buff_chr_0028_wulfa_tut_normalskill_success atk_scale at [240, 243, 246, 249], no kit hit",
-  "chr_0028_wulfa_combo_2_skill: data lands buff_chr_0028_wulfa_normal_defup atk_scale at [10, 13, 16, 19], no kit hit",
-  "chr_0028_wulfa_combo_2_skill: data lands buff_chr_0028_wulfa_combo_2_damage atk_scale at [43, 46, 49, 52], no kit hit",
-  "chr_0028_wulfa_combo_2_skill: data lands buff_chr_0028_wulfa_tut_comboskill_failure atk_scale at [82, 85, 88, 91], no kit hit",
-  // Compiler limit (batch-4 D9f), kit right: sequence 2's scale is SaveBuffStackNumAdvanced of a buff created with count = the consumed
-  // infliction stacks: atk_scale_s + damage_add × {consumed}; potential_atk_multiply is 1 (P1 multiplies the keys). Its else-if chain of
-  // CheckBuffStackNumByTag (Heat, Nature, Electric, Cryo) is one consumeInfliction of the four elements (an enemy holds one element), and
-  // the Lift and the perfect path's buff_physical_no_guard (Vulnerable) only reach a target that had an infliction (consumedAtLeast 1).
-  "chr_0028_wulfa_combo_3_skill/perfect scale: kit {\"sum\":[\"atk_scale_s\",{\"product\":[\"damage_add\",{\"consumed\":true}]}]}, data ((((SaveBuffStackNumAdvanced→spellinflict_stack_max × damage_add) + $atk_scale_s?) × potential_atk_multiply) ÷ 1)",
-  "chr_0028_wulfa_combo_3_skill/late scale: kit {\"sum\":[\"atk_scale_s\",{\"product\":[\"damage_add\",{\"consumed\":true}]}]}, data ((((SaveBuffStackNumAdvanced→spellinflict_stack_max × damage_add) + $atk_scale_s?) × potential_atk_multiply) ÷ 1)",
-  "chr_0028_wulfa_combo_3_skill applies at 29: kit [consume fire+natural+pulse+cryst, lift, vulnerable], data [], conditionally [consume fire, consume natural, consume pulse, consume cryst]",
-  "chr_0028_wulfa_combo_3_skill applies at 227: kit [consume fire+natural+pulse+cryst, lift], data [], conditionally [consume fire, consume natural, consume pulse, consume cryst]",
-  // Sequence 2's buffs carry the same template timeline (D7g, as above).
-  "chr_0028_wulfa_combo_3_skill: data lands buff_chr_0028_wulfa_normal_defup atk_scale at [10, 13, 16, 19, 222, 225, 228, 231], no kit hit",
-  "chr_0028_wulfa_combo_3_skill: data lands buff_chr_0028_wulfa_tut_comboskill_finish atk_scale at [39, 42, 45, 48, 237, 240, 243, 246], no kit hit",
-  // Compiler limit (batch-3 D3 open item), kit right: at frame 58 IfElse potential_5 → SimpleCalcBB atk_scale_1/2/3 × potential_5_damage_scale;
-  // the compiler stops at the dynamic key. The kit's extraScale (potentialAtLeast 5) is that branch; 4e5e (P3) fits the plain keys.
-  "chr_0028_wulfa_ultimate_skill/stab scale: kit atk_scale_1, data $atk_scale_1?",
-  "chr_0028_wulfa_ultimate_skill/slash1 scale: kit atk_scale_2, data $atk_scale_2?",
-  "chr_0028_wulfa_ultimate_skill/slash2 scale: kit atk_scale_3, data $atk_scale_3?",
-  // Batch 4, Zhuang Fangyi. Compiler limit (batch-1 D2): buff_common_obtain_ultimate_sp at frame 6 is on both sides of the IfElse on
-  // the Electrification tag (consume or not); the compiler doesn't merge exhaustive branches, so it finds none unconditional. Same for normal_skill_ult at 5.
-  "chr_0030_zhuangfy_normal_skill teamEnergy: kit 1@6, data 1@0",
-  // Compiler limit (D4: buff-driven periodic hits), kit composite (V3 deferred): the Thunder Strikes come from buff
-  // normal_skill_trigger_sword (created at 13, waitFirstTriggerInterval, interval 0.3 − EntityBB_SwordNum/90 s) putting sword_triggerd on each
-  // Sunderblade; the compiler reads one trigger at once (16 and 19). The kit has one strike_N / final_N pair per Sunderblade count N (stack
-  // strike_n), its frames from the interval; the scale is the data's expression with conductCnt = stack conduct_cnt (the test compares key
-  // products only); usp_extra on every strike, at its frame.
-  "chr_0030_zhuangfy_normal_skill/final_1 energy: kit usp_extra at [28], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/final_1 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill/final_1 frames: kit [28], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/strike_2 energy: kit usp_extra at [25], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/strike_2 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + (atk_up_per_conduct × $conductCnt?)) | ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill/strike_2 frames: kit [25], data [16] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/final_2 energy: kit usp_extra at [36], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/final_2 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill/final_2 frames: kit [36], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/strike_3 energy: kit usp_extra at [24, 32], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/strike_3 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + (atk_up_per_conduct × $conductCnt?)) | ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill/strike_3 frames: kit [24, 32], data [16] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/final_3 energy: kit usp_extra at [43], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/final_3 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill/final_3 frames: kit [43], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/strike_4 energy: kit usp_extra at [24, 32, 39], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/strike_4 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + (atk_up_per_conduct × $conductCnt?)) | ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill/strike_4 frames: kit [24, 32, 39], data [16] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/final_4 energy: kit usp_extra at [50], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/final_4 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill/final_4 frames: kit [50], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/strike_5 energy: kit usp_extra at [24, 31, 38, 46], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/strike_5 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + (atk_up_per_conduct × $conductCnt?)) | ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill/strike_5 frames: kit [24, 31, 38, 46], data [16] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/final_5 energy: kit usp_extra at [56], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/final_5 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill/final_5 frames: kit [56], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/strike_6 energy: kit usp_extra at [23, 30, 37, 44, 51], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/strike_6 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + (atk_up_per_conduct × $conductCnt?)) | ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill/strike_6 frames: kit [23, 30, 37, 44, 51], data [16] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/final_6 energy: kit usp_extra at [61], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/final_6 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill/final_6 frames: kit [61], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/strike_7 energy: kit usp_extra at [23, 30, 36, 43, 50, 56], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/strike_7 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + (atk_up_per_conduct × $conductCnt?)) | ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill/strike_7 frames: kit [23, 30, 36, 43, 50, 56], data [16] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/final_7 energy: kit usp_extra at [66], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/final_7 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill/final_7 frames: kit [66], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/strike_8 energy: kit usp_extra at [23, 29, 35, 42, 48, 54, 61], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/strike_8 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + (atk_up_per_conduct × $conductCnt?)) | ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill/strike_8 frames: kit [23, 29, 35, 42, 48, 54, 61], data [16] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/final_8 energy: kit usp_extra at [70], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/final_8 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill/final_8 frames: kit [70], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/strike_9 energy: kit usp_extra at [22, 28, 34, 40, 46, 52, 58, 64], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/strike_9 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + (atk_up_per_conduct × $conductCnt?)) | ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill/strike_9 frames: kit [22, 28, 34, 40, 46, 52, 58, 64], data [16] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/final_9 energy: kit usp_extra at [73], data usp_extra@16 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …), usp_extra@19 (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill/final_9 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + (atk_up_per_conduct × $conductCnt?)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill/final_9 frames: kit [73], data [19] (if $EntityBB_SwordNum ≥ 1, on buff_chr_0030_zhuangfy_normal_skill_trigger_sword trigger (no interval), …)",
-  "chr_0030_zhuangfy_normal_skill_ult teamEnergy: kit 1@5, data 1@0",
-  // Compiler limit (D4): the entity normal_skill_ult_abilityrange strikes while tick_index < EntityBB_SwordNum, then JumpToAction 64 and the
-  // final (× final_rate, Electric Infliction) at its 69; the compiler doesn't take the jump (final at 84) nor stop the ticks (9 + 1 landings).
-  // The kit's pairs per N as for normal_skill (strikes at 27 + 6k, the final at 6N + 26).
-  "chr_0030_zhuangfy_normal_skill_ult/final_1 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill_ult/final_1 frames: kit [32], data [84]",
-  "chr_0030_zhuangfy_normal_skill_ult/strike_2 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + ($conductCnt? × atk_up_per_conduct)) | ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill_ult/final_2 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill_ult/final_2 frames: kit [38], data [84]",
-  "chr_0030_zhuangfy_normal_skill_ult/strike_3 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + ($conductCnt? × atk_up_per_conduct)) | ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill_ult/strike_3 frames: kit [27, 33], data [33, 39, 45, 51, 57, 63, 69, 75, 84] (if $tick_index? < $EntityBB_SwordNum, if $tick_index? = 1)",
-  "chr_0030_zhuangfy_normal_skill_ult/final_3 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill_ult/final_3 frames: kit [44], data [84]",
-  "chr_0030_zhuangfy_normal_skill_ult/strike_4 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + ($conductCnt? × atk_up_per_conduct)) | ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill_ult/strike_4 frames: kit [27, 33, 39], data [33, 39, 45, 51, 57, 63, 69, 75, 84] (if $tick_index? < $EntityBB_SwordNum, if $tick_index? = 1)",
-  "chr_0030_zhuangfy_normal_skill_ult/final_4 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill_ult/final_4 frames: kit [50], data [84]",
-  "chr_0030_zhuangfy_normal_skill_ult/strike_5 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + ($conductCnt? × atk_up_per_conduct)) | ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill_ult/strike_5 frames: kit [27, 33, 39, 45], data [33, 39, 45, 51, 57, 63, 69, 75, 84] (if $tick_index? < $EntityBB_SwordNum, if $tick_index? = 1)",
-  "chr_0030_zhuangfy_normal_skill_ult/final_5 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill_ult/final_5 frames: kit [56], data [84]",
-  "chr_0030_zhuangfy_normal_skill_ult/strike_6 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + ($conductCnt? × atk_up_per_conduct)) | ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill_ult/strike_6 frames: kit [27, 33, 39, 45, 51], data [33, 39, 45, 51, 57, 63, 69, 75, 84] (if $tick_index? < $EntityBB_SwordNum, if $tick_index? = 1)",
-  "chr_0030_zhuangfy_normal_skill_ult/final_6 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill_ult/final_6 frames: kit [62], data [84]",
-  "chr_0030_zhuangfy_normal_skill_ult/strike_7 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + ($conductCnt? × atk_up_per_conduct)) | ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill_ult/strike_7 frames: kit [27, 33, 39, 45, 51, 57], data [33, 39, 45, 51, 57, 63, 69, 75, 84] (if $tick_index? < $EntityBB_SwordNum, if $tick_index? = 1)",
-  "chr_0030_zhuangfy_normal_skill_ult/final_7 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill_ult/final_7 frames: kit [68], data [84]",
-  "chr_0030_zhuangfy_normal_skill_ult/strike_8 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + ($conductCnt? × atk_up_per_conduct)) | ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill_ult/strike_8 frames: kit [27, 33, 39, 45, 51, 57, 63], data [33, 39, 45, 51, 57, 63, 69, 75, 84] (if $tick_index? < $EntityBB_SwordNum, if $tick_index? = 1)",
-  "chr_0030_zhuangfy_normal_skill_ult/final_8 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill_ult/final_8 frames: kit [74], data [84]",
-  "chr_0030_zhuangfy_normal_skill_ult/strike_9 scale: kit {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data (atk_scale + ($conductCnt? × atk_up_per_conduct)) | ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill_ult/strike_9 frames: kit [27, 33, 39, 45, 51, 57, 63, 69], data [33, 39, 45, 51, 57, 63, 69, 75, 84] (if $tick_index? < $EntityBB_SwordNum, if $tick_index? = 1)",
-  "chr_0030_zhuangfy_normal_skill_ult/final_9 scale: kit final_rate × {\"sum\":[\"atk_scale\",{\"product\":[\"atk_up_per_conduct\",{\"stackCount\":\"conduct_cnt\"}]}]}, data ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate)",
-  "chr_0030_zhuangfy_normal_skill_ult/final_9 frames: kit [80], data [84]",
-  "chr_0030_zhuangfy_normal_skill_ult applies at 32: kit [infliction pulse], data []",
-  "chr_0030_zhuangfy_normal_skill_ult applies at 38: kit [infliction pulse], data []",
-  "chr_0030_zhuangfy_normal_skill_ult applies at 44: kit [infliction pulse], data []",
-  "chr_0030_zhuangfy_normal_skill_ult applies at 50: kit [infliction pulse], data []",
-  "chr_0030_zhuangfy_normal_skill_ult applies at 56: kit [infliction pulse], data []",
-  "chr_0030_zhuangfy_normal_skill_ult applies at 62: kit [infliction pulse], data []",
-  "chr_0030_zhuangfy_normal_skill_ult applies at 68: kit [infliction pulse], data []",
-  "chr_0030_zhuangfy_normal_skill_ult applies at 74: kit [infliction pulse], data []",
-  "chr_0030_zhuangfy_normal_skill_ult applies at 80: kit [infliction pulse], data []",
-  "chr_0030_zhuangfy_normal_skill_ult applies at 84: kit [], data [infliction pulse]",
-  "chr_0030_zhuangfy_normal_skill_ult: data lands chr_0030_zhuangfy_normal_skill_ult_abilityrange (atk_scale + ($conductCnt? × atk_up_per_conduct)) at [75], no kit hit",
-  "chr_0030_zhuangfy_normal_skill_ult: data lands chr_0030_zhuangfy_normal_skill_ult_abilityrange ((atk_scale + ($conductCnt? × atk_up_per_conduct)) × final_rate) at [84], no kit hit",
-  // Kit right (D8f's form): ObtainCostAction usp and usp_extra × inflictCnt (the Electric stacks the combo consumes) as one grant, {consumed: true}.
-  "chr_0030_zhuangfy_combo_skill/hit energy: kit {\"sum\":[\"usp\",{\"product\":[\"usp_extra\",{\"consumed\":true}]}]} at [24], data usp@24, (usp_extra × $inflictCnt?)@24",
-  // Kit right: RefrainObtainUsp is buff ult_base's (the Empyrean, `duration` 25 s from frame 78: the kit buff empyrean's blocksEnergy, a key
-  // this test doesn't read), not the skill's.
-  "chr_0030_zhuangfy_ultimate_skill energyBlockSeconds: kit -, data 27.6",
-  // Batch 4, Tangtang. Compiler limit (batch-4 D9e, Tangtang G3d, open), kit right: the Waterspouts' tornado_atk_scale01 is EntityBB_abilityentity_water01,
-  // which buff_chr_0027_tangtang_passive_0 sets to passive_0's normalskill_atk_scale01; the kit names that key (scaleValue).
-  "chr_0027_tangtang_normal_skill/spout1_first: no landing scaled by normalskill_atk_scale01 (data: $EntityBB_abilityentity_water01 | atk_scale_1)",
-  "chr_0027_tangtang_normal_skill/spout1: no landing scaled by normalskill_atk_scale01 (data: $EntityBB_abilityentity_water01 | atk_scale_1)",
-  "chr_0027_tangtang_normal_skill/spout2_first: no landing scaled by normalskill_atk_scale01 (data: $EntityBB_abilityentity_water01 | atk_scale_1)",
-  "chr_0027_tangtang_normal_skill/spout2: no landing scaled by normalskill_atk_scale01 (data: $EntityBB_abilityentity_water01 | atk_scale_1)",
-  "chr_0027_tangtang_normal_skill/spout3_first: no landing scaled by normalskill_atk_scale01 (data: $EntityBB_abilityentity_water01 | atk_scale_1)",
-  "chr_0027_tangtang_normal_skill/spout3: no landing scaled by normalskill_atk_scale01 (data: $EntityBB_abilityentity_water01 | atk_scale_1)",
-  // Kit form: the early rogue wave (entity frame 133, after the EventListenerAction's jump to 128) lands 5 frames after a
-  // controlled operator's dive, so it is a hit of the dive trigger olden_stare_dive, not of the skill at a fixed frame.
-  "chr_0027_tangtang_ultimate_skill: data lands chr_0027_tangtang_ultimate_skill_1 atk_scale_3 at [209], no kit hit",
-];
+  it("checks an equipment kit's triggered hits against its skill's landings", () => {
+    const dir = mkdtempSync(join(tmpdir(), "efsim-kits-"));
+    mkdirSync(join(dir, "equipment"));
+    const raw = JSON.parse(readFileSync(join(KITS, "../equipment/wpn_lance_0010.json"), "utf8")) as { triggers: { id: string; do: { kind: string; hits?: Record<string, unknown>[] }[] }[] };
+    const hit = raw.triggers.find((t) => t.id === "wpn_lance_0010.physical_status_hit")?.do[0]?.hits?.[0] as Record<string, unknown>;
+    hit["element"] = "fire";
+    writeFileSync(join(dir, "equipment", "wpn_lance_0010.json"), JSON.stringify(raw));
+    expect(() => loadKits(data, dir)).toThrow(/trigger wpn_lance_0010.physical_status_hit differs[\s\S]*sk_wpn_lance_0010\/hit element: kit fire, data physical/);
+  });
 
-describe("batch-1 kits against the compiled SkillData", () => {
-  it("disagree only where known", () => {
-    expect(kitDisagreements()).toEqual(KNOWN);
+  it("fills in what a kit leaves out where its landings agree", () => {
+    const attack2 = data.kits.operators["chr_0016_laevat"]?.skills.find((s) => s.skillId === "chr_0016_laevat_attack2")?.hits[0];
+    expect([attack2?.frames, attack2?.count, attack2?.events]).toEqual([[6, 13], 2, ["chr_0016_laevat_attack2"]]);
+    const k = raw();
+    expect(hitOf(k, "chr_0016_laevat_attack2", "hit")["frames"]).toBeUndefined();
   });
 });
