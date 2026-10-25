@@ -25,13 +25,16 @@ function loggedModifiersAt(ctx: TimelineContext, operator: string, events: reado
 }
 
 /**
- * The crit a logged fight gives a kit hit's landing (TimelineScenario.loggedCrits): of a logged landing of its
- * operator with one of its events within a frame of it; null when there is none, or both crit and not at once
- * (several landings at one frame). Undefined without logged crits (a simulation).
+ * The crit a logged fight gives a kit hit's landing (TimelineScenario.loggedCrits): a pinned landing's own logged hit's
+ * (its `ref`), else of a logged landing of its operator with one of its events within a frame of it; null when there
+ * is none, or both crit and not at once (several landings at one frame). Undefined without logged crits (a simulation).
  */
-function loggedCritAt(ctx: TimelineContext, operator: string, events: readonly string[], frame: number): boolean | null | undefined {
+function loggedCritAt(ctx: TimelineContext, operator: string, events: readonly string[], frame: number, ref?: string): boolean | null | undefined {
   if (!ctx.loggedCrits) return undefined;
-  const near = events.flatMap((e) => (ctx.loggedCrits?.get(`${operator}|${e}`) ?? []).filter((x) => Math.abs(x.frame - frame) <= 1));
+  const all = events.flatMap((e) => ctx.loggedCrits?.get(`${operator}|${e}`) ?? []);
+  const own = ref !== undefined ? all.find((x) => x.ref === ref) : undefined;
+  if (own) return own.crit;
+  const near = all.filter((x) => Math.abs(x.frame - frame) <= 1);
   if (near.length === 0) return null;
   return near.every((x) => x.crit === near[0]?.crit) ? (near[0] as { crit: boolean }).crit : null;
 }
@@ -302,7 +305,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   let roll: number | undefined;
   if (ctx.scenario.options.crit === "rolled" && hit.fixed === undefined) ({ value: roll, state: st } = draw(ctx, st, "crit"));
   // A replayed fight's logged crit for this landing (TimelineScenario.loggedCrits), which decides it.
-  const loggedCrit = hit.fixed === undefined ? loggedCritAt(ctx, hit.operator, kitHit.events, hit.frame) : undefined;
+  const loggedCrit = hit.fixed === undefined ? loggedCritAt(ctx, hit.operator, kitHit.events, hit.frame, hit.ref) : undefined;
   const decorations = hitDecorations(kitHit, finisher);
   const options = hit.fixed !== undefined ? null : damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, castIndex, hit.snapshot);
   const inputs: LandingInputs | null = !options ? null : { kind: "hit", operator: hit.operator, build, panel, skill, hit: kitHit, options: {

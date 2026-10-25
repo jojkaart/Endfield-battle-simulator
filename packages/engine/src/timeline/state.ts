@@ -59,7 +59,7 @@ export interface TimelineScenario {
    * `event` among its events landing at `frame` (±1) crits as the log says, whatever `options.crit` says, and its
    * hit event says so to crit triggers. Its LandedHit records whether the log decided it (`loggedCrit`).
    */
-  readonly loggedCrits?: readonly { readonly operator: string; readonly event: string; readonly frame: number; readonly crit: boolean }[];
+  readonly loggedCrits?: readonly { readonly operator: string; readonly event: string; readonly frame: number; readonly crit: boolean; readonly ref?: string }[];
   /**
    * A logged fight's effects no kit models (the log check's simulation of the logged casts only): a kit hit of
    * `operator` with `event` among its events landing at `frame` (±1) takes these modifiers on top of the timeline's.
@@ -383,7 +383,7 @@ export interface TimelineContext {
   /** With `memoised`: each state's committed damage (search.ts committedDamage), on the same grounds. */
   readonly committedMemo?: WeakMap<TimelineState, number>;
   /** TimelineScenario.loggedCrits by `operator|event`: the logged landings' frames and crits. */
-  readonly loggedCrits?: ReadonlyMap<string, readonly { readonly frame: number; readonly crit: boolean }[]>;
+  readonly loggedCrits?: ReadonlyMap<string, readonly { readonly frame: number; readonly crit: boolean; readonly ref?: string }[]>;
   /** TimelineScenario.loggedModifiers by `operator|event`. */
   readonly loggedModifiers?: ReadonlyMap<string, readonly { readonly frame: number; readonly modifiers: readonly Modifier[] }[]>;
 }

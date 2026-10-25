@@ -281,4 +281,15 @@ describe("simulateLog: the logged casts simulated, each hit against its landing 
     expect(within("chr_0021_whiten")).toBeGreaterThanOrEqual(15);
     expect(sim.filter((x) => typeof x.simulated === "number").length).toBeGreaterThan(300);
   });
+
+  it("gives a pinned landing its own logged hit's crit, also where hits of its event crit and not at one frame (4e5e: Rossi)", () => {
+    // Until 2026-10-25 a landing took the crit of the logged hits of its event within a frame, none where they differed:
+    // 10 pinned landings (Rossi's, Gilberta's, Camille's) had no crit though their own hit has one, and crit-triggered buffs (Wolven Blood) missed them.
+    const fx = readLogFixture(new URL("../fixtures/zmdlogs-4e5e1390085e.json", import.meta.url).pathname);
+    const r = logBuffReplay(data, fx);
+    const missing = r.replay.hits.filter((h) => h.ref !== undefined && h.loggedCrit === null && fx.hits[Number(h.ref)]?.crit !== null);
+    expect(missing.map((h) => `${h.operator} ${h.skillId}:${h.hitId} @${h.frame}`)).toEqual([]);
+    const wrong = r.replay.hits.filter((h) => h.ref !== undefined && typeof h.loggedCrit === "boolean" && h.loggedCrit !== fx.hits[Number(h.ref)]?.crit);
+    expect(wrong).toEqual([]);
+  });
 });

@@ -409,7 +409,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       options: { crit },
       ...(firstBasic ? { controlled: firstBasic.operator } : {}),
       ...(enemyHp?.length ? { enemyHp } : {}),
-      loggedCrits: fx.hits.flatMap((h) => (h.crit === null ? [] : [{ operator: h.operator, event: h.event, frame: frameOf(h.t), crit: h.crit }])),
+      // Each with its logged hit's index: a pinned landing (replayCast landings `ref`) takes its own hit's crit.
+      loggedCrits: fx.hits.flatMap((h, i) => (h.crit === null ? [] : [{ operator: h.operator, event: h.event, frame: frameOf(h.t), crit: h.crit, ref: String(i) }])),
       ...(opts.loggedModifiers ? { loggedModifiers: fx.hits.flatMap((h) => {
         const modifiers = (opts.loggedModifiers as NonNullable<ReplayOptions["loggedModifiers"]>)(h);
         return modifiers.length ? [{ operator: h.operator, event: h.event, frame: frameOf(h.t), modifiers }] : [];
