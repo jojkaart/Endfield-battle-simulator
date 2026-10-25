@@ -5,6 +5,22 @@ their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 Older entries (2026-10-21 and earlier): [journal-archive.md](journal-archive.md).
 
+## 2026-10-26: what isn't simulated accurately (three audits, a plan)
+
+The owner put engine accuracy above the search's scoring and asked for a
+comprehensive analysis. Three read-only audits (logs, kits vs data,
+engine mechanics) → docs/accuracy-plan.md. Main finding: most of today's
+log totals error (−12% to −61%) is the log tooling's (casts merged under
+1 s, Si's Final Stroke not replayed, unknown crits read as non-crits,
+damage past the kill, a missed event prefix, hitless casts' Amp); the
+matched hits alone are −2.6% to −19% in the verified fixtures. The
+engine's largest known error is Stagger (the bar never recovers: wrong
+windows in 22 of 29 logs). Checked by hand: `CAST_SLACK_MS` 1000; the bar
+only falls; the native settings' Solidification 6–9 s and
+`atbRecoverInterval` 0.5 (the engine pauses SP 1.5 s). Question for the
+owner: do teammates basic-attack on their own (4e5e has basic hits of two
+operators within a second; the data's main-character-only flags)?
+
 ## 2026-10-26: stack groups ranked by the data's priority key
 
 The owner asked how "the strongest instance" was decided when two buffs
