@@ -7,10 +7,10 @@ import type { BattleEvent } from "../events.ts";
 import { type ActiveBuff, buffEndedEvent } from "../buffs.ts";
 import { expireStatus, nextTick, tickStatus } from "../status.ts";
 import type { Cast, PendingEnemyAction, Scheduled, TimelineContext, TimelineState } from "./state.ts";
-import { DIVE, DODGE, SP } from "./rules.ts";
+import { DIVE, DODGE } from "./rules.ts";
 import { panelAt, timingOf } from "./context.ts";
 import { shiftOperator, slowDown } from "./clock.ts";
-import { gainEnergy, rebaseCooldowns, spAt } from "./resources.ts";
+import { gainEnergy, gainSp, rebaseCooldowns, spAt } from "./resources.ts";
 import { actionFrame, counters } from "./timing.ts";
 import { situationAt } from "./situation.ts";
 import { runActions, runTriggers } from "./actions.ts";
@@ -73,10 +73,11 @@ function enemyAct(ctx: TimelineContext, state: TimelineState, a: PendingEnemyAct
   const roll = draw(ctx, state, "dodge");
   if (roll.value >= dodge.chance) return runTriggers(ctx, roll.state, events, null);
   const ended = endCurrentSkill(roll.state, op, a.frame);
-  // It's in the cast list as the skill "dodge" (no cast event: nothing listens to the perfect-dodge skill's cast).
-  const sp = Math.min(SP.max, spAt(ended.state, a.frame) + pd.sp);
-  const cast: Cast = { frame: a.frame, operator: op, skill: DODGE, spAfter: sp, energyAfter: ended.state.energy[op] ?? 0 };
-  let st: TimelineState = rebaseCooldowns(ctx, roll.state, { ...ended.state, sp, frame: Math.max(ended.state.frame, a.frame), acting: { ...ended.state.acting, [op]: { skill: DODGE, frame: a.frame, cast: ended.state.casts.length } }, casts: [...ended.state.casts, cast] }, a.frame);
+  // It's in the cast list as the skill "dodge" (no cast event: nothing listens to the perfect-dodge skill's cast). Its SP is
+  // natural (it gives ultimate energy when spent), through gainSp as every other grant.
+  const gained = gainSp(ended.state, pd.sp, a.frame, "natural");
+  const cast: Cast = { frame: a.frame, operator: op, skill: DODGE, spAfter: spAt(gained, a.frame), energyAfter: ended.state.energy[op] ?? 0 };
+  let st: TimelineState = rebaseCooldowns(ctx, roll.state, { ...gained, acting: { ...ended.state.acting, [op]: { skill: DODGE, frame: a.frame, cast: ended.state.casts.length } }, casts: [...ended.state.casts, cast] }, a.frame);
   st = slowDown(ctx, st, op, { ...timingOf(ctx, DODGE), slowdowns: [{ from: 0, scales: pd.slowdown }] }, a.frame);
   st = shiftOperator(st, op, a.frame, Math.round(pd.dodgerSlowdown.reduce((t, x) => t + (1 - x), 0)));
   const others = events.filter((e) => !(e.type === "attacked" && e.operator === op));

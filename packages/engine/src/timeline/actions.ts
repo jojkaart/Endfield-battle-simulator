@@ -278,8 +278,9 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
         const r = a.to === "eventSubject"
           ? endBuffFor(st.buffs, a.buff, owner, frame, e.type === "heal" ? e.target : e.operator, ctx.scenario.team.map((b) => b.operator))
           : endBuff(st.buffs, a.buff, owner, frame, a.layers);
-        // For one member only: the buff goes on for the others (the state changes, no buffEnded).
-        if (!r.ended && a.to === "eventSubject") st = { ...st, buffs: r.buffs };
+        // For one member only: the buff goes on for the others (the state changes, no buffEnded); a recovery rate it gave
+        // that member's combo cooldown stops, as when it ends (rebaseCooldowns).
+        if (!r.ended && a.to === "eventSubject") st = rebaseCooldowns(ctx, st, { ...st, buffs: r.buffs }, frame);
         if (r.ended) {
           st = rebaseCooldowns(ctx, st, { ...st, buffs: r.buffs }, frame);
           events.push(buffEndedEvent(r.gone, frame, true));

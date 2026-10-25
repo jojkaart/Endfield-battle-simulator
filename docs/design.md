@@ -421,7 +421,7 @@ matches are the engine's readings at the landing, and fallback the log's
 listing; tests/logs.test.ts also holds every plain match to the
 simulation's own landing (`simulateLog`, ±1) and every verified fixture's
 total damage, simulated against the log's, to within MAX_DAMAGE_ERROR
-(45%: today dbae −43.9%, bdf2 −28.0%, 0eef −27.1%, b7b3 +21.3%, 40d9
+(45%: today dbae −43.9%, bdf2 −28.0%, 0eef −27.1%, b7b3 +23.1%, 40d9
 −12.9%, 4e5e −12.5%); a fixture's error mustn't grow past its snapshot's.
 That bound is loose because the engine's own state still differs from the
 games' in the ways the report lists (Stagger, inflictions, layers);

@@ -12,7 +12,7 @@ import type { Acting, Cast, Origin, PendingEnergy, PendingHit, PendingJump, Time
 import { DIVE, ENERGY, JUMP, linkValue, SP, hasteFrames } from "./rules.ts";
 import { kitSkill, panelAt, skillCosts } from "./context.ts";
 import { actionSpeed, slowDown } from "./clock.ts";
-import { castCooldowns, gainEnergy, rebaseCooldowns, skillSpGain, spCostAt, spGrantOf } from "./resources.ts";
+import { castCooldowns, gainEnergy, rebaseCooldowns, skillSpGain, spAt, spCostAt, spGrantOf } from "./resources.ts";
 import { chainAfter, windowKey } from "./timing.ts";
 import { situationAt } from "./situation.ts";
 import { cancelCast, jumpCast, schedule } from "./schedule.ts";
@@ -264,9 +264,12 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
   const planned = castJumps(full.timing, skill, jumpEc, operator, castIndex, frame, scaled);
   // Its conditional windows open at this cast (KitSkill.windows), judged as its jumps are.
   const openWindows = full.timing.windows.flatMap((w, i) => (w.conditional && skill.windows?.some((k) => k.from === w.from && (k.skills === undefined || sameSkills(k.skills, w.skills)) && (!k.if || decide(k.if, jumpEc))) ? [i] : []));
+  // The SP at the cast (the state may be at an earlier frame: a cast inside an advance), regenerated to it and capped.
+  const spAtCast = spAt(s, frame);
   const cast: TimelineState = {
     ...next,
-    sp: s.sp - costs.spCost,
+    sp: spAtCast - costs.spCost,
+    frame: Math.max(s.frame, frame),
     // A spend never shortens a pause running longer (one a slow-down lengthened).
     spPausedUntil: costs.spCost > 0 ? Math.max(s.spPausedUntil, frame + SP.pauseAfterSpendFrames) : s.spPausedUntil,
     acting: beside ? s.acting : { ...s.acting, [operator]: { skill: skillId, frame, cast: castIndex, ...(speed !== 1 ? { speed } : {}), ...(openWindows.length ? { windows: openWindows } : {}) } },
@@ -276,7 +279,7 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
     ...(skill.takesControl ? { controlled: operator } : {}),
     scheduled: [...next.scheduled, ...pending, ...(beside ? [] : planned)],
     stacks,
-    casts: [...s.casts, { frame, operator, skill: skillId, spAfter: s.sp - costs.spCost, energyAfter: next.energy[operator] ?? 0, ...(linkUsed > 0 ? { link: linkUsed } : {}) }],
+    casts: [...s.casts, { frame, operator, skill: skillId, spAfter: spAtCast - costs.spCost, energyAfter: next.energy[operator] ?? 0, ...(linkUsed > 0 ? { link: linkUsed } : {}) }],
   };
   const castEvent: BattleEvent = {
     type: "cast", frame, operator, skillId, kind: costs.kind, finisher: full.timing.specification === 8, controlled: s.controlled === operator, cast: castIndex,
