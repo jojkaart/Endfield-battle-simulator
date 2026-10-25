@@ -6,7 +6,7 @@
 // loader and the tests.
 
 import type { Effect, Element, KitHit, Predicate, SkillData } from "@efsim/engine";
-import { compileSkill, formatCompiledValue, prefixOf, type CompiledEffect, type CompiledLanding, type CompiledPoiseLanding, type CompiledSkill, type CompiledValue } from "./skillCompile.ts";
+import { compileSkill, formatCompiledValue, prefixOf, type CompiledCost, type CompiledEffect, type CompiledLanding, type CompiledPoiseLanding, type CompiledSkill, type CompiledValue } from "./skillCompile.ts";
 
 /** What compiling an operator's skill reads of the loaded data. */
 export interface CompileData {
@@ -62,6 +62,18 @@ export function valueGates(op: Operator | undefined, skill: SkillData | undefine
 }
 
 const compiledCache = new WeakMap<object, Map<string, CompiledSkill | null>>();
+
+/** A weapon's or gear set's skill compiled with its values at its highest level (cached per loaded data), or null without a SkillData file. */
+export function compileEquipmentSkill(data: Pick<CompileData, "skills">, skillId: string): CompiledSkill | null {
+  let cache = compiledCache.get(data.skills);
+  if (!cache) compiledCache.set(data.skills, (cache = new Map()));
+  const key = ` ${skillId}`;
+  if (cache.has(key)) return cache.get(key) ?? null;
+  const values = data.skills[skillId]?.levels.at(-1)?.blackboard;
+  const c = compileSkill(skillId, values ? { values } : {});
+  cache.set(key, c);
+  return c;
+}
 
 /**
  * An operator's skill compiled as kit-draft and the loader read it: its own
@@ -140,8 +152,19 @@ export interface MatchSkill {
  */
 export interface Disagreement {
   readonly hit?: string;
+  /** A cast trigger's action (CastAction): `field` is its kind. */
+  readonly trigger?: string;
   readonly field: string;
   readonly text: string;
+}
+
+/** A cast trigger's energy, SP or applications, at the frame of the skill they happen at (its delay). */
+export interface CastAction {
+  readonly trigger: string;
+  readonly frame: number;
+  readonly kind: "energy" | "sp" | "apply";
+  readonly value?: unknown;
+  readonly applies?: readonly KitApplication[];
 }
 
 /** The compiled landings a kit hit stands for. */
@@ -213,6 +236,12 @@ function spGrant(v: unknown): { value: unknown; controlled: boolean | null } {
   return { value: v, controlled: false };
 }
 
+/** Whether an SP grant is only while controlled: atbOnlyMainChar, or a CheckMainCharacter condition on the way. */
+const spControlled = (e: CompiledCost) => e.controlledOnly || e.steps.some((x) => JSON.stringify(x.pred) === JSON.stringify({ controlled: true }));
+
+/** A skill's SP grants, for a disagreement's line. */
+const spGrantsText = (c: CompiledSkill) => c.sp.map((e) => `${formatCompiledValue(e.value)}${e.coefficient !== 1 ? ` × ${round(e.coefficient)}` : ""}${e.controlledOnly ? " (controlled)" : ""}@${e.frame}${e.beforeDamage ? " before damage" : ""}${branchText(e.branch)}`).join(", ") || "none";
+
 /** The first two undecided conditions on the way, for a readable line. */
 const branchText = (b: readonly string[] | undefined) => (b?.length ? ` (${b.slice(0, 2).join(", ")}${b.length > 2 ? ", …" : ""})` : "");
 
@@ -242,9 +271,12 @@ export function dataEnergyBlockSeconds(c: CompiledSkill): number | null {
  * applications by frame across the skill's hits. `kitBlock`: the energy block
  * the kit gives the skill (its energyBlockSeconds, or an energy-blocking buff
  * its own cast trigger applies), in seconds.
+ * `extra`: a cast trigger's hits (their frames from the cast) and actions,
+ * matched as the skill's; `hitsOnly` compares hits alone (an equipment
+ * skill's triggered hits, not a timeline of its own).
  * Returns each disagreement as a line, and what each hit was matched to.
  */
-export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: number | null): { disagreements: Disagreement[]; hits: Map<string, HitMatch>; folded: CompiledSkill } {
+export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: number | null, extra: { readonly triggerHits?: readonly MatchHit[]; readonly actions?: readonly CastAction[]; readonly hitsOnly?: boolean } = {}): { disagreements: Disagreement[]; hits: Map<string, HitMatch>; folded: CompiledSkill } {
   const out: Disagreement[] = [];
   const skill = (field: string, text: string) => out.push({ field, text });
   const hit = (id: string, field: DataField, text: string) => out.push({ hit: id, field, text });
@@ -261,8 +293,9 @@ export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: num
   if (partsText(team) !== partsText(s.teamEnergy ?? [])) skill("teamEnergy", `${where} teamEnergy: kit ${partsText(s.teamEnergy ?? [])}, data ${partsText(team)}`);
   const claimed = new Set<CompiledLanding>();
   const kitApps = new Map<number, Set<string>>();
-  for (const h of s.hits) {
+  for (const h of [...s.hits, ...(extra.triggerHits ?? [])]) {
     const tag = `${where}/${h.id}`;
+    const triggerHit = !s.hits.includes(h);
     for (const f of h.frames ?? []) for (const a of h.applies ?? []) {
       const t = kitAppText(a);
       if (t) kitApps.set(f, new Set([...(kitApps.get(f) ?? []), t]));
@@ -344,8 +377,9 @@ export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: num
     if (!h.finalStrike && fs.includes(true)) hit(h.id, "finalStrike", `${tag} finalStrike: kit none, data at [${at.filter((l) => l.finalStrike).map((l) => l.frame).join(", ")}]`);
     if (h.frames && path) {
       // Dealt from another file (a projectile, entity, buff or helper skill), and when it left the skill's own timeline.
+      // (A trigger's hits: the trigger says whether its actions are the cast's.)
       const det = [...new Set(at.map((l) => l.detached))];
-      if (det.length === 1 && det[0] !== (h.detached ?? false)) hit(h.id, "detached", `${tag} detached: kit ${String(h.detached ?? false)}, data ${String(det[0])}`);
+      if (!triggerHit && det.length === 1 && det[0] !== (h.detached ?? false)) hit(h.id, "detached", `${tag} detached: kit ${String(h.detached ?? false)}, data ${String(det[0])}`);
       if (h.launch !== undefined) {
         const launches = [...new Set(at.map(launchFrame))];
         if (!launches.includes(h.launch)) hit(h.id, "launch", `${tag} launch: kit ${h.launch}, data ${launches.map((x) => x ?? "-").join(" | ")}`);
@@ -354,10 +388,8 @@ export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: num
       if (h.sp !== undefined) {
         const kit = spGrant(h.sp);
         const here = c.sp.filter((e) => (h.frames ?? []).includes(e.frame));
-        // Only while controlled: atbOnlyMainChar, or a CheckMainCharacter condition on the way.
-        const controlled = (e: (typeof here)[number]) => e.controlledOnly || e.steps.some((x) => JSON.stringify(x.pred) === JSON.stringify({ controlled: true }));
-        const matching = here.filter((e) => JSON.stringify(valueExpr(e.value, e.coefficient)) === JSON.stringify(roundedValue(kit.value)) && (kit.controlled === null || kit.controlled === controlled(e)));
-        const grantsText = c.sp.map((e) => `${formatCompiledValue(e.value)}${e.coefficient !== 1 ? ` × ${round(e.coefficient)}` : ""}${e.controlledOnly ? " (controlled)" : ""}@${e.frame}${e.beforeDamage ? " before damage" : ""}${branchText(e.branch)}`).join(", ") || "none";
+        const matching = here.filter((e) => JSON.stringify(valueExpr(e.value, e.coefficient)) === JSON.stringify(roundedValue(kit.value)) && (kit.controlled === null || kit.controlled === spControlled(e)));
+        const grantsText = spGrantsText(c);
         // A literal 0 says the hit gives none (and the skill's atb doesn't go to its first hit).
         const none = kit.value === 0;
         if (!(none && here.every((e) => valueExpr(e.value, e.coefficient) === 0)) && !matching.length) hit(h.id, "sp", `${tag} sp: kit ${valueText(h.sp)} at [${(h.frames ?? []).join(", ")}], data ${grantsText}`);
@@ -365,6 +397,23 @@ export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: num
         const timed = matching.length ? matching : here;
         if (!none && timed.length && !timed.some((e) => e.beforeDamage === (h.spBeforeDamage ?? false))) hit(h.id, "spBeforeDamage", `${tag} spBeforeDamage: kit ${String(h.spBeforeDamage ?? false)}, data ${String(timed[0]?.beforeDamage)}`);
       }
+    }
+  }
+  // A cast trigger's actions at its frame: energy and SP as a hit's, applications with the hits'.
+  for (const a of extra.actions ?? []) {
+    const tag = `${where} trigger ${a.trigger}`;
+    if (a.kind === "apply") {
+      for (const x of a.applies ?? []) {
+        const t = kitAppText(x);
+        if (t) kitApps.set(a.frame, new Set([...(kitApps.get(a.frame) ?? []), t]));
+      }
+    } else if (a.kind === "energy") {
+      const dataE = c.energy.filter((e) => e.frame === a.frame).map((e) => formatCompiledValue(e.value));
+      if (!dataE.includes(grantText(a.value))) out.push({ trigger: a.trigger, field: "energy", text: `${tag} energy: kit ${valueText(a.value)} at ${a.frame}, data ${c.energy.map((e) => `${formatCompiledValue(e.value)}@${e.frame}${branchText(e.branch)}`).join(", ") || "none"}` });
+    } else {
+      const kit = spGrant(a.value);
+      const here = c.sp.filter((e) => e.frame === a.frame);
+      if (!here.some((e) => JSON.stringify(valueExpr(e.value, e.coefficient)) === JSON.stringify(roundedValue(kit.value)) && (kit.controlled === null || kit.controlled === spControlled(e)))) out.push({ trigger: a.trigger, field: "sp", text: `${tag} sp: kit ${valueText(a.value)} at ${a.frame}, data ${spGrantsText(c)}` });
     }
   }
   // Applications by frame: what the kit applies must be in the data there; what the data applies unconditionally must be in the kit.
@@ -391,7 +440,8 @@ export function matchSkill(compiled: CompiledSkill, s: MatchSkill, kitBlock: num
     const mine = new Set(m.landings);
     if ([...matches].some(([other, x]) => other !== id && x.landings.some((l) => mine.has(l)))) matches.set(id, { ...m, whole: false });
   }
-  return { disagreements: out, hits: matches, folded: c };
+  // Hits only (an equipment skill's triggered hits): not the skill's own timeline facts.
+  return { disagreements: extra.hitsOnly ? out.filter((d) => d.hit !== undefined) : out, hits: matches, folded: c };
 }
 
 /** The value all items give, when they give one and the same (by its JSON); undefined when they differ or there are none. */

@@ -1108,6 +1108,12 @@
             "minimum": 0,
             "description": "Frames after the event when the actions run (the trigger's if is judged at the event, each action's own if when it runs)."
           },
+          "dataOverride": {
+            "type": "object",
+            "description": "A cast trigger's actions compared with its skill's compiled SkillData (energy, sp, apply at the delay's frame): the ones that differ on purpose, each with the reason (docs/design.md, \"Kits and the game data\").",
+            "propertyNames": { "enum": ["energy", "sp", "apply"] },
+            "additionalProperties": { "type": "string", "minLength": 10 }
+          },
           "afterHits": {
             "type": "boolean",
             "description": "With delay: at its frame the actions run after the hits landing then (default: before them). The game runs a skill's clips starting on one frame in file order: a clip listed after the damage clip it starts with takes this."

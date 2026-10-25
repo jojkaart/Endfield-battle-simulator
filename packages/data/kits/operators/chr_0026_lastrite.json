@@ -69,6 +69,7 @@
       "on": { "event": "cast", "skills": ["chr_0026_lastrite_normal_skill"], "beside": true },
       "by": "self",
       "skill": "chr_0026_lastrite_normal_skill",
+      "dataOverride": { "sp": "A beside cast plays no timeline: the game runs its switchToBuffConfig buff (normal_skill_inattack), whose start grants the SP; the data's 32 and 300 are the timeline's two paths (see the trigger's note).", "energy": "A beside cast plays no timeline: the game runs its switchToBuffConfig buff (normal_skill_inattack), whose start grants the energy; the data's 32 and 300 are the timeline's two paths (see the trigger's note)." },
       "do": [
         { "kind": "endBuff", "buff": "perfusion" },
         { "kind": "sp", "value": "atb" },
@@ -194,6 +195,7 @@
       "by": "self",
       "delay": 13,
       "skill": "chr_0026_lastrite_combo_skill",
+      "dataOverride": { "energy": "Kit form: the data's usp_base and (if CheckHp > 0) usp x the Cryo Infliction stacks saved at frame 13 as one value; the frame-63 fallback (the target died at 13) isn't written (see the trigger's note)." },
       "do": [
         { "kind": "energy", "value": { "sum": ["usp_base", { "product": ["usp", { "enemyInflictionStacks": "cryst" }] }] }, "ignoreBlock": true }
       ],

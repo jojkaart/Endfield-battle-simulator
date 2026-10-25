@@ -166,7 +166,6 @@
       "skillId": "chr_0018_dapan_ultimate_skill",
       "label": "Ultimate: Chop 'n Dunk!",
       "damageType": "ultimate",
-      "dataOverride": { "applies@0": "Batch 3, Da Pan. Kit right, a limit of this test: the frame-0 forced Lift (AirborneAction forceAirborne, no damage landing there) is the kit's cast trigger ultimate_skill_f0, as kit-draft compiles it; this test only reads applications on a skill's hits." },
       "hits": [
         {
           "id": "flurry",

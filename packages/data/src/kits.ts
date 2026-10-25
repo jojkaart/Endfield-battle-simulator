@@ -9,7 +9,8 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
-import { compileOperatorSkill, dataEnergyBlockSeconds, dataTeamEnergy, hitFacts, kitEnergyBlock, matchSkill, type CompileData, type DataField, type Disagreement, type HitFacts } from "./kitMatch.ts";
+import { compileEquipmentSkill, compileOperatorSkill, dataEnergyBlockSeconds, dataTeamEnergy, hitFacts, kitEnergyBlock, matchSkill, type CompileData, type CastAction, type DataField, type Disagreement, type HitFacts } from "./kitMatch.ts";
+import type { CompiledSkill } from "./skillCompile.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
 import { buffTagFilter, SHIELD_TAG } from "./buffTags.ts";
@@ -72,7 +73,7 @@ type RawAction =
  */
 export type RawOn = TriggerOn | { event: "buffApplied"; tags: number[]; fromKinds?: (SkillType | "none")[]; toOthers?: boolean; received?: boolean };
 
-type RawTrigger = Omit<KitTrigger, "do" | "on"> & { note?: string; on: RawOn; do: RawAction[] };
+type RawTrigger = Omit<KitTrigger, "do" | "on"> & { note?: string; on: RawOn; do: RawAction[]; dataOverride?: Partial<Record<"energy" | "sp" | "apply", string>> };
 
 /** A trigger's event with buff tags turned into their category filter. */
 export function triggerOn(on: RawOn, where: string): TriggerOn {
@@ -688,6 +689,79 @@ function isChainStep(data: KitData, kit: RawKit, skillId: string): boolean {
   });
 }
 
+type RawSkill = RawKit["skills"][number];
+
+/**
+ * The cast triggers that belong to a skill's timeline: on its cast alone,
+ * with its values (`skill`), without a random choice. Their hits land at the
+ * delay plus their frames; their energy, SP and applications happen at the
+ * delay. Only top-level actions count (not an action's alternatives).
+ */
+function castTriggers(skillId: string, triggers: readonly KitTrigger[]): KitTrigger[] {
+  // One with a random choice (Purrchena's prezzies) has alternatives the data has as branches of one landing: left out.
+  return triggers.filter((t) => t.on.event === "cast" && t.on.skills?.length === 1 && t.on.skills[0] === skillId && t.skill === skillId && !t.do.some((a) => a.kind === "choose"));
+}
+
+/**
+ * A skill's (and its cast triggers') differences from the compiled data:
+ * each must be marked in the kit (dataOverride, with the reason), and each
+ * mark must be of a difference. Errors, or `options.disagreements`.
+ */
+function checkSkillData(compiled: CompiledSkill, s: RawSkill, hits: readonly KitHit[], teamEnergy: RawSkill["teamEnergy"], energyBlockSeconds: number | undefined, triggers: readonly KitTrigger[], kit: RawKit, where: string, options: KitLoadOptions): void {
+  const own = castTriggers(s.skillId, triggers);
+  const rawTriggers = new Map((kit.triggers ?? []).map((t) => [t.id, t]));
+  const rawTriggerHit = (tid: string, hid: string): RawHit | undefined => {
+    const list = (acts: readonly RawAction[]): RawHit[] => acts.flatMap((a) => (a.kind === "hits" ? a.hits : a.kind === "choose" ? a.options.flatMap((o) => list(o.do)) : []));
+    return list(rawTriggers.get(tid)?.do ?? []).find((h) => h.id === hid);
+  };
+  // Top-level actions only: a choose action's options are alternatives the data has as branches.
+  const triggerHits = own.flatMap((t) => t.do.flatMap((a) => (a.kind === "hits" ? a.hits.map((h) => ({ ...h, id: `${t.id}/${h.id}`, ...(h.frames ? { frames: h.frames.map((f) => f + (t.delay ?? 0)) } : {}) })) : [])));
+  const actions: CastAction[] = own.flatMap((t) =>
+    t.do.flatMap((a): CastAction[] =>
+      a.kind === "energy" || a.kind === "sp" ? [{ trigger: t.id, frame: t.delay ?? 0, kind: a.kind, value: a.value }] : a.kind === "apply" ? [{ trigger: t.id, frame: t.delay ?? 0, kind: "apply", applies: a.applies }] : [],
+    ),
+  );
+  const m = matchSkill(compiled, { skillId: s.skillId, hits, ...(teamEnergy ? { teamEnergy } : {}), ...(energyBlockSeconds !== undefined ? { energyBlockSeconds } : {}) }, kitEnergyBlock({ skillId: s.skillId, ...(energyBlockSeconds !== undefined ? { energyBlockSeconds } : {}) }, kit.triggers ?? [], kit.buffs ?? []), { triggerHits, actions });
+  const byId = new Map(s.hits.map((h) => [h.id, h]));
+  const hitOf = (id: string) => (id.includes("/") ? rawTriggerHit(id.slice(0, id.indexOf("/")), id.slice(id.indexOf("/") + 1)) : byId.get(id));
+  const reason = (d: Disagreement) => (d.trigger !== undefined ? rawTriggers.get(d.trigger)?.dataOverride?.[d.field as "energy" | "sp" | "apply"] : d.hit !== undefined ? hitOf(d.hit)?.dataOverride?.[d.field as DataField] : s.dataOverride?.[d.field]);
+  const found = new Set(m.disagreements.map((d) => `${d.trigger ?? ""}|${d.hit ?? ""}|${d.field}`));
+  const stale = (text: string) => `${text}: marked as differing from the data (dataOverride), but it agrees`;
+  const problems = [
+    ...m.disagreements.filter((d) => reason(d) === undefined).map((d) => ({ ...d, stale: false })),
+    ...Object.keys(s.dataOverride ?? {}).filter((f) => !found.has(`||${f}`)).map((field) => ({ field, text: stale(`${s.skillId} ${field}`), stale: true })),
+    ...[...s.hits.map((h) => ({ id: h.id, h })), ...triggerHits.map((x) => ({ id: x.id, h: hitOf(x.id) }))].flatMap(({ id, h }) => Object.keys(h?.dataOverride ?? {}).filter((f) => !found.has(`|${id}|${f}`)).map((field) => ({ hit: id, field, text: stale(`${s.skillId}/${id} ${field}`), stale: true }))),
+    ...own.flatMap((t) => Object.keys(rawTriggers.get(t.id)?.dataOverride ?? {}).filter((f) => !found.has(`${t.id}||${f}`)).map((field) => ({ trigger: t.id, field, text: stale(`${s.skillId} trigger ${t.id} ${field}`), stale: true }))),
+  ];
+  if (options.disagreements) for (const d of problems) options.disagreements({ ...d, skillId: s.skillId });
+  else if (problems.length) throw new Error(`${where}: differs from the compiled SkillData (fix the kit, or mark the field in dataOverride with the reason):\n  ${problems.map((d) => d.text).join("\n  ")}`);
+}
+
+/**
+ * An equipment kit's triggered hits against the compiled skill they take
+ * their values from (`skill`), where it has landings in the files they're
+ * logged under (a weapon skill's ability-event handler); each difference
+ * marked in the hit's dataOverride, each mark a difference.
+ */
+function checkEquipmentData(data: KitData, kit: RawEquipmentKit, triggers: readonly KitTrigger[], where: string): void {
+  const raws = new Map((kit.triggers ?? []).map((t) => [t.id, t]));
+  for (const t of triggers) {
+    const hits = t.do.flatMap((a) => (a.kind === "hits" ? a.hits : []));
+    const c = t.skill && hits.length ? compileEquipmentSkill(data, t.skill) : null;
+    if (!c) continue;
+    const files = new Set(c.landings.map((l) => l.file));
+    const compared = hits.filter((h) => h.events.some((e) => files.has(e)));
+    const rawHits = (raws.get(t.id)?.do ?? []).flatMap((a) => (a.kind === "hits" ? a.hits : []));
+    const m = matchSkill(c, { skillId: t.skill as string, hits: compared }, null, { hitsOnly: true });
+    const found = new Set(m.disagreements.map((d) => `${d.hit ?? ""} ${d.field}`));
+    const problems = [
+      ...m.disagreements.filter((d) => rawHits.find((h) => h.id === d.hit)?.dataOverride?.[d.field as DataField] === undefined).map((d) => d.text),
+      ...rawHits.flatMap((h) => Object.keys(h.dataOverride ?? {}).filter((f) => !found.has(`${h.id} ${f}`)).map((f) => `${t.id}/${h.id} ${f}: marked as differing from the data (dataOverride), but it agrees`)),
+    ];
+    if (problems.length) throw new Error(`${where}: trigger ${t.id} differs from the compiled SkillData of ${t.skill} (fix the kit, or mark the field in dataOverride with the reason):\n  ${problems.join("\n  ")}`);
+  }
+}
+
 /**
  * A skill hit with the fields it leaves out taken from what the data says of
  * its landings (hitFacts): frames, events, factor, element (when it isn't the
@@ -759,6 +833,7 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit, options: KitL
     },
   });
   idsOf(where0, "buff", kit.buffs ?? []);
+  const dataChecks: ((triggers: readonly KitTrigger[]) => void)[] = [];
   const skills = kit.skills.map((s) => {
     const where = `${where0}: ${s.skillId}`;
     const skill = data.skills[s.skillId];
@@ -806,20 +881,8 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit, options: KitL
     // A skill hit lands at frames: its own, or the data's when its landings are one branch path no other hit takes landings of.
     for (const h of rawHits) if (!h.frames) throw new Error(`${where} hit ${h.id}: no frames, and the data's landings for it ${compiled ? "aren't one branch path of its own (write its frames)" : "aren't known (no SkillData file)"}`);
     const hits = c.normalizeHits(rawHits, hitSource, where);
-    // What still differs from the data must be marked, with the reason (dataOverride); a mark where nothing differs is stale.
-    if (compiled) {
-      const m = matchSkill(compiled, { skillId: s.skillId, hits, ...(teamEnergy ? { teamEnergy } : {}), ...(energyBlockSeconds !== undefined ? { energyBlockSeconds } : {}) }, kitEnergyBlock({ skillId: s.skillId, ...(energyBlockSeconds !== undefined ? { energyBlockSeconds } : {}) }, kit.triggers ?? [], kit.buffs ?? []));
-      const byId = new Map(s.hits.map((h) => [h.id, h]));
-      const reason = (d: Disagreement) => (d.hit !== undefined ? byId.get(d.hit)?.dataOverride?.[d.field as DataField] : s.dataOverride?.[d.field]);
-      const found = new Set(m.disagreements.map((d) => `${d.hit ?? ""} ${d.field}`));
-      const problems = [
-        ...m.disagreements.filter((d) => reason(d) === undefined).map((d) => ({ ...d, stale: false })),
-        ...Object.keys(s.dataOverride ?? {}).filter((f) => !found.has(` ${f}`)).map((field) => ({ field, text: `${s.skillId} ${field}: marked as differing from the data (dataOverride), but it agrees`, stale: true })),
-        ...s.hits.flatMap((h) => Object.keys(h.dataOverride ?? {}).filter((f) => !found.has(`${h.id} ${f}`)).map((field) => ({ hit: h.id, field, text: `${s.skillId}/${h.id} ${field}: marked as differing from the data (dataOverride), but it agrees`, stale: true }))),
-      ];
-      if (options.disagreements) for (const d of problems) options.disagreements({ ...d, skillId: s.skillId });
-      else if (problems.length) throw new Error(`${where}: differs from the compiled SkillData (fix the kit, or mark the field in dataOverride with the reason):\n  ${problems.map((d) => d.text).join("\n  ")}`);
-    }
+    // What still differs from the data must be marked, with the reason (dataOverride): checked once the triggers are (a cast trigger's hits and actions are the skill's).
+    if (compiled) dataChecks.push((triggers) => checkSkillData(compiled, s, hits, teamEnergy, energyBlockSeconds, triggers, kit, where, options));
     return {
       skillId: s.skillId,
       label: s.label,
@@ -840,7 +903,8 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit, options: KitL
     };
   });
   // Triggers first: normalizeBuffs reads which skills apply each buff.
-  const triggers = c.checkTriggers((kit.triggers ?? []).map(({ note: _note, ...t }) => t));
+  const triggers = c.checkTriggers((kit.triggers ?? []).map(({ note: _note, dataOverride: _d, ...t }) => t));
+  for (const check of dataChecks) check(triggers);
   const buffs = c.normalizeBuffs(kit.buffs ?? []);
   // A buff that maps the basic-attack input maps it to one of the kit's basic attacks.
   for (const b of buffs) {
@@ -911,6 +975,7 @@ function loadEquipmentKit(data: KitData, file: string, kit: RawEquipmentKit): Eq
   const triggers = c.checkTriggers((kit.triggers ?? []).map(({ note: _note, ...t }) => t));
   const buffs = c.normalizeBuffs(kit.buffs ?? []);
   for (const b of buffs) if (b.basicAttack !== undefined) throw new Error(`${where0}: buff ${b.id}: equipment can't map its wearer's basic-attack input (${b.basicAttack})`);
+  checkEquipmentData(data, kit, triggers, where0);
   return {
     id,
     stacks: (kit.stacks ?? []).map((x) => {

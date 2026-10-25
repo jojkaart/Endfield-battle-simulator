@@ -229,6 +229,7 @@
       "skill": "chr_0027_tangtang_normal_skill",
       "delay": 11,
       "awaited": true,
+      "dataOverride": { "sp": "Kit form: the data's IfElse on the consumed whirlpool count (water_cnt 1: atb_return, 2: atb_return x 2) as atb_return x the whirlpool layers." },
       "do": [
         {
           "kind": "sp",

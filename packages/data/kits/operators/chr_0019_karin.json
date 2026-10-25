@@ -78,6 +78,7 @@
       "delay": 22,
       "awaited": true,
       "skill": "chr_0019_karin_combo_skill",
+      "dataOverride": { "sp": "Kit form: the combo's SP is dynamic (atb, isDynamic, set by ModifyDynamicBlackboard from talent 1's sub_ratio, max_ratio and rate before each ObtainCostAction), which the compiler can't value; the kit writes the calculation." },
       "do": [
         { "kind": "sp", "value": { "product": ["atb", { "min": [{ "sum": [1, { "product": [{ "attr": 41 }, { "div": ["sub_ratio", "rate"] }] }] }, { "sum": [1, "max_ratio"] }] }] } }
       ],
@@ -90,6 +91,7 @@
       "delay": 31,
       "awaited": true,
       "skill": "chr_0019_karin_combo_skill",
+      "dataOverride": { "sp": "Kit form: the combo's SP is dynamic (atb, isDynamic, set by ModifyDynamicBlackboard from talent 1's sub_ratio, max_ratio and rate before each ObtainCostAction), which the compiler can't value; the kit writes the calculation." },
       "do": [
         { "kind": "sp", "value": { "product": ["atb", { "min": [{ "sum": [1, { "product": [{ "attr": 41 }, { "div": ["sub_ratio", "rate"] }] }] }, { "sum": [1, "max_ratio"] }] }] } }
       ],
@@ -102,6 +104,7 @@
       "delay": 59,
       "awaited": true,
       "skill": "chr_0019_karin_ultimate_skill",
+      "dataOverride": { "sp": "atb_1 ... atb_3 are dynamic keys in the ultimate's file (isDynamic, 0 there), set by ModifyDynamicBlackboard before each ObtainCostAction, so the compiler can't value them; the kit names the level table's values." },
       "do": [{ "kind": "sp", "value": "atb_1" }],
       "note": "First Rallying Flare: ObtainCostAction atb_1 (26 at L12) at frame 59 (atbGainMethod 0, atbSourceType 3). The ultimate scales atb_n by its own atb_up, which is 1 (its sub_ratio is never set)."
     },
@@ -112,6 +115,7 @@
       "delay": 86,
       "awaited": true,
       "skill": "chr_0019_karin_ultimate_skill",
+      "dataOverride": { "sp": "atb_1 ... atb_3 are dynamic keys in the ultimate's file (isDynamic, 0 there), set by ModifyDynamicBlackboard before each ObtainCostAction, so the compiler can't value them; the kit names the level table's values." },
       "do": [{ "kind": "sp", "value": "atb_2" }],
       "note": "Second flare: atb_2 (27) at frame 86."
     },
@@ -122,6 +126,7 @@
       "delay": 119,
       "awaited": true,
       "skill": "chr_0019_karin_ultimate_skill",
+      "dataOverride": { "sp": "atb_1 ... atb_3 are dynamic keys in the ultimate's file (isDynamic, 0 there), set by ModifyDynamicBlackboard before each ObtainCostAction, so the compiler can't value them; the kit names the level table's values." },
       "do": [{ "kind": "sp", "value": "atb_3" }],
       "note": "Third flare: atb_3 (27) at frame 119."
     },

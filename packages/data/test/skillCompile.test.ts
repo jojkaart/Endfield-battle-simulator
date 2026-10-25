@@ -6,10 +6,11 @@
 // or a mark where nothing differs, fails the load so it gets looked at.
 
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { compileOperatorSkill, compileSkill, formatCompiledValue, loadGameData, loadOperatorKitFile, type CompiledLanding, type CompiledSkill } from "../src/index.ts";
+import { compileOperatorSkill, compileSkill, formatCompiledValue, loadGameData, loadKits, loadOperatorKitFile, type CompiledLanding, type CompiledSkill } from "../src/index.ts";
 
 const data = loadGameData();
 const KITS = join(resolve(dirname(fileURLToPath(import.meta.url)), "../kits/operators"));
@@ -237,6 +238,23 @@ describe("kits against the compiled SkillData", () => {
     const k = raw();
     hitOf(k, "chr_0016_laevat_attack1", "hit")["dataOverride"] = { poise: "A test of a stale mark: nothing differs." };
     expect(() => loadOperatorKitFile(data, file, k)).toThrow(/attack1\/hit poise: marked as differing from the data \(dataOverride\), but it agrees/);
+  });
+
+  it("matches a cast trigger's hits and actions as its skill's", () => {
+    const liino = JSON.parse(readFileSync(join(KITS, "chr_0035_liino.json"), "utf8")) as { triggers: { id: string; do: { kind: string; hits?: Record<string, unknown>[] }[] }[] };
+    const finale = liino.triggers.find((t) => t.id === "ult_song")?.do[0]?.hits?.find((h) => h["id"] === "finale") as Record<string, unknown>;
+    finale["frames"] = [509];
+    expect(() => loadOperatorKitFile(data, "chr_0035_liino.json", liino)).toThrow(/ult_song\/finale frames: kit \[509\], data \[508\]/);
+  });
+
+  it("checks an equipment kit's triggered hits against its skill's landings", () => {
+    const dir = mkdtempSync(join(tmpdir(), "efsim-kits-"));
+    mkdirSync(join(dir, "equipment"));
+    const raw = JSON.parse(readFileSync(join(KITS, "../equipment/wpn_lance_0010.json"), "utf8")) as { triggers: { id: string; do: { kind: string; hits?: Record<string, unknown>[] }[] }[] };
+    const hit = raw.triggers.find((t) => t.id === "wpn_lance_0010.physical_status_hit")?.do[0]?.hits?.[0] as Record<string, unknown>;
+    hit["element"] = "fire";
+    writeFileSync(join(dir, "equipment", "wpn_lance_0010.json"), JSON.stringify(raw));
+    expect(() => loadKits(data, dir)).toThrow(/trigger wpn_lance_0010.physical_status_hit differs[\s\S]*sk_wpn_lance_0010\/hit element: kit fire, data physical/);
   });
 
   it("fills in what a kit leaves out where its landings agree", () => {
