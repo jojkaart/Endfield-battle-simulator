@@ -228,9 +228,10 @@ key at once, holding it: note roughly when the swap happens (about 3.7 s
 expected). Then try swapping during one of her basic attacks: it should
 swap at once, and the attack's hit should still land.
 *Higher priority since 2026-10-25 for swapping rotations only:* the default search doesn't swap since the owner's call that day (`efsim search --swaps` does); swapping searches lean on that last part.
-The 4-operator example's found rotation swaps between two operators'
+The 4-operator team's search with `--swaps` swaps between two operators'
 basic-attack steps, so both chains run at once (Laevatain's enhanced
-attacks and Si's chain, 7.4 s into examples/si-laevatain-liino-gilberta).
+attacks and Si's chain; the example itself has the no-swap rotation since
+2026-10-25).
 Also check, with any two operators: start a basic attack, swap at once,
 and attack with the other: do both attacks' hits land, and does the
 swapped-out one's chain go on if you swap back within its window?

@@ -665,6 +665,7 @@ and a warning). Beam widths 12 / 24 / 48 (single widths; 2026-10-25):
 | laevatain-solo (30 s) | 1,165,844 / 1,194,306 / 1,196,307 (2.5%) | 1,165,844 / 1,165,844 / 1,196,307 (2.5%) |
 | liino-laevatain (30 s) | 1,510,467 / 1,514,664 / 1,526,692 (1.1%, swap fix only) | 1,510,467 / 1,402,446 / 1,511,305 (7.2%) |
 | si-laevatain-liino-gilberta (20 s, beams 6 / 12 / 24) | 3,016,009 / 1,557,958 (swap fix and key) | 3,554,349 / 3,701,403 / 3,173,136 (14.3%) |
+| the same without swaps (the default since 2026-10-25) | | 2,434,451 / 2,650,070 / 2,691,389 (9.5%; 9 / 23 / 45 s) |
 
 So the gap left is the ranking, not the key or the choices: what the
 beam needs is a score closer to the final damage (a rollout, or a value
@@ -684,7 +685,9 @@ their gear) inside advance (56%), for judging the choices (`earliestStart`
 the search's side. With `--swaps`, its rotations lean on two assumptions: an operator's
 basic attack goes on after a swap (two chains run at once, swapping
 between their steps: in-game test 15) and a swap mid-fall keeps the
-landing (test 97); the default search makes neither.
+landing (test 97); the default search makes neither. The example's
+rotation is the no-swap search's since 2026-10-25 (2,691,389; with swaps
+3,464,381).
 
 **Random outcomes** (owner, 2026-10-20: "the result becomes not a number,
 but rather a random distribution and needs to be interpreted and tracked as
