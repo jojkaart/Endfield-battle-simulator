@@ -158,3 +158,30 @@ the logged sources' count), 458b Laevatain 1 → 7 and c6d8 Zhuang Fangyi
 154 → 156, d9e5 Arcane 13 → 15 (no Link: her two battle skills leave the
 Corrosion bracket).
 
+
+## The owner's team, 2026-10-25 (not investigated yet)
+
+Si, Last Rite, Arcane and Xaihi, the owner's team, found by intersecting
+the four operators' ZMDLogs character profiles (docs/data-sources.md#zmdlogs),
+and one more with Ardelia instead of Arcane. All parser v59, single
+target; enemy levels from the stages' DungeonTable entries. First
+`zmdlogs check` (match / hits):
+
+| Fixture | Enemy | Date, length | First check |
+|---|---|---|---|
+| `zmdlogs-b6aa15281db4` | eny_0120_klbear_tower015 (Lv90) | 2026-10-19, 48 s | Si 20/104 (84 unmodelled), Last Rite 14/35, Arcane 0/121 (102 mismatch, ×0.71–0.86), Xaihi 2/29 (27 unmodelled) |
+| `zmdlogs-9555de54bb3d` | eny_0127_bigents_hdg032 (Lv90) | 2026-10-22, 97 s | Si 0/85 (82 mismatch), Last Rite 68/68, Arcane 168/168, Xaihi 58/58 |
+| `zmdlogs-c3c735dbb022` | eny_0125_fdcentur (Lv80) | 2026-10-25, 115 s | Si 174/185, Last Rite 48/48, Xaihi 0/57, Ardelia 0/184 |
+
+**Last Rite's Mirages (batch 4 G4, in-game test 83).** In b6aa the player
+swaps (Xaihi's crystal Amp, which only the controlled operator's Final
+Strike gets, goes to Si at 23.15 s and to Last Rite at 27.07 s). After
+Last Rite's battle skill at 15.40 s, Arcane's Final Strike at 18.36 s
+brings one Mirage pair (`buff_chr_0026_lastrite_normal_skill_phantom` at
+18.66 s, the kit's +9 frames); Si's (22.92 s) and Last Rite's own
+(26.82 s) controlled Final Strikes within the perfusion's 15 s bring
+none. The kit's `mirage` gives each member's perfusion one use, so it
+predicts Mirages on both: the log points to one use per cast for the
+team. 9555 (Last Rite controlled throughout) and c3c7 (Si controlled
+throughout; 6 casts, 6 pairs) don't test a swap but agree. Read from the
+site's detail, not yet confirmed by the check; the kit is unchanged.
