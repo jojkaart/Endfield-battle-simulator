@@ -39,6 +39,12 @@ entry first. Keep entries short; details belong in the docs they produced.
 - **Arts Intensity for status strength** is read for no element or kind;
   the loader now refuses a filtered Arts Intensity modifier (none exists)
   instead of the context losing it.
+- **One damage path each:** a status event's scale (a Combustion tick's
+  damageScale, a Crush multiplier) is a scale part inside
+  `computeReaction`, not a multiply and re-round after it; the finisher
+  multiplier is one `finisherModifier` for the timeline and the log check
+  (the check's copy fell back to ×1 silently). Left from 6's formulas:
+  `Modifier` sides (today `SNAPSHOT_ZONES` stands for the attacker side).
 
 ## 2026-10-25: Last Rite's battle skill acts once per cast
 

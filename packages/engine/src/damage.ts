@@ -405,6 +405,8 @@ export function computeReaction(
   target: DamageTarget,
   reaction: { readonly kind: ReactionKind; readonly element: Element; readonly stacks: number },
   options: DamageOptions = DEFAULT_DAMAGE_OPTIONS,
+  /** A status event's own multiplier part (a Combustion tick's damageScale, a Crush's multiplier): one more scale part. */
+  scale?: { readonly key: string; readonly value: number },
 ): HitDamage {
   return computeDamage(data, build, panel, target, {
     skillId: `reaction:${reaction.kind}`,
@@ -413,10 +415,18 @@ export function computeReaction(
     count: 1,
     element: reaction.element,
     skillType: null,
-    scaleParts: reactionScaleParts(data, build, panel, reaction, options),
+    scaleParts: [...reactionScaleParts(data, build, panel, reaction, options), ...(scale ? [scale] : [])],
     canCrit: reaction.kind !== "combustionTick",
     kind: reaction.kind,
   }, options);
+}
+
+/** A finisher's multiplier (skillSpecification 8): the enemy's attribute 27, else its default, as a multiplicative modifier. */
+export function finisherModifier(data: GameData, enemy: string): Modifier {
+  const attr = Attr.BreakingAttackDamageTakenScalar;
+  const v = data.enemies[enemy]?.staticAttrs[attr] ?? data.attributeDefaults[attr];
+  if (v === undefined) throw new EngineError(`${enemy} has no ${attrName(attr)}, nor has the data a default for it`);
+  return { zone: "multiplicative", value: v - 1, source: "Finisher" };
 }
 
 /** Every hit of the operator's kit. */

@@ -1,8 +1,8 @@
 // Hits and bursts landing: their applications, damage, SP, stagger and the events they start; the random streams.
 
-import { Attr, type SkillType } from "../attributes.ts";
+import type { SkillType } from "../attributes.ts";
 import type { Build } from "../build.ts";
-import { computeHit, computeReaction, decide, type DamageOptions, type DamageTarget, evalContext, fixedHit, type HitDamage, hitDecorations, roundDamage, type Situation, skillValue } from "../damage.ts";
+import { computeHit, computeReaction, decide, finisherModifier, type DamageOptions, type DamageTarget, evalContext, fixedHit, type HitDamage, hitDecorations, type Situation, skillValue } from "../damage.ts";
 import type { Modifier } from "../effects.ts";
 import { EngineError } from "../errors.ts";
 import { type GameData, type KitHit, type KitSkill, resolveApplication } from "../model.ts";
@@ -11,7 +11,7 @@ import { evaluate } from "../expr.ts";
 import { activeAt, resolveValue } from "../buffs.ts";
 import { applyToEnemy, type EnemyStatus, expireStatus, NO_STATUS, type StatusEvent } from "../status.ts";
 import type { LandedHit, LandingFacts, LandingInputs, PendingBurst, PendingHit, ReactionRecord, TimelineContext, TimelineState } from "./state.ts";
-import { enemyAttr, kitSkill, panelAt } from "./context.ts";
+import { kitSkill, panelAt } from "./context.ts";
 import { dealPoise, gainEnergy, gainSp, isStaggered, spGrantOf } from "./resources.ts";
 import { artsIntensity, attackerSide, buffSituation, damageOptions, healEvents, situationAt, statusTweaks } from "./situation.ts";
 import { addBuff, buffAppliedEvent, changedStacks, gainStacks, runTriggers } from "./actions.ts";
@@ -80,11 +80,7 @@ const dealsDamage = (e: StatusEvent): boolean => eventReaction(e) !== null;
  */
 export function landingDamage(data: GameData, target: DamageTarget, inputs: LandingInputs, options: DamageOptions = inputs.options, other?: { readonly skill: Pick<KitSkill, "skillId">; readonly hit: KitHit }): HitDamage {
   if (inputs.kind === "hit") return computeHit(data, inputs.build, inputs.panel, target, other?.skill ?? inputs.skill, other?.hit ?? inputs.hit, options);
-  const result = computeReaction(data, inputs.build, inputs.panel, target, inputs.reaction, options);
-  const scale = inputs.scale;
-  if (!scale) return result;
-  const exact = result.exact * scale.value;
-  return { ...result, scaleParts: [...result.scaleParts, scale], zones: { ...result.zones, scale: result.zones.scale * scale.value }, exact, damage: roundDamage(exact) };
+  return computeReaction(data, inputs.build, inputs.panel, target, inputs.reaction, options, inputs.scale);
 }
 
 function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, st: TimelineState, critRoll?: number): LandedHit | null {
@@ -315,7 +311,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     ...(typeof loggedCrit === "boolean" ? { crit: loggedCrit ? ("always" as const) : ("never" as const) } : {}),
     modifiers: [
       ...options.modifiers,
-      ...(finisher ? [{ zone: "multiplicative" as const, value: enemyAttr(ctx, Attr.BreakingAttackDamageTakenScalar) - 1, source: "Finisher" }] : []),
+      ...(finisher ? [finisherModifier(ctx.data, ctx.enemy.id)] : []),
       ...loggedModifiersAt(ctx, hit.operator, kitHit.events, hit.frame),
     ],
     situation: { ...before, consumed },

@@ -5,7 +5,6 @@
 
 import {
   applyBuff,
-  Attr,
   computeHit,
   computeReaction,
   effectiveKit,
@@ -36,6 +35,7 @@ import {
   type Situation,
   type SkillType,
   type StatPanel,
+  finisherModifier,
 } from "@efsim/engine";
 import type { LogEffect, LogFixture, LogHit } from "@efsim/data";
 import { assumeValues, valueAssumptions, valueReads } from "./hitvalues.ts";
@@ -333,12 +333,6 @@ function isFinisher(data: GameData, build: Build, skillId: string, hit: KitHit):
 }
 
 /** The finisher multiplier (the enemy's BreakingAttackDamageTakenScalar, attribute 27) as the timeline applies it; ZMDLogs doesn't list it. */
-function finisherModifier(data: GameData, enemy: string): Modifier {
-  const attr = Attr.BreakingAttackDamageTakenScalar;
-  const v = data.enemies[enemy]?.staticAttrs[attr] ?? data.attributeDefaults[attr] ?? 1;
-  return { zone: "multiplicative", value: v - 1, source: "Finisher" };
-}
-
 /** An assumption about a whole hit the log leaves open: what it adds and how the report names it. */
 export interface Variant {
   /** Its assumptions' labels, joined (null: none). */
