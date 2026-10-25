@@ -95,8 +95,8 @@
       "label": "Basic attack 3",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
-        { "id": "hit_2", "scale": ["atk_scale_2"], "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } }
+        { "id": "hit", "scale": ["atk_scale"] },
+        { "id": "hit_2", "scale": ["atk_scale_2"] }
       ],
       "note": "The first hit is a ChannelingAction of one tick (10–13). atb is 0 for attacks 1–3 (as compiled)."
     },
@@ -118,8 +118,8 @@
       "label": "Finisher",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [16], "note": "BreakingAttackCalculation atk_scale × multiplier 0.4.", "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [35], "note": "BreakingAttackCalculation atk_scale × multiplier 0.6.", "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } }
+        { "id": "hit", "scale": ["atk_scale"], "frames": [16], "note": "BreakingAttackCalculation atk_scale × multiplier 0.4." },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [35], "note": "BreakingAttackCalculation atk_scale × multiplier 0.6." }
       ]
     },
     {
@@ -134,7 +134,7 @@
       "label": "Battle skill: Flip Da Wok!",
       "damageType": "battle",
       "hits": [
-        { "id": "charge", "scale": ["atk_scale_pre"], "note": "After InterruptAction 1 s (no effect: enemy actions come from the scenario).", "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
+        { "id": "charge", "scale": ["atk_scale_pre"], "note": "After InterruptAction 1 s (no effect: enemy actions come from the scenario)." },
         {
           "id": "flip",
           "scale": ["atk_scale"],
@@ -143,8 +143,7 @@
             { "kind": "vulnerable", "if": { "all": [{ "potentialAtLeast": 5 }, { "not": { "buffActive": "p5_interval" } }] } }
           ],
           "buffs": [{ "buff": "p5_interval", "if": { "all": [{ "potentialAtLeast": 5 }, { "not": { "buffActive": "p5_interval" } }] } }],
-          "note": "Frame 43, in this order: AirborneAction (forceAirborne false: \"deals Physical DMG and Lift\"), then IfElse [CompareFloat potential_5_interval ≥ 1, CheckTimedMarker potential_5_interval, CheckEntityNum (one target)] → CreateBuff buff_physical_no_guard (P5: \"apply 1 more stack of Vulnerability … once every {potential_5_interval}s\") and the timed marker, then the DamageAction with poise, then buff_common_obtain_ultimate_sp (team energy). The Lift is judged before the extra stack: on an enemy without Vulnerable, 2 stacks and no Lift (in-game test 74).",
-          "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." }
+          "note": "Frame 43, in this order: AirborneAction (forceAirborne false: \"deals Physical DMG and Lift\"), then IfElse [CompareFloat potential_5_interval ≥ 1, CheckTimedMarker potential_5_interval, CheckEntityNum (one target)] → CreateBuff buff_physical_no_guard (P5: \"apply 1 more stack of Vulnerability … once every {potential_5_interval}s\") and the timed marker, then the DamageAction with poise, then buff_common_obtain_ultimate_sp (team energy). The Lift is judged before the extra stack: on an enemy without Vulnerable, 2 stacks and no Lift (in-game test 74)."
         }
       ]
     },
@@ -169,16 +168,14 @@
         {
           "id": "flurry",
           "scale": ["atk_scale_loop"],
-          "note": "ChannelingAction 42–64, targetTriggerInterval 0.13 s, maxCountPerTarget 8: the compiler's six landings (\"6-sequence flurry\").",
-          "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." }
+          "note": "ChannelingAction 42–64, targetTriggerInterval 0.13 s, maxCountPerTarget 8: the compiler's six landings (\"6-sequence flurry\")."
         },
         {
           "id": "dunk",
           "scale": ["atk_scale_end"],
           "applies": [{ "kind": "physicalStatus", "status": "knockdown", "forced": true }],
           "buffs": [{ "buff": "prep_ingredients", "if": { "talentAtLeast": [1, 1] } }],
-          "note": "Frame 80: IfElse talent_1 ≥ 1 → ForEach target CreateBuff buff_chr_0018_dapan_talent_1_preparation, then KnockDownAction forceKnockDown (\"forcibly Knock Down\"), then DamageAction atk_scale_end (no poise).",
-          "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." }
+          "note": "Frame 80: IfElse talent_1 ≥ 1 → ForEach target CreateBuff buff_chr_0018_dapan_talent_1_preparation, then KnockDownAction forceKnockDown (\"forcibly Knock Down\"), then DamageAction atk_scale_end (no poise)."
         }
       ]
     }

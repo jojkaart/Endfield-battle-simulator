@@ -155,8 +155,8 @@
       "label": "Basic attack 2",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale1"], "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
-        { "id": "hit_2", "scale": ["atk_scale2"], "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } }
+        { "id": "hit", "scale": ["atk_scale1"] },
+        { "id": "hit_2", "scale": ["atk_scale2"] }
       ]
     },
     {
@@ -164,8 +164,8 @@
       "label": "Basic attack 3",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale1"], "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
-        { "id": "hit_2", "scale": ["atk_scale2"], "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } }
+        { "id": "hit", "scale": ["atk_scale1"] },
+        { "id": "hit_2", "scale": ["atk_scale2"] }
       ]
     },
     {
@@ -173,13 +173,12 @@
       "label": "Basic attack 4 (Final Strike)",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale1"], "finalStrike": false, "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
+        { "id": "hit", "scale": ["atk_scale1"], "finalStrike": false },
         {
           "id": "hit_2",
           "scale": ["atk_scale2"],
           "finalStrike": true,
-          "note": "f30 DamageAction mask 2097280 (Final Strike bit), poise 25 onlyEnableForMainChar; ObtainCostAction atb 28 only while controlled (atbOnlyMainChar). The f7 hit (mask 128) isn't the Final Strike.",
-          "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." }
+          "note": "f30 DamageAction mask 2097280 (Final Strike bit), poise 25 onlyEnableForMainChar; ObtainCostAction atb 28 only while controlled (atbOnlyMainChar). The f7 hit (mask 128) isn't the Final Strike."
         }
       ]
     },
@@ -188,9 +187,9 @@
       "label": "Finisher",
       "damageType": "basic",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale"], "frames": [6], "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
-        { "id": "hit_2", "scale": ["atk_scale"], "frames": [17], "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
-        { "id": "hit_3", "scale": ["atk_scale"], "frames": [37], "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } }
+        { "id": "hit", "scale": ["atk_scale"], "frames": [6] },
+        { "id": "hit_2", "scale": ["atk_scale"], "frames": [17] },
+        { "id": "hit_3", "scale": ["atk_scale"], "frames": [37] }
       ],
       "note": "BreakingAttackCalculation multipliers 0.3 / 0.2 / 0.5 of atk_scale 9.0 (900% shown). Each landing sits in an IfElse on CheckTargetContains whose two sides are the same DamageAction: one hit each (kit-draft emits them twice as branch alternatives; batch-3 D3, identical sides not merged)."
     },
@@ -221,7 +220,7 @@
       "damageType": "battle",
       "available": { "buffActive": "trail_ready" },
       "hits": [
-        { "id": "flurry", "scale": ["atk_scale"], "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
+        { "id": "flurry", "scale": ["atk_scale"] },
         {
           "id": "mangle_splitter",
           "branch": "mangle",
@@ -230,8 +229,7 @@
           "frames": [24],
           "applies": [{ "kind": "physicalStatus", "status": "crush" }],
           "buffs": [{ "buff": "splitter_ready" }],
-          "note": "f24 CrushAction (damageMultiplier 1.0), DamageAction atk_scale2 + poise; buff_chr_0031_mifu_listen_crush (f22–27) turns a Crush from a battle skill on a target with ≥ 3 Vulnerable stacks into World Splitter's state: judged on the stacks before this Crush consumes them (a Crush on 0 stacks only adds one). \"If this Crush consumes at least 3 Vulnerability stacks from a single target\".",
-          "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." }
+          "note": "f24 CrushAction (damageMultiplier 1.0), DamageAction atk_scale2 + poise; buff_chr_0031_mifu_listen_crush (f22–27) turns a Crush from a battle skill on a target with ≥ 3 Vulnerable stacks into World Splitter's state: judged on the stacks before this Crush consumes them (a Crush on 0 stacks only adds one). \"If this Crush consumes at least 3 Vulnerability stacks from a single target\"."
         },
         {
           "id": "mangle",
@@ -239,8 +237,7 @@
           "scale": ["atk_scale2"],
           "frames": [24],
           "applies": [{ "kind": "physicalStatus", "status": "crush" }],
-          "note": "As mangle_splitter, on fewer than 3 Vulnerable stacks: no World Splitter.",
-          "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." }
+          "note": "As mangle_splitter, on fewer than 3 Vulnerable stacks: no World Splitter."
         }
       ],
       "note": "50 SP (normalSkillSubType 1, a sub-skill on the battle-skill button: the engine counts it as a battle-skill cast for Link and cast triggers, in-game test 29's question). Its first 15 frames run ×1.25 for her (Ti1b, not modelled: 3 frames late from f15)."
@@ -271,7 +268,7 @@
             }
           ],
           "note": "f26 ForEach: atk_scale_runtime = atk_scale × yuanshi_multi × crushmulti, DamageAction mask 20480 (4096 + the Crush bit 16384, no battle-skill bit 256): \"this DMG is not treated as Battle Skill DMG, but as Crush DMG\", so no skill-type bonus (damageType none, D5). yuanshi_multi: ReadSkillSettingData \"弭弗特殊猛击\" column 1, a table not in our checkout; the SkillData default 1 (in-game test 91 checks it with the damage type). crushmulti = 1 + crushmultiadd_talent (talent 1 Stern Crackdown: 0.1 / 0.2) when talent > 0 and the target is Staggered (CheckPoiseValue = 0) or has tag 1066759270 (Physical Susceptibility: buff_common_affixes_vulnerable_physical and _all, as enemyModifier reads it). P5 multiplies atk_scale by 1.1 (\"can stack with Stern Crackdown\").",
-          "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24).", "scale": "Batch 4, Mi Fu. Compiler limit (batch-3 D3 open item, a ModifyDynamicBlackboard chain on a scale): f26 atk_scale_runtime = atk_scale × yuanshi_multi (ReadSkillSettingData, its table not in the checkout: SkillData default 1) × crushmulti (talent 1: the kit's extraScale)." }
+          "dataOverride": { "scale": "Batch 4, Mi Fu. Compiler limit (batch-3 D3 open item, a ModifyDynamicBlackboard chain on a scale): f26 atk_scale_runtime = atk_scale × yuanshi_multi (ReadSkillSettingData, its table not in the checkout: SkillData default 1) × crushmulti (talent 1: the kit's extraScale)." }
         }
       ],
       "note": "50 SP; a sub-skill as Trail and Mangle."
@@ -281,14 +278,13 @@
       "label": "Combo skill",
       "damageType": "combo",
       "hits": [
-        { "id": "hit", "scale": ["atk_scale1"], "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
+        { "id": "hit", "scale": ["atk_scale1"] },
         {
           "id": "uppercut",
           "scale": ["atk_scale2"],
           "energy": "usp",
           "buffs": [{ "buff": "combo_susceptibility", "beforeDamage": true }],
-          "note": "f31: the Physical Susceptibility is created before the DamageAction (it acts on this hit, as Estella's); ObtainCostAction usp after CheckSkillHasHit.",
-          "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." }
+          "note": "f31: the Physical Susceptibility is created before the DamageAction (it acts on this hit, as Estella's); ObtainCostAction usp after CheckSkillHasHit."
         }
       ],
       "note": "Cooldown 19 s at level 12 (P1 −2 s: tables). Its ComboSkill slow-down (0–8, everyone but her) from the data."
@@ -298,8 +294,8 @@
       "label": "Ultimate: Pile of No Mercy",
       "damageType": "ultimate",
       "hits": [
-        { "id": "lift", "scale": ["atk_scale"], "applies": [{ "kind": "physicalStatus", "status": "lift", "forced": true }], "note": "f75 AirborneAction forceAirborne, then the DamageAction.", "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } },
-        { "id": "slam", "scale": ["atk_scale2"], "note": "f102 atk_scale2 + poise2 (20, P5 +5).", "dataOverride": { "events": "Left without log event keys as written (the data's file is the skill's own): filling them in moves the pending fixtures' verdicts, so that change waits for its own step (docs/journal.md 2026-10-24)." } }
+        { "id": "lift", "scale": ["atk_scale"], "applies": [{ "kind": "physicalStatus", "status": "lift", "forced": true }], "note": "f75 AirborneAction forceAirborne, then the DamageAction." },
+        { "id": "slam", "scale": ["atk_scale2"], "note": "f102 atk_scale2 + poise2 (20, P5 +5)." }
       ],
       "note": "Cost 80 (P4 ×0.85), cooldown 15 s, time stop 0–71, channel 0–103 (tables, SkillData). The f98 DamageAction with a literal-0 multiplier is left out: whether a 0-damage DamageAction counts as a hit for on-hit effects isn't known, and none of hers needs it."
     }
