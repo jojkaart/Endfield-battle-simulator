@@ -1,12 +1,15 @@
 name: CI
 
 on:
+  # main only: work branches are pushed to main too, and a run per branch doubled every run.
   push:
+    branches: [main]
   pull_request:
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 

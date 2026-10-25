@@ -60,7 +60,8 @@ export function template(data: GameData, operator: string, weapon?: string): str
     operator,
     level: 90,
     promotion: 4,
-    potential: 0,
+    // The owner's default for searches (kit-process.md): 6-stars at P0, 4- and 5-stars at P5.
+    potential: op.rarity >= 6 ? 0 : 5,
     skillLevels: { basic: 12, battle: 12, combo: 12, ultimate: 12 },
     weapon: weapon === undefined ? null : { id: weapon, level: 90, skillLevels: [9, 9, 9] },
     gear: [],
