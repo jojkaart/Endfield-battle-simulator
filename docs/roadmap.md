@@ -77,7 +77,14 @@ the six favourites.
    reapplication; in-game test 4.
 6. **Still open from setup:** a `Result` schema, `NOTICE` when MIT code is
    first copied, the tie-break order.
-7. **Engine review** (2026-10-22): the fixes are in (journal 2026-10-24).
+7. **Kit values from the data** (review 3.1, done 2026-10-25; design.md
+   "Kits and the game data"): the loader fills frames, events, factors,
+   stagger, energy, SP and more from the compiled SkillData and refuses an
+   unmarked difference (`dataOverride`). Next: fill launch frames,
+   applications and bonuses too; SP of hitless skills as cast triggers;
+   Mi Fu's per-fixture factor in 2fd9 / 99fb / de6a (her hits are judged
+   now: nearly all mismatch there, d572 fits).
+8. **Engine review** (2026-10-22): the fixes are in (journal 2026-10-24).
    Open: one scheduler for advanceFrom's event kinds and splitting
    timeline.ts; slow-downs don't shift what's created between their cast
    and their start or during them (buffs, spend pauses, a frozen

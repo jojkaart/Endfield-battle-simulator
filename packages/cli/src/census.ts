@@ -27,6 +27,8 @@ export const DATA_DERIVABLE: ReadonlySet<string> = new Set([
   "hit.poiseControlledOnly",
   "hit.detached",
   "hit.energy",
+  "hit.sp",
+  "hit.spBeforeDamage",
   "skill.teamEnergy",
   "skill.energyBlockSeconds",
 ]);
@@ -36,7 +38,7 @@ export const DATA_DERIVABLE: ReadonlySet<string> = new Set([
  * compiled data (a difference is an error unless marked) but doesn't fill
  * in yet: the review's next target.
  */
-export const DATA_COMPARED: ReadonlySet<string> = new Set(["hit.sp", "hit.spBeforeDamage", "hit.launch", "hit.finalStrike", "applies.infliction", "applies.forcedReaction", "applies.consumeInfliction", "applies.physicalStatus", "applies.vulnerable"]);
+export const DATA_COMPARED: ReadonlySet<string> = new Set(["hit.launch", "hit.finalStrike", "applies.infliction", "applies.forcedReaction", "applies.consumeInfliction", "applies.physicalStatus", "applies.vulnerable"]);
 
 type Json = Record<string, unknown>;
 
