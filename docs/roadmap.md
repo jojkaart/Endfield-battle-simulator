@@ -82,7 +82,9 @@ the six favourites.
    fits bdf2: hits left within Corrosion's range 93 → 26). Open: time
    dilation, carry-over on reapplication; in-game test 4.
 6. **Still open from setup:** a `Result` schema, `NOTICE` when MIT code is
-   first copied, the tie-break order.
+   first copied. (The tie-break order is documented since 2026-10-25:
+   design.md, "Order within a frame"; what the game does at ties isn't
+   known.)
 7. **Kit values from the data** (review 3.1, done 2026-10-25; design.md
    "Kits and the game data"): the loader fills frames, events, factors,
    stagger, energy, SP and more from the compiled SkillData and refuses an
@@ -90,11 +92,17 @@ the six favourites.
    applications and bonuses too; SP of hitless skills as cast triggers;
    Mi Fu's per-fixture factor in 2fd9 / 99fb / de6a (her hits are judged
    now: nearly all mismatch there, d572 fits).
-8. **Engine review** (2026-10-22): the fixes are in (journal 2026-10-24).
-   Open: one scheduler for advanceFrom's event kinds and splitting
-   timeline.ts; slow-downs don't shift what's created between their cast
-   and their start or during them (buffs, spend pauses, a frozen
-   teammate's cast).
+8. **Engine review** (2026-10-22): the fixes are in (journal 2026-10-24);
+   the restructuring (review 3.3) is done (2026-10-25: timeline/ modules,
+   one scheduled list, one in-frame order; design.md "Engine modules").
+   Open: slow-downs don't shift what's created between their cast and
+   their start or during them (buffs, spend pauses, a frozen teammate's
+   cast) — with the scheduled list that's now one place (`shiftClock`'s
+   caller in clock.ts); buffs could become scheduled items' kin (their
+   expiry and ticks on the world's clock) so shifting them is the same
+   pass; which order the game runs simultaneous hits and one event's
+   listeners in (an in-game test would need two operators' hits at one
+   frame that interact).
 
 ## Later
 

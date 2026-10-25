@@ -4,7 +4,7 @@
 // own kit entry's effects, and every team member's hit triggers that react
 // to it with applications or gains (e.g. Laevatain's talent: the controlled
 // operator's Final Strikes absorb Heat Infliction for her Melting Flame).
-// The timeline runs triggers itself (timeline.ts runTriggers); this is the
+// The timeline runs triggers itself (timeline/actions.ts runTriggers); this is the
 // part of them a replay of logged hits can use.
 
 import type { SkillType } from "./attributes.ts";

@@ -490,11 +490,12 @@ ranked by committed damage (hits landed plus everything already on its
 way: the state advanced to the fight's end), optionally plus the worth of
 unspent SP and energy (`resourceWeight`); equivalent states keep only the
 best. Equivalent means equal in every field of the state that what comes
-next reads (`stateKey`): each `TimelineState` field, and each field of a
-pending hit and a buff, is classified in a `KeyRules` record (in the key,
-a projection of it, or a reason it isn't: landed hits and the reaction
-record are the score and the log), so a new field doesn't compile until
-someone decides; the key is a canonical serialisation (sorted keys), with
+next reads (`stateKey`): each `TimelineState` field, and each field of
+each kind of scheduled item and of a buff, is classified in a `KeyRules`
+record (in the key, a projection of it, or a reason it isn't: landed hits
+and the reaction record are the score and the log), so a new field doesn't
+compile until someone decides; scheduled items are keyed per kind, in
+order (the order within a kind is what ties go by); the key is a canonical serialisation (sorted keys), with
 SP and energy rounded to 0.1 (floating-point noise between paths).
 
 **Random outcomes** (owner, 2026-10-20: "the result becomes not a number,
@@ -536,7 +537,7 @@ current action ends (a kit's `endAction`, jumps, dodges), a combo replays
 to every pending hit looking for its window, and each replay starts from
 the node's state again. Now, all exact (same rotations and totals):
 
-- `memoised` (timeline.ts): on the contexts the search makes, `advance`
+- `memoised` (timeline/advance.ts): on the contexts the search makes, `advance`
   is memoised per state object and frame (the cache is the context's own
   `advanceMemo`, not module state). `advance` is a pure function and
   states are never changed in place, so a repeated call returns the first
@@ -545,7 +546,7 @@ the node's state again. Now, all exact (same rotations and totals):
 - `legalActions` judges the controlled operator's basic attacks and the
   swaps first. When one can start at the state's own frame (most decision
   points), nothing starts sooner, so the other actions are choices only if
-  they can start right then: `startsNow` (timeline.ts) judges that without
+  they can start right then: `startsNow` (timeline/drivers.ts) judges that without
   how much later they could (`startFrom`'s frame is the state's own, and a
   combo that needs a window has one open).
 - Of the others, `startsNow` is asked first; only when no action at all
@@ -659,8 +660,9 @@ Two stages:
 1. **Build stage**, per operator and build, cached: the stat snapshot with
    its contributions, plus the list of passive and triggered effects. Search
    reuses it across rotations and teams.
-2. **Event stage:** an integer-frame priority queue ordered by
-   (frame, a documented tie-break order). Casts schedule hits and buff
+2. **Event stage:** what's due later is one list of scheduled items, run
+   by (frame, a documented order within a frame: [below](#order-within-a-frame)).
+   Casts schedule hits and buff
    changes; buffs schedule expiry; triggers fire from a registry. Each hit is
    emitted with the modifiers active at that moment, and damage is a cheap
    pure function of (snapshot, active modifiers, hit). Discrete events skip
@@ -674,6 +676,92 @@ energy.)
 State is **plain data** (flat records and arrays, no object graph), so a
 simulation can be forked by copying: search can simulate a shared opening
 once and branch from it.
+
+### Engine modules
+
+The timeline (`packages/engine/src/timeline.ts`, a façade re-exporting the
+stepping API as `@efsim/engine` exports it) is split by concern under
+`timeline/` (review 3.3, 2026-10-25; lines as of then):
+
+| module | lines | what's in it |
+|---|---|---|
+| `state.ts` | 399 | the types: scenario, context, state, scheduled items (`Scheduled`), casts, landed hits |
+| `rules.ts` | 101 | fixed rules: team SP, energy, combo windows, dives, priorities, Link, haste's frame mapping (`hasteFrames`), `TIMELINE_ASSUMPTIONS` |
+| `context.ts` | 181 | `createContext` (the build stage), panels, kit and skill lookups, skill costs and timing, the enemy's attributes |
+| `schedule.ts` | 117 | the scheduled list: the order within a frame (`IN_FRAME`, `dueBefore`) and one pass each to shift a clock, end a cast and jump on a cast's timeline |
+| `clock.ts` | 132 | slow-downs and the clocks they stop (`slowDown`, `shiftWorld`, `shiftEnemy`, `shiftOperator`), action speed |
+| `resources.ts` | 243 | SP (regen, stops, costs), ultimate energy, cooldowns and recovery rates, the enemy's stagger |
+| `timing.ts` | 393 | when an operator may act: combo windows, action gates, chains, `earliestStart` |
+| `situation.ts` | 169 | what predicates, values and damage see at a frame |
+| `actions.ts` | 393 | triggers (`runTriggers`) and their actions, kit buffs and stacks |
+| `landing.ts` | 373 | a hit or burst landing, status damage, the random streams |
+| `casting.ts` | 289 | casting a skill, ending one, jumps, a dive's jump |
+| `advance.ts` | 234 | `advance`: everything due up to a frame, in order; enemy actions and perfect dodges; `memoised` |
+| `drivers.ts` | 251 | `init`, `apply`, `replayCast`, `simulate`, `simulateRuns`, `startsNow` |
+
+The modules import each other in cycles (casting runs triggers, triggers
+cast), which is safe because no top-level value is computed from another
+timeline module (`rules.ts`, whose constants the others use, imports none
+of them).
+
+**Scheduled items** (`TimelineState.scheduled`): hits on their way,
+delayed trigger actions, team energy given later, jumps and ends on casts'
+timelines, Arts Bursts and the enemy's actions are one list. Each item has
+a header — its frame, the clock it runs on (`world`, `enemy` or an
+operator's), the cast it belongs to (`{operator, index}`), `detached`,
+`launchAt`, `pinned` — and a payload by kind. The header is all that a
+slow-down (`shiftClock`: the items on a stopped clock after its start
+come later, a launch with them; pinned ones stay), an interrupt
+(`cancelCast`) and a jump (`jumpCast`) read, one pass each for every kind:
+what's bound to a cast is decided by its launch if it has one, else by its
+own frame, and nothing is for what's detached from the start (`castBound`).
+Before, each of five lists had its own copy in each of these, and both
+time-stop bugs of 2026-10-24 were a list missing from one.
+
+### Order within a frame
+
+What's due at one frame runs in this order (`schedule.ts` `IN_FRAME`);
+each step waits for everything before it at that frame and at earlier
+ones, and what it does may add to any step still to come:
+
+| # | step | what |
+|---|---|---|
+| 1 | burst | Arts Bursts landing (`burstDelayFrames` after their infliction) |
+| 2 | statusTick | ticks of a status already on the enemy |
+| 3 | buffExpiry | buffs running out (every one ending at the frame at once) |
+| 4 | action | delayed trigger actions (`KitTrigger.delay`) |
+| 5 | energy | team energy a cast gives later (`KitSkill.teamEnergy`) |
+| 6 | enemyAction | the enemy's attacks and charges |
+| 7 | buffTick | buffs' periodic ticks |
+| 8 | hit | hits landing |
+| 9 | afterHits | delayed trigger actions marked `afterHits` |
+| 10 | jump | jumps and ends on casts' timelines, a dive's next part (what's at the jump's own skill frame happens first) |
+
+Steps 2, 3 and 7 come from their own state (the enemy's statuses, the
+buffs); the rest are scheduled items, compared by one function
+(`dueBefore`): frame, step, then for two hits the operator ID, then the
+order they were scheduled in. This is the order the engine had (its ten
+"next due" scans encoded it, 2026-10-25); none of it is from the game,
+whose order isn't in the data. Hits of different operators at one frame
+go by operator ID, an arbitrary order that keeps them apart from the
+team's order (scheduling order instead moves only si-laevatain, by order
+and, with rolled crits, by which hit draws which roll).
+
+**Team order.** A result depends on the order the team is listed in only
+where the game reads team positions: a kit's `teamSlotElement` predicate
+(Si's battle skill inflicts Heat when Team Position 01 is a Heat
+operator) or a cooldown change for the member in a slot (her ultimate's
+talent), both from the data; and the default controlled operator is the
+first. Beyond that, the engine keeps one order the game doesn't
+document: triggers of different operators on one event run in team order.
+They judge their conditions on the state at the event, but each one's
+actions see the earlier ones' (stacks used up, buffs refreshed, events
+queued), and draws for `chance` and `choose` come off one stream in that
+order; events made per member (Link gained, team heals, attacks on the
+team) come in team order too. No example depends on it:
+`tests/team-order.test.ts` runs every example under every order of its
+team (with expected and rolled crits) and requires the same hits, Si's
+examples aside.
 
 ### Damage
 
@@ -835,7 +923,7 @@ Details: [reference-simulators.md](reference-simulators.md).
 
 ## Open questions
 
-- Tie-break rules within a frame.
+- What the game does at ties within a frame (simultaneous hits of different operators, listeners to one event): the engine's order is [documented](#order-within-a-frame), not verified.
 - Rounding and float32 (see [data-sources.md](data-sources.md#rounding)).
 - Which SkillData/BuffData action types the compiler must understand for
   the first fixtures.

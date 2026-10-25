@@ -3,7 +3,7 @@
 // them based on the events that should trigger them."). The logged casts
 // (logcasts.ts: operator, skill, start) are cast again in the engine's
 // timeline at their logged frames, their logged landings at the logged
-// frames (timeline.ts replayCast); their hits, the enemy's statuses, SP and
+// frames (timeline/drivers.ts replayCast); their hits, the enemy's statuses, SP and
 // the kits' triggers then run as in a simulation, and the instances of the
 // kit buffs that stand for a game buff (KitBuff.gameBuff) are read off the
 // timeline's state. The log check (logcheck.ts) takes their activity instead
@@ -129,7 +129,7 @@ export interface ReplayCastFacts {
   readonly consumed: Fact<ConsumedBuffs>;
 }
 
-/** The facts of a trigger's hits: of no cast (timeline.ts: a trigger's `hits` action lands hits without one). */
+/** The facts of a trigger's hits: of no cast (timeline/actions.ts: a trigger's `hits` action lands hits without one). */
 const TRIGGERED: ReplayCastFacts = { index: -1, link: { value: 0 }, windowCount: { unknown: "a trigger's hits, of no cast" }, consumed: { value: { buffs: [], modifiers: [] } } };
 
 /** The game buffs the log lists with values somewhere (effects or boundary effects). */
