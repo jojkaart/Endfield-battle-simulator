@@ -25,7 +25,7 @@ import {
   type OperatorKit,
 } from "@efsim/engine";
 import { loadGameData, type LogFixture, type LogHit } from "@efsim/data";
-import { calc, checkLog, kitStackCaps, layerVariants, linkVariants, logBuffReplay, readLogFixture, teamStackCaps, type CalcOptions, type HitVerdict } from "@efsim/cli";
+import { calc, checkLog, eventCounts, kitStackCaps, layerVariants, linkVariants, logBuffReplay, readLogFixture, teamStackCaps, type CalcOptions, type HitVerdict } from "@efsim/cli";
 import { assumeValues, statedCounts, valueAssumptions, valueReads } from "../packages/cli/src/hitvalues.ts";
 import { placeHits, type LoggedCast } from "../packages/cli/src/logcasts.ts";
 import { checkReactions, enemyClockDue } from "../packages/cli/src/reactioncheck.ts";
@@ -204,6 +204,13 @@ describe("L3: what the log never lists", () => {
     const first = checkLog(g(), fx);
     expect(assumed(first[1])).toContain("unlogged t_ready (the replay can't say: layers without a duration casts before the log may have built)");
     expect(first[2]?.kind === "match" && first[2].class).toBe("plain");
+  });
+
+  it("reads a value's event count at the replay's window count; tries 1-4 only where the replay saw no window", () => {
+    const counted = hit("e", ["k"], { damageType: "combo", scaleValue: { product: [{ key: "atk_scale" }, { eventCount: true }] } as NonNullable<KitHit["scaleValue"]> });
+    expect(eventCounts(counted, { value: 3 })).toEqual([{ eventCount: 3, why: null }]);
+    expect(eventCounts(counted, { unknown: "x" }).map((c) => [c.eventCount, c.why])).toEqual([[1, "x"], [2, "x"], [3, "x"], [4, "x"]]);
+    expect(eventCounts(hit("p", ["k"]), { unknown: "x" })).toEqual([{ eventCount: undefined, why: null }]);
   });
 
   it("leaves Link undecided where another cast that uses Link comes within REPLAY_EDGE_MS (40d9: Gilberta's and Si's ultimates, 86 ms apart)", () => {

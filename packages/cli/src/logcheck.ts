@@ -535,6 +535,17 @@ function castBuffVariants(data: GameData, build: Build, panel: StatPanel, kind: 
   return unloggedCastBuffs(data, build, panel, kind, consumed.unknown);
 }
 
+/**
+ * The counts of the event behind a hit's values (ValueExpr eventCount: a combo's window count, Si's combo) to read it
+ * at: the replay's window count for its cast, no assumption; where the replay can't say (a window it didn't see open,
+ * a trigger's hits), 1-4, each with why. A hit whose values don't read it: one reading.
+ */
+export function eventCounts(h: KitHit, windowCount: Fact<number>): { eventCount: number | undefined; why: string | null }[] {
+  if (!JSON.stringify(h).includes('"eventCount"')) return [{ eventCount: undefined, why: null }];
+  if ("value" in windowCount) return [{ eventCount: windowCount.value, why: null }];
+  return [1, 2, 3, 4].map((n) => ({ eventCount: n, why: windowCount.unknown }));
+}
+
 /** Whether a kit hit is a finisher's (SkillData skillSpecification 8), as the timeline judges it: a skill's own hit, not a trigger's. */
 function isFinisher(data: GameData, build: Build, skillId: string, hit: KitHit): boolean {
   return data.skills[skillId]?.timing?.specification === 8 && (effectiveKit(data, build)?.skills ?? []).some((s) => s.skillId === skillId && s.hits.includes(hit));
@@ -985,7 +996,7 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
                 // A finisher takes the enemy's finisher multiplier, as in the timeline.
                 castBuffVariants(data, member.build, member.panel, h.damageType, castFact(castFacts, "consumed")).flatMap((unlogged) =>
                   (h.extraScale?.length || h.if ? [false, true] : [false]).flatMap((assume) =>
-                    (JSON.stringify(h).includes('"eventCount"') ? [1, 2, 3, 4] : [undefined]).flatMap((eventCount) =>
+                    eventCounts(h, castFact(castFacts, "windowCount")).flatMap(({ eventCount, why }) =>
                       // Values that read what only a fight knows (consumed stacks, own stacks, the enemy's stacks: L4, L6): over their range.
                       [{ assumption: null, label: null }, ...valueAssumptions(valueReads(h), stackMax)].flatMap((va) => {
                         try {
@@ -997,7 +1008,7 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
                           const assumptions: Assumption[] = [
                             ...(found.length > 1 ? [{ kind: "kitHit" as const, label: `kit hit ${h.id}`, buffs: [h.id] }] : []),
                             ...(assume ? [{ kind: "situational" as const, label: "situational parts assumed" }] : []),
-                            ...(eventCount !== undefined ? [{ kind: "eventCount" as const, label: `event count ${eventCount}`, n: eventCount }] : []),
+                            ...(why !== null ? [{ kind: "eventCount" as const, label: `event count ${eventCount} (the replay can't say: ${why})`, n: eventCount as number }] : []),
                             ...(va.label !== null ? [{ kind: "value" as const, label: va.label }] : []),
                             ...(unlogged.label !== null ? [{ kind: "unloggedCastBuff" as const, label: unlogged.label, buffs: unlogged.buffs }] : []),
                           ];
