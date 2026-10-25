@@ -19,7 +19,8 @@
    "Battle from 2026-09-24 (game 1.5); data pins are game 1.6, so a mismatch could be a balance change.",
    "Camille's weapon buffs drop out of the log while the damage keeps them: buff_wpn_lance_0015_atkup (team ATK +9.6%) isn't listed after 49418 ms and buff_wpn_lance_0015_dmgup (team Heat DMG +9.6%) not after 65597 ms, but every later hit is what both give (Estella ×1.0800 on basic, combo, ultimate, battle-skill and reaction hits for the ATK). zmdlogs check doesn't take the log's listing for kit buffs (2026-10-22): its replay of the logged casts through the kits' triggers (packages/cli/src/buffreplay.ts) refreshes atkup at Camille's ultimate and combos (52.3, 55.9, 58.9 s: her skills recover SP) and dmgup at her ultimate's Heat infliction (52.3 s), so both stay on to the end, and the check lists the log's gaps as disagreements. A hand annotation listing atkup as unquantified from 49418 ms stood in for this until then; removed (it also hid the two hits below).",
    "Rossi (batch-4 kit, docs/kit-batches/batch-4/chr_0028_wulfa.md): Rossi is \"her\" in the game's text, and +9.6% ATK at one MI Security layer, as the log lists it, would be ×1.0735 on her hits; her hits carry five (zmdlogs check finds the cap), which make the +9.6% ATK ×1.064 on them. At 13314 ms several of Rossi's crits land at once (a bleed tick, the Wolven Ambrage projectiles), so three Lupine Scarlet layers start at that instant (boundary effects) and each hit used a different count of them: projhit5 and one talent-2 hit one, projhit3 and the other talent-2 hit two (each ×1.0094 the one-layer reading, one layer of 0.016 on a Heat DMG bonus of about 0.70). zmdlogs check tries 1 up to all of a repeated boundary buff's instances, so all five match (the hand annotation listing buff_wpn_sword_0022_layer as unquantified on them is removed). Razor Clawmark ticks 26 times from one application (13314–39556 ms: at once, then each second, the last at its 25 s end). Rossi's finisher hit 3 (69142 ms) is the killing blow: its uncapped 261745 is the log's overkill estimate and matches no reading (×1.051 the plan in the batch-4 analysis); zmdlogs check counts a fight's last hit with an uncapped value above its own as unjudgeable (under unmodelled effects). Link isn't logged: her battle skill at 10016 ms fits one stack, her ultimate at 61167 ms two (Camille's Link sources).",
-   "Hand annotation (not from the importer): Gilberta's battle-skill explosion at 68873 ms lists buff_common_natural_triggered (the Nature reaction the log records from her at the same ms: Corrosion) as unquantified. The explosion's Nature infliction forms the Corrosion and its own damage already has the Corrosion's resistance shred (as the timeline applies a hit's statuses before its damage), which the log can't list on the hit that starts it: with Corrosion level 1 it matches exactly (8972)."
+   "Hand annotation (not from the importer): Gilberta's battle-skill explosion at 68873 ms lists buff_common_natural_triggered (the Nature reaction the log records from her at the same ms: Corrosion) as unquantified. The explosion's Nature infliction forms the Corrosion and its own damage already has the Corrosion's resistance shred (as the timeline applies a hit's statuses before its damage), which the log can't list on the hit that starts it: with Corrosion level 1 it matches exactly (8972).",
+   "Casts (the detail's skill events without damage) added 2026-10-25 from the same battle detail (efsim zmdlogs casts)."
   ]
  },
  "enemy": {
@@ -58008,6 +58009,43 @@
    ],
    "boundaryEffects": [],
    "unquantified": []
+  }
+ ],
+ "casts": [
+  {
+   "t": 5044,
+   "operator": "chr_0021_whiten",
+   "skill": "chr_0021_whiten_normal_skill"
+  },
+  {
+   "t": 5044,
+   "operator": "chr_0033_camille",
+   "skill": "chr_0033_camille_normal_skill"
+  },
+  {
+   "t": 20427,
+   "operator": "chr_0033_camille",
+   "skill": "chr_0033_camille_normal_skill"
+  },
+  {
+   "t": 27187,
+   "operator": "chr_0021_whiten",
+   "skill": "chr_0021_whiten_normal_skill"
+  },
+  {
+   "t": 46380,
+   "operator": "chr_0033_camille",
+   "skill": "chr_0033_camille_normal_skill"
+  },
+  {
+   "t": 52443,
+   "operator": "chr_0021_whiten",
+   "skill": "chr_0021_whiten_normal_skill"
+  },
+  {
+   "t": 63011,
+   "operator": "chr_0033_camille",
+   "skill": "chr_0033_camille_normal_skill"
   }
  ]
 }

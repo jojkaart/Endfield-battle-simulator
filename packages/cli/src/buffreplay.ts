@@ -170,6 +170,39 @@ export interface ReplayedCast extends LoggedCast {
   readonly landings: readonly { readonly hitId: string; readonly nth: number; readonly frame: number; readonly ref: string }[];
 }
 
+/** How far from a placed cast's start a logged cast event of its skill may be to be that cast (ms). */
+export const LOGGED_CAST_MS = 2500;
+
+/**
+ * The replay's casts with the casts the log records without damage (LogFixture.casts) that it lacks: a logged cast of
+ * a kit skill whose damage the log never shows for its operator, with no placed cast of the skill within LOGGED_CAST_MS
+ * (40d9a3c1da37: Laevatain's ultimate at 3041 ms, whose damage comes as her enhanced attacks). A skill whose hits the
+ * log shows elsewhere isn't added where it doesn't (it may be a variant the kit models otherwise: 0eef2474a26f, Liino's
+ * battle skill at 4187 ms, whose only damage is her talent's volley); a placed cast keeps its start (the log's cast
+ * event can come before the skill acts: Liino's battle skill at 760 ms, its buffs at 1314 ms). Follow-up-only skills
+ * are left to the engine.
+ */
+export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixture, "casts" | "hits">, kits: readonly OperatorKit[]): ReplayedCast[] {
+  if (!fx.casts?.length) return [...casts];
+  const logged = new Set(fx.hits.map((h) => `${h.operator}|${h.event}`));
+  const added: ReplayedCast[] = [];
+  for (const lc of fx.casts) {
+    const skill = kits.find((k) => k.operator === lc.operator)?.skills.find((x) => x.skillId === lc.skill);
+    if (!skill || skill.followUpOnly || skill.hits.some((h) => h.events.some((e) => logged.has(`${lc.operator}|${e}`)))) continue;
+    if (casts.some((c) => c.operator === lc.operator && c.skillId === lc.skill && Math.abs(c.start - lc.t) <= LOGGED_CAST_MS)) continue;
+    added.push({ operator: lc.operator, key: lc.skill, group: lc.skill, skillId: lc.skill, kind: skill.kind, start: lc.t, lastHit: lc.t, keepPrevious: false, landings: [] });
+  }
+  if (added.length === 0) return [...casts];
+  // In time order; an operator's earlier cast keeps its hits when the log shows them after this one started.
+  const previous = new Map<string, ReplayedCast>();
+  return [...casts, ...added].sort((x, y) => x.start - y.start).map((c) => {
+    const prev = previous.get(c.operator);
+    const r = { ...c, keepPrevious: prev !== undefined && prev.lastHit > c.start };
+    previous.set(c.operator, r);
+    return r;
+  });
+}
+
 /**
  * The logged casts (distinctCasts) as the replay casts them, in time order,
  * each with its logged landings: the timeline lands the cast's hits the log
@@ -261,7 +294,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // Game buffs a trigger on crits is behind (critTriggers): where a landing's crit isn't logged, the replay bounds them.
   const critDependent = new Set(kitIds.filter(({ owner, id }) => critTriggers(kits.find((k) => k.operator === owner) as OperatorKit, id).length > 0).map((x) => x.g));
   const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
-  const casts: ReplayedCast[] = kits.length > 0 ? replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)) : [];
+  const casts: ReplayedCast[] = kits.length > 0 ? withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits) : [];
   const sampleFrames = [...new Set(fx.hits.flatMap((h) => [frameOf(h.t) - edge, frameOf(h.t), frameOf(h.t) + edge]))].filter((f) => f >= 0).sort((a, b) => a - b);
   type Made = { c: ReplayedCast; f: number; pre: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs };
   /**

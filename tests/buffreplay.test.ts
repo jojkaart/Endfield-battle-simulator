@@ -8,7 +8,8 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { advance, computeHit, computeStats, createContext, FPS, init, replayCast, replayWindowCount, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
 import { loadGameData, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
-import { checkLog, formatBuffReplay, LOG_LISTING, logBuffReplay, readLogFixture, type HitVerdict } from "@efsim/cli";
+import { checkLog, formatBuffReplay, LOG_LISTING, logBuffReplay, readLogFixture, replayedCasts, withLoggedCasts, type HitVerdict } from "@efsim/cli";
+import { placeHits } from "../packages/cli/src/logcasts.ts";
 
 const data = loadGameData();
 const build = JSON.parse(readFileSync(new URL("../examples/laevatain-forgeborn.json", import.meta.url), "utf8")) as Build;
@@ -165,6 +166,23 @@ describe("replayCast: a logged cast at its logged frame", () => {
     expect(replayWindowCount(full, open, op, combo, 50)).toBe(3);
     expect(replayWindowCount(full, open, op, combo, 150)).toBeNull();
     expect(replayWindowCount(full, open, op, BATTLE, 50)).toBeNull();
+  });
+});
+
+describe("40d9a3c1da37: a cast the log shows only as a skill event", () => {
+  const fx = readLogFixture(new URL("../fixtures/zmdlogs-40d9a3c1da37.json", import.meta.url).pathname);
+
+  it("casts Laevatain's ultimate at the log's 3041 ms, so its weapon's buff is on for her enhanced attacks", () => {
+    const placement = placeHits(data, fx);
+    const casts = withLoggedCasts(replayedCasts(placement, fx), fx, [data.kits.operators["chr_0016_laevat"] as OperatorKit]);
+    expect(casts.filter((c) => c.skillId === "chr_0016_laevat_ultimate_skill").map((c) => c.start)).toEqual([3041]);
+    // Si's casts the log also records are placed from their hits already: not cast twice.
+    expect(casts.filter((c) => c.skillId === "chr_0036_jsspsi_normal_skill").length).toBe(replayedCasts(placement, fx).filter((c) => c.skillId === "chr_0036_jsspsi_normal_skill").length);
+    const laevatain = checkLog(data, fx).filter((v) => v.hit.operator === "chr_0016_laevat");
+    expect(laevatain.filter((v) => v.kind === "match" && v.class === "fallback")).toEqual([]);
+    // Without the cast events (as imported before 2026-10-25), the replay never starts buff_wpn_sword_0006_valid.
+    const { casts: _c, ...without } = fx;
+    expect(checkLog(data, without).filter((v) => v.hit.operator === "chr_0016_laevat" && v.kind === "match" && v.class === "fallback").length).toBeGreaterThan(5);
   });
 });
 

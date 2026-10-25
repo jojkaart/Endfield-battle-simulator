@@ -73,6 +73,31 @@ export interface LogFixture {
   readonly enemy: { readonly id: string; readonly level: number };
   readonly team: readonly Build[];
   readonly hits: readonly LogHit[];
+  /** Skill events the log records without damage: casts' starts as the log has them (zmdlogsCasts). Absent in fixtures imported before 2026-10-25. */
+  readonly casts?: readonly LogCast[];
+}
+
+/** A skill event without damage in a ZMDLogs detail: an operator's cast of a skill, at its start (ms). */
+export interface LogCast {
+  readonly t: number;
+  readonly operator: string;
+  readonly skill: string;
+}
+
+/**
+ * The casts a battle detail records as skill events without a damage value (laneType "skill", value null), by the
+ * team's operators: e.g. btl_upload_40d9a3c1da37's Laevatain ultimate at 3041 ms, whose damage comes as other keys.
+ */
+export function zmdlogsCasts(detail: unknown, team: readonly string[]): LogCast[] {
+  const events = a(o(detail, "detail")["timelineEvents"], "timelineEvents").map((e) => o(e, "event"));
+  return events
+    .filter((e) => e["laneType"] === "skill" && e["value"] === null)
+    .map((e) => {
+      const source = s(e["sourceCharacterKey"], "sourceCharacterKey");
+      return { t: n(e["tsMsFromStart"], "tsMsFromStart"), operator: source === ENDMIN_VIRTUAL ? ENDMIN : source, skill: s(e["eventKey"], "eventKey") };
+    })
+    .filter((c) => team.includes(c.operator))
+    .sort((x, y) => x.t - y.t);
 }
 
 const UA = "EndfieldBattleSimulator/0.1 (https://github.com/jojkaart/Endfield-battle-simulator)";
@@ -262,5 +287,6 @@ export function zmdlogsToFixture(battleId: string, detail: unknown, exported: un
     enemy: { id: boss, level: enemyLevel },
     team,
     hits,
+    casts: zmdlogsCasts(detail, team.map((b) => b.operator)),
   };
 }

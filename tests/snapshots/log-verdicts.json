@@ -6,7 +6,7 @@
   "chr_0035_liino": {"plain":11,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":2,"uncovered":0}
  },
  "zmdlogs-40d9a3c1da37.json": {
-  "chr_0016_laevat": {"plain":1,"assumed":5,"fallback":11,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0016_laevat": {"plain":7,"assumed":10,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0036_jsspsi": {"plain":4,"assumed":19,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
   "chr_0013_aglina": {"plain":9,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0033_camille": {"plain":3,"assumed":3,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}

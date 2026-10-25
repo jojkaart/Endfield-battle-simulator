@@ -13,7 +13,7 @@ import { formatRuns, formatSimulation, readScenario, searchCommand } from "./sim
 import { checkLog, findScales, formatLogCheck, impliedScales, logBuffReplay } from "./logcheck.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-import { importBattle, readLogFixture } from "./logs.ts";
+import { addLoggedCasts, importBattle, readLogFixture } from "./logs.ts";
 import { checkReactions, formatReactionCheck } from "./reactioncheck.ts";
 import { formatCensus, kitCensus } from "./census.ts";
 
@@ -45,6 +45,9 @@ const USAGE = `Usage:
                                           plain / assumed / log-listing fallback, and their strength)
                 [--log-buffs]             Kit buffs as the log lists them instead (the check before 2026-10-22)
   efsim zmdlogs reactions <fixture.json>  Replay the kits' inflictions; compare bursts and reactions
+  efsim zmdlogs casts <fixture.json> --detail <file>
+                                          Add the casts a downloaded battle detail records without
+                                          damage to a fixture imported before they were
   efsim zmdlogs scales <fixture> <op>     Multiplier each logged hit of an operator implies
   efsim zmdlogs find-scales <fixture> <op> Skill values (keys) that explain each logged event
   efsim kit-draft <operator>              Draft a kit from SkillData (to verify against logs)
@@ -166,8 +169,11 @@ async function main(argv: string[]): Promise<number> {
         }
         break;
       }
-      if (args.length !== 2 || !arg || (sub !== "import" && sub !== "check" && sub !== "reactions")) throw new Error(`zmdlogs takes import <battle id>, check <file>, reactions <file>, scales <file> <op> or find-scales <file> <op>\n\n${USAGE}`);
-      if (sub === "reactions") {
+      if (args.length !== 2 || !arg || (sub !== "import" && sub !== "check" && sub !== "reactions" && sub !== "casts")) throw new Error(`zmdlogs takes import <battle id>, check <file>, reactions <file>, casts <file> --detail <file>, scales <file> <op> or find-scales <file> <op>\n\n${USAGE}`);
+      if (sub === "casts") {
+        if (!values.detail) throw new Error("zmdlogs casts needs --detail <file> (an already downloaded /api/battles/<id> response)");
+        text = `added ${addLoggedCasts(arg, values.detail)} cast(s) to ${arg}`;
+      } else if (sub === "reactions") {
         text = formatReactionCheck(checkReactions(data, readLogFixture(arg)));
       } else if (sub === "check") {
         const fx = readLogFixture(arg);
