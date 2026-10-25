@@ -21,6 +21,15 @@ sets they use), in phases that repeat until nothing is missing:
    until no gap is left, except gaps the owner agreed to defer.
 5. **Kits:** write or update the batch's kits (now mostly data), verify
    them against the logs, then the [pattern review](kit-abstractions.md#repeating-the-review).
+   Leave out what the loader takes from the compiled SkillData (frames,
+   count, events, factor, element, poise, detached, energy, team energy,
+   energy blocks: [design.md](design.md#skills-and-buffs-from-skilldata--buffdata),
+   "Kits and the game data"); `efsim kit-trim --write` removes what was
+   written anyway. A value that differs from the data's on purpose is
+   marked where it is, `dataOverride: {field: "reason"}` (the reason says
+   why the data's value isn't the game's here: a compiler limit, a branch
+   the kit decides, a log that shows otherwise); the loader refuses an
+   unmarked difference and a mark where nothing differs.
 
 ## Equipment is generic
 

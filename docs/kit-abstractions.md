@@ -59,9 +59,13 @@ level table when given (file defaults can be placeholders).
 `efsim kit-draft <operator>` (v2) turns it into a kit skeleton in the current
 format (it validates against the schema): hits with frames, count, events,
 factor, applies, energy, sp, detached, finalStrike; `teamEnergyFrame`,
-`energyBlockSeconds`; notes for branches, jumps and event-driven hits. The
-loader doesn't use it yet: kits still hand-write these, and loader defaults
-from the compiler are the next step.
+`energyBlockSeconds`; notes for branches, jumps and event-driven hits.
+**Since 2026-10-25 the loader uses it** ([design.md](design.md#skills-and-buffs-from-skilldata--buffdata),
+"Kits and the game data"): it fills in frames, count, events, factor,
+element, poise, detached, energy, team energy and energy blocks a kit leaves
+out, and refuses a written value that differs from the compiled one unless
+the kit marks it (`dataOverride`, with the reason). `efsim kit-trim` removed
+1,287 values equal to the data's (50 KB of 839 KB).
 
 **Since batch 3 (D2–D4, 2026-10-20)** the compiler also reads, per landing,
 its element (damageType 0 Physical, 2 Heat, 3 Electric, 4 Cryo, 6 Nature),
@@ -102,9 +106,11 @@ on a scale (Chen's P5), Switch-chosen SP (Alesh), a buff's infliction on
 another branch than its landing (Avywenna's lance check), talents' own
 buffs and triggers, recalled entities as stacks.
 
-`packages/data/test/skillCompile.test.ts` compares the kits (batches 1 and 2) with
-it, now also each hit's element, stagger and physical statuses; every
-disagreement is listed there with its data evidence (kit errors such as
+The loader compares the kits with it (until 2026-10-25,
+`packages/data/test/skillCompile.test.ts` did, with one list of 178 accepted
+disagreements): each hit's frames, keys, factor, element, stagger, Final
+Strike, SP and its timing, launch and physical statuses; every remaining
+disagreement is marked in its kit with its data evidence (kit errors such as
 Laevatain's combo frame and Liino's follow-up frame, Arcane's missing
 Final Strike stagger and finisher stagger the data doesn't have, and
 compiler limits: buffs a skill creates on the target, jumps, event handlers,
