@@ -141,8 +141,8 @@ describe("rotation search", () => {
     differ({ ...s, buffs: [buff] }, { ...s, buffs: [{ ...buff, appliedAt: 10 }] });
     differ(s, { ...s, stagger: { ...s.stagger, poise: s.stagger.poise - 1 } });
     differ(s, { ...s, enemyFrozenUntil: 99 });
-    const hit = { frame: 99, operator: s.controlled, skillId: "x", hitId: "y", sp: 0 };
-    differ({ ...s, pending: [hit] }, { ...s, pending: [{ ...hit, snapshot: [{ zone: "atk" as const, value: 0.1, source: "test" }] }] });
+    const hit = { kind: "hit" as const, frame: 99, clock: { operator: s.controlled }, operator: s.controlled, skillId: "x", hitId: "y", sp: 0 };
+    differ({ ...s, scheduled: [hit] }, { ...s, scheduled: [{ ...hit, snapshot: [{ zone: "atk" as const, value: 0.1, source: "test" }] }] });
     // The order a path built a record in doesn't matter; Infinity isn't null.
     expect(stateKey({ ...s, readyAt: { a: 1, b: 2 } })).toBe(stateKey({ ...s, readyAt: { b: 2, a: 1 } }));
     const { id, ...rest } = buff;

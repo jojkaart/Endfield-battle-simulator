@@ -364,7 +364,7 @@ describe("S3: search tries a short timing window too", () => {
     const first = earliestStart(ctx, s, act("normal_skill"));
     const frames = legalActions(ctx, s).filter((c) => c.action.skill === L + "normal_skill").map((c) => c.frame);
     expect(frames).toEqual(["frame" in first ? first.frame : NaN, a1 + 40]);
-    const skips = (at: number) => apply(ctx, s, act("normal_skill", at)).pendingJumps.some((j) => j.from === 30);
+    const skips = (at: number) => apply(ctx, s, act("normal_skill", at)).scheduled.some((j) => j.kind === "jump" && j.from === 30);
     expect(skips(frames[0] as number)).toBe(true);
     expect(skips(a1 + 40)).toBe(false);
   });

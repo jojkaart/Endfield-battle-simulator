@@ -94,8 +94,43 @@ export interface EnemyAction {
   readonly element: Element;
 }
 
-export interface PendingHit {
+/**
+ * The clock a scheduled item runs on (docs/design.md "Time"): a slow-down or freeze that stops that clock delays it
+ * (clock.ts). `world`: everything but the operators (nothing scheduled runs on it today); `enemy`: the enemy's own
+ * (its actions, Arts Bursts), which a freeze stops too; an operator's: its casts' hits, delayed actions, team
+ * energy and jumps.
+ */
+export type Clock = "world" | "enemy" | { readonly operator: string };
+
+/** A cast: its operator and its index in the cast list (TimelineState.casts). */
+export interface CastRef {
+  readonly operator: string;
+  readonly index: number;
+}
+
+/**
+ * What every scheduled item has (TimelineState.scheduled): when it's due, on which clock, and what it belongs to, so a
+ * slow-down shifts, an interrupt cancels and a jump moves every kind of item in one pass (schedule.ts).
+ */
+export interface ScheduledHeader {
   readonly frame: number;
+  readonly clock: Clock;
+  /** The cast it belongs to: ending the cast early drops it, a jump on the cast's timeline drops or moves it (castBound). */
+  readonly cast?: CastRef;
+  /**
+   * It goes on when its cast is cut short (a projectile or entity already on its way: KitHit.detached, a detached
+   * KitTrigger, a detached team-energy part), from `launchAt` on when that's set (KitHit.launch, KitTrigger.launch: the
+   * cast's own until then).
+   */
+  readonly detached?: true;
+  readonly launchAt?: number;
+  /** It stays at its frame whatever its clock or cast does (a replayed landing at its logged frame: the log's time has the slow-downs and jumps in already). */
+  readonly pinned?: true;
+}
+
+/** A hit on its way: it lands at its frame (landing.ts landHit). */
+export interface PendingHit extends ScheduledHeader {
+  readonly kind: "hit";
   readonly operator: string;
   readonly skillId: string;
   readonly hitId: string;
@@ -109,11 +144,6 @@ export interface PendingHit {
   readonly eventCount?: number;
   /** …and what it was (applications with `element: "event"` / `status: "event"`). */
   readonly eventSource?: EventSource;
-  /** Lands even if its skill is interrupted (a projectile or entity already on its way: KitHit.detached), from `launchAt` (KitHit.launch) on. */
-  readonly detached?: boolean;
-  readonly launchAt?: number;
-  /** The index of the hit's cast (Cast list), for buffs that cast consumed. */
-  readonly cast?: number;
   /** Who was controlled when the hit's skill was cast (predicates on the hit judge `controlled` by it). */
   readonly controlledAtCast?: string;
   /**
@@ -127,11 +157,73 @@ export interface PendingHit {
   readonly fixed?: number;
   /** A periodic hit with an ATK snapshot (KitHit.atkSnapshot): its owner's attacker-side modifiers when the ticking buff was applied. */
   readonly snapshot?: readonly Modifier[];
-  /** A replayed landing at its logged frame (replayCast `landings`): slow-downs don't move it (the log's time has them in already). */
-  readonly pinned?: true;
   /** A replayed landing's reference (replayCast `landings`): its LandedHit carries it, with the facts it was computed on. */
   readonly ref?: string;
 }
+
+/**
+ * A trigger's actions due later (KitTrigger.delay), with the event that started them. Its `cast`: the cast they belong
+ * to (a cast trigger's), dropped when it's cut short; a detached cast trigger's with its launch (KitTrigger.launch).
+ */
+export interface PendingAction extends ScheduledHeader {
+  readonly kind: "action";
+  readonly owner: string;
+  readonly trigger: string;
+  readonly event: BattleEvent;
+  readonly origin: Origin | null;
+  /** A cast waits for it (KitTrigger.awaited: timing.ts ownHitsLanded). */
+  readonly awaited?: boolean;
+  /** It runs after its frame's hits (KitTrigger.afterHits). */
+  readonly afterHits?: boolean;
+}
+
+/** Ultimate energy given later than its cast (a battle skill's team energy at its data frames, KitSkill.teamEnergy): `if` judged for the caster at the frame. */
+export interface PendingEnergy extends ScheduledHeader {
+  readonly kind: "energy";
+  readonly cast: CastRef;
+  /** Who gains it. */
+  readonly operator: string;
+  readonly amount: number;
+  readonly if?: Predicate;
+}
+
+/**
+ * A jump (or, with `end`, the action's own end) at a real frame of an
+ * operator's cast, in its skill frames; or, with `then`, a dive's next
+ * part (jumpToDive): the operator casts `then` at that frame, and with
+ * `landing`, its landing follows the fall (`from` and `to` are 0).
+ */
+export interface PendingJump extends ScheduledHeader {
+  readonly kind: "jump";
+  readonly cast: CastRef;
+  readonly operator: string;
+  readonly from: number;
+  readonly to: number;
+  readonly end?: true;
+  readonly then?: string;
+  readonly landing?: string;
+}
+
+/** An Arts Burst on its way (BattleConstants.burstDelayFrames after its infliction, on the enemy's clock): it lands, deals its damage and is a `burst` event at its frame. */
+export interface PendingBurst extends ScheduledHeader {
+  readonly kind: "burst";
+  /** The burst, without its frame (the item's: landBurst). */
+  readonly event: Omit<Extract<StatusEvent, { kind: "burst" }>, "frame">;
+  /** The kind of the hit that caused it, and its cast's index (for the burst's events: not a CastRef, an interrupt doesn't stop a burst). */
+  readonly fromKind: SkillType | "none";
+  readonly fromCast?: number;
+}
+
+/** One of the enemy's actions (TimelineScenario.enemyActions), on its clock. */
+export interface PendingEnemyAction extends ScheduledHeader {
+  readonly kind: "enemyAction";
+  readonly act: EnemyActionSpec["kind"];
+  readonly target: string;
+  readonly element: Element;
+}
+
+/** Everything due at a later frame (TimelineState.scheduled); advance.ts runs them in the order of docs/design.md "Order within a frame". */
+export type Scheduled = PendingHit | PendingAction | PendingEnergy | PendingJump | PendingBurst | PendingEnemyAction;
 
 export interface Cast {
   readonly frame: number;
@@ -215,32 +307,20 @@ export interface TimelineState {
   readonly chainNext: Readonly<Record<string, ChainStep & { readonly alternatives?: readonly ChainStep[] }>>;
   /** Per skill ID: frame from which it's off cooldown (a combo cooldown run at a recovery rate may end within a frame: ready from the next whole one). */
   readonly readyAt: Readonly<Record<string, number>>;
-  readonly pending: readonly PendingHit[];
   /**
-   * Trigger actions due later (KitTrigger.delay), with the event that started them. `cast`: the cast they belong to
-   * (a cast trigger's), dropped when it's cut short; `launchAt`: a detached cast trigger's launch (KitTrigger.launch),
-   * the cast's own until then.
+   * Everything due later, in the order it was scheduled (Scheduled: hits on their way, delayed trigger actions, team
+   * energy, jumps on casts' timelines, Arts Bursts, the enemy's actions); advance runs them in the order of
+   * docs/design.md "Order within a frame".
    */
-  readonly pendingActions: readonly { readonly frame: number; readonly owner: string; readonly trigger: string; readonly event: BattleEvent; readonly origin: Origin | null; readonly cast?: { readonly operator: string; readonly index: number }; readonly awaited?: boolean; readonly launchAt?: number; readonly afterHits?: boolean }[];
-  /** Jumps and ends on casts' timelines still to come (SkillTiming.jumps and ends; a conditional jump only if the kit's condition held at the cast). */
-  readonly pendingJumps: readonly PendingJump[];
+  readonly scheduled: readonly Scheduled[];
   /** The team's Link stacks (combo casts leave one each, 15 s): their expiry frames. */
   readonly link: readonly number[];
   /** Until when a control status (Si's Immobilization) freezes the enemy's own clock. */
   readonly enemyFrozenUntil: number;
-  /** The enemy's actions still to come (TimelineScenario.enemyActions), in frame order, on its clock. */
-  readonly enemyActions: readonly EnemyAction[];
-  /** Arts Bursts still to land (BattleConstants.burstDelayFrames after their infliction), on the enemy's clock, with the kind and cast of what caused them. */
-  readonly pendingBursts: readonly PendingBurst[];
   /** The enemy's stagger: its stagger HP left, until when it's Staggered, and whether this stagger's finisher is used. */
   readonly stagger: { readonly poise: number; readonly until: number | null; readonly finisherUsed: boolean };
   /** Global time slow-downs (an ultimate's time stop, a combo's slow-down) still running or to come: per frame from `start`, all but `exempt` (the caster). */
   readonly slowdowns: readonly { readonly start: number; readonly scales: readonly number[]; readonly exempt: string }[];
-  /**
-   * Ultimate energy given later than the cast (a battle skill's team energy at its data frames, KitSkill.teamEnergy):
-   * `cast`, the cast that grants it, dropped if it's cut short first; `if` judged for the caster at the frame.
-   */
-  readonly pendingEnergy: readonly { readonly frame: number; readonly operator: string; readonly amount: number; readonly cast?: { readonly operator: string; readonly index: number }; readonly if?: Predicate; readonly detached?: boolean }[];
   readonly enemy: EnemyStatus;
   /** Timed buffs and debuffs from skills. */
   readonly buffs: readonly ActiveBuff[];
@@ -299,23 +379,6 @@ export interface Acting {
   readonly windows?: readonly number[];
 }
 
-/**
- * A jump (or, with `end`, the action's own end) at a real frame of an
- * operator's cast, in its skill frames; or, with `then`, a dive's next
- * part (jumpToDive): the operator casts `then` at that frame, and with
- * `landing`, its landing follows the fall (`from` and `to` are 0).
- */
-export interface PendingJump {
-  readonly frame: number;
-  readonly operator: string;
-  readonly cast: number;
-  readonly from: number;
-  readonly to: number;
-  readonly end?: true;
-  readonly then?: string;
-  readonly landing?: string;
-}
-
 /** A basic-attack chain step and the frames in which an attack input resolves to it. */
 export interface ChainStep {
   readonly skill: string;
@@ -324,14 +387,6 @@ export interface ChainStep {
 }
 
 export type Stacks = TimelineState["stacks"];
-
-/** An Arts Burst on its way: it lands, deals its damage and is a `burst` event at `frame`. */
-export interface PendingBurst {
-  readonly frame: number;
-  readonly event: Extract<StatusEvent, { kind: "burst" }>;
-  readonly fromKind: SkillType | "none";
-  readonly cast?: number;
-}
 
 /** What started a chain of events: an operator's own combo hits don't open its own combo window. */
 export interface Origin {

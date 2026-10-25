@@ -11,7 +11,7 @@ import { type ActiveBuff, applyBuff, buffEndedEvent, buffReach, endBuff, endBuff
 import { applyToEnemy, expireStatus } from "../status.ts";
 import { FPS } from "../units.ts";
 import type { Origin, PendingHit, Stacks, TimelineContext, TimelineState } from "./state.ts";
-import { COMBO_WINDOW_FRAMES, LINK_FRAMES } from "./rules.ts";
+import { COMBO_WINDOW_FRAMES, LINK_FRAMES, hasteFrames } from "./rules.ts";
 import { panelAt, skillCosts, timingOf } from "./context.ts";
 import { shiftEnemy } from "./clock.ts";
 import { cooldownEnd, dealPoise, gainEnergy, gainSp, maxEnergy, rateProgress, rateReady, rebaseCooldowns, spGrantOf } from "./resources.ts";
@@ -19,6 +19,7 @@ import { actionFrame, ownWindowSkills, playheadOf } from "./timing.ts";
 import { artsIntensity, attackerSide, eventCountOf, eventSourceOf, healEvents, situationAt, statusTweaks, triggerSituation } from "./situation.ts";
 import { asEvents, delayBursts, draw, landHit, recordStatus } from "./landing.ts";
 import { castSkill, endCurrentSkill, takeJump } from "./casting.ts";
+import { schedule } from "./schedule.ts";
 
 /**
  * A kit buff applied: what it is for triggers on buff categories (buffReach: categories and the elements each
@@ -153,12 +154,13 @@ export function runTriggers(ctx: TimelineContext, state: TimelineState, initial:
         if (castKey) st = { ...st, triggerState: { ...st.triggerState, [castKey]: { readyAt: 0, count: (st.triggerState[castKey]?.count ?? 0) + 1 } } };
         if (t.delay) {
           // A detached trigger's actions are the cast's own until their launch.
-          const cast = e.type === "cast" && e.cast !== undefined && (!t.detached || t.launch !== undefined) ? { cast: { operator: e.operator, index: e.cast } } : {};
+          const cast = e.type === "cast" && e.cast !== undefined && (!t.detached || t.launch !== undefined) ? { cast: { operator: e.operator, index: e.cast } } : undefined;
           // A cast's own effects at frames play at its speed, as its hits do (Haste).
           const acting = e.type === "cast" ? st.acting[e.operator] : undefined;
-          const scaled = (f: number) => (acting && acting.frame === e.frame && acting.speed ? Math.round(f / acting.speed) : f);
-          const launch = t.detached && t.launch !== undefined && "cast" in cast ? { launchAt: e.frame + scaled(t.launch) } : {};
-          st = { ...st, pendingActions: [...st.pendingActions, { frame: e.frame + scaled(t.delay), owner, trigger: t.id, event: e, origin, ...cast, ...launch, ...(t.awaited ? { awaited: true } : {}), ...(t.afterHits ? { afterHits: true } : {}) }] };
+          const scaled = (f: number) => (acting && acting.frame === e.frame ? hasteFrames(f, acting.speed) : f);
+          const launch = t.detached && t.launch !== undefined && cast ? { detached: true as const, launchAt: e.frame + scaled(t.launch) } : {};
+          // On its cast's operator's clock (as the cast's hits), else its owner's.
+          st = schedule(st, [{ kind: "action", frame: e.frame + scaled(t.delay), clock: { operator: cast?.cast.operator ?? owner }, owner, trigger: t.id, event: e, origin, ...cast, ...launch, ...(t.awaited ? { awaited: true } : {}), ...(t.afterHits ? { afterHits: true } : {}) }]);
           continue;
         }
         const r = runActions(ctx, st, t, owner, e, origin, atEvent);
@@ -304,13 +306,13 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
         // The playhead: real frames since the start, plus what jumps skipped, in skill frames.
         const playhead = playheadOf(cur, frame);
         if (playhead < a.from || playhead >= a.until || a.to <= playhead) break;
-        const r = takeJump(st, { frame, operator: owner, cast: cur.cast, from: playhead, to: a.to });
+        const r = takeJump(st, { kind: "jump", frame, clock: { operator: owner }, cast: { operator: owner, index: cur.cast }, operator: owner, from: playhead, to: a.to });
         st = rebaseCooldowns(ctx, st, r.state, frame);
         events.push(...r.events);
         break;
       }
       case "cancelHits":
-        st = { ...st, pending: st.pending.filter((h) => !(h.operator === owner && h.trigger?.id === a.trigger)) };
+        st = { ...st, scheduled: st.scheduled.filter((h) => !(h.kind === "hit" && h.operator === owner && h.trigger?.id === a.trigger)) };
         break;
       case "cooldown": {
         const who = a.who === "self" ? owner : a.who === "eventOperator" ? e.operator : ctx.scenario.team[a.who.slot]?.operator;
@@ -347,11 +349,12 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
         const pending: PendingHit[] = [];
         // `now`: its frame-0 hits land as the action runs, before the trigger's next action (a DamageAction inside an event handler).
         const landNow: PendingHit[] = [];
+        const clock = { operator: owner };
         for (const h of a.hits) {
           // A count that's a value is judged as the action runs.
           (typeof h.count === "number" ? (h.frames ?? Array.from({ length: h.count }, () => 0)) : landingFrames(h, evaluate(h.count, ec()))).forEach((f, i) => {
             const p: PendingHit = {
-              frame: frame + f, operator: owner, skillId: triggerSkillId(owner, t), hitId: h.id, sp: 0, trigger: { id: t.id, action: index, ...(nested.length ? { nested } : {}) },
+              kind: "hit", frame: frame + f, clock, operator: owner, skillId: triggerSkillId(owner, t), hitId: h.id, sp: 0, trigger: { id: t.id, action: index, ...(nested.length ? { nested } : {}) },
               ...(h.branch ? { branch: `${owner}:${t.id}:${frame}:${h.branch}:${i}` } : {}), ...(h.fixedDamage !== undefined ? { fixed: evaluate(h.fixedDamage, ec()) } : {}),
               // A tick's hit with an ATK snapshot keeps the attacker side its buff took when applied.
               ...(h.atkSnapshot && e.type === "buffTick" && e.snapshot ? { snapshot: e.snapshot } : {}),
@@ -359,7 +362,7 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
             (a.now && f === 0 ? landNow : pending).push(p);
           });
         }
-        st = { ...st, pending: [...st.pending, ...pending] };
+        st = schedule(st, pending);
         for (const p of landNow) st = landHit(ctx, st, p);
         break;
       }

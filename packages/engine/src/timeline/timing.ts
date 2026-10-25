@@ -9,11 +9,12 @@ import { test } from "../expr.ts";
 import { activeAt } from "../buffs.ts";
 import { FPS } from "../units.ts";
 import type { Acting, ChainStep, PendingJump, RotationAction, TimelineContext, TimelineState } from "./state.ts";
-import { CHAIN_CACHE_FRAMES, priorityOf, SP } from "./rules.ts";
+import { CHAIN_CACHE_FRAMES, priorityOf, SP, hasteFrames, skillFramesOf } from "./rules.ts";
 import { kitSkill, panelAt, skillCosts, timingOf } from "./context.ts";
 import { afterRegen, isStaggered, spAt, spCostAt } from "./resources.ts";
 import { situationAt } from "./situation.ts";
 import { advance } from "./advance.ts";
+import { castBound, ofCast, ofKind } from "./schedule.ts";
 
 /**
  * Combo-kind skills of an operator that an `openCombo` with `skills` names:
@@ -53,7 +54,7 @@ export function needsWindow(ctx: TimelineContext, operator: string, skill: KitSk
 
 /** The real frame of an action's skill frame `x`: from its start at its speed, less what its jumps skipped (a skipped frame is its jump's). */
 export function actionFrame(cur: Acting, x: number): number {
-  let f = cur.frame + (cur.speed ? Math.round(x / cur.speed) : x);
+  let f = cur.frame + hasteFrames(x, cur.speed);
   for (const j of cur.skips ?? []) {
     if (x <= j.from) continue;
     if (x < j.to) return j.at;
@@ -159,7 +160,7 @@ function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, s
  */
 export function chainAfter(ctx: TimelineContext, st: TimelineState, operator: string, skill: KitSkill, frame: number, speed = 1, openWindows: readonly number[] = []): TimelineState["chainNext"] {
   const t = timingOf(ctx, skill.skillId);
-  const at = (x: number) => frame + Math.round(x / speed);
+  const at = (x: number) => frame + hasteFrames(x, speed);
   const { [operator]: prev, ...rest } = st.chainNext;
   if (skill.kind === "basic" && t.specification === 1) {
     const kit = ctx.kits.get(operator);
@@ -185,7 +186,7 @@ function ownHitsLanded(st: TimelineState, operator: string): number {
   const cast = st.acting[operator]?.cast ?? st.casts.findLastIndex((c) => c.operator === operator);
   // An end on its timeline that comes before any jump (InterruptCurSkillAction) drops what lies past it: nothing there to
   // wait for on this path (Snowshine's bash, reached only through her counter's jump; a jump an attack sets off is judged again).
-  const next = st.pendingJumps.filter((j) => j.operator === operator && j.cast === cast).reduce<PendingJump | null>((a, x) => (!a || x.frame < a.frame ? x : a), null);
+  const next = ofKind(st.scheduled, "jump").filter((j) => ofCast(j, operator, cast)).reduce<PendingJump | null>((a, x) => (!a || x.frame < a.frame ? x : a), null);
   const until = next?.end ? next.frame : Infinity;
   let last = 0;
   // What a jump still due on the cast will skip never happens, so nothing waits for it either (batch 3 S2: Wulfgard's plain
@@ -195,8 +196,12 @@ function ownHitsLanded(st: TimelineState, operator: string): number {
     if (f <= until && !skipped(f)) last = Math.max(last, f);
   };
   // A detached hit is the cast's own until its launch: interrupting before it would cancel it (one on its way from frame 0 waits for nothing).
-  for (const h of st.pending) if (h.operator === operator && h.cast === cast && !(h.detached && h.launchAt === undefined)) wait(h.detached ? (h.launchAt as number) : h.frame);
-  for (const a of st.pendingActions) if ((a.awaited || a.launchAt !== undefined) && a.cast && a.cast.operator === operator && a.cast.index === cast) wait(a.launchAt ?? a.frame);
+  for (const x of st.scheduled) {
+    if (!ofCast(x, operator, cast)) continue;
+    const bound = castBound(x);
+    if (x.kind === "hit" && bound !== null) wait(bound);
+    if (x.kind === "action" && (x.awaited || x.launchAt !== undefined)) wait(x.launchAt ?? x.frame);
+  }
   return last;
 }
 
@@ -208,16 +213,16 @@ function ownHitsLanded(st: TimelineState, operator: string): number {
 function skippedByJumps(st: TimelineState, operator: string, cast: number): (frame: number) => boolean {
   const speed = st.acting[operator]?.speed;
   const spans: { readonly at: number; readonly until: number }[] = [];
-  for (const j of st.pendingJumps.filter((x) => x.operator === operator && x.cast === cast && !x.end).sort((a, b) => a.frame - b.frame)) {
+  for (const j of ofKind(st.scheduled, "jump").filter((x) => ofCast(x, operator, cast) && !x.end).sort((a, b) => a.frame - b.frame)) {
     if (spans.some((s) => j.frame > s.at && j.frame < s.until)) continue;
-    spans.push({ at: j.frame, until: j.frame + (speed ? Math.round((j.to - j.from) / speed) : j.to - j.from) });
+    spans.push({ at: j.frame, until: j.frame + hasteFrames(j.to - j.from, speed) });
   }
   return (frame) => spans.some((s) => frame > s.at && frame < s.until);
 }
 
 /** An action's playhead at a real frame, in skill frames: real frames since its start plus what its jumps skipped, at its speed. */
 export function playheadOf(cur: Acting, frame: number): number {
-  return Math.round((frame - cur.frame + (cur.skips ?? []).filter((k) => k.at <= frame).reduce((t, k) => t + k.length, 0)) * (cur.speed ?? 1));
+  return skillFramesOf(frame - cur.frame + (cur.skips ?? []).filter((k) => k.at <= frame).reduce((t, k) => t + k.length, 0), cur.speed);
 }
 
 /**
@@ -256,8 +261,8 @@ export function earliestStart(ctx: TimelineContext, state: TimelineState, action
   // Its action may end sooner: a kit's endAction or follow-up cast (Purrchena's block or loop replaces the current skill), a jump or end on its timeline, a perfect dodge.
   const ends =
     ctx.kits.get(action.operator)?.triggers.some((t) => allActions(t.do).some((a) => a.kind === "endAction" || a.kind === "cast")) ||
-    state.pendingJumps.some((j) => j.operator === action.operator) ||
-    (ctx.scenario.options.dodge !== undefined && state.enemyActions.some((a) => a.kind === "attack"));
+    state.scheduled.some((x) => x.kind === "jump" && x.operator === action.operator) ||
+    (ctx.scenario.options.dodge !== undefined && state.scheduled.some((x) => x.kind === "enemyAction" && x.act === "attack"));
   if (!cur || ("frame" in r && r.frame <= state.frame) || !ends) return r;
   const t = timingOf(ctx, cur.skill);
   const horizon = Math.min(ctx.scenario.durationFrames, "frame" in r ? r.frame : actionFrame(cur, t.durationFrames));
@@ -374,7 +379,7 @@ export function startFrom(ctx: TimelineContext, state: TimelineState, action: Ro
       if (!windowOpen(then, action.operator, key, frame)) {
         // Not open yet: wait for a hit already on its way to open it (a recorded rotation's combo follows its trigger), or for
         // a delayed trigger action to (a combo opening its own next sequence some frames in).
-        const later = [...new Set([...state.pending.map((h) => h.frame), ...state.pendingActions.map((x) => x.frame)].filter((f) => f > frame))].sort((a, b) => a - b);
+        const later = [...new Set(state.scheduled.filter((x) => (x.kind === "hit" || x.kind === "action") && x.frame > frame).map((x) => x.frame))].sort((a, b) => a - b);
         const opens = later.find((f) => windowOpen(advance(ctx, state, f), action.operator, key, f));
         if (opens === undefined || opens > ctx.scenario.durationFrames) return { error: `${action.skill}: its combo trigger hasn't happened (no open window at frame ${frame})` };
         frame = opens;

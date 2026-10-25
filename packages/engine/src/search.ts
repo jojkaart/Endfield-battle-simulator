@@ -34,6 +34,8 @@ import {
   type TimelineScenario,
   type TimelineState,
 } from "./timeline.ts";
+import type { Scheduled } from "./timeline/state.ts";
+import { ofKind } from "./timeline/schedule.ts";
 
 export interface Candidate {
   readonly action: RotationAction;
@@ -180,7 +182,7 @@ function timingChoices(ctx: TimelineContext, state: TimelineState, c: Candidate)
   for (const p of [...(skill.jumps ?? []).map((j) => j.if), ...(skill.windows ?? []).flatMap((w) => (w.if ? [w.if] : [])), ...skill.hits.flatMap((h) => (h.if ? [h.if] : []))]) for (const id of predicateRefs(p).buffs) read.add(id);
   if (read.size === 0) return [];
   const frames = new Set<number>();
-  for (const a of state.pendingActions) {
+  for (const a of ofKind(state.scheduled, "action")) {
     if (a.owner !== c.action.operator || a.frame <= c.frame || a.frame > ctx.scenario.durationFrames) continue;
     const t = kit.triggers.find((x) => x.id === a.trigger);
     if (t && allActions(t.do).some((x) => x.kind === "buff" && read.has(x.buff))) frames.add(a.frame);
@@ -391,12 +393,30 @@ type KeyRules<T> = { readonly [K in keyof T]-?: KeyRule<T[K]> };
 /** Rounded to 0.1: SP and energy reached by different paths differ in floating-point noise (a search policy: states this close are one). */
 const round = (x: number) => Math.round(x * 10) / 10;
 
-/** A pending hit: everything about it decides what it does when it lands. */
-const PENDING_HIT_KEY: KeyRules<TimelineState["pending"][number]> = {
-  frame: true, operator: true, skillId: true, hitId: true, sp: true, spKind: true, spSource: true, usesUp: true, eventCount: true, eventSource: true,
-  detached: true, launchAt: true, cast: true, controlledAtCast: true, trigger: true, branch: true, fixed: true, snapshot: true, pinned: true,
-  ref: "a replayed landing's reference, which no search sets",
+/** A scheduled item's header (ScheduledHeader): when it's due, on which clock, what it belongs to. */
+const HEADER_KEY = { kind: true, frame: true, clock: true, cast: true, detached: true, launchAt: true, pinned: true } as const;
+
+/** Each kind of scheduled item: everything about it decides what it does when it's due, but a replayed landing's reference. */
+const SCHEDULED_KEY: { readonly [K in Scheduled["kind"]]: KeyRules<Extract<Scheduled, { kind: K }>> } = {
+  hit: {
+    ...HEADER_KEY, operator: true, skillId: true, hitId: true, sp: true, spKind: true, spSource: true, usesUp: true, eventCount: true, eventSource: true,
+    controlledAtCast: true, trigger: true, branch: true, fixed: true, snapshot: true, ref: "a replayed landing's reference, which no search sets",
+  },
+  action: { ...HEADER_KEY, owner: true, trigger: true, event: true, origin: true, awaited: true, afterHits: true },
+  energy: { ...HEADER_KEY, operator: true, amount: true, if: true },
+  jump: { ...HEADER_KEY, operator: true, from: true, to: true, end: true, then: true, landing: true },
+  burst: { ...HEADER_KEY, event: true, fromKind: true, fromCast: true },
+  enemyAction: { ...HEADER_KEY, act: true, target: true, element: true },
 };
+const SCHEDULED_KINDS = Object.keys(SCHEDULED_KEY) as Scheduled["kind"][];
+
+/**
+ * The scheduled list as each kind's items, in order: the order within a kind is what advance's ties go by (the first
+ * scheduled), how kinds interleave isn't (each kind has its own place in a frame: docs/design.md "Order within a frame").
+ */
+function scheduledKey(list: readonly Scheduled[]): Record<string, unknown> {
+  return Object.fromEntries(SCHEDULED_KINDS.map((k) => [k, list.filter((x) => x.kind === k).map((x) => project(x, SCHEDULED_KEY[k] as KeyRules<typeof x>))]));
+}
 
 /** A timed buff: everything about it decides what it does (its layers, ticks, records, recipients, the cast it belongs to). */
 const BUFF_KEY: KeyRules<ActiveBuff> = {
@@ -419,16 +439,11 @@ const STATE_KEY: KeyRules<TimelineState> = {
   acting: true,
   chainNext: true,
   readyAt: true,
-  pending: (p) => p.map((h) => project(h, PENDING_HIT_KEY)),
-  pendingActions: true,
-  pendingJumps: true,
+  scheduled: scheduledKey,
   link: true,
   enemyFrozenUntil: true,
-  enemyActions: true,
-  pendingBursts: true,
   stagger: true,
   slowdowns: true,
-  pendingEnergy: true,
   enemy: true,
   buffs: (b) => b.map((x) => project(x, BUFF_KEY)),
   triggerState: true,

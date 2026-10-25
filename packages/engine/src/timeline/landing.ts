@@ -15,6 +15,7 @@ import { enemyAttr, kitSkill, panelAt } from "./context.ts";
 import { dealPoise, gainEnergy, gainSp, isStaggered, spGrantOf } from "./resources.ts";
 import { artsIntensity, attackerSide, buffSituation, damageOptions, healEvents, situationAt, statusTweaks } from "./situation.ts";
 import { addBuff, buffAppliedEvent, changedStacks, gainStacks, runTriggers } from "./actions.ts";
+import { ofKind, schedule } from "./schedule.ts";
 
 /** The modifiers a logged fight gives a kit hit's landing that no kit models (TimelineScenario.loggedModifiers): the nearest logged landing's within a frame, none without. */
 function loggedModifiersAt(ctx: TimelineContext, operator: string, events: readonly string[], frame: number): readonly Modifier[] {
@@ -145,8 +146,12 @@ export function delayBursts(ctx: TimelineContext, st: TimelineState, events: rea
   const delay = (e: StatusEvent) => (e.kind === "burst" ? ctx.burstDelayFrames[e.element] : 0);
   const now = events.filter((e) => delay(e) === 0);
   if (now.length === events.length) return { state: st, now };
-  const later = events.flatMap((e) => (e.kind === "burst" && delay(e) > 0 ? [{ frame: e.frame + delay(e), event: { ...e, frame: e.frame + delay(e) }, fromKind, ...(cast !== undefined ? { cast } : {}) }] : []));
-  return { state: { ...st, pendingBursts: [...st.pendingBursts, ...later] }, now };
+  const later = events.flatMap((e): PendingBurst[] => {
+    if (e.kind !== "burst" || delay(e) === 0) return [];
+    const { frame: _at, ...event } = e;
+    return [{ kind: "burst", frame: e.frame + delay(e), clock: "enemy", event, fromKind, ...(cast !== undefined ? { fromCast: cast } : {}) }];
+  });
+  return { state: schedule(st, later), now };
 }
 
 /** A pending hit's kit entry, the skill its values come from and its kind. */
@@ -176,6 +181,7 @@ function hitOrder(ctx: TimelineContext, hit: PendingHit): number {
 export function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): TimelineState {
   let st = state;
   const { skill, kind, kitHit } = pendingHitDef(ctx, hit);
+  const castIndex = hit.cast?.index;
   const spEvents: BattleEvent[] = [];
   if (hit.sp > 0) {
     const spKind = hit.spKind ?? "returned";
@@ -189,7 +195,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   // Who counts as controlled is who was when its skill was cast.
   const controlled = hit.controlledAtCast ?? st.controlled;
   // The Link stacks its cast used (castLink; a triggered hit is of no cast: 0).
-  const castLink = hit.cast !== undefined ? (st.casts[hit.cast]?.link ?? 0) : 0;
+  const castLink = castIndex !== undefined ? (st.casts[castIndex]?.link ?? 0) : 0;
   const at = (consumedSoFar?: number): Situation => ({ ...situationAt(ctx, hit.operator, st, hit.frame, consumedSoFar), controlled, castLink, ...(hit.eventCount !== undefined ? { eventCount: hit.eventCount } : {}) });
   const before = at();
   const buffsAtLanding = st.buffs;
@@ -199,9 +205,9 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   };
   // Alternatives of one landing are judged together, on the situation before any of them: the first in kit order that happens lands.
   if (hit.branch) {
-    const members = [hit, ...st.pending.filter((p) => p.branch === hit.branch)].sort((a, b) => hitOrder(ctx, a) - hitOrder(ctx, b));
+    const members = [hit, ...ofKind(st.scheduled, "hit").filter((p) => p.branch === hit.branch)].sort((a, b) => hitOrder(ctx, a) - hitOrder(ctx, b));
     const chosen = members.find(happens);
-    st = { ...st, pending: st.pending.filter((p) => p.branch !== hit.branch || p === chosen) };
+    st = { ...st, scheduled: st.scheduled.filter((p) => !(p.kind === "hit" && p.branch === hit.branch) || p === chosen) };
     if (chosen !== hit) return st;
   } else if (!happens(hit)) return st;
   // A poise-only landing (KitHit.poiseOnly): its Stagger and nothing else (the cast's SP on its first landing stays).
@@ -224,7 +230,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
       if (!resolved) continue;
       const side = st;
       const r = applyToEnemy(st.enemy, resolved, hit.frame, hit.operator, ai, (key) => skillValue(ctx.data, panel, build, hit.skillId, key), statusTweaks(ctx, st, hit.operator, hit.frame), () => attackerSide(side, hit.operator, hit.frame));
-      const d = delayBursts(ctx, { ...st, enemy: r.state }, r.events, kind, hit.cast);
+      const d = delayBursts(ctx, { ...st, enemy: r.state }, r.events, kind, castIndex);
       st = d.state;
       out.push(...d.now);
       for (const x of r.events) if (x.kind === "consumed") consumed += x.stacks;
@@ -235,7 +241,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   // A hit computed as a burst is one for triggers too (its damage is the hit's own).
   const burst: StatusEvent[] = kitHit.reaction?.kind === "burst" ? [{ kind: "burst", frame: hit.frame, operator: hit.operator, element: kitHit.reaction.element }] : [];
   // Triggers that act before the hit's damage on its own status events (a buff they apply already counts for it).
-  if ((statusEvents.length || burst.length) && ctx.beforeDamage) st = runTriggers(ctx, st, asEvents([...statusEvents, ...burst], kind, hit.cast), { operator: hit.operator, kind }, (t) => t.beforeDamage === true, false);
+  if ((statusEvents.length || burst.length) && ctx.beforeDamage) st = runTriggers(ctx, st, asEvents([...statusEvents, ...burst], kind, castIndex), { operator: hit.operator, kind }, (t) => t.beforeDamage === true, false);
   let stacksChanged: string[] = [];
   const events: BattleEvent[] = [];
   if (kitHit.gains?.length) {
@@ -280,7 +286,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   // A replayed fight's logged crit for this landing (TimelineScenario.loggedCrits), which decides it.
   const loggedCrit = hit.fixed === undefined ? loggedCritAt(ctx, hit.operator, kitHit.events, hit.frame) : undefined;
   const decorations = hitDecorations(kitHit, finisher);
-  const options = hit.fixed !== undefined ? null : damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast, hit.snapshot);
+  const options = hit.fixed !== undefined ? null : damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, castIndex, hit.snapshot);
   const result = !options ? fixedHit(skill.skillId, kitHit, hit.fixed as number) : computeHit(ctx.data, build, panel, ctx.scenario.target, skill, kitHit, {
     ...options,
     decorations,
@@ -311,7 +317,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   const enemyAtDamage = st.enemy;
   const lateEvents = applyPhase(true);
   // Triggers that act on a hit's own status events before its damage act on these as they happen.
-  if (lateEvents.length && ctx.beforeDamage) st = runTriggers(ctx, st, asEvents(lateEvents, kind, hit.cast), { operator: hit.operator, kind }, (t) => t.beforeDamage === true, false);
+  if (lateEvents.length && ctx.beforeDamage) st = runTriggers(ctx, st, asEvents(lateEvents, kind, castIndex), { operator: hit.operator, kind }, (t) => t.beforeDamage === true, false);
   applyBuffs(false);
   if (hit.usesUp) {
     const own = st.stacks[hit.operator] ?? {};
@@ -330,7 +336,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     const landing = {
       hit: { element: kitHit.reaction?.element ?? kitHit.element, skillType: kitHit.reaction || kind === "none" ? null : kind, staggered: isStaggered(st, hit.frame), kind: kitHit.reaction?.kind ?? kind, decorations },
       ec: evalContext(ctx.data, build, panel, hit.skillId, at(consumed)),
-      ...(hit.cast !== undefined ? { cast: hit.cast } : {}),
+      ...(castIndex !== undefined ? { cast: castIndex } : {}),
     };
     const r = dealPoise(ctx, st, hit.operator, resolveValue(ctx.data, build, panel, hit.skillId, kitHit.poise, at(consumed)), hit.frame, landing);
     st = r.state;
@@ -342,11 +348,11 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     element: kitHit.reaction?.element ?? kitHit.element, finalStrike: kitHit.finalStrike ?? false, finisher, controlled: st.controlled === hit.operator,
     ...(kitHit.dive ? { dive: true } : {}),
     ...(kitHit.reaction ? { reaction: true } : {}),
-    ...(hit.cast !== undefined ? { cast: hit.cast } : {}),
+    ...(castIndex !== undefined ? { cast: castIndex } : {}),
     ...(typeof loggedCrit === "boolean" ? (loggedCrit ? { crit: true } : {}) : (ctx.scenario.options.crit === "always" && hit.fixed === undefined) || result.crit ? { crit: true } : {}),
   };
   const all: BattleEvent[] = [
-    hitEvent, ...asEvents(statusEvents, kind, hit.cast), ...asEvents(burst, kind, hit.cast), ...asEvents(lateEvents, kind, hit.cast), ...poiseEvents, ...events, ...spEvents,
+    hitEvent, ...asEvents(statusEvents, kind, castIndex), ...asEvents(burst, kind, castIndex), ...asEvents(lateEvents, kind, castIndex), ...poiseEvents, ...events, ...spEvents,
     ...(kitHit.heals ? healEvents(ctx, st, hit.operator, kitHit.heals, hit.frame, kind) : []),
     ...(kitHit.gains?.length ? [{ type: "stacks" as const, frame: hit.frame, operator: hit.operator, changed: stacksChanged }] : []),
   ];
@@ -356,9 +362,12 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
 /** A burst lands: before-damage triggers on it, its damage (on the enemy as it is now), then its other triggers. */
 export function landBurst(ctx: TimelineContext, state: TimelineState, b: PendingBurst): TimelineState {
   const origin = { operator: b.event.operator, kind: b.fromKind };
-  const events = asEvents([b.event], b.fromKind, b.cast);
+  // As it was inflicted, at its own frame (kind and frame first, as status.ts makes it).
+  const { kind: burstKind, ...rest } = b.event;
+  const burst = { kind: burstKind, frame: b.frame, ...rest };
+  const events = asEvents([burst], b.fromKind, b.fromCast);
   let st = { ...state, enemy: expireStatus(state.enemy, b.frame) };
   if (ctx.beforeDamage) st = runTriggers(ctx, st, events, origin, (t) => t.beforeDamage === true, false);
-  st = recordStatus(ctx, st, [b.event], st.enemy);
+  st = recordStatus(ctx, st, [burst], st.enemy);
   return runTriggers(ctx, st, events, origin, ctx.beforeDamage ? (t) => !t.beforeDamage : undefined);
 }

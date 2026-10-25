@@ -7,7 +7,7 @@ import type { GameData } from "../model.ts";
 import { evaluate } from "../expr.ts";
 import { NO_STATUS } from "../status.ts";
 import { FPS } from "../units.ts";
-import type { Cast, LandedHit, PendingHit, ReactionRecord, RotationAction, TimelineContext, TimelineScenario, TimelineState } from "./state.ts";
+import type { Cast, LandedHit, PendingEnemyAction, PendingHit, ReactionRecord, RotationAction, TimelineContext, TimelineScenario, TimelineState } from "./state.ts";
 import { SP, TIMELINE_ASSUMPTIONS } from "./rules.ts";
 import { createContext, enemyActionsOf, kitSkill, maxPoise, panelAt, skillCosts } from "./context.ts";
 import { maxEnergy, spAt, spCostAt } from "./resources.ts";
@@ -15,6 +15,7 @@ import { earliestStart, needsWindow, startFrom, windowKey, windowOpen } from "./
 import { runTriggers } from "./actions.ts";
 import { castSkill, jumpToDive } from "./casting.ts";
 import { advance } from "./advance.ts";
+import { ofCast, ofKind } from "./schedule.ts";
 
 export function init(ctx: TimelineContext): TimelineState {
   const st = initialState(ctx);
@@ -40,16 +41,12 @@ function initialState(ctx: TimelineContext): TimelineState {
     controlled,
     acting: {},
     chainNext: {},
-    pendingJumps: [],
     readyAt: {},
-    pending: [],
-    pendingEnergy: [],
-    pendingActions: [],
+    // The enemy's actions, in frame order (attacks before charges at one frame), on its clock.
+    scheduled: enemyActionsOf(ctx.scenario).map((a): PendingEnemyAction => ({ kind: "enemyAction", frame: a.frame, clock: "enemy", act: a.kind, target: a.target, element: a.element })),
     slowdowns: [],
     stagger: { poise: maxPoise(ctx), until: null, finisherUsed: false },
     enemyFrozenUntil: 0,
-    enemyActions: enemyActionsOf(ctx.scenario),
-    pendingBursts: [],
     link: [],
     enemy: NO_STATUS,
     buffs: [],
@@ -117,7 +114,7 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
   if (opts.landings?.length) {
     // The cast's own landings of each kit hit, in frame order: the n-th moves to its logged frame.
     const own = new Map<string, PendingHit[]>();
-    for (const h of st.pending) if (h.cast === index && !h.trigger && h.operator === operator && h.skillId === skillId) own.set(h.hitId, [...(own.get(h.hitId) ?? []), h]);
+    for (const h of ofKind(st.scheduled, "hit")) if (ofCast(h, operator, index) && !h.trigger && h.skillId === skillId) own.set(h.hitId, [...(own.get(h.hitId) ?? []), h]);
     for (const list of own.values()) list.sort((a, b) => a.frame - b.frame);
     const moved = new Map<PendingHit, { frame: number; ref?: string }>();
     for (const l of opts.landings) {
@@ -126,7 +123,7 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     }
     // A pinned landing was launched by its logged frame (a detached one's launch, KitHit.launch, is on the kit's timeline, which jumps shorten).
     const pin = (h: PendingHit, m: { frame: number; ref?: string }): PendingHit => ({ ...h, ...m, pinned: true, ...(h.launchAt !== undefined ? { launchAt: Math.min(h.launchAt, m.frame) } : {}) });
-    st = { ...st, pending: st.pending.map((h) => { const m = moved.get(h); return m ? pin(h, m) : h; }) };
+    st = { ...st, scheduled: st.scheduled.map((h) => { const m = h.kind === "hit" ? moved.get(h) : undefined; return m && h.kind === "hit" ? pin(h, m) : h; }) };
   }
   return runTriggers(ctx, st, r.events, r.origin);
 }

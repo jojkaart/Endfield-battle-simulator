@@ -6,6 +6,7 @@ import { type ActiveBuff, buffAttr } from "../buffs.ts";
 import type { ChainStep, TimelineContext, TimelineState } from "./state.ts";
 import { attrTotal, panelAt } from "./context.ts";
 import { rebaseCooldowns } from "./resources.ts";
+import { onOperator, shiftClock } from "./schedule.ts";
 
 /**
  * A skill's global slow-downs (docs/design.md "Time"): the world (enemy
@@ -63,8 +64,7 @@ export function shiftEnemy(st: TimelineState, start: number, n: number): Timelin
     },
     buffs: st.buffs.map((b) => (b.target === "enemy" ? shiftBuff(b, start, n) : b)),
     stagger: st.stagger.until !== null ? { ...st.stagger, until: later(st.stagger.until) } : st.stagger,
-    enemyActions: st.enemyActions.map((a) => (a.frame > start ? { ...a, frame: a.frame + n } : a)),
-    pendingBursts: st.pendingBursts.map((b) => (b.frame > start ? { ...b, frame: b.frame + n, event: { ...b.event, frame: b.frame + n } } : b)),
+    scheduled: shiftClock(st.scheduled, (c) => c === "enemy", start, n),
   };
 }
 
@@ -81,6 +81,7 @@ function shiftWorld(st: TimelineState, start: number, n: number): TimelineState 
   return {
     ...e,
     buffs: e.buffs.map((b) => (b.target === "enemy" ? b : shiftBuff(b, start, n))),
+    scheduled: shiftClock(e.scheduled, (c) => c === "world", start, n),
     comboWindow: Object.fromEntries(Object.entries(st.comboWindow).map(([k, w]) => [k, { ...w, until: later(w.until) }])),
     energyBlockedUntil: Object.fromEntries(Object.entries(st.energyBlockedUntil).map(([k, f]) => [k, later(f)])),
     link: st.link.map(later),
@@ -105,9 +106,9 @@ function stopSp(stops: TimelineState["spStops"], start: number, n: number): Time
 }
 
 /**
- * An operator's own timeline after `start` (its hits on the way, delayed actions, its casts' team energy, current
- * action) happens `n` frames later. What belongs to a cast goes with the cast's operator (as endCurrentSkill and
- * takeJump treat it); a delayed action of no cast goes with its trigger's owner.
+ * An operator's own timeline after `start` (what's scheduled on its clock: its hits on the way, delayed actions, its
+ * casts' team energy and jumps; its current action) happens `n` frames later. What belongs to a cast is on the cast's
+ * operator's clock (as endCurrentSkill and takeJump treat it); a delayed action of no cast on its trigger's owner's.
  */
 export function shiftOperator(st: TimelineState, operator: string, start: number, n: number): TimelineState {
   if (n <= 0) return st;
@@ -117,10 +118,7 @@ export function shiftOperator(st: TimelineState, operator: string, start: number
   const chain = st.chainNext[operator];
   return {
     ...st,
-    pending: st.pending.map((h) => (h.operator === operator && h.frame > start && !h.pinned ? { ...h, frame: h.frame + n, ...(h.launchAt !== undefined ? { launchAt: later(h.launchAt) } : {}) } : h)),
-    pendingActions: st.pendingActions.map((a) => ((a.cast?.operator ?? a.owner) === operator && a.frame > start ? { ...a, frame: a.frame + n, ...(a.launchAt !== undefined ? { launchAt: later(a.launchAt) } : {}) } : a)),
-    pendingEnergy: st.pendingEnergy.map((x) => (x.cast?.operator === operator && x.frame > start ? { ...x, frame: x.frame + n } : x)),
-    pendingJumps: st.pendingJumps.map((j) => (j.operator === operator && j.frame > start ? { ...j, frame: j.frame + n } : j)),
+    scheduled: shiftClock(st.scheduled, (c) => onOperator(c, operator), start, n),
     ...(cur ? { acting: { ...st.acting, [operator]: { ...cur, frame: cur.frame + n, ...(cur.skips ? { skips: cur.skips.map((k) => ({ ...k, at: k.at + n })) } : {}) } } } : {}),
     ...(chain ? { chainNext: { ...st.chainNext, [operator]: { ...shift(chain), ...(chain.alternatives ? { alternatives: chain.alternatives.map(shift) } : {}) } } } : {}),
   };

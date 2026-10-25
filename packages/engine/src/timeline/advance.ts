@@ -6,7 +6,7 @@ import { EngineError } from "../errors.ts";
 import type { BattleEvent } from "../events.ts";
 import { type ActiveBuff, buffEndedEvent } from "../buffs.ts";
 import { expireStatus, nextTick, tickStatus } from "../status.ts";
-import type { Cast, EnemyAction, PendingBurst, PendingHit, PendingJump, TimelineContext, TimelineState } from "./state.ts";
+import type { Cast, PendingAction, PendingBurst, PendingEnemyAction, PendingEnergy, PendingHit, PendingJump, TimelineContext, TimelineState } from "./state.ts";
 import { DIVE, DODGE, SP } from "./rules.ts";
 import { panelAt, timingOf } from "./context.ts";
 import { shiftOperator, slowDown } from "./clock.ts";
@@ -16,6 +16,7 @@ import { situationAt } from "./situation.ts";
 import { runActions, runTriggers } from "./actions.ts";
 import { asEvents, draw, landBurst, landHit, recordStatus } from "./landing.ts";
 import { castSkill, endCurrentSkill, takeJump } from "./casting.ts";
+import { ofCast, schedule, unschedule } from "./schedule.ts";
 
 /**
  * The earliest periodic tick of an active buff at or before `frame`. A tick
@@ -52,7 +53,7 @@ function nextExpiry(buffs: readonly ActiveBuff[], frame: number): number | null 
  * dodger is exempt, freezes the dodger for its own while, and replaces the
  * attack on it with a perfectDodge event.
  */
-function enemyAct(ctx: TimelineContext, state: TimelineState, a: EnemyAction): TimelineState {
+function enemyAct(ctx: TimelineContext, state: TimelineState, a: PendingEnemyAction): TimelineState {
   const events = enemyActionEvents(ctx, state, a);
   const dodge = ctx.scenario.options.dodge;
   const op = state.controlled;
@@ -65,7 +66,7 @@ function enemyAct(ctx: TimelineContext, state: TimelineState, a: EnemyAction): T
     const t = timingOf(ctx, cur.skill);
     if (t.specification === 5 && a.frame < actionFrame(cur, t.exclusiveFrames)) return runTriggers(ctx, state, events, null);
     // Nor in the air (a dive whose landing is still to come; assumed: no dash in mid-air).
-    if (state.pendingJumps.some((j) => j.operator === op && j.cast === cur.cast && j.then !== undefined)) return runTriggers(ctx, state, events, null);
+    if (state.scheduled.some((j) => j.kind === "jump" && ofCast(j, op, cur.cast) && j.then !== undefined)) return runTriggers(ctx, state, events, null);
   }
   // No dash at an attack the current skill would counter (a kit's `attacked` trigger that jumps this skill from where its playhead is).
   if (cur && counters(ctx, op, cur, a.frame)) return runTriggers(ctx, state, events, null);
@@ -83,8 +84,8 @@ function enemyAct(ctx: TimelineContext, state: TimelineState, a: EnemyAction): T
 }
 
 /** The events an enemy action makes: an attack on each operator it hits, or the start of a charge. */
-function enemyActionEvents(ctx: TimelineContext, st: TimelineState, a: EnemyAction): BattleEvent[] {
-  if (a.kind === "charge") return [{ type: "enemyCharge", frame: a.frame, operator: st.controlled }];
+function enemyActionEvents(ctx: TimelineContext, st: TimelineState, a: PendingEnemyAction): BattleEvent[] {
+  if (a.act === "charge") return [{ type: "enemyCharge", frame: a.frame, operator: st.controlled }];
   const targets = a.target === "controlled" ? [st.controlled] : a.target === "team" ? ctx.scenario.team.map((b) => b.operator) : [a.target];
   return targets.map((operator) => ({ type: "attacked", frame: a.frame, operator, element: a.element, controlled: operator === st.controlled }));
 }
@@ -94,27 +95,52 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
   if (frame < state.frame) throw new EngineError(`can't go back from frame ${state.frame} to ${frame}`);
   let st = state;
   for (;;) {
-    // The next pending hit (triggers can add hits while this runs).
+    // The next scheduled item of each kind due by the frame (triggers can schedule more while this runs): the earliest,
+    // the first scheduled among equals; hits at one frame by operator ID.
     let hit: PendingHit | null = null;
-    for (const h of st.pending) if (h.frame <= frame && (!hit || h.frame < hit.frame || (h.frame === hit.frame && h.operator < hit.operator))) hit = h;
+    let due: PendingAction | null = null;
+    // Delayed actions after their frame's hits (KitTrigger.afterHits).
+    let late: PendingAction | null = null;
+    let grant: PendingEnergy | null = null;
+    let enemyAction: PendingEnemyAction | null = null;
+    let burst: PendingBurst | null = null;
+    let jump: PendingJump | null = null;
+    for (const x of st.scheduled) {
+      if (x.frame > frame) continue;
+      switch (x.kind) {
+        case "hit":
+          if (!hit || x.frame < hit.frame || (x.frame === hit.frame && x.operator < hit.operator)) hit = x;
+          break;
+        case "action":
+          if (x.afterHits) {
+            if (!late || x.frame < late.frame) late = x;
+          } else if (!due || x.frame < due.frame) due = x;
+          break;
+        case "energy":
+          if (!grant || x.frame < grant.frame) grant = x;
+          break;
+        case "enemyAction":
+          if (!enemyAction || x.frame < enemyAction.frame) enemyAction = x;
+          break;
+        case "burst":
+          if (!burst || x.frame < burst.frame) burst = x;
+          break;
+        case "jump":
+          if (!jump || x.frame < jump.frame) jump = x;
+          break;
+      }
+    }
     const tick = nextTick(st.enemy);
     const expiry = nextExpiry(st.buffs, frame);
     const tickDue = tick !== null && tick <= frame ? tick : null;
     const buffTick = nextBuffTick(st.buffs, frame);
-    type Due = TimelineState["pendingActions"][number];
-    const due = st.pendingActions.reduce<Due | null>((a, x) => (x.frame <= frame && !x.afterHits && (!a || x.frame < a.frame) ? x : a), null);
-    // Delayed actions after their frame's hits (KitTrigger.afterHits).
-    const late = st.pendingActions.reduce<Due | null>((a, x) => (x.frame <= frame && x.afterHits && (!a || x.frame < a.frame) ? x : a), null);
     const lateFrame = late?.frame ?? null;
-    const runDue = (x: Due) => {
+    const runDue = (x: PendingAction) => {
       const t = ctx.kits.get(x.owner)?.triggers.find((y) => y.id === x.trigger);
       if (!t) throw new EngineError(`${x.owner} has no trigger ${x.trigger}`);
-      const r = runActions(ctx, { ...st, pendingActions: st.pendingActions.filter((y) => y !== x) }, t, x.owner, { ...x.event, frame: x.frame }, x.origin);
+      const r = runActions(ctx, unschedule(st, x), t, x.owner, { ...x.event, frame: x.frame }, x.origin);
       return runTriggers(ctx, r.state, r.events, x.origin);
     };
-    const grant = st.pendingEnergy.reduce<TimelineState["pendingEnergy"][number] | null>((a, g) => (g.frame <= frame && (!a || g.frame < a.frame) ? g : a), null);
-    const enemyAction = st.enemyActions[0] !== undefined && st.enemyActions[0].frame <= frame ? st.enemyActions[0] : null;
-    const burst = st.pendingBursts.reduce<PendingBurst | null>((a, x) => (x.frame <= frame && (!a || x.frame < a.frame) ? x : a), null);
     // At one frame: Arts Bursts landing, ticks of a status already on the enemy, then buffs ending, then delayed trigger actions, energy grants,
     // the enemy's actions, buffs' periodic ticks, then hits, then delayed actions marked afterHits. Each kind waits for everything earlier.
     const first = (x: number | null, ...later: (number | null)[]) => x !== null && later.every((y) => y === null || x <= y);
@@ -123,10 +149,9 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
     const grantFrame = grant?.frame ?? null;
     const enemyFrame = enemyAction?.frame ?? null;
     // A jump comes after everything else at its frame (what's at its skill frame still happens).
-    const jump = st.pendingJumps.reduce<PendingJump | null>((a, x) => (x.frame <= frame && (!a || x.frame < a.frame) ? x : a), null);
     const jumpFrame = jump?.frame ?? null;
     if (burst && first(burst.frame, tickDue, expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
-      st = landBurst(ctx, { ...st, pendingBursts: st.pendingBursts.filter((x) => x !== burst) }, burst);
+      st = landBurst(ctx, unschedule(st, burst), burst);
       continue;
     }
     if (first(tickDue, expiry, dueFrame, grantFrame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
@@ -155,14 +180,14 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
       continue;
     }
     if (grant && first(grant.frame, enemyFrame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
-      st = { ...st, pendingEnergy: st.pendingEnergy.filter((g) => g !== grant) };
-      const caster = grant.cast?.operator ?? grant.operator;
+      st = unschedule(st, grant);
+      const caster = grant.cast.operator;
       const holds = !grant.if || decide(grant.if, evalContext(ctx.data, ctx.builds.get(caster) as Build, panelAt(ctx, caster, grant.frame), "", situationAt(ctx, caster, st, grant.frame)));
       if (holds) st = gainEnergy(ctx, st, grant.operator, grant.amount, grant.frame);
       continue;
     }
     if (enemyAction && first(enemyAction.frame, buffTick?.frame ?? null, hitFrame, jumpFrame, lateFrame)) {
-      st = enemyAct(ctx, { ...st, enemyActions: st.enemyActions.slice(1) }, enemyAction);
+      st = enemyAct(ctx, unschedule(st, enemyAction), enemyAction);
       continue;
     }
     if (buffTick && first(buffTick.frame, hitFrame, jumpFrame, lateFrame)) {
@@ -177,14 +202,15 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
       continue;
     }
     if (jump && (hitFrame === null || jump.frame < hitFrame) && (lateFrame === null || jump.frame < lateFrame)) {
-      st = { ...st, pendingJumps: st.pendingJumps.filter((x) => x !== jump) };
+      st = unschedule(st, jump);
       // Only while that cast is still the operator's current action.
-      if (st.acting[jump.operator]?.cast !== jump.cast) continue;
+      if (st.acting[jump.operator]?.cast !== jump.cast.index) continue;
       if (jump.then !== undefined) {
         // A dive's fall or landing (jumpToDive): cast now; after the fall, the landing.
         const r = castSkill(ctx, st, jump.operator, jump.then, jump.frame, false);
         const cast = r.state.acting[jump.operator]?.cast;
-        const next = jump.landing === undefined || cast === undefined ? r.state : { ...r.state, pendingJumps: [...r.state.pendingJumps, { frame: jump.frame + DIVE.fall, operator: jump.operator, cast, from: 0, to: 0, then: jump.landing }] };
+        const op = jump.operator;
+        const next = jump.landing === undefined || cast === undefined ? r.state : schedule(r.state, [{ kind: "jump", frame: jump.frame + DIVE.fall, clock: { operator: op }, cast: { operator: op, index: cast }, operator: op, from: 0, to: 0, then: jump.landing }]);
         st = runTriggers(ctx, next, r.events, r.origin);
       } else if (jump.end) {
         const r = endCurrentSkill(st, jump.operator, jump.frame);
@@ -198,7 +224,7 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
     }
     if (!hit) break;
     const h = hit;
-    st = landHit(ctx, { ...st, pending: st.pending.filter((x) => x !== h) }, h);
+    st = landHit(ctx, unschedule(st, h), h);
   }
   return {
     ...st,

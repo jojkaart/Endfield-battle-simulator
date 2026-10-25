@@ -47,6 +47,19 @@ export const TIMELINE_ASSUMPTIONS = [
  */
 const PRIORITY: Readonly<Record<number, number>> = { 1: 1, 3: 2, 8: 2, 4: 5, 5: 7 };
 
+/**
+ * Haste (attribute 92, KeywordSpeedUpScalar; docs/design.md "Time"): a cast at `speed` plays its skill frames
+ * faster. The real frames `x` skill frames take, in whole frames (no speed, or 1: the same).
+ */
+export function hasteFrames(x: number, speed: number | undefined): number {
+  return speed === undefined || speed === 1 ? x : Math.round(x / speed);
+}
+
+/** The skill frames `x` real frames of a cast at `speed` play (hasteFrames the other way). */
+export function skillFramesOf(x: number, speed: number | undefined): number {
+  return Math.round(x * (speed ?? 1));
+}
+
 export const priorityOf = (t: SkillTiming) => (t.specification === 6 ? Infinity : (PRIORITY[t.specification] ?? 2));
 
 /** The current action of an operator that perfectly dodged: the perfect-dodge skill (skillSpecification 2). */

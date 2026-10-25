@@ -8,13 +8,14 @@ import { type EvalContext, evaluate } from "../expr.ts";
 import { activeAt, type ActiveBuff, buffEndedEvents, reaches } from "../buffs.ts";
 import { FPS } from "../units.ts";
 import { FINISHER_SP_SOURCE_TYPE } from "../constants.ts";
-import type { Acting, Cast, Origin, PendingHit, PendingJump, TimelineContext, TimelineState } from "./state.ts";
-import { DIVE, ENERGY, JUMP, linkValue, SP } from "./rules.ts";
+import type { Acting, Cast, Origin, PendingEnergy, PendingHit, PendingJump, Scheduled, TimelineContext, TimelineState } from "./state.ts";
+import { DIVE, ENERGY, JUMP, linkValue, SP, hasteFrames } from "./rules.ts";
 import { kitSkill, panelAt, skillCosts } from "./context.ts";
 import { actionSpeed, slowDown } from "./clock.ts";
 import { castCooldowns, gainEnergy, rebaseCooldowns, skillSpGain, spCostAt, spGrantOf } from "./resources.ts";
 import { chainAfter, windowKey } from "./timing.ts";
 import { situationAt } from "./situation.ts";
+import { cancelCast, jumpCast, schedule } from "./schedule.ts";
 
 /** Whether two skill lists name the same skills. */
 const sameSkills = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x) => b.includes(x));
@@ -22,9 +23,10 @@ const sameSkills = (a: readonly string[], b: readonly string[]) => a.length === 
 /** A cast's jumps and ends: the unconditional ones, and conditional ones whose kit condition holds at the cast. */
 function castJumps(timing: SkillTiming, skill: KitSkill, ec: EvalContext, operator: string, cast: number, frame: number, scaled: (f: number) => number): PendingJump[] {
   const taken = timing.jumps.filter((j) => !j.conditional || skill.jumps?.some((k) => k.at === j.at && (k.to === undefined || k.to === j.to) && decide(k.if, ec)));
+  const of = { kind: "jump", clock: { operator }, cast: { operator, index: cast }, operator } as const;
   return [
-    ...taken.map((j) => ({ frame: frame + scaled(j.at), operator, cast, from: j.at, to: j.to })),
-    ...timing.ends.map((e) => ({ frame: frame + scaled(e), operator, cast, from: e, to: e, end: true as const })),
+    ...taken.map((j) => ({ ...of, frame: frame + scaled(j.at), from: j.at, to: j.to })),
+    ...timing.ends.map((e) => ({ ...of, frame: frame + scaled(e), from: e, to: e, end: true as const })),
   ];
 }
 
@@ -55,41 +57,37 @@ function plannedSlowdowns(timing: SkillTiming, planned: readonly PendingJump[]):
 export function takeJump(st: TimelineState, j: PendingJump): { state: TimelineState; events: BattleEvent[] } {
   const cur = st.acting[j.operator] as Acting;
   const at = j.frame;
-  const length = cur.speed ? Math.round((j.to - j.from) / cur.speed) : j.to - j.from;
-  const mine = (x: { readonly operator: string; readonly index: number } | undefined) => x !== undefined && x.operator === j.operator && x.index === j.cast;
-  // Each list: drop what falls in the skipped frames, pull the rest in.
-  const skip = <T extends { readonly frame: number }>(list: readonly T[], ownedBy: (x: T) => boolean): T[] =>
-    list.flatMap((x) => (!ownedBy(x) || x.frame <= at ? [x] : x.frame < at + length ? [] : [{ ...x, frame: x.frame - length }]));
-  const ending = st.buffs.filter((b) => b.owner === j.operator && b.endsWithCast === j.cast && b.expiresAt > at && b.expiresAt < at + length);
+  const length = hasteFrames(j.to - j.from, cur.speed);
+  const index = j.cast.index;
+  const ending = st.buffs.filter((b) => b.owner === j.operator && b.endsWithCast === index && b.expiresAt > at && b.expiresAt < at + length);
   const events: BattleEvent[] = buffEndedEvents(ending, at, false);
   return {
     state: {
       ...st,
-      pending: [
-        // A replayed landing pinned at its logged frame stays there (the log's time has the jumps in already).
-        ...st.pending.filter((h) => h.pinned),
-        ...skip(st.pending.filter((h) => !h.pinned && (!h.detached || h.launchAt === undefined)), (h) => h.operator === j.operator && h.cast === j.cast && !h.detached),
-        // A detached hit not launched yet moves with its launch: dropped if the jump skips it, sooner if it comes after.
-        ...st.pending
-          .filter((h) => !h.pinned && h.detached && h.launchAt !== undefined)
-          .flatMap((h) => (h.operator !== j.operator || h.cast !== j.cast || (h.launchAt as number) <= at ? [h] : (h.launchAt as number) < at + length ? [] : [{ ...h, frame: h.frame - length, launchAt: (h.launchAt as number) - length }])),
-      ],
-      pendingActions: [
-        ...skip(st.pendingActions.filter((x) => x.launchAt === undefined), (x) => mine(x.cast)),
-        // Launched later: moves with its launch, as a detached hit does.
-        ...st.pendingActions
-          .filter((x) => x.launchAt !== undefined)
-          .flatMap((x) => (!mine(x.cast) || (x.launchAt as number) <= at ? [x] : (x.launchAt as number) < at + length ? [] : [{ ...x, frame: x.frame - length, launchAt: (x.launchAt as number) - length }])),
-      ],
-      pendingEnergy: skip(st.pendingEnergy, (x) => mine(x.cast) && !x.detached),
-      pendingJumps: skip(st.pendingJumps, (x) => x.operator === j.operator && x.cast === j.cast),
-      buffs: st.buffs.flatMap((b) => (ending.includes(b) ? [] : b.owner === j.operator && b.endsWithCast === j.cast && b.expiresAt >= at + length ? [{ ...b, expiresAt: b.expiresAt - length, skipped: (b.skipped ?? 0) + length }] : [b]))
+      // What's scheduled for the cast in the skipped frames is dropped, what's after comes sooner (a detached hit or
+      // action not launched yet moves with its launch; a replayed landing pinned at its logged frame stays there).
+      scheduled: legacyJumpOrder(jumpCast(st.scheduled, j.operator, index, at, length)),
+      buffs: st.buffs.flatMap((b) => (ending.includes(b) ? [] : b.owner === j.operator && b.endsWithCast === index && b.expiresAt >= at + length ? [{ ...b, expiresAt: b.expiresAt - length, skipped: (b.skipped ?? 0) + length }] : [b]))
         // A buff attached to the cast (whileCasting) ends with it, that much sooner.
-        .map((b) => (b.whileCasting && b.cast === j.cast && b.whileCasting.until > at ? { ...b, whileCasting: { ...b.whileCasting, until: Math.max(at, b.whileCasting.until - length) } } : b)),
+        .map((b) => (b.whileCasting && b.cast === index && b.whileCasting.until > at ? { ...b, whileCasting: { ...b.whileCasting, until: Math.max(at, b.whileCasting.until - length) } } : b)),
       acting: { ...st.acting, [j.operator]: { ...cur, skips: [...(cur.skips ?? []), { from: j.from, to: j.to, at, length }] } },
     },
     events,
   };
+}
+
+/** TEMPORARY (one commit): the order the separate hit and action lists had after a jump (pinned hits, the others, those with a launch; actions without a launch, then with). */
+function legacyJumpOrder(list: readonly Scheduled[]): Scheduled[] {
+  const hits = list.filter((x) => x.kind === "hit");
+  const actions = list.filter((x) => x.kind === "action");
+  return [
+    ...list.filter((x) => x.kind !== "hit" && x.kind !== "action"),
+    ...hits.filter((h) => h.pinned),
+    ...hits.filter((h) => !h.pinned && (!h.detached || h.launchAt === undefined)),
+    ...hits.filter((h) => !h.pinned && h.detached && h.launchAt !== undefined),
+    ...actions.filter((x) => x.launchAt === undefined),
+    ...actions.filter((x) => x.launchAt !== undefined),
+  ];
 }
 
 /**
@@ -108,13 +106,11 @@ export function jumpToDive(ctx: TimelineContext, advanced: TimelineState, operat
   const s = ended.state;
   const index = s.casts.length;
   const start = dive.start !== undefined && ctx.kits.get(operator)?.skills.some((x) => x.skillId === dive.start) ? dive.start : undefined;
-  const next: PendingJump =
-    start !== undefined
-      ? { frame: frame + DIVE.rise, operator, cast: index, from: 0, to: 0, then: start, landing: dive.end }
-      : { frame: frame + DIVE.rise + DIVE.fall, operator, cast: index, from: 0, to: 0, then: dive.end };
+  const part = { kind: "jump", clock: { operator }, cast: { operator, index }, operator, from: 0, to: 0 } as const;
+  const next: PendingJump = start !== undefined ? { ...part, frame: frame + DIVE.rise, then: start, landing: dive.end } : { ...part, frame: frame + DIVE.rise + DIVE.fall, then: dive.end };
   // In the cast list as the action "jump" (no cast event: nothing listens to a jump).
   const cast: Cast = { frame, operator, skill: JUMP, spAfter: s.sp, energyAfter: s.energy[operator] ?? 0 };
-  const state = rebaseCooldowns(ctx, advanced, { ...s, acting: { ...s.acting, [operator]: { skill: JUMP, frame, cast: index } }, casts: [...s.casts, cast], pendingJumps: [...s.pendingJumps, next] }, frame);
+  const state = rebaseCooldowns(ctx, advanced, { ...s, acting: { ...s.acting, [operator]: { skill: JUMP, frame, cast: index } }, casts: [...s.casts, cast], scheduled: [...s.scheduled, next] }, frame);
   return { state, events: ended.events };
 }
 
@@ -131,10 +127,7 @@ export function endCurrentSkill(advanced: TimelineState, operator: string, frame
   // A replayed cast whose logged hits go on after the next one started (replayCast keepPrevious) keeps what's to come.
   const state = keepHits ? { ...advanced, buffs: advanced.buffs.filter((b) => !endsNow.includes(b)) } : {
     ...advanced,
-    pending: advanced.pending.filter((h) => !(h.operator === operator && h.cast === prevCast && h.frame > frame && (!h.detached || (h.launchAt !== undefined && h.launchAt > frame)))),
-    pendingActions: advanced.pendingActions.filter((x) => !(x.cast && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame && (x.launchAt === undefined || x.launchAt > frame))),
-    pendingEnergy: advanced.pendingEnergy.filter((x) => !(x.cast && !x.detached && x.cast.operator === operator && x.cast.index === prevCast && x.frame > frame)),
-    pendingJumps: advanced.pendingJumps.filter((x) => !(x.operator === operator && x.cast === prevCast)),
+    scheduled: cancelCast(advanced.scheduled, operator, prevCast, frame),
     // A buff attached to the cast (consumedScope whileCasting) stops acting on the caster's other hits now.
     buffs: advanced.buffs.filter((b) => !endsNow.includes(b)).map((b) => (b.whileCasting && b.cast === prevCast && b.whileCasting.until > frame ? { ...b, whileCasting: { ...b.whileCasting, until: frame } } : b)),
   };
@@ -169,7 +162,7 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
   const castIndex = s.casts.length;
   // Haste (attribute 92, KeywordSpeedUpScalar, default 1, at most 1.3): the cast plays faster (assumed; in-game test 19).
   const speed = actionSpeed(ctx, s, operator, frame);
-  const scaled = (f: number) => (speed === 1 ? f : Math.round(f / speed));
+  const scaled = (f: number) => hasteFrames(f, speed);
   // A combo's window (its own, or its operator's; none for one cast without it): what opened it, and it's used up.
   const windowOf = costs.kind === "combo" && skill.comboWindow !== false ? windowKey(ctx, operator, skillId) : undefined;
   const windowCount = windowOf !== undefined ? s.comboWindow[windowOf]?.count : undefined;
@@ -193,6 +186,9 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
   const stacks = atCast.length ? { ...s.stacks, [operator]: { ...own, ...Object.fromEntries(atCast.map(([id, u]) => [id, Math.max(0, (own[id] ?? 0) - u.amount)])) } } : s.stacks;
   const usesAtHit = (hitId: string) => [...usage].filter(([, u]) => u.atHit === hitId).map(([stack, u]) => ({ stack, amount: u.amount }));
   const pending: PendingHit[] = [];
+  // On the caster's clock, the cast's own (castRef).
+  const clock = { operator };
+  const castRef = { operator, index: castIndex };
   // A hit's `if` is judged as it lands (it may depend on what the skill itself does first); only its stack requirement is the cast's.
   // A count that's a value is judged here, before the cast uses stacks up.
   const countEc = () => evalContext(ctx.data, ctx.builds.get(operator) as Build, panel, skill.skillId, { ...situationAt(ctx, operator, s, frame), ...castSituation });
@@ -200,8 +196,8 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
     const frames = typeof h.count === "number" ? (h.frames ?? Array.from({ length: h.count }, () => 0)) : landingFrames(h, evaluate(h.count, countEc()));
     frames.forEach((f, i) =>
       pending.push({
-        frame: frame + scaled(f), operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castIndex,
-        ...(usesAtHit(h.id).length && i === 0 ? { usesUp: usesAtHit(h.id) } : {}), ...(h.detached || h.launch !== undefined ? { detached: true } : {}),
+        kind: "hit", frame: frame + scaled(f), clock, operator, skillId: skill.skillId, hitId: h.id, sp: 0, controlledAtCast: s.controlled, cast: castRef,
+        ...(usesAtHit(h.id).length && i === 0 ? { usesUp: usesAtHit(h.id) } : {}), ...(h.detached || h.launch !== undefined ? { detached: true as const } : {}),
         ...(h.launch !== undefined ? { launchAt: frame + scaled(h.launch) } : {}),
         ...(windowCount !== undefined ? { eventCount: windowCount } : {}), ...(windowSource ? { eventSource: windowSource } : {}), ...(h.branch ? { branch: `${castIndex}:${h.branch}:${i}` } : {}),
       }),
@@ -230,8 +226,8 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
     else
       for (const part of skill.teamEnergy) {
         const at = frame + scaled(part.frame);
-        const grants = ctx.scenario.team.map((b) => ({ frame: at, operator: b.operator, amount: natural * ENERGY.perNaturalSp * part.ratio, cast: { operator, index: castIndex }, ...(part.detached ? { detached: true } : {}), ...(part.if ? { if: part.if } : {}) }));
-        next = { ...next, pendingEnergy: [...next.pendingEnergy, ...grants] };
+        const grants = ctx.scenario.team.map((b): PendingEnergy => ({ kind: "energy", frame: at, clock, operator: b.operator, amount: natural * ENERGY.perNaturalSp * part.ratio, cast: castRef, ...(part.detached ? { detached: true } : {}), ...(part.if ? { if: part.if } : {}) }));
+        next = schedule(next, grants);
       }
   }
   if (costs.energyCost > 0) next = { ...next, energy: { ...next.energy, [operator]: Math.max(0, (next.energy[operator] ?? 0) - costs.energyCost) } };
@@ -288,12 +284,11 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
     // A spend never shortens a pause running longer (one a slow-down lengthened).
     spPausedUntil: costs.spCost > 0 ? Math.max(s.spPausedUntil, frame + SP.pauseAfterSpendFrames) : s.spPausedUntil,
     acting: beside ? s.acting : { ...s.acting, [operator]: { skill: skillId, frame, cast: castIndex, ...(speed !== 1 ? { speed } : {}), ...(openWindows.length ? { windows: openWindows } : {}) } },
-    pendingJumps: beside ? next.pendingJumps : [...next.pendingJumps, ...planned],
     ...(full.timing.specification === 8 ? { stagger: { ...s.stagger, finisherUsed: true } } : {}),
     chainNext: beside ? next.chainNext : chainAfter(ctx, next, operator, skill, frame, speed, openWindows),
     readyAt: castCooldowns(ctx, next.readyAt, operator, skill, costs.cooldownFrames, frame, s.buffs),
     ...(skill.takesControl ? { controlled: operator } : {}),
-    pending: [...s.pending, ...pending],
+    scheduled: [...next.scheduled, ...pending, ...(beside ? [] : planned)],
     stacks,
     casts: [...s.casts, { frame, operator, skill: skillId, spAfter: s.sp - costs.spCost, energyAfter: next.energy[operator] ?? 0, ...(linkUsed > 0 ? { link: linkUsed } : {}) }],
   };

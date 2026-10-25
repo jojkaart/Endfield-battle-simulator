@@ -847,10 +847,10 @@ describe("timeline: an ultimate's time stop", () => {
     const ctx = createContext(d, { ...scenario(rotation), team, controlled: g, startEnergy: { [op]: "full", [g]: "full" } });
     let s = init(ctx);
     s = apply(ctx, s, rotation[0] as RotationAction);
-    expect(s.pendingEnergy.map((x) => x.frame)).toEqual([30, 30]);
+    expect(s.scheduled.filter((x) => x.kind === "energy").map((x) => x.frame)).toEqual([30, 30]);
     s = apply(ctx, s, rotation[1] as RotationAction);
-    expect(s.pendingEnergy.map((x) => x.frame)).toEqual([91, 91]);
-    const hit = s.pending.filter((h) => h.operator === g).map((h) => h.frame);
+    expect(s.scheduled.filter((x) => x.kind === "energy").map((x) => x.frame)).toEqual([91, 91]);
+    const hit = s.scheduled.filter((h) => h.kind === "hit" && h.operator === g).map((h) => h.frame);
     expect(Math.max(...hit)).toBeGreaterThan(91);
   });
 
@@ -941,7 +941,7 @@ describe("timeline: stagger and finishers", () => {
     expect(hit?.modifiers.find((m) => m.source === "Finisher")).toMatchObject({ zone: "multiplicative", value: 0.75 });
     // Rhodagn gives 100 SP for a finisher (breakingAttackedAtbObtain).
     expect(end.sp).toBeGreaterThanOrEqual(Math.min(SP.max, advance(c2, s2, 49).sp + 100) - 1e-9);
-    expect(s2.pending.find((h) => h.skillId === L + "power_attack")?.sp).toBe(100);
+    expect(s2.scheduled.filter((h) => h.kind === "hit").find((h) => h.skillId === L + "power_attack")?.sp).toBe(100);
   });
 });
 
@@ -1283,7 +1283,7 @@ describe("timeline: ending an action; reaction hit filter", () => {
     const ctx = createContext(g, scenario([]));
     const s = advance(ctx, apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" }), 10);
     expect(s.acting[op]).toBeUndefined();
-    expect(s.pending.some((h) => h.skillId === L + "normal_skill" && !h.detached)).toBe(false);
+    expect(s.scheduled.some((h) => h.kind === "hit" && h.skillId === L + "normal_skill" && !h.detached)).toBe(false);
     expect(earliestStart(ctx, s, { operator: op, skill: L + "attack1" })).toEqual({ frame: 10 });
     // The gate sees the end coming: from the cast itself, the next action may start when it's due.
     const cast = apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" });
@@ -1328,7 +1328,7 @@ describe("timeline: delays under Haste, freezes with before-damage triggers", ()
     let s = apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" });
     s = apply(ctx, s, { operator: op, skill: L + "attack1" });
     const at = s.casts[1]?.frame ?? NaN;
-    expect(s.pendingActions.find((x) => x.trigger === "m")?.frame).toBe(at + 8);
+    expect(s.scheduled.filter((x) => x.kind === "action").find((x) => x.trigger === "m")?.frame).toBe(at + 8);
   });
 
   it("a freeze from a hit's control status still freezes the buffs that hit applies when a kit has before-damage triggers", () => {
@@ -1389,7 +1389,7 @@ describe("timeline: pass-3 gaps (set cooldowns, heal kinds, follow-ups, buffs be
     const left = (beside: boolean) => {
       const ctx = createContext(ultBeside(beside), { ...scenario([]), startStacks: { [op]: { melting_flame: 4 } } });
       const s = apply(ctx, apply(ctx, init(ctx), a("normal_skill")), a("ultimate_skill", 10));
-      return { acting: s.acting[op]?.skill, battleHits: s.pending.filter((h) => h.skillId === L + "normal_skill" && !h.detached).length };
+      return { acting: s.acting[op]?.skill, battleHits: s.scheduled.filter((h) => h.kind === "hit" && h.skillId === L + "normal_skill" && !h.detached).length };
     };
     expect(left(false)).toMatchObject({ acting: L + "ultimate_skill" });
     const kept = left(true);
@@ -1404,13 +1404,13 @@ describe("timeline: team energy at a skill's frames", () => {
     const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills: kit.skills.map((s) => (s.skillId === L + "normal_skill" ? { ...s, teamEnergy: [{ frame: 50, ratio: 1 }] } : s)) } } } };
     const ctx = createContext(g, scenario([]));
     const s = apply(ctx, init(ctx), { operator: op, skill: L + "normal_skill" });
-    expect(s.pendingEnergy.length).toBe(1);
-    expect(apply(ctx, s, { operator: op, skill: L + "ultimate_skill", at: 10 }).pendingEnergy.length).toBe(0);
+    expect(s.scheduled.filter((x) => x.kind === "energy").length).toBe(1);
+    expect(apply(ctx, s, { operator: op, skill: L + "ultimate_skill", at: 10 }).scheduled.filter((x) => x.kind === "energy").length).toBe(0);
     // A detached part (from an entity the skill left) stays.
     const d: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills: kit.skills.map((x) => (x.skillId === L + "normal_skill" ? { ...x, teamEnergy: [{ frame: 50, ratio: 1, detached: true }] } : x)) } } } };
     const dctx = createContext(d, scenario([]));
     const ds = apply(dctx, init(dctx), { operator: op, skill: L + "normal_skill" });
-    expect(apply(dctx, ds, { operator: op, skill: L + "ultimate_skill", at: 10 }).pendingEnergy.length).toBe(1);
+    expect(apply(dctx, ds, { operator: op, skill: L + "ultimate_skill", at: 10 }).scheduled.filter((x) => x.kind === "energy").length).toBe(1);
   });
 
   it("comes in parts, each its ratio of the whole; a part whose condition fails at its frame gives nothing", () => {
