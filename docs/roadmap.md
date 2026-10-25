@@ -41,9 +41,9 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
 5. **Food:** a search over foods per operator; the importer setting a food
    the log lists; in-game test 98 (DEF +x%'s formula item 1).
 6. **Process:** a generated table of which mechanics are verified against
-   real data and which only against the engine's own reading; the in-game
-   tests as a top-10 queue with steps, predictions and a one-line reply
-   format; shared test helpers. Still open from setup: a `Result` schema,
+   real data and which only against the engine's own reading (the in-game
+   tests' queue is at the top of in-game-tests.md: keep it current); shared
+   test helpers. Still open from setup: a `Result` schema,
    `NOTICE` when MIT code is first copied.
 
 ## Later

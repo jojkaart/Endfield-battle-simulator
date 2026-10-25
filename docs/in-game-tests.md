@@ -33,6 +33,28 @@ must be something a person can do by hand while playing:
   Catcher, Ember, Snowshine or Purrchena, so tests that need them are low
   priority; tests that affect every operator come first.
 
+## The queue: ten tests that decide the most now
+
+Ranked by how much of the simulation each answer moves (every fight first,
+then the owner's favourites), as of 2026-10-25. Reply with the number and
+what you saw, in a line; the formats below are only suggestions.
+
+| # | test | needs | reply, e.g. |
+|---|---|---|---|
+| 1 | [99](#99-does-the-stagger-bar-refill-when-the-enemy-isnt-hit-ready-any-operator-higher-priority-every-log-since-2026-10-25) Stagger bar without hits | anyone | `99: stays` or `99: refills after ~5 s, full in ~3 s` |
+| 2 | [54](#54-can-a-dash-cancel-a-battle-skill-or-combo-at-any-moment-ready-higher-priority-affects-every-operator) dash cancels a skill | Laevatain; Gilberta or Si | `54: dashes at once, extra hit gone; combo hit gone` |
+| 3 | [18](#18-what-an-ultimates-time-stop-freezes-ready) what a time stop freezes | any two | `18: cooldown same / ~2 s longer; SP bar unchanged / higher` |
+| 4 | [98](#98-food-buffs-on-the-stat-panel-ready-any-operator-a-few-minutes) food on the stat panel | anyone | `98: stew ATK 2,367 → 2,965, crit +11.4` |
+| 5 | [8](#8-where-link-comes-from-and-its-values-ready-higher-priority-affects-every-team) where Link comes from | Gilberta, Estella, Camille | `8: a 10,000 b 10,000 c 12,000 d 10,000` |
+| 6 | [97](#97-dive-attacks-their-pace-and-what-a-jump-can-do-ready-any-operator-higher-priority-the-search-now-uses-dives) dive attacks | anyone | `97: ten dives 11 s; jump cuts a skill yes; no air dash` |
+| 7 | [77](#77-combustion-ticks-and-a-later-atk-buff-ready-if-you-have-laevatain-and-liino-higher-priority-every-heat-team) Combustion ticks and a later ATK buff | Laevatain, Liino | `77: ticks same` or `77: ticks +7%` |
+| 8 | [19](#19-what-haste-speeds-up-ready-if-you-have-si) what Haste speeds up | Si | `19: 13 numbers vs 10; cooldown same` |
+| 9 | [12](#12-gilbertas-arts-susceptibility-value-and-duration-ready-if-you-have-gilberta) Gilberta's Susceptibility | Gilberta | `12: 0.30 for 5 s; with 2 Vulnerable 0.36` |
+| 10 | [10](#10-sis-combo-by-stacks-consumed-ready-if-you-have-si) Si's combo by stacks | Si | `10: 1 / 2 / 3 stacks → numbers; highest count wins` |
+
+Left out for now: swap tests (15 and parts of 97: the default search
+doesn't swap) and tests for operators the owner doesn't use.
+
 ## Tests
 
 ### 1. Stat panels (ready; lower priority now)
