@@ -24,7 +24,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { Element, PhysicalStatus, Predicate, Zone } from "@efsim/engine";
+import { Slot, type Element, type PhysicalStatus, type Predicate, type Zone } from "@efsim/engine";
 import { parseJsonExact } from "./json.ts";
 import { sourceDir } from "./sources.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
@@ -1034,8 +1034,9 @@ class Compiler {
       const t = shortType(p["$type"]);
       if (t === "InstantModifyAttribute") {
         const m = (p["modifier"] ?? {}) as Obj;
-        if (m["attributeType"] === 9 && p["modifyTargetSide"] === 0) out.push({ zone: "critRate", value: this.value(m["param"], ctx.bb) });
-        else this.notes.add(`${where}: damage processor InstantModifyAttribute attribute ${String(m["attributeType"])} side ${String(p["modifyTargetSide"])} (not read)`);
+        // Crit rate added (formulaItem 5, the Add slot; modifyAttributeType 0, as written): the only form the data has.
+        if (m["attributeType"] === 9 && p["modifyTargetSide"] === 0 && m["formulaItem"] === Slot.Add && m["modifyAttributeType"] === 0) out.push({ zone: "critRate", value: this.value(m["param"], ctx.bb) });
+        else this.notes.add(`${where}: damage processor InstantModifyAttribute attribute ${String(m["attributeType"])} slot ${String(m["formulaItem"])} side ${String(p["modifyTargetSide"])} (not read)`);
       } else if (t === "DamageScaleProcessor" && p["side"] === 0 && (p["zoneName"] === "NormalCalcZone" || p["zoneName"] === "ProdCalcZone")) {
         out.push({ zone: p["zoneName"] === "NormalCalcZone" ? "damageBonus" : "multiplicative", value: this.value(p["addition"], ctx.bb) });
       } else this.notes.add(`${where}: damage processor ${this.summary(p)} (not read)`);

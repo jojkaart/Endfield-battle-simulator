@@ -24,6 +24,14 @@ entry first. Keep entries short; details belong in the docs they produced.
   `clampAttr`): panel totals and the timeline's Haste (was 0.1–1.3 by
   hand), combo-cooldown rate and Stagger efficiency with buffs. Crit Rate
   has no limit in the table; its 0–1 stays a probability rule.
+- **Silent defaults:** a missing enemy DEF is an error (every level row
+  has one); a modifier's `when` the situation can't decide is an error by
+  default, as for `KitHit.if` (it found one path: Arts Intensity for
+  statuses judged modifiers without any situation, so a conditional one was
+  dropped; it now gets the frame's); the compiler reads a crit-rate
+  processor only in the Add slot (formulaItem 5; anything else is noted);
+  a kit modifier of zone `atk` (ATK%) requires its game buff's ATK in
+  formulaItem 6. No result moved.
 
 ## 2026-10-25: Last Rite's battle skill acts once per cast
 

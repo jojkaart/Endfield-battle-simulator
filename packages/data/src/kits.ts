@@ -197,6 +197,11 @@ function gameBuffFile(file: string, buffId: string, gameBuff: string): RawBuffFi
  * their slot. A kit's own `percent` must agree with the data.
  */
 function withPercent(file: string, buffId: string, raw: RawBuffFile, m: KitBuffModifier): KitBuffModifier {
+  // Zone `atk` is ATK% (it joins the panel's ATK% before the attribute bonus): the game buff's ATK must be in formulaItem 6.
+  if (m.zone === "atk") {
+    const atkSlots = new Set(raw.attributeModifiers.filter((x) => x.attr === Attr.Atk).map((x) => x.slot));
+    if ([...atkSlots].some((s) => s !== 6)) throw new Error(`${file}: buff ${buffId}: zone atk is ATK%, but ${raw.id} changes ATK in formulaItem ${[...atkSlots].join(", ")}`);
+  }
   if (m.attr === undefined || attrFeedsZone(m.attr)) return m;
   const slots = new Set(raw.attributeModifiers.filter((x) => x.attr === m.attr && x.target === 0).map((x) => x.slot));
   if (slots.size === 0) return m;

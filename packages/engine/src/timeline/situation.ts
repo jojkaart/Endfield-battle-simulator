@@ -113,7 +113,8 @@ export function buffSituation(s: Situation): Situation {
 /** An operator's Arts Intensity at a frame (panel, given modifiers and active buffs): it sets the strength of the statuses it applies. */
 export function artsIntensity(ctx: TimelineContext, st: TimelineState, operator: string, frame: number): number {
   const build = ctx.builds.get(operator) as Build;
-  const mods = activeModifiers(ctx.data, build, panelAt(ctx, operator, frame), { crit: "never", staggered: false, modifiers: [...(ctx.modifiers.get(operator) ?? []), ...buffModifiers(st.buffs, operator, frame)] });
+  // The frame's situation judges modifiers that hold only in one (until 2026-10-25 none: such a modifier was dropped here).
+  const mods = activeModifiers(ctx.data, build, panelAt(ctx, operator, frame), { crit: "never", staggered: false, situation: situationAt(ctx, operator, st, frame), modifiers: [...(ctx.modifiers.get(operator) ?? []), ...buffModifiers(st.buffs, operator, frame)] });
   return zoneSum(mods, "artsIntensity", { element: "physical", skillType: null, staggered: false });
 }
 

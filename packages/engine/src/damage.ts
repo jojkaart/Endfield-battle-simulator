@@ -45,10 +45,10 @@ export function evalContext(data: GameData, build: Build, panel: StatPanel, skil
 }
 
 /** A predicate's verdict; `assume` decides what an unknown one counts as (undefined: error). */
-export function decide(p: Predicate, c: EvalContext, assume?: boolean): boolean {
+export function decide(p: Predicate, c: EvalContext, assume?: boolean, of?: string): boolean {
   const v = test(p, c);
   if (v !== undefined) return v;
-  if (assume === undefined) throw new EngineError(`a kit condition can't be decided here: ${JSON.stringify(p)}`);
+  if (assume === undefined) throw new EngineError(`a kit condition${of ? ` (${of})` : ""} can't be decided here: ${JSON.stringify(p)}`);
   return assume;
 }
 
@@ -221,9 +221,9 @@ export function staggerModifier(data: GameData): Modifier {
 export function activeModifiers(data: GameData, build: Build, panel: StatPanel, options: DamageOptions): Modifier[] {
   const all = [...panelModifiers(data, panel), ...(options.modifiers ?? []), ...(options.staggered ? [staggerModifier(data)] : [])];
   if (!all.some((m) => m.when)) return all;
-  // A modifier that holds only in a situation (KitBuffModifier.if): judged on the hit's situation; one it can't decide counts as assumeUnknown says (default: not).
+  // A modifier that holds only in a situation (KitBuffModifier.if): judged on the hit's situation; one it can't decide counts as assumeUnknown says (default: an error, as for KitHit.if).
   const ec = evalContext(data, build, panel, "", options.modifierSituation ?? options.situation);
-  return all.filter((m) => !m.when || (test(m.when, ec) ?? options.assumeUnknown ?? false));
+  return all.filter((m) => !m.when || decide(m.when, ec, options.assumeUnknown, m.source));
 }
 
 /**
@@ -271,7 +271,8 @@ export function computeDamage(
   const rolled = options.crit === "rolled" && spec.canCrit ? (options.critRoll as number) < critRate : undefined;
   const crit = !spec.canCrit || options.crit === "never" ? 1 : options.crit === "always" || rolled ? 1 + critDamage : rolled === false ? 1 : 1 + critRate * critDamage;
 
-  const def = enemyLevel[Attr.Def] ?? 0;
+  const def = enemyLevel[Attr.Def];
+  if (def === undefined) throw new EngineError(`${enemy.id} has no DEF at level ${target.level}`);
   // 2 − 0.99^(−DEF) below zero per the Talos Wiki; negative DEF isn't reachable in the game today.
   const defense = def >= 0 ? 1 / (1 + data.constants.efficiencyOfDEF * def) : 2 - Math.pow(0.99, -def);
 

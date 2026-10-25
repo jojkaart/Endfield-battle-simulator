@@ -60,6 +60,15 @@ describe("kit hit primitives: factor, reaction hits, scaleIf, when", () => {
     return computeHit(data, fixture.build, panel, target, s, { ...h, ...extra }, opts);
   };
 
+  it("a modifier that holds only in a situation it can't judge is an error, unless the caller says what to assume (round-two review)", () => {
+    if (!s || !h) throw new Error("no kit");
+    const when = { zone: "damageBonus" as const, value: 1, source: "test: vs Electrified", when: { enemyStatus: "electrification" as const } };
+    expect(() => computeHit(data, fixture.build, panel, target, s, h, { ...opts, modifiers: [when] })).toThrow(/kit condition \(test: vs Electrified\) can't be decided/);
+    const assumed = (assumeUnknown: boolean) => computeHit(data, fixture.build, panel, target, s, h, { ...opts, modifiers: [when], assumeUnknown }).exact;
+    expect(assumed(true)).toBeGreaterThan(hit({}).exact);
+    expect(assumed(false)).toBeCloseTo(hit({}).exact, 9);
+  });
+
   it("a literal factor multiplies the hit", () => {
     expect(hit({ factor: 0.5 }).exact).toBeCloseTo(hit({}).exact / 2, 9);
   });
