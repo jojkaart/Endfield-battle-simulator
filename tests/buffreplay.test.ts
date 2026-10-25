@@ -6,9 +6,9 @@
 // log stops listing Camille's weapon buffs.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, computeHit, computeStats, createContext, FPS, init, replayCast, replayWindowCount, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
+import { advance, computeHit, computeStats, createContext, effectiveKit, FPS, init, replayCast, replayWindowCount, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
 import { loadGameData, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
-import { checkLog, formatBuffReplay, LOG_LISTING, logBuffReplay, readLogFixture, replayedCasts, withLoggedCasts, type HitVerdict } from "@efsim/cli";
+import { castsFromBuffLanes, checkLog, formatBuffReplay, LOG_LISTING, logBuffReplay, readLogFixture, replayedCasts, withLoggedCasts, type HitVerdict } from "@efsim/cli";
 import { placeHits } from "../packages/cli/src/logcasts.ts";
 
 const data = loadGameData();
@@ -180,9 +180,29 @@ describe("40d9a3c1da37: a cast the log shows only as a skill event", () => {
     expect(casts.filter((c) => c.skillId === "chr_0036_jsspsi_normal_skill").length).toBe(replayedCasts(placement, fx).filter((c) => c.skillId === "chr_0036_jsspsi_normal_skill").length);
     const laevatain = checkLog(data, fx).filter((v) => v.hit.operator === "chr_0016_laevat");
     expect(laevatain.filter((v) => v.kind === "match" && v.class === "fallback")).toEqual([]);
-    // Without the cast events (as imported before 2026-10-25), the replay never starts buff_wpn_sword_0006_valid.
+    // Without the cast events (as imported before 2026-10-25), the buff's own lane gives the cast (castsFromBuffLanes):
+    // a frame before buff_wpn_sword_0006_valid first shows, 3.6 s after the logged cast.
     const { casts: _c, ...without } = fx;
-    expect(checkLog(data, without).filter((v) => v.hit.operator === "chr_0016_laevat" && v.kind === "match" && v.class === "fallback").length).toBeGreaterThan(5);
+    const inferred = castsFromBuffLanes(data, without, fx.team.map((b) => effectiveKit(data, b) as OperatorKit), replayedCasts(placement, without));
+    expect(inferred.filter((c) => c.skillId === "chr_0016_laevat_ultimate_skill").map((c) => Math.round(c.start))).toEqual([Math.round(6657 - 1000 / FPS)]);
+    expect(checkLog(data, without).filter((v) => v.hit.operator === "chr_0016_laevat" && v.kind === "match" && v.class === "fallback")).toEqual([]);
+  });
+});
+
+describe("dbaee23b801d: a cast the log shows only by the buff it applies", () => {
+  const fx = readLogFixture(new URL("../fixtures/zmdlogs-dbaee23b801d.json", import.meta.url).pathname);
+
+  it("casts Xaihi's ultimate (no damage) a frame before her weapon's team ATK first shows in the log", () => {
+    const placement = placeHits(data, fx);
+    const kits = fx.team.map((b) => effectiveKit(data, b) as OperatorKit);
+    const base = replayedCasts(placement, fx);
+    const casts = castsFromBuffLanes(data, fx, kits, base);
+    const first = Math.min(...fx.hits.filter((h) => h.effects.some((e) => e.buff === "buff_wpn_funnel_0005_atk_up")).map((h) => h.t));
+    expect(casts.filter((c) => !base.includes(c) && c.skillId === "chr_0011_seraph_ultimate_skill").map((c) => Math.round(c.start))).toEqual([Math.round(first - 1000 / FPS)]);
+    expect(base.some((c) => c.skillId === "chr_0011_seraph_ultimate_skill")).toBe(false);
+    // Liino's hits under it now match by the replay's buffs, not the log's listing.
+    const liino = checkLog(data, fx).filter((v) => v.hit.operator === "chr_0035_liino" && v.kind === "match");
+    expect(liino.filter((v) => v.kind === "match" && v.class !== "fallback").length).toBeGreaterThan(20);
   });
 });
 

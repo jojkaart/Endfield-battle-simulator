@@ -11,8 +11,8 @@
 // the two disagree (leads: a log gap, or a kit trigger that's wrong).
 
 import {
-  activeAt, advance, allActions, Attr, buffModifiers, createContext, kitHitEntries, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
-  type ActiveBuff, type GameData, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type SkillType, type TimelineScenario, type TimelineState,
+  activeAt, advance, allActions, applyBuff, Attr, buffModifiers, computeStats, createContext, kitHitEntries, readingDoesNotApply, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
+  type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type SkillType, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
 import { distinctCasts, landingFrames, type LoggedCast, type Placement } from "./logcasts.ts";
@@ -192,15 +192,69 @@ export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixt
     if (casts.some((c) => c.operator === lc.operator && c.skillId === lc.skill && Math.abs(c.start - lc.t) <= LOGGED_CAST_MS)) continue;
     added.push({ operator: lc.operator, key: lc.skill, group: lc.skill, skillId: lc.skill, kind: skill.kind, start: lc.t, lastHit: lc.t, keepPrevious: false, landings: [] });
   }
-  if (added.length === 0) return [...casts];
-  // In time order; an operator's earlier cast keeps its hits when the log shows them after this one started.
+  return added.length ? ordered([...casts, ...added]) : [...casts];
+}
+
+/** Casts in time order, each keeping its operator's previous cast's hits when the log shows them after it started. */
+function ordered(casts: readonly ReplayedCast[]): ReplayedCast[] {
   const previous = new Map<string, ReplayedCast>();
-  return [...casts, ...added].sort((x, y) => x.start - y.start).map((c) => {
+  return [...casts].sort((x, y) => x.start - y.start).map((c) => {
     const prev = previous.get(c.operator);
     const r = { ...c, keepPrevious: prev !== undefined && prev.lastHit > c.start };
     previous.set(c.operator, r);
     return r;
   });
+}
+
+/**
+ * Casts the log shows only by a buff they apply (its buff lanes: the hits listing it): a game buff the log lists with
+ * values that one trigger of the team applies, on the owner's casts of skills whose damage the log never shows for it
+ * (dbaee23b801d: Xaihi's ultimate, no damage, applies her weapon's team ATK, buff_wpn_funnel_0005_atk_up). Each run of
+ * the buff's listings (gaps no longer than its duration) without a cast of such a skill within its duration before
+ * gets one, its trigger's delay and a frame before the run's first listing (its start is no later; within
+ * REPLAY_EDGE_MS of it, the replay doesn't decide the buff). Returns the casts with those added.
+ */
+export function castsFromBuffLanes(data: GameData, fx: LogFixture, kits: readonly OperatorKit[], casts: readonly ReplayedCast[]): ReplayedCast[] {
+  const logged = new Set(fx.hits.map((h) => `${h.operator}|${h.event}`));
+  const listed = listedWithValues(fx);
+  const appliers = new Map<string, { kit: OperatorKit; t: KitTrigger; def: KitBuff }[]>();
+  for (const kit of kits) {
+    for (const t of kit.triggers) {
+      for (const a of allActions(t.do)) {
+        const def = a.kind === "buff" ? kit.buffs.find((b) => b.id === a.buff) : undefined;
+        if (def?.gameBuff && listed.has(def.gameBuff)) appliers.set(def.gameBuff, [...(appliers.get(def.gameBuff) ?? []), { kit, t, def }]);
+      }
+    }
+  }
+  const added: ReplayedCast[] = [];
+  for (const [g, list] of appliers) {
+    if (list.length !== 1) continue;
+    const { kit, t, def } = list[0] as { kit: OperatorKit; t: KitTrigger; def: KitBuff };
+    if (t.on.event !== "cast" || t.by !== "self" || (!t.on.skills?.length && !t.on.kinds?.length)) continue;
+    const on = t.on;
+    const skill = kit.skills.find((s) => (on.skills?.includes(s.skillId) || on.kinds?.includes(s.kind)) && !s.followUpOnly && !s.hits.some((h) => h.events.some((e) => logged.has(`${kit.operator}|${e}`))));
+    const build = fx.team.find((b) => b.operator === kit.operator);
+    if (!skill || !build) continue;
+    let ms: number;
+    try {
+      const b = applyBuff(data, build, computeStats(data, build), triggerSkillId(kit.operator, t), def, 0);
+      if (!b || !Number.isFinite(b.expiresAt)) continue;
+      ms = (b.expiresAt * 1000) / FPS;
+    } catch (e) {
+      if (!readingDoesNotApply(e)) throw e;
+      continue; // its duration needs a fight
+    }
+    const times = [...new Set(fx.hits.filter((h) => h.effects.some((e) => e.buff === g)).map((h) => h.t))].sort((a, b) => a - b);
+    const starts = times.filter((x, i) => i === 0 || x - (times[i - 1] as number) > ms);
+    const delayMs = ((t.delay ?? 0) * 1000) / FPS;
+    for (const first of starts) {
+      const at = first - delayMs - 1000 / FPS;
+      const near = (c: ReplayedCast) => c.operator === kit.operator && c.skillId === skill.skillId && c.start <= first && c.start >= first - ms;
+      if ([...casts, ...added].some(near)) continue;
+      added.push({ operator: kit.operator, key: skill.skillId, group: skill.skillId, skillId: skill.skillId, kind: skill.kind, start: Math.max(0, at), lastHit: Math.max(0, at), keepPrevious: false, landings: [] });
+    }
+  }
+  return added.length ? ordered([...casts, ...added]) : [...casts];
 }
 
 /**
@@ -294,7 +348,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // Game buffs a trigger on crits is behind (critTriggers): where a landing's crit isn't logged, the replay bounds them.
   const critDependent = new Set(kitIds.filter(({ owner, id }) => critTriggers(kits.find((k) => k.operator === owner) as OperatorKit, id).length > 0).map((x) => x.g));
   const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
-  const casts: ReplayedCast[] = kits.length > 0 ? withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits) : [];
+  const casts: ReplayedCast[] = kits.length > 0 ? castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits)) : [];
   const sampleFrames = [...new Set(fx.hits.flatMap((h) => [frameOf(h.t) - edge, frameOf(h.t), frameOf(h.t) + edge]))].filter((f) => f >= 0).sort((a, b) => a - b);
   type Made = { c: ReplayedCast; f: number; pre: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs };
   /**

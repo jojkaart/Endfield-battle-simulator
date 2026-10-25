@@ -28,5 +28,11 @@
   "chr_0032_lizhiyan": {"plain":50,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":7,"uncovered":1},
   "chr_0036_jsspsi": {"plain":11,"assumed":11,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":5,"uncovered":0},
   "chr_0035_liino": {"plain":14,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":6,"uncovered":0}
+ },
+ "zmdlogs-dbaee23b801d.json": {
+  "chr_0034_typhoea": {"plain":4,"assumed":4,"fallback":34,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":1},
+  "chr_0032_lizhiyan": {"plain":2,"assumed":1,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0035_liino": {"plain":20,"assumed":2,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0011_seraph": {"plain":1,"assumed":0,"fallback":6,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0}
  }
 }
