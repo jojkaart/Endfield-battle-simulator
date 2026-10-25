@@ -16,7 +16,8 @@
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
    "Enemy level 90 is assumed, not logged.",
-   "Challenge stage: total damage 1,857,259 = Lv90 HP 1,238,171 × 1.5 (stage HP scaling, inferred). DEF is 100 at every level of this enemy, so hit damage doesn't depend on the level."
+   "Challenge stage: total damage 1,857,259 = Lv90 HP 1,238,171 × 1.5 (stage HP scaling, inferred). DEF is 100 at every level of this enemy, so hit damage doesn't depend on the level.",
+   "Casts (the detail's skill events without damage) added 2026-10-25 from the same battle detail (efsim zmdlogs casts)."
   ]
  },
  "enemy": {
@@ -6994,6 +6995,63 @@
      "source": "chr_0032_lizhiyan"
     }
    ]
+  }
+ ],
+ "casts": [
+  {
+   "t": 760,
+   "operator": "chr_0035_liino",
+   "skill": "chr_0035_liino_normal_skill"
+  },
+  {
+   "t": 1423,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_normal_skill"
+  },
+  {
+   "t": 2476,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 2943,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_normal_skill"
+  },
+  {
+   "t": 3061,
+   "operator": "chr_0034_typhoea",
+   "skill": "chr_0034_typhoea_normal_skill"
+  },
+  {
+   "t": 4187,
+   "operator": "chr_0035_liino",
+   "skill": "chr_0035_liino_normal_skill"
+  },
+  {
+   "t": 7151,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_combo_skill"
+  },
+  {
+   "t": 7174,
+   "operator": "chr_0034_typhoea",
+   "skill": "chr_0034_typhoea_combo_skill"
+  },
+  {
+   "t": 8739,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_normal_skill"
+  },
+  {
+   "t": 10145,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 11041,
+   "operator": "chr_0034_typhoea",
+   "skill": "chr_0034_typhoea_normal_skill"
   }
  ]
 }

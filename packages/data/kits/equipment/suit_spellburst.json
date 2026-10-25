@@ -3,7 +3,7 @@
   "equipment": "suit_spellburst",
   "sources": [
     "Deep Rampart (3 pieces). rmxlinux Json/SkillData/passive_equipsuit_spellburst01 (phy_spell_up 16, max_stack 3, duration 20) creates buff_equipsuit_spellburst_01, which on the wearer's Nature or Cryo Arts Burst creates buff_equipsuit_spellburst_01_physpellup: Arts Intensity +phy_spell_up (attr 87), layered (stackingType 2, max max_stack via useMaxStackCntKey), duration s each. Its CreateBuff names a CharacterTeamFinder + ExcludeOwner selector but targetSource 4 (owner), and the text says \"the wearer gains\": the wearer only, as the logs show. The set's static Arts DMG +16 % is a stat-panel modifier, not here.",
-    "Checked against fixtures/pending/zmdlogs-dbaee23b801d.json (physpellup layers 1 → 2 → 3 on Typhoeus's bursts)."
+    "Checked against fixtures/zmdlogs-dbaee23b801d.json (physpellup layers 1 → 2 → 3 on Typhoeus's bursts)."
   ],
   "buffs": [
     {

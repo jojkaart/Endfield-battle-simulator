@@ -47,13 +47,23 @@ the six favourites.
    operator's constant factor (build values the log doesn't record, food,
    enemy-side effects), then the kits' own mismatches. Six multi-target
    fights wait in fixtures/multi-target/ for multi-target support.
-   - **Kit-buff replay** (2026-10-22, `zmdlogs check`): make the replay
-     final (drop the log-listing fallback) once it fits: casts the log
-     shows no damage of (Laevatain's ultimate, heal-only casts) need to be
-     inferred; then the "fits the log" disagreements in the report are
-     kit triggers to fix (Liino's ATK on herself, `wpn_sword_0012` counts,
-     Physical Susceptibility in d4fb / d572 / de6a); buff expiry across
-     time stops (in-game test 18).
+   - **Kit-buff replay** (2026-10-22, `zmdlogs check`): since 2026-10-25
+     the check reads facts from it (Link, cast-consumed buffs, combo event
+     counts, own stacks and buff layers, the kit hit, Corrosion, layers of
+     buffs listed once, crit-triggered buffs from the log's crits, casts
+     from cast events and buff lanes; design.md, "What the replay
+     decides"). Next: the enemy's side of a landing (inflictions,
+     Vulnerable, consumed stacks), once the replay's inflictions are checked
+     against the log's reactions (one enemy replay: reactioncheck.ts still
+     runs its own); reaction hits' levels from the replay's reactions;
+     the "fits the log" disagreements the report lists are kit questions
+     (Liino's ATK on herself, `wpn_sword_0012` counts, Physical
+     Susceptibility in d4fb / d572 / de6a, Si's Yinglung's Edge one layer
+     short in b7b3 / abfd, the Endministrator's Grand Vision on her
+     shatter); buff expiry across time stops (in-game test 18). Then make
+     the replay final (the end point, `zmdlogs check --simulate`, matches
+     a third of 4e5e's hits so far: kit buffs named after other game
+     buffs than the log's are counted twice there).
 4. **Food buffs** are done (2026-10-22): `Build.food`, an item ID; the 36
    food buffs' stats are panel lines for 300 s from the fight's start
    (design.md, Input), in simulations, searches, `efsim calc` and the log
@@ -62,19 +72,15 @@ the six favourites.
    could set a food the log lists (by its buffs and values); in-game test 98
    (DEF +x%'s formula item 1, which DEF-reading kits refuse until then).
    - **A stricter log check** (2026-10-24; design.md, "What a log check
-     verifies"): 4 fixtures verify; d9e5, dbae and 0eef went back to
-     pending. Next: move dbae and 0eef back by making the replay fit
-     (their fallback-only operators: the replay's
-     `buff_wpn_funnel_0005_atk_up`, `buff_wpn_funnel_0016_will_atk`,
-     `buff_wpn_lance_0014_damageup`); tighten the negative control's 4%
-     bound by having the replay decide what is now a free count (layers
-     of a buff listed once: 4e5e's `buff_equipsuit_critsuitatk_01`;
-     Corrosion levels); see whether matches that are mostly assumed
-     (Wulfgard 158 of 161 in 4e5e) hold up hit by hit.
-5. **Corrosion model:** time dilation, the applier's talents (Arcane: the
-   log check doesn't apply her cap raise, the timeline does; with it Si's
-   two Corrosion matches in bdf2 no longer fit), and carry-over on
-   reapplication; in-game test 4.
+     verifies"): 6 fixtures verify (0eef and dbae back on 2026-10-25);
+     the negative control's bound is 1% (4e5e 2 of 345 at ×0.97, the rest
+     0). Next: d9e5 (a 1.5-era battle, ×1.7–2.0 after Arcane's ultimate);
+     see whether matches that are mostly assumed (Rossi 123 of 161 in 4e5e:
+     unlogged own crit parts, Link near a grant) hold up hit by hit.
+5. **Corrosion model:** the log check takes Corrosion from the replay's
+   landings since 2026-10-25 (the timeline's ramp with Arcane's cap raise
+   fits bdf2: hits left within Corrosion's range 93 → 26). Open: time
+   dilation, carry-over on reapplication; in-game test 4.
 6. **Still open from setup:** a `Result` schema, `NOTICE` when MIT code is
    first copied, the tie-break order.
 7. **Kit values from the data** (review 3.1, done 2026-10-25; design.md

@@ -253,25 +253,61 @@ a start, and an expiry also ±10% of the instance's life, since the
 timeline's time-stop and hit-stop accounting is off by about that), it
 decides: a buff it has off loses the log's entries, one it has on that
 the log doesn't list gets them (the values the log gives the buff
-elsewhere), one both have on keeps the log's entries. Buffs a trigger on
-crits, chances or enemy actions applies, buffs a cast consumes, and Link
-stay as the log lists them; so does everything near a change. A hit no
-reading of the replay's version fits is tried with the log's listing, and
-a match there is labelled "the log's buff listing (replay: …)": the replay
-doesn't see casts without logged damage yet (journal 2026-10-22). The
-report lists where the replay and the log disagree (on/off, instance
-counts) and which reading the damage fits: log gaps, or kit triggers that
-are wrong. `--log-buffs` checks with the log's listing alone.
+elsewhere), one both have on keeps the log's entries (a buff the log lists
+once whatever its layers, stackingType 8, at the replay's layers). Buffs a
+trigger on chances, enemy actions or heals of the controlled operator
+applies stay as the log lists them; so does everything near a change. A
+hit no reading of the replay's version fits is tried with the log's
+listing, and a match there is labelled "the log's buff listing (replay:
+…)". The report lists where the replay and the log disagree (on/off,
+instance counts) and which reading the damage fits: log gaps, or kit
+triggers that are wrong. `--log-buffs` checks with the log's listing alone.
+
+**What the replay decides** (2026-10-25, review 3.2: the checker reads
+facts from the replay instead of trying alternatives). The replay records
+per logged cast (`BuffReplay.castFacts`) and per logged landing
+(`BuffReplay.landing`: the engine's `LandedHit` with `LandingFacts`)
+what the log doesn't list, and the check reads it, no assumption:
+- **Link** the cast used (`Cast.link`; predictedLink, a second Link model,
+  is gone);
+- **buffs the cast consumed** (`consumedBy`) with their modifiers;
+- **combo event counts** (the window the replay had open);
+- the landing's **kit hit** and its operator's side of the situation: own
+  **stacks**, own **buff layers**, who was controlled;
+- **Corrosion**: the shred the engine's damage of the landing had (its
+  ramp, the applier's talent cap);
+- **crits**: the log's crit flags go into the replay
+  (`TimelineScenario.loggedCrits`), so buffs triggers on crits apply are
+  decided; where a landing's crit isn't logged, only where a second replay
+  with those landings critting agrees;
+- **casts without logged damage**: the log's cast events
+  (`LogFixture.casts`, from the detail's skill events without damage;
+  `zmdlogs casts` adds them to an older fixture), else a cast inferred from
+  the lane of the one buff it applies (`castsFromBuffLanes`).
+A fact the replay's own timing could change is unknown: Link or a
+consumable that starts, ends or is used by another cast within
+REPLAY_EDGE_MS of the cast (on the timeline without the cast, so its time
+stop doesn't hide a teammate's grant), layers without a duration at an
+operator's first such cast (casts before the log may have built them), a
+cast the replay couldn't make, a hit it didn't land (a trigger's landing
+counts within NEAR_FRAMES of the logged hit). There the old alternatives
+are tried, each labelled "(the replay can't say: why)". The enemy's side
+(inflictions, Vulnerable, consumed stacks) isn't taken from the replay
+yet: its inflictions aren't checked against the log's reactions. The end
+point, `zmdlogs check --simulate` (`simulateLog`), compares each logged
+hit with its landing's damage, with only crits, enemy HP and effects no
+kit models from the log: a diagnostic (journal 2026-10-25).
 
 **What a log check verifies** (2026-10-24, after a review found matches
 that said little). A logged hit is read many ways (crit or not, boundary
 buffs, Corrosion levels, situational parts, event counts, value
 assumptions, layers, unlogged own and cast buffs, Link, auras, kit-valued
 unquantified buffs, and the log-listing fallback): median tens to hundreds
-of readings, up to ~11,000. A match is the first reading within ±1, so
-`checkLog` now tries them all and returns, per match, `readings` (tried,
-matching), the `assumptions` as data (`Assumption`: kind, label, buffs,
-count) and a `class`: **plain** (no assumption), **assumed**, or
+of readings, up to ~11,000 (until 2026-10-25; the replay now decides most
+of these where it can: "What the replay decides", above). A match is
+the first reading within ±1, so `checkLog` now tries them all and
+returns, per match, `readings` (tried, matching), the `assumptions` as
+data (`Assumption`: kind, label, buffs, count) and a `class`: **plain** (no assumption), **assumed**, or
 **fallback** (only the log's buff listing fits). Verdicts that aren't
 matches: **mismatch**; **unvalued** (no reading fits, under a buff the
 log lists without a value and no kit values: the prediction lacks it,
@@ -295,12 +331,15 @@ match; matches whose only fitting reading was one of ≥100; a FLAG when
 more than half are fallback, or fewer than half plain). How often a
 reading fits by chance is measured by the negative control
 (`tests/slow/negative-control.test.ts`): every verified fixture with all
-logged values ×0.97 and ×1.03 must give at most 4% of its judged hits
-as matches. It gives 0–3% (2026-10-24: 4e5e 11 of 345 at ×0.97), from
-readings with a free count in steps near 3% (a layered buff the log
-lists once, at 1 up to its maximum layers) or 1–2% (Corrosion levels):
-a single assumed match is weak evidence; a fixture whose hits match by
-the hundred, where ×0.97 matches a few, isn't chance.
+logged values ×0.97 and ×1.03 must give at most 1% of its judged hits
+as matches (4% until 2026-10-25). It gave 0–3% on 2026-10-24 (4e5e 11 of
+345 at ×0.97, bdf2 5 of 166 at ×1.03), from readings with a free count in
+steps near 3% (a layered buff the log lists once, at 1 up to its maximum
+layers) or 1–2% (Corrosion levels); with the replay deciding those
+("What the replay decides"), 4e5e gives 2 and every other verified fixture
+0. Readings per hit fell with it (4e5e 91,895 in all to 25,936; median
+3). A single assumed match is still weak evidence; a fixture whose hits
+match by the hundred, where ×0.97 matches a few, isn't chance.
 
 **Buffs from skills** are kit `buffs` (engine `buffs.ts`): target self,
 team or enemy, a duration (0: not applied; none: until ended) and

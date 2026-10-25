@@ -1,5 +1,7 @@
 // Checks a log fixture: predicts every logged hit that a kit covers from the
-// stored build and the logged buff effects, and compares with the real damage.
+// stored build, the logged buff effects and what the replay of the logged
+// casts decides (buffreplay.ts; docs/design.md, "What the replay decides"),
+// and compares with the real damage.
 
 import {
   allActions,
@@ -31,18 +33,21 @@ import {
   SNAPSHOT_ZONES,
   STATUS_FRAMES,
   type GameData,
+  type HitDamage,
   type KitHit,
+  type LandedHit,
   type KitSkill,
   type Modifier,
   type OperatorKit,
   type ReactionKind,
+  type Situation,
   type SkillType,
   type StatPanel,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit, type RawBuffFile } from "@efsim/data";
 import { assumeValues, valueAssumptions, valueReads } from "./hitvalues.ts";
-import { distinctCasts, placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
-import { disagreementRuns, REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK, replayedHits, replayKitBuffs, type BuffReplay, type DisagreementRun, type ReplayedHits } from "./buffreplay.ts";
+import { placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
+import { atLayers, disagreementRuns, REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK, replayedHits, replayKitBuffs, type BuffReplay, type ConsumedBuffs, type DisagreementRun, type Fact, type ReplayCastFacts, type ReplayedHits } from "./buffreplay.ts";
 
 /** What a reading of a logged hit takes for granted that the log doesn't say. */
 export type AssumptionKind =
@@ -51,7 +56,7 @@ export type AssumptionKind =
   | "noCrit"
   /** Which buffs starting or ending at the hit applied (boundarySubsets). */
   | "boundary"
-  /** Corrosion's level (the log lists Corrosion without a value). */
+  /** Corrosion's level (the log lists Corrosion without a value), where the replay's landing has none (corrosionAt). */
   | "corrosion"
   /** A status hit's stacks. */
   | "stacks"
@@ -59,15 +64,15 @@ export type AssumptionKind =
   | "kitHit"
   /** A hit's situational parts (KitHit.if, extraScale) taken as met. */
   | "situational"
-  /** The count of the event behind a value (eventCount). */
+  /** The count of the event behind a value (eventCounts), where the replay saw no window. */
   | "eventCount"
-  /** What a value reads that only a fight knows (hitvalues.ts). */
+  /** What a value reads that only a fight knows (hitvalues.ts), where the replay's landing doesn't say. */
   | "value"
-  /** Buffs the hit's cast consumes, which the log doesn't list (unloggedCastBuffs). */
+  /** Buffs the hit's cast consumes, which the log doesn't list, where the replay can't say (castBuffVariants). */
   | "unloggedCastBuff"
   /** The hitter's own kit buffs, or their crit parts, which the log doesn't list (unloggedOwnBuffs). */
   | "unloggedOwnBuff"
-  /** Link stacks on the cast (linkVariants). */
+  /** Link stacks on the cast, where the replay can't say (linkVariants). */
   | "link"
   /** An enemy-side team aura the log doesn't list (unloggedEnemyAuras). */
   | "enemyAura"
@@ -311,7 +316,7 @@ function findHits(data: GameData, build: Build, event: string): [{ skillId: stri
   return kitHitEntries(effectiveKit(data, build)).filter((e) => !e.hit.poiseOnly && e.hit.events.includes(event)).map((e) => [{ skillId: e.skillId }, e.hit]);
 }
 
-/** Above this many boundary buffs (64 subsets), only none or all are tried. A burst that triggers its wearer's weapon and gear-set buffs has six (fixtures/pending/zmdlogs-dbaee23b801d.json t=8391). */
+/** Above this many boundary buffs (64 subsets), only none or all are tried. A burst that triggers its wearer's weapon and gear-set buffs has six (fixtures/zmdlogs-dbaee23b801d.json t=8391). */
 const MAX_BOUNDARY_SUBSET = 6;
 
 /** Effects with repeats of the same buff, zone, element and value kept once. */
@@ -424,11 +429,28 @@ interface Candidate {
   readonly stacks: number;
 }
 
+/** Corrosion at a hit as the replay's landing has it (its level, and the engine's shred then), or why the replay can't say. */
+type CorrosionFact = Fact<{ readonly level: number; readonly modifier: Modifier }>;
+
+/**
+ * Corrosion's level at a logged hit, which the log lists without a value: the level of the Corrosion the engine's
+ * damage of the hit's landing in the replay had (LandedHit.modifiers), no assumption. Unknown where the replay has no
+ * landing, or has no Corrosion there (its Nature inflictions aren't checked against the log yet): levels 1-4 are tried.
+ */
+function corrosionAt(landing: LandedHit | Undecided | null): CorrosionFact {
+  if (!landing) return { unknown: "a status hit" };
+  if ("unknown" in landing) return landing;
+  const m = landing.modifiers.find((x) => x.zone === "ignoreResistance" && x.source.startsWith("Corrosion level "));
+  if (!m) return { unknown: "the replay has no Corrosion at the hit" };
+  return { value: { level: Number(m.source.slice("Corrosion level ".length)), modifier: m } };
+}
+
 /** Every combination of what the log leaves open for a hit (with `repeats`, the boundary readings with part of a repeated buff's instances: boundarySubsets). */
-function candidates(hit: LogHit, panels: ReadonlyMap<string, { panel: StatPanel }>, stackOptions: readonly number[], repeats = false): Candidate[] {
+function candidates(hit: LogHit, panels: ReadonlyMap<string, { panel: StatPanel }>, stackOptions: readonly number[], repeats = false, corrosionFact: CorrosionFact = { unknown: "no replay" }): Candidate[] {
   const out: Candidate[] = [];
   const corrosion = hit.unquantified.find((u) => isCorrosionBuff(u.buff));
-  const corrosionLevels = corrosion ? [1, 2, 3, 4] : [0];
+  const known = corrosion && "value" in corrosionFact ? corrosionFact.value : null;
+  const corrosionLevels = known ? [known.level] : corrosion ? [1, 2, 3, 4] : [0];
   for (const boundary of boundarySubsets(hit.boundaryEffects, repeats)) {
     const effects = [...hit.effects, ...boundary.effects];
     for (const level of corrosionLevels) {
@@ -436,10 +458,11 @@ function candidates(hit: LogHit, panels: ReadonlyMap<string, { panel: StatPanel 
       const assumed: Assumption[] = boundary.label ? [{ kind: "boundary", label: boundary.label, buffs: [...new Set(boundary.effects.map((e) => e.buff))] }] : [];
       if (corrosion && level > 0) {
         const applierAi = panels.get(corrosion.source)?.panel.attrs[87]?.total ?? 0;
-        // Without the applier's talent cap (corrosionCapScale), which the timeline applies: with it, two of Si's
-        // matches in bdf223db8e49 no longer fit (2026-10-24; a lead, not settled).
-        extra.push(corrosionModifier(level, hit.t - corrosion.since, applierAi));
-        assumed.push({ kind: "corrosion", label: `Corrosion level ${level}`, buffs: [corrosion.buff], n: level });
+        // The replay's: the engine's shred at the landing (its ramp from the replay's application, the applier's talent cap:
+        // corrosionCapScale). Tried levels ramp from the log's start of it, without the cap (as before 2026-10-25).
+        if (known) extra.push(known.modifier);
+        else extra.push(corrosionModifier(level, hit.t - corrosion.since, applierAi));
+        if (!known) assumed.push({ kind: "corrosion", label: `Corrosion level ${level} (the replay can't say: ${(corrosionFact as Undecided).unknown})`, buffs: [corrosion.buff], n: level });
       }
       for (const crit of hit.crit === null ? [false, true] : [hit.crit]) {
         for (const stacks of stackOptions) {
@@ -508,7 +531,7 @@ function corrosionBounds(data: GameData, hit: LogHit, panels: ReadonlyMap<string
  * hit of a kind such buffs act on, every combination of them is tried: each
  * absent or with 1 up to its maximum layers. The first option is none.
  */
-function unloggedCastBuffs(data: GameData, build: Build, panel: StatPanel, kind: SkillType | "none"): { label: string | null; buffs: string[]; modifiers: Modifier[] }[] {
+function unloggedCastBuffs(data: GameData, build: Build, panel: StatPanel, kind: SkillType | "none", why: string): { label: string | null; buffs: string[]; modifiers: Modifier[] }[] {
   const defs = (effectiveKit(data, build)?.buffs ?? []).filter((b) => kind !== "none" && b.consumedBy?.includes(kind));
   let out: { label: string | null; buffs: string[]; modifiers: Modifier[] }[] = [{ label: null, buffs: [], modifiers: [] }];
   for (const def of defs) {
@@ -522,7 +545,28 @@ function unloggedCastBuffs(data: GameData, build: Build, panel: StatPanel, kind:
     }
     out = out.flatMap((o) => [o, ...layers.map((l) => ({ label: [o.label, `${def.id}${l.n > 1 ? ` ×${l.n}` : ""}`].filter((x) => x).join(", "), buffs: [...o.buffs, def.id], modifiers: [...o.modifiers, ...l.modifiers] }))]);
   }
-  return out.map((o) => (o.label ? { ...o, label: `unlogged ${o.label}` } : o));
+  return out.map((o) => (o.label ? { ...o, label: `unlogged ${o.label} (the replay can't say: ${why})` } : o));
+}
+
+/**
+ * The buffs a hit's cast consumed and carries on its hits, which ZMDLogs doesn't list: the replay's (ReplayCastFacts
+ * consumed: the kit buffs the cast found and used up, with their modifiers as the timeline applies them), no assumption.
+ * Where the replay can't say, every combination of the hitter's own such buffs is tried (unloggedCastBuffs).
+ */
+function castBuffVariants(data: GameData, build: Build, panel: StatPanel, kind: SkillType | "none", consumed: Fact<ConsumedBuffs>): { label: string | null; buffs: string[]; modifiers: readonly Modifier[] }[] {
+  if ("value" in consumed) return [{ label: null, buffs: [], modifiers: consumed.value.modifiers }];
+  return unloggedCastBuffs(data, build, panel, kind, consumed.unknown);
+}
+
+/**
+ * The counts of the event behind a hit's values (ValueExpr eventCount: a combo's window count, Si's combo) to read it
+ * at: the replay's window count for its cast, no assumption; where the replay can't say (a window it didn't see open,
+ * a trigger's hits), 1-4, each with why. A hit whose values don't read it: one reading.
+ */
+export function eventCounts(h: KitHit, windowCount: Fact<number>): { eventCount: number | undefined; why: string | null }[] {
+  if (!JSON.stringify(h).includes('"eventCount"')) return [{ eventCount: undefined, why: null }];
+  if ("value" in windowCount) return [{ eventCount: windowCount.value, why: null }];
+  return [1, 2, 3, 4].map((n) => ({ eventCount: n, why: windowCount.unknown }));
 }
 
 /** Whether a kit hit is a finisher's (SkillData skillSpecification 8), as the timeline judges it: a skill's own hit, not a trigger's. */
@@ -758,91 +802,35 @@ export function ownBuffVariants(options: readonly BuffOption[][], hit: LogHit): 
   return perBuff.reduce<Variant[]>((acc, l) => combine(acc, [NO_VARIANT, ...l]), [NO_VARIANT]);
 }
 
-/** How long a Link stack lasts unless its source says (buff_common_affixes_combo_trigger: 15 s). */
-const LINK_MS = 15000;
+/** The replay doesn't know a fact about a logged hit (BuffReplay castFacts / landing): why, for the labels of the alternatives tried instead. */
+export interface Undecided {
+  readonly unknown: string;
+}
+
+/** The facts the replay has of a logged hit's cast, or why it has none (no replay: `zmdlogs check --log-buffs`). */
+function castFactsOf(replay: LogBuffReplay | null, cast: Pick<LoggedCast, "operator" | "skillId" | "start" | "kind"> | undefined): ReplayCastFacts | Undecided {
+  if (!replay) return { unknown: "no replay" };
+  if (!cast) return { unknown: "a hit the placement doesn't place" };
+  return replay.replay.castFacts(cast);
+}
+
+/** One fact of a cast's (castFactsOf), or why the replay doesn't know it. */
+function castFact<K extends "link" | "windowCount" | "consumed">(facts: ReplayCastFacts | Undecided, key: K): ReplayCastFacts[K] {
+  return "unknown" in facts ? facts : facts[key];
+}
+
+/** Link's multiplier on a battle skill's or ultimate's hits at `n` stacks. */
+const linkModifier = (kind: "battle" | "ultimate", n: number): Modifier => ({ zone: "multiplicative", value: linkValue(kind, n), source: `Link (${n})` });
 
 /**
- * Link stacks a cast would use, from the Link sources the log's casts show
- * (batch 4 L3, after B1: Link comes only from Link sources): kit triggers on
- * a logged cast with a `link` action or a `link` kit buff (their `if`s
- * counted as met), until they run out or a battle skill or ultimate of a
- * logged cast uses them up; at most 4.
+ * Link stacks on a battle-skill or ultimate hit, which ZMDLogs doesn't list: the stacks its cast used in the replay
+ * of the logged casts (Cast.link: the timeline's Link sources, B1), no assumption. Where the replay can't say (`facts`
+ * undecided: a cast it couldn't make, or no replay), none and 1–4 are tried, labelled with why.
  */
-export function predictedLink(data: GameData, fx: LogFixture, placement: Placement, cast: Pick<LoggedCast, "start">): number {
-  let known = linkGrantCache.get(placement);
-  if (!known) linkGrantCache.set(placement, (known = linkGrants(data, fx, placement)));
-  const { casts, grants } = known;
-  // A battle skill or ultimate cast before this one uses up what was granted before it.
-  const users = casts.filter((c) => (c.kind === "battle" || c.kind === "ultimate") && c.start < cast.start - 1);
-  let n = 0;
-  for (const g of grants) {
-    if (!(g.at <= cast.start && g.until > cast.start)) continue;
-    if (users.some((u) => u.start >= g.at)) continue;
-    n += g.count;
-  }
-  return Math.min(4, Math.round(n));
-}
-
-interface LinkGrant {
-  readonly at: number;
-  readonly until: number;
-  readonly count: number;
-}
-
-const linkGrantCache = new WeakMap<Placement, { casts: LoggedCast[]; grants: LinkGrant[] }>();
-
-/** The Link stacks the logged casts grant (predictedLink), with when they run out, in ms. */
-function linkGrants(data: GameData, fx: LogFixture, placement: Placement): { casts: LoggedCast[]; grants: LinkGrant[] } {
-  const casts = distinctCasts(placement);
-  const grants: LinkGrant[] = [];
-  for (const build of fx.team) {
-    const kit = effectiveKit(data, build);
-    if (!kit) continue;
-    const panel = computeStats(data, build);
-    for (const t of kit.triggers) {
-      if (t.on.event !== "cast" || !t.on.skills?.length) continue;
-      const skillId = triggerSkillId(kit.operator, t);
-      for (const a of allActions(t.do)) {
-        let count = 0;
-        let ms = LINK_MS;
-        try {
-          if (a.kind === "link") {
-            const ec = evalContext(data, build, panel, skillId, { team: fx.team });
-            count = a.count === undefined ? 1 : evaluate(a.count, ec);
-            ms = a.seconds === undefined ? LINK_MS : evaluate(a.seconds, ec) * 1000;
-          } else if (a.kind === "buff") {
-            const def = kit.buffs.find((b) => b.id === a.buff && b.link);
-            const b = def ? applyBuff(data, build, panel, skillId, def, 0) : null;
-            if (b) [count, ms] = [1, Number.isFinite(b.expiresAt) ? (b.expiresAt * 1000) / FPS : LINK_MS];
-          }
-        } catch (e) {
-          if (!readingDoesNotApply(e)) throw e;
-          continue; // its count or duration needs a fight
-        }
-        if (count <= 0) continue;
-        for (const c of casts) {
-          if (c.operator !== build.operator || !t.on.skills.includes(c.skillId)) continue;
-          const at = c.start + ((t.delay ?? 0) * 1000) / FPS;
-          grants.push({ at, until: at + ms, count });
-        }
-      }
-    }
-  }
-  return { casts, grants };
-}
-
-/**
- * Link stacks on a battle-skill or ultimate hit, which ZMDLogs doesn't list:
- * none first, then the predicted stacks (predictedLink) and one either side,
- * each Link's multiplier for the cast's kind.
- */
-export function linkVariants(kind: SkillType | null, predicted: number): Variant[] {
+export function linkVariants(kind: SkillType | null, link: Fact<number>): Variant[] {
   if (kind !== "battle" && kind !== "ultimate") return [NO_VARIANT];
-  const counts = [...new Set([predicted, predicted - 1, predicted + 1])].filter((n) => n >= 1 && n <= 4);
-  return [
-    NO_VARIANT,
-    ...counts.map((n): Variant => variant({ kind: "link", label: `Link ${n} (predicted ${predicted})`, n }, [{ zone: "multiplicative", value: linkValue(kind, n), source: `Link (${n})` }])),
-  ];
+  if ("value" in link) return link.value > 0 ? [{ ...NO_VARIANT, modifiers: [linkModifier(kind, link.value)] }] : [NO_VARIANT];
+  return [NO_VARIANT, ...[1, 2, 3, 4].map((n): Variant => variant({ kind: "link", label: `Link ${n} (the replay can't say: ${link.unknown})`, n }, [linkModifier(kind, n)]))];
 }
 
 /** Most layers of an unquantified buff tried from a kit. */
@@ -936,6 +924,8 @@ export function logBuffReplay(data: GameData, fx: LogFixture, placement: Placeme
   return { replay, replayed, runs: disagreementRuns(fx, replayed) };
 }
 
+const NO_LAYERS: ReadonlyMap<string, number> = new Map();
+
 /** The assumption a match carries when only the log's own buff listing fits it, not the kit-buff replay's. */
 export const LOG_LISTING = "the log's buff listing";
 
@@ -958,7 +948,8 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
   const finisher = finisherModifier(data, fx.enemy.id);
   const placement = placeHits(data, fx);
   // The hits as the replay decides their kit buffs; with `buffs: "log"`, as logged.
-  const replayed = opts.buffs === "log" ? null : (opts.replay ?? logBuffReplay(data, fx, placement)).replayed;
+  const replay = opts.buffs === "log" ? null : (opts.replay ?? logBuffReplay(data, fx, placement));
+  const replayed = replay?.replayed ?? null;
   const asReplayed = (h: LogHit) => replayed?.hits.get(h) ?? h;
   const noneDecided: ReadonlySet<string> = new Set();
   const killing = killingBlows(fx);
@@ -971,7 +962,9 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
   };
   return fx.hits.map((logged): HitVerdict => {
     const hit = asReplayed(logged);
-    const decided = replayed?.decidedAt.get(logged) ?? noneDecided;
+    // The buffs the replay sets at the hit (decidedAt) and those it gives layers (layersAt): their layers aren't tried.
+    const layersHere = replayed?.layersAt.get(logged) ?? NO_LAYERS;
+    const decided = layersHere.size ? new Set([...(replayed?.decidedAt.get(logged) ?? []), ...layersHere.keys()]) : (replayed?.decidedAt.get(logged) ?? noneDecided);
     const member = team.at(hit.operator, hit.t);
     const reaction = parseReactionEvent(hit.event);
     const found = reaction || !member ? [] : findHits(data, member.build, hit.event);
@@ -982,12 +975,19 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
     const applied = reaction?.kind === "combustionTick" ? combustionSource(fx, logged) : null;
     const predicted: number[] = [];
     // What the log never lists (batch 4 L3): the operator's own unlogged buffs and crit parts, and Link on a battle skill's or
-    // ultimate's hits (around the stacks the logged Link sources predict), each tried after every reading without them.
+    // ultimate's hits (the replay's, or tried where it can't say), each tried after every reading without them.
     const kit = effectiveKit(data, member.build);
     const placed = placement.hits.get(logged);
     const kind = placed ? placed.cast.kind : (kit?.skills.find((s) => found.some(([f]) => f.skillId === s.skillId))?.kind ?? null);
-    const link = kind === "battle" || kind === "ultimate" ? linkVariants(kind, predictedLink(data, fx, placement, placed?.cast ?? { start: hit.t })) : [NO_VARIANT];
+    const castFacts = castFactsOf(replay, placed?.cast);
+    const link = linkVariants(kind, castFact(castFacts, "link"));
     const stackMax = (id: string) => kit?.stacks.find((x) => x.id === id)?.max ?? 4;
+    // The hit's landing in the replay: its kit hit, and the facts its values read there (BuffReplay.landing).
+    const landedHit = reaction ? null : replay ? replay.replay.landing(logged) : { unknown: "no replay" };
+    const landedHits = landedHit && !("unknown" in landedHit) ? found.filter(([s, h]) => h.id === landedHit.hitId && s.skillId === landedHit.skillId) : [];
+    const landing = landedHit && !("unknown" in landedHit) && landedHit.facts && landedHits.length ? { facts: landedHit.facts } : null;
+    const landingWhy = landedHit && "unknown" in landedHit ? landedHit.unknown : "a landing the kit hits don't name";
+    const corrosionHere = corrosionAt(landedHit);
     /**
      * Every reading of one version of the hit (the replay's, or the log's): the first that matches (its assumptions), and
      * how many readings gave a value and how many of them matched (all are tried, so a match's strength shows).
@@ -1010,6 +1010,97 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
       // Whole-hit assumptions (enemy auras the log doesn't list, layers of a buff it lists once), the plain reading first:
       // a hit that matches without them keeps matching as before; so do readings with part of a repeated boundary buff's instances, after all others.
       const variants = combine(quantified, combine(unloggedOwn, combine(auras, layerVariants(hit, caps, decided))));
+      type Options = (category: HitCategory) => { crit: "always" | "never"; staggered: boolean; conditions: never[]; modifiers: Modifier[] };
+      type Reading = { assumptions: Assumption[]; r: { exact: number } };
+      /** One reading of a kit hit with its situation, cast buffs and finisher; null when it doesn't apply (the hit is ruled out, or a value needs what the situation doesn't say). */
+      const reading = (s: { skillId: string }, h: KitHit, options: Options, mods: readonly Modifier[], situation: Situation, assume: boolean): HitDamage | null => {
+        try {
+          const base = options(h.reaction?.kind ?? h.damageType);
+          const own = isFinisher(data, member.build, s.skillId, h) ? [finisher] : [];
+          return computeHit(data, member.build, member.panel, target, s, h, { ...base, modifiers: [...base.modifiers, ...mods, ...own], situation, assumeUnknown: assume });
+        } catch (e) {
+          if (!readingDoesNotApply(e)) throw e;
+          return null;
+        }
+      };
+      /**
+       * The readings from the hit's landing in the replay, for the kit hit it landed: the situation its values and
+       * conditions read there on its operator's side (LandingFacts: own stacks, own buff layers, who was controlled,
+       * Link), no assumption. The enemy's side (its inflictions and Vulnerable, the stacks a hit consumed) isn't taken
+       * from the replay yet (its inflictions aren't checked against the log's reactions: 0eef / dbae Typhoeus' bursts
+       * consume an infliction the replay doesn't have): what values read of it is tried, labelled. Conditions the
+       * situation leaves open are read both ways (assumed). Null without a landing, or when no reading applies: the
+       * tried readings then. The placement's other kit hits for the event are tried as before (the landed one can be
+       * wrong where a player's timing chooses: Rossi's perfect combo in 4e5e).
+       */
+      const fromLanding = (c: Candidate, options: Options): Reading[] | null => {
+        if (!landing) return null;
+        const facts = landing.facts;
+        const out: Reading[] = [];
+        const enemyWhy = "the enemy's side isn't taken from the replay";
+        for (const [s, h] of landedHits) {
+          const reads = valueReads(h);
+          for (const unlogged of castBuffVariants(data, member.build, member.panel, h.damageType, castFact(castFacts, "consumed"))) {
+            for (const { eventCount, why } of eventCounts(h, castFact(castFacts, "windowCount"))) {
+              for (const va of [{ assumption: null, label: null }, ...valueAssumptions({ ...reads, stacks: [] }, stackMax)]) {
+                const situation: Situation = {
+                  team: fx.team, stacks: facts.stacks, castLink: facts.castLink, controlled: facts.controlled, staggered: facts.staggered, enemyHp: facts.enemyHp,
+                  buffActive: (id) => (facts.buffLayers[id] ?? 0) > 0, buffLayers: (id) => facts.buffLayers[id] ?? 0, ...(eventCount !== undefined ? { eventCount } : {}),
+                };
+                const kh = va.assumption ? assumeValues(h, va.assumption, true) : h;
+                const [no, yes] = [reading(s, kh, options, unlogged.modifiers, situation, false), kh.extraScale?.length || kh.if ? reading(s, kh, options, unlogged.modifiers, situation, true) : null];
+                const assumptions: Assumption[] = [
+                  ...(why !== null ? [{ kind: "eventCount" as const, label: `event count ${eventCount} (the replay can't say: ${why})`, n: eventCount as number }] : []),
+                  ...(va.label !== null ? [{ kind: "value" as const, label: `${va.label} (${enemyWhy})` }] : []),
+                  ...(unlogged.label !== null ? [{ kind: "unloggedCastBuff" as const, label: unlogged.label, buffs: unlogged.buffs }] : []),
+                ];
+                const undecided: Assumption = { kind: "situational", label: `situational parts assumed (the landing's situation doesn't decide them: ${enemyWhy})` };
+                if (no && (!yes || yes.exact === no.exact)) out.push({ assumptions, r: no });
+                else {
+                  if (no) out.push({ assumptions, r: no });
+                  if (yes) out.push({ assumptions: [undecided, ...assumptions], r: yes });
+                }
+              }
+            }
+          }
+        }
+        if (!out.length) return null;
+        // The event's other kit hits, as the placement has them (the landed one first).
+        const landedIds = new Set(landedHits.map(([, h]) => h));
+        const others = found.filter(([, h]) => !landedIds.has(h));
+        return [...out, ...triedReadings(c, options, others, `the replay landed ${landedHits.map(([, h]) => h.id).join(", ")}`)];
+      };
+      /** What the hit's landing in the replay doesn't say, tried: which kit hit, its situational parts, the values that read a fight's state. */
+      const triedReadings = (c: Candidate, options: Options, hits: readonly [{ skillId: string }, KitHit][] = found, whyHit?: string): Reading[] => {
+        const why = whyHit ?? (landing ? "its values need more than the landing's facts" : landingWhy);
+        return hits
+          .filter(([s, h]) => hitAvailable(data, member.build, member.panel, s.skillId, h, { team: fx.team }))
+          .flatMap(([s, h]) =>
+            // A hit whose conditions or extra scale depend on what the log doesn't record (inflictions, stacks): try both outcomes;
+            // one whose values read the count of the event behind it (Si's combo): try counts 1-4; buffs its cast would carry unlogged: try them.
+            // A finisher takes the enemy's finisher multiplier, as in the timeline.
+            castBuffVariants(data, member.build, member.panel, h.damageType, castFact(castFacts, "consumed")).flatMap((unlogged) =>
+              (h.extraScale?.length || h.if ? [false, true] : [false]).flatMap((assume) =>
+                eventCounts(h, castFact(castFacts, "windowCount")).flatMap(({ eventCount, why: countWhy }) =>
+                  // Values that read what only a fight knows (consumed stacks, own stacks, the enemy's stacks: L4, L6): over their range.
+                  [{ assumption: null, label: null }, ...valueAssumptions(valueReads(h), stackMax)].flatMap((va) => {
+                    const situation = { team: fx.team, ...(eventCount !== undefined ? { eventCount } : {}) };
+                    const r = reading(s, va.assumption ? assumeValues(h, va.assumption, true) : h, options, unlogged.modifiers, situation, assume);
+                    if (!r) return []; // the hit doesn't happen under this assumption, or a value needs what it doesn't say
+                    const assumptions: Assumption[] = [
+                      ...(found.length > 1 || whyHit ? [{ kind: "kitHit" as const, label: `kit hit ${h.id} (the replay can't say: ${why})`, buffs: [h.id] }] : []),
+                      ...(assume ? [{ kind: "situational" as const, label: `situational parts assumed (the replay can't say: ${why})` }] : []),
+                      ...(countWhy !== null ? [{ kind: "eventCount" as const, label: `event count ${eventCount} (the replay can't say: ${countWhy})`, n: eventCount as number }] : []),
+                      ...(va.label !== null ? [{ kind: "value" as const, label: `${va.label} (the replay can't say: ${why})` }] : []),
+                      ...(unlogged.label !== null ? [{ kind: "unloggedCastBuff" as const, label: unlogged.label, buffs: unlogged.buffs }] : []),
+                    ];
+                    return [{ assumptions, r }];
+                  }),
+                ),
+              ),
+            ),
+          );
+      };
       /** The readings of one candidate under one variant: each with what it assumes beyond them, and its damage. */
       const readingsOf = (c: Candidate, variant: Variant): { assumptions: Assumption[]; r: { exact: number } }[] => {
         const loggedMods = (category: HitCategory) =>
@@ -1021,45 +1112,12 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
         });
         const results: { assumptions: Assumption[]; r: { exact: number } }[] = reaction
           ? [{ assumptions: [], r: computeReaction(data, member.build, member.panel, target, { ...reaction, stacks: c.stacks }, options(reaction.kind)) }]
-          : found
-              .filter(([s, h]) => hitAvailable(data, member.build, member.panel, s.skillId, h, { team: fx.team }))
-              .flatMap(([s, h]) =>
-                // A hit whose conditions or extra scale depend on what the log doesn't record (inflictions, stacks): try both outcomes;
-                // one whose values read the count of the event behind it (Si's combo): try counts 1-4; buffs its cast would carry unlogged: try them.
-                // A finisher takes the enemy's finisher multiplier, as in the timeline.
-                unloggedCastBuffs(data, member.build, member.panel, h.damageType).flatMap((unlogged) =>
-                  (h.extraScale?.length || h.if ? [false, true] : [false]).flatMap((assume) =>
-                    (JSON.stringify(h).includes('"eventCount"') ? [1, 2, 3, 4] : [undefined]).flatMap((eventCount) =>
-                      // Values that read what only a fight knows (consumed stacks, own stacks, the enemy's stacks: L4, L6): over their range.
-                      [{ assumption: null, label: null }, ...valueAssumptions(valueReads(h), stackMax)].flatMap((va) => {
-                        try {
-                          const situation = { team: fx.team, ...(eventCount !== undefined ? { eventCount } : {}) };
-                          const base = options(h.reaction?.kind ?? h.damageType);
-                          const own = isFinisher(data, member.build, s.skillId, h) ? [finisher] : [];
-                          const kh = va.assumption ? assumeValues(h, va.assumption, true) : h;
-                          const r = computeHit(data, member.build, member.panel, target, s, kh, { ...base, modifiers: [...base.modifiers, ...unlogged.modifiers, ...own], situation, assumeUnknown: assume });
-                          const assumptions: Assumption[] = [
-                            ...(found.length > 1 ? [{ kind: "kitHit" as const, label: `kit hit ${h.id}`, buffs: [h.id] }] : []),
-                            ...(assume ? [{ kind: "situational" as const, label: "situational parts assumed" }] : []),
-                            ...(eventCount !== undefined ? [{ kind: "eventCount" as const, label: `event count ${eventCount}`, n: eventCount }] : []),
-                            ...(va.label !== null ? [{ kind: "value" as const, label: va.label }] : []),
-                            ...(unlogged.label !== null ? [{ kind: "unloggedCastBuff" as const, label: unlogged.label, buffs: unlogged.buffs }] : []),
-                          ];
-                          return [{ assumptions, r }];
-                        } catch (e) {
-                          if (!readingDoesNotApply(e)) throw e;
-                          return []; // the hit doesn't happen under this assumption, or a value needs what it doesn't say
-                        }
-                      }),
-                    ),
-                  ),
-                ),
-              );
+          : (fromLanding(c, options) ?? triedReadings(c, options));
         return results;
       };
       const all = [false, true].flatMap((repeats) => variants.map((variant) => ({ repeats, variant })));
       for (const { repeats, variant } of all) {
-        for (const c of candidates(withLayers(hit, variant.layers), panels, stackOptions, repeats)) {
+        for (const c of candidates(withLayers(hit, variant.layers), panels, stackOptions, repeats, corrosionHere)) {
           for (const { assumptions, r } of readingsOf(c, variant)) {
             const p = roundDamage(r.exact);
             tried++;
@@ -1098,11 +1156,13 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
     let byLog: ReturnType<typeof search> | null = null;
     // The log's listing where the replay changed the hit, when the replay's reading fits no reading: reported, so the
     // disagreements it settles show (formatBuffReplay).
-    if (decided.size > 0) {
-      byLog = search(logged, noneDecided, applied);
+    const setHere = replayed?.decidedAt.get(logged) ?? noneDecided;
+    if (setHere.size > 0) {
+      // The log's listing, with the layers the replay gives a buff both have on (not tried: layerVariants).
+      byLog = search(atLayers(logged, layersHere), new Set(layersHere.keys()), applied);
       readings = { tried: byReplay.tried + byLog.tried, matching: byLog.matching };
       if (byLog.first) {
-        const buffs = [...decided].sort();
+        const buffs = [...setHere].sort();
         return match({ ...byLog.first, assumptions: [...byLog.first.assumptions, { kind: "logListing", label: `${LOG_LISTING} (replay: ${buffs.join(", ")})`, buffs }] }, readings);
       }
     }
@@ -1370,4 +1430,46 @@ export function findScales(data: GameData, fx: LogFixture, operator: string): Sc
     out.push({ event, hits: hits.length, matches: [...tally.values()].sort((x, y) => y.agree - x.agree).slice(0, 8) });
   }
   return out;
+}
+
+/** A logged hit as the simulation of the logged casts has it (simulateLog). */
+export interface SimulatedHit {
+  readonly hit: LogHit;
+  /** Its landing's damage in the replay (crit as logged, the log's effects no kit models added), or why there is none. */
+  readonly simulated: number | { readonly unknown: string };
+}
+
+/** Logged effects the timeline models itself (its statuses: reactions, physical statuses, Stagger), which the simulation doesn't add. */
+const ENGINE_STATUS_BUFF = /_triggered(_do)?$|^buff_physical_|poise_break/;
+
+/**
+ * The end point of the log check (docs/review-2026-10.md 3.2): the logged casts simulated on the timeline and each
+ * logged hit compared with its landing's damage. From the log only the crits (TimelineScenario.loggedCrits), the
+ * enemy's HP (as the replay has it) and the effects no kit models (a buff no team kit stands for, not one of the
+ * timeline's own statuses, not the hitter's food: added to the landing, TimelineScenario.loggedModifiers); everything
+ * else (kit buffs, Link, stacks, Corrosion, consumed buffs) is the engine's. Hits the replay doesn't land have no value.
+ */
+export function simulateLog(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx)): SimulatedHit[] {
+  const kitBuffs = new Set(fx.team.flatMap((b) => (effectiveKit(data, b)?.buffs ?? []).flatMap((x) => (x.gameBuff ? [x.gameBuff] : []))));
+  const caps = kitStackCaps(data, teamPanels(data, fx).panels);
+  const loggedModifiers = (h: LogHit) => logModifiers(withoutOwnFood(data, fx, h).effects.filter((e) => !kitBuffs.has(e.buff) && !ENGINE_STATUS_BUFF.test(e.buff)), null, caps);
+  const replay = replayKitBuffs(data, fx, placement, { loggedModifiers });
+  return fx.hits.map((hit) => {
+    const l = replay.landing(hit);
+    return { hit, simulated: "unknown" in l ? l : l.damage };
+  });
+}
+
+/** The simulation's report: per operator, the logged hits it lands, how many within ±1, and the median ratio of logged to simulated damage. */
+export function formatSimulatedLog(data: GameData, fx: LogFixture, hits: readonly SimulatedHit[]): string {
+  const out = [`${fx.id}: the logged casts simulated (crits, the enemy's HP and effects no kit models from the log; the rest the engine's)`];
+  for (const b of fx.team) {
+    const mine = hits.filter((x) => x.hit.operator === b.operator);
+    const landed = mine.filter((x): x is SimulatedHit & { simulated: number } => typeof x.simulated === "number");
+    const within = landed.filter((x) => Math.abs(x.simulated - (x.hit.uncapped ?? x.hit.value)) <= 1).length;
+    const ratios = landed.map((x) => (x.hit.uncapped ?? x.hit.value) / Math.max(1, x.simulated)).sort((p, q) => p - q);
+    const median = ratios.length ? (ratios[Math.floor((ratios.length - 1) / 2)] as number).toFixed(4) : "-";
+    out.push(`  ${data.operators[b.operator]?.name ?? b.operator}: ${mine.length} hits, ${landed.length} landed, ${within} within ±1, median logged/simulated ${median}`);
+  }
+  return out.join("\n");
 }

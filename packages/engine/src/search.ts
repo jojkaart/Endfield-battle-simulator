@@ -395,6 +395,7 @@ const round = (x: number) => Math.round(x * 10) / 10;
 const PENDING_HIT_KEY: KeyRules<TimelineState["pending"][number]> = {
   frame: true, operator: true, skillId: true, hitId: true, sp: true, spKind: true, spSource: true, usesUp: true, eventCount: true, eventSource: true,
   detached: true, launchAt: true, cast: true, controlledAtCast: true, trigger: true, branch: true, fixed: true, snapshot: true, pinned: true,
+  ref: "a replayed landing's reference, which no search sets",
 };
 
 /** A timed buff: everything about it decides what it does (its layers, ticks, records, recipients, the cast it belongs to). */

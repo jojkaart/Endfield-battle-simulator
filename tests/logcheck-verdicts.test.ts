@@ -96,7 +96,7 @@ describe("errors in a reading", () => {
     // Undecided without the enemy's state: tried as not happening (computeHit throws HitRuledOut) and as happening.
     const situational = hit("s", { if: { enemyInfliction: "fire" } });
     const v = checkLog(withKit([battle([situational])]), fixture([logHit(1000, damage(situational, []))]), { buffs: "log" });
-    expect(v[0]).toMatchObject({ kind: "match", assumed: ["situational parts assumed"] });
+    expect(v[0]).toMatchObject({ kind: "match", assumed: ["situational parts assumed (the replay can't say: no replay)"] });
   });
 
   it("any other error propagates instead of reading as \"doesn't apply\"", () => {

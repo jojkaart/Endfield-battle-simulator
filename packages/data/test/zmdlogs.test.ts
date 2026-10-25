@@ -1,6 +1,6 @@
 // ZMDLogs → log fixture conversion on a synthetic battle.
 import { describe, expect, it } from "vitest";
-import { enemiesHit, zmdlogsToFixture, type BuildLookups } from "../src/zmdlogs.ts";
+import { enemiesHit, zmdlogsCasts, zmdlogsToFixture, type BuildLookups } from "../src/zmdlogs.ts";
 
 const OP = "chr_0021_whiten";
 const BOSS = "eny_0051_rodin";
@@ -98,5 +98,19 @@ describe("multi-target battles", () => {
     expect(fx.hits.map((h) => h.target)).toEqual([BOSS, ADD]);
     expect(fx.hits.map((h) => h.effects.map((e) => e.buff))).toEqual([["buff_ally_atk", "buff_enemy_side"], ["buff_ally_atk"]]);
     expect(zmdlogsToFixture("btl_upload_test", detail, exported, lookups, 90).hits[0]).not.toHaveProperty("target");
+  });
+});
+
+describe("zmdlogsCasts", () => {
+  // A skill event without a damage value is a cast's start (btl_upload_40d9a3c1da37: Laevatain's ultimate at 3041 ms).
+  const cast = (t: number, source: string, key: string) => ({ laneType: "skill", eventKey: key, sourceCharacterKey: source, tsMsFromStart: t, value: null });
+  const withCasts = { ...detail, timelineEvents: [cast(4000, OP, "chr_0021_whiten_ultimate_skill"), ...detail.timelineEvents, cast(2000, "chr_9000_endmin", "chr_0003_endminf_normal_skill"), cast(3000, "chr_9999_other", "x")] };
+
+  it("lists the team's skill events without damage, in time order (the virtual Endministrator read as hers)", () => {
+    expect(zmdlogsCasts(withCasts, [OP, "chr_0003_endminf"])).toEqual([
+      { t: 2000, operator: "chr_0003_endminf", skill: "chr_0003_endminf_normal_skill" },
+      { t: 4000, operator: OP, skill: "chr_0021_whiten_ultimate_skill" },
+    ]);
+    expect(zmdlogsToFixture("btl_upload_test", withCasts, exported, lookups, 90).casts).toEqual([{ t: 4000, operator: OP, skill: "chr_0021_whiten_ultimate_skill" }]);
   });
 });

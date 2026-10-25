@@ -32,6 +32,16 @@
       "properties": { "id": { "type": "string" }, "level": { "type": "integer", "minimum": 1 } }
     },
     "team": { "type": "array", "items": { "$ref": "build.schema.json" }, "minItems": 1, "maxItems": 4 },
+    "casts": {
+      "type": "array",
+      "description": "The skill events the log records without damage: a cast's start (ms) as the log has it, for skills whose casts the hits don't show (an ultimate that only buffs) or place (the kit replay corrects their start). Absent: not imported (fixtures from before 2026-10-25).",
+      "items": {
+        "type": "object",
+        "required": ["t", "operator", "skill"],
+        "additionalProperties": false,
+        "properties": { "t": { "type": "number" }, "operator": { "type": "string" }, "skill": { "type": "string" } }
+      }
+    },
     "hits": {
       "type": "array",
       "items": {

@@ -122,6 +122,17 @@ export interface TimelineScenario {
    * from each `from` frame, its fraction of Max HP; full before the first.
    */
   readonly enemyHp?: readonly { readonly from: number; readonly fraction: number }[];
+  /**
+   * A logged fight's crits (the log check's replay only; no scenario file sets it): a kit hit of `operator` with
+   * `event` among its events landing at `frame` (±1) crits as the log says, whatever `options.crit` says, and its
+   * hit event says so to crit triggers. Its LandedHit records whether the log decided it (`loggedCrit`).
+   */
+  readonly loggedCrits?: readonly { readonly operator: string; readonly event: string; readonly frame: number; readonly crit: boolean }[];
+  /**
+   * A logged fight's effects no kit models (the log check's simulation of the logged casts only): a kit hit of
+   * `operator` with `event` among its events landing at `frame` (±1) takes these modifiers on top of the timeline's.
+   */
+  readonly loggedModifiers?: readonly { readonly operator: string; readonly event: string; readonly frame: number; readonly modifiers: readonly Modifier[] }[];
 }
 
 /**
@@ -184,6 +195,8 @@ interface PendingHit {
   readonly snapshot?: readonly Modifier[];
   /** A replayed landing at its logged frame (replayCast `landings`): slow-downs don't move it (the log's time has them in already). */
   readonly pinned?: true;
+  /** A replayed landing's reference (replayCast `landings`): its LandedHit carries it, with the facts it was computed on. */
+  readonly ref?: string;
 }
 
 export interface Cast {
@@ -202,6 +215,30 @@ export interface LandedHit extends HitDamage {
   readonly operator: string;
   /** Fixed DMG (KitHit.fixedDamage): recording buffs don't record it. */
   readonly fixed?: true;
+  /** A replayed landing's reference (replayCast `landings` ref), and what its values read as it landed. */
+  readonly ref?: string;
+  readonly facts?: LandingFacts;
+  /** With TimelineScenario.loggedCrits: the crit the log gives this kit hit's landing, or null when the log doesn't say (not set otherwise). */
+  readonly loggedCrit?: boolean | null;
+}
+
+/**
+ * What a landing's values and conditions read (the situation its damage was computed on), as data: its operator's
+ * stacks and the enemy's state before its own applications, the infliction stacks those consumed, its combo
+ * window's event count, the Link stacks its cast used, who was controlled at its cast, the layers of its operator's
+ * own active buffs (by kit buff), whether the enemy was Staggered and its HP fraction. Recorded for replayed landings
+ * (the log check reads them instead of trying every count: cli logcheck.ts).
+ */
+export interface LandingFacts {
+  readonly stacks: Readonly<Record<string, number>>;
+  readonly enemy: EnemyStatus;
+  readonly consumed: number;
+  readonly eventCount?: number;
+  readonly castLink: number;
+  readonly controlled: string;
+  readonly buffLayers: Readonly<Record<string, number>>;
+  readonly staggered: boolean;
+  readonly enemyHp: number;
 }
 
 /** A status event with the frame it happened at; the record of what the enemy's arts state did. */
@@ -310,6 +347,29 @@ export interface TimelineContext {
   readonly burstDelayFrames: Readonly<Record<ArtsElement, number>>;
   /** With `memoised`: `advance`'s results per state object and frame (exact: advance is pure and states are never changed in place). */
   readonly advanceMemo?: WeakMap<TimelineState, Map<number, TimelineState>>;
+  /** TimelineScenario.loggedCrits by `operator|event`: the logged landings' frames and crits. */
+  readonly loggedCrits?: ReadonlyMap<string, readonly { readonly frame: number; readonly crit: boolean }[]>;
+  /** TimelineScenario.loggedModifiers by `operator|event`. */
+  readonly loggedModifiers?: ReadonlyMap<string, readonly { readonly frame: number; readonly modifiers: readonly Modifier[] }[]>;
+}
+
+/** The modifiers a logged fight gives a kit hit's landing that no kit models (TimelineScenario.loggedModifiers): the nearest logged landing's within a frame, none without. */
+function loggedModifiersAt(ctx: TimelineContext, operator: string, events: readonly string[], frame: number): readonly Modifier[] {
+  if (!ctx.loggedModifiers) return [];
+  const near = events.flatMap((e) => (ctx.loggedModifiers?.get(`${operator}|${e}`) ?? []).filter((x) => Math.abs(x.frame - frame) <= 1));
+  return near.sort((a, b) => Math.abs(a.frame - frame) - Math.abs(b.frame - frame))[0]?.modifiers ?? [];
+}
+
+/**
+ * The crit a logged fight gives a kit hit's landing (TimelineScenario.loggedCrits): of a logged landing of its
+ * operator with one of its events within a frame of it; null when there is none, or both crit and not at once
+ * (several landings at one frame). Undefined without logged crits (a simulation).
+ */
+function loggedCritAt(ctx: TimelineContext, operator: string, events: readonly string[], frame: number): boolean | null | undefined {
+  if (!ctx.loggedCrits) return undefined;
+  const near = events.flatMap((e) => (ctx.loggedCrits?.get(`${operator}|${e}`) ?? []).filter((x) => Math.abs(x.frame - frame) <= 1));
+  if (near.length === 0) return null;
+  return near.every((x) => x.crit === near[0]?.crit) ? (near[0] as { crit: boolean }).crit : null;
 }
 
 /** Operator attributes the timeline reads from the panel, whose default (GameData.attributeDefaults) holds when no line sets them. */
@@ -319,6 +379,18 @@ const TIMELINE_ATTRS: readonly AttrType[] = [
 
 /** Enemy attributes the timeline reads (enemyAttr): the enemy's own, else their default. */
 const ENEMY_ATTRS: readonly AttrType[] = [Attr.MaxPoise, Attr.PoiseDamageTakenScalar, Attr.PoiseRecTime, Attr.PoiseRecTimeScalar, Attr.BreakingAttackDamageTakenScalar];
+
+function loggedCritsByKey(list: NonNullable<TimelineScenario["loggedCrits"]>): Map<string, { frame: number; crit: boolean }[]> {
+  const out = new Map<string, { frame: number; crit: boolean }[]>();
+  for (const x of list) out.set(`${x.operator}|${x.event}`, [...(out.get(`${x.operator}|${x.event}`) ?? []), { frame: x.frame, crit: x.crit }]);
+  return out;
+}
+
+function byOperatorEvent<T extends { readonly operator: string; readonly event: string }>(list: readonly T[]): Map<string, T[]> {
+  const out = new Map<string, T[]>();
+  for (const x of list) out.set(`${x.operator}|${x.event}`, [...(out.get(`${x.operator}|${x.event}`) ?? []), x]);
+  return out;
+}
 
 export function createContext(data: GameData, scenario: TimelineScenario): TimelineContext {
   if (scenario.team.length === 0 || scenario.team.length > 4) throw new EngineError("a team has 1–4 operators");
@@ -352,6 +424,8 @@ export function createContext(data: GameData, scenario: TimelineScenario): Timel
   return {
     data, scenario, builds, panels, modifiers, kits, beforeDamage, enemy, burstDelayFrames: delays as Record<ArtsElement, number>,
     ...(foodEnds.size ? { foodEnds } : {}),
+    ...(scenario.loggedCrits ? { loggedCrits: loggedCritsByKey(scenario.loggedCrits) } : {}),
+    ...(scenario.loggedModifiers ? { loggedModifiers: byOperatorEvent(scenario.loggedModifiers) } : {}),
     ...(buffAttrs.has(Attr.ComboSkillCooldownRecoveryScalar) ? { comboRates: true } : {}),
     ...(buffAttrs.has(Attr.AtbCostAddition) ? { costBuffs: true } : {}),
     ...(inputBuffs ? { inputBuffs: true } : {}),
@@ -1948,19 +2022,36 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
   const finisher = !hit.trigger && ctx.data.skills[hit.skillId]?.timing?.specification === 8;
   let roll: number | undefined;
   if (ctx.scenario.options.crit === "rolled" && hit.fixed === undefined) ({ value: roll, state: st } = draw(ctx, st, "crit"));
+  // A replayed fight's logged crit for this landing (TimelineScenario.loggedCrits), which decides it.
+  const loggedCrit = hit.fixed === undefined ? loggedCritAt(ctx, hit.operator, kitHit.events, hit.frame) : undefined;
   const decorations = hitDecorations(kitHit, finisher);
   const options = hit.fixed !== undefined ? null : damageOptions(ctx, st, hit.operator, st.enemy, hit.frame, hit.cast, hit.snapshot);
   const result = !options ? fixedHit(skill.skillId, kitHit, hit.fixed as number) : computeHit(ctx.data, build, panel, ctx.scenario.target, skill, kitHit, {
     ...options,
     decorations,
     ...(roll !== undefined ? { critRoll: roll } : {}),
-    ...(finisher ? { modifiers: [...options.modifiers, { zone: "multiplicative" as const, value: enemyAttr(ctx, Attr.BreakingAttackDamageTakenScalar) - 1, source: "Finisher" }] } : {}),
+    ...(typeof loggedCrit === "boolean" ? { crit: loggedCrit ? ("always" as const) : ("never" as const) } : {}),
+    modifiers: [
+      ...options.modifiers,
+      ...(finisher ? [{ zone: "multiplicative" as const, value: enemyAttr(ctx, Attr.BreakingAttackDamageTakenScalar) - 1, source: "Finisher" }] : []),
+      ...loggedModifiersAt(ctx, hit.operator, kitHit.events, hit.frame),
+    ],
     situation: { ...before, consumed },
     // Its modifiers' conditions see the enemy and the buffs as the damage is computed: after the hit's own applications and
     // beforeDamage buffs (whose modifiers count for it: Yvonne's 10th layer gives its Crit DMG to the shot that adds it).
     ...(st.enemy !== before.enemy || st.buffs !== buffsAtLanding ? { modifierSituation: { ...before, consumed, ...buffSituation(at(consumed)) } } : {}),
   });
-  st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}) }]);
+  const facts = (): LandingFacts => {
+    const layers: Record<string, number> = {};
+    for (const b of buffsAtLanding) if (b.owner === hit.operator && b.cast === undefined && activeAt(b, hit.frame)) layers[b.id] = (layers[b.id] ?? 0) + 1;
+    return {
+      stacks: before.stacks ?? {}, enemy: before.enemy ?? NO_STATUS, consumed, ...(hit.eventCount !== undefined ? { eventCount: hit.eventCount } : {}), castLink, controlled,
+      buffLayers: layers, staggered: before.staggered ?? false, enemyHp: before.enemyHp ?? 1,
+    };
+  };
+  st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}), ...(hit.ref !== undefined ? { ref: hit.ref } : {}),
+    // A replay's landings carry their facts (a pinned one with its reference; one a trigger lands, matched to the log by time).
+    ...(hit.ref !== undefined || ctx.loggedCrits ? { facts: facts() } : {}), ...(loggedCrit !== undefined ? { loggedCrit } : {}) }]);
   // The enemy the damage saw: the reactions of the applications before it see it too.
   const enemyAtDamage = st.enemy;
   const lateEvents = applyPhase(true);
@@ -1997,7 +2088,7 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     ...(kitHit.dive ? { dive: true } : {}),
     ...(kitHit.reaction ? { reaction: true } : {}),
     ...(hit.cast !== undefined ? { cast: hit.cast } : {}),
-    ...((ctx.scenario.options.crit === "always" && hit.fixed === undefined) || result.crit ? { crit: true } : {}),
+    ...(typeof loggedCrit === "boolean" ? (loggedCrit ? { crit: true } : {}) : (ctx.scenario.options.crit === "always" && hit.fixed === undefined) || result.crit ? { crit: true } : {}),
   };
   const all: BattleEvent[] = [
     hitEvent, ...asEvents(statusEvents, kind, hit.cast), ...asEvents(burst, kind, hit.cast), ...asEvents(lateEvents, kind, hit.cast), ...poiseEvents, ...events, ...spEvents,
@@ -2067,10 +2158,12 @@ function takeJump(st: TimelineState, j: PendingJump): { state: TimelineState; ev
     state: {
       ...st,
       pending: [
-        ...skip(st.pending.filter((h) => !h.detached || h.launchAt === undefined), (h) => h.operator === j.operator && h.cast === j.cast && !h.detached),
+        // A replayed landing pinned at its logged frame stays there (the log's time has the jumps in already).
+        ...st.pending.filter((h) => h.pinned),
+        ...skip(st.pending.filter((h) => !h.pinned && (!h.detached || h.launchAt === undefined)), (h) => h.operator === j.operator && h.cast === j.cast && !h.detached),
         // A detached hit not launched yet moves with its launch: dropped if the jump skips it, sooner if it comes after.
         ...st.pending
-          .filter((h) => h.detached && h.launchAt !== undefined)
+          .filter((h) => !h.pinned && h.detached && h.launchAt !== undefined)
           .flatMap((h) => (h.operator !== j.operator || h.cast !== j.cast || (h.launchAt as number) <= at ? [h] : (h.launchAt as number) < at + length ? [] : [{ ...h, frame: h.frame - length, launchAt: (h.launchAt as number) - length }])),
       ],
       pendingActions: [
@@ -2493,12 +2586,14 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     const own = new Map<string, PendingHit[]>();
     for (const h of st.pending) if (h.cast === index && !h.trigger && h.operator === operator && h.skillId === skillId) own.set(h.hitId, [...(own.get(h.hitId) ?? []), h]);
     for (const list of own.values()) list.sort((a, b) => a.frame - b.frame);
-    const moved = new Map<PendingHit, number>();
+    const moved = new Map<PendingHit, { frame: number; ref?: string }>();
     for (const l of opts.landings) {
       const h = own.get(l.hitId)?.[l.nth];
-      if (h) moved.set(h, Math.max(frame, l.frame));
+      if (h) moved.set(h, { frame: Math.max(frame, l.frame), ...(l.ref !== undefined ? { ref: l.ref } : {}) });
     }
-    st = { ...st, pending: st.pending.map((h) => (moved.has(h) ? { ...h, frame: moved.get(h) as number, pinned: true as const } : h)) };
+    // A pinned landing was launched by its logged frame (a detached one's launch, KitHit.launch, is on the kit's timeline, which jumps shorten).
+    const pin = (h: PendingHit, m: { frame: number; ref?: string }): PendingHit => ({ ...h, ...m, pinned: true, ...(h.launchAt !== undefined ? { launchAt: Math.min(h.launchAt, m.frame) } : {}) });
+    st = { ...st, pending: st.pending.map((h) => { const m = moved.get(h); return m ? pin(h, m) : h; }) };
   }
   return runTriggers(ctx, st, r.events, r.origin);
 }
@@ -2507,8 +2602,19 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
 export interface ReplayCastOptions {
   /** The operator's current skill keeps its hits still to come (the log shows them landing after this cast started). */
   readonly keepPrevious?: boolean;
-  /** Landings at their logged frames: the `nth` landing (0: the first, in frame order) of the cast's kit hit `hitId` lands at `frame`. */
-  readonly landings?: readonly { readonly hitId: string; readonly nth: number; readonly frame: number }[];
+  /**
+   * Landings at their logged frames: the `nth` landing (0: the first, in frame order) of the cast's kit hit `hitId` lands at `frame`;
+   * with `ref`, its LandedHit carries the reference and its facts (LandingFacts).
+   */
+  readonly landings?: readonly { readonly hitId: string; readonly nth: number; readonly frame: number; readonly ref?: string }[];
+}
+
+/** The count of the combo window a replayed combo would use at a frame (the state advanced to it), or null when none is open (replayCast then opens one, counting 1). */
+export function replayWindowCount(ctx: TimelineContext, state: TimelineState, operator: string, skillId: string, frame: number): number | null {
+  const skill = kitSkill(ctx, operator, skillId);
+  if (skill.kind !== "combo" || skill.comboWindow === false) return null;
+  const key = windowKey(ctx, operator, skillId);
+  return windowOpen(state, operator, key, frame) ? (state.comboWindow[key]?.count ?? 1) : null;
 }
 
 /**

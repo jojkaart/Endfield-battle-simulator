@@ -6,9 +6,10 @@
 // log stops listing Camille's weapon buffs.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, computeHit, computeStats, createContext, FPS, init, replayCast, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
+import { advance, computeHit, computeStats, createContext, effectiveKit, FPS, init, replayCast, replayWindowCount, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
 import { loadGameData, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
-import { checkLog, formatBuffReplay, LOG_LISTING, logBuffReplay, readLogFixture, type HitVerdict } from "@efsim/cli";
+import { castsFromBuffLanes, checkLog, formatBuffReplay, LOG_LISTING, logBuffReplay, readLogFixture, replayedCasts, simulateLog, withLoggedCasts, type HitVerdict } from "@efsim/cli";
+import { placeHits } from "../packages/cli/src/logcasts.ts";
 
 const data = loadGameData();
 const build = JSON.parse(readFileSync(new URL("../examples/laevatain-forgeborn.json", import.meta.url), "utf8")) as Build;
@@ -107,13 +108,17 @@ describe("kit buffs from the replay of the logged casts", () => {
     expect(formatBuffReplay(g, r, v).join("\n")).toContain("log lists it, replay off, 1 hit(s) at 30.0 s (fit the replay 0, the log 0, neither 1)");
   });
 
-  it("leaves a buff to the log when a trigger that applies it waits on what a log can't replay (crits)", () => {
+  it("decides a buff a trigger on crits applies from the log's crits, and not where a landing's crit isn't logged", () => {
     const onCrit: KitTrigger = { id: "t_on_crit", on: { event: "hit", crit: true }, by: "self", do: [{ kind: "buff", buff: "t_atk" }] };
-    const g2 = withKit({ skills: [battle([h]), basic], buffs: [buff], triggers: [onCast, onCrit] });
-    const r = logBuffReplay(g2, fx);
-    expect(r.replay.decided.size).toBe(0);
-    expect(r.replay.undecided.get(GAME_BUFF)).toContain("on crits");
-    expect(checkLog(g2, fx).map(kind)).toEqual(["match", "match", "mismatch", "mismatch"]);
+    const g2 = withKit({ skills: [battle([h]), basic], buffs: [buff], triggers: [onCrit] });
+    // A crit at 1 s applies it (after its own damage) to 11 s; the hits at 4 s and 8 s are under it, the one at 15 s isn't.
+    const crits = (first: boolean | null) => fixture([logHit(1000, 1, { crit: first }), logHit(4000, dmg(BATTLE, h, plus10), { effects: [atk] }), logHit(8000, dmg(BATTLE, h, plus10), { effects: [atk] }), logHit(15000, 1)]);
+    const r = logBuffReplay(g2, crits(true));
+    expect([...r.replay.decided.keys()]).toEqual([GAME_BUFF]);
+    expect(crits(true).hits.map((x) => r.replay.instances(x, GAME_BUFF))).toEqual([null, 1, 1, 0]);
+    // Its crit not logged: a crit or not there changes the buff (the replay with such landings critting disagrees), undecided.
+    const unknown = logBuffReplay(g2, crits(null));
+    expect(crits(null).hits.map((x) => unknown.replay.instances(x, GAME_BUFF))).toEqual([null, null, null, 0]);
   });
 });
 
@@ -134,11 +139,115 @@ describe("replayCast: a logged cast at its logged frame", () => {
     expect(twice(false)).toEqual([["h1", 10], ["h1", 25], ["h2", 35]]);
     expect(twice(true)).toEqual([["h1", 10], ["h2", 20], ["h1", 25], ["h2", 35]]);
   });
+
+  it("keeps a pinned landing at its logged frame across the skill's jumps, a detached one's launch with it", () => {
+    // Frames 100 and 230 are past the jump at 37 (to 215): unpinned, the first is skipped and the second (a projectile
+    // launched at 230) comes 178 frames sooner. The log's frames have the jump in already (4e5e1390085e: Rossi's wolves).
+    const late = hit("late", ["k3"], { frames: [100] });
+    const wolf = hit("wolf", ["k4"], { frames: [230], launch: 230 });
+    const g2 = withKit({ skills: [battle([h1, late, wolf])] });
+    const ctx2 = createContext(g2, { team: [build], target, durationFrames: 10 * FPS, rotation: [], options: { crit: "never" } });
+    const run = (landings: { hitId: string; nth: number; frame: number; ref?: string }[]) => advance(ctx2, replayCast(ctx2, init(ctx2), op, BATTLE, 0, { landings }), 250);
+    expect(landed(run([]))).toEqual([["h1", 10], ["wolf", 52]]);
+    const st = run([{ hitId: "late", nth: 0, frame: 60, ref: "a" }, { hitId: "wolf", nth: 0, frame: 120, ref: "b" }]);
+    expect(landed(st)).toEqual([["h1", 10], ["late", 60], ["wolf", 120]]);
+    // A landing with a reference carries it, with what its values read (LandingFacts).
+    const wolfHit = st.hits.find((x) => x.hitId === "wolf");
+    expect([wolfHit?.ref, wolfHit?.facts?.castLink, wolfHit?.facts?.consumed]).toEqual(["b", 0, 0]);
+    expect(st.hits.find((x) => x.hitId === "h1")?.ref).toBeUndefined();
+  });
+
+  it("tells whether a replayed combo finds its window open, and its count (replayWindowCount)", () => {
+    const combo = kit.skills.find((s) => s.kind === "combo")?.skillId as string;
+    const full = createContext(data, { team: [build], target, durationFrames: 10 * FPS, rotation: [], options: { crit: "never" } });
+    const st = init(full);
+    const open = { ...st, comboWindow: { [op]: { from: 0, until: 100, count: 3 } } };
+    expect(replayWindowCount(full, st, op, combo, 0)).toBeNull();
+    expect(replayWindowCount(full, open, op, combo, 50)).toBe(3);
+    expect(replayWindowCount(full, open, op, combo, 150)).toBeNull();
+    expect(replayWindowCount(full, open, op, BATTLE, 50)).toBeNull();
+  });
+});
+
+describe("40d9a3c1da37: a cast the log shows only as a skill event", () => {
+  const fx = readLogFixture(new URL("../fixtures/zmdlogs-40d9a3c1da37.json", import.meta.url).pathname);
+
+  it("casts Laevatain's ultimate at the log's 3041 ms, so its weapon's buff is on for her enhanced attacks", () => {
+    const placement = placeHits(data, fx);
+    const casts = withLoggedCasts(replayedCasts(placement, fx), fx, [data.kits.operators["chr_0016_laevat"] as OperatorKit]);
+    expect(casts.filter((c) => c.skillId === "chr_0016_laevat_ultimate_skill").map((c) => c.start)).toEqual([3041]);
+    // Si's casts the log also records are placed from their hits already: not cast twice.
+    expect(casts.filter((c) => c.skillId === "chr_0036_jsspsi_normal_skill").length).toBe(replayedCasts(placement, fx).filter((c) => c.skillId === "chr_0036_jsspsi_normal_skill").length);
+    const laevatain = checkLog(data, fx).filter((v) => v.hit.operator === "chr_0016_laevat");
+    expect(laevatain.filter((v) => v.kind === "match" && v.class === "fallback")).toEqual([]);
+    // Without the cast events (as imported before 2026-10-25), the buff's own lane gives the cast (castsFromBuffLanes):
+    // a frame before buff_wpn_sword_0006_valid first shows, 3.6 s after the logged cast.
+    const { casts: _c, ...without } = fx;
+    const inferred = castsFromBuffLanes(data, without, fx.team.map((b) => effectiveKit(data, b) as OperatorKit), replayedCasts(placement, without));
+    expect(inferred.filter((c) => c.skillId === "chr_0016_laevat_ultimate_skill").map((c) => Math.round(c.start))).toEqual([Math.round(6657 - 1000 / FPS)]);
+    expect(checkLog(data, without).filter((v) => v.hit.operator === "chr_0016_laevat" && v.kind === "match" && v.class === "fallback")).toEqual([]);
+  });
+});
+
+describe("dbaee23b801d: a cast the log shows only by the buff it applies", () => {
+  const fx = readLogFixture(new URL("../fixtures/zmdlogs-dbaee23b801d.json", import.meta.url).pathname);
+
+  it("casts Xaihi's ultimate (no damage) a frame before her weapon's team ATK first shows in the log", () => {
+    const placement = placeHits(data, fx);
+    const kits = fx.team.map((b) => effectiveKit(data, b) as OperatorKit);
+    const base = replayedCasts(placement, fx);
+    const casts = castsFromBuffLanes(data, fx, kits, base);
+    const first = Math.min(...fx.hits.filter((h) => h.effects.some((e) => e.buff === "buff_wpn_funnel_0005_atk_up")).map((h) => h.t));
+    expect(casts.filter((c) => !base.includes(c) && c.skillId === "chr_0011_seraph_ultimate_skill").map((c) => Math.round(c.start))).toEqual([Math.round(first - 1000 / FPS)]);
+    expect(base.some((c) => c.skillId === "chr_0011_seraph_ultimate_skill")).toBe(false);
+    // Liino's hits under it now match by the replay's buffs, not the log's listing.
+    const liino = checkLog(data, fx).filter((v) => v.hit.operator === "chr_0035_liino" && v.kind === "match");
+    expect(liino.filter((v) => v.kind === "match" && v.class !== "fallback").length).toBeGreaterThan(20);
+  });
+});
+
+describe("0eef2474a26f: what the replay can't know, and landings a trigger makes", () => {
+  const fx = readLogFixture(new URL("../fixtures/zmdlogs-0eef2474a26f.json", import.meta.url).pathname);
+  const r = logBuffReplay(data, fx);
+
+  it("leaves a buff on heals of the controlled operator to the log (who's controlled isn't logged)", () => {
+    // Liino's weapon buff goes to whom her combo heals: Typhoeus and Si in the log, Arcane in the replay.
+    expect(r.replay.decided.has("buff_wpn_lance_0014_damageup")).toBe(false);
+    expect(r.replay.undecided.get("buff_wpn_lance_0014_damageup")).toContain("controlled operator");
+  });
+
+  it("takes a trigger's landing within NEAR_FRAMES for a logged hit (Liino's volley at 4187 ms: the replay's Corrosion there)", () => {
+    const volley = fx.hits.filter((h) => h.event === "chr_0035_liino_normal_skill_projhit_hit");
+    const landings = volley.map((h) => r.replay.landing(h));
+    expect(landings.every((l) => !("unknown" in l) && l.hitId === "volley")).toBe(true);
+    expect(new Set(landings).size).toBe(volley.length);
+  });
+});
+
+describe("bdf223db8e49: Corrosion from the replay's landings", () => {
+  it("reads hits under Corrosion at the engine's level and shred where the replay landed them (levels tried only elsewhere)", () => {
+    const fx = readLogFixture(new URL("../fixtures/zmdlogs-bdf223db8e49.json", import.meta.url).pathname);
+    const under = checkLog(data, fx).filter((v) => v.hit.unquantified.some((u) => u.buff.startsWith("buff_common_natural")));
+    const matched = under.filter((v): v is Extract<HitVerdict, { kind: "match" }> => v.kind === "match");
+    const tried = matched.filter((v) => v.assumptions.some((a) => a.kind === "corrosion"));
+    expect(matched.length).toBeGreaterThan(60);
+    expect(tried.length).toBeLessThanOrEqual(3);
+    expect(tried.every((v) => v.assumed.some((a) => a.includes("the replay can't say")))).toBe(true);
+  });
 });
 
 describe("4e5e1390085e: Camille's weapon buffs after the log stops listing them", () => {
   const fx = readLogFixture(new URL("../fixtures/zmdlogs-4e5e1390085e.json", import.meta.url).pathname);
   const r = logBuffReplay(data, fx);
+
+  it("gives Rossi's MI Security layers (on her logged crits) where the log lists one, and counts layers that push each other out", () => {
+    const at = (t: number) => fx.hits.find((x) => x.t === t && x.operator === "chr_0028_wulfa" && x.event === "chr_0028_wulfa_attack4") as LogHit;
+    // 15015 ms: five layers on one timer (the oldest pushed out by each new one: an instance ends at the newest layer's start).
+    expect(r.replay.instances(at(15015), "buff_equipsuit_critsuitatk_01")).toBe(5);
+    expect(r.replayed.layersAt.get(at(15015))?.get("buff_equipsuit_critsuitatk_01")).toBe(5);
+    const v = checkLog(data, fx, { replay: r }).find((x) => x.hit === at(15015));
+    expect(v?.kind === "match" && v.assumed.some((a) => a.includes("critsuitatk"))).toBe(false);
+  });
 
   it("has both on to the end by Camille's casts, and reports the log's gaps", () => {
     const late = fx.hits.filter((x) => x.t > 66000);
@@ -154,5 +263,16 @@ describe("4e5e1390085e: Camille's weapon buffs after the log stops listing them"
     expect(rossi.filter((v) => v.kind !== "match").map((v) => [v.hit.t, v.kind])).toEqual([[69142, "unquantified"]]);
     // …by the replay's buffs, not the log's listing.
     expect(rossi.filter((v) => v.kind === "match" && v.hit.t > 65500 && v.assumed.some((a) => a.startsWith(LOG_LISTING)))).toEqual([]);
+  });
+});
+
+describe("simulateLog: the logged casts simulated, each hit against its landing (the end point, a diagnostic)", () => {
+  it("lands 4e5e's hits with the engine's buffs and the log's crits; Gilberta's and Estella's mostly within ±1", () => {
+    const fx = readLogFixture(new URL("../fixtures/zmdlogs-4e5e1390085e.json", import.meta.url).pathname);
+    const sim = simulateLog(data, fx);
+    const within = (op: string) => sim.filter((x) => x.hit.operator === op && typeof x.simulated === "number" && Math.abs(x.simulated - (x.hit.uncapped ?? x.hit.value)) <= 1).length;
+    expect(within("chr_0013_aglina")).toBeGreaterThanOrEqual(40);
+    expect(within("chr_0021_whiten")).toBeGreaterThanOrEqual(15);
+    expect(sim.filter((x) => typeof x.simulated === "number").length).toBeGreaterThan(300);
   });
 });
