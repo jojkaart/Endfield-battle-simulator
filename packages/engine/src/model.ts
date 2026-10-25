@@ -269,6 +269,12 @@ export interface BattleConstants {
   readonly perfectDodge?: PerfectDodge;
   /** Frames from a same-element infliction to its Arts Burst's damage and event, per element (BuffData buff_common_<e>_<e>_triggered: its first tick); 0 when not fetched. */
   readonly burstDelayFrames?: Partial<Record<ArtsElement, number>>;
+  /**
+   * What a Staggered enemy takes on top, in the multiplicative zone (BuffData
+   * buff_common_poise_break_damage_taken_scale: a defender-side ProdCalcZone
+   * DamageScaleProcessor, dmg_up 0.3): the damage pipeline's one representation of Stagger (damage.ts).
+   */
+  readonly staggerDamageTaken: number;
 }
 
 /** A perfect dodge (BuffData; docs/kit-batches/batch-2.md, E1). */

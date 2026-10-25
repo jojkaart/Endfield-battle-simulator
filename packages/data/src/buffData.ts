@@ -286,6 +286,31 @@ export function burstDelays(): Partial<Record<"fire" | "pulse" | "cryst" | "natu
   return out;
 }
 
+/**
+ * What a Staggered enemy takes (BuffData buff_common_poise_break_damage_taken_scale, on the enemy while Staggered):
+ * its one damage processor, a DamageScaleProcessor on the defender's side (side 1) in ProdCalcZone, adds its
+ * blackboard's dmg_up (0.3): the multiplicative zone × (1 + 0.3). Talos Wiki, 666bj and GameKee agree on ×1.3, and so
+ * do the logs (ZMDLogs lists it as prod_vuln_taken 0.3 on hits while Staggered). Any other shape is an error.
+ */
+export function staggerDamageTaken(): number {
+  const id = "buff_common_poise_break_damage_taken_scale";
+  const file = join(sourceDir("rmxlinux"), "Json", "BuffData", `${id}.json`);
+  if (!existsSync(file)) throw new DataError("rmxlinux", `BuffData/${id}`, "not fetched (the Stagger multiplier comes from it)");
+  const ctx: Ctx = { source: "rmxlinux", path: `BuffData/${id}` };
+  const j = obj(parseJsonExact(readFileSync(file, "utf8")), ctx);
+  const mods = get(j, "damageModifier", ctx, arr);
+  const procs = mods.flatMap((m, i) => get(obj(m, at(at(ctx, "damageModifier"), i)), "damageProcessors", at(at(ctx, "damageModifier"), i), arr));
+  const p = procs.length === 1 ? obj(procs[0], at(ctx, "damageProcessors")) : null;
+  if (!p || !String(p["$type"]).includes("DamageScaleProcessor") || p["side"] !== 1 || p["zoneName"] !== "ProdCalcZone") {
+    throw new DataError("rmxlinux", `BuffData/${id}`, "expected one DamageScaleProcessor on the defender's side in ProdCalcZone");
+  }
+  const add = obj(p["addition"], at(ctx, "addition"));
+  const key = add["useBlackboardKey"] ? str(add["blackboardKey"], at(ctx, "addition.blackboardKey")) : null;
+  const value = key === null ? num(add["value"], at(ctx, "addition.value")) : (get(j, "blackboard", ctx, arr) as Record<string, unknown>[]).find((b) => b["key"] === key)?.["valueDouble"];
+  if (typeof value !== "number" || !(value > 0)) throw new DataError("rmxlinux", `BuffData/${id}`, `no positive value for ${key ?? "addition"}`);
+  return value;
+}
+
 /** Frames the perfect-dodge skill holds the dodger (common_character_perfect_dodge: durationFrame 15, exclusiveFrame 15; its SkillData isn't fetched). */
 const PERFECT_DODGE_SKILL_FRAMES = 15;
 

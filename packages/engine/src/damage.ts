@@ -4,7 +4,6 @@
 
 import { Attr, attrName, type AttrType, type Element, type SkillType } from "./attributes.ts";
 import type { Build } from "./build.ts";
-import { STAGGER_DAMAGE_TAKEN } from "./constants.ts";
 import { applies, attrModifier, zoneProduct, zoneSum, type HitContext, type HitDecoration, type HitKind, type Modifier, type Zone } from "./effects.ts";
 import { EngineError, HitRuledOut } from "./errors.ts";
 import type { GameData, KitHit, KitSkill } from "./model.ts";
@@ -74,8 +73,8 @@ export interface Zones {
   readonly amp: number;
   readonly susceptibility: number;
   readonly damageTaken: number;
+  /** Its multiplicative modifiers, each × (1 + v): Stagger's among them (staggerModifier). */
   readonly multiplicative: number;
-  readonly stagger: number;
   readonly defense: number;
   readonly resistance: number;
 }
@@ -207,9 +206,19 @@ function scaleZones(mods: readonly Modifier[], scales: DamageSpec["zoneScale"]):
   });
 }
 
-/** All modifiers acting on a build's hits: stat panel and external ones (kit buffs, a log's, the scenario's). */
+/**
+ * Stagger's multiplier as a modifier (GameData.constants.staggerDamageTaken: buff_common_poise_break_damage_taken_scale,
+ * a defender-side ProdCalcZone buff the game puts on a Staggered enemy): the one representation of Stagger in the damage
+ * pipeline, added by activeModifiers when DamageOptions.staggered says so. Until 2026-10-25 the pipeline also had a
+ * Stagger zone of ×1.3 and the timeline added this as well: ×1.69 (round-two review).
+ */
+export function staggerModifier(data: GameData): Modifier {
+  return { zone: "multiplicative", value: data.constants.staggerDamageTaken, source: "Staggered" };
+}
+
+/** All modifiers acting on a build's hits: stat panel and external ones (kit buffs, a log's, the scenario's), and Stagger's when the target is Staggered. */
 export function activeModifiers(data: GameData, build: Build, panel: StatPanel, options: DamageOptions): Modifier[] {
-  const all = [...panelModifiers(data, panel), ...(options.modifiers ?? [])];
+  const all = [...panelModifiers(data, panel), ...(options.modifiers ?? []), ...(options.staggered ? [staggerModifier(data)] : [])];
   if (!all.some((m) => m.when)) return all;
   // A modifier that holds only in a situation (KitBuffModifier.if): judged on the hit's situation; one it can't decide counts as assumeUnknown says (default: not).
   const ec = evalContext(data, build, panel, "", options.modifierSituation ?? options.situation);
@@ -280,7 +289,6 @@ export function computeDamage(
     susceptibility: 1 + sum("susceptibility"),
     damageTaken: 1 + sum("damageTaken"),
     multiplicative: zoneProduct(mods, "multiplicative", ctx),
-    stagger: options.staggered ? STAGGER_DAMAGE_TAKEN : 1,
     defense,
     resistance: (100 - enemy.resistance[spec.element] + sum("ignoreResistance")) / 100,
   };
@@ -330,7 +338,7 @@ const staticCount = (hit: KitHit): number => (typeof hit.count === "number" ? hi
 
 /** A Fixed DMG hit (KitHit.fixedDamage): exactly its value, every zone ×1. */
 export function fixedHit(skillId: string, hit: KitHit, value: number): HitDamage {
-  const zones: Zones = { atk: 1, scale: 1, damageBonus: 1, crit: 1, amp: 1, susceptibility: 1, damageTaken: 1, multiplicative: 1, stagger: 1, defense: 1, resistance: 1 };
+  const zones: Zones = { atk: 1, scale: 1, damageBonus: 1, crit: 1, amp: 1, susceptibility: 1, damageTaken: 1, multiplicative: 1, defense: 1, resistance: 1 };
   return { skillId, hitId: hit.id, label: hit.label, count: staticCount(hit), element: hit.element, scaleParts: [{ key: "fixed", value }], zones, modifiers: [], exact: value, damage: roundDamage(value) };
 }
 

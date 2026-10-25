@@ -927,6 +927,9 @@ describe("timeline: stagger and finishers", () => {
     const r = simulate(d, scenario([{ operator: op, skill: L + "attack1" }, { operator: op, skill: L + "attack2" }]));
     const a2 = r.hits.find((h) => h.skillId === L + "attack2");
     expect(a2?.modifiers.some((m) => m.source === "Staggered" && m.zone === "multiplicative" && m.value === 0.3)).toBe(true);
+    // Counted once (round-two review: ×1.69 with the Stagger zone and the modifier both): the same hit unstaggered is ×1/1.3.
+    const plain = simulate(data, scenario([{ operator: op, skill: L + "attack1" }, { operator: op, skill: L + "attack2" }])).hits.find((h) => h.skillId === L + "attack2");
+    expect((a2?.exact ?? 0) / (plain?.exact ?? 1)).toBeCloseTo(1.3, 9);
   });
 
   it("a finisher needs a Staggered enemy, once per stagger, and is multiplied by its finisher multiplier with its SP", () => {
