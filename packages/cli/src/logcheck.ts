@@ -1429,3 +1429,45 @@ export function findScales(data: GameData, fx: LogFixture, operator: string): Sc
   }
   return out;
 }
+
+/** A logged hit as the simulation of the logged casts has it (simulateLog). */
+export interface SimulatedHit {
+  readonly hit: LogHit;
+  /** Its landing's damage in the replay (crit as logged, the log's effects no kit models added), or why there is none. */
+  readonly simulated: number | { readonly unknown: string };
+}
+
+/** Logged effects the timeline models itself (its statuses: reactions, physical statuses, Stagger), which the simulation doesn't add. */
+const ENGINE_STATUS_BUFF = /_triggered(_do)?$|^buff_physical_|poise_break/;
+
+/**
+ * The end point of the log check (docs/review-2026-10.md 3.2): the logged casts simulated on the timeline and each
+ * logged hit compared with its landing's damage. From the log only the crits (TimelineScenario.loggedCrits), the
+ * enemy's HP (as the replay has it) and the effects no kit models (a buff no team kit stands for, not one of the
+ * timeline's own statuses, not the hitter's food: added to the landing, TimelineScenario.loggedModifiers); everything
+ * else (kit buffs, Link, stacks, Corrosion, consumed buffs) is the engine's. Hits the replay doesn't land have no value.
+ */
+export function simulateLog(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx)): SimulatedHit[] {
+  const kitBuffs = new Set(fx.team.flatMap((b) => (effectiveKit(data, b)?.buffs ?? []).flatMap((x) => (x.gameBuff ? [x.gameBuff] : []))));
+  const caps = kitStackCaps(data, teamPanels(data, fx).panels);
+  const loggedModifiers = (h: LogHit) => logModifiers(withoutOwnFood(data, fx, h).effects.filter((e) => !kitBuffs.has(e.buff) && !ENGINE_STATUS_BUFF.test(e.buff)), null, caps);
+  const replay = replayKitBuffs(data, fx, placement, { loggedModifiers });
+  return fx.hits.map((hit) => {
+    const l = replay.landing(hit);
+    return { hit, simulated: "unknown" in l ? l : l.damage };
+  });
+}
+
+/** The simulation's report: per operator, the logged hits it lands, how many within ±1, and the median ratio of logged to simulated damage. */
+export function formatSimulatedLog(data: GameData, fx: LogFixture, hits: readonly SimulatedHit[]): string {
+  const out = [`${fx.id}: the logged casts simulated (crits, the enemy's HP and effects no kit models from the log; the rest the engine's)`];
+  for (const b of fx.team) {
+    const mine = hits.filter((x) => x.hit.operator === b.operator);
+    const landed = mine.filter((x): x is SimulatedHit & { simulated: number } => typeof x.simulated === "number");
+    const within = landed.filter((x) => Math.abs(x.simulated - (x.hit.uncapped ?? x.hit.value)) <= 1).length;
+    const ratios = landed.map((x) => (x.hit.uncapped ?? x.hit.value) / Math.max(1, x.simulated)).sort((p, q) => p - q);
+    const median = ratios.length ? (ratios[Math.floor((ratios.length - 1) / 2)] as number).toFixed(4) : "-";
+    out.push(`  ${data.operators[b.operator]?.name ?? b.operator}: ${mine.length} hits, ${landed.length} landed, ${within} within ±1, median logged/simulated ${median}`);
+  }
+  return out.join("\n");
+}

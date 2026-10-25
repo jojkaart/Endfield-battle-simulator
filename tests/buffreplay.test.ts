@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { advance, computeHit, computeStats, createContext, effectiveKit, FPS, init, replayCast, replayWindowCount, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
 import { loadGameData, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
-import { castsFromBuffLanes, checkLog, formatBuffReplay, LOG_LISTING, logBuffReplay, readLogFixture, replayedCasts, withLoggedCasts, type HitVerdict } from "@efsim/cli";
+import { castsFromBuffLanes, checkLog, formatBuffReplay, LOG_LISTING, logBuffReplay, readLogFixture, replayedCasts, simulateLog, withLoggedCasts, type HitVerdict } from "@efsim/cli";
 import { placeHits } from "../packages/cli/src/logcasts.ts";
 
 const data = loadGameData();
@@ -263,5 +263,16 @@ describe("4e5e1390085e: Camille's weapon buffs after the log stops listing them"
     expect(rossi.filter((v) => v.kind !== "match").map((v) => [v.hit.t, v.kind])).toEqual([[69142, "unquantified"]]);
     // …by the replay's buffs, not the log's listing.
     expect(rossi.filter((v) => v.kind === "match" && v.hit.t > 65500 && v.assumed.some((a) => a.startsWith(LOG_LISTING)))).toEqual([]);
+  });
+});
+
+describe("simulateLog: the logged casts simulated, each hit against its landing (the end point, a diagnostic)", () => {
+  it("lands 4e5e's hits with the engine's buffs and the log's crits; Gilberta's and Estella's mostly within ±1", () => {
+    const fx = readLogFixture(new URL("../fixtures/zmdlogs-4e5e1390085e.json", import.meta.url).pathname);
+    const sim = simulateLog(data, fx);
+    const within = (op: string) => sim.filter((x) => x.hit.operator === op && typeof x.simulated === "number" && Math.abs(x.simulated - (x.hit.uncapped ?? x.hit.value)) <= 1).length;
+    expect(within("chr_0013_aglina")).toBeGreaterThanOrEqual(40);
+    expect(within("chr_0021_whiten")).toBeGreaterThanOrEqual(15);
+    expect(sim.filter((x) => typeof x.simulated === "number").length).toBeGreaterThan(300);
   });
 });

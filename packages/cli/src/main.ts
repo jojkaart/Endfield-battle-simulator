@@ -10,7 +10,7 @@ import type { CritMode, TimelineScenario } from "@efsim/engine";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "./commands.ts";
 import { kitDraft } from "./kitdraft.ts";
 import { formatRuns, formatSimulation, readScenario, searchCommand } from "./simulate.ts";
-import { checkLog, findScales, formatLogCheck, impliedScales, logBuffReplay } from "./logcheck.ts";
+import { checkLog, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, simulateLog } from "./logcheck.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 import { addLoggedCasts, importBattle, readLogFixture } from "./logs.ts";
@@ -44,6 +44,8 @@ const USAGE = `Usage:
                                           whether it verifies the fixture, matches per operator as
                                           plain / assumed / log-listing fallback, and their strength)
                 [--log-buffs]             Kit buffs as the log lists them instead (the check before 2026-10-22)
+                [--simulate]              Simulate the logged casts instead and compare each hit with its landing
+                                          (crits, enemy HP and effects no kit models from the log)
   efsim zmdlogs reactions <fixture.json>  Replay the kits' inflictions; compare bursts and reactions
   efsim zmdlogs casts <fixture.json> --detail <file>
                                           Add the casts a downloaded battle detail records without
@@ -80,6 +82,7 @@ async function main(argv: string[]): Promise<number> {
       note: { type: "string", multiple: true, default: [] },
       verbose: { type: "boolean", default: false },
       "log-buffs": { type: "boolean", default: false },
+      simulate: { type: "boolean", default: false },
       beam: { type: "string", default: "24" },
       "resource-weight": { type: "string" },
       seed: { type: "string" },
@@ -177,6 +180,10 @@ async function main(argv: string[]): Promise<number> {
         text = formatReactionCheck(checkReactions(data, readLogFixture(arg)));
       } else if (sub === "check") {
         const fx = readLogFixture(arg);
+        if (values.simulate) {
+          text = formatSimulatedLog(data, fx, simulateLog(data, fx));
+          break;
+        }
         const replay = values["log-buffs"] ? null : logBuffReplay(data, fx);
         text = formatLogCheck(data, fx, checkLog(data, fx, replay ? { replay } : { buffs: "log" }), replay ?? undefined);
       } else {

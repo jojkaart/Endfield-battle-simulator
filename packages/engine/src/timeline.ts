@@ -128,6 +128,11 @@ export interface TimelineScenario {
    * hit event says so to crit triggers. Its LandedHit records whether the log decided it (`loggedCrit`).
    */
   readonly loggedCrits?: readonly { readonly operator: string; readonly event: string; readonly frame: number; readonly crit: boolean }[];
+  /**
+   * A logged fight's effects no kit models (the log check's simulation of the logged casts only): a kit hit of
+   * `operator` with `event` among its events landing at `frame` (±1) takes these modifiers on top of the timeline's.
+   */
+  readonly loggedModifiers?: readonly { readonly operator: string; readonly event: string; readonly frame: number; readonly modifiers: readonly Modifier[] }[];
 }
 
 /**
@@ -344,6 +349,15 @@ export interface TimelineContext {
   readonly advanceMemo?: WeakMap<TimelineState, Map<number, TimelineState>>;
   /** TimelineScenario.loggedCrits by `operator|event`: the logged landings' frames and crits. */
   readonly loggedCrits?: ReadonlyMap<string, readonly { readonly frame: number; readonly crit: boolean }[]>;
+  /** TimelineScenario.loggedModifiers by `operator|event`. */
+  readonly loggedModifiers?: ReadonlyMap<string, readonly { readonly frame: number; readonly modifiers: readonly Modifier[] }[]>;
+}
+
+/** The modifiers a logged fight gives a kit hit's landing that no kit models (TimelineScenario.loggedModifiers): the nearest logged landing's within a frame, none without. */
+function loggedModifiersAt(ctx: TimelineContext, operator: string, events: readonly string[], frame: number): readonly Modifier[] {
+  if (!ctx.loggedModifiers) return [];
+  const near = events.flatMap((e) => (ctx.loggedModifiers?.get(`${operator}|${e}`) ?? []).filter((x) => Math.abs(x.frame - frame) <= 1));
+  return near.sort((a, b) => Math.abs(a.frame - frame) - Math.abs(b.frame - frame))[0]?.modifiers ?? [];
 }
 
 /**
@@ -369,6 +383,12 @@ const ENEMY_ATTRS: readonly AttrType[] = [Attr.MaxPoise, Attr.PoiseDamageTakenSc
 function loggedCritsByKey(list: NonNullable<TimelineScenario["loggedCrits"]>): Map<string, { frame: number; crit: boolean }[]> {
   const out = new Map<string, { frame: number; crit: boolean }[]>();
   for (const x of list) out.set(`${x.operator}|${x.event}`, [...(out.get(`${x.operator}|${x.event}`) ?? []), { frame: x.frame, crit: x.crit }]);
+  return out;
+}
+
+function byOperatorEvent<T extends { readonly operator: string; readonly event: string }>(list: readonly T[]): Map<string, T[]> {
+  const out = new Map<string, T[]>();
+  for (const x of list) out.set(`${x.operator}|${x.event}`, [...(out.get(`${x.operator}|${x.event}`) ?? []), x]);
   return out;
 }
 
@@ -405,6 +425,7 @@ export function createContext(data: GameData, scenario: TimelineScenario): Timel
     data, scenario, builds, panels, modifiers, kits, beforeDamage, enemy, burstDelayFrames: delays as Record<ArtsElement, number>,
     ...(foodEnds.size ? { foodEnds } : {}),
     ...(scenario.loggedCrits ? { loggedCrits: loggedCritsByKey(scenario.loggedCrits) } : {}),
+    ...(scenario.loggedModifiers ? { loggedModifiers: byOperatorEvent(scenario.loggedModifiers) } : {}),
     ...(buffAttrs.has(Attr.ComboSkillCooldownRecoveryScalar) ? { comboRates: true } : {}),
     ...(buffAttrs.has(Attr.AtbCostAddition) ? { costBuffs: true } : {}),
     ...(inputBuffs ? { inputBuffs: true } : {}),
@@ -2010,7 +2031,11 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     decorations,
     ...(roll !== undefined ? { critRoll: roll } : {}),
     ...(typeof loggedCrit === "boolean" ? { crit: loggedCrit ? ("always" as const) : ("never" as const) } : {}),
-    ...(finisher ? { modifiers: [...options.modifiers, { zone: "multiplicative" as const, value: enemyAttr(ctx, Attr.BreakingAttackDamageTakenScalar) - 1, source: "Finisher" }] } : {}),
+    modifiers: [
+      ...options.modifiers,
+      ...(finisher ? [{ zone: "multiplicative" as const, value: enemyAttr(ctx, Attr.BreakingAttackDamageTakenScalar) - 1, source: "Finisher" }] : []),
+      ...loggedModifiersAt(ctx, hit.operator, kitHit.events, hit.frame),
+    ],
     situation: { ...before, consumed },
     // Its modifiers' conditions see the enemy and the buffs as the damage is computed: after the hit's own applications and
     // beforeDamage buffs (whose modifiers count for it: Yvonne's 10th layer gives its Crit DMG to the shot that adds it).

@@ -320,7 +320,15 @@ interface Change {
  * left to the log: `undecided`). The state is read at every logged hit and
  * REPLAY_EDGE_MS either side of it.
  */
-export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placement): BuffReplay {
+export interface ReplayOptions {
+  /**
+   * Modifiers a logged hit's landing takes on top of the timeline's (TimelineScenario.loggedModifiers): the log's effects
+   * no kit models, for the simulation of the logged casts (logcheck.ts simulateLog). Absent: the kits' alone.
+   */
+  readonly loggedModifiers?: (hit: LogHit) => readonly Modifier[];
+}
+
+export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placement, opts: ReplayOptions = {}): BuffReplay {
   const listed = listedWithValues(fx);
   const kits = fx.team.flatMap((b) => {
     const k = effectiveKit(data, b);
@@ -371,6 +379,10 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       ...(firstBasic ? { controlled: firstBasic.operator } : {}),
       ...(enemyHp?.length ? { enemyHp } : {}),
       loggedCrits: fx.hits.flatMap((h) => (h.crit === null ? [] : [{ operator: h.operator, event: h.event, frame: frameOf(h.t), crit: h.crit }])),
+      ...(opts.loggedModifiers ? { loggedModifiers: fx.hits.flatMap((h) => {
+        const modifiers = (opts.loggedModifiers as NonNullable<ReplayOptions["loggedModifiers"]>)(h);
+        return modifiers.length ? [{ operator: h.operator, event: h.event, frame: frameOf(h.t), modifiers }] : [];
+      }) } : {}),
     };
     const ctx = createContext(data, scenario);
     let st: TimelineState = init(ctx);
