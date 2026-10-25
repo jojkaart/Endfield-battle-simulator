@@ -85,14 +85,26 @@ describe("L4 and L6: hit values that read what only a fight knows", () => {
   it("zmdlogs check finds the consumed count a hit's value needs (Rossi's sequence 2)", () => {
     const g = withKit({ skills: [battle([consumedHit])] });
     const v = checkLog(g, fixture([logHit(1000, "k", damage(g, assumeValues(consumedHit, { consumed: 2 }, true)))]))[0];
-    expect(assumed(v)).toContain("consumed 2");
+    // The enemy's side isn't taken from the replay's landing yet: tried, labelled.
+    expect(assumed(v).some((a) => a.startsWith("consumed 2 ("))).toBe(true);
   });
 
-  it("zmdlogs check tries an own stack over its range (Zhuang Fangyi's conduct_cnt)", () => {
+  it("zmdlogs check tries an own stack over its range where the replay can't say (Zhuang Fangyi's conduct_cnt)", () => {
     const h = hit("s", ["k"], { scale: [], scaleValue: { product: ["atk_scale", { sum: [1, { stackCount: "conduct" }] }] } });
     const g = withKit({ skills: [battle([h])], stacks: [{ id: "conduct", label: "conduct", max: 4 }] });
-    const v = checkLog(g, fixture([logHit(1000, "k", damage(g, assumeValues(h, { stacks: { conduct: 3 } }, true)))]))[0];
-    expect(assumed(v)).toContain("stack conduct 3");
+    const v = checkLog(g, fixture([logHit(1000, "k", damage(g, assumeValues(h, { stacks: { conduct: 3 } }, true)))]), { buffs: "log" })[0];
+    expect(assumed(v)).toContain("stack conduct 3 (the replay can't say: no replay)");
+  });
+
+  it("zmdlogs check reads an own stack at the replay's count where the hit landed (no assumption)", () => {
+    // Each battle skill's first hit gains a conduct stack; its second reads them.
+    const gain = hit("g", ["k1"], { frames: [5], gains: [{ stack: "conduct", amount: 1 }] });
+    const h = hit("s", ["k2"], { frames: [10], scale: [], scaleValue: { product: ["atk_scale", { sum: [1, { stackCount: "conduct" }] }] } });
+    const g = withKit({ skills: [battle([gain, h])], stacks: [{ id: "conduct", label: "conduct", max: 4 }] });
+    const at = (n: number) => damage(g, assumeValues(h, { stacks: { conduct: n } }, true));
+    const fx = fixture([logHit(1000, "k1", damage(g, gain)), logHit(1167, "k2", at(1)), logHit(5000, "k1", damage(g, gain)), logHit(5167, "k2", at(2))]);
+    const v = checkLog(g, fx);
+    expect([v[1], v[3]].map((x) => (x?.kind === "match" ? x.class : x?.kind))).toEqual(["plain", "plain"]);
   });
 
   it("enemyInflictionStacks reads the enemy's stacks of one element", () => {
@@ -116,8 +128,8 @@ describe("L4 and L6: hit values that read what only a fight knows", () => {
     const at = (h: KitHit, n: number) => damage(g, assumeValues(h, { infliction: { element: "cryst", stacks: n } }, true));
     expect(at(ifs, 3)).toBe(at(stacks, 3));
     const v = checkLog(g, fixture([logHit(1000, "k1", at(ifs, 3)), logHit(5000, "k2", at(stacks, 2))]));
-    expect(assumed(v[0])).toContain("enemy cryst ×3");
-    expect(assumed(v[1])).toContain("enemy cryst ×2");
+    expect(assumed(v[0]).some((a) => a.startsWith("enemy cryst ×3 ("))).toBe(true);
+    expect(assumed(v[1]).some((a) => a.startsWith("enemy cryst ×2 ("))).toBe(true);
   });
 
   it("calc shows such a hit at a stated count instead of failing", () => {

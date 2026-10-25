@@ -212,8 +212,9 @@ export interface LandedHit extends HitDamage {
 /**
  * What a landing's values and conditions read (the situation its damage was computed on), as data: its operator's
  * stacks and the enemy's state before its own applications, the infliction stacks those consumed, its combo
- * window's event count, the Link stacks its cast used. Recorded for replayed landings (the log check reads them
- * instead of trying every count: cli logcheck.ts).
+ * window's event count, the Link stacks its cast used, who was controlled at its cast, the layers of its operator's
+ * own active buffs (by kit buff), whether the enemy was Staggered and its HP fraction. Recorded for replayed landings
+ * (the log check reads them instead of trying every count: cli logcheck.ts).
  */
 export interface LandingFacts {
   readonly stacks: Readonly<Record<string, number>>;
@@ -222,6 +223,9 @@ export interface LandingFacts {
   readonly eventCount?: number;
   readonly castLink: number;
   readonly controlled: string;
+  readonly buffLayers: Readonly<Record<string, number>>;
+  readonly staggered: boolean;
+  readonly enemyHp: number;
 }
 
 /** A status event with the frame it happened at; the record of what the enemy's arts state did. */
@@ -1980,7 +1984,14 @@ function landHit(ctx: TimelineContext, state: TimelineState, hit: PendingHit): T
     // beforeDamage buffs (whose modifiers count for it: Yvonne's 10th layer gives its Crit DMG to the shot that adds it).
     ...(st.enemy !== before.enemy || st.buffs !== buffsAtLanding ? { modifierSituation: { ...before, consumed, ...buffSituation(at(consumed)) } } : {}),
   });
-  const facts = (): LandingFacts => ({ stacks: before.stacks ?? {}, enemy: before.enemy ?? NO_STATUS, consumed, ...(hit.eventCount !== undefined ? { eventCount: hit.eventCount } : {}), castLink, controlled });
+  const facts = (): LandingFacts => {
+    const layers: Record<string, number> = {};
+    for (const b of buffsAtLanding) if (b.owner === hit.operator && b.cast === undefined && activeAt(b, hit.frame)) layers[b.id] = (layers[b.id] ?? 0) + 1;
+    return {
+      stacks: before.stacks ?? {}, enemy: before.enemy ?? NO_STATUS, consumed, ...(hit.eventCount !== undefined ? { eventCount: hit.eventCount } : {}), castLink, controlled,
+      buffLayers: layers, staggered: before.staggered ?? false, enemyHp: before.enemyHp ?? 1,
+    };
+  };
   st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}), ...(hit.ref !== undefined ? { ref: hit.ref, facts: facts() } : {}) }]);
   // The enemy the damage saw: the reactions of the applications before it see it too.
   const enemyAtDamage = st.enemy;

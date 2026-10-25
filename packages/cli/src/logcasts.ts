@@ -185,8 +185,14 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         // The same cast while within its landings' span, or while it has landings to come within the skill's whole action
         // (a landing after a wait: Rossi's Lift 2.2 s after her charge, where the logged span is 0.6 s).
         const elapsed = cur ? worldMs(cur.first, h.t, others) : 0;
+        // Not once another of the operator's skills was cast since, unless the landing to come is on its way (detached): the
+        // new cast ended this one (4e5e1390085e: Rossi's attack 4 at 14708 ms after her attack 3, not hit_ai's landings at
+        // frame 195+ of her attack 4 at 6974 ms).
+        const next = cur?.slots?.[cur.index + 1];
+        const superseded = cur !== undefined && next !== undefined && !next.hits.some((x) => x.detached || x.launch !== undefined) &&
+          [...opened.values()].flat().some((c) => c !== cur.cast && c.kind !== null && c.start > cur.cast.start && c.start <= h.t);
         const toCome = cur?.slots && cur.index + 1 < cur.slots.length && elapsed <= cur.longest + CAST_SLACK_MS;
-        if (cur && (elapsed <= cur.span + CAST_SLACK_MS || toCome)) {
+        if (cur && !superseded && (elapsed <= cur.span + CAST_SLACK_MS || toCome)) {
           cur.index++;
           const s = cur.slots;
           const slot = s ? s[Math.min(cur.index, s.length - 1)] : undefined;
