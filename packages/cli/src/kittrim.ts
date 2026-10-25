@@ -15,7 +15,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits/operators");
 
 /** Hit fields the loader can fill in, in the order they're tried (frames first: with them gone, the data's landings decide the rest). */
-export const TRIMMED_HIT_FIELDS = ["frames", "count", "events", "factor", "element", "poise", "poiseControlledOnly", "detached", "energy"] as const;
+export const TRIMMED_HIT_FIELDS = ["frames", "count", "events", "factor", "element", "poise", "poiseControlledOnly", "detached", "energy", "sp", "spBeforeDamage"] as const;
 /** Skill fields the loader can fill in. */
 export const TRIMMED_SKILL_FIELDS = ["teamEnergy", "energyBlockSeconds"] as const;
 

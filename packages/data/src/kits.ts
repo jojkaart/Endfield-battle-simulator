@@ -9,7 +9,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import { damageSites, operatorSkillFiles } from "./skillGraph.ts";
-import { compileEquipmentSkill, compileOperatorSkill, dataEnergyBlockSeconds, dataTeamEnergy, hitFacts, kitEnergyBlock, matchSkill, type CompileData, type CastAction, type DataField, type Disagreement, type HitFacts } from "./kitMatch.ts";
+import { compileEquipmentSkill, compileOperatorSkill, dataEnergyBlockSeconds, dataTeamEnergy, hitFacts, kitEnergyBlock, matchSkill, spPlaced, type CompileData, type CastAction, type DataField, type Disagreement, type HitFacts } from "./kitMatch.ts";
 import type { CompiledSkill } from "./skillCompile.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { buffFilePath, isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
@@ -794,6 +794,7 @@ function withDataFacts(h: RawHit, all: HitFacts, kitElement: Element | undefined
     ...(h.poiseControlledOnly === undefined && poise !== undefined && f.poiseControlledOnly ? { poiseControlledOnly: true } : {}),
     ...(h.detached === undefined && f.detached !== undefined ? { detached: f.detached } : {}),
     ...(h.energy === undefined && f.energy !== undefined && f.energy !== null ? { energy: f.energy as ValueExpr } : {}),
+    ...(h.sp === undefined && f.sp !== undefined && f.sp !== null ? { sp: f.sp as ValueExpr, ...(h.spBeforeDamage === undefined && f.spBeforeDamage ? { spBeforeDamage: true as const } : {}) } : {}),
   };
 }
 
@@ -882,7 +883,22 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit, options: KitL
     if (compiled) {
       const first = c.normalizeHits(s.hits, hitSource, where);
       const m = matchSkill(compiled, { skillId: s.skillId, hits: first, ...(s.teamEnergy ? { teamEnergy: s.teamEnergy } : {}), ...(s.energyBlockSeconds !== undefined ? { energyBlockSeconds: s.energyBlockSeconds } : {}) }, kitEnergyBlock(s, kit.triggers ?? [], kit.buffs ?? []));
-      rawHits = s.hits.map((h) => withDataFacts(h, h.poiseOnly || h.reaction ? {} : hitFacts(m.folded, m.hits.get(h.id)), kit.element));
+      // SP from the data only where it says all of the skill's (else, unless the kit names SP, the engine's first-hit atb stays).
+      const spFromData = s.hits.some((h) => h.sp !== undefined) || spPlaced(m.folded, m.hits);
+      rawHits = s.hits.map((h) => {
+        const f = h.poiseOnly || h.reaction ? {} : hitFacts(m.folded, m.hits.get(h.id));
+        const { sp: _sp, spBeforeDamage: _b, ...noSp } = f;
+        // An SP key without a value at every level of the skill (Antal's finisher's atb) isn't one to fill in.
+        const spKnown = (() => {
+          try {
+            if (f.sp !== undefined && f.sp !== null) c.checkValue(f.sp as ValueExpr, s.skillId, where);
+            return true;
+          } catch {
+            return false;
+          }
+        })();
+        return withDataFacts(h, spFromData && spKnown ? f : noSp, kit.element);
+      });
       // The skill's team energy and energy block, when it leaves them out (and gives no energy-blocking buff of its own).
       if (s.teamEnergy === undefined && s.dataOverride?.["teamEnergy"] === undefined) {
         const parts = dataTeamEnergy(m.folded);

@@ -108,7 +108,8 @@ describe("a dive in a rotation", () => {
   });
 
   it("with the fall in the kit: the fall's own hits after the jump, then the landing", () => {
-    const landing = kit.skills.find((x) => x.skillId === END)?.hits[0] as KitHit;
+    // The landing's hit without its SP (the landing's atb, which the fall's file doesn't have).
+    const { sp: _sp, ...landing } = kit.skills.find((x) => x.skillId === END)?.hits[0] as KitHit;
     const g = withKit({ start: { hits: [{ ...landing, id: "fall", frames: [3], dive: false }] } });
     const s = run(g, scenario([dive()]));
     expect(castsOf(s)).toEqual([[JUMP, 0], ["plunging_attack_start", RISE], ["plunging_attack_end", RISE + FALL]]);

@@ -470,6 +470,10 @@ export interface HitFacts {
   readonly detached?: boolean;
   /** Ultimate energy each landing grants (one unconditional ObtainCostAction costType 0 going with it, a kit value); null when none does. */
   readonly energy?: unknown;
+  /** SP each landing grants (one ObtainCostAction costType 1 going with it, with no condition of its own but "while controlled": then `{if: {controlled: true}, then: v}`); null when none does. */
+  readonly sp?: unknown;
+  /** Whether that SP comes before the landing's damage. */
+  readonly spBeforeDamage?: boolean;
 }
 
 /**
@@ -507,7 +511,44 @@ export function hitFacts(folded: CompiledSkill, m: HitMatch | undefined): HitFac
     const energy = same(grants);
     if (energy !== undefined) out.energy = energy;
   }
+  // SP: the same, a grant only while controlled said as {if: {controlled: true}, then: v}.
+  const sp = ls.map((l) => spOf(folded, l));
+  if (!sp.includes(undefined)) {
+    const v = same(sp.map((x) => (x as { value: unknown } | null)?.value ?? null));
+    const before = same(sp.map((x) => (x as { beforeDamage: boolean } | null)?.beforeDamage ?? false));
+    if (v !== undefined) out.sp = v;
+    if (v !== undefined && v !== null && before !== undefined) out.spBeforeDamage = before;
+  }
   return out;
+}
+
+/** The SP grant going with a landing as a kit value, null when none does, undefined when it can't be said (several, a percentage, another condition, an expression). */
+function spOf(folded: CompiledSkill, l: CompiledLanding): { value: unknown; beforeDamage: boolean } | null | undefined {
+  const i = folded.landings.indexOf(l);
+  const here = folded.sp.filter((e) => e.landing === i);
+  if (here.length === 0) return null;
+  const e = here[0] as CompiledCost;
+  const extra = e.steps.slice(l.steps.length);
+  const controlledStep = extra.length === 1 && JSON.stringify(extra[0]?.pred) === JSON.stringify({ controlled: true });
+  if (here.length > 1 || e.isPercent || !prefixOf(l.branch, e.branch) || !(extra.length === 0 || controlledStep)) return undefined;
+  // A key with no value at the skill's levels or in its file isn't a kit value.
+  const v = e.value.value === null ? null : valueExpr(e.value, e.coefficient);
+  if (v === null) return undefined;
+  return { value: e.controlledOnly || controlledStep ? { if: { controlled: true }, then: v } : v, beforeDamage: e.beforeDamage };
+}
+
+/**
+ * Whether every SP grant of a skill goes with a landing of one of the given
+ * hits and can be said (spOf): then the data says all the SP the skill gives
+ * and where; else the engine's default (the skill's `atb` on its first hit)
+ * stays.
+ */
+export function spPlaced(folded: CompiledSkill, matches: ReadonlyMap<string, HitMatch>): boolean {
+  const mine = new Set([...matches.values()].flatMap((m) => m.landings));
+  return folded.sp.every((e) => {
+    const l = e.landing === null ? undefined : folded.landings[e.landing];
+    return l !== undefined && mine.has(l) && spOf(folded, l) !== undefined;
+  });
 }
 
 /** The energy block a kit gives a skill: its energyBlockSeconds, or the duration of an energy-blocking buff its own cast trigger applies (Laevatain's show_weapon). */
