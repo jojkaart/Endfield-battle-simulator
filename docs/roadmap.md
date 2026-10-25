@@ -84,7 +84,7 @@ the six favourites.
 6. **Still open from setup:** a `Result` schema, `NOTICE` when MIT code is
    first copied. (The tie-break order is documented since 2026-10-25:
    design.md, "Order within a frame"; what the game does at ties isn't
-   known.)
+   known, and the owner judged it too rare to matter, 2026-10-25.)
 7. **Kit values from the data** (review 3.1, done 2026-10-25; design.md
    "Kits and the game data"): the loader fills frames, events, factors,
    stagger, energy, SP and more from the compiled SkillData and refuses an

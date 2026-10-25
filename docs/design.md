@@ -745,7 +745,9 @@ order they were scheduled in. This is the order the engine had (its ten
 whose order isn't in the data. Hits of different operators at one frame
 go by operator ID, an arbitrary order that keeps them apart from the
 team's order (scheduling order instead moves only si-laevatain, by order
-and, with rolled crits, by which hit draws which roll).
+and, with rolled crits, by which hit draws which roll). The owner
+(2026-10-25): same-frame hits of two operators are rare enough not to
+matter in practice, so the order stays and gets no in-game test.
 
 **Team order.** A result depends on the order the team is listed in only
 where the game reads team positions: a kit's `teamSlotElement` predicate
