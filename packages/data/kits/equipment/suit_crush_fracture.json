@@ -11,6 +11,8 @@
       "label": "Grizzled Edge: Physical DMG",
       "target": "self",
       "gameBuff": "buff_equipsuit_crush_fracture_physicdamage",
+      "priority": { "product":  [{ "eventCount":  true}, "phy_dmg_up_perstack", { "if":  { "any":  [{ "enemyModifier":  { "zone":  "susceptibility", "element":  "physical" }}, { "enemyStaggered":  true}]}, "then":  "special_multi", "else":  1}]},
+      "note": "Its instances rank by `priority` (the priority key), which buff_equipsuit_crush_fracture fills at creation from phy_dmg_up_final, as it does phy_dmg_up (the effect): the effect's value.",
       "duration": "duration",
       "modifiers": [
         {
@@ -24,9 +26,10 @@
       "label": "Grizzled Edge: Physical DMG (Originium Crystals)",
       "target": "self",
       "gameBuff": "buff_equipsuit_crush_fracture_physicdamage",
+      "priority": { "product":  [{ "eventCount":  true}, "phy_dmg_up_perstack", "special_multi"]},
       "duration": "duration",
       "modifiers": [{ "attr": 50, "value": { "product": [{ "eventCount": true }, "phy_dmg_up_perstack", "special_multi"] } }],
-      "note": "The same game buff when the target carried buff_common_originum_frozen at the event: always × special_multi."
+      "note": "The same game buff when the target carried buff_common_originum_frozen at the event: always × special_multi. Its instances rank by `priority` (the priority key), which buff_equipsuit_crush_fracture fills at creation from phy_dmg_up_final, as it does phy_dmg_up (the effect): the effect's value."
     }
   ],
   "triggers": [

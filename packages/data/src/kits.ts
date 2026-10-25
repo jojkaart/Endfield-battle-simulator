@@ -14,7 +14,7 @@ import type { CompiledSkill, CompiledValue } from "./skillCompile.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { buffFilePath, isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
 import { buffTagFilter, SHIELD_TAG } from "./buffTags.ts";
-import { Attr, attrFeedsZone, buffAttrHasEffect, buffReach, type BuffCategory, type TriggerOn, type KitBuffModifier, ELEMENTS, predicateRefs, predicateValues, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type KitTrigger, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
+import { Attr, attrFeedsZone, attrModifier, buffAttrHasEffect, buffReach, type BuffCategory, type TriggerOn, type KitBuffModifier, ELEMENTS, predicateRefs, predicateValues, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type KitTrigger, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
@@ -119,7 +119,8 @@ interface RawEquipmentKit {
   triggers?: RawTrigger[];
 }
 
-type RawBuff = KitBuff & { note?: string; dataOverride?: { duration?: string } };
+/** A kit buff as written: `priority`, when the kit states it, is a value (the loader makes it KitBuff.priority). */
+type RawBuff = Omit<KitBuff, "priority"> & { priority?: ValueExpr; note?: string; dataOverride?: { duration?: string } };
 
 function validator() {
   const ajv = new Ajv2020({ allErrors: true, strict: true });
@@ -255,6 +256,49 @@ function gameBuffLayers(raw: RawBuffFile, applyingSkillHasKey?: boolean): number
   return cap !== undefined && cap > 1 ? cap : undefined;
 }
 
+/** Whether a game buff makes a stack group (KitBuff.stackGroup): stackingType 1, or 11 with a priority key and one instance. */
+function groupsInstances(raw: RawBuffFile): boolean {
+  const s = raw.stacking;
+  return s.type === 1 || (s.type === 11 && s.priorityKey !== null && s.maxStacksKey === null && s.maxStackCnt === 1);
+}
+
+/**
+ * A grouped game buff's ranking (KitBuff.priority). `effect`: one of the
+ * game buff's attribute modifiers reads the priority key, so the game ranks
+ * by that effect's value at creation; the kit modifier standing for it
+ * (the same attribute, or the zone and element it feeds) gives it. `kit`:
+ * the kit states it. `key`: the key, read from the applying skill when it
+ * has it (`skillsWithKey`; undefined: every applier, as assumed where no
+ * application was seen), else the buff's own blackboard value (0 when it
+ * has none). Undefined for a group without a priority key (the latest
+ * acts) and for buffs that aren't grouped.
+ */
+function gameBuffPriority(file: string, b: Pick<KitBuff, "id" | "modifiers">, raw: RawBuffFile, stated: ValueExpr | undefined, skillsWithKey?: readonly string[]): KitBuff["priority"] {
+  const s = raw.stacking;
+  const key = s.priorityKey;
+  if (!groupsInstances(raw) || key === null) {
+    if (stated !== undefined) throw new Error(`${file}: buff ${b.id}: ${raw.id} has no priority key, so the kit's priority ranks nothing`);
+    return undefined;
+  }
+  if (s.negatePriority) throw new Error(`${file}: buff ${b.id}: ${raw.id} keeps its weakest instance (negatePriority), which isn't supported`);
+  const reading = raw.attributeModifiers.filter((m) => m.key === key).map((m) => m.attr);
+  if (reading.length) {
+    if (stated !== undefined) throw new Error(`${file}: buff ${b.id}: ${raw.id}'s attribute ${reading.join(", ")} reads its priority key ${key}, so the priority is that effect's value: drop the kit's`);
+    const stands = (m: KitBuff["modifiers"][number]) => reading.some((attr) => {
+      if (m.attr !== undefined) return m.attr === attr;
+      // ATK (2) is the kit's zone `atk` (ATK%: withPercent requires its formulaItem 6).
+      if (attr === Attr.Atk) return m.zone === "atk";
+      const z = attrModifier(attr, 0, "");
+      return z !== null && z.zone === m.zone && (z.element === undefined || m.elements === undefined || m.elements.includes(z.element));
+    });
+    const m = b.modifiers.find(stands);
+    if (!m) throw new Error(`${file}: buff ${b.id}: ${raw.id} ranks its instances by attribute ${reading.join(", ")} (${key}), which no modifier of the kit stands for`);
+    return { from: "effect", value: m.value };
+  }
+  if (stated !== undefined) return { from: "kit", value: stated };
+  return { from: "key", value: key, ...(skillsWithKey ? { skills: skillsWithKey } : {}), otherwise: raw.blackboard[key] ?? 0 };
+}
+
 /** Whether the skills applying a kit buff matter for its cap: the game buff's maxStackCntKey sets its instances or its layers (the kit names no cap). */
 function capKey(b: Pick<KitBuff, "maxStacks">, raw: RawBuffFile): string | null {
   const s = raw.stacking;
@@ -277,9 +321,13 @@ function capKey(b: Pick<KitBuff, "maxStacks">, raw: RawBuffFile): string | null 
  * `applyingSkillHasKey`: whether the skills that apply it have its
  * maxStackCntKey (gameBuffInstances, gameBuffLayers; default: assumed).
  */
-export function withGameBuff(file: string, b0: KitBuff, applyingSkillHasKey?: boolean): KitBuff {
+export function withGameBuff(file: string, given: RawBuff | KitBuff, applyingSkillHasKey?: boolean, skillsWithPriorityKey?: readonly string[]): KitBuff {
+  const { priority: stated, ...b0 } = given as RawBuff;
   const { gameBuff } = b0;
-  if (!gameBuff) return b0;
+  if (!gameBuff) {
+    if (stated !== undefined) throw new Error(`${file}: buff ${b0.id}: priority ranks a game buff's instances; it has none`);
+    return b0;
+  }
   const raw = gameBuffFile(file, b0.id, gameBuff);
   // The basic-attack input it maps (a ComboCacheAction in its buffEvent 5); a kit's own must agree with the data.
   if (b0.basicAttack !== undefined && b0.basicAttack !== raw.basicAttack) throw new Error(`${file}: buff ${b0.id}: ${raw.id} maps the basic-attack input to ${raw.basicAttack ?? "nothing"}, not ${b0.basicAttack}`);
@@ -287,8 +335,8 @@ export function withGameBuff(file: string, b0: KitBuff, applyingSkillHasKey?: bo
   const modifiers = b.modifiers.map((m) => withPercent(file, b.id, raw, m));
   const s = raw.stacking;
   const instances = gameBuffInstances(file, b, raw, applyingSkillHasKey);
-  if (s.type === 1) return { ...b, modifiers, stackGroup: s.key ?? gameBuff, ...(instances !== undefined ? { instances } : {}) };
-  if (s.type === 11 && s.priorityKey !== null && s.maxStacksKey === null && s.maxStackCnt === 1) return { ...b, modifiers, stackGroup: s.key ?? gameBuff };
+  const priority = gameBuffPriority(file, b, raw, stated, skillsWithPriorityKey);
+  if (groupsInstances(raw)) return { ...b, modifiers, stackGroup: s.key ?? gameBuff, ...(instances !== undefined ? { instances } : {}), ...(priority !== undefined ? { priority } : {}) };
   const cap = gameBuffLayers(raw, applyingSkillHasKey);
   if (cap !== undefined && typeof b.maxStacks === "number" && b.maxStacks !== cap) throw new Error(`${file}: buff ${b.id}: ${raw.id} keeps ${cap} layers (stackingType ${s.type}${s.maxStacksKey === null ? ", its literal maxStackCnt" : `, its own ${s.maxStacksKey}`}), not ${b.maxStacks}`);
   const maxStacks = b.maxStacks ?? cap;
@@ -335,7 +383,7 @@ interface KitScope {
   readonly owner: string;
   readonly element?: Element;
   readonly stackIds: ReadonlySet<string>;
-  readonly buffDefs: ReadonlyMap<string, KitBuff>;
+  readonly buffDefs: ReadonlyMap<string, RawBuff>;
   /** Whether a skill ID is one of the owner's skills (cast filters name them). */
   readonly isSkill: (id: string) => boolean;
   /** Whether a skill ID is a combo-kind skill of the owner's kit cast with the combo window (`openCombo` `skills` name them); none for equipment. */
@@ -358,7 +406,7 @@ interface KitScope {
  * game buff or the equipment's skills (Cohesive Traction, Aspirant, Grand
  * Vision, Glorious Memory, Yvonne's talent 1); else the cast's own hits.
  */
-function defaultConsumedScope(b: KitBuff, skills: readonly string[]): KitBuff["consumedScope"] {
+function defaultConsumedScope(b: Pick<KitBuff, "gameBuff">, skills: readonly string[]): KitBuff["consumedScope"] {
   const attached = [...(b.gameBuff ? skillAttachedEffects("BuffData", b.gameBuff) : []), ...skills.flatMap((id) => skillAttachedEffects("SkillData", id))].filter((x) => x !== b.gameBuff);
   return attached.length ? "whileCasting" : undefined;
 }
@@ -368,6 +416,8 @@ function kitChecker(scope: KitScope) {
   const { stackIds, buffDefs } = scope;
   /** Per buff whose instances or layers a maxStackCntKey sets: whether each skill applying it has the key (B2: else the buff's own value). */
   const instanceKeySites = new Map<string, boolean[]>();
+  /** Per grouped buff with a priority key: the skills applying it that have the key (the others rank by the buff's own value). */
+  const priorityKeySites = new Map<string, Set<string>>();
   const hasKey = (skillId: string, key: string): boolean => {
     if (!scope.isSource(skillId)) return false;
     try {
@@ -414,8 +464,8 @@ function kitChecker(scope: KitScope) {
     if (a.level !== undefined) checkValue(a.level, skillId, `${where} forcedReaction level`);
     if (a.extraSeconds !== undefined) checkValue(a.extraSeconds, skillId, `${where} forcedReaction extraSeconds`);
   };
-  const checkBuff = (b: KitBuff, skillId: string, where: string) => {
-    for (const v of [b.duration, b.maxStacks, b.every, b.records?.rate, ...b.modifiers.map((m) => m.value)]) if (v !== undefined) checkValue(v, skillId, `${where}: buff ${b.id}`);
+  const checkBuff = (b: RawBuff, skillId: string, where: string) => {
+    for (const v of [b.duration, b.maxStacks, b.every, b.records?.rate, b.priority, ...b.modifiers.map((m) => m.value)]) if (v !== undefined) checkValue(v, skillId, `${where}: buff ${b.id}`);
     if (b.records && b.target !== "enemy") throw new Error(`${where}: buff ${b.id}: only an enemy buff records the damage its target takes`);
     if (b.link && b.target !== "team") throw new Error(`${where}: buff ${b.id}: a Link stack is a team buff`);
     for (const m of b.modifiers) if ((m.zone === undefined) === (m.attr === undefined)) throw new Error(`${where}: buff ${b.id}: each modifier has a zone or an attribute`);
@@ -429,6 +479,13 @@ function kitChecker(scope: KitScope) {
     // Instances or layers kept by the applying skill's value (maxStackCntKey): whether this applier has the key (normalizeBuffs decides).
     const key = b.gameBuff ? capKey(b, gameBuffFile(scope.file, b.id, b.gameBuff)) : null;
     if (key !== null) instanceKeySites.set(b.id, [...(instanceKeySites.get(b.id) ?? []), hasKey(skillId, key)]);
+    const raw = b.gameBuff ? gameBuffFile(scope.file, b.id, b.gameBuff) : null;
+    const pkey = raw && groupsInstances(raw) ? raw.stacking.priorityKey : null;
+    if (pkey !== null) {
+      const withKey = priorityKeySites.get(b.id) ?? new Set<string>();
+      if (hasKey(skillId, pkey)) withKey.add(skillId);
+      priorityKeySites.set(b.id, withKey);
+    }
     if (b.recipients && b.target !== "team") throw new Error(`${where}: buff ${b.id}: only team buffs have recipients`);
     // Recipient filters judge the recipient; its own stacks and buffs aren't the kit's, so they aren't checked here.
   };
@@ -658,9 +715,10 @@ function kitChecker(scope: KitScope) {
     buffs.map(({ note: _note, dataOverride: _d, ...b }) => {
       const sites = instanceKeySites.get(b.id);
       if (sites && sites.some((x) => x) && sites.some((x) => !x)) throw new Error(`${scope.file}: buff ${b.id}: some skills applying it have its game buff's maxStackCntKey and some don't`);
+      const withPriorityKey = priorityKeySites.get(b.id);
       if (b.consumedScope && !b.consumedBy) throw new Error(`${scope.file}: buff ${b.id}: consumedScope is for a buff a cast consumes (consumedBy)`);
       const consumedScope = b.consumedBy && b.consumedScope === undefined ? defaultConsumedScope(b, scope.castBuffSkills ?? []) : undefined;
-      return withCategories(scope.file, withGameBuff(scope.file, consumedScope ? { ...b, consumedScope } : b, sites ? sites.every((x) => x) : undefined));
+      return withCategories(scope.file, withGameBuff(scope.file, consumedScope ? { ...b, consumedScope } : b, sites ? sites.every((x) => x) : undefined, withPriorityKey ? [...withPriorityKey].sort() : undefined));
     });
   /** A kit's triggers, checked, with the triggers their actions name (cancelHits) among them. */
   const checkTriggers = (list: readonly Omit<RawTrigger, "note">[]): KitTrigger[] => {

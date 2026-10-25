@@ -157,7 +157,7 @@ describe("V4: percentage attribute buffs", () => {
 
 describe("B1: instances of a buff with a priority (stackingType 1, priority key)", () => {
   const mk = (value: number, appliedAt: number, maxInstances: number): ActiveBuff => ({
-    id: "p", owner: op, target: "self", appliedAt, expiresAt: appliedAt + 600, stackGroup: "g", maxInstances,
+    id: "p", owner: op, target: "self", appliedAt, expiresAt: appliedAt + 600, stackGroup: "g", maxInstances, priority: value,
     modifiers: [{ zone: "damageBonus", value, element: "physical", source: "p" }],
   });
   const values = (buffs: readonly ActiveBuff[]) => buffs.map((b) => b.modifiers[0]?.value);
@@ -177,20 +177,26 @@ describe("B1: instances of a buff with a priority (stackingType 1, priority key)
     expect(withBuff(withBuff(withBuff([], mk(0.1, 0, 0)), mk(0.2, 1, 0)), mk(0.3, 2, 0))).toHaveLength(3);
   });
 
-  it("a stack group's strongest instance acts whole, not the strongest value of each modifier (round-two review)", () => {
-    const two = (a: number, b: number, appliedAt: number): ActiveBuff => ({
-      id: "p", owner: op, target: "self", appliedAt, expiresAt: appliedAt + 600, stackGroup: "g",
-      modifiers: [{ zone: "damageBonus", value: a, source: "p" }, { zone: "amp", value: b, source: "p" }],
+  it("a stack group's highest-priority instance acts whole: not the strongest value of each modifier, nor their sum", () => {
+    const two = (priority: number, a: number, b: number, appliedAt: number): ActiveBuff => ({
+      id: "p", owner: op, target: "self", appliedAt, expiresAt: appliedAt + 600, stackGroup: "g", priority,
+      modifiers: [{ zone: "damageBonus", value: a, source: "p" }, { zone: "attribute", attr: Attr.Str, value: b, source: "p" }],
     });
-    // A: 0.5 + 0.1, B: 0.2 + 0.3. The old rule took 0.5 and 0.3; now A whole (0.6 > 0.5).
-    const buffs = [two(0.5, 0.1, 0), two(0.2, 0.3, 10)];
-    expect(buffModifiers(buffs, op, 20).map((m) => [m.zone, m.value])).toEqual([["damageBonus", 0.5], ["amp", 0.1]]);
-    // Equal strength: the latest applied.
-    expect(buffModifiers([two(0.5, 0.1, 0), two(0.1, 0.5, 10)], op, 20).map((m) => m.value)).toEqual([0.1, 0.5]);
+    const acts = (buffs: ActiveBuff[]) => buffModifiers(buffs, op, 20).map((m) => [m.zone, m.value]);
+    // A: priority 0.5, DMG +0.5 and Strength +10; B: priority 0.2, DMG +0.2 and Strength +40. B's values sum to more
+    // (the rule until 2026-10-26 would have kept it) and its Strength is higher (the per-modifier rule before 2026-10-25
+    // would have mixed the two); the game keeps A, by its priority.
+    expect(acts([two(0.5, 0.5, 10, 0), two(0.2, 0.2, 40, 10)])).toEqual([["damageBonus", 0.5], ["attribute", 10]]);
+    // Equal priority: the latest applied.
+    expect(acts([two(0.5, 0.5, 10, 0), two(0.5, 0.1, 40, 10)])).toEqual([["damageBonus", 0.1], ["attribute", 40]]);
+    // At an instance limit the lowest priority goes, whatever its values.
+    const limited = (priority: number, a: number, appliedAt: number) => ({ ...two(priority, a, 0, appliedAt), maxInstances: 1 });
+    expect(withBuff([limited(0.5, 0.1, 0)], limited(0.2, 0.9, 10)).map((b) => b.priority)).toEqual([0.5]);
   });
 
   it("on the timeline: each instance keeps its own timer, and the buff ends with its last one", () => {
-    const inst: KitBuff = { id: "inst", label: "inst", target: "self", duration: 5, instances: 2, stackGroup: "inst", modifiers: [{ zone: "amp", value: { if: { buffActive: "inst" }, then: 0.1, else: 0.3 } }] };
+    const amp = { if: { buffActive: "inst" }, then: 0.1, else: 0.3 } as const;
+    const inst: KitBuff = { id: "inst", label: "inst", target: "self", duration: 5, instances: 2, stackGroup: "inst", priority: { from: "kit", value: amp }, modifiers: [{ zone: "amp", value: amp }] };
     const triggers: KitTrigger[] = [
       { id: "give", on: { event: "cast", kinds: ["battle"] }, by: "self", do: [{ kind: "buff", buff: "inst" }] },
       { id: "ended", on: { event: "buffEnded", buff: "inst" }, by: "self", do: [{ kind: "gain", gains: [{ stack: "ended", amount: 1 }] }] },

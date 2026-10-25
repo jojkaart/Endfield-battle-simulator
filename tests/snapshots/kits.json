@@ -24,7 +24,7 @@
   "digest": "bf5cef0987f4a3ea"
  },
  "equipment suit_crush_fracture": {
-  "digest": "e3eacf5da1112377"
+  "digest": "c4d3d11b2c418f20"
  },
  "equipment suit_expend_spell01": {
   "digest": "6b5f2900852ab0f5"
@@ -84,7 +84,7 @@
   "digest": "62909ad7b7d3e72e"
  },
  "equipment wpn_claym_0008": {
-  "digest": "46e5c3cbe1809ebb"
+  "digest": "a2e1def9b020dbbf"
  },
  "equipment wpn_claym_0009": {
   "digest": "9ea4ebad22577a79"
@@ -102,7 +102,7 @@
   "digest": "e402a416d17990b7"
  },
  "equipment wpn_claym_0014": {
-  "digest": "c6d2329ccdae365f"
+  "digest": "5728e6eefdd65fc2"
  },
  "equipment wpn_claym_0015": {
   "digest": "52459c97fed3d3f1"
@@ -111,13 +111,13 @@
   "digest": "f9480b54c30b3fe2"
  },
  "equipment wpn_claym_0017": {
-  "digest": "188ce4dc64c8e549"
+  "digest": "398a162f1af624a0"
  },
  "equipment wpn_claym_0018": {
-  "digest": "9f06ea32ba6fb1dd"
+  "digest": "d6a97a2c8ef507f2"
  },
  "equipment wpn_claym_0019": {
-  "digest": "2d63cf5b294f04c4"
+  "digest": "7fd17a9f1a38da2b"
  },
  "equipment wpn_funnel_0001": {
   "digest": "01bd15a54acb3ab5"
@@ -129,43 +129,43 @@
   "digest": "d53a93a6076a3f94"
  },
  "equipment wpn_funnel_0004": {
-  "digest": "42c748086d873dc7"
+  "digest": "5a6ebc5ac05b39ab"
  },
  "equipment wpn_funnel_0005": {
-  "digest": "26e32084d62173ea"
+  "digest": "fb4753b0ac0c4c85"
  },
  "equipment wpn_funnel_0006": {
-  "digest": "4921de1b618b22f8"
+  "digest": "336baa4c77775dc7"
  },
  "equipment wpn_funnel_0007": {
   "digest": "8fc7c56c75198660"
  },
  "equipment wpn_funnel_0008": {
-  "digest": "4cc6de8ed44b3946"
+  "digest": "b50a147c067e9174"
  },
  "equipment wpn_funnel_0009": {
   "digest": "cd8268d29912106c"
  },
  "equipment wpn_funnel_0010": {
-  "digest": "4e297932ce675c9c"
+  "digest": "b9282be986ddd60e"
  },
  "equipment wpn_funnel_0011": {
-  "digest": "1f55f95c8851fe77"
+  "digest": "d98bc8904d892f5a"
  },
  "equipment wpn_funnel_0012": {
   "digest": "36df20709bb3c7e4"
  },
  "equipment wpn_funnel_0013": {
-  "digest": "6e60bebf8a772320"
+  "digest": "434a6d1a7b5faf0b"
  },
  "equipment wpn_funnel_0014": {
-  "digest": "5c6fba3bfe1c7586"
+  "digest": "6e9b5b609140b292"
  },
  "equipment wpn_funnel_0015": {
   "digest": "d6da80e445e3e46e"
  },
  "equipment wpn_funnel_0016": {
-  "digest": "a53a5e98d3bc5bc7"
+  "digest": "3e111f617b4e2080"
  },
  "equipment wpn_funnel_0017": {
   "digest": "5ecc9855a63561fe"
@@ -216,7 +216,7 @@
   "digest": "4ef208ac1f91bb54"
  },
  "equipment wpn_lance_0016": {
-  "digest": "4229c382ce235a75"
+  "digest": "06ecaa81847e0366"
  },
  "equipment wpn_pistol_0001": {
   "digest": "3a513c314fb28f07"
@@ -231,7 +231,7 @@
   "digest": "e9497f8f4334b462"
  },
  "equipment wpn_pistol_0005": {
-  "digest": "f11d60e5908a4b04"
+  "digest": "2065042b476860ea"
  },
  "equipment wpn_pistol_0006": {
   "digest": "621c570d73dbbd45"
@@ -240,10 +240,10 @@
   "digest": "35c91c8a4c905a1e"
  },
  "equipment wpn_pistol_0008": {
-  "digest": "5a51684270aa7273"
+  "digest": "f37275fef4aa1790"
  },
  "equipment wpn_pistol_0009": {
-  "digest": "b296b9fa62801a9b"
+  "digest": "fd2487d3b905f3e7"
  },
  "equipment wpn_pistol_0010": {
   "digest": "170c08ae74cd46a7"
@@ -252,7 +252,7 @@
   "digest": "a5ca5e1c8ffecf75"
  },
  "equipment wpn_pistol_0012": {
-  "digest": "31833f1ebc6e2058"
+  "digest": "a991c8112c242256"
  },
  "equipment wpn_sword_0003": {
   "digest": "18a5b51cfddf4171"
@@ -282,7 +282,7 @@
   "digest": "69f045b6916047cf"
  },
  "equipment wpn_sword_0013": {
-  "digest": "68b3ec5f410d7a64"
+  "digest": "b8bea7e20955b2e6"
  },
  "equipment wpn_sword_0014": {
   "digest": "8dfdcdb6a401467a"
@@ -315,13 +315,13 @@
   "digest": "934bd6ac02b4f79a"
  },
  "equipment wpn_sword_0023": {
-  "digest": "1c08e08bed2c9ab7"
+  "digest": "b358fa241c86fb71"
  },
  "equipment wpn_sword_0024": {
-  "digest": "c5d2a4bef5269fae"
+  "digest": "994ef7eef7fa5fbd"
  },
  "equipment wpn_sword_0026": {
-  "digest": "e7f3102d4a44fc94"
+  "digest": "cbfd3618e3d6d839"
  },
  "operator chr_0002_endminm": {
   "digest": "708b374291d15534"
@@ -390,10 +390,10 @@
   "digest": "bb2d8c11a534a9f3"
  },
  "operator chr_0026_lastrite": {
-  "digest": "82ca81daa9a56d72"
+  "digest": "3ee007fb6e8ea098"
  },
  "operator chr_0027_tangtang": {
-  "digest": "5a257a75bd92472f"
+  "digest": "24ea98c01d95533f"
  },
  "operator chr_0028_wulfa": {
   "digest": "c33801e37d5276bc"
@@ -417,10 +417,10 @@
   "digest": "74b2ce5ae230392e"
  },
  "operator chr_0035_liino": {
-  "digest": "5d79bf494d5df03f"
+  "digest": "dc7685288e7fd5cb"
  },
  "operator chr_0036_jsspsi": {
-  "digest": "de70b3a1bcc65a7c"
+  "digest": "028a442ed4917710"
  },
  "operator chr_0038_purrche": {
   "digest": "ab0e103b0d3da96f"

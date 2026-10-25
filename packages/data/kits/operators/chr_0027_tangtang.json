@@ -73,6 +73,7 @@
       "label": "Waterspouts (2): Arts Susceptibility",
       "target": "enemy",
       "gameBuff": "buff_chr_0027_tangtang_normalskill_spellvulnerable",
+      "priority": { "key":  "rate_spellvulnerable", "skill":  "chr_0027_tangtang_normal_skill" },
       "duration": {
         "key": "duration_spellvulnerable",
         "skill": "chr_0027_tangtang_normal_skill"
@@ -92,13 +93,14 @@
           ]
         }
       ],
-      "note": "buff_chr_0027_tangtang_normalskill_spellvulnerable (VulnerableAction subType 1: Arts; logged as buff_common_affixes_vulnerable_spell), created by normal_skill_water_projhit_1 with rate_spellvulnerable: stackingType 1, priority rate_spellvulnerable, maxStackCntKey cntmax, which only the buff's own blackboard has (1: the loader reads it there, batch 4 B2). The 2- and 3-Waterspout casts create the same game buff, so the kit keeps one instance across its two buffs by hand (the stack group already lets only the strongest act): the 3-Waterspout cast ends this one, and this one isn't applied over the 3-Waterspout one. Riot Bringer's Waterspouts apply it too, at the ultimate's rate_spellvulnerable + the passive's (ModifyDynamicBlackboard operation 1 at ultimate frame 76): 0 + 0.05 below P3, 0.05 + 0.05 from P3, the battle skill's own values (0.05 / 0.10) at every potential, so the battle skill's key stands for both."
+      "note": "buff_chr_0027_tangtang_normalskill_spellvulnerable (VulnerableAction subType 1: Arts; logged as buff_common_affixes_vulnerable_spell), created by normal_skill_water_projhit_1 with rate_spellvulnerable: stackingType 1, priority rate_spellvulnerable, maxStackCntKey cntmax, which only the buff's own blackboard has (1: the loader reads it there, batch 4 B2). The 2- and 3-Waterspout casts create the same game buff, so the kit keeps one instance across its two buffs by hand (the stack group already lets only the strongest act): the 3-Waterspout cast ends this one, and this one isn't applied over the 3-Waterspout one. Riot Bringer's Waterspouts apply it too, at the ultimate's rate_spellvulnerable + the passive's (ModifyDynamicBlackboard operation 1 at ultimate frame 76): 0 + 0.05 below P3, 0.05 + 0.05 from P3, the battle skill's own values (0.05 / 0.10) at every potential, so the battle skill's key stands for both. Its instances rank by rate_spellvulnerable (the priority key), which each waterspout hit fills at creation with the rate it applies (projhit_2: rate_spellvulnerable_02): the effect's value."
     },
     {
       "id": "spout_susceptibility_3",
       "label": "Waterspouts (3): Arts Susceptibility",
       "target": "enemy",
       "gameBuff": "buff_chr_0027_tangtang_normalskill_spellvulnerable",
+      "priority": { "key":  "rate_spellvulnerable_02", "skill":  "chr_0027_tangtang_normal_skill" },
       "duration": {
         "key": "duration_spellvulnerable",
         "skill": "chr_0027_tangtang_normal_skill"
@@ -118,7 +120,7 @@
           ]
         }
       ],
-      "note": "normal_skill_water_projhit_2's application, rate_spellvulnerable_02 (10%, 15% at P3). Riot Bringer's: the ultimate's rate_spellvulnerable_02 (0, 0.05 from P3) + the passive's (0.10): equal at every potential."
+      "note": "normal_skill_water_projhit_2's application, rate_spellvulnerable_02 (10%, 15% at P3). Riot Bringer's: the ultimate's rate_spellvulnerable_02 (0, 0.05 from P3) + the passive's (0.10): equal at every potential. Its instances rank by rate_spellvulnerable (the priority key), which each waterspout hit fills at creation with the rate it applies (projhit_2: rate_spellvulnerable_02): the effect's value."
     },
     {
       "id": "olden_stare",

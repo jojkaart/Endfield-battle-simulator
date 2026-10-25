@@ -40,6 +40,8 @@ export interface ActiveBuff {
   readonly maxLayers?: number;
   /** Instances with a priority (KitBuff.instances): at most this many from one owner (0: no limit), the strongest acting; at the limit the weakest goes. */
   readonly maxInstances?: number;
+  /** Its stack group's ranking value at application (KitBuff.priority): the highest instance acts; none: the latest does. */
+  readonly priority?: number;
   /** The next cast of these kinds by someone it reaches consumes it (KitBuff.consumedBy). */
   readonly consumedBy?: readonly SkillType[];
   /** Consumed by a cast: acts only on that cast's hits (the index of the cast in the timeline). */
@@ -180,6 +182,11 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
   const maxLayers = buff.maxStacks === undefined ? undefined : Math.round(resolveValue(data, build, panel, skillId, buff.maxStacks, situation));
   const maxInstances = buff.instances === undefined ? undefined : Math.round(resolveValue(data, build, panel, skillId, buff.instances, situation));
   if (maxInstances !== undefined && (maxLayers !== undefined || !(maxInstances >= 0))) throw new EngineError(`${build.operator} buff ${buff.id}: ${maxLayers !== undefined ? "layers and instances with a priority don't go together" : `${maxInstances} instances`}`);
+  if (maxInstances !== undefined && buff.priority === undefined) throw new EngineError(`${build.operator} buff ${buff.id}: instances with a priority need one (KitBuff.priority)`);
+  const p = buff.priority;
+  const fromSkill = p !== undefined && (!p.skills || p.skills.includes(skillId));
+  if (p !== undefined && !fromSkill && p.otherwise === undefined) throw new EngineError(`${build.operator} buff ${buff.id}: ${skillId} has no value for its priority`);
+  const priority = p === undefined ? undefined : fromSkill ? resolveValue(data, build, panel, skillId, p.value, situation) : p.otherwise;
   return {
     id: buff.id,
     ...(buff.stackGroup ? { stackGroup: buff.stackGroup } : {}),
@@ -197,6 +204,7 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
     ...(recipients ? { recipients } : {}),
     ...(maxLayers !== undefined ? { maxLayers } : {}),
     ...(maxInstances !== undefined ? { maxInstances } : {}),
+    ...(priority !== undefined ? { priority } : {}),
     ...(buff.consumedBy ? { consumedBy: buff.consumedBy } : {}),
     ...(buff.blocksEnergy ? { blocksEnergy: true } : {}),
     ...(every !== undefined ? { every, nextTick: frame + (buff.tickOnApply ? 0 : every) } : {}),
@@ -204,9 +212,13 @@ export function applyBuff(data: GameData, build: Build, panel: StatPanel, skillI
   };
 }
 
-/** An instance's strength, for which of a buff's instances with a priority goes at the limit (KitBuff.instances): its values summed. */
-function instanceStrength(b: ActiveBuff): number {
-  return b.modifiers.reduce((s, m) => s + m.value, 0) + (b.attrs ?? []).reduce((s, a) => s + a.value, 0);
+/**
+ * An instance's rank in its stack group: its priority value (KitBuff.priority, the game buff's priority key). A group
+ * without one ranks every instance the same, so the latest acts. Until 2026-10-26 the rank was the instance's values
+ * summed, which weighed unlike effects against each other (a crit rate against a DMG bonus, attribute points).
+ */
+function instanceRank(b: ActiveBuff): number {
+  return b.priority ?? 0;
 }
 
 /**
@@ -225,7 +237,7 @@ export function withBuff(buffs: readonly ActiveBuff[], b: ActiveBuff | null): Ac
     const all = [...buffs.filter(same), b];
     if (b.maxInstances === 0 || all.length <= b.maxInstances) return [...buffs, b];
     // Weakest first; among equals the oldest (the new one is last, so it stays over an equal one).
-    const order = all.map((x, i) => ({ x, i })).sort((p, q) => instanceStrength(p.x) - instanceStrength(q.x) || p.i - q.i);
+    const order = all.map((x, i) => ({ x, i })).sort((p, q) => instanceRank(p.x) - instanceRank(q.x) || p.i - q.i);
     const drop = new Set(order.slice(0, all.length - b.maxInstances).map((p) => p.x));
     return [...buffs, b].filter((x) => !drop.has(x));
   }
@@ -319,18 +331,18 @@ function attributeModifiers(b: ActiveBuff): Modifier[] {
 }
 
 /**
- * The buffs that act among some active ones: each stack group's strongest
- * instance (instanceStrength; ties: the latest applied) whole, as the game
- * keeps one instance of an effect that doesn't stack; until 2026-10-25 the
- * strongest value of each modifier, which could mix two instances (every
- * group's buffs have the same modifiers today, so nothing moved).
+ * The buffs that act among some active ones: each stack group's highest
+ * ranked instance (instanceRank: its priority value; ties: the latest
+ * applied) whole, as the game keeps one instance of an effect that doesn't
+ * stack; until 2026-10-25 the strongest value of each modifier, which could
+ * mix two instances.
  */
 function acting(buffs: readonly ActiveBuff[]): ActiveBuff[] {
   const best = new Map<string, ActiveBuff>();
   for (const b of buffs) {
     if (!b.stackGroup) continue;
     const cur = best.get(b.stackGroup);
-    if (!cur || instanceStrength(b) > instanceStrength(cur) || (instanceStrength(b) === instanceStrength(cur) && b.appliedAt >= cur.appliedAt)) best.set(b.stackGroup, b);
+    if (!cur || instanceRank(b) > instanceRank(cur) || (instanceRank(b) === instanceRank(cur) && b.appliedAt >= cur.appliedAt)) best.set(b.stackGroup, b);
   }
   return buffs.filter((b) => !b.stackGroup || best.get(b.stackGroup) === b);
 }

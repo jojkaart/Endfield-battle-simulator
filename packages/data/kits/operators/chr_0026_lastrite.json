@@ -39,6 +39,7 @@
       "label": "Hypothermia: Cryo Susceptibility",
       "target": "enemy",
       "gameBuff": "buff_chr_0026_lastrite_talent_1_vul",
+      "priority": { "product":  [{ "talent":  0, "key":  "crystal_up" }, { "eventCount":  true}]},
       "duration": { "talent": 0, "key": "duration" },
       "modifiers": [
         {
@@ -47,7 +48,7 @@
           "value": { "product": [{ "talent": 0, "key": "crystal_up" }, { "eventCount": true }] }
         }
       ],
-      "note": "VulnerableAction subType 5 (Cryo), rate crystal_vul = infliction_num × crystal_up (SimpleCalcBB in buff_..._talent_1), asChildBuff (logged as buff_common_affixes_vulnerable_crystal); stackingType 1, priority crystal_vul, max 1: the strongest instance acts (loader, batch-3 B1). Verified on b7b3 (0.16 = 4 × 0.04 at t=11462 as a boundary buff, active at 15280)."
+      "note": "VulnerableAction subType 5 (Cryo), rate crystal_vul = infliction_num × crystal_up (SimpleCalcBB in buff_..._talent_1), asChildBuff (logged as buff_common_affixes_vulnerable_crystal); stackingType 1, priority crystal_vul, max 1: the strongest instance acts (loader, batch-3 B1). Verified on b7b3 (0.16 = 4 × 0.04 at t=11462 as a boundary buff, active at 15280). Its instances rank by crystal_vul (the game buff's priority key), which buff_chr_0026_lastrite_talent_1 computes as infliction_num × crystal_up and passes at creation: the effect's value."
     }
   ],
   "triggers": [

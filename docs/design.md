@@ -436,7 +436,12 @@ Efficiency) are read where the game reads them. A buff can be layered
 (`maxStacks`, each layer with its own duration), reach only some team
 members (`recipients`, a Predicate per member), or be consumed by the next
 cast of a kind and act on that cast's hits only (`consumedBy`: Link). Buffs
-from the same BuffData stacking key count only their strongest instance.
+from the same BuffData stacking key count only one instance, whole: the
+one with the highest priority, the value of the game buff's priority key
+at application (`KitBuff.priority`: the effect that reads the key, the
+key itself, or, where a parent buff fills it, what the kit states;
+tests/kits-priority.test.ts checks which against every CreateBuffAction);
+ties and groups without a priority key: the latest.
 Hits and triggers apply them, by default after the hit's own damage;
 triggers end them (all, or the oldest layers), and a buff ending is an
 event. Modifiers can be limited to hit kinds (`onlyKinds`,

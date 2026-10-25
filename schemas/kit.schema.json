@@ -184,6 +184,10 @@
           "note": {
             "type": "string"
           },
+          "priority": {
+            "$ref": "#/$defs/valueExpr",
+            "description": "What the game buff's instances in one stack group are ranked by, where the game fills its priority key at creation from a value the loader can't read (a parent buff's): the highest acts whole. Usually the loader derives it (KitBuff.priority); tests/kits-priority.test.ts says which kits must state it."
+          },
           "maxStacks": {
             "$ref": "#/$defs/valueExpr",
             "description": "Layered (BuffData stackingType 2 / 11): up to this many instances from one owner, each with its own duration; at the maximum a new one replaces the oldest. Modifiers add up per layer."

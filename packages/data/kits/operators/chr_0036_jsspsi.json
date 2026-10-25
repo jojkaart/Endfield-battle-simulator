@@ -83,6 +83,7 @@
       "label": "Unsoiled Brush: Haste",
       "target": "team",
       "gameBuff": "buff_chr_0036_jsspsi_talent1_speedup",
+      "priority": { "talent":  1, "key":  "ratio_speed" },
       "duration": {
         "talent": 1,
         "key": "duration_speedup"
@@ -96,7 +97,7 @@
           }
         }
       ],
-      "note": "Talent 2 (Unsoiled Brush): \"when the Inksoul disappears, allied operators gain 15% / 30% Haste for 5 s\". BuffData talent1_speedup (SpeedupAction, stackingType 1 priority ratio_speed: strongest only), created by xianjing_inkboom / xianjing_linkline. 0 s while the talent isn't learned, so it's skipped. What Haste speeds up is assumed (in-game test 19)."
+      "note": "Talent 2 (Unsoiled Brush): \"when the Inksoul disappears, allied operators gain 15% / 30% Haste for 5 s\". BuffData talent1_speedup (SpeedupAction, stackingType 1 priority ratio_speed: strongest only), created by xianjing_inkboom / xianjing_linkline. 0 s while the talent isn't learned, so it's skipped. What Haste speeds up is assumed (in-game test 19). Its instances rank by ratio_speed (the priority key), which the creating buffs (xianjing_inkboom, xianjing_linkline) pass from their own ratio_speed: the effect's value."
     }
   ],
   "triggers": [

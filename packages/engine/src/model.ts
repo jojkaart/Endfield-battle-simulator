@@ -664,6 +664,23 @@ export interface KitBuff {
    * doesn't say which (batch 3 B1). Its `buffEnded` comes with the last one.
    */
   readonly instances?: ValueExpr;
+  /**
+   * What instances in a stack group are ranked by (BuffData
+   * stackingSettings.priorityKey): `value` at application, for an applier
+   * among `skills` (absent: every applier), else `otherwise`. The loader
+   * sets it (`from`): `effect`, the priority key is what one of the game
+   * buff's attribute modifiers reads, so the value of the kit modifier
+   * standing for it; `kit`, the kit states it (a kit buff's `priority`, a
+   * ValueExpr) where the game fills the key at creation from another value
+   * and no attribute modifier reads it; `key`, the key itself, from the
+   * skills that have it, the game buff's own value for the others.
+   * tests/kits-priority.test.ts checks the choice against every
+   * CreateBuffAction in the data. The highest acts whole (ties: the
+   * latest), and at the instance limit the lowest goes. A group without a
+   * priority key: the latest applied acts (an interim; the data says no
+   * more).
+   */
+  readonly priority?: { readonly from: "effect" | "kit" | "key"; readonly value: ValueExpr; readonly skills?: readonly string[]; readonly otherwise?: number };
   /** The BuffData buff it stands for (kits name it; predicates and triggers by game buff read it). */
   readonly gameBuff?: string;
   /**

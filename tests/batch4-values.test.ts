@@ -172,7 +172,7 @@ describe("B2: a stack cap (maxStackCntKey) the applying skill doesn't have", () 
   const spout: KitBuff = { id: "spout", label: "Arts Susceptibility", target: "enemy", gameBuff: "buff_chr_0027_tangtang_normalskill_spellvulnerable", modifiers: [{ zone: "susceptibility", value: 0.05 }] };
   it("the buff's own blackboard value (Tangtang: cntmax 1), else 0 (no limit); with the key, the applier's value as before", () => {
     expect(withGameBuff("test", spout, false)).toMatchObject({ instances: 1, stackGroup: "buff_chr_0027_tangtang_normalskill_spellvulnerable" });
-    expect(withGameBuff("test", { ...spout, gameBuff: "buff_wpn_pistol_0005_valid" }, false)).toMatchObject({ instances: 0, stackGroup: "buff_wpn_pistol_0005_valid" });
+    expect(withGameBuff("test", { ...spout, gameBuff: "buff_wpn_pistol_0005_valid", modifiers: [{ attr: 54, value: 0.1 }] }, false)).toMatchObject({ instances: 0, stackGroup: "buff_wpn_pistol_0005_valid" });
     expect(withGameBuff("test", spout).instances).toBe("cntmax");
   });
 
