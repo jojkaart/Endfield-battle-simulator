@@ -1,0 +1,46 @@
+// How logged hits are grouped into casts (packages/cli/src/logcasts.ts), on real logs: the accuracy plan's A1
+// (docs/accuracy-plan.md), where casts of one key less than CAST_SLACK_MS apart were merged.
+
+import { describe, expect, it } from "vitest";
+import { loadGameData, type LogHit } from "@efsim/data";
+import { readLogFixture } from "@efsim/cli";
+import { distinctCasts, placeHits } from "../packages/cli/src/logcasts.ts";
+
+const data = loadGameData();
+const T = "chr_0034_typhoea";
+
+describe("cast placement (accuracy plan A1)", () => {
+  const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-92b450306768.json", import.meta.url).pathname);
+  const placement = placeHits(data, fx);
+  const shots = fx.hits.filter((h) => h.operator === T && h.event === `${T}_floating_attack1_01_projhit`).sort((a, b) => a.t - b.t);
+
+  it("a cast whose known landings are all logged doesn't take another landing of the key: Typhoeus's hover shots, 0.6 s apart, are casts of their own", () => {
+    const [a, b] = shots;
+    expect((b as LogHit).t - (a as LogHit).t).toBeLessThan(1000);
+    const cast = (h: LogHit | undefined) => placement.hits.get(h as LogHit)?.cast;
+    expect(cast(b)).not.toBe(cast(a));
+    // Her power and plain shots (a stack requirement each) are alternatives: one landing slot, each shot index 0.
+    expect(shots.slice(0, 4).map((h) => placement.hits.get(h)?.index)).toEqual([0, 0, 0, 0]);
+  });
+
+  it("casts of one skill placed from the same key stay two casts in the replay's list, however close", () => {
+    const starts = distinctCasts(placement).filter((c) => c.operator === T && c.skillId === `${T}_floating_attack1`).map((c) => Math.round(c.start));
+    expect(starts.slice(0, 4)).toEqual([4240, 4849, 5557, 6166]);
+  });
+
+  it("Typhoeus's arrowrain is placed (its log key from the data; the mark that kept it off is gone): her ultimate is replayed", () => {
+    const dbae = readLogFixture(new URL("../fixtures/zmdlogs-dbaee23b801d.json", import.meta.url).pathname);
+    const rain = dbae.hits.find((h) => h.event === `${T}_ultimate_skill_arrowrain`);
+    expect(placeHits(data, dbae).hits.get(rain as LogHit)?.cast.skillId).toBe(`${T}_ultimate_skillfloating`);
+  });
+});
+
+describe("the replay casts the basic-attack step the engine's state allows (accuracy plan A1)", () => {
+  it("Typhoeus's second hover shot in 92b4, placed as attack 1 (one key for attacks 1–4), is replayed as attack 2 (her ABATK attempts)", async () => {
+    const { logBuffReplay } = await import("@efsim/cli");
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-92b450306768.json", import.meta.url).pathname);
+    const r = logBuffReplay(data, fx).replay;
+    const steps = r.hits.filter((h) => h.operator === T && h.skillId.startsWith(`${T}_floating_attack`) && h.hitId.endsWith("_shot")).map((h) => h.skillId.slice(-1));
+    expect(steps.slice(0, 3)).toEqual(["1", "2", "3"]);
+  });
+});

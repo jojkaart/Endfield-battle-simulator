@@ -1815,9 +1815,8 @@
             "atk_scale_main",
             "potential_damge_up"
           ],
-          "events": [],
-          "dataOverride": { "events": "Logged as chr_0034_typhoea_ultimate_skill_arrowrain, but the key is left off on purpose: fixtures/zmdlogs-dbaee23b801d.json t=13975 matches, while fixtures/pending/zmdlogs-d9e59d0fb737.json t=4415 is x1.1585 above it, unexplained (see the hit's note)." },
-          "note": "ultimate_skill_arrowrain, spawned at frame 61, damage at its frame 1 (mask 4608): atk_scale_main × potential_damge_up (P5 1.2); poise 20. Logged as chr_0034_typhoea_ultimate_skill_arrowrain, but the key is left off: it matches fixtures/zmdlogs-dbaee23b801d.json t=13975 (103923, crit), while fixtures/pending/zmdlogs-d9e59d0fb737.json t=4415 (15716, no logged buff) is ×1.1585 above it, unexplained."
+          "events": ["chr_0034_typhoea_ultimate_skill_arrowrain"],
+          "note": "ultimate_skill_arrowrain, spawned at frame 61, damage at its frame 1 (mask 4608): atk_scale_main × potential_damge_up (P5 1.2); poise 20. Logged as chr_0034_typhoea_ultimate_skill_arrowrain (the key from the data since 2026-10-26): it matches fixtures/zmdlogs-dbaee23b801d.json t=13975 (103923, crit); fixtures/pending/zmdlogs-d9e59d0fb737.json t=4415 (15716) is ×1.1585 above it, a battle from before the 1.6 tables (accuracy plan A7), so it no longer keeps the key off."
         }
       ]
     },

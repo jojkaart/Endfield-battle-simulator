@@ -11,8 +11,8 @@
 // the two disagree (leads: a log gap, or a kit trigger that's wrong).
 
 import {
-  activeAt, advance, allActions, applyBuff, Attr, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
-  type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineScenario, type TimelineState,
+  activeAt, advance, allActions, earliestStart, applyBuff, Attr, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
+  type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
 import { distinctCasts, landingFrames, type LoggedCast, type Placement } from "./logcasts.ts";
@@ -342,6 +342,29 @@ interface Change {
  * left to the log: `undecided`). The state is read at every logged hit and
  * REPLAY_EDGE_MS either side of it.
  */
+/**
+ * Which basic-attack step a logged basic cast is: its placed skill when it can start at its frame, else the step the
+ * operator's chain points to (TimelineState.chainNext and its alternatives) that has the cast's key and can. Steps of one
+ * chain can share a key, and which comes next is the kit's call (Typhoeus's hover attacks 1–4 log one key; after attack 1
+ * comes attack 1 or 2 by her arrows): the placement takes the first, the engine knows the step.
+ */
+function chainStepFor(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, f: number): string {
+  if (c.kind !== "basic") return c.skillId;
+  const startsBy = (skill: string) => {
+    const r = earliestStart(ctx, st, { operator: c.operator, skill });
+    return !("error" in r) && r.frame <= f + 1;
+  };
+  if (startsBy(c.skillId)) return c.skillId;
+  const kit = ctx.kits.get(c.operator);
+  const hasKey = (skill: string) => (kit?.skills.find((k) => k.skillId === skill)?.hits ?? []).some((h) => h.events.includes(c.key));
+  // The chain's next steps first, then any basic attack of the operator with the key (steps gated by the kit's own
+  // state, Typhoeus's ABATK attempts: her hover attacks aren't a chain of windows).
+  const chain = st.chainNext[c.operator];
+  const steps = [...(chain ? [chain, ...(chain.alternatives ?? [])].filter((x) => x.until >= f).map((x) => x.skill) : []), ...(kit?.skills.filter((k) => k.kind === "basic").map((k) => k.skillId) ?? [])];
+  for (const skill of steps) if (skill !== c.skillId && hasKey(skill) && startsBy(skill)) return skill;
+  return c.skillId;
+}
+
 export interface ReplayOptions {
   /**
    * Modifiers a logged hit's landing takes on top of the timeline's (TimelineScenario.loggedModifiers): the log's effects
@@ -489,8 +512,9 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
           st = advance(ctx, st, f);
           const windowCount = c.kind === "combo" ? replayWindowCount(ctx, st, c.operator, c.skillId, f) : null;
           const pre = st;
-          st = replayCast(ctx, st, c.operator, c.skillId, f, { keepPrevious: c.keepPrevious, landings: c.landings });
-          const index = st.casts.findLastIndex((x) => x.frame === f && x.operator === c.operator && x.skill === c.skillId);
+          const skillId = chainStepFor(ctx, st, c, f);
+          st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious, landings: c.landings });
+          const index = st.casts.findLastIndex((x) => x.frame === f && x.operator === c.operator && x.skill === skillId);
           const carried = st.buffs.filter((b) => b.cast === index && b.id !== "link");
           const consumed: ConsumedBuffs = { buffs: carried.map((b) => b.id).sort(), modifiers: buffModifiers(carried, c.operator, f, index) };
           made.push({ c, f, pre, index, link: st.casts[index]?.link ?? 0, windowCount, consumed });

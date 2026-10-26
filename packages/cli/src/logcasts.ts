@@ -5,7 +5,7 @@
 // hit. The reaction replay applies the landing's own applications (L1) and
 // the casts' time stops (L5); the log check counts Link sources (L3).
 
-import { computeStats, effectiveKit, FPS, hitAvailable, triggerSkillId, allActions, type Build, type GameData, type KitHit, type SkillType, type StatPanel } from "@efsim/engine";
+import { computeStats, effectiveKit, FPS, hitAvailable, triggerSkillId, allActions, type Build, type GameData, type KitHit, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
 import type { LogFixture, LogHit } from "@efsim/data";
 
 /**
@@ -118,8 +118,8 @@ export function landingFrames(h: KitHit): number[] | null {
 
 /**
  * A group's landing slots of a key in frame order (kit order at one frame);
- * landings of different hits at one frame that both have conditions (`if`
- * or `branch`) are alternatives, one slot. Null when a hit with the key has
+ * landings of different hits at one frame that both have conditions (`if`,
+ * `branch` or `requires`) are alternatives, one slot. Null when a hit with the key has
  * no frames: the order is unknown.
  */
 function slotsOf(g: Group, key: string): Slot[] | null {
@@ -133,7 +133,9 @@ function slotsOf(g: Group, key: string): Slot[] | null {
     for (const frame of frames) landings.push({ frame, hit: h, order: order++ });
   }
   landings.sort((a, b) => a.frame - b.frame || a.order - b.order);
-  const conditional = (h: KitHit) => h.if !== undefined || h.branch !== undefined;
+  // Alternatives: hits with a condition (`if`), a branch, or a stack requirement (Typhoeus's power shot needs an arrow, the
+  // plain one none: one landing per cast, not two).
+  const conditional = (h: KitHit) => h.if !== undefined || h.branch !== undefined || h.requires !== undefined;
   const slots: { frame: number; hits: KitHit[] }[] = [];
   for (const l of landings) {
     const last = slots.at(-1);
@@ -144,6 +146,15 @@ function slotsOf(g: Group, key: string): Slot[] | null {
 }
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
+
+/**
+ * Whether a group's landings of a key are all known in number: every hit with the key has frames and a literal count (or
+ * none). A landing on its way (`detached`, `launch`) may come late, but a cast still makes that many. Alternatives at one
+ * frame are one slot (slotsOf).
+ */
+function exactSlots(g: Group, key: string): boolean {
+  return g.hits.filter((h) => !h.poiseOnly && h.events.includes(key)).every((h) => landingFrames(h) !== null && (h.count === undefined || typeof h.count === "number"));
+}
 
 /**
  * Places every logged hit (see the file comment), twice: the second time,
@@ -174,9 +185,11 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
     /** One pass over the operator's logged hits; `starts` (by skill) picks among groups sharing a key. */
     const pass = (starts: ReadonlyMap<string, readonly number[]> | null) => {
       const placed = new Map<LogHit, PlacedHit>();
-      const current = new Map<string, { cast: LoggedCast; first: number; index: number; span: number; longest: number; slots: Slot[] | null }>();
+      const current = new Map<string, { cast: LoggedCast; first: number; index: number; span: number; longest: number; slots: Slot[] | null; exact: boolean }>();
       // Casts placed so far, per group: a key's first landing within an earlier cast's reach is that cast's (joinable).
       const opened = new Map<string, LoggedCast[]>();
+      // The operator's latest cast of a skill, for a key several chain steps share (choose: the step after it).
+      let latest: LoggedCast | null = null;
       for (const h of mine) {
         const candidates = groupsWith(h.event);
         if (candidates.length === 0) continue;
@@ -192,21 +205,25 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const superseded = cur !== undefined && next !== undefined && !next.hits.some((x) => x.detached || x.launch !== undefined) &&
           [...opened.values()].flat().some((c) => c !== cur.cast && c.kind !== null && c.start > cur.cast.start && c.start <= h.t);
         const toCome = cur?.slots && cur.index + 1 < cur.slots.length && elapsed <= cur.longest + CAST_SLACK_MS;
-        if (cur && !superseded && (elapsed <= cur.span + CAST_SLACK_MS || toCome)) {
+        // A cast whose landings of the key are all known (exactSlots) and all logged already: another is a new cast, however
+        // soon (Typhoeus's hover shots, 0.6 s apart under one key, were one cast with one landing: every second shot unlanded).
+        const used = cur?.exact === true && cur.slots !== null && cur.index + 1 >= cur.slots.length;
+        if (cur && !superseded && !used && (elapsed <= cur.span + CAST_SLACK_MS || toCome)) {
           cur.index++;
           const s = cur.slots;
           const slot = s ? s[Math.min(cur.index, s.length - 1)] : undefined;
           placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame } : {}) });
           continue;
         }
-        const g = choose(candidates, h, starts, slots);
+        const g = choose(candidates, h, starts, slots, latest ? { cast: latest, timing: data.skills[latest.skillId]?.timing } : null);
         const s = slots(g, h.event);
         const first = s?.[0];
         const cast: LoggedCast = joinable(opened.get(g.id) ?? [], h, first?.frame ?? 0) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, start: h.t - msOf(first?.frame ?? 0) };
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
+        if (cast.kind !== null && (!latest || cast.start >= latest.start)) latest = cast;
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
         const longest = Math.max(span, g.kind !== null ? msOf(data.skills[g.skillId]?.timing?.durationFrames ?? 0) : 0);
-        current.set(h.event, { cast, first: h.t, index: 0, span, longest, slots: s });
+        current.set(h.event, { cast, first: h.t, index: 0, span, longest, slots: s, exact: exactSlots(g, h.event) });
         placed.set(h, { cast, index: 0, hits: first ? first.hits : allHits(candidates, h.event), ...(first ? { frame: first.frame } : {}) });
       }
       return placed;
@@ -245,7 +262,8 @@ export function distinctCasts(placement: Placement): LoggedCast[] {
   const out: LoggedCast[] = [];
   for (const c of [...placement.casts].sort((a, b) => a.start - b.start)) {
     if (c.kind === null) continue;
-    if (out.some((x) => x.operator === c.operator && x.skillId === c.skillId && Math.abs(x.start - c.start) <= CAST_MERGE_MS)) continue;
+    // Placed from the same key they are two casts (the placement already joined what one cast's landings of it can be).
+    if (out.some((x) => x.operator === c.operator && x.skillId === c.skillId && x.key !== c.key && Math.abs(x.start - c.start) <= CAST_MERGE_MS)) continue;
     out.push(c);
   }
   return out;
@@ -263,9 +281,14 @@ const ANCHOR_MS = 1500;
  * Which group a new cast of a key shared by several is: the one whose
  * anchor (the skill itself, placed from its other keys, or the skill whose
  * cast fires the trigger, plus the delay) started closest to where this
- * cast would start; else the first in kit order.
+ * cast would start; else the chain step after the operator's latest cast
+ * (`prev`: a candidate its windows list, starting within its action plus
+ * CAST_SLACK_MS: Rossi's chain steps share keys); else the first in kit
+ * order. Steps gated by the kit's state rather than windows (Typhoeus's
+ * hover attacks): the replay casts the step the engine allows
+ * (buffreplay.ts chainStepFor).
  */
-function choose(candidates: readonly Group[], h: LogHit, starts: ReadonlyMap<string, readonly number[]> | null, slots: (g: Group, key: string) => Slot[] | null): Group {
+function choose(candidates: readonly Group[], h: LogHit, starts: ReadonlyMap<string, readonly number[]> | null, slots: (g: Group, key: string) => Slot[] | null, prev: { cast: LoggedCast; timing: SkillTiming | null | undefined } | null): Group {
   if (candidates.length === 1 || !starts) return candidates[0] as Group;
   let best: { g: Group; d: number } | null = null;
   for (const g of candidates) {
@@ -276,5 +299,12 @@ function choose(candidates: readonly Group[], h: LogHit, starts: ReadonlyMap<str
       if (d <= ANCHOR_MS && (!best || d < best.d)) best = { g, d };
     }
   }
-  return best?.g ?? (candidates[0] as Group);
+  if (best) return best.g;
+  if (prev?.timing) {
+    const start = (g: Group) => h.t - msOf(slots(g, h.event)?.[0]?.frame ?? 0);
+    const listed = new Set(prev.timing.windows.flatMap((w) => w.skills));
+    const next = candidates.find((g) => g.kind !== null && listed.has(g.skillId) && start(g) >= prev.cast.start && start(g) <= prev.cast.start + msOf(prev.timing?.durationFrames ?? 0) + CAST_SLACK_MS);
+    if (next) return next;
+  }
+  return candidates[0] as Group;
 }

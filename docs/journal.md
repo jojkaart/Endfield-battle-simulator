@@ -5,6 +5,23 @@ their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 Older entries (2026-10-21 and earlier): [journal-archive.md](journal-archive.md).
 
+## 2026-10-26: accuracy plan A1, casts the log placement merged
+
+The owner on teammates: they basic-attack on their own, slower than the
+controlled operator, not during e.g. Liino's stance and ultimate (plan
+B0). Then A1 (accuracy-plan.md "Progress"): four placement and replay
+fixes, not one: a cast with all its known landings of a key logged takes
+no more; stack requirements are alternatives at one frame; casts placed
+from the same key aren't merged as one cast; shared-key chain steps by
+the windows, and in the replay by the engine's state (Typhoeus's hover
+attacks are gated by her ABATK stack, not windows: placing them by
+windows alone didn't help, removing the window rule lost Rossi's gains in
+4e5e / d572 / 2fd9 / 99fb, so both stay). Typhoeus's arrowrain key back.
+92b4 −34.8 → −3.1%, bdf2 −28 → −9.3%, dbae −43.9 → −20.6%, 4e5e −12.5 →
+−6.5%; Rossi's 4e5e hits all match now (the killing blow too). Some plain
+matches drop where the extra landings bring the replay's (wrong) Stagger
+earlier: B1 next after A.
+
 ## 2026-10-26: what isn't simulated accurately (three audits, a plan)
 
 The owner put engine accuracy above the search's scoring and asked for a

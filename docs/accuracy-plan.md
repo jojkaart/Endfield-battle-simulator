@@ -36,6 +36,24 @@ by Stagger (wrong windows in 22 of 29 fights), can be measured and fixed.
 | A6 | Casts without damage (Xaihi's ultimate) aren't inferred, so their Amp is missing | e82d all 20 Si combo / ultimate hits ×2.04 (−47%); 90 hits ×1.73 in abfd / b6aa / 9555; 26 Typhoeus hits in dbae | infer a hitless cast from its buff's lane (as `castsFromBuffLanes` does for others) |
 | A7 | d9e5 predates the 1.6 tables | its leads changed shape after the 1.6 data | exclude it from leads |
 
+**Progress.** A1 done (2026-10-26). It was four things, not a time gap
+alone: a cast whose landings of a key are all known and all logged takes
+no more (logcasts.ts `exactSlots`); hits with a stack requirement are
+alternatives at one frame like `if` and `branch` (Typhoeus's power and
+plain shots were two slots); `distinctCasts` merged casts of one skill
+placed from the same key; and basic-attack steps sharing a key are
+chosen as the step after the latest cast (the windows; Rossi's chain) or,
+in the replay, the step the engine's state allows (`chainStepFor`;
+Typhoeus's hover attacks gated by her ABATK attempts). Typhoeus's
+arrowrain key is restored (A7 retires the mark). Totals errors: 92b4
+−34.8 → −3.1%, bdf2 −28.0 → −9.3%, dbae −43.9 → −20.6%, 4e5e −12.5 →
+−6.5%, d572 −44.1 → −34.0% (plain 367 → 551), 99fb −62.3 → −50.0%, 2fd9
+−52.3 → −42.3%, 0c14 −24.0 → −17.4%, abfd −46.4 → −42.0%. Some plain
+matches drop where more landed hits make the replay's Stagger come even
+earlier (3aa6's staggered-hit error +183% → +456%; bdf2 Si 19 → 12):
+B1's bug showing through. Left in Typhoeus: a hover shot the replay
+lands 0.7 s late, and her hover ending early in 92b4 (kit state, B8).
+
 Done when the verified fixtures' totals are within a few percent once
 matched-hit errors are taken out, so the matched hits' error is the
 engine's.
