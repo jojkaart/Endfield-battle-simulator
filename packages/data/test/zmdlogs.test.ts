@@ -1,6 +1,6 @@
 // ZMDLogs → log fixture conversion on a synthetic battle.
 import { describe, expect, it } from "vitest";
-import { enemiesHit, zmdlogsCasts, zmdlogsToFixture, type BuildLookups } from "../src/zmdlogs.ts";
+import { enemiesHit, zmdlogsCasts, zmdlogsPoise, zmdlogsToFixture, type BuildLookups } from "../src/zmdlogs.ts";
 
 const OP = "chr_0021_whiten";
 const BOSS = "eny_0051_rodin";
@@ -112,5 +112,27 @@ describe("zmdlogsCasts", () => {
       { t: 4000, operator: OP, skill: "chr_0021_whiten_ultimate_skill" },
     ]);
     expect(zmdlogsToFixture("btl_upload_test", withCasts, exported, lookups, 90).casts).toEqual([{ t: 4000, operator: OP, skill: "chr_0021_whiten_ultimate_skill" }]);
+  });
+});
+
+describe("zmdlogsPoise", () => {
+  // poiseDamage: value negative (dealt), current_value the Stagger bar after the hit.
+  const hit = (t: number, value: number, poise: number | null, bar = 0) => ({
+    laneType: "skill", eventKey: "chr_0021_whiten_attack1", sourceCharacterKey: OP, targetCharacterKey: BOSS, targetEnemyKey: BOSS, tsMsFromStart: t, value,
+    damageElement: "physical", hitContext: { critical: { status: "verified", isCritical: false } },
+    poiseDamage: poise === null ? null : { type: "PoiseDamage", value: -poise, current_value: bar },
+  });
+  const staggered = { ...detail, timelineEvents: [hit(1000, 500, 18, 262), hit(2000, 400, null), hit(3000, 300, 0, 262)] };
+
+  it("keeps each damage hit's Stagger dealt and the bar after it (none when it dealt none)", () => {
+    const fx = zmdlogsToFixture("btl_upload_test", staggered, exported, lookups, 90);
+    expect(fx.hits.map((h) => h.poise)).toEqual([{ dealt: 18, bar: 262 }, undefined, undefined]);
+    expect(zmdlogsPoise(staggered, fx.hits)).toEqual([{ dealt: 18, bar: 262 }, undefined, undefined]);
+  });
+
+  it("refuses hits that aren't the detail's damage events in order", () => {
+    const fx = zmdlogsToFixture("btl_upload_test", staggered, exported, lookups, 90);
+    expect(() => zmdlogsPoise(staggered, [...fx.hits].reverse())).toThrow(/isn't the detail's damage event/);
+    expect(() => zmdlogsPoise(staggered, fx.hits.slice(1))).toThrow(/3 damage events, the fixture 2 hits/);
   });
 });

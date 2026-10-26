@@ -13,7 +13,7 @@ import { formatRuns, formatSimulation, readScenario, searchCommand } from "./sim
 import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, simulateLog } from "./logcheck.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-import { addLoggedCasts, importBattle, readLogFixture } from "./logs.ts";
+import { importBattle, readLogFixture, refreshFixture } from "./logs.ts";
 import { checkReactions, formatReactionCheck } from "./reactioncheck.ts";
 import { formatCensus, kitCensus } from "./census.ts";
 import { formatTrim, kitTrim } from "./kittrim.ts";
@@ -51,9 +51,9 @@ const USAGE = `Usage:
                 [--simulate]              Simulate the logged casts instead and compare each hit with its landing
                                           (crits, enemy HP and effects no kit models from the log)
   efsim zmdlogs reactions <fixture.json>  Replay the kits' inflictions; compare bursts and reactions
-  efsim zmdlogs casts <fixture.json> --detail <file>
-                                          Add the casts a downloaded battle detail records without
-                                          damage to a fixture imported before they were
+  efsim zmdlogs refresh <fixture.json> --detail <file>
+                                          Add what a downloaded battle detail records that an older
+                                          import lacks: casts without damage, each hit's Stagger
   efsim zmdlogs scales <fixture> <op>     Multiplier each logged hit of an operator implies
   efsim zmdlogs find-scales <fixture> <op> Skill values (keys) that explain each logged event
   efsim kit-draft <operator>              Draft a kit from SkillData (to verify against logs)
@@ -181,10 +181,11 @@ async function main(argv: string[]): Promise<number> {
         }
         break;
       }
-      if (args.length !== 2 || !arg || (sub !== "import" && sub !== "check" && sub !== "reactions" && sub !== "casts")) throw new Error(`zmdlogs takes import <battle id>, check <file>, reactions <file>, casts <file> --detail <file>, scales <file> <op> or find-scales <file> <op>\n\n${USAGE}`);
-      if (sub === "casts") {
-        if (!values.detail) throw new Error("zmdlogs casts needs --detail <file> (an already downloaded /api/battles/<id> response)");
-        text = `added ${addLoggedCasts(arg, values.detail)} cast(s) to ${arg}`;
+      if (args.length !== 2 || !arg || (sub !== "import" && sub !== "check" && sub !== "reactions" && sub !== "refresh")) throw new Error(`zmdlogs takes import <battle id>, check <file>, reactions <file>, refresh <file> --detail <file>, scales <file> <op> or find-scales <file> <op>\n\n${USAGE}`);
+      if (sub === "refresh") {
+        if (!values.detail) throw new Error("zmdlogs refresh needs --detail <file> (an already downloaded /api/battles/<id> response)");
+        const r = refreshFixture(arg, values.detail);
+        text = `${arg}: ${r.casts} cast(s), ${r.poise} hit(s) with Stagger`;
       } else if (sub === "reactions") {
         const fx = readLogFixture(arg);
         text = formatReactionCheck(checkReactions(data(), fx));

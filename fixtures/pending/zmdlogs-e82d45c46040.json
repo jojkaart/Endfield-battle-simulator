@@ -16,7 +16,9 @@
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
    "Enemy level 90 is assumed, not logged.",
-   "Hand annotation (not from the importer; 2026-10-21, as a build field since 2026-10-22): Si's build has \"food\": \"item_corp3_animal_1\", Ginseng Meat Stew (UseItemTable: ATK +180 flat, Crit Rate +11.44%, 300 s, one operator), which the log doesn't record or list (as on the Endministrator in zmdlogs-7e19489ae503), so the field is set by hand. It is the ×1.139 on her battle skill and first ultimate hits; with it 21 of her 22 hits match (0 without). No other food fits Perlica's two hits. (2026-10-21 to 2026-10-22 this was an atk effect of 0.222497 = 180 / 809 hand-added to each of her hits.)"
+   "Hand annotation (not from the importer; 2026-10-21, as a build field since 2026-10-22): Si's build has \"food\": \"item_corp3_animal_1\", Ginseng Meat Stew (UseItemTable: ATK +180 flat, Crit Rate +11.44%, 300 s, one operator), which the log doesn't record or list (as on the Endministrator in zmdlogs-7e19489ae503), so the field is set by hand. It is the ×1.139 on her battle skill and first ultimate hits; with it 21 of her 22 hits match (0 without). No other food fits Perlica's two hits. (2026-10-21 to 2026-10-22 this was an atk effect of 0.222497 = 180 / 809 hand-added to each of her hits.)",
+   "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
   ]
  },
  "enemy": {
@@ -263,7 +265,11 @@
      "value": 0.21
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 275
+   }
   },
   {
    "t": 7021,
@@ -318,7 +324,11 @@
      "value": 0.197039
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 270
+   }
   },
   {
    "t": 7022,
@@ -372,7 +382,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 260
+   }
   },
   {
    "t": 7196,
@@ -812,7 +826,11 @@
      "value": 0.2
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 250
+   }
   },
   {
    "t": 7544,
@@ -1006,7 +1024,11 @@
      "value": 0.2
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 250
+   }
   },
   {
    "t": 8370,
@@ -1491,7 +1513,11 @@
      "value": 0.2
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 230
+   }
   },
   {
    "t": 8370,
@@ -1588,7 +1614,11 @@
      "value": 0.2
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 230
+   }
   },
   {
    "t": 8370,
@@ -1685,7 +1715,11 @@
      "value": 0.2
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 230
+   }
   },
   {
    "t": 8370,
@@ -1782,7 +1816,11 @@
      "value": 0.2
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 230
+   }
   },
   {
    "t": 8474,
@@ -2440,7 +2478,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 225
+   }
   },
   {
    "t": 8734,
@@ -2885,7 +2927,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 215
+   }
   },
   {
    "t": 11111,
@@ -2989,6 +3035,43 @@
    ],
    "boundaryEffects": [],
    "unquantified": []
+  }
+ ],
+ "casts": [
+  {
+   "t": 1880,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_normal_skill"
+  },
+  {
+   "t": 3896,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 3896,
+   "operator": "chr_0011_seraph",
+   "skill": "chr_0011_seraph_ultimate_skill"
+  },
+  {
+   "t": 7021,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_ultimate_skill"
+  },
+  {
+   "t": 8370,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 8370,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_combo_skill"
+  },
+  {
+   "t": 8734,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_normal_skill"
   }
  ]
 }

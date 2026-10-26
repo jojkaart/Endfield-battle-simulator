@@ -194,7 +194,7 @@ describe("40d9a3c1da37: a cast the log shows only as a skill event", () => {
 });
 
 describe("dbaee23b801d: a cast the log shows only by the buff it applies", () => {
-  const fx = readLogFixture(new URL("../fixtures/zmdlogs-dbaee23b801d.json", import.meta.url).pathname);
+  const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-dbaee23b801d.json", import.meta.url).pathname);
 
   it("casts Xaihi's ultimate (no damage) a frame before her weapon's team ATK first shows in the log", () => {
     const placement = placeHits(data, fx);
@@ -207,6 +207,17 @@ describe("dbaee23b801d: a cast the log shows only by the buff it applies", () =>
     // Liino's hits under it now match by the replay's buffs, not the log's listing.
     const liino = checkLog(data, fx).filter((v) => v.hit.operator === "chr_0035_liino" && v.kind === "match");
     expect(liino.filter((v) => v.kind === "match" && v.class !== "fallback").length).toBeGreaterThan(20);
+  });
+
+  it("keeps Xaihi's logged ultimate (7606 ms) through her attack 1 placed inside its cantCastSkill channel: its Amp reaches her later hits", () => {
+    const r = logBuffReplay(data, fx);
+    const amped = (t: number) => {
+      const l = r.replay.landing(fx.hits.find((h) => h.operator === "chr_0011_seraph" && h.t === t) as LogHit);
+      if ("unknown" in l || l.inputs?.kind !== "hit") throw new Error(`no landing at ${t}`);
+      return (l.inputs.options.modifiers ?? []).some((m) => m.kitBuff?.id === "stack_overflow");
+    };
+    // Frame 58 of the ultimate (the 1.5 s time stop doesn't hold its caster) is after the first hit, before the second.
+    expect([amped(8391), amped(10692)]).toEqual([false, true]);
   });
 });
 

@@ -18,7 +18,8 @@
    "Enemy level 80 from the stage's DungeonTable entry (dung02_bossrush03_02).",
    "Si, Last Rite, Xaihi and Ardelia, imported 2026-10-25 with the owner's team logs (b6aa15281db4, 9555de54bb3d).",
    "Si is controlled throughout (Xaihi's crystal Amp always goes to her). 6 Last Rite battle skills, 6 Mirage pairs, all buff_chr_0026_lastrite_normal_skill_phantom on Si's first Final Strike after each cast: consistent with one use per cast (G4), though no swap tests it.",
-   "Xaihi wields Chivalric Virtues (wpn_funnel_0010)."
+   "Xaihi wields Chivalric Virtues (wpn_funnel_0010).",
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
   ]
  },
  "enemy": {
@@ -466,7 +467,11 @@
    "element": "cryst",
    "effects": [],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 297
+   }
   },
   {
    "t": 7694,
@@ -908,7 +913,11 @@
      "since": 10355,
      "source": "chr_0025_ardelia"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 287
+   }
   },
   {
    "t": 10498,
@@ -1432,7 +1441,11 @@
      "since": 10355,
      "source": "chr_0025_ardelia"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 277
+   }
   },
   {
    "t": 11995,
@@ -1666,7 +1679,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 275
+   }
   },
   {
    "t": 16303,
@@ -1780,7 +1797,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 253
+   }
   },
   {
    "t": 17305,
@@ -1864,7 +1885,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 235
+   }
   },
   {
    "t": 17404,
@@ -2206,7 +2231,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 233
+   }
   },
   {
    "t": 19212,
@@ -2442,7 +2471,11 @@
      "value": 0.1
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 223
+   }
   },
   {
    "t": 19733,
@@ -2545,7 +2578,11 @@
      "value": 0.21
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 218
+   }
   },
   {
    "t": 20664,
@@ -4309,7 +4346,11 @@
      "value": 0.12
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 203
+   }
   },
   {
    "t": 25367,
@@ -4424,7 +4465,11 @@
      "value": 0.12
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 203
+   }
   },
   {
    "t": 25476,
@@ -5205,7 +5250,11 @@
      "value": 0.17
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 183
+   }
   },
   {
    "t": 29022,
@@ -5559,7 +5608,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 178
+   }
   },
   {
    "t": 29103,
@@ -7180,7 +7233,11 @@
      "value": 0.16
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 173
+   }
   },
   {
    "t": 29609,
@@ -8224,7 +8281,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 163
+   }
   },
   {
    "t": 30322,
@@ -8572,7 +8633,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 133
+   }
   },
   {
    "t": 30720,
@@ -10085,7 +10150,11 @@
      "value": 0.144
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 128
+   }
   },
   {
    "t": 33733,
@@ -10267,7 +10336,11 @@
      "value": 0.21
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 315
+   }
   },
   {
    "t": 42558,
@@ -11983,7 +12056,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 292
+   }
   },
   {
    "t": 56178,
@@ -12777,7 +12854,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 287
+   }
   },
   {
    "t": 62716,
@@ -13017,7 +13098,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 264
+   }
   },
   {
    "t": 66493,
@@ -13224,7 +13309,11 @@
      "value": 0.144
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 254
+   }
   },
   {
    "t": 67154,
@@ -13771,7 +13860,11 @@
      "value": 0.16
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 239
+   }
   },
   {
    "t": 68611,
@@ -13838,7 +13931,11 @@
      "value": 0.16
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 239
+   }
   },
   {
    "t": 68713,
@@ -15203,7 +15300,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 229
+   }
   },
   {
    "t": 70846,
@@ -15377,7 +15478,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 211
+   }
   },
   {
    "t": 71617,
@@ -16157,7 +16262,11 @@
      "since": 74540,
      "source": "chr_0025_ardelia"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 201
+   }
   },
   {
    "t": 76290,
@@ -16230,7 +16339,11 @@
      "since": 74540,
      "source": "chr_0025_ardelia"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 5,
+    "bar": 196
+   }
   },
   {
    "t": 79490,
@@ -16530,7 +16643,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 178
+   }
   },
   {
    "t": 85094,
@@ -17142,7 +17259,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 155
+   }
   },
   {
    "t": 91944,
@@ -17594,7 +17715,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 155
+   }
   },
   {
    "t": 96216,
@@ -18148,7 +18273,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 155
+   }
   },
   {
    "t": 101481,
@@ -18844,7 +18973,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 132
+   }
   },
   {
    "t": 104844,
@@ -20375,7 +20508,11 @@
      "value": 0.16
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 117
+   }
   },
   {
    "t": 110571,
@@ -20460,7 +20597,11 @@
      "value": 0.16
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 117
+   }
   },
   {
    "t": 110752,
@@ -20908,7 +21049,11 @@
      "value": 0.2
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 97
+   }
   },
   {
    "t": 114222,
@@ -21173,7 +21318,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 92
+   }
   },
   {
    "t": 114542,
@@ -21677,7 +21826,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 87
+   }
   },
   {
    "t": 114942,

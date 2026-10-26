@@ -15,7 +15,9 @@
   },
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
-   "Enemy level 90 from the stage's DungeonTable entry (indie_hard002_s)."
+   "Enemy level 90 from the stage's DungeonTable entry (indie_hard002_s).",
+   "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
   ]
  },
  "enemy": {
@@ -364,7 +366,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 130
+   }
   },
   {
    "t": 3193,
@@ -484,7 +490,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 0.5,
+    "bar": 128.5
+   }
   },
   {
    "t": 3378,
@@ -538,7 +548,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 0.5,
+    "bar": 128.5
+   }
   },
   {
    "t": 3378,
@@ -592,7 +606,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 0.5,
+    "bar": 128.5
+   }
   },
   {
    "t": 3979,
@@ -646,7 +664,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 0.5,
+    "bar": 127
+   }
   },
   {
    "t": 3979,
@@ -700,7 +722,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 0.5,
+    "bar": 127
+   }
   },
   {
    "t": 3979,
@@ -754,7 +780,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 0.5,
+    "bar": 127
+   }
   },
   {
    "t": 4168,
@@ -820,7 +850,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 122
+   }
   },
   {
    "t": 4273,
@@ -2812,7 +2846,11 @@
      "value": 0.1
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 112
+   }
   },
   {
    "t": 7659,
@@ -3029,7 +3067,11 @@
      "value": 0.1
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 112
+   }
   },
   {
    "t": 7869,
@@ -7818,6 +7860,48 @@
     }
    ],
    "unquantified": []
+  }
+ ],
+ "casts": [
+  {
+   "t": 2478,
+   "operator": "chr_0035_liino",
+   "skill": "chr_0035_liino_normal_skill"
+  },
+  {
+   "t": 2584,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_normal_skill"
+  },
+  {
+   "t": 2814,
+   "operator": "chr_0034_typhoea",
+   "skill": "chr_0034_typhoea_normal_skill"
+  },
+  {
+   "t": 3979,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 5695,
+   "operator": "chr_0035_liino",
+   "skill": "chr_0035_liino_normal_skill"
+  },
+  {
+   "t": 7161,
+   "operator": "chr_0034_typhoea",
+   "skill": "chr_0034_typhoea_combo_skill"
+  },
+  {
+   "t": 10289,
+   "operator": "chr_0035_liino",
+   "skill": "chr_0035_liino_normal_skill"
+  },
+  {
+   "t": 10997,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
   }
  ]
 }

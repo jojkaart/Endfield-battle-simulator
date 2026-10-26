@@ -67,6 +67,13 @@
               "additionalProperties": false,
               "properties": { "buff": { "type": "string" }, "since": { "type": "number" }, "source": { "type": "string" } }
             }
+          },
+          "poise": {
+            "type": "object",
+            "description": "The Stagger the hit dealt as the log has it: dealt (positive) and the Stagger bar after it.",
+            "required": ["dealt", "bar"],
+            "additionalProperties": false,
+            "properties": { "dealt": { "type": "number", "exclusiveMinimum": 0 }, "bar": { "type": "number", "minimum": 0 } }
           }
         }
       }

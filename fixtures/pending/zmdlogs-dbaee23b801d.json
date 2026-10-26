@@ -1,5 +1,5 @@
 {
- "$schema": "../schemas/log-fixture.schema.json",
+ "$schema": "../../schemas/log-fixture.schema.json",
  "id": "zmdlogs-dbaee23b801d",
  "description": "ZMDLogs battle btl_upload_dbaee23b801d vs eny_0114_jzmking: chr_0034_typhoea, chr_0032_lizhiyan, chr_0035_liino, chr_0011_seraph; per-hit damage with the logged buff effects.",
  "provenance": {
@@ -18,7 +18,9 @@
    "Enemy level 90 is assumed, not logged.",
    "Challenge stage: total damage 1,994,821 = Lv90 HP 1,329,887 × 1.5 (stage HP scaling, inferred). DEF is 100 at every level of this enemy, so hit damage doesn't depend on the level.",
    "Pending until 2026-10-18 (commit ab5e668): the checker counted the two logged buff_wpn_funnel_0016_will_dmg instances twice (its stackingType 1: only the highest applies) and lacked the burst-only mask of buff_chr_0034_typhoea_combo_enemy_debuff and per-buff boundary choices; with those it passed and moved to fixtures/. Back in fixtures/pending/ since 2026-10-24: 75 of its 78 matches fit only the log's buff listing, not the kit-buff replay's (fixtures/pending/README.md).",
-   "Xaihi (chr_0011_seraph) has Stanza of Memorials (wpn_funnel_0005) at weapon level 85, not 90 (inferred 2026-10-20, batch 3, docs/kit-batches/batch-3/chr_0011_seraph.md): with 90 all 7 of her hits (attacks 1-5) were predicted at one ratio (logged / predicted 0.970; one hit with boundary buffs), and her ultimate's logged Amp, which reads her Intellect, already matched; her ATK only depends on the weapon level here. At 85 (ATK 3,691.8) all 7 match; 84 and 86 leave all 7 mismatched. Weapon level 89 with attributeNodes 3 fits as well (the log can't tell them apart)."
+   "Xaihi (chr_0011_seraph) has Stanza of Memorials (wpn_funnel_0005) at weapon level 85, not 90 (inferred 2026-10-20, batch 3, docs/kit-batches/batch-3/chr_0011_seraph.md): with 90 all 7 of her hits (attacks 1-5) were predicted at one ratio (logged / predicted 0.970; one hit with boundary buffs), and her ultimate's logged Amp, which reads her Intellect, already matched; her ATK only depends on the weapon level here. At 85 (ATK 3,691.8) all 7 match; 84 and 86 leave all 7 mismatched. Weapon level 89 with attributeNodes 3 fits as well (the log can't tell them apart).",
+   "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
   ]
  },
  "enemy": {
@@ -331,7 +333,11 @@
      "value": 0.123232
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 310
+   }
   },
   {
    "t": 2595,
@@ -511,7 +517,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 300
+   }
   },
   {
    "t": 8258,
@@ -879,7 +889,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 295
+   }
   },
   {
    "t": 8613,
@@ -2894,7 +2908,11 @@
      "value": 0.1
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 285
+   }
   },
   {
    "t": 10101,
@@ -3069,7 +3087,11 @@
      "value": 0.1
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 285
+   }
   },
   {
    "t": 10101,
@@ -3765,7 +3787,11 @@
      "value": 0.096
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 265
+   }
   },
   {
    "t": 10451,
@@ -6834,7 +6860,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 245
+   }
   },
   {
    "t": 14084,
@@ -12652,6 +12682,58 @@
     }
    ],
    "unquantified": []
+  }
+ ],
+ "casts": [
+  {
+   "t": 435,
+   "operator": "chr_0034_typhoea",
+   "skill": "chr_0034_typhoea_normal_skill"
+  },
+  {
+   "t": 2706,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_normal_skill"
+  },
+  {
+   "t": 2947,
+   "operator": "chr_0035_liino",
+   "skill": "chr_0035_liino_ultimate_skill"
+  },
+  {
+   "t": 7606,
+   "operator": "chr_0011_seraph",
+   "skill": "chr_0011_seraph_ultimate_skill"
+  },
+  {
+   "t": 8258,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 8258,
+   "operator": "chr_0035_liino",
+   "skill": "chr_0035_liino_ultimate_skill"
+  },
+  {
+   "t": 9530,
+   "operator": "chr_0034_typhoea",
+   "skill": "chr_0034_typhoea_combo_skill"
+  },
+  {
+   "t": 13975,
+   "operator": "chr_0034_typhoea",
+   "skill": "chr_0034_typhoea_ultimate_skill"
+  },
+  {
+   "t": 13975,
+   "operator": "chr_0035_liino",
+   "skill": "chr_0035_liino_ultimate_skill"
+  },
+  {
+   "t": 16610,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
   }
  ]
 }

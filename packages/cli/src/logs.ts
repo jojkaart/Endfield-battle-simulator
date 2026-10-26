@@ -5,7 +5,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import type { GameData } from "@efsim/engine";
-import { enemiesHit, fetchBattle, sourceCommit, SOURCES, zmdlogsCasts, zmdlogsToFixture, type LogFixture } from "@efsim/data";
+import { enemiesHit, fetchBattle, sourceCommit, SOURCES, zmdlogsCasts, zmdlogsPoise, zmdlogsToFixture, type LogFixture } from "@efsim/data";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -94,20 +94,30 @@ export async function importBattle(data: GameData, battleId: string, enemyLevel?
 }
 
 /**
- * Adds the casts a battle's detail records without damage (zmdlogsCasts) to a log fixture imported before they were
- * (2026-10-25), from an already downloaded /api/battles/<id> response (no network), with a provenance note. Returns
- * how many it added.
+ * Adds what a battle's detail records that older imports of it lack, from an already downloaded /api/battles/<id>
+ * response (no network), with a provenance note: the casts without damage (zmdlogsCasts, 2026-10-25) and each hit's
+ * Stagger (LogHit.poise, zmdlogsPoise, 2026-10-26). Returns how many casts and Stagger-dealing hits it has.
  */
-export function addLoggedCasts(file: string, detailFile: string): number {
+export function refreshFixture(file: string, detailFile: string): { casts: number; poise: number } {
   const fx = readLogFixture(file);
   const detail: unknown = JSON.parse(readFileSync(detailFile, "utf8"));
   const id = (detail as { battle?: { id?: string } }).battle?.id;
   if (id !== fx.provenance.battleId) throw new Error(`${detailFile} is battle ${String(id)}, not ${fx.provenance.battleId}`);
   const casts = zmdlogsCasts(detail, fx.team.map((b) => b.operator));
-  const note = "Casts (the detail's skill events without damage) added 2026-10-25 from the same battle detail (efsim zmdlogs casts).";
-  const out: LogFixture = { ...fx, provenance: { ...fx.provenance, notes: fx.provenance.notes.includes(note) ? fx.provenance.notes : [...fx.provenance.notes, note] }, casts };
+  const poise = zmdlogsPoise(detail, fx.hits);
+  const hits = fx.hits.map((h, i) => {
+    const { poise: _, ...rest } = h;
+    const p = poise[i];
+    return p ? { ...rest, poise: p } : rest;
+  });
+  const added = [
+    ...(fx.casts ? [] : ["Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh)."]),
+    ...(fx.hits.some((h) => h.poise) ? [] : ["Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."]),
+  ];
+  const notes = [...fx.provenance.notes, ...added.filter((n) => !fx.provenance.notes.includes(n))];
+  const out: LogFixture = { ...fx, provenance: { ...fx.provenance, notes }, hits, casts };
   const { ajv, validate } = validator();
-  if (!validate(out)) throw new Error(`fixture with casts is invalid: ${ajv.errorsText(validate.errors)}`);
+  if (!validate(out)) throw new Error(`refreshed fixture is invalid: ${ajv.errorsText(validate.errors)}`);
   writeFileSync(file, JSON.stringify(out, null, 1) + "\n");
-  return casts.length;
+  return { casts: casts.length, poise: poise.filter(Boolean).length };
 }

@@ -517,8 +517,16 @@ nothing on a server. API documented in
     key: an ultimate that only buffs, a battle skill's cast before its
     projectiles; their time can precede the skill's first effect (0eef:
     Liino's battle skill at 760 ms, its buffs at 1314 ms). The importer
-    keeps them as `casts` (2026-10-25; `efsim zmdlogs casts` adds them to
+    keeps them as `casts` (2026-10-25; `efsim zmdlogs refresh` adds them to
     an older fixture from a downloaded detail).
+  - Stagger: a damage event's `poiseDamage` ({type "PoiseDamage", value
+    −dealt, current_value: the bar after the hit, source, orig_source}),
+    on damage events only. The importer keeps it as the hit's `poise`
+    ({dealt, bar}; 2026-10-26, `zmdlogs refresh` for older fixtures).
+    Stagger itself is a buff lane, `buff_common_poise_break_damage_taken_scale`
+    on the enemy (its `durationMs`: the window, in real time; the buff's own
+    data lasts 0.1 s and is renewed while Staggered). Some hits deal Stagger
+    the log doesn't attribute (the bar drops between logged hits).
   - No battle list or search. Find candidates through boards:
     `GET /api/home/hot-bosses` → `GET /api/bosses/{slug}/rankings` (each
     account's fastest run only) or

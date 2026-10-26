@@ -11,7 +11,7 @@ import type { Cast, LandedHit, PendingEnemyAction, PendingHit, ReactionRecord, R
 import { SP, TIMELINE_ASSUMPTIONS } from "./rules.ts";
 import { createContext, enemyActionsOf, kitSkill, maxPoise, panelAt, skillCosts } from "./context.ts";
 import { maxEnergy, spAt, spCostAt } from "./resources.ts";
-import { earliestStart, needsWindow, startFrom, windowKey, windowOpen } from "./timing.ts";
+import { afterCantCast, earliestStart, needsWindow, startFrom, windowKey, windowOpen } from "./timing.ts";
 import { runTriggers } from "./actions.ts";
 import { castSkill, jumpToDive } from "./casting.ts";
 import { advance } from "./advance.ts";
@@ -109,7 +109,10 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
     if (!windowOpen(advanced, operator, key, frame)) advanced = { ...advanced, comboWindow: { ...advanced.comboWindow, [key]: { from: frame, until: frame + 1, count: 1 } } };
   }
   const index = advanced.casts.length;
-  const r = castSkill(ctx, advanced, operator, skillId, frame, false, opts.keepPrevious ?? false);
+  // Inside its operator's own cantCastSkill channel the game couldn't have cut the running cast: its hits and actions
+  // stand (dbaee23b801d: a hit of Xaihi's attack 1 placed 0.45 s into her ultimate, whose Amp comes at frame 58).
+  const keepPrevious = opts.keepPrevious === true || afterCantCast(ctx, advanced, operator, frame) > frame;
+  const r = castSkill(ctx, advanced, operator, skillId, frame, false, keepPrevious);
   let st = r.state;
   if (opts.landings?.length) {
     // The cast's own landings of each kit hit, in frame order: the n-th moves to its logged frame.

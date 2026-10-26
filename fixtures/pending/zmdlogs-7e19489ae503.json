@@ -16,7 +16,9 @@
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
    "Enemy level 90 is assumed, not logged.",
-   "Hand annotation (not from the importer; 2026-10-21, as a build field since 2026-10-22): the Endministrator's build has \"food\": \"item_corp3_animal_1\", Ginseng Meat Stew (UseItemTable: ATK +180 flat, buff_common_atk_buff_potion_2 formulaItem 7, and Crit Rate +11.44%, buff_common_ctr_buff_potion_1; 300 s, one operator). The log doesn't record food or list this buff, so the field is set by hand; the owner suggested a food buff. The checker puts its lines in her stat panel (180 flat ATK in the ATK formula's flat slot). With it all 34 of her hits match (0 without); the log does list percentage food buffs elsewhere (40d9: Bottled Duskberry Juice 0.2934694; b7b3: Jakub's Legacy 0.27). The stew's Crit Rate doesn't change a logged hit's value. (2026-10-21 to 2026-10-22 this was an atk effect of 0.219780 = 180 / 819 hand-added to each of her hits.)"
+   "Hand annotation (not from the importer; 2026-10-21, as a build field since 2026-10-22): the Endministrator's build has \"food\": \"item_corp3_animal_1\", Ginseng Meat Stew (UseItemTable: ATK +180 flat, buff_common_atk_buff_potion_2 formulaItem 7, and Crit Rate +11.44%, buff_common_ctr_buff_potion_1; 300 s, one operator). The log doesn't record food or list this buff, so the field is set by hand; the owner suggested a food buff. The checker puts its lines in her stat panel (180 flat ATK in the ATK formula's flat slot). With it all 34 of her hits match (0 without); the log does list percentage food buffs elsewhere (40d9: Bottled Duskberry Juice 0.2934694; b7b3: Jakub's Legacy 0.27). The stew's Crit Rate doesn't change a logged hit's value. (2026-10-21 to 2026-10-22 this was an atk effect of 0.219780 = 180 / 819 hand-added to each of her hits.)",
+   "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
   ]
  },
  "enemy": {
@@ -287,7 +289,11 @@
      "value": 0.08
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 270
+   }
   },
   {
    "t": 6324,
@@ -324,7 +330,11 @@
      "value": 0.2
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 240
+   }
   },
   {
    "t": 6324,
@@ -361,7 +371,11 @@
      "value": 0.2
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 240
+   }
   },
   {
    "t": 7335,
@@ -385,7 +399,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 230
+   }
   },
   {
    "t": 7335,
@@ -409,7 +427,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 230
+   }
   },
   {
    "t": 8077,
@@ -452,7 +474,11 @@
      "value": 0.16
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 210
+   }
   },
   {
    "t": 8077,
@@ -495,7 +521,11 @@
      "value": 0.16
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 210
+   }
   },
   {
    "t": 9196,
@@ -585,7 +615,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 25,
+    "bar": 185
+   }
   },
   {
    "t": 9714,
@@ -855,7 +889,11 @@
    "element": "physical",
    "effects": [],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 175
+   }
   },
   {
    "t": 12440,
@@ -976,7 +1014,11 @@
    "element": "physical",
    "effects": [],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 170
+   }
   },
   {
    "t": 14591,
@@ -1023,7 +1065,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 25,
+    "bar": 145
+   }
   },
   {
    "t": 14984,
@@ -1053,7 +1099,11 @@
      "value": 0.437314
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 140
+   }
   },
   {
    "t": 14984,
@@ -1083,7 +1133,11 @@
      "value": 0.437314
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 140
+   }
   },
   {
    "t": 14984,
@@ -1143,7 +1197,11 @@
      "value": 0.437314
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 140
+   }
   },
   {
    "t": 15191,
@@ -1323,7 +1381,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 130
+   }
   },
   {
    "t": 19022,
@@ -1426,7 +1488,11 @@
      "value": 8
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 3,
+    "bar": 127
+   }
   },
   {
    "t": 20424,
@@ -1717,7 +1783,11 @@
      "value": 8
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 3,
+    "bar": 124
+   }
   },
   {
    "t": 21063,
@@ -2074,7 +2144,11 @@
      "value": 8
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 9,
+    "bar": 115
+   }
   },
   {
    "t": 21935,
@@ -2597,7 +2671,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 25,
+    "bar": 90
+   }
   },
   {
    "t": 23673,
@@ -3121,7 +3199,11 @@
      "value": 0.08
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 80
+   }
   },
   {
    "t": 25479,
@@ -3410,7 +3492,11 @@
      "value": 8
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 49.6
+   }
   },
   {
    "t": 25812,
@@ -3519,7 +3605,11 @@
      "value": 8
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 49.6
+   }
   },
   {
    "t": 25916,
@@ -3862,7 +3952,11 @@
      "value": 8
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10.4,
+    "bar": 39.2
+   }
   },
   {
    "t": 27753,
@@ -4201,7 +4295,11 @@
      "value": 8
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10.4,
+    "bar": 39.2
+   }
   },
   {
    "t": 28190,
@@ -4340,7 +4438,11 @@
      "value": 8
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 24.2
+   }
   },
   {
    "t": 28190,
@@ -5171,7 +5273,11 @@
      "value": 0.16
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 3.8
+   }
   },
   {
    "t": 28603,
@@ -5292,7 +5398,11 @@
      "value": 0.16
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 3.8
+   }
   },
   {
    "t": 28603,
@@ -5533,7 +5643,11 @@
      "value": 0.3
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 0
+   }
   },
   {
    "t": 30861,
@@ -5798,7 +5912,11 @@
      "value": 0.3
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 265
+   }
   },
   {
    "t": 33152,
@@ -6490,7 +6608,11 @@
      "value": 0.3
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 255
+   }
   },
   {
    "t": 33734,
@@ -6587,7 +6709,11 @@
      "value": 0.3
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 255
+   }
   },
   {
    "t": 33734,
@@ -6684,7 +6810,11 @@
      "value": 0.3
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 255
+   }
   },
   {
    "t": 33839,
@@ -7026,7 +7156,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 25,
+    "bar": 230
+   }
   },
   {
    "t": 36117,
@@ -7149,5 +7283,6 @@
    "boundaryEffects": [],
    "unquantified": []
   }
- ]
+ ],
+ "casts": []
 }

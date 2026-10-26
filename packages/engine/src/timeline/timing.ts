@@ -233,7 +233,7 @@ export function counters(ctx: TimelineContext, operator: string, cur: Acting, fr
 }
 
 /** The first frame at or after `frame` outside the operator's current skill's cantCastSkill channels. */
-function afterCantCast(ctx: TimelineContext, state: TimelineState, operator: string, frame: number): number {
+export function afterCantCast(ctx: TimelineContext, state: TimelineState, operator: string, frame: number): number {
   const cur = state.acting[operator];
   if (!cur) return frame;
   let f = frame;

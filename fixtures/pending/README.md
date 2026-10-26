@@ -27,7 +27,16 @@ buffs, not the engine's).
   say so: this INT battle predates the 1.6 tables (555me's commit
   371c743), and all of it is under her ultimate's forced Corrosion. Not
   a kit error the check can name; maybe the battle is from 1.5.
-- `zmdlogs-dbaee23b801d.json` (back in fixtures/ since 2026-10-25): 75
+- `zmdlogs-dbaee23b801d.json` (back in fixtures/ 2026-10-25, here again
+  2026-10-26): with the logged casts (`efsim zmdlogs refresh`) the replay
+  has Xaihi's ultimate at its logged 7606 ms and her team Amp
+  (`stack_overflow`, 0.568 Cryo / Nature) from frame 58: Typhoeus's total
+  −19.4 → +5.7%. Xaihi's hits after it are then 0.927× the log: the replay
+  lacks Arcane's weapon's `buff_wpn_funnel_0016_will_atk`, which comes
+  from her Nature burst at 10341 ms that the reaction replay doesn't make
+  (`zmdlogs reactions`: logged, not predicted). Her one assumed match
+  before (Liino's `cosmovoice_atk` uncertain near 8.4 s) is gone. Back up
+  once Arcane's burst is replayed (accuracy plan B8). Earlier: 75
   of 78 matches were only with the log's buff listing; Liino (25) and
   Xaihi (7) had no other. The replay had `buff_wpn_funnel_0005_atk_up`
   (Xaihi's Stanza of Memorials) off: it comes from her ultimate, which has

@@ -17,7 +17,8 @@
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
    "Enemy level 90 is assumed, not logged.",
    "Challenge stage: total damage 1,857,259 = Lv90 HP 1,238,171 × 1.5 (stage HP scaling, inferred). DEF is 100 at every level of this enemy, so hit damage doesn't depend on the level.",
-   "Casts (the detail's skill events without damage) added 2026-10-25 from the same battle detail (efsim zmdlogs casts)."
+   "Casts (the detail's skill events without damage) added 2026-10-25 from the same battle detail (efsim zmdlogs casts).",
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
   ]
  },
  "enemy": {
@@ -311,7 +312,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 0.5,
+    "bar": 318.5
+   }
   },
   {
    "t": 1776,
@@ -329,7 +334,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 0.5,
+    "bar": 318.5
+   }
   },
   {
    "t": 1776,
@@ -347,7 +356,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 0.5,
+    "bar": 318.5
+   }
   },
   {
    "t": 1885,
@@ -365,7 +378,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 0.5,
+    "bar": 317
+   }
   },
   {
    "t": 1885,
@@ -383,7 +400,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 0.5,
+    "bar": 317
+   }
   },
   {
    "t": 1885,
@@ -401,7 +422,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 0.5,
+    "bar": 317
+   }
   },
   {
    "t": 2476,
@@ -432,7 +457,11 @@
      "value": 0.21
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 312
+   }
   },
   {
    "t": 2719,
@@ -474,7 +503,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 307
+   }
   },
   {
    "t": 2719,
@@ -738,7 +771,11 @@
      "since": 3620,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 297
+   }
   },
   {
    "t": 3620,
@@ -786,7 +823,11 @@
      "since": 3620,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 297
+   }
   },
   {
    "t": 3729,
@@ -3103,7 +3144,11 @@
      "since": 3620,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 287
+   }
   },
   {
    "t": 7937,
@@ -3302,7 +3347,11 @@
      "since": 3620,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 287
+   }
   },
   {
    "t": 7937,
@@ -6139,7 +6188,11 @@
      "since": 3620,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 277
+   }
   },
   {
    "t": 9695,
@@ -6994,7 +7047,11 @@
      "since": 3620,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 5,
+    "bar": 272
+   }
   }
  ],
  "casts": [

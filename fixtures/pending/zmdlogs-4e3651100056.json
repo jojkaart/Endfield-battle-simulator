@@ -15,7 +15,9 @@
   },
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
-   "Enemy level 90 from the stage's DungeonTable entry (indie_hard015_s)."
+   "Enemy level 90 from the stage's DungeonTable entry (indie_hard015_s).",
+   "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
   ]
  },
  "enemy": {
@@ -254,7 +256,11 @@
    "element": "cryst",
    "effects": [],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 322
+   }
   },
   {
    "t": 6751,
@@ -370,7 +376,11 @@
      "since": 8610,
      "source": "chr_0025_ardelia"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 312
+   }
   },
   {
    "t": 8713,
@@ -507,7 +517,11 @@
      "since": 8610,
      "source": "chr_0025_ardelia"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 302
+   }
   },
   {
    "t": 9068,
@@ -683,7 +697,11 @@
      "value": 0.12
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 297
+   }
   },
   {
    "t": 10580,
@@ -756,7 +774,11 @@
      "value": 0.448
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 287
+   }
   },
   {
    "t": 10580,
@@ -829,7 +851,11 @@
      "value": 0.448
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 287
+   }
   },
   {
    "t": 10914,
@@ -1478,7 +1504,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 277
+   }
   },
   {
    "t": 12215,
@@ -2720,7 +2750,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 267
+   }
   },
   {
    "t": 13024,
@@ -3782,7 +3816,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 249
+   }
   },
   {
    "t": 14316,
@@ -5270,7 +5308,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 1.67,
+    "bar": 247.33
+   }
   },
   {
    "t": 16887,
@@ -5582,7 +5624,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 1.67,
+    "bar": 245.66
+   }
   },
   {
    "t": 17220,
@@ -6014,7 +6060,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 1.67,
+    "bar": 243.99
+   }
   },
   {
    "t": 17469,
@@ -6734,7 +6784,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 238.99
+   }
   },
   {
    "t": 18403,
@@ -7174,7 +7228,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 220.99
+   }
   },
   {
    "t": 18734,
@@ -8119,7 +8177,11 @@
      "value": 0.15
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 210.99
+   }
   },
   {
    "t": 20809,
@@ -10117,7 +10179,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 192.99
+   }
   },
   {
    "t": 23491,
@@ -13057,7 +13123,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 174.99
+   }
   },
   {
    "t": 28352,
@@ -14473,7 +14543,11 @@
      "since": 31057,
      "source": "chr_0025_ardelia"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 164.99
+   }
   },
   {
    "t": 31285,
@@ -14895,7 +14969,11 @@
      "since": 31057,
      "source": "chr_0025_ardelia"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 154.99
+   }
   },
   {
    "t": 32212,
@@ -15637,7 +15715,11 @@
      "value": 0.15
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 144.99
+   }
   },
   {
    "t": 36050,
@@ -15855,7 +15937,11 @@
      "value": 0.08
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 124.99
+   }
   },
   {
    "t": 36050,
@@ -16162,7 +16248,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 106.99
+   }
   },
   {
    "t": 36813,
@@ -16264,7 +16354,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 101.99
+   }
   },
   {
    "t": 37063,
@@ -16379,7 +16473,11 @@
      "value": 0.448
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 91.99
+   }
   },
   {
    "t": 37063,
@@ -16494,7 +16592,11 @@
      "value": 0.448
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 91.99
+   }
   },
   {
    "t": 37885,
@@ -18318,7 +18420,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 81.99
+   }
   },
   {
    "t": 38819,
@@ -18894,7 +19000,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 1.67,
+    "bar": 80.32
+   }
   },
   {
    "t": 39048,
@@ -19458,7 +19568,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 1.67,
+    "bar": 78.65
+   }
   },
   {
    "t": 39399,
@@ -19926,7 +20040,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 1.67,
+    "bar": 76.98
+   }
   },
   {
    "t": 39626,
@@ -20724,7 +20842,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 71.98
+   }
   },
   {
    "t": 42361,
@@ -20820,7 +20942,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 53.98
+   }
   },
   {
    "t": 42485,
@@ -21133,7 +21259,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 43.98
+   }
   },
   {
    "t": 43083,
@@ -23451,7 +23581,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 25.98
+   }
   },
   {
    "t": 48750,
@@ -24357,7 +24491,11 @@
      "since": 50771,
      "source": "chr_0025_ardelia"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 15.98
+   }
   },
   {
    "t": 50771,
@@ -25102,7 +25240,11 @@
      "since": 50771,
      "source": "chr_0025_ardelia"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 5.98001
+   }
   },
   {
    "t": 51642,
@@ -25507,7 +25649,11 @@
      "value": 0.12
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 0
+   }
   },
   {
    "t": 56066,
@@ -25610,7 +25756,11 @@
      "value": 0.12
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 0
+   }
   },
   {
    "t": 56439,
@@ -25922,7 +26072,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 0
+   }
   },
   {
    "t": 57022,
@@ -26018,7 +26172,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 0
+   }
   },
   {
    "t": 57270,
@@ -26330,7 +26488,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 0
+   }
   },
   {
    "t": 57606,
@@ -26534,7 +26696,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 0
+   }
   },
   {
    "t": 58084,
@@ -26732,7 +26898,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 0
+   }
   },
   {
    "t": 58418,
@@ -27134,7 +27304,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 0
+   }
   },
   {
    "t": 59249,
@@ -27230,7 +27404,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 0
+   }
   },
   {
    "t": 59249,
@@ -27728,7 +27906,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 1.67,
+    "bar": 0
+   }
   },
   {
    "t": 60164,
@@ -27926,7 +28108,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 1.67,
+    "bar": 0
+   }
   },
   {
    "t": 60764,
@@ -28035,7 +28221,11 @@
      "value": 0.3
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 1.67,
+    "bar": 0
+   }
   },
   {
    "t": 60764,
@@ -28144,7 +28334,11 @@
      "value": 0.3
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 1.67,
+    "bar": 0
+   }
   },
   {
    "t": 60764,
@@ -28246,7 +28440,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 0
+   }
   },
   {
    "t": 60868,
@@ -28931,7 +29129,11 @@
      "value": 0.08
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 0
+   }
   },
   {
    "t": 62133,
@@ -31084,7 +31286,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 1.67,
+    "bar": 0
+   }
   },
   {
    "t": 65023,
@@ -31517,7 +31723,11 @@
      "value": 0.08
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 0
+   }
   },
   {
    "t": 65252,
@@ -31734,7 +31944,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 1.67,
+    "bar": 0
+   }
   },
   {
    "t": 65376,
@@ -32154,7 +32368,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 1.67,
+    "bar": 0
+   }
   },
   {
    "t": 65604,
@@ -32556,7 +32774,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 0
+   }
   },
   {
    "t": 66184,
@@ -32868,7 +33090,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 0
+   }
   },
   {
    "t": 66534,
@@ -32976,7 +33202,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 0
+   }
   },
   {
    "t": 66534,
@@ -33301,7 +33531,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 3,
+    "bar": 0
+   }
   },
   {
    "t": 68950,
@@ -33536,7 +33770,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 3,
+    "bar": 0
+   }
   },
   {
    "t": 71864,
@@ -33758,7 +33996,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 3,
+    "bar": 0
+   }
   },
   {
    "t": 71968,
@@ -33866,7 +34108,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 3,
+    "bar": 0
+   }
   },
   {
    "t": 72092,
@@ -33974,7 +34220,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 3,
+    "bar": 0
+   }
   },
   {
    "t": 72218,
@@ -34101,7 +34351,11 @@
      "value": 0.08
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 0
+   }
   },
   {
    "t": 72218,
@@ -34228,7 +34482,11 @@
      "value": 0.08
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 0
+   }
   },
   {
    "t": 72322,
@@ -34936,7 +35194,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 1.67,
+    "bar": 0
+   }
   },
   {
    "t": 72798,
@@ -35290,7 +35552,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 1.67,
+    "bar": 0
+   }
   },
   {
    "t": 73377,
@@ -35518,7 +35784,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 1.67,
+    "bar": 0
+   }
   },
   {
    "t": 73832,
@@ -35952,7 +36222,11 @@
      "value": 0.08
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 335
+   }
   },
   {
    "t": 74534,
@@ -36344,6 +36618,118 @@
    ],
    "boundaryEffects": [],
    "unquantified": []
+  }
+ ],
+ "casts": [
+  {
+   "t": 5614,
+   "operator": "chr_0025_ardelia",
+   "skill": "chr_0025_ardelia_combo_skill"
+  },
+  {
+   "t": 8965,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_normal_skill"
+  },
+  {
+   "t": 10350,
+   "operator": "chr_0006_wolfgd",
+   "skill": "chr_0006_wolfgd_combo_skill"
+  },
+  {
+   "t": 11327,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_combo_skill"
+  },
+  {
+   "t": 16533,
+   "operator": "chr_0006_wolfgd",
+   "skill": "chr_0006_wolfgd_normal_skill"
+  },
+  {
+   "t": 28352,
+   "operator": "chr_0025_ardelia",
+   "skill": "chr_0025_ardelia_combo_skill"
+  },
+  {
+   "t": 35698,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_normal_skill"
+  },
+  {
+   "t": 36709,
+   "operator": "chr_0006_wolfgd",
+   "skill": "chr_0006_wolfgd_combo_skill"
+  },
+  {
+   "t": 37063,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_combo_skill"
+  },
+  {
+   "t": 38819,
+   "operator": "chr_0006_wolfgd",
+   "skill": "chr_0006_wolfgd_normal_skill"
+  },
+  {
+   "t": 47805,
+   "operator": "chr_0025_ardelia",
+   "skill": "chr_0025_ardelia_combo_skill"
+  },
+  {
+   "t": 55116,
+   "operator": "chr_0025_ardelia",
+   "skill": "chr_0025_ardelia_ultimate_skill"
+  },
+  {
+   "t": 55345,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_normal_skill"
+  },
+  {
+   "t": 58189,
+   "operator": "chr_0025_ardelia",
+   "skill": "chr_0025_ardelia_ultimate_skill"
+  },
+  {
+   "t": 59832,
+   "operator": "chr_0006_wolfgd",
+   "skill": "chr_0006_wolfgd_normal_skill"
+  },
+  {
+   "t": 61902,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_combo_skill"
+  },
+  {
+   "t": 61902,
+   "operator": "chr_0006_wolfgd",
+   "skill": "chr_0006_wolfgd_combo_skill"
+  },
+  {
+   "t": 64544,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_ultimate_skill"
+  },
+  {
+   "t": 64793,
+   "operator": "chr_0006_wolfgd",
+   "skill": "chr_0006_wolfgd_normal_skill"
+  },
+  {
+   "t": 72550,
+   "operator": "chr_0006_wolfgd",
+   "skill": "chr_0006_wolfgd_normal_skill"
+  },
+  {
+   "t": 75403,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_combo_skill"
+  },
+  {
+   "t": 75403,
+   "operator": "chr_0006_wolfgd",
+   "skill": "chr_0006_wolfgd_combo_skill"
   }
  ]
 }

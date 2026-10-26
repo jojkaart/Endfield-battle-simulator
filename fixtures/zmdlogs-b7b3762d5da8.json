@@ -16,7 +16,9 @@
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
    "Enemy level 90 is assumed, not logged.",
-   "Last Rite (batch-4 kit): only her ultimate's first two slashes (f86, f105) are logged; the third (atk_scale2, f134) is missing though the fight goes on to 18,024 ms (unexplained; the data has no condition on it). Her frame spacing is faster than 30 FPS (the combo's 50 frames in 1,307 ms: Si's talent-2 Haste, in-game test 19). Both logged slashes need talent 2's zoneScale (×1.5 on the whole Cryo Susceptibility on them)."
+   "Last Rite (batch-4 kit): only her ultimate's first two slashes (f86, f105) are logged; the third (atk_scale2, f134) is missing though the fight goes on to 18,024 ms (unexplained; the data has no condition on it). Her frame spacing is faster than 30 FPS (the combo's 50 frames in 1,307 ms: Si's talent-2 Haste, in-game test 19). Both logged slashes need talent 2's zoneScale (×1.5 on the whole Cryo Susceptibility on them).",
+   "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
   ]
  },
  "enemy": {
@@ -269,7 +271,11 @@
      "value": 0.12
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 275
+   }
   },
   {
    "t": 4770,
@@ -444,7 +450,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 270
+   }
   },
   {
    "t": 4953,
@@ -684,7 +694,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 260
+   }
   },
   {
    "t": 5229,
@@ -968,7 +982,11 @@
      "value": 0.128
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 255
+   }
   },
   {
    "t": 7150,
@@ -1041,7 +1059,11 @@
      "value": 0.128
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 245
+   }
   },
   {
    "t": 10155,
@@ -1386,7 +1408,11 @@
      "value": 0.108
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 225
+   }
   },
   {
    "t": 10615,
@@ -2392,7 +2418,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 223
+   }
   },
   {
    "t": 11368,
@@ -2645,7 +2675,11 @@
      "value": 0.16
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 206
+   }
   },
   {
    "t": 11462,
@@ -2784,7 +2818,11 @@
      "value": 0.16
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 206
+   }
   },
   {
    "t": 11462,
@@ -2923,7 +2961,11 @@
      "value": 0.16
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 221
+   }
   },
   {
    "t": 11462,
@@ -3303,7 +3345,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 204
+   }
   },
   {
    "t": 12197,
@@ -3441,7 +3487,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 204
+   }
   },
   {
    "t": 12197,
@@ -4245,7 +4295,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 204
+   }
   },
   {
    "t": 12287,
@@ -4515,7 +4569,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 202
+   }
   },
   {
    "t": 12380,
@@ -4653,7 +4711,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 202
+   }
   },
   {
    "t": 12380,
@@ -4923,7 +4985,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 202
+   }
   },
   {
    "t": 12471,
@@ -5193,7 +5259,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 2,
+    "bar": 200
+   }
   },
   {
    "t": 15042,
@@ -6009,7 +6079,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 195
+   }
   },
   {
    "t": 15374,
@@ -6813,7 +6887,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 175
+   }
   },
   {
    "t": 15558,
@@ -6945,7 +7023,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 165
+   }
   },
   {
    "t": 15652,
@@ -7359,7 +7441,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 160
+   }
   },
   {
    "t": 15927,
@@ -10040,6 +10126,43 @@
    ],
    "boundaryEffects": [],
    "unquantified": []
+  }
+ ],
+ "casts": [
+  {
+   "t": 1951,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_normal_skill"
+  },
+  {
+   "t": 4585,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 4585,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_ultimate_skill"
+  },
+  {
+   "t": 10155,
+   "operator": "chr_0027_tangtang",
+   "skill": "chr_0027_tangtang_ultimate_skill"
+  },
+  {
+   "t": 10248,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_normal_skill"
+  },
+  {
+   "t": 11462,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_combo_skill"
+  },
+  {
+   "t": 15280,
+   "operator": "chr_0036_jsspsi",
+   "skill": "chr_0036_jsspsi_normal_skill"
   }
  ]
 }

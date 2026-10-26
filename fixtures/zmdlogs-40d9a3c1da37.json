@@ -19,7 +19,8 @@
    "Si (chr_0036_jsspsi) has attributeNodes 2, not all 4: nodes chr_0036_jsspsi_5 and _7 (+15 and +20 Wisd) also need trust 300, which the log doesn't record. With all 4 every Si hit is predicted 3.83% high; with 2, her battle skill, basic attack and ultimate hits match exactly (inferred 2026-10-18).",
    "Hand annotation (not from the importer): Gilberta's ultimate hit at t=12951 ms lists buff_common_affixes_combo_trigger (source Camille) as unquantified. The log records that buff on Gilberta with zero duration and no effects at the moment of her cast, so the importer drops it, but it is Link: per rmxlinux BuffData a battle-skill or ultimate cast turns the combo_trigger stacks into buff_common_affixes_skillimbue_atk, a ComboCalcZone addition for that cast's hits. The hit is exactly 1.2000 × the prediction without it (24116 against 20097), Link's +20% at 1 stack (Talos Wiki), and ZMDLogs credits that part to Camille.",
    "With Camille's kit (batch 4): the Link stack is her combo's talent-1 ComboAction on the target with hovering Vesperwings (zmdlogs check predicts it), and the Heat burst logged at 7663 ms is her battle skill's Heat Infliction (6751 ms) on Laevatain's (6657 ms, the 7550 ms burst): zmdlogs reactions 3 matched, 0, 0 (2, 0, 1 without her kit).",
-   "Casts (the detail's skill events without damage) added 2026-10-25 from the same battle detail (efsim zmdlogs casts)."
+   "Casts (the detail's skill events without damage) added 2026-10-25 from the same battle detail (efsim zmdlogs casts).",
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
   ]
  },
  "enemy": {
@@ -291,7 +292,11 @@
      "value": 0.18
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 275
+   }
   },
   {
    "t": 6657,
@@ -395,7 +400,11 @@
      "value": 0.12
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 265
+   }
   },
   {
    "t": 6845,
@@ -701,7 +710,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 24,
+    "bar": 241
+   }
   },
   {
    "t": 8462,
@@ -912,7 +925,11 @@
      "value": 0.096
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 231
+   }
   },
   {
    "t": 9334,
@@ -1406,7 +1423,11 @@
      "since": 12951,
      "source": "chr_0033_camille"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 24,
+    "bar": 207
+   }
   },
   {
    "t": 13137,
@@ -3356,7 +3377,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 187
+   }
   },
   {
    "t": 14441,
@@ -3896,7 +3921,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 177
+   }
   },
   {
    "t": 15957,

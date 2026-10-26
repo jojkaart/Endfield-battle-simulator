@@ -54,6 +54,11 @@ export interface LogHit {
    * these only match once the engine models the buff.
    */
   readonly unquantified: readonly { readonly buff: string; readonly since: number; readonly source: string }[];
+  /**
+   * The Stagger the hit dealt, as the log has it (poiseDamage): `dealt` (positive) and the enemy's Stagger bar
+   * after it. Absent on hits that dealt none, and in fixtures imported before 2026-10-26 (zmdlogsPoise).
+   */
+  readonly poise?: { readonly dealt: number; readonly bar: number };
 }
 
 export interface LogFixture {
@@ -98,6 +103,34 @@ export function zmdlogsCasts(detail: unknown, team: readonly string[]): LogCast[
     })
     .filter((c) => team.includes(c.operator))
     .sort((x, y) => x.t - y.t);
+}
+
+/** A damage event's logged Stagger (LogHit.poise), if it dealt any. */
+function poiseOf(e: Json): LogHit["poise"] {
+  const p = e["poiseDamage"];
+  if (p === null || p === undefined) return undefined;
+  const q = o(p, "poiseDamage");
+  const dealt = -n(q["value"], "poiseDamage.value");
+  return dealt > 0 ? { dealt, bar: n(q["current_value"], "poiseDamage.current_value") } : undefined;
+}
+
+/** A detail's damage events (positive value), in its order: one fixture hit each (zmdlogsToFixture). */
+function damageEvents(detail: unknown): Json[] {
+  return a(o(detail, "detail")["timelineEvents"], "timelineEvents").map((e) => o(e, "event")).filter((e) => typeof e["value"] === "number" && e["value"] > 0);
+}
+
+/**
+ * The logged Stagger of each of a fixture's hits (LogHit.poise), from the battle detail it was imported from: the
+ * hits are the detail's damage events in order, which this checks (time, event and damage).
+ */
+export function zmdlogsPoise(detail: unknown, hits: readonly Pick<LogHit, "t" | "event" | "value">[]): LogHit["poise"][] {
+  const events = damageEvents(detail);
+  if (events.length !== hits.length) throw new Error(`ZMDLogs: the detail has ${events.length} damage events, the fixture ${hits.length} hits`);
+  return events.map((e, i) => {
+    const h = hits[i] as Pick<LogHit, "t" | "event" | "value">;
+    if (e["tsMsFromStart"] !== h.t || e["eventKey"] !== h.event || e["value"] !== h.value) throw new Error(`ZMDLogs: hit ${i} (${h.t} ms ${h.event} ${h.value}) isn't the detail's damage event ${String(e["tsMsFromStart"])} ms ${String(e["eventKey"])} ${String(e["value"])}`);
+    return poiseOf(e);
+  });
 }
 
 const UA = "EndfieldBattleSimulator/0.1 (https://github.com/jojkaart/Endfield-battle-simulator)";
@@ -234,8 +267,9 @@ export function zmdlogsToFixture(battleId: string, detail: unknown, exported: un
     });
 
   const hits: LogHit[] = [];
-  for (const e of events) {
-    if (typeof e["value"] !== "number" || e["value"] <= 0) continue;
+  for (const e of damageEvents(detail)) {
+    if (typeof e["value"] !== "number") continue;
+    const poise = poiseOf(e);
     const t = n(e["tsMsFromStart"], "tsMsFromStart");
     const source = s(e["sourceCharacterKey"], "sourceCharacterKey");
     const operator = source === ENDMIN_VIRTUAL ? ENDMIN : source;
@@ -263,6 +297,7 @@ export function zmdlogsToFixture(battleId: string, detail: unknown, exported: un
       unquantified: [...inside, ...boundary]
         .filter((b) => Array.isArray(b["dynamicEffects"]) && (b["dynamicEffects"] as unknown[]).length > 0)
         .map((b) => ({ buff: s(b["eventKey"], "eventKey").replace(/::.*$/, ""), since: start(b), source: ((k) => (k === ENDMIN_VIRTUAL ? ENDMIN : k))(s(b["sourceCharacterKey"], "sourceCharacterKey")) })),
+      ...(poise ? { poise } : {}),
     });
   }
 

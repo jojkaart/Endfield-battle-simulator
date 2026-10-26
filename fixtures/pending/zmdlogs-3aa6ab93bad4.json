@@ -15,7 +15,9 @@
   },
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
-   "Enemy level 90 from the stage's DungeonTable entry (dung02_bossrush04_03)."
+   "Enemy level 90 from the stage's DungeonTable entry (dung02_bossrush04_03).",
+   "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
   ]
  },
  "enemy": {
@@ -254,7 +256,11 @@
    "element": "pulse",
    "effects": [],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 375
+   }
   },
   {
    "t": 4664,
@@ -319,7 +325,11 @@
      "value": 0.168
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 370
+   }
   },
   {
    "t": 10112,
@@ -374,7 +384,11 @@
      "value": 0.128
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 360
+   }
   },
   {
    "t": 12107,
@@ -620,7 +634,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 7,
+    "bar": 353
+   }
   },
   {
    "t": 14247,
@@ -746,7 +764,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 333
+   }
   },
   {
    "t": 14534,
@@ -1150,7 +1172,11 @@
      "value": 0.24
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 7,
+    "bar": 326
+   }
   },
   {
    "t": 16095,
@@ -1372,7 +1398,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 311
+   }
   },
   {
    "t": 16521,
@@ -1517,7 +1547,11 @@
      "value": 0.09
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 306
+   }
   },
   {
    "t": 17470,
@@ -1979,7 +2013,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 288
+   }
   },
   {
    "t": 17976,
@@ -2659,7 +2697,11 @@
      "value": 0.16
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 278
+   }
   },
   {
    "t": 19353,
@@ -3602,7 +3644,11 @@
      "value": 0.12
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 273
+   }
   },
   {
    "t": 20247,
@@ -3863,7 +3909,11 @@
      "value": 0.09
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 268
+   }
   },
   {
    "t": 21902,
@@ -4248,7 +4298,11 @@
      "value": 0.2
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 258
+   }
   },
   {
    "t": 22289,
@@ -4879,7 +4933,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 243
+   }
   },
   {
    "t": 23403,
@@ -5599,7 +5657,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 225
+   }
   },
   {
    "t": 25197,
@@ -6544,7 +6606,11 @@
      "value": 0.12
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 215
+   }
   },
   {
    "t": 29041,
@@ -6792,7 +6858,11 @@
      "value": 0.128
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 205
+   }
   },
   {
    "t": 29143,
@@ -7392,7 +7462,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 190
+   }
   },
   {
    "t": 30129,
@@ -7909,7 +7983,11 @@
      "value": 0.168
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 185
+   }
   },
   {
    "t": 31179,
@@ -9595,7 +9673,11 @@
      "value": 0.09
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 180
+   }
   },
   {
    "t": 33003,
@@ -12649,7 +12731,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 162
+   }
   },
   {
    "t": 34702,
@@ -13147,7 +13233,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 147
+   }
   },
   {
    "t": 36625,
@@ -13334,7 +13424,11 @@
      "value": 0.2
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 137
+   }
   },
   {
    "t": 36726,
@@ -13659,7 +13753,11 @@
      "value": 0.09
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 132
+   }
   },
   {
    "t": 38044,
@@ -14417,7 +14515,11 @@
      "value": 0.12
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 112
+   }
   },
   {
    "t": 40208,
@@ -14573,7 +14675,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 94
+   }
   },
   {
    "t": 40208,
@@ -15726,7 +15832,11 @@
      "value": 0.09
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 89
+   }
   },
   {
    "t": 43786,
@@ -16200,7 +16310,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 7,
+    "bar": 82
+   }
   },
   {
    "t": 44094,
@@ -16616,7 +16730,11 @@
      "value": 0.2
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 72
+   }
   },
   {
    "t": 44301,
@@ -17892,7 +18010,11 @@
      "value": 0.09
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 67
+   }
   },
   {
    "t": 45364,
@@ -18425,7 +18547,11 @@
    "element": "pulse",
    "effects": [],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 390
+   }
   },
   {
    "t": 68155,
@@ -18771,7 +18897,11 @@
      "value": 0.168
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 385
+   }
   },
   {
    "t": 69021,
@@ -19595,7 +19725,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 367
+   }
   },
   {
    "t": 72067,
@@ -19698,7 +19832,11 @@
      "value": 0.16
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 357
+   }
   },
   {
    "t": 73675,
@@ -20143,7 +20281,11 @@
      "value": 0.09
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 337
+   }
   },
   {
    "t": 76572,
@@ -20306,7 +20448,11 @@
      "value": 0.2
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 327
+   }
   },
   {
    "t": 76775,
@@ -20457,7 +20603,11 @@
      "value": 0.12
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 322
+   }
   },
   {
    "t": 77078,
@@ -21166,7 +21316,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 302
+   }
   },
   {
    "t": 79418,
@@ -21856,7 +22010,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 287
+   }
   },
   {
    "t": 80234,
@@ -24258,7 +24416,11 @@
      "value": 0.128
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 277
+   }
   },
   {
    "t": 87518,
@@ -24384,7 +24546,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 262
+   }
   },
   {
    "t": 87518,
@@ -27420,7 +27586,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 237
+   }
   },
   {
    "t": 96508,
@@ -27770,7 +27940,11 @@
      "value": 0.168
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 232
+   }
   },
   {
    "t": 96912,
@@ -30688,7 +30862,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 214
+   }
   },
   {
    "t": 99587,
@@ -31085,7 +31263,11 @@
      "value": 0.16
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 204
+   }
   },
   {
    "t": 100537,
@@ -31374,7 +31556,11 @@
      "value": 0.09
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 199
+   }
   },
   {
    "t": 101878,
@@ -31705,7 +31891,11 @@
      "value": 0.2
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 189
+   }
   },
   {
    "t": 102283,
@@ -33476,7 +33666,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 174
+   }
   },
   {
    "t": 105496,
@@ -33554,7 +33748,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 7,
+    "bar": 167
+   }
   },
   {
    "t": 105496,
@@ -33843,7 +34041,11 @@
      "value": 0.12
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 162
+   }
   },
   {
    "t": 106006,
@@ -35549,7 +35751,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 144
+   }
   },
   {
    "t": 109015,
@@ -36253,7 +36459,11 @@
      "value": 0.128
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 134
+   }
   },
   {
    "t": 112058,
@@ -37107,7 +37317,11 @@
      "value": 0.09
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 129
+   }
   },
   {
    "t": 113342,
@@ -37449,7 +37663,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 114
+   }
   },
   {
    "t": 113730,
@@ -41583,7 +41801,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 84
+   }
   },
   {
    "t": 121770,
@@ -41686,7 +41908,11 @@
      "value": 0.168
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 79
+   }
   },
   {
    "t": 121972,
@@ -42256,7 +42482,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 61
+   }
   },
   {
    "t": 122687,
@@ -42798,7 +43028,11 @@
      "value": 0.2
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 51
+   }
   },
   {
    "t": 124449,
@@ -42991,7 +43225,11 @@
      "value": 0.24
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 41
+   }
   },
   {
    "t": 124959,
@@ -44071,7 +44309,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 31
+   }
   },
   {
    "t": 141253,
@@ -44486,7 +44728,11 @@
      "value": 0.168
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 26
+   }
   },
   {
    "t": 143215,
@@ -44654,7 +44900,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 8
+   }
   },
   {
    "t": 144841,
@@ -44817,7 +45067,11 @@
      "value": 0.16
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 0
+   }
   },
   {
    "t": 145742,
@@ -44962,7 +45216,11 @@
      "value": 0.09
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 0
+   }
   },
   {
    "t": 146858,
@@ -45347,7 +45605,11 @@
      "value": 0.2
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 0
+   }
   },
   {
    "t": 147244,
@@ -46638,7 +46900,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 15,
+    "bar": 0
+   }
   },
   {
    "t": 150597,
@@ -46752,7 +47018,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 0
+   }
   },
   {
    "t": 150698,
@@ -46977,6 +47247,178 @@
    ],
    "boundaryEffects": [],
    "unquantified": []
+  }
+ ],
+ "casts": [
+  {
+   "t": 5232,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 5736,
+   "operator": "chr_0030_zhuangfy",
+   "skill": "chr_0030_zhuangfy_ultimate_skill"
+  },
+  {
+   "t": 12107,
+   "operator": "chr_0007_ikut",
+   "skill": "chr_0007_ikut_ultimate_skill"
+  },
+  {
+   "t": 14534,
+   "operator": "chr_0030_zhuangfy",
+   "skill": "chr_0030_zhuangfy_normal_skill"
+  },
+  {
+   "t": 19639,
+   "operator": "chr_0030_zhuangfy",
+   "skill": "chr_0030_zhuangfy_normal_skill"
+  },
+  {
+   "t": 19864,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 21154,
+   "operator": "chr_0004_pelica",
+   "skill": "chr_0004_pelica_combo_skill"
+  },
+  {
+   "t": 25197,
+   "operator": "chr_0030_zhuangfy",
+   "skill": "chr_0030_zhuangfy_normal_skill"
+  },
+  {
+   "t": 30832,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 31502,
+   "operator": "chr_0030_zhuangfy",
+   "skill": "chr_0030_zhuangfy_normal_skill"
+  },
+  {
+   "t": 38996,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 40412,
+   "operator": "chr_0030_zhuangfy",
+   "skill": "chr_0030_zhuangfy_normal_skill"
+  },
+  {
+   "t": 41751,
+   "operator": "chr_0004_pelica",
+   "skill": "chr_0004_pelica_combo_skill"
+  },
+  {
+   "t": 43786,
+   "operator": "chr_0007_ikut",
+   "skill": "chr_0007_ikut_ultimate_skill"
+  },
+  {
+   "t": 68819,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 75359,
+   "operator": "chr_0004_pelica",
+   "skill": "chr_0004_pelica_combo_skill"
+  },
+  {
+   "t": 76265,
+   "operator": "chr_0030_zhuangfy",
+   "skill": "chr_0030_zhuangfy_normal_skill"
+  },
+  {
+   "t": 76572,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 82923,
+   "operator": "chr_0030_zhuangfy",
+   "skill": "chr_0030_zhuangfy_normal_skill"
+  },
+  {
+   "t": 95964,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 100840,
+   "operator": "chr_0030_zhuangfy",
+   "skill": "chr_0030_zhuangfy_normal_skill"
+  },
+  {
+   "t": 101504,
+   "operator": "chr_0004_pelica",
+   "skill": "chr_0004_pelica_combo_skill"
+  },
+  {
+   "t": 105296,
+   "operator": "chr_0007_ikut",
+   "skill": "chr_0007_ikut_ultimate_skill"
+  },
+  {
+   "t": 105496,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 109116,
+   "operator": "chr_0030_zhuangfy",
+   "skill": "chr_0030_zhuangfy_normal_skill"
+  },
+  {
+   "t": 117222,
+   "operator": "chr_0030_zhuangfy",
+   "skill": "chr_0030_zhuangfy_ultimate_skill"
+  },
+  {
+   "t": 118037,
+   "operator": "chr_0030_zhuangfy",
+   "skill": "chr_0030_zhuangfy_normal_skill"
+  },
+  {
+   "t": 121565,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 123454,
+   "operator": "chr_0004_pelica",
+   "skill": "chr_0004_pelica_combo_skill"
+  },
+  {
+   "t": 125651,
+   "operator": "chr_0030_zhuangfy",
+   "skill": "chr_0030_zhuangfy_normal_skill"
+  },
+  {
+   "t": 128960,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 142123,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 145742,
+   "operator": "chr_0030_zhuangfy",
+   "skill": "chr_0030_zhuangfy_normal_skill"
+  },
+  {
+   "t": 146452,
+   "operator": "chr_0004_pelica",
+   "skill": "chr_0004_pelica_combo_skill"
   }
  ]
 }

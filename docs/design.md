@@ -357,7 +357,7 @@ what the log doesn't list, and the check reads it, no assumption:
   with those landings critting agrees;
 - **casts without logged damage**: the log's cast events
   (`LogFixture.casts`, from the detail's skill events without damage;
-  `zmdlogs casts` adds them to an older fixture), else a cast inferred from
+  `zmdlogs refresh` adds them to an older fixture), else a cast inferred from
   the lane of the one buff it applies (`castsFromBuffLanes`).
 A fact the replay's own timing could change is unknown: Link or a
 consumable that starts, ends or is used by another cast within

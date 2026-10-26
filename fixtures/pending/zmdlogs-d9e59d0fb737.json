@@ -15,7 +15,9 @@
   },
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
-   "Enemy level 90 is assumed, not logged."
+   "Enemy level 90 is assumed, not logged.",
+   "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
   ]
  },
  "enemy": {
@@ -254,7 +256,11 @@
    "element": "natural",
    "effects": [],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 260
+   }
   },
   {
    "t": 6098,
@@ -302,7 +308,11 @@
      "since": 6098,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 250
+   }
   },
   {
    "t": 6325,
@@ -344,7 +354,11 @@
      "since": 6098,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 24,
+    "bar": 226
+   }
   },
   {
    "t": 9503,
@@ -592,7 +606,11 @@
      "since": 6098,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 5,
+    "bar": 221
+   }
   },
   {
    "t": 9934,
@@ -2536,7 +2554,11 @@
      "since": 6098,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 6,
+    "bar": 183.465
+   }
   },
   {
    "t": 11727,
@@ -2942,7 +2964,11 @@
      "since": 6098,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 6,
+    "bar": 183.465
+   }
   },
   {
    "t": 11830,
@@ -3045,7 +3071,11 @@
      "since": 6098,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 20,
+    "bar": 163.465
+   }
   },
   {
    "t": 11830,
@@ -3148,7 +3178,11 @@
      "since": 6098,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 20,
+    "bar": 163.465
+   }
   },
   {
    "t": 12037,
@@ -3420,7 +3454,11 @@
      "since": 6098,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 153.465
+   }
   },
   {
    "t": 12346,
@@ -3559,7 +3597,11 @@
      "since": 6098,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 153.465
+   }
   },
   {
    "t": 12450,
@@ -3740,7 +3782,11 @@
      "since": 6098,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 5,
+    "bar": 148.465
+   }
   },
   {
    "t": 12450,
@@ -3921,7 +3967,11 @@
      "since": 6098,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 138.465
+   }
   },
   {
    "t": 12553,
@@ -6042,7 +6092,11 @@
      "since": 6098,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 128.465
+   }
   },
   {
    "t": 13520,
@@ -10912,6 +10966,53 @@
      "source": "chr_0032_lizhiyan"
     }
    ]
+  }
+ ],
+ "casts": [
+  {
+   "t": 4415,
+   "operator": "chr_0034_typhoea",
+   "skill": "chr_0034_typhoea_ultimate_skill"
+  },
+  {
+   "t": 9483,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
+  },
+  {
+   "t": 9483,
+   "operator": "chr_0035_liino",
+   "skill": "chr_0035_liino_ultimate_skill"
+  },
+  {
+   "t": 9605,
+   "operator": "chr_0034_typhoea",
+   "skill": "chr_0034_typhoea_ultimate_skill"
+  },
+  {
+   "t": 11727,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_normal_skill"
+  },
+  {
+   "t": 11727,
+   "operator": "chr_0034_typhoea",
+   "skill": "chr_0034_typhoea_combo_skill"
+  },
+  {
+   "t": 13005,
+   "operator": "chr_0034_typhoea",
+   "skill": "chr_0034_typhoea_ultimate_skill"
+  },
+  {
+   "t": 13315,
+   "operator": "chr_0035_liino",
+   "skill": "chr_0035_liino_ultimate_skill"
+  },
+  {
+   "t": 13829,
+   "operator": "chr_0032_lizhiyan",
+   "skill": "chr_0032_lizhiyan_combo_skill"
   }
  ]
 }

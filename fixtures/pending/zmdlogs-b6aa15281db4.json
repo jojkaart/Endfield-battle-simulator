@@ -19,7 +19,8 @@
    "The owner's team (Si, Last Rite, Arcane, Xaihi), imported 2026-10-25 for it.",
    "The player swaps: Xaihi's crystal Amp (buff_common_affixes_enhance_spell, only for the controlled operator's Final Strike) goes to Si at 23.15 s and to Last Rite at 27.07 s (times from the site's detail).",
    "Last Rite's Mirages (2026-10-25, read from the detail, not yet by the check): her battle skill at 15.40 s; Arcane's Final Strike at 18.36 s brings one buff_chr_0026_lastrite_normal_skill_phantom pair at 18.66 s (+9 frames, as the kit has it); the controlled Final Strikes of Si (22.92 s) and Last Rite (26.82 s) within the perfusion's 15 s bring none. That contradicts the kit's trigger mirage (each member's perfusion acts once: docs/kit-batches/batch-4/chr_0026_lastrite.md G4, in-game test 83) and points to one use per cast for the team. Kit not changed.",
-   "Xaihi's combo (27.28 s) comes before Last Rite's (29.01 s), with her Cryo burst at 31.36 s; she wields Chivalric Virtues (wpn_funnel_0010)."
+   "Xaihi's combo (27.28 s) comes before Last Rite's (29.01 s), with her Cryo burst at 31.36 s; she wields Chivalric Virtues (wpn_funnel_0010).",
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
   ]
  },
  "enemy": {
@@ -265,7 +266,11 @@
      "value": 0.21
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 315
+   }
   },
   {
    "t": 1104,
@@ -319,7 +324,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 310
+   }
   },
   {
    "t": 1624,
@@ -1544,7 +1553,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 25,
+    "bar": 280
+   }
   },
   {
    "t": 5415,
@@ -2855,7 +2868,11 @@
      "value": 0.153937
     }
    ],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 5,
+    "bar": 275
+   }
   },
   {
    "t": 7618,
@@ -3878,7 +3895,11 @@
     }
    ],
    "boundaryEffects": [],
-   "unquantified": []
+   "unquantified": [],
+   "poise": {
+    "dealt": 25,
+    "bar": 250
+   }
   },
   {
    "t": 11116,
@@ -4022,7 +4043,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 240
+   }
   },
   {
    "t": 11432,
@@ -4076,7 +4101,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 240
+   }
   },
   {
    "t": 11432,
@@ -5136,7 +5165,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 230
+   }
   },
   {
    "t": 13739,
@@ -5658,7 +5691,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 17,
+    "bar": 213
+   }
   },
   {
    "t": 15818,
@@ -6614,7 +6651,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 17,
+    "bar": 191
+   }
   },
   {
    "t": 18464,
@@ -6999,7 +7040,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 5,
+    "bar": 186
+   }
   },
   {
    "t": 19557,
@@ -8309,7 +8354,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 18,
+    "bar": 168
+   }
   },
   {
    "t": 23026,
@@ -8472,7 +8521,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 5,
+    "bar": 163
+   }
   },
   {
    "t": 23439,
@@ -10093,7 +10146,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 5,
+    "bar": 158
+   }
   },
   {
    "t": 26697,
@@ -10243,7 +10300,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 25,
+    "bar": 133
+   }
   },
   {
    "t": 27174,
@@ -10400,7 +10461,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 123
+   }
   },
   {
    "t": 28311,
@@ -12068,7 +12133,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 15,
+    "bar": 108
+   }
   },
   {
    "t": 32034,
@@ -12183,7 +12252,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 15,
+    "bar": 108
+   }
   },
   {
    "t": 32034,
@@ -13345,7 +13418,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 5,
+    "bar": 103
+   }
   },
   {
    "t": 35296,
@@ -13714,7 +13791,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 93
+   }
   },
   {
    "t": 37561,
@@ -14605,7 +14686,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 5,
+    "bar": 88
+   }
   },
   {
    "t": 37772,
@@ -17193,7 +17278,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 78
+   }
   },
   {
    "t": 39201,
@@ -17818,7 +17907,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 20,
+    "bar": 58
+   }
   },
   {
    "t": 40138,
@@ -18503,7 +18596,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 15,
+    "bar": 43
+   }
   },
   {
    "t": 40244,
@@ -18690,7 +18787,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 15,
+    "bar": 28
+   }
   },
   {
    "t": 40244,
@@ -18877,7 +18978,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 15,
+    "bar": 28
+   }
   },
   {
    "t": 43781,
@@ -19058,7 +19163,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 5,
+    "bar": 23
+   }
   },
   {
    "t": 43884,
@@ -21396,7 +21505,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 5,
+    "bar": 18
+   }
   },
   {
    "t": 44403,
@@ -23538,7 +23651,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 8
+   }
   },
   {
    "t": 45050,
@@ -24715,7 +24832,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 10,
+    "bar": 0
+   }
   },
   {
    "t": 46635,
@@ -25207,7 +25328,11 @@
      "since": 11432,
      "source": "chr_0032_lizhiyan"
     }
-   ]
+   ],
+   "poise": {
+    "dealt": 5,
+    "bar": 0
+   }
   },
   {
    "t": 47050,
