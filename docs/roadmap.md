@@ -9,13 +9,13 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
 ## Next steps
 
 0. **Engine accuracy first** (the owner, 2026-10-26: above the search's
-   scoring): [accuracy-plan.md](accuracy-plan.md). Phase A makes the log
-   check measure the engine (casts merged under 1 s, Si's Final Stroke,
-   unknown crits, damage past the kill, the Endministrator's event prefix,
-   hitless casts' Amp); then B: Stagger (wrong windows in 22 of 29 logs),
-   teammates' own basic attacks (the owner: they attack, slower, not
-   during e.g. Liino's stance), SP recovery, Corrosion, Solidification / Combustion durations, a
-   reaction's own hit, the favourites' kit leads.
+   scoring): [accuracy-plan.md](accuracy-plan.md). Phase A and B1
+   (Stagger) are done; next B0's other half, teammates' own basic attacks
+   in `simulate` and the search (the owner: they attack, slower, not
+   during e.g. Liino's stance; their pace measurable now that the replay
+   knows who's controlled), then SP recovery, Corrosion, Solidification /
+   Combustion durations, a reaction's own hit, the favourites' kit leads
+   (Arcane's Nature burst in dbae).
 1. **The tool's purpose: team rotations for the owner's favourites**
    (Typhoeus, Arcane, Si, Gilberta, Liino, Estella, Laevatain; 6-stars P0,
    4- and 5-stars P5 unless the owner's account says otherwise; no swaps by
@@ -24,9 +24,8 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
    for what a state holds), then searches of the favourites' teams and a
    report of the best rotations found. Ask the owner for their roster.
 2. **Log check leads** (design.md "The log check's rule"; the report names
-   them, largest first): the replay's Stagger (Staggered in 4e5e 23–34 s and
-   bdf2 19–24 s where the log has none; re-import with `poiseDamage` per
-   hit to compare), Rossi's Wolven Blood layers, Typhoeus's hover through
+   them, largest first): Stagger the log has that no logged hit explains
+   (4e5e: 24 at 53.2 s), Rossi's Wolven Blood layers, Typhoeus's hover through
    her combo, Arcane's Solemn Phalanx WILL buffs, Camille's weapon ATK the
    log stops listing, the replay's inflictions against the log's reactions
    (one enemy replay instead of reactioncheck.ts's own), statuses and

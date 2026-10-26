@@ -16,7 +16,7 @@ export type { RotationAction, TimelineOptions, TimelineScenario, EnemyActionSpec
 export { SP, ENERGY, COMBO_WINDOW_FRAMES, TIMELINE_ASSUMPTIONS, DODGE, JUMP, diveFrames, linkValue } from "./timeline/rules.ts";
 export { createContext, panelAt, enemyActionsOf, enemyHpAt } from "./timeline/context.ts";
 export type { EnergyGrantOptions } from "./timeline/resources.ts";
-export { staggerFrames } from "./timeline/resources.ts";
+export { refillPoise, staggerFrames } from "./timeline/resources.ts";
 export { exclusiveUntil, earliestStart } from "./timeline/timing.ts";
 export { landingDamage, nextRandom } from "./timeline/landing.ts";
 export { advance, memoised } from "./timeline/advance.ts";

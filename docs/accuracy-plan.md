@@ -116,8 +116,8 @@ Ranked by breadth (every fight first), then the owner's favourites.
 
 | # | mechanic | now | what the data / logs say | impact |
 |---|---|---|---|---|
-| B0 | **Teammates' own basic attacks** | only the controlled operator basic-attacks (timing.ts:297) | the owner: they do, slower than the controlled operator, and some skills stop it for their own operator only (Liino's Vocalist Stance and ultimate stop Liino's basic attacks, not the others'; the stance deals its damage through the skill instead; the owner, 2026-10-26). To settle from the logs: each operator's pace when not controlled (the gaps between its basic chains in fights where another is controlled), which chain steps it uses, whether its Final Strikes count; from the data: the main-character-only flags (`onlyEnableForMainChar` on 48 basic-attack files, `onlyExecuteWhenSourceIsMainChar` on 125) say which effects an uncontrolled attack doesn't get, and what blocks an operator's own (Liino's stance and ultimate: find the tag or action) | every team: ~2% per teammate plus what their hits trigger |
-| B1 | **Stagger** | the bar only falls (packages/engine/src/timeline/resources.ts:211–240); the 50% node is only an event | logs: the engine's first Stagger comes at 0.25–0.96× the game's time (4e5e 23 s vs 67 s; bdf2 Staggered where the game never was); windows ~10 s vs the log's 7–19 s; 1,447 hits Staggered only in the engine (×0.77), 1,329 only in the log. Data: RecoverPoiseAction (`buff_common_recoverpoise`, `enemy_patrolregen`), ModifyResilienceDecreaseFactor; the node's buff (`buff_common_mini_poise_break`, 2.5 s, an interrupt and 0.5 s slow) | every fight: ×1.3 for ~10 s per window; per-fight totals −10% to +30% |
+| B0 | **Teammates' own basic attacks** (in the replay since 2026-10-26: B1 below; `simulate` and the search still to do) | only the controlled operator basic-attacks (timing.ts:297) | the owner: they do, slower than the controlled operator, and some skills stop it for their own operator only (Liino's Vocalist Stance and ultimate stop Liino's basic attacks, not the others'; the stance deals its damage through the skill instead; the owner, 2026-10-26). To settle from the logs: each operator's pace when not controlled (the gaps between its basic chains in fights where another is controlled), which chain steps it uses, whether its Final Strikes count; from the data: the main-character-only flags (`onlyEnableForMainChar` on 48 basic-attack files, `onlyExecuteWhenSourceIsMainChar` on 125) say which effects an uncontrolled attack doesn't get, and what blocks an operator's own (Liino's stance and ultimate: find the tag or action) | every team: ~2% per teammate plus what their hits trigger |
+| B1 | **Stagger** (done 2026-10-26, below) | the bar only falls (packages/engine/src/timeline/resources.ts:211–240); the 50% node is only an event | logs: the engine's first Stagger comes at 0.25–0.96× the game's time (4e5e 23 s vs 67 s; bdf2 Staggered where the game never was); windows ~10 s vs the log's 7–19 s; 1,447 hits Staggered only in the engine (×0.77), 1,329 only in the log. Data: RecoverPoiseAction (`buff_common_recoverpoise`, `enemy_patrolregen`), ModifyResilienceDecreaseFactor; the node's buff (`buff_common_mini_poise_break`, 2.5 s, an interrupt and 0.5 s slow) | every fight: ×1.3 for ~10 s per window; per-fight totals −10% to +30% |
 | B2 | **SP recovery after spending** | 8/s, paused 1.5 s after spending (rules.ts:14, from older Endaxis notes) | the game's native skill settings (Endaxis's extraction, revision 1.5.3) have `atbRecoverInterval: 0.5`, which Endaxis's simulator reads as the pause; Zero Sanity: 7.69/s, no pause | every SP-bound team: rossi-gilberta +7.8% with 0.5 s; whether 0.5 is the pause or a tick interval needs a check (a log with SP, or an in-game test) |
 | B3 | **Corrosion** | ramp in whole seconds from application, paused only by a full stop; no carry-over on reapplication (reactions.ts:79–87) | data: the wrapper copies the existing Corrosion's `def_decrease` (carry-over); the settings' initial shred by level (−3.6 / −4.8 / −6 / −7.2) and 15 s; logs need ~4.5 points at 6.5 s where the model gives ≥ 11.9 | Arcane, Gilberta, Typhoeus, Ardelia: likely 5–10% too high while Corrosion is up |
 | B4 | **Solidification duration** | 5.75–8.75 s (status.ts:82) | the native settings: 6 / 7 / 8 / 9 s (settles in-game test 71) | Estella teams, +0.25 s each |
@@ -128,6 +128,55 @@ Ranked by breadth (every fight first), then the owner's favourites.
 | B9 | **Crit-triggered effects under expected crits** | never fire (`simulate`'s default); the search switches to rolled crits | an expected-value model (each trigger at its crit rate), or `simulate` defaulting to rolled crits with many runs | Rossi about −30%, crit-trigger weapons |
 | B10 | **Hit-stop** | not modelled (281 files, 33 operators) | log chain timings: Camille and Si match the engine, Arcane ~4% slower, Rossi 15–20% slower; the curves exist (Endaxis's catalogue, read only) | timing; settle per operator from the logs' chain timings before modelling |
 | B11 | Smaller | `NOT_MODELLED` text still lists Link and finisher as ×1 (damage.ts:83; both are modelled); a skill's SP arrives at its first hit; hitless skills' SP; perfect-dodge SP 7 vs 7.5 (test 52) | — | small |
+
+B1 done (2026-10-26), with B0's half in the replay. From all 29 logs'
+`poiseDamage` (now each fixture hit's `poise`, `efsim zmdlogs refresh`):
+- **Stagger per hit is right.** The engine's bar follows the log's hit
+  for hit wherever the replay has the right controlled operator (4e5e
+  to 28.8 s and from 42 s on; Lift's 10 × (1 + AI/200) included). The
+  reactions' poise in the log is the triggering hit's, credited twice
+  (the bar drops once).
+- **The bar doesn't recover on its own.** No rise between hits in 29
+  fights, even over gaps of 10–38 s (in-game test 99 answered). It
+  refills at a Stagger's end, and in jumps straight to full that are the
+  enemy's own: a second life (3aa6, c3c7, d774 at HP 0 → 100%), and
+  Rhodagn at 29.5 / 33.2 / 37–45 s in three of five fights, not at a
+  fixed HP (two fights passed 70% without it). The engine gains an enemy
+  action `recover` (refillPoise), and the replay takes these jumps from
+  the log (loggedRecoveries). What sets off Rhodagn's is test 100.
+- **Stagger lasts PoiseRecTime** (attribute 21 × 31) **plus the time
+  stops**: the logged windows (real time) are the enemy's 9–11 s plus
+  the ultimates' and combos' stops inside them, plus 0.3–2.3 s (median
+  ~1.1 s) nothing explains yet (hit-stop, B10?). Short windows are the
+  fight's end, or a recovery cutting them.
+- **Teammates' Final Strikes deal no Stagger** (onlyEnableForMainChar):
+  one operator per fight has Stagger on its basic hits. The replay made
+  every basic attacker controlled, so teammates' attacks (B0) Staggered
+  and took the controlled path. Now the controlled operator comes from
+  the log (controlledFromLog: basic hits with Stagger; the swap at the
+  start of the next one's run of basic casts), and the others' basic
+  casts replay as their own (`replayCast` `teammate`).
+- Along the way: the refresh added the logged casts to 23 fixtures (A's
+  "casts missing" leftover), and a logged cast placed inside its
+  operator's own cantCastSkill channel no longer cuts the running cast
+  (Xaihi's ultimate Amp: A6's leftover).
+
+Measured (totals error, plain matches) from before the refresh:
+abfd −34.6 → −6.5% (31 → 270), e82d −32.7 → −9.1% (3 → 18), 458b
+−15.2 → −1.7% (294 → 442), 99fb −42.5 → −26.4%, a7a7 −33.4 → −19.4%
+(0 → 137), 9555 −20.9 → −15.5% (124 → 179), c6d8 −19.5 → −9.1%, b6aa
+−20.5 → −5.6%, 012a −13.6 → −2.3%, dbae −20.6 → +5.7%; plain d572
+551 → 637, 4bfc 121 → 198, 4e5e 189 → 228, 40d9 23 → 51, bdf2 79 → 104.
+Some totals moved away from 0 as the replay stopped Staggering where the
+game didn't (that had offset other deficits): 4e5e −0.7 → −5.2%, bdf2
++0.5 → −2.7%, 40d9 0 → −1.9%, c3c7 +0.1 → +7.9%, 4e36 +17.2 → +21.5%.
+dbae moved to pending: Xaihi's hits need Arcane's
+Nature burst at 10341 ms, which the reaction replay doesn't make (B8).
+Left: 4e5e's bar 24 lower than the engine's from 53.2 s (unattributed
+Stagger at Estella's projectile and a Cryo-on-Heat reaction), which
+costs Rossi's killing blow its Stagger; B0's other half, teammates'
+attacks in `simulate` and the search (their pace, from the logs now
+that the replay knows who's controlled).
 
 ## Phase C: questions for the owner (they decide what to model)
 
@@ -143,7 +192,8 @@ Ranked by breadth (every fight first), then the owner's favourites.
 
 ## Phase D: in-game tests (re-ranked by what they decide)
 
-1. **99** Stagger bar without hits (B1).
+1. **100** what makes Rhodagn's Stagger bar snap back to full (B1; 99
+   is answered by the logs: the bar doesn't recover on its own).
 2. **New: SP recovery** — cast battle skills from empty SP and time 3–4
    casts: with a 1.5 s pause each costs about 1 s more than with 0.5 s (B2).
 3. **18** what a time stop freezes (cooldowns, the caster's buffs, SP):

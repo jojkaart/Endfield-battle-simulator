@@ -945,6 +945,25 @@ describe("timeline: stagger and finishers", () => {
     expect((a2?.exact ?? 0) / (plain?.exact ?? 1)).toBeCloseTo(1.3, 9);
   });
 
+  it("the bar doesn't recover on its own; an enemy action `recover` refills it and ends a Stagger", () => {
+    const sc = (extra: Partial<TimelineScenario>): TimelineScenario => ({ ...scenario([]), durationFrames: 900, ...extra });
+    const run = (g: GameData, s: TimelineScenario, rotation: RotationAction[], frame: number) => {
+      const ctx = createContext(g, s);
+      let st = init(ctx);
+      for (const a of rotation) st = apply(ctx, st, a);
+      return advance(ctx, st, frame);
+    };
+    // The kit's own Final Strike leaves the bar below full, and 25 s later it still is.
+    const chain = ["attack1", "attack2", "attack3", "attack4", "attack5"].map((k) => ({ operator: op, skill: L + k }));
+    const low = run(data, sc({}), chain, 150).stagger.poise;
+    expect(low).toBeLessThan(280);
+    expect(run(data, sc({}), chain, 900).stagger.poise).toBe(low);
+    expect(run(data, sc({ enemyActions: [{ kind: "recover", at: [200] }] }), chain, 201).stagger).toEqual({ poise: 280, until: null, finisherUsed: false });
+    // Staggered from frame 6 until 306 (attack1 deals 300 here): a recover at 100 ends it.
+    const s = run(d, sc({ enemyActions: [{ kind: "recover", at: [100] }] }), [{ operator: op, skill: L + "attack1" }], 101);
+    expect(s.stagger).toEqual({ poise: 280, until: null, finisherUsed: false });
+  });
+
   it("a finisher needs a Staggered enemy, once per stagger, and is multiplied by its finisher multiplier with its SP", () => {
     const { ctx, s } = at([], 0);
     expect(earliestStart(ctx, s, { operator: op, skill: L + "power_attack" })).toHaveProperty("error");

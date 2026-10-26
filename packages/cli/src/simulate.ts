@@ -22,7 +22,7 @@ interface RawScenario {
   startStacks?: Record<string, Record<string, number>>;
   rotation: { operator: string; skill: string; at?: number; repeat?: number }[];
   enemyHp?: { at: number; fraction: number }[];
-  enemyActions?: { kind: "attack" | "charge"; at?: number[]; every?: number; from?: number; target?: string; element?: Element }[];
+  enemyActions?: { kind: "attack" | "charge" | "recover"; at?: number[]; every?: number; from?: number; target?: string; element?: Element }[];
 }
 
 export function readScenario(file: string): TimelineScenario {

@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { advance, computeHit, computeStats, createContext, effectiveKit, FPS, init, parseReactionEvent, replayCast, replayWindowCount, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
 import { loadGameData, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
-import { castsFromBuffLanes, checkLog, formatBuffReplay, LOG_LISTING, logBuffReplay, readLogFixture, replayedCasts, simulateLog, withLoggedCasts, type HitVerdict } from "@efsim/cli";
+import { castsFromBuffLanes, checkLog, controlledFromLog, formatBuffReplay, LOG_LISTING, logBuffReplay, loggedRecoveries, readLogFixture, replayedCasts, simulateLog, withLoggedCasts, type HitVerdict } from "@efsim/cli";
 import { placeHits } from "../packages/cli/src/logcasts.ts";
 
 const data = loadGameData();
@@ -221,6 +221,39 @@ describe("dbaee23b801d: a cast the log shows only by the buff it applies", () =>
   });
 });
 
+describe("4e5e1390085e: who the log shows controlled, and the enemy's own Stagger recovery", () => {
+  const fx = readLogFixture(new URL("../fixtures/zmdlogs-4e5e1390085e.json", import.meta.url).pathname);
+  const R = "chr_0028_wulfa";
+
+  it("takes the controlled operator from the basic hits with Stagger: the others' basic casts are teammates' own", () => {
+    const placement = placeHits(data, fx);
+    const control = controlledFromLog(placement, replayedCasts(placement, fx));
+    // Rossi's Final Strikes deal Stagger (8.6, 16.2, 23.4 s); Camille's attack 5 at 14.5 s and Gilberta's attack 4 don't.
+    expect(control?.first).toBe(R);
+    const basics = (control?.casts ?? []).filter((c) => c.kind === "basic");
+    expect(new Set(basics.filter((c) => !c.teammate).map((c) => c.operator))).toEqual(new Set([R]));
+    expect(basics.some((c) => c.operator === "chr_0033_camille" && c.skillId.endsWith("attack5") && c.teammate)).toBe(true);
+  });
+
+  it("refills the bar where the log's jumps back to full: Rhodagn's own recovery at 29.5 s, not a Stagger's end", () => {
+    expect(loggedRecoveries(fx)).toContain(29524);
+    const r = logBuffReplay(data, fx).replay;
+    // The replay's only Stagger is the log's last one (66.6 s); before, it Staggered at 29.5 s, where the log's bar refilled.
+    expect(r.staggers.every((f) => f * (1000 / FPS) > 60_000)).toBe(true);
+  });
+});
+
+describe("7e19489ae503: a recovery cuts a Stagger short", () => {
+  it("ends the replay's Stagger where the log's bar is full again (33.2 s, the log's Stagger 29.8–33.2 s)", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-7e19489ae503.json", import.meta.url).pathname);
+    const t = loggedRecoveries(fx).find((x) => x > 30_000 && x < 34_000);
+    expect(t).toBeDefined();
+    const r = logBuffReplay(data, fx).replay;
+    const at = (ms: number) => r.staggerNearChange(ms);
+    expect(at(t as number)).toBe(true);
+  });
+});
+
 describe("0eef2474a26f: what the replay can't know, and landings a trigger makes", () => {
   const fx = readLogFixture(new URL("../fixtures/zmdlogs-0eef2474a26f.json", import.meta.url).pathname);
   const r = logBuffReplay(data, fx);
@@ -272,10 +305,13 @@ describe("4e5e1390085e: Camille's weapon buffs after the log stops listing them"
     expect(gaps.find((x) => x.buff === "buff_wpn_lance_0015_dmgup")?.from).toBeGreaterThanOrEqual(65597);
   });
 
-  it("matches Rossi's hits under them without a hand annotation (all of them, the killing blow too since the placement's chain steps, accuracy plan A1)", () => {
+  it("matches Rossi's hits under them without a hand annotation (all but the killing blow, accuracy plan A1 and B1)", () => {
     const rossi = checkLog(data, fx, { replay: r }).filter((v) => v.hit.operator === "chr_0028_wulfa");
-    expect(rossi.filter((v) => v.kind === "match").length).toBe(162);
-    expect(rossi.filter((v) => v.kind !== "match").map((v) => [v.hit.t, v.kind])).toEqual([]);
+    expect(rossi.filter((v) => v.kind === "match").length).toBe(161);
+    // His finisher at 69142 ms lies in the log's last Stagger (66.6 s), which the replay's bar misses by 24: the log's bar
+    // drops 36 at 53177 ms, of which only Estella's projectile's 12 is logged (2026-10-26; before, the replay's own
+    // Stagger at 29.5 s, where the log's bar refilled, let it reach that one by chance).
+    expect(rossi.filter((v) => v.kind !== "match").map((v) => [v.hit.t, v.kind])).toEqual([[69142, "unquantified"]]);
     // …by the replay's buffs, not the log's listing, in the fallback's readings (the engine's own fall back where its
     // Wolven Blood layers or Stagger differ from the log's: the report's leads).
     const listing = checkLog(data, fx, { replay: r, engine: false }).filter((v) => v.hit.operator === "chr_0028_wulfa");

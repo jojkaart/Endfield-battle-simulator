@@ -36,12 +36,13 @@ must be something a person can do by hand while playing:
 ## The queue: ten tests that decide the most now
 
 Ranked by how much of the simulation each answer moves (every fight first,
-then the owner's favourites), as of 2026-10-25. Reply with the number and
+then the owner's favourites), as of 2026-10-26 (99 answered by the logs;
+100 replaces it). Reply with the number and
 what you saw, in a line; the formats below are only suggestions.
 
 | # | test | needs | reply, e.g. |
 |---|---|---|---|
-| 1 | [99](#99-does-the-stagger-bar-refill-when-the-enemy-isnt-hit-ready-any-operator-higher-priority-every-log-since-2026-10-25) Stagger bar without hits | anyone | `99: stays` or `99: refills after ~5 s, full in ~3 s` |
+| 1 | [100](#100-what-makes-rhodagns-stagger-bar-snap-back-to-full-ready-if-you-fight-rhodagn-higher-priority-every-rhodagn-fight) Rhodagn's Stagger bar snapping back | anyone, vs Rhodagn | `100: at ~30 s, HP ~70%, as he jumps to the stacks` |
 | 2 | [54](#54-can-a-dash-cancel-a-battle-skill-or-combo-at-any-moment-ready-higher-priority-affects-every-operator) dash cancels a skill | Laevatain; Gilberta or Si | `54: dashes at once, extra hit gone; combo hit gone` |
 | 3 | [18](#18-what-an-ultimates-time-stop-freezes-ready) what a time stop freezes | any two | `18: cooldown same / ~2 s longer; SP bar unchanged / higher` |
 | 4 | [98](#98-food-buffs-on-the-stat-panel-ready-any-operator-a-few-minutes) food on the stat panel | anyone | `98: stew ATK 2,367 → 2,965, crit +11.4` |
@@ -1821,7 +1822,14 @@ for ATK).
    it's a percentage of the whole DEF, **unchanged** if of the operator's
    own base DEF.
 
-### 99. Does the Stagger bar refill when the enemy isn't hit? (ready, any operator; higher priority: every log since 2026-10-25)
+### 99. Does the Stagger bar refill when the enemy isn't hit? (done 2026-10-26 from the logs: it doesn't; don't ask)
+
+**Answered by the logs** (accuracy plan B1, 2026-10-26): ZMDLogs records
+the bar after every hit (`poiseDamage.current_value`). Across 29 fights
+it never rises between hits, even over gaps of 10–38 s without a hit
+(e.g. 04d401ad257e: 38.6 s at 278). It rises only at a Stagger's end and
+in a few jumps straight back to full, which test 100 asks about. The
+engine's rule (the bar stays) stands.
 
 **Why:** the log check now runs the engine's own Stagger (journal
 2026-10-25), and in two logs the engine has the enemy Staggered long
@@ -1837,6 +1845,25 @@ for 15 s and watch the bar.
 2. If it creeps back up (or snaps back full after some seconds), note
    about how long it waits before refilling and how fast it refills
    (seconds, by stopwatch or a phone video).
+
+### 100. What makes Rhodagn's Stagger bar snap back to full? (ready, if you fight Rhodagn; higher priority: every Rhodagn fight)
+
+**Why:** in three of five logged Rhodagn fights his Stagger bar jumps
+back to full with no Stagger before it, and once it cut a Stagger short:
+4e5e1390085e at 29.5 s (HP 73 → 69%), 7e19489ae503 at 33.2 s (a
+Stagger from 29.8 s ended after 3.3 s, HP 70%), abfd4b7478ec between
+36.7 and 44.6 s (HP 75 → 69%). Two other fights went below 70% HP
+without it (40d9a3c1da37 at 14 s, e82d45c46040 at 9 s), so it isn't
+simply his HP. The data we have doesn't say (it's his AI). The engine
+can schedule it (an enemy action `recover`), but needs to know when.
+**How:** fight Rhodagn as usual and watch the Stagger bar under his HP
+bar. When it snaps back to full without him having been Staggered just
+before, note the time into the fight (stopwatch or video), roughly his
+HP, and what he was doing (a special move? drawing power from the
+stacks?). If he's Staggered when it happens, note whether the Stagger
+ends there.
+1. Engine (now): the bar never refills except at a Stagger's end.
+2. Logs: around 30–45 s and 69–75% HP, maybe tied to a move of his.
 
 ## Results
 

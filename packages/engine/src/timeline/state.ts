@@ -73,8 +73,12 @@ export interface TimelineScenario {
  * clock: a time stop or a freeze delays what comes after it.
  */
 export interface EnemyActionSpec {
-  /** `attack`: it hits `target`; `charge`: it starts charging a skill (Catcher's combo trigger). */
-  readonly kind: "attack" | "charge";
+  /**
+   * `attack`: it hits `target`; `charge`: it starts charging a skill (Catcher's combo trigger); `recover`: its Stagger
+   * bar refills and a Stagger ends (refillPoise: a boss's own move, e.g. Rhodagn's 29.5 s into 4e5e1390085e, 33.2 s
+   * into 7e19489ae503; what sets it off isn't in the data).
+   */
+  readonly kind: "attack" | "charge" | "recover";
   readonly at?: readonly number[];
   readonly every?: number;
   readonly from?: number;

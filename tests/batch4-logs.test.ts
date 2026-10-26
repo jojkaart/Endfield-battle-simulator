@@ -236,10 +236,10 @@ describe("L3: what the log never lists", () => {
     // The fallback's readings (the log's listing with the replay's facts) try Link 1-4 there, labelled with why.
     const v = checkLog(data, fx, { engine: false }).filter((x) => x.hit.t === 12951 && x.hit.operator === "chr_0013_aglina");
     expect(v.map(assumed)).toEqual([["Link 1 (the replay can't say: Link stacks change within 500 ms of the cast)"]]);
-    // So do the engine's: none fits, as the replay has Corrosion on the enemy there that the log doesn't list (a lead: its
-    // inflictions aren't checked against the log's reactions), and the hit falls back on the log's listing, saying why.
+    // The engine's own reading fits it as it stands (since 2026-10-26, the controlled operator from the log's Stagger:
+    // before, no engine reading fit, and the hit fell back on the log's listing).
     const e = checkLog(data, fx).filter((x) => x.hit.t === 12951 && x.hit.operator === "chr_0013_aglina");
-    expect(e.map(assumed)).toEqual([["Link 1 (the replay can't say: Link stacks change within 500 ms of the cast)", "the log's buff listing (no engine reading fits (26003))"]]);
+    expect(e.map(assumed)).toEqual([[]]);
     // One hit out of the log: no casts to replay, the log's listing alone.
     const one = checkLog(data, { ...fx, hits: fx.hits.filter((h) => h.t === 12951 && h.operator === "chr_0013_aglina") }, { buffs: "log" });
     expect(one.map(assumed)).toEqual([["Link 1 (the replay can't say: no replay)"]]);

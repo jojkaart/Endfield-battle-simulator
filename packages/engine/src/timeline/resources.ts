@@ -195,6 +195,15 @@ export function skillSpGain(ctx: TimelineContext, operator: string, skillId: str
 
 export const isStaggered = (st: TimelineState, frame: number) => st.stagger.until !== null && st.stagger.until > frame;
 
+/**
+ * The enemy's Stagger bar back to full, and a Stagger over (an enemy action `recover`; the log check's replay where the
+ * log's bar jumps back up). Its bar doesn't recover on its own: none of 29 logged fights shows it rise without a
+ * Stagger's end or such a jump (2026-10-26, accuracy plan B1).
+ */
+export function refillPoise(ctx: TimelineContext, st: TimelineState): TimelineState {
+  return { ...st, stagger: { poise: maxPoise(ctx), until: null, finisherUsed: false } };
+}
+
 /** How long a Stagger lasts (frames): the enemy's attribute 21 × 31 seconds. */
 export function staggerFrames(ctx: TimelineContext): number {
   return Math.round(enemyAttr(ctx, Attr.PoiseRecTime) * enemyAttr(ctx, Attr.PoiseRecTimeScalar) * FPS);

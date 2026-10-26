@@ -92,14 +92,15 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
  * it, without a rotation's checks (cooldowns, combo windows, priorities,
  * energy: the game allowed it). SP below its cost is raised to the cost
  * first, so the team's SP doesn't go negative; a basic attack or a dive
- * makes its operator the controlled one. The rest is a cast as `apply` makes
- * it: its hits, what they do, and the triggers they start.
+ * makes its operator the controlled one (not a `teammate`'s own attack).
+ * The rest is a cast as `apply` makes it: its hits, what they do, and the
+ * triggers they start.
  */
 export function replayCast(ctx: TimelineContext, state: TimelineState, operator: string, skillId: string, frame: number, opts: ReplayCastOptions = {}): TimelineState {
   if (!ctx.builds.has(operator)) throw new EngineError(`${operator} isn't in the team`);
   let advanced = advance(ctx, state, frame);
   const costs = skillCosts(ctx, operator, skillId, frame);
-  if (costs.kind === "basic" || costs.timing.specification === 6) advanced = { ...advanced, controlled: operator };
+  if (!opts.teammate && (costs.kind === "basic" || costs.timing.specification === 6)) advanced = { ...advanced, controlled: operator };
   const cost = spCostAt(ctx, advanced, operator, costs, frame);
   if (advanced.sp < cost) advanced = { ...advanced, sp: cost };
   // A combo the log shows had its window open: one opened by an event the replay didn't see counts 1 (its count isn't logged).
@@ -140,6 +141,8 @@ export interface ReplayCastOptions {
    * with `ref`, its LandedHit carries the reference and its facts (LandingFacts).
    */
   readonly landings?: readonly { readonly hitId: string; readonly nth: number; readonly frame: number; readonly ref?: string }[];
+  /** A teammate's own basic attack (the log shows someone else controlled): the controlled operator stays. */
+  readonly teammate?: boolean;
 }
 
 /** The count of the combo window a replayed combo would use at a frame (the state advanced to it), or null when none is open (replayCast then opens one, counting 1). */

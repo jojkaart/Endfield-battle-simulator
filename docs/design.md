@@ -314,8 +314,9 @@ verify an operator. Its Stagger is the pipeline's own (DamageOptions
 so Staggered-only modifiers apply). Gaps the fallback still covers
 (2026-10-25; the report's "engine against the log's listing" names them
 per buff and operator): the replay's Stagger (Staggered at 23–34 s in
-4e5e and 19–24 s in bdf2, where the log has none: poise or its recovery),
-its inflictions (40d9: a Corrosion after Gilberta's ultimate the log
+4e5e and 19–24 s in bdf2, where the log has none: teammates' Final
+Strikes taken as the controlled operator's, and Rhodagn's own recovery;
+both from the log since 2026-10-26), its inflictions (40d9: a Corrosion after Gilberta's ultimate the log
 never lists), Wolven Blood's layers on Rossi, Typhoeus's hover through
 her combo, statuses it doesn't deal near the logged time, and a few
 landings it doesn't make. `--log-buffs` checks with the log's listing
@@ -358,7 +359,18 @@ what the log doesn't list, and the check reads it, no assumption:
 - **casts without logged damage**: the log's cast events
   (`LogFixture.casts`, from the detail's skill events without damage;
   `zmdlogs refresh` adds them to an older fixture), else a cast inferred from
-  the lane of the one buff it applies (`castsFromBuffLanes`).
+  the lane of the one buff it applies (`castsFromBuffLanes`); a logged
+  cast inside its operator's own cantCastSkill channel keeps the running
+  cast (the game couldn't have cut it there);
+- **who is controlled**: every basic-attack hit with Stagger is
+  controlled-only, so the log's Stagger per hit (`LogHit.poise`) names
+  the controlled operator; the others' basic casts are their own attacks
+  (`controlledFromLog`, `replayCast` `teammate`: the controlled operator
+  stays). Without such a hit, each basic cast's operator is controlled;
+- **the enemy's Stagger recoveries**: where the log's bar is back to full
+  between two hits, the replay refills its bar (`loggedRecoveries`,
+  `refillPoise`: a second life, or Rhodagn's own move). Its Stagger
+  otherwise is the engine's, from the kits' Stagger per hit.
 A fact the replay's own timing could change is unknown: Link or a
 consumable that starts, ends or is used by another cast within
 REPLAY_EDGE_MS of the cast (on the timeline without the cast, so its time

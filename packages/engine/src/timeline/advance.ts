@@ -10,7 +10,7 @@ import type { Cast, PendingEnemyAction, Scheduled, TimelineContext, TimelineStat
 import { DIVE, DODGE } from "./rules.ts";
 import { panelAt, timingOf } from "./context.ts";
 import { shiftOperator, slowDown } from "./clock.ts";
-import { gainEnergy, gainSp, rebaseCooldowns, spAt } from "./resources.ts";
+import { gainEnergy, gainSp, rebaseCooldowns, refillPoise, spAt } from "./resources.ts";
 import { actionFrame, counters } from "./timing.ts";
 import { situationAt } from "./situation.ts";
 import { runActions, runTriggers } from "./actions.ts";
@@ -54,6 +54,7 @@ function nextExpiry(buffs: readonly ActiveBuff[], frame: number): number | null 
  * attack on it with a perfectDodge event.
  */
 function enemyAct(ctx: TimelineContext, state: TimelineState, a: PendingEnemyAction): TimelineState {
+  if (a.act === "recover") return refillPoise(ctx, state);
   const events = enemyActionEvents(ctx, state, a);
   const dodge = ctx.scenario.options.dodge;
   const op = state.controlled;

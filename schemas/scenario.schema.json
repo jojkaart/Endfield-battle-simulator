@@ -63,13 +63,13 @@
     },
     "enemyActions": {
       "type": "array",
-      "description": "What the enemy does (default nothing): attacks on the team and skill charges, at listed times or every n seconds. Times are on the enemy's clock: time stops and freezes delay what comes after them.",
+      "description": "What the enemy does (default nothing): attacks on the team, skill charges and Stagger recoveries (its bar refills and a Stagger ends: a boss's own move), at listed times or every n seconds. Times are on the enemy's clock: time stops and freezes delay what comes after them.",
       "items": {
         "type": "object",
         "required": ["kind"],
         "additionalProperties": false,
         "properties": {
-          "kind": { "enum": ["attack", "charge"] },
+          "kind": { "enum": ["attack", "charge", "recover"] },
           "at": { "type": "array", "items": { "type": "number", "minimum": 0 }, "description": "Times in seconds." },
           "every": { "type": "number", "exclusiveMinimum": 0, "description": "Or every n seconds, from `from` (default n) to the fight's end." },
           "from": { "type": "number", "minimum": 0 },

@@ -382,6 +382,15 @@ runtime, read not copied; engine `status.ts`):
   controlled (`onlyEnableForMainChar`). At 0 the enemy is Staggered: ×1.3
   damage taken (`buff_common_poise_break_damage_taken_scale`, its own
   multiplier), no more stagger, one finisher allowed; then the bar refills.
+  Checked against 29 logs' bars (2026-10-26, accuracy plan B1): the
+  Stagger per hit matches; teammates' Final Strikes deal none; the bar
+  never recovers on its own; a Staggered window lasts attribute 21 × 31
+  on the enemy's clock (time stops extend it) plus ~1 s unexplained.
+  Bosses refill it themselves at times: a second life, and Rhodagn in
+  three of five fights (29.5–45 s; not a fixed HP; in-game test 100).
+  `buff_common_recoverpoise` (RecoverPoiseAction) and
+  `buff_common_enemy_poiseresist_normal` have no creator / no action in
+  the fetched data.
 - Zero Sanity's notes (Lift consumes Vulnerable; Crush / Breach need none)
   describe the Beta I rules, changed since.
 - Verified: Estella's Lift hits in `zmdlogs-4e5e1390085e` match exactly.
