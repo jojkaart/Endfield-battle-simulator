@@ -1005,7 +1005,7 @@ export function engineReport(data: GameData, fx: LogFixture, replay: LogBuffRepl
   for (const h of fx.hits) {
     const r = byHit.get(h);
     if (!r || "unknown" in r.landing) continue;
-    if (r.primary !== null) primary.set(h, { landing: r.landing, predicted: r.primary });
+    if (r.primary !== null) primary.set(h, { landing: r.landing, predicted: r.expected ?? r.primary });
     for (const d of logDifferences(c, h, r.landing as Parameters<typeof logDifferences>[2])) {
       const k = `${d.what}|${d.kind}|${h.operator}`;
       const run = runs.get(k) ?? { what: d.what, kind: d.kind, operator: h.operator, from: h.t, to: h.t, hits: 0, fits: { engine: 0, log: 0, neither: 0 }, example: { engine: d.engine, log: d.log } };

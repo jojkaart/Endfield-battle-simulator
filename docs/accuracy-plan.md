@@ -54,6 +54,15 @@ earlier (3aa6's staggered-hit error +183% → +456%; bdf2 Si 19 → 12):
 B1's bug showing through. Left in Typhoeus: a hover shot the replay
 lands 0.7 s late, and her hover ending early in 92b4 (kit state, B8).
 
+A3 and A4 done (2026-10-26): a hit whose crit the log doesn't give counts
+at expected crits in the totals (the readings still try both): 4e5e −6.5
+→ −0.7%, d572 −34.0 → −25.5%, abfd −42.3 → −34.7%, 0c14 −17.4 → −9.3%,
+99fb −50.0 → −42.5%; e82d barely moves (its gap is A6's Amp). A fight
+that ends in a kill (the log's total is the enemy's HP) stops the
+replay's damage at that HP, so the totals' "last hit" is the time to
+kill: b7b3 +23.1% damage → 0, the replay kills 10.5% sooner; 7e19 +48.1%
+→ 0, 6.6% sooner (the engine's damage too high there).
+
 Done when the verified fixtures' totals are within a few percent once
 matched-hit errors are taken out, so the matched hits' error is the
 engine's.

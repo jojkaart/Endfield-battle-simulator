@@ -8,7 +8,7 @@
 // replacing them: where they differ is reported (logDifferences). docs/design.md, "The log check's rule".
 
 import {
-  activeModifiers, corrosionModifier, effectiveKit, kitBuffModifiers, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,
+  Attr, activeModifiers, corrosionModifier, effectiveKit, kitBuffModifiers, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,
   type DamageOptions, type DamageTarget, type GameData, type KitBuff, type KitHit, type LandedHit, type LandingInputs, type Modifier, type SkillType,
 } from "@efsim/engine";
 import type { LogEffect, LogFixture, LogHit } from "@efsim/data";
@@ -172,7 +172,7 @@ const MAX_COMBINATIONS = 4096;
  * can't say, the event's other kit hits, an unlogged crit, the enemy's side of a condition, Corrosion or a reaction
  * level the replay lacks, log-only buffs at the hit's boundary). Empty without a landing.
  */
-export function engineReadings(c: EngineCheck, hit: LogHit, place: HitPlace): { readings: EngineReading[]; primary: number | null; landing: LandedHit | { readonly unknown: string } } {
+export function engineReadings(c: EngineCheck, hit: LogHit, place: HitPlace): { readings: EngineReading[]; primary: number | null; expected?: number; landing: LandedHit | { readonly unknown: string } } {
   const landing = landingOf(c, hit);
   if ("unknown" in landing) return { readings: [], primary: null, landing };
   const inputs = landing.inputs;
@@ -304,6 +304,15 @@ export function engineReadings(c: EngineCheck, hit: LogHit, place: HitPlace): { 
       readings.push({ predicted: roundDamage(d.exact), assumptions });
     } catch (e) {
       // A reading where the hit doesn't happen, or a value needs what it doesn't say.
+      if (!readingDoesNotApply(e)) throw e;
+    }
+  }
+  // A hit whose crit the log doesn't give: the primary reading at expected crits, for the fight's totals (the readings try
+  // both; counting such hits as non-crits biased the totals low: e82d −31%, 0c14 −24%; accuracy plan A3).
+  if (hit.crit === null && primaryDamage !== null) {
+    try {
+      return { readings, primary: primaryDamage, expected: landingDamage(c.data, c.target, primary.inputs, { ...primary.options, crit: "expected" }, primary.other).exact, landing };
+    } catch (e) {
       if (!readingDoesNotApply(e)) throw e;
     }
   }
@@ -445,13 +454,20 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   const sim = { damage: 0, perOperator: {} as Record<string, number>, perKind: {} as Record<string, number>, hits: 0, statusHits: 0, crits: 0, known: 0, staggered: 0, last: 0 };
   const matched = new Map([...primary].map(([h, p]) => [p.landing, { hit: h, predicted: p.predicted }]));
   const end = (fx.hits.reduce((m, h) => Math.max(m, h.t), 0) * 30) / 1000 + 1;
-  for (const l of c.replay.hits) {
+  // A fight that ends in a kill (the log's total is the enemy's HP): the replay's damage stops at that HP too, so its
+  // "last hit" is its time to kill (b7b3: the replay reached Rhodagn's 2.29M at 17.0 s, the log at 18.0 s, then dealt
+  // +25% more the enemy never took; accuracy plan A4).
+  const hp = data.enemies[fx.enemy.id]?.levels[fx.enemy.level - 1]?.[Attr.MaxHp];
+  const kill = hp !== undefined && hp > 0 && Math.abs(logged.damage - hp) <= 0.005 * hp ? hp : null;
+  for (const l of [...c.replay.hits].sort((a, b) => a.frame - b.frame)) {
     if (l.frame > end) continue;
+    if (kill !== null && sim.damage >= kill) break;
     const m = matched.get(l);
     let damage: number;
     if (m) damage = Math.min(m.predicted, m.hit.uncapped !== undefined ? m.hit.value : Infinity);
     else if (l.inputs) damage = landingDamage(data, c.target, l.inputs, { ...l.inputs.options, crit: "expected" }).exact;
     else damage = l.exact;
+    if (kill !== null) damage = Math.min(damage, kill - sim.damage);
     sim.damage += damage;
     add(sim.perOperator, l.operator, damage);
     add(sim.perKind, l.skillId.startsWith("reaction:") ? "status" : l.inputs?.kind === "hit" ? l.inputs.hit.damageType : kindOf(data, fx, l.operator, l.skillId), damage);

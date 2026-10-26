@@ -44,3 +44,14 @@ describe("the replay casts the basic-attack step the engine's state allows (accu
     expect(steps.slice(0, 3)).toEqual(["1", "2", "3"]);
   });
 });
+
+describe("the fight's totals (accuracy plan A3, A4)", () => {
+  it("a kill: the replay's damage stops at the enemy's HP, its last hit is its time to kill (b7b3: Rhodagn dies ~1.9 s sooner in the replay)", async () => {
+    const { engineHits, engineReport, logBuffReplay } = await import("../packages/cli/src/logcheck.ts");
+    const fx = readLogFixture(new URL("../fixtures/zmdlogs-b7b3762d5da8.json", import.meta.url).pathname);
+    const replay = logBuffReplay(data, fx);
+    const report = engineReport(data, fx, replay, engineHits(data, fx, replay));
+    expect(report.totals.simulated.damage).toBeCloseTo(report.totals.logged.damage, -2);
+    expect(report.errors["last hit"]).toBeLessThan(-5);
+  });
+});

@@ -20,7 +20,10 @@ windows alone didn't help, removing the window rule lost Rossi's gains in
 92b4 −34.8 → −3.1%, bdf2 −28 → −9.3%, dbae −43.9 → −20.6%, 4e5e −12.5 →
 −6.5%; Rossi's 4e5e hits all match now (the killing blow too). Some plain
 matches drop where the extra landings bring the replay's (wrong) Stagger
-earlier: B1 next after A.
+earlier: B1 next after A. A3 (unknown crits at expected crits in the
+totals) and A4 (a kill caps the replay's damage at the enemy's HP; the
+"last hit" error is then the time to kill: b7b3 −10.5%, 7e19 −6.6%): 4e5e
+now −0.7%.
 
 ## 2026-10-26: what isn't simulated accurately (three audits, a plan)
 
