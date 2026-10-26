@@ -46,6 +46,7 @@ Ranked by breadth (every fight first), then the owner's favourites.
 
 | # | mechanic | now | what the data / logs say | impact |
 |---|---|---|---|---|
+| B0 | **Teammates' own basic attacks** | only the controlled operator basic-attacks (timing.ts:297) | the owner: they do, slower than the controlled operator, and some skills stop it (Liino's Vocalist Stance and ultimate). To settle from the logs: each operator's pace when not controlled (the gaps between its basic chains in fights where another is controlled), which chain steps it uses, whether its Final Strikes count; from the data: the main-character-only flags (`onlyEnableForMainChar` on 48 basic-attack files, `onlyExecuteWhenSourceIsMainChar` on 125) say which effects an uncontrolled attack doesn't get, and what blocks it (Liino's stance and ultimate: find the tag or action) | every team: ~2% per teammate plus what their hits trigger |
 | B1 | **Stagger** | the bar only falls (packages/engine/src/timeline/resources.ts:211–240); the 50% node is only an event | logs: the engine's first Stagger comes at 0.25–0.96× the game's time (4e5e 23 s vs 67 s; bdf2 Staggered where the game never was); windows ~10 s vs the log's 7–19 s; 1,447 hits Staggered only in the engine (×0.77), 1,329 only in the log. Data: RecoverPoiseAction (`buff_common_recoverpoise`, `enemy_patrolregen`), ModifyResilienceDecreaseFactor; the node's buff (`buff_common_mini_poise_break`, 2.5 s, an interrupt and 0.5 s slow) | every fight: ×1.3 for ~10 s per window; per-fight totals −10% to +30% |
 | B2 | **SP recovery after spending** | 8/s, paused 1.5 s after spending (rules.ts:14, from older Endaxis notes) | the game's native skill settings (Endaxis's extraction, revision 1.5.3) have `atbRecoverInterval: 0.5`, which Endaxis's simulator reads as the pause; Zero Sanity: 7.69/s, no pause | every SP-bound team: rossi-gilberta +7.8% with 0.5 s; whether 0.5 is the pause or a tick interval needs a check (a log with SP, or an in-game test) |
 | B3 | **Corrosion** | ramp in whole seconds from application, paused only by a full stop; no carry-over on reapplication (reactions.ts:79–87) | data: the wrapper copies the existing Corrosion's `def_decrease` (carry-over); the settings' initial shred by level (−3.6 / −4.8 / −6 / −7.2) and 15 s; logs need ~4.5 points at 6.5 s where the model gives ≥ 11.9 | Arcane, Gilberta, Typhoeus, Ardelia: likely 5–10% too high while Corrosion is up |
@@ -60,13 +61,14 @@ Ranked by breadth (every fight first), then the owner's favourites.
 
 ## Phase C: questions for the owner (they decide what to model)
 
-- **Do teammates act on their own?** The engine has only the controlled
-  operator basic-attack. In 4e5e, 23 of 42 seconds have basic hits from two
-  or more operators, three within a second of each other, and the data's
-  `onlyEnableForMainChar` (48 basic-attack files) and
-  `onlyExecuteWhenSourceIsMainChar` (125 files) only make sense if other
-  operators act. If they auto-attack, each adds about 1.5–2.3% of a fight's
-  damage plus their triggers, inflictions and Final Strikes: every team.
+- **Do teammates act on their own?** Answered (the owner, 2026-10-26):
+  "Yes, the non-controlled operators do basic attacks on the enemies,
+  though not quite at the pace the controlled operator does and certain
+  skills, like liino's stance and ultimate prevent that." So the engine
+  is missing every teammate's basic attacks (in 4e5e, 23 of 42 seconds have
+  basic hits from two or more operators; about 1.5–2.3% of a fight per
+  teammate, plus their triggers, inflictions and Final Strikes). Now item
+  B0 below.
 - **Dodging and enemy attacks by default:** the default scenario has none.
 
 ## Phase D: in-game tests (re-ranked by what they decide)
@@ -108,7 +110,7 @@ an engine rule. d9e5 is excluded (pre-1.6).
 
 ## Order of work
 
-A1–A7 first (each re-measures the verified fixtures), then B1 (Stagger:
+A1–A7 first (each re-measures the verified fixtures), then B0 (teammates' basic attacks: measured from the logs once A places casts right) and B1 (Stagger:
 re-import the logs with `poiseDamage` per hit, compare windows), B2–B5
 (settings and data), B7, B8 per favourite, B6, B9, B10; ask C now; D as
 the owner plays; E alongside when a change touches it. Every step reports

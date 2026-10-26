@@ -13,7 +13,8 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
    check measure the engine (casts merged under 1 s, Si's Final Stroke,
    unknown crits, damage past the kill, the Endministrator's event prefix,
    hitless casts' Amp); then B: Stagger (wrong windows in 22 of 29 logs),
-   SP recovery, Corrosion, Solidification / Combustion durations, a
+   teammates' own basic attacks (the owner: they attack, slower, not
+   during e.g. Liino's stance), SP recovery, Corrosion, Solidification / Combustion durations, a
    reaction's own hit, the favourites' kit leads.
 1. **The tool's purpose: team rotations for the owner's favourites**
    (Typhoeus, Arcane, Si, Gilberta, Liino, Estella, Laevatain; 6-stars P0,

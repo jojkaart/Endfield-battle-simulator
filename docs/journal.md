@@ -17,9 +17,11 @@ matched hits alone are −2.6% to −19% in the verified fixtures. The
 engine's largest known error is Stagger (the bar never recovers: wrong
 windows in 22 of 29 logs). Checked by hand: `CAST_SLACK_MS` 1000; the bar
 only falls; the native settings' Solidification 6–9 s and
-`atbRecoverInterval` 0.5 (the engine pauses SP 1.5 s). Question for the
-owner: do teammates basic-attack on their own (4e5e has basic hits of two
-operators within a second; the data's main-character-only flags)?
+`atbRecoverInterval` 0.5 (the engine pauses SP 1.5 s). Asked the owner
+whether teammates basic-attack on their own: "Yes, the non-controlled
+operators do basic attacks on the enemies, though not quite at the pace
+the controlled operator does and certain skills, like liino's stance and
+ultimate prevent that." Now plan item B0.
 
 ## 2026-10-26: stack groups ranked by the data's priority key
 
