@@ -453,6 +453,14 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   }
   const sim = { damage: 0, perOperator: {} as Record<string, number>, perKind: {} as Record<string, number>, hits: 0, statusHits: 0, crits: 0, known: 0, staggered: 0, last: 0 };
   const matched = new Map([...primary].map(([h, p]) => [p.landing, { hit: h, predicted: p.predicted }]));
+  // Landings of logged hits without a reading (Fixed DMG: Si's Artful Intent burst) are still that hit's: a hit the log
+  // capped at the enemy's remaining HP caps the landing's damage too (bdf223db8e49's killing burst, 284,900 of 530,319).
+  const cappedHit = new Map<LandedHit, LogHit>();
+  for (const h of fx.hits) {
+    if (h.uncapped === undefined || primary.has(h)) continue;
+    const l = c.replay.landing(h);
+    if (!("unknown" in l)) cappedHit.set(l, h);
+  }
   const end = (fx.hits.reduce((m, h) => Math.max(m, h.t), 0) * 30) / 1000 + 1;
   // A fight that ends in a kill (the log's total is the enemy's HP): the replay's damage stops at that HP too, so its
   // "last hit" is its time to kill (b7b3: the replay reached Rhodagn's 2.29M at 17.0 s, the log at 18.0 s, then dealt
@@ -467,6 +475,8 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     if (m) damage = Math.min(m.predicted, m.hit.uncapped !== undefined ? m.hit.value : Infinity);
     else if (l.inputs) damage = landingDamage(data, c.target, l.inputs, { ...l.inputs.options, crit: "expected" }).exact;
     else damage = l.exact;
+    const capped = cappedHit.get(l);
+    if (capped) damage = Math.min(damage, capped.value);
     if (kill !== null) damage = Math.min(damage, kill - sim.damage);
     sim.damage += damage;
     add(sim.perOperator, l.operator, damage);

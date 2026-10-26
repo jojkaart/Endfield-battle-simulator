@@ -63,6 +63,22 @@ replay's damage at that HP, so the totals' "last hit" is the time to
 kill: b7b3 +23.1% damage → 0, the replay kills 10.5% sooner; 7e19 +48.1%
 → 0, 6.6% sooner (the engine's damage too high there).
 
+A2 done (2026-10-26). Si's second battle-skill press, logged as her
+battle skill, is Initial Stroke, and Final Stroke's press isn't logged at
+all; the burst after Artful Intent's end is. So: a logged cast of a skill
+whose damage the log shows elsewhere is kept as a slot cast, made as the
+skill of its kind the slot holds then (Initial Stroke) only when it leads
+to a cast inferred from the log (castsFromBuffEnds: a logged hit of a
+trigger on a buff's end, the kit ending that buff on a skill's cast,
+the replay's buff lasting past the logged end by itself: Final Stroke).
+Liino's logged press during her stance in 0eef leads to nothing the log
+shows and stays skipped (as End Stance it would drop the stance's ATK
+the log keeps). A Fixed DMG landing of a logged hit the log capped at
+the enemy's remaining HP is capped in the totals too. 0eef −26.0 →
+−11.8%, bdf2 −9.1 → +0.5%, b6aa −30.3 → −20.5%, c3c7 −12.4 → −5.1%, e82d
+−59.6 → −51.8%, 40d9 → 0 (a kill). Not done: `casts` for the 8 Si
+fixtures without them (a re-import with `--detail`).
+
 Done when the verified fixtures' totals are within a few percent once
 matched-hit errors are taken out, so the matched hits' error is the
 engine's.

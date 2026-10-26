@@ -26,7 +26,13 @@ matches drop where the extra landings bring the replay's (wrong) Stagger
 earlier: B1 next after A. A3 (unknown crits at expected crits in the
 totals) and A4 (a kill caps the replay's damage at the enemy's HP; the
 "last hit" error is then the time to kill: b7b3 −10.5%, 7e19 −6.6%): 4e5e
-now −0.7%.
+now −0.7%. A2: Si's Initial Stroke from her logged press (a "slot" cast,
+only when it leads to a cast the log implies), Final Stroke inferred from
+the burst after Artful Intent's end (castsFromBuffEnds; not when the
+buff's own expiry explains it); a first version substituted Liino's
+logged press during her stance as End Stance and dropped the stance's ATK
+(0eef Si plain 9 → 1): substitutions now need a logged consequence. 0eef
+−26 → −11.8%, bdf2 → +0.5%, b6aa → −20.5%, c3c7 → −5.1%.
 
 ## 2026-10-26: what isn't simulated accurately (three audits, a plan)
 

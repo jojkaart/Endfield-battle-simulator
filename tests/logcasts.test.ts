@@ -55,3 +55,19 @@ describe("the fight's totals (accuracy plan A3, A4)", () => {
     expect(report.errors["last hit"]).toBeLessThan(-5);
   });
 });
+
+describe("Si's strokes and Artful Intent's burst (accuracy plan A2)", () => {
+  it("0eef: the logged press under Artful Intent is Initial Stroke, Final Stroke is inferred from the burst after the buff's end, and the burst lands at its logged time", async () => {
+    const { logBuffReplay } = await import("@efsim/cli");
+    const fx = readLogFixture(new URL("../fixtures/zmdlogs-0eef2474a26f.json", import.meta.url).pathname);
+    const r = logBuffReplay(data, fx).replay;
+    const si = "chr_0036_jsspsi";
+    const burst = r.hits.find((h) => h.operator === si && h.hitId === "burst_inksoul");
+    expect(Math.abs(((burst?.frame ?? 0) * 1000) / 30 - 10030)).toBeLessThan(50);
+    // Liino's logged battle skill during her Vocalist Stance (4187 ms) leads to nothing the log shows: not cast as End
+    // Stance, so the stance's ATK stays on Si's combo at 8026 ms.
+    const hit = fx.hits.find((h) => h.operator === si && h.t === 8026);
+    const l = r.landing(hit as LogHit);
+    expect("unknown" in l ? [] : l.modifiers.map((m) => m.source).filter((x) => x.includes("Vocalist Stance"))).toHaveLength(1);
+  });
+});

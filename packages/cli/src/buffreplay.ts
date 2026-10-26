@@ -190,6 +190,22 @@ export interface ReplayedCast extends LoggedCast {
   readonly keepPrevious: boolean;
   /** Its landings at their logged frames (replayCast landings): each logged hit of the cast whose kit landing the placement knows. */
   readonly landings: readonly { readonly hitId: string; readonly nth: number; readonly frame: number; readonly ref: string }[];
+  /**
+   * A logged cast event of a skill whose damage the log shows elsewhere, kept only for the slot it stands for: the replay
+   * makes it only when the skill can't start there and another of the operator's skills of its kind can (replayedSkill:
+   * Si's second battle-skill press under Artful Intent is logged as her battle skill, and is Initial Stroke). Only one
+   * that `leadsTo` an inferred cast is made so (castsFromBuffEnds): a press is shown as another skill only where the log
+   * shows what that skill leads to (Liino's battle skill at 4187 ms in 0eef2474a26f, during her Vocalist Stance, would be
+   * End Stance, but the log keeps the stance's ATK on her team after it).
+   */
+  readonly slot?: true;
+  readonly leadsTo?: true;
+  /**
+   * Inferred from a logged hit of a trigger on this buff's end (castsFromBuffEnds), at `endsAt` ms: cast only while the
+   * buff is active and would last past that end by itself (else its expiry is the end: bdf223db8e49's burst at 24321 ms
+   * is Artful Intent's own expiry, its mark projectile, not Final Stroke's).
+   */
+  readonly whileBuff?: { readonly buff: string; readonly endsAt: number };
 }
 
 /** How far from a placed cast's start a logged cast event of its skill may be to be that cast (ms). */
@@ -210,9 +226,10 @@ export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixt
   const added: ReplayedCast[] = [];
   for (const lc of fx.casts) {
     const skill = kits.find((k) => k.operator === lc.operator)?.skills.find((x) => x.skillId === lc.skill);
-    if (!skill || skill.followUpOnly || skill.hits.some((h) => h.events.some((e) => logged.has(`${lc.operator}|${e}`)))) continue;
+    if (!skill || skill.followUpOnly) continue;
     if (casts.some((c) => c.operator === lc.operator && c.skillId === lc.skill && Math.abs(c.start - lc.t) <= LOGGED_CAST_MS)) continue;
-    added.push({ operator: lc.operator, key: lc.skill, group: lc.skill, skillId: lc.skill, kind: skill.kind, start: lc.t, lastHit: lc.t, keepPrevious: false, landings: [] });
+    const shownElsewhere = skill.hits.some((h) => h.events.some((e) => logged.has(`${lc.operator}|${e}`)));
+    added.push({ operator: lc.operator, key: lc.skill, group: lc.skill, skillId: lc.skill, kind: skill.kind, start: lc.t, lastHit: lc.t, keepPrevious: false, landings: [], ...(shownElsewhere ? { slot: true as const } : {}) });
   }
   return added.length ? ordered([...casts, ...added]) : [...casts];
 }
@@ -226,6 +243,46 @@ function ordered(casts: readonly ReplayedCast[]): ReplayedCast[] {
     previous.set(c.operator, r);
     return r;
   });
+}
+
+/**
+ * Casts the log shows only by a buff's end: a logged hit of a trigger on the end of one of its operator's buffs
+ * (`buffEnded`), where the kit ends that buff on a cast of a skill (a trigger on the cast with an `endBuff` of it), and no
+ * cast of that skill is replayed from its delay plus LOGGED_CAST_MS before the end. Then a cast of the skill at the end
+ * less the trigger's delay, made only if the buff is still active then (else its expiry explains the end). Si's Final
+ * Stroke: its press isn't in the log's cast events, the Inksoul's burst after Artful Intent's end is (0eef2474a26f at
+ * 10030 ms; accuracy plan A2).
+ */
+/** How much longer than a logged buff end the replay's buff must last for an inferred cast to be what ended it (castsFromBuffEnds). */
+const EXPIRY_MARGIN_FRAMES = 6;
+
+export function castsFromBuffEnds(kits: readonly OperatorKit[], placement: Placement, casts: readonly ReplayedCast[]): ReplayedCast[] {
+  const added: ReplayedCast[] = [];
+  const leads = new Set<number>();
+  for (const pc of placement.casts) {
+    if (!pc.group.startsWith("trigger:")) continue;
+    const kit = kits.find((k) => k.operator === pc.operator);
+    const t = kit?.triggers.find((x) => `trigger:${x.id}` === pc.group);
+    if (!kit || !t || t.on.event !== "buffEnded" || !("buff" in t.on)) continue;
+    const buff = t.on.buff;
+    for (const e of kit.triggers) {
+      if (e.on.event !== "cast" || !e.on.skills?.length || !allActions(e.do).some((a) => a.kind === "endBuff" && a.buff === buff)) continue;
+      const skillId = e.on.skills[0] as string;
+      const skill = kit.skills.find((x) => x.skillId === skillId);
+      if (!skill) continue;
+      const start = pc.start - ((e.delay ?? 0) * 1000) / FPS;
+      if ([...casts, ...added].some((c) => c.operator === pc.operator && e.on.event === "cast" && (e.on.skills ?? []).includes(c.skillId) && c.start <= pc.start && c.start >= start - LOGGED_CAST_MS)) continue;
+      added.push({ operator: pc.operator, key: skillId, group: skillId, skillId, kind: skill.kind, start, lastHit: start, keepPrevious: false, landings: [], whileBuff: { buff, endsAt: pc.start } });
+      // A slot press of its kind shortly before it is the step that leads to it (Si's Initial Stroke before Final Stroke).
+      for (const [i, c] of casts.entries()) {
+        if (c.slot && c.operator === pc.operator && c.kind === skill.kind && c.start <= start && c.start >= start - 2 * LOGGED_CAST_MS) leads.add(i);
+      }
+      break;
+    }
+  }
+  // In time order, without recomputing the others' keepPrevious: an inferred cast the replay may skip isn't anyone's
+  // previous cast (it keeps the running cast's hits itself).
+  return added.length ? [...casts.map((c, i) => (leads.has(i) ? { ...c, leadsTo: true as const } : c)), ...added.map((c) => ({ ...c, keepPrevious: true }))].sort((x, y) => x.start - y.start) : [...casts];
 }
 
 /**
@@ -343,19 +400,29 @@ interface Change {
  * REPLAY_EDGE_MS either side of it.
  */
 /**
- * Which basic-attack step a logged basic cast is: its placed skill when it can start at its frame, else the step the
- * operator's chain points to (TimelineState.chainNext and its alternatives) that has the cast's key and can. Steps of one
- * chain can share a key, and which comes next is the kit's call (Typhoeus's hover attacks 1–4 log one key; after attack 1
- * comes attack 1 or 2 by her arrows): the placement takes the first, the engine knows the step.
+ * The skill the replay casts for a logged cast, or null to skip it. A basic attack: its placed skill when it can start at
+ * its frame, else the step the operator's chain points to (TimelineState.chainNext and its alternatives), or any basic
+ * attack of the operator, that has the cast's key and can (Typhoeus's hover attacks 1–4 log one key, and which comes
+ * next is her kit's state: the placement takes the first, the engine knows the step). A slot cast (ReplayedCast.slot):
+ * skipped when its skill can start, else the operator's skill of its kind that can (Si's Initial or Final Stroke for a
+ * logged battle skill under Artful Intent; accuracy plan A2), else skipped.
  */
-function chainStepFor(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, f: number): string {
-  if (c.kind !== "basic") return c.skillId;
+function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, f: number): string | null {
   const startsBy = (skill: string) => {
     const r = earliestStart(ctx, st, { operator: c.operator, skill });
     return !("error" in r) && r.frame <= f + 1;
   };
-  if (startsBy(c.skillId)) return c.skillId;
   const kit = ctx.kits.get(c.operator);
+  const w = c.whileBuff;
+  if (w && !st.buffs.some((b) => b.id === w.buff && b.owner === c.operator && activeAt(b, f) && b.expiresAt > Math.round((w.endsAt * FPS) / 1000) + EXPIRY_MARGIN_FRAMES)) return null;
+  if (c.slot) {
+    if (!c.leadsTo) return null;
+    // Which skill the slot holds, not whether it can start this frame (Si presses during her combo in 0eef): available at all.
+    const available = (skill: string) => !("error" in earliestStart(ctx, st, { operator: c.operator, skill }));
+    if (available(c.skillId)) return null;
+    return kit?.skills.find((k) => k.skillId !== c.skillId && k.kind === c.kind && !k.followUpOnly && available(k.skillId))?.skillId ?? null;
+  }
+  if (c.kind !== "basic" || startsBy(c.skillId)) return c.skillId;
   const hasKey = (skill: string) => (kit?.skills.find((k) => k.skillId === skill)?.hits ?? []).some((h) => h.events.includes(c.key));
   // The chain's next steps first, then any basic attack of the operator with the key (steps gated by the kit's own
   // state, Typhoeus's ABATK attempts: her hover attacks aren't a chain of windows).
@@ -407,7 +474,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // Game buffs a trigger on crits is behind (critTriggers): where a landing's crit isn't logged, the replay bounds them.
   const critDependent = new Set(kitIds.filter(({ owner, id }) => critTriggers(kits.find((k) => k.operator === owner) as OperatorKit, id).length > 0).map((x) => x.g));
   const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
-  const casts: ReplayedCast[] = kits.length > 0 ? castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits)) : [];
+  const casts: ReplayedCast[] = kits.length > 0 ? castsFromBuffEnds(kits, placement, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits))) : [];
   const sampleFrames = [...new Set(fx.hits.flatMap((h) => [frameOf(h.t) - edge, frameOf(h.t), frameOf(h.t) + edge]))].filter((f) => f >= 0).sort((a, b) => a - b);
   type Made = { c: ReplayedCast; f: number; pre: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs };
   /**
@@ -512,8 +579,10 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
           st = advance(ctx, st, f);
           const windowCount = c.kind === "combo" ? replayWindowCount(ctx, st, c.operator, c.skillId, f) : null;
           const pre = st;
-          const skillId = chainStepFor(ctx, st, c, f);
-          st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious, landings: c.landings });
+          const skillId = replayedSkill(ctx, st, c, f);
+          if (skillId === null) continue;
+          // A slot cast the log shows only by its press (Si's Initial Stroke during her combo) keeps the running cast's hits.
+          st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious || c.slot === true, landings: c.landings });
           const index = st.casts.findLastIndex((x) => x.frame === f && x.operator === c.operator && x.skill === skillId);
           const carried = st.buffs.filter((b) => b.cast === index && b.id !== "link");
           const consumed: ConsumedBuffs = { buffs: carried.map((b) => b.id).sort(), modifiers: buffModifiers(carried, c.operator, f, index) };
