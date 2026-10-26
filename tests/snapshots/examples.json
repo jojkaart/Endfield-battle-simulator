@@ -29,17 +29,17 @@
   ]
  },
  "antal-focus.scenario.json": {
-  "total": 486746.814,
+  "total": 497573.664,
   "hits": 39,
   "casts": 18,
   "perOperator": {
    "chr_0023_antal": 56530.871,
    "chr_0013_aglina": 47239.704,
-   "chr_0016_laevat": 382976.239
+   "chr_0016_laevat": 393803.09
   },
-  "digest": "6b4bb1fd5c48",
+  "digest": "58ec67a69eb1",
   "windows": [
-   "1ebb83e992df",
+   "c63ae9c5a60a",
    "6ad3fa9a3448",
    "e3b0c44298fc",
    "f055729564b4",
@@ -103,17 +103,17 @@
   ]
  },
  "camille-gilberta.scenario.json": {
-  "total": 200535.282,
-  "hits": 44,
+  "total": 226621.078,
+  "hits": 52,
   "casts": 11,
   "perOperator": {
-   "chr_0033_camille": 130345.467,
-   "chr_0013_aglina": 70189.815
+   "chr_0033_camille": 174345.154,
+   "chr_0013_aglina": 52275.924
   },
-  "digest": "8967d6d4a79a",
+  "digest": "dbd8e2b502e2",
   "windows": [
-   "47a229dee149",
-   "b3d2b3fceac8"
+   "4c10c65111e1",
+   "1d34eeb0f198"
   ]
  },
  "catcher-counter.scenario.json": {
@@ -201,16 +201,16 @@
   ]
  },
  "gilberta-gravity-field.scenario.json": {
-  "total": 352119.646,
+  "total": 367003.004,
   "hits": 36,
   "casts": 13,
   "perOperator": {
-   "chr_0013_aglina": 59911.176,
-   "chr_0016_laevat": 292208.47
+   "chr_0013_aglina": 58875.394,
+   "chr_0016_laevat": 308127.611
   },
-  "digest": "72eb3712e949",
+  "digest": "f1b2dbbeb173",
   "windows": [
-   "d091e381f56b",
+   "6aee8a6f177b",
    "f6f7810d6ccb"
   ]
  },
@@ -346,19 +346,19 @@
   ]
  },
  "si-laevatain-liino-gilberta.scenario.json": {
-  "total": 2691389.486,
-  "hits": 113,
+  "total": 2830893.391,
+  "hits": 114,
   "casts": 43,
   "perOperator": {
-   "chr_0036_jsspsi": 551587.589,
-   "chr_0016_laevat": 1878824.641,
-   "chr_0035_liino": 195723.74,
-   "chr_0013_aglina": 65253.516
+   "chr_0036_jsspsi": 588849.336,
+   "chr_0016_laevat": 1967121.435,
+   "chr_0035_liino": 196749.67,
+   "chr_0013_aglina": 78172.95
   },
-  "digest": "a1d0282477ef",
+  "digest": "c2d739e1a66a",
   "windows": [
-   "21dcbc630758",
-   "db2f4acf6e3d"
+   "cab1e71ec001",
+   "5a02852b9c98"
   ]
  },
  "si-laevatain.scenario.json": {

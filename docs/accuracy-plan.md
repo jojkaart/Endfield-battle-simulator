@@ -79,6 +79,33 @@ the enemy's remaining HP is capped in the totals too. 0eef −26.0 →
 −59.6 → −51.8%, 40d9 → 0 (a kill). Not done: `casts` for the 8 Si
 fixtures without them (a re-import with `--detail`).
 
+A5 reclassified (2026-10-26): the male Endministrator (`chr_0002_endminm`,
+d4fb) isn't the female's events under another name. All 13 of his skill
+files differ from hers in timing and actions (his attack 1 ends at frame
+120, hers at 179; his power attack differs in 2,473 lines), so mapping
+the events would place his hits on her timeline. He needs a kit variant
+(her kit's structure, his SkillData) and the importer needs to tell the
+genders apart (it reads the virtual ID as her): a kit item now (B8).
+
+A6 done (2026-10-26), but not as planned: e82d's missing Amp was Si's
+own (her ultimate's, 0.432 Cryo / Heat), not a hitless cast's. Arcane's
+ultimate at 5455 ms inside Si's from 5096 ms: the engine held Si's
+delayed Amp (her cast's frame 62) through Arcane's stop while her
+logged slashes (frame 63 on) land on time, unheld. Shifting cast starts
+by other operators' stops instead (the placement) made b7b3 and dbae
+worse (plain 38 → 13, 23 → 4): wrong. The engine's rule now: an
+ultimate's time stop doesn't hold an operator whose own ultimate's time
+stop covers those frames (Si's stop's ignoreTargets name the "dazhao"
+group; an interim from one log, in-game test 18). e82d −51.8 → −32.7%,
+c3c7 −5.1 → +0.1%, 9555 plain 110 → 124; 458b plain 300 → 294.
+Examples with overlapping ultimates move: camille-gilberta +13.0%,
+si-laevatain-liino-gilberta +5.2%, gilberta-gravity-field +4.2%,
+antal-focus +2.2%. Xaihi's own ultimate Amp (a hitless cast whose Amp
+shares the affix names with Si's) is still not inferred: e82d's 0.607
+Cryo / Nature entries.
+
+A7 done: d9e5 is marked excluded in fixtures/pending/README.md.
+
 Done when the verified fixtures' totals are within a few percent once
 matched-hit errors are taken out, so the matched hits' error is the
 engine's.

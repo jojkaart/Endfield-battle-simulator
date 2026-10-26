@@ -39,6 +39,6 @@
   "chr_0032_lizhiyan": {"plain":1,"assumed":1,"fallback":2,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0035_liino": {"plain":21,"assumed":0,"fallback":4,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0011_seraph": {"plain":0,"assumed":1,"fallback":6,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":-20.6,"operator chr_0034_typhoea":-19.8,"operator chr_0032_lizhiyan":-63.1,"operator chr_0035_liino":-5.6,"operator chr_0011_seraph":-39.3,"kind basic":-19.2,"kind battle":-26.3,"kind combo":-27.6,"kind status":-100,"kind ultimate":-19.5,"hits":15.2,"status hits":-100,"staggered hits":0,"last hit":0,"crit share (points)":0.8}
+  "totals": {"damage":-20.6,"operator chr_0034_typhoea":-19.8,"operator chr_0032_lizhiyan":-63.1,"operator chr_0035_liino":-6.1,"operator chr_0011_seraph":-39.3,"kind basic":-19.2,"kind battle":-26.3,"kind combo":-27.5,"kind status":-100,"kind ultimate":-19.7,"hits":15.2,"status hits":-100,"staggered hits":0,"last hit":0,"crit share (points)":0.8}
  }
 }

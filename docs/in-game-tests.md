@@ -352,6 +352,14 @@ frozen. Also, in a video: is the SP bar (not full) visibly higher at the
 animation's end than at its start (regen runs: about a twentieth of the
 bar over 2 s), or unchanged (frozen, engine)?
 
+Two ultimates overlapping (since 2026-10-26): the engine doesn't freeze an
+operator whose own ultimate's time stop is still running when another
+ultimate stops time (one log: Si's ultimate slashes landed on time with
+Arcane's ultimate cast inside hers). To check: cast Laevatain's ultimate,
+then at once Gilberta's (or any ultimate) during Laevatain's freeze: does
+Laevatain's animation carry on at its own pace (engine), or pause until
+Gilberta's freeze ends (about 1.7 s longer)?
+
 The caster's own buffs are a second question. The engine freezes them too
 (only the caster's hits and action are exempt), but the data exempts the
 caster from its own time stops and slow-downs, and one Estella log fits

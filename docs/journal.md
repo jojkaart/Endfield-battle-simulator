@@ -33,6 +33,14 @@ buff's own expiry explains it); a first version substituted Liino's
 logged press during her stance as End Stance and dropped the stance's ATK
 (0eef Si plain 9 → 1): substitutions now need a logged consequence. 0eef
 −26 → −11.8%, bdf2 → +0.5%, b6aa → −20.5%, c3c7 → −5.1%.
+A5 is a kit item: the male Endministrator's skill files all differ from
+the female's (timing and actions). A6: e82d's missing Amp was Si's own,
+held by the engine through Arcane's ultimate cast inside Si's; shifting
+cast starts in the placement instead was wrong (b7b3 plain 38 → 13),
+reverted. The engine no longer holds an operator during another
+ultimate's stop while its own ultimate's stop runs (interim, one log;
+in-game test 18 has the check): e82d −51.8 → −32.7%, c3c7 → +0.1%;
+examples with overlapping ultimates +2–13% (camille-gilberta +13.0%).
 
 ## 2026-10-26: what isn't simulated accurately (three audits, a plan)
 

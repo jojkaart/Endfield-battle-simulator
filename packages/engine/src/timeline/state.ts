@@ -336,8 +336,12 @@ export interface TimelineState {
   readonly enemyFrozenUntil: number;
   /** The enemy's stagger: its stagger HP left, until when it's Staggered, and whether this stagger's finisher is used. */
   readonly stagger: { readonly poise: number; readonly until: number | null; readonly finisherUsed: boolean };
-  /** Global time slow-downs (an ultimate's time stop, a combo's slow-down) still running or to come: per frame from `start`, all but `exempt` (the caster). */
-  readonly slowdowns: readonly { readonly start: number; readonly scales: readonly number[]; readonly exempt: string }[];
+  /**
+   * Global time slow-downs (an ultimate's time stop, a combo's slow-down) still running or to come: per frame from
+   * `start`, all but `exempt` (the caster). `ultimate`: an ultimate's (its caster isn't held by another ultimate's while
+   * it runs: clock.ts slowDown).
+   */
+  readonly slowdowns: readonly { readonly start: number; readonly scales: readonly number[]; readonly exempt: string; readonly ultimate?: true }[];
   readonly enemy: EnemyStatus;
   /** Timed buffs and debuffs from skills. */
   readonly buffs: readonly ActiveBuff[];

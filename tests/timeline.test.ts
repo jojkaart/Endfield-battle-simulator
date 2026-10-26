@@ -837,6 +837,19 @@ describe("timeline: an ultimate's time stop", () => {
     expect(stopped).toEqual(plain.map((f) => (f > 10 ? f + 61 : f)));
   });
 
+  it("doesn't hold an operator inside its own ultimate's time stop (an interim from e82d45c46040): only the part after it ends", () => {
+    const gilUlt = { operator: g, skill: "chr_0013_aglina_ultimate_skill" };
+    const own = (data.skills["chr_0013_aglina_ultimate_skill"]?.timing?.slowdowns ?? [])[0];
+    const ownEnd = (own?.from ?? 0) + (own?.scales.length ?? 0);
+    const lUlt = { operator: op, skill: L + "ultimate_skill", at: 10 };
+    const plain = runTo([gilUlt], 30 * 20).end.hits.filter((h) => h.operator === g).map((h) => h.frame);
+    const both = runTo([gilUlt, lUlt], 30 * 20).end.hits.filter((h) => h.operator === g).map((h) => h.frame);
+    // Laevatain's 61 frames from 10: Gilberta loses only those after her own stop ends.
+    const held = Math.max(0, 10 + 61 - Math.max(10, ownEnd));
+    expect(held).toBeLessThan(61);
+    expect(both).toEqual(plain.map((f) => (f > 10 ? f + held : f)));
+  });
+
   it("delays a frozen operator's team energy with its hits (a battle skill's teamEnergy at its data frame)", () => {
     // Gilberta's battle skill with its team energy at frame 30 (as Dapan's at 43): Laevatain's stop at 10 moves it to 91.
     const gs = "chr_0013_aglina_normal_skill";
@@ -859,7 +872,7 @@ describe("timeline: an ultimate's time stop", () => {
     const { s } = runTo([gil, { operator: op, skill: L + "ultimate_skill", at: 10 }], 10);
     expect(s.readyAt["chr_0013_aglina_normal_skill"]).toBe(before.readyAt["chr_0013_aglina_normal_skill"]);
     expect(s.spPausedUntil).toBe(Math.max(before.spPausedUntil, 10) + 61);
-    expect(s.slowdowns).toEqual([{ start: 10, scales: Array.from({ length: 61 }, () => 0), exempt: op }]);
+    expect(s.slowdowns).toEqual([{ start: 10, scales: Array.from({ length: 61 }, () => 0), exempt: op, ultimate: true }]);
   });
 
   it("SP regenerates until a stop starts, also one that starts later than its cast, or is cast inside an advance", () => {

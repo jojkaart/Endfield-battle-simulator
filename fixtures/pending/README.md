@@ -19,7 +19,8 @@ Corrosion can give, and every operator with a kit needs a plain or
 assumed match (log-listing fallbacks show the damage with the log's
 buffs, not the engine's).
 
-- `zmdlogs-d9e59d0fb737.json` (0 of 98 hits matched): every hit after
+- `zmdlogs-d9e59d0fb737.json` (0 of 98 hits matched; excluded from the
+  accuracy plan's leads, A7: a battle from before the 1.6 tables): every hit after
   Arcane's ultimate is ×1.7–2.0 the prediction (Typhoeus 42, Arcane 13,
   Gilberta 8 of their hits are now mismatches; 34 stay under Corrosion
   within its range, Liino's 24 among them). Arcane's kit notes already

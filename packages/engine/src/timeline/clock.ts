@@ -15,12 +15,17 @@ import { onOperator, shiftClock } from "./schedule.ts";
  * and every operator but the caster (its hits on the way, its current
  * action) lose the frames the slow-down takes; cooldowns run on. Where
  * slow-downs overlap the lowest scale counts, so each loses only what the
- * new one adds. Modelled as shifting everything after the slow-down's start
- * by the lost frames: exact for a stop, and for a partial slow-down after
- * it ends.
+ * new one adds. An ultimate's time stop doesn't hold an operator whose own
+ * ultimate's time stop covers that frame (an interim from one log:
+ * e82d45c46040, Arcane's ultimate at 5455 ms inside Si's from 5096 ms; Si's
+ * slashes land at her kit's frames, unheld, and her stop's ignoreTargets
+ * name the "dazhao" group; in-game test 18). Modelled as shifting
+ * everything after the slow-down's start by the lost frames: exact for a
+ * stop, and for a partial slow-down after it ends.
  */
 export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string, timing: SkillTiming, frame: number): TimelineState {
   let s: TimelineState = { ...st, slowdowns: st.slowdowns.filter((x) => x.start + x.scales.length > frame) };
+  const ultimate = timing.specification === 5;
   for (const d of timing.slowdowns) {
     const start = frame + d.from;
     const scaleAt = (who: string | null, f: number) => {
@@ -28,15 +33,17 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
       for (const x of s.slowdowns) if (x.exempt !== who && f >= x.start && f < x.start + x.scales.length) m = Math.min(m, x.scales[f - x.start] as number);
       return m;
     };
+    // Frames of its own ultimate's time stop, which another ultimate's doesn't take from it.
+    const ownStop = (who: string | null, f: number) => ultimate && who !== null && s.slowdowns.some((x) => x.ultimate && x.exempt === who && f >= x.start && f < x.start + x.scales.length);
     const lost = (who: string | null) => {
       if (who === caster) return 0;
       let sum = 0;
-      d.scales.forEach((v, k) => (sum += Math.max(0, scaleAt(who, start + k) - v)));
+      d.scales.forEach((v, k) => (sum += ownStop(who, start + k) ? 0 : Math.max(0, scaleAt(who, start + k) - v)));
       return Math.round(sum);
     };
     const world = lost(null);
     const by = new Map(ctx.scenario.team.map((b) => [b.operator, lost(b.operator)]));
-    s = { ...shiftWorld(s, start, world), slowdowns: [...s.slowdowns, { start, scales: d.scales, exempt: caster }] };
+    s = { ...shiftWorld(s, start, world), slowdowns: [...s.slowdowns, { start, scales: d.scales, exempt: caster, ...(ultimate ? { ultimate: true as const } : {}) }] };
     for (const [op, n] of by) s = shiftOperator(s, op, start, n);
   }
   // Cooldowns run on through it, while the buffs on the world's clock (a recovery rate's among them) last longer.
