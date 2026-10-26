@@ -9,7 +9,10 @@ Older entries (2026-10-21 and earlier): [journal-archive.md](journal-archive.md)
 
 The owner on teammates: they basic-attack on their own, slower than the
 controlled operator, not during e.g. Liino's stance and ultimate (plan
-B0). Then A1 (accuracy-plan.md "Progress"): four placement and replay
+B0); and later: "Liino's skill only blocks it for Liino herself. The
+other operators do keep attacking and even Liino's stance is doing damage
+to enemies, but through the skill instead." Then A1 (accuracy-plan.md
+"Progress"): four placement and replay
 fixes, not one: a cast with all its known landings of a key logged takes
 no more; stack requirements are alternatives at one frame; casts placed
 from the same key aren't merged as one cast; shared-key chain steps by
