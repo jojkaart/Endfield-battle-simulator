@@ -588,8 +588,10 @@ evaluate(state) → partial Result        // damage so far, resources, timings
 the stepping API. By default it never swaps (`SearchOptions.swaps`, CLI
 `--swaps`; the owner, 2026-10-25: "I don't intend to do operator swaps
 during battles"): the scenario's controlled operator does every basic
-attack and dive, and the teammates cast their battle skills, combos and
-ultimates. At each decision point every legal action is tried
+attack and dive the rotation makes, and the teammates cast their battle
+skills, combos and ultimates; between those, the teammates basic-attack on
+their own (scenario `teammateAttacks`, default on: `teammates.ts`, which
+the search doesn't decide). At each decision point every legal action is tried
 (`legalActions`: the actions that can start soonest, plus the controlled
 operator's next basic attacks even if later, plus the *asides* whenever
 legal: the swaps and the controlled operator's dive, which don't count for
@@ -908,6 +910,7 @@ stepping API as `@efsim/engine` exports it) is split by concern under
 | `casting.ts` | 289 | casting a skill, ending one, jumps, a dive's jump |
 | `advance.ts` | 234 | `advance`: everything due up to a frame, in order; enemy actions and perfect dodges; `memoised` |
 | `drivers.ts` | 251 | `init`, `apply`, `replayCast`, `simulate`, `simulateRuns`, `startsNow` |
+| `teammates.ts` | 64 | teammates' own basic attacks: the chain at its windows, the pause after a full chain, held by the operator's own action |
 
 The modules import each other in cycles (casting runs triggers, triggers
 cast), which is safe because no top-level value is computed from another
@@ -946,10 +949,11 @@ ones, and what it does may add to any step still to come:
 | 8 | hit | hits landing |
 | 9 | afterHits | delayed trigger actions marked `afterHits` |
 | 10 | jump | jumps and ends on casts' timelines, a dive's next part (what's at the jump's own skill frame happens first) |
+| 11 | auto | teammates' own basic attacks (`teammates.ts`), once the frame's casts and hits are in |
 
 Steps 2, 3 and 7 come from their own state (the enemy's statuses, the
 buffs); the rest are scheduled items, compared by one function
-(`dueBefore`): frame, step, then for two hits the operator ID, then the
+(`dueBefore`): frame, step, then for two hits (or two teammates' attacks) the operator ID, then the
 order they were scheduled in. This is the order the engine had (its ten
 "next due" scans encoded it, 2026-10-25); none of it is from the game,
 whose order isn't in the data. Hits of different operators at one frame

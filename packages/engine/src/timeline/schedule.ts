@@ -19,11 +19,12 @@ import type { Clock, Scheduled, TimelineState } from "./state.ts";
  *  8. hit          hits landing
  *  9. afterHits    delayed trigger actions after their frame's hits (KitTrigger.afterHits)
  * 10. jump         jumps and ends on casts' timelines, a dive's next part: what's at the jump's own skill frame happens first
+ * 11. auto         teammates' own basic attacks (teammates.ts): once the frame's own casts' effects are in
  *
- * Within a step at one frame: hits by their operator's ID (an arbitrary order the game's isn't known to follow; it
+ * Within a step at one frame: hits (and teammates' attacks) by their operator's ID (an arbitrary order the game's isn't known to follow; it
  * keeps a hit's order apart from the team's order), then everything in the order it was scheduled (`dueBefore`).
  */
-export const IN_FRAME = ["burst", "statusTick", "buffExpiry", "action", "energy", "enemyAction", "buffTick", "hit", "afterHits", "jump"] as const;
+export const IN_FRAME = ["burst", "statusTick", "buffExpiry", "action", "energy", "enemyAction", "buffTick", "hit", "afterHits", "jump", "auto"] as const;
 export type Step = (typeof IN_FRAME)[number];
 export const IN_FRAME_RANK = Object.fromEntries(IN_FRAME.map((s, i) => [s, i])) as Readonly<Record<Step, number>>;
 
@@ -41,7 +42,8 @@ export function dueBefore(a: Scheduled, b: Scheduled): boolean {
   const ra = IN_FRAME_RANK[stepOf(a)];
   const rb = IN_FRAME_RANK[stepOf(b)];
   if (ra !== rb) return ra < rb;
-  return a.kind === "hit" && b.kind === "hit" && a.operator < b.operator;
+  // Hits, and teammates' attacks, by their operator's ID (not the team's order).
+  return ((a.kind === "hit" && b.kind === "hit") || (a.kind === "auto" && b.kind === "auto")) && a.operator < b.operator;
 }
 
 /** A scheduled list's items of one kind, in order. */

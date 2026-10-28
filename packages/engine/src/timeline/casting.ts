@@ -16,6 +16,7 @@ import { castCooldowns, gainEnergy, rebaseCooldowns, skillSpGain, spAt, spCostAt
 import { chainAfter, windowKey } from "./timing.ts";
 import { situationAt } from "./situation.ts";
 import { cancelCast, jumpCast, schedule } from "./schedule.ts";
+import { teammateStart } from "./teammates.ts";
 
 /** Whether two skill lists name the same skills. */
 const sameSkills = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((x) => b.includes(x));
@@ -277,7 +278,8 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
     chainNext: beside ? next.chainNext : chainAfter(ctx, next, operator, skill, frame, speed, openWindows),
     readyAt: castCooldowns(ctx, next.readyAt, operator, skill, costs.cooldownFrames, frame, s.buffs),
     ...(skill.takesControl ? { controlled: operator } : {}),
-    scheduled: [...next.scheduled, ...pending, ...(beside ? [] : planned)],
+    // A skill that takes control leaves the operator it replaces attacking on its own (teammates.ts).
+    scheduled: [...next.scheduled, ...pending, ...(beside ? [] : planned), ...(skill.takesControl && s.controlled !== operator && ctx.scenario.options.teammateAttacks ? [teammateStart(s.controlled, frame)] : [])],
     stacks,
     casts: [...s.casts, { frame, operator, skill: skillId, spAfter: spAtCast - costs.spCost, energyAfter: next.energy[operator] ?? 0, ...(linkUsed > 0 ? { link: linkUsed } : {}) }],
   };

@@ -11,7 +11,8 @@ const data = loadGameData();
 const X = "chr_0011_seraph";
 const S = "chr_0036_jsspsi";
 const L = "chr_0016_laevat";
-const example = readScenario(new URL("../examples/xaihi-si.scenario.json", import.meta.url).pathname);
+// Kit mechanics on the example's rotation alone: teammates' own attacks off (accuracy plan B0; tests/teammates.test.ts).
+const example = ((sc) => ({ ...sc, options: { ...sc.options, teammateAttacks: false } }))(readScenario(new URL("../examples/xaihi-si.scenario.json", import.meta.url).pathname));
 const laevatain = JSON.parse(readFileSync(new URL("../examples/laevatain-forgeborn.json", import.meta.url), "utf8")) as Build;
 const act = (operator: string) => (skill: string, at?: number): RotationAction => ({ operator, skill: skill === "swap" ? "swap" : `${operator}_${skill}`, ...(at !== undefined ? { at } : {}) });
 const op = act(X);

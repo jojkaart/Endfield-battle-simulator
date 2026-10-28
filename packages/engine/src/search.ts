@@ -484,6 +484,7 @@ const SCHEDULED_KEY: { readonly [K in Scheduled["kind"]]: KeyRules<Extract<Sched
   jump: { ...HEADER_KEY, operator: true, from: true, to: true, end: true, then: true, landing: true },
   burst: { ...HEADER_KEY, event: true, fromKind: true, fromCast: (i, env) => env.rel(i) },
   enemyAction: { ...HEADER_KEY, act: true, target: true, element: true },
+  auto: { ...HEADER_KEY, operator: true, step: true },
 };
 const SCHEDULED_KINDS = Object.keys(SCHEDULED_KEY) as Scheduled["kind"][];
 

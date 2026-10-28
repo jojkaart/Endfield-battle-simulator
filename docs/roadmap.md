@@ -9,11 +9,9 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
 ## Next steps
 
 0. **Engine accuracy first** (the owner, 2026-10-26: above the search's
-   scoring): [accuracy-plan.md](accuracy-plan.md). Phase A and B1
-   (Stagger) are done; next B0's other half, teammates' own basic attacks
-   in `simulate` and the search (the owner: they attack, slower, not
-   during e.g. Liino's stance; their pace measurable now that the replay
-   knows who's controlled), then SP recovery, Corrosion, Solidification /
+   scoring): [accuracy-plan.md](accuracy-plan.md). Phase A, B1 (Stagger)
+   and B0 (teammates' own basic attacks, in-game test 101 to confirm the
+   pace) are done; next SP recovery (B2), Corrosion, Solidification /
    Combustion durations, a reaction's own hit, the favourites' kit leads
    (Arcane's Nature burst in dbae).
 1. **The tool's purpose: team rotations for the owner's favourites**

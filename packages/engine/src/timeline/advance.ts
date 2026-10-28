@@ -17,6 +17,7 @@ import { runActions, runTriggers } from "./actions.ts";
 import { asEvents, draw, landBurst, landHit, recordStatus } from "./landing.ts";
 import { castSkill, endCurrentSkill, takeJump } from "./casting.ts";
 import { dueBefore, IN_FRAME_RANK, ofCast, schedule, stepOf, unschedule } from "./schedule.ts";
+import { teammateAttack } from "./teammates.ts";
 
 /**
  * The earliest periodic tick of an active buff at or before `frame`. A tick
@@ -202,6 +203,8 @@ function runScheduled(ctx: TimelineContext, st: TimelineState, x: Scheduled): Ti
     }
     case "enemyAction":
       return enemyAct(ctx, st, x);
+    case "auto":
+      return teammateAttack(ctx, st, x);
     case "hit":
       return landHit(ctx, st, x);
     case "jump": {

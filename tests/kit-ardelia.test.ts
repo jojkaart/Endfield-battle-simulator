@@ -185,7 +185,9 @@ describe("Ardelia's arts units on their wielders", () => {
   });
 
   it("Opus: Etch Figure on Gilberta: her battle skill's Nature Infliction gives Laevatain (not her) Arts DMG +0.196 for 15 s (one enemy, L9)", () => {
-    const sc = readScenario(new URL("../examples/gilberta-gravity-field.scenario.json", import.meta.url).pathname);
+    // Laevatain's hits from Gilberta's battle skill on: teammates' own attacks off (accuracy plan B0), or hers come before it.
+    const read = readScenario(new URL("../examples/gilberta-gravity-field.scenario.json", import.meta.url).pathname);
+    const sc = { ...read, options: { ...read.options, teammateAttacks: false } };
     const worn: TimelineScenario = { ...sc, team: sc.team.map((m) => (m.operator === G ? { ...m, weapon: { id: "wpn_funnel_0006", level: 90, skillLevels: [9, 9, 9] } } : m)), startEnergy: {}, controlled: G };
     const g = act(G);
     const l = act(L);

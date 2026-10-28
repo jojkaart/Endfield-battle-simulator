@@ -61,6 +61,10 @@
       },
       "description": "The controlled operator dashes at every enemy attack on it (enemyActions); a perfect dodge ends its action, gives SP and slows the world, cooldowns excepted. Absent: no dodges."
     },
+    "teammateAttacks": {
+      "type": "boolean",
+      "description": "Whether the operators that aren't controlled basic-attack on their own (default true): each runs its chain when its own action is over, pausing 3.5 s after a full chain (the logs' median), and its own skills cut it. Their Final Strikes deal no Stagger and give no SP."
+    },
     "enemyActions": {
       "type": "array",
       "description": "What the enemy does (default nothing): attacks on the team, skill charges and Stagger recoveries (its bar refills and a Stagger ends: a boss's own move), at listed times or every n seconds. Times are on the enemy's clock: time stops and freezes delay what comes after them.",

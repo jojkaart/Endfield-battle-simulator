@@ -42,7 +42,8 @@ what you saw, in a line; the formats below are only suggestions.
 
 | # | test | needs | reply, e.g. |
 |---|---|---|---|
-| 1 | [100](#100-what-makes-rhodagns-stagger-bar-snap-back-to-full-ready-if-you-fight-rhodagn-higher-priority-every-rhodagn-fight) Rhodagn's Stagger bar snapping back | anyone, vs Rhodagn | `100: at ~30 s, HP ~70%, as he jumps to the stacks` |
+| 1 | [101](#101-how-often-a-teammate-attacks-on-its-own-ready-any-team-higher-priority-every-team-since-2026-10-28) a teammate's own attacks | anyone | `101: 3 chains in 20 s, ~4 s pauses; same when I attack` |
+| 1b | [100](#100-what-makes-rhodagns-stagger-bar-snap-back-to-full-ready-if-you-fight-rhodagn-higher-priority-every-rhodagn-fight) Rhodagn's Stagger bar snapping back | anyone, vs Rhodagn | `100: at ~30 s, HP ~70%, as he jumps to the stacks` |
 | 2 | [54](#54-can-a-dash-cancel-a-battle-skill-or-combo-at-any-moment-ready-higher-priority-affects-every-operator) dash cancels a skill | Laevatain; Gilberta or Si | `54: dashes at once, extra hit gone; combo hit gone` |
 | 3 | [18](#18-what-an-ultimates-time-stop-freezes-ready) what a time stop freezes | any two | `18: cooldown same / ~2 s longer; SP bar unchanged / higher` |
 | 4 | [98](#98-food-buffs-on-the-stat-panel-ready-any-operator-a-few-minutes) food on the stat panel | anyone | `98: stew ATK 2,367 → 2,965, crit +11.4` |
@@ -1864,6 +1865,25 @@ stacks?). If he's Staggered when it happens, note whether the Stagger
 ends there.
 1. Engine (now): the bar never refills except at a Stagger's end.
 2. Logs: around 30–45 s and 69–75% HP, maybe tied to a move of his.
+
+### 101. How often a teammate attacks on its own (ready, any team; higher priority: every team since 2026-10-28)
+
+**Why:** the engine now has teammates basic-attack on their own
+(accuracy plan B0): each runs its full chain, then pauses about 3.5 s
+(the logs' median gap between a teammate's runs; quartiles 2.1–6.8 s),
+and its own skills cut it. With it, examples whose controlled operator is
+a support rise a lot (akekuri-laevatain +66%: Laevatain, a teammate,
+fills the gaps). The logs measure the gaps, but not why they vary.
+**How:** in a training room with a dummy, control one operator and stop
+attacking (stand still near the enemy, don't swap, cast nothing) for
+20 s. Watch one teammate: count its full chains (its Final Strike, the
+chain's last and biggest hit) and roughly time the pause after each.
+Then do the same while your controlled operator attacks nonstop, to see
+whether the teammate's pace changes.
+1. Engine: about 3–4 full chains in 20 s (a chain of about 2–3 s, then
+   a pause of about 3.5 s), the same whether you attack or not.
+2. If the teammate attacks nonstop, or only now and then (say one chain
+   in 10 s), or only when you attack, note it: the pause is then wrong.
 
 ## Results
 

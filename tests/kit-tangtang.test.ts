@@ -315,7 +315,7 @@ describe("Clannibal (wpn_pistol_0009) on Wulfgard", () => {
     expect(consumed.length).toBeGreaterThan(0);
     const at = consumed[0]?.frame as number;
     // The rotation's actions up to the consumption, then 5 s on (the buffs are still there to read).
-    const s = run(wielding, wsc.rotation.slice(0, all.casts.filter((c) => c.frame <= at).length), at + 5 * 30);
+    const s = run(wielding, wsc.rotation.slice(0, all.casts.filter((c) => !c.teammate && c.frame <= at).length), at + 5 * 30);
     const taken = s.buffs.filter((b) => b.id === "wpn_pistol_0009.taken_fire");
     expect(taken.length).toBeGreaterThan(0);
     expect(taken.map((b) => b.expiresAt - b.appliedAt)).toEqual(taken.map(() => 15 * 30));

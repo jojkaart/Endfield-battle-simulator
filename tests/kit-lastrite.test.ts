@@ -10,7 +10,8 @@ const data = loadGameData();
 const L = "chr_0026_lastrite";
 const P = L + "_";
 const SI = "chr_0036_jsspsi";
-const example = readScenario(new URL("../examples/lastrite-si.scenario.json", import.meta.url).pathname);
+// Kit mechanics on the example's rotation alone: teammates' own attacks off (accuracy plan B0; tests/teammates.test.ts).
+const example = ((sc) => ({ ...sc, options: { ...sc.options, teammateAttacks: false } }))(readScenario(new URL("../examples/lastrite-si.scenario.json", import.meta.url).pathname));
 /** A rotation step; `at` in frames. */
 const op = (skill: string, at?: number): RotationAction => ({ operator: L, skill: P + skill, ...(at !== undefined ? { at } : {}) });
 const si = (skill: string, at?: number): RotationAction => ({ operator: SI, skill: `${SI}_${skill}`, ...(at !== undefined ? { at } : {}) });

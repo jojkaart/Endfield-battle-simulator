@@ -18,6 +18,7 @@ interface RawScenario {
   crit?: CritMode;
   seed?: number;
   dodge?: { chance: number };
+  teammateAttacks?: boolean;
   startEnergy?: Record<string, number | "full">;
   startStacks?: Record<string, Record<string, number>>;
   rotation: { operator: string; skill: string; at?: number; repeat?: number }[];
@@ -41,7 +42,8 @@ export function readScenario(file: string): TimelineScenario {
     target: s.target,
     durationFrames: Math.round(s.durationSeconds * FPS),
     rotation,
-    options: { crit: s.crit ?? "expected", ...(s.seed !== undefined ? { seed: s.seed } : {}), ...(s.dodge ? { dodge: s.dodge } : {}) },
+    // Teammates attack on their own unless the scenario says they don't (the owner, 2026-10-26; accuracy plan B0).
+    options: { crit: s.crit ?? "expected", ...(s.seed !== undefined ? { seed: s.seed } : {}), ...(s.dodge ? { dodge: s.dodge } : {}), teammateAttacks: s.teammateAttacks ?? true },
     ...(s.controlled ? { controlled: s.controlled } : {}),
     ...(s.startEnergy ? { startEnergy: s.startEnergy } : {}),
     ...(s.startStacks ? { startStacks: s.startStacks } : {}),
@@ -188,6 +190,7 @@ export function searchCommand(
       crit: found.crit,
       ...(scenario.options.seed !== undefined ? { seed: scenario.options.seed } : {}),
       ...(scenario.options.dodge ? { dodge: scenario.options.dodge } : {}),
+      ...(scenario.options.teammateAttacks === false ? { teammateAttacks: false } : {}),
       ...(scenario.enemyHp ? { enemyHp: scenario.enemyHp.map((e) => ({ at: e.from / FPS, fraction: e.fraction })) } : {}),
       ...(scenario.enemyActions ? { enemyActions: scenario.enemyActions.map((a) => ({ ...a, ...(a.at ? { at: a.at.map((f) => f / FPS) } : {}), ...(a.every !== undefined ? { every: a.every / FPS } : {}), ...(a.from !== undefined ? { from: a.from / FPS } : {}) })) } : {}),
       rotation: found.rotation.map((a) => ({ operator: a.operator, skill: a.skill, ...(a.at !== undefined ? { at: a.at / FPS } : {}) })),
@@ -214,7 +217,7 @@ export function formatResult(data: GameData, scenario: TimelineScenario, r: Time
     "",
     table(
       ["time", "operator", "skill", "SP after", "energy after"],
-      r.casts.map((c) => [`${(c.frame / FPS).toFixed(2)} s`, name(c.operator), c.skill.replace(/^chr_\d+_[a-z]+_/, ""), c.spAfter.toFixed(0), c.energyAfter.toFixed(1)]),
+      r.casts.map((c) => [`${(c.frame / FPS).toFixed(2)} s`, name(c.operator), c.skill.replace(/^chr_\d+_[a-z]+_/, "") + (c.teammate ? " (own)" : ""), c.spAfter.toFixed(0), c.energyAfter.toFixed(1)]),
       ["r", "l", "l", "r", "r"],
     ),
   ];

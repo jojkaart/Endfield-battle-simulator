@@ -116,7 +116,7 @@ Ranked by breadth (every fight first), then the owner's favourites.
 
 | # | mechanic | now | what the data / logs say | impact |
 |---|---|---|---|---|
-| B0 | **Teammates' own basic attacks** (in the replay since 2026-10-26: B1 below; `simulate` and the search still to do) | only the controlled operator basic-attacks (timing.ts:297) | the owner: they do, slower than the controlled operator, and some skills stop it for their own operator only (Liino's Vocalist Stance and ultimate stop Liino's basic attacks, not the others'; the stance deals its damage through the skill instead; the owner, 2026-10-26). To settle from the logs: each operator's pace when not controlled (the gaps between its basic chains in fights where another is controlled), which chain steps it uses, whether its Final Strikes count; from the data: the main-character-only flags (`onlyEnableForMainChar` on 48 basic-attack files, `onlyExecuteWhenSourceIsMainChar` on 125) say which effects an uncontrolled attack doesn't get, and what blocks an operator's own (Liino's stance and ultimate: find the tag or action) | every team: ~2% per teammate plus what their hits trigger |
+| B0 | **Teammates' own basic attacks** (done 2026-10-28: the replay since B1, `simulate` and the search below) | only the controlled operator basic-attacks (timing.ts:297) | the owner: they do, slower than the controlled operator, and some skills stop it for their own operator only (Liino's Vocalist Stance and ultimate stop Liino's basic attacks, not the others'; the stance deals its damage through the skill instead; the owner, 2026-10-26). To settle from the logs: each operator's pace when not controlled (the gaps between its basic chains in fights where another is controlled), which chain steps it uses, whether its Final Strikes count; from the data: the main-character-only flags (`onlyEnableForMainChar` on 48 basic-attack files, `onlyExecuteWhenSourceIsMainChar` on 125) say which effects an uncontrolled attack doesn't get, and what blocks an operator's own (Liino's stance and ultimate: find the tag or action) | every team: ~2% per teammate plus what their hits trigger |
 | B1 | **Stagger** (done 2026-10-26, below) | the bar only falls (packages/engine/src/timeline/resources.ts:211–240); the 50% node is only an event | logs: the engine's first Stagger comes at 0.25–0.96× the game's time (4e5e 23 s vs 67 s; bdf2 Staggered where the game never was); windows ~10 s vs the log's 7–19 s; 1,447 hits Staggered only in the engine (×0.77), 1,329 only in the log. Data: RecoverPoiseAction (`buff_common_recoverpoise`, `enemy_patrolregen`), ModifyResilienceDecreaseFactor; the node's buff (`buff_common_mini_poise_break`, 2.5 s, an interrupt and 0.5 s slow) | every fight: ×1.3 for ~10 s per window; per-fight totals −10% to +30% |
 | B2 | **SP recovery after spending** | 8/s, paused 1.5 s after spending (rules.ts:14, from older Endaxis notes) | the game's native skill settings (Endaxis's extraction, revision 1.5.3) have `atbRecoverInterval: 0.5`, which Endaxis's simulator reads as the pause; Zero Sanity: 7.69/s, no pause | every SP-bound team: rossi-gilberta +7.8% with 0.5 s; whether 0.5 is the pause or a tick interval needs a check (a log with SP, or an in-game test) |
 | B3 | **Corrosion** | ramp in whole seconds from application, paused only by a full stop; no carry-over on reapplication (reactions.ts:79–87) | data: the wrapper copies the existing Corrosion's `def_decrease` (carry-over); the settings' initial shred by level (−3.6 / −4.8 / −6 / −7.2) and 15 s; logs need ~4.5 points at 6.5 s where the model gives ≥ 11.9 | Arcane, Gilberta, Typhoeus, Ardelia: likely 5–10% too high while Corrosion is up |
@@ -174,9 +174,36 @@ dbae moved to pending: Xaihi's hits need Arcane's
 Nature burst at 10341 ms, which the reaction replay doesn't make (B8).
 Left: 4e5e's bar 24 lower than the engine's from 53.2 s (unattributed
 Stagger at Estella's projectile and a Cryo-on-Heat reaction), which
-costs Rossi's killing blow its Stagger; B0's other half, teammates'
-attacks in `simulate` and the search (their pace, from the logs now
-that the replay knows who's controlled).
+costs Rossi's killing blow its Stagger.
+
+B0 done (2026-10-28). Measured in 28 logs (the replay's teammate casts,
+from the controlled operator the log's Stagger names): a teammate runs
+its chain at the chain's windows (step intervals 0.82× the steps'
+exclusive time), its runs end in a pause (235; median 3.5 s, quartiles
+2.1–6.8 s) or at its own battle skill or combo (246); it spends a median
+39% of its free time attacking (64 operator-fights; the controlled
+operator 60–80%). The engine (`teammates.ts`, scenario `teammateAttacks`,
+default on in scenario files, off in the engine API for tests and the
+log replay): each operator that isn't controlled runs its chain whenever
+its own action is over (exclusive time and own hits), the next step at
+its window, a 3.5 s pause after a full chain; its own casts cut it at
+once; a swap (or a skill that takes control) hands the attacks over;
+same-frame attacks go by operator ID (team order doesn't matter).
+Liino's stance holds hers (her battle skill's action), not the others'.
+Their Final Strikes deal no Stagger and they get no controlled-only SP
+(both from the data). Examples: akekuri-laevatain +66.1%,
+endministrator-crystals +43.5%, fluorite-gilberta +37.5%, antal-focus
++37.4%, pogranichnik-chen +37.3%, ember-guard +34.2%, wulfgard-fluorite
++29.9%, gilberta-gravity-field +26.2%, alesh-estella +25.9%, xaihi-si
++24.4%, perlica-estella +19.9%, camille-gilberta +13.4%, lastrite-si
++10.5%, si-laevatain +8.5%, si-laevatain-liino-gilberta +7.6%,
+typhoeus-gilberta +5.5%; solo examples and liino-laevatain unchanged;
+rossi-gilberta's one seed −18.7% (its rolled crits share one stream; the
+mean of 50 seeds +2.3%). Largest where the controlled operator is a
+support and a damage dealer is a teammate: the support's idle waits now
+hold the teammate's chains. In-game test 101 checks the pace. The search
+takes ~1.5× as long (si-laevatain, beam 24: 20 → 30 s) and finds +4.4%
+there.
 
 ## Phase C: questions for the owner (they decide what to model)
 
@@ -230,8 +257,7 @@ an engine rule. d9e5 is excluded (pre-1.6).
 
 ## Order of work
 
-A1–A7 first (each re-measures the verified fixtures), then B0 (teammates' basic attacks: measured from the logs once A places casts right) and B1 (Stagger:
-re-import the logs with `poiseDamage` per hit, compare windows), B2–B5
+A1–A7, B1 and B0 done (2026-10-26 / 28). Next B2–B5
 (settings and data), B7, B8 per favourite, B6, B9, B10; ask C now; D as
 the owner plays; E alongside when a change touches it. Every step reports
 the verified fixtures' totals and matched-hit error before and after.

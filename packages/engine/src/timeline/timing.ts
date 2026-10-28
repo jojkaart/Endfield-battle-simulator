@@ -93,7 +93,7 @@ function exclusiveOf(ct: SkillTiming, cur: Acting): number {
  */
 export function exclusiveUntil(ctx: TimelineContext, state: TimelineState, operator: string): number {
   const cur = state.acting[operator];
-  if (!cur) return state.frame;
+  if (!cur || cur.auto) return state.frame;
   const ct = timingOf(ctx, cur.skill);
   return Math.max(state.frame, Math.min(actionFrame(cur, ct.durationFrames), actionFrame(cur, exclusiveOf(ct, cur))));
 }
@@ -113,7 +113,8 @@ function actionGate(ctx: TimelineContext, st: TimelineState, operator: string, s
   const nt = timingOf(ctx, skillId);
   const steps = chainSteps(st, operator);
   let frame = base;
-  const cur = st.acting[operator];
+  // A teammate's own attack doesn't hold the operator's own casts (teammates.ts).
+  const cur = st.acting[operator]?.auto ? undefined : st.acting[operator];
   if (cur) {
     const ct = timingOf(ctx, cur.skill);
     const at = (x: number) => actionFrame(cur, x);
@@ -176,7 +177,9 @@ export function chainAfter(ctx: TimelineContext, st: TimelineState, operator: st
 }
 
 /** The frame by which an operator's current cast has landed its hits, and run its awaited delayed actions, that an interrupt would cancel. */
-function ownHitsLanded(st: TimelineState, operator: string): number {
+export function ownHitsLanded(st: TimelineState, operator: string): number {
+  // A teammate's own attack is cut at once (teammates.ts).
+  if (st.acting[operator]?.auto) return 0;
   const cast = st.acting[operator]?.cast ?? st.casts.findLastIndex((c) => c.operator === operator);
   // An end on its timeline that comes before any jump (InterruptCurSkillAction) drops what lies past it: nothing there to
   // wait for on this path (Snowshine's bash, reached only through her counter's jump; a jump an attack sets off is judged again).
@@ -235,7 +238,7 @@ export function counters(ctx: TimelineContext, operator: string, cur: Acting, fr
 /** The first frame at or after `frame` outside the operator's current skill's cantCastSkill channels. */
 export function afterCantCast(ctx: TimelineContext, state: TimelineState, operator: string, frame: number): number {
   const cur = state.acting[operator];
-  if (!cur) return frame;
+  if (!cur || cur.auto) return frame;
   let f = frame;
   // Channels are in skill frames; a hasted cast plays them faster.
   const at = (x: number) => actionFrame(cur, x);
@@ -257,7 +260,7 @@ export function earliestStart(ctx: TimelineContext, state: TimelineState, action
     ctx.kits.get(action.operator)?.triggers.some((t) => allActions(t.do).some((a) => a.kind === "endAction" || a.kind === "cast")) ||
     state.scheduled.some((x) => x.kind === "jump" && x.operator === action.operator) ||
     (ctx.scenario.options.dodge !== undefined && state.scheduled.some((x) => x.kind === "enemyAction" && x.act === "attack"));
-  if (!cur || ("frame" in r && r.frame <= state.frame) || !ends) return r;
+  if (!cur || cur.auto || ("frame" in r && r.frame <= state.frame) || !ends) return r;
   const t = timingOf(ctx, cur.skill);
   const horizon = Math.min(ctx.scenario.durationFrames, "frame" in r ? r.frame : actionFrame(cur, t.durationFrames));
   // Over, replaced, or moved on by a jump.

@@ -33,6 +33,12 @@ export interface TimelineOptions {
   readonly dodge?: { readonly chance: number };
   /** Extra modifiers on every hit (e.g. a fixed external buff). */
   readonly modifiers?: readonly Modifier[];
+  /**
+   * Operators that aren't controlled basic-attack on their own (teammates.ts; the owner, 2026-10-26). Absent: they
+   * don't (the engine's own default, for tests and the log check's replay, which casts the logged attacks itself);
+   * scenario files have it on unless they say otherwise (cli simulate.ts).
+   */
+  readonly teammateAttacks?: boolean;
 }
 
 export interface TimelineScenario {
@@ -224,8 +230,15 @@ export interface PendingEnemyAction extends ScheduledHeader {
   readonly element: Element;
 }
 
+/** A teammate's next basic attack (teammates.ts), on its clock: its chain's first step, or the next one at its window. */
+export interface PendingAuto extends ScheduledHeader {
+  readonly kind: "auto";
+  readonly operator: string;
+  readonly step: "start" | "next";
+}
+
 /** Everything due at a later frame (TimelineState.scheduled); advance.ts runs them in the order of docs/design.md "Order within a frame". */
-export type Scheduled = PendingHit | PendingAction | PendingEnergy | PendingJump | PendingBurst | PendingEnemyAction;
+export type Scheduled = PendingHit | PendingAction | PendingEnergy | PendingJump | PendingBurst | PendingEnemyAction | PendingAuto;
 
 export interface Cast {
   readonly frame: number;
@@ -236,6 +249,8 @@ export interface Cast {
   readonly energyAfter: number;
   /** Link stacks the cast used (a battle skill or ultimate; absent: none). */
   readonly link?: number;
+  /** A teammate's own basic attack (teammates.ts), not one the rotation made. */
+  readonly teammate?: true;
 }
 
 export interface LandedHit extends HitDamage {
@@ -406,6 +421,8 @@ export interface Acting {
   readonly skips?: readonly { readonly from: number; readonly to: number; readonly at: number; readonly length: number }[];
   /** Its conditional windows (indexes in SkillTiming.windows) whose kit condition held at the cast (KitSkill.windows). */
   readonly windows?: readonly number[];
+  /** A teammate's own basic attack (teammates.ts): the operator's own casts cut it at once, as if it had no action. */
+  readonly auto?: true;
 }
 
 /** A basic-attack chain step and the frames in which an attack input resolves to it. */

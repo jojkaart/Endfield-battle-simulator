@@ -1,49 +1,52 @@
 {
  "akekuri-laevatain.scenario.json": {
-  "total": 210880.216,
-  "hits": 81,
-  "casts": 28,
+  "total": 350286.825,
+  "hits": 138,
+  "casts": 64,
   "perOperator": {
    "chr_0019_karin": 63782.654,
-   "chr_0016_laevat": 147097.562
+   "chr_0016_laevat": 286504.171
   },
-  "digest": "8bda920628a3",
+  "digest": "7dad449fa33c",
   "windows": [
-   "8084f4ffad62",
-   "e5133d5849f0",
-   "76d4b757cb93",
-   "97df76b1defb"
+   "4199b6179a05",
+   "4dfe986acc39",
+   "7a63851dfe14",
+   "b5b9c0f1c0df",
+   "22526023081a"
   ]
  },
  "alesh-estella.scenario.json": {
-  "total": 137101.19,
-  "hits": 17,
-  "casts": 10,
+  "total": 172676.435,
+  "hits": 34,
+  "casts": 26,
   "perOperator": {
    "chr_0024_deepfin": 35901.705,
-   "chr_0021_whiten": 101199.485
+   "chr_0021_whiten": 136774.73
   },
-  "digest": "14f9ef402510",
+  "digest": "cc60214f84f0",
   "windows": [
-   "14f9ef402510"
+   "a5ef8320d3b1",
+   "8cd72b39c008"
   ]
  },
  "antal-focus.scenario.json": {
-  "total": 497573.664,
-  "hits": 39,
-  "casts": 18,
+  "total": 683880.161,
+  "hits": 169,
+  "casts": 90,
   "perOperator": {
-   "chr_0023_antal": 56530.871,
-   "chr_0013_aglina": 47239.704,
-   "chr_0016_laevat": 393803.09
+   "chr_0023_antal": 118406.608,
+   "chr_0013_aglina": 109206.674,
+   "chr_0016_laevat": 456266.88
   },
-  "digest": "58ec67a69eb1",
+  "digest": "698afa98d4a3",
   "windows": [
-   "c63ae9c5a60a",
-   "6ad3fa9a3448",
-   "e3b0c44298fc",
-   "f055729564b4",
-   "1a6fc4bcfa38"
+   "b9344550033d",
+   "8fea5ad7aefa",
+   "39dd68b5e9c5",
+   "5a998d550cf3",
+   "d2af5321d5b9",
+   "3e79b0bf33f4"
   ]
  },
  "arcane-will-solo.scenario.json": {
@@ -103,17 +106,17 @@
   ]
  },
  "camille-gilberta.scenario.json": {
-  "total": 226621.078,
-  "hits": 52,
-  "casts": 11,
+  "total": 256908.755,
+  "hits": 76,
+  "casts": 23,
   "perOperator": {
    "chr_0033_camille": 174345.154,
-   "chr_0013_aglina": 52275.924
+   "chr_0013_aglina": 82563.601
   },
-  "digest": "dbd8e2b502e2",
+  "digest": "68b75eb739c5",
   "windows": [
-   "4c10c65111e1",
-   "1d34eeb0f198"
+   "e65bd7832d98",
+   "459c143c5e87"
   ]
  },
  "catcher-counter.scenario.json": {
@@ -144,74 +147,77 @@
   ]
  },
  "ember-guard.scenario.json": {
-  "total": 96094.531,
-  "hits": 15,
-  "casts": 11,
+  "total": 128943.794,
+  "hits": 28,
+  "casts": 24,
   "perOperator": {
    "chr_0009_azrila": 96094.531,
-   "chr_0020_meurs": 0
+   "chr_0020_meurs": 32849.262
   },
-  "digest": "7450749cbb7c",
+  "digest": "50920a60dce2",
   "windows": [
-   "ed55648c0e53",
-   "cbbb9e63f9ce"
+   "48d7529f18ca",
+   "87f77ab50fce"
   ]
  },
  "endministrator-crystals.scenario.json": {
-  "total": 220110.658,
-  "hits": 24,
-  "casts": 12,
+  "total": 315795.678,
+  "hits": 87,
+  "casts": 50,
   "perOperator": {
    "chr_0003_endminf": 96611.723,
-   "chr_0021_whiten": 72270.893,
-   "chr_0013_aglina": 51228.042
+   "chr_0021_whiten": 125586.684,
+   "chr_0013_aglina": 93597.271
   },
-  "digest": "6d4bad4b2087",
+  "digest": "18b174ca247f",
   "windows": [
-   "3a5264b17750",
-   "68aba3825a57"
+   "2675a11f81bf",
+   "d3f59b076106",
+   "7b8e0627d1df"
   ]
  },
  "estella-solidification.scenario.json": {
-  "total": 178286.421,
-  "hits": 20,
-  "casts": 8,
+  "total": 199360.687,
+  "hits": 45,
+  "casts": 21,
   "perOperator": {
    "chr_0021_whiten": 169112.301,
-   "chr_0013_aglina": 9174.121
+   "chr_0013_aglina": 30248.387
   },
-  "digest": "002b4bd88387",
+  "digest": "a33aa761681f",
   "windows": [
-   "002b4bd88387"
+   "a15930c362d6",
+   "ff42e0d9b4a8"
   ]
  },
  "fluorite-gilberta.scenario.json": {
-  "total": 107982.467,
-  "hits": 28,
-  "casts": 17,
+  "total": 148446.262,
+  "hits": 83,
+  "casts": 42,
   "perOperator": {
    "chr_0022_bounda": 89201.601,
-   "chr_0013_aglina": 18780.866
+   "chr_0013_aglina": 59244.662
   },
-  "digest": "e2c8a56654ad",
+  "digest": "3849fb4dac31",
   "windows": [
-   "11da26030598",
-   "ec03f391bc1a",
-   "97d9bdcf32a9"
+   "1ab0209a2c75",
+   "ff503a7609d4",
+   "81cee0b0f736",
+   "40de43569f91"
   ]
  },
  "gilberta-gravity-field.scenario.json": {
-  "total": 367003.004,
-  "hits": 36,
-  "casts": 13,
+  "total": 462977.444,
+  "hits": 57,
+  "casts": 26,
   "perOperator": {
-   "chr_0013_aglina": 58875.394,
-   "chr_0016_laevat": 308127.611
+   "chr_0013_aglina": 62896.28,
+   "chr_0016_laevat": 400081.165
   },
-  "digest": "f1b2dbbeb173",
+  "digest": "de1441977596",
   "windows": [
-   "6aee8a6f177b",
-   "f6f7810d6ccb"
+   "b7493375bd24",
+   "e75f87455823"
   ]
  },
  "laevatain-solo.scenario.json": {
@@ -229,18 +235,18 @@
   ]
  },
  "lastrite-si.scenario.json": {
-  "total": 823680.266,
-  "hits": 51,
-  "casts": 24,
+  "total": 910070.237,
+  "hits": 96,
+  "casts": 48,
   "perOperator": {
-   "chr_0036_jsspsi": 42066.081,
-   "chr_0026_lastrite": 781614.186
+   "chr_0036_jsspsi": 119650.628,
+   "chr_0026_lastrite": 790419.609
   },
-  "digest": "bec06f8aba6f",
+  "digest": "1dc6ba051e20",
   "windows": [
-   "a091998e467c",
-   "da61a13577f6",
-   "68726493cd95"
+   "68cc06d12a88",
+   "79ba2f1d6ee7",
+   "83a3d4afa656"
   ]
  },
  "lifeng-solo.scenario.json": {
@@ -260,7 +266,7 @@
  "liino-laevatain.scenario.json": {
   "total": 601605.296,
   "hits": 55,
-  "casts": 14,
+  "casts": 15,
   "perOperator": {
    "chr_0016_laevat": 499733.838,
    "chr_0035_liino": 101871.458
@@ -273,45 +279,47 @@
   ]
  },
  "mifu-dapan.scenario.json": {
-  "total": 636140.343,
-  "hits": 39,
-  "casts": 13,
+  "total": 685145.414,
+  "hits": 60,
+  "casts": 32,
   "perOperator": {
    "chr_0031_mifu": 582605.414,
-   "chr_0018_dapan": 53534.928
+   "chr_0018_dapan": 102540
   },
-  "digest": "1010a6458d24",
+  "digest": "99854810076b",
   "windows": [
-   "b7306b8b347b",
-   "1c3556d3aad4",
-   "d7a74649fcd2"
+   "188cf8e0250d",
+   "e43a949139bb",
+   "520742b1a883"
   ]
  },
  "perlica-estella.scenario.json": {
-  "total": 119103.879,
-  "hits": 12,
-  "casts": 8,
+  "total": 142747.25,
+  "hits": 23,
+  "casts": 19,
   "perOperator": {
    "chr_0004_pelica": 109879.704,
-   "chr_0021_whiten": 9224.176
+   "chr_0021_whiten": 32867.546
   },
-  "digest": "c19d06a5b664",
+  "digest": "cbe8441203f1",
   "windows": [
-   "c19d06a5b664"
+   "11c16ebe8a05",
+   "8db65bb6752f"
   ]
  },
  "pogranichnik-chen.scenario.json": {
-  "total": 244384.391,
-  "hits": 42,
-  "casts": 17,
+  "total": 335507.549,
+  "hits": 82,
+  "casts": 43,
   "perOperator": {
    "chr_0029_pograni": 147945.355,
-   "chr_0005_chen": 96439.036
+   "chr_0005_chen": 187562.193
   },
-  "digest": "49f9f861f7fd",
+  "digest": "4605f6c775a1",
   "windows": [
-   "f1ab5334d8ce",
-   "194271655d8d"
+   "37187b688d9b",
+   "fdbe6adcc8af",
+   "f60a97643f87"
   ]
  },
  "purrchena-shield.scenario.json": {
@@ -330,49 +338,49 @@
   ]
  },
  "rossi-gilberta.scenario.json": {
-  "total": 981094.748,
-  "hits": 131,
-  "casts": 21,
+  "total": 797693.953,
+  "hits": 183,
+  "casts": 46,
   "perOperator": {
-   "chr_0028_wulfa": 971441.143,
-   "chr_0013_aglina": 9653.604
+   "chr_0028_wulfa": 742994.456,
+   "chr_0013_aglina": 54699.496
   },
-  "digest": "be77394f554c",
+  "digest": "e3c4c27e1cc6",
   "windows": [
-   "f1bcbd9e8285",
-   "6fedd5840fb5",
-   "72b72f84f5d8",
-   "0cc4259fdc9f"
+   "860e09976ab7",
+   "c07b11012b68",
+   "f41e5d437b53",
+   "7f145e5fc55c"
   ]
  },
  "si-laevatain-liino-gilberta.scenario.json": {
-  "total": 2830893.391,
-  "hits": 114,
-  "casts": 43,
+  "total": 3045327.543,
+  "hits": 165,
+  "casts": 74,
   "perOperator": {
-   "chr_0036_jsspsi": 588849.336,
+   "chr_0036_jsspsi": 727762.691,
    "chr_0016_laevat": 1967121.435,
    "chr_0035_liino": 196749.67,
-   "chr_0013_aglina": 78172.95
+   "chr_0013_aglina": 153693.747
   },
-  "digest": "c2d739e1a66a",
+  "digest": "939530adf5df",
   "windows": [
-   "cab1e71ec001",
-   "5a02852b9c98"
+   "caf5e6d51785",
+   "e3030a26aa48"
   ]
  },
  "si-laevatain.scenario.json": {
-  "total": 985293.722,
-  "hits": 47,
-  "casts": 14,
+  "total": 1068700.286,
+  "hits": 74,
+  "casts": 28,
   "perOperator": {
-   "chr_0036_jsspsi": 313809.077,
-   "chr_0016_laevat": 671484.645
+   "chr_0036_jsspsi": 394349.938,
+   "chr_0016_laevat": 674350.348
   },
-  "digest": "56c341894e02",
+  "digest": "64c3dcf951ed",
   "windows": [
-   "6ae5af450068",
-   "658e698e95eb"
+   "3c20509ba2d6",
+   "46b28fa94f51"
   ]
  },
  "snowshine-counter.scenario.json": {
@@ -405,65 +413,68 @@
   ]
  },
  "typhoeus-gilberta.scenario.json": {
-  "total": 1058494.023,
-  "hits": 95,
-  "casts": 27,
+  "total": 1116459.46,
+  "hits": 174,
+  "casts": 63,
   "perOperator": {
    "chr_0034_typhoea": 1038892.185,
-   "chr_0013_aglina": 19601.838
+   "chr_0013_aglina": 77567.275
   },
-  "digest": "5d86468c6499",
+  "digest": "81ef229196a4",
   "windows": [
-   "aa1b0c8287b5",
-   "d9b121e4c43a",
-   "6250801c742d",
-   "9d7a09640ed5",
-   "b79493efd6a8"
+   "dfe585749b7b",
+   "f58ee036aad5",
+   "f9e21aa25aea",
+   "254e01a1dffb",
+   "c9b3e77ea3e6",
+   "6ff20abc5761"
   ]
  },
  "wulfgard-fluorite.scenario.json": {
-  "total": 85470.206,
-  "hits": 27,
-  "casts": 10,
+  "total": 111002.559,
+  "hits": 48,
+  "casts": 31,
   "perOperator": {
    "chr_0006_wolfgd": 77121.772,
-   "chr_0022_bounda": 8348.434
+   "chr_0022_bounda": 33880.788
   },
-  "digest": "d7259052ace8",
+  "digest": "d5e014949667",
   "windows": [
-   "107caaad5380",
-   "609d2ed1b1e3",
-   "5b348ee8dd2b"
+   "b683876131a3",
+   "255b6ac49cbe",
+   "d70f34160eb2"
   ]
  },
  "xaihi-si.scenario.json": {
-  "total": 289662.282,
-  "hits": 67,
-  "casts": 36,
+  "total": 360302.56,
+  "hits": 114,
+  "casts": 71,
   "perOperator": {
-   "chr_0011_seraph": 36455.848,
-   "chr_0036_jsspsi": 253206.433
+   "chr_0011_seraph": 80528.578,
+   "chr_0036_jsspsi": 279773.982
   },
-  "digest": "9229d8eb0e52",
+  "digest": "4415106902f3",
   "windows": [
-   "128245f96d47",
-   "6dfa20f92c39",
-   "68008cbc8185",
-   "22ea8c8e5339"
+   "5f999bc78a68",
+   "a3dd6d4ff143",
+   "f376fcd5a448",
+   "0cbe020c9ee5"
   ]
  },
  "yvonne-fluorite.scenario.json": {
-  "total": 370476.563,
-  "hits": 100,
-  "casts": 23,
+  "total": 403505.401,
+  "hits": 129,
+  "casts": 52,
   "perOperator": {
    "chr_0017_yvonne": 362128.129,
-   "chr_0022_bounda": 8348.434
+   "chr_0022_bounda": 41377.272
   },
-  "digest": "46aaa9f3080b",
+  "digest": "e081dc57490f",
   "windows": [
-   "2cfd19b6e247",
-   "ff2df60c6bc5"
+   "f6d068dd6780",
+   "0b4a5593d81b",
+   "0f4fe1d00a4e",
+   "97c5255339a8"
   ]
  },
  "zhuangfy-solo.scenario.json": {

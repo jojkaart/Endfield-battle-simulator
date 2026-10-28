@@ -15,7 +15,8 @@ import { afterCantCast, earliestStart, needsWindow, startFrom, windowKey, window
 import { runTriggers } from "./actions.ts";
 import { castSkill, jumpToDive } from "./casting.ts";
 import { advance } from "./advance.ts";
-import { ofCast, ofKind } from "./schedule.ts";
+import { ofCast, ofKind, schedule } from "./schedule.ts";
+import { teammateStart } from "./teammates.ts";
 
 export function init(ctx: TimelineContext): TimelineState {
   const st = initialState(ctx);
@@ -42,8 +43,11 @@ function initialState(ctx: TimelineContext): TimelineState {
     acting: {},
     chainNext: {},
     readyAt: {},
-    // The enemy's actions, in frame order (attacks before charges at one frame), on its clock.
-    scheduled: enemyActionsOf(ctx.scenario).map((a): PendingEnemyAction => ({ kind: "enemyAction", frame: a.frame, clock: "enemy", act: a.kind, target: a.target, element: a.element })),
+    // The enemy's actions, in frame order (attacks before charges at one frame), on its clock; teammates' own attacks.
+    scheduled: [
+      ...enemyActionsOf(ctx.scenario).map((a): PendingEnemyAction => ({ kind: "enemyAction", frame: a.frame, clock: "enemy", act: a.kind, target: a.target, element: a.element })),
+      ...(ctx.scenario.options.teammateAttacks ? ctx.scenario.team.filter((b) => b.operator !== controlled).map((b) => teammateStart(b.operator, 0)) : []),
+    ],
     slowdowns: [],
     stagger: { poise: maxPoise(ctx), until: null, finisherUsed: false },
     enemyFrozenUntil: 0,
@@ -76,7 +80,12 @@ export function apply(ctx: TimelineContext, state: TimelineState, action: Rotati
   const start = earliestStart(ctx, state, action);
   if ("error" in start) throw new EngineError(`frame ${state.frame}: ${action.operator} ${action.skill}: ${start.error}`);
   const advanced = advance(ctx, state, start.frame);
-  if (action.skill === "swap") return { ...advanced, controlled: action.operator };
+  if (action.skill === "swap") {
+    // The operator left starts attacking on its own (teammates.ts).
+    const left = advanced.controlled;
+    const swapped = { ...advanced, controlled: action.operator };
+    return ctx.scenario.options.teammateAttacks ? schedule(swapped, [teammateStart(left, start.frame)]) : swapped;
+  }
   const dive = ctx.data.operators[action.operator]?.dive;
   if (dive?.end === action.skill) {
     const j = jumpToDive(ctx, advanced, action.operator, dive, start.frame);
