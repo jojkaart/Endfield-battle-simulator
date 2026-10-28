@@ -258,8 +258,11 @@ available when the log shows that variant's own keys within 3 s after it
 End Stance has none). 3aa6 −40.7 → −23.8%, 4bfc −37.4 → −31.4%, c6d8
 −9.1 → +7.9% (Zhuang −20.3 → −1.2%; Perlica +144% and Arcane +116% there
 were hidden by it: their hits are 0.33–0.40× the engine, her ultimate's
-0.100× exactly: a damage reduction on eny_0090_wgabyss the log doesn't
-list, to look into). Zhuang's own values in her ultimate still mismatch
+0.100× exactly: from 15.8 s to its Stagger at 75.6 s every operator's
+hits there are ×0.1, then ×1 again: a 90% damage reduction phase of
+eny_0090_wgabyss that ends when its 980-point bar breaks; neither the log
+nor its attributes show it (its AI, as Rhodagn's refill); a scenario
+could model it as an enemy action, once the owner confirms the mechanic). Zhuang's own values in her ultimate still mismatch
 (normal_skill_ult ×1.02–1.55, buff_sword_triggerd 887 k unlanded in 3aa6,
 attack1_ult_2 not in her kit).
 
