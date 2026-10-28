@@ -119,11 +119,11 @@ Ranked by breadth (every fight first), then the owner's favourites.
 | B0 | **Teammates' own basic attacks** (done 2026-10-28: the replay since B1, `simulate` and the search below) | only the controlled operator basic-attacks (timing.ts:297) | the owner: they do, slower than the controlled operator, and some skills stop it for their own operator only (Liino's Vocalist Stance and ultimate stop Liino's basic attacks, not the others'; the stance deals its damage through the skill instead; the owner, 2026-10-26). To settle from the logs: each operator's pace when not controlled (the gaps between its basic chains in fights where another is controlled), which chain steps it uses, whether its Final Strikes count; from the data: the main-character-only flags (`onlyEnableForMainChar` on 48 basic-attack files, `onlyExecuteWhenSourceIsMainChar` on 125) say which effects an uncontrolled attack doesn't get, and what blocks an operator's own (Liino's stance and ultimate: find the tag or action) | every team: ~2% per teammate plus what their hits trigger |
 | B1 | **Stagger** (done 2026-10-26, below) | the bar only falls (packages/engine/src/timeline/resources.ts:211–240); the 50% node is only an event | logs: the engine's first Stagger comes at 0.25–0.96× the game's time (4e5e 23 s vs 67 s; bdf2 Staggered where the game never was); windows ~10 s vs the log's 7–19 s; 1,447 hits Staggered only in the engine (×0.77), 1,329 only in the log. Data: RecoverPoiseAction (`buff_common_recoverpoise`, `enemy_patrolregen`), ModifyResilienceDecreaseFactor; the node's buff (`buff_common_mini_poise_break`, 2.5 s, an interrupt and 0.5 s slow) | every fight: ×1.3 for ~10 s per window; per-fight totals −10% to +30% |
 | B2 | **SP recovery after spending** | 8/s, paused 1.5 s after spending (rules.ts:14, from older Endaxis notes) | the game's native skill settings (Endaxis's extraction, revision 1.5.3) have `atbRecoverInterval: 0.5`, which Endaxis's simulator reads as the pause; Zero Sanity: 7.69/s, no pause | every SP-bound team: rossi-gilberta +7.8% with 0.5 s; whether 0.5 is the pause or a tick interval needs a check (a log with SP, or an in-game test) |
-| B3 | **Corrosion** | ramp in whole seconds from application, paused only by a full stop; no carry-over on reapplication (reactions.ts:79–87) | data: the wrapper copies the existing Corrosion's `def_decrease` (carry-over); the settings' initial shred by level (−3.6 / −4.8 / −6 / −7.2) and 15 s; logs need ~4.5 points at 6.5 s where the model gives ≥ 11.9 | Arcane, Gilberta, Typhoeus, Ardelia: likely 5–10% too high while Corrosion is up |
+| B3 | **Corrosion** (carry-over done 2026-10-28, below) | ramp in whole seconds from application, paused only by a full stop; no carry-over on reapplication (reactions.ts:79–87) | data: the wrapper copies the existing Corrosion's `def_decrease` (carry-over); the settings' initial shred by level (−3.6 / −4.8 / −6 / −7.2) and 15 s; logs need ~4.5 points at 6.5 s where the model gives ≥ 11.9 | Arcane, Gilberta, Typhoeus, Ardelia: likely 5–10% too high while Corrosion is up |
 | B4 | **Solidification duration** | 5.75–8.75 s (status.ts:82) | the native settings: 6 / 7 / 8 / 9 s (settles in-game test 71) | Estella teams, +0.25 s each |
-| B5 | **Combustion duration** | 10 s / 10 ticks (status.ts:79) | `buff_common_burning_status` has 11 s (lifeType 1); count ticks in Heat logs | Laevatain and Heat teams |
+| B5 | **Combustion duration** (checked 2026-10-28: 10 s stays, below) | 10 s / 10 ticks (status.ts:79) | `buff_common_burning_status` has 11 s (lifeType 1); count ticks in Heat logs | Laevatain and Heat teams |
 | B6 | **Hits that ignore others' time stops** | pending hits shift with every time stop (clock.ts:40) | SetIgnoreGlobalTimeScaleAction on Si's battle-skill entities and Arcane's and Pogranichnik's ultimates | Si + Laevatain (Laevatain's ultimate stops time) |
-| B7 | **A reaction's own damage hit** | not modelled (reactions.ts:105–111) | `buff_common_{fire,pulse,cryst}_triggered` carry a DamageAction (PrimaryAttrCalculation, atkScale 50); the logs' unexplained ×1.42 on one-element reaction keys (batch 1 L2) | about a third of Arcane's logged damage in 0eef |
+| B7 | **A reaction's own damage hit** (Corrosion's done 2026-10-28, below) | not modelled (reactions.ts:105–111) | `buff_common_{fire,pulse,cryst}_triggered` carry a DamageAction (PrimaryAttrCalculation, atkScale 50); the logs' unexplained ×1.42 on one-element reaction keys (batch 1 L2) | about a third of Arcane's logged damage in 0eef |
 | B8 | **Kit fixes the logs show** | — | Typhoeus's `hovering_atk` (P1 ATK) ends at her combo in the engine but lasts in the log (91 hits, ×1.10); her arrowrain `events` mark hides dbae's verified hit; Liino's ATK buff windows offset (389 hits ×1.087 the other way 207); Rossi's ultimate ×2.8–3.3 (Wolven Blood layers); Last Rite's perfusion on only in the engine on 76 hits (×0.77) | per operator, up to −43% (Rossi) |
 | B9 | **Crit-triggered effects under expected crits** | never fire (`simulate`'s default); the search switches to rolled crits | an expected-value model (each trigger at its crit rate), or `simulate` defaulting to rolled crits with many runs | Rossi about −30%, crit-trigger weapons |
 | B10 | **Hit-stop** | not modelled (281 files, 33 operators) | log chain timings: Camille and Si match the engine, Arcane ~4% slower, Rossi 15–20% slower; the curves exist (Endaxis's catalogue, read only) | timing; settle per operator from the logs' chain timings before modelling |
@@ -205,6 +205,34 @@ hold the teammate's chains. In-game test 101 checks the pace. The search
 takes ~1.5× as long (si-laevatain, beam 24: 20 → 30 s) and finds +4.4%
 there.
 
+B3, B5, B7 (2026-10-28):
+- **B3 Corrosion.** The logs don't show it too strong. Against the
+  simulation of the logged casts, hits under Corrosion are 1.00–1.10× the
+  engine's where the same operator's hits outside are 1.00 (Arcane in
+  bdf2 1.000 under and outside; Typhoeus 1.065–1.096 under: hers, not the
+  shred's). What the data shows and the engine lacked: a Corrosion
+  applied while one is on starts from the running one's shred (the
+  wrapper's GetTargetBuffBBAdvanced of `def_decrease`; the new one keeps
+  the stronger of that and its own start, ramps to its own cap, clamped
+  from its first tick): `corrosionShred` `carried`. a7a7 −19.4 → −8.8%,
+  plain 137 → 315; nothing else moves.
+- **B5 Combustion.** `buff_common_burning_status` says 11 s, but the
+  logs count 10 ticks per Combustion run to its end (0c14, d572), as
+  the engine does now, and 11 s (with the last tick before the end) makes
+  the replay's ticks worse: 458b 60 → 53, 012a 13 → 11 (logged 58, 13).
+  A Heat reaction inside the extra second meets the running Combustion,
+  which the game must handle otherwise. Kept at 10 s.
+- **B7 Corrosion's own hit.** The log's one-element key
+  `buff_common_natural_triggered` (all 10 logged) is Corrosion's initial
+  hit: the Nature wrappers create it (with the damage) before the status
+  buff. So it doesn't see its own Corrosion's shred. With that, 0eef,
+  bdf2, d572 and a7a7's first match plainly (were ×0.91–0.94, or not
+  checked), b6aa's at level 3 (the replay's 2), 4e5e's assumed; 04d4's
+  Purrchena one and an a7a7 one (×1.003, with a Corrosion running) don't.
+  Examples: camille-gilberta −0.22%, si-laevatain-liino-gilberta −0.03%.
+  The other elements' reactions name their damage key by both elements
+  and need nothing.
+
 ## Phase C: questions for the owner (they decide what to model)
 
 - **Do teammates act on their own?** Answered (the owner, 2026-10-26):
@@ -257,7 +285,8 @@ an engine rule. d9e5 is excluded (pre-1.6).
 
 ## Order of work
 
-A1–A7, B1 and B0 done (2026-10-26 / 28). Next B2–B5
-(settings and data), B7, B8 per favourite, B6, B9, B10; ask C now; D as
+A1–A7, B1, B0, B3 (carry-over), B5 (checked) and B7 (Corrosion) done
+(2026-10-26 / 28). B2 and B4 wait on in-game tests 102 and 71. Next B8
+per favourite, B6, B9, B10; ask C now; D as
 the owner plays; E alongside when a change touches it. Every step reports
 the verified fixtures' totals and matched-hit error before and after.

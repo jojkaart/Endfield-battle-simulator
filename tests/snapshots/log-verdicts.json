@@ -1,10 +1,10 @@
 {
  "zmdlogs-0eef2474a26f.json": {
   "chr_0034_typhoea": {"plain":8,"assumed":4,"fallback":7,"mismatch":0,"unvalued":0,"unquantified":12,"uncovered":0},
-  "chr_0032_lizhiyan": {"plain":2,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":1},
+  "chr_0032_lizhiyan": {"plain":3,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0036_jsspsi": {"plain":9,"assumed":0,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":10,"uncovered":0},
   "chr_0035_liino": {"plain":8,"assumed":3,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":2,"uncovered":0},
-  "totals": {"damage":-11.8,"operator chr_0034_typhoea":0.8,"operator chr_0035_liino":58.7,"operator chr_0036_jsspsi":-27.1,"operator chr_0032_lizhiyan":2.5,"kind basic":1.4,"kind battle":-11,"kind combo":-32.8,"kind status":134.9,"kind uncovered":-100,"hits":8.8,"status hits":100,"staggered hits":0,"last hit":0,"crit share (points)":0.3}
+  "totals": {"damage":-12,"operator chr_0034_typhoea":0.8,"operator chr_0035_liino":58.7,"operator chr_0036_jsspsi":-27.2,"operator chr_0032_lizhiyan":-2.9,"kind basic":1.4,"kind battle":-11.1,"kind combo":-32.8,"kind status":-4.8,"hits":8.8,"status hits":0,"staggered hits":0,"last hit":0,"crit share (points)":0.3}
  },
  "zmdlogs-40d9a3c1da37.json": {
   "chr_0016_laevat": {"plain":14,"assumed":2,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
@@ -17,8 +17,8 @@
   "chr_0028_wulfa": {"plain":69,"assumed":42,"fallback":50,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
   "chr_0033_camille": {"plain":72,"assumed":9,"fallback":4,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0021_whiten": {"plain":35,"assumed":1,"fallback":5,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0013_aglina": {"plain":52,"assumed":3,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":1},
-  "totals": {"damage":-5.2,"operator chr_0013_aglina":-7,"operator chr_0028_wulfa":-8.2,"operator chr_0033_camille":1.6,"operator chr_0021_whiten":0.1,"kind basic":-5.7,"kind battle":-1.4,"kind combo":0.3,"kind none":-10.3,"kind status":9,"kind ultimate":-6,"kind uncovered":-100,"hits":1.7,"status hits":10,"staggered hits":-84.6,"last hit":0,"crit share (points)":-0.5}
+  "chr_0013_aglina": {"plain":52,"assumed":3,"fallback":4,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "totals": {"damage":-4.9,"operator chr_0013_aglina":-2.5,"operator chr_0028_wulfa":-8.2,"operator chr_0033_camille":1.6,"operator chr_0021_whiten":0.1,"kind basic":-5.7,"kind battle":-1.4,"kind combo":0.3,"kind none":-10.3,"kind status":-2.5,"kind ultimate":-6,"hits":1.7,"status hits":4.8,"staggered hits":-84.6,"last hit":0,"crit share (points)":-0.3}
  },
  "zmdlogs-b7b3762d5da8.json": {
   "chr_0032_lizhiyan": {"plain":9,"assumed":1,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
@@ -29,9 +29,9 @@
  },
  "zmdlogs-bdf223db8e49.json": {
   "chr_0034_typhoea": {"plain":27,"assumed":2,"fallback":27,"mismatch":0,"unvalued":0,"unquantified":6,"uncovered":0},
-  "chr_0032_lizhiyan": {"plain":50,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":7,"uncovered":1},
+  "chr_0032_lizhiyan": {"plain":51,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":7,"uncovered":0},
   "chr_0036_jsspsi": {"plain":21,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":5,"uncovered":0},
   "chr_0035_liino": {"plain":6,"assumed":2,"fallback":6,"mismatch":0,"unvalued":0,"unquantified":6,"uncovered":0},
-  "totals": {"damage":-2.7,"operator chr_0035_liino":-12.8,"operator chr_0034_typhoea":0.5,"operator chr_0036_jsspsi":-11.1,"operator chr_0032_lizhiyan":3.5,"kind basic":0.7,"kind battle":-1.3,"kind combo":-17.3,"kind status":185.5,"kind uncovered":-100,"hits":-3,"status hits":100,"staggered hits":0,"last hit":0.1,"crit share (points)":-0.2}
+  "totals": {"damage":-2.9,"operator chr_0035_liino":-12.8,"operator chr_0034_typhoea":0.5,"operator chr_0036_jsspsi":-11.1,"operator chr_0032_lizhiyan":-1.5,"kind basic":0.7,"kind battle":-1.3,"kind combo":-17.3,"kind status":-4.2,"hits":-3,"status hits":0,"staggered hits":0,"last hit":0.1,"crit share (points)":-0.3}
  }
 }

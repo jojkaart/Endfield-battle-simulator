@@ -35,7 +35,7 @@
 
 import type { Modifier } from "./effects.ts";
 import { EngineError } from "./errors.ts";
-import { artsIntensityEffect, corrosionModifier, type ArtsElement } from "./reactions.ts";
+import { artsIntensityEffect, corrosionModifier, corrosionShred, type ArtsElement } from "./reactions.ts";
 import { FPS } from "./units.ts";
 
 export const ARTS_ELEMENTS: readonly ArtsElement[] = ["fire", "pulse", "cryst", "natural"];
@@ -74,7 +74,12 @@ export const BREACH_DAMAGE_TAKEN = [0.12, 0.16, 0.2, 0.24] as const;
 export const MAX_INFLICTION_STACKS = 4;
 export const INFLICTION_FRAMES = 20 * FPS;
 
-/** Status durations in frames by level 1–4 (Talos Wiki). */
+/**
+ * Status durations in frames by level 1–4 (Talos Wiki). Combustion: 10 s, a tick each second, the last as it ends.
+ * buff_common_burning_status says 11 s (its blackboard `duration` unused), but 11 s with the last tick before the end
+ * fits the logs worse (2026-10-28, accuracy plan B5: replayed ticks 458b 60 → 53 and 012a 13 → 11, logged 58 and 13;
+ * a Heat reaction inside the extra second meets the running Combustion, which the game must handle otherwise).
+ */
 export const STATUS_FRAMES: Readonly<Record<ReactionStatus, readonly number[]>> = {
   combustion: [10, 10, 10, 10].map((s) => s * FPS),
   corrosion: [15, 15, 15, 15].map((s) => s * FPS),
@@ -163,6 +168,8 @@ export interface ActiveStatus {
   readonly damageScale?: { readonly key: string; readonly value: number };
   /** Its strength cap × this (Corrosion's shred cap; an applier's talent). */
   readonly capScale?: number;
+  /** Corrosion: the shred of the Corrosion it replaced, when it did (corrosionShred `carried`). */
+  readonly carried?: number;
   /**
    * Combustion: the applier's attacker-side modifiers when it was applied
    * (effects.ts SNAPSHOT_ZONES; buff_common_burning_status takeAtkSnapshot),
@@ -305,12 +312,16 @@ export type StatusTweaks = Partial<Record<ReactionStatus, { readonly extraFrames
 
 function withStatus(s: EnemyStatus, st: ReactionStatus, level: number, frame: number, operator: string, artsIntensity: number, o: StatusOverrides = {}, tweaks: StatusTweaks = {}): EnemyStatus {
   const t = tweaks[st];
+  // A Corrosion still on the enemy passes its shred on (buff_common_natural_*_triggered_wrapper).
+  const running = st === "corrosion" ? s.statuses.find((x) => x.status === "corrosion" && x.expiresAt > frame) : undefined;
+  const carried = running ? corrosionShred(running.level, ((frame - running.appliedAt) * 1000) / FPS, running.artsIntensity, running.capScale ?? 1, running.damageScale?.value ?? 1, running.carried ?? 0) : 0;
   const status: ActiveStatus = {
     status: st,
     level: checkLevel(level),
     appliedAt: frame,
     expiresAt: frame + (o.durationFrames ?? (STATUS_FRAMES[st][level - 1] as number)) + (o.extraFrames ?? 0) + (t?.extraFrames ?? 0),
     ...(t && t.capScale !== 1 ? { capScale: t.capScale } : {}),
+    ...(carried > 0 ? { carried } : {}),
     operator,
     artsIntensity,
     ...(st === "combustion" ? { nextTickAt: frame + COMBUSTION_TICK_FRAMES } : {}),
@@ -454,7 +465,7 @@ export function statusModifiers(state: EnemyStatus, frame: number): Modifier[] {
   const scaled = (x: { readonly damageScale?: { readonly value: number } }) => x.damageScale?.value ?? 1;
   for (const x of expireStatus(state, frame).statuses) {
     if (x.status === "corrosion") {
-      out.push(corrosionModifier(x.level, ((frame - x.appliedAt) * 1000) / FPS, x.artsIntensity, x.capScale ?? 1, scaled(x)));
+      out.push(corrosionModifier(x.level, ((frame - x.appliedAt) * 1000) / FPS, x.artsIntensity, x.capScale ?? 1, scaled(x), x.carried ?? 0));
     } else if (x.status === "electrification") {
       const value = (ELECTRIFICATION_DAMAGE_TAKEN[x.level - 1] as number) * artsIntensityEffect(x.artsIntensity) * scaled(x);
       for (const element of ARTS_ELEMENTS) out.push({ zone: "damageTaken", value, element, source: `Electrification level ${x.level}` });

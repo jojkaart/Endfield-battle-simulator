@@ -89,6 +89,22 @@ describe("statuses", () => {
     expect(s.statuses[0]).toMatchObject({ level: 1, appliedAt: 100, expiresAt: 100 + 450 });
   });
 
+  it("a Corrosion reapplied while one is on keeps the stronger of the old one's shred and its own start, and ramps to its own cap", () => {
+    // Level 4 from 0: at frame 100 (3 whole seconds) 7.2 + 3 × 1.68 = 12.24; a level 1 then starts there, not at 3.6.
+    const { s } = run([[0, { kind: "forcedReaction", status: "corrosion", level: 4 }], [100, { kind: "forcedReaction", status: "corrosion", level: 1 }]]);
+    expect(s.statuses[0]?.carried).toBeCloseTo(12.24, 9);
+    expect(statusModifiers(s, 100)[0]?.value).toBeCloseTo(12.24, 9);
+    // Its ramp from there (+0.84 a second), up to level 1's own cap (12): already above it, so held at 12 from its first tick.
+    expect(statusModifiers(s, 130)[0]?.value).toBeCloseTo(12, 9);
+    // Over a weaker one, its own start: a level 1 at 0, a level 4 at 30 starts at 7.2, not at 3.6 + 0.84.
+    const { s: up } = run([[0, { kind: "forcedReaction", status: "corrosion", level: 1 }], [30, { kind: "forcedReaction", status: "corrosion", level: 4 }]]);
+    expect(statusModifiers(up, 30)[0]?.value).toBeCloseTo(7.2, 9);
+    // After the old one ran out nothing carries.
+    const { s: late } = run([[0, { kind: "forcedReaction", status: "corrosion", level: 4 }], [460, { kind: "forcedReaction", status: "corrosion", level: 1 }]]);
+    expect(late.statuses[0]?.carried).toBeUndefined();
+    expect(corrosionShred(1, 0, 0, 1, 1, 5)).toBeCloseTo(5, 9);
+  });
+
   it("Corrosion shreds resistance for every element, ramping per whole second, scaled by the applier's Arts Intensity", () => {
     const { s } = run([[0, { kind: "forcedReaction", status: "corrosion", level: 2 }]], NO_STATUS, 100);
     const at = (f: number) => statusModifiers(s, f);

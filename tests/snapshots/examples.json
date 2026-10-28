@@ -106,16 +106,16 @@
   ]
  },
  "camille-gilberta.scenario.json": {
-  "total": 256908.755,
+  "total": 256343.724,
   "hits": 76,
   "casts": 23,
   "perOperator": {
    "chr_0033_camille": 174345.154,
-   "chr_0013_aglina": 82563.601
+   "chr_0013_aglina": 81998.57
   },
-  "digest": "68b75eb739c5",
+  "digest": "07d34424e7c6",
   "windows": [
-   "e65bd7832d98",
+   "299f9b4a7122",
    "459c143c5e87"
   ]
  },
@@ -354,18 +354,18 @@
   ]
  },
  "si-laevatain-liino-gilberta.scenario.json": {
-  "total": 3045327.543,
+  "total": 3044348.107,
   "hits": 165,
   "casts": 74,
   "perOperator": {
-   "chr_0036_jsspsi": 727762.691,
+   "chr_0036_jsspsi": 727650.013,
    "chr_0016_laevat": 1967121.435,
    "chr_0035_liino": 196749.67,
-   "chr_0013_aglina": 153693.747
+   "chr_0013_aglina": 152826.989
   },
-  "digest": "939530adf5df",
+  "digest": "9c150cfc4902",
   "windows": [
-   "caf5e6d51785",
+   "be1d38ab81ce",
    "e3030a26aa48"
   ]
  },

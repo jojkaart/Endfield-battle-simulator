@@ -11,9 +11,11 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
 0. **Engine accuracy first** (the owner, 2026-10-26: above the search's
    scoring): [accuracy-plan.md](accuracy-plan.md). Phase A, B1 (Stagger)
    and B0 (teammates' own basic attacks, in-game test 101 to confirm the
-   pace) are done; next SP recovery (B2), Corrosion, Solidification /
-   Combustion durations, a reaction's own hit, the favourites' kit leads
-   (Arcane's Nature burst in dbae).
+   pace) are done, and B3 / B5 / B7 as far as the data and logs go; B2
+   (SP stop) and B4 (Solidification) wait on in-game tests 102 and 71;
+   next the favourites' kit leads (B8: Arcane's Nature burst in dbae,
+   Typhoeus's hover and her ×1.07–1.10 under Corrosion, Liino's ATK
+   windows), then B6, B9, B10.
 1. **The tool's purpose: team rotations for the owner's favourites**
    (Typhoeus, Arcane, Si, Gilberta, Liino, Estella, Laevatain; 6-stars P0,
    4- and 5-stars P5 unless the owner's account says otherwise; no swaps by

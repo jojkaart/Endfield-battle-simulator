@@ -83,9 +83,15 @@ export function landingDamage(data: GameData, target: DamageTarget, inputs: Land
   return computeReaction(data, inputs.build, inputs.panel, target, inputs.reaction, options, inputs.scale);
 }
 
-function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, st: TimelineState, critRoll?: number): LandedHit | null {
+function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, st: TimelineState, critRoll?: number, prior?: EnemyStatus): LandedHit | null {
   const reaction = eventReaction(e);
   if (!reaction) return null;
+  // Corrosion's own hit comes before its status (buff_common_natural_*_triggered_wrapper creates the damage buff,
+  // buff_common_natural_triggered, first): it sees the Corrosion that was on the enemy, not its own (2026-10-28,
+  // accuracy plan B7: logged ×0.91–0.94 of the prediction with its own shred, matched without it).
+  if (e.kind === "reaction" && e.status === "corrosion" && e.initialHit && prior) {
+    enemy = { ...enemy, statuses: [...enemy.statuses.filter((x) => x.status !== "corrosion"), ...prior.statuses.filter((x) => x.status === "corrosion" && x.expiresAt > e.frame)] };
+  }
   const build = ctx.builds.get(e.operator) as Build;
   // A Combustion tick keeps its applier's attacker side from the application (ActiveStatus.snapshot).
   const snapshot = e.kind === "combustionTick" ? e.snapshot : undefined;
@@ -117,7 +123,7 @@ function addHits(st: TimelineState, landed: readonly LandedHit[]): TimelineState
  * Status events: recorded, and the damage they deal (bursts, reactions, ticks) lands. `enemy` is the state their
  * damage sees: after a hit's own applications, before a tick's change.
  */
-export function recordStatus(ctx: TimelineContext, st: TimelineState, events: readonly StatusEvent[], enemy: EnemyStatus): TimelineState {
+export function recordStatus(ctx: TimelineContext, st: TimelineState, events: readonly StatusEvent[], enemy: EnemyStatus, prior?: EnemyStatus): TimelineState {
   const records: ReactionRecord[] = [];
   const landed: LandedHit[] = [];
   let next = st;
@@ -127,7 +133,7 @@ export function recordStatus(ctx: TimelineContext, st: TimelineState, events: re
     // Every damaging event draws its crit roll (a tick that can't crit too: the stream doesn't depend on what crits).
     let roll: number | undefined;
     if (ctx.scenario.options.crit === "rolled" && dealsDamage(e)) ({ value: roll, state: next } = draw(ctx, next, "crit"));
-    const d = eventDamage(ctx, e, enemy, st, roll);
+    const d = eventDamage(ctx, e, enemy, st, roll, prior);
     if (d) landed.push(d);
   }
   return records.length ? addHits({ ...next, reactions: [...next.reactions, ...records] }, landed) : st;
@@ -346,7 +352,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.energy, at(consumed));
     st = gainEnergy(ctx, st, hit.operator, amount, hit.frame);
   }
-  st = recordStatus(ctx, st, statusEvents, enemyAtDamage);
+  st = recordStatus(ctx, st, statusEvents, enemyAtDamage, before.enemy);
   if (lateEvents.length) st = recordStatus(ctx, st, lateEvents, st.enemy);
   // Stagger: Final Strikes' only while their operator is controlled (onlyEnableForMainChar).
   const poiseEvents: BattleEvent[] = [];

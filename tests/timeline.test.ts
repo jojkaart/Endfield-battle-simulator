@@ -163,14 +163,15 @@ describe("timeline: a reaction applies before the hit that triggers it", () => {
     startEnergy: { [op]: "full" },
   });
 
-  it("Gilberta's explosion consumes Laevatain's Heat into Corrosion, and its own damage already has the shred", () => {
+  it("Gilberta's explosion consumes Laevatain's Heat into Corrosion, and its own damage already has the shred (not the reaction's own hit)", () => {
     const corrosion = r.reactions.find((e) => e.kind === "reaction");
     expect(corrosion).toMatchObject({ operator: "chr_0013_aglina", status: "corrosion", level: 1, consumed: "fire", initialHit: true });
     const explosion = r.hits.find((h) => h.operator === "chr_0013_aglina" && h.frame === corrosion?.frame && !h.skillId.startsWith("reaction"));
     expect(explosion?.modifiers.some((m) => m.source === "Corrosion level 1")).toBe(true);
     const initial = r.hits.find((h) => h.skillId === "reaction:reaction");
     expect(initial?.element).toBe("natural");
-    expect(initial?.modifiers.some((m) => m.source === "Corrosion level 1")).toBe(true);
+    // Corrosion's own hit comes before its status (buff_common_natural_triggered; accuracy plan B7).
+    expect(initial?.modifiers.some((m) => m.source === "Corrosion level 1")).toBe(false);
   });
 });
 

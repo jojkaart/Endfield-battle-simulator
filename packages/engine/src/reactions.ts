@@ -74,21 +74,28 @@ export function artsIntensityEffect(ai: number): number {
  * log fixtures check. `capScale` raises the cap (an applier's talent, e.g.
  * Arcane's `corrupt_rate`); `scale` multiplies the whole shred (start, per
  * second and cap: a forced Corrosion's `extra_scaling`,
- * buff_common_natural_natural_corrupt_triggered).
+ * buff_common_natural_natural_corrupt_triggered). `carried`: the shred a
+ * Corrosion it replaced had then (the wrapper's GetTargetBuffBBAdvanced
+ * copies its `def_decrease`; on its add the new one keeps the stronger of
+ * that and its own start, and ramps from there to its own cap, which its
+ * first tick clamps to).
  */
-export function corrosionShred(level: number, elapsedMs: number, applierAi: number, capScale = 1, scale = 1): number {
+export function corrosionShred(level: number, elapsedMs: number, applierAi: number, capScale = 1, scale = 1, carried = 0): number {
   const i = level - 1;
   const initial = [3.6, 4.8, 6, 7.2][i];
   const perSecond = [0.84, 1.12, 1.4, 1.68][i];
   const max = [12, 16, 20, 24][i];
   if (initial === undefined || perSecond === undefined || max === undefined) throw new RangeError(`Corrosion level ${level}`);
-  const base = Math.min(max * capScale, initial + perSecond * Math.floor(Math.max(0, elapsedMs) / 1000));
-  return base * scale * artsIntensityEffect(applierAi);
+  const k = scale * artsIntensityEffect(applierAi);
+  const start = Math.max(carried, initial * k);
+  const ticks = Math.floor(Math.max(0, elapsedMs) / 1000);
+  // The cap holds from its first tick (each tick adds, then clamps); a carried shred above it stands until then.
+  return ticks === 0 ? start : Math.min(max * capScale * k, start + perSecond * k * ticks);
 }
 
 /** Corrosion as a modifier: its shred adds back resistance points for every element (Physical included). */
-export function corrosionModifier(level: number, elapsedMs: number, applierAi: number, capScale = 1, scale = 1): Modifier {
-  return { zone: "ignoreResistance", value: corrosionShred(level, elapsedMs, applierAi, capScale, scale), source: `Corrosion level ${level}` };
+export function corrosionModifier(level: number, elapsedMs: number, applierAi: number, capScale = 1, scale = 1, carried = 0): Modifier {
+  return { zone: "ignoreResistance", value: corrosionShred(level, elapsedMs, applierAi, capScale, scale, carried), source: `Corrosion level ${level}` };
 }
 
 /** Log keys of physical-status hits and Shatter (the BuffData files holding their damage). */
@@ -104,13 +111,15 @@ const PHYSICAL_EVENT_KINDS: Readonly<Record<string, ReactionKind>> = {
 
 /**
  * Reaction damage element and kind from a log event key like
- * buff_common_fire_natural_triggered (burst when both are the same). Newer
- * logs also have buff_common_<element>_triggered (Arcane's Nature onto Cryo,
- * btl_upload_bdf223db8e49), but its damage is ×1.42–1.43 of a level I
- * reaction in both logs seen, so it isn't treated as one until explained.
+ * buff_common_fire_natural_triggered (burst when both are the same).
+ * Corrosion's own hit is buff_common_natural_triggered: the Nature wrappers
+ * (buff_common_natural_*_triggered_wrapper) put its damage there and the
+ * status in buff_common_natural_<element>_triggered (all 10 logged ones;
+ * 2026-10-28, accuracy plan B7).
  */
 export function parseReactionEvent(event: string): { kind: ReactionKind; element: Element } | null {
   if (event === "buff_common_burning_status") return { kind: "combustionTick", element: "fire" };
+  if (event === "buff_common_natural_triggered") return { kind: "reaction", element: "natural" };
   const physical = PHYSICAL_EVENT_KINDS[event];
   if (physical) return { kind: physical, element: "physical" };
   const m = /^buff_common_(fire|natural|pulse|cryst)_(fire|natural|pulse|cryst)_triggered$/.exec(event);

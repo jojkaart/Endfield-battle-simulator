@@ -5,6 +5,21 @@ their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 Older entries (2026-10-21 and earlier): [journal-archive.md](journal-archive.md).
 
+## 2026-10-28: accuracy plan B2–B7 from the data and the logs
+
+B2 (SP pause): neither the logs (no SP in them) nor the data say; in-game
+test 102 measures the stop as B − A of two timings. B3: the logs don't
+show Corrosion too strong (the plan's guess); the data's carry-over on
+reapplication was missing (a7a7 −19.4 → −8.8%, plain 137 → 315). B4:
+Solidification's length isn't in our data or the logs (test 71). B5: the
+data's 11 s Combustion made the replay's ticks worse (458b 60 → 53 against
+58 logged): kept 10 s, with the numbers in the code. B7: the one-element
+key `buff_common_natural_triggered` is Corrosion's own hit, made before
+its status (so without its own shred): the "×1.42" of batch 1 L2 is gone
+(the engine moved since); 0eef, bdf2, d572, a7a7 match it plainly.
+Dead end: a 10 s / 11 s A/B with a half-reverted sed gave a wrong reading
+(one of the two tick conditions stayed): compare from snapshots.
+
 ## 2026-10-28: accuracy plan B0, teammates' own basic attacks
 
 Goal: B0's second half, in `simulate` and the search. Measured first from
