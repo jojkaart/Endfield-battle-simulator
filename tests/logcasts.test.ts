@@ -29,7 +29,7 @@ describe("cast placement (accuracy plan A1)", () => {
   });
 
   it("Typhoeus's arrowrain is placed (its log key from the data; the mark that kept it off is gone): her ultimate is replayed", () => {
-    const dbae = readLogFixture(new URL("../fixtures/pending/zmdlogs-dbaee23b801d.json", import.meta.url).pathname);
+    const dbae = readLogFixture(new URL("../fixtures/zmdlogs-dbaee23b801d.json", import.meta.url).pathname);
     const rain = dbae.hits.find((h) => h.event === `${T}_ultimate_skill_arrowrain`);
     expect(placeHits(data, dbae).hits.get(rain as LogHit)?.cast.skillId).toBe(`${T}_ultimate_skillfloating`);
   });

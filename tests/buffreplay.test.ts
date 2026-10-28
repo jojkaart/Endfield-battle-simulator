@@ -194,7 +194,7 @@ describe("40d9a3c1da37: a cast the log shows only as a skill event", () => {
 });
 
 describe("dbaee23b801d: a cast the log shows only by the buff it applies", () => {
-  const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-dbaee23b801d.json", import.meta.url).pathname);
+  const fx = readLogFixture(new URL("../fixtures/zmdlogs-dbaee23b801d.json", import.meta.url).pathname);
 
   it("casts Xaihi's ultimate (no damage) a frame before her weapon's team ATK first shows in the log", () => {
     const placement = placeHits(data, fx);
@@ -218,6 +218,25 @@ describe("dbaee23b801d: a cast the log shows only by the buff it applies", () =>
     };
     // Frame 58 of the ultimate (the 1.5 s time stop doesn't hold its caster) is after the first hit, before the second.
     expect([amped(8391), amped(10692)]).toEqual([false, true]);
+  });
+
+  it("joins each Power Shot burst to its arrow, across time stops, and so makes Arcane's Nature burst at 10341 ms", () => {
+    const T = "chr_0034_typhoea";
+    const placement = placeHits(data, fx);
+    // Seven arrows, seven bursts (0.26 s to 2.5 s after their arrows: 5890 → 8391 across Liino's ultimate): one shot cast each.
+    const shots = replayedCasts(placement, fx).filter((c) => c.operator === T && /floating_attack\d$/.test(c.skillId));
+    expect(shots).toHaveLength(7);
+    expect(shots.every((c) => c.landings.some((l) => l.hitId === "burst") && c.landings.some((l) => l.hitId === "power_shot"))).toBe(true);
+    // The burst at 8391 ms is the 5890 ms arrow's, not a shot of its own using up the stack Arcane's battle skill left at
+    // 8258 ms: her touch at 8501 ms meets that stack and bursts (her weapon's will_atk follows); the 8613 ms arrow uses
+    // up the touch's.
+    const r = logBuffReplay(data, fx).replay;
+    const burst = fx.hits.find((h) => h.operator === "chr_0032_lizhiyan" && h.event === "buff_common_natural_natural_triggered") as LogHit;
+    expect("unknown" in r.statusLanding(burst)).toBe(false);
+    const frame = (ms: number) => Math.round((ms * FPS) / 1000);
+    const used = r.reactions.filter((x) => x.kind === "consumed" && x.operator === T).map((x) => x.frame);
+    expect(used.filter((f) => f >= frame(8258) && f <= frame(8501))).toEqual([]);
+    expect(used).toContain(frame(8613));
   });
 });
 

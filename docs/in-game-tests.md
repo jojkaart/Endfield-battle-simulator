@@ -598,23 +598,21 @@ next ultimate.
 ultimate's button stay (10 s expected)? Then cast it early: does her energy
 bar start refilling right after, or only when the 10 s are over?
 
-### 33. Arcane's WILL combo: the Cryo burst and its element (ready, if you have Arcane)
+### 33. Arcane's WILL combo: the element of the touch's stack (ready, if you have Arcane)
 
-**Why:** in WILL mode her combo's touch adds a stack of the same element.
-The logs credit Cryo bursts to her about 1–1.5 s after the touch, never
-at it, so either the stack lands later or the log credits the burst to
-the stack's owner. Also, the engine takes the element from the enemy's
-current infliction, but the data probably takes it from the infliction
-that opened the combo window: when the enemy's infliction changes before
-the combo, that's one burst (1.6 × her ATK) more or less.
-**How:** Will > Intellect. (1) A teammate applies Cryo; Arcane's combo at
-once, and then nobody attacks for a few seconds: does a Cryo burst number
-appear at the touch? Then the same, but with a teammate's hit 2–3 s after
-the touch: does the burst number appear only with that hit (the log
-credits it to the hit), or at the touch? (2) A teammate applies Cryo (opening
-the window), then a Heat hit consumes it (Solidification), then Arcane's
-combo: does the touch apply Cryo (the trigger's element), nothing, or
-Heat?
+**Why:** in WILL mode her combo's touch adds a stack of an Arts element.
+The engine takes the element from the enemy's current infliction, but the
+data (a switch on `EntityBB_consumed_type`, which the reaction buffs also
+carry) may take it from the infliction that opened the combo window: when
+the enemy's infliction changes before the touch, that's one burst
+(1.6 × her ATK) more or less. (Answered from the logs, 2026-10-28: the
+bursts credited to her 1–1.5 s after the touch are the touch's own, after
+the standard 1 s burst delay plus time stops; the replay lands them within
+30 ms in two logs.)
+**How:** Will > Intellect. A teammate applies Cryo (opening the window),
+then a Heat hit consumes it (Solidification), then Arcane's combo: does
+the touch apply Cryo (the trigger's element), nothing, or Heat? About 1 s
+after the touch, a Cryo burst number means Cryo.
 
 ### 34. Arcane's INT combo without the battle skill (ready, if you have Arcane; lower priority)
 
@@ -836,17 +834,18 @@ rain per shot.
 empowered one on the 5th? Then land early and attack on the ground within
 the 5 s: no rains expected.
 
-### 47. Projectile travel and Typhoeus's burst delay (not testable by hand)
+### 47. Projectile travel and Typhoeus's burst delay (answered from the data, 2026-10-28)
 
 **Why:** the engine lands projectile hits at their launch frame; the data
 has no travel time. Typhoeus's Power Shot burst shows up about 0.3 s after
-the arrow in the logs: travel, or a delay of the burst itself? Small for
-damage (0.1–0.4 s); her Hail of Arrows count already ignores the bursts,
-so moving them later is safe.
-**Not testable by hand:** the gaps are 0.1–0.4 s, below what a stopwatch
-or a phone video can tell. The engine keeps launch-frame landings (kits
-take travel time from logs where they can); ZMDLogs timestamps are the
-way to settle it.
+the arrow in the logs: travel, or a delay of the burst itself?
+**Answer (no test needed):** a delay of the burst. The arrow's own hit uses
+up the Nature stack and creates `buff_common_natural_natural_triggered_typhoea`
+on the enemy, which deals the burst after its `triggerInterval` of 0.35 s,
+on the enemy's clock: time stops hold it (the logs: 0.26–0.46 s after the
+arrow, 1–2.5 s across an ultimate or combo). The engine models it
+(`enemyDelay`). Travel time of other projectiles stays open, and
+still can't be timed by hand.
 
 ### 48. Valiant's hit and skill-type bonuses (ready, if you have Estella with Valiant)
 

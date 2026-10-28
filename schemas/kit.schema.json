@@ -3378,6 +3378,11 @@
           "type": "boolean",
           "description": "Lands even if the skill is interrupted before it (a projectile or ability entity already on its way); other hits still to land are cancelled when the operator starts another skill."
         },
+        "enemyDelay": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Its damage comes this many frames after the landing, on the enemy's clock (time stops hold it): a buff the landing puts on the enemy deals it after its triggerInterval (Typhoeus's Power Shot burst). The landing's applications, gains, buffs, SP and energy happen at its frame; the damage reads what they consumed."
+        },
         "launch": {
           "type": "integer",
           "minimum": 0,

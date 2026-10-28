@@ -266,6 +266,43 @@ could model it as an enemy action, once the owner confirms the mechanic). Zhuang
 (normal_skill_ult ×1.02–1.55, buff_sword_triggerd 887 k unlanded in 3aa6,
 attack1_ult_2 not in her kit).
 
+B8, Arcane's Nature burst in dbae (2026-10-28). It needed Typhoeus's
+Power Shot burst on the enemy's clock. Her arrow's hit consumes the Nature
+stack and creates `buff_common_natural_natural_triggered_typhoea`, which
+deals the burst 0.35 s later (its `triggerInterval`), held by time stops
+(her own ultimate's too). The logs show 0.26–0.46 s, and 1–2.5 s across
+an ultimate or combo. The kit had the burst at the arrow's frame. Beyond
+1 s the placement made each such burst a shot cast of its own, and the
+next arrow joined that cast. In dbae the extra cast consumed the stack
+Arcane's battle skill left at 8258 ms, so her touch at 8501 ms didn't
+burst and her weapon's `will_atk` never came. Now a kit hit's
+`enemyDelay` lands its effects at its frame and its damage that many
+frames later on the enemy's clock (`PendingHit.deferred`; the replay pins
+the damage at its logged frame, `damageFrame`). The placement joins a
+delayed landing to the latest shot of any step that lacks one, within its
+frame plus 1 s of the enemy's time (`joinDelayed`). Two replay faults
+came with it:
+- A delayed landing no longer counts as its cast going on (`lastHit`,
+  `keepPrevious`). Shot 4's burst kept its hover end past the hovering
+  combo that cuts it (92b4).
+- A logged hit's cast is its own before a same-skill cast within 1 s
+  (`ofCast`). The next shot's landings had been left unpinned.
+
+dbae verifies again (fixtures/): Typhoeus plain 1 → 18, Xaihi 0 → 6,
+Arcane −62.5 → −33%, the total +5.7 → +9.9% (the old total hid the
+missing burst behind an extra shot; one off-field shot the log lacks
+remains, from her chain at 22 frames). bdf2 +0.5 → +0.1% (plain 123 →
+129), 92b4 plain 25 → 29, 0eef −10.1 → −10.0%, d9e5 −1.9 → −0.1%. 012a
+−2.3 → +1.5% (Camille's two combos at 33.5 / 34.2 s now pinned move a
+Stagger that's already wrong: the replay breaks the bar at 35.9 s, the
+log at 53.4 s, a B1 lead). The bursts credited to Arcane 1–1.5 s after
+her touch are its own, after the 1 s burst delay plus time stops: the
+replay lands them within 30 ms in 0eef and bdf2 (in-game test 33's first
+half). Her touch's element is the enemy's current one in 0eef: the
+trigger's element (`element: "event"`) took Si's Cryo after the combo cast
+at the same frame and gave 0eef −23.8%; test 33 keeps the second half.
+Examples: one Typhoeus example −0.004%.
+
 ## Phase C: questions for the owner (they decide what to model)
 
 - **Do teammates act on their own?** Answered (the owner, 2026-10-26):

@@ -441,6 +441,14 @@ export interface KitHit {
    */
   readonly launch?: number;
   /**
+   * Its damage comes this many frames after the landing, on the enemy's clock (time stops hold it): a buff the landing
+   * puts on the enemy deals it once its triggerInterval has passed (Typhoeus's Power Shot burst,
+   * buff_common_natural_natural_triggered_typhoea, 0.35 s). What the landing does (applications, gains, buffs, SP,
+   * energy, used-up stacks) happens at its frame, and the damage reads what that consumed; the hit event, its Stagger
+   * and a burst's event come with the damage.
+   */
+  readonly enemyDelay?: number;
+  /**
    * Fixed DMG: the hit deals exactly this value (no ATK, zones, crit, DEF,
    * RES or Staggered multiplier; SkillData damageType 8), and `scale` is
    * empty. A triggered hit's value is judged when its trigger fires.

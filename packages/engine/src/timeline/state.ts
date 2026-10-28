@@ -167,6 +167,10 @@ export interface PendingHit extends ScheduledHeader {
   readonly snapshot?: readonly Modifier[];
   /** A replayed landing's reference (replayCast `landings`): its LandedHit carries it, with the facts it was computed on. */
   readonly ref?: string;
+  /** A delayed hit's damage (KitHit.enemyDelay), due on the enemy's clock: what its landing consumed, which the damage reads. */
+  readonly deferred?: { readonly consumed: number };
+  /** A replayed delayed hit (KitHit.enemyDelay): its damage's logged frame, where the damage is pinned. */
+  readonly damageFrame?: number;
 }
 
 /**

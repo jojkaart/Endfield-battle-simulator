@@ -138,7 +138,12 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
       if (h) moved.set(h, { frame: Math.max(frame, l.frame), ...(l.ref !== undefined ? { ref: l.ref } : {}) });
     }
     // A pinned landing was launched by its logged frame (a detached one's launch, KitHit.launch, is on the kit's timeline, which jumps shorten).
-    const pin = (h: PendingHit, m: { frame: number; ref?: string }): PendingHit => ({ ...h, ...m, pinned: true, ...(h.launchAt !== undefined ? { launchAt: Math.min(h.launchAt, m.frame) } : {}) });
+    // A delayed hit's logged frame is its damage's (KitHit.enemyDelay): its landing stays at its kit frame.
+    const delayed = new Set(skill.hits.filter((h) => h.enemyDelay !== undefined).map((h) => h.id));
+    const pin = (h: PendingHit, m: { frame: number; ref?: string }): PendingHit =>
+      delayed.has(h.hitId)
+        ? { ...h, damageFrame: Math.max(m.frame, h.frame), ...(m.ref !== undefined ? { ref: m.ref } : {}) }
+        : { ...h, ...m, pinned: true, ...(h.launchAt !== undefined ? { launchAt: Math.min(h.launchAt, m.frame) } : {}) };
     st = { ...st, scheduled: st.scheduled.map((h) => { const m = h.kind === "hit" ? moved.get(h) : undefined; return m && h.kind === "hit" ? pin(h, m) : h; }) };
   }
   return runTriggers(ctx, st, r.events, r.origin);

@@ -413,20 +413,20 @@
   ]
  },
  "typhoeus-gilberta.scenario.json": {
-  "total": 1116459.46,
+  "total": 1116412.429,
   "hits": 174,
   "casts": 63,
   "perOperator": {
-   "chr_0034_typhoea": 1038892.185,
+   "chr_0034_typhoea": 1038845.154,
    "chr_0013_aglina": 77567.275
   },
-  "digest": "81ef229196a4",
+  "digest": "10484150f00f",
   "windows": [
-   "dfe585749b7b",
-   "f58ee036aad5",
+   "dbef8bbce0f3",
+   "a03e3bb5330f",
    "f9e21aa25aea",
    "254e01a1dffb",
-   "c9b3e77ea3e6",
+   "c2005d095dd4",
    "6ff20abc5761"
   ]
  },

@@ -43,6 +43,7 @@ interface RawHit {
   heals?: "self" | "controlled" | "team";
   detached?: boolean;
   launch?: number;
+  enemyDelay?: number;
   poise?: ValueExpr;
   poiseControlledOnly?: boolean;
   /** Which skill-type bonus applies (`none`: no skill type): required on triggered hits; on a skill's hit, an override of the skill's. */
@@ -593,6 +594,7 @@ function kitChecker(scope: KitScope) {
         // A hit dealt from another SkillData file (a projectile or ability entity) is on its way and survives an interrupt.
         ...((h.detached ?? (h.launch !== undefined || (src.defaultEvent !== undefined && events.length > 0 && !events.includes(src.defaultEvent)))) ? { detached: true } : {}),
         ...(h.launch !== undefined ? { launch: h.launch } : {}),
+        ...(h.enemyDelay !== undefined ? { enemyDelay: h.enemyDelay } : {}),
         ...(h.if ? { if: h.if } : {}),
         ...(h.branch ? { branch: h.branch } : {}),
         ...((h.finalStrike ?? src.finalStrike?.(h, events) ?? false) ? { finalStrike: true } : {}),

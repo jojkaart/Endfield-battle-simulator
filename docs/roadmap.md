@@ -13,11 +13,12 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
    and B0 (teammates' own basic attacks, in-game test 101 to confirm the
    pace) are done, and B3 / B5 / B7 as far as the data and logs go; B2
    (SP stop) and B4 (Solidification) wait on in-game tests 102 and 71;
-   next the favourites' kit leads (B8: Arcane's Nature burst in dbae,
-   Liino's ATK windows (Vocalist 0.10 against the log's 0.16 on her),
-   Zhuang Fangyi's ultimate values), bosses' own phases the logs show
-   (Rhodagn's refill, test 100; the Abyss boss's ×0.1 until its Stagger
-   in c6d8), then B6 (Si's battle-skill entity and Arcane's and
+   next the favourites' kit leads (B8: Liino's ATK windows (Vocalist 0.10
+   against the log's 0.16 on her), Typhoeus's off-field shot chain at 22
+   frames (one shot more than dbae logs), Zhuang Fangyi's ultimate values),
+   012a's Stagger (the replay breaks the bar at 35.9 s, the log at 53.4 s),
+   bosses' own phases the logs show (Rhodagn's refill, test 100; the Abyss
+   boss's ×0.1 until its Stagger in c6d8), then B6 (Si's battle-skill entity and Arcane's and
    Pogranichnik's ultimates ignore others' time stops: small), B9, B10.
 1. **The tool's purpose: team rotations for the owner's favourites**
    (Typhoeus, Arcane, Si, Gilberta, Liino, Estella, Laevatain; 6-stars P0,

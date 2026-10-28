@@ -15,7 +15,7 @@ import {
   type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
-import { distinctCasts, landingFrames, type LoggedCast, type Placement } from "./logcasts.ts";
+import { distinctCasts, loggedFrames, type LoggedCast, type Placement } from "./logcasts.ts";
 
 /**
  * How sure the replay is of when its buffs start and end. A start is a
@@ -419,17 +419,19 @@ export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits"
   const casts = distinctCasts(placement);
   // A landing's reference: its logged hit's index in the fixture (replayCast `ref`: its LandedHit carries it).
   const hitIndex = new Map((fx?.hits ?? [...placement.hits.keys()]).map((h, i) => [h, i]));
-  const ofCast = (c: LoggedCast): LoggedCast | undefined => casts.find((d) => d.operator === c.operator && d.skillId === c.skillId && Math.abs(d.start - c.start) <= 1000);
+  // Its own cast, else the one it merged into (distinctCasts: the same skill placed from another key, within CAST_MERGE_MS).
+  const ofCast = (c: LoggedCast): LoggedCast | undefined => (casts.includes(c) ? c : casts.find((d) => d.operator === c.operator && d.skillId === c.skillId && Math.abs(d.start - c.start) <= 1000));
   const last = new Map<LoggedCast, number>();
   const landings = new Map<LoggedCast, { hitId: string; nth: number; frame: number; ref: string }[]>();
   const used = new Map<string, Set<number>>();
   for (const [h, p] of [...placement.hits].sort((a, b) => a[0].t - b[0].t)) {
     const d = ofCast(p.cast);
     if (!d) continue;
-    last.set(d, Math.max(last.get(d) ?? -Infinity, h.t));
+    // A delayed hit's damage (KitHit.enemyDelay) lands whatever comes after its cast: it doesn't show the cast going on.
+    if (!p.hits.every((k) => k.enemyDelay !== undefined)) last.set(d, Math.max(last.get(d) ?? -Infinity, h.t));
     if (p.frame === undefined || p.cast.skillId !== d.skillId) continue;
     for (const k of p.hits) {
-      const frames = landingFrames(k) ?? [];
+      const frames = loggedFrames(k) ?? [];
       // The n-th landing of the kit hit at the slot's frame not taken yet (several landings may share a frame).
       const key = `${d.operator}|${d.start}|${k.id}`;
       const taken = used.get(key) ?? new Set<number>();

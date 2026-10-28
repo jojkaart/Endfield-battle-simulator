@@ -116,6 +116,11 @@ export function landingFrames(h: KitHit): number[] | null {
   return frames;
 }
 
+/** The frames a hit's landings are logged at: its damage's, `enemyDelay` after a delayed hit's landing (KitHit.enemyDelay). */
+export function loggedFrames(h: KitHit): number[] | null {
+  return landingFrames(h)?.map((f) => f + (h.enemyDelay ?? 0)) ?? null;
+}
+
 /**
  * A group's landing slots of a key in frame order (kit order at one frame);
  * landings of different hits at one frame that both have conditions (`if`,
@@ -128,7 +133,7 @@ function slotsOf(g: Group, key: string): Slot[] | null {
   for (const h of g.hits) {
     // A stagger-only landing (KitHit.poiseOnly) isn't logged.
     if (h.poiseOnly || !h.events.includes(key)) continue;
-    const frames = landingFrames(h);
+    const frames = loggedFrames(h);
     if (!frames) return null;
     for (const frame of frames) landings.push({ frame, hit: h, order: order++ });
   }
@@ -215,10 +220,12 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
           placed.set(h, { cast: cur.cast, index: cur.index, hits: slot ? slot.hits : allHits(candidates, h.event), ...(slot ? { frame: slot.frame } : {}) });
           continue;
         }
-        const g = choose(candidates, h, starts, slots, latest ? { cast: latest, timing: data.skills[latest.skillId]?.timing } : null);
+        const free = (c: LoggedCast) => ![...placed].some(([x, p]) => p.cast === c && x.event === h.event);
+        const late = joinDelayed(candidates, h, slots, opened, stops, free);
+        const g: Group = late?.g ?? choose(candidates, h, starts, slots, latest ? { cast: latest, timing: data.skills[latest.skillId]?.timing } : null);
         const s = slots(g, h.event);
         const first = s?.[0];
-        const cast: LoggedCast = joinable(opened.get(g.id) ?? [], h, first?.frame ?? 0) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, start: h.t - msOf(first?.frame ?? 0) };
+        const cast: LoggedCast = late?.cast ?? joinable(opened.get(g.id) ?? [], h, first?.frame ?? 0) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, start: h.t - msOf(first?.frame ?? 0) };
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
         if (cast.kind !== null && (!latest || cast.start >= latest.start)) latest = cast;
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
@@ -250,6 +257,26 @@ function joinable(casts: readonly LoggedCast[], h: LogHit, frame: number): Logge
   for (const c of casts) {
     if (c.key === h.event || c.start > h.t || c.start < h.t - msOf(frame) - CAST_SLACK_MS) continue;
     if (!best || c.start > best.start) best = c;
+  }
+  return best;
+}
+
+/**
+ * The cast a delayed hit's logged landing (KitHit.enemyDelay: its damage) belongs to: of the groups whose landing of the
+ * key is delayed, the latest cast that started before it and has no landing of the key yet, within the landing's frame
+ * plus CAST_SLACK_MS of the enemy's time: every time stop holds it, its own operator's too (dbaee23b801d: Typhoeus's
+ * burst 2.5 s after her arrow at 5890 ms, across Liino's ultimate). A shot's burst is the latest shot's, whichever step
+ * (bdf223db8e49: a burst at 14487 ms made a shot 5 the log doesn't have, its own shot 1 at 14025 ms none). Null: none.
+ */
+function joinDelayed(candidates: readonly Group[], h: LogHit, slots: (g: Group, key: string) => Slot[] | null, opened: ReadonlyMap<string, readonly LoggedCast[]>, stops: readonly TimeStop[], free: (c: LoggedCast) => boolean): { g: Group; cast: LoggedCast } | null {
+  let best: { g: Group; cast: LoggedCast } | null = null;
+  for (const g of candidates) {
+    const first = slots(g, h.event)?.[0];
+    if (!first?.hits.some((x) => x.enemyDelay !== undefined)) continue;
+    for (const c of opened.get(g.id) ?? []) {
+      if (c.key === h.event || c.start > h.t || worldMs(c.start, h.t, stops) > msOf(first.frame) + CAST_SLACK_MS || !free(c)) continue;
+      if (!best || c.start > best.cast.start) best = { g, cast: c };
+    }
   }
   return best;
 }

@@ -813,6 +813,19 @@ target enums aren't in the data, or need in-game tests (18).
 0.1–1.3): a cast plays at that speed (its hits, windows and locked part
 come sooner; cooldowns don't change). Assumed: Endaxis parses but doesn't
 use it; in-game test 19.
+**Waiting on the enemy's clock**: what a buff on the enemy does after its
+`triggerInterval` (`waitFirstTriggerInterval`) is held by every time stop,
+the caster's own included. An Arts Burst lands `burstDelayFrames` (1 s)
+after the infliction that made it; a kit hit with `enemyDelay` (Typhoeus's
+Power Shot burst: the arrow's hit consumes the stack, gives the energy and
+creates `buff_common_natural_natural_triggered_typhoea`, which deals the
+burst 0.35 s later) lands its effects at its frame and its damage that many
+frames later (`PendingHit.deferred`), reading what the landing consumed.
+The logs agree: her bursts come 0.26–0.46 s after the arrow, 1–2.5 s across
+an ultimate or combo, and Arcane's touch bursts 1–1.5 s after the touch.
+The log check places a delayed landing by its damage's time
+(logcasts.ts `loggedFrames`, `joinDelayed`: the latest shot without its
+burst, within its frame plus 1 s of the enemy's time).
 
 ### Skill timing
 

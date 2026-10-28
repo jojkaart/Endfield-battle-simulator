@@ -558,7 +558,10 @@ b7b3762d5da8, P5 bdf223db8e49).
   (0eef 2719 → 3729, bdf2 6395 → 7371, e82d 7021 → 8561/8647), a Nature
   burst 1.84 s after (dbae 8501 → 10341), never at the touch itself.
   Either the log credits a burst to the owner of the stack it lands on, or
-  the stack lands later than the touch: test A.
+  the stack lands later than the touch: test A. (Settled 2026-10-28: the
+  touch's own burst, after the standard 1 s burst delay on the enemy's
+  clock plus the time stops; the replay lands 0eef's at 3733 and bdf2's at
+  7400 ms. dbae's needed Typhoeus's burst delayed too: accuracy plan B8.)
 - **The misspelt combo entity** (`chr_032_lizhiyan_combo_skill_abilityentity_seal`,
   now fetched) holds only animation, movement, sound and effects.
 - Unchanged and confirmed: frames of every hit in the current kit's

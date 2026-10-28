@@ -473,6 +473,10 @@ LaunchProjectile / SpawnAbilityEntity; burst Δ 289–432 ms after the arrow in 
 *impact:* her hits land 0.1–0.4 s early: buff windows (Windform, physpellup, teammates' timed
 buffs) and the Hail of Arrows' 5 s are judged at the wrong moment; small damage effect, log
 checks tolerate it.
+*Settled for the burst (2026-10-28):* a delay of the burst buff. The arrow's hit consumes the
+stack, gives the energy and creates `buff_common_natural_natural_triggered_typhoea`, whose
+`triggerInterval` 0.35 s (`waitFirstTriggerInterval`) runs on the enemy's clock: `enemyDelay` 10
+on the burst hits. Arrows' own travel stays open.
 
 **R5 Airborne state for dive attacks.** *family:* skills (states). *feature:* plunging attacks
 castable only mid-air (after a jump, which rotations don't have yet). *evidence:* CharGrowthTable

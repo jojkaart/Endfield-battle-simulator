@@ -208,7 +208,7 @@ export function withoutOwnFood(data: GameData, fx: LogFixture, hit: LogHit): Log
   return { ...hit, effects: hit.effects.filter(keep), boundaryEffects: hit.boundaryEffects.filter(keep) };
 }
 
-/** Above this many boundary buffs (64 subsets), only none or all are tried. A burst that triggers its wearer's weapon and gear-set buffs has six (fixtures/pending/zmdlogs-dbaee23b801d.json t=8391). */
+/** Above this many boundary buffs (64 subsets), only none or all are tried. A burst that triggers its wearer's weapon and gear-set buffs has six (fixtures/zmdlogs-dbaee23b801d.json t=8391). */
 const MAX_BOUNDARY_SUBSET = 6;
 
 /** Effects with repeats of the same buff, zone, element and value kept once. */
