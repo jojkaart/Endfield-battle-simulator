@@ -201,6 +201,12 @@ export interface ReplayedCast extends LoggedCast {
   readonly slot?: true;
   readonly leadsTo?: true;
   /**
+   * A slot cast's variants (skills of its kind, not cast near it) whose own keys the log shows within SLOT_SHOWS_MS
+   * after the press: the press is the one of them its kit says the slot holds then (3aa6ab93bad4: Zhuang Fangyi's
+   * battle-skill presses during her ultimate, logged as normal_skill, are normal_skill_ult, whose keys follow each).
+   */
+  readonly shows?: readonly string[];
+  /**
    * Inferred from a logged hit of a trigger on this buff's end (castsFromBuffEnds), at `endsAt` ms: cast only while the
    * buff is active and would last past that end by itself (else its expiry is the end: bdf223db8e49's burst at 24321 ms
    * is Artful Intent's own expiry, its mark projectile, not Final Stroke's).
@@ -222,6 +228,9 @@ export const LOGGED_CAST_MS = 2500;
  * event can come before the skill acts: Liino's battle skill at 760 ms, its buffs at 1314 ms). Follow-up-only skills
  * are left to the engine.
  */
+/** How soon after a slot press the log must show a variant's own keys for the press to be that variant (ms; withLoggedCasts). */
+const SLOT_SHOWS_MS = 3000;
+
 export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixture, "casts" | "hits">, kits: readonly OperatorKit[]): ReplayedCast[] {
   if (!fx.casts?.length) return [...casts];
   const logged = new Set(fx.hits.map((h) => `${h.operator}|${h.event}`));
@@ -231,7 +240,15 @@ export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixt
     if (!skill || skill.followUpOnly) continue;
     if (casts.some((c) => c.operator === lc.operator && c.skillId === lc.skill && Math.abs(c.start - lc.t) <= LOGGED_CAST_MS)) continue;
     const shownElsewhere = skill.hits.some((h) => h.events.some((e) => logged.has(`${lc.operator}|${e}`)));
-    added.push({ operator: lc.operator, key: lc.skill, group: lc.skill, skillId: lc.skill, kind: skill.kind, start: lc.t, lastHit: lc.t, keepPrevious: false, landings: [], ...(shownElsewhere ? { slot: true as const } : {}) });
+    const own = new Set(skill.hits.flatMap((h) => h.events));
+    const kit = kits.find((k) => k.operator === lc.operator);
+    const shows = shownElsewhere
+      ? (kit?.skills ?? [])
+          .filter((k) => k.skillId !== lc.skill && k.kind === skill.kind && !k.followUpOnly && !casts.some((c) => c.operator === lc.operator && c.skillId === k.skillId && Math.abs(c.start - lc.t) <= LOGGED_CAST_MS))
+          .filter((k) => k.hits.some((h) => h.events.some((e) => !own.has(e) && fx.hits.some((x) => x.operator === lc.operator && x.event === e && x.t >= lc.t && x.t <= lc.t + SLOT_SHOWS_MS))))
+          .map((k) => k.skillId)
+      : [];
+    added.push({ operator: lc.operator, key: lc.skill, group: lc.skill, skillId: lc.skill, kind: skill.kind, start: lc.t, lastHit: lc.t, keepPrevious: false, landings: [], ...(shownElsewhere ? { slot: true as const } : {}), ...(shows.length ? { shows } : {}) });
   }
   return added.length ? ordered([...casts, ...added]) : [...casts];
 }
@@ -472,6 +489,8 @@ function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast,
   const w = c.whileBuff;
   if (w && !st.buffs.some((b) => b.id === w.buff && b.owner === c.operator && activeAt(b, f) && b.expiresAt > Math.round((w.endsAt * FPS) / 1000) + EXPIRY_MARGIN_FRAMES)) return null;
   if (c.slot) {
+    // A press the log shows as a variant by its own keys: the variant the kit says the slot holds then.
+    if (!c.leadsTo && c.shows?.length) return skillAvailable(ctx, st, c.operator, c.skillId, f) ? null : (c.shows.find((s) => skillAvailable(ctx, st, c.operator, s, f)) ?? null);
     if (!c.leadsTo) return null;
     // Which skill the slot holds, not whether it can start this frame (Si presses during her combo in 0eef): available at all.
     const available = (skill: string) => !("error" in earliestStart(ctx, st, { operator: c.operator, skill }));

@@ -24,6 +24,10 @@ kept the cut loop's landing; her combo placed as the grounded variant):
 bdf2 plain 105 → 123, 92b4 → 0%. Keeping only hits on keepPrevious was
 tried first and lost real delayed buffs (Liino and Si −11–13% in bdf2):
 only follow-up casts are dropped now.
+Zhuang Fangyi: battle-skill presses during her ultimate become her ult
+battle skill when its own keys follow (3aa6 −40.7 → −23.8%). c6d8 then
+shows a ×10 damage reduction on its boss the log doesn't list (Arcane's
+ultimate 0.100× exactly): next lead there.
 
 ## 2026-10-28: accuracy plan B0, teammates' own basic attacks
 

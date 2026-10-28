@@ -272,6 +272,22 @@ describe("0eef2474a26f: what the replay can't know, and landings a trigger makes
   });
 });
 
+describe("3aa6ab93bad4: a press the log shows as a variant by its own keys", () => {
+  it("replays Zhuang Fangyi's battle-skill presses during her ultimate (logged as normal_skill) as normal_skill_ult", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-3aa6ab93bad4.json", import.meta.url).pathname);
+    const Z = "chr_0030_zhuangfy";
+    const kits = fx.team.map((b) => effectiveKit(data, b) as OperatorKit);
+    const casts = withLoggedCasts(replayedCasts(placeHits(data, fx), fx), fx, kits);
+    // The press at 19639 ms: not placed (its hits went to the cast before), its variant's keys follow it.
+    expect(casts.find((c) => c.operator === Z && Math.round(c.start) === 19639)?.shows).toEqual([`${Z}_normal_skill_ult`]);
+    // Every logged hit of the variant lands now but those of the first seconds of a press the placement merged.
+    const r = logBuffReplay(data, fx).replay;
+    const ult = fx.hits.filter((h) => h.operator === Z && h.event === `${Z}_normal_skill_ult_abilityrange` && h.t > 19639 && h.t < 22000);
+    expect(ult.length).toBeGreaterThan(0);
+    expect(ult.every((h) => !("unknown" in r.landing(h)))).toBe(true);
+  });
+});
+
 describe("bdf223db8e49: Typhoeus's hover through her shots and her hovering combo", () => {
   it("keeps the hover when a logged shot cuts the loop the previous one started, and casts the combo the slot holds", () => {
     const fx = readLogFixture(new URL("../fixtures/zmdlogs-bdf223db8e49.json", import.meta.url).pathname);

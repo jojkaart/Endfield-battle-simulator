@@ -248,6 +248,21 @@ the hover: the replay now casts a slot's variant its kit says is
 but its hits still mismatch (Typhoeus +7.7%, the others −12 to −16%):
 still excluded (A7). Examples don't move (replay only).
 
+B8, Zhuang Fangyi's ultimate (2026-10-28). Her battle-skill presses during
+her ultimate are logged as `normal_skill`; the slot then holds
+`normal_skill_ult`, and the placement had merged two of five presses'
+hits into the casts before them (1.05 M of her ult battle skill unlanded
+in 3aa6). A slot press is now made as the variant its kit says is
+available when the log shows that variant's own keys within 3 s after it
+(`ReplayedCast.shows`; a logged consequence, as A2's rule asks: Liino's
+End Stance has none). 3aa6 −40.7 → −23.8%, 4bfc −37.4 → −31.4%, c6d8
+−9.1 → +7.9% (Zhuang −20.3 → −1.2%; Perlica +144% and Arcane +116% there
+were hidden by it: their hits are 0.33–0.40× the engine, her ultimate's
+0.100× exactly: a damage reduction on eny_0090_wgabyss the log doesn't
+list, to look into). Zhuang's own values in her ultimate still mismatch
+(normal_skill_ult ×1.02–1.55, buff_sword_triggerd 887 k unlanded in 3aa6,
+attack1_ult_2 not in her kit).
+
 ## Phase C: questions for the owner (they decide what to model)
 
 - **Do teammates act on their own?** Answered (the owner, 2026-10-26):
