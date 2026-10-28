@@ -3,12 +3,12 @@
 import type { Build } from "../build.ts";
 import { decide, evalContext, hitAvailable, type Situation } from "../damage.ts";
 import { type KitHit, type KitSkill, landingFrames, type SkillTiming, type StackRequirement } from "../model.ts";
-import type { BattleEvent } from "../events.ts";
+import { allActions, type BattleEvent } from "../events.ts";
 import { type EvalContext, evaluate } from "../expr.ts";
 import { activeAt, type ActiveBuff, buffEndedEvents, reaches } from "../buffs.ts";
 import { FPS } from "../units.ts";
 import { FINISHER_SP_SOURCE_TYPE } from "../constants.ts";
-import type { Acting, Cast, Origin, PendingEnergy, PendingHit, PendingJump, TimelineContext, TimelineState } from "./state.ts";
+import type { Acting, Cast, Origin, PendingEnergy, PendingHit, PendingJump, Scheduled, TimelineContext, TimelineState } from "./state.ts";
 import { DIVE, ENERGY, JUMP, linkValue, SP, hasteFrames } from "./rules.ts";
 import { kitSkill, panelAt, skillCosts } from "./context.ts";
 import { actionSpeed, slowDown } from "./clock.ts";
@@ -101,20 +101,27 @@ export function jumpToDive(ctx: TimelineContext, advanced: TimelineState, operat
   return { state, events: ended.events };
 }
 
+/** Whether a kit trigger's actions cast a skill (a follow-up: CastSkill on a skill's timeline). */
+function castsSkill(ctx: TimelineContext, owner: string, trigger: string): boolean {
+  return (ctx.kits.get(owner)?.triggers ?? []).some((t) => t.id === trigger && allActions(t.do).some((a) => a.kind === "cast"));
+}
+
 /**
  * Ends an operator's current skill at a frame: its hits still to land are
  * cancelled, unless already on their way (detached), and so are its
  * delayed cast-trigger actions; the buffs that end with it end (their
- * `buffEnded` events are returned).
+ * `buffEnded` events are returned). `keep`: true keeps everything it has to
+ * come, a function what it says (replayCast `keepPrevious`).
  */
-export function endCurrentSkill(advanced: TimelineState, operator: string, frame: number, keepHits = false): { state: TimelineState; events: BattleEvent[] } {
+export function endCurrentSkill(advanced: TimelineState, operator: string, frame: number, keep: boolean | ((x: Scheduled) => boolean) = false): { state: TimelineState; events: BattleEvent[] } {
+  const keepHits = keep === true;
   // The current skill's cast (a skill cast beside it isn't the current one).
   const prevCast = advanced.acting[operator]?.cast ?? advanced.casts.findLastIndex((c) => c.operator === operator);
   const endsNow = advanced.buffs.filter((b) => b.owner === operator && b.endsWithCast !== undefined && b.endsWithCast === prevCast && b.expiresAt > frame);
   // A replayed cast whose logged hits go on after the next one started (replayCast keepPrevious) keeps what's to come.
   const state = keepHits ? { ...advanced, buffs: advanced.buffs.filter((b) => !endsNow.includes(b)) } : {
     ...advanced,
-    scheduled: cancelCast(advanced.scheduled, operator, prevCast, frame),
+    scheduled: cancelCast(advanced.scheduled, operator, prevCast, frame, typeof keep === "function" ? keep : undefined),
     // A buff attached to the cast (consumedScope whileCasting) stops acting on the caster's other hits now.
     buffs: advanced.buffs.filter((b) => !endsNow.includes(b)).map((b) => (b.whileCasting && b.cast === prevCast && b.whileCasting.until > frame ? { ...b, whileCasting: { ...b.whileCasting, until: frame } } : b)),
   };
@@ -129,11 +136,13 @@ export function endCurrentSkill(advanced: TimelineState, operator: string, frame
  * cast (`followUp`: a skill casting another, CastSkill) costs nothing and
  * starts no cooldown.
  */
-export function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: string, skillId: string, frame: number, followUp: boolean, keepPrevious = false): { state: TimelineState; events: BattleEvent[]; origin: Origin } {
+export function castSkill(ctx: TimelineContext, advanced: TimelineState, operator: string, skillId: string, frame: number, followUp: boolean, keepPrevious: boolean | "uncast" = false): { state: TimelineState; events: BattleEvent[]; origin: Origin } {
   const skill = kitSkill(ctx, operator, skillId);
   // Starting a skill ends the operator's current one, unless it runs beside it (KitSkill.beside).
   const beside = skill.beside !== undefined && decide(skill.beside, evalContext(ctx.data, ctx.builds.get(operator) as Build, panelAt(ctx, operator, frame), skillId, situationAt(ctx, operator, advanced, frame)));
-  const ended = beside ? { state: advanced, events: [] } : endCurrentSkill(advanced, operator, frame, keepPrevious);
+  // "uncast": keep what's to come but the follow-up casts its delayed actions make (the timeline the new cast replaces).
+  const keep = keepPrevious === "uncast" ? (x: Scheduled) => !(x.kind === "action" && castsSkill(ctx, x.owner, x.trigger)) : keepPrevious;
+  const ended = beside ? { state: advanced, events: [] } : endCurrentSkill(advanced, operator, frame, keep);
   const s = rebaseCooldowns(ctx, advanced, ended.state, frame);
   const endsNowEvents = ended.events;
   const full = skillCosts(ctx, operator, skillId, frame);

@@ -233,6 +233,21 @@ B3, B5, B7 (2026-10-28):
   The other elements' reactions name their damage key by both elements
   and need nothing.
 
+B8, Typhoeus's hover (2026-10-28). Her ×1.07–1.10 under Corrosion was
+her P1 hover ATK (`hovering_atk`), not Corrosion: the replay's hover
+ended early. Two replay faults: (1) a logged cast after which the
+previous one's logged hits go on (`keepPrevious`) kept everything the
+running cast had to come, including the follow-up casts on its timeline
+(the loop shot 2 starts lands her at its frame 27 unless shot 3 cuts it):
+now it keeps all but those (`castSkill` "uncast"); (2) both her combos
+share their log keys, so the placement cast the grounded one, which ends
+the hover: the replay now casts a slot's variant its kit says is
+`available` then (`skillAvailable`). bdf2 −2.9 → +0.5%, plain 105 →
+123 (Typhoeus 27 → 45), 92b4 −3.1 → 0% (plain 5 → 25), 7e19 plain 50 →
+64, 0eef −12.0 → −10.1%; 0c14 −5.5 → −7.6%. d9e5's total −28.9 → −1.9%,
+but its hits still mismatch (Typhoeus +7.7%, the others −12 to −16%):
+still excluded (A7). Examples don't move (replay only).
+
 ## Phase C: questions for the owner (they decide what to model)
 
 - **Do teammates act on their own?** Answered (the owner, 2026-10-26):

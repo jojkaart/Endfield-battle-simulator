@@ -121,7 +121,10 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
   const index = advanced.casts.length;
   // Inside its operator's own cantCastSkill channel the game couldn't have cut the running cast: its hits and actions
   // stand (dbaee23b801d: a hit of Xaihi's attack 1 placed 0.45 s into her ultimate, whose Amp comes at frame 58).
-  const keepPrevious = opts.keepPrevious === true || afterCantCast(ctx, advanced, operator, frame) > frame;
+  // A logged cast after which the previous one's logged hits go on keeps what that one had to come, but the follow-ups its
+  // timeline would cast (bdf223db8e49: Typhoeus's shot 3 cuts the loop shot 2 started, whose landing at its frame 27 would
+  // end her hover).
+  const keepPrevious = afterCantCast(ctx, advanced, operator, frame) > frame ? true : opts.keepPrevious === true ? ("uncast" as const) : false;
   const r = castSkill(ctx, advanced, operator, skillId, frame, false, keepPrevious);
   let st = r.state;
   if (opts.landings?.length) {

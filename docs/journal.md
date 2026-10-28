@@ -19,6 +19,11 @@ its status (so without its own shred): the "×1.42" of batch 1 L2 is gone
 (the engine moved since); 0eef, bdf2, d572, a7a7 match it plainly.
 Dead end: a 10 s / 11 s A/B with a half-reverted sed gave a wrong reading
 (one of the two tick conditions stayed): compare from snapshots.
+Then B8 for Typhoeus: her hover ended early in the replay (keepPrevious
+kept the cut loop's landing; her combo placed as the grounded variant):
+bdf2 plain 105 → 123, 92b4 → 0%. Keeping only hits on keepPrevious was
+tried first and lost real delayed buffs (Liino and Si −11–13% in bdf2):
+only follow-up casts are dropped now.
 
 ## 2026-10-28: accuracy plan B0, teammates' own basic attacks
 

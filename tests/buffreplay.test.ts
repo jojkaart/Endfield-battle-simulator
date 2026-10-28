@@ -272,6 +272,20 @@ describe("0eef2474a26f: what the replay can't know, and landings a trigger makes
   });
 });
 
+describe("bdf223db8e49: Typhoeus's hover through her shots and her hovering combo", () => {
+  it("keeps the hover when a logged shot cuts the loop the previous one started, and casts the combo the slot holds", () => {
+    const fx = readLogFixture(new URL("../fixtures/zmdlogs-bdf223db8e49.json", import.meta.url).pathname);
+    const r = logBuffReplay(data, fx);
+    // The combo at ~11 s: logged as the shared combo keys, replayed as the hovering combo (it keeps the hover and its P1 ATK).
+    const combo = fx.hits.find((h) => h.event === "chr_0034_typhoea_combo_01_projhit") as LogHit;
+    const l = r.replay.landing(combo);
+    expect("unknown" in l ? l.unknown : l.skillId).toBe("chr_0034_typhoea_combo_skillfloating");
+    expect(r.replay.instances(combo, "buff_chr_0034_typhoea_potential_atkup")).toBe(1);
+    const v = checkLog(data, fx, { replay: r }).filter((x) => x.hit.operator === "chr_0034_typhoea" && x.kind === "match");
+    expect(v.filter((x) => x.kind === "match" && x.class === "plain").length).toBeGreaterThanOrEqual(44);
+  });
+});
+
 describe("bdf223db8e49: Corrosion from the replay's landings", () => {
   it("reads hits under Corrosion at the engine's level and shred where the replay landed them (levels tried only elsewhere)", () => {
     const fx = readLogFixture(new URL("../fixtures/zmdlogs-bdf223db8e49.json", import.meta.url).pathname);

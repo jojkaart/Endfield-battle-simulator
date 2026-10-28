@@ -99,8 +99,8 @@ export function shiftClock(list: readonly Scheduled[], on: (c: Clock) => boolean
  * An operator's cast ends at `frame` (casting.ts endCurrentSkill): what it still had to do after the frame goes
  * (castBound past it); a jump on its timeline goes even at the frame (it would come after everything else there).
  */
-export function cancelCast(list: readonly Scheduled[], operator: string, index: number, frame: number): readonly Scheduled[] {
-  return list.filter((x) => !(ofCast(x, operator, index) && (x.kind === "jump" || (x.frame > frame && (castBound(x) ?? -Infinity) > frame))));
+export function cancelCast(list: readonly Scheduled[], operator: string, index: number, frame: number, kept: (x: Scheduled) => boolean = () => false): readonly Scheduled[] {
+  return list.filter((x) => kept(x) || !(ofCast(x, operator, index) && (x.kind === "jump" || (x.frame > frame && (castBound(x) ?? -Infinity) > frame))));
 }
 
 /**

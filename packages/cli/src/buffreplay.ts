@@ -11,7 +11,7 @@
 // the two disagree (leads: a log gap, or a kit trigger that's wrong).
 
 import {
-  activeAt, advance, allActions, earliestStart, applyBuff, Attr, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, refillPoise, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
+  activeAt, advance, allActions, earliestStart, applyBuff, Attr, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, refillPoise, skillAvailable, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
   type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
@@ -478,7 +478,15 @@ function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast,
     if (available(c.skillId)) return null;
     return kit?.skills.find((k) => k.skillId !== c.skillId && k.kind === c.kind && !k.followUpOnly && available(k.skillId))?.skillId ?? null;
   }
-  if (c.kind !== "basic" || startsBy(c.skillId)) return c.skillId;
+  // A skill of a slot that holds one of two variants with the same keys (Typhoeus's combo while hovering, her hovering
+  // combo otherwise): the one its kit says is available then.
+  if (c.kind !== "basic") {
+    if (skillAvailable(ctx, st, c.operator, c.skillId, f)) return c.skillId;
+    const keys = new Set((kit?.skills.find((k) => k.skillId === c.skillId)?.hits ?? []).flatMap((h) => h.events));
+    const variant = kit?.skills.find((k) => k.skillId !== c.skillId && k.kind === c.kind && !k.followUpOnly && k.hits.some((h) => h.events.some((e) => keys.has(e))) && skillAvailable(ctx, st, c.operator, k.skillId, f));
+    return variant?.skillId ?? c.skillId;
+  }
+  if (startsBy(c.skillId)) return c.skillId;
   const hasKey = (skill: string) => (kit?.skills.find((k) => k.skillId === skill)?.hits ?? []).some((h) => h.events.includes(c.key));
   // The chain's next steps first, then any basic attack of the operator with the key (steps gated by the kit's own
   // state, Typhoeus's ABATK attempts: her hover attacks aren't a chain of windows).

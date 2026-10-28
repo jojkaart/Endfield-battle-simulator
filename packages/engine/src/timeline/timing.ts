@@ -315,6 +315,15 @@ export function startFrom(ctx: TimelineContext, state: TimelineState, action: Ro
   return { error: `${action.skill}: its start keeps moving as its gates are judged again (frame ${frame} after ${MAX_GATE_ROUNDS} rounds)` };
 }
 
+/** Whether a skill's kit `available` condition holds at a frame (judged on the state then); true without one. */
+export function skillAvailable(ctx: TimelineContext, state: TimelineState, operator: string, skillId: string, frame: number): boolean {
+  const skill = kitSkill(ctx, operator, skillId);
+  if (!skill.available) return true;
+  const then = advance(ctx, state, frame);
+  const build = ctx.builds.get(operator) as Build;
+  return decide(skill.available, evalContext(ctx.data, build, panelAt(ctx, operator, frame), skill.skillId, situationAt(ctx, operator, then, frame)));
+}
+
 /** Rounds of startFrom's gates before a start that keeps moving is reported. */
 const MAX_GATE_ROUNDS = 16;
 
@@ -380,12 +389,7 @@ function gatesFrom(ctx: TimelineContext, state: TimelineState, action: RotationA
   if (frame > ctx.scenario.durationFrames) return { error: `${action.skill} can't start before the fight ends` };
   // Energy, combo windows and states change only as hits land, so check them as they'll be at the start frame.
   const skill = kitSkill(ctx, action.operator, action.skill);
-  if (skill.available) {
-    const then = advance(ctx, state, frame);
-    const build = ctx.builds.get(action.operator) as Build;
-    const ok = decide(skill.available, evalContext(ctx.data, build, panelAt(ctx, action.operator, frame), skill.skillId, situationAt(ctx, action.operator, then, frame)));
-    if (!ok) return { error: `${action.skill} isn't available at frame ${frame} (${JSON.stringify(skill.available)})` };
-  }
+  if (!skillAvailable(ctx, state, action.operator, action.skill, frame)) return { error: `${action.skill} isn't available at frame ${frame} (${JSON.stringify(skill.available)})` };
   const windowed = needsWindow(ctx, action.operator, skill);
   if (costs.energyCost > 0 || windowed) {
     const then = advance(ctx, state, frame);

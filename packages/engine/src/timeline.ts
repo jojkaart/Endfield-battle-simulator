@@ -17,7 +17,7 @@ export { SP, ENERGY, COMBO_WINDOW_FRAMES, TIMELINE_ASSUMPTIONS, DODGE, JUMP, div
 export { createContext, panelAt, enemyActionsOf, enemyHpAt } from "./timeline/context.ts";
 export type { EnergyGrantOptions } from "./timeline/resources.ts";
 export { refillPoise, staggerFrames } from "./timeline/resources.ts";
-export { exclusiveUntil, earliestStart } from "./timeline/timing.ts";
+export { exclusiveUntil, earliestStart, skillAvailable } from "./timeline/timing.ts";
 export { landingDamage, nextRandom } from "./timeline/landing.ts";
 export { TEAMMATE_PAUSE_FRAMES } from "./timeline/teammates.ts";
 export { advance, memoised } from "./timeline/advance.ts";
