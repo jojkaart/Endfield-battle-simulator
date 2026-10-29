@@ -304,8 +304,9 @@ describe("3aa6ab93bad4: a press the log shows as a variant by its own keys", () 
     const Z = "chr_0030_zhuangfy";
     const kits = fx.team.map((b) => effectiveKit(data, b) as OperatorKit);
     const casts = withLoggedCasts(replayedCasts(placeHits(data, fx), fx), fx, kits);
-    // The press at 19639 ms: not placed (its hits went to the cast before), its variant's keys follow it.
-    expect(casts.find((c) => c.operator === Z && Math.round(c.start) === 19639)?.shows).toEqual([`${Z}_normal_skill_ult`]);
+    // The press at 19639 ms: placed from its own hits since the placement follows her strike variants (before, they went
+    // to the cast before it and the press was made from its variant's keys, `shows`).
+    expect(casts.some((c) => c.operator === Z && c.skillId === `${Z}_normal_skill_ult` && Math.abs(c.start - 19639) <= 2500 && c.landings.length > 0)).toBe(true);
     // Every logged hit of the variant lands now but those of the first seconds of a press the placement merged.
     const r = logBuffReplay(data, fx).replay;
     const ult = fx.hits.filter((h) => h.operator === Z && h.event === `${Z}_normal_skill_ult_abilityrange` && h.t > 19639 && h.t < 22000);

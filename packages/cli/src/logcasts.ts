@@ -65,6 +65,8 @@ interface Group {
 interface Slot {
   readonly frame: number;
   readonly hits: readonly KitHit[];
+  /** The slots follow one of the key's variants (variantOrder): a cast may make fewer of them. */
+  readonly variant?: true;
 }
 
 export interface LoggedCast {
@@ -131,15 +133,12 @@ export function loggedFrames(h: KitHit): number[] | null {
  * no frames: the order is unknown.
  */
 function slotsOf(g: Group, key: string): Slot[] | null {
+  const withKey = g.hits.filter((h) => !h.poiseOnly && h.events.includes(key)); // a stagger-only landing (poiseOnly) isn't logged
+  if (withKey.some((h) => !loggedFrames(h))) return null;
+  const order = variantOrder(withKey);
   const landings: { frame: number; hit: KitHit; order: number }[] = [];
-  let order = 0;
-  for (const h of g.hits) {
-    // A stagger-only landing (KitHit.poiseOnly) isn't logged.
-    if (h.poiseOnly || !h.events.includes(key)) continue;
-    const frames = loggedFrames(h);
-    if (!frames) return null;
-    for (const frame of frames) landings.push({ frame, hit: h, order: order++ });
-  }
+  let n = 0;
+  for (const h of order.slotted) for (const frame of loggedFrames(h) as number[]) landings.push({ frame, hit: h, order: n++ });
   landings.sort((a, b) => a.frame - b.frame || a.order - b.order);
   // Alternatives: hits with a condition (`if`), a branch, or a stack requirement (Typhoeus's power shot needs an arrow, the
   // plain one none: one landing per cast, not two).
@@ -150,7 +149,41 @@ function slotsOf(g: Group, key: string): Slot[] | null {
     if (last && last.frame === l.frame && conditional(l.hit) && last.hits.every((x) => x !== l.hit && conditional(x))) last.hits.push(l.hit);
     else slots.push({ frame: l.frame, hits: [l.hit] });
   }
-  return slots;
+  // The other variants' hits are alternatives where they land at a slot's frame.
+  for (const slot of slots) for (const h of order.others) if ((loggedFrames(h) as number[]).includes(slot.frame) && !slot.hits.includes(h)) slot.hits.push(h);
+  return order.others.length ? slots.map((x) => ({ ...x, variant: true as const })) : slots;
+}
+
+/**
+ * A key's hits split into variants by ranges of one stack (a requirement, or the hit's whole `if`; a cast makes one: Zhuang Fangyi's
+ * strike_N / final_N by her Sunderblade count): the slots follow the variant with the most landings, and the others'
+ * hits are only alternatives at its frames (3aa6ab93bad4: final_1 at frame 32, between strike_9's 27 and 33, took a
+ * cast's second strike, so its seven strikes went to three casts). Without such variants every hit is slotted.
+ */
+function variantOrder(hits: readonly KitHit[]): { slotted: readonly KitHit[]; others: readonly KitHit[] } {
+  const byStack = new Map<string, Map<string, KitHit[]>>();
+  // A stack range as a requirement or as the hit's whole condition.
+  const rangeOf = (h: KitHit): { stack: string; atLeast?: unknown; below?: unknown } | null => {
+    if (h.requires) return h.requires;
+    const c = h.if as { stack?: unknown; atLeast?: unknown; below?: unknown } | undefined;
+    return c && typeof c.stack === "string" && Object.keys(c).every((k) => k === "stack" || k === "atLeast" || k === "below") ? { stack: c.stack, atLeast: c.atLeast, below: c.below } : null;
+  };
+  for (const h of hits) {
+    const r = rangeOf(h);
+    if (!r) continue;
+    const range = `${r.atLeast ?? ""}..${r.below ?? ""}`;
+    const ranges = byStack.get(r.stack) ?? new Map<string, KitHit[]>();
+    ranges.set(range, [...(ranges.get(range) ?? []), h]);
+    byStack.set(r.stack, ranges);
+  }
+  const others = new Set<KitHit>();
+  for (const ranges of byStack.values()) {
+    if (ranges.size < 3) continue; // two ranges are alternatives at one frame (an arrow or none)
+    const count = (list: readonly KitHit[]) => list.reduce((a, h) => a + (loggedFrames(h)?.length ?? 0), 0);
+    const best = [...ranges.values()].reduce((a, b) => (count(b) > count(a) ? b : a));
+    for (const list of ranges.values()) if (list !== best) for (const h of list) others.add(h);
+  }
+  return { slotted: hits.filter((h) => !others.has(h)), others: hits.filter((h) => others.has(h)) };
 }
 
 const msOf = (frames: number) => (frames * 1000) / FPS;
@@ -217,10 +250,14 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const superseded = cur !== undefined && next !== undefined && !onTime && !next.hits.some((x) => x.detached || x.launch !== undefined) &&
           [...opened.values()].flat().some((c) => c !== cur.cast && c.kind !== null && c.start > cur.cast.start && c.start <= h.t);
         const toCome = cur?.slots && cur.index + 1 < cur.slots.length && elapsed <= cur.longest + CAST_SLACK_MS;
+        // A variant's slot may never come (variantOrder): a logged press of a skill of the cast's kind since its first
+        // landing starts a new cast (3aa6ab93bad4: a cast of two strikes doesn't take the next cast's seven; d774d0ce7bd3:
+        // a battle skill's strikes 2.6 s apart, no press between, are one cast's).
+        const pressed = next?.variant === true && cur !== undefined && (fx.casts ?? []).some((c) => c.operator === build.operator && c.t > cur.first && c.t <= h.t && groups.find((x) => x.id === c.skill)?.kind === cur.cast.kind);
         // A cast whose landings of the key are all known (exactSlots) and all logged already: another is a new cast, however
         // soon (Typhoeus's hover shots, 0.6 s apart under one key, were one cast with one landing: every second shot unlanded).
         const used = cur?.exact === true && cur.slots !== null && cur.index + 1 >= cur.slots.length;
-        if (cur && !superseded && !used && (elapsed <= cur.span + CAST_SLACK_MS || toCome)) {
+        if (cur && !superseded && !used && !pressed && (elapsed <= cur.span + CAST_SLACK_MS || toCome)) {
           cur.index++;
           const s = cur.slots;
           const slot = s ? s[Math.min(cur.index, s.length - 1)] : undefined;

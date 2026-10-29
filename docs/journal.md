@@ -36,7 +36,13 @@ basic attack). The replay now infers such a cast from the trigger hit
 invented an ultimate and a combo). b6aa −8.4%, plain 62 → 216; 9555
 −17.4 → +5.7%. Then 9555's Si: two usp02 wearers' team DMG stacked in the
 replay; one-layer stackingType 2 buffs on others are one group now
-(9555 +2.3%).
+(9555 +2.3%). Then Zhuang Fangyi's strikes: the kit was right, the
+placement wasn't (her strike variants' finals sat between strikes): slots
+follow the largest variant, and a logged press starts a new cast. 3aa6
+−10.6%, 4bfc −12.9% (plain 206 → 311, 209 → 406). Dead end: bounding
+joins by slot frames (split her plain battle skill and Last Rite's combo).
+Not engine leads: 3aa6's Stagger compare (the poise print fired in
+speculative states too), Si's build in 9555.
 
 ## 2026-10-28: Typhoeus's burst on the enemy's clock; dbae verifies again
 

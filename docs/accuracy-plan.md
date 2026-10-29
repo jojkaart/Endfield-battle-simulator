@@ -385,6 +385,24 @@ Zhuang Fangyi's ultimate state). 9555 +5.7 → +2.3% (plain 199 → 214).
 Left there: Xaihi's ultimate Amp in b6aa shows 0.57 s after its logged
 cast (1.9–2.5 s in four other logs).
 
+B8, Zhuang Fangyi's strikes (2026-10-29). Her kit's values were right:
+the replay's strikes rise by her talent's Amp per strike exactly as the
+log's do. The placement put them in the wrong landings. Her strikes are
+variants by Sunderblade count (strike_N / final_N, as `if` stack ranges),
+and the small variants' finals sit between the large ones' strikes
+(final_1 at frame 32, between 27 and 33), so a cast's second strike took
+final_1's slot, the cast filled up, and its seven strikes went to three
+casts. The slots now follow the variant with the most landings, the
+others' hits being alternatives at its frames (`variantOrder`). And since
+a variant cast may make fewer landings than its slots, a logged press of
+a skill of the cast's kind since its first landing starts a new cast (a
+bound by the slots' frames instead broke her plain battle skill, whose
+strikes come 2.6 s apart in d774, and Last Rite's combo in b6aa). Plain:
+3aa6 206 → 311 (−25.5 → −10.6%), 4bfc 209 → 406 (−31.4 → −12.9%), d774
+148 → 224 (−25 → +17.9%: Liino's +124% there was hidden; her 100 hits
+mismatch), c6d8 29 → 39 (its boss's ×0.1 phase). Left: her Sunderblade
+count runs above the game's (d774 at 104 s: 8 strikes, the log 3).
+
 ## Phase C: questions for the owner (they decide what to model)
 
 - **Do teammates act on their own?** Answered (the owner, 2026-10-26):

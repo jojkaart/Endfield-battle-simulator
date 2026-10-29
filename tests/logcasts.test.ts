@@ -87,3 +87,16 @@ describe("Si's strokes and Artful Intent's burst (accuracy plan A2)", () => {
     expect("unknown" in l ? [] : l.modifiers.map((m) => m.source).filter((x) => x.includes("Vocalist Stance"))).toHaveLength(1);
   });
 });
+
+describe("variants by a stack range (Zhuang Fangyi's strike_N / final_N by Sunderblade count)", () => {
+  it("slots follow the variant with the most landings, and a logged press starts a new cast", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-3aa6ab93bad4.json", import.meta.url).pathname);
+    const Z = "chr_0030_zhuangfy";
+    const p = placeHits(data, fx);
+    // One cast's seven strikes (32.9–34.0 s, 0.2 s apart): one cast, slots 0–6 in order (final_1 at frame 32 had taken the second).
+    const strikes = fx.hits.filter((h) => h.operator === Z && h.event === `${Z}_normal_skill_ult_abilityrange` && h.t >= 32900 && h.t <= 34035);
+    expect(strikes).toHaveLength(7);
+    expect(new Set(strikes.map((h) => p.hits.get(h)?.cast)).size).toBe(1);
+    expect(strikes.map((h) => p.hits.get(h)?.index)).toEqual([0, 1, 2, 3, 4, 5, 6]);
+  });
+});
