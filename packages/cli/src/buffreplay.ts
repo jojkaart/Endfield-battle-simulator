@@ -489,6 +489,27 @@ interface Change {
  * skipped when its skill can start, else the operator's skill of its kind that can (Si's Initial or Final Stroke for a
  * logged battle skill under Artful Intent; accuracy plan A2), else skipped.
  */
+/** How soon before a logged cast its operator's own follow-up cast of a skill with the cast's key is that cast (frames). */
+const FOLLOW_UP_FRAMES = 10;
+
+/**
+ * The state without the follow-up casts its operators' timelines would make (a trigger's delayed `cast`) up to `until`
+ * where a logged cast of the same operator, of a skill with its key, comes within FOLLOW_UP_FRAMES after: the logged cast
+ * is that follow-up, a little later (dbaee23b801d: Typhoeus's off-field shot chain at its kit's 22 frames, the log's
+ * next shot 2 frames on: the replay made both).
+ */
+function withoutFollowUps(ctx: TimelineContext, st: TimelineState, casts: readonly ReplayedCast[], until: number): TimelineState {
+  const castsKey = (owner: string, trigger: string, key: string) => {
+    const kit = ctx.kits.get(owner);
+    const hasKey = (skill: string) => (kit?.skills.find((k) => k.skillId === skill)?.hits ?? []).some((h) => h.events.includes(key));
+    return (kit?.triggers ?? []).some((t) => t.id === trigger && allActions(t.do).some((a) => a.kind === "cast" && hasKey(a.skill)));
+  };
+  const replaced = (x: TimelineState["scheduled"][number]) =>
+    x.kind === "action" && x.frame <= until &&
+    casts.some((c) => !c.slot && c.landings.length > 0 && c.operator === x.owner && frameOf(c.start) >= x.frame && frameOf(c.start) < x.frame + FOLLOW_UP_FRAMES && castsKey(x.owner, x.trigger, c.key));
+  return st.scheduled.some(replaced) ? { ...st, scheduled: st.scheduled.filter((x) => !replaced(x)) } : st;
+}
+
 function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, f: number): string | null {
   const startsBy = (skill: string) => {
     const r = earliestStart(ctx, st, { operator: c.operator, skill });
@@ -678,7 +699,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
         const c = s.cast;
         try {
           const f = Math.max(s.frame, st.frame);
-          st = advance(ctx, st, f);
+          st = advance(ctx, withoutFollowUps(ctx, st, casts, f), f);
           const windowCount = c.kind === "combo" ? replayWindowCount(ctx, st, c.operator, c.skillId, f) : null;
           const pre = st;
           const skillId = replayedSkill(ctx, st, c, f);
@@ -695,7 +716,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
         continue;
       }
       try {
-        st = advance(ctx, st, Math.max(s.frame, st.frame));
+        st = advance(ctx, withoutFollowUps(ctx, st, casts, Math.max(s.frame, st.frame)), Math.max(s.frame, st.frame));
         if (s.recover) {
           st = refillPoise(ctx, st);
           continue;

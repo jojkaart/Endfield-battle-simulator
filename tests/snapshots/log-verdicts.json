@@ -1,10 +1,10 @@
 {
  "zmdlogs-0eef2474a26f.json": {
-  "chr_0034_typhoea": {"plain":11,"assumed":3,"fallback":5,"mismatch":0,"unvalued":0,"unquantified":12,"uncovered":0},
+  "chr_0034_typhoea": {"plain":16,"assumed":2,"fallback":2,"mismatch":0,"unvalued":0,"unquantified":11,"uncovered":0},
   "chr_0032_lizhiyan": {"plain":3,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0036_jsspsi": {"plain":9,"assumed":0,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":10,"uncovered":0},
   "chr_0035_liino": {"plain":8,"assumed":3,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":2,"uncovered":0},
-  "totals": {"damage":-10,"operator chr_0034_typhoea":4.2,"operator chr_0035_liino":58.7,"operator chr_0036_jsspsi":-26.7,"operator chr_0032_lizhiyan":-2.9,"kind basic":4.7,"kind battle":-9.9,"kind combo":-32.5,"kind status":-4.8,"hits":8.8,"status hits":0,"staggered hits":0,"last hit":0,"crit share (points)":0.2}
+  "totals": {"damage":-10.2,"operator chr_0034_typhoea":3.9,"operator chr_0035_liino":58.7,"operator chr_0036_jsspsi":-26.7,"operator chr_0032_lizhiyan":-2.9,"kind basic":4.2,"kind battle":-9.8,"kind combo":-32.2,"kind status":-4.8,"hits":7.4,"status hits":0,"staggered hits":0,"last hit":0,"crit share (points)":0.1}
  },
  "zmdlogs-40d9a3c1da37.json": {
   "chr_0016_laevat": {"plain":14,"assumed":2,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
@@ -39,6 +39,6 @@
   "chr_0032_lizhiyan": {"plain":1,"assumed":2,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0035_liino": {"plain":15,"assumed":9,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0011_seraph": {"plain":6,"assumed":0,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":9.9,"operator chr_0034_typhoea":11.2,"operator chr_0032_lizhiyan":-33,"operator chr_0035_liino":5.3,"operator chr_0011_seraph":0.1,"kind basic":11.9,"kind battle":-26.3,"kind combo":4.2,"kind status":-39.6,"kind ultimate":4.5,"hits":11.4,"status hits":0,"staggered hits":0,"last hit":0.2,"crit share (points)":0.1}
+  "totals": {"damage":-4.2,"operator chr_0034_typhoea":-3.8,"operator chr_0032_lizhiyan":-33,"operator chr_0035_liino":5.3,"operator chr_0011_seraph":0.1,"kind basic":-5,"kind battle":-26.3,"kind combo":4.2,"kind status":-39.6,"kind ultimate":4.5,"hits":8.9,"status hits":0,"staggered hits":0,"last hit":0.2,"crit share (points)":0.1}
  }
 }

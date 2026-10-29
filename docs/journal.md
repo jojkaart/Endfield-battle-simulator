@@ -19,6 +19,9 @@ test 28 now asks. The presses every ~3 s in every Liino log are the
 stance's soundwave heals, not casts (her stance and volleys go on).
 Dead end: casting every available press (458b, c3c7, dbae worse; it even
 re-cast Liino's ultimate from the "ultimate" presses during Cosmovoice).
+Then Typhoeus's off-field chain: the replay made the chain's next shot
+and the logged one 2 frames later; a logged cast now takes the place of
+a follow-up cast due within 10 frames before it (dbae +9.9 → −4.2%).
 
 ## 2026-10-28: Typhoeus's burst on the enemy's clock; dbae verifies again
 

@@ -330,6 +330,15 @@ d774 −22.1 → −19.2% (plain 33 → 147), c6d8 +7.9 → +9.9% (plain 0 → 2
 Liino's mismatches 90 → 67; its boss's ×0.1 phase is still unmodelled),
 e82d −9.1 → −8.6%. Examples don't move (none ends a stance early).
 
+B8, Typhoeus's off-field shots (2026-10-29). Off-field her shots chain
+by themselves (kit: a shot casts the next 22 frames in); the log's next
+shot comes 2 frames later and is placed as a cast of its own, so the
+replay made both (dbae: one shot and its burst more, ~14% of the
+total). A follow-up cast a trigger would make within 10 frames before a
+logged cast of the same operator with its key is now left to the logged
+cast (`withoutFollowUps`). dbae +9.9 → −4.2% (no unlogged shot left),
+0eef plain 31 → 36. The 2-frame lag itself may be hit-stop (B10).
+
 ## Phase C: questions for the owner (they decide what to model)
 
 - **Do teammates act on their own?** Answered (the owner, 2026-10-26):

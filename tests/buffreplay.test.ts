@@ -238,6 +238,13 @@ describe("dbaee23b801d: a cast the log shows only by the buff it applies", () =>
     expect(used.filter((f) => f >= frame(8258) && f <= frame(8501))).toEqual([]);
     expect(used).toContain(frame(8613));
   });
+
+  it("makes a logged shot the off-field chain's own next shot, not one more (her kit's 22 frames, the log's 24)", () => {
+    const T = "chr_0034_typhoea";
+    const r = logBuffReplay(data, fx).replay;
+    // Every power shot and burst the replay lands is a logged one.
+    expect(r.hits.filter((h) => h.operator === T && (h.hitId === "power_shot" || h.hitId === "burst") && h.ref === undefined).map((h) => h.frame)).toEqual([]);
+  });
 });
 
 describe("4e5e1390085e: who the log shows controlled, and the enemy's own Stagger recovery", () => {
