@@ -33,6 +33,22 @@ describe("cast placement (accuracy plan A1)", () => {
     const rain = dbae.hits.find((h) => h.event === `${T}_ultimate_skill_arrowrain`);
     expect(placeHits(data, dbae).hits.get(rain as LogHit)?.cast.skillId).toBe(`${T}_ultimate_skillfloating`);
   });
+
+  it("a landing at its next slot's own frame stays in its cast, though another cast seems to start between (Camille's combo in 012a)", async () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-012ae1c80ae6.json", import.meta.url).pathname);
+    const C = "chr_0033_camille";
+    const p = placeHits(data, fx);
+    // One combo: its hits at frames 19 / 27 / 47, logged at 33910 / 34117 / 34798 ms around an attack 3 placed at 33552 ms.
+    const combo = fx.hits.filter((h) => h.operator === C && h.event === `${C}_combo_skill` && h.t > 33000 && h.t < 35000);
+    expect(combo.map((h) => h.t)).toEqual([33910, 34117, 34798]);
+    expect(new Set(combo.map((h) => p.hits.get(h)?.cast)).size).toBe(1);
+    expect(combo.map((h) => p.hits.get(h)?.index)).toEqual([0, 1, 2]);
+    // Its one poised hit (hit_3) is the only Stagger the replay deals there, and the bar breaks near the log's 53.4 s, not
+    // at 35.9 s (with Arcane's Cluster Strike lasers' 20 each and three combos it did).
+    const { logBuffReplay } = await import("@efsim/cli");
+    const first = logBuffReplay(data, fx).replay.staggers[0] as number;
+    expect((first * 1000) / 30).toBeGreaterThan(45000);
+  });
 });
 
 describe("the replay casts the basic-attack step the engine's state allows (accuracy plan A1)", () => {

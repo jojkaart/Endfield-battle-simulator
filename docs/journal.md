@@ -22,6 +22,12 @@ re-cast Liino's ultimate from the "ultimate" presses during Cosmovoice).
 Then Typhoeus's off-field chain: the replay made the chain's next shot
 and the logged one 2 frames later; a logged cast now takes the place of
 a follow-up cast due within 10 frames before it (dbae +9.9 → −4.2%).
+Then 012a's early Stagger: Arcane's Cluster Strike lasers had 20 Stagger
+each in the kit (a misread literal; no logged laser has any), and
+Camille's combo was placed as three casts around a misplaced attack 3.
+Stagger starts now come within 1–4 s of the logs; plain 012a 138 → 226.
+Some totals fell (b6aa −15.3%): the false Stagger's ×1.3 had hidden
+deficits, which are leads now.
 
 ## 2026-10-28: Typhoeus's burst on the enemy's clock; dbae verifies again
 

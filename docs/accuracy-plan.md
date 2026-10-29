@@ -339,6 +339,26 @@ logged cast of the same operator with its key is now left to the logged
 cast (`withoutFollowUps`). dbae +9.9 → −4.2% (no unlogged shot left),
 0eef plain 31 → 36. The 2-frame lag itself may be hit-stop (B10).
 
+B1 follow-up, 012a's early Stagger (2026-10-29). Hit for hit against the
+log's bar, the replay matched until 34.7 s, then dealt two things the log
+doesn't:
+- **Arcane's Cluster Strike lasers dealt 20 Stagger each.** The kit read
+  a literal 20 as their poise, but `ultimate_skill_laser` has one damage
+  unit (damageAttributeType 0, no poise calculation), and none of the 68
+  lasers in seven logs moves the bar. Removed.
+- **Camille's one combo was placed as three.** An attack 3 placed
+  between its hits counted as a newer cast that ended it. A landing that
+  comes at its next slot's own frame (within 150 ms, from the key's first
+  landing) now stays in its cast (`ON_TIME_MS`).
+
+The replay's Stagger now starts near the log's: 012a 49.0 s (log 53.4,
+was 35.9), b6aa 46.8 (45.7), d774 139.7 (138.7). Plain: 012a 138 → 226,
+3aa6 192 → 206, 9555 179 → 194. Totals moved down where the false Stagger
+(×1.3) had covered deficits: b6aa −5.6 → −15.3% (Arcane's 65
+mismatches there are older), d774 −19.2 → −25%, 9555 −15.5 → −17.4%,
+3aa6 −23.8 → −25.5% (whose Stagger at 145.6 s the replay still lacks),
+012a +1.5 → −2.9%.
+
 ## Phase C: questions for the owner (they decide what to model)
 
 - **Do teammates act on their own?** Answered (the owner, 2026-10-26):

@@ -677,7 +677,6 @@
                 27
               ],
               "damageType": "ultimate",
-              "poise": 20,
               "events": [
                 "chr_0032_lizhiyan_ultimate_skill_laser"
               ]
@@ -718,7 +717,7 @@
           }
         }
       ],
-      "note": "inaura abilityEvent 101, Final Strike path: target_mark 0.1 s, then if the array is up and no 0.4 s marker: laser buff by layer, energy usp_step (max energy / 2), layer +1. The second strike switches to Gloompurge Arcana (listener)."
+      "note": "inaura abilityEvent 101, Final Strike path: target_mark 0.1 s, then if the array is up and no 0.4 s marker: laser buff by layer, energy usp_step (max energy / 2), layer +1. The second strike switches to Gloompurge Arcana (listener). The lasers deal no Stagger: ultimate_skill_laser has one damage unit (damageAttributeType 0, poiseCalculation null), its DefiniteValueCalculation 20 isn't a poise unit, and none of the 68 lasers in seven logs moves the bar."
     },
     {
       "id": "cluster_strike_finisher",
@@ -774,7 +773,6 @@
                 24
               ],
               "damageType": "ultimate",
-              "poise": 20,
               "events": [
                 "chr_0032_lizhiyan_ultimate_skill_laser"
               ]

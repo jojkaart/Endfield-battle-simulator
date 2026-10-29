@@ -733,8 +733,10 @@ b7b3762d5da8, P5 bdf223db8e49).
 - evidence: skillCompile.ts `damage()` ("1 = poise (stagger) damage",
   `continue`); power_attack draft: 6 × `atk_scale`, no factor; poise keys
   `poise_touch`, `poise_boom`, `poise_early_finish`, `poise_final`,
-  `poise` (battle skill 10, ultimates), literal 20 (Cluster lasers), 5/20/10
-  (finisher).
+  `poise` (battle skill 10, ultimates), literal 20 (Cluster lasers: not a
+  poise unit, corrected 2026-10-29: `ultimate_skill_laser`'s one damage
+  unit has no poise calculation, and no logged laser deals Stagger),
+  5/20/10 (finisher).
 - impact: none once the kit hand-writes them (the batch-1 kits carry no
   poise yet, so stagger is under-counted for everyone until then).
 

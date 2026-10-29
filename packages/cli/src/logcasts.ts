@@ -16,6 +16,9 @@ import type { LogFixture, LogHit } from "@efsim/data";
  */
 export const CAST_SLACK_MS = 1000;
 
+/** A cast's next landing of a key logged this close to its slot's frame (from the key's first landing) is that landing (ms). */
+const ON_TIME_MS = 150;
+
 /** A global slow-down a logged cast caused (SkillTiming.slowdowns: UltimateTimeAction, global TimeDilationAction): from frame `start`, the world's time scale per frame. */
 export interface TimeStop {
   readonly start: number;
@@ -206,8 +209,12 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         // Not once another of the operator's skills was cast since, unless the landing to come is on its way (detached): the
         // new cast ended this one (4e5e1390085e: Rossi's attack 4 at 14708 ms after her attack 3, not hit_ai's landings at
         // frame 195+ of her attack 4 at 6974 ms).
+        // A landing at its next slot's own frame is the cast's, whatever seems to start in between (012ae1c80ae6: Camille's
+        // combo hits at 33910 / 34117 / 34798 ms, its frames 19 / 27 / 47, around an attack 3 placed at 33552 ms).
         const next = cur?.slots?.[cur.index + 1];
-        const superseded = cur !== undefined && next !== undefined && !next.hits.some((x) => x.detached || x.launch !== undefined) &&
+        const head = cur?.slots?.[0];
+        const onTime = cur !== undefined && next !== undefined && head !== undefined && Math.abs(elapsed - msOf(next.frame - head.frame)) <= ON_TIME_MS;
+        const superseded = cur !== undefined && next !== undefined && !onTime && !next.hits.some((x) => x.detached || x.launch !== undefined) &&
           [...opened.values()].flat().some((c) => c !== cur.cast && c.kind !== null && c.start > cur.cast.start && c.start <= h.t);
         const toCome = cur?.slots && cur.index + 1 < cur.slots.length && elapsed <= cur.longest + CAST_SLACK_MS;
         // A cast whose landings of the key are all known (exactSlots) and all logged already: another is a new cast, however
