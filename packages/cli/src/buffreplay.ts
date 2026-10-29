@@ -15,7 +15,7 @@ import {
   type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
-import { distinctCasts, loggedFrames, type LoggedCast, type Placement } from "./logcasts.ts";
+import { distinctCasts, loggedFrames, mergeMs, type LoggedCast, type Placement } from "./logcasts.ts";
 
 /**
  * How sure the replay is of when its buffs start and end. A start is a
@@ -471,7 +471,7 @@ const RUN_GAP_MS = 1500;
  * replay then makes each basic cast's operator the controlled one, as before).
  */
 export function controlledFromLog(placement: Placement, casts: readonly ReplayedCast[]): { readonly first: string; readonly casts: ReplayedCast[] } | null {
-  const ofCast = (c: LoggedCast) => casts.find((d) => d.operator === c.operator && d.skillId === c.skillId && Math.abs(d.start - c.start) <= 1000);
+  const ofCast = (c: LoggedCast) => casts.find((d) => d.operator === c.operator && d.skillId === c.skillId && Math.abs(d.start - c.start) <= mergeMs(placement, c.skillId));
   const shown = [...placement.hits]
     .filter(([h, p]) => h.poise !== undefined && p.cast.kind === "basic" && p.hits.some((k) => k.poise !== undefined && k.poiseControlledOnly))
     .flatMap(([h, p]) => {
@@ -498,8 +498,8 @@ export function replayedCasts(placement: Placement, fx?: Pick<LogFixture, "hits"
   const casts = distinctCasts(placement);
   // A landing's reference: its logged hit's index in the fixture (replayCast `ref`: its LandedHit carries it).
   const hitIndex = new Map((fx?.hits ?? [...placement.hits.keys()]).map((h, i) => [h, i]));
-  // Its own cast, else the one it merged into (distinctCasts: the same skill placed from another key, within CAST_MERGE_MS).
-  const ofCast = (c: LoggedCast): LoggedCast | undefined => (casts.includes(c) ? c : casts.find((d) => d.operator === c.operator && d.skillId === c.skillId && Math.abs(d.start - c.start) <= 1000));
+  // Its own cast, else the one it merged into (distinctCasts: the same skill placed from another key, within mergeMs).
+  const ofCast = (c: LoggedCast): LoggedCast | undefined => (casts.includes(c) ? c : casts.find((d) => d.operator === c.operator && d.skillId === c.skillId && Math.abs(d.start - c.start) <= mergeMs(placement, c.skillId)));
   const last = new Map<LoggedCast, number>();
   const landings = new Map<LoggedCast, { hitId: string; nth: number; frame: number; ref: string }[]>();
   const used = new Map<string, Set<number>>();

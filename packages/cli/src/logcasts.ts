@@ -95,6 +95,8 @@ export interface PlacedHit {
 export interface Placement {
   readonly hits: ReadonlyMap<LogHit, PlacedHit>;
   readonly casts: readonly LoggedCast[];
+  /** Per skill, how close casts of it placed from different keys are one cast, in ms (mergeMs; absent: CAST_MERGE_MS). */
+  readonly merge?: ReadonlyMap<string, number>;
 }
 
 function groupsOf(data: GameData, build: Build, panel: StatPanel, team: readonly Build[]): Group[] {
@@ -204,7 +206,12 @@ function exactSlots(g: Group, key: string): boolean {
  * 11.3 s runs on across Jsspsi's combo and Last Rite's ultimate).
  */
 export function placeHits(data: GameData, fx: LogFixture): Placement {
-  return placeWith(data, fx, castTimeStops(data, placeWith(data, fx, []).casts));
+  const placed = placeWith(data, fx, castTimeStops(data, placeWith(data, fx, []).casts));
+  // An ultimate isn't cast again within its own action: its casts placed from different keys within its duration are one
+  // (d774d0ce7bd3: Liino's at 116.5 s, its beats, projectiles and side projectiles placed 2 s apart: three casts, three bombs).
+  const merge = new Map<string, number>();
+  for (const c of placed.casts) if (c.kind === "ultimate") merge.set(c.skillId, Math.max(CAST_MERGE_MS, msOf(data.skills[c.skillId]?.timing?.durationFrames ?? 0)));
+  return { ...placed, merge };
 }
 
 function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): Placement {
@@ -328,13 +335,18 @@ function joinDelayed(candidates: readonly Group[], h: LogHit, slots: (g: Group, 
 /** Casts of one skill placed from different keys this close are one cast. */
 const CAST_MERGE_MS = 1000;
 
+/** How close casts of a skill placed from different keys are one cast (ms): Placement.merge, else CAST_MERGE_MS. */
+export function mergeMs(placement: Pick<Placement, "merge">, skillId: string): number {
+  return placement.merge?.get(skillId) ?? CAST_MERGE_MS;
+}
+
 /** The logged casts of kit skills (not triggers' hits), one per cast: a cast placed from several of its keys counts once, at its earliest start. */
 export function distinctCasts(placement: Placement): LoggedCast[] {
   const out: LoggedCast[] = [];
   for (const c of [...placement.casts].sort((a, b) => a.start - b.start)) {
     if (c.kind === null) continue;
     // Placed from the same key they are two casts (the placement already joined what one cast's landings of it can be).
-    if (out.some((x) => x.operator === c.operator && x.skillId === c.skillId && x.key !== c.key && Math.abs(x.start - c.start) <= CAST_MERGE_MS)) continue;
+    if (out.some((x) => x.operator === c.operator && x.skillId === c.skillId && x.key !== c.key && Math.abs(x.start - c.start) <= mergeMs(placement, c.skillId))) continue;
     out.push(c);
   }
   return out;

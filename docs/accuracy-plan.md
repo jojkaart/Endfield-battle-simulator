@@ -403,6 +403,16 @@ strikes come 2.6 s apart in d774, and Last Rite's combo in b6aa). Plain:
 mismatch), c6d8 29 → 39 (its boss's ×0.1 phase). Left: her Sunderblade
 count runs above the game's (d774 at 104 s: 8 strikes, the log 3).
 
+Then Liino's +124% in d774: the replay cast four ultimates, the log has
+two. Her ultimate's keys don't keep the kit's spacing (beats, projectiles
+and side projectiles placed up to 2 s apart), and casts of one skill
+from different keys merged only within 1 s, so one ultimate became three,
+each with its bomb and beats. An ultimate isn't cast again within its own
+action: such casts now merge within its duration (`mergeMs`). Liino
+d774 +124 → +29%, 4bfc +21.7 → −5.7% (her ultimate +17.6 → −1.7%); 4bfc's
+total −12.9 → −14.8% (the extra bomb's Stagger had moved its window
+early: staggered hits −5 → −24%).
+
 ## Phase C: questions for the owner (they decide what to model)
 
 - **Do teammates act on their own?** Answered (the owner, 2026-10-26):

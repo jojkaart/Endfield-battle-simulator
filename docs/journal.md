@@ -43,6 +43,9 @@ follow the largest variant, and a logged press starts a new cast. 3aa6
 joins by slot frames (split her plain battle skill and Last Rite's combo).
 Not engine leads: 3aa6's Stagger compare (the poise print fired in
 speculative states too), Si's build in 9555.
+Liino's +124% in d774: one ultimate placed as three casts from its keys;
+an ultimate's casts now merge within its duration (d774 Liino +29%,
+4bfc Liino −5.7%).
 
 ## 2026-10-28: Typhoeus's burst on the enemy's clock; dbae verifies again
 

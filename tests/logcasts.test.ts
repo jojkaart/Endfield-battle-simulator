@@ -100,3 +100,16 @@ describe("variants by a stack range (Zhuang Fangyi's strike_N / final_N by Sunde
     expect(strikes.map((h) => p.hits.get(h)?.index)).toEqual([0, 1, 2, 3, 4, 5, 6]);
   });
 });
+
+describe("an ultimate placed from several keys", () => {
+  it("is one cast within its own duration (Liino's at 116.5 s in d774: beats, projectiles and side projectiles 2 s apart)", async () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-d774d0ce7bd3.json", import.meta.url).pathname);
+    const L = "chr_0035_liino";
+    const ults = distinctCasts(placeHits(data, fx)).filter((c) => c.operator === L && c.skillId === `${L}_ultimate_skill`);
+    expect(ults.filter((c) => c.start > 110000 && c.start < 125000)).toHaveLength(1);
+    // So the replay lands one bomb per logged one.
+    const { logBuffReplay } = await import("@efsim/cli");
+    const bombs = logBuffReplay(data, fx).replay.hits.filter((h) => h.operator === L && h.hitId === "bomb");
+    expect(bombs).toHaveLength(fx.hits.filter((h) => h.operator === L && h.event === `${L}_ultimate_skill_projhit_damage_02`).length);
+  });
+});

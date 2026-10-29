@@ -13,8 +13,8 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
    and B0 (teammates' own basic attacks, in-game test 101 to confirm the
    pace) are done, and B3 / B5 / B7 as far as the data and logs go; B2
    (SP stop) and B4 (Solidification) wait on in-game tests 102 and 71;
-   next the favourites' kit leads (B8: Liino in d774, all 100 hits
-   mismatched (+124%); Zhuang Fangyi's Sunderblade count above the log's
+   next the favourites' kit leads (B8: Liino's hits in d774 ×0.937 the
+   engine's, nearly all of them (a build or buff offset); Zhuang Fangyi's Sunderblade count above the log's
    (d774: 8 strikes where the log has 3); Si's build in 9555 (every hit
    ×0.89–0.94: ATK); logged presses with no damage of their own while the enemy is
    there: Zhuang Fangyi's, Arcane's combo and Si's in 4bfc, 3aa6, 0c14),
