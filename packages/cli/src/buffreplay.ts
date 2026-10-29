@@ -363,6 +363,78 @@ export function castsFromBuffLanes(data: GameData, fx: LogFixture, kits: readonl
 }
 
 /**
+ * Casts the log shows only by a trigger's hits that need a buff from them: a kit trigger with hits whose condition reads
+ * a buff (`buffActive`, or `operatorBuff` of a game buff) that one cast trigger of the team applies, on its owner's casts
+ * of one skill. Each logged landing of the trigger's hits with no cast of that skill replayed within the buff's duration
+ * before gets one (only for a skill that can run beside its operator's action), INFERRED_LEAD_FRAMES before the event that fired the trigger (the landing less its frame; the log's
+ * milliseconds round to either frame). b6aa15281db4: Last
+ * Rite's Mirage at 6141 ms (her perfusion's, on a Final Strike) with no battle skill in the log: cast inside her own
+ * basic attack, it plays no timeline. Returns the casts with those added.
+ */
+/** How many frames before the event that fired a trigger an inferred cast comes (castsFromTriggerHits). */
+const INFERRED_LEAD_FRAMES = 3;
+
+export function castsFromTriggerHits(data: GameData, fx: LogFixture, kits: readonly OperatorKit[], casts: readonly ReplayedCast[]): ReplayedCast[] {
+  const added: ReplayedCast[] = [];
+  const reads = (p: unknown, out: { kit?: string; game?: string }[] = []): { kit?: string; game?: string }[] => {
+    if (Array.isArray(p)) for (const x of p) reads(x, out);
+    else if (p && typeof p === "object") {
+      for (const [k, v] of Object.entries(p)) {
+        if (k === "buffActive" && typeof v === "string") out.push({ kit: v });
+        else if (k === "operatorBuff" && typeof v === "string") out.push({ game: v });
+        else reads(v, out);
+      }
+    }
+    return out;
+  };
+  for (const kit of kits) {
+    for (const t of kit.triggers) {
+      const hits = allActions(t.do).flatMap((a) => (a.kind === "hits" ? a.hits : []));
+      if (!hits.length || !t.if) continue;
+      for (const need of reads(t.if)) {
+        // The buff and the one cast trigger of the team that applies it.
+        const appliers = kits.flatMap((k) => k.triggers.flatMap((x) => allActions(x.do).flatMap((a) => {
+          const def = a.kind === "buff" ? k.buffs.find((b) => b.id === a.buff) : undefined;
+          const match = def && (need.kit ? k === kit && def.id === need.kit : def.gameBuff === need.game);
+          const on = x.on;
+          return match && on.event === "cast" && x.by === "self" && on.skills?.length ? [{ k, x, def, skills: on.skills }] : [];
+        })));
+        const skills = new Set(appliers.flatMap((a) => a.skills));
+        if (skills.size !== 1) continue;
+        const { k, x, def } = appliers[0] as (typeof appliers)[number];
+        const skill = k.skills.find((sk) => sk.skillId === [...skills][0] && !sk.followUpOnly);
+        const build = fx.team.find((b) => b.operator === k.operator);
+        if (!skill || !build) continue;
+        // Only a skill that can run beside its operator's action (KitSkill.beside: switchToBuffConfig, no timeline of its
+        // own), the casts a log can lack: elsewhere a trigger landing later than the buff's reading lasts is the reading's
+        // limit, not a missed cast (b7b3762d5da8: Tangtang's ultimate; a7a7a40c97ed: Arcane's combo; d9e59d0fb737, whose
+        // kit leaves Typhoeus's ultimate key off).
+        if (!skill.beside) continue;
+        let ms: number;
+        try {
+          const b = applyBuff(data, build, computeStats(data, build), triggerSkillId(k.operator, x), def, 0);
+          if (!b || !Number.isFinite(b.expiresAt)) continue;
+          ms = (b.expiresAt * 1000) / FPS;
+        } catch (e) {
+          if (!readingDoesNotApply(e)) throw e;
+          continue;
+        }
+        for (const h of hits) {
+          const frame = Math.min(...(h.frames ?? [0]));
+          for (const lh of fx.hits.filter((y) => y.operator === kit.operator && h.events.includes(y.event)).sort((a, b) => a.t - b.t)) {
+            const at = Math.max(0, lh.t - ((frame + INFERRED_LEAD_FRAMES) * 1000) / FPS);
+            const near = (c: ReplayedCast) => c.operator === k.operator && c.skillId === skill.skillId && c.start <= lh.t && c.start >= lh.t - ms;
+            if ([...casts, ...added].some(near)) continue;
+            added.push({ operator: k.operator, key: skill.skillId, group: skill.skillId, skillId: skill.skillId, kind: skill.kind, start: at, lastHit: at, keepPrevious: false, landings: [] });
+          }
+        }
+      }
+    }
+  }
+  return added.length ? ordered([...casts, ...added]) : [...casts];
+}
+
+/**
  * The logged casts (distinctCasts) as the replay casts them, in time order,
  * each with its logged landings: the timeline lands the cast's hits the log
  * shows at their logged frames (the log's time has other casts' time stops
@@ -592,7 +664,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // Game buffs a trigger on crits is behind (critTriggers): where a landing's crit isn't logged, the replay bounds them.
   const critDependent = new Set(kitIds.filter(({ owner, id }) => critTriggers(kits.find((k) => k.operator === owner) as OperatorKit, id).length > 0).map((x) => x.g));
   const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
-  const assembled: ReplayedCast[] = kits.length > 0 ? castsFromBuffEnds(kits, placement, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits))) : [];
+  const assembled: ReplayedCast[] = kits.length > 0 ? castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits)))) : [];
   const control = controlledFromLog(placement, assembled);
   const recoveries = loggedRecoveries(fx).map(frameOf);
   const casts = control?.casts ?? assembled;

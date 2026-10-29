@@ -28,6 +28,13 @@ Camille's combo was placed as three casts around a misplaced attack 3.
 Stagger starts now come within 1–4 s of the logs; plain 012a 138 → 226.
 Some totals fell (b6aa −15.3%): the false Stagger's ×1.3 had hidden
 deficits, which are leads now.
+b6aa's next: every hit under its Corrosion implied ×1.25 the engine's
+shred, level 3 against the replay's 2. The missing Cryo stack was Last
+Rite's Mirage, needing a battle skill the log never shows (cast beside her
+basic attack). The replay now infers such a cast from the trigger hit
+(`castsFromTriggerHits`, beside-capable skills only: unrestricted it
+invented an ultimate and a combo). b6aa −8.4%, plain 62 → 216; 9555
+−17.4 → +5.7%.
 
 ## 2026-10-28: Typhoeus's burst on the enemy's clock; dbae verifies again
 

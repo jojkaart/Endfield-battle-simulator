@@ -8,7 +8,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { advance, computeHit, computeStats, createContext, effectiveKit, FPS, init, parseReactionEvent, replayCast, replayWindowCount, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
 import { loadGameData, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
-import { castsFromBuffLanes, checkLog, controlledFromLog, formatBuffReplay, LOG_LISTING, logBuffReplay, loggedRecoveries, readLogFixture, replayedCasts, simulateLog, withLoggedCasts, type HitVerdict } from "@efsim/cli";
+import { castsFromBuffLanes, castsFromTriggerHits, checkLog, controlledFromLog, formatBuffReplay, LOG_LISTING, logBuffReplay, loggedRecoveries, readLogFixture, replayedCasts, simulateLog, withLoggedCasts, type HitVerdict } from "@efsim/cli";
 import { placeHits } from "../packages/cli/src/logcasts.ts";
 
 const data = loadGameData();
@@ -394,5 +394,19 @@ describe("simulateLog: the logged casts simulated, each hit against its landing 
     expect(missing.map((h) => `${h.operator} ${h.skillId}:${h.hitId} @${h.frame}`)).toEqual([]);
     const wrong = r.replay.hits.filter((h) => h.ref !== undefined && typeof h.loggedCrit === "boolean" && h.loggedCrit !== fx.hits[Number(h.ref)]?.crit);
     expect(wrong).toEqual([]);
+  });
+});
+
+describe("b6aa15281db4: a battle skill the log shows only by a trigger that needs its buff", () => {
+  const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-b6aa15281db4.json", import.meta.url).pathname);
+
+  it("casts Last Rite's battle skill (run beside her basic attack, no timeline) before the Final Strike her Mirage at 6141 ms needs it for", () => {
+    const kits = fx.team.map((b) => effectiveKit(data, b) as OperatorKit);
+    const base = replayedCasts(placeHits(data, fx), fx);
+    const added = castsFromTriggerHits(data, fx, kits, base).filter((c) => !base.some((b) => b.operator === c.operator && b.skillId === c.skillId && b.start === c.start));
+    expect(added.map((c) => [c.skillId, Math.round(c.start)])).toEqual([["chr_0026_lastrite_normal_skill", Math.round(6141 - (24 * 1000) / FPS)]]);
+    // Its Mirage adds the third Cryo stack: Arcane's Nature at 11432 ms makes level 3 Corrosion, as the log's ×1.25 shred says.
+    const corrosion = logBuffReplay(data, fx).replay.reactions.find((x) => x.kind === "reaction" && x.status === "corrosion");
+    expect(corrosion && "level" in corrosion ? corrosion.level : null).toBe(3);
   });
 });

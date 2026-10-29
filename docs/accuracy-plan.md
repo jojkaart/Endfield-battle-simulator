@@ -359,6 +359,22 @@ mismatches there are older), d774 −19.2 → −25%, 9555 −15.5 → −17.4%,
 3aa6 −23.8 → −25.5% (whose Stagger at 145.6 s the replay still lacks),
 012a +1.5 → −2.9%.
 
+b6aa's Corrosion (2026-10-29). Arcane's 65 mismatches there, and every
+operator's hits under Corrosion in b6aa, imply exactly ×1.25 the engine's
+shred: level 3's start, ramp and cap are ×1.25 level 2's. The reaction
+replay had level 3; the buff replay lacked a Cryo stack: Last Rite's
+Mirage at 6141 ms (on her Final Strike, needing her battle skill's
+perfusion), whose battle skill the log never shows. Cast inside her own
+basic attack it runs beside it (`KitSkill.beside`, no timeline, no hits).
+New `castsFromTriggerHits`: a trigger's logged hit that needs a buff only
+one skill's cast gives, with no cast of it within the buff's duration
+before, gets that cast 3 frames before the event that fired the trigger;
+only for skills that can run beside (elsewhere it added a second Tangtang
+ultimate in b7b3 and an Arcane combo in a7a7, from a buff's reading
+ending before a later trigger hit). b6aa −15.3 → −8.4% (plain 62 → 216),
+9555 −17.4 → +5.7% (Last Rite −26 → +3%, Arcane −10 → −3%, Si −9 →
++10%: a lead).
+
 ## Phase C: questions for the owner (they decide what to model)
 
 - **Do teammates act on their own?** Answered (the owner, 2026-10-26):
