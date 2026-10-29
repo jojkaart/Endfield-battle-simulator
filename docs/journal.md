@@ -34,7 +34,9 @@ Rite's Mirage, needing a battle skill the log never shows (cast beside her
 basic attack). The replay now infers such a cast from the trigger hit
 (`castsFromTriggerHits`, beside-capable skills only: unrestricted it
 invented an ultimate and a combo). b6aa −8.4%, plain 62 → 216; 9555
-−17.4 → +5.7%.
+−17.4 → +5.7%. Then 9555's Si: two usp02 wearers' team DMG stacked in the
+replay; one-layer stackingType 2 buffs on others are one group now
+(9555 +2.3%).
 
 ## 2026-10-28: Typhoeus's burst on the enemy's clock; dbae verifies again
 

@@ -375,6 +375,16 @@ ending before a later trigger hit). b6aa −15.3 → −8.4% (plain 62 → 216),
 9555 −17.4 → +5.7% (Last Rite −26 → +3%, Arcane −10 → −3%, Si −9 →
 +10%: a lead).
 
+Then that lead: two wearers of Eternal Xiranite (usp02) gave the team two
++0.16 instances in the replay, one in the log. The game buff is
+stackingType 2 with a literal one layer; across all logs no such buff is
+listed twice on one hit (those listed several times take their layers
+from a `max_stack` key). The loader now makes such a buff on others one
+stack group (self buffs keep their refresh as before: grouping one broke
+Zhuang Fangyi's ultimate state). 9555 +5.7 → +2.3% (plain 199 → 214).
+Left there: Xaihi's ultimate Amp in b6aa shows 0.57 s after its logged
+cast (1.9–2.5 s in four other logs).
+
 ## Phase C: questions for the owner (they decide what to model)
 
 - **Do teammates act on their own?** Answered (the owner, 2026-10-26):

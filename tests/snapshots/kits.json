@@ -3,7 +3,7 @@
   "digest": "b7960e109b69dc78"
  },
  "equipment suit_atb01": {
-  "digest": "a3568d32bdf49e9b"
+  "digest": "652f240e2ea9c048"
  },
  "equipment suit_atk01": {
   "digest": "fc72e32fd7040ba2"
@@ -60,7 +60,7 @@
   "digest": "eaccf375ff05182f"
  },
  "equipment suit_usp02": {
-  "digest": "de3cf068008cd9f2"
+  "digest": "0ad8187df5da994b"
  },
  "equipment suit_will01": {
   "digest": "fcfd76a7d1c59327"
@@ -324,10 +324,10 @@
   "digest": "cbfd3618e3d6d839"
  },
  "operator chr_0002_endminm": {
-  "digest": "708b374291d15534"
+  "digest": "9dc9c00d5119278e"
  },
  "operator chr_0003_endminf": {
-  "digest": "ad83cd78512da8c9"
+  "digest": "79e39fe9a6e78933"
  },
  "operator chr_0004_pelica": {
   "digest": "1c207142e7190948"
@@ -339,16 +339,16 @@
   "digest": "0eba72d7945ac81f"
  },
  "operator chr_0007_ikut": {
-  "digest": "16e66d52e4889314"
+  "digest": "f209706763fe246b"
  },
  "operator chr_0009_azrila": {
   "digest": "5d01fe21cb1ecb79"
  },
  "operator chr_0011_seraph": {
-  "digest": "55b3b1fd089c201a"
+  "digest": "d95defbbb61f1fb8"
  },
  "operator chr_0012_avywen": {
-  "digest": "31c9cd4fabf1c045"
+  "digest": "c808d8172d65639f"
  },
  "operator chr_0013_aglina": {
   "digest": "6576fc2a14f1303f"
@@ -372,7 +372,7 @@
   "digest": "5a2269aa873dfaef"
  },
  "operator chr_0020_meurs": {
-  "digest": "96659f72cbc7ba07"
+  "digest": "1be24a596d067892"
  },
  "operator chr_0021_whiten": {
   "digest": "881284806519c875"
@@ -381,7 +381,7 @@
   "digest": "243ed17a08d2f2df"
  },
  "operator chr_0023_antal": {
-  "digest": "9520f1890aba76d7"
+  "digest": "46b5d7d948aa1792"
  },
  "operator chr_0024_deepfin": {
   "digest": "db31045bc4a9dc30"
@@ -390,7 +390,7 @@
   "digest": "bb2d8c11a534a9f3"
  },
  "operator chr_0026_lastrite": {
-  "digest": "3ee007fb6e8ea098"
+  "digest": "ee923eaded945904"
  },
  "operator chr_0027_tangtang": {
   "digest": "24ea98c01d95533f"
@@ -408,7 +408,7 @@
   "digest": "bbb0ac7c1e15dcf0"
  },
  "operator chr_0032_lizhiyan": {
-  "digest": "375bbc6d3b78490d"
+  "digest": "08fb7c54662094e5"
  },
  "operator chr_0033_camille": {
   "digest": "c6f0cb1215d8909e"
@@ -420,7 +420,7 @@
   "digest": "11bd433e48f0ea0c"
  },
  "operator chr_0036_jsspsi": {
-  "digest": "028a442ed4917710"
+  "digest": "0c4de0ac06a8ee14"
  },
  "operator chr_0038_purrche": {
   "digest": "ab0e103b0d3da96f"

@@ -239,3 +239,13 @@ describe("B2: stackingType 11 across wielders", () => {
     expect(buffModifiers([copy("x", 0.1), copy("y", 0.16)], op, 10).map((m) => m.value)).toEqual([0.16]);
   });
 });
+
+describe("stackingType 2 with one literal layer across appliers", () => {
+  it("a buff on others is one group (two Eternal Xiranite wearers' team DMG is one +0.16 in 9555de54bb3d); a self buff stays as it is", () => {
+    expect(data.kits.equipment["suit_usp02"]?.buffs.find((b) => b.id === "suit_usp02.team_dmg")?.stackGroup).toBe("buff_equipsuit_usp_02_AddAttack");
+    const self: KitBuff = { id: "s", label: "s", target: "self", gameBuff: "buff_equipsuit_usp_02_AddAttack", modifiers: [{ zone: "damageBonus", value: 0.16 }] };
+    expect(withGameBuff("test", self).stackGroup).toBeUndefined();
+    // A max_stack layer count stays per owner (Qingbo's spellup lists two layers from one wearer).
+    expect(data.kits.equipment["suit_combo_cd01"]?.buffs.find((b) => b.id === "suit_combo_cd01.spellup")?.stackGroup).toBeUndefined();
+  });
+});

@@ -15,8 +15,8 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
    (SP stop) and B4 (Solidification) wait on in-game tests 102 and 71;
    next the favourites' kit leads (B8: Zhuang Fangyi's ultimate values; logged presses with no damage of their own while the enemy is
    there: Zhuang Fangyi's, Arcane's combo and Si's in 4bfc, 3aa6, 0c14),
-   3aa6's Stagger at 145.6 s (the replay has none), Si +10% in 9555, Xaihi's
-   ultimate Amp missing on Arcane in b6aa at 31.6–32.3 s (×1.49),
+   3aa6's Stagger at 145.6 s (the replay has none), Xaihi's ultimate Amp in
+   b6aa 0.57 s after its logged cast (elsewhere 1.9–2.5 s),
    bosses' own phases the logs show (Rhodagn's refill, test 100; the Abyss
    boss's ×0.1 until its Stagger in c6d8), then B6 (Si's battle-skill entity and Arcane's and
    Pogranichnik's ultimates ignore others' time stops: small), B9, B10.

@@ -264,6 +264,16 @@ function groupsInstances(raw: RawBuffFile): boolean {
 }
 
 /**
+ * Whether a game buff on others keeps one layer whoever applies it (a stack group without a priority): stackingType 2
+ * with a literal one layer. No log lists one twice on a hit (fixtures/pending/zmdlogs-9555de54bb3d.json: two wearers'
+ * buff_equipsuit_usp_02_AddAttack is one +0.16). A self buff has one applier: left as it is.
+ */
+function oneLayerOnHolder(raw: RawBuffFile, b: Pick<KitBuff, "target">): boolean {
+  const s = raw.stacking;
+  return b.target !== "self" && s.type === 2 && s.maxStacksKey === null && s.maxStackCnt === 1;
+}
+
+/**
  * A grouped game buff's ranking (KitBuff.priority). `effect`: one of the
  * game buff's attribute modifiers reads the priority key, so the game ranks
  * by that effect's value at creation; the kit modifier standing for it
@@ -338,6 +348,7 @@ export function withGameBuff(file: string, given: RawBuff | KitBuff, applyingSki
   const instances = gameBuffInstances(file, b, raw, applyingSkillHasKey);
   const priority = gameBuffPriority(file, b, raw, stated, skillsWithPriorityKey);
   if (groupsInstances(raw)) return { ...b, modifiers, stackGroup: s.key ?? gameBuff, ...(instances !== undefined ? { instances } : {}), ...(priority !== undefined ? { priority } : {}) };
+  if (oneLayerOnHolder(raw, b)) return { ...b, modifiers, stackGroup: s.key ?? gameBuff };
   const cap = gameBuffLayers(raw, applyingSkillHasKey);
   if (cap !== undefined && typeof b.maxStacks === "number" && b.maxStacks !== cap) throw new Error(`${file}: buff ${b.id}: ${raw.id} keeps ${cap} layers (stackingType ${s.type}${s.maxStacksKey === null ? ", its literal maxStackCnt" : `, its own ${s.maxStacksKey}`}), not ${b.maxStacks}`);
   const maxStacks = b.maxStacks ?? cap;
