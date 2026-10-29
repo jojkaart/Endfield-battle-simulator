@@ -5,6 +5,21 @@ their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 Older entries (2026-10-21 and earlier): [journal-archive.md](journal-archive.md).
 
+## 2026-10-29: Liino's team ATK through the logs' presses
+
+Goal: B8's Liino lead. The largest gap was d774: her stance's team ATK
+on in the log from 54.6 to 115.9 s, off in the replay. The enemy is gone
+from 30.6 s (no hits), so her battle skill at 49863 ms hit no one, and the
+replay skipped the press as an unshown variant. Such a press (`unseen`:
+no hit by anyone within 1 s of its first landing) is now cast when the
+slot holds it: d774 plain 33 → 147, c6d8 0 → 29. The data also has the
+stance's ATK lingering 5 s after it ends (`atkup_finishtime`, kit
+`vocalist_linger`); c6d8's log suggests ~1.7 s after an End Stance, so
+test 28 now asks. The presses every ~3 s in every Liino log are the
+stance's soundwave heals, not casts (her stance and volleys go on).
+Dead end: casting every available press (458b, c3c7, dbae worse; it even
+re-cast Liino's ultimate from the "ultimate" presses during Cosmovoice).
+
 ## 2026-10-28: Typhoeus's burst on the enemy's clock; dbae verifies again
 
 Goal: Arcane's Nature burst at 10341 ms in dbae (B8), which held back

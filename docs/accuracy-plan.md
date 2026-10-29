@@ -303,6 +303,33 @@ trigger's element (`element: "event"`) took Si's Cryo after the combo cast
 at the same frame and gave 0eef −23.8%; test 33 keeps the second half.
 Examples: one Typhoeus example −0.004%.
 
+B8, Liino's ATK (2026-10-29). The logs list her team ATK without a break
+through runs of her battle-skill presses every 3–4 s. Only the first
+press of a stance launches the six projectiles. Under the later ones her
+stance and its volleys go on, so they're neither new stances nor End
+Stance: they match its 3 s soundwave heal, and the replay skips them
+as before. Two faults:
+- **A stance cast on no one.** In d774 the enemy is gone from 30.6 to
+  54.6 s (no hit by anyone). Liino's battle skill at 49863 ms hit
+  nothing, so the replay took the press for an unshown variant and never
+  cast it: her stance's ATK was missing on the team for 61 s (Arcane's
+  109 hits all fit the log). A press whose first landing would come
+  where the log has no hit within 1 s (`unseen`) is now cast when the kit
+  says the slot holds that skill. Casting every available press instead
+  made 458b, c3c7 and dbae worse: Arcane's press at 2706 ms in dbae comes
+  while Typhoeus's hits land, and Si's and Xaihi's presses have no
+  landings (open: Zhuang Fangyi's, Arcane's combo and Si's runs of
+  presses in 4bfc, 3aa6, 0c14).
+- **The linger.** When the stance's per-member buff ends, it creates
+  `buff_chr_0035_liino_atkup_finishtime` for `finish_duration` (5 s on
+  the battle skill, a SkillData default; 0 on the ultimate) with the same
+  ATK and stacking key (kit buff `vocalist_linger`). c6d8's log ends the
+  ATK 1.7 s after an End Stance press at 26807 ms (in-game test 28 (e)).
+
+d774 −22.1 → −19.2% (plain 33 → 147), c6d8 +7.9 → +9.9% (plain 0 → 29,
+Liino's mismatches 90 → 67; its boss's ×0.1 phase is still unmodelled),
+e82d −9.1 → −8.6%. Examples don't move (none ends a stance early).
+
 ## Phase C: questions for the owner (they decide what to model)
 
 - **Do teammates act on their own?** Answered (the owner, 2026-10-26):

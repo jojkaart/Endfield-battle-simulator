@@ -13,9 +13,10 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
    and B0 (teammates' own basic attacks, in-game test 101 to confirm the
    pace) are done, and B3 / B5 / B7 as far as the data and logs go; B2
    (SP stop) and B4 (Solidification) wait on in-game tests 102 and 71;
-   next the favourites' kit leads (B8: Liino's ATK windows (Vocalist 0.10
-   against the log's 0.16 on her), Typhoeus's off-field shot chain at 22
-   frames (one shot more than dbae logs), Zhuang Fangyi's ultimate values),
+   next the favourites' kit leads (B8: Typhoeus's off-field shot chain at
+   22 frames (one shot more than dbae logs), Zhuang Fangyi's ultimate
+   values; logged presses with no damage of their own while the enemy is
+   there: Zhuang Fangyi's, Arcane's combo and Si's in 4bfc, 3aa6, 0c14),
    012a's Stagger (the replay breaks the bar at 35.9 s, the log at 53.4 s),
    bosses' own phases the logs show (Rhodagn's refill, test 100; the Abyss
    boss's ×0.1 until its Stagger in c6d8), then B6 (Si's battle-skill entity and Arcane's and

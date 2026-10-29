@@ -206,6 +206,8 @@ export interface ReplayedCast extends LoggedCast {
    * battle-skill presses during her ultimate, logged as normal_skill, are normal_skill_ult, whose keys follow each).
    */
   readonly shows?: readonly string[];
+  /** A slot cast whose first landing would come where the log has no hit by anyone within QUIET_MS (no enemy to hit). */
+  readonly unseen?: true;
   /**
    * Inferred from a logged hit of a trigger on this buff's end (castsFromBuffEnds), at `endsAt` ms: cast only while the
    * buff is active and would last past that end by itself (else its expiry is the end: bdf223db8e49's burst at 24321 ms
@@ -231,6 +233,9 @@ export const LOGGED_CAST_MS = 2500;
 /** How soon after a slot press the log must show a variant's own keys for the press to be that variant (ms; withLoggedCasts). */
 const SLOT_SHOWS_MS = 3000;
 
+/** How far from a slot press's first landing the log has no hit by anyone for the press to be `unseen` (ms). */
+const QUIET_MS = 1000;
+
 export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixture, "casts" | "hits">, kits: readonly OperatorKit[]): ReplayedCast[] {
   if (!fx.casts?.length) return [...casts];
   const logged = new Set(fx.hits.map((h) => `${h.operator}|${h.event}`));
@@ -248,7 +253,9 @@ export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixt
           .filter((k) => k.hits.some((h) => h.events.some((e) => !own.has(e) && fx.hits.some((x) => x.operator === lc.operator && x.event === e && x.t >= lc.t && x.t <= lc.t + SLOT_SHOWS_MS))))
           .map((k) => k.skillId)
       : [];
-    added.push({ operator: lc.operator, key: lc.skill, group: lc.skill, skillId: lc.skill, kind: skill.kind, start: lc.t, lastHit: lc.t, keepPrevious: false, landings: [], ...(shownElsewhere ? { slot: true as const } : {}), ...(shows.length ? { shows } : {}) });
+    const landsAt = lc.t + (Math.min(...skill.hits.flatMap((h) => loggedFrames(h) ?? [])) * 1000) / FPS;
+    const unseen = shownElsewhere && Number.isFinite(landsAt) && !fx.hits.some((h) => Math.abs(h.t - landsAt) <= QUIET_MS);
+    added.push({ operator: lc.operator, key: lc.skill, group: lc.skill, skillId: lc.skill, kind: skill.kind, start: lc.t, lastHit: lc.t, keepPrevious: false, landings: [], ...(shownElsewhere ? { slot: true as const } : {}), ...(shows.length ? { shows } : {}), ...(unseen ? { unseen: true as const } : {}) });
   }
   return added.length ? ordered([...casts, ...added]) : [...casts];
 }
@@ -493,7 +500,12 @@ function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast,
   if (c.slot) {
     // A press the log shows as a variant by its own keys: the variant the kit says the slot holds then.
     if (!c.leadsTo && c.shows?.length) return skillAvailable(ctx, st, c.operator, c.skillId, f) ? null : (c.shows.find((s) => skillAvailable(ctx, st, c.operator, s, f)) ?? null);
-    if (!c.leadsTo) return null;
+    // A press whose hits had no one to land on (`unseen`) is its own skill while the slot holds it (d774d0ce7bd3: Liino's
+    // battle skill at 49863 ms, with no enemy from 30.6 to 54.6 s; its stance's ATK is on the team from then to 115.9 s).
+    // Else a press the log shows nothing of isn't made: the slot held a variant (her stance's presses every ~3 s, under
+    // which the stance and its volleys go on), or the press did nothing (dbaee23b801d: Arcane's at 2706 ms, while
+    // Typhoeus's hits land).
+    if (!c.leadsTo) return c.unseen && skillAvailable(ctx, st, c.operator, c.skillId, f) && startsBy(c.skillId) ? c.skillId : null;
     // Which skill the slot holds, not whether it can start this frame (Si presses during her combo in 0eef): available at all.
     const available = (skill: string) => !("error" in earliestStart(ctx, st, { operator: c.operator, skill }));
     if (available(c.skillId)) return null;

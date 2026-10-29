@@ -30,6 +30,7 @@
       ],
       "note": "buff_chr_0035_liino_normalskill_music_tag (frame 15, music_duration 60 s): its aura gives the team buff_chr_0035_liino_atkup / _atkup_owner (ATK +atk_up; stacking key liino_atk_up, shared with cosmovoice_atk). Applied by the first projectile before its damage (the logs show atkup_owner on all six). Its ticks are the soundwave heals (normalskill_music_damage every music_trigger, first at once). Ended by End Stance and by the ultimate (triggers end_stance, ult_replaces_vocalist)."
     },
+    {"id": "vocalist_linger", "label": "Vocalist Stance's team ATK after it ends", "target": "team", "gameBuff": "buff_chr_0035_liino_atkup_finishtime", "duration": "finish_duration", "modifiers": [{"zone": "atk", "value": "atk_up"}], "note": "buff_chr_0035_liino_normalskill_buff_atkup (the stance aura's per-member buff) creates buff_chr_0035_liino_atkup_finishtime when it ends (buffEvent 2), for finish_duration (5 s on the battle skill: SkillData default, not in SkillPatchTable; 0 on the ultimate) with its atk_up (EnhancedAction, ATK formula item 6). Same stacking key as the stance's ATK (liino_atk_up, priority atk_up, one instance): it doesn't add to a new stance's. The logs show the team ATK on without a break while she presses her slot every ~3 s (d774d0ce7bd3, bdf223db8e49); no log has an End Stance to time it."},
     {
       "id": "stance_action",
       "label": "In the stance's own action (marker)",
@@ -325,6 +326,7 @@
       ],
       "note": "normal_skill / normal_skill_combo EventListenerAction on normalskill_end(_active) → JumpTo 1967 (the end of the action). When End Stance or the ultimate ended the stance, the cast already ended the action (stance_action with it). The 1967–2100 tail isn't played (in-game test 17)."
     },
+    {"id": "stance_linger", "on": {"event": "buffEnded", "buff": "vocalist_stance"}, "by": "self", "skill": "chr_0035_liino_normal_skill", "do": [{"kind": "buff", "buff": "vocalist_linger"}], "note": "normalskill_buff_atkup's end event (buffEvent 2) → atkup_finishtime: whatever ends the stance (End Stance, the ultimate, its 60 s)."},
     {
       "id": "ult_replaces_vocalist",
       "on": {

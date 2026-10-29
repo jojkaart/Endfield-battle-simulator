@@ -528,7 +528,9 @@ come out? (b) In the first 3 s after the battle skill, can you cast End
 Stance or her combo, or does it wait until about 3 s? (c) Right after her
 combo, can she basic attack? (d) After End Stance from Vocalist, how long
 until her battle skill can be cast again? The data says 3 s (the first
-report said 5).
+report said 5). (e) After End Stance from Vocalist, how long does the
+team's ATK buff icon stay? The data says 5 s more (atkup_finishtime); one
+log suggests under 2 s.
 
 ### 29. Do sub-skills count as a battle skill? (ready, if you have Si, Liino or Mi Fu)
 

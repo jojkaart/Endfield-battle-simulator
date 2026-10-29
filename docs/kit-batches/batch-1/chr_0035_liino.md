@@ -931,3 +931,13 @@ attack, plunge or finisher.
   non-detached hits though it won't cancel them. The kit avoids it (every ultimate hit is detached or a trigger hit).
 - E4 (minor). earliestStart reads the action gate from the state before advancing: when the stance runs out at 1812
   (stance_end ends her action), a battle skill without `at` starts at 1817 (the ended action's window) instead of 1812.
+
+## The stance's ATK after it ends (2026-10-29)
+
+`buff_chr_0035_liino_normalskill_buff_atkup` (each member's buff under the stance's aura) creates
+`buff_chr_0035_liino_atkup_finishtime` when it ends (buffEvent 2): its `atk_up` for `finish_duration`, 5 s on the
+battle skill (SkillData default, absent from SkillPatchTable), 0 on the ultimate. Same stacking key as the stance's
+ATK (`liino_atk_up`, priority `atk_up`, one instance). Kit: buff `vocalist_linger`, trigger `stance_linger`. The logs'
+battle-skill "casts" every ~3 s during her stance are its soundwave heals: the stance, its ATK and its volleys go on
+under them (bdf223db8e49, a7a7a40c97ed, 4bfc6f3e84b8), and only a stance's first press launches the six projectiles.
+c6d80590f5ea ends the team ATK 1.7 s after an End Stance press at 26807 ms: in-game test 28 (e).
