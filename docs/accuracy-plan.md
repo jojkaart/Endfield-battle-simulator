@@ -433,6 +433,15 @@ later, cut the inferred cast before its delayed end ran. The operator's
 next cast before the logged end now keeps what the inferred cast has to
 come. a7a7 −8.3 → −2.2%.
 
+Open, for in-game test 103: Liino's battle-skill presses every 3–4 s in
+her stance. In a7a7 her battle skill's keys never appear, so each press is
+cast as a battle skill (60 projectiles the log hasn't: Liino +61%).
+Skipping the presses the kit says the slot doesn't hold made her +1% but
+the team worse (a7a7 plain 322 → 261: two Corrosions change level or
+time, Arcane, Si and Wulfgard mismatch more), so they do something in
+game: an End Stance / restart toggle, or a cast teammates' effects count.
+Reverted until the test says which.
+
 ## Phase C: questions for the owner (they decide what to model)
 
 - **Do teammates act on their own?** Answered (the owner, 2026-10-26):

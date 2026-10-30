@@ -50,7 +50,9 @@ cast earlier (4e5e −2.8%). Zhuang's Sunderblade counts differ from the
 log both ways (they hang on the Electrification replay): not a quick fix.
 Si −27% in 0eef is one crit, not an error. a7a7's Si: the next cast cut
 an inferred Final Stroke before its Artful Intent end; it keeps it now
-(a7a7 −2.2%).
+(a7a7 −2.2%). Dead end: skipping Liino's in-stance presses when the
+slot doesn't hold her battle skill (her +61% → +1%, the team worse):
+in-game test 103 asks what they are.
 
 ## 2026-10-28: Typhoeus's burst on the enemy's clock; dbae verifies again
 
