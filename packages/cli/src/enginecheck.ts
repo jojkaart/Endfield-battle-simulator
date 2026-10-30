@@ -11,7 +11,7 @@ import {
   Attr, activeModifiers, corrosionModifier, effectiveKit, kitBuffModifiers, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,
   type DamageOptions, type DamageTarget, type GameData, type KitBuff, type KitHit, type LandedHit, type LandingInputs, type Modifier, type SkillType,
 } from "@efsim/engine";
-import type { LogEffect, LogFixture, LogHit } from "@efsim/data";
+import type { AbsentLanding, LogEffect, LogFixture, LogHit } from "@efsim/data";
 import type { BuffReplay, Fact, ReplayCastFacts } from "./buffreplay.ts";
 import type { Assumption } from "./logcheck.ts";
 import { boundarySubsets, buffFile, isCorrosionBuff, kitStackCaps, logModifiers, teamPanels, withoutOwnFood, type HitCategory, type StackCap } from "./logeffects.ts";
@@ -416,7 +416,12 @@ export interface FightTotals {
 export interface TotalsComparison {
   readonly logged: FightTotals;
   readonly simulated: FightTotals;
+  /** The fixture's absent landings (LogFixture.absent) the totals left out, and those the replay had none for. */
+  readonly absent: { readonly leftOut: number; readonly unmatched: readonly AbsentLanding[] };
 }
+
+/** How near its `t` an absent landing (LogFixture.absent) is looked for. */
+const ABSENT_MS = 1000;
 
 /** The kind a logged hit or a replay landing counts under (FightTotals.perKind). */
 function kindOf(data: GameData, fx: LogFixture, operator: string, skillId: string, event?: string): string {
@@ -475,8 +480,18 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   const hp = data.enemies[fx.enemy.id]?.levels[fx.enemy.level - 1]?.[Attr.MaxHp];
   const kill = hp !== undefined && hp > 0 && Math.abs(logged.damage - hp) <= 0.005 * hp ? hp : null;
   let simKill: number | null = null;
+  // Landings the log can't have (the fixture's `absent`, judged by hand): each the nearest of its operator's skill and hit.
+  const absent = new Set<LandedHit>();
+  const unmatched: AbsentLanding[] = [];
+  for (const a of fx.absent ?? []) {
+    const near = c.replay.hits
+      .filter((l) => !absent.has(l) && l.operator === a.operator && l.skillId === a.skillId && l.hitId === a.hitId && Math.abs((l.frame * 1000) / 30 - a.t) <= ABSENT_MS)
+      .sort((x, y) => Math.abs((x.frame * 1000) / 30 - a.t) - Math.abs((y.frame * 1000) / 30 - a.t))[0];
+    if (near) absent.add(near);
+    else unmatched.push(a);
+  }
   for (const l of [...c.replay.hits].sort((a, b) => a.frame - b.frame)) {
-    if (l.frame > end) continue;
+    if (l.frame > end || absent.has(l)) continue;
     const m = matched.get(l);
     let damage: number;
     if (m) damage = Math.min(m.predicted, m.hit.uncapped !== undefined ? m.hit.value : Infinity);
@@ -500,7 +515,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   const totals = (x: typeof logged, killMs: number | null): FightTotals => ({
     damage: x.damage, perOperator: x.perOperator, perKind: x.perKind, hits: x.hits, statusHits: x.statusHits, critShare: x.known ? x.crits / x.known : 0, staggeredHits: x.staggered, lastHitMs: x.last, killMs,
   });
-  return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill) };
+  return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill), absent: { leftOut: absent.size, unmatched } };
 }
 
 /** A totals comparison as rounded percentage errors (simulated / logged − 1, to 0.1 %), for the report and the verdict snapshots. */

@@ -16,9 +16,12 @@ overshoot: b7b3 +25.2%, 7e19 +15.4%. In b7b3 it was the placement:
 Tangtang's dive spouts (fired by Arcane's plunging attack) share her
 battle skill's key and were placed as an extra battle skill. A trigger
 fired by decorated hits (a dive) now anchors on those logged hits
-(`firedAt`): b7b3 +15.5%, nothing else moves. Left: Last Rite's third
-ultimate slash, not in b7b3's log (+42% for her), Arcane's Cryo burst
-times, 7e19's Crush matching.
+(`firedAt`): b7b3 +15.5%, nothing else moves. Last Rite's third
+ultimate slash isn't in b7b3's log (+42% for her); the owner: assume the
+log lacks it. Its HP bookkeeping agrees the log can't show it (the hits
+sum to Rhodagn's HP exactly, the killing blow capped), so it didn't hit
+him. Fixtures now take a hand-written `absent` list the totals leave out:
+b7b3 +1.8%. Left: Arcane's Cryo burst times, 7e19's Crush matching.
 
 ## 2026-10-29: Liino's team ATK through the logs' presses
 

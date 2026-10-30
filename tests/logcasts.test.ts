@@ -62,14 +62,25 @@ describe("the replay casts the basic-attack step the engine's state allows (accu
 });
 
 describe("the fight's totals (accuracy plan A3, A4)", () => {
-  it("a kill: both totals end at the log's kill, the replay's past the enemy's HP; its time to kill is when it reached the HP (b7b3: Rhodagn dies ~1.9 s sooner in the replay)", async () => {
+  it("a kill: both totals end at the log's kill, the replay's past the enemy's HP; its time to kill is when it reached the HP (b7b3: Rhodagn dies ~0.4 s sooner in the replay, its absent slash left out)", async () => {
     const { engineHits, engineReport, logBuffReplay } = await import("../packages/cli/src/logcheck.ts");
     const fx = readLogFixture(new URL("../fixtures/zmdlogs-b7b3762d5da8.json", import.meta.url).pathname);
     const replay = logBuffReplay(data, fx);
     const report = engineReport(data, fx, replay, engineHits(data, fx, replay));
     expect(report.totals.simulated.damage).toBeGreaterThan(report.totals.logged.damage);
     expect(Math.abs(report.totals.simulated.lastHitMs - report.totals.logged.lastHitMs)).toBeLessThan(100);
-    expect(report.errors["time to kill"]).toBeLessThan(-5);
+    expect(report.errors["time to kill"]).toBeLessThan(0);
+  });
+
+  it("a landing the fixture marks absent from the log is left out of the replay's totals (b7b3: Last Rite's third ultimate slash)", async () => {
+    const { engineHits, engineReport, logBuffReplay } = await import("../packages/cli/src/logcheck.ts");
+    const fx = readLogFixture(new URL("../fixtures/zmdlogs-b7b3762d5da8.json", import.meta.url).pathname);
+    const replay = logBuffReplay(data, fx);
+    const LR = "chr_0026_lastrite";
+    expect(replay.replay.hits.some((h) => h.operator === LR && h.hitId === "slash_3")).toBe(true);
+    const report = engineReport(data, fx, replay, engineHits(data, fx, replay));
+    expect(report.totals.absent).toEqual({ leftOut: 1, unmatched: [] });
+    expect(Math.abs(report.errors[`operator ${LR}`] as number)).toBeLessThan(10);
   });
 });
 

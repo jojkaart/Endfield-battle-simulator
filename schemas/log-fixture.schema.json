@@ -42,6 +42,16 @@
         "properties": { "t": { "type": "number" }, "operator": { "type": "string" }, "skill": { "type": "string" } }
       }
     },
+    "absent": {
+      "type": "array",
+      "description": "Hand-written: the replay's landings the log doesn't have and can't (a hit that didn't reach the logged enemy, or one ZMDLogs dropped), judged from the log, each with why. The totals leave each out (enginecheck.ts fightTotals): the landing of the operator's skill and hit nearest t, within 1 s.",
+      "items": {
+        "type": "object",
+        "required": ["operator", "skillId", "hitId", "t", "why"],
+        "additionalProperties": false,
+        "properties": { "operator": { "type": "string" }, "skillId": { "type": "string" }, "hitId": { "type": "string" }, "t": { "type": "number" }, "why": { "type": "string" } }
+      }
+    },
     "hits": {
       "type": "array",
       "items": {

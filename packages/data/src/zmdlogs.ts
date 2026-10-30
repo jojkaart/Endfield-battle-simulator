@@ -80,6 +80,17 @@ export interface LogFixture {
   readonly hits: readonly LogHit[];
   /** Skill events the log records without damage: casts' starts as the log has them (zmdlogsCasts). Absent in fixtures imported before 2026-10-25. */
   readonly casts?: readonly LogCast[];
+  /** Hand-written: the replay's landings the log doesn't have and can't, each with why (the totals leave them out). */
+  readonly absent?: readonly AbsentLanding[];
+}
+
+/** A replay landing a log can't have (LogFixture.absent): the landing of the operator's skill and hit nearest `t` (ms). */
+export interface AbsentLanding {
+  readonly operator: string;
+  readonly skillId: string;
+  readonly hitId: string;
+  readonly t: number;
+  readonly why: string;
 }
 
 /** A skill event without damage in a ZMDLogs detail: an operator's cast of a skill, at its start (ms). */

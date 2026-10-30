@@ -457,10 +457,17 @@ share her battle skill's key, and with no anchor for a trigger fired by
 a hit they were placed as a battle skill the log doesn't have (its five
 shots, and the spouts twice). A trigger on decorated landings now takes
 the logged hits that can fire it as its firings' starts (`firedAt`).
-b7b3 +25.2 → +15.5%; no other log moves. Left in b7b3: Last Rite's third
-ultimate slash (305 k at 16.1 s; +42%), which the log hasn't though the
-enemy lives 2.4 s on (three slashes in b6aa, c3c7 and 9555); Arcane's
-Cryo bursts at other times than the log's (+13.7%). 7e19's +15.4% is
+b7b3 +25.2 → +15.5%; no other log moves. Then Last Rite's third
+ultimate slash (305 k at 16.1 s; her +42%), which the log hasn't though
+Rhodagn lives 2.4 s on (three slashes in b6aa, c3c7 and 9555; the data
+puts no condition on it). The log can't have it: its hits sum to his HP
+(2,292,921 against 2,292,909) with the killing blow capped at the HP
+left, so the slash didn't damage him (out of reach, or dropped). A
+fixture's hand-written `absent` now names such landings with why, and the
+totals leave them out (the report says how many, and flags an entry the
+replay has no landing for): b7b3 +15.5 → +1.8% (Last Rite +2.8%, time to
+kill 17.6 vs 18.0 s). Left in b7b3: Arcane's Cryo bursts at other times
+than the log's (+13.7%). 7e19's +15.4% is
 the Endministrator's Crush and ultimate landings unmatched to the log's
 (+46%).
 

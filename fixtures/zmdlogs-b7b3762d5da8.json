@@ -16,7 +16,7 @@
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
    "Enemy level 90 is assumed, not logged.",
-   "Last Rite (batch-4 kit): only her ultimate's first two slashes (f86, f105) are logged; the third (atk_scale2, f134) is missing though the fight goes on to 18,024 ms (unexplained; the data has no condition on it). Her frame spacing is faster than 30 FPS (the combo's 50 frames in 1,307 ms: Si's talent-2 Haste, in-game test 19). Both logged slashes need talent 2's zoneScale (×1.5 on the whole Cryo Susceptibility on them).",
+   "Last Rite (batch-4 kit): only her ultimate's first two slashes (f86, f105) are logged; the third (atk_scale2, f134) is missing though the fight goes on to 18,024 ms (the data has no condition on it; the logged hits sum to the enemy's HP, so it didn't damage him: listed in `absent`, left out of the totals). Her frame spacing is faster than 30 FPS (the combo's 50 frames in 1,307 ms: Si's talent-2 Haste, in-game test 19). Both logged slashes need talent 2's zoneScale (×1.5 on the whole Cryo Susceptibility on them).",
    "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
    "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
   ]
@@ -10163,6 +10163,15 @@
    "t": 15280,
    "operator": "chr_0036_jsspsi",
    "skill": "chr_0036_jsspsi_normal_skill"
+  }
+ ],
+ "absent": [
+  {
+   "operator": "chr_0026_lastrite",
+   "skillId": "chr_0026_lastrite_ultimate_skill",
+   "hitId": "slash_3",
+   "t": 16133,
+   "why": "Her ultimate's third slash (atk_scale2, f134; three slashes in b6aa, c3c7 and 9555) isn't logged, though Rhodagn lives to 18,024 ms. The logged hits sum to his HP (2,292,921 against 2,292,909) with the killing blow capped at the HP left (7,445 of 14,193), so it didn't damage him: out of reach (he moves) or dropped, the log can't show it either way."
   }
  ]
 }
