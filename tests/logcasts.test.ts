@@ -113,3 +113,13 @@ describe("an ultimate placed from several keys", () => {
     expect(bombs).toHaveLength(fx.hits.filter((h) => h.operator === L && h.event === `${L}_ultimate_skill_projhit_damage_02`).length);
   });
 });
+
+describe("a trigger's landing on a skill's cast", () => {
+  it("moves the cast to where it puts it, when earlier than the skill's own keys (Liino's song beat in dbae)", () => {
+    const fx = readLogFixture(new URL("../fixtures/zmdlogs-dbaee23b801d.json", import.meta.url).pathname);
+    const L = "chr_0035_liino";
+    const ult = distinctCasts(placeHits(data, fx)).find((c) => c.operator === L && c.skillId === `${L}_ultimate_skill`);
+    // Her first beat (trigger ult_song, frame 77) at 8258 ms; her projectiles (frame 76) at 8613 ms put it 0.4 s later.
+    expect(Math.round(ult?.start ?? NaN)).toBe(Math.round(8258 - (77 * 1000) / 30));
+  });
+});

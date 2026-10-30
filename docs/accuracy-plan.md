@@ -413,6 +413,19 @@ d774 +124 → +29%, 4bfc +21.7 → −5.7% (her ultimate +17.6 → −1.7%); 4bf
 total −12.9 → −14.8% (the extra bomb's Stagger had moved its window
 early: staggered hits −5 → −24%).
 
+And a trigger's landing on a skill's cast (an anchored trigger: Liino's
+song beats on her ultimate) now moves the cast earlier when it puts it
+earlier than the skill's own keys do (the beat at frame 77 at 8258 ms in
+dbae: the ultimate at 5691 ms, not its projectiles' 6080). 4e5e −4.9 →
+−2.8% (Rossi −8 → −5%), d774 +17.3 → +11.8%, a7a7 −8.6 → −8.3%. Two
+checks that turned out not to be engine errors: 0eef's Si −27% is one
+logged crit (her combo final, 380 k, against its expected value), and
+Liino's +59% there is her combo's second hit, which ZMDLogs logs only
+under Corrosion. dbae's Arcane −33% stays: the log has Cosmovoice's Amp
+on Typhoeus from 5.9 s, before the beat that dates her ultimate, so either
+the ultimate came earlier or that Amp is another (Xaihi's is Will-based
+too).
+
 ## Phase C: questions for the owner (they decide what to model)
 
 - **Do teammates act on their own?** Answered (the owner, 2026-10-26):

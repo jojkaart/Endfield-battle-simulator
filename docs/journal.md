@@ -45,7 +45,10 @@ Not engine leads: 3aa6's Stagger compare (the poise print fired in
 speculative states too), Si's build in 9555.
 Liino's +124% in d774: one ultimate placed as three casts from its keys;
 an ultimate's casts now merge within its duration (d774 Liino +29%,
-4bfc Liino −5.7%).
+4bfc Liino −5.7%). Anchored triggers (Liino's song beats) can move their
+cast earlier (4e5e −2.8%). Zhuang's Sunderblade counts differ from the
+log both ways (they hang on the Electrification replay): not a quick fix.
+Si −27% in 0eef is one crit, not an error.
 
 ## 2026-10-28: Typhoeus's burst on the enemy's clock; dbae verifies again
 

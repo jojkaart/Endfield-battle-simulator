@@ -80,6 +80,8 @@ export interface LoggedCast {
   readonly kind: SkillType | null;
   /** The cast's start in ms: its first logged landing's time less that landing's frame. */
   readonly start: number;
+  /** A trigger's hits on casts of some skills: those skills and its delay in frames (Group.anchor). */
+  readonly anchor?: { readonly skills: readonly string[]; readonly delay: number };
 }
 
 export interface PlacedHit {
@@ -276,7 +278,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         const g: Group = late?.g ?? choose(candidates, h, starts, slots, latest ? { cast: latest, timing: data.skills[latest.skillId]?.timing } : null);
         const s = slots(g, h.event);
         const first = s?.[0];
-        const cast: LoggedCast = late?.cast ?? joinable(opened.get(g.id) ?? [], h, first?.frame ?? 0) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, start: h.t - msOf(first?.frame ?? 0) };
+        const cast: LoggedCast = late?.cast ?? joinable(opened.get(g.id) ?? [], h, first?.frame ?? 0) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, start: h.t - msOf(first?.frame ?? 0), ...(g.anchor ? { anchor: g.anchor } : {}) };
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
         if (cast.kind !== null && (!latest || cast.start >= latest.start)) latest = cast;
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
@@ -348,6 +350,15 @@ export function distinctCasts(placement: Placement): LoggedCast[] {
     // Placed from the same key they are two casts (the placement already joined what one cast's landings of it can be).
     if (out.some((x) => x.operator === c.operator && x.skillId === c.skillId && x.key !== c.key && Math.abs(x.start - c.start) <= mergeMs(placement, c.skillId))) continue;
     out.push(c);
+  }
+  // A trigger's landing on a skill's cast that puts the cast earlier than its own keys do moves it there (dbaee23b801d:
+  // Liino's ultimate, its first song beat at 8258 ms at frame 77, its projectiles' start 0.4 s later, its Cosmovoice
+  // buffs then after Arcane's hits that the log has them on).
+  for (const t of placement.casts) {
+    if (t.kind !== null || !t.anchor) continue;
+    const at = t.start - msOf(t.anchor.delay);
+    const i = out.findIndex((x) => x.operator === t.operator && t.anchor?.skills.includes(x.skillId) && at < x.start && x.start - at <= mergeMs(placement, x.skillId));
+    if (i >= 0) out[i] = { ...(out[i] as LoggedCast), start: at };
   }
   return out;
 }

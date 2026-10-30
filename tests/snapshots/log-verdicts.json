@@ -18,7 +18,7 @@
   "chr_0033_camille": {"plain":72,"assumed":9,"fallback":4,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0021_whiten": {"plain":35,"assumed":1,"fallback":5,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0013_aglina": {"plain":52,"assumed":3,"fallback":4,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":-4.9,"operator chr_0013_aglina":-2.5,"operator chr_0028_wulfa":-8.2,"operator chr_0033_camille":1.6,"operator chr_0021_whiten":0.1,"kind basic":-5.7,"kind battle":-1.4,"kind combo":0.3,"kind none":-10.3,"kind status":-2.5,"kind ultimate":-6,"hits":1.7,"status hits":4.8,"staggered hits":-84.6,"last hit":0,"crit share (points)":-0.3}
+  "totals": {"damage":-2.8,"operator chr_0013_aglina":-2.5,"operator chr_0028_wulfa":-4.8,"operator chr_0033_camille":1.6,"operator chr_0021_whiten":0.1,"kind basic":-5.7,"kind battle":-1.4,"kind combo":20.8,"kind none":-10.3,"kind status":-2.5,"kind ultimate":-6,"hits":2,"status hits":4.8,"staggered hits":-84.6,"last hit":0,"crit share (points)":-0.3}
  },
  "zmdlogs-b7b3762d5da8.json": {
   "chr_0032_lizhiyan": {"plain":9,"assumed":1,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
@@ -39,6 +39,6 @@
   "chr_0032_lizhiyan": {"plain":1,"assumed":2,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0035_liino": {"plain":15,"assumed":9,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0011_seraph": {"plain":6,"assumed":0,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":-4.2,"operator chr_0034_typhoea":-3.8,"operator chr_0032_lizhiyan":-33,"operator chr_0035_liino":5.3,"operator chr_0011_seraph":0.1,"kind basic":-5,"kind battle":-26.3,"kind combo":4.2,"kind status":-39.6,"kind ultimate":4.5,"hits":8.9,"status hits":0,"staggered hits":0,"last hit":0.2,"crit share (points)":0.1}
+  "totals": {"damage":-4.3,"operator chr_0034_typhoea":-3.9,"operator chr_0032_lizhiyan":-33,"operator chr_0035_liino":5.3,"operator chr_0011_seraph":0.1,"kind basic":-5,"kind battle":-26.3,"kind combo":1.4,"kind status":-39.6,"kind ultimate":4.5,"hits":8.9,"status hits":0,"staggered hits":0,"last hit":0.2,"crit share (points)":0.1}
  }
 }
