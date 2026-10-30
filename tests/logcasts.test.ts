@@ -62,13 +62,14 @@ describe("the replay casts the basic-attack step the engine's state allows (accu
 });
 
 describe("the fight's totals (accuracy plan A3, A4)", () => {
-  it("a kill: the replay's damage stops at the enemy's HP, its last hit is its time to kill (b7b3: Rhodagn dies ~1.9 s sooner in the replay)", async () => {
+  it("a kill: both totals end at the log's kill, the replay's past the enemy's HP; its time to kill is when it reached the HP (b7b3: Rhodagn dies ~1.9 s sooner in the replay)", async () => {
     const { engineHits, engineReport, logBuffReplay } = await import("../packages/cli/src/logcheck.ts");
     const fx = readLogFixture(new URL("../fixtures/zmdlogs-b7b3762d5da8.json", import.meta.url).pathname);
     const replay = logBuffReplay(data, fx);
     const report = engineReport(data, fx, replay, engineHits(data, fx, replay));
-    expect(report.totals.simulated.damage).toBeCloseTo(report.totals.logged.damage, -2);
-    expect(report.errors["last hit"]).toBeLessThan(-5);
+    expect(report.totals.simulated.damage).toBeGreaterThan(report.totals.logged.damage);
+    expect(Math.abs(report.totals.simulated.lastHitMs - report.totals.logged.lastHitMs)).toBeLessThan(100);
+    expect(report.errors["time to kill"]).toBeLessThan(-5);
   });
 });
 
@@ -121,5 +122,19 @@ describe("a trigger's landing on a skill's cast", () => {
     const ult = distinctCasts(placeHits(data, fx)).find((c) => c.operator === L && c.skillId === `${L}_ultimate_skill`);
     // Her first beat (trigger ult_song, frame 77) at 8258 ms; her projectiles (frame 76) at 8613 ms put it 0.4 s later.
     expect(Math.round(ult?.start ?? NaN)).toBe(Math.round(8258 - (77 * 1000) / 30));
+  });
+});
+
+describe("a trigger fired by a decorated hit", () => {
+  it("is placed from the logged hits that fire it (b7b3: Tangtang's dive spouts after Arcane's plunging attack, not a battle skill of her own)", () => {
+    const fx = readLogFixture(new URL("../fixtures/zmdlogs-b7b3762d5da8.json", import.meta.url).pathname);
+    const TT = "chr_0027_tangtang";
+    const p = placeHits(data, fx);
+    // Arcane's dive at 15374 ms; the riot spouts (trigger olden_stare_dive, first at frame 18) from 15928 ms share the
+    // battle skill's key (normal_skill_water_projhit).
+    const spouts = fx.hits.filter((h) => h.operator === TT && h.event === `${TT}_normal_skill_water_projhit` && h.t > 15500);
+    expect(spouts.length).toBeGreaterThan(5);
+    expect(new Set(spouts.map((h) => p.hits.get(h)?.cast.group))).toEqual(new Set([`trigger:olden_stare_dive`]));
+    expect(distinctCasts(p).filter((c) => c.operator === TT && c.skillId === `${TT}_normal_skill` && c.start > 13000)).toHaveLength(0);
   });
 });

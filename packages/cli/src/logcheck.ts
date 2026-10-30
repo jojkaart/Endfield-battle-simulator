@@ -1037,7 +1037,9 @@ export function formatEngineReport(data: GameData, r: EngineReport): string[] {
     "",
     `Totals, the simulation of the logged casts against the log (error: simulated / logged − 1): damage ${Math.round(t.simulated.damage)} vs ${t.logged.damage} (${pct(r.errors["damage"])}), ` +
       `hits ${t.simulated.hits} vs ${t.logged.hits}, status hits ${t.simulated.statusHits} vs ${t.logged.statusHits}, hits under Stagger ${t.simulated.staggeredHits} vs ${t.logged.staggeredHits}, ` +
-      `last hit ${seconds(t.simulated.lastHitMs)} vs ${seconds(t.logged.lastHitMs)} s, crit share ${(t.simulated.critShare * 100).toFixed(1)}% vs ${(t.logged.critShare * 100).toFixed(1)}%`,
+      `last hit ${seconds(t.simulated.lastHitMs)} vs ${seconds(t.logged.lastHitMs)} s, ` +
+      (t.logged.killMs !== null ? `time to kill ${t.simulated.killMs !== null ? seconds(t.simulated.killMs) : "not reached"} vs ${seconds(t.logged.killMs)} s, ` : "") +
+      `crit share ${(t.simulated.critShare * 100).toFixed(1)}% vs ${(t.logged.critShare * 100).toFixed(1)}%`,
     `  per operator: ${Object.keys(t.logged.perOperator).map((op) => `${name(op)} ${pct(r.errors[`operator ${op}`])}`).join(", ")}`,
     `  per kind: ${Object.keys(r.errors).filter((k) => k.startsWith("kind ")).map((k) => `${k.slice(5)} ${pct(r.errors[k])}`).join(", ")}`,
   );

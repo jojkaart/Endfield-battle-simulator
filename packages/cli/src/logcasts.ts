@@ -5,7 +5,7 @@
 // hit. The reaction replay applies the landing's own applications (L1) and
 // the casts' time stops (L5); the log check counts Link sources (L3).
 
-import { computeStats, effectiveKit, FPS, hitAvailable, triggerSkillId, allActions, type Build, type GameData, type KitHit, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
+import { computeStats, effectiveKit, FPS, hitAvailable, hitDecorations, triggerSkillId, allActions, type Build, type HitDecoration, type GameData, type KitHit, type SkillTiming, type SkillType, type StatPanel } from "@efsim/engine";
 import type { LogFixture, LogHit } from "@efsim/data";
 
 /**
@@ -58,6 +58,11 @@ interface Group {
   readonly kind: SkillType | null;
   /** For a trigger on casts of some skills: those skills, and its delay in frames. */
   readonly anchor: { readonly skills: readonly string[]; readonly delay: number } | null;
+  /**
+   * For a trigger on landings with a decoration (a dive attack): the logged times (ms) of the hits that can fire it, its
+   * firings' starts; its hits' casts are placed from these as a skill's are from its other keys (choose).
+   */
+  readonly firedAt?: readonly number[];
   readonly hits: readonly KitHit[];
 }
 
@@ -101,7 +106,8 @@ export interface Placement {
   readonly merge?: ReadonlyMap<string, number>;
 }
 
-function groupsOf(data: GameData, build: Build, panel: StatPanel, team: readonly Build[]): Group[] {
+function groupsOf(data: GameData, build: Build, panel: StatPanel, fx: LogFixture): Group[] {
+  const team = fx.team;
   const kit = effectiveKit(data, build);
   if (!kit) return [];
   const available = (skillId: string) => (h: KitHit) => hitAvailable(data, build, panel, skillId, h, { team });
@@ -112,9 +118,28 @@ function groupsOf(data: GameData, build: Build, panel: StatPanel, team: readonly
       const hits = allActions(t.do).flatMap((a) => (a.kind === "hits" ? a.hits : [])).filter(available(skillId));
       if (hits.length === 0) return [];
       const anchor = t.on.event === "cast" && t.on.skills?.length ? { skills: t.on.skills, delay: t.delay ?? 0 } : null;
-      return [{ id: `trigger:${t.id}`, skillId, kind: null, anchor, hits }];
+      const firedAt = t.on.event === "hit" && t.on.decorations?.length ? decoratedHits(data, fx, t.on.decorations, t.by === "self" ? build.operator : null).map((h) => h.t + msOf(t.delay ?? 0)) : undefined;
+      return [{ id: `trigger:${t.id}`, skillId, kind: null, anchor, ...(firedAt ? { firedAt } : {}), hits }];
     }),
   ];
+}
+
+/**
+ * The logged hits that are landings with any of these decorations (hitDecorations: a kit hit of their operator's with the
+ * key that has one), all operators' or one's (b7b3762d5da8: Arcane's plunging attack at 15374 ms fires Tangtang's
+ * OLDEN STARE dive, whose riot spouts from 15928 ms share her battle skill's key: placed as a battle skill, they made
+ * one the log doesn't have, with five shots).
+ */
+function decoratedHits(data: GameData, fx: LogFixture, decorations: readonly HitDecoration[], operator: string | null): LogHit[] {
+  const keys = new Set<string>();
+  for (const b of fx.team) {
+    if (operator !== null && b.operator !== operator) continue;
+    for (const s of effectiveKit(data, b)?.skills ?? []) {
+      const finisher = data.skills[s.skillId]?.timing?.specification === 8;
+      for (const h of s.hits) if (hitDecorations(h, finisher).some((d) => decorations.includes(d))) for (const e of h.events) keys.add(`${b.operator}|${e}`);
+    }
+  }
+  return fx.hits.filter((h) => keys.has(`${h.operator}|${h.event}`));
 }
 
 /** A hit's landing frames (a count past its frames repeats the last, `framesEvery` apart); null when it has none. */
@@ -221,7 +246,7 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
   const casts: LoggedCast[] = [];
   const sorted = [...fx.hits].sort((a, b) => a.t - b.t);
   for (const build of fx.team) {
-    const groups = groupsOf(data, build, computeStats(data, build), fx.team);
+    const groups = groupsOf(data, build, computeStats(data, build), fx);
     if (groups.length === 0) continue;
     const mine = sorted.filter((h) => h.operator === build.operator);
     const others = stops.filter((x) => x.operator !== build.operator);
@@ -387,7 +412,7 @@ function choose(candidates: readonly Group[], h: LogHit, starts: ReadonlyMap<str
   let best: { g: Group; d: number } | null = null;
   for (const g of candidates) {
     const start = h.t - msOf(slots(g, h.event)?.[0]?.frame ?? 0);
-    const refs = g.anchor ? g.anchor.skills.flatMap((s) => (starts.get(s) ?? []).map((t) => t + msOf((g.anchor as { delay: number }).delay))) : (starts.get(g.id) ?? []);
+    const refs = g.anchor ? g.anchor.skills.flatMap((s) => (starts.get(s) ?? []).map((t) => t + msOf((g.anchor as { delay: number }).delay))) : (g.firedAt ?? starts.get(g.id) ?? []);
     for (const r of refs) {
       const d = Math.abs(start - r);
       if (d <= ANCHOR_MS && (!best || d < best.d)) best = { g, d };

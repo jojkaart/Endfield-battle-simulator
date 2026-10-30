@@ -405,6 +405,11 @@ export interface FightTotals {
   readonly staggeredHits: number;
   /** The last hit's time (ms). */
   readonly lastHitMs: number;
+  /**
+   * In a fight that ends in a kill: when the damage reached the enemy's HP (ms): the log's last hit, the replay's
+   * landing that brought its running total there (null if it never did by the log's kill).
+   */
+  readonly killMs: number | null;
 }
 
 /** Each comparison of the log's totals with the simulation's: the log's value, the simulation's, and the error (simulated / logged − 1). */
@@ -461,15 +466,17 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     const l = c.replay.landing(h);
     if (!("unknown" in l)) cappedHit.set(l, h);
   }
+  // The log's damage ends at its last hit, the kill's too when the fight ends in one (the log's total is the enemy's
+  // HP): the replay's damage is summed to that moment as well, past its own HP if it gets there sooner, so both totals
+  // and each operator's cover the same span (b7b3: capping the replay at Rhodagn's 2.29M stopped it at 17.0 s, 1 s
+  // before the log's kill, and put Arcane's last second on the log's side only). When the replay reaches the HP is
+  // the time to kill (killMs).
   const end = (fx.hits.reduce((m, h) => Math.max(m, h.t), 0) * 30) / 1000 + 1;
-  // A fight that ends in a kill (the log's total is the enemy's HP): the replay's damage stops at that HP too, so its
-  // "last hit" is its time to kill (b7b3: the replay reached Rhodagn's 2.29M at 17.0 s, the log at 18.0 s, then dealt
-  // +25% more the enemy never took; accuracy plan A4).
   const hp = data.enemies[fx.enemy.id]?.levels[fx.enemy.level - 1]?.[Attr.MaxHp];
   const kill = hp !== undefined && hp > 0 && Math.abs(logged.damage - hp) <= 0.005 * hp ? hp : null;
+  let simKill: number | null = null;
   for (const l of [...c.replay.hits].sort((a, b) => a.frame - b.frame)) {
     if (l.frame > end) continue;
-    if (kill !== null && sim.damage >= kill) break;
     const m = matched.get(l);
     let damage: number;
     if (m) damage = Math.min(m.predicted, m.hit.uncapped !== undefined ? m.hit.value : Infinity);
@@ -477,8 +484,8 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     else damage = l.exact;
     const capped = cappedHit.get(l);
     if (capped) damage = Math.min(damage, capped.value);
-    if (kill !== null) damage = Math.min(damage, kill - sim.damage);
     sim.damage += damage;
+    if (kill !== null && simKill === null && sim.damage >= kill) simKill = (l.frame * 1000) / 30;
     add(sim.perOperator, l.operator, damage);
     add(sim.perKind, l.skillId.startsWith("reaction:") ? "status" : l.inputs?.kind === "hit" ? l.inputs.hit.damageType : kindOf(data, fx, l.operator, l.skillId), damage);
     sim.hits++;
@@ -490,8 +497,10 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     if (l.inputs?.options.staggered) sim.staggered++;
     sim.last = Math.max(sim.last, (l.frame * 1000) / 30);
   }
-  const totals = (x: typeof logged): FightTotals => ({ damage: x.damage, perOperator: x.perOperator, perKind: x.perKind, hits: x.hits, statusHits: x.statusHits, critShare: x.known ? x.crits / x.known : 0, staggeredHits: x.staggered, lastHitMs: x.last });
-  return { logged: totals(logged), simulated: totals(sim) };
+  const totals = (x: typeof logged, killMs: number | null): FightTotals => ({
+    damage: x.damage, perOperator: x.perOperator, perKind: x.perKind, hits: x.hits, statusHits: x.statusHits, critShare: x.known ? x.crits / x.known : 0, staggeredHits: x.staggered, lastHitMs: x.last, killMs,
+  });
+  return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill) };
 }
 
 /** A totals comparison as rounded percentage errors (simulated / logged − 1, to 0.1 %), for the report and the verdict snapshots. */
@@ -504,6 +513,7 @@ export function totalsErrors(t: TotalsComparison): Record<string, number | null>
   out["status hits"] = pct(t.simulated.statusHits, t.logged.statusHits);
   out["staggered hits"] = pct(t.simulated.staggeredHits, t.logged.staggeredHits);
   out["last hit"] = pct(t.simulated.lastHitMs, t.logged.lastHitMs);
+  if (t.logged.killMs !== null) out["time to kill"] = t.simulated.killMs !== null ? pct(t.simulated.killMs, t.logged.killMs) : null;
   out["crit share (points)"] = Math.round((t.simulated.critShare - t.logged.critShare) * 1000) / 10;
   return out;
 }

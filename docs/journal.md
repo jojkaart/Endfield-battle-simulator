@@ -5,6 +5,21 @@ their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 Older entries (2026-10-21 and earlier): [journal-archive.md](journal-archive.md).
 
+## 2026-10-30: A kill's span on both sides
+
+Goal: the owner's point that when a log stops counting at the kill, both
+totals should stop there. They didn't: the replay stopped at the enemy's
+HP, 1 s before b7b3's kill, so Arcane's last second counted for the log
+only (her −43%). Both now sum to the log's kill, and when the replay
+reaches the HP is its own "time to kill" row. The cap had hidden an
+overshoot: b7b3 +25.2%, 7e19 +15.4%. In b7b3 it was the placement:
+Tangtang's dive spouts (fired by Arcane's plunging attack) share her
+battle skill's key and were placed as an extra battle skill. A trigger
+fired by decorated hits (a dive) now anchors on those logged hits
+(`firedAt`): b7b3 +15.5%, nothing else moves. Left: Last Rite's third
+ultimate slash, not in b7b3's log (+42% for her), Arcane's Cryo burst
+times, 7e19's Crush matching.
+
 ## 2026-10-29: Liino's team ATK through the logs' presses
 
 Goal: B8's Liino lead. The largest gap was d774: her stance's team ATK

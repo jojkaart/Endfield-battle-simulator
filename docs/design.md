@@ -328,7 +328,11 @@ log's (`engineReport`: the replay's landings, its own included, matched
 landings at their primary reading): total damage, per operator and per
 kind (basic, battle, combo, ultimate, status, none), hits, status hits,
 hits under Stagger, the last hit's time and the crit share, each as a
-percentage error; the verdict snapshots pin them to 0.1%.
+percentage error; the verdict snapshots pin them to 0.1%. Both sides
+sum to the log's last hit: in a fight that ends in a kill (the log's
+total is the enemy's HP) the replay's damage goes on past the HP to the
+log's kill, so each operator's covers the same span, and when the replay
+reached the HP is its own row, the time to kill.
 
 **Why the check missed the Stagger bug** (journal 2026-10-25): until then
 `checkLog` computed every hit through options of its own (`staggered:

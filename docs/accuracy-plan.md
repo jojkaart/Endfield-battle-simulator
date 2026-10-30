@@ -31,7 +31,7 @@ by Stagger (wrong windows in 22 of 29 fights), can be measured and fixed.
 | A1 | Casts closer than `CAST_SLACK_MS` (1 s, packages/cli/src/logcasts.ts:17) merge into one: Typhoeus's hover shots (0.6 s apart, one event name) and Zhuang Fangyi's empowered battle skill lose every second cast | unlanded 34% of 92b4, 51% of dbae, 22% of bdf2, 20% of d9e5, 21–29% of 3aa6 / 4bfc / c6d8 / d774 | place repeated casts by their landings' count per cast (shot index), not a time gap |
 | A2 | Si's second battle-skill press (Final Stroke, logged under the same ID) isn't replayed, so Artful Intent's burst (Fixed DMG) never lands where the log has it | 19 hits in 12 fixtures; 0eef −16%, e82d −12%, b6aa a 971k hit | map a second press during Artful Intent to Final Stroke; add `casts` to the 8 Si fixtures without them |
 | A3 | A hit whose crit the log doesn't give counts as a non-crit (packages/cli/src/enginecheck.ts:193), in the totals too | e82d −31%, 0c14 −24%, 99fb −16%, 0eef −11% | expected crit for unknown, or the crit the ratio implies |
-| A4 | The replay deals damage past the kill (`fightTotals` has no HP cap) | b7b3 +25% after Rhodagn's 2.29M HP | stop at the enemy's HP / the log's last hit |
+| A4 | The replay deals damage past the kill (`fightTotals` has no HP cap) | b7b3 +25% after Rhodagn's 2.29M HP | stop at the log's last hit (the kill), both sides; time to kill on its own (2026-10-30) |
 | A5 | The Endministrator logged under `chr_0002_endminm_*` events | d4fb 286 hits unplaced (18%); the replay's own ultimates +11–18% in d4fb, 7e19, 0c14 | map the event prefix like the operator ID |
 | A6 | Casts without damage (Xaihi's ultimate) aren't inferred, so their Amp is missing | e82d all 20 Si combo / ultimate hits ×2.04 (−47%); 90 hits ×1.73 in abfd / b6aa / 9555; 26 Typhoeus hits in dbae | infer a hitless cast from its buff's lane (as `castsFromBuffLanes` does for others) |
 | A7 | d9e5 predates the 1.6 tables | its leads changed shape after the 1.6 data | exclude it from leads |
@@ -441,6 +441,28 @@ the team worse (a7a7 plain 322 → 261: two Corrosions change level or
 time, Arcane, Si and Wulfgard mismatch more), so they do something in
 game: an End Stance / restart toggle, or a cast teammates' effects count.
 Reverted until the test says which.
+
+A4 revisited, a kill's span (2026-10-30, the owner: "If the logs stop
+counting damage at a kill, then the total damage accumulation should stop
+there too for both the engine and the log"). Capping the replay at the
+enemy's HP stopped its sum at its own kill (b7b3: 17.0 s, the log's at
+18.0 s), so the log's last second counted on one side only: Arcane's
+−43% was that, not her kit. Both totals now end at the log's kill, the
+replay's past the HP if it gets there sooner; when it reaches the HP is
+its own row, "time to kill" (b7b3 −10.5%, 7e19 0). That uncovered what
+the cap hid: b7b3 +25.2%, 7e19 +15.4%, 92b4 +1.6%. In b7b3 most of it
+was the placement: Arcane's plunging attack at 15374 ms is the dive that
+fires Tangtang's OLDEN STARE dive, whose riot spouts (from 15928 ms)
+share her battle skill's key, and with no anchor for a trigger fired by
+a hit they were placed as a battle skill the log doesn't have (its five
+shots, and the spouts twice). A trigger on decorated landings now takes
+the logged hits that can fire it as its firings' starts (`firedAt`).
+b7b3 +25.2 → +15.5%; no other log moves. Left in b7b3: Last Rite's third
+ultimate slash (305 k at 16.1 s; +42%), which the log hasn't though the
+enemy lives 2.4 s on (three slashes in b6aa, c3c7 and 9555); Arcane's
+Cryo bursts at other times than the log's (+13.7%). 7e19's +15.4% is
+the Endministrator's Crush and ultimate landings unmatched to the log's
+(+46%).
 
 ## Phase C: questions for the owner (they decide what to model)
 
