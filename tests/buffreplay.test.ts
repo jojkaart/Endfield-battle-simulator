@@ -411,3 +411,12 @@ describe("b6aa15281db4: a battle skill the log shows only by a trigger that need
     expect(corrosion && "level" in corrosion ? corrosion.level : null).toBe(3);
   });
 });
+
+describe("a7a7a40c97ed: a cast inferred from a buff's end and the cast after it", () => {
+  it("keeps the inferred Final Stroke's Artful Intent end through Si's attack 2 0.3 s later: the killing burst at 56469 ms lands", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-a7a7a40c97ed.json", import.meta.url).pathname);
+    const r = logBuffReplay(data, fx).replay;
+    const bursts = r.hits.filter((h) => h.operator === "chr_0036_jsspsi" && h.hitId === "burst_inksoul").map((h) => Math.round((h.frame * 1000) / FPS));
+    expect(bursts.some((t) => Math.abs(t - 56469) < 50)).toBe(true);
+  });
+});

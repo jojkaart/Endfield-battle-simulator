@@ -426,6 +426,13 @@ on Typhoeus from 5.9 s, before the beat that dates her ultimate, so either
 the ultimate came earlier or that Amp is another (Xaihi's is Will-based
 too).
 
+a7a7's Si −28%: her killing Inksoul burst at 56469 ms (464 k, 662 k
+uncapped) didn't land. The replay infers the Final Stroke that ends her
+Artful Intent from it (castsFromBuffEnds), but her attack 2, logged 0.3 s
+later, cut the inferred cast before its delayed end ran. The operator's
+next cast before the logged end now keeps what the inferred cast has to
+come. a7a7 −8.3 → −2.2%.
+
 ## Phase C: questions for the owner (they decide what to model)
 
 - **Do teammates act on their own?** Answered (the owner, 2026-10-26):

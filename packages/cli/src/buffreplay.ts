@@ -308,7 +308,14 @@ export function castsFromBuffEnds(kits: readonly OperatorKit[], placement: Place
   }
   // In time order, without recomputing the others' keepPrevious: an inferred cast the replay may skip isn't anyone's
   // previous cast (it keeps the running cast's hits itself).
-  return added.length ? [...casts.map((c, i) => (leads.has(i) ? { ...c, leadsTo: true as const } : c)), ...added.map((c) => ({ ...c, keepPrevious: true }))].sort((x, y) => x.start - y.start) : [...casts];
+  if (!added.length) return [...casts];
+  const all = [...casts.map((c, i) => (leads.has(i) ? { ...c, leadsTo: true as const } : c)), ...added.map((c) => ({ ...c, keepPrevious: true }))].sort((x, y) => x.start - y.start);
+  // The operator's next cast before the logged end keeps what the inferred cast has to come (a7a7a40c97ed: Si's attack 2
+  // 0.3 s after the Final Stroke that ends her Artful Intent at 56469 ms, its burst the killing hit).
+  return all.map((c, i) => {
+    const prev = all.slice(0, i).reverse().find((x) => x.operator === c.operator);
+    return prev && added.some((a) => a.operator === prev.operator && a.start === prev.start && a.skillId === prev.skillId) && prev.whileBuff && c.start < (prev.whileBuff.endsAt as number) ? { ...c, keepPrevious: true } : c;
+  });
 }
 
 /**

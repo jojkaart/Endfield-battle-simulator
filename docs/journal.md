@@ -48,7 +48,9 @@ an ultimate's casts now merge within its duration (d774 Liino +29%,
 4bfc Liino −5.7%). Anchored triggers (Liino's song beats) can move their
 cast earlier (4e5e −2.8%). Zhuang's Sunderblade counts differ from the
 log both ways (they hang on the Electrification replay): not a quick fix.
-Si −27% in 0eef is one crit, not an error.
+Si −27% in 0eef is one crit, not an error. a7a7's Si: the next cast cut
+an inferred Final Stroke before its Artful Intent end; it keeps it now
+(a7a7 −2.2%).
 
 ## 2026-10-28: Typhoeus's burst on the enemy's clock; dbae verifies again
 
