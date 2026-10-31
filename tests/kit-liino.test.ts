@@ -38,3 +38,18 @@ describe("Liino: Vocalist Stance's team ATK lingers after it ends", () => {
     expect(from(hit, LINGER).length + from(hit, STANCE).length).toBe(1);
   });
 });
+
+describe("Liino: Cosmovoice starts at her ultimate's frame 77", () => {
+  const amp = (s: TimelineState) => s.buffs.find((b) => b.owner === LI && b.id === "cosmovoice_amp");
+
+  it("on its own: at frame 77, the end of its time stop (buff_chr_0035_liino_ultskill_music_tag)", () => {
+    expect(amp(run([act(LI, "ultimate_skill", 0)], 100))?.appliedAt).toBe(77);
+  });
+
+  it("with another ultimate's time stop starting inside hers and running on past it: still at 77 (dbaee23b801d: Xaihi's ultimate at 7606 ms, Cosmovoice at 8258 ms)", () => {
+    // Laevatain's ultimate 1.5 s into Liino's: her stop holds Liino only from Liino's own stop's end, after what's due then.
+    const s = run([act(LI, "ultimate_skill", 0), act(LA, "ultimate_skill", 1.5)], 200);
+    expect(s.casts.filter((c) => c.skill === `${LA}_ultimate_skill`)).toHaveLength(1);
+    expect(amp(s)?.appliedAt).toBe(77);
+  });
+});

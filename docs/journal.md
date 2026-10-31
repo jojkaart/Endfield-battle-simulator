@@ -30,6 +30,14 @@ table of which; Bosses (rank 2) are now assumed immune (b7b3 Arcane
 +13.7 → −0.3%, c3c7 +7.9 → +4.7%). Dead end: bursts on the world clock
 by the burst buff's `useTimeDilationDt` (false for every common buff,
 Artful Intent too, which a freeze does stretch). In-game test 104 asks.
+Then dbae's Arcane −33%: Cosmovoice was on Liino's first projectile
+landing (pinned to its logged time) instead of her frame 77, and a time
+stop starting inside her own shifted that frame's action by 1.2 s. Now a
+frame-77 trigger, and the hold starts after what's due at the own stop's
+end. Side effect caught by bdf2 and 0eef: the buff-lane inference read
+Vocalist Stance's ATK (same game buff, from a hit) as ultimates. dbae
+−2.2% (Arcane −19%), a7a7 −0.7%. bdf2's Si −11% is one combo finisher
+×1.456 with no count that fits: a lead.
 
 ## 2026-10-29: Liino's team ATK through the logs' presses
 

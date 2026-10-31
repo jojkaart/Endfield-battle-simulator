@@ -484,6 +484,30 @@ So a Boss (rank 2) is control-immune unless the scenario says otherwise:
 b7b3 +1.8 → +1.4% (Arcane +13.7 → −0.3%, plain 38 → 40), c3c7 +7.9 →
 +4.7%, 0c14 −7.8 → −8.5% (unverified, no plain match; its Si −3 →
 −1.5%), abfd −6.3 → −6.4%. In-game test 104 asks.
+
+dbae's Arcane −33% (2026-10-31): her hits from 8258 ms were ×1.50 the
+engine's, missing Cosmovoice's Amp (0.41) and ATK the log lists. Two
+causes. The kit put Cosmovoice on her ultimate's first projectile pair
+(frame 76), and the log check pins that landing to its logged time
+(8613 ms); the data starts it at frame 77 (the music aura), so a cast
+trigger there does now (the logs list it on her first beat and on every
+projectile, which travel). And Xaihi's ultimate stop from 7606 ms, inside
+Liino's own, held her from her stop's end and shifted her frame-77 action
+due right then by 1.2 s (to 9500 ms); the hold now starts after it. With
+the ultimate a cast trigger's buff, `castsFromBuffLanes` read Vocalist
+Stance's listings (the same game buff, by a hit) as hitless ultimates
+(bdf2 and 0eef stopped verifying); a game buff a hit applies isn't
+inferred from. dbae −4.3 → −2.2% (Arcane −33 → −19.3%, plain 40 → 43),
+a7a7 −2.2 → −0.7% (mismatches 87 → 75), d9e5 −13.1 → −11.6%. Left in
+dbae: Arcane's burst at 10341 ms ×1.66 (placed nowhere). The log's
+ultimate cast at 2947 ms is not the cast: the beats fit 5691 ms (its time
+stop's end is logged at 8258 ms).
+
+bdf2's Si −11.1% is one hit: her combo finisher at 13143 ms, ×1.456 the
+engine's (count 2 + P5 = 3), the ten slashes before it under the same
+buffs and Corrosion exact. The log needs a count of about 6; none fits
+(stacks go to 4). The check calls it Corrosion within range, which hides
+it. Open.
  7e19's +15.4% is
 the Endministrator's Crush and ultimate landings unmatched to the log's
 (+46%).

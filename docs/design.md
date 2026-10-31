@@ -804,7 +804,11 @@ and the other operators (their hits on the way, delayed actions, current
 action) lose the frames the slow-down takes; skill cooldowns run on raw
 time. Overlapping slow-downs: the lowest scale counts. The engine shifts
 what comes after the slow-down's start by the lost frames, which is exact
-for a stop and, for a partial slow-down, for everything after it ends.
+for a stop and, for a partial slow-down, for everything after it ends;
+for an operator still in its own ultimate's stop (which another
+ultimate's doesn't hold), from that stop's end, so what's due right then
+comes on time (Liino's Cosmovoice at her frame 77 across Xaihi's stop in
+dbae).
 SP regenerates until the slow-down starts (which may be frames into its
 cast, or inside an advance for a trigger's cast), not for the lost frames
 after it (`TimelineState.spStops`), then on; the pause after a spend is

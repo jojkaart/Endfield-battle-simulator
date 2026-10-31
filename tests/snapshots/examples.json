@@ -264,16 +264,16 @@
   ]
  },
  "liino-laevatain.scenario.json": {
-  "total": 601605.296,
+  "total": 601207.938,
   "hits": 55,
   "casts": 15,
   "perOperator": {
    "chr_0016_laevat": 499733.838,
-   "chr_0035_liino": 101871.458
+   "chr_0035_liino": 101474.1
   },
-  "digest": "f9e0bb681db3",
+  "digest": "3903e607d3ef",
   "windows": [
-   "c4ebbc52487e",
+   "06924876acf4",
    "9fa4b541a891",
    "44e694a06457"
   ]
@@ -354,18 +354,18 @@
   ]
  },
  "si-laevatain-liino-gilberta.scenario.json": {
-  "total": 2965981.139,
+  "total": 2964094.57,
   "hits": 166,
   "casts": 74,
   "perOperator": {
-   "chr_0036_jsspsi": 713038.938,
+   "chr_0036_jsspsi": 712060.293,
    "chr_0016_laevat": 1905687.82,
-   "chr_0035_liino": 195683.905,
+   "chr_0035_liino": 194775.98,
    "chr_0013_aglina": 151570.476
   },
-  "digest": "59b0f0a56ea2",
+  "digest": "6c23aa4ace81",
   "windows": [
-   "5fe923015ed3",
+   "73b5a56c9a19",
    "384b37d3e234"
   ]
  },

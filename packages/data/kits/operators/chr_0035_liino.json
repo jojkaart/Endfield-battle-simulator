@@ -412,6 +412,33 @@
       "note": "The ultimate's beats and finale, at frames from the cast. Written as trigger hits when the engine still judged skill hits' if at the cast; it now judges it as they land, so they could be skill hits with if: buffActive cosmovoice_amp again (same result). As trigger hits they're judged as they land: End Stance ends cosmovoice_amp and with it the beats still to come and the finale (the game's JumpTo 540); a combo during Cosmovoice runs beside the ultimate and doesn't touch them."
     },
     {
+      "id": "cosmovoice_start",
+      "on": {
+        "event": "cast",
+        "skills": [
+          "chr_0035_liino_ultimate_skill"
+        ]
+      },
+      "by": "self",
+      "skill": "chr_0035_liino_ultimate_skill",
+      "delay": 77,
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "cosmovoice_atk"
+        },
+        {
+          "kind": "buff",
+          "buff": "cosmovoice_amp"
+        },
+        {
+          "kind": "buff",
+          "buff": "cosmovoice_block"
+        }
+      ],
+      "note": "Ultimate frame 77: the music_tag aura (team ATK, Amp) and the energy block's CreateBuffAction (77–527) start; delayed actions come before the frame's hits, so the first beat (77, if Cosmovoice) lands under it. Until 2026-10-31 on the first projectiles' landing, which the log check pins to its logged time: dbaee23b801d's Arcane at 8258 / 8501 ms had none of it (×1.5)."
+    },
+    {
       "id": "ult_heal_start",
       "on": {
         "event": "cast",
@@ -702,21 +729,7 @@
             76,
             76
           ],
-          "buffs": [
-            {
-              "buff": "cosmovoice_atk",
-              "beforeDamage": true
-            },
-            {
-              "buff": "cosmovoice_amp",
-              "beforeDamage": true
-            },
-            {
-              "buff": "cosmovoice_block",
-              "beforeDamage": true
-            }
-          ],
-          "note": "Split from the rest only so the stance starts with the first landing (the logs have it on every projectile; the data creates it at 77)."
+          "note": "The entity's first pair (its frame 0, ultimate frame 76). Cosmovoice starts at frame 77 (trigger cosmovoice_start), not with a landing: the logs have its ATK and Amp on every projectile (they travel: dbaee23b801d's first lands 0.35 s after the first beat) and on hits of others from the first beat (Arcane's at 8258 ms there, the projectiles logged at 8613 ms)."
         },
         {
           "id": "projectiles",

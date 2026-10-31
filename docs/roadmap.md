@@ -20,7 +20,9 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
    there: Zhuang Fangyi's, Arcane's combo and Si's in 4bfc, 3aa6, 0c14),
    3aa6's Stagger at 145.6 s (the replay has none), Xaihi's ultimate Amp in
    b6aa 0.57 s after its logged cast (elsewhere 1.9–2.5 s), whether Bosses
-   ignore freezes (assumed since 2026-10-31; test 104), 7e19's Crush landings unmatched (Endministrator
+   ignore freezes (assumed since 2026-10-31; test 104), bdf2's Si combo
+   finisher ×1.456 (no stack count fits), dbae's Arcane burst at 10.3 s
+   (×1.66), 7e19's Crush landings unmatched (Endministrator
    +46%),
    bosses' own phases the logs show (Rhodagn's refill, test 100; the Abyss
    boss's ×0.1 until its Stagger in c6d8), then B6 (Si's battle-skill entity and Arcane's and

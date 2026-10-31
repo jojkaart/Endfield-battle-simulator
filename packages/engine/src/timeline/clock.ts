@@ -35,16 +35,24 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
     };
     // Frames of its own ultimate's time stop, which another ultimate's doesn't take from it.
     const ownStop = (who: string | null, f: number) => ultimate && who !== null && s.slowdowns.some((x) => x.ultimate && x.exempt === who && f >= x.start && f < x.start + x.scales.length);
-    const lost = (who: string | null) => {
-      if (who === caster) return 0;
+    // The frames it takes from one, and the first it takes: an operator its own ultimate's stop still covers is held only
+    // from that stop's end, so what's due right then comes on time (dbaee23b801d: Liino's Cosmovoice at her ultimate's
+    // frame 77, the end of its stop, with Xaihi's ultimate stop from 7606 ms running on: at 8258 ms, as logged).
+    const lost = (who: string | null): { n: number; from: number } => {
+      if (who === caster) return { n: 0, from: start };
       let sum = 0;
-      d.scales.forEach((v, k) => (sum += ownStop(who, start + k) ? 0 : Math.max(0, scaleAt(who, start + k) - v)));
-      return Math.round(sum);
+      let from: number | null = null;
+      d.scales.forEach((v, k) => {
+        const held = ownStop(who, start + k) ? 0 : Math.max(0, scaleAt(who, start + k) - v);
+        if (held > 0 && from === null) from = start + k;
+        sum += held;
+      });
+      return { n: Math.round(sum), from: from ?? start };
     };
-    const world = lost(null);
+    const world = lost(null).n;
     const by = new Map(ctx.scenario.team.map((b) => [b.operator, lost(b.operator)]));
     s = { ...shiftWorld(s, start, world), slowdowns: [...s.slowdowns, { start, scales: d.scales, exempt: caster, ...(ultimate ? { ultimate: true as const } : {}) }] };
-    for (const [op, n] of by) s = shiftOperator(s, op, start, n);
+    for (const [op, l] of by) s = shiftOperator(s, op, l.from, l.n);
   }
   // Cooldowns run on through it, while the buffs on the world's clock (a recovery rate's among them) last longer.
   return rebaseCooldowns(ctx, st, s, frame);

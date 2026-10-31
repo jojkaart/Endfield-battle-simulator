@@ -338,6 +338,13 @@ export function castsFromBuffLanes(data: GameData, fx: LogFixture, kits: readonl
       }
     }
   }
+  // A game buff a skill's hit applies too isn't one trigger's (bdf223db8e49: Liino's Vocalist Stance ATK by her battle
+  // skill's hit and Cosmovoice's by her ultimate's frame-77 trigger share buff_chr_0035_liino_atkup; the stance's
+  // listings made an ultimate at 0 ms).
+  for (const kit of kits) for (const e of kitHitEntries(kit)) for (const b of e.hit.buffs ?? []) {
+    const def = kit.buffs.find((x) => x.id === b.buff);
+    if (def?.gameBuff) appliers.delete(def.gameBuff);
+  }
   const added: ReplayedCast[] = [];
   for (const [g, list] of appliers) {
     if (list.length !== 1) continue;
