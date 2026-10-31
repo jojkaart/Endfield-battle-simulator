@@ -9,9 +9,10 @@ const build = JSON.parse(readFileSync(new URL("../examples/laevatain-forgeborn.j
 const L = "chr_0016_laevat_";
 const op = build.operator;
 const chain: RotationAction[] = ["attack1", "attack2", "attack3", "attack4", "attack5"].map((s) => ({ operator: op, skill: L + s }));
+// Rhodagn, not control-immune here (as a Boss he is by default: clock.ts controlImmune), so freezes show.
 const scenario = (rotation: RotationAction[]): TimelineScenario => ({
   team: [build],
-  target: { enemy: "eny_0051_rodin", level: 90 },
+  target: { enemy: "eny_0051_rodin", level: 90, controlImmune: false },
   durationFrames: 30 * 60,
   rotation,
   options: { crit: "never" },
@@ -1251,12 +1252,15 @@ describe("timeline: what ends with a cast, cast blocks, mid-air, control immunit
     }
     const imm: KitTrigger = { id: "imm", on: { event: "cast", kinds: ["basic"] }, by: "self", maxCount: 1, do: [{ kind: "apply", applies: [{ kind: "infliction", element: "fire" }, { kind: "control", status: "immobilization", seconds: 1, freezes: true }] }] };
     const g = withKit({ triggers: [...kit.triggers, imm] });
-    const heat = (controlImmune: boolean) => {
-      const ctx = createContext(g, { ...scenario([a("attack1")]), target: { enemy: "eny_0051_rodin", level: 90, ...(controlImmune ? { controlImmune } : {}) } });
+    const heat = (controlImmune: boolean | undefined) => {
+      const ctx = createContext(g, { ...scenario([a("attack1")]), target: { enemy: "eny_0051_rodin", level: 90, ...(controlImmune !== undefined ? { controlImmune } : {}) } });
       return advance(ctx, apply(ctx, init(ctx), a("attack1")), 5).enemy.infliction?.expiresAt;
     };
     expect(heat(false)).toBe(630);
     expect(heat(true)).toBe(600);
+    // Unsaid, a Boss (rank 2: Rhodagn) is control-immune (b7b3762d5da8's Cryo bursts during Tangtang's stare).
+    expect(data.enemies["eny_0051_rodin"]?.rank).toBe(2);
+    expect(heat(undefined)).toBe(600);
   });
 
   it("a combo's cast event carries its window's count", () => {

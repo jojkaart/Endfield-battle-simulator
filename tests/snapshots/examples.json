@@ -354,19 +354,19 @@
   ]
  },
  "si-laevatain-liino-gilberta.scenario.json": {
-  "total": 3044348.107,
-  "hits": 165,
+  "total": 2965981.139,
+  "hits": 166,
   "casts": 74,
   "perOperator": {
-   "chr_0036_jsspsi": 727650.013,
-   "chr_0016_laevat": 1967121.435,
-   "chr_0035_liino": 196749.67,
-   "chr_0013_aglina": 152826.989
+   "chr_0036_jsspsi": 713038.938,
+   "chr_0016_laevat": 1905687.82,
+   "chr_0035_liino": 195683.905,
+   "chr_0013_aglina": 151570.476
   },
-  "digest": "9c150cfc4902",
+  "digest": "59b0f0a56ea2",
   "windows": [
-   "be1d38ab81ce",
-   "e3030a26aa48"
+   "5fe923015ed3",
+   "384b37d3e234"
   ]
  },
  "si-laevatain.scenario.json": {
@@ -398,17 +398,17 @@
   ]
  },
  "tangtang-whirlpools.scenario.json": {
-  "total": 712771.952,
+  "total": 711736.099,
   "hits": 124,
   "casts": 14,
   "perOperator": {
-   "chr_0027_tangtang": 712771.952
+   "chr_0027_tangtang": 711736.099
   },
-  "digest": "47755d6dcbf5",
+  "digest": "c02f75de0a49",
   "windows": [
-   "b1193af665b4",
-   "aace20ea8f0b",
-   "d788ec09b203",
+   "a06fd9521e20",
+   "67e24e6761e6",
+   "78097a44215c",
    "9d6b2ee5e17b"
   ]
  },
@@ -453,12 +453,12 @@
    "chr_0011_seraph": 80528.578,
    "chr_0036_jsspsi": 279773.982
   },
-  "digest": "4415106902f3",
+  "digest": "fb9f174f2f6f",
   "windows": [
    "5f999bc78a68",
-   "a3dd6d4ff143",
+   "334717cf62f5",
    "f376fcd5a448",
-   "0cbe020c9ee5"
+   "43ac74dda5af"
   ]
  },
  "yvonne-fluorite.scenario.json": {

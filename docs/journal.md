@@ -5,7 +5,7 @@ their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 Older entries (2026-10-21 and earlier): [journal-archive.md](journal-archive.md).
 
-## 2026-10-30: A kill's span on both sides
+## 2026-10-30/31: A kill's span on both sides; bosses and freezes
 
 Goal: the owner's point that when a log stops counting at the kill, both
 totals should stop there. They didn't: the replay stopped at the enemy's
@@ -22,6 +22,14 @@ log lacks it. Its HP bookkeeping agrees the log can't show it (the hits
 sum to Rhodagn's HP exactly, the killing blow capped), so it didn't hit
 him. Fixtures now take a hand-written `absent` list the totals leave out:
 b7b3 +1.8%. Left: Arcane's Cryo burst times, 7e19's Crush matching.
+Then (2026-10-31) the verified totals' bound went 45 → 12% (worst now
+0eef −10.2%), and Arcane's Cryo bursts: the replay froze Rhodagn for
+Tangtang's stare, holding them 7 s; the log has them due by the time
+stops alone. The data skips freezes on control-immune enemies without a
+table of which; Bosses (rank 2) are now assumed immune (b7b3 Arcane
++13.7 → −0.3%, c3c7 +7.9 → +4.7%). Dead end: bursts on the world clock
+by the burst buff's `useTimeDilationDt` (false for every common buff,
+Artful Intent too, which a freeze does stretch). In-game test 104 asks.
 
 ## 2026-10-29: Liino's team ATK through the logs' presses
 

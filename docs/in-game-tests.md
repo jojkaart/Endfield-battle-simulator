@@ -36,7 +36,7 @@ must be something a person can do by hand while playing:
 ## The queue: the tests that decide the most now
 
 Ranked by how much of the simulation each answer moves (every fight first,
-then the owner's favourites), as of 2026-10-30 (103 new; 101 and 102
+then the owner's favourites), as of 2026-10-31 (104 new; 103 from 2026-10-30; 101 and 102
 from 2026-10-28; 99 answered by the logs). Reply with the number and
 what you saw, in a line; the formats below are only suggestions.
 
@@ -45,16 +45,17 @@ what you saw, in a line; the formats below are only suggestions.
 | 1 | [101](#101-how-often-a-teammate-attacks-on-its-own-ready-any-team-higher-priority-every-team-since-2026-10-28) a teammate's own attacks | anyone | `101: 3 chains in 20 s, ~4 s pauses; same when I attack` |
 | 2 | [102](#102-how-fast-sp-refills-and-how-long-it-stops-after-spending-ready-any-operator-higher-priority-every-sp-bound-team) SP refill and its stop after spending | anyone | `102: A 39 s, B 42 s` |
 | 3 | [100](#100-what-makes-rhodagns-stagger-bar-snap-back-to-full-ready-if-you-fight-rhodagn-higher-priority-every-rhodagn-fight) Rhodagn's Stagger bar snapping back | anyone, vs Rhodagn | `100: at ~30 s, HP ~70%, as he jumps to the stacks` |
-| 4 | [103](#103-what-liinos-battle-skill-presses-do-in-vocalist-stance-ready-if-you-have-liino-higher-priority-every-liino-log) Liino's presses in her stance | Liino | `103: ends stance, ATK stays ~5 s; restarts with projectiles` |
-| 5 | [54](#54-can-a-dash-cancel-a-battle-skill-or-combo-at-any-moment-ready-higher-priority-affects-every-operator) dash cancels a skill | Laevatain; Gilberta or Si | `54: dashes at once, extra hit gone; combo hit gone` |
-| 6 | [18](#18-what-an-ultimates-time-stop-freezes-ready) what a time stop freezes | any two | `18: cooldown same / ~2 s longer; SP bar unchanged / higher` |
-| 7 | [98](#98-food-buffs-on-the-stat-panel-ready-any-operator-a-few-minutes) food on the stat panel | anyone | `98: stew ATK 2,367 → 2,965, crit +11.4` |
-| 8 | [8](#8-where-link-comes-from-and-its-values-ready-higher-priority-affects-every-team) where Link comes from | Gilberta, Estella, Camille | `8: a 10,000 b 10,000 c 12,000 d 10,000` |
-| 9 | [97](#97-dive-attacks-their-pace-and-what-a-jump-can-do-ready-any-operator-higher-priority-the-search-now-uses-dives) dive attacks | anyone | `97: ten dives 11 s; jump cuts a skill yes; no air dash` |
-| 10 | [77](#77-combustion-ticks-and-a-later-atk-buff-ready-if-you-have-laevatain-and-liino-higher-priority-every-heat-team) Combustion ticks and a later ATK buff | Laevatain, Liino | `77: ticks same` or `77: ticks +7%` |
-| 11 | [19](#19-what-haste-speeds-up-ready-if-you-have-si) what Haste speeds up | Si | `19: 13 numbers vs 10; cooldown same` |
-| 12 | [12](#12-gilbertas-arts-susceptibility-value-and-duration-ready-if-you-have-gilberta) Gilberta's Susceptibility | Gilberta | `12: 0.30 for 5 s; with 2 Vulnerable 0.36` |
-| 13 | [10](#10-sis-combo-by-stacks-consumed-ready-if-you-have-si) Si's combo by stacks | Si | `10: 1 / 2 / 3 stacks → numbers; highest count wins` |
+| 4 | [104](#104-do-bosses-ignore-freezes-ready-if-you-have-si-or-tangtang-higher-priority-every-boss-fight-with-a-freeze) bosses and freezes | Si or Tangtang, vs a boss | `104: Rhodagn keeps moving; small enemies freeze` |
+| 5 | [103](#103-what-liinos-battle-skill-presses-do-in-vocalist-stance-ready-if-you-have-liino-higher-priority-every-liino-log) Liino's presses in her stance | Liino | `103: ends stance, ATK stays ~5 s; restarts with projectiles` |
+| 6 | [54](#54-can-a-dash-cancel-a-battle-skill-or-combo-at-any-moment-ready-higher-priority-affects-every-operator) dash cancels a skill | Laevatain; Gilberta or Si | `54: dashes at once, extra hit gone; combo hit gone` |
+| 7 | [18](#18-what-an-ultimates-time-stop-freezes-ready) what a time stop freezes | any two | `18: cooldown same / ~2 s longer; SP bar unchanged / higher` |
+| 8 | [98](#98-food-buffs-on-the-stat-panel-ready-any-operator-a-few-minutes) food on the stat panel | anyone | `98: stew ATK 2,367 → 2,965, crit +11.4` |
+| 9 | [8](#8-where-link-comes-from-and-its-values-ready-higher-priority-affects-every-team) where Link comes from | Gilberta, Estella, Camille | `8: a 10,000 b 10,000 c 12,000 d 10,000` |
+| 10 | [97](#97-dive-attacks-their-pace-and-what-a-jump-can-do-ready-any-operator-higher-priority-the-search-now-uses-dives) dive attacks | anyone | `97: ten dives 11 s; jump cuts a skill yes; no air dash` |
+| 11 | [77](#77-combustion-ticks-and-a-later-atk-buff-ready-if-you-have-laevatain-and-liino-higher-priority-every-heat-team) Combustion ticks and a later ATK buff | Laevatain, Liino | `77: ticks same` or `77: ticks +7%` |
+| 12 | [19](#19-what-haste-speeds-up-ready-if-you-have-si) what Haste speeds up | Si | `19: 13 numbers vs 10; cooldown same` |
+| 13 | [12](#12-gilbertas-arts-susceptibility-value-and-duration-ready-if-you-have-gilberta) Gilberta's Susceptibility | Gilberta | `12: 0.30 for 5 s; with 2 Vulnerable 0.36` |
+| 14 | [10](#10-sis-combo-by-stacks-consumed-ready-if-you-have-si) Si's combo by stacks | Si | `10: 1 / 2 / 3 stacks → numbers; highest count wins` |
 
 Left out for now: swap tests (15 and parts of 97: the default search
 doesn't swap) and tests for operators the owner doesn't use.
@@ -675,6 +676,9 @@ That's about one earlier Arcane combo per second ultimate.
   Without the ultimate first: 19 s.
 
 ### 37. Enemy timers while Imprisoned or Immobilized (ready, if you have Arcane, Last Rite or Tangtang; the Si part is not testable by hand)
+
+(Since 2026-10-31 the engine assumes Bosses ignore these freezes: test
+104. The parts below are about enemies that do freeze.)
 
 **Why:** the engine freezes every status on the enemy while Si's
 Immobilization freezes it (1 s, 1.5 s at P1), which fits one log for
@@ -1927,6 +1931,29 @@ how long? (b) Press it again as soon as you can: does a new stance start,
 with SP spent and the opening burst of six projectiles? (c) If you play
 her yourself: do you press the battle skill during the stance, and why?
 **Reply, e.g.:** `103: a ends stance, ATK stays ~5 s; b restarts, 100 SP, projectiles yes`.
+
+### 104. Do bosses ignore freezes? (ready, if you have Si or Tangtang; higher priority: every boss fight with a freeze)
+
+**Why:** some control statuses freeze the enemy, which holds its timers:
+Si's battle-skill Immobilization (1 s, 1.5 s at P1), Tangtang's OLDEN
+STARE (4 s). The data skips the freeze on enemies with a control-immune
+tag, but no table says which enemies have it. In b7b3 (Rhodagn), Arcane's
+Cryo bursts land during Tangtang's stare exactly when the ultimates' time
+stops alone have them due, as if Rhodagn weren't frozen; treating Bosses
+as immune also brought c3c7 (Chiliarch) closer to its log. So the engine
+now assumes every Boss is control-immune (2026-10-31). If they aren't,
+each freeze on a boss stretches the enemy's statuses again (Corrosion,
+Susceptibility, Artful Intent: 1–4 s per freeze).
+
+**How:** fight Rhodagn (or any boss) with Si. Use her battle skill on him
+while he's mid-attack or walking, and watch him right after the hit: does
+he stop dead for about a second (his animation frozen), or carry on? If
+you have Tangtang, her ultimate without diving: does he stand frozen for
+about 4 s? For comparison, the same on an ordinary enemy (one of the
+small ones) should freeze it.
+
+**Reply, e.g.:** `104: Rhodagn keeps moving; small enemies freeze` or
+`104: Rhodagn freezes ~1 s too`.
 
 ## Results
 

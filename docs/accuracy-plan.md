@@ -467,7 +467,24 @@ fixture's hand-written `absent` now names such landings with why, and the
 totals leave them out (the report says how many, and flags an entry the
 replay has no landing for): b7b3 +15.5 → +1.8% (Last Rite +2.8%, time to
 kill 17.6 vs 18.0 s). Left in b7b3: Arcane's Cryo bursts at other times
-than the log's (+13.7%). 7e19's +15.4% is
+than the log's (+13.7%).
+
+Bosses and freezes (2026-10-31). Those bursts: two from Arcane's
+ultimate and touch at 7150 ms, logged at 10910 ms, which the ultimates'
+time stops alone put at 10917 ms (`zmdlogs reactions`). The replay also
+froze Rhodagn's clock for Tangtang's OLDEN STARE from 10.2 s and held them
+to 17.6 s. The data skips that freeze on control-immune enemies, and no
+table says which those are. Bursts on the world clock instead (the burst
+buffs' `useTimeDilationDt` is false) fit as well, but every common buff
+has that flag false, Si's Artful Intent too, which bdf2 shows stretched by
+her freeze; so it says nothing. As control-immune, per enemy: Rhodagn
+(b7b3), Chiliarch (c3c7 +7.9 → +4.7%) and agdisk / bigents improve,
+klbear (an Alpha) goes both ways (a7a7 plain 322 → 337, b6aa 216 → 197).
+So a Boss (rank 2) is control-immune unless the scenario says otherwise:
+b7b3 +1.8 → +1.4% (Arcane +13.7 → −0.3%, plain 38 → 40), c3c7 +7.9 →
++4.7%, 0c14 −7.8 → −8.5% (unverified, no plain match; its Si −3 →
+−1.5%), abfd −6.3 → −6.4%. In-game test 104 asks.
+ 7e19's +15.4% is
 the Endministrator's Crush and ultimate landings unmatched to the log's
 (+46%).
 

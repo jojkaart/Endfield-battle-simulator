@@ -832,6 +832,12 @@ an ultimate or combo, and Arcane's touch bursts 1–1.5 s after the touch.
 The log check places a delayed landing by its damage's time
 (logcasts.ts `loggedFrames`, `joinDelayed`: the latest shot without its
 burst, within its frame plus 1 s of the enemy's time).
+**Freezes**: a control status with `freezes` (Si's Immobilization,
+Tangtang's OLDEN STARE) stops the enemy's own clock, unless the enemy is
+control-immune (the data's tag 188749032, skipping the freeze). No table
+gives the tag; the scenario's `target.controlImmune` says, else a Boss
+(rank 2) is (clock.ts `controlImmune`; b7b3's Cryo bursts during the stare
+on Rhodagn; in-game test 104).
 
 ### Skill timing
 

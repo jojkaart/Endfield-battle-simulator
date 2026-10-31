@@ -27,10 +27,10 @@ it("has a verdict snapshot for every verified fixture and none for a fixture tha
 /**
  * The largest error of a verified fixture's total damage, simulated (the replay of the logged casts through the engine:
  * engineReport) against the log's, in % (2026-10-25: dbae −43.9%, bdf2 −28.0%, 0eef −27.1%, b7b3 +23.1%, 40d9 −12.9%,
- * 4e5e −12.5%; journal). A bound to tighten as the leads the report lists are fixed; each fixture's error is also in
- * the snapshot and mustn't grow.
+ * 4e5e −12.5%; journal; 2026-10-31: 0eef −10.2%, the rest within ±4.3%). A bound to tighten as the leads the report
+ * lists are fixed; each fixture's error is also in the snapshot and mustn't grow.
  */
-const MAX_DAMAGE_ERROR = 45;
+const MAX_DAMAGE_ERROR = 12;
 
 /**
  * The plain matches (no assumption) whose hit the simulation of the logged casts doesn't reproduce: its landing's damage

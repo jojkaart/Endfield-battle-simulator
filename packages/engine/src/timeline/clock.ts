@@ -51,6 +51,17 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
 }
 
 /**
+ * Whether the enemy's control-immune (the game's tag 188749032, which skips a control status's freeze: Tangtang's
+ * OLDEN STARE, Si's Immobilization). No table gives the tag: the scenario's target says, or else a Boss (rank 2,
+ * EnemyTemplateDisplayInfoTable displayType) is. b7b3762d5da8: Arcane's two Cryo bursts from 7150 ms land at
+ * 10910 ms, during Tangtang's stare on Rhodagn, when the ultimates' time stops alone had them due (frozen, the replay
+ * held them to 17.6 s); c3c735dbb022 (Chiliarch) +7.9 → +4.7% with it. In-game test 37 asks.
+ */
+export function controlImmune(ctx: TimelineContext): boolean {
+  return ctx.scenario.target.controlImmune ?? ctx.data.enemies[ctx.scenario.target.enemy]?.rank === 2;
+}
+
+/**
  * The enemy's own clock after `start` (its statuses, inflictions, Vulnerable, physical and control statuses, debuffs on
  * it, its stagger, its actions, the end of a freeze: TimelineState.enemyFrozenUntil) runs `n` frames later.
  */

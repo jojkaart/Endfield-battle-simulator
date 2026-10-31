@@ -19,8 +19,8 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
    ×0.89–0.94: ATK); logged presses with no damage of their own while the enemy is
    there: Zhuang Fangyi's, Arcane's combo and Si's in 4bfc, 3aa6, 0c14),
    3aa6's Stagger at 145.6 s (the replay has none), Xaihi's ultimate Amp in
-   b6aa 0.57 s after its logged cast (elsewhere 1.9–2.5 s), Arcane's Cryo
-   burst times in b7b3 (+13.7%), 7e19's Crush landings unmatched (Endministrator
+   b6aa 0.57 s after its logged cast (elsewhere 1.9–2.5 s), whether Bosses
+   ignore freezes (assumed since 2026-10-31; test 104), 7e19's Crush landings unmatched (Endministrator
    +46%),
    bosses' own phases the logs show (Rhodagn's refill, test 100; the Abyss
    boss's ×0.1 until its Stagger in c6d8), then B6 (Si's battle-skill entity and Arcane's and

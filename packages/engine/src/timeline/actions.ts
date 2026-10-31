@@ -13,7 +13,7 @@ import { FPS } from "../units.ts";
 import type { Origin, PendingHit, Stacks, TimelineContext, TimelineState } from "./state.ts";
 import { COMBO_WINDOW_FRAMES, LINK_FRAMES, hasteFrames } from "./rules.ts";
 import { panelAt, skillCosts, timingOf } from "./context.ts";
-import { shiftEnemy } from "./clock.ts";
+import { controlImmune, shiftEnemy } from "./clock.ts";
 import { cooldownEnd, dealPoise, gainEnergy, gainSp, maxEnergy, rateProgress, rateReady, rebaseCooldowns, spGrantOf } from "./resources.ts";
 import { actionFrame, ownWindowSkills, playheadOf } from "./timing.ts";
 import { artsIntensity, attackerSide, eventCountOf, eventSourceOf, healEvents, situationAt, statusTweaks, triggerSituation } from "./situation.ts";
@@ -109,7 +109,7 @@ export function runTriggers(ctx: TimelineContext, state: TimelineState, initial:
     // after its damage, not in the before-damage run, so buffs the hit applies are frozen with the enemy too.
     const engine = reactOnInitial || !first.has(e);
     // A control status that freezes the enemy stops its clock (overlapping freezes count once).
-    if (engine && e.type === "status" && e.event.kind === "control" && e.event.freezes && !ctx.scenario.target.controlImmune) {
+    if (engine && e.type === "status" && e.event.kind === "control" && e.event.freezes && !controlImmune(ctx)) {
       const end = e.frame + e.event.frames;
       const lost = Math.max(0, end - Math.max(e.frame, st.enemyFrozenUntil));
       st = { ...shiftEnemy(st, e.frame, lost), enemyFrozenUntil: Math.max(st.enemyFrozenUntil, end) };
