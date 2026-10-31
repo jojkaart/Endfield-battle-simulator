@@ -420,3 +420,23 @@ describe("a7a7a40c97ed: a cast inferred from a buff's end and the cast after it"
     expect(bursts.some((t) => Math.abs(t - 56469) < 50)).toBe(true);
   });
 });
+
+describe("a hitless ultimate's logged cast at its time stop's end", () => {
+  it("starts its stop's length earlier when nobody hits during it and another's hit lands at the event (b6aa: Xaihi at 31027 ms, her Amp on Last Rite's combo at 32034 ms)", async () => {
+    const { logBuffReplay } = await import("@efsim/cli");
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-b6aa15281db4.json", import.meta.url).pathname);
+    const r = logBuffReplay(data, fx).replay;
+    const combo = fx.hits.find((h) => h.t === 32034 && h.operator === "chr_0026_lastrite" && h.value === 268211) as LogHit;
+    const l = r.landing(combo);
+    expect("unknown" in l ? [] : l.modifiers.filter((m) => m.source.includes("Stack Overflow"))).toHaveLength(1);
+  });
+
+  it("stays at the event without such a hit (e82d: Xaihi at 3896 ms; her Amp not yet on Arcane's ultimate at 7022 ms)", async () => {
+    const { logBuffReplay } = await import("@efsim/cli");
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-e82d45c46040.json", import.meta.url).pathname);
+    const r = logBuffReplay(data, fx).replay;
+    const hit = fx.hits.find((h) => h.t === 7022 && h.operator === "chr_0032_lizhiyan") as LogHit;
+    const l = r.landing(hit);
+    expect("unknown" in l ? [] : l.modifiers.filter((m) => m.source.includes("Stack Overflow"))).toHaveLength(0);
+  });
+});

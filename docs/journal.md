@@ -44,6 +44,12 @@ clock through every slow-down (0eef worse: Arcane's own combo held her
 burst), ultimate stops only (dbae's still early), its operator's clock
 (held by others' stops and slow-downs, not its own). The last fits both:
 dbae Arcane −19 → 0%.
+b6aa's Last Rite combo lacked Xaihi's Amp: her logged ultimate cast is
+her stop's end. Such a hitless ultimate now starts earlier when the log
+is quiet for the stop's length and another's hit lands at the event
+(without that last check e82d's Xaihi moved wrongly). b6aa plain 217 →
+236, c3c7 96 → 113, 4bfc +10. Dead end: Liino's volley trigger in bdf2
+(no reaction before the 3.2 s volley; ~4k damage, left).
 
 ## 2026-10-29: Liino's team ATK through the logs' presses
 

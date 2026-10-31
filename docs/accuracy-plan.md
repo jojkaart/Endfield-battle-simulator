@@ -515,6 +515,23 @@ slow-downs hold it, running ones too, its own operator's and freezes
 don't. dbae Arcane −19.3 → +0.1% (plain 43 → 52), e82d plain 18 → 20,
 0eef unchanged, the rest ±1.
 
+b6aa's Last Rite (2026-10-31): her combo at 32034 ms ×1.346 lacked
+Xaihi's ultimate Amp (0.415; (1.2 + 0.415) / 1.2 exactly), the lead "her
+Amp 0.57 s after its logged cast". Her cast event (31027 ms) is her time
+stop's end: no hit by anyone for 1.8 s before it, Arcane's attack 2 at
+31027 ms itself (what waited lands as the stop ends), her Amp (frame 58)
+on hits from 31592 ms. A hitless ultimate's logged cast now starts its
+stop's length earlier when nobody hits in that span, no other known stop
+covers half of it, and another operator's hit lands at the event. Without
+the last condition e82d's Xaihi moved too (plain 20 → 2: her Amp then on
+Arcane's ultimate at 7022 ms, which the log has without), and d774's
+Zhuang Fangyi (her own sword hit at the event). Plain: b6aa 217 → 236
+(−8.4 → −7.1%), c3c7 96 → 113 (+4.6 → +10%: its Xaihi +165% and Ardelia
++75% kits drive its total), 4bfc 390 → 400, 458b 442 → 445; abfd −6.4 →
+−5.5%. Left in b6aa: Last Rite's weapon battle-skill buff from 38.8 s
+(no logged Mirage then), and her 814k ultimate slash whose crit the log
+doesn't give (×1.55 the expected value).
+
 bdf2's Si −11.1% is one hit: her combo finisher at 13143 ms, ×1.456 the
 engine's (count 2 + P5 = 3), the ten slashes before it under the same
 buffs and Corrosion exact. The log needs a count of about 6; none fits

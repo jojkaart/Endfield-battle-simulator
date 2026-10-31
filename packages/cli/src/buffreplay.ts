@@ -15,7 +15,7 @@ import {
   type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
-import { distinctCasts, loggedFrames, mergeMs, type LoggedCast, type Placement } from "./logcasts.ts";
+import { castTimeStops, distinctCasts, loggedFrames, mergeMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 
 /**
  * How sure the replay is of when its buffs start and end. A start is a
@@ -236,7 +236,38 @@ const SLOT_SHOWS_MS = 3000;
 /** How far from a slot press's first landing the log has no hit by anyone for the press to be `unseen` (ms). */
 const QUIET_MS = 1000;
 
-export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixture, "casts" | "hits">, kits: readonly OperatorKit[]): ReplayedCast[] {
+/**
+ * Where a logged cast of a skill without logged hits of its own starts: an ultimate's cast event can come at its time
+ * stop's end (b6aa15281db4: Xaihi's at 31027 ms, after 1.8 s without a hit by anyone; her Amp, at frame 58, is on hits
+ * from 31592 ms). When no hit by anyone falls in the stop's length before the event, one falls at it, and no other
+ * cast's stop covers half of it (dbaee23b801d: Xaihi's at 7606 ms inside Liino's stop, her Amp not yet on 8501 ms), it
+ * started that early.
+ */
+function loggedCastStart(data: GameData | undefined, lc: { t: number; operator: string; skill: string }, kind: SkillType, hits: readonly LogHit[], stops: readonly TimeStop[]): number {
+  if (!data || kind !== "ultimate") return lc.t;
+  const stop = data.skills[lc.skill]?.timing?.slowdowns.find((d) => d.from === 0 && Math.min(...d.scales) === 0);
+  if (!stop) return lc.t;
+  const length = (stop.scales.length * 1000) / FPS;
+  const [from, to] = [lc.t - length, lc.t];
+  if (hits.some((h) => h.t > from + EDGE_MS && h.t < to - EDGE_MS)) return lc.t;
+  // What waited out a time stop lands as it ends: another's hit at the event's own time (b6aa15281db4: Arcane's attack
+  // 2 at 31027 ms) says the stop ended there (not the caster's own: d774d0ce7bd3, Zhuang Fangyi's sword at her ultimate); without one (e82d45c46040: Xaihi's at 3896 ms after 2315 ms, her Amp not yet on
+  // Arcane's hit at 7022 ms) the event is the cast.
+  if (!hits.some((h) => h.operator !== lc.operator && Math.abs(h.t - lc.t) <= FLUSH_MS)) return lc.t;
+  const covered = stops.some((x) => {
+    if (x.operator === lc.operator) return false;
+    const [a, b] = [(x.start * 1000) / FPS, ((x.start + x.scales.length) * 1000) / FPS];
+    return Math.min(b, to) - Math.max(a, from) >= length / 2;
+  });
+  return covered ? lc.t : Math.round(from);
+}
+
+/** How close to a window's edges a logged hit may be and still not count as inside it (ms; loggedCastStart). */
+const EDGE_MS = 100;
+/** How close to a cast event a logged hit is at it (ms; loggedCastStart). */
+const FLUSH_MS = 15;
+
+export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixture, "casts" | "hits">, kits: readonly OperatorKit[], data?: GameData, stops: readonly TimeStop[] = []): ReplayedCast[] {
   if (!fx.casts?.length) return [...casts];
   const logged = new Set(fx.hits.map((h) => `${h.operator}|${h.event}`));
   const added: ReplayedCast[] = [];
@@ -255,7 +286,8 @@ export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixt
       : [];
     const landsAt = lc.t + (Math.min(...skill.hits.flatMap((h) => loggedFrames(h) ?? [])) * 1000) / FPS;
     const unseen = shownElsewhere && Number.isFinite(landsAt) && !fx.hits.some((h) => Math.abs(h.t - landsAt) <= QUIET_MS);
-    added.push({ operator: lc.operator, key: lc.skill, group: lc.skill, skillId: lc.skill, kind: skill.kind, start: lc.t, lastHit: lc.t, keepPrevious: false, landings: [], ...(shownElsewhere ? { slot: true as const } : {}), ...(shows.length ? { shows } : {}), ...(unseen ? { unseen: true as const } : {}) });
+    const start = shownElsewhere ? lc.t : loggedCastStart(data, lc, skill.kind, fx.hits, stops);
+    added.push({ operator: lc.operator, key: lc.skill, group: lc.skill, skillId: lc.skill, kind: skill.kind, start, lastHit: start, keepPrevious: false, landings: [], ...(shownElsewhere ? { slot: true as const } : {}), ...(shows.length ? { shows } : {}), ...(unseen ? { unseen: true as const } : {}) });
   }
   return added.length ? ordered([...casts, ...added]) : [...casts];
 }
@@ -678,7 +710,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // Game buffs a trigger on crits is behind (critTriggers): where a landing's crit isn't logged, the replay bounds them.
   const critDependent = new Set(kitIds.filter(({ owner, id }) => critTriggers(kits.find((k) => k.operator === owner) as OperatorKit, id).length > 0).map((x) => x.g));
   const followUps = new Set(kits.flatMap((k) => k.skills.filter((s) => s.followUpOnly).map((s) => `${k.operator}|${s.skillId}`)));
-  const assembled: ReplayedCast[] = kits.length > 0 ? castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits)))) : [];
+  const assembled: ReplayedCast[] = kits.length > 0 ? castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts))))) : [];
   const control = controlledFromLog(placement, assembled);
   const recoveries = loggedRecoveries(fx).map(frameOf);
   const casts = control?.casts ?? assembled;
