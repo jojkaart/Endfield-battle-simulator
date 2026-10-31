@@ -84,11 +84,11 @@ export function castBound(x: Scheduled): number | null {
  * The items on a clock after `start` happen `n` frames later, a launch to come with them (a slow-down or freeze of
  * that clock: clock.ts); pinned ones stay.
  */
-export function shiftClock(list: readonly Scheduled[], on: (c: Clock) => boolean, start: number, n: number): readonly Scheduled[] {
+export function shiftClock(list: readonly Scheduled[], on: (c: Clock, x: Scheduled) => boolean, start: number, n: number): readonly Scheduled[] {
   if (n <= 0) return list;
   let changed = false;
   const out = list.map((x) => {
-    if (x.pinned || x.frame <= start || !on(x.clock)) return x;
+    if (x.pinned || x.frame <= start || !on(x.clock, x)) return x;
     changed = true;
     return { ...x, frame: x.frame + n, ...(x.launchAt !== undefined && x.launchAt > start ? { launchAt: x.launchAt + n } : {}) };
   });

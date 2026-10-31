@@ -149,3 +149,20 @@ describe("a trigger fired by a decorated hit", () => {
     expect(distinctCasts(p).filter((c) => c.operator === TT && c.skillId === `${TT}_normal_skill` && c.start > 13000)).toHaveLength(0);
   });
 });
+
+describe("an Arts Burst's delay (1 s) on its operator's clock", () => {
+  it("waits out others' time stops and slow-downs, not its own operator's", async () => {
+    const { logBuffReplay } = await import("@efsim/cli");
+    const at = (file: string, t: number) => {
+      const fx = readLogFixture(new URL(file, import.meta.url).pathname);
+      const r = logBuffReplay(data, fx).replay;
+      const l = r.statusLanding(fx.hits.find((h) => h.t === t && h.operator === "chr_0032_lizhiyan") as LogHit);
+      return "unknown" in l ? null : (l.frame * 1000) / 30;
+    };
+    // dbaee23b801d: Arcane's touch at 8501 ms, inside Xaihi's ultimate stop, then Typhoeus's combo: her Nature burst at
+    // 10341 ms (unheld, at 9.5 s; held by the stop alone, 10.1 s, before the Amp and debuff the log has on it).
+    expect(Math.abs((at("../fixtures/zmdlogs-dbaee23b801d.json", 10341) as number) - 10341)).toBeLessThan(200);
+    // 0eef2474a26f: her touch at 2719 ms inside her own combo's slow-down: her Cryo burst 1 s later, at 3729 ms.
+    expect(Math.abs((at("../fixtures/zmdlogs-0eef2474a26f.json", 3729) as number) - 3729)).toBeLessThan(100);
+  });
+});

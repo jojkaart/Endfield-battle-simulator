@@ -826,7 +826,11 @@ use it; in-game test 19.
 **Waiting on the enemy's clock**: what a buff on the enemy does after its
 `triggerInterval` (`waitFirstTriggerInterval`) is held by every time stop,
 the caster's own included. An Arts Burst lands `burstDelayFrames` (1 s)
-after the infliction that made it; a kit hit with `enemyDelay` (Typhoeus's
+after the infliction that made it, on its operator's clock: others' time
+stops and slow-downs hold it, also ones already running when it's made
+(`operatorClockDue`), its own operator's don't, nor a freeze (its buff
+doesn't run on time dilation: `useTimeDilationDt` false; dbae's burst
+after Xaihi's stop, 0eef's inside Arcane's own combo); a kit hit with `enemyDelay` (Typhoeus's
 Power Shot burst: the arrow's hit consumes the stack, gives the energy and
 creates `buff_common_natural_natural_triggered_typhoea`, which deals the
 burst 0.35 s later) lands its effects at its frame and its damage that many

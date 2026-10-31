@@ -198,9 +198,9 @@
    "chr_0022_bounda": 89201.601,
    "chr_0013_aglina": 59244.662
   },
-  "digest": "3849fb4dac31",
+  "digest": "6270b8fc515c",
   "windows": [
-   "1ab0209a2c75",
+   "f190f04d4021",
    "ff503a7609d4",
    "81cee0b0f736",
    "40de43569f91"
@@ -404,12 +404,12 @@
   "perOperator": {
    "chr_0027_tangtang": 711736.099
   },
-  "digest": "c02f75de0a49",
+  "digest": "f6399ad7d9d6",
   "windows": [
-   "a06fd9521e20",
-   "67e24e6761e6",
-   "78097a44215c",
-   "9d6b2ee5e17b"
+   "b9401a33834f",
+   "16bb697007c0",
+   "a4a16592d860",
+   "fec0292b0b44"
   ]
  },
  "typhoeus-gilberta.scenario.json": {

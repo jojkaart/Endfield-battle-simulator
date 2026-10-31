@@ -503,6 +503,18 @@ dbae: Arcane's burst at 10341 ms ×1.66 (placed nowhere). The log's
 ultimate cast at 2947 ms is not the cast: the beats fit 5691 ms (its time
 stop's end is logged at 8258 ms).
 
+Then dbae's Arcane burst at 10341 ms (×1.66, 2026-10-31): 1 s after her
+touch at 8501 ms, which lands inside Xaihi's ultimate stop. A time stop
+shifted what was scheduled when it began, but a burst made during it ran
+on unheld (9.9 s, before Xaihi's Amp and Typhoeus's debuff the log has
+on it). Walking the enemy's clock through every slow-down fixed dbae but
+held 0eef's Cryo burst inside Arcane's own combo, which the log has 1 s
+after the touch (0eef plain 36 → 28); ultimate stops alone left dbae's
+at 10.1 s. A burst now runs on its operator's clock: others' stops and
+slow-downs hold it, running ones too, its own operator's and freezes
+don't. dbae Arcane −19.3 → +0.1% (plain 43 → 52), e82d plain 18 → 20,
+0eef unchanged, the rest ±1.
+
 bdf2's Si −11.1% is one hit: her combo finisher at 13143 ms, ×1.456 the
 engine's (count 2 + P5 = 3), the ten slashes before it under the same
 buffs and Corrosion exact. The log needs a count of about 6; none fits

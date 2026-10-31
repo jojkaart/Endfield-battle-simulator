@@ -16,6 +16,7 @@ import { dealPoise, gainEnergy, gainSp, isStaggered, spGrantOf } from "./resourc
 import { artsIntensity, attackerSide, buffSituation, damageOptions, healEvents, situationAt, statusTweaks } from "./situation.ts";
 import { addBuff, buffAppliedEvent, changedStacks, gainStacks, runTriggers } from "./actions.ts";
 import { ofKind, schedule } from "./schedule.ts";
+import { operatorClockDue } from "./clock.ts";
 
 /** The modifiers a logged fight gives a kit hit's landing that no kit models (TimelineScenario.loggedModifiers): the nearest logged landing's within a frame, none without. */
 function loggedModifiersAt(ctx: TimelineContext, operator: string, events: readonly string[], frame: number): readonly Modifier[] {
@@ -164,7 +165,7 @@ export function draw(ctx: TimelineContext, st: TimelineState, stream: string): {
 export const asEvents = (events: readonly StatusEvent[], fromKind: SkillType | "none", cast?: number): BattleEvent[] =>
   events.map((e) => ({ type: "status", frame: e.frame, operator: e.operator, event: e, fromKind, ...(cast !== undefined ? { cast } : {}) }));
 
-/** An infliction's status events without its bursts, which are scheduled their element's delay later, on the enemy's clock (BattleConstants.burstDelayFrames). */
+/** An infliction's status events without its bursts, which are scheduled their element's delay later (BattleConstants.burstDelayFrames), on their operator's clock: others' time stops and slow-downs hold them, its own and freezes don't (clock.ts operatorClockDue). */
 export function delayBursts(ctx: TimelineContext, st: TimelineState, events: readonly StatusEvent[], fromKind: SkillType | "none", cast?: number): { state: TimelineState; now: StatusEvent[] } {
   const delay = (e: StatusEvent) => (e.kind === "burst" ? ctx.burstDelayFrames[e.element] : 0);
   const now = events.filter((e) => delay(e) === 0);
@@ -172,7 +173,7 @@ export function delayBursts(ctx: TimelineContext, st: TimelineState, events: rea
   const later = events.flatMap((e): PendingBurst[] => {
     if (e.kind !== "burst" || delay(e) === 0) return [];
     const { frame: _at, ...event } = e;
-    return [{ kind: "burst", frame: e.frame + delay(e), clock: "enemy", event, fromKind, ...(cast !== undefined ? { fromCast: cast } : {}) }];
+    return [{ kind: "burst", frame: operatorClockDue(st, e.operator, e.frame, delay(e)), clock: { operator: e.operator }, event, fromKind, ...(cast !== undefined ? { fromCast: cast } : {}) }];
   });
   return { state: schedule(st, later), now };
 }

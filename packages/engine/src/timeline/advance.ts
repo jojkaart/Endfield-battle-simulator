@@ -81,7 +81,8 @@ function enemyAct(ctx: TimelineContext, state: TimelineState, a: PendingEnemyAct
   const cast: Cast = { frame: a.frame, operator: op, skill: DODGE, spAfter: spAt(gained, a.frame), energyAfter: ended.state.energy[op] ?? 0 };
   let st: TimelineState = rebaseCooldowns(ctx, roll.state, { ...gained, acting: { ...ended.state.acting, [op]: { skill: DODGE, frame: a.frame, cast: ended.state.casts.length } }, casts: [...ended.state.casts, cast] }, a.frame);
   st = slowDown(ctx, st, op, { ...timingOf(ctx, DODGE), slowdowns: [{ from: 0, scales: pd.slowdown }] }, a.frame);
-  st = shiftOperator(st, op, a.frame, Math.round(pd.dodgerSlowdown.reduce((t, x) => t + (1 - x), 0)));
+  // The dodger's own slow-down holds its actions, not its Arts Bursts on the enemy (on its clock only for others' stops).
+  st = shiftOperator(st, op, a.frame, Math.round(pd.dodgerSlowdown.reduce((t, x) => t + (1 - x), 0)), false);
   const others = events.filter((e) => !(e.type === "attacked" && e.operator === op));
   return runTriggers(ctx, st, [...ended.events, { type: "perfectDodge", frame: a.frame, operator: op }, ...others], null);
 }

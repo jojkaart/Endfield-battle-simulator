@@ -59,6 +59,28 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
 }
 
 /**
+ * When an operator's clock, from `from`, has run `delay` frames: through the slow-downs already under way or to come
+ * that hold it (TimelineState.slowdowns, all but its own; slowDown shifted what was scheduled when each began, not what
+ * comes later). An Arts Burst runs on its operator's clock: it waits out the rest of another's time stop or slow-down
+ * (dbaee23b801d: Arcane's touch at 8501 ms inside Xaihi's ultimate stop, then Typhoeus's combo; her Nature burst logged
+ * at 10341 ms, at 9.9 s 1 s after the touch), not its own operator's (0eef2474a26f: her Cryo burst 1 s after her touch
+ * inside her own combo's slow-down).
+ */
+export function operatorClockDue(st: TimelineState, operator: string, from: number, delay: number): number {
+  const holding = st.slowdowns.filter((x) => x.exempt !== operator);
+  const last = holding.reduce((m, x) => Math.max(m, x.start + x.scales.length), from);
+  if (last <= from) return from + delay;
+  let f = from;
+  let run = 0;
+  for (; run < delay && f < last; f++) {
+    let rate = 1;
+    for (const x of holding) if (f >= x.start && f < x.start + x.scales.length) rate = Math.min(rate, x.scales[f - x.start] as number);
+    run += rate;
+  }
+  return f + Math.max(0, Math.round(delay - run));
+}
+
+/**
  * Whether the enemy's control-immune (the game's tag 188749032, which skips a control status's freeze: Tangtang's
  * OLDEN STARE, Si's Immobilization). No table gives the tag: the scenario's target says, or else a Boss (rank 2,
  * EnemyTemplateDisplayInfoTable displayType) is. b7b3762d5da8: Arcane's two Cryo bursts from 7150 ms land at
@@ -142,7 +164,7 @@ function stopSp(stops: TimelineState["spStops"], start: number, n: number): Time
  * casts' team energy and jumps; its current action) happens `n` frames later. What belongs to a cast is on the cast's
  * operator's clock (as endCurrentSkill and takeJump treat it); a delayed action of no cast on its trigger's owner's.
  */
-export function shiftOperator(st: TimelineState, operator: string, start: number, n: number): TimelineState {
+export function shiftOperator(st: TimelineState, operator: string, start: number, n: number, bursts = true): TimelineState {
   if (n <= 0) return st;
   const later = (f: number) => (f > start ? f + n : f);
   const shift = (c: ChainStep): ChainStep => ({ skill: c.skill, from: later(c.from), until: later(c.until) });
@@ -150,7 +172,7 @@ export function shiftOperator(st: TimelineState, operator: string, start: number
   const chain = st.chainNext[operator];
   return {
     ...st,
-    scheduled: shiftClock(st.scheduled, (c) => onOperator(c, operator), start, n),
+    scheduled: shiftClock(st.scheduled, (c, x) => onOperator(c, operator) && (bursts || x.kind !== "burst"), start, n),
     ...(cur ? { acting: { ...st.acting, [operator]: { ...cur, frame: cur.frame + n, ...(cur.skips ? { skips: cur.skips.map((k) => ({ ...k, at: k.at + n })) } : {}) } } } : {}),
     ...(chain ? { chainNext: { ...st.chainNext, [operator]: { ...shift(chain), ...(chain.alternatives ? { alternatives: chain.alternatives.map(shift) } : {}) } } } : {}),
   };

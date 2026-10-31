@@ -38,6 +38,12 @@ end. Side effect caught by bdf2 and 0eef: the buff-lane inference read
 Vocalist Stance's ATK (same game buff, from a hit) as ultimates. dbae
 −2.2% (Arcane −19%), a7a7 −0.7%. bdf2's Si −11% is one combo finisher
 ×1.456 with no count that fits: a lead.
+Then dbae's last Arcane gap, her burst: made inside Xaihi's ultimate
+stop, it wasn't held by the stop's rest. Three rules tried: the enemy's
+clock through every slow-down (0eef worse: Arcane's own combo held her
+burst), ultimate stops only (dbae's still early), its operator's clock
+(held by others' stops and slow-downs, not its own). The last fits both:
+dbae Arcane −19 → 0%.
 
 ## 2026-10-29: Liino's team ATK through the logs' presses
 

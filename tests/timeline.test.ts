@@ -1006,7 +1006,7 @@ describe("timeline: control statuses", () => {
     expect(run(d(true)).enemy.infliction?.expiresAt).toBe(630);
   });
 
-  it("an Arts Burst lands its element's delay after the infliction, on the enemy's clock: a freeze holds it", () => {
+  it("an Arts Burst lands its element's delay after the infliction, on its operator's clock: a freeze doesn't hold it", () => {
     const burstAt = (freezes: boolean) => {
       const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, triggers: [...kit.triggers, { id: "imm", on: { event: "cast", kinds: ["basic"] }, by: "self", maxCount: 1, do: [{ kind: "apply", applies: [{ kind: "infliction", element: "fire" }, { kind: "infliction", element: "fire" }, { kind: "control", status: "immobilization", seconds: 1, freezes }] }] }] } } } };
       const ctx = createContext(g, scenario([{ operator: op, skill: L + "attack1" }]));
@@ -1016,7 +1016,9 @@ describe("timeline: control statuses", () => {
     // buff_common_fire_fire_triggered deals it at its first tick: 1 s.
     expect(data.constants.burstDelayFrames?.fire).toBe(30);
     expect(burstAt(false)).toEqual([30]);
-    expect(burstAt(true)).toEqual([60]);
+    // Its buff doesn't run on time dilation (BuffData useTimeDilationDt false), and a freeze is one: others' time stops
+    // and slow-downs hold it (tests/logcasts.test.ts, dbaee23b801d), as they hold its operator.
+    expect(burstAt(true)).toEqual([30]);
   });
 });
 

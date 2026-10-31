@@ -216,7 +216,7 @@ export interface PendingJump extends ScheduledHeader {
   readonly landing?: string;
 }
 
-/** An Arts Burst on its way (BattleConstants.burstDelayFrames after its infliction, on the enemy's clock): it lands, deals its damage and is a `burst` event at its frame. */
+/** An Arts Burst on its way (BattleConstants.burstDelayFrames after its infliction, on its operator's clock: clock.ts operatorClockDue): it lands, deals its damage and is a `burst` event at its frame. */
 export interface PendingBurst extends ScheduledHeader {
   readonly kind: "burst";
   /** The burst, without its frame (the item's: landBurst). */
