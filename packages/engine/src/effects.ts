@@ -52,9 +52,10 @@ export type Zone = (typeof ZONES)[number];
  * the ticks; a talent-1 layer gone by the last), while the third is ×1.3
  * the first by the Stagger that started between them;
  * fixtures/zmdlogs-40d9a3c1da37.json 18684 ms: a tick after the Arts
- * Susceptibility ended is lower by exactly that. ATK and Amp are on the same
- * side (not in those logs: in-game test 77 decides ATK); crit doesn't act on
- * ticks.
+ * Susceptibility ended is lower by exactly that. ATK too:
+ * pending/zmdlogs-458b03609665.json's ticks at 82333 / 85696 ms are ×1.3
+ * apart (the Stagger), though team ATK buffs started between (in-game test
+ * 77 answered). Amp is on the same side; crit doesn't act on ticks.
  */
 export const SNAPSHOT_ZONES: ReadonlySet<Zone> = new Set(["atk", "attribute", "damageBonus", "amp", "critRate", "critDamage", "artsIntensity"]);
 

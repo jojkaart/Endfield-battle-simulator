@@ -36,7 +36,7 @@ must be something a person can do by hand while playing:
 ## The queue: the tests that decide the most now
 
 Ranked by how much of the simulation each answer moves (every fight first,
-then the owner's favourites), as of 2026-10-31 (104 new; 103 from 2026-10-30; 101 and 102
+then the owner's favourites), as of 2026-11-01 (77 answered by the logs; 104 from 2026-10-31, 103 from 2026-10-30; 101 and 102
 from 2026-10-28; 99 answered by the logs). Reply with the number and
 what you saw, in a line; the formats below are only suggestions.
 
@@ -52,10 +52,9 @@ what you saw, in a line; the formats below are only suggestions.
 | 8 | [98](#98-food-buffs-on-the-stat-panel-ready-any-operator-a-few-minutes) food on the stat panel | anyone | `98: stew ATK 2,367 → 2,965, crit +11.4` |
 | 9 | [8](#8-where-link-comes-from-and-its-values-ready-higher-priority-affects-every-team) where Link comes from | Gilberta, Estella, Camille | `8: a 10,000 b 10,000 c 12,000 d 10,000` |
 | 10 | [97](#97-dive-attacks-their-pace-and-what-a-jump-can-do-ready-any-operator-higher-priority-the-search-now-uses-dives) dive attacks | anyone | `97: ten dives 11 s; jump cuts a skill yes; no air dash` |
-| 11 | [77](#77-combustion-ticks-and-a-later-atk-buff-ready-if-you-have-laevatain-and-liino-higher-priority-every-heat-team) Combustion ticks and a later ATK buff | Laevatain, Liino | `77: ticks same` or `77: ticks +7%` |
-| 12 | [19](#19-what-haste-speeds-up-ready-if-you-have-si) what Haste speeds up | Si | `19: 13 numbers vs 10; cooldown same` |
-| 13 | [12](#12-gilbertas-arts-susceptibility-value-and-duration-ready-if-you-have-gilberta) Gilberta's Susceptibility | Gilberta | `12: 0.30 for 5 s; with 2 Vulnerable 0.36` |
-| 14 | [10](#10-sis-combo-by-stacks-consumed-ready-if-you-have-si) Si's combo by stacks | Si | `10: 1 / 2 / 3 stacks → numbers; highest count wins` |
+| 11 | [19](#19-what-haste-speeds-up-ready-if-you-have-si) what Haste speeds up | Si | `19: 13 numbers vs 10; cooldown same` |
+| 12 | [12](#12-gilbertas-arts-susceptibility-value-and-duration-ready-if-you-have-gilberta) Gilberta's Susceptibility | Gilberta | `12: 0.30 for 5 s; with 2 Vulnerable 0.36` |
+| 13 | [10](#10-sis-combo-by-stacks-consumed-ready-if-you-have-si) Si's combo by stacks | Si | `10: 1 / 2 / 3 stacks → numbers; highest count wins` |
 
 Left out for now: swap tests (15 and parts of 97: the default search
 doesn't swap) and tests for operators the owner doesn't use.
@@ -1445,7 +1444,16 @@ docs/kit-batches/batch-3/chr_0038_purrche.md.
   count the vortexes each time. The data allows one at most; independent
   50/50 Prezzies would give two or more in about half of them.
 
-### 77. Combustion ticks and a later ATK buff (ready, if you have Laevatain and Liino; higher priority: every Heat team)
+### 77. Combustion ticks and a later ATK buff (answered 2026-11-01 from the logs: ATK is kept from the application; don't ask)
+
+**Answer (zmdlogs-458b03609665):** Wulfgard's Combustion ticks at 82333
+and 85696 ms, with no Heat reaction between, are 1917 and 2493: ×1.3
+exactly, the Stagger the second is under, though it also lists Akekuri's
+potential ATK (+10%) and two weapon ATK stacks (+9% each) the first
+doesn't. So ATK is kept from the application (data, engine). The next
+tick (86690 ms, after Laevatain's combo at 86464 ms) is ×1.28 higher
+again, which fits the burn's snapshot being taken anew with the ATK then:
+a lead (accuracy plan), not a question.
 
 **Why:** Combustion deals a tick of damage every second for 10 s. The data
 marks the ticks as taking the applier's ATK when Combustion is applied

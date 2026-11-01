@@ -549,6 +549,16 @@ carry the inputs, each with a note. Plain: 458b 445 → 895 (mismatches
 04d4's Snowshine ×0.96, 99fb's Mi Fu ×1.11 and Ember ×1.04 (also 2fd9),
 92b4's Liino ×1.031 (6 hits).
 
+458b's Combustion ticks (2026-11-01; 25 of its 27 mismatches). Two
+ticks of one burn (82333 / 85696 ms, no Heat reaction between) are ×1.3
+apart, the Stagger alone, though the second also lists new ATK buffs on
+Wulfgard: the ATK snapshot holds (in-game test 77 answered). The replay's
+ticks miss for two other reasons: its Stagger windows (B1: hits under
+Stagger 139 vs 187), and the burn's value stepping up ×1.28 at 86690 ms
+after Laevatain's combo, as if a Heat infliction on a burning enemy took
+the snapshot anew with Wulfgard's ATK then (+37% ATK% fits ×1.28 at
+32% ATK%; the later ×0.92 doesn't fit as simply). Open.
+
 bdf2's Si −11.1% is one hit: her combo finisher at 13143 ms, ×1.456 the
 engine's (count 2 + P5 = 3), the ten slashes before it under the same
 buffs and Corrosion exact. The log needs a count of about 6; none fits

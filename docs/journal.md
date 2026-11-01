@@ -16,6 +16,10 @@ and Purrchena (weapon 84) in 04d4. The check now reports such offsets
 with the inputs that explain them (`buildOffsets`), and those fixtures
 carry the inputs with notes. 458b plain 445 → 895, mismatches 560 → 27;
 d774 +45 plain; 04d4 0 → 160. Unexplained offsets are listed as leads.
+458b's remaining mismatches are Combustion ticks: they answer in-game
+test 77 (two ticks of one burn ×1.3 apart, Stagger only, despite new ATK
+buffs: the ATK snapshot holds), and show a step up after a later Heat hit
+(a refreshed snapshot?), a lead.
 
 ## 2026-10-30/31: A kill's span on both sides; bosses and freezes
 
