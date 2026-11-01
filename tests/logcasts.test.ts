@@ -3,6 +3,7 @@
 
 import { describe, expect, it } from "vitest";
 import { loadGameData, type LogHit } from "@efsim/data";
+import type { Build } from "@efsim/engine";
 import { readLogFixture } from "@efsim/cli";
 import { distinctCasts, placeHits } from "../packages/cli/src/logcasts.ts";
 
@@ -164,5 +165,25 @@ describe("an Arts Burst's delay (1 s) on its operator's clock", () => {
     expect(Math.abs((at("../fixtures/zmdlogs-dbaee23b801d.json", 10341) as number) - 10341)).toBeLessThan(200);
     // 0eef2474a26f: her touch at 2719 ms inside her own combo's slow-down: her Cryo burst 1 s later, at 3729 ms.
     expect(Math.abs((at("../fixtures/zmdlogs-0eef2474a26f.json", 3729) as number) - 3729)).toBeLessThan(100);
+  });
+});
+
+describe("build offsets: one factor on all of an operator's hits (a build input the export doesn't give)", () => {
+  it("names the weapon level or attribute nodes that give it (d774's Liino: weapon 80; 458b's Si: 2 nodes)", async () => {
+    const { buildOffsets, engineHits, logBuffReplay } = await import("../packages/cli/src/logcheck.ts");
+    const offsetOf = (file: string, operator: string, build: (b: Build) => Build) => {
+      const fx = readLogFixture(new URL(file, import.meta.url).pathname);
+      const asAssumed = { ...fx, team: fx.team.map((b) => (b.operator === operator ? build(b) : b)) };
+      const replay = logBuffReplay(data, asAssumed);
+      return buildOffsets(data, asAssumed, engineHits(data, asAssumed, replay)).find((o) => o.operator === operator);
+    };
+    // The fixtures as imported (weapon 90, every node): the offset and its explanation.
+    const liino = offsetOf("../fixtures/pending/zmdlogs-d774d0ce7bd3.json", "chr_0035_liino", (b) => ({ ...b, weapon: { ...(b.weapon as NonNullable<Build["weapon"]>), level: 90 } }));
+    expect(liino?.ratio).toBeCloseTo(0.937, 3);
+    expect(liino?.explained).toContain("the weapon at level 80");
+    const si = offsetOf("../fixtures/pending/zmdlogs-458b03609665.json", "chr_0036_jsspsi", ({ attributeNodes: _n, ...b }) => b);
+    expect(si?.explained).toContain("2 attribute node(s)");
+    // As corrected: none.
+    expect(offsetOf("../fixtures/pending/zmdlogs-458b03609665.json", "chr_0036_jsspsi", (b) => b)).toBeUndefined();
   });
 });

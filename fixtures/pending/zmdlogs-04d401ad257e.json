@@ -17,7 +17,8 @@
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
    "Enemy level 90 from the stage's DungeonTable entry (dung02_bossrush03_03).",
    "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh).",
+   "Purrchena's weapon at level 84, not the assumed 90 (2026-11-01): 84% of her 212 non-crit hits are ×0.9607 the level-90 reading, level 84's ATK ×0.9614 (log check: build offset). The export has no weapon level."
   ]
  },
  "enemy": {
@@ -148,7 +149,7 @@
    },
    "weapon": {
     "id": "wpn_sword_0026",
-    "level": 90,
+    "level": 84,
     "skillLevels": [
      4,
      5,

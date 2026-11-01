@@ -17,7 +17,8 @@
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
    "Enemy level 90 from the stage's DungeonTable entry (dung02_bossrush04_03).",
    "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh).",
+   "Liino's weapon (Bedazzling Night Debut) at level 80, not the assumed 90 (2026-11-01): every one of her logged hits is ×0.937 the level-90 reading, and level 80's ATK (5804 against 6194.5: ×0.93696) is the only level that gives it; skill level 9 needs the last breakthrough, which comes at 80. The export has no weapon level."
   ]
  },
  "enemy": {
@@ -148,7 +149,7 @@
    },
    "weapon": {
     "id": "wpn_lance_0014",
-    "level": 90,
+    "level": 80,
     "skillLevels": [
      9,
      6,

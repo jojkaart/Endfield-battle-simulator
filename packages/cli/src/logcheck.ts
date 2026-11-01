@@ -6,6 +6,7 @@
 import {
   applyBuff,
   computeHit,
+  computeStats,
   computeReaction,
   effectiveKit,
   evalContext,
@@ -995,6 +996,70 @@ export interface EngineReport {
   readonly totals: TotalsComparison;
   /** The totals' errors (simulated / logged − 1, in %, to 0.1): what the verdict snapshots pin. */
   readonly errors: Readonly<Record<string, number | null>>;
+  /** Operators whose hits are off by one factor (buildOffsets): a build input the log doesn't give. */
+  readonly offsets: readonly BuildOffset[];
+}
+
+/** One operator's hits all off by one factor: logged / the engine's nearest reading, on most of its non-crit hits. */
+export interface BuildOffset {
+  readonly operator: string;
+  readonly ratio: number;
+  /** Of its non-crit hits with readings, how many are within OFFSET_SPREAD of the ratio. */
+  readonly share: number;
+  readonly hits: number;
+  /** Build inputs the log doesn't give whose ATK, against the fixture's, is the ratio (within OFFSET_SPREAD / 3): a lower weapon level, fewer attribute nodes. */
+  readonly explained: readonly string[];
+}
+
+/** An offset: at least this share of an operator's non-crit hits (and OFFSET_MIN_HITS of them) within OFFSET_SPREAD of one ratio at least OFFSET_MIN away from 1. */
+const OFFSET_SHARE = 0.75;
+const OFFSET_MIN_HITS = 4;
+const OFFSET_SPREAD = 0.003;
+const OFFSET_MIN = 0.01;
+
+/**
+ * Operators whose logged hits are all off by one factor against the engine's readings: a build input the export
+ * doesn't give, with those that would give it: the weapon's level (assumed 90: skill level 9 needs only the last
+ * breakthrough, at 80; d774d0ce7bd3's Liino ×0.9370 = level 80's ATK, 458b03609665's Karin ×0.9394), the attribute
+ * nodes (every one the promotion allows is assumed; 458b03609665's Si ×0.9648 = two of four).
+ */
+export function buildOffsets(data: GameData, fx: LogFixture, byHit: EngineHits): BuildOffset[] {
+  const out: BuildOffset[] = [];
+  for (const b of fx.team) {
+    const ratios: number[] = [];
+    for (const h of fx.hits) {
+      if (h.operator !== b.operator || h.crit !== false) continue;
+      const values = byHit.get(h)?.readings.map((r) => r.predicted).filter((v) => v > 0) ?? [];
+      if (values.length === 0) continue;
+      ratios.push(h.value / values.reduce((a, v) => (Math.abs(h.value / v - 1) < Math.abs(h.value / a - 1) ? v : a)));
+    }
+    if (ratios.length < OFFSET_MIN_HITS) continue;
+    ratios.sort((a, c) => a - c);
+    const ratio = ratios[Math.floor(ratios.length / 2)] as number;
+    const share = ratios.filter((x) => Math.abs(x / ratio - 1) <= OFFSET_SPREAD).length / ratios.length;
+    if (share < OFFSET_SHARE || Math.abs(ratio - 1) < OFFSET_MIN) continue;
+    const explained: string[] = [];
+    if (ratio < 1) {
+      const full = computeStats(data, b).atk.total;
+      const fits = (x: Build) => Math.abs(computeStats(data, x).atk.total / full / ratio - 1) <= OFFSET_SPREAD / 3;
+      const weapon = b.weapon;
+      if (weapon) for (let level = weapon.level - 1; level >= 1; level--) if (data.weapons[weapon.id]?.baseAtk[level - 1] !== undefined && fits({ ...b, weapon: { ...weapon, level } })) explained.push(`the weapon at level ${level}`);
+      // Attribute nodes: fewer than every one the promotion allows (the build's default).
+      for (let n = 0; ; n++) {
+        let x: Build;
+        try {
+          x = { ...b, attributeNodes: n };
+          computeStats(data, x);
+        } catch {
+          break;
+        }
+        if (n >= (b.attributeNodes ?? Infinity)) break;
+        if (fits(x) && computeStats(data, x).atk.total < full) explained.push(`${n} attribute node(s)`);
+      }
+    }
+    out.push({ operator: b.operator, ratio, share, hits: ratios.length, explained });
+  }
+  return out;
 }
 
 export function engineReport(data: GameData, fx: LogFixture, replay: LogBuffReplay, byHit: EngineHits, verdicts: readonly HitVerdict[] = []): EngineReport {
@@ -1018,7 +1083,7 @@ export function engineReport(data: GameData, fx: LogFixture, replay: LogBuffRepl
     }
   }
   const totals = fightTotals(c, primary);
-  return { differences: [...runs.values()].sort((a, b) => b.hits - a.hits || a.from - b.from), totals, errors: totalsErrors(totals) };
+  return { differences: [...runs.values()].sort((a, b) => b.hits - a.hits || a.from - b.from), totals, errors: totalsErrors(totals), offsets: buildOffsets(data, fx, byHit) };
 }
 
 /** The engine report's lines (formatLogCheck): its differences with the log's listing, and the totals' errors. */
@@ -1045,6 +1110,10 @@ export function formatEngineReport(data: GameData, r: EngineReport): string[] {
   );
   if (t.absent.leftOut) out.push(`  left out: ${t.absent.leftOut} replay landing(s) the fixture marks absent from the log (its \`absent\`)`);
   for (const a of t.absent.unmatched) out.push(`  absent ${name(a.operator)} ${a.skillId} ${a.hitId} at ${seconds(a.t)} s: no such landing in the replay (stale?)`);
+  for (const o of r.offsets) {
+    const levels = o.explained.length ? `; ${o.explained.join(" or ")} gives it` : "";
+    out.push(`  build offset: ${name(o.operator)}'s hits ×${o.ratio.toFixed(4)} the engine's (${Math.round(o.share * 100)}% of ${o.hits} non-crit hits)${levels}: a build input the log doesn't give?`);
+  }
   return out;
 }
 

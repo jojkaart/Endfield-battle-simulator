@@ -532,6 +532,23 @@ Zhuang Fangyi (her own sword hit at the event). Plain: b6aa 217 → 236
 (no logged Mirage then), and her 814k ultimate slash whose crit the log
 doesn't give (×1.55 the expected value).
 
+Build offsets (2026-11-01). All 100 of Liino's hits in d774 mismatched,
+every one ×0.937. Her stats checked out (the log's gear lines are the
+engine's, her Cosmovoice Amp 0.5045 = 0.0004 × the engine's Will 1261),
+the duplicate accessory is real (two identical Slabs in the raw log). It
+was her weapon's level: the export has none, the importer assumes 90
+(skill level 9 needs only the last breakthrough, at 80), and level 80's
+ATK is ×0.93696. A scan of every operator for one factor on most of its
+hits found more: 458b's Karin (weapon 80, ×0.9394), 458b's Si (×0.9648:
+two attribute nodes of four), 04d4's Purrchena (weapon 84). The log check
+now reports such offsets with the build inputs that give them
+(`buildOffsets`: weapon level, attribute nodes), and those four fixtures
+carry the inputs, each with a note. Plain: 458b 445 → 895 (mismatches
+560 → 27, the rest Combustion ticks), d774 233 → 278 (Liino +28.5 →
++20.4%), 04d4 0 → 160. Unexplained offsets left: 4bfc's Arclight ×0.88,
+04d4's Snowshine ×0.96, 99fb's Mi Fu ×1.11 and Ember ×1.04 (also 2fd9),
+92b4's Liino ×1.031 (6 hits).
+
 bdf2's Si −11.1% is one hit: her combo finisher at 13143 ms, ×1.456 the
 engine's (count 2 + P5 = 3), the ten slashes before it under the same
 buffs and Corrosion exact. The log needs a count of about 6; none fits
