@@ -539,7 +539,7 @@ the duplicate accessory is real (two identical Slabs in the raw log). It
 was her weapon's level: the export has none, the importer assumes 90
 (skill level 9 needs only the last breakthrough, at 80), and level 80's
 ATK is ×0.93696. A scan of every operator for one factor on most of its
-hits found more: 458b's Karin (weapon 80, ×0.9394), 458b's Si (×0.9648:
+hits found more: 458b's Akekuri (weapon 80, ×0.9394), 458b's Si (×0.9648:
 two attribute nodes of four), 04d4's Purrchena (weapon 84). The log check
 now reports such offsets with the build inputs that give them
 (`buildOffsets`: weapon level, attribute nodes), and those four fixtures

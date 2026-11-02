@@ -18,7 +18,7 @@
    "Enemy level 90 from the stage's DungeonTable entry (indie_battletower015_ex).",
    "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
    "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh).",
-   "Karin's weapon at level 80, not the assumed 90 (2026-11-01): her basic attacks, battle skill and burst are ×0.9393–0.9406 the level-90 reading, level 80's ATK ratio ×0.9394; skill level 9 needs the last breakthrough, which comes at 80. The export has no weapon level.",
+   "Akekuri's weapon (chr_0019_karin) at level 80, not the assumed 90 (2026-11-01): Akekuri's basic attacks, battle skill and burst are ×0.9393–0.9406 the level-90 reading, level 80's ATK ratio ×0.9394; skill level 9 needs the last breakthrough, which comes at 80. The export has no weapon level.",
    "Si with 2 attribute nodes, not every one her promotion allows (2026-11-01): 89% of her 266 non-crit hits are ×0.9648 the four-node reading, two nodes' ATK ×0.9649 (log check: build offset). The export has no attribute nodes."
   ]
  },

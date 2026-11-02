@@ -122,7 +122,7 @@ Status: `supported` / `gap` / `data` / `unique?` / `unknown`.
 **1. Hitless skills (ultimate with no damage).**
 - family: skills (hitless skills).
 - feature: a kit skill may have no hits (`hits` minItems 0) and still apply kit buffs, energy blocks and state at given frames: `skill.buffs: [{buff, frame}]`. Twilight is applied at frame 0 of the cast.
-- evidence: `chr_0016_laevat_ultimate_skill` has no DamageAction, LaunchProjectile or SpawnAbilityEntity; its buffs (show_weapon, ult_end, ring_start_asset) deal no damage. zmdlogs-40d9a3c1da37 has no `chr_0016_laevat_ultimate_skill` event although her enhanced attacks start at 6657 ms (the cast was before, inside the log; first logged hit 5493 ms). Shared: Seraph, Karin and Antal ultimates also have no DamageAction (and kit-abstractions lists Si's strokes, Liino's End Stance).
+- evidence: `chr_0016_laevat_ultimate_skill` has no DamageAction, LaunchProjectile or SpawnAbilityEntity; its buffs (show_weapon, ult_end, ring_start_asset) deal no damage. zmdlogs-40d9a3c1da37 has no `chr_0016_laevat_ultimate_skill` event although her enhanced attacks start at 6657 ms (the cast was before, inside the log; first logged hit 5493 ms). Shared: Xaihi (chr_0011_seraph), Akekuri (chr_0019_karin) and Antal ultimates also have no DamageAction (and kit-abstractions lists Si's strokes, Liino's End Stance).
 - impact: a phantom 6.08 × ATK ultimate-type hit (skill 12) per ultimate, roughly 4–5% of a Twilight window's damage with Forgeborn, more without.
 
 **2. Pausing and extending a buff's remaining time.**

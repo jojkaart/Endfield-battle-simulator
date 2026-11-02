@@ -11,7 +11,7 @@ Goal: Liino's 100 mismatches in d774, all ×0.937. Not her kit or stats
 (her Amp confirms her Will, the raw log her gear): her weapon was level
 80, which the importer can't know (it assumes 90; skill level 9 needs
 only the last breakthrough, at 80). A scan for operators with one factor
-on most hits found Karin (weapon 80) and Si (2 attribute nodes) in 458b,
+on most hits found Akekuri (weapon 80) and Si (2 attribute nodes) in 458b,
 and Purrchena (weapon 84) in 04d4. The check now reports such offsets
 with the inputs that explain them (`buildOffsets`), and those fixtures
 carry the inputs with notes. 458b plain 445 → 895, mismatches 560 → 27;

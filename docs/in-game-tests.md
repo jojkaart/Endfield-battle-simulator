@@ -1246,7 +1246,7 @@ at once. Time how long the Electrification icon stays after the combo:
 **Why:** her finisher's data forces a Knock Down when she's controlled
 (her report, row 7), but the action carries the flag for a dying target
 (deadOption 2), which elsewhere marks a death launch or knock-back
-(Karin's battle skill in batch 2, Chen's second Lift). The SkillData
+(Akekuri's battle skill (chr_0019_karin) in batch 2, Chen's second Lift). The SkillData
 compiler follows that reading (batch 3, D2), so the engine gives her
 finisher no Knock Down on an enemy that survives. If the game does knock
 it down, each of her finishers adds a Knock Down damage hit and a

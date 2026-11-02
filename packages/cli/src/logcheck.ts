@@ -1020,7 +1020,7 @@ const OFFSET_MIN = 0.01;
 /**
  * Operators whose logged hits are all off by one factor against the engine's readings: a build input the export
  * doesn't give, with those that would give it: the weapon's level (assumed 90: skill level 9 needs only the last
- * breakthrough, at 80; d774d0ce7bd3's Liino ×0.9370 = level 80's ATK, 458b03609665's Karin ×0.9394), the attribute
+ * breakthrough, at 80; d774d0ce7bd3's Liino ×0.9370 = level 80's ATK, 458b03609665's Akekuri ×0.9394), the attribute
  * nodes (every one the promotion allows is assumed; 458b03609665's Si ×0.9648 = two of four).
  */
 export function buildOffsets(data: GameData, fx: LogFixture, byHit: EngineHits): BuildOffset[] {
