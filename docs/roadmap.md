@@ -14,7 +14,7 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
    pace) are done, and B3 / B5 / B7 as far as the data and logs go; B2
    (SP stop) and B4 (Solidification) wait on in-game tests 102 and 71;
    next the favourites' kit leads (B8: the build offsets the log check
-   reports without an explanation (4bfc's Arclight ×0.88, 99fb's Mi Fu
+   reports without an explanation (04d4's Snowshine ×0.96, 99fb's Mi Fu
    ×1.11, 92b4's Liino ×1.031), 458b's Combustion ticks; Zhuang Fangyi's Sunderblade count above the log's
    (d774: 8 strikes where the log has 3); Si's build in 9555 (every hit
    ×0.89–0.94: ATK); logged presses with no damage of their own while the enemy is

@@ -20,6 +20,9 @@ d774 +45 plain; 04d4 0 → 160. Unexplained offsets are listed as leads.
 test 77 (two ticks of one burn ×1.3 apart, Stagger only, despite new ATK
 buffs: the ATK snapshot holds), and show a step up after a later Heat hit
 (a refreshed snapshot?), a lead.
+Then (2026-11-03) the offset search tries a lower weapon level and fewer
+attribute nodes together when neither alone fits: 4bfc's Arclight is
+both (plain 400 → 558).
 
 ## 2026-10-30/31: A kill's span on both sides; bosses and freezes
 

@@ -17,7 +17,8 @@
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
    "Enemy level 90 from the stage's DungeonTable entry (indie_battletower015_ex).",
    "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh).",
+   "Arclight (chr_0007_ikut) with the weapon at level 80 and no attribute node, not the assumed 90 and every node (2026-11-03): 83% of Arclight's 170 non-crit hits are ×0.8815 the assumed build's reading, and that pair alone gives it (×0.8813; log check: build offset). The export has neither."
   ]
  },
  "enemy": {
@@ -140,7 +141,7 @@
    },
    "weapon": {
     "id": "wpn_sword_0012",
-    "level": 90,
+    "level": 80,
     "skillLevels": [
      4,
      5,
@@ -180,7 +181,8 @@
       0
      ]
     }
-   ]
+   ],
+   "attributeNodes": 0
   },
   {
    "operator": "chr_0035_liino",

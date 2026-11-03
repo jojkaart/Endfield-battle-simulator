@@ -545,7 +545,9 @@ now reports such offsets with the build inputs that give them
 (`buildOffsets`: weapon level, attribute nodes), and those four fixtures
 carry the inputs, each with a note. Plain: 458b 445 → 895 (mismatches
 560 → 27, the rest Combustion ticks), d774 233 → 278 (Liino +28.5 →
-+20.4%), 04d4 0 → 160. Unexplained offsets left: 4bfc's Arclight ×0.88,
++20.4%), 04d4 0 → 160. Then pairs (2026-11-03): 4bfc's Arclight ×0.8815 is the
+weapon at 80 and no attribute node together (×0.8813, the only pair);
+4bfc plain 400 → 558, mismatches 286 → 115. Unexplained offsets left:
 04d4's Snowshine ×0.96, 99fb's Mi Fu ×1.11 and Ember ×1.04 (also 2fd9),
 92b4's Liino ×1.031 (6 hits).
 

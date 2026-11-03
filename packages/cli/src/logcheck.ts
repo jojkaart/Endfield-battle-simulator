@@ -1042,20 +1042,32 @@ export function buildOffsets(data: GameData, fx: LogFixture, byHit: EngineHits):
     if (ratio < 1) {
       const full = computeStats(data, b).atk.total;
       const fits = (x: Build) => Math.abs(computeStats(data, x).atk.total / full / ratio - 1) <= OFFSET_SPREAD / 3;
-      const weapon = b.weapon;
-      if (weapon) for (let level = weapon.level - 1; level >= 1; level--) if (data.weapons[weapon.id]?.baseAtk[level - 1] !== undefined && fits({ ...b, weapon: { ...weapon, level } })) explained.push(`the weapon at level ${level}`);
-      // Attribute nodes: fewer than every one the promotion allows (the build's default).
-      for (let n = 0; ; n++) {
-        let x: Build;
+      // Attribute nodes: the build's (every one the promotion allows by default), then fewer.
+      const nodeCounts: (number | undefined)[] = [b.attributeNodes];
+      for (let n = 0; n < (b.attributeNodes ?? Infinity); n++) {
         try {
-          x = { ...b, attributeNodes: n };
-          computeStats(data, x);
+          computeStats(data, { ...b, attributeNodes: n });
         } catch {
           break;
         }
-        if (n >= (b.attributeNodes ?? Infinity)) break;
-        if (fits(x) && computeStats(data, x).atk.total < full) explained.push(`${n} attribute node(s)`);
+        if (computeStats(data, { ...b, attributeNodes: n }).atk.total < full) nodeCounts.push(n);
       }
+      const weapon = b.weapon;
+      const levels = weapon ? [weapon.level, ...Array.from({ length: weapon.level - 1 }, (_, i) => weapon.level - 1 - i).filter((l) => data.weapons[weapon.id]?.baseAtk[l - 1] !== undefined)] : [];
+      // One input first (a lower weapon level, or fewer nodes), both only when neither alone fits (4bfc6f3e84b8's
+      // Arclight ×0.8815: no node and the weapon at 80, Arclight at 80 too).
+      const single: string[] = [];
+      const pairs: string[] = [];
+      for (const n of nodeCounts) {
+        for (const level of weapon ? levels : [0]) {
+          if (n === b.attributeNodes && (!weapon || level === weapon.level)) continue;
+          const x: Build = { ...b, ...(n !== undefined ? { attributeNodes: n } : {}), ...(weapon ? { weapon: { ...weapon, level } } : {}) };
+          if (!fits(x)) continue;
+          const parts = [...(weapon && level !== weapon.level ? [`the weapon at level ${level}`] : []), ...(n !== b.attributeNodes ? [`${n} attribute node(s)`] : [])];
+          (parts.length === 1 ? single : pairs).push(parts.join(" and "));
+        }
+      }
+      explained.push(...(single.length ? single : pairs));
     }
     out.push({ operator: b.operator, ratio, share, hits: ratios.length, explained });
   }
