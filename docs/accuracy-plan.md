@@ -551,6 +551,15 @@ weapon at 80 and no attribute node together (×0.8813, the only pair);
 04d4's Snowshine ×0.96, 99fb's Mi Fu ×1.11 and Ember ×1.04 (also 2fd9),
 92b4's Liino ×1.031 (6 hits).
 
+Duplicate accessories (2026-11-03). Three of the unexplained offsets are
+builds the export lists with one accessory twice (two slots, identical
+lines): 9555's Si (her hits split ×0.94 / ×1.05), 04d4's Snowshine
+(×0.96), 92b4's Liino. Counted once, Si's and Snowshine's hits turn
+uniform but stay off (×0.991, ×0.987): between the two builds, as if the
+second slot held another item with fewer of those lines. d774's Liino
+wears one too, and there it is real: her Cosmovoice Amp (0.0004 × Will)
+needs the duplicate's Will exactly. Open: the export can't say which.
+
 458b's Combustion ticks (2026-11-01; 25 of its 27 mismatches). Two
 ticks of one burn (82333 / 85696 ms, no Heat reaction between) are ×1.3
 apart, the Stagger alone, though the second also lists new ATK buffs on

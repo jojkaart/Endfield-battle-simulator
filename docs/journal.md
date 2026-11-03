@@ -22,7 +22,8 @@ buffs: the ATK snapshot holds), and show a step up after a later Heat hit
 (a refreshed snapshot?), a lead.
 Then (2026-11-03) the offset search tries a lower weapon level and fewer
 attribute nodes together when neither alone fits: 4bfc's Arclight is
-both (plain 400 → 558).
+both (plain 400 → 558). Dead end: the builds with a duplicate accessory
+(9555's Si, 04d4's Snowshine) fit neither with nor without it.
 
 ## 2026-10-30/31: A kill's span on both sides; bosses and freezes
 
