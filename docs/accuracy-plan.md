@@ -559,6 +559,12 @@ uniform but stay off (×0.991, ×0.987): between the two builds, as if the
 second slot held another item with fewer of those lines. d774's Liino
 wears one too, and there it is real: her Cosmovoice Amp (0.0004 × Will)
 needs the duplicate's Will exactly. Open: the export can't say which.
+Also open: Ember (chr_0009_azrila) is low in every log, uniformly per
+build: ×1.044 in 99fb and 2fd9 (one build), ×1.023 in 04d4 (another
+weapon, no set in common): her kit or stats, not a build input. And the
+Si boss (eny_0134_jsspsi, bar 400 as the log has it) Staggers 5 s late
+in 3aa6 (150.9 against 145.6 s): a small Stagger shortfall over 145 s
+(B1).
 
 458b's Combustion ticks (2026-11-01; 25 of its 27 mismatches). Two
 ticks of one burn (82333 / 85696 ms, no Heat reaction between) are ×1.3
