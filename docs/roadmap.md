@@ -28,7 +28,8 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
    boss's ×0.1 until its Stagger in c6d8), then B6 (Si's battle-skill entity and Arcane's and
    Pogranichnik's ultimates ignore others' time stops: small), B9, B10.
 1. **The tool's purpose: team rotations for the owner's favourites**
-   (Typhoeus, Arcane, Si, Gilberta, Liino, Estella, Laevatain; 6-stars P0,
+   (Typhoeus, Arcane, Si, Gilberta, Liino, Estella, Laevatain, Rossi
+   (the owner, 2026-11-08); 6-stars P0,
    4- and 5-stars P5 unless the owner's account says otherwise; no swaps by
    default, the owner's call 2026-10-25). The search's beams still disagree
    by 4–14%: a score closer to the final damage (a cheap rollout, or a value

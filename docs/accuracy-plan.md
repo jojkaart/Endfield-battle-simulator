@@ -585,6 +585,42 @@ it. Open.
 the Endministrator's Crush and ultimate landings unmatched to the log's
 (+46%).
 
+## Choosing logs (agreed with the owner, 2026-11-08)
+
+More logs come from ZMDLogs, chosen so their builds need no guessing:
+the export never gives a weapon's level, attribute nodes, talents or
+promotion. 50 loadouts may be screened (authorized 2026-11-08).
+
+- **Required:** every operator level 90 (so promotion 4); parser v59 or
+  later (the 1.6 tables); one main target; a kit for every operator.
+- **Not filtered:** weapon skill levels (sub-max ones are wanted as test
+  cases), gear artifice (Arcane's INT / WILL builds keep a weapon skill
+  or gear lines low on purpose), two copies of one kit (common and often
+  best; d774 shows the game counts both).
+- **The weapon's level:** its breakthrough stage bounds its skill
+  levels (WeaponBreakThroughTemplateTable: skill 1 or 2 at 9 needs stage
+  4, level 80–90; skill 1 at 6 allows level 40–90). Prefer builds whose
+  skills pin the stage; sub-max cases from logs best with another skill
+  at 9 (Liino [9, 5, 4]). Fixtures note the allowed range; the offset
+  search stays within it. Weapon potential (duplicates) only raises the
+  unique third skill (+1 per level, WeaponTalentTemplateTable); whether
+  the export's skill level includes it (`weaponRefine`,
+  `potentialLevel`) is decoded from the loadouts first.
+- **Preferred:** at least 3 logs per favourite (Typhoeus, Arcane, Si,
+  Gilberta, Liino, Estella, Laevatain, Rossi), Arcane 2 each in INT and
+  WILL; some bosses no log covers yet, none with a phase known to be
+  unmodelled; 30–150 s; at most two logs per account.
+- **Screening:** in stages, cheapest first (the lists give boss, date
+  and duration; then the 64 KB export's loadout; then the full detail),
+  3 s or more between requests. IDs, accounts and screening notes stay
+  in the session's scratch folder, never in the repository.
+- **After import:** a third of the new logs are a hold-out, only ever
+  measured (before any change and after each round), never debugged:
+  their errors are the honest accuracy. Every new log's first check is
+  recorded before any fix. An operator with a build offset sends us to
+  another log first; a log is corrected only when no cleaner one exists,
+  with the evidence in its notes.
+
 ## Phase C: questions for the owner (they decide what to model)
 
 - **Do teammates act on their own?** Answered (the owner, 2026-10-26):
