@@ -242,3 +242,12 @@ The owner's call (2026-10-25): one use per cast for the whole team; the
 kit's `mirage` now ends the perfusion for everyone. The engine's Mirage
 counts in these logs didn't move (b6aa 1 pair, c3c7 5, 9555 none): the
 gaps are casts and Final Strikes the replay misses, still open.
+
+## Screened batch, 2026-11-08
+
+Chosen by the rules in docs/accuracy-plan.md ("Choosing logs"): every
+operator level 90, parser v59, one main target. `zmdlogs-0ddbbdca1db5`,
+`-0dfc9d76c84d`, `-262b2c8c20c8`, `-489c0be3e162`, `-7b54dc249bcd`,
+`-a27bc3527682`. A hold-out third of this batch (and the next) is drawn
+before anyone reads their checks; until then their snapshot entries are
+recorded, not studied.

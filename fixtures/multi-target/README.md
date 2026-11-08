@@ -18,3 +18,12 @@ doesn't run these. They're kept for developing multi-target support.
 | `zmdlogs-146d5ae8c480.json` | — (2026-10-06, v58, 247 s) | eny_0120_klbear (585), eny_0117_klhound_klbearsummon (14) | Ember, Snowshine, Purrchena, Catcher |
 | `zmdlogs-3440cf450fea.json` | — (2026-10-01, v57, 101 s) | eny_0093_hshog_tower011 (188), eny_0047_firebat_tower011 (174), eny_0023_aghornb_tower011 (111) | Camille, Laevatain, Wulfgard, Antal |
 | `zmdlogs-82735c6db6fc.json` | Beast File: Qingbo Stockade - Brutal (2026-10-21, v59, 149 s) | eny_0070_agscorp2 (233), eny_0093_hshog (231), eny_0055_hscrane (144) | Endministrator, Chen Qianyu, Lifeng, Pogranichnik |
+| `zmdlogs-0b4a7de6660a.json` | indie_hard010_s (2026-10-27, v59, 44 s) | eny_0087_wgslime_hdg010 (306), eny_0105_wgslime2_hdg010 (230) | Typhoeus, Arcane, Si, Liino |
+| `zmdlogs-4f7eb04ec5b5.json` | indie_battletower012_ex (2026-10-29, v59, 100 s) | eny_0071_sandb (461), eny_0101_agfly2 (178), eny_0021_agmelee (178), eny_0063_agmelee2 (91) | Si, Arcane, Rossi, Gilberta |
+| `zmdlogs-69e75ed40a8c.json` | indie_battletower003_ex (2026-10-30, v59, 115 s) | eny_0033_lbhunt_hdg005 (882), eny_0095_ethillu_race003 (186) | Arcane, Alesh, Si, Estella |
+| `zmdlogs-7b4e79852515.json` | indie_battletower012_ex (2026-10-28, v59, 35 s) | eny_0071_sandb (142), eny_0101_agfly2 (115), eny_0063_agmelee2 (77), eny_0021_agmelee (52) | Typhoeus, Arcane, Si, Liino |
+| `zmdlogs-8318e149e80f.json` | indie_hard032_s (2026-10-23, v59, 35 s) | eny_0127_bigents_hdg032 (229), eny_0127_bigents (1) | Typhoeus, Arcane, Si, Liino |
+| `zmdlogs-b74c8f31a39f.json` | indie_battletower012_ex (2026-10-29, v59, 91 s) | eny_0063_agmelee2 (308), eny_0071_sandb (227), eny_0021_agmelee (179), eny_0101_agfly2 (164) | Si, Rossi, Gilberta, Arcane |
+| `zmdlogs-c516ec177a9d.json` | indie_battletower003_ex (2026-10-29, v59, 95 s) | eny_0033_lbhunt_hdg005 (796), eny_0095_ethillu_race003 (232) | Si, Rossi, Gilberta, Arcane |
+
+Imported 2026-11-08 in the screened batch (docs/accuracy-plan.md, "Choosing logs"); the export doesn't show the target count, so these were caught only on import. `zmdlogs-8318e149e80f.json` is single-target in all but one stray hit on the boss's template ID (eny_0127_bigents for eny_0127_bigents_hdg032).
