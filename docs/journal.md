@@ -5,6 +5,19 @@ their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 Older entries (2026-10-21 and earlier): [journal-archive.md](journal-archive.md).
 
+## 2026-11-08 / 09: New logs chosen by rule, with a hold-out
+
+Goal (the owner): pick logs whose builds need no guessing, rather than
+fit inputs to logs. Agreed rules in the accuracy plan ("Choosing logs").
+Screened 80 loadouts (export endpoint, 3 s apart) from the favourites'
+profile lists: level 90 everywhere, parser v59, single-target stages,
+favourites spread (Rossi added to them). 17 single-target logs imported;
+9 turned out multi-target (not visible before import); Tower 1 refused
+(a stage buff's zone). A third of the 17 is a hold-out, drawn by fixed
+seed before any check was read: measured only, never debugged. Decoded
+along the way: `weaponRefine` = weapon potential + 1, and the logged
+unique-skill level includes it, so the engine was already right there.
+
 ## 2026-11-01: Build inputs the export doesn't give
 
 Goal: Liino's 100 mismatches in d774, all ×0.937. Not her kit or stats

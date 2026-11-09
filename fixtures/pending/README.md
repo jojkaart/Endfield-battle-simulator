@@ -251,3 +251,10 @@ operator level 90, parser v59, one main target. `zmdlogs-0ddbbdca1db5`,
 `-a27bc3527682`. A hold-out third of this batch (and the next) is drawn
 before anyone reads their checks; until then their snapshot entries are
 recorded, not studied.
+
+Second screened batch, 2026-11-09: `zmdlogs-1cd1657bc305`,
+`-1d9198480e75`, `-3f78ceb15bc3`, `-4a64e58e75ad`, `-549fa3672278`,
+`-63398339803e`, `-7bbc94d2da9f`, `-7be1ca9f455b`, `-9a8097fcf351`,
+`-db8711232de9`, `-e9896c8d02be`. The hold-out (6 of the 17, drawn
+before their checks were read) is in `holdout.json`: those are only
+measured, never debugged.

@@ -621,6 +621,19 @@ promotion. 50 loadouts may be screened (authorized 2026-11-08).
   another log first; a log is corrected only when no cleaner one exists,
   with the evidence in its notes.
 
+Done 2026-11-08 / 09: 80 loadouts screened in two rounds, 29 imported:
+17 single-target (fixtures/pending), 9 multi-target (the export doesn't
+show it: Towers 3 and 12, Hard 10 and 32 have more than one enemy), 2
+refused (Tower 1's stage buff, a zone the importer doesn't know), 1 more
+multi-target on retry. Hold-out: 6 of the 17 (fixtures/pending/
+holdout.json, drawn by a fixed seed before any check was read). What the
+loadouts showed: `weaponRefine` is the weapon's potential + 1, and the
+unique skill's logged level already includes it (refinement 6: 9);
+`potentialLevel` on weapon skills is the operator's potential copied.
+Estella has only 2 logs (no more candidates in her profile). Single-
+target stages so far: Towers 15, 16, 19; Hard 2, 15, 27, 33; the Rhodagn
+rush and dungeon 2's rushes 3 and 4.
+
 ## Phase C: questions for the owner (they decide what to model)
 
 - **Do teammates act on their own?** Answered (the owner, 2026-10-26):
