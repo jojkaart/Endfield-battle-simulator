@@ -36,27 +36,30 @@ ramp gives the ×1.09 on fire. Rossi's ×1.33 after 24.97 s is crit-only
 **Still possible:**
 - Gilberta's susceptibility (found: buff_common_affixes_vulnerable_spell,
   rate 0.30 × (1 + 0.10 × n), n the enemy's Vulnerable stacks): the
-  engine's n is 3 at her ultimate (32.51 s), the log's 0.42 means 4. A 4th
-  stack from Rossi's combo_3 "perfect" hit (Vulnerable +1 on a consumed
-  infliction; the replay never applies it: the log's combo_2 hit at
-  32.49 s is ×1.375 the replay's, maybe that variant), or a stack expiry
-  the replay times differently (its 3 expire at 32.44 s, shifted by time
-  stops); the replay's Vulnerable count reads 3 then 2 in one frame at
-  31.60 s (a stale snapshot or a bug). This is ×1.022; ×1.067 remains.
-- Rossi's crit DMG 2.0 against the replay's 1.5 at 22–25 s: an unknown
-  +0.5 (source not found).
-- Wolven Blood layers: the replay 16, the log 15 (under 1%).
-- In 2fd9 / 99fb: the log's Electrification (damage taken 0.24 on fire)
-  missing from the replay at the ultimate; the shared ×1.044 of Hard 27
-  (below); the suit ATK buff the log never lists there.
-- Her weapon's unique skill: the two mismatching fixtures have weapon
-  skills [9, 9, 9], the matching 4e5e and 489c [9, 9, 4] (4a64's [9, 9, 8]
-  matches only on log-listing fallbacks, weak evidence).
-- The other 29 foods (not scanned for Rossi).
+  engine's n is 3 at her ultimate (landing frame 975), the log's 0.42
+  means 4 (×1.022 of the ×1.09; ×1.067 remains). Round 4: the 4th stack is
+  Rossi's Lift; two misses, either enough: (a) her combo is placed at
+  frame 948 where the log implies ~946, so its Lift (frame 977) lands
+  after Gilberta's ultimate; (b) at 7.807 s the log has a Lift and her
+  combo consumed 1 infliction (48646 / 30023), the replay none (no enemy
+  Arts Infliction from 2.04 to 9.46 s: Arcane's touch is element "enemy",
+  a no-op without one). Her 32.489 s combo hit is the perfect-timing
+  variant, consumed 2 in the log, 1 in the replay. Ruled out: the perfect
+  hit's own Vulnerable rule (perfect and late predict the same there);
+  a stack expiry (none before 34.9 s; the "3 then 2" at 31.60 s is a stale
+  snapshot of Gilberta's combo's pre-state).
+- Rossi's crit DMG at 22–25 s (found: buff_chr_0028_wulfa_combo_criticalrate,
+  combo_3, crit_damage_increase_rate 0.5, 15 s): the replay's ends at
+  21.8–22.1 s, the log's zone is still 2.0 at 22.13–24.97 s and 1.5 at
+  25.37 s: the game's window ~3 s longer. Ruled out: other Crit DMG
+  sources (no food, gear set or weapon line gives it; the ultimate's crit
+  buff is 5 s). Still possible: time the replay's slow-downs don't add to
+  the buff (the ComboSkill curve is hand-approximated); the second
+  CreateBuff's timing (a refresh).
 
-**Next check:** Rossi's combo_3 perfect-hit Vulnerable in the kit; the
-replay's Vulnerable stack count around 31.6–32.5 s; her crit DMG at
-22–25 s.
+**Next check:** the enemy's inflictions at 2–9.5 s in 9a80 (the source
+of the 7.8 s one); the reaction-level fix (round 4) may change the
+consumed counts; the combo crit buff's clock through slow-downs.
 
 ## Hard 27: every physical hit ×1.1125 low (2fd9, 99fb)
 
