@@ -297,14 +297,24 @@ Corrosion levels (the log's now).
 - The replay's inflictions themselves (casts whose hits the log doesn't
   show, same-frame order across operators) still differ from the game's;
   only the reaction levels are taken from the log.
-- 3f78's second window at level 2 still ×1.079–1.158 (54–61.5 s): the log
-  lists Arcane's Will DMG and Will ATK (funnel_0016, 0.096 each) more
-  often than the engine has them.
+- 3f78's second window, ×1.079 (54–61.6 s): found (round 5): one Will
+  ATK instance (funnel_0016 will_atk, made by Arcane's bursts, ~24 s)
+  the replay lacks on all 101 hits: its only Arcane burst is at ~20.7 s;
+  the log's second, buff_common_cryst_cryst_triggered at 47230 ms
+  (credited to her), isn't replayed; its source perhaps her touch's
+  element (entry above). The ×1.158 hits: an extra 0.192 that isn't Will
+  (candidates: log-only entries in Rossi's window, wpn_sword_0022.final
+  0.384, wpn_funnel_0005.atk_up 0.224, suit_usp02.team_dmg 0.16).
+  Elsewhere the Will buffs' counts agree (0eef, bdf2, dbae, 4a64, e82d;
+  b7b3 has 63 hits with a will_atk the log doesn't list; d9e5 12 the
+  other way).
 - The first windows (4a64 6.3–18.8 s, 3f78 3–15 s) are still "no level
   fits" in the check (nearest ×1.012–1.014, ×0.987 at 15–17 s in 4a64),
   though their level (1) is the replay's and the round-4 hand fit is
   1.000: the check's reading differs from that fit somewhere.
-- ×1.5 on hits at a reaction's own millisecond (1.5001 in 3f78 and 4a64).
+- ×1.5 on hits at a reaction's own millisecond: found and fixed (round
+  5): Hot Work's Nature DMG on the hit that forms the Corrosion. 4a64 at
+  52982 ms is ×1.39, not 1.5: open.
 - Rossi's combo_2 ×0.94 in 3f78's second window.
 - Si's ultimate and Fixed DMG, Rossi's and Si's ultimate hits (×1.4 to
   ×36): not Corrosion. Si's Inksoul burst (Fixed DMG from the fight's hit
