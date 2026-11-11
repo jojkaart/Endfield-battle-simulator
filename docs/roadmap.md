@@ -13,9 +13,14 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
    and B0 (teammates' own basic attacks, in-game test 101 to confirm the
    pace) are done, and B3 / B5 / B7 as far as the data and logs go; B2
    (SP stop) and B4 (Solidification) wait on in-game tests 102 and 71;
-   next the favourites' kit leads (B8: the build offsets the log check
-   reports without an explanation (04d4's Snowshine ×0.96, 99fb's Mi Fu
-   ×1.11, 92b4's Liino ×1.031), 458b's Combustion ticks; Zhuang Fangyi's Sunderblade count above the log's
+   next the screened logs' leads (accuracy plan, "The screened logs",
+   item 10: Rossi's ultimate ×1.09 in 9a80 and 2fd9, Mi Fu ×1.11 in Hard
+   27, Si's hitless Initial Stroke in 3f78, db87's Arcane ATK, the
+   eny_0134 logs' food in 0c14 and de6a), diagnosed in parallel (small
+   models first, the owner's call 2026-11-11); then the favourites' kit
+   leads (B8: the build offsets the log check
+   reports without an explanation (04d4's Snowshine ×0.96,
+   92b4's Liino ×1.031), 458b's Combustion ticks; Zhuang Fangyi's Sunderblade count above the log's
    (d774: 8 strikes where the log has 3); Si's build in 9555 (every hit
    ×0.89–0.94: ATK); logged presses with no damage of their own while the enemy is
    there: Zhuang Fangyi's, Arcane's combo and Si's in 4bfc, 3aa6, 0c14),

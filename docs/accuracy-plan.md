@@ -664,6 +664,8 @@ log-verdicts-pending.json and fixtures/pending/holdout.json.
    reaction; the replay deals all four (68 where the game took 34). The
    engine's Stagger from a hit and from the Lift or reaction it causes is
    one event in game: a lead (B1).
+2. **e989 (bossrush04) low for everyone**, constant per operator: an
+   unlisted food (item 7 below).
 3. **Lift and Knock Down deal no Stagger of their own.** Over 40 logs the
    log lists one Stagger event shared by the hit and the Lift or Knock
    Down it applies, its value the hit's: 155 of 156 Lifts, 69 of 69
@@ -673,12 +675,50 @@ log-verdicts-pending.json and fixtures/pending/holdout.json.
    hits +154 → +8%; plain 7175 → 7191. Measured: development plain 25.2 →
    25.5%, hold-out 49.3% (unchanged). Open: the one exception, 4e5e at
    12219 ms, Estella's Lift listing 10 apart from her ultimate's 24.
-2. **e989 (bossrush04) low for everyone**, constant per operator through
-   the fight: Camille ×1.246, Arcane ×1.199, Si ×1.09, Laevatain ×1.06.
-   The log's listed modifiers, gear lines (raw values) and stage tags
-   (none) all match; no food, no unlogged team buff of one value (ATK%,
-   flat ATK and attributes all give different amounts). Open; 0c14 on the
-   same stage is low too, 3aa6 and d774 aren't.
+4. **Diagnosis in parallel** (the owner, 2026-11-11): small models
+   diagnose one log each, a larger one what they can't; fixes are made and
+   verified here. Their reports are leads, checked before use.
+5. **The totals' window edge.** a27b's killing Crush landed 65 ms after
+   the log's last hit and was dropped: a logged hit's landing now counts
+   wherever the replay puts it, other landings to the log's end, and a
+   kill's last hits are capped at the log's value. a27b −14.1 → −7.1%.
+6. **Unjudged buffs of an operator the log lists none of.** 1d91 never
+   lists Liino's buffs (stance, lance ATK layers, which go to her heals'
+   targets, so the replay can't judge them and took them from the log:
+   none). Such an operator's buffs stay the engine's. 1d91 plain 33 →
+   251, total −8.4 → +4.0% (Liino's presses aside, every operator within
+   3%).
+7. **Food the eny_0134 logs don't list.** No log of this boss lists a
+   food buff (the Rodin logs do: 40d9, b7b3). Hits fit (1 + p + f) /
+   (1 + p) exactly, p the panel ATK%: Bottled Duskberry Juice (0.2935) in
+   3f78 and 4a64, Jakub's Legacy (0.27) in e989. Annotated as builds'
+   `food`, evidence in the notes (as 7e19's stew). e989 plain 0 → 179;
+   3f78, 4a64 −46 → −36.5% (left: Corrosion-routed hits, Rossi). Si in
+   e989 fits 0 attribute nodes (×0.940): left as is, the log to replace.
+8. **Mi Fu's World Splitter is Crush DMG** (in-game test 91 answered):
+   Crush's level coefficient and Arts Intensity apply (`KitHit.status`).
+   a27b's hit exact (×3.22 low before), four of d5720's five; Mi Fu's
+   totals a27b −11 → +1%, d5720 −37 → −11%, de6a −25 → −6%. Open: ×1.11
+   more in Hard 27 (2fd9, 99fb, Mi Fu P5).
+9. **An operator's own ultimate stop isn't held by a combo's slow-down.**
+   9a80: Si's combo slow-down inside Rossi's stop held her crit buff
+   (frame 58) to after her first stabs, which crit at ×2.9 with it. Plain
+   +11 (hold-out +4), but some totals rise (hold-out mean |damage error|
+   19.7 → 20.3%). Rossi's ultimate hits are still ×1.090 low in 9a80
+   (2fd9: ×1.081), on crits and non-crits alike: open.
+10. **Leads not yet acted on.** Hard 33 (7b54, 6339): the Woodcraft
+   Slug's number shield (buff_eny_0129_slwood_numshield_hdg033, not in our
+   checkout) goes with debuffs the engine keeps but the damage shows off
+   (Jade Vessel's 0.12, Arcane's stacks, the affixes): a boss phase the
+   engine doesn't model; such logs are to be avoided (Choosing logs).
+   3f78: Si's Initial Stroke press without hits isn't made, so her
+   Inksoul burst takes the mark branch. db87: Arcane's ATK ×0.94 (her Will
+   term; an in-game panel read would settle it). Laevatain's enhanced
+   battle skill (`ratio`, test 20): ×0.833 in e989, ×1.083 in db87.
+   6339: a power-attack hit_2 and Combustion the log doesn't have.
+   Measured after items 5–9: development plain 25.5 → 37.9%, mismatches
+   38.2 → 25.4%, mean |damage error| 26.2 → 22.5%; hold-out plain 49.3 →
+   49.7%, mismatches 9.1 → 9.0%, mean |damage error| 19.7 → 20.3%.
 
 ## Phase C: questions for the owner (they decide what to model)
 
