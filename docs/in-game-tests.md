@@ -1939,7 +1939,9 @@ then, and the battle skill has a 3 s cooldown after it), so either players
 toggle the stance off and on (End Stance, 3 s, battle skill again), or the
 log records something else as presses (her soundwave heals come every 3 s
 too). Treating them as nothing makes the replay worse for her teammates,
-so they likely do something.
+so they likely do something. One more clue (1d91, 2026-11-11): after some
+presses come six hits at twice her volley's value, as her battle skill's
+projectiles would be, under the volley's name.
 **How:** Liino in Vocalist Stance. (a) Press the battle skill once: does
 the stance end (its icon, the music)? Does the team ATK icon stay, and for
 how long? (b) Press it again as soon as you can: does a new stance start,
