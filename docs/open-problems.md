@@ -184,29 +184,42 @@ window by window.
 
 ## 3f78 and 4a64: −36.5% after food
 
-**Shows:** most hits carry buff_common_natural_cryst_triggered, which the
-check routes to Corrosion; no Corrosion level fits ("unquantified").
+**Shows:** most hits carry buff_common_natural_cryst_triggered; the check
+routes them to Corrosion and finds "no level that fits".
 
-**Found (round 3):** buff_common_natural_cryst_triggered is of the
-Corrosion family (applyTag −421286163, Corrosion's; stacking key
-natural_triggered, 20 s, a tick each second), and its BuffData lowers
-DEF (def_decrease from 0 to −0.15, −0.01 a tick), a curve no engine
-Corrosion level (resistance shred 3.6–7.2 at start, +0.84–1.68/s, caps
-12–24) follows. Without Corrosion the hits are ×0.94–0.96 the
-prediction, roughly flat; levels 1–4 need ×1.18–1.46. "No level that
-fits" shows in every non-hold-out log with the buff (×3 to ×75).
+**Found (round 4, a sonnet pass correcting round 3's):** the buff *is*
+the engine's Corrosion (Nature onto Cryst): its modifiers are on
+attributes 94–98, resistance points for Physical, Nature, Cryst, Pulse
+and Fire (`def_decrease` is only the blackboard key; its values come from
+the wrapper's ReadSkillSettingData "腐蚀每跳减抗"). With the right level
+the engine's curve fits exactly: 4a64's first Corrosion (4517 ms, level
+1) gives 1.000 ± 1 on Si's, Arcane's and Gilberta's hits at every shred
+step from 7.8 to 23.2. The misfits are the replay's level: 4a64's second
+Corrosion (52982 ms) is level 1 in the reaction check, level 2 in the
+check's replay (hits ×0.95–0.97; at level 1 they fit); 3f78's second
+(46994 ms) the other way round.
 
-**Still possible:** a defense decrease, not a resistance shred (the
-engine's model wrong for this buff); a ~4–5% bias in the baseline these
-hits are compared with; the buff having no effect on these hits plus a
-separate ×0.95; the key naming a Nature-on-Cryst reaction with another
-effect. Also: the routing (the buff may not be Corrosion here); Si's
-Inksoul burst (Fixed DMG from the fight's hit sum) not computable; Rossi's
-Seething Blood extras after null-crit stabs (they need the stab's crit);
-Rossi's ultimate residual.
+**Ruled out:** a DEF decrease (round 3's reading: attributes 94–98 aren't
+DEF, and a full −15% gives at most ×1.081); a different status from the
+engine's Corrosion; the food running out (300 s).
 
-**Next check:** model it as its BuffData says (a DEF decrease on that
-curve) and see whether the hits fit, in 3f78 and the other logs with it.
+**Still possible:**
+- Why the check's replay gets another level than the reaction check: a
+  different Cryst stack count at the Nature hit (an infliction it lacks or
+  adds). Being fixed (round 4: the level from the logged reaction's
+  damage).
+- 3f78's second window at level 2 still ×1.079–1.158: the log lists
+  Arcane's Will DMG and Will ATK (funnel_0016, 0.096 each) more often than
+  the engine has them.
+- ×1.5 on hits at a reaction's own millisecond (1.5001 in 3f78 and 4a64).
+- Rossi's combo_2 ×0.94 in 3f78's second window.
+- Si's ultimate and Fixed DMG, Rossi's and Si's ultimate hits (×1.4 to
+  ×36): not Corrosion. Si's Inksoul burst (Fixed DMG from the fight's hit
+  sum) isn't computable; Rossi's Seething Blood extras after null-crit
+  stabs need the stab's crit.
+
+**Next check:** after the level fix, the Will buffs' instances in 3f78;
+the hits at reactions' own milliseconds.
 
 ## The slow-down rule's reach (2026-11-11)
 
