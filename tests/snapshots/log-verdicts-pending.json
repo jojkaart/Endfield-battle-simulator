@@ -42,11 +42,11 @@
   "totals": {"damage":8.1,"operator chr_0025_ardelia":4.7,"operator chr_0034_typhoea":4.8,"operator chr_0032_lizhiyan":-1.8,"operator chr_0035_liino":72.7,"kind basic":5.4,"kind battle":191.5,"kind combo":-4.8,"kind status":-19.2,"kind ultimate":0.9,"hits":26.8,"status hits":0,"staggered hits":0,"last hit":0,"crit share (points)":0.3}
  },
  "pending/zmdlogs-1d9198480e75.json": {
-  "chr_0034_typhoea": {"plain":0,"assumed":0,"fallback":9,"mismatch":217,"unvalued":0,"unquantified":1,"uncovered":0},
-  "chr_0032_lizhiyan": {"plain":0,"assumed":0,"fallback":0,"mismatch":157,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0025_ardelia": {"plain":10,"assumed":7,"fallback":0,"mismatch":113,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0034_typhoea": {"plain":162,"assumed":8,"fallback":8,"mismatch":48,"unvalued":0,"unquantified":1,"uncovered":0},
+  "chr_0032_lizhiyan": {"plain":63,"assumed":21,"fallback":0,"mismatch":73,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0025_ardelia": {"plain":3,"assumed":11,"fallback":0,"mismatch":116,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0035_liino": {"plain":23,"assumed":2,"fallback":6,"mismatch":32,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":-8.4,"operator chr_0032_lizhiyan":-15.3,"operator chr_0034_typhoea":-12.2,"operator chr_0035_liino":113.5,"operator chr_0025_ardelia":-17.9,"kind basic":-11.7,"kind battle":68.2,"kind combo":-22.5,"kind status":-12.1,"kind ultimate":2.3,"hits":18.2,"status hits":0,"staggered hits":-12.6,"last hit":0,"crit share (points)":-0.4}
+  "totals": {"damage":4,"operator chr_0032_lizhiyan":-2.6,"operator chr_0034_typhoea":0.2,"operator chr_0035_liino":113.5,"operator chr_0025_ardelia":-1.7,"kind basic":1.1,"kind battle":81.1,"kind combo":-11.8,"kind status":2.4,"kind ultimate":7.9,"hits":18.2,"status hits":0,"staggered hits":-12.6,"last hit":0,"crit share (points)":-0.4}
  },
  "pending/zmdlogs-262b2c8c20c8.json": {
   "chr_0034_typhoea": {"plain":106,"assumed":5,"fallback":5,"mismatch":11,"unvalued":0,"unquantified":7,"uncovered":0},

@@ -440,3 +440,12 @@ describe("a hitless ultimate's logged cast at its time stop's end", () => {
     expect("unknown" in l ? [] : l.modifiers.filter((m) => m.source.includes("Stack Overflow"))).toHaveLength(0);
   });
 });
+
+describe("kit buffs the replay can't judge, where the log records none of their operator's buffs", () => {
+  it("are the engine's: 1d91 never lists Liino's buffs, so her lance's ATK layers (on her heals' targets) stay in; 1cd1 lists them", () => {
+    const key = "chr_0035_liino:wpn_lance_0014.atk";
+    const unjudged = (f: string) => logBuffReplay(data, readLogFixture(new URL(`../fixtures/pending/zmdlogs-${f}.json`, import.meta.url).pathname)).replay.unjudgedKitBuffs.has(key);
+    expect(unjudged("1d9198480e75")).toBe(false);
+    expect(unjudged("1cd1657bc305")).toBe(true);
+  });
+});

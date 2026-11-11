@@ -723,9 +723,14 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     }
   }
   for (const g of undecided.keys()) decided.delete(g);
-  // Every kit buff the replay can't judge, listed or not (the log check takes those from the log: logcheck.ts).
+  // Every kit buff the replay can't judge, listed or not (the log check takes those from the log: logcheck.ts). Not an
+  // operator's whose buffs the log never lists, its weapon's and gear's included: such a log doesn't record that
+  // operator's buffs, so their absence says nothing (1d91: Liino's lance ATK layers on her heals' targets, ×1.15 on
+  // Typhoeus's hits with 4 layers, and her stance ATK, all missing from the log).
   const unjudgedKitBuffs = new Map<string, string>();
+  const allListed = new Set(fx.hits.flatMap((h) => h.effects.map((e) => e.buff)));
   for (const kit of kits) for (const def of kit.buffs) {
+    if (!kit.buffs.some((d) => d.gameBuff !== undefined && allListed.has(d.gameBuff))) continue;
     const why = undecidedBuff(kit, def.id);
     if (why) unjudgedKitBuffs.set(`${kit.operator}:${def.id}`, why);
   }
