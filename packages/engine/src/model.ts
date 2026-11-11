@@ -390,6 +390,12 @@ export interface KitHit {
   readonly factor?: number;
   /** Damage computed as an arts reaction or burst (no skill-type bonus, level coefficient, Arts Intensity), times `scale`. */
   readonly reaction?: { readonly kind: "burst" | "reaction"; readonly element: ArtsElement; readonly level?: number };
+  /**
+   * Damage computed as a physical status's hit (no skill-type bonus; that status's level coefficient and Arts
+   * Intensity; its kind for modifiers), times `scale` in place of the status's own base: a skill's "Crush DMG"
+   * (DamageAction decorate-mask bit 16384; Mi Fu's World Splitter).
+   */
+  readonly status?: "crush";
   /** Extra multipliers that apply only in a situation (e.g. Typhoeus's burst ×1.3 when the enemy has a Nature infliction as the shot lands). */
   readonly extraScale?: readonly { readonly value: ValueExpr; readonly if: Predicate }[];
   /** A multiplier computed from values (e.g. `atk_scale2 + n × atk_scale2_1`), times `scale`. */

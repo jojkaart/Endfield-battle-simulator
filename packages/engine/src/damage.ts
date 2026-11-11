@@ -344,6 +344,16 @@ function reactionScaleParts(
   ];
 }
 
+/** A physical status's hit's own multiplier parts but its base (KitHit.status): operator level, Arts Intensity. */
+function statusScaleParts(data: GameData, build: Build, panel: StatPanel, kind: "crush", options: DamageOptions): { key: string; value: number }[] {
+  const ctx: HitContext = { element: "physical", skillType: null, staggered: options.staggered, kind };
+  const ai = zoneSum(activeModifiers(data, build, panel, options), "artsIntensity", ctx);
+  return [
+    { key: "level coefficient", value: levelCoefficient(panel, kind) },
+    { key: "arts intensity", value: artsIntensityDamage(ai) },
+  ];
+}
+
 /** A hit's landings per use for a per-hit listing: its count, or 1 for a count judged at the cast (a value). */
 const staticCount = (hit: KitHit): number => (typeof hit.count === "number" ? hit.count : 1);
 
@@ -370,6 +380,7 @@ export function computeHit(
   const extra = (hit.extraScale ?? []).filter((x) => decide(x.if, ec, options.assumeUnknown));
   const scaleParts = [
     ...(hit.reaction ? reactionScaleParts(data, build, panel, { kind: hit.reaction.kind, element: hit.reaction.element, stacks: hit.reaction.level ?? 1 }, options) : []),
+    ...(hit.status ? statusScaleParts(data, build, panel, hit.status, options) : []),
     ...hit.scale.map((key) => ({ key, value: skillValue(data, panel, build, skill.skillId, key) })),
     ...(hit.scaleValue !== undefined ? [{ key: "value", value: evaluate(hit.scaleValue, ec) }] : []),
     ...extra.map((x) => ({ key: typeof x.value === "string" ? x.value : JSON.stringify(x.value), value: evaluate(x.value, ec) })),
@@ -383,10 +394,10 @@ export function computeHit(
     label: hit.label,
     count: staticCount(hit),
     element: hit.reaction?.element ?? hit.element,
-    skillType: hit.reaction || hit.damageType === "none" ? null : hit.damageType,
+    skillType: hit.reaction || hit.status || hit.damageType === "none" ? null : hit.damageType,
     scaleParts,
     canCrit: true,
-    kind: hit.reaction?.kind ?? hit.damageType,
+    kind: hit.reaction?.kind ?? hit.status ?? hit.damageType,
     ...(hit.base !== undefined ? { base: evaluate(hit.base, ec) } : {}),
     decorations: options.decorations ?? hitDecorations(hit, data.skills[skill.skillId]?.timing?.specification === 8),
     ...(hit.zoneScale?.length ? { zoneScale: hit.zoneScale.map((z) => ({ zone: z.zone, value: evaluate(z.value, ec) })) } : {}),

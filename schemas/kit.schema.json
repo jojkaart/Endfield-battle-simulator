@@ -3160,6 +3160,12 @@
           "exclusiveMinimum": 0,
           "description": "Literal multiplier from the skill graph (a SimpleCalcBB × or ÷ splitting a value, e.g. 0.5 for one of two arrows); cite it in the note."
         },
+        "status": {
+          "enum": [
+            "crush"
+          ],
+          "description": "The hit's damage is a physical status's (\"Crush DMG\": DamageAction decorate-mask bit 16384): no skill-type bonus; the status's level coefficient and Arts Intensity apply, times its scale keys in place of the status's own base (Mi Fu's World Splitter)."
+        },
         "reaction": {
           "type": "object",
           "description": "The hit's damage is an arts burst or reaction (no skill-type bonus; level coefficient and Arts Intensity apply), times its scale keys, e.g. Typhoeus's own Nature burst.",

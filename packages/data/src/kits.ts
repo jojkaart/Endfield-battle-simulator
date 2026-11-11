@@ -29,6 +29,7 @@ interface RawHit {
   dive?: boolean;
   factor?: number;
   reaction?: { kind: "burst" | "reaction"; element: "fire" | "pulse" | "cryst" | "natural"; level?: number };
+  status?: "crush";
   extraScale?: { value: ValueExpr; if: Predicate }[];
   scaleValue?: ValueExpr;
   fixedDamage?: ValueExpr;
@@ -525,7 +526,7 @@ function kitChecker(scope: KitScope) {
       if (src.damageType && h.damageType === src.damageType) throw new Error(`${where} hit ${h.id}: damageType ${h.damageType} is the skill's own (leave it out)`);
       if (h.poiseOnly) {
         if (h.poise === undefined || h.scale.length) throw new Error(`${where} hit ${h.id}: a poise-only landing has a poise and an empty scale`);
-        const extra = (["scaleValue", "extraScale", "factor", "reaction", "fixedDamage", "base", "bonuses", "applies", "gains", "buffs", "energy", "sp", "spKind", "heals", "requires", "finalStrike"] as const).filter((k) => h[k] !== undefined);
+        const extra = (["scaleValue", "extraScale", "factor", "reaction", "status", "fixedDamage", "base", "bonuses", "applies", "gains", "buffs", "energy", "sp", "spKind", "heals", "requires", "finalStrike"] as const).filter((k) => h[k] !== undefined);
         if (extra.length) throw new Error(`${where} hit ${h.id}: a poise-only landing deals only its poise (drop ${extra.join(", ")})`);
       }
       if (!src.damageType && !h.damageType) throw new Error(`${where} hit ${h.id}: a triggered hit needs a damageType`);
@@ -544,7 +545,7 @@ function kitChecker(scope: KitScope) {
       if (h.atkSnapshot && !src.buffTick) throw new Error(`${where} hit ${h.id}: atkSnapshot is for the hits of a buffTick trigger (the ticking buff keeps the snapshot)`);
       if (h.fixedDamage !== undefined) {
         checkValue(h.fixedDamage, src.skillId, `${where} hit ${h.id} fixedDamage`);
-        if (h.scale.length || h.scaleValue !== undefined || h.extraScale || h.factor !== undefined || h.reaction || h.bonuses || h.zoneScale || h.atkSnapshot) throw new Error(`${where} hit ${h.id}: a Fixed DMG hit has no scale, factor, reaction, bonuses, zoneScale or atkSnapshot`);
+        if (h.scale.length || h.scaleValue !== undefined || h.extraScale || h.factor !== undefined || h.reaction || h.status || h.bonuses || h.zoneScale || h.atkSnapshot) throw new Error(`${where} hit ${h.id}: a Fixed DMG hit has no scale, factor, reaction, bonuses, zoneScale or atkSnapshot`);
       }
       if (h.if) checkPredicate(h.if, `${where} hit ${h.id}`, src.skillId);
       for (const x of [...(h.applies ?? []), ...(h.buffs ?? []), ...(h.gains ?? [])]) if (x.if) checkPredicate(x.if, `${where} hit ${h.id}`, src.skillId);
@@ -589,6 +590,7 @@ function kitChecker(scope: KitScope) {
         ...(h.atkSnapshot ? { atkSnapshot: true } : {}),
         ...(h.factor !== undefined ? { factor: h.factor } : {}),
         ...(h.reaction ? { reaction: h.reaction } : {}),
+        ...(h.status ? { status: h.status } : {}),
         ...(h.extraScale ? { extraScale: h.extraScale } : {}),
         ...(h.scaleValue !== undefined ? { scaleValue: h.scaleValue } : {}),
         ...(h.fixedDamage !== undefined ? { fixedDamage: h.fixedDamage } : {}),

@@ -1,9 +1,9 @@
 // Mi Fu's kit (chr_0031_mifu) and her equipment kits (wpn_claym_0017 Amaranthine Tassel; wpn_claym_0019 Long Heritage,
 // tested on Si, its natural wielder): the mechanics the kit plan (docs/kit-batches/batch-4/chr_0031_mifu.md, § Kit plan
-// and § Kit) says must fire, on the example scenario's builds. No log has her or either weapon: the expected values are
+// and § Kit) says must fire, on the example scenario's builds. The expected values are
 // the data's (SkillPatchTable at skill level 12, weapon skill level 9; PotentialTalentEffectTable).
 import { describe, expect, it } from "vitest";
-import { advance, apply, computeStats, createContext, earliestStart, init, skillParam, skillValue, type Build, type LandedHit, type RotationAction, type TimelineScenario, type TimelineState } from "@efsim/engine";
+import { advance, apply, Attr, computeStats, createContext, earliestStart, init, skillParam, skillValue, type Build, type LandedHit, type RotationAction, type TimelineScenario, type TimelineState } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { readScenario } from "@efsim/cli";
 
@@ -46,7 +46,9 @@ const fromSource = (h: LandedHit | undefined, text: string) => (h?.modifiers ?? 
 /** Whether one of the kit's buffs is active at frame f of the rotation's run. */
 const activeAt = (sc: TimelineScenario, rotation: readonly RotationAction[], id: string, f: number) => run(sc, rotation, f).buffs.some((b) => b.id === id && b.appliedAt <= f && b.expiresAt > f);
 /** A hit's whole multiplier (its scale parts' product). */
-const multiplier = (h: LandedHit | undefined) => (h?.scaleParts ?? []).reduce((a, p) => a * p.value, h ? 1 : NaN);
+/** The skill's own multiplier: its scale parts but those of the physical status it deals as (KitHit.status). */
+const STATUS_PARTS = new Set(["level coefficient", "arts intensity"]);
+const multiplier = (h: LandedHit | undefined) => (h?.scaleParts ?? []).filter((p) => !STATUS_PARTS.has(p.key)).reduce((a, p) => a * p.value, h ? 1 : NaN);
 const crushes = (s: TimelineState) => s.reactions.flatMap((r) => (r.kind === "physical" && r.status === "crush" ? [{ frame: r.frame, level: r.level }] : []));
 const bb = (skill: string, level = 12) => data.skills[skill]?.levels[level - 1]?.blackboard ?? {};
 /** A skill value after potentials (the build's panel), as hits read it. */
@@ -143,7 +145,7 @@ describe("Mi Fu's battle skill states", () => {
     const w = castAt(s, "normalskill_3");
     expect(hitsOf(s, "normalskill_3").map((h) => [h.hitId, h.frame - w])).toEqual([["split", 26]]);
     const split = hitsOf(s, "normalskill_3", "split")[0];
-    expect(split?.scaleParts.map((p) => p.value)).toEqual([expect.closeTo(6.6, 5), 1, expect.closeTo(1.2, 6)]);
+    expect(split?.scaleParts.filter((p) => !STATUS_PARTS.has(p.key)).map((p) => p.value)).toEqual([expect.closeTo(6.6, 5), 1, expect.closeTo(1.2, 6)]);
     const rot = [...stacks, op("combo_skill"), op("normalskill_2"), op("normalskill_3")];
     expect([activeAt(scenario(), rot, "splitter_ready", w + 20), activeAt(scenario(), rot, "splitter_ready", w + 21)]).toEqual([true, false]);
     expect([bb(P + "normalskill_3")["poise"], kitSkill("normalskill_3")?.hits[0]?.frames]).toEqual([5, [23, 25]]);
@@ -158,6 +160,14 @@ describe("Mi Fu's battle skill states", () => {
     expect(split?.modifiers.some((m) => m.skillType === "battle")).toBe(false);
     expect(mangle?.modifiers.some((m) => m.skillType === "battle")).toBe(true);
     expect(split?.zones.damageBonus).toBeLessThan(mangle?.zones.damageBonus ?? 0);
+  });
+
+  it("World Splitter is Crush DMG: Crush's level coefficient and Arts Intensity apply (a27bc3527682: exactly × 1.22704 × (1 + AI / 100) the plain reading)", () => {
+    const split = hitsOf(splitterRun({}, 400), "normalskill_3", "split")[0];
+    const panel = computeStats(data, mifu);
+    const part = (k: string) => split?.scaleParts.find((p) => p.key === k)?.value;
+    expect(part("level coefficient")).toBeCloseTo(1.22704, 5);
+    expect(part("arts intensity")).toBeGreaterThanOrEqual(1 + (panel.attrs[Attr.PhysicalAndSpellInflictionEnhance]?.total ?? 0) / 100 - 1e-9);
   });
 
   it("talent 1 needs Physical Susceptibility or a Stagger: without her combo's Susceptibility ×1; at talent level 1 ×1.1; unlearned ×1", () => {

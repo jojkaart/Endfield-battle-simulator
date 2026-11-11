@@ -1707,7 +1707,14 @@ Chen or Estella).
    stacks). Does the button go dark at the Crush (a state), or stay lit
    until about 6 s after it lit (engine)?
 
-### 91. World Splitter's damage type (ready, if you have Mi Fu)
+### 91. World Splitter's damage type (answered 2026-11-11 from the logs: Crush DMG, `yuanshi_multi` 1; don't ask)
+
+**Answer (zmdlogs-a27bc3527682, d5720d9ceb94):** World Splitter is
+computed as Crush: no Battle Skill DMG bonus, and Crush's level
+coefficient (1.227 at level 90) and Arts Intensity (× (1 + AI / 100))
+apply. a27b's hit at 36721 ms and four of d5720's five match exactly
+with `yuanshi_multi` 1. Still open: ×1.11 more in Hard 27 (2fd9, 99fb,
+Mi Fu P5), a lead for the accuracy plan, not for this test.
 
 **Why:** "this DMG is not treated as Battle Skill DMG, but as Crush DMG":
 the engine gives World Splitter no Battle Skill DMG bonus. Its multiplier
