@@ -711,7 +711,16 @@ log-verdicts-pending.json and fixtures/pending/holdout.json.
    (frame 58) to after her first stabs, which crit at ×2.9 with it. Plain
    +11 (hold-out +4), but some totals rise (hold-out mean |damage error|
    19.7 → 20.3%). Rossi's ultimate hits are still ×1.090 low in 9a80
-   (2fd9: ×1.081), on crits and non-crits alike: open.
+   (2fd9: ×1.081), on crits and non-crits alike: open. Not P5 (4a64, P5,
+   matches) nor Rossi's ultimate alone (a sonnet pass, 2026-11-11): in
+   9a80 Aglina's susceptibility is 0.42 in the log, 0.39 in the engine
+   (×1.022 of it; d5720 matches only with 0.42), and the replay's
+   Corrosion is level 1 where the log's reaction is level 2 (Rossi's
+   physical hits after 24.97 s ×1.33 low). In Hard 27 (2fd9, 99fb, one
+   player) every physical hit of Mi Fu and Rossi is ×1.1125 low from the
+   first, no buffs listed (World Splitter's ×1.11 is that), Azrila's
+   ×1.044: an enemy- or build-side term not found yet; the replay also
+   lacks the log's Electrification at the ultimate there.
 10. **Leads not yet acted on.** Hard 33 (7b54, 6339): the Woodcraft
    Slug's number shield (buff_eny_0129_slwood_numshield_hdg033, not in our
    checkout) goes with debuffs the engine keeps but the damage shows off
