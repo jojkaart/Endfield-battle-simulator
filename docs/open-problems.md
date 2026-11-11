@@ -212,16 +212,31 @@ curve) and see whether the hits fit, in 3f78 and the other logs with it.
 
 **Shows:** "an operator in its own ultimate's stop isn't held by another's
 slow-down" fixed 9a80's crit buff and raised plain matches (hold-out +4),
-but the hold-out's mean damage error rose 19.7 → 20.3% (median +1.1 →
-+5.1%).
+but some totals rose (hold-out mean |damage error| 19.7 → 20.3% at the
+time, before the crit fix).
 
-**Still possible:** the rule right and other errors now showing; the rule
-too wide (it may hold only for a slow-down that starts inside the stop, or
-only for the ultimate's own action, not every scheduled item of the
-operator's).
+**Evidence so far (round 3):** in 1cd1 and 0c14 every overlap starts
+inside the stop (Liino's 77-frame stop with Arcane's and Typhoeus's
+slow-downs; the Endministrator's 44-frame stops with Rossi's). 0c14 at
+80.5 s: Rossi's airborne (log 34792: old rule 24079, new 31303) and
+combo_2 (log 113417: old 78495, new 102043) move toward the log; the
+Endministrator's frozen buff (log 26783: old 32873, new 42734) moves
+away. 1cd1: Liino's ultimate projectiles fit neither (log 1391: old 1128,
+new 1696; her stance buffs may be the cause).
 
-**Next check:** the development logs whose totals rose with it (1cd1,
-0c14, 262b is hold-out: not debugged), hit by hit around ultimates.
+**Ruled out:** the old rule as the only fit (Rossi's 80.5 s hits favour
+the new one); "only the ultimate's own action and hits" alone (it reverts
+those hits and worsens the ultimate-kind total, −2.0 → −15.6%), though
+not excluded as part of the answer.
+
+**Still possible:** (a) every scheduled item of the operator (as now);
+(b) only its ultimate's own action and hits (the Endministrator's total
+fits it: +24% against +44%); (c) only slow-downs that start inside the
+stop: no log separates it from (a) yet; a mix (the Endministrator's
+frozen buff on another clock than her hits).
+
+**Next check:** a log where a slow-down starts before an ultimate's stop
+and runs into it; the Endministrator's frozen buff's clock in her kit.
 
 ## Smaller, not yet diagnosed
 
