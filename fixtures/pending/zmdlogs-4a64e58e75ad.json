@@ -15,7 +15,8 @@
   },
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
-   "Enemy level 90 from the stage's DungeonTable entry (dung02_bossrush04_03)."
+   "Enemy level 90 from the stage's DungeonTable entry (dung02_bossrush04_03).",
+   "Hand annotation (2026-11-11): Si's and Rossi's builds have \"food\": \"item_inn_drink_10\", Bottled Duskberry Juice (ATK +29.35%, buff_common_atk_buff_potion_1), which the log doesn't list (no log of eny_0134_jsspsi lists food). Without it Si is ×1.209 and Rossi ×1.212 low, exactly (1 + p + 0.2935) / (1 + p) with p their panel ATK%; Arcane and Gilberta match without food."
   ]
  },
  "enemy": {
@@ -76,7 +77,8 @@
       3
      ]
     }
-   ]
+   ],
+   "food": "item_inn_drink_10"
   },
   {
    "operator": "chr_0032_lizhiyan",
@@ -186,7 +188,8 @@
       3
      ]
     }
-   ]
+   ],
+   "food": "item_inn_drink_10"
   },
   {
    "operator": "chr_0013_aglina",

@@ -15,7 +15,8 @@
   },
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
-   "Enemy level 90 from the stage's DungeonTable entry (dung02_bossrush04_03)."
+   "Enemy level 90 from the stage's DungeonTable entry (dung02_bossrush04_03).",
+   "Hand annotation (2026-11-11): every operator's build has \"food\": \"item_inn_drink_10\", Bottled Duskberry Juice (ATK +29.35%, buff_common_atk_buff_potion_1). The log lists no food buff, as no log of this boss (eny_0134_jsspsi) does, while the Rodin logs list theirs (40d9, b7b3). Without it every operator's hits are low by exactly (1 + p + 0.2935) / (1 + p) with p the panel's ATK%: Si 1.2087 (p 0.406), Arcane and Rossi 1.2337 (p 0.256); with it Si's and Arcane's first hits match exactly (4899, 7799)."
   ]
  },
  "enemy": {
@@ -76,7 +77,8 @@
       3
      ]
     }
-   ]
+   ],
+   "food": "item_inn_drink_10"
   },
   {
    "operator": "chr_0028_wulfa",
@@ -131,7 +133,8 @@
       3
      ]
     }
-   ]
+   ],
+   "food": "item_inn_drink_10"
   },
   {
    "operator": "chr_0032_lizhiyan",
@@ -186,7 +189,8 @@
       3
      ]
     }
-   ]
+   ],
+   "food": "item_inn_drink_10"
   },
   {
    "operator": "chr_0013_aglina",
@@ -241,7 +245,8 @@
       0
      ]
     }
-   ]
+   ],
+   "food": "item_inn_drink_10"
   }
  ],
  "hits": [

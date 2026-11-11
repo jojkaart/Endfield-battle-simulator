@@ -15,7 +15,8 @@
   },
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
-   "Enemy level 90 from the stage's DungeonTable entry (dung02_bossrush04_03)."
+   "Enemy level 90 from the stage's DungeonTable entry (dung02_bossrush04_03).",
+   "Hand annotation (2026-11-11): every operator's build has \"food\": \"item_agrange_1_erhound_1_sp_1_1\", Jakub's Legacy (ATK +27%, buff_common_atk_buff_potion_1), which the log doesn't list (no log of eny_0134_jsspsi lists food; b7b3 lists this one at 0.27). Without it each operator's hits are low by (1 + p + b + 0.27) / (1 + p + b), p the panel's ATK% and b the buffs' ATK%: Camille 1.2700 (p 0, b 0) and 1.2463 (b 0.096), Laevatain 1.1817 (p 0.39, b 0.096), Arcane 1.2147 (p 0.256). Si's hits fit it too once her ATK is ×0.940 lower, which 0 attribute nodes give (left as the check's build offset: not corrected)."
   ]
  },
  "enemy": {
@@ -76,7 +77,8 @@
       0
      ]
     }
-   ]
+   ],
+   "food": "item_agrange_1_erhound_1_sp_1_1"
   },
   {
    "operator": "chr_0036_jsspsi",
@@ -131,7 +133,8 @@
       3
      ]
     }
-   ]
+   ],
+   "food": "item_agrange_1_erhound_1_sp_1_1"
   },
   {
    "operator": "chr_0032_lizhiyan",
@@ -186,7 +189,8 @@
       0
      ]
     }
-   ]
+   ],
+   "food": "item_agrange_1_erhound_1_sp_1_1"
   },
   {
    "operator": "chr_0016_laevat",
@@ -241,7 +245,8 @@
       3
      ]
     }
-   ]
+   ],
+   "food": "item_agrange_1_erhound_1_sp_1_1"
   }
  ],
  "hits": [
