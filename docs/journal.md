@@ -15,7 +15,15 @@ replay now sets its bar to the log's before each hit with Stagger and
 ends Staggers of its own the log doesn't have: plain +207 over all logs,
 hold-out 47.7 → 49.3% plain. It exposed a double count: the engine's
 Stagger from a hit and from the Lift or reaction it causes (one event in
-game; 4e5e's total +6.2% now). Lead for B1.
+game; 4e5e's total +6.2% now). Lead for B1, settled the same day: the
+logs list one event for a hit and its Lift (155 of 156), so Lift and
+Knock Down lost their formula Stagger (4e5e −1.7%). Diagnosis now runs
+in parallel sub-agents (the owner's call): small models diagnose, the
+fixes are verified here. Their reports: Rossi's ultimate ×2.6–3.2 low
+(9a80, 489c); bossrush04 (3f78) ×1.2 on Corrosion-routed hits and two
+unlanded Si Fixed DMG hits; Hard 33's Jade Vessel bonus applied where
+the game doesn't; Liino's battle skill replayed in full where the logs
+show no projectile; e989's ratios aren't constant after all.
 
 ## 2026-11-08 / 09: New logs chosen by rule, with a hold-out
 

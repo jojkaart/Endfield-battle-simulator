@@ -14,7 +14,7 @@ import type { Origin, PendingHit, Stacks, TimelineContext, TimelineState } from 
 import { COMBO_WINDOW_FRAMES, LINK_FRAMES, hasteFrames } from "./rules.ts";
 import { panelAt, skillCosts, timingOf } from "./context.ts";
 import { controlImmune, shiftEnemy } from "./clock.ts";
-import { cooldownEnd, dealPoise, gainEnergy, gainSp, maxEnergy, rateProgress, rateReady, rebaseCooldowns, spGrantOf } from "./resources.ts";
+import { cooldownEnd, gainEnergy, gainSp, maxEnergy, rateProgress, rateReady, rebaseCooldowns, spGrantOf } from "./resources.ts";
 import { actionFrame, ownWindowSkills, playheadOf } from "./timing.ts";
 import { artsIntensity, attackerSide, eventCountOf, eventSourceOf, healEvents, situationAt, statusTweaks, triggerSituation } from "./situation.ts";
 import { asEvents, delayBursts, draw, landHit, recordStatus } from "./landing.ts";
@@ -114,12 +114,10 @@ export function runTriggers(ctx: TimelineContext, state: TimelineState, initial:
       const lost = Math.max(0, end - Math.max(e.frame, st.enemyFrozenUntil));
       st = { ...shiftEnemy(st, e.frame, lost), enemyFrozenUntil: Math.max(st.enemyFrozenUntil, end) };
     }
-    // Lift and Knock Down stagger: 10 × (1 + AI/200) of the applier.
-    if (engine && e.type === "status" && e.event.kind === "physical" && (e.event.status === "lift" || e.event.status === "knockdown") && ctx.builds.has(e.operator)) {
-      const r = dealPoise(ctx, st, e.operator, 10 * (1 + artsIntensity(ctx, st, e.operator, e.frame) / 200), e.frame);
-      st = r.state;
-      queue.push(...r.events);
-    }
+    // Lift and Knock Down deal no Stagger of their own beside the hit that applies them: the logs list one event on
+    // both, its value the hit's (155 of 156 cases in 40 logs, 2026-11-11; Rossi's Lifts at 5, below any
+    // 10 × (1 + AI/200)). The one exception (4e5e1390085e at 12219 ms: Estella's Lift 10 apart from her ultimate's 24)
+    // is open (accuracy plan).
     // A combo window that lasts while a buff is active closes when it ends (and doesn't reopen with a new instance).
     if (e.type === "buffEnded" && Object.values(st.comboWindow).some((w) => w.whileBuff === e.buff)) {
       const prefix = `${e.operator}>`;

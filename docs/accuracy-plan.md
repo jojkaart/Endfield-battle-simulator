@@ -133,9 +133,10 @@ B1 done (2026-10-26), with B0's half in the replay. From all 29 logs'
 `poiseDamage` (now each fixture hit's `poise`, `efsim zmdlogs refresh`):
 - **Stagger per hit is right.** The engine's bar follows the log's hit
   for hit wherever the replay has the right controlled operator (4e5e
-  to 28.8 s and from 42 s on; Lift's 10 × (1 + AI/200) included). The
-  reactions' poise in the log is the triggering hit's, credited twice
-  (the bar drops once).
+  to 28.8 s and from 42 s on). The reactions' poise in the log is the
+  triggering hit's, credited twice (the bar drops once). Lift and Knock
+  Down deal none of their own either (revised 2026-11-11, below: the
+  10 × (1 + AI/200) this bullet once credited them was a double count).
 - **The bar doesn't recover on its own.** No rise between hits in 29
   fights, even over gaps of 10–38 s (in-game test 99 answered). It
   refills at a Stagger's end, and in jumps straight to full that are the
@@ -663,6 +664,15 @@ log-verdicts-pending.json and fixtures/pending/holdout.json.
    reaction; the replay deals all four (68 where the game took 34). The
    engine's Stagger from a hit and from the Lift or reaction it causes is
    one event in game: a lead (B1).
+3. **Lift and Knock Down deal no Stagger of their own.** Over 40 logs the
+   log lists one Stagger event shared by the hit and the Lift or Knock
+   Down it applies, its value the hit's: 155 of 156 Lifts, 69 of 69
+   reactions (Rossi's Lifts at 5, below any 10 × (1 + AI/200)). The
+   engine dealt the hit's Stagger and then the formula's again; the
+   formula is gone (actions.ts). 4e5e total +6.2 → −1.7%, its staggered
+   hits +154 → +8%; plain 7175 → 7191. Measured: development plain 25.2 →
+   25.5%, hold-out 49.3% (unchanged). Open: the one exception, 4e5e at
+   12219 ms, Estella's Lift listing 10 apart from her ultimate's 24.
 2. **e989 (bossrush04) low for everyone**, constant per operator through
    the fight: Camille ×1.246, Arcane ×1.199, Si ×1.09, Laevatain ×1.06.
    The log's listed modifiers, gear lines (raw values) and stage tags
