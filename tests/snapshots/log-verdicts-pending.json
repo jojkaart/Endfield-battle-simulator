@@ -14,11 +14,11 @@
   "totals": {"damage":-2.2,"operator chr_0020_meurs":110.6,"operator chr_0009_azrila":-8.7,"operator chr_0038_purrche":-4.7,"operator chr_0014_aurora":-8.1,"kind basic":1.4,"kind battle":-8.4,"kind combo":27.8,"kind none":7.1,"kind status":-23.6,"kind ultimate":12.9,"kind uncovered":-100,"hits":3.1,"status hits":-8.6,"staggered hits":-9.4,"last hit":0,"crit share (points)":-0.1}
  },
  "pending/zmdlogs-0c14fb3ce77d.json": {
-  "chr_0028_wulfa": {"plain":0,"assumed":0,"fallback":8,"mismatch":260,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0028_wulfa": {"plain":21,"assumed":12,"fallback":219,"mismatch":16,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0003_endminf": {"plain":32,"assumed":2,"fallback":89,"mismatch":5,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0036_jsspsi": {"plain":0,"assumed":0,"fallback":7,"mismatch":183,"unvalued":0,"unquantified":4,"uncovered":0},
-  "chr_0024_deepfin": {"plain":0,"assumed":0,"fallback":0,"mismatch":54,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":1.6,"operator chr_0028_wulfa":-23,"operator chr_0003_endminf":61.1,"operator chr_0024_deepfin":6.7,"operator chr_0036_jsspsi":6.1,"kind basic":-14.3,"kind battle":26.6,"kind combo":10.9,"kind none":11.4,"kind status":-24.7,"kind ultimate":3.6,"hits":13.8,"status hits":8.7,"staggered hits":10.3,"last hit":0,"crit share (points)":-0.4}
+  "chr_0024_deepfin": {"plain":18,"assumed":1,"fallback":34,"mismatch":1,"unvalued":0,"unquantified":0,"uncovered":0},
+  "totals": {"damage":8.7,"operator chr_0028_wulfa":-10.6,"operator chr_0003_endminf":61.1,"operator chr_0024_deepfin":-14.1,"operator chr_0036_jsspsi":8.6,"kind basic":-7.3,"kind battle":37.5,"kind combo":17.9,"kind none":28.4,"kind status":-18.8,"kind ultimate":8.3,"hits":13.8,"status hits":8.7,"staggered hits":10.3,"last hit":0,"crit share (points)":-0.4}
  },
  "pending/zmdlogs-0ddbbdca1db5.json": {
   "chr_0033_camille": {"plain":6,"assumed":1,"fallback":28,"mismatch":6,"unvalued":0,"unquantified":0,"uncovered":2},

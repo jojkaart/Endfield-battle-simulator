@@ -18,7 +18,8 @@
    "Enemy level 90 from the stage's DungeonTable entry (dung02_bossrush04_03).",
    "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
    "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh).",
-   "Hand annotation (2026-11-11): the Endministrator's build has \"food\": \"item_bottled_insec2_2\" (Kunst Tube, DMG +24.65% for every element), which the log doesn't list (no log of eny_0134_jsspsi lists food): her hits ×1.15 low without it, 123 of 128 matching with it (median 1.000; the only one of 36 foods that fits). Rossi (×1.51), Si (×1.15) and Deepfin (×0.86) fit no food: open."
+   "Hand annotation (2026-11-11): the Endministrator's build has \"food\": \"item_bottled_insec2_2\" (Kunst Tube, DMG +24.65% for every element), which the log doesn't list (no log of eny_0134_jsspsi lists food): her hits ×1.15 low without it, 123 of 128 matching with it (median 1.000; the only one of 36 foods that fits).",
+   "Hand corrections (2026-11-11): Alesh's weapon (wpn_sword_0012, skills [2, 2, 2]) is level 60, not 90: her eight buff-free hits at 0–11 s were ×0.807 = (277 + 342) / (277 + 490), her base ATK and the weapon's at 60 and 90, and match exactly with it (53 of 54 hits match). Rossi's build has \"food\": \"item_bottled_insec2_2\" (Kunst Tube, DMG +24.65%): her hits at 0–12 s and 110 s match with it, 252 of 268 in all; her windows at 22–40, 62–82 and 150–195 s carry other differences (Wolven Blood layers, Razor Clawmark). Si (no constant factor) is open."
   ]
  },
  "enemy": {
@@ -79,7 +80,8 @@
       3
      ]
     }
-   ]
+   ],
+   "food": "item_bottled_insec2_2"
   },
   {
    "operator": "chr_0003_endminf",
@@ -205,7 +207,7 @@
    },
    "weapon": {
     "id": "wpn_sword_0012",
-    "level": 90,
+    "level": 60,
     "skillLevels": [
      2,
      2,
