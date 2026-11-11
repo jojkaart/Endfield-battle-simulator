@@ -15,7 +15,7 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
    (SP stop) and B4 (Solidification) wait on in-game tests 102 and 71;
    next the screened logs' leads (accuracy plan, "The screened logs",
    item 10: Rossi's ultimate ×1.09 in 9a80 and 2fd9, Mi Fu ×1.11 in Hard
-   27, Si's hitless Initial Stroke in 3f78, db87's Arcane ATK, the
+   27, Si's combo −22.6% in 40d9 (unmasked), db87's Arcane ATK, the
    eny_0134 logs' food in 0c14 and de6a), diagnosed in parallel (small
    models first, the owner's call 2026-11-11); then the favourites' kit
    leads (B8: the build offsets the log check
