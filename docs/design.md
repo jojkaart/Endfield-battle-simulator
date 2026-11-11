@@ -236,6 +236,13 @@ and statuses act on hits as ordinary Modifiers. Operator counters such as
 Laevatain's Melting Flame are kit `stacks` that hits `gain` and `require`.
 `efsim zmdlogs reactions` replays a log through the state machine to check
 a kit's `applies` against the logged bursts and reactions.
+Order within one landing: the hit's inflictions, then the triggers marked
+`beforeDamage` on what they caused (their buffs count for the hit), then
+the hit's damage. A reaction's own hit sees those buffs (Perlica's P3 on
+her Electrification's hit, e82d), except Corrosion's, which the data
+deals before its status exists (its damage buff first): it sees neither
+its own shred nor what the status triggers (Hot Work's Nature DMG is on
+the hit that forms the Corrosion, not on its own: 3f78, 4a64).
 
 **Kit buffs in the log check** (2026-10-22, owner: the engine activates
 buffs from the events that trigger them, not from the log's listing).

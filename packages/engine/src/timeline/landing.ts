@@ -141,7 +141,7 @@ function addHits(st: TimelineState, landed: readonly LandedHit[]): TimelineState
  * Status events: recorded, and the damage they deal (bursts, reactions, ticks) lands. `enemy` is the state their
  * damage sees: after a hit's own applications, before a tick's change.
  */
-export function recordStatus(ctx: TimelineContext, st: TimelineState, events: readonly StatusEvent[], enemy: EnemyStatus, prior?: EnemyStatus): TimelineState {
+export function recordStatus(ctx: TimelineContext, st: TimelineState, events: readonly StatusEvent[], enemy: EnemyStatus, prior?: EnemyStatus, beforeTriggers?: TimelineState): TimelineState {
   const records: ReactionRecord[] = [];
   const landed: LandedHit[] = [];
   let next = st;
@@ -151,7 +151,12 @@ export function recordStatus(ctx: TimelineContext, st: TimelineState, events: re
     // Every damaging event draws its crit roll (a tick that can't crit too: the stream doesn't depend on what crits).
     let roll: number | undefined;
     if (ctx.scenario.options.crit === "rolled" && dealsDamage(e)) ({ value: roll, state: next } = draw(ctx, next, "crit"));
-    const d = eventDamage(ctx, e, enemy, st, roll, prior);
+    // Corrosion's own hit comes before its status (eventDamage), so before what the status's application triggers ahead
+    // of the forming hit's damage (3f78ceb15bc3 at 1334 and 46994 ms, 4a64e58e75ad at 4517 ms: Hot Work's Nature DMG,
+    // created on the Corrosion, is on Arcane's hit that forms it, ×1.5, not on the Corrosion's own hit). Other reactions'
+    // tagged buffs come before their own hit (e82d45c46040: Perlica's P3 ATK on her Electrification's hit).
+    const own = beforeTriggers && e.kind === "reaction" && e.status === "corrosion" && e.initialHit ? beforeTriggers : st;
+    const d = eventDamage(ctx, e, enemy, own, roll, prior);
     if (d) landed.push(d);
   }
   return records.length ? addHits({ ...next, reactions: [...next.reactions, ...records] }, landed) : st;
@@ -290,6 +295,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   // A hit computed as a burst is one for triggers too (its damage is the hit's own).
   const burst: StatusEvent[] = kitHit.reaction?.kind === "burst" && withDamage ? [{ kind: "burst", frame: hit.frame, operator: hit.operator, element: kitHit.reaction.element }] : [];
   // Triggers that act before the hit's damage on its own status events (a buff they apply already counts for it).
+  const beforeTriggers = st;
   if ((statusEvents.length || burst.length) && ctx.beforeDamage) st = runTriggers(ctx, st, asEvents([...statusEvents, ...burst], kind, castIndex), { operator: hit.operator, kind }, (t) => t.beforeDamage === true, false);
   let stacksChanged: string[] = [];
   const events: BattleEvent[] = [];
@@ -378,7 +384,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.energy, at(consumed));
     st = gainEnergy(ctx, st, hit.operator, amount, hit.frame);
   }
-  st = recordStatus(ctx, st, statusEvents, enemyAtDamage, before.enemy);
+  st = recordStatus(ctx, st, statusEvents, enemyAtDamage, before.enemy, beforeTriggers);
   if (lateEvents.length) st = recordStatus(ctx, st, lateEvents, st.enemy);
   // Stagger: Final Strikes' only while their operator is controlled (onlyEnableForMainChar).
   const poiseEvents: BattleEvent[] = [];

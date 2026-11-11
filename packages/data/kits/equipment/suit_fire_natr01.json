@@ -3,7 +3,7 @@
   "equipment": "suit_fire_natr01",
   "sources": [
     "Hot Work 3-piece, rmxlinux Json/SkillData/passive_equipsuit_fninflict_01 (game 1.6): Arts Intensity + phy_spell_up on the stat panel; buff_equipsuit_fninflict_01: when the wearer applies a buff tagged Combustion (abilityEvent 102) it creates buff_equipsuit_fninflict_01_firedamageadd (attribute 51, Heat DMG + fire_dmg_up, `duration` 10 s); Corrosion → _poisedamageadd (attribute 54, Nature DMG + nature_dmg_up, `duration2` 10 s). Both stacking type 2, max 1: a new one refreshes. Values: SkillPatchTable passive_equipsuit_fninflict_01 (the BuffData defaults aren't the set's).",
-    "Not in any log or fixture with 3 pieces yet."
+    "Both buffs act on the hit whose reaction makes them (beforeDamage), not on Corrosion's own hit, which comes first (its damage buff before its status: timeline/landing.ts recordStatus): zmdlogs-3f78ceb15bc3 at 1334 and 46994 ms and zmdlogs-4a64e58e75ad at 4517 ms, Arcane's hit that forms the Corrosion ×1.5 = 1 + nature_dmg_up 0.5, the Corrosion's own without it. Heat by the same ability event (102), on Combustion's own hit too as other reactions' tagged buffs are; 458b03609665 and 012ae1c80ae6 gain plain matches with it."
   ],
   "buffs": [
     {
@@ -43,6 +43,7 @@
         ]
       },
       "by": "self",
+      "beforeDamage": true,
       "skill": "passive_equipsuit_fninflict_01",
       "do": [
         {
@@ -60,6 +61,7 @@
         ]
       },
       "by": "self",
+      "beforeDamage": true,
       "skill": "passive_equipsuit_fninflict_01",
       "do": [
         {

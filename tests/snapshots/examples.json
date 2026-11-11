@@ -76,15 +76,15 @@
   ]
  },
  "ardelia-corrosion.scenario.json": {
-  "total": 150604.511,
+  "total": 152723.704,
   "hits": 53,
   "casts": 12,
   "perOperator": {
-   "chr_0025_ardelia": 150604.511
+   "chr_0025_ardelia": 152723.704
   },
-  "digest": "4c0925a9fe07",
+  "digest": "10b11fa28d8d",
   "windows": [
-   "ee18fb4d46cd",
+   "67441ccbe3b3",
    "316c729719c2"
   ]
  },
@@ -354,18 +354,18 @@
   ]
  },
  "si-laevatain-liino-gilberta.scenario.json": {
-  "total": 3002793.422,
+  "total": 2998384.655,
   "hits": 166,
   "casts": 74,
   "perOperator": {
-   "chr_0036_jsspsi": 733954.149,
+   "chr_0036_jsspsi": 733446.946,
    "chr_0016_laevat": 1924218.681,
    "chr_0035_liino": 191102.482,
-   "chr_0013_aglina": 153518.11
+   "chr_0013_aglina": 149616.546
   },
-  "digest": "b9cadf5cdf7b",
+  "digest": "d66e585d6757",
   "windows": [
-   "6d9fd5a9ca04",
+   "2a0edc0a427b",
    "defe64ad9fe4"
   ]
  },

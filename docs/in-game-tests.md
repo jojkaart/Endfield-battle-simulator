@@ -891,7 +891,13 @@ Solidifications within 1 s should give one step, not two, but they can't
 be timed by hand reliably; skip that part.) If the gauge doesn't show such
 a small step, this one is not testable by hand.
 
-### 51. Does an effect a hit triggers count on that same hit? (ready, if you have Arcane with Solemn Phalanx, Hot Work, Da Pan with Ancient Canal, or Ardelia with Dreams of the Starry Beach)
+### 51. Does an effect a hit triggers count on that same hit? (ready, if you have Arcane with Solemn Phalanx, Da Pan with Ancient Canal, or Ardelia with Dreams of the Starry Beach; Hot Work answered by the logs)
+
+**Partly answered (2026-11-11, zmdlogs-3f78ceb15bc3, 4a64e58e75ad):** Hot
+Work's Nature DMG, made when a hit forms a Corrosion, counts on that hit
+(Arcane's battle-skill hit ×1.5 exactly, three times) but not on the
+Corrosion's own hit, which comes first. The Solemn Phalanx, Ancient Canal
+and Starry Beach cases below are still open.
 
 **Why:** some weapon and gear-set effects start from something a hit does
 (an Arts Infliction, a Susceptibility it applies). The data creates some
