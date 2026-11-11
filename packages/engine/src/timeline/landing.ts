@@ -9,7 +9,7 @@ import { type GameData, type KitHit, type KitSkill, resolveApplication } from ".
 import { type BattleEvent, triggerActionAt } from "../events.ts";
 import { evaluate } from "../expr.ts";
 import { activeAt, resolveValue } from "../buffs.ts";
-import { applyToEnemy, type EnemyStatus, expireStatus, NO_STATUS, type StatusEvent } from "../status.ts";
+import { applyToEnemy, type EnemyStatus, expireStatus, type HitApplication, MAX_INFLICTION_STACKS, NO_STATUS, type StatusEvent } from "../status.ts";
 import type { LandedHit, LandingFacts, LandingInputs, PendingBurst, PendingHit, ReactionRecord, TimelineContext, TimelineState } from "./state.ts";
 import { kitSkill, panelAt } from "./context.ts";
 import { dealPoise, gainEnergy, gainSp, isStaggered, spGrantOf } from "./resources.ts";
@@ -38,6 +38,23 @@ function loggedCritAt(ctx: TimelineContext, operator: string, events: readonly s
   const near = all.filter((x) => Math.abs(x.frame - frame) <= 1);
   if (near.length === 0) return null;
   return near.every((x) => x.crit === near[0]?.crit) ? (near[0] as { crit: boolean }).crit : null;
+}
+
+/**
+ * The enemy as a logged fight's reaction level has it (TimelineScenario.loggedReactionLevels): before an infliction of
+ * `operator` that meets another element's (a reaction) within a frame of a logged level of its operator and element,
+ * the infliction it consumes holds that many stacks (the reaction takes its level from them: status.ts applyToEnemy).
+ * Unchanged otherwise, and without logged levels (a simulation).
+ */
+export function withLoggedReactionLevel(ctx: TimelineContext, enemy: EnemyStatus, app: HitApplication, frame: number, operator: string): EnemyStatus {
+  const list = ctx.scenario.loggedReactionLevels;
+  if (!list || app.kind !== "infliction" || app.element === "enemy") return enemy;
+  const cur = enemy.infliction && enemy.infliction.expiresAt > frame ? enemy.infliction : null;
+  if (!cur || cur.element === app.element) return enemy;
+  const near = list.filter((x) => x.operator === operator && x.element === app.element && Math.abs(x.frame - frame) <= 1).sort((a, b) => Math.abs(a.frame - frame) - Math.abs(b.frame - frame))[0];
+  if (!near || near.level === cur.stacks) return enemy;
+  if (!Number.isInteger(near.level) || near.level < 1 || near.level > MAX_INFLICTION_STACKS) throw new EngineError(`logged reaction level ${near.level}`);
+  return { ...enemy, infliction: { ...cur, stacks: near.level } };
 }
 
 /**
@@ -261,7 +278,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
       const resolved = resolveApplication(app, (v) => evaluate(v, evalContext(ctx.data, build, panel, hit.skillId, at(consumed))), hit.eventSource);
       if (!resolved) continue;
       const side = st;
-      const r = applyToEnemy(st.enemy, resolved, hit.frame, hit.operator, ai, (key) => skillValue(ctx.data, panel, build, hit.skillId, key), statusTweaks(ctx, st, hit.operator, hit.frame), () => attackerSide(side, hit.operator, hit.frame));
+      const r = applyToEnemy(withLoggedReactionLevel(ctx, st.enemy, resolved, hit.frame, hit.operator), resolved, hit.frame, hit.operator, ai, (key) => skillValue(ctx.data, panel, build, hit.skillId, key), statusTweaks(ctx, st, hit.operator, hit.frame), () => attackerSide(side, hit.operator, hit.frame));
       const d = delayBursts(ctx, { ...st, enemy: r.state }, r.events, kind, castIndex);
       st = d.state;
       out.push(...d.now);

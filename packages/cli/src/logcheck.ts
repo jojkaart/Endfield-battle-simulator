@@ -30,12 +30,14 @@ import {
   type HitDamage,
   type KitHit,
   type LandedHit,
+  type LandingInputs,
   type KitSkill,
   type Modifier,
   type OperatorKit,
   type Situation,
   type SkillType,
   type StatPanel,
+  type TimelineScenario,
   finisherModifier,
 } from "@efsim/engine";
 import type { LogEffect, LogFixture, LogHit } from "@efsim/data";
@@ -43,6 +45,7 @@ import { assumeValues, valueAssumptions, valueReads } from "./hitvalues.ts";
 import { engineCheck, engineReadings, fightTotals, logDifferences, totalsErrors, type HitPlace, type LogDifference, type TotalsComparison } from "./enginecheck.ts";
 import { boundarySubsets, buffFile, isCorrosionBuff, kitBuffSource, kitStackCaps, logModifiers, teamPanels, withoutOwnFood, type HitCategory, type StackCap } from "./logeffects.ts";
 import { placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
+import { checkReactions } from "./reactioncheck.ts";
 import { atLayers, disagreementRuns, REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK, replayedHits, replayKitBuffs, type BuffReplay, type ConsumedBuffs, type DisagreementRun, type Fact, type ReplayCastFacts, type ReplayedHits } from "./buffreplay.ts";
 
 /** What a reading of a logged hit takes for granted that the log doesn't say. */
@@ -631,8 +634,59 @@ export interface LogBuffReplay {
   readonly runs: readonly DisagreementRun[];
 }
 
+/** A logged arts reaction's level, at the replay's landing of it (TimelineScenario.loggedReactionLevels). */
+type ReactionLevel = NonNullable<TimelineScenario["loggedReactionLevels"]>[number];
+
+/** Replays at most, the first included: each may show levels the last one's readings left open (a Corrosion's level changes later hits). */
+const REACTION_LEVEL_PASSES = 3;
+
+/**
+ * The arts reaction levels (Combustion, Electrification, Solidification, Corrosion) a log shows, at the replay's
+ * landings of its logged reaction hits. A logged reaction hit carries the reaction's damage, which its level sets
+ * (reactionBase: 0.8 + 0.8 × stacks), so the levels whose engine readings of it (engineReadings: levels 1-4 among
+ * them) fit the logged value (±1) are those the log allows: one alone is the log's level; of several, the one the
+ * logged hits' inflictions give (reactioncheck.ts checkReactions), if it is among them; otherwise the log doesn't say,
+ * and the replay keeps its own. The replay's enemy can hold another stack count than the game's: a cast's hit it lands
+ * that the log doesn't show (4a64e58e75ad: Xaihi's battle skill at 33.3 s, a Cryst stack that makes Arcane's Corrosion
+ * at 52982 ms level 2, logged level 1), or two operators' landings at one frame in another order (3f78ceb15bc3 at
+ * 45458 ms: Arcane's ultimate before Xaihi's Cryst, so her Corrosion at 46994 ms is level 1, logged level 2).
+ */
+export function loggedReactionLevels(data: GameData, fx: LogFixture, placement: Placement, replay: BuffReplay): ReactionLevel[] {
+  const reactionHits = fx.hits.filter((h) => parseReactionEvent(h.event)?.kind === "reaction");
+  if (reactionHits.length === 0) return [];
+  const c = engineCheck(data, fx, replay);
+  let byInflictions: ReturnType<typeof checkReactions> | null = null;
+  const out: ReactionLevel[] = [];
+  for (const h of reactionHits) {
+    const e = engineReadings(c, h, hitPlace(data, fx, placement, null, h));
+    const landing = e.landing;
+    if ("unknown" in landing || landing.inputs?.kind !== "status") continue;
+    const own = landing.inputs.reaction.stacks;
+    const fitting = new Set(e.readings.filter((r) => Math.abs(r.predicted - h.value) <= 1).map((r) => r.assumptions.find((a) => a.kind === "stacks")?.n ?? own));
+    let level: number | null = null;
+    if (fitting.size === 1) level = [...fitting][0] as number;
+    else if (fitting.size > 1) {
+      byInflictions ??= checkReactions(data, fx);
+      const element = landing.inputs.reaction.element;
+      const m = byInflictions.matched.find((x) => x.loggedT === h.t && x.predicted.kind === "reaction" && x.predicted.operator === h.operator && x.predicted.element === element);
+      if (m && m.predicted.kind === "reaction" && fitting.has(m.predicted.level)) level = m.predicted.level;
+    }
+    if (level !== null) out.push({ operator: h.operator, element: landing.inputs.reaction.element as ReactionLevel["element"], frame: landing.frame, level });
+  }
+  return out;
+}
+
 export function logBuffReplay(data: GameData, fx: LogFixture, placement: Placement = placeHits(data, fx)): LogBuffReplay {
-  const replay = replayKitBuffs(data, fx, placement);
+  let replay = replayKitBuffs(data, fx, placement);
+  // Again with the levels the log shows where the replay's differ, until it has them all (REACTION_LEVEL_PASSES).
+  const levels = new Map<string, ReactionLevel>();
+  for (let pass = 1; pass < REACTION_LEVEL_PASSES; pass++) {
+    const own = new Map(replay.hits.filter((h) => h.skillId === "reaction:reaction" && h.inputs?.kind === "status").map((h) => [`${h.operator}|${h.element}|${h.frame}`, (h.inputs as Extract<LandingInputs, { kind: "status" }>).reaction.stacks]));
+    const shown = loggedReactionLevels(data, fx, placement, replay).filter((l) => own.get(`${l.operator}|${l.element}|${l.frame}`) !== l.level);
+    if (shown.length === 0) break;
+    for (const l of shown) levels.set(`${l.operator}|${l.element}|${l.frame}`, l);
+    replay = replayKitBuffs(data, fx, placement, { reactionLevels: [...levels.values()] });
+  }
   const replayed = replayedHits(fx, replay);
   return { replay, replayed, runs: disagreementRuns(fx, replayed) };
 }

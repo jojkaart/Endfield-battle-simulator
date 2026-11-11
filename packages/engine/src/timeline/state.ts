@@ -71,6 +71,12 @@ export interface TimelineScenario {
    * `operator` with `event` among its events landing at `frame` (±1) takes these modifiers on top of the timeline's.
    */
   readonly loggedModifiers?: readonly { readonly operator: string; readonly event: string; readonly frame: number; readonly modifiers: readonly Modifier[] }[];
+  /**
+   * A logged fight's arts reaction levels (the log check's replay only, where the log shows a level its replay doesn't
+   * have): an infliction of `element` by `operator` at `frame` (±1) that meets another element's infliction consumes
+   * `level` stacks of it, whatever the replay's enemy holds, so the reaction (its hit and its status) is of that level.
+   */
+  readonly loggedReactionLevels?: readonly { readonly operator: string; readonly element: ArtsElement; readonly frame: number; readonly level: number }[];
 }
 
 /**

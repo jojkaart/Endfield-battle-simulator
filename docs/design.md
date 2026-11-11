@@ -288,7 +288,16 @@ still comes from the log, and why:
   triggers depend on chances, the enemy's actions or heals of the
   controlled operator (`BuffReplay.unjudgedKitBuffs`; the log's entries
   replace the engine's for them);
-- the **build values** the log records (levels, gear, potentials).
+- the **build values** the log records (levels, gear, potentials);
+- an **arts reaction's level** where the log shows one and the replay's
+  enemy has other stacks (2026-11-11; `logcheck.ts` `loggedReactionLevels`,
+  TimelineScenario `loggedReactionLevels`): the levels whose engine
+  readings of the logged reaction hit fit its value (±1); one alone is
+  the log's, of several the one the logged hits' inflictions give
+  (`reactioncheck.ts`) if it is among them, else the replay keeps its own.
+  The replay is made again with them (at most three times in all), so
+  the status (a Corrosion's shred, Combustion's ticks) has that level too.
+  Its inflictions themselves aren't checked against the log yet.
 The log's entries under a buff the engine models are compared with the
 engine's modifiers, not added: a kit buff stands for the game buffs a log
 lists it under (`loggedNames`: its `gameBuff`, its `loggedAs`, and the

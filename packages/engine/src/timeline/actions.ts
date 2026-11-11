@@ -17,7 +17,7 @@ import { controlImmune, shiftEnemy } from "./clock.ts";
 import { cooldownEnd, gainEnergy, gainSp, maxEnergy, rateProgress, rateReady, rebaseCooldowns, spGrantOf } from "./resources.ts";
 import { actionFrame, ownWindowSkills, playheadOf } from "./timing.ts";
 import { artsIntensity, attackerSide, eventCountOf, eventSourceOf, healEvents, situationAt, statusTweaks, triggerSituation } from "./situation.ts";
-import { asEvents, delayBursts, draw, landHit, recordStatus } from "./landing.ts";
+import { asEvents, delayBursts, draw, landHit, recordStatus, withLoggedReactionLevel } from "./landing.ts";
 import { castSkill, endCurrentSkill, takeJump } from "./casting.ts";
 import { schedule } from "./schedule.ts";
 
@@ -216,7 +216,7 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
           const resolved = resolveApplication(app, (v) => evaluate(v, ec()), eventSourceOf(e));
           if (!resolved) continue;
           const side = st;
-          const r = applyToEnemy(expireStatus(st.enemy, frame), resolved, frame, owner, ai, (key) => skillValue(ctx.data, panel, build, triggerSkillId(owner, t), key), statusTweaks(ctx, st, owner, frame), () => attackerSide(side, owner, frame));
+          const r = applyToEnemy(withLoggedReactionLevel(ctx, expireStatus(st.enemy, frame), resolved, frame, owner), resolved, frame, owner, ai, (key) => skillValue(ctx.data, panel, build, triggerSkillId(owner, t), key), statusTweaks(ctx, st, owner, frame), () => attackerSide(side, owner, frame));
           const fromKind = origin && origin.operator === owner ? origin.kind : "none";
           const d = delayBursts(ctx, { ...st, enemy: r.state }, r.events, fromKind);
           st = recordStatus(ctx, d.state, d.now, r.state);

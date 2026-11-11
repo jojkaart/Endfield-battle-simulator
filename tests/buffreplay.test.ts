@@ -481,3 +481,36 @@ describe("an operator in its own ultimate's time stop isn't held by another's sl
     expect(stabs.every((h) => h.modifiers.some((m) => m.source.includes("Razorclaw Ambuscade: Crit DMG")))).toBe(true);
   });
 });
+
+describe("an arts reaction's level as the log shows it, where the replay's enemy holds other stacks (2026-11-11)", () => {
+  const A = "chr_0032_lizhiyan";
+  const near = (frame: number, t: number) => Math.abs((frame * 1000) / FPS - t) <= 34;
+  /** A fixture's replay: its reaction of `status` near `t` ms (the level), and the Corrosion levels its landings in the 10 s after see. */
+  const replayAt = (f: string, status: string, t: number) => {
+    const fx = readLogFixture(new URL(`../fixtures/pending/zmdlogs-${f}.json`, import.meta.url).pathname);
+    const r = logBuffReplay(data, fx).replay;
+    const reaction = r.reactions.find((e) => e.kind === "reaction" && e.status === status && near(e.frame, t));
+    const after = r.hits.filter((h) => h.frame > (t * FPS) / 1000 + 1 && h.frame < ((t + 10000) * FPS) / 1000);
+    const shreds = new Set(after.flatMap((h) => h.modifiers.filter((m) => m.source.startsWith("Corrosion level ")).map((m) => m.source)));
+    return { level: reaction?.kind === "reaction" ? reaction.level : null, shreds: [...shreds], fx, r };
+  };
+
+  it("4a64: Arcane's Corrosion at 52982 ms is level 1, as its logged hit (16537) says (the replay's Cryst stack from Xaihi's battle skill at 33.3 s, a cast the log shows no hit of, made it 2)", () => {
+    const { level, shreds, fx, r } = replayAt("4a64e58e75ad", "corrosion", 52982);
+    expect(level).toBe(1);
+    expect(shreds).toEqual(["Corrosion level 1"]);
+    const hit = fx.hits.find((h) => h.t === 52982 && h.operator === A && h.event === "buff_common_natural_triggered") as LogHit;
+    const l = r.statusLanding(hit);
+    expect("unknown" in l ? null : l.inputs?.kind === "status" ? l.inputs.reaction.stacks : null).toBe(1);
+  });
+
+  it("3f78: Arcane's Corrosion at 46994 ms is level 2 (its hit fits level 2, or level 1 with a set buff the replay isn't sure of; the logged hits' inflictions say 2)", () => {
+    const { level, shreds } = replayAt("3f78ceb15bc3", "corrosion", 46994);
+    expect(level).toBe(2);
+    expect(shreds).toEqual(["Corrosion level 2"]);
+  });
+
+  it("keeps the replay's own level where the log's doesn't decide (489c: Rossi's Combustion at 96773 ms fits level 3, or level 1 with a crit; the inflictions say 1)", () => {
+    expect(replayAt("489c0be3e162", "combustion", 96773).level).toBe(1);
+  });
+});

@@ -710,6 +710,11 @@ export interface ReplayOptions {
    * no kit models, for the simulation of the logged casts (logcheck.ts simulateLog). Absent: the kits' alone.
    */
   readonly loggedModifiers?: (hit: LogHit) => readonly Modifier[];
+  /**
+   * Arts reaction levels the log shows where the replay's differ (TimelineScenario.loggedReactionLevels: logcheck.ts
+   * loggedReactionLevels finds them), at the replay's own landings of those reactions. Absent: the replay's own.
+   */
+  readonly reactionLevels?: TimelineScenario["loggedReactionLevels"];
 }
 
 export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placement, opts: ReplayOptions = {}): BuffReplay {
@@ -787,6 +792,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
         const modifiers = (opts.loggedModifiers as NonNullable<ReplayOptions["loggedModifiers"]>)(h);
         return modifiers.length ? [{ operator: h.operator, event: h.event, frame: frameOf(h.t), modifiers }] : [];
       }) } : {}),
+      ...(opts.reactionLevels?.length ? { loggedReactionLevels: opts.reactionLevels } : {}),
     };
     const ctx = createContext(data, scenario);
     let st: TimelineState = init(ctx);

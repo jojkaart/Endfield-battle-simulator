@@ -215,18 +215,36 @@ Corrosion (52982 ms) is level 1 in the reaction check, level 2 in the
 check's replay (hits ×0.95–0.97; at level 1 they fit); 3f78's second
 (46994 ms) the other way round.
 
+**Found (2026-11-11, the level fix):** the replay's enemy held other Cryst
+stacks than the game's. 4a64 at 52982 ms: level 2 in the replay from a
+Cryst stack of Xaihi's battle skill cast at 33.3 s, whose hit the log
+never shows; level 1 by the logged reaction hit (16537) and the reaction
+check. 3f78 at 46994 ms: level 1 in the replay (at 45458 ms Arcane's
+ultimate lands before Xaihi's Cryst, so its "enemy's element"
+infliction adds nothing); level 2 in the reaction check (the hit fits 2,
+or 1 with a set buff the replay isn't sure of). The replay now takes the
+level the log shows (docs/design.md, "The log check's rule"): 4a64 plain
+68 → 114, unquantified 193 → 131, mismatches 3 → 1; 3f78 plain 30 → 32,
+assumed 6 → 25, unquantified 208 → 179, mismatches 8 → 5. Totals: 4a64
+−36.5 → −38.7%, 3f78 −36.5 → −35.0% (less shred in 4a64; the
+under-prediction is elsewhere).
+
 **Ruled out:** a DEF decrease (round 3's reading: attributes 94–98 aren't
 DEF, and a full −15% gives at most ×1.081); a different status from the
-engine's Corrosion; the food running out (300 s).
+engine's Corrosion; the food running out (300 s); the second windows'
+Corrosion levels (the log's now).
 
 **Still possible:**
-- Why the check's replay gets another level than the reaction check: a
-  different Cryst stack count at the Nature hit (an infliction it lacks or
-  adds). Being fixed (round 4: the level from the logged reaction's
-  damage).
-- 3f78's second window at level 2 still ×1.079–1.158: the log lists
-  Arcane's Will DMG and Will ATK (funnel_0016, 0.096 each) more often than
-  the engine has them.
+- The replay's inflictions themselves (casts whose hits the log doesn't
+  show, same-frame order across operators) still differ from the game's;
+  only the reaction levels are taken from the log.
+- 3f78's second window at level 2 still ×1.079–1.158 (54–61.5 s): the log
+  lists Arcane's Will DMG and Will ATK (funnel_0016, 0.096 each) more
+  often than the engine has them.
+- The first windows (4a64 6.3–18.8 s, 3f78 3–15 s) are still "no level
+  fits" in the check (nearest ×1.012–1.014, ×0.987 at 15–17 s in 4a64),
+  though their level (1) is the replay's and the round-4 hand fit is
+  1.000: the check's reading differs from that fit somewhere.
 - ×1.5 on hits at a reaction's own millisecond (1.5001 in 3f78 and 4a64).
 - Rossi's combo_2 ×0.94 in 3f78's second window.
 - Si's ultimate and Fixed DMG, Rossi's and Si's ultimate hits (×1.4 to
@@ -234,8 +252,8 @@ engine's Corrosion; the food running out (300 s).
   sum) isn't computable; Rossi's Seething Blood extras after null-crit
   stabs need the stab's crit.
 
-**Next check:** after the level fix, the Will buffs' instances in 3f78;
-the hits at reactions' own milliseconds.
+**Next check:** the Will buffs' instances in 3f78; the hits at
+reactions' own milliseconds; why the first windows' hits miss in the check.
 
 ## The slow-down rule's reach (2026-11-11)
 
