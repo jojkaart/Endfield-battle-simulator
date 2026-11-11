@@ -134,19 +134,35 @@ zeroes whole hits); Stagger (the bar isn't empty when the buffs stop
 acting); an additive damage-taken reduction (1 + 0.12 − r doesn't fit;
 1 + 0.096k does).
 
-**Still possible:**
-- The number-shield phase (buff_eny_0129_slwood_numshield_hdg033,
-  FinishBuffAdvanced ×2: not yet read which buffs or tags it ends) removing
-  or suspending enemy debuffs.
-- Per-instance replacement (Jade Vessel's priority key `dmg_taken_up`) or a
-  dispel on reapplication.
-- The log listing buffs by presence while the damage uses another state
-  (a ZMDLogs quirk for shielded enemies).
-- Hits zeroed by the shield explaining the missing hit_2 and Combustion.
+Round 5, the slug's data (from extracted BuffData): the number shield
+(numshield_hdg033: 1, set to 3 on a signal buff, one less per qualifying
+hit) blocks hits through buff_common_eny_numshield (−9999 in the product
+zone: a blocked hit deals 0); at 0, numshield_zero ends the shield buffs
+by id. Its two FinishBuffAdvanced end numshield_destory (on itself) and
+the stage's poison on the team. Every finish names buffs by id; no tag
+query. Jade Vessel's enemyvul and Arcane's funnel stacks carry no tags.
+Neither log has a zero-value hit or lists a shield or Stagger buff. In
+6339 Jade Vessel's entry drops out of the hits' lists at 10913 ms (last
+at 10349); in 7b54 it's listed to 35.5 s.
 
-**Next check:** what numshield_hdg033's FinishBuffAdvanced ends, against
-the times the debuffs stop acting. Status: an unmodelled boss phase; such
-logs are to be avoided (accuracy plan, Choosing logs).
+**Ruled out:** the shield (or its end) ending the debuffs, by id or by
+tag; Stagger at 10.5 s (6339: bar 22 → 45, rising) or at 12 s (7b54).
+
+**Still possible:**
+- Jade Vessel's replacement by priority key (stacking type 11,
+  `dmg_taken_up`, max 1) keeping another instance than the engine's.
+- The hits' effects lists being sparse in these logs (entries vanish and
+  return), so "listed but not acting" reads presence wrongly.
+- Shield-blocked hits hidden in a gap (6339: none from 11.3 to 14.6 s).
+- A Stagger in 7b54 from ~19–20 s (bar 7 at 19.0 s, no sample to 29.5 s).
+- buff_common_mini_poise_break_slwood and numshield_destory carrying an
+  effect (the latter unread; the former an interrupt with 4 s
+  immobilization, read in round 1).
+- Hits zeroed by the shield explaining 6339's missing hit_2 and
+  Combustion.
+
+**Next check:** none planned: such logs are to be avoided. If one is
+needed, the priority-key replacement of Jade Vessel's buff.
 
 ## Liino's battle-skill presses during Vocalist Stance (every Liino log)
 
