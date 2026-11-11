@@ -93,9 +93,22 @@ modifiers) has physical resistance 20 (zone 0.8) in the data; the hits
 need 0.89, resistance 11. Rossi's fire hits (8, weak) are ×0.890, as if
 fire were 11 too (the data: 0).
 
+Round 4, other Hard stages: no Hard-stage pattern. Hard 15
+(eny_0058_agdisk_hdg015, data resistances 12): fire fits 12 exactly (233
+of 234 hits), physical fits no single value and is one operator per log
+(Akekuri in 012a, Alesh in 4e36), and its hits are low, not high; R = 11
+gives 0 matches there. hdg005 (eny_0033_lbhunt, physical 0): no value
+fits; Estella's hits with few effects match at 0. Control: Tower 15
+(klbear, physical 20) peaks sharply at 20 (132 of 132 plain in 458b).
+
 **Still possible:**
-- A Hard 27 resistance setting outside the tables we read (all
-  resistances 11?), or an enemy buff giving it.
+- An operator- or team-side term: both Hard 27 logs are one player's,
+  with Azrila in both teams (an unlisted team Physical DMG or
+  susceptibility of hers, a talent or potential, would hit Rossi and Mi
+  Fu alike); per-log operator factors on Hard 15 and hdg005 (Akekuri's,
+  Alesh's, Estella's buffs) likewise untested.
+- A Hard 27 resistance setting outside the tables we read, or an enemy
+  buff giving it (no longer favoured).
 - Azrila: 1.044 = 1.1125 × 0.9388, her ATK inputs ~6% high (a weapon
   level, nodes) on top of the same term.
 - An unlisted team debuff (Physical Susceptibility) or a build input
@@ -103,9 +116,9 @@ fire were 11 too (the data: 0).
 - The two factors (physical ×1.11, all-element ×1.044) being one term in
   different zones.
 
-**Next check:** a log of another Hard stage's enemy with physical hits
-(does the same 0.89 appear?); Azrila's build offsets; the separate
-over-predictions there (Aurora ×0.655, Purrchena ×2.757 in 99fb).
+**Next check:** Azrila's kit (talents, potentials, team buffs) at her
+builds in 2fd9 and 99fb; her own ×1.044; the separate over-predictions
+there (Aurora ×0.655, Purrchena ×2.757 in 99fb).
 
 ## Hard 33's slug: debuffs the engine keeps don't act (7b54, 6339)
 
