@@ -449,3 +449,13 @@ describe("kit buffs the replay can't judge, where the log records none of their 
     expect(unjudged("1cd1657bc305")).toBe(true);
   });
 });
+
+describe("an operator in its own ultimate's time stop isn't held by another's slow-down", () => {
+  it("9a80: Si's combo slow-down inside Rossi's ultimate stop doesn't delay its crit buff (frame 58): her first stabs have it", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-9a8097fcf351.json", import.meta.url).pathname);
+    const W = "chr_0028_wulfa";
+    const stabs = logBuffReplay(data, fx).replay.hits.filter((h) => h.operator === W && h.skillId === `${W}_ultimate_skill` && h.hitId === "stab");
+    expect(stabs[0]?.frame).toBe(1055);
+    expect(stabs.every((h) => h.modifiers.some((m) => m.source.includes("Razorclaw Ambuscade: Crit DMG")))).toBe(true);
+  });
+});

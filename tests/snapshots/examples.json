@@ -279,18 +279,18 @@
   ]
  },
  "mifu-dapan.scenario.json": {
-  "total": 832029.897,
-  "hits": 60,
+  "total": 834141.093,
+  "hits": 61,
   "casts": 32,
   "perOperator": {
    "chr_0031_mifu": 729489.898,
-   "chr_0018_dapan": 102540
+   "chr_0018_dapan": 104651.195
   },
-  "digest": "bafdc5cf4206",
+  "digest": "b1fc29865c7f",
   "windows": [
-   "f95c96cf5dbb",
-   "e43a949139bb",
-   "520742b1a883"
+   "9996ba1b0ad2",
+   "f15ad740152f",
+   "fd5edd2feb64"
   ]
  },
  "perlica-estella.scenario.json": {
@@ -354,19 +354,19 @@
   ]
  },
  "si-laevatain-liino-gilberta.scenario.json": {
-  "total": 2964094.57,
+  "total": 3002793.422,
   "hits": 166,
   "casts": 74,
   "perOperator": {
-   "chr_0036_jsspsi": 712060.293,
-   "chr_0016_laevat": 1905687.82,
-   "chr_0035_liino": 194775.98,
-   "chr_0013_aglina": 151570.476
+   "chr_0036_jsspsi": 733954.149,
+   "chr_0016_laevat": 1924218.681,
+   "chr_0035_liino": 191102.482,
+   "chr_0013_aglina": 153518.11
   },
-  "digest": "6c23aa4ace81",
+  "digest": "b9cadf5cdf7b",
   "windows": [
-   "73b5a56c9a19",
-   "384b37d3e234"
+   "6d9fd5a9ca04",
+   "defe64ad9fe4"
   ]
  },
  "si-laevatain.scenario.json": {

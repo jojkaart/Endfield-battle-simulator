@@ -811,9 +811,10 @@ time. Overlapping slow-downs: the lowest scale counts. The engine shifts
 what comes after the slow-down's start by the lost frames, which is exact
 for a stop and, for a partial slow-down, for everything after it ends;
 for an operator still in its own ultimate's stop (which another
-ultimate's doesn't hold), from that stop's end, so what's due right then
-comes on time (Liino's Cosmovoice at her frame 77 across Xaihi's stop in
-dbae).
+ultimate's stop or a combo's slow-down doesn't hold), from that stop's
+end, so what's due right then comes on time (Liino's Cosmovoice at her
+frame 77 across Xaihi's stop in dbae; Rossi's ultimate crit buff at its
+frame 58 across Si's combo slow-down in 9a80).
 SP regenerates until the slow-down starts (which may be frames into its
 cast, or inside an advance for a trigger's cast), not for the lost frames
 after it (`TimelineState.spStops`), then on; the pause after a spend is

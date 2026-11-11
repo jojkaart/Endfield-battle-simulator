@@ -33,8 +33,10 @@ export function slowDown(ctx: TimelineContext, st: TimelineState, caster: string
       for (const x of s.slowdowns) if (x.exempt !== who && f >= x.start && f < x.start + x.scales.length) m = Math.min(m, x.scales[f - x.start] as number);
       return m;
     };
-    // Frames of its own ultimate's time stop, which another ultimate's doesn't take from it.
-    const ownStop = (who: string | null, f: number) => ultimate && who !== null && s.slowdowns.some((x) => x.ultimate && x.exempt === who && f >= x.start && f < x.start + x.scales.length);
+    // Frames of its own ultimate's time stop, which another's stop or slow-down doesn't take from it (9a8097fcf351: Si's
+    // combo slow-down from 1034 inside Rossi's stop, 992 to 1049, held her ultimate's crit buff, due at its frame 58, to
+    // 1066, while the log has her stabs from 1055 crit at ×2.9 with it).
+    const ownStop = (who: string | null, f: number) => who !== null && s.slowdowns.some((x) => x.ultimate && x.exempt === who && f >= x.start && f < x.start + x.scales.length);
     // The frames it takes from one, and the first it takes: an operator its own ultimate's stop still covers is held only
     // from that stop's end, so what's due right then comes on time (dbaee23b801d: Liino's Cosmovoice at her ultimate's
     // frame 77, the end of its stop, with Xaihi's ultimate stop from 7606 ms running on: at 8258 ms, as logged).
