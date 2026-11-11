@@ -754,6 +754,16 @@ log-verdicts-pending.json and fixtures/pending/holdout.json.
    205); db87's Arcane a level-80 weapon (plain 0 → 50). Measured:
    development plain 40.7% (mismatches 22.0%), hold-out 49.7% (9.0%).
    What each left standing: [open-problems.md](open-problems.md).
+12. **Round 4.** The Corrosion buff on Cryst is the engine's Corrosion
+   (a sonnet pass overturning round 3's "DEF decrease"); the misfits were
+   the replay's level, now taken from the logged reaction's damage where
+   it fits one level (opus, `loggedReactionLevels`): 4a64 plain 68 → 114.
+   Rossi's 4th Vulnerable stack in 9a80 is her own Lift, missed twice
+   (her combo placed 2 frames late; no infliction for it to consume at
+   7.8 s); her combo's crit window is 3 s longer in the log than the
+   replay's, cause not found; Hard 27's physical ×1.11 isn't a Hard-stage
+   pattern (other Hard enemies fit their data). Measured: development
+   plain 41.9%, hold-out 49.9% (mean |damage error| 18.7%).
 
 ## Phase C: questions for the owner (they decide what to model)
 
