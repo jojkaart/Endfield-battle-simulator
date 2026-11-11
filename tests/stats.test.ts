@@ -105,3 +105,29 @@ describe("attribute limits from AttributeMetaTable (round-two review)", () => {
     expect(clampAttr(data, Attr.CriticalRate, 1.5)).toBe(1.5);
   });
 });
+
+describe("weapons below their maximum (the owner: Arcane builds keep a weapon skill low on purpose)", () => {
+  // Logs with sub-max weapons: d774 (Liino's [9, 6, 4] at level 80), a7a7 ([9, 8, 4]), 1d91 ([9, 4, 4]).
+  const will = JSON.parse(readFileSync(new URL("../examples/arcane-will.json", import.meta.url), "utf8")) as Build;
+  const at = (skillLevels: [number, number, number], level = 90): Build => ({ ...will, weapon: { id: "wpn_funnel_0016", level, skillLevels } });
+  const wisd = (b: Build) => computeStats(data, b).attrs[Attr.Wisd]?.total ?? NaN;
+
+  it("a stat skill gives its own level's value", () => {
+    // wpn_attr_wisd_high: Intellect +20, +36, … +156 at levels 1–9 (SkillPatchTable), no Intellect % in this build.
+    const table = (data.skills["wpn_attr_wisd_high"] as SkillData).levels.map((l) => l.blackboard["wisd"] as number);
+    for (let l = 1; l <= 9; l++) expect(wisd(at([l, 9, 5])) - wisd(at([1, 9, 5]))).toBeCloseTo((table[l - 1] as number) - (table[0] as number), 6);
+    // Arcane's mode follows the panel: this WILL build stays WILL at every level of her Intellect skill.
+    for (const l of [1, 9]) expect(computeStats(data, at([l, 9, 5])).attrs[Attr.Will]?.total ?? 0).toBeGreaterThan(wisd(at([l, 9, 5])));
+  });
+
+  it("the unique skill's values come from its level, and the weapon's base ATK from the weapon's level", () => {
+    const value = (b: Build) => skillValue(data, computeStats(data, b), b, "sk_wpn_funnel_0016", "atk_up");
+    const levels = (data.skills["sk_wpn_funnel_0016"] as SkillData).levels;
+    expect(value(at([9, 9, 1]))).toBe(levels[0]?.blackboard["atk_up"]);
+    expect(value(at([9, 9, 4]))).toBe(levels[3]?.blackboard["atk_up"]);
+    expect(value(at([9, 9, 4]))).toBeLessThan(value(at([9, 9, 9])));
+    const base = (lv: number) => computeStats(data, at([9, 9, 5], lv)).atk.weaponBase;
+    expect(base(80)).toBe(data.weapons["wpn_funnel_0016"]?.baseAtk[79]);
+    expect(base(80)).toBeLessThan(base(90));
+  });
+});
