@@ -362,13 +362,13 @@ describe("4e5e1390085e: Camille's weapon buffs after the log stops listing them"
     expect(gaps.find((x) => x.buff === "buff_wpn_lance_0015_dmgup")?.from).toBeGreaterThanOrEqual(65597);
   });
 
-  it("matches Rossi's hits under them without a hand annotation (all but the killing blow, accuracy plan A1 and B1)", () => {
+  it("matches Rossi's hits under them without a hand annotation (every one, accuracy plan A1 and B1)", () => {
     const rossi = checkLog(data, fx, { replay: r }).filter((v) => v.hit.operator === "chr_0028_wulfa");
-    expect(rossi.filter((v) => v.kind === "match").length).toBe(161);
-    // His finisher at 69142 ms lies in the log's last Stagger (66.6 s), which the replay's bar misses by 24: the log's bar
-    // drops 36 at 53177 ms, of which only Estella's projectile's 12 is logged (2026-10-26; before, the replay's own
-    // Stagger at 29.5 s, where the log's bar refilled, let it reach that one by chance).
-    expect(rossi.filter((v) => v.kind !== "match").map((v) => [v.hit.t, v.kind])).toEqual([[69142, "unquantified"]]);
+    expect(rossi.filter((v) => v.kind === "match").length).toBe(162);
+    // His finisher at 69142 ms lies in the log's last Stagger (66.6 s), which the replay's own bar missed by 24 (the
+    // log's bar drops 36 at 53177 ms, of which only Estella's projectile's 12 is logged): since 2026-11-11 the replay
+    // follows the log's bar at its hits with Stagger (loggedPoiseBars), and it matches.
+    expect(rossi.filter((v) => v.kind !== "match").map((v) => [v.hit.t, v.kind])).toEqual([]);
     // …by the replay's buffs, not the log's listing, in the fallback's readings (the engine's own fall back where its
     // Wolven Blood layers or Stagger differ from the log's: the report's leads).
     const listing = checkLog(data, fx, { replay: r, engine: false }).filter((v) => v.hit.operator === "chr_0028_wulfa");

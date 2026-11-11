@@ -14,11 +14,11 @@
   "totals": {"damage":-1.9,"operator chr_0013_aglina":0,"operator chr_0036_jsspsi":-2.3,"operator chr_0016_laevat":-1.5,"operator chr_0033_camille":-4.3,"kind basic":-1.7,"kind battle":111.6,"kind combo":-22.6,"kind status":0.7,"kind ultimate":0,"hits":0,"status hits":0,"staggered hits":0,"last hit":-2.1,"time to kill":null,"crit share (points)":0.3}
  },
  "zmdlogs-4e5e1390085e.json": {
-  "chr_0028_wulfa": {"plain":69,"assumed":42,"fallback":50,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
+  "chr_0028_wulfa": {"plain":72,"assumed":42,"fallback":48,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0033_camille": {"plain":72,"assumed":9,"fallback":4,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0021_whiten": {"plain":35,"assumed":1,"fallback":5,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0013_aglina": {"plain":52,"assumed":3,"fallback":4,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":-2.8,"operator chr_0013_aglina":-2.5,"operator chr_0028_wulfa":-4.8,"operator chr_0033_camille":1.6,"operator chr_0021_whiten":0.1,"kind basic":-5.7,"kind battle":-1.4,"kind combo":20.8,"kind none":-10.3,"kind status":-2.5,"kind ultimate":-6,"hits":2,"status hits":4.8,"staggered hits":-84.6,"last hit":0,"time to kill":null,"crit share (points)":-0.3}
+  "chr_0021_whiten": {"plain":39,"assumed":1,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "chr_0013_aglina": {"plain":54,"assumed":3,"fallback":2,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
+  "totals": {"damage":6.2,"operator chr_0013_aglina":5,"operator chr_0028_wulfa":9.7,"operator chr_0033_camille":3,"operator chr_0021_whiten":-0.9,"kind basic":-2.1,"kind battle":1.7,"kind combo":20.8,"kind none":-14.5,"kind status":1.5,"kind ultimate":13.7,"hits":2,"status hits":4.8,"staggered hits":153.8,"last hit":0,"time to kill":-1.6,"crit share (points)":-0.3}
  },
  "zmdlogs-b7b3762d5da8.json": {
   "chr_0032_lizhiyan": {"plain":10,"assumed":2,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},

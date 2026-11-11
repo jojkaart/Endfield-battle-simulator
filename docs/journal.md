@@ -5,6 +5,18 @@ their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 Older entries (2026-10-21 and earlier): [journal-archive.md](journal-archive.md).
 
+## 2026-11-11: The replay's Stagger bar follows the log
+
+Goal: the screened development logs, largest problems first. e989 is low
+for every operator by a constant per operator; nothing found yet (gear,
+listed buffs, stage tags all match). Hard 33: its slug refills its own
+Stagger bar, so the replay Staggered it where the game never did. The
+replay now sets its bar to the log's before each hit with Stagger and
+ends Staggers of its own the log doesn't have: plain +207 over all logs,
+hold-out 47.7 → 49.3% plain. It exposed a double count: the engine's
+Stagger from a hit and from the Lift or reaction it causes (one event in
+game; 4e5e's total +6.2% now). Lead for B1.
+
 ## 2026-11-08 / 09: New logs chosen by rule, with a hold-out
 
 Goal (the owner): pick logs whose builds need no guessing, rather than

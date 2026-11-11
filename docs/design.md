@@ -332,7 +332,12 @@ percentage error; the verdict snapshots pin them to 0.1%. Both sides
 sum to the log's last hit: in a fight that ends in a kill (the log's
 total is the enemy's HP) the replay's damage goes on past the HP to the
 log's kill, so each operator's covers the same span, and when the replay
-reached the HP is its own row, the time to kill. Landings a log can't
+reached the HP is its own row, the time to kill. The replay's Stagger bar
+follows the log: set to the log's bar before each hit with Stagger, and a
+Stagger of its own ended where the log shows none (buffreplay.ts
+`loggedPoiseBars`), so its Stagger windows are the log's; the totals'
+"hits under Stagger" row measures that following, not the engine's
+Stagger sums. Landings a log can't
 have (a hit that didn't reach the logged enemy) are named by hand in the
 fixture's `absent`, each with why, and left out of the replay's side.
 

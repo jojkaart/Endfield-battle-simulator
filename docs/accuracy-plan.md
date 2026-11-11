@@ -634,6 +634,42 @@ Estella has only 2 logs (no more candidates in her profile). Single-
 target stages so far: Towers 15, 16, 19; Hard 2, 15, 27, 33; the Rhodagn
 rush and dungeon 2's rushes 3 and 4.
 
+## The screened logs, first rounds (2026-11-11)
+
+Baseline before any change (development 11 logs / hold-out 6): plain
+matches 24.0% / 47.7%, mismatches 39.0% / 9.1%, mean |total damage
+error| 26.4% / 20.0%. Recorded by `measure.py`-style sums over
+log-verdicts-pending.json and fixtures/pending/holdout.json.
+
+1. **The Stagger bar from the log.** Hard 33's Woodcraft Slug refills its
+   bar on its own (27 → 42 in 1.9 s in 7b54); the replay's bar only fell,
+   so it Staggered the slug twice where the log never does. And replayed
+   casts the log shows without hits (7b54: battle skills at 3 s, before
+   its first logged hit) dealt Stagger the game didn't. The replay now
+   sets its bar to the log's before every hit with Stagger
+   (`loggedPoiseBars`: the bar after plus what it dealt; hits under
+   50 ms apart as one group), and ends a Stagger of its own where the log
+   shows the enemy not Staggered (a bar above 0, no Stagger listed); the
+   first logged hit finding the bar full counts as a refill. Staggered-
+   hit errors: 3aa6 −100 → −11%, a27b −100 → +12%, de6a −27 → +1%, 6339
+   +1400 → 0%, 0c14 +36 → +7%, plain +207 over all logs (6968 → 7175).
+   Measured: development plain 24.0 → 25.2%, hold-out 47.7 → 49.3%
+   (mean |damage error| 20.0 → 19.7%). The cost: Stagger's timing comes
+   from the log in a replay, so "hits under Stagger" no longer tests the
+   engine's Stagger sums; their per-hit values still show in the bar's
+   steps. Worse: 4e5e (verified) +6.2% total (−2.8%), its Stagger 1.5 s
+   early: at 65097 ms the log lists one 24 on both Estella's ultimate hit
+   and the Lift it causes, and one 10 on Camille's battle skill and its
+   reaction; the replay deals all four (68 where the game took 34). The
+   engine's Stagger from a hit and from the Lift or reaction it causes is
+   one event in game: a lead (B1).
+2. **e989 (bossrush04) low for everyone**, constant per operator through
+   the fight: Camille ×1.246, Arcane ×1.199, Si ×1.09, Laevatain ×1.06.
+   The log's listed modifiers, gear lines (raw values) and stage tags
+   (none) all match; no food, no unlogged team buff of one value (ATK%,
+   flat ATK and attributes all give different amounts). Open; 0c14 on the
+   same stage is low too, 3aa6 and d774 aren't.
+
 ## Phase C: questions for the owner (they decide what to model)
 
 - **Do teammates act on their own?** Answered (the owner, 2026-10-26):

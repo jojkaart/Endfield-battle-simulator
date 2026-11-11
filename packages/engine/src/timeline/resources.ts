@@ -204,6 +204,16 @@ export function refillPoise(ctx: TimelineContext, st: TimelineState): TimelineSt
   return { ...st, stagger: { poise: maxPoise(ctx), until: null, finisherUsed: false } };
 }
 
+/**
+ * The enemy's stagger HP set to `poise` (within 0 and full): its state as a log shows it, which a replay follows (cli
+ * buffreplay.ts loggedPoiseBars) as it pins landings to their logged frames. Not while Staggered, unless `endStagger`:
+ * the log shows the enemy not Staggered then.
+ */
+export function setPoise(ctx: TimelineContext, st: TimelineState, poise: number, endStagger = false): TimelineState {
+  if (st.stagger.until !== null && !endStagger) return st;
+  return { ...st, stagger: { poise: Math.max(0, Math.min(maxPoise(ctx), poise)), until: null, finisherUsed: endStagger ? false : st.stagger.finisherUsed } };
+}
+
 /** How long a Stagger lasts (frames): the enemy's attribute 21 × 31 seconds. */
 export function staggerFrames(ctx: TimelineContext): number {
   return Math.round(enemyAttr(ctx, Attr.PoiseRecTime) * enemyAttr(ctx, Attr.PoiseRecTimeScalar) * FPS);

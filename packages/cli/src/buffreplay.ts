@@ -11,7 +11,7 @@
 // the two disagree (leads: a log gap, or a kit trigger that's wrong).
 
 import {
-  activeAt, advance, allActions, earliestStart, applyBuff, Attr, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, refillPoise, skillAvailable, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
+  activeAt, advance, allActions, earliestStart, applyBuff, Attr, setPoise, buffModifiers, computeStats, createContext, kitHitEntries, parseReactionEvent, readingDoesNotApply, refillPoise, skillAvailable, staggerFrames, triggerSkillId, effectiveKit, FPS, init, reaches, replayCast, replayWindowCount,
   type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
@@ -499,10 +499,40 @@ export function loggedRecoveries(fx: Pick<LogFixture, "hits">): number[] {
   for (const [i, h] of shown.entries()) {
     const prev = shown[i - 1];
     const before = h.poise.bar + h.poise.dealt;
-    if (prev && h.t > prev.t && before > prev.poise.bar + 1 && before >= full - 0.5 && out.at(-1) !== h.t) out.push(h.t);
+    // The first logged one too, when it finds the bar full: hits the replay gave Stagger before it didn't leave any
+    // (7b54dc249bcd: Camille's and Si's battle skills at 3 s, the slug's bar full at 11418 ms).
+    if ((prev ? h.t > prev.t && before > prev.poise.bar + 1 : true) && before >= full - 0.5 && out.at(-1) !== h.t) out.push(h.t);
   }
   return out;
 }
+
+/**
+ * The log's Stagger bar before each group of logged hits with Stagger (LogHit.poise: the bar after a hit plus what it
+ * dealt; hits less than POISE_ORDER_MS apart are one group, their order in the log not theirs: its highest), in ms. The
+ * replay sets its bar to it a frame before, so each hit finds the bar the game had: the enemy's own recovery, which
+ * some enemies' AI makes, isn't in the timeline (7b54dc249bcd's Woodcraft Slug: 27 → 42 in 1.9 s, never Staggered in
+ * 26 s, where a bar that only falls broke twice), nor Stagger from hits the log doesn't show. A full bar is a
+ * recovery (loggedRecoveries), a Stagger's end refills it.
+ */
+export function loggedPoiseBars(fx: Pick<LogFixture, "hits">): { readonly t: number; readonly bar: number; readonly notStaggered: boolean }[] {
+  const shown = fx.hits.filter((h): h is LogHit & { poise: NonNullable<LogHit["poise"]> } => h.poise !== undefined).sort((a, b) => a.t - b.t);
+  const out: { t: number; bar: number; notStaggered: boolean }[] = [];
+  // Not Staggered: the hit lists no Stagger and leaves the bar above 0 (a Stagger the replay has there isn't the game's).
+  const calm = (h: LogHit & { poise: NonNullable<LogHit["poise"]> }) => h.poise.bar > 0 && !h.effects.some((e) => /poise_break/.test(e.buff));
+  for (const [i, h] of shown.entries()) {
+    const prev = shown[i - 1];
+    const before = h.poise.bar + h.poise.dealt;
+    const last = out.at(-1);
+    if (prev && last && h.t - prev.t < POISE_ORDER_MS) {
+      last.bar = Math.max(last.bar, before);
+      last.notStaggered = last.notStaggered && calm(h);
+    } else out.push({ t: h.t, bar: before, notStaggered: calm(h) });
+  }
+  return out;
+}
+
+/** How far apart two logged hits must be for their bars' order to be theirs (ms; loggedPoiseGains). */
+const POISE_ORDER_MS = 50;
 
 /** How far apart two basic casts of one operator may be (ms, the first's last hit to the next's start) to be one run of its attacks. */
 const RUN_GAP_MS = 1500;
@@ -713,6 +743,8 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const assembled: ReplayedCast[] = kits.length > 0 ? castsFromBuffEnds(kits, placement, castsFromTriggerHits(data, fx, kits, castsFromBuffLanes(data, fx, kits, withLoggedCasts(replayedCasts(placement, fx).filter((c) => !followUps.has(`${c.operator}|${c.skillId}`)), fx, kits, data, castTimeStops(data, placement.casts))))) : [];
   const control = controlledFromLog(placement, assembled);
   const recoveries = loggedRecoveries(fx).map(frameOf);
+  // The bar is set a frame before its hit, so the hit sees the bar the log has before it.
+  const poiseBars = loggedPoiseBars(fx).map((g) => ({ frame: Math.max(0, frameOf(g.t) - 1), bar: g.bar, calm: g.notStaggered }));
   const casts = control?.casts ?? assembled;
   const sampleFrames = [...new Set(fx.hits.flatMap((h) => [frameOf(h.t) - edge, frameOf(h.t), frameOf(h.t) + edge]))].filter((f) => f >= 0).sort((a, b) => a - b);
   type Made = { c: ReplayedCast; f: number; pre: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs };
@@ -801,9 +833,11 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       for (const [k, v] of seen) open.set(k, v);
     };
     // Casts and samples in frame order; a cast before a sample at its frame (its frame-0 hits land first); the log's
-    // Stagger recoveries before both (the bar is full for that frame's hits).
-    const steps = [
+    // Stagger recoveries before both (the bar is full for that frame's hits), and its bar a frame before its hits.
+    type Step = { frame: number; cast: ReplayedCast | null; recover: boolean; bar?: number; calm?: boolean };
+    const steps: Step[] = [
       ...recoveries.map((frame) => ({ frame, cast: null as ReplayedCast | null, recover: true })),
+      ...poiseBars.map((g) => ({ frame: g.frame, cast: null as ReplayedCast | null, recover: false, bar: g.bar, calm: g.calm })),
       ...casts.map((c) => ({ frame: Math.max(0, frameOf(c.start)), cast: c as ReplayedCast | null, recover: false })),
       ...sampleFrames.map((frame) => ({ frame, cast: null as ReplayedCast | null, recover: false })),
     ].sort((a, b) => a.frame - b.frame || Number(b.recover) - Number(a.recover) || (a.cast ? 0 : 1) - (b.cast ? 0 : 1));
@@ -837,6 +871,10 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
         st = advance(ctx, withoutFollowUps(ctx, st, casts, Math.max(s.frame, st.frame)), Math.max(s.frame, st.frame));
         if (s.recover) {
           st = refillPoise(ctx, st);
+          continue;
+        }
+        if (s.bar !== undefined) {
+          st = setPoise(ctx, st, s.bar, s.calm === true);
           continue;
         }
       } catch (e) {
