@@ -744,6 +744,16 @@ log-verdicts-pending.json and fixtures/pending/holdout.json.
    Measured after items 5–9: development plain 25.5 → 37.9%, mismatches
    38.2 → 25.4%, mean |damage error| 26.2 → 22.5%; hold-out plain 49.3 →
    49.7%, mismatches 9.1 → 9.0%, mean |damage error| 19.7 → 20.3%.
+11. **Round 3** (the register's next checks, seven small-model agents):
+   e989's Si has 0 attribute nodes (71 of 73 hits match; a level-80
+   weapon, ×0.937 against ×0.940, matches none); the totals counted an
+   unlogged crit at expected rates even when the hit's value equals the
+   crit reading (40d9's killing combo finish ×1.5: 40d9 −9.1 → −0.1%,
+   hold-out mean |damage error| 20.3 → 18.4%); 0c14's Alesh has a level-60
+   weapon (×0.807 exactly) and Rossi a Kunst Tube (0c14 mismatches 502 →
+   205); db87's Arcane a level-80 weapon (plain 0 → 50). Measured:
+   development plain 40.7% (mismatches 22.0%), hold-out 49.7% (9.0%).
+   What each left standing: [open-problems.md](open-problems.md).
 
 ## Phase C: questions for the owner (they decide what to model)
 
