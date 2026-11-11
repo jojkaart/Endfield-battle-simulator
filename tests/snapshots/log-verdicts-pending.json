@@ -274,9 +274,9 @@
  },
  "pending/zmdlogs-e9896c8d02be.json": {
   "chr_0033_camille": {"plain":48,"assumed":1,"fallback":3,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "chr_0036_jsspsi": {"plain":0,"assumed":0,"fallback":0,"mismatch":71,"unvalued":0,"unquantified":2,"uncovered":0},
+  "chr_0036_jsspsi": {"plain":54,"assumed":15,"fallback":2,"mismatch":0,"unvalued":0,"unquantified":2,"uncovered":0},
   "chr_0032_lizhiyan": {"plain":66,"assumed":4,"fallback":5,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0016_laevat": {"plain":68,"assumed":5,"fallback":20,"mismatch":6,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":6.5,"operator chr_0036_jsspsi":3.6,"operator chr_0032_lizhiyan":-0.8,"operator chr_0016_laevat":8.2,"operator chr_0033_camille":5.2,"kind basic":3.7,"kind battle":5.8,"kind combo":3,"kind status":38.5,"kind ultimate":7.2,"hits":9.4,"status hits":42.9,"staggered hits":0,"last hit":-0.2,"crit share (points)":-0.6}
+  "totals": {"damage":5.5,"operator chr_0036_jsspsi":-0.1,"operator chr_0032_lizhiyan":-0.8,"operator chr_0016_laevat":8.2,"operator chr_0033_camille":5.2,"kind basic":3.4,"kind battle":5.4,"kind combo":-0.1,"kind status":38.5,"kind ultimate":2.5,"hits":9.4,"status hits":42.9,"staggered hits":0,"last hit":-0.2,"crit share (points)":-0.6}
  }
 }
