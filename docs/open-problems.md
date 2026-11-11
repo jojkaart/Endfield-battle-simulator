@@ -59,9 +59,11 @@ ramp gives the ×1.09 on fire. Rossi's ×1.33 after 24.97 s is crit-only
   from combo_3's second CreateBuff (frames 212–215, 13.90 s: it would run
   to ~28.9 s); stops alone; hit-stops as world pauses and a longer combo
   slow-down curve (d572's window matches the replay to 0.12 s with as
-  dense hits). Still possible: a stop or freeze only 9a80 has between 6.8
-  and 25 s (Si's ultimate is placed at 27.1 s, its logged cast is at
-  25.47 s: a placement to check); a refresh at frame 212 with another
+  dense hits); Si's ultimate placement (placed at 27.1 s from its hits,
+  logged at 25.47 s, 0.5 s after her combo: the press during the combo,
+  the ultimate starting at the combo's end; its first hit at 29.20 s is
+  the kit's offset from 27.1 s; either way after 25 s). Still possible: a
+  stop or freeze only 9a80 has between 6.8 and 25 s; a refresh at frame 212 with another
   timer; the qte_ring state at the cast (frame 0 jumps to 212 without it);
   the evidence itself (22.13 s is unquantified, 24.97 s matches without
   the buff, so the window's end is weaker than ×2.0 suggests). 2fd9 and
@@ -69,8 +71,8 @@ ramp gives the ×1.09 on fire. Rossi's ×1.33 after 24.97 s is crit-only
 
 **Next check:** the enemy's inflictions at 2–9.5 s in 9a80 (the source
 of the 7.8 s one); the reaction-level fix (round 4) may change the
-consumed counts; Si's ultimate placed at 27.1 s against its logged cast
-at 25.47 s.
+consumed counts; every stop and freeze in 9a80 from 6.8 to 25 s against
+d572's (where the window matches).
 
 ## Hard 27: every physical hit ×1.1125 low (2fd9, 99fb)
 
