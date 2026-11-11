@@ -45,7 +45,9 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
    (4e5e: 24 at 53.2 s), Rossi's Wolven Blood layers, Typhoeus's hover through
    her combo, Arcane's Solemn Phalanx WILL buffs, Camille's weapon ATK the
    log stops listing, the replay's inflictions against the log's reactions
-   (one enemy replay instead of reactioncheck.ts's own), statuses and
+   (one enemy replay instead of reactioncheck.ts's own; reaction levels
+   already come from the log where it shows them, and 4a64's Xaihi
+   battle-skill casts without logged hits still add inflictions), statuses and
    landings the replay misses (Arcane's Final Strike in b6aa, 9555's casts);
    458b's ×1.3 on Laevatain's `normal_skill_during_ult`; then tighten the
    totals' bound (45%). The fallbacks in verified fixtures (~300) are the
