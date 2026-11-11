@@ -17,6 +17,9 @@ After that milestone, a `dev` branch takes over the role `main` has now.
 
 - Read [docs/journal.md](docs/journal.md) and [docs/roadmap.md](docs/roadmap.md)
   at the start of a session.
+- Keep [docs/open-problems.md](docs/open-problems.md) current: for each
+  unexplained accuracy problem, what is ruled out and what is still possible.
+  Diagnosis briefs ask for both.
 - Before a session ends (or after a significant milestone), add a short entry
   at the top of the journal: goal, what was done, decisions and why, dead ends
   or problems, and update the roadmap's next steps.

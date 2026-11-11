@@ -721,7 +721,7 @@ log-verdicts-pending.json and fixtures/pending/holdout.json.
    first, no buffs listed (World Splitter's ×1.11 is that), Azrila's
    ×1.044: an enemy- or build-side term not found yet; the replay also
    lacks the log's Electrification at the ultimate there.
-10. **Leads not yet acted on.** Hard 33 (7b54, 6339): the Woodcraft
+10. **Leads not yet acted on** (each problem's candidates still standing, not only what's ruled out: [open-problems.md](open-problems.md)). Hard 33 (7b54, 6339): the Woodcraft
    Slug's number shield (buff_eny_0129_slwood_numshield_hdg033, not in our
    checkout) goes with debuffs the engine keeps but the damage shows off
    (Jade Vessel's 0.12, Arcane's stacks, the affixes): a boss phase the
