@@ -279,16 +279,16 @@
   ]
  },
  "mifu-dapan.scenario.json": {
-  "total": 685145.414,
+  "total": 832029.897,
   "hits": 60,
   "casts": 32,
   "perOperator": {
-   "chr_0031_mifu": 582605.414,
+   "chr_0031_mifu": 729489.898,
    "chr_0018_dapan": 102540
   },
-  "digest": "99854810076b",
+  "digest": "bafdc5cf4206",
   "windows": [
-   "188cf8e0250d",
+   "f95c96cf5dbb",
    "e43a949139bb",
    "520742b1a883"
   ]
