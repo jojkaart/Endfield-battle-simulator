@@ -715,7 +715,9 @@ log-verdicts-pending.json and fixtures/pending/holdout.json.
    Inksoul burst takes the mark branch. db87: Arcane's ATK ×0.94 (her Will
    term; an in-game panel read would settle it). Laevatain's enhanced
    battle skill (`ratio`, test 20): ×0.833 in e989, ×1.083 in db87.
-   6339: a power-attack hit_2 and Combustion the log doesn't have.
+   6339 (the same slug): Laevatain's power-attack hit_2 and Combustion
+   the log doesn't have; the pair is in 0206 and 3440 (1.4–2 s apart), so
+   the slug's shield (it zeroes whole hits) is the likelier cause.
    Measured after items 5–9: development plain 25.5 → 37.9%, mismatches
    38.2 → 25.4%, mean |damage error| 26.2 → 22.5%; hold-out plain 49.3 →
    49.7%, mismatches 9.1 → 9.0%, mean |damage error| 19.7 → 20.3%.
