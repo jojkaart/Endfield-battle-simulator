@@ -74,6 +74,29 @@ of the 7.8 s one); the reaction-level fix (round 4) may change the
 consumed counts; every stop and freeze in 9a80 from 6.8 to 25 s against
 d572's (where the window matches).
 
+## Arcane's WILL combo touch: which element (in-game test 33)
+
+**Shows:** the kit takes the enemy's current infliction's element; with
+none, nothing. The data switches on `EntityBB_consumed_type`.
+
+**Ruled out (round 5, 94 touches in 30 logs):** "nothing when the enemy
+has none": in 21 such touches a later consumer (Rossi's combo, whose Lift
+needs a consumed infliction) consumes one, at 1.5–1.7× the replay's
+consumed-0 value (9a80 7807; 3f78 8763, 50552; 4a64 9904, 57555; 489c
+19734; 4f7e 8566, 86309); a fixed Heat (the switch's 0): b74c's next
+burst is Cryst; the opener's *applied* element where it was a reaction
+(b74c: Nature onto Cryst, then a Cryst burst). No touch has a current
+element other than the opener's.
+
+**Still possible:** the element the window's opener consumed (Cryst for
+a Nature-onto-Cryst Corrosion), or the applied one when the opener was a
+plain infliction (they agree in 9a80 and c516); the enemy's last
+infliction before the opener consumed it (indistinguishable from the
+first); b74c's Cryst coming from Si's combo or ultimate instead (the kit
+says they apply none).
+
+**Next check:** being implemented (round 5); in-game test 33 confirms.
+
 ## Hard 27: every physical hit ×1.1125 low (2fd9, 99fb)
 
 **Shows:** Mi Fu's and Rossi's physical hits from the first one, with no
@@ -101,12 +124,20 @@ gives 0 matches there. hdg005 (eny_0033_lbhunt, physical 0): no value
 fits; Estella's hits with few effects match at 0. Control: Tower 15
 (klbear, physical 20) peaks sharply at 20 (132 of 132 plain in 458b).
 
+Round 5, Azrila: not the source. Her kit, potentials (P3 in both),
+talents, weapon (wpn_claym_0006) and gear give no team Physical DMG or
+susceptibility; the factor starts at 5.1 s (Mi Fu) and 6.0 s (Rossi),
+her first hit at 10.3 s; with her in 7e19 the physical hits are 1.0000.
+Mi Fu's and Rossi's ratio is 1.1125–1.1130 whatever their other zones.
+
 **Still possible:**
-- An operator- or team-side term: both Hard 27 logs are one player's,
-  with Azrila in both teams (an unlisted team Physical DMG or
-  susceptibility of hers, a talent or potential, would hit Rossi and Mi
-  Fu alike); per-log operator factors on Hard 15 and hdg005 (Akekuri's,
-  Alesh's, Estella's buffs) likewise untested.
+- An enemy-side physical term of eny_0124_kltdcap_hdg027 only (no other
+  log has physical hits on it; 1d91's tower016 variant has none).
+- Per-log operator factors on Hard 15 and hdg005 (Akekuri's, Alesh's,
+  Estella's buffs), untested.
+- Azrila's own ×1.044: her ATK ~6% high in the engine (×0.9386 after the
+  ×1.1125); P2's attributes (+3.8% ATK) don't fit. Aurora ×0.655
+  (whatever the zones); Purrchena is level 1 in 99fb (a build input).
 - A Hard 27 resistance setting outside the tables we read, or an enemy
   buff giving it (no longer favoured).
 - Azrila: 1.044 = 1.1125 × 0.9388, her ATK inputs ~6% high (a weapon
@@ -116,9 +147,8 @@ fits; Estella's hits with few effects match at 0. Control: Tower 15
 - The two factors (physical ×1.11, all-element ×1.044) being one term in
   different zones.
 
-**Next check:** Azrila's kit (talents, potentials, team buffs) at her
-builds in 2fd9 and 99fb; her own ×1.044; the separate over-predictions
-there (Aurora ×0.655, Purrchena ×2.757 in 99fb).
+**Next check:** a log with physical hits on this enemy from another
+player; Aurora's and Azrila's builds.
 
 ## Hard 33's slug: debuffs the engine keeps don't act (7b54, 6339)
 
