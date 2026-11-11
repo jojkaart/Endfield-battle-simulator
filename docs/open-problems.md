@@ -53,13 +53,24 @@ ramp gives the ×1.09 on fire. Rossi's ×1.33 after 24.97 s is crit-only
   21.8–22.1 s, the log's zone is still 2.0 at 22.13–24.97 s and 1.5 at
   25.37 s: the game's window ~3 s longer. Ruled out: other Crit DMG
   sources (no food, gear set or weapon line gives it; the ultimate's crit
-  buff is 5 s). Still possible: time the replay's slow-downs don't add to
-  the buff (the ComboSkill curve is hand-approximated); the second
-  CreateBuff's timing (a refresh).
+  buff is 5 s). Round 4: the replay makes it once, at the cast (6.840 s),
+  15 s raw, to 21.84 s; the world clock's stops to 22 s add ~0.8 s (two
+  of ~0.42 s), all to 25 s ~1.7 s. Also ruled out: a full 15 s refresh
+  from combo_3's second CreateBuff (frames 212–215, 13.90 s: it would run
+  to ~28.9 s); stops alone; hit-stops as world pauses and a longer combo
+  slow-down curve (d572's window matches the replay to 0.12 s with as
+  dense hits). Still possible: a stop or freeze only 9a80 has between 6.8
+  and 25 s (Si's ultimate is placed at 27.1 s, its logged cast is at
+  25.47 s: a placement to check); a refresh at frame 212 with another
+  timer; the qte_ring state at the cast (frame 0 jumps to 212 without it);
+  the evidence itself (22.13 s is unquantified, 24.97 s matches without
+  the buff, so the window's end is weaker than ×2.0 suggests). 2fd9 and
+  489c lean the same way (0.4–1 s past the replay), noisily.
 
 **Next check:** the enemy's inflictions at 2–9.5 s in 9a80 (the source
 of the 7.8 s one); the reaction-level fix (round 4) may change the
-consumed counts; the combo crit buff's clock through slow-downs.
+consumed counts; Si's ultimate placed at 27.1 s against its logged cast
+at 25.47 s.
 
 ## Hard 27: every physical hit ×1.1125 low (2fd9, 99fb)
 
