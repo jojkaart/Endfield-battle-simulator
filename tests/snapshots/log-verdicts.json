@@ -11,7 +11,7 @@
   "chr_0036_jsspsi": {"plain":22,"assumed":1,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":1,"uncovered":0},
   "chr_0013_aglina": {"plain":10,"assumed":0,"fallback":0,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0033_camille": {"plain":5,"assumed":0,"fallback":1,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},
-  "totals": {"damage":-1.9,"operator chr_0013_aglina":0,"operator chr_0036_jsspsi":-2.3,"operator chr_0016_laevat":-1.5,"operator chr_0033_camille":-4.3,"kind basic":-1.7,"kind battle":111.6,"kind combo":-22.6,"kind status":0.7,"kind ultimate":0,"hits":0,"status hits":0,"staggered hits":0,"last hit":-2.1,"time to kill":null,"crit share (points)":0.3}
+  "totals": {"damage":-9.1,"operator chr_0013_aglina":0,"operator chr_0036_jsspsi":-17.9,"operator chr_0016_laevat":-1.5,"operator chr_0033_camille":-4.3,"kind basic":-1.7,"kind battle":-1.6,"kind combo":-22.6,"kind status":0.7,"kind ultimate":0,"hits":0,"status hits":0,"staggered hits":0,"last hit":0,"time to kill":null,"crit share (points)":0.3}
  },
  "zmdlogs-4e5e1390085e.json": {
   "chr_0028_wulfa": {"plain":72,"assumed":42,"fallback":48,"mismatch":0,"unvalued":0,"unquantified":0,"uncovered":0},

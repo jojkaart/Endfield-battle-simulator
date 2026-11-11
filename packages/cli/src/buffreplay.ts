@@ -199,7 +199,8 @@ export interface ReplayedCast extends LoggedCast {
    * End Stance, but the log keeps the stance's ATK on her team after it).
    */
   readonly slot?: true;
-  readonly leadsTo?: true;
+  /** The skill of the inferred cast the press leads to: the press is made as another variant, a step before it. */
+  readonly leadsTo?: string;
   /**
    * A slot cast's variants (skills of its kind, not cast near it) whose own keys the log shows within SLOT_SHOWS_MS
    * after the press: the press is the one of them its kit says the slot holds then (3aa6ab93bad4: Zhuang Fangyi's
@@ -316,7 +317,7 @@ const EXPIRY_MARGIN_FRAMES = 6;
 
 export function castsFromBuffEnds(kits: readonly OperatorKit[], placement: Placement, casts: readonly ReplayedCast[]): ReplayedCast[] {
   const added: ReplayedCast[] = [];
-  const leads = new Set<number>();
+  const leads = new Map<number, string>();
   for (const pc of placement.casts) {
     if (!pc.group.startsWith("trigger:")) continue;
     const kit = kits.find((k) => k.operator === pc.operator);
@@ -333,7 +334,7 @@ export function castsFromBuffEnds(kits: readonly OperatorKit[], placement: Place
       added.push({ operator: pc.operator, key: skillId, group: skillId, skillId, kind: skill.kind, start, lastHit: start, keepPrevious: false, landings: [], whileBuff: { buff, endsAt: pc.start } });
       // A slot press of its kind shortly before it is the step that leads to it (Si's Initial Stroke before Final Stroke).
       for (const [i, c] of casts.entries()) {
-        if (c.slot && c.operator === pc.operator && c.kind === skill.kind && c.start <= start && c.start >= start - 2 * LOGGED_CAST_MS) leads.add(i);
+        if (c.slot && c.operator === pc.operator && c.kind === skill.kind && c.start <= start && c.start >= start - 2 * LOGGED_CAST_MS && !leads.has(i)) leads.set(i, skillId);
       }
       break;
     }
@@ -341,7 +342,7 @@ export function castsFromBuffEnds(kits: readonly OperatorKit[], placement: Place
   // In time order, without recomputing the others' keepPrevious: an inferred cast the replay may skip isn't anyone's
   // previous cast (it keeps the running cast's hits itself).
   if (!added.length) return [...casts];
-  const all = [...casts.map((c, i) => (leads.has(i) ? { ...c, leadsTo: true as const } : c)), ...added.map((c) => ({ ...c, keepPrevious: true }))].sort((x, y) => x.start - y.start);
+  const all = [...casts.map((c, i) => (leads.has(i) ? { ...c, leadsTo: leads.get(i) as string } : c)), ...added.map((c) => ({ ...c, keepPrevious: true }))].sort((x, y) => x.start - y.start);
   // The operator's next cast before the logged end keeps what the inferred cast has to come (a7a7a40c97ed: Si's attack 2
   // 0.3 s after the Final Stroke that ends her Artful Intent at 56469 ms, its burst the killing hit).
   return all.map((c, i) => {
@@ -675,10 +676,15 @@ function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast,
     // which the stance and its volleys go on), or the press did nothing (dbaee23b801d: Arcane's at 2706 ms, while
     // Typhoeus's hits land).
     if (!c.leadsTo) return c.unseen && skillAvailable(ctx, st, c.operator, c.skillId, f) && startsBy(c.skillId) ? c.skillId : null;
-    // Which skill the slot holds, not whether it can start this frame (Si presses during her combo in 0eef): available at all.
-    const available = (skill: string) => !("error" in earliestStart(ctx, st, { operator: c.operator, skill }));
+    // Which skill the slot holds, not whether it can start this frame (Si presses during her combo in 0eef): available at all
+    // by its kit's state then (earliestStart alone waits for that state: 3f78ceb15bc3's press at 19708 ms, in her
+    // ultimate, read as her battle skill after Artful Intent's end, so Initial Stroke wasn't made and the Inksoul's burst
+    // at 22689 ms took the mark's branch). It is a step before the inferred cast, never that cast again (the inferred one
+    // is timed by the log's buff end: e9896c8d02be's press at 67244 ms, under the Inksoul, isn't the Final Stroke whose
+    // burst comes at 69192 ms).
+    const available = (skill: string) => skillAvailable(ctx, st, c.operator, skill, f) && !("error" in earliestStart(ctx, st, { operator: c.operator, skill }));
     if (available(c.skillId)) return null;
-    return kit?.skills.find((k) => k.skillId !== c.skillId && k.kind === c.kind && !k.followUpOnly && available(k.skillId))?.skillId ?? null;
+    return kit?.skills.find((k) => k.skillId !== c.skillId && k.skillId !== c.leadsTo && k.kind === c.kind && !k.followUpOnly && available(k.skillId))?.skillId ?? null;
   }
   // A skill of a slot that holds one of two variants with the same keys (Typhoeus's combo while hovering, her hovering
   // combo otherwise): the one its kit says is available then.

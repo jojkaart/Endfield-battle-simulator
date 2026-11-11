@@ -421,6 +421,28 @@ describe("a7a7a40c97ed: a cast inferred from a buff's end and the cast after it"
   });
 });
 
+describe("a press that leads to an inferred cast: the slot's variant by its kit's state, not the inferred skill again", () => {
+  const S = "chr_0036_jsspsi";
+  const burstAt = (file: string, t: number) => {
+    const fx = readLogFixture(new URL(`../fixtures/pending/zmdlogs-${file}.json`, import.meta.url).pathname);
+    const h = fx.hits.find((x) => x.operator === S && x.event === `${S}_normal_skill_inkmove_2` && x.t === t) as LogHit;
+    const l = logBuffReplay(data, fx).replay.landing(h);
+    return "unknown" in l ? null : { hitId: l.hitId, ms: Math.round((l.frame * 1000) / FPS) };
+  };
+
+  it("3f78: Si's press at 19708 ms, in her ultimate, is Initial Stroke (not her battle skill after Artful Intent's end): the Inksoul's burst at 22689 ms lands", () => {
+    const l = burstAt("3f78ceb15bc3", 22689);
+    expect(l?.hitId).toBe("burst_inksoul");
+    expect(Math.abs((l?.ms ?? 0) - 22689)).toBeLessThan(50);
+  });
+
+  it("e989: her press at 67244 ms under the Inksoul isn't the Final Stroke the log's burst at 69192 ms is inferred from", () => {
+    const l = burstAt("e9896c8d02be", 69192);
+    expect(l?.hitId).toBe("burst_inksoul");
+    expect(Math.abs((l?.ms ?? 0) - 69192)).toBeLessThan(50);
+  });
+});
+
 describe("a hitless ultimate's logged cast at its time stop's end", () => {
   it("starts its stop's length earlier when nobody hits during it and another's hit lands at the event (b6aa: Xaihi at 31027 ms, her Amp on Last Rite's combo at 32034 ms)", async () => {
     const { logBuffReplay } = await import("@efsim/cli");

@@ -717,8 +717,16 @@ log-verdicts-pending.json and fixtures/pending/holdout.json.
    checkout) goes with debuffs the engine keeps but the damage shows off
    (Jade Vessel's 0.12, Arcane's stacks, the affixes): a boss phase the
    engine doesn't model; such logs are to be avoided (Choosing logs).
-   3f78: Si's Initial Stroke press without hits isn't made, so her
-   Inksoul burst takes the mark branch. db87: Arcane's ATK ×0.94 (her Will
+   3f78 (acted on): Si's press at 19708 ms leads to the Final Stroke
+   inferred from the burst, but replayedSkill read her battle skill as
+   available (earliestStart waits out Artful Intent), so Initial Stroke
+   wasn't made and the burst took the mark branch. A `leadsTo` press is
+   now the variant its kit's state holds at the press, never the inferred
+   skill itself (e989's 67244 ms press would have been an early Final
+   Stroke). The bursts now land in 3f78 (22689), 40d9 (18836, the kill:
+   Si −2.3 → −17.9%, battle +111.6 → −1.6%, the old early burst's
+   uncapped damage hid her combo's −22.6%), 6339 (19914), 9555 (85556);
+   458b plain −2, no hold-out log moved. db87: Arcane's ATK ×0.94 (her Will
    term; an in-game panel read would settle it). Laevatain's enhanced
    battle skill (`ratio`, test 20): ×0.833 in e989, ×1.083 in db87.
    6339 (the same slug): Laevatain's power-attack hit_2 and Combustion
