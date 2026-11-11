@@ -17,7 +17,8 @@
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
    "Enemy level 90 from the stage's DungeonTable entry (dung02_bossrush04_03).",
    "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh).",
+   "Hand annotation (2026-11-11): the Endministrator's build has \"food\": \"item_bottled_insec2_2\" (Kunst Tube, DMG +24.65% for every element), which the log doesn't list (no log of eny_0134_jsspsi lists food): her hits ×1.15 low without it, 123 of 128 matching with it (median 1.000; the only one of 36 foods that fits). Rossi (×1.51), Si (×1.15) and Deepfin (×0.86) fit no food: open."
   ]
  },
  "enemy": {
@@ -133,7 +134,8 @@
       3
      ]
     }
-   ]
+   ],
+   "food": "item_bottled_insec2_2"
   },
   {
    "operator": "chr_0036_jsspsi",

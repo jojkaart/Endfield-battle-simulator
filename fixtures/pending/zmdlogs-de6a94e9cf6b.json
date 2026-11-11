@@ -17,7 +17,8 @@
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
    "Enemy level 90 from the stage's DungeonTable entry (dung02_bossrush04_03).",
    "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh).",
+   "Hand annotation (2026-11-11): foods the log doesn't list (no log of eny_0134_jsspsi lists food): Pogranichnik and Lifeng \"food\": \"item_agrange_1_erhound_1_sp_1_1\" (Jakub's Legacy, ATK +27%), Chen Qianyu and Mi Fu \"item_bottled_insec2_2\" (Kunst Tube, DMG +24.65% for every element). Each was the one food of 36 tried that fits that operator's hits: without food their non-crit hits were ×1.19, ×1.24, ×1.18 and ×1.12 low, with it median ×1.004 (Pogranichnik 82 of 84 matching, Lifeng 71 of 71, Chen 81 of 102, Mi Fu 91 of 91)."
   ]
  },
  "enemy": {
@@ -78,7 +79,8 @@
       0
      ]
     }
-   ]
+   ],
+   "food": "item_agrange_1_erhound_1_sp_1_1"
   },
   {
    "operator": "chr_0015_lifeng",
@@ -133,7 +135,8 @@
       0
      ]
     }
-   ]
+   ],
+   "food": "item_agrange_1_erhound_1_sp_1_1"
   },
   {
    "operator": "chr_0005_chen",
@@ -188,7 +191,8 @@
       1
      ]
     }
-   ]
+   ],
+   "food": "item_bottled_insec2_2"
   },
   {
    "operator": "chr_0031_mifu",
@@ -243,7 +247,8 @@
       0
      ]
     }
-   ]
+   ],
+   "food": "item_bottled_insec2_2"
   }
  ],
  "hits": [

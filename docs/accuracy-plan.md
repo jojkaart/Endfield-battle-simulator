@@ -695,6 +695,12 @@ log-verdicts-pending.json and fixtures/pending/holdout.json.
    `food`, evidence in the notes (as 7e19's stew). e989 plain 0 → 179;
    3f78, 4a64 −46 → −36.5% (left: Corrosion-routed hits, Rossi). Si in
    e989 fits 0 attribute nodes (×0.940): left as is, the log to replace.
+   de6a and 0c14 (a scan of 36 foods per operator, one fitting each):
+   Jakub's Legacy for Pogranichnik and Lifeng, Kunst Tube (DMG +24.65%)
+   for Chen, Mi Fu and 0c14's Endministrator; de6a −10.2 → +1.1%, 0c14
+   −2.4 → +1.6%. Weaker: most of those matches are log-listing fallbacks,
+   and a food chosen from 36 per operator can overfit. 0c14's Rossi
+   (×1.51), Si (×1.15) and Alesh (×0.86) fit none.
 8. **Mi Fu's World Splitter is Crush DMG** (in-game test 91 answered):
    Crush's level coefficient and Arts Intensity apply (`KitHit.status`).
    a27b's hit exact (×3.22 low before), four of d5720's five; Mi Fu's
