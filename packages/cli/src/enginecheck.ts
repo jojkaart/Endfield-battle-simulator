@@ -490,14 +490,19 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     if (near) absent.add(near);
     else unmatched.push(a);
   }
+  // A fight that ends in a kill: its last logged hits are capped at the enemy's remaining HP, whether or not the log
+  // gives the uncapped value (a27b's killing Crush, 161,507 of a predicted 332,879).
+  const killing = new Set(kill === null ? [] : fx.hits.filter((h) => h.t === logged.last));
   for (const l of [...c.replay.hits].sort((a, b) => a.frame - b.frame)) {
-    if (l.frame > end || absent.has(l)) continue;
     const m = matched.get(l);
+    const capped = cappedHit.get(l);
+    // A landing of a logged hit counts wherever the replay put it; others only up to the log's end (a27b: the
+    // killing blow landed 65 ms after the log's).
+    if ((l.frame > end && !m && !capped) || absent.has(l)) continue;
     let damage: number;
-    if (m) damage = Math.min(m.predicted, m.hit.uncapped !== undefined ? m.hit.value : Infinity);
+    if (m) damage = Math.min(m.predicted, m.hit.uncapped !== undefined || killing.has(m.hit) ? m.hit.value : Infinity);
     else if (l.inputs) damage = landingDamage(data, c.target, l.inputs, { ...l.inputs.options, crit: "expected" }).exact;
     else damage = l.exact;
-    const capped = cappedHit.get(l);
     if (capped) damage = Math.min(damage, capped.value);
     sim.damage += damage;
     if (kill !== null && simKill === null && sim.damage >= kill) simKill = (l.frame * 1000) / 30;
@@ -510,7 +515,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
       if (m.hit.crit) sim.crits++;
     }
     if (l.inputs?.options.staggered) sim.staggered++;
-    sim.last = Math.max(sim.last, (l.frame * 1000) / 30);
+    if (l.frame <= end) sim.last = Math.max(sim.last, (l.frame * 1000) / 30);
   }
   const totals = (x: typeof logged, killMs: number | null): FightTotals => ({
     damage: x.damage, perOperator: x.perOperator, perKind: x.perKind, hits: x.hits, statusHits: x.statusHits, critShare: x.known ? x.crits / x.known : 0, staggeredHits: x.staggered, lastHitMs: x.last, killMs,

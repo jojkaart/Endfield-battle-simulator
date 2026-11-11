@@ -73,6 +73,20 @@ describe("the fight's totals (accuracy plan A3, A4)", () => {
     expect(report.errors["time to kill"]).toBeLessThan(0);
   });
 
+  it("a logged hit's landing counts even past the log's end, and the killing hit is capped at the log's value (a27b: Mi Fu's Crush 65 ms late, 161,507 of 332,879)", async () => {
+    const { engineHits, engineReport, logBuffReplay } = await import("../packages/cli/src/logcheck.ts");
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-a27bc3527682.json", import.meta.url).pathname);
+    const replay = logBuffReplay(data, fx);
+    const report = engineReport(data, fx, replay, engineHits(data, fx, replay));
+    const kill = fx.hits.find((h) => h.t === 68068 && h.event === "buff_physical_do_crushed");
+    expect(kill?.value).toBe(161507);
+    expect(replay.replay.hits.some((l) => l.operator === "chr_0031_mifu" && (l.frame * 1000) / 30 > 68068 + 30)).toBe(true);
+    // Left out, Mi Fu's total was −24.7%; counted uncapped, the fight's would be over the enemy's HP.
+    const share = (report.totals.simulated.perOperator["chr_0031_mifu"] ?? 0) / (report.totals.logged.perOperator["chr_0031_mifu"] ?? 1) - 1;
+    expect(share).toBeGreaterThan(-0.15);
+    expect(report.totals.simulated.damage).toBeLessThan(report.totals.logged.damage);
+  });
+
   it("a landing the fixture marks absent from the log is left out of the replay's totals (b7b3: Last Rite's third ultimate slash)", async () => {
     const { engineHits, engineReport, logBuffReplay } = await import("../packages/cli/src/logcheck.ts");
     const fx = readLogFixture(new URL("../fixtures/zmdlogs-b7b3762d5da8.json", import.meta.url).pathname);
