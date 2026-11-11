@@ -310,6 +310,11 @@ export function engineReadings(c: EngineCheck, hit: LogHit, place: HitPlace): { 
   // A hit whose crit the log doesn't give: the primary reading at expected crits, for the fight's totals (the readings try
   // both; counting such hits as non-crits biased the totals low: e82d −31%, 0c14 −24%; accuracy plan A3).
   if (hit.crit === null && primaryDamage !== null) {
+    // Unless the logged value is one of the two exactly: then it says whether the hit crit (40d9a3c1da37: Si's killing
+    // combo finish, 599,622 = ×1.5 the non-crit reading, counted at expected crits as 409,741).
+    if (primaryDamage === hit.value) return { readings, primary: primaryDamage, expected: primaryDamage, landing };
+    const critOnly = readings.find((r) => r.assumptions.length === 1 && r.assumptions[0]?.kind === "crit");
+    if (critOnly && critOnly.predicted === hit.value) return { readings, primary: primaryDamage, expected: critOnly.predicted, landing };
     try {
       return { readings, primary: primaryDamage, expected: landingDamage(c.data, c.target, primary.inputs, { ...primary.options, crit: "expected" }, primary.other).exact, landing };
     } catch (e) {

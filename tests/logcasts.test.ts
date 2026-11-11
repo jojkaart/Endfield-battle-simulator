@@ -63,14 +63,14 @@ describe("the replay casts the basic-attack step the engine's state allows (accu
 });
 
 describe("the fight's totals (accuracy plan A3, A4)", () => {
-  it("a kill: both totals end at the log's kill, the replay's past the enemy's HP; its time to kill is when it reached the HP (b7b3: Rhodagn dies ~0.4 s sooner in the replay, its absent slash left out)", async () => {
+  it("a kill: both totals end at the log's kill, the replay's past the enemy's HP; its time to kill is when it reached the HP (b7b3: Rhodagn dies at the log's time in the replay, within 1%, its absent slash left out; ~0.4 s sooner while unlogged crits counted at expected rates)", async () => {
     const { engineHits, engineReport, logBuffReplay } = await import("../packages/cli/src/logcheck.ts");
     const fx = readLogFixture(new URL("../fixtures/zmdlogs-b7b3762d5da8.json", import.meta.url).pathname);
     const replay = logBuffReplay(data, fx);
     const report = engineReport(data, fx, replay, engineHits(data, fx, replay));
     expect(report.totals.simulated.damage).toBeGreaterThan(report.totals.logged.damage);
     expect(Math.abs(report.totals.simulated.lastHitMs - report.totals.logged.lastHitMs)).toBeLessThan(100);
-    expect(report.errors["time to kill"]).toBeLessThan(0);
+    expect(Math.abs(report.errors["time to kill"] ?? NaN)).toBeLessThan(1);
   });
 
   it("a logged hit's landing counts even past the log's end, and the killing hit is capped at the log's value (a27b: Mi Fu's Crush 65 ms late, 161,507 of 332,879)", async () => {
@@ -85,6 +85,15 @@ describe("the fight's totals (accuracy plan A3, A4)", () => {
     const share = (report.totals.simulated.perOperator["chr_0031_mifu"] ?? 0) / (report.totals.logged.perOperator["chr_0031_mifu"] ?? 1) - 1;
     expect(share).toBeGreaterThan(-0.15);
     expect(report.totals.simulated.damage).toBeLessThan(report.totals.logged.damage);
+  });
+
+  it("a hit whose crit the log doesn't give counts as the reading its value equals, crit or not (40d9: Si's killing combo finish, 599,622 = ×1.5 the non-crit 399,748)", async () => {
+    const { engineHits, engineReport, logBuffReplay } = await import("../packages/cli/src/logcheck.ts");
+    const fx = readLogFixture(new URL("../fixtures/zmdlogs-40d9a3c1da37.json", import.meta.url).pathname);
+    const replay = logBuffReplay(data, fx);
+    const report = engineReport(data, fx, replay, engineHits(data, fx, replay));
+    const si = (x: typeof report.totals.logged) => x.perOperator["chr_0036_jsspsi"] ?? NaN;
+    expect(si(report.totals.simulated) / si(report.totals.logged)).toBeCloseTo(1, 3);
   });
 
   it("a landing the fixture marks absent from the log is left out of the replay's totals (b7b3: Last Rite's third ultimate slash)", async () => {
