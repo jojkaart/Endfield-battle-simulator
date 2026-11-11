@@ -15,7 +15,8 @@
   },
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
-   "Enemy level 90 from the stage's DungeonTable entry (indie_battletower019_ex)."
+   "Enemy level 90 from the stage's DungeonTable entry (indie_battletower019_ex).",
+   "Hand correction (2026-11-11): Arcane's weapon (wpn_funnel_0008, skills [4, 9, 8]) is level 80, not the assumed 90 (the export doesn't give a weapon's level; skill 2 at 9 needs only the last breakthrough, at 80). Every plain Arcane hit was ×0.939–0.940 the prediction at level 90, the ATK zone alone: implied ATK 3224 against 3433, (312 + 441) / (312 + 490) = 0.939 with 441 her weapon's base ATK at level 80. Her first weapon skill at 4 keeps her Will above her Intellect (WILL mode), as the owner says such builds do."
   ]
  },
  "enemy": {
@@ -146,7 +147,7 @@
    },
    "weapon": {
     "id": "wpn_funnel_0008",
-    "level": 90,
+    "level": 80,
     "skillLevels": [
      4,
      9,
