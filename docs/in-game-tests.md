@@ -36,7 +36,7 @@ must be something a person can do by hand while playing:
 ## The queue: the tests that decide the most now
 
 Ranked by how much of the simulation each answer moves (every fight first,
-then the owner's favourites), as of 2026-11-01 (77 answered by the logs; 104 from 2026-10-31, 103 from 2026-10-30; 101 and 102
+then the owner's favourites), as of 2026-11-11 (91 answered by the logs; 77 on 2026-11-01; 104 from 2026-10-31, 103 from 2026-10-30; 101 and 102
 from 2026-10-28; 99 answered by the logs). Reply with the number and
 what you saw, in a line; the formats below are only suggestions.
 
