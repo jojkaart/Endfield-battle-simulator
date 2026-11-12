@@ -12,7 +12,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** one basic-attack landing (about a full atk_scale1 per use) and the timing of the chain's middle landing.
 - **Evidence:** `jq` damage summary of `chr_0031_mifu_attack3.json`. Attack 2 in the same kit has one kit hit per data landing, so attack 3 is the outlier.
 - **Confidence it's a real problem:** medium (the two atk_scale1 landings could be one landing split by a branch; the branch structure was not traced)
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the loaded kit has attack3 `hit` count 2 frames [10, 16] plus `hit_2` at 30: the data's three landings (the compiler fills count and frames).
 
 ### F2. Battle skill Trail and Mangle: `flurry` has one hit; SkillData has two landings
 - **Where:** packages/data/kits/operators/chr_0031_mifu.json → skills `chr_0031_mifu_normalskill_2`, hit `flurry` (atk_scale)
@@ -21,7 +21,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** one battle-skill landing (the flurry's second hit) and the hit-triggers (Link and cast-based effects) it would count for.
 - **Evidence:** `jq` damage summary of `chr_0031_mifu_normalskill_2.json`.
 - **Confidence it's a real problem:** medium
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the loaded kit's `flurry` has count 2, frames [3, 10], matching the data.
 
 ### F3. Combo skill: two basic-kind landings in SkillData, one `hit` in the kit
 - **Where:** packages/data/kits/operators/chr_0031_mifu.json → skills `chr_0031_mifu_combo_skill`, hit `hit` (atk_scale1)
@@ -30,7 +30,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** one combo landing per cast; the combo's damage and its trigger-count. Size: about one atk_scale1 per cast.
 - **Evidence:** `jq` damage summary of `chr_0031_mifu_combo_skill.json`. The two frames may be a branch (not traced).
 - **Confidence it's a real problem:** low-medium
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the loaded kit's combo `hit` has count 2, frames [8, 10], then `uppercut` at 31 with poise: matches the data.
 
 ### F4. Stagger units are not on the kit's hit fields for several landings
 - **Where:** packages/data/kits/operators/chr_0031_mifu.json → skills `chr_0031_mifu_attack4` (hit `hit_2`, Final Strike), `chr_0031_mifu_combo_skill` (hit `uppercut`), `chr_0031_mifu_normalskill_2` (hit `mangle`), `chr_0031_mifu_ultimate_skill` (hit `slam`)
@@ -39,7 +39,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** Stagger progress and nodes for the chain, combo, battle skill and ultimate. Batch-4 item G3a and its "3 KNOWN entries" say some compiled landings still keep poise apart; whether `foldPoise` (packages/data/src/kitMatch.ts) handles the mixed-action units was not checked.
 - **Evidence:** `grep -n poise` on the kit (only the World Splitter's poise hit); SkillData damage units; packages/data/src/kitMatch.ts lines 113–129.
 - **Confidence it's a real problem:** medium (the compiler may fold them)
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the loaded kit has poise on attack4 `hit_2` ("poise", controlled-only, Final Strike), combo `uppercut` ("poise"), `mangle` and `mangle_splitter` ("poise") and `slam` ("poise2"); the compiler fills them from the data.
 
 ## Checked, no conflict found
 - Basic attack 2: two landings (atk_scale1 at 9–10, atk_scale2 at 16–19), matching the kit's two hits.
@@ -58,3 +58,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - Buffs `trail_ready`, `splitter_ready`, `combo_susceptibility` and the P3 shield's stacking and duration: not traced to BuffData.
 - Log fixtures: only the kit's citations; no fixture was opened (the hold-out fixtures were excluded).
 - Equipment kits: none referenced by this operator's kit.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: F1, F2, F3, F4 · UNCERTAIN: none
+All four flags read the raw JSON; the loaded kit has the counts, frames and poise. No log fixture outside the hold-out.

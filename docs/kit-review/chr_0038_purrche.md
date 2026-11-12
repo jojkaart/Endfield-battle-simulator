@@ -14,7 +14,7 @@ Scope note: the kit is large (about 81 KB; a shield and block state machine, a c
 - **Why it may matter:** Stagger progress for the chain's Final Strike and the counter (20 Stagger per counter in the note). Batch-4 G3a's "3 KNOWN entries" note that some compiled poise units stay apart from their hits; the fold rule (packages/data/src/kitMatch.ts `foldPoise`) may or may not cover these mixed actions.
 - **Evidence:** `grep -n poise` on the kit (combo bomb, ultimate bombs and ambassador carry `poise`; the two above do not); SkillData damage units; the kit's own notes.
 - **Confidence it's a real problem:** medium (the compiler may fold them; the notes assert the poise)
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the loaded kit has attack3 `hit_2` poise "poise" controlled-only (Final Strike, frame 21) and the counter `hit` poise "poise" (frame 9): filled from the data's poise units.
 
 ## Checked, no conflict found
 - Basic attack 1: landings at frames 10 and 17 (SkillData atk_scale_1 and atk_scale_2), matching the kit's `hit` (10) and `hit_2` (17). The kit's 0.4 / 0.6 factors on atk_scale are the kit-draft's SimpleCalcBBAction and were not compared numerically.
@@ -33,3 +33,7 @@ Scope note: the kit is large (about 81 KB; a shield and block state machine, a c
 - Buffs `shield_up`, `protection` (its duration override), `counter_ready`, `arts_susceptibility` (maxStacks 3) against BuffData.
 - Log fixtures: only the kit's citations; no fixture was opened (the hold-out fixtures were excluded).
 - Equipment kits: none referenced by this operator's kit.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: F1 · UNCERTAIN: none
+The loaded kit has the poise. No log fixture outside the hold-out.

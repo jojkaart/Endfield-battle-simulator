@@ -14,7 +14,7 @@ Scope note: this kit is large (about 105 KB, with the battle skill, its empowere
 - **Why it may matter:** one missing landing (21–24, at about frame 32 of the skill) and a Final Strike flag on the first landing: Final Strike-dependent effects (Stagger rules, SP and other Final Strike triggers) would not apply to it.
 - **Evidence:** `jq` damage summary of `attack2_abilityrange` and `attack4_abilityrange`; the kit's own note for attack4.
 - **Confidence it's a real problem:** medium-high (the entities differ in the data; the note reuses attack2's)
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — chr_0030_zhuangfy_attack4.json spawns chr_0030_zhuangfy_attack2_abilityrange (grep; compileSkill of attack4 lands in attack2_abilityrange at 11, 20, 23, 26), exactly the kit's frames and note. attack4_abilityrange (Final Strike mask, 21–24 landing) is spawned by nothing; the only Final Strike in the chain is attack5, flagged in the kit.
 
 ### F2. Stagger (poise) units are not on the kit's hit fields for the combo and the Final Strike
 - **Where:** packages/data/kits/operators/chr_0030_zhuangfy.json → skills `chr_0030_zhuangfy_combo_skill` (hit `hit`), `chr_0030_zhuangfy_attack5` (hit `range`, Final Strike); `chr_0030_zhuangfy_attack3` ult variant (`attack3_ult`, hit `range`)
@@ -23,7 +23,7 @@ Scope note: this kit is large (about 105 KB, with the battle skill, its empowere
 - **Why it may matter:** Stagger progress and the finisher window for the combo, Final Strike and the ultimate-state chain. Size: the poise value per landing is not read here.
 - **Evidence:** `grep -n poise` on the kit (only the `final_N` hits); SkillData damage units; the kit's attack5 note. The batch-4 table's "3 KNOWN entries" and the D6 fold (packages/data/src/kitMatch.ts `foldPoise`) apply to these cases.
 - **Confidence it's a real problem:** medium (the compiler may fold them)
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the loaded kit has poise on combo `hit` ("poise"), attack5 `range` ("poise", controlled-only, Final Strike) and attack3_ult `range` ("poise", controlled-only, Final Strike): the compiler fills them from the landing's poise unit.
 
 ## Checked, no conflict found
 - Basic attack 2 and attack 4 entity tick timing: the immediate landing at the spawn frame and three ticks 9, 12, 15 frames after it match the kit's frames (SkillData ticks at relative 9 and 15 plus the middle one) for attack2.
@@ -41,3 +41,7 @@ Scope note: this kit is large (about 105 KB, with the battle skill, its empowere
 - Triggers `bs_consumed` (statusConsumed) and `ult_end`'s cooldown and cast values.
 - Log fixtures: only the kit's citations; no fixture was opened (the hold-out fixtures were excluded). The accuracy plan's Zhuang items (B8 and the Thunder Strikes) were not traced to the kit.
 - Equipment kits: none referenced by this operator's kit.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: F1, F2 · UNCERTAIN: none
+attack4_abilityrange is an unspawned entity; the loaded kit has the poise. No log fixture outside the hold-out.

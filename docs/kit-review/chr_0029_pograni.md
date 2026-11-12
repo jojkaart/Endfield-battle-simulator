@@ -12,7 +12,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** most of the basic-chain damage and the Stagger of the chains (about 2–6 landings per chain use). Size: the missing landings are a large share of the chain's damage.
 - **Evidence:** `jq` over each file's timelineActions (damageUnits per timeline item); compare with attack1 (one landing, one hit in the kit) and Tangtang's chains (one kit hit per landing).
 - **Confidence it's a real problem:** high that the landing counts differ. Medium that it is an error rather than a compiler fold; the kit has no `count` or `frames` that would cover the extra landings.
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the loaded kit has attack2 count 2 frames [7, 14], attack3 count 2 frames [9, 15], attack4 count 6 frames [3, 5, 7, 11, 13, 15]: exactly the data's landings (the compiler fills count and frames; the kit just doesn't spell them).
 
 ### F2. Stagger units are not on the kit's hit fields for several landings
 - **Where:** packages/data/kits/operators/chr_0029_pograni.json → hits `hit` of `chr_0029_pograni_attack3`/`attack4`/`attack5`, `hit` and `hit_2` of `chr_0029_pograni_normal_skill`, the four `combo_skill` hits, `chr_0029_pograni_ultimate_skill` (hit `hit`, the rush)
@@ -21,7 +21,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** Stagger progress, Stagger nodes and the finisher windows for every chain and combo. Batch-4 item G3a and the batch-4 table's "3 KNOWN entries" say the compiled landings still keep some poise apart from their hits. Whether `foldPoise` (packages/data/src/kitMatch.ts) folds the mixed-action units was not checked.
 - **Evidence:** `grep -n poise` on the kit (only `poise_final` appears on fields); SkillData damageUnits; packages/data/src/kitMatch.ts lines 113–129; docs/kit-batches/batch-4.md D6.
 - **Confidence it's a real problem:** medium (the compiler may fold them; the kit's own fields do not show it)
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the loaded kit has poise on attack5 ("poise", controlled-only), battle skill `hit` and `hit_2` ("poise"), all four combo hits (poise1/poise3/poise4) and the rush ("poise_rush"). Attack3 and attack4 have poise units, but their blackboard `poise` is 0.0 (SkillData chr_0029_pograni_attack3/attack4 blackboard), so they deal no Stagger.
 
 ### F3. Battle skill second hit: scale key and literal value differ between the kit and SkillData
 - **Where:** packages/data/kits/operators/chr_0029_pograni.json → skills `chr_0029_pograni_normal_skill`, hit `hit_2` (scale `atk_scale2`, `applies` Breach)
@@ -30,7 +30,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** if the Breach landing takes its multiplier from the literal 2.0 and not from `atk_scale2` (1.2 at its level), the hit's damage is off by a large factor; the kit gives no frame either, so its timing rests on the default.
 - **Evidence:** `jq` on the DamageAction units at timeline starts 28 and 38 (sc 78 and 88); blackboard values in the file's `blackboard` entries.
 - **Confidence it's a real problem:** low-medium (the literal may be the compiled value of the `atk_scale` key at this level; not verified against the compiled skill)
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the hit's `atkScale` field (literal 2.0, useBlackboardKey false) is the unused one; the used scale is the unit's `atkCalculation` (AtkScaleCalculation): atk_scale at frame 28 and atk_scale2 at frame 38 (SkillData chr_0029_pograni_normal_skill.json). The kit's `hit_2` = atk_scale2 agrees, with no dataOverride, so the loader's check passes; tests/kit-pogranichnik.test.ts asserts 1.92 / 2.38.
 
 ### F4. Finisher entities finish1–3 carry an ultimate-kind hit that the kit does not list
 - **Where:** packages/data/kits/operators/chr_0029_pograni.json → triggers `oath_final_status_self` / `oath_final_combo` (the `decisive_assault` hit on `_finish4`)
@@ -39,7 +39,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** possible extra ultimate-kind hits per Decisive Assault (three of four Shieldguards), if the marker does not gate them. Size unknown.
 - **Evidence:** `jq` damage summary of the four `_finish*` files; the kit's `oath_final_status_self` note.
 - **Confidence it's a real problem:** low (the marker may gate those hits; the kit's note is partial)
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — chr_0029_pograni_ultimate_skill_abilityentity_finish1/2/3 are not spawned by any file in Json (grep: referenced only by themselves; they carry atk_scale 1.0 and atb 10, not the ultimate's atk_scale_trigger/final keys). The live entities are attack2 (harass) and finish4 (Decisive Assault), both in the kit.
 
 ## Checked, no conflict found
 - Finisher: landings at frames 7, 14 and 25 (mask 132) match the kit's `power_attack` hits.
@@ -57,3 +57,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - Basic-attack launch and frame values for attacks 1–4 (the kit has none; SkillData timelines not traced).
 - Log fixtures: only the kit's citations; no fixture was opened (the hold-out fixtures were excluded).
 - Equipment kits: none referenced by this operator's kit.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: F1, F2, F3, F4 · UNCERTAIN: none
+The flags read the raw JSON; the loaded kit fills count, frames and poise from SkillData. No log fixture for this operator outside the hold-out.

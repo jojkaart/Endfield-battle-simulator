@@ -12,7 +12,8 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** decides whether a Cryo infliction that forms Solidification (or another reaction) opens Tangtang's combo window. That changes when her combo can be cast, and so SP, Link and the Whirlpool timing in rotations.
 - **Evidence:** the trigger's `on` block and note in the kit file; schemas/kit.schema.json `reactions` description; docs/in-game-tests.md test 35; docs/combat-mechanics.md §7.5.
 - **Confidence it's a real problem:** medium-high (a field and the note disagree; the question itself is open)
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the field is what the engine does: events.ts line 453 counts an infliction that forms a reaction when `reactions: true`, and the loader's commit fbdfdb5 (2026-10-22, owner's reading) made every such kit count it. The note's last sentence ("doesn't count in the engine") is stale wording, not a second behaviour; b7b3 (the cited fixture) is unaffected. Only the open test 35 can change the choice, for all kits using `reactions: true` alike.
+  - **Fix (if REAL):** none for damage; reword the note to "counts since 2026-10-22; test 35 can still confirm" (as chr_0032_lizhiyan.json does).
 
 ### F2. Basic attack 4 has one hit; SkillData has three landings
 - **Where:** packages/data/kits/operators/chr_0027_tangtang.json → skills `chr_0027_tangtang_attack4`, hits `hit` (atk_scale_1) and `hit_2` (atk_scale_2)
@@ -21,7 +22,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** one basic-attack landing missing (about one atk_scale_1 hit per chain, ≈ a full basic multiplier per use) and the chain's timing for the first two landings.
 - **Evidence:** `jq` over the file's timelineActions (damageUnits per timeline item); the other chains of this kit (attack2, attack3) have one kit hit per data landing, so attack4 is the outlier.
 - **Confidence it's a real problem:** medium (the two frames 6–8 and 10–12 could be one landing split by a branch; not checked in the timeline's branch structure)
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the loaded kit has attack4 `hit` with count 2, frames [6, 10] (atk_scale_1) and `hit_2` at 23 (atk_scale_2): the compiler fills `count` and `frames` from SkillData, so the two atk_scale_1 landings are in the loaded kit (dumped from loadKits).
 
 ### F3. Stagger (poise-only units) not on the kit's hit fields, while its notes say they are folded in
 - **Where:** packages/data/kits/operators/chr_0027_tangtang.json → skills `chr_0027_tangtang_attack5` (hit `shot`), `chr_0027_tangtang_combo_skill` (hit `jet`), `chr_0027_tangtang_normal_skill` (hit `shot`, and the `spout*` hits), `chr_0027_tangtang_ultimate_skill` (hit `rogue_wave`); only the `early_rogue_wave` hit (in the `olden_stare_dive` trigger) has a `poise` field.
@@ -30,7 +31,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** Stagger bar progress, Stagger nodes and the finisher window. Batch-4 review item G3a says the draft-copied Tangtang kit lost "18 and 10 Stagger per Final Strike and combo"; the batch-4 table still lists "3 KNOWN entries" with the compiled landing apart. Whether the compiler folds these at match time (packages/data/src/kitMatch.ts `foldPoise`) for the mixed-action cases was not checked.
 - **Evidence:** `grep -n poise` over the kit file (only early_rogue_wave); docs/kit-batches/batch-4/chr_0027_tangtang.md "Re-analysis of the gaps" G3a; docs/kit-batches/batch-4.md D6; packages/data/src/kitMatch.ts lines 113–129.
 - **Confidence it's a real problem:** medium (the notes say folded; the fields and the batch-4 "KNOWN" entries say otherwise)
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the loaded kit carries the poise: attack5 `shot` poise "poise" controlled-only (Final Strike), combo `jet` poise "poise", battle skill `shot` poise "poise1", ultimate `rogue_wave` poise "poise2" (withDataFacts fills `poise` and `poiseControlledOnly` from the compiled landing; foldPoise folds the poise-only unit into it). The spout hits are scale-less entity ticks with no stagger unit.
 
 ### F4. OLDEN STARE freezes every enemy, including bosses, without citing the open boss-freeze question
 - **Where:** packages/data/kits/operators/chr_0027_tangtang.json → triggers `olden_stare`, the `control` apply `immobilization` with `freezes: true`
@@ -39,7 +40,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** a Boss's clock and its timers during OLDEN STARE (up to 4 s) and the Immobilization's effect on the boss hits; the kit's freeze length rests on that open point.
 - **Evidence:** docs/combat-mechanics.md §6.3; docs/in-game-tests.md test 104; the kit's `olden_stare` note.
 - **Confidence it's a real problem:** low (the kit is documented on the freeze; the boss part is not cited)
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the freeze rule is the engine's, not the kit's: docs/in-game-tests.md test 104 says the engine takes every Boss as control-immune since 2026-10-31 (b7b3 Rhodagn and c3c7 fit it), so the kit's `freezes: true` does not stop a boss's clock in the simulation. The kit note says only that controlImmune turns the freeze off; citing test 104 would be a courtesy.
 
 ### F5. Team Haste from talent 1 rests on an ASSUMED rule the kit does not mention
 - **Where:** packages/data/kits/operators/chr_0027_tangtang.json → buffs `haste`, `haste_tail`; trigger `whirlpool_forms` (`talentAtLeast [0,1]`)
@@ -48,7 +49,8 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** timing of hits and windows when talent 1 is on; the kit's note does not say the rule is untested.
 - **Evidence:** docs/combat-mechanics.md §6.4; the kit's `haste` buff; docs/in-game-tests.md test 19 and test 84 (Tangtang's own Haste).
 - **Confidence it's a real problem:** low
-- **Verdict:** (phase 3)
+- **Verdict:** UNCERTAIN — the kit's Haste (attribute 92, `ratio_speed`) is the data's own buff, and what Haste speeds up is the engine's ASSUMED rule (combat-mechanics §6.4, test 19), shared by every Haste user; nothing in the kit is wrong against the data.
+  - **Decides it (if UNCERTAIN):** in-game test 19 (count a teammate's basic-attack damage numbers in 5 s with and without Haste), or test 84 for Tangtang's own Haste.
 
 ## Checked, no conflict found
 - Whirlpool stacking: buff_chr_0027_tangtang_water is stackingType 2, maxStackCntKey water_stack = 2 (BuffData, blackboard), duration_water 30 s per layer: matches the kit's `whirlpool` buff (reference §8.1).
@@ -67,3 +69,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - Triggers `combo_window_burst`, `whirlpool_forms` (delay 26), the Slow and the `olden_stare_dive` hit frames versus the dive's landing timing (batch-1 S10 rotation dives are not castable yet).
 - Log fixtures: only the kit's own citations; no fixture was opened (the hold-out fixtures were excluded).
 - Equipment kits: none referenced by this operator's kit.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: F1, F2, F3, F4 · UNCERTAIN: F5
+F1's note wording is stale (the kit counts reaction-forming inflictions since 2026-10-22); a doc fix only. F5 is the shared Haste assumption (test 19). Logs: b7b3 (Tangtang) was run through `zmdlogs check`; Tangtang is +4.7% there, not traced to these flags.
