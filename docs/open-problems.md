@@ -376,11 +376,44 @@ frozen buff on another clock than her hits).
 **Next check:** a log where a slow-down starts before an ultimate's stop
 and runs into it; the Endministrator's frozen buff's clock in her kit.
 
+## Laevatain's battle-skill multipliers: data and logs against Zero Sanity
+
+**Shows (kit review 2026-11-12, Laevatain F3, F4):** the kit follows Zero
+Sanity's in-game table (game ~1.1): the empowered extra hit × extra_scaling,
+Twilight's enhanced battle-skill hits 1 and 2 × ratio. The data (1.6) has
+× ratio on the extra hit and none on hits 1 and 2; with the data's reading
+e989 (P5, game 1.6) goes from 6 mismatches to 0, its extra hit logged at
+0.8 of the kit's (1.2 / 1.5).
+
+**Ruled out:** nothing yet.
+
+**Still possible:** a game change since 1.1 (the data and logs are 1.6);
+a log or import effect in e989; a P1–P2 difference (db87, P1, still ×1.30
+on the Twilight hits with either reading).
+
+**Next check:** in-game test 20; the owner's decision on whether game-1.6
+logs outrank Zero Sanity's older in-game values.
+
+## Fight-wide factors in older imports (kit review)
+
+- Da Pan's only log (multi-target 10df): ×1.25 on half his hits and on
+  Pogranichnik's in the same fight.
+- 04d4: Catcher's weapon fits level ~1 (×1.0265 left), Ember ×1.0226 (as
+  in 146d); Ember ×1.0444 in Hard 27's pair, none in 7e19.
+- c3c7: Xaihi's hits all ×0.337.
+
+**Still possible:** build inputs the export doesn't give (weapon levels,
+nodes, food), stage effects. **Next check:** none planned (not screened
+logs).
+
 ## Smaller, not yet diagnosed
 
 - Laevatain's enhanced battle skill (`normal_skill_during_ult`): ×0.833
   in e989, ×1.083 in db87; its `ratio` key has no value in the data
   (in-game test 20).
+- Arcane's talent 1, paramType 4 (−6 on the INT combo) ignored by the
+  engine: a second cooldown cut would make INT combos twice as frequent
+  (kit review N1; an in-game timing decides).
 - 4e5e at 12219 ms: Estella's Lift lists Stagger 10 apart from her
   ultimate's 24, the one exception of 156 to the shared-event rule.
 - 1d91: Typhoeus's natural-triggered hits get Barrage Array's +0.10 in the
