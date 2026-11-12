@@ -1945,7 +1945,11 @@
                 },
                 {
                   "const": "event",
-                  "description": "The element of the event behind it (a combo's: the infliction that opened its window); none: nothing happens."
+                  "description": "The element of the event behind it (a combo's: the infliction that opened its window, as the combo is cast); none: nothing happens."
+                },
+                {
+                  "const": "window",
+                  "description": "The element of the latest event its owner's combo-window trigger saw (a reaction's: the infliction it consumed). A combo's hit: the latest since its cast began (the cooldown then keeps the window shut), else the opener of the window it used, else (a window the replay didn't see open) the enemy's current element; none: nothing happens."
                 }
               ]
             },

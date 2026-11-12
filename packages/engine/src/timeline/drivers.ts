@@ -37,6 +37,7 @@ function initialState(ctx: TimelineContext): TimelineState {
     })),
     energyBlockedUntil: {},
     comboWindow: {},
+    comboTrigger: {},
     spPausedUntil: 0,
     spStops: [],
     controlled,

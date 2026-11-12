@@ -480,8 +480,12 @@ export type KitApplication = (
   | (Omit<Extract<HitApplication, { readonly kind: "forcedReaction" }>, "level" | "extraSeconds"> & { readonly level?: ValueExpr; readonly extraSeconds?: ValueExpr })
   /** `status: "event"`: the physical status of the event behind it (a combo's: the one that opened its window). */
   | (Omit<Extract<HitApplication, { readonly kind: "physicalStatus" }>, "status"> & { readonly status: Extract<HitApplication, { readonly kind: "physicalStatus" }>["status"] | "event" })
-  /** `element: "event"`: the infliction element of the event behind it (a combo's: the one that opened its window). */
-  | (Omit<Extract<HitApplication, { readonly kind: "infliction" }>, "stacks" | "element"> & { readonly element: Extract<HitApplication, { readonly kind: "infliction" }>["element"] | "event"; readonly stacks?: ValueExpr })
+  /**
+   * `element: "event"`: the infliction element of the event behind it (a combo's: the one that opened its window, as
+   * the combo is cast). `element: "window"`: the element of the latest event its owner's combo-window trigger saw, as
+   * the application happens (a reaction's: the infliction it consumed; for a combo's hit, landing.ts windowSourceAt).
+   */
+  | (Omit<Extract<HitApplication, { readonly kind: "infliction" }>, "stacks" | "element"> & { readonly element: Extract<HitApplication, { readonly kind: "infliction" }>["element"] | "event" | "window"; readonly stacks?: ValueExpr })
   | (Omit<Extract<HitApplication, { readonly kind: "consumeInfliction" }>, "stacks"> & { readonly stacks?: ValueExpr })
 ) & {
   readonly if?: Predicate;
@@ -495,19 +499,21 @@ export type KitApplication = (
   readonly afterDamage?: boolean;
 };
 
-/** What an event behind an effect was, for applications that repeat it (`element: "event"`, `status: "event"`): Antal's combo. */
+/** What an event behind an effect was, for applications that repeat it (`element: "event"`, `status: "event"`: Antal's combo; `element: "window"`: Arcane's touch). */
 export type EventSource = { readonly kind: "infliction"; readonly element: ArtsElement } | { readonly kind: "physical"; readonly status: PhysicalStatus };
 
 /**
  * The arts-state application a kit application amounts to, with its values
  * resolved; null when it repeats the event behind it and that event isn't
  * of its kind (an infliction-opened combo window and a `status: "event"`),
- * or when it's a forced reaction of level 0 (nothing consumed).
+ * or when it's a forced reaction of level 0 (nothing consumed). `window`: what
+ * the owner's combo-window trigger last saw (`element: "window"`).
  */
-export function resolveApplication(app: KitApplication, value: (v: ValueExpr) => number, source?: EventSource): HitApplication | null {
-  if (app.kind === "infliction" && app.element === "event") {
-    if (source?.kind !== "infliction") return null;
-    return resolveApplication({ ...app, element: source.element }, value);
+export function resolveApplication(app: KitApplication, value: (v: ValueExpr) => number, source?: EventSource, window?: EventSource): HitApplication | null {
+  if (app.kind === "infliction" && (app.element === "event" || app.element === "window")) {
+    const from = app.element === "event" ? source : window;
+    if (from?.kind !== "infliction") return null;
+    return resolveApplication({ ...app, element: from.element }, value);
   }
   if (app.kind === "physicalStatus" && app.status === "event") {
     if (source?.kind !== "physical") return null;

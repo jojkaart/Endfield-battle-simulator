@@ -197,6 +197,9 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
         // Not while every combo the window is for is on cooldown (the regular window: those without one of their own, and cast with one).
         const own = ownWindowSkills(ctx, owner);
         const combos = (ctx.kits.get(owner)?.skills ?? []).filter((s) => s.kind === "combo" && (a.skills ? a.skills.includes(s.skillId) : s.comboWindow !== false && !own.has(s.skillId)));
+        // What the trigger saw, and when, whether the window opens or the cooldown keeps it shut (element "window").
+        const seen = eventSourceOf(e);
+        if (seen) for (const key of a.skills ? a.skills.map((id) => `${owner}>${id}`) : [owner]) st = { ...st, comboTrigger: { ...st.comboTrigger, [key]: { source: seen, frame } } };
         if (combos.length > 0 && combos.every((s) => (st.readyAt[s.skillId] ?? 0) > frame)) break;
         const until = frame + (a.seconds === undefined ? (a.whileBuff ? Infinity : COMBO_WINDOW_FRAMES) : Math.round(evaluate(a.seconds, ec()) * FPS));
         for (const key of a.skills ? a.skills.map((id) => `${owner}>${id}`) : [owner]) {
@@ -213,7 +216,7 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
         const ai = artsIntensity(ctx, st, owner, frame);
         for (const app of a.applies) {
           if (app.if && !decide(app.if, ec())) continue;
-          const resolved = resolveApplication(app, (v) => evaluate(v, ec()), eventSourceOf(e));
+          const resolved = resolveApplication(app, (v) => evaluate(v, ec()), eventSourceOf(e), st.comboTrigger[owner]?.source);
           if (!resolved) continue;
           const side = st;
           const r = applyToEnemy(withLoggedReactionLevel(ctx, expireStatus(st.enemy, frame), resolved, frame, owner), resolved, frame, owner, ai, (key) => skillValue(ctx.data, panel, build, triggerSkillId(owner, t), key), statusTweaks(ctx, st, owner, frame), () => attackerSide(side, owner, frame));

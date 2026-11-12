@@ -526,3 +526,33 @@ describe("what a hit's reaction triggers before its damage", () => {
     }
   });
 });
+
+describe("Arcane's WILL combo touch: the element of what opened her window (element \"window\", in-game test 33)", () => {
+  const A = "chr_0032_lizhiyan";
+  const replayOf = (f: string) => {
+    const fx = readLogFixture(new URL(`../fixtures/${f}.json`, import.meta.url).pathname);
+    return { fx, r: logBuffReplay(data, fx).replay };
+  };
+  const logged = (fx: LogFixture, t: number, operator: string, event: string) => fx.hits.find((h) => h.t === t && h.operator === operator && h.event === event) as LogHit;
+  const frameOf = (l: { frame: number } | { unknown: string }) => {
+    if ("unknown" in l) throw new Error(l.unknown);
+    return l.frame;
+  };
+
+  it("9a80: with no infliction on the enemy at the touch (2167 ms), it applies the Cryst its window's Corrosion consumed, which Rossi's Lift at 7807 ms consumes", () => {
+    const { fx, r } = replayOf("pending/zmdlogs-9a8097fcf351");
+    const touch = frameOf(r.landing(logged(fx, 2167, A, "buff_chr_0032_lizhiyan_combo_skill_seal_total")));
+    // What opened the window: the Corrosion before the touch, Nature onto Cryst.
+    const opener = r.reactions.filter((x) => x.kind === "reaction" && x.frame <= touch).at(-1);
+    expect(opener?.kind === "reaction" ? [opener.status, opener.consumed] : null).toEqual(["corrosion", "cryst"]);
+    const lift = frameOf(r.statusLanding(logged(fx, 7807, "chr_0028_wulfa", "buff_physical_airborne")));
+    const consumed = r.reactions.filter((x) => x.kind === "consumed" && x.operator === "chr_0028_wulfa" && x.frame === lift);
+    expect(consumed.map((x) => (x.kind === "consumed" ? [x.element, x.stacks] : null))).toEqual([["cryst", 1]]);
+  });
+
+  it("0eef: with the enemy's infliction the opener's (Si's Cryo at the ms of her combo, landing after its cast), it's that one: the Cryst burst at 3729 ms", () => {
+    const { fx, r } = replayOf("zmdlogs-0eef2474a26f");
+    const burst = r.statusLanding(logged(fx, 3729, A, "buff_common_cryst_cryst_triggered"));
+    expect("unknown" in burst ? burst.unknown : burst.element).toBe("cryst");
+  });
+});
