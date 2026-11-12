@@ -764,6 +764,15 @@ log-verdicts-pending.json and fixtures/pending/holdout.json.
    replay's, cause not found; Hard 27's physical ×1.11 isn't a Hard-stage
    pattern (other Hard enemies fit their data). Measured: development
    plain 41.9%, hold-out 49.9% (mean |damage error| 18.7%).
+13. **Round 5.** Hot Work's buffs count on the hit whose reaction makes
+   them, not on Corrosion's own hit (Arcane's forming hits ×1.5 exactly in
+   3f78 and 4a64; test 51 answered for Hot Work): plain +14. Arcane's
+   WILL touch applies the element of what opened her window (opus,
+   `element: "window"`; 21 of 94 logged touches had no infliction to
+   copy, a later consumer shows one): 9a80 −30.7 → −23.6%, 3f78 plain 34 →
+   41. Ruled out: Azrila for Hard 27; the slug's shield ending debuffs
+   (Hard 33). Measured: development plain 42.4% (mismatches 21.7%, mean
+   |damage error| 21.5%), hold-out 50.0% (9.0%, 18.5%).
 
 ## Phase C: questions for the owner (they decide what to model)
 
