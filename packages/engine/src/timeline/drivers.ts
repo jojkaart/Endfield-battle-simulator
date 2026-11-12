@@ -39,7 +39,6 @@ function initialState(ctx: TimelineContext): TimelineState {
     comboWindow: {},
     comboTrigger: {},
     spPausedUntil: 0,
-    spStops: [],
     controlled,
     acting: {},
     chainNext: {},

@@ -53,8 +53,8 @@ hand-written data, event queue); **current Endaxis** `fbf6a29`
   effective-ATK rounding rule ("round up if fraction ≥ 0.7") was fitted on
   two loadouts, its bare-loadout test is skipped and still 1 off, and
   `calculateDamage` rounds ATK to 0.1 contrary to its own spec. Beta Breach
-  values. SP regen modelled as continuous 7.69/s (the game is 8/s with a
-  1.5 s pause after spending).
+  values. SP regen modelled as continuous 7.69/s (the engine: 8/s with a
+  0.5 s pause after spending, since 2026-11-12; 1.5 s before).
 - **End-DPScope:** process per evaluation; patched vendor code; `Math.random`
   IDs that changed between runs and broke label mapping; inherits every
   engine bug. Its log notes one Typhoeus timeline ~8% below target and
@@ -70,7 +70,8 @@ hand-written data, event queue); **current Endaxis** `fbf6a29`
   `SkillPatchTable`.
 - Team SP: 8/s with a pause after spending. Endaxis's generated native
   settings say `atbRecoverInterval: 0.5`, so whether that is the pause or
-  the regen tick interval is open (the engine uses a 1.5 s pause); Zero
+  the regen tick interval is open (the engine uses a 0.5 s pause since
+  2026-11-12, after 666bj's in-game test; the logs rule out 1.5 s); Zero
   Sanity regenerates 7.6923/s;
   battle skill gives 0.065 ultimate energy per natural SP; refunded SP gives
   none. Zero Sanity uses max 300, start 200.

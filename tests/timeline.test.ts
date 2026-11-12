@@ -750,8 +750,9 @@ describe("timeline: follow-up casts", () => {
     const r = simulate(d, { ...sc, team, controlled: g });
     expect(r.casts.map((c) => [c.frame, c.skill])).toEqual([[0, L + "normal_skill"], [30, L + "attack1"]]);
     expect(r.hits.some((h) => h.skillId === L + "attack1" && h.frame === 36)).toBe(true);
-    // Free: no SP spent (and none regenerated yet: regen pauses 1.5 s after the battle skill's spend; its P1 SP return is on the empowered extra hit only).
-    expect(r.casts[1]?.spAfter).toBe(r.casts[0]?.spAfter);
+    // Free: no SP spent; only regen after the 0.5 s pause that follows the battle skill's spend (frames 15–30); its P1 SP
+    // return is on the empowered extra hit only.
+    expect(r.casts[1]?.spAfter).toBeCloseTo((r.casts[0]?.spAfter ?? NaN) + ((30 - SP.pauseAfterSpendFrames) * SP.perSecond) / 30, 6);
   });
 });
 
@@ -868,26 +869,26 @@ describe("timeline: an ultimate's time stop", () => {
     expect(Math.max(...hit)).toBeGreaterThan(91);
   });
 
-  it("freezes the world's timers and SP regen, but not cooldowns", () => {
+  it("freezes the world's timers, but not cooldowns or SP regen", () => {
     const gil = { operator: g, skill: "chr_0013_aglina_normal_skill" };
     const before = runTo([gil], 10).end;
     const { s } = runTo([gil, { operator: op, skill: L + "ultimate_skill", at: 10 }], 10);
     expect(s.readyAt["chr_0013_aglina_normal_skill"]).toBe(before.readyAt["chr_0013_aglina_normal_skill"]);
-    expect(s.spPausedUntil).toBe(Math.max(before.spPausedUntil, 10) + 61);
+    expect(s.spPausedUntil).toBe(Math.max(before.spPausedUntil, 10));
     expect(s.slowdowns).toEqual([{ start: 10, scales: Array.from({ length: 61 }, () => 0), exempt: op, ultimate: true }]);
   });
 
-  it("SP regenerates until a stop starts, also one that starts later than its cast, or is cast inside an advance", () => {
+  it("SP regenerates through time stops (the logs: web review row 2), also one that starts later than its cast, or is cast inside an advance", () => {
     const ult = L + "ultimate_skill";
     const u = data.skills[ult];
     const rate = SP.perSecond / 30;
-    // Her ultimate (no SP spent) with its 61-frame stop from frame 60 of the cast: regen runs 0–60, stops 60–121, runs on.
+    // Her ultimate (no SP spent) with its 61-frame stop from frame 60 of the cast: regen runs on through it.
     const late: GameData = { ...data, skills: { ...data.skills, [ult]: { ...u, timing: { ...u?.timing, slowdowns: [{ from: 60, scales: Array.from({ length: 61 }, () => 0) }] } } } as GameData["skills"] };
     const ctx = createContext(late, scenario([]));
     const s = apply(ctx, init(ctx), { operator: op, skill: ult });
     expect(advance(ctx, s, 60).sp).toBeCloseTo(200 + 60 * rate, 6);
-    expect(advance(ctx, s, 121).sp).toBeCloseTo(200 + 60 * rate, 6);
-    expect(advance(ctx, s, 150).sp).toBeCloseTo(200 + (150 - 61) * rate, 6);
+    expect(advance(ctx, s, 121).sp).toBeCloseTo(200 + 121 * rate, 6);
+    expect(advance(ctx, s, 150).sp).toBeCloseTo(200 + 150 * rate, 6);
     // The same stop from frame 0, cast by a trigger 100 frames after attack1 while one advance runs from frame 0 to 300.
     const kit = data.kits.operators[op] as OperatorKit;
     const t: KitTrigger = { id: "test_late_ult", on: { event: "cast", skills: [L + "attack1"] }, by: "self", delay: 100, do: [{ kind: "cast", skill: ult }] };
@@ -896,17 +897,15 @@ describe("timeline: an ultimate's time stop", () => {
     const s2 = apply(c2, init(c2), { operator: op, skill: L + "attack1" });
     const end = advance(c2, s2, 300);
     expect(end.casts.map((c) => [c.skill, c.frame])).toEqual([[L + "attack1", 0], [ult, 100]]);
-    expect(end.sp).toBeCloseTo(200 + (300 - 61) * rate, 6);
+    expect(end.sp).toBeCloseTo(Math.min(300, 200 + 300 * rate), 6);
   });
 
   it("overlapping stops cost only what the new one adds", () => {
     // Gilberta's ultimate (0–52) right after Laevatain's (0–61): during the overlap Gilberta is frozen already; Laevatain loses Gilberta's 52 frames.
     const { ctx, s: both } = runTo([{ operator: op, skill: L + "ultimate_skill" }, { operator: g, skill: "chr_0013_aglina_ultimate_skill", at: 0 }], 0);
     expect(both.slowdowns.map((x) => [x.start, x.scales.length, x.exempt])).toEqual([[0, 61, op], [0, 52, g]]);
-    // The world (SP regen with it) stands still 61 frames, not 61 + 52.
-    expect(both.spStops).toEqual([{ from: 0, until: 61 }]);
-    expect(advance(ctx, both, 61).sp).toBe(both.sp);
-    expect(advance(ctx, both, 91).sp).toBeCloseTo(both.sp + SP.perSecond, 6);
+    // SP regenerates through both (rules.ts SP).
+    expect(advance(ctx, both, 30).sp).toBeCloseTo(both.sp + SP.perSecond, 6);
   });
 });
 

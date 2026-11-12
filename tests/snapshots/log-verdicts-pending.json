@@ -256,7 +256,7 @@
   "chr_0016_laevat": {"plain":24,"assumed":1,"fallback":2,"mismatch":28,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0032_lizhiyan": {"plain":51,"assumed":2,"fallback":2,"mismatch":16,"unvalued":0,"unquantified":0,"uncovered":0},
   "chr_0036_jsspsi": {"plain":27,"assumed":9,"fallback":2,"mismatch":10,"unvalued":0,"unquantified":2,"uncovered":0},
-  "totals": {"damage":-8.1,"operator chr_0033_camille":-0.7,"operator chr_0016_laevat":-8.5,"operator chr_0036_jsspsi":-10,"operator chr_0032_lizhiyan":-2.1,"kind basic":2,"kind battle":-14.1,"kind combo":-5.9,"kind status":0.3,"kind ultimate":0,"hits":11.9,"status hits":0,"staggered hits":9.2,"last hit":-0.1,"crit share (points)":-0.2}
+  "totals": {"damage":-5.9,"operator chr_0033_camille":-0.7,"operator chr_0016_laevat":-8.5,"operator chr_0036_jsspsi":-1,"operator chr_0032_lizhiyan":-2.1,"kind basic":2,"kind battle":-10,"kind combo":-5.9,"kind status":0.3,"kind ultimate":0,"hits":12.3,"status hits":0,"staggered hits":9.2,"last hit":0,"crit share (points)":-0.2}
  },
  "pending/zmdlogs-de6a94e9cf6b.json": {
   "chr_0029_pograni": {"plain":20,"assumed":4,"fallback":58,"mismatch":2,"unvalued":0,"unquantified":0,"uncovered":0},

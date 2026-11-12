@@ -16,28 +16,13 @@ import { attrTotal, enemyAttr, maxPoise, panelAt, skillCosts, skillGroup } from 
 
 /** SP at a later frame, with regeneration (whole frames, no fractions lost): from the state's frame, after its pause, outside its stops. */
 export function spAt(state: TimelineState, frame: number): number {
-  return Math.min(SP.max, state.sp + (regenFrames(state, Math.max(state.frame, state.spPausedUntil), frame) * SP.perSecond) / FPS);
+  // On raw time, through time stops and slow-downs (rules.ts SP).
+  return Math.min(SP.max, state.sp + (Math.max(0, frame - Math.max(state.frame, state.spPausedUntil)) * SP.perSecond) / FPS);
 }
 
-/** The frames in [from, to) SP regenerates in: those outside the state's stops (TimelineState.spStops). */
-function regenFrames(state: TimelineState, from: number, to: number): number {
-  if (to <= from) return 0;
-  let n = to - from;
-  for (const p of state.spStops) n -= Math.max(0, Math.min(to, p.until) - Math.max(from, p.from));
-  return n;
-}
-
-/** The frame by which SP has regenerated for `frames` frames from `from` (no earlier than the pause after a spend), skipping the stops. */
+/** The frame by which SP has regenerated for `frames` frames from `from` (no earlier than the pause after a spend). */
 export function afterRegen(state: TimelineState, from: number, frames: number): number {
-  let f = Math.max(from, state.spPausedUntil);
-  let left = frames;
-  for (const p of state.spStops) {
-    if (p.until <= f) continue;
-    if (p.from >= f + left) break;
-    left -= Math.max(0, p.from - f);
-    f = p.until;
-  }
-  return f + left;
+  return Math.max(from, state.spPausedUntil) + frames;
 }
 
 /**

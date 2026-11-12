@@ -820,10 +820,11 @@ values, and are converted once at load with a documented rounding rule.
 not copied, 2026-10-18): an ultimate's `UltimateTimeAction` (time stop) and
 global-layer `TimeDilationAction`s (a combo's slow-down) scale time for
 everyone but the caster. The world (enemy statuses, inflictions, DoT ticks,
-every buff including the caster's, combo windows, SP regen, energy blocks)
+every buff including the caster's, combo windows, energy blocks)
 and the other operators (their hits on the way, delayed actions, current
 action) lose the frames the slow-down takes; skill cooldowns run on raw
-time. Overlapping slow-downs: the lowest scale counts. The engine shifts
+time, and so do team SP's regen and its pause after a spend (the logs:
+the replay's SP shortfalls drop from 20 to 13 of 38 logs). Overlapping slow-downs: the lowest scale counts. The engine shifts
 what comes after the slow-down's start by the lost frames, which is exact
 for a stop and, for a partial slow-down, for everything after it ends;
 for an operator still in its own ultimate's stop (which another
@@ -831,10 +832,7 @@ ultimate's stop or a combo's slow-down doesn't hold), from that stop's
 end, so what's due right then comes on time (Liino's Cosmovoice at her
 frame 77 across Xaihi's stop in dbae; Rossi's ultimate crit buff at its
 frame 58 across Si's combo slow-down in 9a80).
-SP regenerates until the slow-down starts (which may be frames into its
-cast, or inside an advance for a trigger's cast), not for the lost frames
-after it (`TimelineState.spStops`), then on; the pause after a spend is
-apart from these and a later spend never shortens it.
+A later spend never shortens the pause after an earlier one.
 Curves: inline Unity curves are evaluated (Hermite); of the named ones only
 `ComboSkill` (0.01 for 40% of the duration, up to 1 at 93%, ramp taken as
 linear) and `RESETto1` are known. Not modelled yet: entity-layer
@@ -937,7 +935,7 @@ Two stages:
 
 SP, ultimate energy, stagger and cooldowns are **live state** that gates
 actions, not post-passes. (Known details to model: team SP regenerates
-8/s with a 1.5 s pause after spending; refunded SP doesn't give ultimate
+8/s with a 0.5 s pause after spending; refunded SP doesn't give ultimate
 energy.)
 
 State is **plain data** (flat records and arrays, no object graph), so a

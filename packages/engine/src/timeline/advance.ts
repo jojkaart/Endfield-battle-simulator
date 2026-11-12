@@ -181,7 +181,6 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
     ...st,
     sp: spAt(st, frame),
     frame,
-    ...(st.spStops.some((p) => p.until <= frame) ? { spStops: st.spStops.filter((p) => p.until > frame) } : {}),
     enemy: expireStatus(st.enemy, frame),
   };
 }

@@ -1,19 +1,19 @@
 {
  "akekuri-laevatain.scenario.json": {
-  "total": 350286.825,
+  "total": 353360.114,
   "hits": 138,
   "casts": 64,
   "perOperator": {
-   "chr_0019_karin": 63782.654,
-   "chr_0016_laevat": 286504.171
+   "chr_0019_karin": 65618.882,
+   "chr_0016_laevat": 287741.232
   },
-  "digest": "7dad449fa33c",
+  "digest": "7b610d05d65b",
   "windows": [
    "4199b6179a05",
-   "4dfe986acc39",
-   "7a63851dfe14",
-   "b5b9c0f1c0df",
-   "22526023081a"
+   "96f5535ea637",
+   "422ffb393a6f",
+   "5448f193417a",
+   "c5b51a13cc60"
   ]
  },
  "alesh-estella.scenario.json": {
@@ -191,18 +191,18 @@
   ]
  },
  "fluorite-gilberta.scenario.json": {
-  "total": 148446.262,
+  "total": 152023.819,
   "hits": 83,
   "casts": 42,
   "perOperator": {
-   "chr_0022_bounda": 89201.601,
+   "chr_0022_bounda": 92779.157,
    "chr_0013_aglina": 59244.662
   },
-  "digest": "6270b8fc515c",
+  "digest": "e6cf27b71e7b",
   "windows": [
    "f190f04d4021",
-   "ff503a7609d4",
-   "81cee0b0f736",
+   "5e3c8e7128d9",
+   "c91232dc4e41",
    "40de43569f91"
   ]
  },
@@ -279,18 +279,18 @@
   ]
  },
  "mifu-dapan.scenario.json": {
-  "total": 834141.093,
+  "total": 904272.955,
   "hits": 61,
   "casts": 32,
   "perOperator": {
-   "chr_0031_mifu": 729489.898,
+   "chr_0031_mifu": 799621.759,
    "chr_0018_dapan": 104651.195
   },
-  "digest": "b1fc29865c7f",
+  "digest": "5cdb254cf4d0",
   "windows": [
    "9996ba1b0ad2",
-   "f15ad740152f",
-   "fd5edd2feb64"
+   "9542d1096e4e",
+   "c9f63273a90d"
   ]
  },
  "perlica-estella.scenario.json": {
@@ -338,19 +338,19 @@
   ]
  },
  "rossi-gilberta.scenario.json": {
-  "total": 797693.953,
-  "hits": 183,
+  "total": 1101054.026,
+  "hits": 189,
   "casts": 46,
   "perOperator": {
-   "chr_0028_wulfa": 742994.456,
-   "chr_0013_aglina": 54699.496
+   "chr_0028_wulfa": 1045664.074,
+   "chr_0013_aglina": 55389.953
   },
-  "digest": "e3c4c27e1cc6",
+  "digest": "02f1a25da3e1",
   "windows": [
    "860e09976ab7",
-   "c07b11012b68",
-   "f41e5d437b53",
-   "7f145e5fc55c"
+   "c076ee9e81c2",
+   "ea82770e334e",
+   "b4ac2857ee91"
   ]
  },
  "si-laevatain-liino-gilberta.scenario.json": {
@@ -398,18 +398,17 @@
   ]
  },
  "tangtang-whirlpools.scenario.json": {
-  "total": 711736.099,
+  "total": 712361.21,
   "hits": 124,
   "casts": 14,
   "perOperator": {
-   "chr_0027_tangtang": 711736.099
+   "chr_0027_tangtang": 712361.21
   },
-  "digest": "f6399ad7d9d6",
+  "digest": "c42947ba336b",
   "windows": [
    "b9401a33834f",
-   "16bb697007c0",
-   "a4a16592d860",
-   "fec0292b0b44"
+   "f07dd3762b64",
+   "bb1dc14b244c"
   ]
  },
  "typhoeus-gilberta.scenario.json": {
@@ -420,29 +419,29 @@
    "chr_0034_typhoea": 1038845.154,
    "chr_0013_aglina": 77567.275
   },
-  "digest": "10484150f00f",
+  "digest": "113602ae7404",
   "windows": [
    "dbef8bbce0f3",
-   "a03e3bb5330f",
-   "f9e21aa25aea",
-   "254e01a1dffb",
-   "c2005d095dd4",
-   "6ff20abc5761"
+   "712802a5ec4a",
+   "7377927f5b61",
+   "05609a1588f5",
+   "c9b60cc5501d",
+   "fd035afe24a2"
   ]
  },
  "wulfgard-fluorite.scenario.json": {
-  "total": 111002.559,
+  "total": 114399.506,
   "hits": 48,
   "casts": 31,
   "perOperator": {
-   "chr_0006_wolfgd": 77121.772,
+   "chr_0006_wolfgd": 80518.718,
    "chr_0022_bounda": 33880.788
   },
-  "digest": "d5e014949667",
+  "digest": "61408dfa0148",
   "windows": [
    "b683876131a3",
-   "255b6ac49cbe",
-   "d70f34160eb2"
+   "1c99e9219eab",
+   "064f33ce4e7a"
   ]
  },
  "xaihi-si.scenario.json": {
@@ -478,18 +477,17 @@
   ]
  },
  "zhuangfy-solo.scenario.json": {
-  "total": 1108816.16,
+  "total": 1122426.466,
   "hits": 43,
   "casts": 22,
   "perOperator": {
-   "chr_0030_zhuangfy": 1108816.16
+   "chr_0030_zhuangfy": 1122426.466
   },
-  "digest": "128f49d7a2e7",
+  "digest": "22fe2c625920",
   "windows": [
    "ca7556dfa863",
-   "a35d6cc5da65",
-   "ab24bfb1c4b2",
-   "650877edd5bf"
+   "62f1b712e353",
+   "effd5545798b"
   ]
  }
 }

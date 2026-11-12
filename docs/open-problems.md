@@ -409,19 +409,30 @@ logs).
 ## Team SP: the replay's SP runs short (web review row 2)
 
 **Shows:** with the engine's own SP, the log check's replay can't afford
-casts the log made, in 28 of 40 logs at the 1.5 s regen pause (most 2–12
-SP short), 22 at 0.5 s, 14 with no pause (1d91 at 4833 ms: 46 SP before a
-100 cast). replayCast raises SP silently, so verdicts don't show it.
+casts the log made: at first in 28 of 40 logs at the 1.5 s regen pause
+(most 2–12 SP short), 22 at 0.5 s, 14 with no pause (1d91 at 4833 ms: 46
+SP before a 100 cast). replayCast raises SP silently, so verdicts don't
+show it. Since 2026-11-12 the engine pauses 0.5 s and regenerates through
+others' time stops and slow-downs: of the 17 development logs, 9 are still
+short at some cast, 1193 SP in all (before: 13 logs, 2921 SP).
 
-**Ruled out:** a 1.5 s pause after every spend (engine rule K1, assumed).
+**Ruled out:** a 1.5 s pause after every spend (old rule K1). Regen held
+during others' time stops and slow-downs (old rule K2: about 1400 SP of the
+shortfall, 7 logs). SP for basic-attack hits on which the log shows poise
+(the replay's controlled operator already matches the log's).
 
-**Still possible:** a 0.5 s pause after battle skills (666bj, tested in
-game); no pause but after a perfect dodge (Talos Wiki); SP gains the
-engine misses (per-hit SP, finisher SP, returned SP, start SP above 200);
-a replay artefact (db87 at 10117 ms charges 200 SP for one press).
+**Still possible:** Liino's presses in Vocalist Stance cost no SP (about
+900 SP; test 103); Purrchena's block refund (+20 at her counter, about 240
+SP, more if repeated blocks count); teammates' Final Strikes give SP too
+(alone 1497 SP at 0.5 s; with the others only db87 and 04d4 stay short);
+other hitless presses free (Si, Laevatain in db87: dubious); SP at the
+start above 200 (0eef short at 3.2 s); a pause shorter than 0.5 s (bdf2 at
+3817 ms fails any pause above ~0.2 s with the old regen); a replay
+artefact (db87 at 10117 ms charges 200 SP for one press).
 
-**Next check:** an audit of the SP gains in the replay's worst logs
-(1d91, 04d4, 6339); then the pause (test 102).
+**Next check:** test 103 (Liino); the Final-Strike SP of teammates
+(a data read: who gets a Final Strike's `atb` when not controlled); then
+the pause (test 102).
 
 ## Solidification as a freeze (web review row 4)
 

@@ -5,7 +5,7 @@
 // (Pogranichnik P5 with Thermite Cutter, Chen Qianyu) and, for the weapons, with their natural wielders.
 // fixtures/pending/zmdlogs-7e19489ae503.json checks his hits against a log (29 of 29 match: tests/logs.test.ts once it moves).
 import { describe, expect, it } from "vitest";
-import { advance, apply, computeStats, createContext, earliestStart, init, skillValue, type Build, type LandedHit, type RotationAction, type StatPanel, type TimelineScenario, type TimelineState } from "@efsim/engine";
+import { advance, apply, SP, computeStats, createContext, earliestStart, init, skillValue, type Build, type LandedHit, type RotationAction, type StatPanel, type TimelineScenario, type TimelineState } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { readBuild, readScenario } from "@efsim/cli";
 
@@ -99,10 +99,10 @@ describe("Pogranichnik's skills", () => {
   });
 
   it("battle-skill SP by the stacks its Breach consumed: atb1–atb4 = 5 / 15 / 25 / 35 (L12) at frame 38, none on an enemy without stacks (Vulnerable only, no Breach)", () => {
-    // The battle skill pauses SP regeneration (1.5 s after spending), so the SP across frame 38 is its grant.
+    // The SP across frame 38 is its grant and a frame of regen (the pause after spending is 0.5 s).
     const grant = (before: RotationAction[]) => {
       const cast = castAt(run(scenario(), [...before, o("normal_skill")], 400), "normal_skill");
-      return run(scenario(), [...before, o("normal_skill")], cast + 38).sp - run(scenario(), [...before, o("normal_skill")], cast + 37).sp;
+      return run(scenario(), [...before, o("normal_skill")], cast + 38).sp - run(scenario(), [...before, o("normal_skill")], cast + 37).sp - SP.perSecond / 30;
     };
     expect(grant([])).toBeCloseTo(0, 6);
     expect(grant(stacks1)).toBeCloseTo(5, 6);

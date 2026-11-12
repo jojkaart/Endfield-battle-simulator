@@ -344,8 +344,9 @@ without about 5.3 s.
 
 **Why:** the engine now freezes everyone but the caster for an ultimate's
 time stop (Laevatain's first 2 s, Gilberta's 1.7 s): the enemy's statuses
-and Combustion ticks, all buffs, combo windows and SP regen, but **not**
-skill cooldowns (Endaxis's rule, from its unit tests only).
+and Combustion ticks, all buffs and combo windows, but **not**
+skill cooldowns (Endaxis's rule, from its unit tests only) or SP regen
+(the logs, 2026-11-12).
 **How:** time a teammate's combo cooldown with a stopwatch, from the combo
 cast until its button is ready again: once with nothing else happening,
 once with an ultimate with a long time stop cast during it (Laevatain's
@@ -450,7 +451,7 @@ empowered battle skill: does the icon come back?)
 plain battle skill gives none. The engine follows the data.
 **How:** the game shows no SP number, so look for a jump instead, in a
 phone video with the SP bar not full. After a battle skill the bar drops a
-third and SP regen pauses (about 1.5 s, unverified), then fills smoothly.
+third and SP regen pauses (about 0.5 s), then fills smoothly.
 With 4 Melting Flame: does the bar jump up by about a fifteenth (20 of
 300) at the moment the big extra hit lands? Then a plain battle skill: no
 jump expected anywhere. If the jump is too small to see, leave this one:
@@ -878,9 +879,9 @@ compare Valiant's hit after her combo with the one after her ultimate
 (talent level 2). The data says a teammate's Shatter doesn't count.
 **How:** the game shows no SP number, so look for a jump in a phone video,
 with the SP bar not full. After a battle skill the bar drops a third and
-regen pauses (about 1.5 s, unverified), so a return shows as a small jump
-on a still bar, about 0.7 s after the cast (15 of 300: a twentieth of the
-bar). Her combo on a Solidified enemy (Shatter), then her battle skill: a
+regen pauses (about 0.5 s), then refills slowly (8 a second), so a
+return shows as a small jump about 0.7 s after the cast (15 of 300: a
+twentieth of the bar, about two seconds of refill at once). Her combo on a Solidified enemy (Shatter), then her battle skill: a
 jump expected. A second battle skill without a Shatter: no jump. Then a
 teammate's Shatter (their Lift on a Solidified enemy), then her battle
 skill: no jump, if the data is right. If a twentieth of the bar is too
@@ -1925,11 +1926,12 @@ whether the teammate's pace changes.
 
 ### 102. How fast SP refills, and how long it stops after spending (ready, any operator; higher priority: every SP-bound team)
 
-**Why:** the engine regenerates team SP at 8/s and stops it for 1.5 s
-after every spend (older notes, unverified). The game's own settings, as
-Endaxis reads them, say 0.5 s (`atbRecoverInterval`), and Zero Sanity uses
-7.69/s with no stop. Teams that run out of SP are about 8% off between
-1.5 s and 0.5 s (accuracy plan B2). The logs don't record SP.
+**Why:** the engine regenerates team SP at 8/s and, since 2026-11-12,
+stops it for 0.5 s after every spend (666bj's in-game test, and the game's
+own `atbRecoverInterval` as Endaxis reads it); it used 1.5 s, which the
+logs rule out (the replay can't afford the casts the players made). Zero
+Sanity uses 7.69/s with no stop. The logs don't record SP, and can't tell
+0.5 s from a shorter stop or none: SP gains the engine misses blur it.
 **How:** pick an operator whose battle skill gives no SP back (e.g.
 Laevatain), in a training room. Don't basic-attack at all during the
 test (Final Strikes give SP; teammates' don't), and record a phone video
@@ -1938,8 +1940,8 @@ of the SP bar.
   all three bars full.
 - B: spend all three bars, then cast the battle skill each time a bar is
   full: time from the first of these casts to the fourth.
-1. Engine (8/s, 1.5 s stop): A about 39 s, B about 42 s (B − A = 3 s).
-2. With a 0.5 s stop: A about 38 s, B about 39 s (B − A = 1 s).
+1. With a 1.5 s stop (the engine before 2026-11-12): A about 39 s, B about 42 s (B − A = 3 s).
+2. Engine (0.5 s stop): A about 38 s, B about 39 s (B − A = 1 s).
 3. With no stop at 7.69/s (Zero Sanity): A and B both about 39 s.
 B − A is twice the stop, whatever the rate; A minus the stop gives the
 rate (300 SP over that time).

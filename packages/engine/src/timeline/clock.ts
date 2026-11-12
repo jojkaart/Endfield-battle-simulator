@@ -129,7 +129,7 @@ function shiftBuff(b: ActiveBuff, start: number, n: number): ActiveBuff {
   return b.expiresAt > start || (b.nextTick ?? -1) > start ? { ...b, expiresAt: later(b.expiresAt), ...(b.nextTick !== undefined ? { nextTick: later(b.nextTick) } : {}) } : b;
 }
 
-/** Everything on the world's clock after `start` happens `n` frames later: the enemy's, every buff, combo windows, energy blocks, SP regen. */
+/** Everything on the world's clock after `start` happens `n` frames later: the enemy's, every buff, combo windows, energy blocks. */
 function shiftWorld(st: TimelineState, start: number, n: number): TimelineState {
   if (n <= 0) return st;
   const later = (f: number) => (f > start ? f + n : f);
@@ -141,24 +141,8 @@ function shiftWorld(st: TimelineState, start: number, n: number): TimelineState 
     comboWindow: Object.fromEntries(Object.entries(st.comboWindow).map(([k, w]) => [k, { ...w, until: later(w.until) }])),
     energyBlockedUntil: Object.fromEntries(Object.entries(st.energyBlockedUntil).map(([k, f]) => [k, later(f)])),
     link: st.link.map(later),
-    // SP doesn't regenerate meanwhile: it does until `start` (which may be later than the state's frame: a slow-down
-    // some frames into its cast, or one cast by a trigger while an advance runs), then not for `n` frames.
-    spPausedUntil: later(st.spPausedUntil),
-    spStops: stopSp(st.spStops, start, n),
+    // SP isn't on it: regen and its pause after a spend run on raw time, as cooldowns do (rules.ts SP).
   };
-}
-
-/** SP stops after a slow-down from `start` adds `n` frames: what comes after it, `n` later, and [start, start + n) (merged). */
-function stopSp(stops: TimelineState["spStops"], start: number, n: number): TimelineState["spStops"] {
-  const later = (f: number) => (f > start ? f + n : f);
-  const all = [...stops.map((p) => ({ from: later(p.from), until: later(p.until) })), { from: start, until: start + n }].sort((a, b) => a.from - b.from);
-  const out: { from: number; until: number }[] = [];
-  for (const p of all) {
-    const last = out.at(-1);
-    if (last && p.from <= last.until) last.until = Math.max(last.until, p.until);
-    else out.push({ ...p });
-  }
-  return out;
 }
 
 /**

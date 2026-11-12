@@ -2,7 +2,7 @@
 // Aggeloslayer and Pathfinder's Beacon, Frontiers, Qingbo, Roving MSGR): what the kit
 // (docs/kit-batches/batch-2/chr_0019_karin.md, § Kit) says must fire, on the example scenario's builds.
 import { describe, expect, it } from "vitest";
-import { advance, apply, Attr, computeStats, createContext, init, type Build, type GearPiece, type RotationAction, type TimelineScenario, type TimelineState } from "@efsim/engine";
+import { advance, apply, SP, Attr, computeStats, createContext, init, type Build, type GearPiece, type RotationAction, type TimelineScenario, type TimelineState } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { readScenario } from "@efsim/cli";
 
@@ -34,14 +34,15 @@ const ult = [K("ultimate_skill")];
 describe("Akekuri's kit", () => {
   it("the ultimate: three flares give 26 / 27 / 27 natural SP at frames 59 / 86 / 119, each a P1 layer on one shared 10 s timer and a Frontiers refresh", () => {
     // Natural (atbGainMethod 0): it gives the team ultimate energy when spent, so none of it is returned SP.
-    const at = [58, 59, 86, 119].map((f) => run(example, ult, f));
-    expect(at.map((s) => s.spReturned)).toEqual([0, 0, 0, 0]);
-    const sp = at.map((s) => s.sp);
-    // Each flare's SP, plus the regeneration between them.
-    const steps = sp.slice(1).map((x, i) => x - (sp[i] ?? 0));
+    // Laevatain's battle skill first spends 100, so the flares stay under the 300 cap; regen runs through the stop
+    // (rules.ts SP), so each one-frame step is the flare's SP plus a frame of regen.
+    const rot = [L("normal_skill", 0), ...ult];
+    const at = (f: number) => run(example, rot, f);
+    expect([59, 86, 119].map((f) => at(f).spReturned)).toEqual([0, 0, 0]);
+    const steps = [59, 86, 119].map((f) => at(f).sp - at(f - 1).sp - SP.perSecond / 30);
     expect(Math.floor(steps[0] ?? 0)).toBe(26);
-    expect(steps[1]).toBeGreaterThanOrEqual(27);
-    expect(steps[2]).toBeGreaterThanOrEqual(27);
+    expect(steps[1]).toBeGreaterThanOrEqual(27 - 1e-9);
+    expect(steps[2]).toBeGreaterThanOrEqual(27 - 1e-9);
     const at119 = run(example, ult, 119);
     const layers = active(at119, "positive_feedback");
     expect(layers.map((b) => b.expiresAt)).toEqual([419, 419, 419]);
@@ -113,8 +114,8 @@ describe("Akekuri's kit", () => {
     expect(wisd).toBeGreaterThan(500);
     const thrust = 7.5 * Math.min(1 + wisd * 0.0015, 1.75);
     const at = (f: number) => run(example, example.rotation, combo + f);
-    // Natural SP (atbGainMethod 0): the step at each thrust (regeneration is paused here).
-    for (const f of [22, 31]) expect(at(f).sp - at(f - 1).sp).toBeCloseTo(thrust, 6);
+    // Natural SP (atbGainMethod 0): the step at each thrust, plus a frame of regen.
+    for (const f of [22, 31]) expect(at(f).sp - at(f - 1).sp).toBeCloseTo(thrust + SP.perSecond / 30, 6);
     expect(at(31).spReturned).toBe(at(0).spReturned);
     const after = at(31);
     expect(active(after, "positive_feedback").map((b) => b.expiresAt)).toEqual([combo + 331, combo + 331]);
@@ -149,7 +150,7 @@ describe("Akekuri's kit", () => {
     const sc = scenario({ talents: [0, 1] });
     const s = run(sc, example.rotation);
     const combo = s.casts.find((c) => c.skill === `${A}_combo_skill`)?.frame ?? NaN;
-    expect(run(sc, example.rotation, combo + 22).sp - run(sc, example.rotation, combo + 21).sp).toBeCloseTo(7.5, 6);
+    expect(run(sc, example.rotation, combo + 22).sp - run(sc, example.rotation, combo + 21).sp).toBeCloseTo(7.5 + SP.perSecond / 30, 6);
   });
 });
 

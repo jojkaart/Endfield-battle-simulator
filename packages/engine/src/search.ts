@@ -551,7 +551,6 @@ const STATE_KEY: KeyRules<TimelineState> = {
   comboTrigger: true,
   // Read as max(frame, it) (resources.ts spAt, afterRegen; timing.ts) and raised with max (casting.ts).
   spPausedUntil: deadline,
-  spStops: true,
   controlled: (c, env) => (env.loose ? undefined : c),
   acting: (a, env) => Object.fromEntries(Object.entries(a).map(([op, x]) => [op, x.cast !== undefined ? { ...x, cast: env.rel(x.cast) } : x])),
   chainNext: (c, env) => {

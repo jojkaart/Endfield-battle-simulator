@@ -545,9 +545,14 @@ of Laevatain's attack5 has it (batch-1 "Kit errors found").
 
 ### 7.3 SP
 
-- Team SP: max 300, start 200, +8/s, regeneration paused 1.5 s after a
-  spend. [ASSUMED]: the native settings say `atbRecoverInterval` 0.5, and
-  Zero Sanity uses 7.69/s with no pause. [OPEN] (accuracy plan B2, test 102)
+- Team SP: max 300, start 200, +8/s, regeneration paused 0.5 s after a
+  spend (2026-11-12; was 1.5 s, which the logs rule out). The native
+  settings say `atbRecoverInterval` 0.5, 666bj's in-game test 0.5 s after
+  a battle skill; Zero Sanity uses 7.69/s with no pause. [OPEN] (accuracy
+  plan B2, test 102)
+- Regeneration and its pause run through others' time stops and
+  slow-downs, as cooldowns do: the replay's SP shortfalls drop from 20 to
+  13 of 38 logs with it. [SETTLED] by the logs (2026-11-12)
 - **Natural** SP (regeneration, a finisher's SP, `atbGainMethod` 0) gives
   ultimate energy when spent. **Returned** SP (skills' `atb`, method 1) is
   spent first and gives none. [DATA] (resources.ts `gainSp`)

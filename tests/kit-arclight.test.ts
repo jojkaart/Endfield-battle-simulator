@@ -1,7 +1,7 @@
 // Arclight's kit (chr_0007_ikut) and the equipment batch 3 gave her (wpn_sword_0015 Aspirant, wpn_sword_0018 Twelve Questions):
 // the mechanics the kit plan (docs/kit-batches/batch-3/chr_0007_ikut.md) says must fire, and the interims' behaviour.
 import { describe, expect, it } from "vitest";
-import { advance, apply, createContext, init, type Build, type LandedHit, type RotationAction, type TimelineScenario, type TimelineState } from "@efsim/engine";
+import { advance, apply, SP, createContext, init, type Build, type LandedHit, type RotationAction, type TimelineScenario, type TimelineState } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { readScenario } from "@efsim/cli";
 
@@ -122,8 +122,8 @@ describe("Arclight's kit", () => {
       const sc = withArclight({ potential: pot }, { startEnergy: { [A]: "full" } });
       const rotation = [ULT, op("normal_skill", AFTER_EXPLOSION)];
       const cast = castAt(run(sc, rotation, 200), "normal_skill");
-      // SP regeneration is paused 1.5 s after the battle skill's cost, so the step is the extra attack's SP alone.
-      return (run(sc, rotation, cast + 44).sp ?? 0) - (run(sc, rotation, cast + 43).sp ?? 0);
+      // The step is the extra attack's SP and a frame of regen (the pause after the battle skill's cost is 0.5 s).
+      return (run(sc, rotation, cast + 44).sp ?? 0) - (run(sc, rotation, cast + 43).sp ?? 0) - SP.perSecond / 30;
     };
     expect(gain(5)).toBeCloseTo(50, 6);
     expect(gain(0)).toBeCloseTo(40, 6);

@@ -88,9 +88,11 @@ describe("rotation search", () => {
     // re-pinned after batch 3's S1 / D1 (MarkCanInterrupt, IfElse jumps), which free Laevatain sooner: 1,079,511.708 → 1,176,753.682, 530 → 529 states; then after batch 4's Link correction (a combo
     // gives no Link by itself): 1,070,547.094, 538 states; then with dives among the choices (batch-1 S10): 1,161,308.759,
     // 524 states (the found rotation has no dive; the dive children changed which states the beam kept); 523 states
-    // since the key leaves out deadlines already past (2026-10-25: one more merge, same rotation and total).
-    expect(found.result.total).toBeCloseTo(1161308.759, 3);
-    expect(found.expanded).toBe(523);
+    // since the key leaves out deadlines already past (2026-10-25: one more merge, same rotation and total). 2026-11-12, SP
+    // regen through time stops and a 0.5 s pause: 1,148,635.809, 527 states. The rotation found before is still legal
+    // and still totals 1,161,308.759; with SP sooner the width-8 beam keeps other states and misses it.
+    expect(found.result.total).toBeCloseTo(1148635.809, 3);
+    expect(found.expanded).toBe(527);
   });
 
   it("works for a team: casts of both operators interleave, all legal; no swaps unless asked for", () => {
@@ -330,12 +332,13 @@ describe("rotation search with random outcomes", () => {
  * Re-pinned 2026-10-25 (review round two): offering the actions that start a few frames after a state (a swap no
  * longer counts for what's soonest) gave 247,209.285, a rotation of more choices that the beam of 6 kept less of;
  * keeping one state per family (prune: the swapped variants of one state filled half the beam) 269,470.931, which
- * by chance is the old key's total; the key's dead deadlines on their own move neither.
+ * by chance is the old key's total; the key's dead deadlines on their own move neither. 2026-11-12, SP regen through
+ * time stops and a 0.5 s pause: 269,663.155.
  */
-const DUO_TOTAL = 269470.9311;
+const DUO_TOTAL = 269663.1553;
 /**
  * The same search without swaps, the default since 2026-10-25 (the owner doesn't swap in battle): the controlled
  * operator does every basic attack, the teammate casts its skills. Lower than with swaps (the swaps let both chains
- * run), as expected.
+ * run), as expected. 2026-11-12 (SP as above): 259,112.742 → 263,698.788.
  */
-const DUO_NO_SWAPS_TOTAL = 259112.7416;
+const DUO_NO_SWAPS_TOTAL = 263698.788;

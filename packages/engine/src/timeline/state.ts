@@ -344,11 +344,6 @@ export interface TimelineState {
   readonly comboTrigger: Readonly<Record<string, { readonly source: EventSource; readonly frame: number }>>;
   /** Frame until which SP doesn't regenerate (after a spend: SP.pauseAfterSpendFrames). */
   readonly spPausedUntil: number;
-  /**
-   * Frames [from, until) in which SP doesn't regenerate either: the world's clock stands still (slow-downs, shiftWorld).
-   * Disjoint and in order; those over by the state's frame are dropped as it advances.
-   */
-  readonly spStops: readonly { readonly from: number; readonly until: number }[];
   readonly controlled: string;
   /** Per operator: its current (last) action, which gates its next one (actionGate); `skips`: the jumps it took (actionFrame). */
   readonly acting: Readonly<Record<string, Acting>>;

@@ -7,11 +7,15 @@ import { DIVE_MOTION } from "../constants.ts";
 
 /**
  * Team SP. Values from Endaxis's notes on the native skill settings (team SP
- * max 300, start 200, 8 per second, regen paused 1.5 s after spending);
- * Zero Sanity uses a continuous 7.69/s instead. Not yet checked against a
- * fixture.
+ * max 300, start 200, 8 per second); Zero Sanity uses a continuous 7.69/s
+ * instead. Regen pauses 0.5 s after a spend (666bj's in-game test, after a
+ * battle skill) and runs on raw time, through others' time stops and
+ * slow-downs (2026-11-12, docs/web-review/README.md row 2: with the old 1.5 s
+ * pause and regen held by stops, the log check's replay couldn't afford casts
+ * the logs made in 26 of 38 logs; with these, 13; the rest are SP gains the
+ * replay lacks: docs/open-problems.md "Team SP").
  */
-export const SP = { max: 300, start: 200, perSecond: 8, pauseAfterSpendFrames: 45 } as const;
+export const SP = { max: 300, start: 200, perSecond: 8, pauseAfterSpendFrames: 15 } as const;
 
 /**
  * Ultimate energy and combo windows (Endaxis's native skill settings and
@@ -38,7 +42,7 @@ export const TIMELINE_ASSUMPTIONS = [
   "Inflictions and reactions follow the Talos Wiki rules (status.ts). What a hit applies takes effect before its own damage and the reaction's initial hit (logs: Gilberta's explosion and Arcane's battle skill include the Corrosion they trigger), unless its kit says afterDamage; buff modifiers' conditions on the enemy see it too.",
   "Physical statuses (Vulnerable, Lift, Knock Down, Crush, Breach), Shatter and stagger follow the Talos Wiki tutorial tables (status.ts). Hit-stop and entity-layer slow-downs aren't modelled.",
   "One enemy; every hit lands on it.",
-  `Team SP: max ${SP.max}, start ${SP.start}, ${SP.perSecond}/s, paused ${SP.pauseAfterSpendFrames / FPS} s after spending (unverified).`,
+  `Team SP: max ${SP.max}, start ${SP.start}, ${SP.perSecond}/s, paused ${SP.pauseAfterSpendFrames / FPS} s after spending (666bj's test; in-game test 102), regenerating through time stops (the logs).`,
 ] as const;
 
 /**

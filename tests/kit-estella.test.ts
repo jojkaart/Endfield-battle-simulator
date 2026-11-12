@@ -70,7 +70,7 @@ describe("Estella's kit", () => {
 
   it("talent 1: a Shatter gives the stack; the next battle skill returns 15 SP at frame 21 and uses it", () => {
     const s = run(scenario({}), [...opening, op("combo_skill"), op("normal_skill")]);
-    expect(s.spReturned).toBe(15);
+    expect(s.spReturned).toBeCloseTo(15, 9);
     expect(s.stacks[E]?.commiseration).toBe(0);
     const unlearned = run(scenario({ talents: [0, 2] }), [...opening, op("combo_skill"), op("normal_skill")]);
     expect(unlearned.spReturned).toBe(0);

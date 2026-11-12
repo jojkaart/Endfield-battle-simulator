@@ -145,7 +145,7 @@ are at 30 FPS.
 - T3. Ultimate time stops (`UltimateTimeAction`) and global `TimeDilationAction` slow-downs scale time for everyone but the caster; the lowest scale counts where they overlap. [DATA]
 - T4. Combo slow-down curve `ComboSkill`: 0.01 for the first 40% of its duration, linear to 1 at 93%, 1 after. [DATA]; linear ramp [ASSUMED]
 - T5. Lost frames = Σ(1 − scale) over the slow-down's frames (rounded); everything after the start on a held clock is shifted by that many frames.
-- T6. Held by others' stops/slow-downs (world clock): enemy statuses, inflictions, Vulnerable, Combustion ticks, debuffs, Stagger timer, combo windows, Link stacks, SP regen and its pause, energy blocks, every buff (caster's own included). [ASSUMED] for buffs and SP
+- T6. Held by others' stops/slow-downs (world clock): enemy statuses, inflictions, Vulnerable, Combustion ticks, debuffs, Stagger timer, combo windows, Link stacks, energy blocks, every buff (caster's own included); not SP (K2). [ASSUMED] for buffs
 - T7. Held for each non-caster operator: its hits on the way, delayed actions, current action and chain windows. [ASSUMED]
 - T8. Cooldowns run on raw time through stops and slow-downs. [ASSUMED]
 - T9. An operator inside its own ultimate's stop isn't held by another's stop or slow-down until its own stop ends. [SETTLED] for three logs; reach [OPEN]
@@ -164,8 +164,8 @@ are at 30 FPS.
 
 ## K. Casting
 
-- K1. Team SP: max 300, start 200, regenerates 8/s (8/30 per frame), regeneration paused 1.5 s (45 frames) after any spend; a later spend never shortens a running pause. [ASSUMED]; regen rate and pause [OPEN]
-- K2. SP regen stops during others' time stops and slow-downs (lost frames). [ASSUMED]
+- K1. Team SP: max 300, start 200, regenerates 8/s (8/30 per frame), regeneration paused 0.5 s (15 frames) after any spend; a later spend never shortens a running pause. [ASSUMED] max, start, rate; pause 0.5 s [OPEN] (666bj's in-game test; the logs rule out 1.5 s; test 102)
+- K2. SP regen and its pause run on raw time, through others' time stops and slow-downs, as cooldowns do. [SETTLED] by the logs (the replay's SP shortfalls at the 0.5 s pause, 2026-11-12: 20 → 13 of 38 logs short)
 - K3. SP cost = table cost (SkillPatchTable, costType 1) + attribute 45 of panel and buffs, at least 0; a cost above 300 can't be cast; casts wait for SP. [DATA]
 - K4. SP above 300 is lost. [DATA]
 - K5. Natural SP (regen, finisher SP, perfect dodge, `atbGainMethod` 0) gives ultimate energy when spent; returned SP (skills' `atb`, method 1, default) is spent first and gives none. [DATA]

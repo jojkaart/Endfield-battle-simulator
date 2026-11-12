@@ -12,7 +12,10 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
    scoring): [accuracy-plan.md](accuracy-plan.md). Phase A, B1 (Stagger)
    and B0 (teammates' own basic attacks, in-game test 101 to confirm the
    pace) are done, and B3 / B5 / B7 as far as the data and logs go; B2
-   (SP stop) and B4 (Solidification) wait on in-game tests 102 and 71;
+   (SP stop: 0.5 s since 2026-11-12, regen through time stops; test 102
+   pins it) and B4 (Solidification) wait on in-game tests 102 and 71; the
+   SP the replay still lacks (open-problems "Team SP": Liino's presses,
+   teammates' Final Strikes, Purrchena's blocks);
    next the screened logs' leads ([open-problems.md](open-problems.md):
    what each has ruled out and what still stands; Rossi's ultimate ×1.09 in 9a80 and 2fd9, Mi Fu ×1.11 in Hard
    27, Si's combo −22.6% in 40d9 (unmasked), db87's Arcane ATK, e82d's

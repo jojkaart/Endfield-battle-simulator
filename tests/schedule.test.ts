@@ -98,10 +98,10 @@ describe("one pass per change for every kind of item", () => {
 
 describe("a cast's hits at one frame", () => {
   const data = loadGameData();
-  it("land in kit order, whatever another cast's jumps did (akekuri-laevatain: Laevatain's battle skill at frame 972)", () => {
+  it("land in kit order, whatever another cast's jumps did (akekuri-laevatain: Laevatain's battle skill at frame 797)", () => {
     // Before 2026-10-25 a jump on any cast rebuilt the hit list with every detached hit not launched yet at its end,
     // so Laevatain's Combustion `dot` (launched at frame 4) landed after `empowered_extra` at the same frame.
     const r = simulate(data, readScenario(new URL("../examples/akekuri-laevatain.scenario.json", import.meta.url).pathname));
-    expect(r.hits.filter((h) => h.frame === 972 && h.skillId === "chr_0016_laevat_normal_skill").map((h) => h.hitId)).toEqual(["dot", "empowered_extra"]);
+    expect(r.hits.filter((h) => h.frame === 797 && h.skillId === "chr_0016_laevat_normal_skill").map((h) => h.hitId)).toEqual(["dot", "empowered_extra"]);
   });
 });
