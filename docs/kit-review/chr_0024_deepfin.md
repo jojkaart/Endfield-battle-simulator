@@ -13,7 +13,7 @@ Name check: docs/glossary.md maps `deepfin` to Alesh.
 - **Why it may matter:** two ultimate landings differing by ×1.34 and ×1.90 is larger than the constant build factor the note gives her (×0.807 at weapon 60), so the ultimate's damage in the kit is wrong or incomplete for at least one of these cases (the P5 threshold, a second landing, or a buff the kit lacks). Size: the note's ×1.90 is +90% on the landing it was measured on.
 - **Evidence:** docs/open-problems.md "0c14" section (4e36 numbers as above); fixtures/pending/zmdlogs-4e3651100056.json exists (not opened in this pass). The kit's source line is dated 2026-10-20, before this finding.
 - **Confidence it's a real problem:** medium (the log finding is recorded but unexplained; the kit's stale "no fixture" line is a fact).
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the kit's ×1.5 matches the logs; the open-problems ×1.34/×1.90 are not a kit conflict. `zmdlogs check` fixtures/pending/zmdlogs-4e3651100056.json: ultimate t=36050 ratio 0.8695 equals her neighbouring hits (0.87), so no extra factor; t=72218 ratio 1.1991 against neighbours 0.7994 is exactly ×1.50 (the P5 atk_up 1.5 under hp_tar 0.5; the check has no enemy HP, so `enemyHpBelow` is unknown there). 69e75ed40a8c t=31015: two logged ultimate hits 17491 and 26237 are exactly ×1.5 apart. So the gate and factor are right; what is unexplained is only the 26 s ATK buff listed twice, which is not an ultimate or kit-ultimate matter.
 
 ### F2. Talent 1's 3 s lockout is cited to a BuffData default that is 0 in the file
 - **Where:** packages/data/kits/operators/chr_0024_deepfin.json → buffs[talent1_icd] (`duration: 3`) and the three talent-1 triggers (`not buffActive talent1_icd`)
@@ -22,7 +22,7 @@ Name check: docs/glossary.md maps `deepfin` to Alesh.
 - **Why it may matter:** this marker is the only limit on how often Alesh gains energy from Solidification or Originium Crystals (3 + 6 / 4 + 8 usp per proc). With a 0 s lockout every Solidification would pay; with 3 s, as the kit has it, far fewer do. This moves ultimate energy timing for every Alesh rotation with talent 1.
 - **Evidence:** the two data files above (values read with jq). The English talent name "Flash-frozen for Freshness" is in data/555me-beyondGameData/tableCfg/CharGrowthTable.json; its description was not located in this pass, so the 3 s may come from the in-game description. The kit cites no description.
 - **Confidence it's a real problem:** medium (the value may be right; the cited source is not the one that gives it).
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the flag misread the file. The ×0 default it quotes is the unused `value` next to `useBlackboardKey: true` in the CreateTimedMarker action; the buff's own blackboard in Json/BuffData/buff_chr_0024_deepfin_talent_1_auro.json has `CD` valueDouble 3.0 (with usp 10, usp_self 12). The kit's 3 s literal and its note (a BuffData blackboard default the loader does not read yet, batch-3 D4) are accurate.
 
 ### F3. The kit says no log has Alesh; a committed fixture does
 - **Where:** packages/data/kits/operators/chr_0024_deepfin.json → sources[4] ("No log fixture has Alesh, OBJ Edge of Lightness or Finchaser 3.0 (2026-10-20)")
@@ -31,7 +31,7 @@ Name check: docs/glossary.md maps `deepfin` to Alesh.
 - **Why it may matter:** the kit's combo, battle-skill and ultimate numbers have not been compared with these logs; the stale line also hides the F1 finding from anyone reading the kit alone. Size: not measured.
 - **Evidence:** `grep -rl chr_0024_deepfin fixtures` (hold-out ids excluded).
 - **Confidence it's a real problem:** high that the statement is stale; medium that it hides a mismatch.
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — documentation only: sources[4] is stale (69e75ed40a8c, 4e3651100056 have Alesh). Her hits all mismatch in both logs, but in constant per-window ratios across basic attacks, combo, battle skill and ultimate (4e36 0.70, 0.87, 0.80, 1.18; the weapon-level-60 build factor ×0.807 per open-problems, and Ardelia/Si-side buffs), not by skill. 69e7 is multi-target with some hits logged 1-6 damage (another target). Nothing points at a kit error.
 
 ## Checked, no conflict found
 - Battle skill SkillPatch values: atk_scale 4.5, poise 10, SP 15 / 25 / 35 / 45 by consumed Cryo stacks, P1 +10 SP (`potential_1_atb`, PotentialTalentEffectTable `chr_0024_deepfin_potential_1`). The stagger unit's poise key is read from the data by the loader; the kit omits it on purpose.
@@ -48,3 +48,7 @@ Name check: docs/glossary.md maps `deepfin` to Alesh.
 - Shatter as a combo opener (`combo_on_shatter`): the kit labels it an interim behind in-game test 63, which is open (docs/in-game-tests.md). Not re-judged.
 - Equipment (weapon 60 factor and the gear sets): not opened.
 - Log 4e36 itself was not opened; F1 rests on docs/open-problems.md's numbers. Hold-out fixtures were not opened.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: F1, F2, F3 · UNCERTAIN: none
+The ultimate's P5 ×1.5 appears exactly in 4e36 (t=72218) and 69e7 (t=31015); BuffData `CD` is 3.0, so the 3 s lockout is right. sources[4] ('no log has Alesh') is stale; update it.

@@ -16,7 +16,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** if unit 1 deals damage, every battle-skill landing carries an extra 2.85 ATK-scale on top of the kit's 2.0 (about +140% of the kit's per-landing scale), which changes the battle-skill damage in every rotation with Antal. If unit 2 is the only damage unit, the kit is right and the literal unit is a shield or a non-damage part that the kit should say so. Size depends on how the engine reads an attribute-1 unit that also has an ATK key.
 - **Evidence:** Json/SkillData/chr_0023_antal_normal_skill.json (frame 20 DamageAction, both units, read with jq on `actionGroupData.timelineActions`); TableCfg/SkillPatchTable.json `chr_0023_antal_normal_skill` L12 (atk_scale 2.0, duration 60, rate 0.10, cost 100 SP; no poise). The batch-2 plan docs/kit-batches/batch-2/chr_0023_antal.md does not mention 2.85 anywhere (grep finds nothing).
 - **Confidence it's a real problem:** medium
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the flag misreads the data. In SkillData frame 20 the HP unit's real scale is its `atkCalculation` (AtkScaleCalculation, `atk_scale` with useBlackboardKey true); the unit's own top-level `atkScale` literal 2.85 is the unused field that packages/data/src/skillCompile.ts `damage()` (line ~996) skips when a blackboard-keyed one exists, and the attribute-1 unit is only the stagger unit. Log 3440 (fixtures/multi-target/zmdlogs-3440cf450fea.json) t=3280 chr_0023_antal_normal_skill: logged 3684, predicted 2985-3642, ratio 1.2342, the same ratio as his basic attacks and combo (t=4497 1.2342), so the 2.0 scale is consistent; an extra 2.85 would put it near 0.5.
 
 ### F2. The kit says no committed log has Antal; two committed fixtures do
 - **Where:** packages/data/kits/operators/chr_0023_antal.json → sources[6] ("Not verified against a log: no committed fixture has Antal ... U1–U4")
@@ -25,7 +25,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** U1–U4 (combo windows from physical statuses and reactions, Electric/Heat Amp carrying the Amp tag, P5's +4% holding) and the combo and Focus behaviour may already be settled or contradicted by these logs, so the kit's "not verified" status is out of date. Size: not measured.
 - **Evidence:** `grep -rl chr_0023_antal fixtures` (excluding the hold-out ids); docs/accuracy-plan.md examples list (around lines 103 and 196).
 - **Confidence it's a real problem:** high that the kit's statement is stale; medium that it hides a mismatch.
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — documentation only: the sources[6] line is stale (fixtures/multi-target/zmdlogs-3440cf450fea.json and zmdlogs-0206142f9134.json have Antal). `zmdlogs check` 0206: 73 hits, 34 match (27 plain, 7 assumed); the mismatches come in constant per-window ratios (1.30, 0.75, 1.12) across all his hit types, the signature of target-specific enemy buffs in a multi-target fight, not of a kit error. 3440: all 52 hits mismatch at one common ratio per window (1.234 early), also build/target input. The logs do not contradict the kit; they cannot settle U1-U4 either (multi-target, no verdict snapshot).
 
 ## Checked, no conflict found
 - Battle skill: frame 20 DamageAction after the Focus CreateBuff (kit's `beforeDamage` on `focus` and `focus_p5_timer`); mask 4352; cost 100 SP; SkillPatch duration 60 and rate 0.10 match the buff's duration and Susceptibility rate.
@@ -43,3 +43,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - Combo window triggers (`combo_infliction`, `combo_physical`) against the game's combo-trigger text beyond the kit's own quote; open tests 35 and 63 are the kit's own.
 - Logs: no committed fixture has Antal (kit's own note); docs/accuracy-plan.md, open-problems.md and in-game-tests.md were not searched for Antal.
 - Hold-out fixtures were not opened.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: F1, F2 · UNCERTAIN: none
+F1 was a misread of the data (the 2.85 literal is the unused field next to an AtkScaleCalculation; log 3440 t=3280 fits 2.0). F2 is a stale kit note only (sources[6]); the two multi-target logs have no verdict snapshots and show no kit error.
