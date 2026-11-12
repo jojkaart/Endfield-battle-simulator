@@ -26,3 +26,7 @@ None. No conflict with the reference or the game data was found in the areas bel
 - Dash attack, extra attack and dodge: not kit skills (kit sources say so; dash attacks are deferred).
 - Heal amounts (not modelled by the kit, as stated).
 - Log fixtures: no `zmdlogs check` run in this pass; the hold-out fixtures were not opened.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: none (no flags) · UNCERTAIN: none
+No new flags. Checked: the loaded kit's hits against `efsim kit-draft` (frames, counts, atb, usp: same), and the logs: the verified zmdlogs-dbaee23b801d (7 hits, 6 plain, 1 assumed, 0 mismatch, 0 unmatched landings) and the pending zmdlogs-abfd4b7478ec (75 hits, 72 plain), -9555de54bb3d (58, 39 plain) and -b6aa15281db4 (29, 22 plain, 5 under unmodelled effects) have no Ember mismatch. zmdlogs-c3c735dbb022 shows Ember's hits all at ×0.337 of the prediction, every hit type alike (basic, combo): a build offset (level or stats), not a kit shape, in a fixture with 242 problems. The talent-2 Dispel at the ultimate (SkillData sai 31) has no damage effect (operator statuses are not simulated), as the kit's note says. Hold-outs were not opened.

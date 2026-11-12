@@ -26,3 +26,7 @@ None. No conflict with the reference or the game data was found in the areas bel
 - The `talent0_usp` values on the ObtainCostAction `coefficient` of attack4 (the kit's 0.5); the coefficient was not printed in this pass.
 - Dash attack, extra attack and dodge: not kit skills (kit sources say so).
 - Log fixtures: no `zmdlogs check` run in this pass; the hold-out fixtures were not opened.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: none (no flags) · UNCERTAIN: none
+No new flags. No non-hold-out log fixture contains Avywenna, so nothing here is log-tested. Checked: the loaded kit's hits against `efsim kit-draft` (frames, counts, factors 0.3 / 0.2 / 0.5 on the power attack, `talent0_usp` energy on the combo, ultimate and lances, a battle-skill `teamEnergy` at frame 18, poise keys, the lance layers as counts): same. Unchecked and still open: the lance flight time and the EX pulse buff's lockout (kit notes say so), and the P5 `enemyModifier` condition. Hold-outs were not opened.

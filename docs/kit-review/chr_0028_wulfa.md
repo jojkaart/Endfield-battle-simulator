@@ -12,7 +12,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** if the factors apply, each charge is 0.3 × the kit's value and the lift 0.4 ×; the battle skill's non-explosive damage would be overstated about 3× on the charges and 2.5× on the lift. The logs' fit is not stated for these hits, so the size is unquantified here.
 - **Evidence:** SkillData chr_0028_wulfa_normal_skill.json SimpleCalcBBAction sai 92 / 108 / 123 (`key` atk_scale_once, operation 2, value2 0.3 / 0.3 / 0.4; value1 `atk_scale_1`). docs/kit-batches/batch-4/chr_0028_wulfa.md (battle-skill rows) for the plan.
 - **Confidence it's a real problem:** medium (the data is explicit; the logs may fit the kit as built if the engine applies the factor elsewhere, which this pass did not check)
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the flag read the kit JSON, not the loaded kit: the loaded `charge` hit has `factor: 0.3` (count 2, frames 16 and 22) and `lift` has `factor: 0.4`, both filled from the data's SimpleCalcBB (`efsim kit-draft` / kits.ts). Tested against the log: zmdlogs-4e5e1390085e (verified; Rossi 162 of 162 hits match, 72 plain) with the factors removed in a scratch script gives 3 new mismatches on the battle-skill hits (10016, 10112, 12219 ms).
 
 ### F2. Combo sequence 1 (combo_2): its two landings use `atk_scale` without the ×0.35 factor the data applies
 - **Where:** kit → skills[chr_0028_wulfa_combo_2_skill] hits `hit` (frame 13) and `hit_2` (frame 24): `scale: ["atk_scale"]`, no `factor`
@@ -21,7 +21,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** ×2.86 on each of the two sequence-1 landings if the factor applies (the combo's own ticks, from `combo_2_damagewait`, are a separate question and are not assessed here).
 - **Evidence:** SkillData chr_0028_wulfa_combo_2_skill.json SimpleCalcBBAction sai 27 and 42 (operation 2, value 0.35); the batch-4 plan's row 20; docs/open-problems.md (Rossi's combo_2 ×0.94 in 3f78's second window) suggests the logs match the kit as written, which would mean the factor is applied somewhere else. That conflict is why confidence is medium.
 - **Confidence it's a real problem:** medium
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the loaded `combo_2_skill` hits `hit` and `hit_2` carry `factor: 0.35` (loaded kit; the JSON does not need to repeat it). Removing it in a scratch script gives 4 mismatches in zmdlogs-4e5e1390085e (combo_2 hits at 29121, 30212, 54674, 55289 ms); with it all 162 Rossi hits match. The open-problems ×0.94 in 3f78 is a separate, small residual, not a missing factor.
 
 ### F3. Basic attack 2: the note describes two landings, the kit lists one hit with no frames
 - **Where:** kit → skills[chr_0028_wulfa_attack2] hit `hit` (`scale: ["atk_scale"]`, no frames); note "SimpleCalcBB × 0.5 on the dynamic atk_scale before the first DamageAction: two landings at half each."
@@ -30,7 +30,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** the second landing's timing (frame 9) is absent, so the chain's damage timing is missing one landing per attack2. The ×0.5 is correctly described in the note; only the hit representation is missing.
 - **Evidence:** SkillData chr_0028_wulfa_attack2.json (DamageActions at f5 and f9; SimpleCalc sai 9).
 - **Confidence it's a real problem:** low (the note covers the scale; the omission is in the representation)
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the loaded `attack2` hit has `count: 2`, frames `[5, 9]` and `factor: 0.5` (filled from the data); only the kit JSON omits them. In zmdlogs-4e5e1390085e the 19 logged attack2 hits all match.
 
 ### F4. Elite stop (Razorclaw Ambuscade, 3.1 s freeze): the kit gates it on rank 1; the data's gate that creates the 3.1 s elite stop is enemyRankSet 2
 - **Where:** kit → triggers[ult_stop_elite]: `if: { enemyRank: [1] }`, applies a freezing control of 3.1 s
@@ -39,7 +39,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** the 3.1 s freeze and its time stop apply to the wrong enemy class if the mapping is inverted; this is a freeze, so the enemy's clock stops too (§6.3).
 - **Evidence:** SkillData chr_0028_wulfa_ultimate_skill.json, CheckEnemyRank sai 51 and 62; kit note "CheckEnemyRank enemyRankSet 2 → … (frame 150 = 93 frames = 3.1 s)" (the kit cites the same key but applies it to rank [1]). Log check not run.
 - **Confidence it's a real problem:** low (the enum for enemyRankSet is not in the reference, and the kit's note cites the same key; the mapping needs a check)
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — `enemyRankSet` is a bit set, not a rank value: the kit reads bit 1 (value 2) as displayType 1 (Elite) and bit 0 (value 1) as Common, which is why the batch plan calls them "1 normal, 2 elite", and the data names the 3.1 s buff `buff_chr_0028_wulfa_ult_stopenemy_elite`. The flag compared the set value with the §10 rank enum (where 2 is Boss). The kit's note labels the bit reading a claim (batch-4 E2) and tests/kit-rossi.test.ts pins the elite/boss behaviour, but no log or in-game test of a Rossi ultimate on an elite exists; the name evidence is the best there is.
 
 ## Checked, no conflict found
 - Basic attacks 1, 3, 4 (controlled path and not-controlled path frames 195–213 with the factor 0.5 documented by dataOverride), 5 (Final Strike mask 2097280, controlled-only poise and atb), finisher (mask 132, hits at frames 6 / 15 / 36).
@@ -59,3 +59,8 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - Rossi's food/equipment kits (the equipment kits that name her were not opened).
 - Log fixtures: no `zmdlogs check` run in this pass; the hold-out fixtures were not opened. The accuracy-plan notes on Rossi's combo and ultimate (open-problems "Rossi's ultimate", "0c14: Si, and Rossi's later windows") were read but not re-tested.
 - The bleed tick template timeline that the kit documents as a data quirk (D7g): accepted as documented.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: F1, F2, F3, F4 · UNCERTAIN: none
+All four flags read the kit JSON rather than the loaded kit; the factors, count and frames are filled from SkillData on load, and the verified fixture zmdlogs-4e5e1390085e (162 of 162 Rossi hits match) breaks without the factors (scratch variants).
+No new flags. Hold-outs were not opened.
