@@ -516,15 +516,16 @@ describe("an arts reaction's level as the log shows it, where the replay's enemy
 });
 
 describe("what a hit's reaction triggers before its damage", () => {
-  it("Hot Work's Nature DMG, made by a Corrosion, counts on the hit that forms it, not on the Corrosion's own hit (3f78 at 1334 and 46994 ms, 4a64 at 4517 ms)", () => {
-    const A = "chr_0032_lizhiyan";
-    for (const [f, times] of [["3f78ceb15bc3", [1334, 46994]], ["4a64e58e75ad", [4517]]] as const) {
+  // One test per fixture: each is a whole log check (about half a minute alone; together they ran past the timeout under load).
+  for (const [f, times] of [["3f78ceb15bc3", [1334, 46994]], ["4a64e58e75ad", [4517]]] as const) {
+    it(`Hot Work's Nature DMG, made by a Corrosion, counts on the hit that forms it, not on the Corrosion's own hit (${f.slice(0, 4)} at ${times.join(" and ")} ms)`, () => {
+      const A = "chr_0032_lizhiyan";
       const fx = readLogFixture(new URL(`../fixtures/pending/zmdlogs-${f}.json`, import.meta.url).pathname);
       const at = checkLog(data, fx).filter((v) => v.hit.operator === A && (times as readonly number[]).includes(v.hit.t));
       expect(at.length).toBe(2 * times.length);
       expect(at.every((v) => v.kind === "match" && v.class === "plain")).toBe(true);
-    }
-  });
+    });
+  }
 });
 
 describe("Arcane's WILL combo touch: the element of what opened her window (element \"window\", in-game test 33)", () => {
