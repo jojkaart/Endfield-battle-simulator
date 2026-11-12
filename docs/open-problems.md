@@ -119,16 +119,18 @@ consumed element); e82d's extra touch.
 
 ## Hard 27: every physical hit ×1.1125 low (2fd9, 99fb)
 
+(Ember is chr_0009_azrila; this entry called her Azrila before 2026-11-12.)
+
 **Shows:** Mi Fu's and Rossi's physical hits from the first one, with no
 buffs listed (Mi Fu's attack 3 at 5143 ms: every zone ×1); Mi Fu's World
-Splitter residual is the same factor; Azrila ×1.044. One player, one
+Splitter residual is the same factor; Ember ×1.044. One player, one
 enemy (eny_0124_kltdcap_hdg027), Mi Fu P5 in both.
 
 **Ruled out:** Mi Fu's kit (World Splitter exact in a27b, d5720); seven
 foods; defense (×1.1125 needs DEF ≈ 79.8; 80 gives 1.1111); the level
 (DEF 100 at every level); other variants of the template (all share it and
 its born buffs; no other log hits it with physical or fire); a modifier in
-the stage's DungeonTable entry (indie_hard027_s: paramList null); Azrila's
+the stage's DungeonTable entry (indie_hard027_s: paramList null); Ember's
 ×1.044 as an element resistance (no value fits).
 
 **Found:** the enemy (EnemyTable alias of eny_0124_kltdcap, no attribute
@@ -144,7 +146,7 @@ gives 0 matches there. hdg005 (eny_0033_lbhunt, physical 0): no value
 fits; Estella's hits with few effects match at 0. Control: Tower 15
 (klbear, physical 20) peaks sharply at 20 (132 of 132 plain in 458b).
 
-Round 5, Azrila: not the source. Her kit, potentials (P3 in both),
+Round 5, Ember: not the source. Her kit, potentials (P3 in both),
 talents, weapon (wpn_claym_0006) and gear give no team Physical DMG or
 susceptibility; the factor starts at 5.1 s (Mi Fu) and 6.0 s (Rossi),
 her first hit at 10.3 s; with her in 7e19 the physical hits are 1.0000.
@@ -155,12 +157,12 @@ Mi Fu's and Rossi's ratio is 1.1125–1.1130 whatever their other zones.
   log has physical hits on it; 1d91's tower016 variant has none).
 - Per-log operator factors on Hard 15 and hdg005 (Akekuri's, Alesh's,
   Estella's buffs), untested.
-- Azrila's own ×1.044: her ATK ~6% high in the engine (×0.9386 after the
+- Ember's own ×1.044: her ATK ~6% high in the engine (×0.9386 after the
   ×1.1125); P2's attributes (+3.8% ATK) don't fit. Aurora ×0.655
   (whatever the zones); Purrchena is level 1 in 99fb (a build input).
 - A Hard 27 resistance setting outside the tables we read, or an enemy
   buff giving it (no longer favoured).
-- Azrila: 1.044 = 1.1125 × 0.9388, her ATK inputs ~6% high (a weapon
+- Ember: 1.044 = 1.1125 × 0.9388, her ATK inputs ~6% high (a weapon
   level, nodes) on top of the same term.
 - An unlisted team debuff (Physical Susceptibility) or a build input
   common to this player's operators (gear, food: 29 not scanned).
@@ -168,7 +170,7 @@ Mi Fu's and Rossi's ratio is 1.1125–1.1130 whatever their other zones.
   different zones.
 
 **Next check:** a log with physical hits on this enemy from another
-player; Aurora's and Azrila's builds.
+player; Aurora's and Ember's builds.
 
 ## Hard 33's slug: debuffs the engine keeps don't act (7b54, 6339)
 

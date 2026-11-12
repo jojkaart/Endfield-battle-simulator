@@ -718,7 +718,7 @@ log-verdicts-pending.json and fixtures/pending/holdout.json.
    Corrosion is level 1 where the log's reaction is level 2 (Rossi's
    physical hits after 24.97 s ×1.33 low). In Hard 27 (2fd9, 99fb, one
    player) every physical hit of Mi Fu and Rossi is ×1.1125 low from the
-   first, no buffs listed (World Splitter's ×1.11 is that), Azrila's
+   first, no buffs listed (World Splitter's ×1.11 is that), Ember's
    ×1.044: an enemy- or build-side term not found yet; the replay also
    lacks the log's Electrification at the ultimate there.
 10. **Leads not yet acted on** (each problem's candidates still standing, not only what's ruled out: [open-problems.md](open-problems.md)). Hard 33 (7b54, 6339): the Woodcraft
@@ -770,7 +770,7 @@ log-verdicts-pending.json and fixtures/pending/holdout.json.
    WILL touch applies the element of what opened her window (opus,
    `element: "window"`; 21 of 94 logged touches had no infliction to
    copy, a later consumer shows one): 9a80 −30.7 → −23.6%, 3f78 plain 34 →
-   41. Ruled out: Azrila for Hard 27; the slug's shield ending debuffs
+   41. Ruled out: Ember (chr_0009_azrila) for Hard 27; the slug's shield ending debuffs
    (Hard 33). Measured: development plain 42.4% (mismatches 21.7%, mean
    |damage error| 21.5%), hold-out 50.0% (9.0%, 18.5%).
 
