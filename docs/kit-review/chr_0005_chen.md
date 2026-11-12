@@ -26,3 +26,19 @@ No flags. The kit's known gaps are all written down with their tests or batch no
 - The dash attack, the dive attack's jump and the combo's EventListener (abilityEvent 55, cd_reduction) are outside the kit by its own note; not reviewed.
 - The combo's Lift has floatingDuration 0 in the data; the Lift length is outside the kit (nothing reads it, per the kit's note); not checked further.
 - Level 12 SkillPatchTable values (for example attack1 atk_scale 0.23 and the ultimate's cost 70) were not re-read.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: none (no flags) · UNCERTAIN: N1
+No REAL flags. Fixtures exist for Chen (phase 2 had not run them): a27bc3527682 (59 hits: 45 plain, 7 assumed, 7 mismatch), 7e19489ae503, de6a94e9cf6b (102 hits, 81 match).
+
+### N1. Ultimate slashes in a27bc3527682 are 8.8% high (engine ×1.096 of the log)
+- **Where:** packages/data/kits/operators/chr_0005_chen.json → skills[chr_0005_chen_ultimate_skill]
+- **Kit has:** slashes at 63..80 and the final at 103 (frames match SkillData).
+- **Expected:** logged 11411 / 12020 / 12628 / 13237 / 13846 / 13846 at 21.5 to 22.2 s and 174865 at 25.2 s; the engine predicts ratio 0.912 on all seven, while Chen's other 52 hits there match. The `check` listing shows the engine adding chr_0005_chen:wpn_sword_0017.ready (damageBonus 0.336) and Aglina's arts_susceptibility 0.3 on these hits, which the log doesn't list (the log lists wpn_sword_0017_valid 0.336 instead), so the surplus comes from a weapon kit or another operator, not from Chen's scales.
+- **Why it may matter:** the seven hits are the whole ultimate in that log; if the weapon buff is counted twice, Chen's ultimate is overcounted by 9.6% with that weapon.
+- **Evidence:** `zmdlogs check fixtures/pending/zmdlogs-a27bc3527682.json` (lines on wpn_sword_0017.ready and aglina:arts_susceptibility).
+- **Confidence it's a real problem:** medium, but for wpn_sword_0017 / Aglina, not the Chen kit
+- **Verdict:** UNCERTAIN — the Chen kit's own values match; the surplus factor belongs to another kit.
+  - **Decides it (if UNCERTAIN):** the owner of wpn_sword_0017's and Aglina's kits checks whether `ready` duplicates the logged `valid` entry and whether Aglina's susceptibility should be on at 21.5 s.
+
+Also seen: 7e19489ae503 has every Chen hit at ×1.15 (a build or enemy-level offset, same ratio on all, not a kit pattern); de6a94e9cf6b ultimate hits are +0.4% (rounding). Shadowless (log lists 0.2 on 26 hits, engine omits it) is the documented P1 HP condition (test 69).

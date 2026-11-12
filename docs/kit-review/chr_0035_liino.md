@@ -12,7 +12,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** if the file is the whole finisher, the kit's two extra 0.1 landings add 0.2 of atk_scale (about 1.8 of the 9.0 the kit sums to), a roughly 25% overcount of this finisher's damage. Each landing is also a Stagger or poise event if the unit carries one. No log fixture logs Liino's finisher (kit note), so nothing confirms the 15 and 18 frames.
 - **Evidence:** packages/data/kits/operators/chr_0035_liino.json (the two hit entries and the note); Json/SkillData/chr_0035_liino_power_attack.json (DamageAction and BreakingAttackCalculation at timeline frames 12 and 34 only; the whole file was searched). Compare Si's and Chen's finishers, whose explicit frames and multipliers match their SkillData.
 - **Confidence it's a real problem:** medium
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the flag read only the DamageActions. Timeline action 6 of SkillData chr_0035_liino_power_attack.json is a ChannelingActionV2 (frames 12 to 24, triggerInterval 0.033, targetTriggerInterval 0.1, maxCountPerTarget 3) whose actionOnTick holds the 0.1 DamageAction, so one target is hit at frames 12, 15 and 18; 3 × 0.1 + 0.7 = 1.0. The loaded kit has the factors too: ticks [12,15,18] factor 0.1, final [34] factor 0.7 (loadGameData; withDataFacts fills `factor` from the compiled landings, skillCompile.ts line 1008), so it does not land 4 × atk_scale.
 
 ### F2. Starry Boost's SP: the kit's value is the talent rank 1 value; rank 2 gives 10
 - **Where:** packages/data/kits/operators/chr_0035_liino.json → triggers[starry_boost_start] and triggers[starry_boost] (`sp` value `atb_return`); sources, "Talents and potentials" and the note on SkillData defaults ("atb_return 5")
@@ -21,7 +21,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** 5 or 10 SP returned to the next Pulse or Nature battle skill, once per combo cast. The SP is returned (method 1), so it gives no ultimate energy but does change the rotation's SP.
 - **Evidence:** the two PotentialTalentEffectTable rows above; the sources line in the kit.
 - **Confidence it's a real problem:** low (it depends on whether the plain key reads the talent-modified blackboard at runtime, which the kit does not say)
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the trigger's `atb_return` is read through the talent-modified blackboard. The trigger's skill is chr_0035_liino_combo_skill, and `skillValue` applies the stat panel's skillValues (the talent node's skillBbModifier). Checked with the example build: talent 2 at rank 2 gives 10, rank 1 gives 5 (computeStats + skillValue, key atb_return); the default is the highest rank, so 10. The kit's note "atb_return 5" only describes the SkillData default.
 
 ### F3. Talent 1 (Shelter / healing taken) is neither modelled nor listed as out of scope
 - **Where:** packages/data/kits/operators/chr_0035_liino.json → sources (the talent section covers talent 2 only); no buff or trigger for talent 1
@@ -30,7 +30,8 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** if Shelter reduces damage taken by the team, it is a damage-taken term on enemy hits, and enemy damage is not simulated (§1.1), so no damage changes here. If it is a shield or a heal term, it is out of scope. Either way the kit should say which, so phase 3 can close it.
 - **Evidence:** the PotentialTalentEffectTable rows above.
 - **Confidence it's a real problem:** low
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — Shelter is a damage-taken scalar on the defender (damageModifier, side 1, `shelter` −0.1 / −0.2 for 3 s) plus `heal_rate` on healing received (buff_chr_0035_liino_talent_shelter). Both concern damage to the team and healing; enemy damage and healing are not simulated (§1.1), and no operator's damage output changes.
+  - Housekeeping: a line in the kit's sources saying talent 1 is out of scope would close it.
 
 ## Checked, no conflict found
 - Battle skill: six projectile hits at atk_scale (normal_skill_projhit and projhit_02 ×5) with the stance buff applied before the first hit; the kit's log claim (6/6 in 0eef2474a26f and bdf223db8e49) was not re-run.
@@ -50,3 +51,18 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - The RefrainObtainUsp energy block (kit: whole stance, against the buff's 1 s): the kit's own note cites in-game test 27 as undecided, so it is not flagged here.
 - Ultimate projectile frames at offsets 8 and 11 (ultimate frames 84 and 87) are not in the kit's explicit list; their side-shot hits take frames from the loader, which was not traced.
 - Basic attack 2's five channel hits and attack 3's five projectiles were not traced to their entities.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: F1, F2, F3, N1 · UNCERTAIN: none
+No REAL flags.
+
+### N1. The finisher's note is stale
+- **Where:** packages/data/kits/operators/chr_0035_liino.json → skills[chr_0035_liino_power_attack].hits[final].note
+- **Kit has:** "The compiler doesn't read these multipliers yet (it lands 4 × atk_scale)."
+- **Expected:** skillCompile.ts reads BreakingAttackCalculation's multiplier, and the loaded kit has factors 0.1 and 0.7 (see F1).
+- **Why it may matter:** only the note; it caused F1.
+- **Evidence:** loadGameData: hits ticks factor 0.1 and final factor 0.7.
+- **Confidence it's a real problem:** low
+- **Verdict:** NOT A PROBLEM — wording only; fix the note.
+
+Other checks: `zmdlogs check` of zmdlogs-dbaee23b801d (ultimate) gives Liino 25 of 25 plain, 0 mismatch; of 0eef2474a26f 11 of 13. In pending a7a7a40c97ed, Liino's battle-skill projectile hits (t=12578, 24467 to 34593 ms, ratios 1.27 to 1.40) mismatch; this looks like the known in-stance press problem (test 103) and is not re-flagged. Buff ultskill_spellvulnerable is referenced by nothing (batch-1 gap report), so not a miss.
