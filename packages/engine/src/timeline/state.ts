@@ -335,6 +335,13 @@ export interface TimelineState {
    * buff of the operator is active.
    */
   readonly comboWindow: Readonly<Record<string, { readonly from: number; readonly until: number; readonly count: number; readonly source?: EventSource; readonly whileBuff?: string }>>;
+  /**
+   * Per combo window (windowKey): what the latest event that ran its owner's `openCombo` was, and its frame, whether it
+   * opened or refreshed the window or the combo's cooldown kept it shut (not the owner's own combo), kept after the
+   * window closes. Applications with `element: "window"` read it (landing.ts windowSourceAt; the game's native
+   * EntityBB_consumed_type: Arcane's touch, in-game test 33).
+   */
+  readonly comboTrigger: Readonly<Record<string, { readonly source: EventSource; readonly frame: number }>>;
   /** Frame until which SP doesn't regenerate (after a spend: SP.pauseAfterSpendFrames). */
   readonly spPausedUntil: number;
   /**

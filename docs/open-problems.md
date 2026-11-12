@@ -42,8 +42,9 @@ ramp gives the ×1.09 on fire. Rossi's ×1.33 after 24.97 s is crit-only
   frame 948 where the log implies ~946, so its Lift (frame 977) lands
   after Gilberta's ultimate; (b) at 7.807 s the log has a Lift and her
   combo consumed 1 infliction (48646 / 30023), the replay none (no enemy
-  Arts Infliction from 2.04 to 9.46 s: Arcane's touch is element "enemy",
-  a no-op without one). Her 32.489 s combo hit is the perfect-timing
+  Arts Infliction from 2.04 to 9.46 s: Arcane's touch was element "enemy",
+  a no-op without one; fixed 2026-11-12, the touch applies the Cryst her
+  window's Corrosion consumed and the replay's Lift consumes 1 there). Her 32.489 s combo hit is the perfect-timing
   variant, consumed 2 in the log, 1 in the replay. Ruled out: the perfect
   hit's own Vulnerable rule (perfect and late predict the same there);
   a stack expiry (none before 34.9 s; the "3 then 2" at 31.60 s is a stale
@@ -76,8 +77,21 @@ d572's (where the window matches).
 
 ## Arcane's WILL combo touch: which element (in-game test 33)
 
-**Shows:** the kit takes the enemy's current infliction's element; with
-none, nothing. The data switches on `EntityBB_consumed_type`.
+**Found (round 6, 2026-11-12, implemented):** the touch applies the
+element of what opened her window (`element: "window"`: the latest event
+her combo trigger saw since the cast began, else the window's opener at
+the cast; for a reaction, the infliction it consumed; for a window the
+replay didn't see open, the enemy's current one). 9a80 plain 157 → 160,
+mismatches 95 → 88, −30.7 → −23.6%; 3f78 plain 34 → 41; 489c, 4a64, e82d
+closer; fixtures/ and the hold-out counts unchanged (hold-out mean
+|damage| a little lower). Dead ends: the opener at the cast only
+(`element: "event"`): 0eef −19.9%, the replay casts her combo before
+Si's Cryo hit at the same ms; every event the trigger saw, before the
+cast too: 1cd1 10 → 13.9% (a Nature 1.6 s before a cast the replay's
+cooldown kept shut) and a hold-out log much worse.
+
+**Shows (before):** the kit took the enemy's current infliction's
+element; with none, nothing. The data switches on `EntityBB_consumed_type`.
 
 **Ruled out (round 5, 94 touches in 30 logs):** "nothing when the enemy
 has none": in 21 such touches a later consumer (Rossi's combo, whose Lift
@@ -88,14 +102,20 @@ burst is Cryst; the opener's *applied* element where it was a reaction
 (b74c: Nature onto Cryst, then a Cryst burst). No touch has a current
 element other than the opener's.
 
-**Still possible:** the element the window's opener consumed (Cryst for
-a Nature-onto-Cryst Corrosion), or the applied one when the opener was a
-plain infliction (they agree in 9a80 and c516); the enemy's last
-infliction before the opener consumed it (indistinguishable from the
-first); b74c's Cryst coming from Si's combo or ultimate instead (the kit
-says they apply none).
+**Still possible:** the enemy's last infliction before the opener
+consumed it (indistinguishable from the consumed element); the window's
+first opener instead of the latest (no log tells them apart: every touch
+with a current infliction has the latest's element); events while the
+cooldown keeps the window shut counting before the cast too (only 1cd1,
+where the replay's cooldown may be wrong); b74c's Cryst coming from Si's
+combo or ultimate instead (the kit says they apply none). Not fixed with
+it: e82d's replay lands a third touch the log hasn't (226 frames), which
+now applies Cryst (Arcane's own total +8 → +47%); the multi-target logs
+move both ways (b74c +23 → +34%, c516 +131 → +159%, 4f7e −2.7 → +3.4%:
+their replay already over-predicts).
 
-**Next check:** being implemented (round 5); in-game test 33 confirms.
+**Next check:** in-game test 33 (latest opener against first, and the
+consumed element); e82d's extra touch.
 
 ## Hard 27: every physical hit ×1.1125 low (2fd9, 99fb)
 

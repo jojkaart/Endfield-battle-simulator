@@ -5,7 +5,7 @@ import type { Build } from "../build.ts";
 import { computeHit, computeReaction, decide, finisherModifier, type DamageOptions, type DamageTarget, evalContext, fixedHit, type HitDamage, hitDecorations, type Situation, skillValue } from "../damage.ts";
 import type { Modifier } from "../effects.ts";
 import { EngineError } from "../errors.ts";
-import { type GameData, type KitHit, type KitSkill, resolveApplication } from "../model.ts";
+import { type EventSource, type GameData, type KitHit, type KitSkill, resolveApplication } from "../model.ts";
 import { type BattleEvent, triggerActionAt } from "../events.ts";
 import { evaluate } from "../expr.ts";
 import { activeAt, resolveValue } from "../buffs.ts";
@@ -17,6 +17,7 @@ import { artsIntensity, attackerSide, buffSituation, damageOptions, healEvents, 
 import { addBuff, buffAppliedEvent, changedStacks, gainStacks, runTriggers } from "./actions.ts";
 import { ofKind, schedule } from "./schedule.ts";
 import { operatorClockDue } from "./clock.ts";
+import { windowKey } from "./timing.ts";
 
 /** The modifiers a logged fight gives a kit hit's landing that no kit models (TimelineScenario.loggedModifiers): the nearest logged landing's within a frame, none without. */
 function loggedModifiersAt(ctx: TimelineContext, operator: string, events: readonly string[], frame: number): readonly Modifier[] {
@@ -135,6 +136,24 @@ function addHits(st: TimelineState, landed: readonly LandedHit[]): TimelineState
       })
     : st.buffs;
   return { ...st, buffs, hits: [...st.hits, ...landed] };
+}
+
+/**
+ * What a hit's `element: "window"` reads (in-game test 33): the latest event its operator's combo-window trigger saw
+ * since the hit's cast began (TimelineState.comboTrigger: an opener landing in the cast's first frames, while the
+ * cooldown keeps the window shut; 0eef2474a26f, Si's Cryo at the ms of Arcane's combo); else what opened the window the
+ * cast used (eventSource; 9a8097fcf351 at 2167 ms: the Corrosion's consumed Cryst, the enemy has none at the touch);
+ * else, for a window the replay didn't see open (a logged cast), the enemy's current infliction, which every logged
+ * touch where the enemy has one agrees with. An event before the cast that didn't open the window doesn't count
+ * (1cd1657bc305: a Nature 1.6 s before a cast, while the replay's cooldown kept the window shut).
+ */
+function windowSourceAt(ctx: TimelineContext, st: TimelineState, hit: PendingHit): EventSource | undefined {
+  const seen = st.comboTrigger[windowKey(ctx, hit.operator, hit.skillId)];
+  const castFrame = hit.cast !== undefined ? st.casts[hit.cast.index]?.frame : undefined;
+  if (seen && castFrame !== undefined && seen.frame >= castFrame) return seen.source;
+  if (hit.eventSource) return hit.eventSource;
+  const current = expireStatus(st.enemy, hit.frame).infliction;
+  return current ? { kind: "infliction", element: current.element } : undefined;
 }
 
 /**
@@ -280,7 +299,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     const ai = artsIntensity(ctx, st, hit.operator, hit.frame);
     for (const app of apps) {
       if (app.if && !decide(app.if, evalContext(ctx.data, build, panel, hit.skillId, at(consumed)))) continue;
-      const resolved = resolveApplication(app, (v) => evaluate(v, evalContext(ctx.data, build, panel, hit.skillId, at(consumed))), hit.eventSource);
+      const resolved = resolveApplication(app, (v) => evaluate(v, evalContext(ctx.data, build, panel, hit.skillId, at(consumed))), hit.eventSource, windowSourceAt(ctx, st, hit));
       if (!resolved) continue;
       const side = st;
       const r = applyToEnemy(withLoggedReactionLevel(ctx, st.enemy, resolved, hit.frame, hit.operator), resolved, hit.frame, hit.operator, ai, (key) => skillValue(ctx.data, panel, build, hit.skillId, key), statusTweaks(ctx, st, hit.operator, hit.frame), () => attackerSide(side, hit.operator, hit.frame));

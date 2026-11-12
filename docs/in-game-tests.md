@@ -603,19 +603,29 @@ bar start refilling right after, or only when the 10 s are over?
 
 ### 33. Arcane's WILL combo: the element of the touch's stack (ready, if you have Arcane)
 
+**Partly answered (2026-11-12, by the logs):** with no infliction on the
+enemy at the touch, it still applies one: the element the reaction that
+opened the window consumed (Cryst after a Nature-onto-Cryst Corrosion; in
+21 of 94 touches in 30 logs a later hit consumes it, e.g. Rossi's combo
+at 1.5–1.7× in 9a80, 3f78, 4a64, 489c). The engine now does that
+(`element: "window"`). Earlier (2026-10-28): the bursts credited to her
+1–1.5 s after the touch are the touch's own, after the standard 1 s
+burst delay plus time stops.
+
 **Why:** in WILL mode her combo's touch adds a stack of an Arts element.
-The engine takes the element from the enemy's current infliction, but the
-data (a switch on `EntityBB_consumed_type`, which the reaction buffs also
-carry) may take it from the infliction that opened the combo window: when
-the enemy's infliction changes before the touch, that's one burst
-(1.6 × her ATK) more or less. (Answered from the logs, 2026-10-28: the
-bursts credited to her 1–1.5 s after the touch are the touch's own, after
-the standard 1 s burst delay plus time stops; the replay lands them within
-30 ms in two logs.)
+The data switches on `EntityBB_consumed_type`, which the game sets: the
+engine takes the latest event that opened (or would have opened) her
+window. No log has a touch where the enemy's infliction differs from that
+event's element, so which one wins then is open: one burst (1.6 × her
+ATK) more or less.
 **How:** Will > Intellect. A teammate applies Cryo (opening the window),
-then a Heat hit consumes it (Solidification), then Arcane's combo: does
-the touch apply Cryo (the trigger's element), nothing, or Heat? About 1 s
-after the touch, a Cryo burst number means Cryo.
+then a Heat hit consumes it (Solidification: the enemy now has none),
+then a third teammate applies Electric (a new infliction, which opens the
+window again), then Arcane's combo: does the touch apply Electric (the
+latest; engine), Cryo (the first opener), or nothing? About 1 s after the
+touch, an Electric burst number means Electric. Simpler (the case the
+logs show): Cryo, then the Heat hit, then her combo: a Cryo icon on the
+enemy after the touch confirms the consumed element.
 
 ### 34. Arcane's INT combo without the battle skill (ready, if you have Arcane; lower priority)
 

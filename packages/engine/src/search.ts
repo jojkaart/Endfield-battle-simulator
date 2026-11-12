@@ -547,6 +547,8 @@ const STATE_KEY: KeyRules<TimelineState> = {
   energyBlockedUntil: (e, env) => entries(e, (f) => f > env.frame),
   // Read through windowOpen (`until < frame`: closed) or with `until >= frame`, but a follow-up combo's count (endedWindowsRead).
   comboWindow: (w, env) => entries(w, (x, k) => x.until >= env.frame || env.scenario.endedWindowsRead.has(k)),
+  // Read by any later `element: "window"` application, however long ago it was set.
+  comboTrigger: true,
   // Read as max(frame, it) (resources.ts spAt, afterRegen; timing.ts) and raised with max (casting.ts).
   spPausedUntil: deadline,
   spStops: true,
