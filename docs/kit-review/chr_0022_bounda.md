@@ -52,3 +52,7 @@ talent 2 chance, docs/in-game-tests.md) is not marked in the kit, but the kit's 
 - Open items the kit cites (in-game tests 35 and 47, and its own F1–F3 notes), and docs/in-game-tests.md test 59
   (the talent 2 chance), which are unresolved in the docs.
 - No Fluorite log was opened in this pass (fixtures/pending/zmdlogs-abfd4b7478ec.json is cited by the kit; not examined).
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: none (phase 2 raised no flags) · UNCERTAIN: none
+Log check, for context: fixtures/pending/zmdlogs-abfd4b7478ec.json, Fluorite 56 of 56 hits match (49 plain, 2 assumed, 5 log-listing fallback), 0 mismatch, 100% of her damage covered by the kit. The log supports her hit data, the explosion / detonation structure and talents as checked in phase 2; test 59 (talent 2 chance) remains an in-game question not tested by a damage log.

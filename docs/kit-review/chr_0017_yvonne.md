@@ -26,7 +26,7 @@ Reference: docs/combat-mechanics.md.
 - **Evidence:** the kit JSON (skill `normal_skill`, no `teamEnergy`); the batch-4 report row 11 and its
   sample at around line 374; packages/data/src/kits.ts around lines 1021–1023; packages/engine/src/timeline/casting.ts around line 221.
 - **Confidence it's a real problem:** medium (the kit contradicts its own plan; the code path read, not run).
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the flag misreads the kit. chr_0017_yvonne.json (skill `chr_0017_yvonne_normal_skill`, line ~560) does carry `"teamEnergy": [{"frame": 35, "ratio": 1, "detached": true}]` beside the `dataOverride.teamEnergy` note. The loader (packages/data/src/kits.ts:999, `let teamEnergy = s.teamEnergy`) keeps it; the cast-time fallback in casting.ts (~line 221) only runs when `skill.teamEnergy === undefined`, which is not the case. The override entry only marks that the compiler can't derive the value, which is why the explicit entry exists. It matches the batch-4 plan row 11.
 
 ## Checked, no conflict found
 - Hits, frames and scale keys against SkillData and SkillPatch at level 12: attack1–4 projectiles
@@ -61,3 +61,7 @@ Reference: docs/combat-mechanics.md.
 - Equipment numbers: sk_wpn_pistol_0005 / 0007 / 0008 values and their buff durations were not checked
   against SkillPatch; only their triggers and buffs were read.
 - No log fixture was opened for Yvonne in this pass (the batch-4 fixtures were not examined).
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: F1 · UNCERTAIN: none
+Log check, for context: fixtures/pending/zmdlogs-abfd4b7478ec.json, Yvonne 182 of 183 hits match (13 plain, 20 assumed, 149 log-listing fallback), so her hits, scale keys and frames are consistent with the one log. The single mismatch is t=116720 chr_0017_yvonne_ult_attack2_projhit (logged 1626, predicted 1639 / 1721 among others, ratio 0.91 against the first reading); not investigated further. The team-energy timing is not visible in a damage log, so F1's real kit value rests on the data reading in the batch-4 plan.

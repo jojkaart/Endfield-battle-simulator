@@ -23,7 +23,8 @@ Name: the batch brief named this operator Xaihi. CharacterTable `engName` and do
   line 1104); the kit notes above.
 - **Confidence it's a real problem:** medium (the kit rests on the engine's reading of the mark, which the
   test is meant to settle; the kit does not say so).
-- **Verdict:** (phase 3)
+- **Verdict:** UNCERTAIN — the kit's frames come from SkillData (JumpToAction 60, InterruptCurSkillAction 194) and the open question is the engine's reading of the mark (§7.1 test 61), which the docs already tag [OPEN]. Her log has no counter-path timing to test it (the fight's casts don't separate it from the check's tolerances).
+  - **Decides it (if UNCERTAIN):** in-game test 61, Catcher's paragraph: time from the counter to the first accepted input.
 
 ### F2. P1 strike reads DEF, but food DEF% is an open question (test 98)
 - **Where:** kit `triggers` → `p1_strike` → `hits[0].base` = `dmg_base + attr 3 × def_scale` (300 + 5 × DEF).
@@ -36,7 +37,8 @@ Name: the batch brief named this operator Xaihi. CharacterTable `engName` and do
   P1 strike is either missing or wrong for that build. The size is 5 × the DEF change from the food.
 - **Evidence:** docs/combat-mechanics.md §1.5; docs/journal.md around lines 1108–1112; kit `p1_strike` note.
 - **Confidence it's a real problem:** medium (the build-specific gap is real; the kit does not mention it).
-- **Verdict:** (phase 3)
+- **Verdict:** UNCERTAIN — a documented, deliberate refusal (combat-mechanics §1.5, journal 1108–1112): with a DEF +x% food worn, the P1 strike is refused rather than computed wrongly, and 8 foods are affected. The kit is not wrong; the formula item 1 is unknown. No log wears a DEF food (the Catcher log's gear gives DEF 160 with no food and its P1 hits are ×1.0274, see F3), and the size is 5 × the DEF change.
+  - **Decides it (if UNCERTAIN):** in-game test 98 (Bottled Milk: DEF 140 → 167 or unchanged).
 
 ### F3. The only Catcher log (04d401ad257e, pending) matches none of her 252 hits, with no entry in open-problems
 - **Where:** fixtures/pending/zmdlogs-04d401ad257e.json (eny_0125_fdcentur, level 90; Catcher at level 80,
@@ -58,7 +60,9 @@ Name: the batch brief named this operator Xaihi. CharacterTable `engName` and do
   docs/open-problems.md (grep found none for Catcher).
 - **Confidence it's a real problem:** medium that the engine's Catcher prediction is wrong for this log; low
   that the cause is in the kit. Cause not identified.
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — not the kit: the cause is a build input the export omits, the weapon level. The check's ratio is a near-constant 0.470 (0.4697–0.4706) across every ATK-based skill (basics, combo, ultimate, shockwave), i.e. no kit scale key, frame or hit is off; and the DEF-based P1 strike (`buff_chr_0020_meurs_potential_1`) already sits at ×1.0274, which a weapon can't change. Re-running the check on a copy of the fixture (fixtures/pending/zmdlogs-04d401ad257e.json with only Catcher's `weapon.level` changed; scratch files in the scratchpad kv6/) gives the median basic-hit ratio: weapon level 90 → 0.470, 80 → 0.501, 60 → 0.576, 40 → 0.677, 20 → 0.821, **1 → 1.0265** (±0.001, all skills). Her weapon wpn_claym_0015 (5-star) is logged with skill levels [3, 2, 3]; the break-through bounds (555me WeaponBreakThroughTemplateTable weapon_breakthrough_456star_C_2) allow skill levels [3, 2, 3] at stages 0–3 (level ≤ 79) but not stage 4, so level 90 is excluded by the log's own skill levels (stage 0 bounds are 3/3/4, which [3, 2, 3] fits). At level 1 the weapon's ATK is far below the level-90 411 (panel ATK not printed for that run). The gear as modelled (4 phy01 pieces, the duplicate counted twice) fits with it: a run with no gear at all gives ×1.23 instead, so the duplicate piece is not what breaks this log (it stays [OPEN] in §9 for 9555). What remains is ×1.026–1.027, equal to the P1 strike's ×1.0274 and close to Ember's ×1.0226 in the same fight, so it is a fight-wide factor (enemy eny_0125 side), not Catcher's.
+  - **Fix (if REAL):** none for the kit. For the fixture: set Catcher's weapon level to about 1 (the minimum) in fixtures/pending/zmdlogs-04d401ad257e.json with a provenance note, and look into the fight-wide ×1.023–1.027 (Ember ×1.0226, Catcher ×1.0265, P1 ×1.0274; Purrchena's level-84 fit may have absorbed it). With these, her hits (all skills) would fit to within about 0.1%, which also makes this log a verification of her hit data (scale keys, frames, P1 formula).
+- Also add to docs/open-problems.md: weapon level of the Catcher log, and the shared ×1.026.
 
 ## Checked, no conflict found
 - Hits, frames and scale keys against SkillData and SkillPatch (level 12): attack1–4 (attack4 mask 2097280,
@@ -88,3 +92,12 @@ Name: the batch brief named this operator Xaihi. CharacterTable `engName` and do
 - Potential 4's cost ×0.9 and the combo's cooldown (33 s at level 12): taken from the engine's generic handling,
   not checked here.
 - No other Catcher log was opened; the only one available to this pass is 04d401ad257e (F3).
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: F3 · UNCERTAIN: F1, F2
+F3 resolved: the log's weapon level is not 90 (the importer's assumption); at level ~1 every ATK-based Catcher hit fits ×1.0265 with spread under 0.1%, so her kit's scale keys, frames and the P1 strike (×1.0274 independent of the weapon) are consistent with the data. The leftover ×1.026 is shared with Ember (×1.0226) in the same fight and looks fight-wide.
+N1. **The Catcher log's weapon level and the shared ×1.026 are not in docs/open-problems.md.**
+- **Where:** fixtures/pending/zmdlogs-04d401ad257e.json, `team[3].weapon.level` (90, assumed by the importer).
+- **Evidence:** the weapon-level scan under F3; check output "build offset: Catcher's hits ×1.0267 the engine's" at weapon level 1.
+- **Verdict:** REAL (fixture, not kit) — the fixture's assumed weapon level misleads the check; a note and the level change would turn 252 mismatches into a ×1.027 offset, shared with the other operators' ×1.02.
+  - **Fix (if REAL):** edit the fixture's Catcher weapon level to 1 with a provenance note (as for Purrchena's 84), and record the ×1.026 in docs/open-problems.md.

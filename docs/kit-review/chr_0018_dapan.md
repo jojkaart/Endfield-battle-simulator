@@ -23,7 +23,8 @@ the default weapon wpn_claym_0010 is stats only). Reference: docs/combat-mechani
 - **Evidence:** docs/combat-mechanics.md §8.4 "Test 51's findings" and §11; docs/in-game-tests.md test 51
   (Da Pan paragraph); the two kit trigger notes above.
 - **Confidence it's a real problem:** medium (the engine's default is unproven, not known wrong).
-- **Verdict:** (phase 3)
+- **Verdict:** UNCERTAIN — the kit follows the data's order (the Vulnerable FinishBuff before the Crush DamageAction) and says so; §8.4 tags the game's answer [OPEN] (test 51). The one Da Pan log, fixtures/multi-target/zmdlogs-10df8c76ccda.json, can't decide it: at t=160427 the combo (logged 16730) and its Crush (buff_physical_do_crushed, logged 37974) both mismatch under every reading (the Crush's highest candidate is 33904, so logged is ×1.12 above even the best one), and the whole fight carries a ×1.25 / ×0.96 pattern shared with Pogranichnik's hits (ratio 1.2494 at t=5649), i.e. a fight-wide cause not specific to Da Pan. Note the log leans the opposite way to the flag's worry (logged above predicted, not below).
+  - **Decides it (if UNCERTAIN):** in-game test 51's Da Pan part (does the combo's own Crush hit show the talent 1 / Ancient Canal bonus), or a single-enemy Da Pan log with the 1.25 cause explained.
 
 ### F2. Prep Ingredients' 40% cooldown cut uses a reading that test 36 leaves open
 - **Where:** kit `triggers` → `prep_cut` → `do[0]`: cooldown fraction `product [-1, talent_1_cd_reduce]`
@@ -36,7 +37,8 @@ the default weapon wpn_claym_0010 is stats only). Reference: docs/combat-mechani
 - **Evidence:** docs/combat-mechanics.md §7.5; docs/in-game-tests.md test 36; combo cooldown 19 s at level 12
   (SkillPatchTable chr_0018_dapan_combo_skill).
 - **Confidence it's a real problem:** low (the kit names the reading and the test).
-- **Verdict:** (phase 3)
+- **Verdict:** UNCERTAIN — the kit names the reading (40% of the full cooldown) and the test (36); the two readings differ by about 0.3 s of the combo's ready time (11.4 s vs 11.7 s), so any error is small. No log measures a combo cooldown reduction here.
+  - **Decides it (if UNCERTAIN):** in-game test 36, Da Pan part (the combo's ready time after Prep Ingredients).
 
 ### F3. Potential 1 (kill-triggered buff on the ultimate) is not modelled
 - **Where:** kit `sources[1]` ("Not modelled: P1 ..."); no buff or trigger for buff_chr_0018_dapan_potential_1.
@@ -49,7 +51,7 @@ the default weapon wpn_claym_0010 is stats only). Reference: docs/combat-mechani
   fights where the ultimate kills; large in multi-enemy fights, rare against bosses.
 - **Evidence:** PotentialTalentEffectTable entry above; kit `sources[1]`.
 - **Confidence it's a real problem:** medium that the effect is missing; low on the size of its impact.
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the effect is real in the data (PotentialTalentEffectTable chr_0018_dapan_potential_1: `potential_1_dmg_up` 0.3, `potential_1_duration` 15 on the ultimate; the ultimate's EventListenerAction 0–89 on ability event 222 creates buff_chr_0018_dapan_potential_1), but it needs a kill event, which the engine has no way to express (no kill trigger in packages/engine or data), and the simulator fights one enemy: an ultimate that kills the only enemy ends the fight, so the 15 s buff has nothing to act on. The kit documents the omission (`sources[1]`, batch 3 N2). It would become real only with multi-enemy scenarios (then +30% ultimate damage for 15 s after a kill, on a kill that left other enemies).
 
 ## Checked, no conflict found
 - Hits, frames and scale keys against SkillData damage units: attack1–3 (landings at f13, f7, f10 and f23),
@@ -80,3 +82,12 @@ the default weapon wpn_claym_0010 is stats only). Reference: docs/combat-mechani
   (def_up 0.504 at level 9), buff_wpn_claym_0015's duration and stacking.
 - Ultimate energy cost (90, costType 0) and cooldown (15 s): the kit does not carry them.
 - No log fixture for Da Pan was opened in this pass.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: F3 · UNCERTAIN: F1, F2
+Log check, for context: fixtures/multi-target/zmdlogs-10df8c76ccda.json is the only Da Pan log (not mentioned in docs/open-problems.md): Da Pan 58 of 117 hits match (20 plain, 11 assumed, 27 log-listing fallback), 59 mismatch; mismatch ratios cluster at ×1.25, ×1.625 and ×0.96 and Pogranichnik's hits in the same fight mismatch by the same ×1.25, so the cause is fight-wide (a multi-target / buff question), not Da Pan's kit.
+N1. **Da Pan's only log mismatches half its hits and has no open-problems entry.**
+- **Where:** fixtures/multi-target/zmdlogs-10df8c76ccda.json; `node packages/cli/src/main.ts zmdlogs check` on it.
+- **Evidence:** 59 of 117 mismatch; ×1.2500 on attack1–4, battle skill, ultimate flurry and airborne at t=2824–37326 and 170289–179828 (Pogranichnik ×1.2494 at t=5649, same fight), ×1.625 at t=25263–33766 (1.25 × 1.3), ×0.9614 elsewhere; the combo Crush at t=160427 ×1.12 above the highest reading.
+- **Verdict:** UNCERTAIN — a ×1.25 shared with another operator points at a fight-wide factor (unlogged enemy buff, Endministrator's `originium_crystals` is listed among the assumed items, or a weakness / susceptibility the engine doesn't see), not Da Pan's kit.
+  - **Decides it (if UNCERTAIN):** a diagnosis of that fixture's ×1.25 (check whether `originium_crystals` / susceptibility explains it), recorded in docs/open-problems.md.
