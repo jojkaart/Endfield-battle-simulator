@@ -11,7 +11,8 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** the Solidified state ends 0.25 s apart between the two readings at level 1 (and at P3, the same gap). That decides whether a later physical status or Vulnerable on that enemy shatters it (Shatter: 120% + 120% × level physical, §3.6). Only the window matters, not the damage of the Snow Zone itself, which the kit says is unchanged.
 - **Evidence:** the kit hit above; docs/combat-mechanics.md §3.6; the Solidification duration table is in the engine (not reopened here). Test 71 and accuracy plan B4 are the cited open questions.
 - **Confidence it's a real problem:** low
-- **Verdict:** (phase 3)
+- **Verdict:** UNCERTAIN — The kit uses the engine's table (packages/engine/src/status.ts line 87: 5.75 s at level 1) and the flag correctly notes the reference's [OPEN] (§3.6; test 71 part 2 times the icon, 5.75 s vs 6 s). The gap is 0.25 s of Solidified window, with no damage in the Snow Zone itself affected; no Aurora logs exist, and a shared engine value, not a kit choice, is in question (the kit already passes the level and `extraSeconds`).
+  - **Decides it (if UNCERTAIN):** test 71 part 2 (stopwatch the Solidification icon after a level-1 application: about 5.75 s vs 6 s), or a log with a level-1 Solidification and a later Shatter just inside the 0.25 s window. The fix, if the native 6 s wins, belongs in status.ts, not Aurora's kit.
 
 ## Checked, no conflict found
 
@@ -34,3 +35,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - The ultimate's TakeDownAction and InterruptAction on the target, the frost's slow-down on small enemies, and P2's radius were not evaluated (the kit lists them as not modelled).
 - Logs: not opened; log facts were read from the kit and batch-3 docs only. Hold-out fixtures were not touched.
 - Equipment: none reviewed in this pass.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: none · UNCERTAIN: F1
+F1 (uncertain): engine-wide Solidification duration (0.25 s); the kit is correct whichever wins.

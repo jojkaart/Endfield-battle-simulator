@@ -11,7 +11,8 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** shifts the explosion by 0.06-0.11 s in every combo and Hunter Pursuit on a hovering target. That moves it relative to the ultimate's time stop and other operators' hits in a window (batch-4 notes that an ultimate's stop between the hit and the explosion lengthens the gap, 40d9 9240 → 12951 ms). Damage size not computed.
 - **Evidence:** BuffData/buff_chr_0033_camille_normal_skill_delay_damage.json (duration 0.4, bat_atk_scale default 5.0 overridden by the entity's 1.0); docs/kit-batches/batch-4/chr_0033_camille.md row 14 and U2 (fixtures 40d9 and 4e5e, as cited there; not reopened in this pass).
 - **Confidence it's a real problem:** medium
-- **Verdict:** (phase 3)
+- **Verdict:** UNCERTAIN — The flag reads kit and data correctly (delay_damage duration 0.4 s, 12 frames). Logged gaps from combo hit 3 to the explosion are 0.343 s (4e5e 7982→8325 ms), 0.304 s (30769→31073) and 0.289 s (55863→56152), all below 0.4 s, so the logs contradict the data's number; but the cause (hit-stop before the hit, §6.2 / B10, versus a genuinely shorter delay) is not known, and the reference tells us not to fit frames to one log's pace. `zmdlogs check` does not score hit timing: Camille's hits all match by value (40d9: 6 of 6, 0 mismatch; damage −4.3% for Camille comes from kinds the flag doesn't concern, explosion is matched "assuming" only because the replay lands it differently), and total damage and last-hit time of 40d9 are within 0.1%. Effect of the gap is at most 0.06–0.11 s of timing, no damage change except relative to another operator's stop or hit-stop window.
+  - **Decides it (if UNCERTAIN):** a log where Camille's hit 3 is followed by the explosion with no hit-stop candidate in between, or an in-game frame-by-frame recording of the Vesperwings explosion after a combo hit; if the gap is the same 0.3 s it is a data/timing fix of `frames: [12]` (to about 9-10) in both explosion hits, if hit-stop explains it the kit is right.
 
 ## Checked, no conflict found
 
@@ -37,3 +38,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - The basic-attack chain and dive values were not compared to SkillPatchTable.
 - Logs: not opened; log facts were read from the kit and batch-4 docs only. Hold-out fixtures were not touched.
 - Equipment: no equipment kit is referenced by this kit; Camille's usual weapon and gear sets were not reviewed in this pass.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: none · UNCERTAIN: F1
+F1 (uncertain): the explosion timing is 0.06-0.11 s later than logged; no damage effect on the checked logs.

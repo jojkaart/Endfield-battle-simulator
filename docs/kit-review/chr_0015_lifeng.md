@@ -11,7 +11,8 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** 5 s of Link after each Lifeng combo. Link adds +30 / 45 / 60 / 75% to a battle skill and +20 / 30 / 40 / 50% to an ultimate by stack count (§7.6), and it decides whether Lifeng's ultimate gets its third hit (`link_hit`, castLink). A cast in those 5 s would change damage.
 - **Evidence:** BuffData/buff_common_affixes_combo_trigger.json (duration 15); SkillPatchTable chr_0015_lifeng_combo_skill duration 20 (as the kit's source note gives it); chr_0033_camille.json `combo_f47`; docs/in-game-tests.md test 78 (line 1501, the open question the kit cites).
 - **Confidence it's a real problem:** medium
-- **Verdict:** (phase 3)
+- **Verdict:** UNCERTAIN — The flag reads the data accurately: ComboAction duration 20 s (SkillPatchTable) versus the Link buff's literal 15 s, and the kit documents the choice as open (note, report U2). The only other ComboAction kit, Camille's, uses 15 s and so can't tell the two readings apart; no logs exist for Lifeng, and no other kit uses a ComboAction duration other than 15. Effect if wrong: 5 s of Link after her combo (battle +30..75%, ultimate +20..50% and the third hit), only for casts 15-20 s after it.
+  - **Decides it (if UNCERTAIN):** in-game test 78 step 4 (combo, then the ultimate 17-18 s later with nothing in between: a third hit means 20 s). If it fails, change `combo_link`'s `seconds` to 15 in chr_0015_lifeng.json.
 
 ## Checked, no conflict found
 
@@ -34,3 +35,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - The talent-2 and P5 handler order was not re-derived from BuffData (the kit documents it).
 - Logs: none for Lifeng per the kit; not opened. Hold-out fixtures were not touched.
 - Other equipment that names Lifeng was not reviewed beyond the two weapon kits above.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: none · UNCERTAIN: F1
+F1 (uncertain): Link length 20 s vs 15 s; test 78 step 4 is ready and decides it.

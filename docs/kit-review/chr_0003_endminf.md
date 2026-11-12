@@ -11,7 +11,8 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - **Why it may matter:** if a Vulnerable stack added at 4 stacks, or to an enemy that already has Vulnerable, does not ignite in game, then the crystals are consumed early by those applications. That loses talent 2's Physical DMG taken for the rest of the crystals' life, and talent 1's ATK, P2's share and P3's energy. Which skills apply Vulnerable to an enemy already at 4 stacks decides how often this happens. Size not computed.
 - **Evidence:** the kit's trigger and note (above). The BuffData igniteEventAction (buff_physical_no_guard, buffEvent 7) is cited by that note and was not reopened in this pass. In-game test 64 in docs/in-game-tests.md is the open question.
 - **Confidence it's a real problem:** medium
-- **Verdict:** (phase 3)
+- **Verdict:** UNCERTAIN — The flag describes the kit correctly: `crystals_vulnerable` has no `rising` / `fromNone` filter, and the data (buff_physical_no_guard buffEvent actions) runs its igniteEventAction on every stack added, which is what the kit's note says. Whether the game fires it for a stack at 4 or on an already Vulnerable enemy is exactly combat-mechanics §4's [OPEN] item (test 64). No log of this operator isolates it (the only cited fixture, 7e19, is a Breach on an enemy where the crystal hit matches).
+  - **Decides it (if UNCERTAIN):** in-game test 64's mechanism, but run with the Endministrator: crystals up with her combo on a dummy already carrying 4 Vulnerable stacks, then a Lift/Crush adding a fifth; do the crystals break and does the crystal hit land? Test 64 currently names only Chen and Da Pan, so add an Endministrator variant (or settle with Chen's result, as it is the same event).
 
 ## Checked, no conflict found
 
@@ -32,3 +33,7 @@ Reviewed: 2026-11-12 (phase 2, flags only). Kit: packages/data/kits/operators/ch
 - Talent 1's atk_up (0.15 / 0.30) and duration (15 s) in chr_9000_endmin_talent_1_* were not compared numerically.
 - Logs: not opened; fixture 7e19 is cited only through the kit. Hold-out fixtures were not touched.
 - Equipment: none reviewed in this pass.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: none · UNCERTAIN: F1
+F1 (uncertain): crystals might survive Vulnerable stacks that do not "ignite" in game; test 64 decides, with an Endministrator variant.
