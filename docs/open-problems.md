@@ -406,6 +406,40 @@ logs outrank Zero Sanity's older in-game values.
 nodes, food), stage effects. **Next check:** none planned (not screened
 logs).
 
+## Team SP: the replay's SP runs short (web review row 2)
+
+**Shows:** with the engine's own SP, the log check's replay can't afford
+casts the log made, in 28 of 40 logs at the 1.5 s regen pause (most 2–12
+SP short), 22 at 0.5 s, 14 with no pause (1d91 at 4833 ms: 46 SP before a
+100 cast). replayCast raises SP silently, so verdicts don't show it.
+
+**Ruled out:** a 1.5 s pause after every spend (engine rule K1, assumed).
+
+**Still possible:** a 0.5 s pause after battle skills (666bj, tested in
+game); no pause but after a perfect dodge (Talos Wiki); SP gains the
+engine misses (per-hit SP, finisher SP, returned SP, start SP above 200);
+a replay artefact (db87 at 10117 ms charges 200 SP for one press).
+
+**Next check:** an audit of the SP gains in the replay's worst logs
+(1d91, 04d4, 6339); then the pause (test 102).
+
+## Solidification as a freeze (web review row 4)
+
+**Shows:** the data's buff_common_do_frozen stops the enemy's clock
+(TimeDilation 0), behind CheckSuperArmor (20, compareType 1); the engine
+has no freeze for Solidification (rule A37).
+
+**Ruled out:** a freeze on 4e36's enemy (super armor 30: Combustion ticks
+on time through it).
+
+**Still possible:** a freeze on enemies under the gate (super armor 0:
+agmelee2, lbhunt); the dilation holding only animation (T10 open).
+
+**Next check:** CheckSuperArmor's compareType direction (other buffs using
+it); a log with a Solidified enemy of super armor 0. Also seen: 4f7e at
+40603 ms, the engine's Solidification consumed Nature where the log's
+was Heat.
+
 ## Smaller, not yet diagnosed
 
 - Laevatain's enhanced battle skill (`normal_skill_during_ult`): ×0.833

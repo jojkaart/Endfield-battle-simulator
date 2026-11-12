@@ -42,3 +42,18 @@ halving (S10 silent); GameKee's order of a reaction's own hit before the
 triggering hit (A16); ZS's Stagger fixed at 5 s (S9; the data's attribute
 21 says 6–24 s); Talos's attributes unfloored (D10, against the settled
 5871 ATK). Self-contradicting or weak claims are in the reports.
+
+## Tested against the logs (2026-11-12)
+
+| Row | Result | Evidence |
+|---|---|---|
+| 1. Solidification 6–9 s | **undecided** | 25 Solidifications in 4 logs; every one ends in a Shatter (the longest 5.03 s, L1) or isn't listed; no log shows one expiring. Test 71 decides. |
+| 2. SP regen pause | **1.5 s ruled out; shorter not pinned** | the engine's own SP before ~480 paid casts in 40 logs, at pauses of 1.5 / 0.5 / 0 s: the first unaffordable cast in 28 / 22 / 14 logs, most 2–12 SP short (what a 1.5 s pause takes). bdf2 at 3817 ms fails any pause above ~0.2 s; 14 logs fail even with none, so SP gains are missing too (1d91: 46 SP before a 100 cast). The replay tops SP up silently, so the log check's verdicts don't show it. |
+| 3. Stagger nodes ×1.3 | **not supported** | 44 crossings of the 50% node in 25 logs: hits in the 5 s after are as well predicted without a node effect as those before (×1.25–1.35: 1.2% after, 0.6% before); no node buff listed. 33 / 66% nodes: no enemy here has them. |
+| 4. Solidification controls the enemy | **the data says yes, gated** | buff_common_do_frozen (the end of Solidification's chain) has a full TimeDilation on the enemy, as Si's Immobilization, behind CheckSuperArmor (20, direction not decoded). 4e36's enemy (super armor 30): Combustion ticks keep their cadence through a Solidification, so not frozen there; most enemies here have 30, two have 0. |
+| 5. Lift / Knock Down 10 Stagger | **not supported** | 263 events in 55 logs: their Stagger is the applying hit's (192), none where the applier has none (68), none on forced Lifts (3); the one exception (4e5e 12219 ms) unexplained. |
+
+Next steps: the SP gains the replay lacks (per-hit SP, finishers, returned
+SP: an engine/kit audit), then the pause length (test 102); the
+CheckSuperArmor gate's direction (data), then Solidification's freeze on
+enemies under it; test 71 for Solidification's length.
