@@ -13,7 +13,8 @@ Method: the kit compared with `efsim kit-draft chr_0034_typhoea` (compiled from 
 - **Why it may matter:** the rule differs between the two kits. The slow check would matter only if it were enabled and the target were not already slowed when the Nature Burst lands. The array slows the same enemies it damages (SkillPatch `persistent_slow` 0.6), so the size should be small; a slow applied after the debuff could still change the first bursts.
 - **Evidence:** BuffData buff_chr_0034_typhoea_combo_enemy_debuff.json (damageModifier conditions above); SkillPatchTable chr_0034_typhoea_combo_skill L12 (`persistent_naturalburst_increase` 0.10, `persistent_slow` 0.6, `persistent_time` 6); Si's kit note cites log zmdlogs-0eef2474a26f, where the kit says all ten combo hits match only with the debuff dropped for Si.
 - **Confidence it's a real problem:** medium that the rule is inconsistent between the two kits. Low that it changes damage much, since the effect is small and the data's check is off.
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — the data's enabled condition is the decorate mask alone: BuffData `buff_chr_0034_typhoea_combo_enemy_debuff` damageModifier has `CheckDamageDecorateMask` (mask 33554432, checkType 2) enabled and `CheckBuffStackNumAdvanced` on `buff_common_affixes_slow` with `isEnable: false`, so the Typhoeus kit (`onlyKinds: [burst]`, no slow condition) reads the data exactly. The inconsistency is in the wording of Si's note, not in either kit's damage: Si's slashes carry the combo mask (12288), not the burst mask, so the debuff the log lists on them doesn't apply, which is what Si's fixtures need (0eef2474a26f: all ten hits exact without it). The "slowed target" reason in Si's note names a check the data disables. Typhoeus's own side is evidenced by fixtures/zmdlogs-dbaee23b801d.json (the debuff listed 52 times, kit note: only on bursts).
+  - (Doc only, not damage: chr_0036_jsspsi.json's sources sentence should say "needs decorate mask 33554432 (an Arts Burst)"; the slow check is disabled.)
 
 ### F2. Talent 2 (Linken sphere) and the P1 shield-cooldown change are not mentioned in the kit
 - **Where:** packages/data/kits/operators/chr_0034_typhoea.json (no talent 2 entry; the sources name only talent 1 and the potentials).
@@ -22,7 +23,7 @@ Method: the kit compared with `efsim kit-draft chr_0034_typhoea` (compiled from 
 - **Why it may matter:** probably nothing for damage output (a damage-taken shield cannot change the simulated damage when HP isn't tracked). The kit should say so, so phase 3 doesn't read the gap as a missing mechanic.
 - **Evidence:** TableCfg/PotentialTalentEffectTable.json (keys above); Json/BuffData/buff_chr_0034_typhoea_talent_linken_sphere.json.
 - **Confidence it's a real problem:** low (an undocumented omission, not a damage conflict).
-- **Verdict:** (phase 3)
+- **Verdict:** NOT A PROBLEM — nothing to simulate: `buff_chr_0034_typhoea_talent_linken_sphere` has only `protect_times` 1, `damage_resist` 0.3, `sheild_cd` 18 and duration 10 s (no damage modifier, no shield-break effect, no attribute change for the team), and the P1 `buff_chr_0034_typhoea_potential_decrease_sheildcd` (decrease_cd −3) only shortens that shield's cooldown. Reference §8 ("Operator HP isn't tracked", [ASSUMED]) already makes a damage-taken shield a no-op in the engine, so omitting both cannot change any hit or timing.
 
 ## Checked, no conflict found
 - Battle skill's team energy: the kit's frame 12 (window 12–18, `ObtainUspInNormalSkill`) matches the timeline of `chr_0034_typhoea_normal_skill_floating_start` (the action sits in the 12–18 section). The kit's override of the compiler's `buff_common_obtain_ultimate_sp` reading is correct.
@@ -41,3 +42,8 @@ Method: the kit compared with `efsim kit-draft chr_0034_typhoea` (compiled from 
 - Logs: the kit's fixtures (dbaee, 0eef, bdf223, d9e5) were not re-run. The hold-out fixtures were not opened.
 - Equipment kits and weapons were not reviewed.
 - Finisher: the kit's ×1.0 on a Staggered enemy is marked as not yet seen in any log, and it was not judged.
+
+## Phase 3 summary (2026-11-12)
+REAL: none · NOT A PROBLEM: F1, F2 · UNCERTAIN: none
+No REAL flag. The phase 2 file checked the kit's numbers and found no conflict; phase 3 found none either.
+New flags: none (the Typhoeus kit tests live in tests/batch4-skills.test.ts and the log snapshots; nothing further was checked beyond the two flags).
