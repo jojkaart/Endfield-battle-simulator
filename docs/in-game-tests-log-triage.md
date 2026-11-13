@@ -21,7 +21,7 @@ cooldowns, dodges, dashes, positions, screen).
 
 ## The engine looks wrong (to check first)
 
-- 25: up to 11 layers of Liino's weapon buff on one operator (1cd1 Typhoeus; a7a7 Arcane 10), against max_stack 4.
+- 25: up to 11 layers of Liino's weapon buff listed on one operator, against max_stack 4. Checked 2026-11-13: the damage fits 4; the log over-lists such buffs (open-problems).
 - 96: Ardelia's Wooly Party shows 7 hits (4e36) and 3 (c3c7), not 11. The owner: the sheep fly at random, so the count varies; the engine's 11 is a ceiling, counted from 23 ultimates in 20 logs: mean 6.1 below P3, 8.6 from P3 (open-problems).
 - 78: none of Lifeng's 7 ultimates has a third hit, even 4–7 s after her combo (d4fb).
 - 69: Chen's P1 is listed only against Rhodagn (7e19, a27b), never in d4fb, de6a, 10df, 8273.

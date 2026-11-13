@@ -317,24 +317,35 @@ engine still has Liino ATK in 1cd1 after 39 s.
 **Next check:** 1cd1 together with the weapon-layer entry below (its
 Typhoeus carries 11 layers just before); 0eef none planned.
 
-## Liino's weapon: more than 4 layers on one teammate (test 25)
+## Liino's weapon: more than 4 layers listed on one teammate (test 25)
 
-**Shows:** buff_wpn_lance_0014_damageup (ATK +0.098 each at L9) listed up
-to 11 times on one hit: 1cd1's Typhoeus 3–11 layers (11 at 39036 ms),
-Arcane 2–5, Ardelia 1; a7a7's Arcane up to 10 (log triage, 2026-11-13).
-The kit caps it at max_stack 4 (SkillPatchTable). In 1cd1 Typhoeus's hits
-there match only with the log's listing (fallback), not the engine's
-reading.
+**Shows:** buff_wpn_lance_0014_damageup listed up to 11–13 times on one
+hit (1cd1's Typhoeus 3–11, a7a7's Arcane up to 10).
 
-**Ruled out:** nothing yet.
+**Settled (haiku + check, 2026-11-13): the damage fits the cap of 4,
+the listing over-counts.** 18 Liino logs, ~4,500 teammates' hits where the
+engine has 4 layers: those listed with 8–12 still match the engine
+exactly at the same rate as those listed with 0–4 (e.g. listed 9: 118 of
+238; listed 3: 360 of 691); 11 real layers would put them ~20% higher.
+Log/engine ratios peak at 1.00, no peak at more layers. The cap is per
+recipient, shared by every heal source (per-source caps would show steps
+past 4; none). Rises come within 4 s of her heals, expiry 20 s after
+(median 19.9 s). The listing errs the other way too: 1d91 lists none and
+fits 4; Ardelia lists 1 in 1cd1 and fits 4. (On 2026-11-13 the lead read
+1cd1's fallback matches as support for 11 layers: wrong, a coincidence of
+the log's other listed buffs.) Other stackingType-11 buffs (wpn_sword_0012,
+cap 2) are listed up to 12 times too: a log habit.
 
-**Still possible:** max_stack not enforced for stackingType 11 (a layer
-per heal, 20 s each); the cap per source skill (battle, combo, ultimate
-heals each up to 4); why the count differs by teammate (which heals reach
-whom).
+**Ruled out:** the listed count in the damage; the buff's own default cap
+(2); a cap of 4 per heal source.
 
-**Next check:** the layer count against her heals over time in 1cd1 and
-a7a7 (small model first).
+**Still possible (not the weapon):** 1cd1's team-wide step at 24.0–24.6 s
+(×0.936 → ×0.820 for Ardelia, Arcane, Typhoeus alike) and Typhoeus ×0.820
+→ ×0.917 at 39.0 s; the engine giving Typhoeus's ultimate hits no layers
+(37974, 41265 ms); c6d8's engine values ×10 off on every hit.
+
+**Next check:** 1cd1's step at 24 s (sonnet); the log check's fallback
+should not trust stackingType-11 listings' counts.
 
 ## Ardelia's Wooly Party: the engine assumes every hit lands (test 96)
 
