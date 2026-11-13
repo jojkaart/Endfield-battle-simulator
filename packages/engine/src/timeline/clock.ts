@@ -84,18 +84,20 @@ export function operatorClockDue(st: TimelineState, operator: string, from: numb
 
 /**
  * Whether the enemy's control-immune (the game's tag 188749032, which skips a control status's freeze: Tangtang's
- * OLDEN STARE, Si's Immobilization). No table gives the tag: the scenario's target says, or else a Boss (rank 2,
- * EnemyTemplateDisplayInfoTable displayType) is. b7b3762d5da8: Arcane's two Cryo bursts from 7150 ms land at
- * 10910 ms, during Tangtang's stare on Rhodagn, when the ultimates' time stops alone had them due (frozen, the replay
- * held them to 17.6 s); c3c735dbb022 (Chiliarch) +7.9 → +4.7% with it. In-game test 37 asks.
+ * OLDEN STARE, Si's Immobilization; the freezing operator's own debuffs on it are still held: actions.ts runTriggers).
+ * No table gives the tag (only Tangtang's and Si's buff files carry it, no enemy): the scenario's target says, or else
+ * a Boss (rank 2, EnemyTemplateDisplayInfoTable displayType) is. 4a64e58e75ad (eny_0134): Si's freeze holding Arcane's
+ * debuffs halves Arcane's plain matches (64 → 32); b7b3762d5da8 (Rhodagn, Tangtang's stare) is the same either way
+ * since Arts Bursts run on their operator's clock. In-game tests 37 and 104.
  */
 export function controlImmune(ctx: TimelineContext): boolean {
   return ctx.scenario.target.controlImmune ?? ctx.data.enemies[ctx.scenario.target.enemy]?.rank === 2;
 }
 
 /**
- * The enemy's own clock after `start` (its statuses, inflictions, Vulnerable, physical and control statuses, debuffs on
- * it, its stagger, its actions, the end of a freeze: TimelineState.enemyFrozenUntil) runs `n` frames later.
+ * The enemy's own clock after `start` (its statuses, inflictions, Vulnerable, physical and control statuses, its
+ * stagger, its actions, the end of a freeze: TimelineState.enemyFrozenUntil) runs `n` frames later. Not the debuffs
+ * on it (enemy-target buffs): shiftDebuffs.
  */
 export function shiftEnemy(st: TimelineState, start: number, n: number): TimelineState {
   if (n <= 0) return st;
@@ -116,12 +118,21 @@ export function shiftEnemy(st: TimelineState, start: number, n: number): Timelin
         ...(x.appliedAt <= start && x.expiresAt > start ? { appliedAt: x.appliedAt + n } : {}),
       })),
     },
-    buffs: st.buffs.map((b) => (b.target === "enemy" ? shiftBuff(b, start, n) : b)),
     stagger: st.stagger.until !== null ? { ...st.stagger, until: later(st.stagger.until) } : st.stagger,
     // A freeze running at `start` ends that much later (a freeze that overlaps it then counts what it adds: runTriggers).
     enemyFrozenUntil: later(st.enemyFrozenUntil),
     scheduled: shiftClock(st.scheduled, (c) => c === "enemy", start, n),
   };
+}
+
+/**
+ * The debuffs on the enemy (enemy-target buffs) after `start`, all or only `owner`'s, end `n` frames later. Every buff
+ * has an owner (the operator whose kit, weapon or gear set applied it: buffs.ts ActiveBuff.owner), so none is left
+ * undecided.
+ */
+export function shiftDebuffs(st: TimelineState, start: number, n: number, owner?: string): TimelineState {
+  if (n <= 0) return st;
+  return { ...st, buffs: st.buffs.map((b) => (b.target === "enemy" && (owner === undefined || b.owner === owner) ? shiftBuff(b, start, n) : b)) };
 }
 
 function shiftBuff(b: ActiveBuff, start: number, n: number): ActiveBuff {
@@ -136,7 +147,8 @@ function shiftWorld(st: TimelineState, start: number, n: number): TimelineState 
   const e = shiftEnemy(st, start, n);
   return {
     ...e,
-    buffs: e.buffs.map((b) => (b.target === "enemy" ? b : shiftBuff(b, start, n))),
+    buffs: e.buffs.map((b) => shiftBuff(b, start, n)),
+    enemyFrozenBy: Object.fromEntries(Object.entries(st.enemyFrozenBy).map(([k, f]) => [k, later(f)])),
     scheduled: shiftClock(e.scheduled, (c) => c === "world", start, n),
     comboWindow: Object.fromEntries(Object.entries(st.comboWindow).map(([k, w]) => [k, { ...w, until: later(w.until) }])),
     energyBlockedUntil: Object.fromEntries(Object.entries(st.energyBlockedUntil).map(([k, f]) => [k, later(f)])),

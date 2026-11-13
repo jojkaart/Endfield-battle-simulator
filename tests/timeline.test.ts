@@ -1259,7 +1259,8 @@ describe("timeline: what ends with a cast, cast blocks, mid-air, control immunit
     };
     expect(heat(false)).toBe(630);
     expect(heat(true)).toBe(600);
-    // Unsaid, a Boss (rank 2: Rhodagn) is control-immune (b7b3762d5da8's Cryo bursts during Tangtang's stare).
+    // Unsaid, a Boss (rank 2: Rhodagn) is control-immune (4a64e58e75ad: Si's freeze holding Arcane's debuffs on
+    // eny_0134 halves Arcane's plain matches; only the freezer's own debuffs are held there).
     expect(data.enemies["eny_0051_rodin"]?.rank).toBe(2);
     expect(heat(undefined)).toBe(600);
   });
@@ -1382,6 +1383,22 @@ describe("timeline: delays under Haste, freezes with before-damage triggers", ()
     const plain = expiry([]);
     expect(plain).toBe(6 + 150 + 30);
     expect(expiry([{ id: "bd", on: { event: "control" }, by: "self", beforeDamage: true, do: [] }])).toBe(plain);
+  });
+
+  it("a freeze holds every debuff on the enemy; on a control-immune one only the freezing operator's (actions.ts runTriggers)", () => {
+    const debuff: KitBuff = { id: "debuff", label: "debuff", target: "enemy", duration: 5, modifiers: [] };
+    const skills = kit.skills.map((s) => (s.skillId === L + "attack1" ? { ...s, hits: s.hits.map((h) => ({ ...h, applies: [{ kind: "control" as const, status: "immobilization", seconds: 1, freezes: true }], buffs: [{ buff: "debuff" }] })) } : s));
+    const g: GameData = { ...data, kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills, buffs: [...kit.buffs, debuff] } } } };
+    // Another operator's debuff, already on the enemy (b6aa15281db4: Xaihi's cryo_fragility under Si's freeze).
+    const other = { id: "other", owner: "someone_else", target: "enemy" as const, appliedAt: 0, expiresAt: 300, modifiers: [] };
+    const ends = (controlImmune: boolean) => {
+      const ctx = createContext(g, { ...scenario([]), target: { enemy: "eny_0051_rodin", level: 90, controlImmune } });
+      const s = advance(ctx, apply(ctx, { ...init(ctx), buffs: [other] }, { operator: op, skill: L + "attack1" }), 10);
+      return [s.buffs.find((b) => b.id === "debuff")?.expiresAt, s.buffs.find((b) => b.id === "other")?.expiresAt];
+    };
+    expect(ends(false)).toEqual([6 + 150 + 30, 330]);
+    // 4a64e58e75ad (eny_0134, a Boss): Si's freeze holding Arcane's will_burst too halves Arcane's plain matches.
+    expect(ends(true)).toEqual([6 + 150 + 30, 300]);
   });
 });
 

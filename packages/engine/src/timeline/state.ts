@@ -379,6 +379,8 @@ export interface TimelineState {
   readonly link: readonly number[];
   /** Until when a control status (Si's Immobilization) freezes the enemy's own clock. */
   readonly enemyFrozenUntil: number;
+  /** Per operator: until when a freeze of theirs holds their own debuffs on a control-immune enemy (actions.ts runTriggers). */
+  readonly enemyFrozenBy: Readonly<Record<string, number>>;
   /** The enemy's stagger: its stagger HP left, until when it's Staggered, and whether this stagger's finisher is used. */
   readonly stagger: { readonly poise: number; readonly until: number | null; readonly finisherUsed: boolean };
   /**

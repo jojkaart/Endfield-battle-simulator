@@ -872,11 +872,19 @@ The log check places a delayed landing by its damage's time
 (logcasts.ts `loggedFrames`, `joinDelayed`: the latest shot without its
 burst, within its frame plus 1 s of the enemy's time).
 **Freezes**: a control status with `freezes` (Si's Immobilization,
-Tangtang's OLDEN STARE) stops the enemy's own clock, unless the enemy is
-control-immune (the data's tag 188749032, skipping the freeze). No table
-gives the tag; the scenario's `target.controlImmune` says, else a Boss
-(rank 2) is (clock.ts `controlImmune`; b7b3's Cryo bursts during the stare
-on Rhodagn; in-game test 104).
+Tangtang's OLDEN STARE, Rossi's ultimate) stops the enemy's own clock and
+every operator's debuffs on it, unless the enemy is control-immune (the
+data's tag 188749032, skipping the freeze). On a control-immune enemy it
+still holds the freezing operator's own debuffs (each buff's `owner`:
+Si's Artful Intent, Jade Vessel and her weapon's; Tangtang's for her
+stare), not the others'. No table gives the tag; the scenario's
+`target.controlImmune` says, else a Boss (rank 2) is (clock.ts
+`controlImmune`, actions.ts `runTriggers`). The logs: on non-bosses
+others' debuffs are held (b6aa: Xaihi's cryo_fragility under Si's freeze;
+489c: Arcane's will_burst under Rossi's), on bosses they aren't (4a64:
+holding Arcane's halves her plain matches), while Si's Artful Intent ends
+on bosses fit only with hers held (abfd, c3c7, 0c14); in-game tests 37
+and 104.
 
 ### Skill timing
 
