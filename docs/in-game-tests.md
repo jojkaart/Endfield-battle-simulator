@@ -1,5 +1,7 @@
 # In-game tests
 
+Which of these the logs could decide instead: [in-game-tests-log-triage.md](in-game-tests-log-triage.md) (2026-11-13).
+
 Tests the owner could run while playing, to settle questions only the game
 can answer. Each should be simple and take a few minutes. Claude keeps this
 list current and mentions new **ready** tests to the owner; results go in

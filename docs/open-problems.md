@@ -299,6 +299,25 @@ engine still has Liino ATK in 1cd1 after 39 s.
 **Next check:** what separates the logs with Cosmovoice's buffs from those
 without (sonnet).
 
+## Liino's weapon: more than 4 layers on one teammate (test 25)
+
+**Shows:** buff_wpn_lance_0014_damageup (ATK +0.098 each at L9) listed up
+to 11 times on one hit: 1cd1's Typhoeus 3–11 layers (11 at 39036 ms),
+Arcane 2–5, Ardelia 1; a7a7's Arcane up to 10 (log triage, 2026-11-13).
+The kit caps it at max_stack 4 (SkillPatchTable). In 1cd1 Typhoeus's hits
+there match only with the log's listing (fallback), not the engine's
+reading.
+
+**Ruled out:** nothing yet.
+
+**Still possible:** max_stack not enforced for stackingType 11 (a layer
+per heal, 20 s each); the cap per source skill (battle, combo, ultimate
+heals each up to 4); why the count differs by teammate (which heals reach
+whom).
+
+**Next check:** the layer count against her heals over time in 1cd1 and
+a7a7 (small model first).
+
 ## Liino's volley doubles in 1d91
 
 **Shows:** 442 at 1990 ms, 886 (exactly 2×) at 13713 ms, later 985, 1152;
