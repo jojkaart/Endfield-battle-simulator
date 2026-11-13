@@ -635,6 +635,16 @@ Estella has only 2 logs (no more candidates in her profile). Single-
 target stages so far: Towers 15, 16, 19; Hard 2, 15, 27, 33; the Rhodagn
 rush and dungeon 2's rushes 3 and 4.
 
+Round three (2026-11-13, the owner: logs with Ardelia's ultimate): her
+ZMDLogs profile, 56 exports and 18 details screened (3.5 s apart), 23
+ultimates counted for test 96 (open-problems, Wooly Party); 6 imported
+that pass the rules above (fixtures/pending), 2 drawn as hold-outs
+(random.seed(20261113)) before any check was read. First checks of the 4
+development ones (total damage error): +20.9, −8.9, +45.4, +21.8%, the
+engine high in three (Ardelia's 11 sheep hits a part of it). New
+baseline with them: development plain 36.1%, mismatch 19.3%, mean
+|damage error| 22.1%; hold-out 44.1%, 6.2%, 17.7%.
+
 ## The screened logs, first rounds (2026-11-11)
 
 Baseline before any change (development 11 logs / hold-out 6): plain
