@@ -227,7 +227,16 @@ level 12 below P2: 0.30, 0.33, 0.36, 0.39, 0.42 for 0–4 stacks (hits ×1.30
 … ×1.42). From P2: 0.36, 0.42, 0.48, 0.54, 0.54. A 0.48 at 3 stacks from
 P2 would mean the data's check is "fewer than 3", not "3 or fewer".
 
-### 105. Arcane on the mode line: INT's cooldown with WILL's skills? (ready, if you have Arcane with Type 42: Solemn Phalanx; higher priority: a faster WILL rotation)
+### 105. Arcane on the mode line: INT's cooldown with WILL's skills? (answered, 2026-11-13: no; 0206 is game 1.5)
+
+**Answered (the owner, game 1.6):** 0206's exact loadout shows Intellect
+472, Will 473 (the engine's 472.44 / 473.50), WILL mode, combo cooldown
+18 s on the display. 0206 is the only game-1.5 log of hers (2026-10-04,
+parser v57); every game-1.6 WILL gap is 16.9 s or more. So its 12.15 s
+is game 1.5 (a shorter WILL cooldown, or the talent's cut in both modes
+then). Still untested: a whole-parts tie (b6aa's 431.44 / 431.50) without
+the Qingbo set, if one check floors and the other doesn't; low priority.
+
 
 **Why:** 0206's Arcane had INT's 12 s combo cooldown while her skills ran
 in WILL (open-problems, "Arcane's Array Arcana on a knife edge"). The game
@@ -252,7 +261,7 @@ ultimate, a Susceptibility icon on the enemy (WILL) or Arts Amp on her
 (INT).
 **Reply, e.g.:** `105: 0206 copy, 472/473, toast WILL, cooldown 12 s, Susceptibility`.
 
-### 13. Arcane's combo cooldown in WILL mode (decided by the logs, 2026-11-13: 18 s as the data; 0206 explained)
+### 13. Arcane's combo cooldown in WILL mode (decided, 2026-11-13: 18 s as the data; confirmed in game by the owner, test 105; 0206 is game 1.5)
 
 **Decided (haiku over every operator's combo gaps, then a check):** no
 common offset: clean gaps sit 0.1–0.5 s above the cooldown for nine

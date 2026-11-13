@@ -503,37 +503,24 @@ holding her own debuffs (b7b3 doesn't tell).
 
 **Next check:** in-game test 104 (does a boss visibly freeze?) and 37.
 
-## Arcane's Array Arcana on a knife edge (0206, b6aa)
+## Arcane's Array Arcana on a knife edge (0206, b6aa): closed 2026-11-13
 
-**Shows:** 0206's Arcane (Intellect 472.4, Will 473.5 by our panel) has
-a 12.15 s combo gap: INT's cooldown (12 s), though her ultimate's
-Susceptibility shows WILL in the same fight. b6aa is closer still (0.1
-points). Clean WILL gaps elsewhere: 18 s as the data.
+**Shows:** 0206's Arcane (Intellect 472.44, Will 473.50) had a 12.15 s
+combo gap, INT's 12 s, with WILL's Susceptibility.
 
-**Ruled out:** a common offset in logged combo gaps (clean gaps +0.1–0.5 s
-over the cooldown, nine operators); a cooldown food (fits worse); a
-teammate's cut (none in the team's data); Si's ultimate (no Si).
+**Settled:** 0206 is from game 1.5 (2026-10-04, parser v57), the only
+pre-1.6 log of hers; the owner copied its exact loadout in game 1.6:
+Intellect 472, Will 473, WILL mode, combo cooldown 18 s. Every game-1.6
+WILL gap is 16.9 s or more. The engine (1.6) is right. Possibly a 1.5
+bug fixed in 1.6 (the owner). The game does
+decide her mode in two places (the skill condition table's lizhiyan_wisd
+for the talent's cut and the skill set; her passive buff's CompareDeckAttr
+for her skills' branches), but nothing now shows them disagreeing; the
+stat-panel warning added for it was removed.
 
-**Found in the data (2026-11-13, the owner's idea):** the game decides
-her mode in two places. The talent's cooldown cut and the skill set shown
-use the skill condition table (lizhiyan_wisd: Intellect ≥ Will, condType
-14010 on "deck" attributes; its toast floors both); her skills' in-fight
-branches (the WILL Susceptibility, the combo's and battle skill's
-branches, the ultimate's P5 cut) read EntityBB_wisd_greater_will, set by
-her passive buff's CompareDeckAttr (compare 3, operand types 2 and 3). If
-the two read the attributes slightly differently, a build on the line can
-be INT for the cooldown and WILL for the effects: 0206 exactly. What
-differs isn't in the data. The engine uses one mode; since 2026-11-13 the
-stat panel warns when the two attributes are within 2 points
-(stats.ts KNIFE_EDGE_POINTS; 0206 1.1, b6aa 0.1).
-
-**Still possible:** what the two checks read differently (sources,
-rounding, when); our panel a point or two off for her Intellect or Will
-(gear rolls, rounding).
-
-**Next check:** 0206's panel line by line (which source could add ~1 point
-of Intellect); her other mode-dependent effects in 0206 around 81–93 s.
-Also open: the Qingbo / Frontiers ×0.85 on her (69e7, b6aa show none).
+**Still possible (low priority):** a whole-parts tie (b6aa: 431.44 /
+431.50) splitting if one check floors; 3f78's and e989's gaps ~1 s under
+18 s (no cut source in the data).
 
 ## Liino's volley doubles in 1d91
 

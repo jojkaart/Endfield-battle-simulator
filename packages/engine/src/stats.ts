@@ -461,23 +461,9 @@ export function computeStats(data: GameData, build: Build, options: StatOptions 
     });
     if (holds) c.add();
   }
-  // A mode decided by comparing two attributes, on a knife edge: the game decides it in two places (a skill condition
-  // for talent effects and the skill set; a passive buff's CompareDeckAttr for in-skill branches), and a build within
-  // KNIFE_EDGE_POINTS can come out differently in each (zmdlogs-0206142f9134: Arcane at Intellect 472.4, Will 473.5
-  // by this panel has INT's combo cooldown and WILL's Susceptibility; docs/open-problems.md "Arcane's Array Arcana").
-  for (const [id, p] of Object.entries(meaning)) {
-    if (!("attrAtLeast" in p)) continue;
-    const [a, b] = p.attrAtLeast;
-    const va = panel.attrs[a]?.total ?? 0;
-    const vb = panel.attrs[b]?.total ?? 0;
-    if (Math.abs(va - vb) < KNIFE_EDGE_POINTS)
-      warnings.push(`${op.name}'s ${id}: ${panel.attrs[a]?.name ?? a} ${va.toFixed(1)} against ${panel.attrs[b]?.name ?? b} ${vb.toFixed(1)}, within ${KNIFE_EDGE_POINTS} points: the game may decide the mode differently for talent effects and for skills (the engine uses one)`);
-  }
   return panel;
 }
 
-/** How close two attributes a mode compares may be before the panel warns (Arcane in zmdlogs-0206142f9134: 1.1). */
-export const KNIFE_EDGE_POINTS = 2;
 
 /** The gear sets a build has enough pieces of for their set effect, by set ID. */
 export function activeGearSets(data: GameData, build: Build): { readonly set: GearSetData; readonly count: number }[] {
