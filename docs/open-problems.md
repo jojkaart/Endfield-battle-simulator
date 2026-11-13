@@ -251,6 +251,29 @@ which would explain why skipping the events loses teammates' matches.
 what the volleys and teammates' matches need; in-game test 103 only for
 what's left.
 
+## Liino's stance ATK ends early in 0eef and 1cd1 (the 5 s linger)
+
+**Shows:** the team ATK of Vocalist Stance leaves teammates' hits long
+before the stance's 60 s, with no End Stance in the log (no log has one):
+0eef at 8739 ms (cast ~760 ms; beats at 760 and 4187 only, her combo at
+7570), and the next teammates' hits are ×0.934 of the engine's (it keeps
+the stance, or its 5 s linger); 1cd1 at 34388 ms (last beat 34285; her
+ultimate events at 37948 and 41265), and from +4.6 s on Typhoeus ×0.917
+and Arcane ×0.839 of the engine's, with no Liino ATK listed.
+
+**Ruled out:** players cancelling and recasting the stance for its ATK
+(the owner's point, 2026-11-13: no log has an End Stance; the logged
+"presses" are beats). The data's linger (`finish_duration` 5 s) doesn't
+add to a new stance's ATK, so there's nothing to gain from it.
+
+**Still possible:** what ends the stance there (her combo in 0eef, the
+ultimate in 1cd1, a stage effect, her death); whether the 5 s linger
+exists (0eef: if End Stance-like, the ATK went at once, against it; no
+other log has teammates' hits in the 5 s after a stance's end); why the
+engine still has Liino ATK in 1cd1 after 39 s.
+
+**Next check:** a diagnosis of these two endings (small model first).
+
 ## Liino's volley doubles in 1d91
 
 **Shows:** 442 at 1990 ms, 886 (exactly 2×) at 13713 ms, later 985, 1152;
