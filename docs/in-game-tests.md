@@ -1814,6 +1814,12 @@ only about 6, her ultimate is about 45% lower.
 **How:** below P3, record her ultimate on a large dummy with a phone and
 count the Wooly Party damage numbers: 10–11 (engine: 11) or clearly fewer.
 A log settles it better.
+**Answered in part (the owner, 2026-11-13):** the sheep spew out at
+random, not aimed at the enemy, so the count varies cast to cast. The
+logs agree: 7 hits (4e36, P1, a disk enemy) and 3 (c3c7, P2, Chiliarch),
+the only two ultimates of hers that hit in our logs. So the engine's 11
+is the most, not what to expect; what to expect needs more casts (more
+Ardelia logs, or counts from several of your casts).
 
 ### 97. Dive attacks: their pace and what a jump can do (ready, any operator; higher priority: the search now uses dives)
 

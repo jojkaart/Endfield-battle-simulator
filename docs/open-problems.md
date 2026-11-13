@@ -336,6 +336,22 @@ whom).
 **Next check:** the layer count against her heals over time in 1cd1 and
 a7a7 (small model first).
 
+## Ardelia's Wooly Party: the engine assumes every hit lands (test 96)
+
+**Shows:** 7 sheep hits in 4e36 and 3 in c3c7 (her only ultimates that
+hit in our logs), against the engine's 11 below P3 (14 from P3), which
+assume the 0.3 s per-enemy cap is always reached.
+
+**Ruled out:** a fixed count: the sheep fly at random, not aimed (the
+owner, 2026-11-13), so the count varies cast to cast.
+
+**Still possible:** an expected count (mean of more casts; enemy size may
+matter), or the count as a random outcome in rolled battles (as crits
+are).
+
+**Next check:** more Ardelia ultimates (logs to import, or the owner's
+counts); low priority (not a favourite).
+
 ## Liino's volley doubles in 1d91
 
 **Shows:** 442 at 1990 ms, 886 (exactly 2×) at 13713 ms, later 985, 1152;
