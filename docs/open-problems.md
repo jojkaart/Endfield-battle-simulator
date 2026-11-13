@@ -557,8 +557,21 @@ during others' time stops and slow-downs (old rule K2: about 1400 SP of the
 shortfall, 7 logs). SP for basic-attack hits on which the log shows poise
 (the replay's controlled operator already matches the log's).
 
+**Ruled out (2026-11-13, sonnet + check):** teammates' Final Strike SP as
+the main gap. In the data most operators' Final Strike SP has no
+controlled gate (atbOnlyMainChar false, no branch), and the engine already
+grants it to teammates; only Laevatain, Ardelia, Zhuang Fangyi, Antal and
+Tangtang gate it (Tangtang's attack5_projhit: the ObtainCostAction inside
+an IfElse on CheckMainCharacterCondition, so the kits' `if controlled`
+are right though the flag says false). Granting all of it anyway: 10 → 7
+of 15 development logs short, 1808 → 1287 SP (counted at each replayed
+cast).
+
 **Still possible:** Liino's "presses" in Vocalist Stance are her
-stance's beats, logged under the battle skill (the owner; about 900 SP); Purrchena's block refund (+20 at her counter, about 240
+stance's beats, logged under the battle skill (the owner; about 900 SP;
+being implemented); teammates' basic attacks the replay doesn't land
+(their Final Strikes' SP; the earlier probe granted SP at every logged
+Final Strike); Purrchena's block refund (+20 at her counter, about 240
 SP, more if repeated blocks count); teammates' Final Strikes give SP too
 (alone 1497 SP at 0.5 s; with the others only db87 and 04d4 stay short);
 other hitless presses free (Si, Laevatain in db87: dubious); SP at the
