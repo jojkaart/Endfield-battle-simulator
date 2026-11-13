@@ -349,8 +349,13 @@ owner, 2026-11-13), so the count varies cast to cast.
 matter), or the count as a random outcome in rolled battles (as crits
 are).
 
+**Impact:** small. She's a support (the owner): teams run her for her
+effects on others, not her own damage. What it can move: the search
+valuing her ultimate's damage too high and timing it for that rather than
+for her support.
+
 **Next check:** more Ardelia ultimates (logs to import, or the owner's
-counts); low priority (not a favourite).
+counts); low priority.
 
 ## Liino's volley doubles in 1d91
 
