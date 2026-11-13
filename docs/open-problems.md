@@ -222,14 +222,29 @@ needed, the priority-key replacement of Jade Vessel's buff.
 1d91 +113%, 1cd1 +96%, a7a7 +59% for Liino.
 
 **Ruled out:** replaying them as full battle skills (60 projectiles the
-log hasn't); skipping them (a7a7 plain 322 → 261: two Corrosions move,
-teammates mismatch).
+log hasn't); skipping them outright (a7a7 plain 322 → 261: two Corrosions
+move, teammates mismatch); players pressing every 3–4 s (the owner, who
+plays her, 2026-11-13: a press in the stance is rare).
 
-**Still possible:** End Stance then a restart (3 s cooldown); the log
-recording something else as presses (the heal soundwaves, also every 3 s);
-a press teammates' effects count as a battle-skill cast.
+**Leading reading (the owner, 2026-11-13):** they are the stance's beats,
+which the log records under the battle skill's key. The stance's
+`music_trigger` is 3 s; the logged gaps are 3.0 s at the shortest
+(10th percentile 3032 ms, median about 3.5 s: beats are held by others'
+time stops, the log's times aren't), and the first "press" of a run is
+the real cast. The replay reads each later one as a press (End Stance or
+a recast) and charges SP for some: about 900 SP of the SP shortfall (Team
+SP, below).
 
-**Next check:** in-game test 103 (ready).
+**Still possible:** what a beat does besides the heal: the owner says it
+damages enemies in range too, but the logs show no beat damage event
+(Liino's only stance damage is the volley, normal_skill_projhit_hit) and
+the data's Vocalist beat has only a HealAction; whether a beat re-opens
+the volley window (`volley_window_open`, frame 45 of the battle skill),
+which would explain why skipping the events loses teammates' matches.
+
+**Next check:** replay these events as beats (no cast, no SP) and see
+what the volleys and teammates' matches need; in-game test 103 only for
+what's left.
 
 ## Liino's volley doubles in 1d91
 
@@ -421,8 +436,8 @@ during others' time stops and slow-downs (old rule K2: about 1400 SP of the
 shortfall, 7 logs). SP for basic-attack hits on which the log shows poise
 (the replay's controlled operator already matches the log's).
 
-**Still possible:** Liino's presses in Vocalist Stance cost no SP (about
-900 SP; test 103); Purrchena's block refund (+20 at her counter, about 240
+**Still possible:** Liino's "presses" in Vocalist Stance are her
+stance's beats, logged under the battle skill (the owner; about 900 SP); Purrchena's block refund (+20 at her counter, about 240
 SP, more if repeated blocks count); teammates' Final Strikes give SP too
 (alone 1497 SP at 0.5 s; with the others only db87 and 04d4 stay short);
 other hitless presses free (Si, Laevatain in db87: dubious); SP at the

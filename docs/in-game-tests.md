@@ -1966,6 +1966,11 @@ how long? (b) Press it again as soon as you can: does a new stance start,
 with SP spent and the opening burst of six projectiles? (c) If you play
 her yourself: do you press the battle skill during the stance, and why?
 **Reply, e.g.:** `103: a ends stance, ATK stays ~5 s; b restarts, 100 SP, projectiles yes`.
+**Partly answered (the owner, 2026-11-13):** (c) a press in the stance
+is rare; the logged "presses" are most likely the stance's beats (every
+3 s, a team heal, and the owner says they damage enemies in range). Still
+useful: (a), and whether a beat's damage shows as its own number on the
+enemy.
 
 ### 104. Do bosses ignore freezes? (ready, if you have Si or Tangtang; higher priority: every boss fight with a freeze)
 
