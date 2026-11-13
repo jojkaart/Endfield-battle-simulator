@@ -177,3 +177,13 @@ claims to check before they change the engine.
   fits (d9e5 at 9605 ms: 5 shots, 4 rains and 1 empowered rain); dbae and
   d9e5's second end too soon; 7b4e's empowered rain lands at +6.7 s, past
   a 5 s window counted from the ultimate (where the window starts is open).
+- **20 Laevatain's multipliers: decided** (the data's reading; see test 20).
+- **22 Scorching Heart's 20 s: not decided, the logs conflict.** 0206 and
+  458b end it before an extension by the empowered extra or the explosion
+  would (against a restart on a capped gain); later in 0206 the log lists
+  it over 89.5–102 s and 110–117 s where the replay has it off, ending
+  about 20 s after empowered extras (for a restart). The in-game test stays.
+- **21 Twilight with combos, 17 Twilight's length: not decided.** e989 has
+  no upper bracket; 458b's brackets (33.7–34.1 s and 28.7–29.2 s after the
+  ultimate) are far above the model's ~19–23 s, not yet explained by
+  teammates' time stops or other pauses.
