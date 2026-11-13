@@ -269,13 +269,25 @@ add to a new stance's ATK, so there's nothing to gain from it.
 **Ruled out (also):** her combo ending the stance (its description: it
 doesn't cancel the stance, the owner 2026-11-13; the kit resumes it).
 
-**Still possible:** what ends the stance there (the ultimate in 1cd1, a
-stage effect, her death, a buff the log stops listing while it's on); whether the 5 s linger
+**Found (haiku, 2026-11-13):** 1cd1's stance ends at her ultimate (cast
+37948 ms, its projectiles 38725–39580 are real damage; the ultimate leaves
+no linger), so the ATK going at 37974 fits. But Cosmovoice's ATK and Amp
+never show on anyone (no beats either; dbae logs them, same parser), and
+teammates' hits are a steady ×0.917 / ×0.838, as without them. Both
+endings come in the fight's last seconds: 0eef ends at 10030 ms (ATK gone
+1.3 s before), 1cd1 at 42702 ms (4.7 s after). The ATK auras are team-wide
+(AuraAction auraType 1, no radius; only her talent's shelter has 5.5–6 m),
+so distance isn't it.
+
+**Still possible:** an end-of-fight effect (team buffs dropped or not
+started in the last seconds); Liino down or off the field (HP and swaps
+aren't logged); the 41265 ultimate event being a beat; whether the 5 s linger
 exists (0eef: if End Stance-like, the ATK went at once, against it; no
 other log has teammates' hits in the 5 s after a stance's end); why the
 engine still has Liino ATK in 1cd1 after 39 s.
 
-**Next check:** a diagnosis of these two endings (small model first).
+**Next check:** other logs' last seconds: do team buffs the engine keeps
+vanish from the log and the damage with them (sonnet).
 
 ## Liino's volley doubles in 1d91
 
