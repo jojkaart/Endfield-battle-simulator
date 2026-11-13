@@ -244,6 +244,18 @@ engine has): 0206 has no Si, and in 3f78 and e989 Arcane is in slot 3
 Arcane; between the two presses (81.1 and 93.3 s) Antal's combos come
 right after each of hers (81.5, 93.7 s), Camille's and Laevatain's at
 89.5–90.4 s; her ultimate (sequence 2) at 78.9 s, before the first.
+From the battle's detail (2026-11-13; 0206 is an older import without
+casts): her presses at 3.4, 30.3, 52.2, 81.0, 93.1, 110.4 s (the entries
+6–7 s after each are her Imprisonment's end), so gaps 26.8, 21.9, 28.8,
+**12.15** and **17.3** s, on the log's clock (real battle time, running
+through time stops, like the engine's cooldowns: a stop can only lengthen
+a real gap). Nothing in the team's data cuts another operator's
+cooldown: the only cooldown action is her own ultimate 2's (WILL and
+cd_minus > 0, i.e. P5; she's P0). Builds: Laevatain P2, Forgeborn Scathe
+9/9/9, Hot Work ×3 + LYNX Slab; Camille P2, Blessing of Lustrous Carmine
+9/9/4, Frontiers ×3 + Redeemer Seal; Antal P5, Detonation Unit 9/9/4,
+Qingbo ×3 + Redeemer Seal; Arcane P0, Type 42: Solemn Phalanx 9/9/4,
+Eternal Xiranite ×4. Enemy: Bonekrusher Ballista (several enemies).
 
 **Why:** a talent shortens her combo cooldown by 6 s only in INT mode
 (data: `activeCondition lizhiyan_wisd`); the engine now follows the data
