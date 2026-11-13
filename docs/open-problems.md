@@ -444,7 +444,22 @@ bursts?); Tangtang's stare differing from Si's Immobilization; the control
 -immune tag 188749032 (only in Tangtang's and Si's buff files, no enemy
 carries it in the data).
 
-**Next check:** on 4a64 and 0c14, which timers the freeze holds (sonnet).
+**Found (sonnet, 2026-11-13):** in the engine only the enemy-target buffs
+matter (statuses, Corrosion, inflictions, Vulnerable, Stagger, enemy
+actions: freezing them or not changes no verdict). On 4a64, freezing only
+Si's own enemy debuffs (Artful Intent, her weapon's enemy_vul) keeps every
+match (Si 37, Arcane 64 plain); freezing Arcane's (will_burst with another
+of hers) costs the 64 → 32. The log agrees: her weapon's will_atk is listed
+51313–54731 ms only, the frozen engine keeps it to 56.9 s. Si's Artful
+Intent ends fit with only it frozen (abfd −318 / +7 / −174; c3c7 0 / −4 /
+−15 ms).
+
+**Proposed rule:** a freeze holds the freezing operator's own debuffs on
+the enemy (and the enemy's own statuses, which no verdict tells apart),
+not other operators' debuffs; bosses not immune. Being implemented and
+measured (opus); Tangtang's stare untested.
+
+**Next check:** the rule on every log (development and hold-out).
 
 ## Liino's volley doubles in 1d91
 
