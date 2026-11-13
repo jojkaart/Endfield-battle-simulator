@@ -367,6 +367,20 @@ for her support.
 **Next check:** more Ardelia ultimates (logs to import, or the owner's
 counts); low priority.
 
+## db87: ×1.3 on Laevatain's hits under her sword buff
+
+**Shows:** the 8 Laevatain hits carrying buff_wpn_sword_0006_valid
+(listed 1.2) are ×1.30 of the engine's in both readings of her battle
+skill (test 20); her two hits without it match exactly; e989 lists the
+buff at 2.1 and fits exactly.
+
+**Ruled out:** her battle skill's multipliers (both readings carry it).
+
+**Still possible:** the buff's value or stacks in db87 (listed 1.2 against
+what the engine applies), another buff on the same hits, db87's build.
+
+**Next check:** the sword buff's value and stacks in db87 against e989.
+
 ## Liino's volley doubles in 1d91
 
 **Shows:** 442 at 1990 ms, 886 (exactly 2×) at 13713 ms, later 985, 1152;

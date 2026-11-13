@@ -400,7 +400,19 @@ the Haste begins and time it with a stopwatch against one without Haste:
 about 1.5 s shorter if Haste speeds up cooldowns too (the engine says no);
 at 15% the difference (0.75 s) is too small to see.
 
-### 20. Laevatain's battle-skill multipliers (ready, if you have Laevatain at P1+)
+### 20. Laevatain's battle-skill multipliers (decided by the logs, 2026-11-13: the owner to confirm the change)
+
+**Decided by the logs (sonnet, 9 logs, each hit under both readings):**
+the data's reading fits, the kit's (Zero Sanity's game-~1.1 values) none.
+Enhanced hits 1–2 without `ratio`: 12 of 12 exact in e989 (P5), 3440
+(P3), 064b (P2), the kit's ×0.57–0.83. Empowered extra = `atk_scale_3 ×
+ratio`: 6 exact in e989, 3440, 064b, 6339, the kit's ×0.72–0.82. 0206
+fits neither but is nearer the data on hits 1–2 and 6 of 7 extras; 458b
+and 012a are P0 (ratio 1, no difference). db87, which had pointed the
+other way, has a ×1.3 on its 8 hits under buff_wpn_sword_0006_valid in
+both readings (the extra too, which reads `ratio` either way): a separate
+factor. No in-game run needed unless you want to confirm.
+
 
 **Why:** the empowered battle skill's extra hit is her largest hit. The
 data multiplies it by `ratio` (1.2 from P1); Zero Sanity's in-game number

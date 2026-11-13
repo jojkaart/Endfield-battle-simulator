@@ -21,7 +21,9 @@ where an operator's file says so.
   mismatches to 0 (+7.2 → +2.5%), development plain 42.4 → 42.6%,
   hold-out mean |damage error| 18.5 → 18.3%; db87 (P1) −8.1 → −10.6%.
   It breaks Zero Sanity's three in-game values (57552, 19732, 22124),
-  measured at game ~1.1; the logs are 1.6. **The owner's call**: a game
+  measured at game ~1.1; the logs are 1.6. **Decided by the logs 2026-11-13**
+  (in-game test 20: the data's reading fits 18 hits exactly, the kit's none;
+  db87's ×1.3 is a sword buff, both readings). Was **the owner's call**: a game
   change since 1.1, or a log effect. Test 20 decides.
 - **REAL, a fixture not a kit: 1.** 04d4's Catcher weapon isn't level 90
   (her logged weapon skills [3, 2, 3]): at level ~1 every ATK hit fits
