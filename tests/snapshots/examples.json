@@ -1,17 +1,17 @@
 {
  "akekuri-laevatain.scenario.json": {
-  "total": 353360.114,
+  "total": 339202.27,
   "hits": 138,
   "casts": 64,
   "perOperator": {
    "chr_0019_karin": 65618.882,
-   "chr_0016_laevat": 287741.232
+   "chr_0016_laevat": 273583.389
   },
-  "digest": "7b610d05d65b",
+  "digest": "a53a35008e81",
   "windows": [
    "4199b6179a05",
    "96f5535ea637",
-   "422ffb393a6f",
+   "1a8dd75aa766",
    "5448f193417a",
    "c5b51a13cc60"
   ]
@@ -31,17 +31,17 @@
   ]
  },
  "antal-focus.scenario.json": {
-  "total": 683880.161,
+  "total": 670515.857,
   "hits": 169,
   "casts": 90,
   "perOperator": {
    "chr_0023_antal": 118406.608,
    "chr_0013_aglina": 109206.674,
-   "chr_0016_laevat": 456266.88
+   "chr_0016_laevat": 442902.575
   },
-  "digest": "698afa98d4a3",
+  "digest": "b2bcaf0b9ea3",
   "windows": [
-   "b9344550033d",
+   "96d149dc526c",
    "8fea5ad7aefa",
    "39dd68b5e9c5",
    "5a998d550cf3",
@@ -207,30 +207,30 @@
   ]
  },
  "gilberta-gravity-field.scenario.json": {
-  "total": 462977.444,
+  "total": 451447.228,
   "hits": 57,
   "casts": 26,
   "perOperator": {
    "chr_0013_aglina": 62896.28,
-   "chr_0016_laevat": 400081.165
+   "chr_0016_laevat": 388550.949
   },
-  "digest": "de1441977596",
+  "digest": "57523a35aa89",
   "windows": [
-   "b7493375bd24",
+   "16a017be292d",
    "e75f87455823"
   ]
  },
  "laevatain-solo.scenario.json": {
-  "total": 739230.791,
+  "total": 715593.516,
   "hits": 33,
   "casts": 17,
   "perOperator": {
-   "chr_0016_laevat": 739230.791
+   "chr_0016_laevat": 715593.516
   },
-  "digest": "8a29edd70033",
+  "digest": "7a3eece7a165",
   "windows": [
-   "12fe52c73239",
-   "0d245d44af47",
+   "fd341b24c340",
+   "056e92cf86e4",
    "66d2b4451608"
   ]
  },
@@ -264,17 +264,17 @@
   ]
  },
  "liino-laevatain.scenario.json": {
-  "total": 601207.938,
+  "total": 580413.577,
   "hits": 55,
   "casts": 15,
   "perOperator": {
-   "chr_0016_laevat": 499733.838,
+   "chr_0016_laevat": 478939.477,
    "chr_0035_liino": 101474.1
   },
-  "digest": "3903e607d3ef",
+  "digest": "51e0a43ecf0b",
   "windows": [
    "06924876acf4",
-   "9fa4b541a891",
+   "a79396b47fb1",
    "44e694a06457"
   ]
  },
@@ -370,16 +370,16 @@
   ]
  },
  "si-laevatain.scenario.json": {
-  "total": 1068700.286,
+  "total": 1056617.776,
   "hits": 74,
   "casts": 28,
   "perOperator": {
    "chr_0036_jsspsi": 394349.938,
-   "chr_0016_laevat": 674350.348
+   "chr_0016_laevat": 662267.839
   },
-  "digest": "64c3dcf951ed",
+  "digest": "e564c8883e00",
   "windows": [
-   "3c20509ba2d6",
+   "0f9ca2ae2569",
    "46b28fa94f51"
   ]
  },

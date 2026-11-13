@@ -9,7 +9,7 @@ const data = loadGameData();
 describe.each(loadFixtures().filter(({ fixture }) => fixture.expected.damage?.length))("$file", ({ fixture }) => {
   const panel = computeStats(data, fixture.build);
   const kit = data.kits.operators[fixture.build.operator];
-  it.each(fixture.expected.damage ?? [])("$label = $expected", ({ hits, buffs, crit, expected, tolerance }) => {
+  it.each(fixture.expected.damage ?? [])("$label = $expected", ({ hits, buffs, crit, expected, tolerance, superseded }) => {
     let exact = 0;
     const modifiers = (buffs ?? []).flatMap((b) => (typeof b === "string" ? kitBuffModifiers(data, fixture.build, panel, b) : kitBuffModifiers(data, fixture.build, panel, b.buff, b.layers ?? 1)));
     for (const { skill, hit, times } of hits) {
@@ -25,7 +25,8 @@ describe.each(loadFixtures().filter(({ fixture }) => fixture.expected.damage?.le
       });
       exact += result.exact * (times ?? 1);
     }
-    expect(Math.abs(roundDamage(exact) - expected)).toBeLessThanOrEqual(tolerance ?? 0);
+    // A value from an older game version that later evidence supersedes: the engine is checked against the new one.
+    expect(Math.abs(roundDamage(exact) - (superseded?.engine ?? expected))).toBeLessThanOrEqual(superseded ? 0 : (tolerance ?? 0));
   });
 });
 

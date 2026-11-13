@@ -94,7 +94,14 @@
         },
         "crit": { "enum": ["never", "always", "expected"] },
         "expected": { "type": "number" },
-        "tolerance": { "type": "number", "minimum": 0 }
+        "tolerance": { "type": "number", "minimum": 0 },
+        "superseded": {
+          "type": "object",
+          "required": ["engine", "why"],
+          "additionalProperties": false,
+          "description": "The in-game value (`expected`) was measured on an older game version and later evidence supersedes it: the engine is checked against `engine` instead, and `expected` stays for provenance.",
+          "properties": { "engine": { "type": "number" }, "why": { "type": "string" } }
+        }
       }
     }
   }

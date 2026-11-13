@@ -141,9 +141,9 @@ describe("timeline: Zero Sanity's in-game forced Combustion (fixtures/zero-sanit
     options: { crit: "never" },
   });
 
-  it("the fifth battle skill is empowered (57552) and its Combustion ticks for 2608, 7.5 s at P5", () => {
+  it("the fifth battle skill is empowered (Zero Sanity's 57552 at game ~1.1; 46042 by the game-1.6 data and logs, in-game test 20) and its Combustion ticks for 2608, 7.5 s at P5", () => {
     expect(r.casts[3]?.frame ?? Infinity).toBeLessThan(30 * 40);
-    expect(r.hits.filter((h) => h.hitId === "empowered_extra").map((h) => h.damage)).toEqual([57552]);
+    expect(r.hits.filter((h) => h.hitId === "empowered_extra").map((h) => h.damage)).toEqual([46042]);
     const ticks = r.hits.filter((h) => h.skillId === "reaction:combustionTick");
     expect(ticks.map((h) => h.damage)).toEqual(Array.from({ length: 7 }, () => 2608));
   });
