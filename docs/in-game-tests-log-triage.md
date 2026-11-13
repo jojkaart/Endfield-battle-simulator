@@ -153,3 +153,27 @@ cooldowns, dodges, dashes, positions, screen).
 | 102 SP refill | GAME ONLY | SP. |
 | 103 Liino's presses | GAME ONLY | Part a can't be told from beats. |
 | 104 Bosses and freezes | LOGS | See ranked list; Jade Vessel's 30 s end pinned to about 0.35 s. |
+
+## Worked on (2026-11-13, overnight diagnoses)
+
+Small-model findings, with the evidence in the session's scratch notes;
+claims to check before they change the engine.
+
+- **86 Rossi's combo cooldown: not decided.** 12 logs. Shortest gap
+  sequence 1 → sequence 1 with sequence 2 in between 16.85 s (0c14; its
+  sequence 2 hit at +5.99 s), without 25.2–25.6 s (c516, 4e5e). The
+  engine (14 s from the sequence-2 press, about 21 s without) fits only if
+  0c14's sequence 2 was pressed late (≥ 2.85 s after sequence 1); the
+  press time can't be placed from the hits (sequence 1's hit 2 lands 0.6–
+  3.5 s after hit 1, against the kit's frames). Nothing contradicts the
+  engine.
+- **43 Typhoeus's off-field shots: not decided.** 13 logs: four hover shots
+  (about +1.0, 1.6, 2.3, 2.9 s after the battle skill), usually cut by the
+  player's combo; uninterrupted hovers show a fifth shot (6 cases: 1d91
+  ×2, 9c6e, 7b4e ×2, 8318), as the engine has. A burst follows the fifth
+  shot in 4 of 6 (+0.31–0.65 s), against "the fifth is plain", but bursts
+  are paired to shots by time only.
+- **46 Hail of Arrows: not decided.** Where a log is complete, the count
+  fits (d9e5 at 9605 ms: 5 shots, 4 rains and 1 empowered rain); dbae and
+  d9e5's second end too soon; 7b4e's empowered rain lands at +6.7 s, past
+  a 5 s window counted from the ultimate (where the window starts is open).
