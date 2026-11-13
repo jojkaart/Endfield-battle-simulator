@@ -6,6 +6,7 @@ import { EngineError } from "../errors.ts";
 import type { GameData } from "../model.ts";
 import { evaluate } from "../expr.ts";
 import { NO_STATUS } from "../status.ts";
+import { type DamageMoments, hitsMoments } from "../moments.ts";
 import { FPS } from "../units.ts";
 import type { Cast, LandedHit, PendingEnemyAction, PendingHit, ReactionRecord, RotationAction, TimelineContext, TimelineScenario, TimelineState } from "./state.ts";
 import { SP, TIMELINE_ASSUMPTIONS } from "./rules.ts";
@@ -180,6 +181,13 @@ export interface TimelineResult {
   readonly hits: readonly LandedHit[];
   readonly reactions: readonly ReactionRecord[];
   readonly assumptions: readonly string[];
+  /**
+   * This battle's total as a distribution over what's still random in it and changes nothing later (moments.ts
+   * hitsMoments): expected crits' outcomes and random landed counts. Its mean is `total`. With rolled, never or always
+   * crits (and hits a `distribution` battle rolls) all mass is at their values. For the fight's distribution over
+   * what changes later too (dodges, chances, crit-triggered effects) and its true bounds: simulateDistribution.
+   */
+  readonly moments: DamageMoments;
 }
 
 /** Runs a recorded rotation: the simplest driver on the stepping API. */
@@ -208,6 +216,7 @@ export function simulate(data: GameData, scenario: TimelineScenario): TimelineRe
     hits: state.hits,
     reactions: state.reactions,
     assumptions: [...TIMELINE_ASSUMPTIONS, ...(missingFrames ? ["Some hits have no frames in their kit and land at the skill's start."] : [])],
+    moments: { ...hitsMoments(state.hits), mean: total },
   };
 }
 

@@ -14,7 +14,7 @@ import type { CompiledSkill, CompiledValue } from "./skillCompile.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { buffFilePath, isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
 import { buffTagFilter, SHIELD_TAG } from "./buffTags.ts";
-import { Attr, attrFeedsZone, attrModifier, buffAttrHasEffect, buffReach, type BuffCategory, type TriggerOn, type KitBuffModifier, ELEMENTS, predicateRefs, predicateValues, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type KitTrigger, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
+import { Attr, attrFeedsZone, attrModifier, buffAttrHasEffect, buffReach, type BuffCategory, type TriggerOn, type KitBuffModifier, ELEMENTS, predicateRefs, predicateValues, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type KitTrigger, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type LandedCount, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
@@ -50,8 +50,29 @@ interface RawHit {
   /** Which skill-type bonus applies (`none`: no skill type): required on triggered hits; on a skill's hit, an override of the skill's. */
   damageType?: SkillType | "none";
   poiseOnly?: true;
+  landedCount?: LandedCount;
   /** Fields where the kit's value (or its leaving one out) differs from the compiled data's on purpose, each with the reason (kitMatch.ts). */
   dataOverride?: Partial<Record<DataField, string>>;
+}
+
+/**
+ * A random landed count (KitHit.landedCount): a skill's hit with a fixed number of landings, each observed count a
+ * whole number from 0 to them, potentials 1–5; a hit whose landings deal only damage and Stagger (the expected count
+ * scales both: what else a landing did would happen on every planned landing), not alternatives, not detached.
+ */
+function checkLandedCount(h: RawHit, count: ValueExpr, triggered: boolean, where: string): void {
+  const lc = h.landedCount as LandedCount;
+  if (triggered) throw new Error(`${where}: landedCount is for a skill's hit (a cast's landings), not a triggered one`);
+  if (typeof count !== "number") throw new Error(`${where}: landedCount needs a fixed number of landings, not a count that's a value`);
+  const lists: [string, readonly number[]][] = [["counts", lc.counts], ...Object.entries(lc.fromPotential ?? {}).map(([p, c]): [string, readonly number[]] => [`fromPotential ${p}`, c])];
+  for (const p of Object.keys(lc.fromPotential ?? {})) if (!/^[1-5]$/.test(p)) throw new Error(`${where}: landedCount fromPotential ${p} isn't a potential 1–5`);
+  for (const [name, list] of lists) {
+    if (list.length === 0) throw new Error(`${where}: landedCount ${name} is empty`);
+    const bad = list.filter((c) => !Number.isInteger(c) || c < 0 || c > count);
+    if (bad.length) throw new Error(`${where}: landedCount ${name} has ${bad.join(", ")}: each count is a whole number from 0 to the hit's ${count} landings`);
+  }
+  const effects = (["applies", "gains", "buffs", "energy", "sp", "heals", "requires", "branch", "enemyDelay", "fixedDamage", "launch", "poiseOnly"] as const).filter((k) => h[k] !== undefined);
+  if (effects.length || h.detached) throw new Error(`${where}: a landed-count hit deals only damage and Stagger, on the cast's own timeline (drop ${[...effects, ...(h.detached ? ["detached"] : [])].join(", ")})`);
 }
 
 type RawAction =
@@ -579,6 +600,7 @@ function kitChecker(scope: KitScope) {
         if (h.frames && h.frames.length !== count) throw new Error(`${where} hit ${h.id}: ${h.frames.length} frames for count ${JSON.stringify(count)}`);
         if (h.framesEvery !== undefined) throw new Error(`${where} hit ${h.id}: framesEvery is for a count that's a value`);
       } else checkValue(h.count as ValueExpr, src.skillId, `${where} hit ${h.id} count`);
+      if (h.landedCount) checkLandedCount(h, count, !src.damageType, `${where} hit ${h.id}`);
       return {
         id: h.id, label: h.label ?? src.label, scale: h.scale, count, damageType: h.damageType ?? src.damageType ?? "none", element, events,
         ...(h.frames ? { frames: h.frames } : {}),
@@ -613,6 +635,7 @@ function kitChecker(scope: KitScope) {
         ...((h.finalStrike ?? src.finalStrike?.(h, events) ?? false) ? { finalStrike: true } : {}),
         ...((h.dive ?? src.dive?.(h, events) ?? false) ? { dive: true } : {}),
         ...(h.gains ? { gains: h.gains.map((g) => ({ stack: g.stack, amount: (g.amount as ValueExpr | undefined) ?? 1, ...(g.if ? { if: g.if } : {}) })) } : {}),
+        ...(h.landedCount ? { landedCount: { counts: h.landedCount.counts, ...(h.landedCount.fromPotential ? { fromPotential: h.landedCount.fromPotential } : {}) } } : {}),
       };
     });
   };

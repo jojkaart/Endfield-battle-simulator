@@ -462,6 +462,33 @@ export interface KitHit {
   readonly fixedDamage?: ValueExpr;
   /** Whom the hit heals (an event for heal triggers; amounts aren't modelled). */
   readonly heals?: Exclude<HealTarget, "eventOperator">;
+  /**
+   * A random number of the cast's landings happen (Ardelia's sheep fly at random: in-game test 96): an empirical
+   * distribution of the count, each observed count equally likely, by potential. See LandedCount.
+   */
+  readonly landedCount?: LandedCount;
+}
+
+/**
+ * How many of a skill hit's landings in one cast happen (KitHit.landedCount): `counts` are observed counts, each
+ * equally likely; `fromPotential` replaces them from a potential on (the highest key at most the build's). The
+ * landings they're out of are the cast's planned ones: its frames, less those its jumps decided at the cast skip
+ * (timeline/casting.ts). Damage only: the hit has no effects of its own beyond its damage and hit event.
+ *
+ * - `expected` crits and `distribution` (also `never` / `always`): every planned landing lands, its damage × E[N] / L;
+ *   the distribution counts the cast's landings as a random sum (moments.ts compoundMoments).
+ * - `rolled`: N is drawn from the counts and N of the L landings chosen uniformly at random (stream `landed`).
+ * - TimelineOptions.landedCounts `least` / `most`: the fewest / most observed, the first ones landing (bounds).
+ */
+export interface LandedCount {
+  readonly counts: readonly number[];
+  readonly fromPotential?: Readonly<Record<string, readonly number[]>>;
+}
+
+/** The observed counts of a landed-count hit for a potential (LandedCount.fromPotential: the highest key at most `potential`). */
+export function landedCountsAt(lc: LandedCount, potential: number): readonly number[] {
+  const keys = Object.keys(lc.fromPotential ?? {}).map(Number).filter((p) => p <= potential).sort((a, b) => b - a);
+  return keys.length ? (lc.fromPotential as Record<string, readonly number[]>)[String(keys[0])] as readonly number[] : lc.counts;
 }
 
 /**

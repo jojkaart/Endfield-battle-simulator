@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { FPS, critTriggers, randomOutcomes, searchBeams, simulate, simulateRuns, type RotationSpread, type TimelineResult, type Build, type CritMode, type Element, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { FPS, critTriggers, randomOutcomes, searchBeams, simulate, simulateDistribution, simulateRuns, type DamageDistribution, type RotationSpread, type TimelineResult, type Build, type CritMode, type Element, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
 import { readBuild } from "./commands.ts";
 import { num, table } from "./format.ts";
 
@@ -59,20 +59,42 @@ export function readScenario(file: string): TimelineScenario {
   };
 }
 
-/** One battle of the scenario; with random outcomes, a note that it's one battle of a distribution (unless `runs` was asked for, which prints formatRuns instead). */
-export function formatSimulation(data: GameData, scenario: TimelineScenario, verbose: boolean): string {
+/**
+ * One battle of the scenario, and with expected crits the total's distribution (engine simulateDistribution: mean,
+ * standard deviation, Cornish–Fisher 5–95% range, bounds), over `battles` seeded battles when outcomes change what
+ * happens later. With rolled crits (or never / always and random outcomes) a note that it's one battle of a
+ * distribution (unless `runs` was asked for, which prints formatRuns instead).
+ */
+export function formatSimulation(data: GameData, scenario: TimelineScenario, verbose: boolean, battles?: number): string {
   const text = formatResult(data, scenario, simulate(data, scenario), verbose);
-  // With expected crits, crit-triggered effects never fire (no hit counts as a crit): a warning, not a distribution.
-  const offCrits = scenario.options.crit === "expected" ? critTriggers(data, scenario) : [];
-  const random = randomOutcomes(data, scenario).filter((x) => offCrits.length === 0 || !x.startsWith("crit-triggered effects"));
-  if (random.length === 0 && offCrits.length === 0) return text;
   const [first, ...rest] = text.split("\n");
+  if (scenario.options.crit === "expected" || scenario.options.crit === "distribution") {
+    const d = simulateDistribution(data, scenario, battles !== undefined ? { battles } : {});
+    const offCrits = scenario.options.crit === "expected" ? critTriggers(data, scenario) : [];
+    return [first, ...formatDistribution(d, offCrits), ...rest].join("\n");
+  }
+  const random = randomOutcomes(data, scenario);
+  if (random.length === 0) return text;
   return [
     first,
-    ...(offCrits.length ? [`Warning: crit-triggered effects never fire with expected crits (${offCrits.join("; ")}); crit "rolled" or --runs n plays them.`] : []),
-    ...(random.length ? [`Note: random outcomes (${random.join("; ")}): this is one battle (seed ${scenario.options.seed ?? 1}) of a distribution; --runs n shows the spread over n battles.`] : []),
+    `Note: random outcomes (${random.join("; ")}): this is one battle (seed ${scenario.options.seed ?? 1}) of a distribution; --runs n shows the spread over n battles.`,
     ...rest,
   ].join("\n");
+}
+
+/** A total's distribution as lines (formatSimulation). `offCrits`: crit-triggered effects the one battle above (expected crits) never fires. */
+export function formatDistribution(d: DamageDistribution, offCrits: readonly string[]): string[] {
+  const n = (x: number) => num(Math.round(x), 0);
+  const seeds = d.battles === 1 ? `seed ${d.seed}` : `seeds ${d.seed}–${d.seed + d.battles - 1}`;
+  const over = d.battles > 1 ? ` over ${d.battles} battles` : "";
+  const boundsOver = d.boundsOver > 1 ? `, bounds over ${d.boundsOver} battles` : "";
+  return [
+    `Distribution of the total${over}: mean ${n(d.mean)}${d.battles > 1 ? ` (± ${n(d.meanError)} standard error from ${d.battles} battles)` : ""}, standard deviation ${n(d.sd)} (${d.mean ? ((d.sd / d.mean) * 100).toFixed(1) : "0.0"}%);` +
+      ` 5–95% ≈ ${n(d.p5)} – ${n(d.p95)} (Cornish–Fisher, skew ${d.skew.toFixed(2)}); bounds ${n(d.min)} – ${n(d.max)} (no crits and fewest random landings / every hit crits and most${boundsOver}).`,
+    ...(d.battles > 1 ? [`  Random outcomes that change what follows (${d.random.join("; ")}): ${d.battles} seeded battles (${seeds}${d.crit === "distribution" ? "; crit distribution: the hits a crit-triggered effect could fire on roll, the others count as distributions" : ""}), combined.${d.illegal ? ` Not legal in ${d.illegal} of them (left out).` : ""}`] : []),
+    ...(offCrits.length ? [`  The total above is one battle with expected crits, in which crit-triggered effects never fire (${offCrits.join("; ")}); the distribution plays them.`] : []),
+    ...(d.boundsNote ? [`  Note: ${d.boundsNote}.`] : []),
+  ];
 }
 
 /** The spread of a rotation's damage over many battles with rolled crits, beside its expected-crit total. */

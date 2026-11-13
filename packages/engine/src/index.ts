@@ -15,3 +15,5 @@ export * from "./buffs.ts";
 export * from "./search.ts";
 export * from "./expr.ts";
 export * from "./timeline.ts";
+export * from "./moments.ts";
+export * from "./distribution.ts";

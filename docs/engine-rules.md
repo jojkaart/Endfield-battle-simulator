@@ -44,11 +44,14 @@ are at 30 FPS.
 
 - C1. Crit rate = attribute 9 total (operator base 0.05 from CharacterTable + sources), clamped to [0, 1]. [SETTLED]
 - C2. Crit DMG = attribute 10 total (default 0.5 + sources); a crit is × (1 + crit DMG). [SETTLED]
-- C3. Crit modes: `expected` × (1 + rate × crit DMG) (default), `always` × (1 + crit DMG), `never` ×1, `rolled`: crit when a uniform draw in [0, 1) < rate. [SETTLED] for the multiplier
+- C3. Crit modes: `expected` × (1 + rate × crit DMG) (default), `always` × (1 + crit DMG), `never` ×1, `rolled`: crit when a uniform draw in [0, 1) < rate; `distribution`: `expected`, but the kit hits a crit-triggered effect could fire on (C8) are rolled. [SETTLED] for the multiplier
 - C4. Every hit can crit (skill hits, bursts, reactions, physical-status hits, Shatter) except Combustion ticks and Fixed DMG. [ASSUMED] (Combustion ticks: [SETTLED])
-- C5. In `expected` mode no hit counts as a crit for `crit: true` triggers. [ASSUMED]
-- C6. Rolled crits use a seeded mulberry32 stream (`crit`), one draw per damaging landing (ticks included).
+- C5. In `expected` mode no hit counts as a crit for `crit: true` triggers; in `distribution` mode only the rolled hits (C8) can. [ASSUMED]
+- C6. Rolled crits use a seeded mulberry32 stream (`crit`), one draw per damaging landing (ticks included); in `distribution` mode one per rolled kit hit (C8) only.
 - C7. Crit stats on a Combustion tick come from the applier's snapshot (B21) but are not used, since ticks can't crit.
+- C8. A kit hit rolls its crit in `distribution` mode when some team trigger on crits (`on: {event: hit, crit}`) matches its hit event on every other filter of `on` and on `by`; the trigger's `if`, cooldown and counts aren't judged (a hit may roll that no trigger would fire on). Status-event damage never rolls there (no crit trigger listens to it).
+- C9. A hit's distribution (docs/design.md "Damage distributions"): with expected crits and a crit rate strictly between 0 and 1, two values, v without the crit and v(1 + crit DMG) with it (HitDamage.critSpread), mean the expected value; otherwise all at its value. Independent across hits.
+- C10. The distribution's bounds are two battles: crits `never` with the fewest landed counts (K38), and `always` with the most. This assumes crit-triggered effects only raise damage. With dodges or trigger chances, over the K seeded battles' never / always battles.
 
 ## R. Resistance, defense, level
 
@@ -200,7 +203,8 @@ are at 30 FPS.
 - K34. Triggers: `cooldown` (seconds; per subject optional), `maxCount` per fight, `maxPerCast`, `chance` rolled after `if` (a miss starts no cooldown). [DATA]
 - K35. Triggers of different operators on one event run in team order; each judges its `if` on the state at the event, before any trigger acts. [ASSUMED]
 - K36. Heals are events without amounts; operator HP isn't tracked (low-HP conditions never hold, full-HP ones always do). [ASSUMED]
-- K37. One enemy; every hit lands on it.
+- K37. One enemy; every hit lands on it (but K38).
+- K38. A skill hit with `landedCount` (Ardelia's sheep) lands a random number N of its L planned landings (its frames less those the cast's jumps decided at the cast skip: 11 below P3, 14 from P3), N from the observed counts, each equally likely (`fromPotential` from a potential on). `expected` / `distribution` / `never` / `always` crits: all L land, damage and Stagger × E[N] / L (a `multiplicative` modifier); the distribution counts the cast's landings as one random sum. `rolled`: N drawn and N of the L landings chosen uniformly (stream `landed`). Bound battles (`landedCounts` least / most): the first min / max N. Log replays land every planned one (the log shows which). [ASSUMED] counts from 21 logged casts (in-game test 96)
 
 ## B. Buffs
 

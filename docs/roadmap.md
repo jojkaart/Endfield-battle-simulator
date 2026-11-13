@@ -44,6 +44,10 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
    by 4–14%: a score closer to the final damage (a cheap rollout, or a value
    for what a state holds), then searches of the favourites' teams and a
    report of the best rotations found. Ask the owner for their roster.
+   Damage distributions are in (design.md "Damage distributions"); next
+   there: the mean of crit-triggered teams from one deterministic battle
+   with those buffs at their expected state (so the search ranks by it
+   and stays one battle), then `--percentile` from the distribution.
 2. **Log check leads** (design.md "The log check's rule"; the report names
    them, largest first): Stagger the log has that no logged hit explains
    (4e5e: 24 at 53.2 s), Rossi's Wolven Blood layers, Typhoeus's hover through

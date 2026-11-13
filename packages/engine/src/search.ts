@@ -238,7 +238,7 @@ export function randomOutcomes(data: GameData, scenario: Omit<TimelineScenario, 
     const chance = (ctx.kits.get(b.operator)?.triggers ?? []).filter((t) => t.chance !== undefined || allActions(t.do).some((x) => x.kind === "choose")).map((t) => t.id);
     if (chance.length) out.push(`trigger chance (${data.operators[b.operator]?.name ?? b.operator}: ${chance.join(", ")})`);
   }
-  if (o.crit === "rolled" || o.crit === "expected") {
+  if (o.crit === "rolled" || o.crit === "expected" || o.crit === "distribution") {
     const crits = critTriggers(data, scenario);
     if (crits.length) out.push(`crit-triggered effects (${crits.join("; ")})${o.crit === "expected" ? ": ranked with rolled crits" : ""}`);
   }
@@ -478,7 +478,7 @@ const SCHEDULED_KEY: { readonly [K in Scheduled["kind"]]: KeyRules<Extract<Sched
   hit: {
     ...HEADER_KEY, operator: true, skillId: true, hitId: true, sp: true, spKind: true, spSource: true, usesUp: true, eventCount: true, eventSource: true,
     controlledAtCast: (c, env) => (env.loose ? undefined : c), trigger: true, branch: branchKey, fixed: true, snapshot: true, ref: "a replayed landing's reference, which no search sets",
-    deferred: true, damageFrame: "a replayed landing's damage frame, which no search sets",
+    deferred: true, damageFrame: "a replayed landing's damage frame, which no search sets", landedOf: true,
   },
   action: { ...HEADER_KEY, owner: true, trigger: true, event: eventKey, origin: true, awaited: true, afterHits: true },
   energy: { ...HEADER_KEY, operator: true, amount: true, if: true },

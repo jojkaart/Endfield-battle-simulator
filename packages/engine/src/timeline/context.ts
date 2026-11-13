@@ -49,6 +49,7 @@ export function createContext(data: GameData, scenario: TimelineScenario): Timel
     return kit ? [[b.operator, kit] as const] : [];
   }));
   const beforeDamage = [...kits.values()].some((k) => k.triggers.some((t) => t.beforeDamage));
+  const critListeners = [...kits].flatMap(([owner, k]) => k.triggers.filter((t) => t.on.event === "hit" && t.on.crit !== undefined).map((trigger) => ({ owner, trigger })));
   const buffAttrs = new Set([...kits.values()].flatMap((k) => k.buffs.flatMap((b) => b.modifiers.flatMap((m) => (m.attr !== undefined ? [m.attr] : [])))));
   const inputBuffs = [...kits.values()].some((k) => k.buffs.some((b) => b.basicAttack !== undefined));
   const ownWindows = new Map([...kits].map(([op, k]) => [op, new Set(k.triggers.flatMap((t) => allActions(t.do).flatMap((a) => (a.kind === "openCombo" ? (a.skills ?? []) : []))))] as const));
@@ -64,6 +65,7 @@ export function createContext(data: GameData, scenario: TimelineScenario): Timel
   return {
     data, scenario, builds, panels, modifiers, kits, beforeDamage, enemy, burstDelayFrames: delays as Record<ArtsElement, number>, ownWindows,
     ...(foodEnds.size ? { foodEnds } : {}),
+    ...(critListeners.length ? { critListeners } : {}),
     ...(scenario.loggedCrits ? { loggedCrits: loggedCritsByKey(scenario.loggedCrits) } : {}),
     ...(scenario.loggedModifiers ? { loggedModifiers: byOperatorEvent(scenario.loggedModifiers) } : {}),
     ...(buffAttrs.has(Attr.ComboSkillCooldownRecoveryScalar) ? { comboRates: true } : {}),

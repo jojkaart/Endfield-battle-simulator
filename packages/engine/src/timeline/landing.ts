@@ -5,8 +5,8 @@ import type { Build } from "../build.ts";
 import { computeHit, computeReaction, decide, finisherModifier, type DamageOptions, type DamageTarget, evalContext, fixedHit, type HitDamage, hitDecorations, type Situation, skillValue } from "../damage.ts";
 import type { Modifier } from "../effects.ts";
 import { EngineError } from "../errors.ts";
-import { type EventSource, type GameData, type KitHit, type KitSkill, resolveApplication } from "../model.ts";
-import { type BattleEvent, triggerActionAt } from "../events.ts";
+import { type EventSource, type GameData, type KitHit, type KitSkill, landedCountsAt, resolveApplication } from "../model.ts";
+import { type BattleEvent, causeMatches, eventMatches, triggerActionAt } from "../events.ts";
 import { evaluate } from "../expr.ts";
 import { activeAt, resolveValue } from "../buffs.ts";
 import { applyToEnemy, type EnemyStatus, expireStatus, type HitApplication, MAX_INFLICTION_STACKS, NO_STATUS, type StatusEvent } from "../status.ts";
@@ -242,6 +242,32 @@ function hitOrder(ctx: TimelineContext, hit: PendingHit): number {
   return a?.kind === "hits" ? a.hits.findIndex((h) => h.id === hit.hitId) : 0;
 }
 
+/** A kit hit's landing as a hit event, but whether it crit (landHit adds that once its damage is computed). */
+function hitEventOf(st: TimelineState, hit: PendingHit, kitHit: KitHit, finisher: boolean): Extract<BattleEvent, { type: "hit" }> {
+  return {
+    // A skill's hit with a damage type of its own (KitHit.damageType) is a hit of that kind; the rest of the cast's events keep the skill's.
+    type: "hit", frame: hit.frame, operator: hit.operator, skillId: hit.skillId, kind: kitHit.damageType,
+    element: kitHit.reaction?.element ?? kitHit.element, finalStrike: kitHit.finalStrike ?? false, finisher, controlled: st.controlled === hit.operator,
+    ...(kitHit.dive ? { dive: true } : {}),
+    ...(kitHit.reaction ? { reaction: true } : {}),
+    ...(hit.cast !== undefined ? { cast: hit.cast.index } : {}),
+  };
+}
+
+/**
+ * Whether a crit-triggered effect could fire on a hit event (TimelineContext.critListeners): a trigger on crits whose
+ * other filters (`on` but its `crit`) and cause (`by`) match it. Its `if`, cooldown and counts aren't judged, so a hit
+ * may roll that no trigger would have fired on: still right, a little less exact. With crit `distribution` only these
+ * hits roll their crit (docs/design.md "Damage distributions").
+ */
+function critMatters(ctx: TimelineContext, e: BattleEvent): boolean {
+  return (ctx.critListeners ?? []).some(({ owner, trigger: t }) => {
+    if (t.on.event !== "hit") return false;
+    const { crit: _crit, ...on } = t.on;
+    return eventMatches(on, e, owner, {}) && causeMatches(t.by, e, owner, t.on);
+  });
+}
+
 /**
  * Lands one pending hit: its own effects, its damage, then the triggers its events start. A delayed hit
  * (KitHit.enemyDelay) lands twice: its effects at its frame, which schedules its damage (PendingHit.deferred).
@@ -355,8 +381,13 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   }
   // A finisher (skillSpecification 8) is multiplied by the enemy's finisher multiplier (attribute 27).
   const finisher = !hit.trigger && ctx.data.skills[hit.skillId]?.timing?.specification === 8;
+  const critMode = ctx.scenario.options.crit;
   let roll: number | undefined;
-  if (ctx.scenario.options.crit === "rolled" && hit.fixed === undefined && withDamage) ({ value: roll, state: st } = draw(ctx, st, "crit"));
+  // Rolled crits roll every hit; `distribution` only those a crit-triggered effect could fire on (critMatters).
+  if ((critMode === "rolled" || (critMode === "distribution" && critMatters(ctx, hitEventOf(st, hit, kitHit, finisher)))) && hit.fixed === undefined && withDamage) ({ value: roll, state: st } = draw(ctx, st, "crit"));
+  // A landing of a random landed count at the expected count (PendingHit.landedOf): its damage and Stagger × E[N] / L.
+  const landedCounts = hit.landedOf !== undefined && kitHit.landedCount ? landedCountsAt(kitHit.landedCount, build.potential) : undefined;
+  const landedScale = landedCounts ? landedCounts.reduce((a, b) => a + b, 0) / landedCounts.length / (hit.landedOf as number) : 1;
   // A replayed fight's logged crit for this landing (TimelineScenario.loggedCrits), which decides it.
   const loggedCrit = hit.fixed === undefined && withDamage ? loggedCritAt(ctx, hit.operator, kitHit.events, hit.frame, hit.ref) : undefined;
   const decorations = hitDecorations(kitHit, finisher);
@@ -370,6 +401,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
       ...options.modifiers,
       ...(finisher ? [finisherModifier(ctx.data, ctx.enemy.id)] : []),
       ...loggedModifiersAt(ctx, hit.operator, kitHit.events, hit.frame),
+      ...(landedCounts ? [{ zone: "multiplicative" as const, value: landedScale - 1, source: `random landed count (KitHit.landedCount): E[N] / ${hit.landedOf as number} planned landings` }] : []),
     ],
     situation: { ...before, consumed },
     // Its modifiers' conditions see the enemy and the buffs as the damage is computed: after the hit's own applications and
@@ -387,7 +419,8 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   };
   if (result) st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}), ...(hit.ref !== undefined ? { ref: hit.ref } : {}),
     // A replay's landings carry their facts (a pinned one with its reference; one a trigger lands, matched to the log by time).
-    ...(hit.ref !== undefined || ctx.loggedCrits ? { facts: facts() } : {}), ...(loggedCrit !== undefined ? { loggedCrit } : {}), ...(ctx.loggedCrits && inputs ? { inputs } : {}) }]);
+    ...(hit.ref !== undefined || ctx.loggedCrits ? { facts: facts() } : {}), ...(loggedCrit !== undefined ? { loggedCrit } : {}), ...(ctx.loggedCrits && inputs ? { inputs } : {}),
+    ...(landedCounts && castIndex !== undefined ? { landed: { cast: castIndex, of: hit.landedOf as number, counts: landedCounts, scale: landedScale } } : {}) }]);
   // The enemy the damage saw: the reactions of the applications before it see it too.
   const enemyAtDamage = st.enemy;
   const lateEvents = applyPhase(true);
@@ -413,17 +446,12 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
       ec: evalContext(ctx.data, build, panel, hit.skillId, at(consumed)),
       ...(castIndex !== undefined ? { cast: castIndex } : {}),
     };
-    const r = dealPoise(ctx, st, hit.operator, resolveValue(ctx.data, build, panel, hit.skillId, kitHit.poise, at(consumed)), hit.frame, landing);
+    const r = dealPoise(ctx, st, hit.operator, resolveValue(ctx.data, build, panel, hit.skillId, kitHit.poise, at(consumed)) * landedScale, hit.frame, landing);
     st = r.state;
     poiseEvents.push(...r.events);
   }
   const hitEvent: BattleEvent = {
-    // A skill's hit with a damage type of its own (KitHit.damageType) is a hit of that kind; the rest of the cast's events keep the skill's.
-    type: "hit", frame: hit.frame, operator: hit.operator, skillId: hit.skillId, kind: kitHit.damageType,
-    element: kitHit.reaction?.element ?? kitHit.element, finalStrike: kitHit.finalStrike ?? false, finisher, controlled: st.controlled === hit.operator,
-    ...(kitHit.dive ? { dive: true } : {}),
-    ...(kitHit.reaction ? { reaction: true } : {}),
-    ...(castIndex !== undefined ? { cast: castIndex } : {}),
+    ...hitEventOf(st, hit, kitHit, finisher),
     ...(typeof loggedCrit === "boolean" ? (loggedCrit ? { crit: true } : {}) : (ctx.scenario.options.crit === "always" && hit.fixed === undefined) || result?.crit ? { crit: true } : {}),
   };
   if (!withDamage) {
