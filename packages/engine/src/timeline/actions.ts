@@ -13,7 +13,7 @@ import { FPS } from "../units.ts";
 import type { Origin, PendingHit, Stacks, TimelineContext, TimelineState } from "./state.ts";
 import { COMBO_WINDOW_FRAMES, LINK_FRAMES, hasteFrames } from "./rules.ts";
 import { panelAt, skillCosts, timingOf } from "./context.ts";
-import { controlImmune, shiftEnemy } from "./clock.ts";
+import { controlImmune, shiftDebuffs, shiftEnemy } from "./clock.ts";
 import { cooldownEnd, gainEnergy, gainSp, maxEnergy, rateProgress, rateReady, rebaseCooldowns, spGrantOf } from "./resources.ts";
 import { actionFrame, ownWindowSkills, playheadOf } from "./timing.ts";
 import { artsIntensity, attackerSide, eventCountOf, eventSourceOf, healEvents, situationAt, statusTweaks, triggerSituation } from "./situation.ts";
@@ -108,11 +108,26 @@ export function runTriggers(ctx: TimelineContext, state: TimelineState, initial:
     // The engine's own reactions to an event (freezes, Lift stagger) happen once: for a hit's own status events
     // after its damage, not in the before-damage run, so buffs the hit applies are frozen with the enemy too.
     const engine = reactOnInitial || !first.has(e);
-    // A control status that freezes the enemy stops its clock (overlapping freezes count once).
-    if (engine && e.type === "status" && e.event.kind === "control" && e.event.freezes && !controlImmune(ctx)) {
+    // A control status that freezes the enemy stops its clock and every debuff on it (overlapping freezes count once).
+    // A control-immune enemy (clock.ts controlImmune: a Boss) isn't frozen, but the freezing operator's own debuffs on
+    // it are still held (overlapping freezes of theirs count once). Non-bosses: everyone's debuffs held fits the logs,
+    // b6aa15281db4 (Si's freeze ~37.8 s holds Xaihi's cryo_fragility: Si 89 plain, 77 with only hers held),
+    // 489c0be3e162 (Rossi's holds Arcane's will_burst ~45.5 s: Arcane 132 plain, 123 without), 791020039384
+    // (Tangtang's stare: damage error −8.9%, −11.7% without). Bosses: only the freezer's own, 4a64e58e75ad (eny_0134:
+    // Si's freeze holding Arcane's will_burst too halves Arcane's plain matches 64 → 32, Si 37 → 25), c3c735dbb022
+    // (Si 86 plain, 82 with everyone's held), while Si's Artful Intent ends fit only with hers held (abfd4b7478ec
+    // Rhodagn −318 / +7 / −174 ms against 1318 / 393 / 1174 unheld; c3c7 0 / −4 / −15 against 0 / 971 / 949;
+    // 0c14fb3ce77d 1 / 5 against 834 / 39).
+    if (engine && e.type === "status" && e.event.kind === "control" && e.event.freezes) {
       const end = e.frame + e.event.frames;
-      const lost = Math.max(0, end - Math.max(e.frame, st.enemyFrozenUntil));
-      st = { ...shiftEnemy(st, e.frame, lost), enemyFrozenUntil: Math.max(st.enemyFrozenUntil, end) };
+      if (!controlImmune(ctx)) {
+        const lost = Math.max(0, end - Math.max(e.frame, st.enemyFrozenUntil));
+        st = { ...shiftDebuffs(shiftEnemy(st, e.frame, lost), e.frame, lost), enemyFrozenUntil: Math.max(st.enemyFrozenUntil, end) };
+      } else {
+        const by = e.event.operator;
+        const lost = Math.max(0, end - Math.max(e.frame, st.enemyFrozenBy[by] ?? 0));
+        st = { ...shiftDebuffs(st, e.frame, lost, by), enemyFrozenBy: { ...st.enemyFrozenBy, [by]: Math.max(st.enemyFrozenBy[by] ?? 0, end) } };
+      }
     }
     // Lift and Knock Down deal no Stagger of their own beside the hit that applies them: the logs list one event on
     // both, its value the hit's (155 of 156 cases in 40 logs, 2026-11-11; Rossi's Lifts at 5, below any

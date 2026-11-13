@@ -398,17 +398,17 @@
   ]
  },
  "tangtang-whirlpools.scenario.json": {
-  "total": 712361.21,
+  "total": 712771.952,
   "hits": 124,
   "casts": 14,
   "perOperator": {
-   "chr_0027_tangtang": 712361.21
+   "chr_0027_tangtang": 712771.952
   },
-  "digest": "c42947ba336b",
+  "digest": "5129ba1cf377",
   "windows": [
    "b9401a33834f",
    "f07dd3762b64",
-   "bb1dc14b244c"
+   "7a4e707fa710"
   ]
  },
  "typhoeus-gilberta.scenario.json": {
@@ -452,12 +452,12 @@
    "chr_0011_seraph": 80528.578,
    "chr_0036_jsspsi": 279773.982
   },
-  "digest": "fb9f174f2f6f",
+  "digest": "eed20784396c",
   "windows": [
    "5f999bc78a68",
    "334717cf62f5",
    "f376fcd5a448",
-   "43ac74dda5af"
+   "0cbe020c9ee5"
   ]
  },
  "yvonne-fluorite.scenario.json": {

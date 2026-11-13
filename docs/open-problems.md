@@ -456,10 +456,39 @@ Intent ends fit with only it frozen (abfd −318 / +7 / −174; c3c7 0 / −4 /
 
 **Proposed rule:** a freeze holds the freezing operator's own debuffs on
 the enemy (and the enemy's own statuses, which no verdict tells apart),
-not other operators' debuffs; bosses not immune. Being implemented and
-measured (opus); Tangtang's stare untested.
+not other operators' debuffs; bosses not immune.
 
-**Next check:** the rule on every log (development and hold-out).
+**Measured (opus, 2026-11-13):** as proposed (no Boss immune, only the
+freezer's debuffs held everywhere): development plain 36.1 → 35.9%,
+mismatch 19.3 → 19.4%, mean |damage error| 22.1 → 22.3%; hold-out 44.1 →
+44.4%, 6.2%, 17.7 → 17.6%. The loss is all on non-bosses, where others'
+debuffs held fit better: b6aa (eny_0120 tower) Si 89 → 77 plain (Xaihi's
+cryo_fragility under Si's freeze at 37.9–39.4 s, then "as the log lists
+it"), 489c (eny_0127) Arcane 132 → 123 and Rossi 125 → 131 mismatches
+(Arcane's will_burst under Rossi's freeze at 45.4–46.7 s), 791 (Tangtang's
+stare) damage −8.9 → −11.7%. On bosses others' debuffs held is worse: 4a64
+Arcane 64 → 32, Si 37 → 25 plain; c3c7 Si 86 → 82. abfd and 0c14 don't tell.
+
+**Implemented:** bosses stay control-immune by default (their clock and
+others' debuffs run on), but a freeze holds the freezing operator's own
+debuffs on any enemy (actions.ts runTriggers; TimelineState.enemyFrozenBy
+counts each operator's overlapping freezes once); non-bosses freeze whole,
+as before. Against the branch base: development and hold-out unchanged at
+one decimal (36.1 / 19.3 / 22.1%; 44.1 / 6.2 / 17.7%); 0c14 Endministrator
+32 → 34 plain, damage +8.7 → +7.9%; abfd −4.5 → −4.4%; b7b3 (Tangtang's
+stare on Rhodagn, the old evidence for immunity) unchanged: Arts Bursts run
+on their operator's clock now, so it no longer tells.
+
+**Ruled out (this round):** "a freeze holds only the freezer's debuffs" on
+every enemy (b6aa, 489c, 791); every debuff held on a boss (4a64, c3c7).
+
+**Still possible:** the boss/non-boss split being something else (the
+control-immune tag on some enemies only; the debuff kinds: Arcane's weapon
+buff against her kit's); whether a boss's own clock (its statuses,
+Corrosion) stops, which no verdict tells apart; Tangtang's stare on a boss
+holding her own debuffs (b7b3 doesn't tell).
+
+**Next check:** in-game test 104 (does a boss visibly freeze?) and 37.
 
 ## Liino's volley doubles in 1d91
 

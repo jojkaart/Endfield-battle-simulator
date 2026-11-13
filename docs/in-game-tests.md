@@ -714,13 +714,15 @@ That's about one earlier Arcane combo per second ultimate.
 ### 37. Enemy timers while Imprisoned or Immobilized (ready, if you have Arcane, Last Rite or Tangtang; the Si part is not testable by hand)
 
 (Since 2026-10-31 the engine assumes Bosses ignore these freezes: test
-104. The parts below are about enemies that do freeze.)
+104; since 2026-11-13 a freeze on a Boss still holds the freezing
+operator's own debuffs, e.g. Si's Artful Intent. The parts below are
+about enemies that do freeze.)
 
 **Why:** the engine freezes every status on the enemy while Si's
 Immobilization freezes it (1 s, 1.5 s at P1), which fits one log for
-Artful Intent. But the data skips the freeze on control-immune enemies
-(likely bosses), where Artful Intent, Jade Vessel's 30 s debuff and
-Corrosion would run 1–1.5 s shorter per battle skill. Arcane's WILL
+Artful Intent. The data skips the freeze on control-immune enemies
+(likely bosses); there the logs fit Si's own Artful Intent and Jade
+Vessel's debuff held by her freeze, teammates' debuffs (Arcane's) not. Arcane's WILL
 Imprisonment (6.6 s) slows the enemy's clock instead; if statuses follow
 it, each combo adds about 2.5 s to every status on the enemy (Corrosion's
 ramp and duration, Electrification, teammates' Susceptibility). The
@@ -730,10 +732,9 @@ engine doesn't do that yet. This may also explain part of test 4.
   or her own Corrosion), then Arcane's WILL combo: does the status run out
   later than without the combo, by about 2–3 s?
 - Si: **not testable by hand.** The engine gives Artful Intent 20 s plus
-  the Immobilization (21–21.5 s) where the freeze works, and Jade Vessel's
-  debuff a flat 30 s (applied as the freeze starts; the freeze only
-  stretches what is already on the enemy); flat 20 s and 30 s on an immune
-  enemy. Each reading differs from the next by only 1–1.5 s on a 20–30 s
+  the Immobilization (21–21.5 s), and Jade Vessel's debuff 30 s plus the
+  freezes that come after it, bosses included; teammates' debuffs are
+  stretched by her freeze on ordinary enemies only. Each reading differs from the next by only 1–1.5 s on a 20–30 s
   timer, too close for a stopwatch or a phone video. Impact: 1–1.5 s of
   Artful Intent or Jade Vessel's debuff per battle skill, on bosses only.
 - Last Rite (optional; batch 4, her report D): her combo freezes the
@@ -2030,9 +2031,13 @@ tag, but no table says which enemies have it. In b7b3 (Rhodagn), Arcane's
 Cryo bursts land during Tangtang's stare exactly when the ultimates' time
 stops alone have them due, as if Rhodagn weren't frozen; treating Bosses
 as immune also brought c3c7 (Chiliarch) closer to its log. So the engine
-now assumes every Boss is control-immune (2026-10-31). If they aren't,
-each freeze on a boss stretches the enemy's statuses again (Corrosion,
-Susceptibility, Artful Intent: 1–4 s per freeze).
+assumes every Boss is control-immune (2026-10-31). Since 2026-11-13 a
+freeze on a boss still holds the freezing operator's own debuffs (Si's
+Artful Intent ends in three boss logs fit only so), while teammates'
+debuffs run on (4a64: holding Arcane's on eny_0134 halves her matches);
+on ordinary enemies everyone's are held (b6aa, 489c). Whether the boss
+itself stops (its animation, its own statuses) no log tells: that's
+what this test decides.
 
 **How:** fight Rhodagn (or any boss) with Si. Use her battle skill on him
 while he's mid-attack or walking, and watch him right after the hit: does

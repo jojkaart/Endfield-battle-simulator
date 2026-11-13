@@ -121,7 +121,7 @@ are at 30 FPS.
 - P10. One instance per physical status; reapplying replaces it.
 - P11. Physical-status hits can crit, take element (Physical) DMG, Amp, Susceptibility, damage taken and Stagger's ×1.3, and no skill-type DMG.
 - P12. Physical statuses run on the enemy clock (held by time stops and freezes).
-- P13. Control statuses (Immobilization etc.) last their seconds or skill value; with `freezes` they stop the enemy's clock unless it is control-immune (S12, N9). [OPEN]
+- P13. Control statuses (Immobilization etc.) last their seconds or skill value; with `freezes` they stop the enemy's clock unless it is control-immune (S12, N9, T12). [OPEN]
 
 ## S. Stagger
 
@@ -148,13 +148,13 @@ are at 30 FPS.
 - T3. Ultimate time stops (`UltimateTimeAction`) and global `TimeDilationAction` slow-downs scale time for everyone but the caster; the lowest scale counts where they overlap. [DATA]
 - T4. Combo slow-down curve `ComboSkill`: 0.01 for the first 40% of its duration, linear to 1 at 93%, 1 after. [DATA]; linear ramp [ASSUMED]
 - T5. Lost frames = Σ(1 − scale) over the slow-down's frames (rounded); everything after the start on a held clock is shifted by that many frames.
-- T6. Held by others' stops/slow-downs (world clock): enemy statuses, inflictions, Vulnerable, Combustion ticks, debuffs, Stagger timer, combo windows, Link stacks, energy blocks, every buff (caster's own included); not SP (K2). [ASSUMED] for buffs
+- T6. Held by others' stops/slow-downs (world clock): enemy statuses, inflictions, Vulnerable, Combustion ticks, debuffs (every operator's), Stagger timer, combo windows, Link stacks, energy blocks, every buff (caster's own included); not SP (K2). [ASSUMED] for buffs. Freezes hold less: T12.
 - T7. Held for each non-caster operator: its hits on the way, delayed actions, current action and chain windows. [ASSUMED]
 - T8. Cooldowns run on raw time through stops and slow-downs. [ASSUMED]
 - T9. An operator inside its own ultimate's stop isn't held by another's stop or slow-down until its own stop ends. [SETTLED] for three logs; reach [OPEN]
 - T10. Hit-stop, entity-layer dilation and `SetIgnoreGlobalTimeScaleAction` aren't modelled. [OPEN]
 - T11. Enemy-clock waits (`enemyDelay` hits, enemy buffs' triggerInterval) are held by every time stop, the caster's own included. [SETTLED]
-- T12. Freezes: a `freezes` control stops the enemy clock for its duration (overlaps count once), unless control-immune; default immune = Boss (rank 2). [OPEN]
+- T12. Freezes: a `freezes` control stops the enemy clock and every operator's debuffs on it for its duration (overlaps count once), unless control-immune (default: a Boss, rank 2); on a control-immune enemy it holds only the freezing operator's own debuffs (Si's Artful Intent, Jade Vessel, her weapon's; Tangtang's for her stare), each operator's overlapping freezes counting once. Fits: non-bosses b6aa, 489c, 791 (others' debuffs held), bosses 4a64, c3c7 (others' not), Artful Intent ends in abfd, c3c7, 0c14 (Si's held). [OPEN] (in-game tests 37, 104)
 - T13. Haste (attribute 92, default 1, clamped 0.1–1.3): a cast's skill frames play as round(x / speed) real frames (hits, windows, exclusive time, jumps); cooldowns unchanged. [ASSUMED]
 - T14. Arts Burst clock: held by others' stops/slow-downs (including ones already running), not by its own operator's, nor by freezes. [SETTLED]
 - T15. Order within a frame: bursts, status ticks, buff expiries, delayed actions, team energy, enemy actions, buff ticks, hits, after-hits actions, jumps, teammates' attacks. [ASSUMED]
@@ -257,6 +257,6 @@ are at 30 FPS.
 - N6. Enemy HP isn't simulated: HP fraction is a scenario input (1 by default) for HP conditions.
 - N7. Born buffs, shields, number shields and damage-reduction phases aren't modelled. [ASSUMED]
 - N8. Enemy attacks and charges are scenario inputs on the enemy's clock; enemy damage isn't simulated.
-- N9. Control immunity: the scenario says; else every Boss (rank 2) is immune to freezes. [OPEN]
+- N9. Control immunity: the scenario says; else every Boss (rank 2) is immune to freezes, except for the freezing operator's own debuffs (T12). [OPEN]
 - N10. Boss Stagger refills (second lives, Rhodagn) are scenario `recover` actions, not automatic. [SETTLED] in logs; trigger [OPEN]
 - N11. Finisher multiplier (attribute 27) and finisher SP are per enemy (S14, S15). [DATA]

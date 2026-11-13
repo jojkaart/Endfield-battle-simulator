@@ -570,6 +570,7 @@ const STATE_KEY: KeyRules<TimelineState> = {
   link: (l, env) => l.filter((f) => f > env.frame),
   // Read as max(event frame, it) (actions.ts freeze).
   enemyFrozenUntil: deadline,
+  enemyFrozenBy: (e, env) => entries(e, (f) => f > env.frame),
   // Staggered while `until > frame`; once it's over the bar counts as full (dealPoise); finisherUsed is read only while Staggered.
   stagger: (s, env) => (s.until !== null && s.until > env.frame ? s : { poise: s.until !== null ? env.scenario.maxPoise : s.poise }),
   // Read only from their start to their end (clock.ts slowDown, which drops the ended ones).

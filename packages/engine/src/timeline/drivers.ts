@@ -52,6 +52,7 @@ function initialState(ctx: TimelineContext): TimelineState {
     slowdowns: [],
     stagger: { poise: maxPoise(ctx), until: null, finisherUsed: false },
     enemyFrozenUntil: 0,
+    enemyFrozenBy: {},
     link: [],
     enemy: NO_STATUS,
     buffs: [],
