@@ -279,15 +279,25 @@ endings come in the fight's last seconds: 0eef ends at 10030 ms (ATK gone
 (AuraAction auraType 1, no radius; only her talent's shelter has 5.5–6 m),
 so distance isn't it.
 
-**Still possible:** an end-of-fight effect (team buffs dropped or not
-started in the last seconds); Liino down or off the field (HP and swaps
-aren't logged); the 41265 ultimate event being a beat; whether the 5 s linger
+**Found (sonnet + check, 2026-11-13):** no end-of-fight effect (last-5 s
+mismatch rate 34%, as elsewhere). The real pattern: Cosmovoice's buffs
+(team ATK buff_chr_0035_liino_atkup; Amp logged as
+buff_common_affixes_enhance_natural / _pulse) are on teammates' hits after
+her ultimate in 4bfe, 7b4e, 4bfc, d774, dbae and on none in 1cd1, 1d91,
+a7a7, c6d8, d9e5 (19–80 teammates' hits each in the 2.6–15 s after). Not
+Vocalist being on at the cast (4bfc: on before, buffs after; 1cd1, a7a7:
+on before, none after). The engine gives them in every log.
+
+**Still possible:** what separates the two groups (her ultimate cut short,
+which ends Cosmovoice by autoFinishByAction; control; potential; the
+log's listing in 1d91, which lists none of her ATK even before); Liino
+down or off the field (HP and swaps aren't logged); whether the 5 s linger
 exists (0eef: if End Stance-like, the ATK went at once, against it; no
 other log has teammates' hits in the 5 s after a stance's end); why the
 engine still has Liino ATK in 1cd1 after 39 s.
 
-**Next check:** other logs' last seconds: do team buffs the engine keeps
-vanish from the log and the damage with them (sonnet).
+**Next check:** what separates the logs with Cosmovoice's buffs from those
+without (sonnet).
 
 ## Liino's volley doubles in 1d91
 
