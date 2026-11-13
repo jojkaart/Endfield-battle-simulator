@@ -227,7 +227,22 @@ level 12 below P2: 0.30, 0.33, 0.36, 0.39, 0.42 for 0–4 stacks (hits ×1.30
 … ×1.42). From P2: 0.36, 0.42, 0.48, 0.54, 0.54. A 0.48 at 3 stacks from
 P2 would mean the data's check is "fewer than 3", not "3 or fewer".
 
-### 13. Arcane's combo cooldown in WILL mode (ready, if you have Arcane; higher priority now: a log contradicts the data)
+### 13. Arcane's combo cooldown in WILL mode (decided by the logs, 2026-11-13: 18 s as the data; 0206 explained)
+
+**Decided (haiku over every operator's combo gaps, then a check):** no
+common offset: clean gaps sit 0.1–0.5 s above the cooldown for nine
+operators, and Arcane's WILL gaps cluster just above 18 s (5082 18.45,
+8318 18.49, db87 18.25, 9555 18.96): WILL is 18 s, as the data and the
+engine. 0206's 12.15 s is INT's 12 s + 0.15: her build sits on the mode
+line (our panel: Intellect 472.4, Will 473.5), so she counted as INT when
+that cooldown was set (our panel a point off, or the mode flipping
+mid-fight when something briefly raises an attribute; her ultimate's
+Susceptibility elsewhere shows WILL). A cooldown food (Echoing Remedy,
+13.4 s) fits worse (−1.2 s, which no operator shows). Open from it: how
+the game picks the mode on a knife edge (b6aa: 0.1 points), and whether
+the Qingbo / Frontiers set's ×0.85 applies to her (69e7 and b6aa, both
+with the set, show nothing under 17.35 s against 15.3).
+
 
 **The logs (sonnet, 38 logs, 2026-11-13):** 0206 (P0, WILL by its own
 Susceptibility values, no cooldown set) has two of her combo presses

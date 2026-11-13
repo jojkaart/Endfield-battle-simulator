@@ -503,6 +503,26 @@ holding her own debuffs (b7b3 doesn't tell).
 
 **Next check:** in-game test 104 (does a boss visibly freeze?) and 37.
 
+## Arcane's Array Arcana on a knife edge (0206, b6aa)
+
+**Shows:** 0206's Arcane (Intellect 472.4, Will 473.5 by our panel) has
+a 12.15 s combo gap: INT's cooldown (12 s), though her ultimate's
+Susceptibility shows WILL in the same fight. b6aa is closer still (0.1
+points). Clean WILL gaps elsewhere: 18 s as the data.
+
+**Ruled out:** a common offset in logged combo gaps (clean gaps +0.1–0.5 s
+over the cooldown, nine operators); a cooldown food (fits worse); a
+teammate's cut (none in the team's data); Si's ultimate (no Si).
+
+**Still possible:** our panel a point or two off for her Intellect or Will
+(gear rolls, rounding); the mode re-evaluated mid-fight with temporary
+attribute changes (the talent text says it isn't); the cut and the
+Susceptibility keyed to different conditions.
+
+**Next check:** 0206's panel line by line (which source could add ~1 point
+of Intellect); her other mode-dependent effects in 0206 around 81–93 s.
+Also open: the Qingbo / Frontiers ×0.85 on her (69e7, b6aa show none).
+
 ## Liino's volley doubles in 1d91
 
 **Shows:** 442 at 1990 ms, 886 (exactly 2×) at 13713 ms, later 985, 1152;
