@@ -5,7 +5,7 @@
     "Hits, frames, keys and events: rmxlinux Json/SkillData chr_0006_wolfgd_* and Json/BuffData buff_chr_0006_wolfgd_* (fetched by 535e88f), as compiled by efsim kit-draft and corrected by hand where the data decides in IfElse branches: the battle skill's SpellInflict flag (frames 0-2, CheckTagMatch on the smart target: Burning -1110095722 = Combustion, Conduct 1466867135 = Electrification), the third shot's two projectiles at 23 and the additional shot's succeed / fail branches at landing. Frames are SkillData frames; every hit of a LaunchProjectile is at its launch frame (`launch`: the cast's own until then; travel isn't in the data, in-game test 47).",
     "Timing from SkillData (loader): the battle skill's conditional JumpToAction 31 -> 118 (inside the IfElse on SpellInflict, D1; named by `jumps`), its unconditional 117 -> 247 and its MarkCanInterrupt at 48 (S1: a plain cast frees him at 48; the reaction path's jump skips the mark, so it holds until its exclusive frame 159 = real 72).",
     "Values: SkillPatchTable chr_0006_wolfgd_*; talents (PotentialTalentEffectTable): talent 1 attaches buff_chr_0006_wolfgd_talent_0 (add 0.2 / 0.3, duration 10), talent 2 sets the battle skill's returnskillpower (5 / 10) and talent2. Potentials: P1 Strength +15 and Agility +15 (data); P2 potential_skillpower 10; P3 potential_3 and teammate_percent 0.5; P4 ultimate cost x0.85 (data); P5 potential_5 (the ultimate's combo reset).",
-    "Batch-3 report docs/kit-batches/batch-3/chr_0006_wolfgd.md (gap report, kit plan and the section \"Kit\"). No log fixture has Wulfgard: nothing here is verified by a log."
+    "Batch-3 report docs/kit-batches/batch-3/chr_0006_wolfgd.md (gap report, kit plan and the section \"Kit\"). Logs: 4e36 (P5) and 14a9; 4e36 decides in-game tests 72 (he keeps 0.3, teammates 0.15) and 17's Wulfgard variant (the jumps skip)."
   ],
   "element": "fire",
   "buffs": [
@@ -35,7 +35,7 @@
       "gameBuff": "buff_chr_0006_wolfgd_talent_0_effectbuff",
       "duration": { "talent": 0, "key": "duration" },
       "modifiers": [{ "attr": 51, "value": { "product": [{ "talent": 0, "key": "add" }, { "key": "teammate_percent", "skill": "chr_0006_wolfgd_normal_skill" }] } }],
-      "note": "P3: the battle skill at frame 141 (FindTarget CharacterTeamFinder, ModifyDynamicBlackboard teammate_percent x add, CreateBuff) gives the effect buff with add x teammate_percent (0.5). The finder has no validator, so the data's second CreateBuff reaches Wulfgard too; interim (report row 26): teammates only, as the description says (\"grants other teammates Scorching Fangs with {teammate_percent} of the base effects\"). Whether his own copy drops to 15% is in-game test 72."
+      "note": "P3: the battle skill at frame 141 (FindTarget CharacterTeamFinder, ModifyDynamicBlackboard teammate_percent x add, CreateBuff) gives the effect buff with add x teammate_percent (0.5). The finder has no validator, so the data's second CreateBuff reaches Wulfgard too; interim (report row 26): teammates only, as the description says (\"grants other teammates Scorching Fangs with {teammate_percent} of the base effects\"). His own copy stays at 0.3: the logs decide in-game test 72 (4e36, 2026-11-13)."
     }
   ],
   "triggers": [
