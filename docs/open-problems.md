@@ -266,8 +266,11 @@ and Arcane ×0.839 of the engine's, with no Liino ATK listed.
 "presses" are beats). The data's linger (`finish_duration` 5 s) doesn't
 add to a new stance's ATK, so there's nothing to gain from it.
 
-**Still possible:** what ends the stance there (her combo in 0eef, the
-ultimate in 1cd1, a stage effect, her death); whether the 5 s linger
+**Ruled out (also):** her combo ending the stance (its description: it
+doesn't cancel the stance, the owner 2026-11-13; the kit resumes it).
+
+**Still possible:** what ends the stance there (the ultimate in 1cd1, a
+stage effect, her death, a buff the log stops listing while it's on); whether the 5 s linger
 exists (0eef: if End Stance-like, the ATK went at once, against it; no
 other log has teammates' hits in the 5 s after a stance's end); why the
 engine still has Liino ATK in 1cd1 after 39 s.
