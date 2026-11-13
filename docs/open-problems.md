@@ -392,6 +392,21 @@ what the engine applies), another buff on the same hits, db87's build.
 
 **Next check:** the sword buff's value and stacks in db87 against e989.
 
+## OBJ Razorhorn's ATK lasts longer than its 15 s
+
+**Shows:** wpn_lance_0013's atk_up (Estella's weapon) still listed 17.2 s
+after its Shatter in a27b (44993 → 62229) and 18.7 s in 69e7 (13030 →
+31681), against the data's 15 s at L9; the check says "log lists it,
+replay isn't sure".
+
+**Ruled out:** nothing yet.
+
+**Still possible:** a refresh by a later Shatter or other trigger; the
+duration read wrong; the listing lagging (stackingType habits, cf. Liino's
+weapon).
+
+**Next check:** each listing's start and the Shatters between (small model).
+
 ## Liino's volley doubles in 1d91
 
 **Shows:** 442 at 1990 ms, 886 (exactly 2×) at 13713 ms, later 985, 1152;

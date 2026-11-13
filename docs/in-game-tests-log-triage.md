@@ -10,14 +10,14 @@ when that test is worked on, not a result.
 have shows the case), **24 PARTLY**, **14 GAME ONLY** (SP, energy, HP,
 cooldowns, dodges, dashes, positions, screen).
 
-## Already decided by a log (to write up)
+## Already decided by a log (written up 2026-11-13, verified by sonnet)
 
 - 72: Wulfgard keeps 0.3, teammates get 0.15 (4e36).
 - 89: Zhuang's talent 1, strikes ×1.117 (4bfc), as the engine says.
 - 17, Wulfgard variant: cast to extra shot 1.7–2.2 s (4e36): fits skips.
-- 63: Alesh's combos 0.8–3.5 s after Shatters (69e7); Razorhorn's ATK starts on Shatter hits (a27b).
+- 63: Alesh's combos 0.8–3.5 s after Shatters (69e7); Razorhorn's ATK starts on Shatter hits (a27b: Estella's weapon, not Chen's).
 - 79: Yvonne's Final Strike remap lasts at least 4 s (abfd: 4.1 s and 6 s after the bomb).
-- 83: Last Rite's Mirages, b6aa agrees with the owner's call.
+- 83: Last Rite's Mirages, b6aa agrees with the owner's call (partly: rules out "each member once", can't separate the two readings).
 
 ## The engine looks wrong (to check first)
 

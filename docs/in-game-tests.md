@@ -293,6 +293,8 @@ Dolly's hit is on its way once it's sent.
 
 ### 17. Do the jumps in Laevatain's battle skill skip time? (ready, if you have Laevatain or Wulfgard)
 
+**Wulfgard variant decided by the logs (2026-11-13):** 4e36, cast to his big shot 1.87, 2.16, 1.74 and 1.88 s: the jumps skip (about 1.8 s with the flight; about 4.7 s without), as the engine has (frame 54 = 1.8 s). The "about 2.4 s to his next attack" sign isn't checked; Laevatain's own variant stays open.
+
 **Why:** her battle skill's data has jumps: the timeline skips ahead, on
 one path when she has 4 Melting Flame (empowered) and on another when
 not. Since batch 2 (S1) the engine takes jumps as skipping time, because
@@ -1181,6 +1183,8 @@ gone at about 11 s (own timers).
 
 ### 63. Does a Shatter count as consuming a reaction? (ready, if you have Alesh and Estella; variants with OBJ Razorhorn or Twelve Questions)
 
+**Decided by the logs (2026-11-13): a Shatter counts.** 69e7: five Shatters, and Alesh's five combos come one after each (0.8–1.2 s; 3.5 s once, on the other enemy). OBJ Razorhorn (Estella's weapon in a27b and 69e7, not Chen's): its ATK first shows on her Shatter hits (a27b 14630, 44993, 63630; 69e7 all five). As the engine has. Not covered: the control (an infliction consumed, button dark). Aside: Razorhorn's ATK is still listed 17–19 s after its Shatter, against the data's 15 s (open-problems).
+
 **Why:** a Shatter ends Solidification with a physical status. Effects
 that listen for "an Arts Reaction consumed" may or may not count it
 (batch 3, A7): Alesh's combo trigger, Liino's combo, OBJ Razorhorn's ATK,
@@ -1367,6 +1371,8 @@ stacks it consumes.
 
 ### 72. Wulfgard's P3: does he keep his full Scorching Fangs? (ready, if you have Wulfgard at P3+)
 
+**Decided by the logs (2026-11-13): he keeps 0.3.** 4e36 (P5): after his extra shots teammates list the effect at 0.15 (Ardelia, Si, Alesh), his own hits stay at 0.3 (25908, 38591, 43083), no hit lists both. As the engine has.
+
 **Why:** at P3 his battle skill's additional shot gives teammates
 Scorching Fangs at half strength (15% Heat DMG). The data gives that copy
 to the whole team, him included, on a buff he already has; if a refresh
@@ -1536,6 +1542,8 @@ battle skill before the combo, never between the combo and the ultimate
 
 ### 79. Yvonne's talent 1: how long the next basic attack stays a Final Strike (ready, if you have Yvonne and a Cryo or Nature teammate)
 
+**Decided by the logs (2026-11-13): it lasts well past 0.5 s.** abfd: her Final Strike comes about 3.8 s after the bomb (pressed after Si's attacks until 25.6 s; the hit at 25929 lists talent_1_valid_up 0.5), and again at 70555 after the bomb at 64571 (about 5.5 s). The engine's 15 s isn't contradicted (no upper bound in the log); whether her combo lit after it isn't logged.
+
 **Why:** when her battle skill's bomb Solidifies an enemy, talent 1 turns
 her next basic attack into her Final Strike (attack 5) for up to 15 s. The
 data does it by remapping the basic-attack button; the engine keeps the
@@ -1603,6 +1611,8 @@ does attack 2's second hit still show its damage number? Data and engine:
 yes.
 
 ### 83. Last Rite's Mirages after a swap (decided by the owner, 2026-10-25; still worth a look)
+
+**Partly decided by the logs (2026-11-13):** b6aa, Last Rite's cast at 15400 with Xaihi controlled: one Mirage pair (18659, after Xaihi's Final Strike), none after Last Rite's own (22061, 26821) or Si's (22920, 26697) within the 15 s, though Last Rite holds a perfusion: "each member once" is ruled out. It can't separate "the first Final Strike of anyone" (the engine) from "only the operator controlled at the cast": Xaihi was both.
 
 **Decided:** the owner: "It just makes more sense that the battle skill
 can only be activated once." The engine gives one use per cast for the
@@ -1707,6 +1717,8 @@ early, perhaps on a swap. The engine follows the first two since
    attacks; engine), or is it gone?
 
 ### 89. Zhuang Fangyi's talent 1 over one cast (ready, if you have Zhuang Fangyi with talent 1 at level 2+; needs nine Sunderblades)
+
+**Decided by the logs (2026-11-13): the Amp raises add up.** 4bfc, a cast outside the Empyrean (44232): 7317 … 8171 in steps of 122, ×1.1167 over eight strikes = 1.34 / 1.20 exactly. Inside the Empyrean the ratio is ×1.091 (other Amp in the zone), the step the same. As the engine has.
 
 **Why:** talent 1 gives her Electric Amp with each battle skill and
 raises it by 2% before each Thunder Strike. The engine adds the raises up
