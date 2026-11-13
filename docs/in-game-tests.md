@@ -256,6 +256,12 @@ cd_minus > 0, i.e. P5; she's P0). Builds: Laevatain P2, Forgeborn Scathe
 9/9/4, Frontiers ×3 + Redeemer Seal; Antal P5, Detonation Unit 9/9/4,
 Qingbo ×3 + Redeemer Seal; Arcane P0, Type 42: Solemn Phalanx 9/9/4,
 Eternal Xiranite ×4. Enemy: Bonekrusher Ballista (several enemies).
+The owner's idea (2026-11-13): a cooldown food. Echoing Remedy (attribute
+47 ×0.742: 13.4 s) or Bottled Milk [A] (×0.821: 14.8 s); logs never show
+foods that don't touch damage. 12.15 s is still 1.2 s under 13.4, but
+3f78 and e989 are ~1.05 s under 18 s too: if logged gaps run ~1 s short
+of the cooldown in general, Echoing Remedy fits 0206. Being checked across
+every operator's combo gaps (haiku).
 
 **Why:** a talent shortens her combo cooldown by 6 s only in INT mode
 (data: `activeCondition lizhiyan_wisd`); the engine now follows the data
