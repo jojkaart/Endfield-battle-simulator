@@ -227,7 +227,17 @@ level 12 below P2: 0.30, 0.33, 0.36, 0.39, 0.42 for 0–4 stacks (hits ×1.30
 … ×1.42). From P2: 0.36, 0.42, 0.48, 0.54, 0.54. A 0.48 at 3 stacks from
 P2 would mean the data's check is "fewer than 3", not "3 or fewer".
 
-### 13. Arcane's combo cooldown in WILL mode (ready, if you have Arcane)
+### 13. Arcane's combo cooldown in WILL mode (ready, if you have Arcane; higher priority now: a log contradicts the data)
+
+**The logs (sonnet, 38 logs, 2026-11-13):** 0206 (P0, WILL by its own
+Susceptibility values, no cooldown set) has two of her combo presses
+12.2 s apart, against the engine's 18 s; 3f78 and e989 (WILL, P0) 16.9 s.
+Every other WILL gap is 17.4 s or more (late presses say nothing). The
+data gates both of talent 1's −6 cuts (paramType 2 and 4) on
+`lizhiyan_wisd` (INT). So either the cut applies in WILL too (then every
+WILL Arcane combos every 12 s, 10.2 s with the cooldown set: a large
+change for her teams), or 0206 has a cut nobody's data shows. One
+stopwatch reading decides it.
 
 **Why:** a talent shortens her combo cooldown by 6 s only in INT mode
 (data: `activeCondition lizhiyan_wisd`); the engine now follows the data

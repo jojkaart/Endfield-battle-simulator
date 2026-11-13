@@ -198,6 +198,9 @@ claims to check before they change the engine.
   (WILL), the combo-cooldown set ×0.85. Logged press gaps: b6aa 18.5,
   18.2 with the set (engine 15.3); 1d91 19.9, 19.8 (no set); a7a7 17.6,
   17.5, then 12.0 (P5); 3f78 16.9. No single rule fits; sonnet next.
+  Sonnet (38 logs): a7a7's 12.0 was a miscount (17.6 / 17.5 / ~14.9); 0206
+  (WILL, P0, no set) 12.2 s against 18 s; the set's ×0.85 neither shown nor
+  contradicted (its gaps ≥ 17.4 s). Test 13 raised in priority.
 - **30 Arcane's talent-1 Susceptibility: 10 s (one log, weak).** 1d91,
   after her ultimate at 49470: listed through +11.39 s, gone at +11.71 s,
   i.e. 10 s plus the 1.6 s time stop; 20 s ruled out. Most other
