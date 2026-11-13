@@ -1818,8 +1818,9 @@ A log settles it better.
 random, not aimed at the enemy, so the count varies cast to cast. The
 logs agree: 7 hits (4e36, P1, a disk enemy) and 3 (c3c7, P2, Chiliarch),
 the only two ultimates of hers that hit in our logs. So the engine's 11
-is the most, not what to expect; what to expect needs more casts (more
-Ardelia logs, or counts from several of your casts).
+is the most, not what to expect. Counted from 23 ultimates in 20 logs
+(2026-11-13): on average 6.1 hits below P3 (engine 11), 8.6 from P3
+(engine 14). No in-game count needed.
 
 ### 97. Dive attacks: their pace and what a jump can do (ready, any operator; higher priority: the search now uses dives)
 

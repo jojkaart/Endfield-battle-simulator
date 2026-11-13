@@ -345,9 +345,19 @@ assume the 0.3 s per-enemy cap is always reached.
 **Ruled out:** a fixed count: the sheep fly at random, not aimed (the
 owner, 2026-11-13), so the count varies cast to cast.
 
-**Still possible:** an expected count (mean of more casts; enemy size may
-matter), or the count as a random outcome in rolled battles (as crits
-are).
+**Counted (2026-11-13):** 21 ultimates in 18 more ZMDLogs battles
+(screened from her profile, not imported; IDs in the session's scratch
+folder) and our 2 logs, sheep hits on the main target per cast:
+- below P3 (engine 11): 2, 3, 3, 4, 5, 6, 6, 7, 7, 8, 8, 8, 9, 9: mean
+  6.1, median 6.5, never 10 or 11 (×0.55 of the engine);
+- from P3 (engine 14): 4, 8, 8, 9, 10, 10, 11: mean 8.6 (×0.61).
+One more cast (Hard 32, several enemies, potential not exported) hit
+nothing. Hits on one enemy are 0.2–0.45 s apart (the 0.3 s cap, roughly),
+spread over 2–6 s; towers 15/16 (large bosses) and smaller enemies alike.
+
+**Still possible:** the expected count (6.1 / 8.6 of 11 / 14) as the
+engine's count, or the count as a random outcome in rolled battles (as
+crits are); enemy size mattering (too few casts per enemy to tell).
 
 **Impact:** small. She's a support (the owner): teams run her for her
 effects on others, not her own damage. What it can move: the search
