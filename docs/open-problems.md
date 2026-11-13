@@ -514,10 +514,22 @@ points). Clean WILL gaps elsewhere: 18 s as the data.
 over the cooldown, nine operators); a cooldown food (fits worse); a
 teammate's cut (none in the team's data); Si's ultimate (no Si).
 
-**Still possible:** our panel a point or two off for her Intellect or Will
-(gear rolls, rounding); the mode re-evaluated mid-fight with temporary
-attribute changes (the talent text says it isn't); the cut and the
-Susceptibility keyed to different conditions.
+**Found in the data (2026-11-13, the owner's idea):** the game decides
+her mode in two places. The talent's cooldown cut and the skill set shown
+use the skill condition table (lizhiyan_wisd: Intellect ≥ Will, condType
+14010 on "deck" attributes; its toast floors both); her skills' in-fight
+branches (the WILL Susceptibility, the combo's and battle skill's
+branches, the ultimate's P5 cut) read EntityBB_wisd_greater_will, set by
+her passive buff's CompareDeckAttr (compare 3, operand types 2 and 3). If
+the two read the attributes slightly differently, a build on the line can
+be INT for the cooldown and WILL for the effects: 0206 exactly. What
+differs isn't in the data. The engine uses one mode; since 2026-11-13 the
+stat panel warns when the two attributes are within 2 points
+(stats.ts KNIFE_EDGE_POINTS; 0206 1.1, b6aa 0.1).
+
+**Still possible:** what the two checks read differently (sources,
+rounding, when); our panel a point or two off for her Intellect or Will
+(gear rolls, rounding).
 
 **Next check:** 0206's panel line by line (which source could add ~1 point
 of Intellect); her other mode-dependent effects in 0206 around 81–93 s.
