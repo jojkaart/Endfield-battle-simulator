@@ -91,8 +91,10 @@ describe("rotation search", () => {
     // since the key leaves out deadlines already past (2026-10-25: one more merge, same rotation and total). 2026-11-12, SP
     // regen through time stops and a 0.5 s pause: 1,148,635.809, 527 states. The rotation found before is still legal
     // and still totals 1,161,308.759; with SP sooner the width-8 beam keeps other states and misses it.
-    expect(found.result.total).toBeCloseTo(1148635.809, 3);
-    expect(found.expanded).toBe(527);
+    // 2026-11-13 (proposal, the owner to confirm): Laevatain's battle skill by the game-1.6 data (in-game test 20):
+    // 1,118,447.887, 513 states.
+    expect(found.result.total).toBeCloseTo(1118447.887, 3);
+    expect(found.expanded).toBe(513);
   });
 
   it("works for a team: casts of both operators interleave, all legal; no swaps unless asked for", () => {

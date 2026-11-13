@@ -24,6 +24,8 @@ export interface DamageExpectation {
   crit?: "never" | "always" | "expected";
   expected: number;
   tolerance?: number;
+  /** An older game version's in-game value that later evidence supersedes: the engine is checked against `engine`. */
+  superseded?: { engine: number; why: string };
 }
 
 export interface Fixture {

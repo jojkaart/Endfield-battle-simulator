@@ -373,7 +373,8 @@
           }
         ],
         "crit": "never",
-        "expected": 57552
+        "expected": 57552,
+        "superseded": { "engine": 46042, "why": "Zero Sanity's in-game value, game ~1.1. The game-1.6 data and logs (in-game test 20, decided 2026-11-13: 18 hits exact in e989, 3440, 064b, 6339) give atk_scale_3 × ratio (1.2 at P5), not × extra_scaling (1.5): 57552 × 1.2 / 1.5." }
       },
       {
         "label": "Combo skill",
@@ -451,7 +452,8 @@
           }
         ],
         "crit": "never",
-        "expected": 19732
+        "expected": 19732,
+        "superseded": { "engine": 16443, "why": "Zero Sanity's in-game value, game ~1.1. The game-1.6 data and logs (in-game test 20, decided 2026-11-13: 18 hits exact in e989, 3440, 064b, 6339) give no ratio on enhanced hit 1: 19732 / 1.2." }
       },
       {
         "label": "Ultimate: enhanced battle skill hit 2",
@@ -462,7 +464,8 @@
           }
         ],
         "crit": "never",
-        "expected": 22124
+        "expected": 22124,
+        "superseded": { "engine": 18437, "why": "Zero Sanity's in-game value, game ~1.1. The game-1.6 data and logs (in-game test 20, decided 2026-11-13: 18 hits exact in e989, 3440, 064b, 6339) give no ratio on enhanced hit 2: 22124 / 1.2." }
       },
       {
         "label": "Ultimate: enhanced battle skill extra hit (Scorching Heart active)",

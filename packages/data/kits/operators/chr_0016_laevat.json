@@ -441,10 +441,23 @@
     },
     {
       "skillId": "chr_0016_laevat_normal_skill",
-      "jumps": [{ "at": 30, "if": { "stack": "melting_flame", "atLeast": 4 } }],
+      "jumps": [
+        {
+          "at": 30,
+          "if": {
+            "stack": "melting_flame",
+            "atLeast": 4
+          }
+        }
+      ],
       "label": "Battle skill",
       "damageType": "battle",
-      "teamEnergy": [{ "frame": 22, "ratio": 1 }],
+      "teamEnergy": [
+        {
+          "frame": 22,
+          "ratio": 1
+        }
+      ],
       "available": {
         "not": {
           "buffActive": "twilight"
@@ -478,7 +491,7 @@
           "label": "Empowered extra hit",
           "scale": [
             "atk_scale_3",
-            "extra_scaling"
+            "ratio"
           ],
           "requires": {
             "stack": "melting_flame",
@@ -494,14 +507,21 @@
               "scaleKey": "extra_scaling"
             }
           ],
-          "dataOverride": { "scale": "ModifyDynamicBlackboard atk_scale_3 ×= ratio at frame 104; extra_scaling only goes to the forced Combustion buff. Open question in batch-1 (in-game test 20)." },
-          "note": "With 4 Melting Flame at the cast (CheckBuffStackNumAdvanced at frame 3): all stacks are consumed at this hit (FinishBuffAction at 104, after the explosion's +1), forced Combustion for `duration` with ticks × extra_scaling (P3 ×1.5 both), `extra_usp` energy, and the P1 SP return `atb` (its ObtainCostAction is inside this hit's channel). Scale: Zero Sanity's extra_scaling; the data has × ratio (in-game test 20)."
+          "note": "With 4 Melting Flame at the cast (CheckBuffStackNumAdvanced at frame 3): all stacks are consumed at this hit (FinishBuffAction at 104, after the explosion's +1), forced Combustion for `duration` with ticks × extra_scaling (P3 ×1.5 both), `extra_usp` energy, and the P1 SP return `atb` (its ObtainCostAction is inside this hit's channel). Scale: Zero Sanity's extra_scaling; the data has × ratio (in-game test 20). Scale atk_scale_3 × ratio, as the data (ModifyDynamicBlackboard at frame 104): in-game test 20, decided by the logs 2026-11-13 (6 extras exact in e989, 3440, 064b, 6339; Zero Sanity's × extra_scaling, game ~1.1, fits none)."
         }
       ]
     },
     {
       "skillId": "chr_0016_laevat_normal_skill_during_ult",
-      "jumps": [{ "at": 24, "if": { "stack": "melting_flame", "atLeast": 4 } }],
+      "jumps": [
+        {
+          "at": 24,
+          "if": {
+            "stack": "melting_flame",
+            "atLeast": 4
+          }
+        }
+      ],
       "label": "Battle skill (Twilight)",
       "damageType": "battle",
       "available": {
@@ -512,25 +532,22 @@
           "id": "hit1",
           "label": "Hit 1",
           "scale": [
-            "atk_scale",
-            "ratio"
+            "atk_scale"
           ],
           "gains": [
             {
               "stack": "melting_flame"
             }
           ],
-          "dataOverride": { "scale": "Only atk_scale_3 is multiplied by ratio (frame 98); the hits at 13 and 23 use atk_scale and atk_scale_2 as they are. The kit's ratio on them comes from Zero Sanity's table (in-game test 20)." },
-          "note": "Grants 1 Melting Flame (CreateBuff buff_chr_0016_laevat_energy). × ratio from Zero Sanity's table; the data has none (in-game test 20)."
+          "note": "Grants 1 Melting Flame (CreateBuff buff_chr_0016_laevat_energy). × ratio from Zero Sanity's table; the data has none (in-game test 20). No ratio, as the data (only atk_scale_3 is multiplied, frame 98): in-game test 20, decided by the logs 2026-11-13 (12 of 12 exact in e989, 3440, 064b)."
         },
         {
           "id": "hit2",
           "label": "Hit 2",
           "scale": [
-            "atk_scale_2",
-            "ratio"
+            "atk_scale_2"
           ],
-          "dataOverride": { "scale": "Only atk_scale_3 is multiplied by ratio (frame 98); the hits at 13 and 23 use atk_scale and atk_scale_2 as they are. The kit's ratio on them comes from Zero Sanity's table (in-game test 20)." }
+          "note": "No ratio, as the data (only atk_scale_3 is multiplied, frame 98): in-game test 20, decided by the logs 2026-11-13 (12 of 12 exact in e989, 3440, 064b)."
         },
         {
           "id": "extra",
@@ -586,7 +603,9 @@
               }
             ]
           },
-          "dataOverride": { "energy": "buff_chr_0016_laevat_combo_skill_usp (at 41) grants usp_1…usp_4 by a Switch on a saved stack count; its usp_1 (25) equals the skill's usp_1_display (the buff's keys aren't the skill's)." },
+          "dataOverride": {
+            "energy": "buff_chr_0016_laevat_combo_skill_usp (at 41) grants usp_1…usp_4 by a Switch on a saved stack count; its usp_1 (25) equals the skill's usp_1_display (the buff's keys aren't the skill's)."
+          },
           "note": "Dealt by buff_chr_0016_laevat_combo_skill_hit, created by combo_skill_start (CreateBuff at 20, first trigger 0.7 s later for one enemy) → 41; only on enemies with Combustion or Corrosion. Energy 25 for one enemy (combo_skill_usp usp_1 = usp_1_display), 1 Melting Flame (combo_skill_hit_self)."
         }
       ]
