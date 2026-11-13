@@ -235,10 +235,15 @@ the real cast. The replay reads each later one as a press (End Stance or
 a recast) and charges SP for some: about 900 SP of the SP shortfall (Team
 SP, below).
 
-**Still possible:** what a beat does besides the heal: the owner says it
-damages enemies in range too, but the logs show no beat damage event
-(Liino's only stance damage is the volley, normal_skill_projhit_hit) and
-the data's Vocalist beat has only a HealAction; whether a beat re-opens
+**Settled on the way:** a Vocalist beat heals and makes enemies in range
+flinch, with no damage (its soundwave projectile:
+HealAction and EnemyHurtAnimAction, no DamageAction; no beat damage event
+in the logs); the owner remembered the heal for sure and damage less so.
+Cosmovoice's beats do deal damage (the kit's ult_song). The beats' heals
+feed her signature weapon (wpn_lance_0014, in every Liino log: ATK on the
+healed teammate, 20 s, 4 stacks), already in the kit and seen in the logs.
+
+**Still possible:** whether a beat re-opens
 the volley window (`volley_window_open`, frame 45 of the battle skill),
 which would explain why skipping the events loses teammates' matches.
 
