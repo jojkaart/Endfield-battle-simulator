@@ -8,6 +8,13 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
 
 ## Next steps
 
+- **First (2026-11-13):** the owner's yes on Laevatain's test-20 branch;
+  in-game test 13 (Arcane's WILL combo cooldown, 12 s or 18 s); then the
+  search on the distribution (rank by mean or a percentile from it; the
+  crit-trigger mean from the buffs' expected state, so the search stays
+  one battle); the new leads in open-problems (Razorhorn's duration,
+  db87's sword buff, 1cd1's step, 1d91's missing heal).
+
 0. **Engine accuracy first** (the owner, 2026-10-26: above the search's
    scoring): [accuracy-plan.md](accuracy-plan.md). Phase A, B1 (Stagger)
    and B0 (teammates' own basic attacks, in-game test 101 to confirm the
