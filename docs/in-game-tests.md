@@ -2019,7 +2019,9 @@ her yourself: do you press the battle skill during the stance, and why?
 **Partly answered (the owner, 2026-11-13):** (c) a press in the stance
 is rare; the logged "presses" are most likely the stance's beats (every
 3 s, a team heal; the data has them make enemies flinch, with no damage).
-Still useful: (a).
+Still useful: (a). Since 2026-11-13 the log check replays them as beats
+(no cast, no SP); a real End Stance press in the stance would be read as
+a beat too.
 
 ### 104. Do bosses ignore freezes? (ready, if you have Si or Tangtang; higher priority: every boss fight with a freeze)
 

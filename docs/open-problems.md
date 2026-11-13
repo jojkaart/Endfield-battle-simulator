@@ -109,13 +109,15 @@ with a current infliction has the latest's element); events while the
 cooldown keeps the window shut counting before the cast too (only 1cd1,
 where the replay's cooldown may be wrong); b74c's Cryst coming from Si's
 combo or ultimate instead (the kit says they apply none). Not fixed with
-it: e82d's replay lands a third touch the log hasn't (226 frames), which
-now applies Cryst (Arcane's own total +8 → +47%); the multi-target logs
+it: e82d's replay landed a third touch the log hasn't (226 frames), which
+applied Cryst (Arcane's own total +8 → +47%; gone since 2026-11-13: the
+logged combo at 3896 ms is the one placed at 7033 ms, matched in the
+world's time across the time stops between, Arcane −2.5%); the multi-target logs
 move both ways (b74c +23 → +34%, c516 +131 → +159%, 4f7e −2.7 → +3.4%:
 their replay already over-predicts).
 
 **Next check:** in-game test 33 (latest opener against first, and the
-consumed element); e82d's extra touch.
+consumed element).
 
 ## Hard 27: every physical hit ×1.1125 low (2fd9, 99fb)
 
@@ -219,37 +221,48 @@ needed, the priority-key replacement of Jade Vessel's buff.
 ## Liino's battle-skill presses during Vocalist Stance (every Liino log)
 
 **Shows:** a press every 3–4 s, no hits; the stance and its volleys go on.
-1d91 +113%, 1cd1 +96%, a7a7 +59% for Liino.
+Replayed as presses: 1d91 +113%, 1cd1 +96%, a7a7 +59% for Liino.
 
 **Ruled out:** replaying them as full battle skills (60 projectiles the
-log hasn't); skipping them outright (a7a7 plain 322 → 261: two Corrosions
-move, teammates mismatch); players pressing every 3–4 s (the owner, who
-plays her, 2026-11-13: a press in the stance is rare).
+log hasn't); players pressing every 3–4 s (the owner, who plays her,
+2026-11-13: a press in the stance is rare); a beat re-opening or
+refreshing her volley window (the data: spelllnfliction_check and
+_extraattack are clips of the battle skill's own action, frames 45–1691,
+created once per cast; the beats, normalskill_music_damage's soundwave
+launches, and normalskill_music_tag create neither; extraattack's 10 s
+interval is per instance, so only a real cast restarts it); the teammates'
+losses when the events were skipped (a7a7 322 → 261 plain) being Liino's:
+the recasts drained the team's SP, so Arcane's press at 37415 ms, 3.1 s
+before the battle skill placed from its hits at 40523 ms (351 ms later in
+the world's time, across two ultimates' stops), couldn't start and wasn't
+made; skipped, the SP was there and it was made as a second cast, landing
+a Corrosion at 39.4 s the log hasn't. A logged cast now matches a placed
+one within 2.5 s of the world's time (worldMs), which also removes e82d's
+extra Arcane touch.
 
-**Leading reading (the owner, 2026-11-13):** they are the stance's beats,
-which the log records under the battle skill's key. The stance's
-`music_trigger` is 3 s; the logged gaps are 3.0 s at the shortest
-(10th percentile 3032 ms, median about 3.5 s: beats are held by others'
-time stops, the log's times aren't), and the first "press" of a run is
-the real cast. The replay reads each later one as a press (End Stance or
-a recast) and charges SP for some: about 900 SP of the SP shortfall (Team
-SP, below).
+**Done (2026-11-13):** they are the stance's beats (the owner): the kit's
+vocalist_stance has `ticksLoggedAs` its battle skill, and the replay reads
+such an event while its own stance is on as a beat: no cast, no SP; the
+beat comes at the event (a tick due within half an interval is held to
+it or brought to it; the next comes 3 s on), since bdf2, 0eef, d774 and
+4bfc list one more layer of her weapon's heal ATK on teammates after each
+event. Liino's damage error: 1d91 +113 → +2%, 1cd1 +96 → +27%, a7a7 +58 →
++2%, 8318 +230 → −7%, 4bfe +121 → +7%, 7910 +31 → −7%; teammates
+unchanged but 1d91 (Typhoeus 162 → 152 plain, Arcane 63 → 51, Ardelia
+3 → 4).
 
-**Settled on the way:** a Vocalist beat heals and makes enemies in range
-flinch, with no damage (its soundwave projectile:
-HealAction and EnemyHurtAnimAction, no DamageAction; no beat damage event
-in the logs); the owner remembered the heal for sure and damage less so.
-Cosmovoice's beats do deal damage (the kit's ult_song). The beats' heals
-feed her signature weapon (wpn_lance_0014, in every Liino log: ATK on the
-healed teammate, 20 s, 4 stacks), already in the kit and seen in the logs.
+**Still possible:** 1d91's damage wants one more heal than the beats give:
+Arcane's hits fit 2 weapon layers at 5940 ms (a heal near 5.9 s, before
+the event at 6255) and 3 from 6797 to 10024 ms (another after it); 1d91
+lists none of Liino's buffs, so only the damage tells; the recast reading
+gave both (its own tick, then the recast's). A heal at the cast besides
+the first beat (the data's unused normal_skill_projhit_health heals the
+team) would fit 1d91 but not bdf2's or 0eef's listing (one layer after
+the cast). A real End Stance press in a stance is read as a beat (rare,
+the owner).
 
-**Still possible:** whether a beat re-opens
-the volley window (`volley_window_open`, frame 45 of the battle skill),
-which would explain why skipping the events loses teammates' matches.
-
-**Next check:** replay these events as beats (no cast, no SP) and see
-what the volleys and teammates' matches need; in-game test 103 only for
-what's left.
+**Next check:** in-game test 103 (a) only (End Stance); 1d91's extra heal
+if another log without Liino's buffs listed shows it.
 
 ## Liino's stance ATK ends early in 0eef and 1cd1 (the 5 s linger)
 
@@ -629,7 +642,12 @@ casts the log made: at first in 28 of 40 logs at the 1.5 s regen pause
 SP before a 100 cast). replayCast raises SP silently, so verdicts don't
 show it. Since 2026-11-12 the engine pauses 0.5 s and regenerates through
 others' time stops and slow-downs: of the 17 development logs, 9 are still
-short at some cast, 1193 SP in all (before: 13 logs, 2921 SP).
+short at some cast, 1193 SP in all (before: 13 logs, 2921 SP). Since
+2026-11-13 Liino's beats cost nothing and a logged cast matches a placed
+one in the world's time: of the 15 development logs, 8 short at 21 casts,
+1038 SP (before: 10 logs, 39 casts, 1673 SP, 116 of it Liino's); in the
+Liino logs, Liino's top-ups are gone (a7a7 153 → 0 SP, 8318 111 → 0, 4bfe
+126 → 0: teammates' presses no longer starved by her recasts).
 
 **Ruled out:** a 1.5 s pause after every spend (old rule K1). Regen held
 during others' time stops and slow-downs (old rule K2: about 1400 SP of the
@@ -646,9 +664,10 @@ are right though the flag says false). Granting all of it anyway: 10 → 7
 of 15 development logs short, 1808 → 1287 SP (counted at each replayed
 cast).
 
-**Still possible:** Liino's "presses" in Vocalist Stance are her
-stance's beats, logged under the battle skill (the owner; about 900 SP;
-being implemented); teammates' basic attacks the replay doesn't land
+**Ruled out (2026-11-13):** Liino's "presses" in Vocalist Stance: her
+stance's beats (the owner), replayed as such, no SP.
+
+**Still possible:** teammates' basic attacks the replay doesn't land
 (their Final Strikes' SP; the earlier probe granted SP at every logged
 Final Strike); Purrchena's block refund (+20 at her counter, about 240
 SP, more if repeated blocks count); teammates' Final Strikes give SP too
@@ -658,8 +677,7 @@ start above 200 (0eef short at 3.2 s); a pause shorter than 0.5 s (bdf2 at
 3817 ms fails any pause above ~0.2 s with the old regen); a replay
 artefact (db87 at 10117 ms charges 200 SP for one press).
 
-**Next check:** test 103 (Liino); the Final-Strike SP of teammates
-(a data read: who gets a Final Strike's `atb` when not controlled); then
+**Next check:** teammates' basic attacks the replay doesn't land; then
 the pause (test 102).
 
 ## Solidification as a freeze (web review row 4)
