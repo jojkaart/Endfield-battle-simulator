@@ -187,3 +187,18 @@ claims to check before they change the engine.
   no upper bracket; 458b's brackets (33.7–34.1 s and 28.7–29.2 s after the
   ultimate) are far above the model's ~19–23 s, not yet explained by
   teammates' time stops or other pauses.
+- **12 Gilberta's Susceptibility: not decided, nothing against the
+  engine.** Values fit rate × (1 + 0.1·n) at P0 (0.30 + 0.03 per
+  Vulnerable stack; 0.36 / 0.39 / 0.42 = 2 / 3 / 4 stacks) and the P3
+  form (40d9 0.36 = no stacks); stacks aren't logged. 5 s fits the two
+  clean ends (489c +5000 / +5426 ms, 40d9 +5058 / +5733), but three
+  listings run 5.9–6.9 s (unbracketed: the log ends, or another source).
+- **13 Arcane's WILL combo cooldown: not decided, the engine looks wrong
+  for the set.** Engine: 18 s at combo level 12, INT −6 s, P5 a fraction
+  (WILL), the combo-cooldown set ×0.85. Logged press gaps: b6aa 18.5,
+  18.2 with the set (engine 15.3); 1d91 19.9, 19.8 (no set); a7a7 17.6,
+  17.5, then 12.0 (P5); 3f78 16.9. No single rule fits; sonnet next.
+- **30 Arcane's talent-1 Susceptibility: 10 s (one log, weak).** 1d91,
+  after her ultimate at 49470: listed through +11.39 s, gone at +11.71 s,
+  i.e. 10 s plus the 1.6 s time stop; 20 s ruled out. Most other
+  windows are shared with other sources and unbracketed.
