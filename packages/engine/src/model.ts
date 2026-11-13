@@ -681,6 +681,12 @@ export interface KitBuff {
   /** The first tick comes when it's applied (default: one interval later). */
   readonly tickOnApply?: boolean;
   /**
+   * A skill of the kit whose cast-event key a battle log records each tick under, without damage (Liino's Vocalist
+   * Stance beats under her battle skill): the log check's replay reads such an event while the buff is on as a tick
+   * there, not a press (cli buffreplay.ts). The engine doesn't read it.
+   */
+  readonly ticksLoggedAs?: string;
+  /**
    * Ends with the action that applied it (CreateBuffAction autoFinishByAction):
    * when its owner's current skill ends or the owner starts another one.
    * Applied while its owner isn't in a skill, it isn't applied.

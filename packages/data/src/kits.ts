@@ -501,6 +501,7 @@ function kitChecker(scope: KitScope) {
   const checkBuff = (b: RawBuff, skillId: string, where: string) => {
     for (const v of [b.duration, b.maxStacks, b.every, b.records?.rate, b.priority, ...b.modifiers.map((m) => m.value)]) if (v !== undefined) checkValue(v, skillId, `${where}: buff ${b.id}`);
     if (b.records && b.target !== "enemy") throw new Error(`${where}: buff ${b.id}: only an enemy buff records the damage its target takes`);
+    if (b.ticksLoggedAs !== undefined && (b.every === undefined || !scope.isSkill(b.ticksLoggedAs))) throw new Error(`${where}: buff ${b.id}: ticksLoggedAs names a skill of ${scope.owner}'s kit, for a buff with ticks (every)`);
     if (b.link && b.target !== "team") throw new Error(`${where}: buff ${b.id}: a Link stack is a team buff`);
     for (const m of b.modifiers) if ((m.zone === undefined) === (m.attr === undefined)) throw new Error(`${where}: buff ${b.id}: each modifier has a zone or an attribute`);
     for (const m of b.modifiers) if (m.attr !== undefined && !buffAttrHasEffect(m.attr)) throw new Error(`${where}: buff ${b.id}: attribute ${m.attr} feeds no damage zone and nothing reads it (ATK is the atk zone)`);

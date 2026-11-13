@@ -15,7 +15,7 @@ import {
   type ActiveBuff, type GameData, type KitBuff, type KitTrigger, type LandedHit, type Modifier, type OperatorKit, type ReactionRecord, type SkillType, type TimelineContext, type TimelineScenario, type TimelineState,
 } from "@efsim/engine";
 import { isBuffFileListed, readBuffFile, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
-import { castTimeStops, distinctCasts, loggedFrames, mergeMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
+import { castTimeStops, distinctCasts, loggedFrames, mergeMs, worldMs, type LoggedCast, type Placement, type TimeStop } from "./logcasts.ts";
 
 /**
  * How sure the replay is of when its buffs start and end. A start is a
@@ -272,16 +272,20 @@ export function withLoggedCasts(casts: readonly ReplayedCast[], fx: Pick<LogFixt
   if (!fx.casts?.length) return [...casts];
   const logged = new Set(fx.hits.map((h) => `${h.operator}|${h.event}`));
   const added: ReplayedCast[] = [];
+  // A placed cast is the logged one within LOGGED_CAST_MS of the world's time: the log's times run on through time stops
+  // (a7a7a40c97ed: Arcane's battle skill pressed at 37415 ms, placed from its hits at 40523 ms, 351 ms later across
+  // Wulfgard's and her own ultimates' stops).
+  const near = (c: ReplayedCast, lc: { t: number; operator: string }, skill: string) => c.operator === lc.operator && c.skillId === skill && worldMs(Math.min(c.start, lc.t), Math.max(c.start, lc.t), stops) <= LOGGED_CAST_MS;
   for (const lc of fx.casts) {
     const skill = kits.find((k) => k.operator === lc.operator)?.skills.find((x) => x.skillId === lc.skill);
     if (!skill || skill.followUpOnly) continue;
-    if (casts.some((c) => c.operator === lc.operator && c.skillId === lc.skill && Math.abs(c.start - lc.t) <= LOGGED_CAST_MS)) continue;
+    if (casts.some((c) => near(c, lc, lc.skill))) continue;
     const shownElsewhere = skill.hits.some((h) => h.events.some((e) => logged.has(`${lc.operator}|${e}`)));
     const own = new Set(skill.hits.flatMap((h) => h.events));
     const kit = kits.find((k) => k.operator === lc.operator);
     const shows = shownElsewhere
       ? (kit?.skills ?? [])
-          .filter((k) => k.skillId !== lc.skill && k.kind === skill.kind && !k.followUpOnly && !casts.some((c) => c.operator === lc.operator && c.skillId === k.skillId && Math.abs(c.start - lc.t) <= LOGGED_CAST_MS))
+          .filter((k) => k.skillId !== lc.skill && k.kind === skill.kind && !k.followUpOnly && !casts.some((c) => near(c, lc, k.skillId)))
           .filter((k) => k.hits.some((h) => h.events.some((e) => !own.has(e) && fx.hits.some((x) => x.operator === lc.operator && x.event === e && x.t >= lc.t && x.t <= lc.t + SLOT_SHOWS_MS))))
           .map((k) => k.skillId)
       : [];
@@ -659,6 +663,53 @@ function withoutFollowUps(ctx: TimelineContext, st: TimelineState, casts: readon
   return st.scheduled.some(replaced) ? { ...st, scheduled: st.scheduled.filter((x) => !replaced(x)) } : st;
 }
 
+/**
+ * A logged cast event that is a tick of one of its operator's buffs (KitBuff.ticksLoggedAs) on at `f`, as the state
+ * after it, or null when it's a press. Liino's battle-skill events during her Vocalist Stance are its beats (the owner,
+ * who plays her; the stance's music_trigger is 3 s, and of the events of one stance only the first has projectiles
+ * behind it): no cast, no SP. The tick is the log's (bdf223db8e49 lists one more layer of her weapon's heal ATK on
+ * Typhoeus after each event, none between): one the replay has due within half an interval comes at the event (one
+ * due earlier waited for it: heldTicks), and the next an interval after it (the replay's own ticks drift from the
+ * game's: 1d9198480e75's ran 1.5 s early by 27 s).
+ */
+function loggedTick(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, f: number): TimelineState | null {
+  if (c.landings.length > 0) return null;
+  const ids = new Set((ctx.kits.get(c.operator)?.buffs ?? []).filter((d) => d.ticksLoggedAs === c.skillId).map((d) => d.id));
+  const b = ids.size ? st.buffs.find((x) => ids.has(x.id) && x.owner === c.operator && x.cast === undefined && x.every !== undefined && activeAt(x, f)) : undefined;
+  if (!b || b.every === undefined) return null;
+  const every = b.every;
+  const due = b.nextTick !== undefined && b.nextTick - f <= every / 2;
+  const next = { ...st, buffs: st.buffs.map((x) => (x === b ? { ...b, nextTick: due ? f : f + every } : x)) };
+  return due ? advance(ctx, next, f) : next;
+}
+
+/** The frames of the logged cast events that may be ticks of a buff (KitBuff.ticksLoggedAs), per `owner|buff`. */
+function loggedTickFrames(kits: readonly OperatorKit[], casts: readonly ReplayedCast[]): Map<string, number[]> {
+  const out = new Map<string, number[]>();
+  for (const k of kits) for (const d of k.buffs) {
+    if (d.ticksLoggedAs === undefined) continue;
+    const frames = casts.filter((c) => c.operator === k.operator && c.skillId === d.ticksLoggedAs && c.landings.length === 0).map((c) => frameOf(c.start));
+    if (frames.length) out.set(`${k.operator}|${d.id}`, frames);
+  }
+  return out;
+}
+
+/** The state with each tick due by `frame` that comes less than half an interval before a logged event of it (loggedTickFrames) held to that event (loggedTick). */
+function heldTicks(st: TimelineState, frame: number, events: ReadonlyMap<string, readonly number[]>): TimelineState {
+  if (events.size === 0) return st;
+  let changed = false;
+  const buffs = st.buffs.map((b) => {
+    const frames = events.get(`${b.owner}|${b.id}`);
+    const [n, every] = [b.nextTick, b.every];
+    if (!frames || n === undefined || every === undefined || b.cast !== undefined || n > frame) return b;
+    const e = frames.find((x) => x > n && x - n <= every / 2);
+    if (e === undefined) return b;
+    changed = true;
+    return { ...b, nextTick: e };
+  });
+  return changed ? { ...st, buffs } : st;
+}
+
 function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, f: number): string | null {
   const startsBy = (skill: string) => {
     const r = earliestStart(ctx, st, { operator: c.operator, skill });
@@ -762,6 +813,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   // The bar is set a frame before its hit, so the hit sees the bar the log has before it.
   const poiseBars = loggedPoiseBars(fx).map((g) => ({ frame: Math.max(0, frameOf(g.t) - 1), bar: g.bar, calm: g.notStaggered }));
   const casts = control?.casts ?? assembled;
+  const tickEvents = loggedTickFrames(kits, casts);
   const sampleFrames = [...new Set(fx.hits.flatMap((h) => [frameOf(h.t) - edge, frameOf(h.t), frameOf(h.t) + edge]))].filter((f) => f >= 0).sort((a, b) => a - b);
   type Made = { c: ReplayedCast; f: number; pre: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs };
   /**
@@ -863,6 +915,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     const made: Made[] = [];
     const castErrors: { cast: ReplayedCast; error: string }[] = [];
     for (const s of steps) {
+      st = heldTicks(st, Math.max(s.frame, st.frame), tickEvents);
       if (checkpoints.at(-1) !== st) checkpoints.push(st);
       if (s.cast) {
         const c = s.cast;
@@ -871,6 +924,11 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
           st = advance(ctx, withoutFollowUps(ctx, st, casts, f), f);
           const windowCount = c.kind === "combo" ? replayWindowCount(ctx, st, c.operator, c.skillId, f) : null;
           const pre = st;
+          const tick = loggedTick(ctx, st, c, f);
+          if (tick) {
+            st = tick;
+            continue;
+          }
           const skillId = replayedSkill(ctx, st, c, f);
           if (skillId === null) continue;
           // A slot cast the log shows only by its press (Si's Initial Stroke during her combo) keeps the running cast's hits.

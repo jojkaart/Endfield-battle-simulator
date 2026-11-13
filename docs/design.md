@@ -388,7 +388,10 @@ what the log doesn't list, and the check reads it, no assumption:
   `zmdlogs refresh` adds them to an older fixture), else a cast inferred from
   the lane of the one buff it applies (`castsFromBuffLanes`); a logged
   cast inside its operator's own cantCastSkill channel keeps the running
-  cast (the game couldn't have cut it there);
+  cast (the game couldn't have cut it there); one is a placed cast's
+  within 2.5 s of the world's time (time stops between don't count); one
+  of a skill a kit buff's ticks are logged under (`ticksLoggedAs`: Liino's
+  stance beats) while that buff is on is its tick there, not a cast;
 - **who is controlled**: every basic-attack hit with Stagger is
   controlled-only, so the log's Stagger per hit (`LogHit.poise`) names
   the controlled operator; the others' basic casts are their own attacks
