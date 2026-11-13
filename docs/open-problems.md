@@ -407,6 +407,34 @@ weapon).
 
 **Next check:** each listing's start and the Shatters between (small model).
 
+## Freezes on bosses: Si's Immobilization holds her Artful Intent (tests 104, 37)
+
+**Shows (sonnet, 2026-11-13):** Si's Artful Intent ends (the Inksoul
+burst: an exact expiry marker) fit only when her Immobilization freezes
+the boss: abfd (Rhodagn) residuals 318 / −7 / 174 ms frozen against 1318 /
+393 / 1174 immune; c3c7 (Chiliarch) 0 / 4 / 15 against 0 / 971 / 949;
+0c14 (eny_0134) 1 / 5 against 834 / 39. Non-bosses fit frozen, as the
+engine has. Jade Vessel's 30 s in abfd and c3c7 fits being stretched by
+her freeze too. The engine makes every Boss (rank 2) control-immune
+(clock.ts controlImmune, from b7b3's Cryo bursts during Tangtang's stare).
+
+**Tried (2026-11-13, reverted):** no Boss immune. Development plain 36.1 →
+35.4%, mean |damage error| 22.1 → 21.9%, hold-out unchanged; 4a64 (the
+same boss as 0c14) loses Arcane 64 → 32 plain and Si 37 → 25: the whole
+enemy clock frozen stretches timers the log says weren't.
+
+**Ruled out:** "bosses ignore freezes" as a property of the enemy (Si
+freezes Rhodagn in abfd, while b7b3's Tangtang stare on Rhodagn doesn't
+hold Arcane's bursts); freezing the boss's whole clock (4a64).
+
+**Still possible:** the freeze holds some timers and not others (Si's own
+Artful Intent and Jade Vessel yes; Arcane's statuses, Corrosion, her
+bursts?); Tangtang's stare differing from Si's Immobilization; the control
+-immune tag 188749032 (only in Tangtang's and Si's buff files, no enemy
+carries it in the data).
+
+**Next check:** on 4a64 and 0c14, which timers the freeze holds (sonnet).
+
 ## Liino's volley doubles in 1d91
 
 **Shows:** 442 at 1990 ms, 886 (exactly 2×) at 13713 ms, later 985, 1152;

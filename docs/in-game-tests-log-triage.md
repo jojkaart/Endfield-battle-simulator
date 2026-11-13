@@ -202,3 +202,10 @@ claims to check before they change the engine.
   after her ultimate at 49470: listed through +11.39 s, gone at +11.71 s,
   i.e. 10 s plus the 1.6 s time stop; 20 s ruled out. Most other
   windows are shared with other sources and unbracketed.
+- **104 Bosses and freezes: decided for Si's Immobilization, bosses
+  aren't immune** (Artful Intent ends fit to ~10 ms on Rhodagn, Chiliarch
+  and eny_0134 only when frozen); Tangtang's stare on a boss not decided;
+  what the freeze holds is open (open-problems, "Freezes on bosses").
+- **37 Timers while Imprisoned or Immobilized: in part.** Si's: Artful
+  Intent = 20 s + freeze + stops on every enemy, Jade Vessel stretched by
+  her freeze too. Arcane's, Last Rite's and Tangtang's parts: no data.
