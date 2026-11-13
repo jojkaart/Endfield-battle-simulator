@@ -227,6 +227,31 @@ level 12 below P2: 0.30, 0.33, 0.36, 0.39, 0.42 for 0–4 stacks (hits ×1.30
 … ×1.42). From P2: 0.36, 0.42, 0.48, 0.54, 0.54. A 0.48 at 3 stacks from
 P2 would mean the data's check is "fewer than 3", not "3 or fewer".
 
+### 105. Arcane on the mode line: INT's cooldown with WILL's skills? (ready, if you have Arcane with Type 42: Solemn Phalanx; higher priority: a faster WILL rotation)
+
+**Why:** 0206's Arcane had INT's 12 s combo cooldown while her skills ran
+in WILL (open-problems, "Arcane's Array Arcana on a knife edge"). The game
+decides her mode in two places (a skill condition for the talent's cut,
+her passive buff for her skills); a build on the line may come out
+differently in each. With Solemn Phalanx her Intellect always ends in .44
+and her Will in .50 (gear adds whole points), so builds sit at a whole
+number − 0.06. 0206: Intellect 472.44 / Will 473.50 (P0; Solemn Phalanx
+skill 1 at 9; Eternal Xiranite Wraps [3,0,3], Light Armor [3,3,0],
+Auxiliary Arm [3,3,3] ×2). b6aa: 431.44 / 431.50 (P2; skill 1 at 4;
+Qingbo Gloves [0,3,3], Eternal Xiranite Light Armor [3,3,0], Qingbo Cask
+[0,3,3] ×2). Attribute nodes and potentials add the same to both, so only
+the weapon and the gear move the difference.
+**How:** with gear and weapons you own (free to swap), copy 0206's
+loadout if you can; else list your pieces and `efsim edge <build.json>
+<pool.json>` finds the loadouts nearest the line (a "split candidate":
+whole parts tie, raw Intellect below Will). For each loadout tried: (a)
+Intellect and Will on her character screen (against the engine's values),
+(b) the mode the toast announces, (c) her combo cooldown by stopwatch
+(12 s INT, 18 s WILL; ×0.85 with 3 Qingbo pieces), (d) after her
+ultimate, a Susceptibility icon on the enemy (WILL) or Arts Amp on her
+(INT).
+**Reply, e.g.:** `105: 0206 copy, 472/473, toast WILL, cooldown 12 s, Susceptibility`.
+
 ### 13. Arcane's combo cooldown in WILL mode (decided by the logs, 2026-11-13: 18 s as the data; 0206 explained)
 
 **Decided (haiku over every operator's combo gaps, then a check):** no

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // efsim: Endfield battle simulator command line.
 
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -17,12 +17,15 @@ import { importBattle, readLogFixture, refreshFixture } from "./logs.ts";
 import { checkReactions, formatReactionCheck } from "./reactioncheck.ts";
 import { formatCensus, kitCensus } from "./census.ts";
 import { formatTrim, kitTrim } from "./kittrim.ts";
+import { knifeEdge, type EdgePool } from "./edge.ts";
 
 const USAGE = `Usage:
   efsim find <text>                       Look up operator, weapon, gear and enemy IDs by name
   efsim template <operator> [--weapon id] Print a build file to start from
   efsim calc <build.json> [options]       Stat panel and damage per hit
   efsim compare <a.json> <b.json> [opts]  Two builds of one operator side by side
+  efsim edge <build.json> <pool.json>     Loadouts from owned weapons and gear that put a mode's two attributes
+                                          on a knife edge (Arcane's INT / WILL; pool: {weapons?, gear}; --top n)
   efsim simulate <scenario.json>          Run a team rotation on the timeline (--verbose: every hit); with
                                           expected crits also the total's distribution (mean, standard
                                           deviation, 5–95%, bounds)
@@ -91,6 +94,7 @@ async function main(argv: string[]): Promise<number> {
       "log-buffs": { type: "boolean", default: false },
       simulate: { type: "boolean", default: false },
       beam: { type: "string", default: "24" },
+      top: { type: "string" },
       single: { type: "boolean", default: false },
       swaps: { type: "boolean", default: false },
       seed: { type: "string" },
@@ -266,6 +270,15 @@ async function main(argv: string[]): Promise<number> {
       {
         const builds = [readBuild(args[0] as string), readBuild(args[1] as string)] as const;
         text = compare(data(), builds[0], builds[1], options, [basename(args[0] as string), basename(args[1] as string)]);
+      }
+      break;
+    case "edge":
+      need(2);
+      {
+        const build = readBuild(args[0] as string);
+        const pool = JSON.parse(readFileSync(args[1] as string, "utf8")) as EdgePool;
+        if (!Array.isArray(pool.gear)) throw new Error(`${args[1]}: a pool has "gear": [{ "id", "artifice" }] (and optional "weapons")`);
+        text = knifeEdge(data(), build, pool, values.top === undefined ? 5 : Number(values.top));
       }
       break;
     default:
