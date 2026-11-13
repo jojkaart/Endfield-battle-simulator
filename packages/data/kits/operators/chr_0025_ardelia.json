@@ -203,6 +203,11 @@
           "scale": ["atk_scale"],
           "frames": [81, 90, 99, 108, 117, 126, 135, 144, 153, 162, 171, 180, 189, 198],
           "detached": false,
+          "landedCount": {
+            "counts": [2, 3, 3, 4, 5, 6, 6, 7, 7, 8, 8, 8, 9, 9],
+            "fromPotential": { "3": [4, 8, 8, 9, 10, 10, 11] },
+            "note": "Sheep hits on the main target per cast, counted 2026-11-13 in ZMDLogs battles (docs/open-problems.md, Ardelia's Wooly Party: 21 casts with a known potential; one on several enemies that hit nothing left out): below P3, of the 11 planned landings, mean 6.1; from P3, of 14, mean 8.6. The sheep fly at random (the owner, 2026-11-13), so the count is a random outcome (docs/design.md, Damage distributions)."
+          },
           "dataOverride": { "count": "Kit interim (U1, in-game test 96), compiler limit D7e: ArdeliaUltMark (CheckTimedMarkerCondition returnTrueIfNotExists + CreateTimedMarker interval 0.3 s on the target) lets one enemy take one hit per 9 frames; the compiler lands every tick of both channels.", "detached": "On purpose: a detached hit would keep the landings the jump 171 -> 201 (potential3_duration < 1) skips; the frames are the copies' launch frames (Ti2, see the hit's note)." },
           "note": "Two ChannelingActions 81–201 every 0.1 s each LaunchProjectile a copy to a random point (2–6 m around her; 1.5–6 m in a 120° cone toward the main target) → chr_0025_ardelia_ultimate_skill_sheep_projhit on landing: HitBox 1.5 m, ForEach target {CheckTimedMarkerCondition ArdeliaUltMark (returnTrueIfNotExists) → DamageAction atk_scale + poise (mask 4608) → CreateTimedMarker ArdeliaUltMark interval (0.3 s = 9 frames) on that target}. Interim (U1, in-game test 96): the cap is reached from the first tick, one hit every 9 frames from 81: 14 to 198 (P3+), 11 below P3, where the jump 171 → 201 (potential3_duration < 1) skips the last three. detached false on purpose: the loader's default for a hit in another file is detached, which would keep the landings the jump skips. kit-draft's 82 landings (every tick of both channels) ignore the marker. Frames are launch frames (Ti2)."
         }

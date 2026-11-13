@@ -23,8 +23,12 @@ const USAGE = `Usage:
   efsim template <operator> [--weapon id] Print a build file to start from
   efsim calc <build.json> [options]       Stat panel and damage per hit
   efsim compare <a.json> <b.json> [opts]  Two builds of one operator side by side
-  efsim simulate <scenario.json>          Run a team rotation on the timeline (--verbose: every hit)
+  efsim simulate <scenario.json>          Run a team rotation on the timeline (--verbose: every hit); with
+                                          expected crits also the total's distribution (mean, standard
+                                          deviation, 5–95%, bounds)
                 [--seed n]                Seed of the battle's rolls (scenario crit "rolled")
+                [--battles k]             Seeded battles for the distribution when random outcomes change
+                                          what follows (crit-triggered effects, dodges, chances; default 8)
                 [--runs n]                n battles with rolled crits: the spread of the damage
                 [--attack-every s]        The enemy attacks the controlled operator every s seconds
                 [--dodge p]               Dash at every enemy attack, perfect with chance p (0–1)
@@ -92,6 +96,7 @@ async function main(argv: string[]): Promise<number> {
       seed: { type: "string" },
       runs: { type: "string" },
       seeds: { type: "string" },
+      battles: { type: "string" },
       percentile: { type: "string" },
       dodge: { type: "string" },
       "attack-every": { type: "string" },
@@ -211,7 +216,9 @@ async function main(argv: string[]): Promise<number> {
         const seeded = withBattleOptions(readScenario(args[0] as string));
         const runs = values.runs === undefined ? undefined : Number(values.runs);
         if (runs !== undefined && !(Number.isInteger(runs) && runs >= 1)) throw new Error(`--runs must be a whole number ≥ 1`);
-        text = runs === undefined ? formatSimulation(data(), seeded, values.verbose) : formatRuns(data(), seeded, runs);
+        const battles = values.battles === undefined ? undefined : Number(values.battles);
+        if (battles !== undefined && !(Number.isInteger(battles) && battles >= 1)) throw new Error(`--battles must be a whole number ≥ 1`);
+        text = runs === undefined ? formatSimulation(data(), seeded, values.verbose, battles) : formatRuns(data(), seeded, runs);
       }
       break;
     case "search":

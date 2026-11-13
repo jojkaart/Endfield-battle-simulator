@@ -11,8 +11,12 @@ import { artsIntensityDamage, levelCoefficientAttr, reactionBase, type ReactionK
 import { evaluate, test, type EvalContext, type Predicate } from "./expr.ts";
 import { ATK_ATTRIBUTES, atkAttributeBonus, percentOfLine, skillLevel, type StatPanel } from "./stats.ts";
 
-/** `expected`: the crit zone at its average; `rolled`: each hit crits or not, by a roll the caller makes (DamageOptions.critRoll). */
-export type CritMode = "never" | "always" | "expected" | "rolled";
+/**
+ * `expected`: the crit zone at its average; `rolled`: each hit crits or not, by a roll the caller makes
+ * (DamageOptions.critRoll); `distribution`: expected, but a hit given a roll is rolled (the timeline rolls the hits a
+ * crit-triggered effect could fire on: docs/design.md "Damage distributions").
+ */
+export type CritMode = "never" | "always" | "expected" | "rolled" | "distribution";
 
 export interface DamageOptions {
   readonly crit: CritMode;
@@ -105,6 +109,12 @@ export interface HitDamage {
   readonly damage: number;
   /** With rolled crits, whether it crit (absent for hits that can't). */
   readonly crit?: boolean;
+  /**
+   * With expected crits, a hit that may or may not crit (chance strictly between 0 and 1, a crit DMG bonus): the
+   * chance and the damage of the hit without the crit and with it (v and v(1 + c), before rounding), the two values
+   * of its distribution (moments.ts critMoments); `exact` is its mean.
+   */
+  readonly critSpread?: { readonly chance: number; readonly low: number; readonly high: number };
 }
 
 /**
@@ -268,9 +278,11 @@ export function computeDamage(
 
   const critRate = Math.min(1, Math.max(0, sum("critRate")));
   const critDamage = sum("critDamage");
-  if (options.crit === "rolled" && options.critRoll === undefined) throw new EngineError("rolled crits need a roll for each hit (the timeline rolls them)");
-  const rolled = options.crit === "rolled" && spec.canCrit ? (options.critRoll as number) < critRate : undefined;
-  const crit = !spec.canCrit || options.crit === "never" ? 1 : options.crit === "always" || rolled ? 1 + critDamage : rolled === false ? 1 : 1 + critRate * critDamage;
+  // `distribution`: rolled for a hit given a roll, else expected.
+  const mode = options.crit === "distribution" ? (options.critRoll !== undefined ? "rolled" : "expected") : options.crit;
+  if (mode === "rolled" && options.critRoll === undefined) throw new EngineError("rolled crits need a roll for each hit (the timeline rolls them)");
+  const rolled = mode === "rolled" && spec.canCrit ? (options.critRoll as number) < critRate : undefined;
+  const crit = !spec.canCrit || mode === "never" ? 1 : mode === "always" || rolled ? 1 + critDamage : rolled === false ? 1 : 1 + critRate * critDamage;
 
   const def = enemyLevel[Attr.Def];
   if (def === undefined) throw new EngineError(`${enemy.id} has no DEF at level ${target.level}`);
@@ -296,6 +308,9 @@ export function computeDamage(
     resistance: (100 - enemy.resistance[spec.element] + sum("ignoreResistance")) / 100,
   };
   const exact = Object.values(zones).reduce((p, z) => p * z, 1);
+  // A hit that may crit or not under expected crits: its value without the crit zone, and with the full crit.
+  const spread = mode === "expected" && spec.canCrit && critRate > 0 && critRate < 1 && critDamage !== 0;
+  const low = spread ? (Object.keys(zones) as (keyof Zones)[]).reduce((p, k) => (k === "crit" ? p : p * zones[k]), 1) : 0;
   return {
     skillId: spec.skillId,
     hitId: spec.hitId,
@@ -308,6 +323,7 @@ export function computeDamage(
     exact,
     damage: roundDamage(exact),
     ...(rolled !== undefined ? { crit: rolled } : {}),
+    ...(spread ? { critSpread: { chance: critRate, low, high: low * (1 + critDamage) } } : {}),
   };
 }
 

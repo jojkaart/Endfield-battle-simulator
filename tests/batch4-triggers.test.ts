@@ -161,12 +161,15 @@ describe("T3: crit-triggered effects are random outcomes", () => {
     expect(searchCritMode(g, sc("always"))).toBe("always");
   });
 
-  it("simulate with expected crits warns that they never fire", () => {
-    const text = formatSimulation(g, sc("expected"), false);
-    expect(text).toMatch(/Warning: crit-triggered effects never fire with expected crits \(Laevatain: critT\)/);
+  it("simulate with expected crits says its one battle never fires them, and its distribution plays them over seeded battles", () => {
+    const text = formatSimulation(g, sc("expected"), false, 2);
+    expect(text).toMatch(/one battle with expected crits, in which crit-triggered effects never fire \(Laevatain: critT\); the distribution plays them/);
+    expect(text).toMatch(/Distribution of the total over 2 battles/);
     expect(text).not.toMatch(/Note: random outcomes/);
     expect(n(run(g, sc("expected")), "a")).toBe(0);
     expect(n(run(g, sc("always")), "a")).toBeGreaterThan(0);
+    // With crit `distribution` the hits the trigger listens to roll their crit, so it fires.
+    expect(Array.from({ length: 20 }, (_, seed) => n(run(g, { ...sc("distribution"), options: { crit: "distribution", seed } }), "a")).some((x) => x > 0)).toBe(true);
   });
 
   it("search plays such a scenario over seeded battles with rolled crits", () => {

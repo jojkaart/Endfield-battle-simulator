@@ -3417,6 +3417,31 @@
         "base": {
           "$ref": "#/$defs/valueExpr",
           "description": "What the multiplier multiplies instead of ATK (MultiplyAttributeCalculation: e.g. 300 + 5 × DEF); every other zone as usual."
+        },
+        "landedCount": {
+          "type": "object",
+          "description": "A random number of the cast's landings of this hit happen (Ardelia's sheep fly at random: in-game test 96): observed counts per cast, each equally likely, out of the cast's planned landings (its frames less those its jumps decided at the cast skip). Expected crits: every planned landing lands with its damage and Stagger × E[N] / landings, and the damage distribution counts the cast's landings as a random sum; rolled crits: N drawn from the counts (stream landed) and N landings chosen at random. A skill's hit with a fixed count that deals only damage and Stagger (docs/design.md \"Damage distributions\").",
+          "required": ["counts"],
+          "additionalProperties": false,
+          "properties": {
+            "counts": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "integer", "minimum": 0 },
+              "description": "Observed landings per cast (each at most the hit's landings)."
+            },
+            "fromPotential": {
+              "type": "object",
+              "description": "From a potential on (key 1–5), these counts instead: the highest key at most the build's potential.",
+              "propertyNames": { "pattern": "^[1-5]$" },
+              "additionalProperties": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "integer", "minimum": 0 }
+              }
+            },
+            "note": { "type": "string" }
+          }
         }
       }
     }

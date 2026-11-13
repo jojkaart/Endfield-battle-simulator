@@ -336,11 +336,23 @@ whom).
 **Next check:** the layer count against her heals over time in 1cd1 and
 a7a7 (small model first).
 
-## Ardelia's Wooly Party: the engine assumes every hit lands (test 96)
+## Ardelia's Wooly Party: a random hit count (test 96)
 
 **Shows:** 7 sheep hits in 4e36 and 3 in c3c7 (her only ultimates that
 hit in our logs), against the engine's 11 below P3 (14 from P3), which
-assume the 0.3 s per-enemy cap is always reached.
+assumed the 0.3 s per-enemy cap is always reached (until 2026-11-13).
+
+**Done (2026-11-13):** the count below is now the kit's (`landedCount` on
+the sheep hit; docs/design.md "Damage distributions"): expected crits deal
+each planned landing's damage and Stagger × E[N] / L (6.1 / 11, 8.6 / 14),
+the distribution counts a cast's sheep as a random sum, rolled crits draw
+the count (stream `landed`) and land that many at random. The example went
+from 152,724 to 114,744 (the mean; standard deviation 17,650; 5–95%
+≈ 83,975–142,039). Log replays still land all 11 / 14 (the log shows
+which landed). Left: the Stagger at E[N] / L is an expected value of a
+threshold effect (Stagger nodes), and every planned landing still fires a
+hit event at expected crits (a trigger on her ultimate's hits, from gear or
+a teammate, would fire 11 / 14 times, not N).
 
 **Ruled out:** a fixed count: the sheep fly at random, not aimed (the
 owner, 2026-11-13), so the count varies cast to cast.
@@ -355,9 +367,8 @@ One more cast (Hard 32, several enemies, potential not exported) hit
 nothing. Hits on one enemy are 0.2–0.45 s apart (the 0.3 s cap, roughly),
 spread over 2–6 s; towers 15/16 (large bosses) and smaller enemies alike.
 
-**Still possible:** the expected count (6.1 / 8.6 of 11 / 14) as the
-engine's count, or the count as a random outcome in rolled battles (as
-crits are); enemy size mattering (too few casts per enemy to tell).
+**Still possible:** enemy size mattering (too few casts per enemy to
+tell); the counts being a small sample (14 and 7 casts).
 
 **Impact:** small. She's a support (the owner): teams run her for her
 effects on others, not her own damage. What it can move: the search

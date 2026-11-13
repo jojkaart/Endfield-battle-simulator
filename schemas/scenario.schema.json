@@ -37,7 +37,7 @@
       }
     },
     "durationSeconds": { "type": "number", "exclusiveMinimum": 0 },
-    "crit": { "enum": ["never", "always", "expected", "rolled"], "description": "expected: the crit zone at its average; rolled: each hit crits or not by a seeded roll (crit-triggered effects need it)." },
+    "crit": { "enum": ["never", "always", "expected", "rolled", "distribution"], "description": "expected: the crit zone at its average; rolled: each hit crits or not by a seeded roll (crit-triggered effects need it); distribution: expected, but the hits a crit-triggered effect could fire on roll (one seeded battle of the damage distribution: docs/design.md, Damage distributions)." },
     "seed": { "type": "integer", "minimum": 0, "maximum": 4294967295, "description": "Seed of the battle's random draws (rolled crits); default 1." },
     "enemyHp": {
       "type": "array",

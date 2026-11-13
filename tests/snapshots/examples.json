@@ -76,16 +76,16 @@
   ]
  },
  "ardelia-corrosion.scenario.json": {
-  "total": 152723.704,
+  "total": 114743.659,
   "hits": 53,
   "casts": 12,
   "perOperator": {
-   "chr_0025_ardelia": 152723.704
+   "chr_0025_ardelia": 114743.659
   },
-  "digest": "10b11fa28d8d",
+  "digest": "d0822f7da3c4",
   "windows": [
-   "67441ccbe3b3",
-   "316c729719c2"
+   "e76541adb918",
+   "a1a087c2ab20"
   ]
  },
  "avywenna-thunderlances.scenario.json": {

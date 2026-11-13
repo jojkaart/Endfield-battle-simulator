@@ -1821,6 +1821,13 @@ the only two ultimates of hers that hit in our logs. So the engine's 11
 is the most, not what to expect. Counted from 23 ultimates in 20 logs
 (2026-11-13): on average 6.1 hits below P3 (engine 11), 8.6 from P3
 (engine 14). No in-game count needed.
+**In the engine (2026-11-13):** the count is a random outcome
+(`landedCount` on the sheep hit, docs/design.md "Damage distributions"):
+with expected crits each of the 11 / 14 hits deals × 6.1 / 11 (× 8.6 / 14)
+of its damage, and `efsim simulate` shows the spread the count adds; with
+rolled crits each battle draws a count from the 21 counted casts. The
+example's total went from 152,724 to 114,744. More counts (any potential,
+one enemy) would sharpen the distribution; still low priority.
 
 ### 97. Dive attacks: their pace and what a jump can do (ready, any operator; higher priority: the search now uses dives)
 

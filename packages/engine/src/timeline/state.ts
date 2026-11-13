@@ -5,7 +5,7 @@ import type { Build } from "../build.ts";
 import type { CritMode, DamageOptions, DamageTarget, HitDamage } from "../damage.ts";
 import type { Modifier } from "../effects.ts";
 import type { EnemyData, EventSource, GameData, KitHit, KitSkill, OperatorKit, SpKind } from "../model.ts";
-import type { BattleEvent } from "../events.ts";
+import type { BattleEvent, KitTrigger } from "../events.ts";
 import type { Predicate } from "../expr.ts";
 import type { ActiveBuff } from "../buffs.ts";
 import type { StatPanel } from "../stats.ts";
@@ -39,6 +39,12 @@ export interface TimelineOptions {
    * scenario files have it on unless they say otherwise (cli simulate.ts).
    */
   readonly teammateAttacks?: boolean;
+  /**
+   * Hits with a random landed count (KitHit.landedCount) land the fewest observed (`least`) or the most (`most`), the
+   * first of the cast's planned landings: the distribution's bounds (distribution.ts). Absent: by the crit mode
+   * (rolled: drawn; otherwise every planned landing at E[N] / landings).
+   */
+  readonly landedCounts?: "least" | "most";
 }
 
 export interface TimelineScenario {
@@ -177,6 +183,8 @@ export interface PendingHit extends ScheduledHeader {
   readonly deferred?: { readonly consumed: number };
   /** A replayed delayed hit (KitHit.enemyDelay): its damage's logged frame, where the damage is pinned. */
   readonly damageFrame?: number;
+  /** A landing of a random landed count (KitHit.landedCount) at its expected count: the cast's planned landings of the hit, L (its damage and Stagger × E[N] / L). */
+  readonly landedOf?: number;
 }
 
 /**
@@ -275,6 +283,12 @@ export interface LandedHit extends HitDamage {
   readonly loggedCrit?: boolean | null;
   /** With TimelineScenario.loggedCrits (a replayed fight): what its damage was computed from (landing.ts landingDamage), so the log check computes it again, with a change, through the same path. */
   readonly inputs?: LandingInputs;
+  /**
+   * A landing of a random landed count at its expected count (PendingHit.landedOf): its cast, the cast's planned
+   * landings `of`, the observed counts and the factor E[N] / of its damage carries; the distribution counts the
+   * cast's landings of the hit as one random sum (moments.ts landedMoments).
+   */
+  readonly landed?: { readonly cast: number; readonly of: number; readonly counts: readonly number[]; readonly scale: number };
 }
 
 /**
@@ -421,6 +435,8 @@ export interface TimelineContext {
   readonly loggedCrits?: ReadonlyMap<string, readonly { readonly frame: number; readonly crit: boolean; readonly ref?: string }[]>;
   /** TimelineScenario.loggedModifiers by `operator|event`. */
   readonly loggedModifiers?: ReadonlyMap<string, readonly { readonly frame: number; readonly modifiers: readonly Modifier[] }[]>;
+  /** The team's kit triggers on crits (`on: {event: hit, crit}`) with their owners: with crit `distribution`, the hits they could fire on roll their crit (landing.ts). */
+  readonly critListeners?: readonly { readonly owner: string; readonly trigger: KitTrigger }[];
 }
 
 /** An operator's current action. */
