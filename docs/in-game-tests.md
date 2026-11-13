@@ -237,7 +237,13 @@ data gates both of talent 1's −6 cuts (paramType 2 and 4) on
 `lizhiyan_wisd` (INT). So either the cut applies in WILL too (then every
 WILL Arcane combos every 12 s, 10.2 s with the cooldown set: a large
 change for her teams), or 0206 has a cut nobody's data shows. One
-stopwatch reading decides it.
+stopwatch reading decides it. Not Si's ultimate (the owner's idea: it
+resets the combo cooldown of the operator in team slot 1, which the
+engine has): 0206 has no Si, and in 3f78 and e989 Arcane is in slot 3
+(slot 1: Si herself, Camille). 0206's team: Laevatain, Camille, Antal,
+Arcane; between the two presses (81.1 and 93.3 s) Antal's combos come
+right after each of hers (81.5, 93.7 s), Camille's and Laevatain's at
+89.5–90.4 s; her ultimate (sequence 2) at 78.9 s, before the first.
 
 **Why:** a talent shortens her combo cooldown by 6 s only in INT mode
 (data: `activeCondition lizhiyan_wisd`); the engine now follows the data
