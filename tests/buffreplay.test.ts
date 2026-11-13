@@ -557,3 +557,19 @@ describe("Arcane's WILL combo touch: the element of what opened her window (elem
     expect("unknown" in burst ? burst.unknown : burst.element).toBe("cryst");
   });
 });
+
+describe("a7a7a40c97ed: Liino's battle-skill events in Vocalist Stance are its beats", () => {
+  const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-a7a7a40c97ed.json", import.meta.url).pathname);
+  const r = logBuffReplay(data, fx).replay;
+  const L = "chr_0035_liino";
+  it("casts only the stance's first event: no projectiles from the nine beats after it (5405 ms to 35353 ms)", () => {
+    const own = r.hits.filter((h) => h.operator === L && h.skillId === `${L}_normal_skill` && h.hitId !== "volley").map((h) => (h.frame * 1000) / FPS);
+    expect(own.length).toBeGreaterThan(0);
+    expect(Math.max(...own)).toBeLessThan(5000);
+  });
+  it("takes Arcane's press at 37415 ms for the battle skill placed at 40523 ms (351 ms later in the world's time): no Corrosion before her ultimate's at 40865 ms", () => {
+    const corrosions = r.reactions.filter((x) => x.kind === "reaction" && x.status === "corrosion" && x.frame >= 38 * FPS && x.frame <= 43 * FPS).map((x) => (x.frame * 1000) / FPS);
+    expect(corrosions.length).toBeGreaterThan(0);
+    expect(Math.min(...corrosions)).toBeGreaterThan(40800);
+  });
+});

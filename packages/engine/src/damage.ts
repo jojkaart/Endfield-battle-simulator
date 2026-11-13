@@ -64,7 +64,8 @@ export interface DamageTarget {
   /**
    * The enemy is immune to control (the game's control-immune tag
    * 188749032; no table says which enemies have it): control statuses are
-   * applied, but don't freeze it. Absent: a Boss (rank 2) is, others aren't
+   * applied, but freeze only their operator's own debuffs on it. Absent: a
+   * Boss (rank 2) is, others aren't
    * (timeline/clock.ts controlImmune).
    */
   readonly controlImmune?: boolean;

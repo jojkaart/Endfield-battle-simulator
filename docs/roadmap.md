@@ -14,12 +14,12 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
    pace) are done, and B3 / B5 / B7 as far as the data and logs go; B2
    (SP stop: 0.5 s since 2026-11-12, regen through time stops; test 102
    pins it) and B4 (Solidification) wait on in-game tests 102 and 71; the
-   SP the replay still lacks (open-problems "Team SP": Liino's presses,
-   teammates' Final Strikes, Purrchena's blocks);
+   SP the replay still lacks (open-problems "Team SP": teammates' unlanded
+   basic attacks, Purrchena's blocks; Liino's beats done 2026-11-13, 1d91's
+   extra heal left);
    next the screened logs' leads ([open-problems.md](open-problems.md):
    what each has ruled out and what still stands; Rossi's ultimate ×1.09 in 9a80 and 2fd9, Mi Fu ×1.11 in Hard
-   27, Si's combo −22.6% in 40d9 (unmasked), db87's Arcane ATK, e82d's
-   extra Arcane touch in the replay (now applying Cryst), the
+   27, Si's combo −22.6% in 40d9 (unmasked), db87's Arcane ATK, the
    eny_0134 logs' food in 0c14 and de6a), diagnosed in parallel (small
    models first, the owner's call 2026-11-11); then the favourites' kit
    leads (B8: the build offsets the log check
