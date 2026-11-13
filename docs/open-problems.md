@@ -288,16 +288,34 @@ a7a7, c6d8, d9e5 (19–80 teammates' hits each in the 2.6–15 s after). Not
 Vocalist being on at the cast (4bfc: on before, buffs after; 1cd1, a7a7:
 on before, none after). The engine gives them in every log.
 
-**Still possible:** what separates the two groups (her ultimate cut short,
-which ends Cosmovoice by autoFinishByAction; control; potential; the
-log's listing in 1d91, which lists none of her ATK even before); Liino
-down or off the field (HP and swaps aren't logged); whether the 5 s linger
+**Found (sonnet, 2026-11-13): mostly the log's listing.** In a7a7 and
+c6d8 teammates' hits after the ultimate match the engine plainly with
+Cosmovoice's buffs (a7a7 Arcane 27/29, c6d8 Zhuang Fangyi 20/24): the
+damage has them, the listing drops them (and Vocalist's ATK with them at
+the cast). 1d91: a standing offset before and after (Arcane ×0.894 /
+×0.929), not a loss at the ultimate. d9e5 (the one log of parser v58):
+teammates ×1.14 before and after. Only **1cd1** lacks something in the
+damage: ×0.917 / ×0.838 from 39036 ms, with Cosmovoice's Amp seemingly in
+it (with Amp 7839, without 5217, logged 7187), so about the ATK, though
+Arcane's ×0.838 is below what +0.16 ATK alone explains (≥ 0.862).
+
+**Ruled out (also):** her ultimate cut short (she casts only its own
+events after it in all 10 logs); who's controlled; potential, skill
+levels, weapon, enemy; the beats. The engine stays as it is for a7a7,
+c6d8, 1d91.
+
+**Still possible:** for 1cd1 (P5, fight ends 4.7 s later): a real loss of
+the ATK (or part of the Amp); its weapon layers (up to 11 on Typhoeus,
+see the next entry) changing at the ultimate; for 0eef: Liino down or off
+the field (HP and swaps aren't logged); the log dropping Liino's buffs
+from the listing when her ultimate replaces Vocalist (a7a7, c6d8, 1cd1,
+1d91); whether the 5 s linger
 exists (0eef: if End Stance-like, the ATK went at once, against it; no
 other log has teammates' hits in the 5 s after a stance's end); why the
 engine still has Liino ATK in 1cd1 after 39 s.
 
-**Next check:** what separates the logs with Cosmovoice's buffs from those
-without (sonnet).
+**Next check:** 1cd1 together with the weapon-layer entry below (its
+Typhoeus carries 11 layers just before); 0eef none planned.
 
 ## Liino's weapon: more than 4 layers on one teammate (test 25)
 
