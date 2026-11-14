@@ -549,6 +549,47 @@ lands no volley in 1d91 at all.
 **Next check:** in-game test 103 with this in mind; why the replay
 lands no volley here.
 
+## Si's Artful Intent bursts that fit no reading (6 of 40)
+
+**Shows (2026-11-14, recordedburst.ts):** the log check values each burst
+as the build's ink_damage_rate × every logged hit from Si's battle-skill
+hit to the record's end (docs/design.md, "What a log check verifies").
+34 of 40 single-target bursts in non-hold-out logs fit within the per-hit
+rounding (most within ±3: 489c 38772 ms 446279 vs 446281, 9555 53088 ms,
+db87 45457 ms, e82d 11111 ms, c3c7 100082 ms; abfd's three at rate 0.11,
+battle skill 10; 0c14's first two at 0.17, P1 with battle skill 9 — the
+diagnosis's "abfd ×0.84" and "0c14 P1" misfits were the skill level).
+489c 5961 ms has no battle-skill hit before it (unquantified). Misfits:
+
+- 0c14 181424 ms ×0.288: the window from the battle-skill hit at
+  108670 ms is 73 s long; Si's battle skill is cast every ~3 s from
+  116 s with no logged hit.
+- 458b 85571 ms ×1.065: the log has no hit at all in the 3.2 s before the
+  burst (a gap in the log?).
+- 458b 131439 ms ×0.98 and a7a7 34593 ms ×0.986: a cut 1.2–1.7 s before
+  the burst comes closest (458b ±12 against ±9.5 allowed); a combo cast
+  (458b, 479 ms before) may stretch the projectile's 14 frames.
+- 6339 19914 ms ×0.66 (logged twice): the slug (eny_0129_slwood_hdg033)
+  caps hits mid-fight (11308 ms: 117149 and 98788 both "uncapped
+  121248"), as if its HP came in phases; a window from ~11.1 s would fit.
+- 9a80 38099 ms ×0.9998: the sum is 1115 too high (one reading), with
+  rows the log lists two or three times at 35280–35767 ms.
+
+**Ruled out:** the rate (the engine's ink_damage_rate fits 34 bursts at
+P0–P5 and battle skill 9–12); a fixed end lag (fits stop 294–393 ms
+before the burst in 3f78 61538 ms, 681–869 ms in 458b 23727 ms); only
+Si's hits, or no status hits (every exact fit counts all of them).
+
+**Still possible:** for 0c14, a battle-skill hit the log doesn't have
+(resetting the record: SkillData normal_skill sets EntityBB_ink_damage to
+0 at frame 0); for 6339, the slug's phase change resetting or splitting
+the record (BuffData xianjing_inkhurteffect event 1, hp_zero, adds
+kill_damage × rate); time dilation stretching the burst's delay past 1 s;
+duplicate log rows.
+
+**Next check:** 6339 and 7b54 (the same slug) with a window from each
+phase change.
+
 ## 0c14: Si, and Rossi's later windows
 
 Found (2026-11-11): Alesh's weapon at level 60 (her buff-free hits

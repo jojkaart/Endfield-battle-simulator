@@ -28,7 +28,9 @@ function scaled(fx: LogFixture, k: number): LogFixture {
 describe.each(logFixtures(""))("%s", (file) => {
   const fx = readLogFixture(join(ROOT, "fixtures", file));
   it.each(FACTORS)("×%s gives (close to) no matches", (k) => {
-    const verdicts = checkLog(data, scaled(fx, k));
+    // A recording buff's burst (Si's Artful Intent) is valued from the log's own hits, which scale with it: its match
+    // isn't chance, and it says nothing about the kits' damage (recordedburst.ts). Left out.
+    const verdicts = checkLog(data, scaled(fx, k)).filter((v) => !(v.kind === "match" && v.assumptions.some((a) => a.kind === "recordEnd")));
     const judged = verdicts.filter((v) => v.kind !== "uncovered" && !(v.kind === "unquantified" && v.reason !== "corrosion")).length;
     const matches = verdicts.flatMap((v) => (v.kind === "match" ? [v] : []));
     const lines = matches.map((m) => `  ${m.hit.operator} t=${m.hit.t} ${m.hit.event} [${m.class}, ${m.readings.matching} of ${m.readings.tried} readings]: ${m.assumed.join(", ") || "no assumption"}`);
