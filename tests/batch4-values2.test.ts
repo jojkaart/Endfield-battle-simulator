@@ -189,12 +189,14 @@ describe("linkGained: a Link stack given to the team (Thermite Cutter's Link hal
   const rotation = [op("normal_skill"), op("attack1"), op("attack2"), op("attack3"), op("attack5"), op("combo_skill")];
   const scenario = (team: Build[]): TimelineScenario => ({ team, target, durationFrames: 30 * 20, rotation, options: { crit: "never" } });
 
-  it("Lifeng's combo gives Link; Pogranichnik (a sword wielder with Thermite Cutter) gains it, and the team gains ATK +atk_up2 at that frame", () => {
+  it("Lifeng's combo gives the team Link, but a teammate's Link adds no Thermite layer (the kit's trigger is fromSelf: 012a, 82735, d4fb, 2026-11-14)", () => {
     const s = run(scenario([lifeng, pog]), rotation, 30 * 20);
     const combo = s.casts.find((c) => c.skill === LF + "combo_skill")?.frame ?? NaN;
     const thermite = s.buffs.filter((b) => b.id === "wpn_sword_0012.team_atk" && b.owner === "chr_0029_pograni");
-    expect(thermite.map((b) => b.appliedAt)).toEqual([combo + 19]);
-    expect(thermite[0]?.modifiers.map((m) => [m.zone, m.value])).toEqual([["atk", expect.closeTo(0.14, 6)]]);
+    expect(thermite.some((b) => b.appliedAt === combo + 19)).toBe(false);
+    const ev: BattleEvent = { type: "linkGained", frame: 0, operator: "chr_0029_pograni", from: L, count: 1 };
+    expect(eventMatches({ event: "linkGained", fromSelf: true }, ev, "chr_0029_pograni", {})).toBe(false);
+    expect(eventMatches({ event: "linkGained", fromSelf: true }, { ...ev, from: "chr_0029_pograni" }, "chr_0029_pograni", {})).toBe(true);
   });
 
   it("the event names each team member who gains it (`by` is the one who gains: self for the wielder); none without a link action", () => {
