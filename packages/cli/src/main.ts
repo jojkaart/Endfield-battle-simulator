@@ -39,9 +39,10 @@ const USAGE = `Usage:
                 [--beam n] [--out file]   Beam width w (default 24): runs w/2, w and 2w, keeps the best and
                                           shows how far apart they are; save the rotation as a scenario
                 [--single]                Only beam w (a third of the time, no spread)
-                [--loop]                  An opener and a loop instead of one fight: repetitions from a cast of
-                                          the slowest ultimate to its next, each searched afresh at beam w
-                                          until 3 in a row agree (--out saves opener and repetitions)
+                [--loop] [--loops n]      An opener and a loop instead of one fight: rounds from a cast of the
+                                          slowest ultimate to its next, each the best closing plan at beam w
+                                          or the last replayed, until one plays 3 more times exactly
+                                          (--out saves the opener and n plays of the loop, default 4)
                 [--swaps]                 Let the rotation swap the controlled operator (default: never; the
                                           scenario's controlled operator does every basic attack and dive)
                 [--seeds k]               With random outcomes: battles each candidate is ranked over (default 4)
@@ -101,6 +102,7 @@ async function main(argv: string[]): Promise<number> {
       single: { type: "boolean", default: false },
       swaps: { type: "boolean", default: false },
       loop: { type: "boolean", default: false },
+      loops: { type: "string" },
       seed: { type: "string" },
       runs: { type: "string" },
       seeds: { type: "string" },
@@ -242,7 +244,9 @@ async function main(argv: string[]): Promise<number> {
         if (!(Number.isInteger(beam) && beam >= 1)) throw new Error(`--beam must be a whole number ≥ 1`);
         const scenario = withBattleOptions(readScenario(args[0] as string));
         if (values.loop) {
-          text = loopCommand(data(), scenario, { beam, swaps: values.swaps, ...(values.out ? { out: values.out } : {}) });
+          const loops = values.loops === undefined ? undefined : Number(values.loops);
+          if (loops !== undefined && !(Number.isInteger(loops) && loops >= 1)) throw new Error(`--loops must be a whole number ≥ 1`);
+          text = loopCommand(data(), scenario, { beam, swaps: values.swaps, ...(values.out ? { out: values.out } : {}), ...(loops !== undefined ? { loops } : {}), progress: (line) => process.stderr.write(line + "\n") });
           break;
         }
         text = searchCommand(data(), scenario, {

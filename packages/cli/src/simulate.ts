@@ -249,43 +249,49 @@ function formatActions(data: GameData, actions: readonly RotationAction[]): stri
 }
 
 /**
- * efsim search --loop: an opener and a loop (searchLoop) at beam w: each repetition from a cast of the slowest
- * ultimate to its next, searched afresh until `repeats` in a row agree; optionally the opener and repetitions saved
- * as a scenario that `simulate` replays.
+ * efsim search --loop: an opener and a loop (searchLoop) at beam w: rounds from a cast of the slowest ultimate to its
+ * next, each the best closing plan from where the last ended or the last one replayed, until one plays `repeats` more
+ * times exactly; optionally the opener and `loops` plays of the loop saved as a scenario that `simulate` replays.
  */
-export function loopCommand(data: GameData, scenario: TimelineScenario, options: { beam: number; swaps?: boolean; out?: string }): string {
+export function loopCommand(data: GameData, scenario: TimelineScenario, options: { beam: number; swaps?: boolean; out?: string; loops?: number; progress?: (line: string) => void }): string {
   const { rotation: _ignored, ...rest } = scenario;
   const t = Date.now();
-  const r = searchLoop(data, rest, { beamWidth: options.beam, swaps: options.swaps ?? false });
   const s = (f: number) => `${(f / FPS).toFixed(1)} s`;
   const n = (x: number) => num(Math.round(x), 0);
   const name = (op: string) => data.operators[op]?.name ?? op;
+  const r = searchLoop(data, rest, {
+    beamWidth: options.beam,
+    swaps: options.swaps ?? false,
+    ...(options.loops !== undefined ? { plays: options.loops } : {}),
+    ...(options.progress ? { onRound: (x) => options.progress?.(`round at ${s(x.start)}: ${x.replayed ? "replayed" : "new plan"}, ${s(x.frames)}, score ${n(x.score)}${x.replayFailure ? ` (the last doesn't replay: ${x.replayFailure.slice(0, 120)})` : ""} (${((Date.now() - t) / 1000).toFixed(0)} s)`) } : {}),
+  });
   const lines = [
-    `Searched an opener over ${s(r.horizonFrames)} and ${r.repetitions.length} repetition${r.repetitions.length === 1 ? "" : "s"} (beam ${options.beam}, ${((Date.now() - t) / 1000).toFixed(1)} s).`,
-    ...(r.boundary ? [`Each repetition runs from ${name(r.boundary.operator)}'s ultimate (${r.boundary.skill}, the one cast least) to its next cast.`] : []),
+    `Searched an opener over ${s(r.horizonFrames)} and ${r.repetitions.length} round${r.repetitions.length === 1 ? "" : "s"} (beam ${options.beam}, ${((Date.now() - t) / 1000).toFixed(1)} s).`,
+    ...(r.boundary ? [`Each round runs from ${name(r.boundary.operator)}'s ultimate (${r.boundary.skill}, the slowest to recharge) to its next cast.`] : []),
     "",
     table(
-      ["repetition", "starts", "length", "damage", "DPS"],
-      r.repetitions.map((c, i) => [String(i + 1), s(c.start), s(c.frames), n(c.damage), n(c.damage / (c.frames / FPS))]),
-      ["r", "r", "r", "r", "r"],
+      ["round", "starts", "length", "damage", "DPS", "plan"],
+      r.repetitions.map((c, i) => [String(i + 1), s(c.start), s(c.frames), n(c.damage), n(c.damage / (c.frames / FPS)), c.replayed ? "the last, replayed" : "new"]),
+      ["r", "r", "r", "r", "r", "l"],
     ),
     "",
   ];
   const l = r.loop;
   if (l) {
     lines.push(
-      `Loop: repetitions ${l.first + 1}–${l.first + r.repeats} agree (${l.exact ? "the same actions at the same times" : `the same skills in order, lengths within ${(l.lengthApart * 100).toFixed(1)}%`}); ${s(l.frames)}, ${n(l.dps)} DPS (their damage per second ${(l.damageApart * 100).toFixed(1)}% apart: the enemy's Stagger windows fall differently).`,
+      `Loop: rounds ${l.first + 1}–${l.first + l.plays} play the same actions at the same times; ${s(l.frames)}, ${n(l.dps)} DPS over its ${l.plays} plays, their damage per second ${(l.damageApart * 100).toFixed(1)}% apart (${l.agrees ? "within" : "beyond"} ${(r.tolerance * 100).toFixed(0)}%${l.agrees ? "" : ": the enemy's Stagger windows fall in different plays"}).`,
       "",
       `Opener (${s(l.openerFrames)}, ${n(l.openerDamage)} damage):`,
       ...formatActions(data, l.opener),
       "",
-      `Loop (times from its start):`,
+      `Loop (${s(l.frames)}, times from its start):`,
       ...formatActions(data, l.actions),
     );
-  } else lines.push(`No loop: ${r.reason ?? "the repetitions didn't agree"}. The repetitions above are each the search's best from where the last ended; their mean is the sustained DPS to expect.`);
-  lines.push("", `Opener and all repetitions: ${n(r.total)} damage in ${s(r.frames)}, ${n(r.dps)} DPS (simulate replays it).`);
+    if (r.reason) lines.push("", `Note: ${r.reason}.`);
+  } else lines.push(`No loop: ${r.reason ?? "no plan repeated"}. The rounds above are each the best closing plan from where the last ended; their mean is the sustained DPS to expect.`);
+  lines.push("", `Opener and ${l ? `${l.plays} plays of the loop` : "all rounds"}: ${n(r.total)} damage in ${s(r.frames)}, ${n(r.dps)} DPS (simulate replays it).`);
   if (options.out) {
-    writeFileSync(options.out, JSON.stringify(scenarioDoc(scenario, r.rotation, scenario.options.crit, r.frames, `Opener and ${r.repetitions.length} repetitions found by efsim search --loop (beam ${options.beam}); replays with efsim simulate.`), null, 2) + "\n");
+    writeFileSync(options.out, JSON.stringify(scenarioDoc(scenario, r.rotation, scenario.options.crit, r.frames, l ? `Opener and ${l.plays} plays of a ${s(l.frames)} loop found by efsim search --loop (beam ${options.beam}); replays with efsim simulate.` : `Opener and ${r.repetitions.length} rounds found by efsim search --loop (beam ${options.beam}, no loop); replays with efsim simulate.`), null, 2) + "\n");
     lines.push("", `Wrote ${options.out}.`);
   }
   return lines.join("\n");
