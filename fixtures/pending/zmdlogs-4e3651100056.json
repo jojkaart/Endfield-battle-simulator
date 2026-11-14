@@ -17,7 +17,8 @@
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
    "Enemy level 90 from the stage's DungeonTable entry (indie_hard015_s).",
    "Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh).",
-   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh).",
+   "Ardelia's weapon (Dreams of the Starry Beach) at level 1 and no attribute node, not the assumed 90 and every node (2026-11-14): her combo projectile at 6853 ms, under no ATK buff, is ×0.4075 the assumed reading, and level 1 with no node is the build input that gives it (ATK 1046 against 2568: ×0.4073); with it 128 of her 130 hits match (35 plain, 14 assumed, 79 on the log's listing, where the replay's layers of Alesh's weapon ATK, wpn_sword_0012_atk_up, differ from the log's: a separate lead; ×0.82–1.13 there). Level 5 with every node (×0.4593) has more exact readings (54 of 125 against 48), only through those layers, and misses the buff-free hits. Her weapon's logged skill levels (2, 1, 4) allow any level up to 40 (WeaponBreakThroughTemplateTable: its second skill is at least 2 from the second breakthrough, at 40). The log check's build offset doesn't report it: that flat ATK spreads her hits' ratios (×0.34 / 0.46 / 0.53). The export has no weapon level or attribute nodes."
   ]
  },
  "enemy": {
@@ -93,7 +94,7 @@
    },
    "weapon": {
     "id": "wpn_funnel_0013",
-    "level": 90,
+    "level": 1,
     "skillLevels": [
      2,
      1,
@@ -133,7 +134,8 @@
       3
      ]
     }
-   ]
+   ],
+   "attributeNodes": 0
   },
   {
    "operator": "chr_0006_wolfgd",

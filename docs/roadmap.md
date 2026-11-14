@@ -28,11 +28,14 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
    next the screened logs' leads ([open-problems.md](open-problems.md):
    what each has ruled out and what still stands; Rossi's ultimate ×1.09 in 9a80 and 2fd9, Mi Fu ×1.11 in Hard
    27, Si's combo −22.6% in 40d9 (unmasked), db87's Arcane ATK, the
-   eny_0134 logs' food in 0c14 and de6a), diagnosed in parallel (small
+   eny_0134 logs' food in 0c14 and de6a; Yvonne −23% in 5082 and
+   Ardelia's sheep ×1.407 in 791, both unmasked 2026-11-14), diagnosed in parallel (small
    models first, the owner's call 2026-11-11); then the favourites' kit
    leads (B8: the build offsets the log check
    reports without an explanation (04d4's Snowshine ×0.96,
-   92b4's Liino ×1.031), 458b's Combustion ticks; Zhuang Fangyi's Sunderblade count above the log's
+   92b4's Liino ×1.031), and those it can't see (flat ATK buffs spread the
+   ratio: 4e36 / c3c7's Ardelia, set by hand; a replay per candidate build,
+   bounded by the weapon's logged skill levels), 458b's Combustion ticks; Zhuang Fangyi's Sunderblade count above the log's
    (d774: 8 strikes where the log has 3); Si's build in 9555 (every hit
    ×0.89–0.94: ATK); logged presses with no damage of their own while the enemy is
    there: Zhuang Fangyi's, Arcane's combo and Si's in 4bfc, 3aa6, 0c14),

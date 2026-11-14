@@ -146,7 +146,11 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
       delayed.has(h.hitId)
         ? { ...h, damageFrame: Math.max(m.frame, h.frame), ...(m.ref !== undefined ? { ref: m.ref } : {}) }
         : { ...h, ...m, pinned: true, ...(h.launchAt !== undefined ? { launchAt: Math.min(h.launchAt, m.frame) } : {}) };
-    st = { ...st, scheduled: st.scheduled.map((h) => { const m = h.kind === "hit" ? moved.get(h) : undefined; return m && h.kind === "hit" ? pin(h, m) : h; }) };
+    // A hit with a random landed count (KitHit.landedCount) lands as often as the log shows: its other planned landings
+    // didn't (5082ceaffad1: 10 of Ardelia's 14 sheep). Not one that carries SP or uses stacks up.
+    const random = new Set(skill.hits.filter((h) => h.landedCount !== undefined).map((h) => h.id));
+    const unlanded = new Set([...own].filter(([id]) => random.has(id)).flatMap(([, list]) => list.filter((h) => !moved.has(h) && h.sp === 0 && !h.usesUp)));
+    st = { ...st, scheduled: st.scheduled.filter((h) => h.kind !== "hit" || !unlanded.has(h)).map((h) => { const m = h.kind === "hit" ? moved.get(h) : undefined; return m && h.kind === "hit" ? pin(h, m) : h; }) };
   }
   return runTriggers(ctx, st, r.events, r.origin);
 }
