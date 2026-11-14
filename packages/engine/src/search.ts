@@ -893,8 +893,10 @@ export function searchRotation(data: GameData, scenario: Omit<TimelineScenario, 
   return search(data, scenario, options, hooks);
 }
 
-/** What a caller adds to a search (searchBeams: the narrower widths' best). */
+/** What a caller adds to a search (searchBeams: the narrower widths' best; searchLoop: the rotation so far). */
 export interface SearchHooks {
+  /** Actions every rotation starts with, applied as recorded from the fight's start: the search goes on from there. */
+  readonly prefix?: readonly RotationAction[];
   /**
    * A rotation the beam keeps a place for, so that the search finds at least as much (searchBeams: the best of the
    * narrower widths). It must be one this search can make (the same scenario and options: a found rotation).
@@ -940,7 +942,9 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
   };
   const guide = hooks.guide;
   const same = (a: RotationAction | undefined, b: RotationAction) => a !== undefined && a.operator === b.operator && a.skill === b.skill && a.at === b.at;
-  const root = { ...node(ctxs.map((c) => init(c)), []), ...(guide ? { guideAt: 0 } : {}) };
+  const prefix = hooks.prefix ?? [];
+  const onGuide = guide !== undefined && prefix.every((a, i) => same(guide[i], a));
+  const root = { ...node(ctxs.map((c) => prefix.reduce((st, a) => apply(c, st, a), init(c))), prefix), ...(onGuide ? { guideAt: prefix.length } : {}) };
   push(root);
   let best: Node = root;
   let expanded = 0;

@@ -891,6 +891,49 @@ With random outcomes a search costs about K times as much per child
 (each battle is applied and scored; only the first judges the choices):
 si-laevatain with `--dodge 0.7 --attack-every 4` and K = 4 took 23 s.
 
+**Opener and loop** (`searchLoop`, `efsim search --loop`; owner,
+2026-11-14: "complete rotations, not a fixed 60 s window", an opener and
+then a loop that can be repeated for as long as the fight lasts, its
+boundaries at the ultimates' casts). The opener search runs over the
+scenario's fight (at least 60 s, `horizonFrames`); the **boundary** is the
+ultimate its rotation casts least (the slowest to recharge sets the loop's
+length), and the opener ends at its first cast. Then repetition after
+repetition, each **searched afresh**: the beam search from the rotation so
+far (`SearchHooks.prefix`) over the longest repetition (60 s) and 10 s
+more, cut at the boundary's next cast. A plan that depends only on where
+it starts repeats once the starts repeat, so the loop is the last
+`repeats` (3) repetitions once they agree: *exact* (the same actions at the
+same times) or alike (the same skills in the same order, lengths within
+`tolerance`, 1%); at most 6 repetitions. The earlier repetitions are the
+opener's (they still spend what the opener left over). Whatever happens,
+the opener and every repetition replay with `simulate` (one rotation,
+`at` absolute, to the start of the repetition after the last), and each
+repetition's damage is what lands in its frames.
+
+Tolerance: the lengths within 1% (the brief's "~1%"), the damage not:
+the enemy's Stagger cycle doesn't follow the loop's, so a finisher and the
+Staggered bonus fall in a different repetition each time (laevatain-solo,
+a loop cut at her ultimate and played three times: one repetition had the
+finisher, 292k of its 1.58M); the loop's DPS is the repetitions' mean and
+`damageApart` says how far apart they were.
+
+Tried first and dropped (2026-11-14): cutting the fixed-length search's
+rotation at two casts of an ultimate and replaying that segment — at its
+exact frames (every cut failed: a chain step not reached, a combo window
+not open, a finisher on an enemy not Staggered, the ultimate 25 frames
+late), as a player would (the skills in order as soon as legal, basic
+attacks, combos and finishers in between: the repetitions drifted, a
+segment that spent the opener's energy came back late, 1188 → 1277 →
+1500 frames), and with closing conditions (the same energy, SP, stacks,
+cooldowns and chain step at the end as at the start: no state of a beam
+of 12 met them). The fixed-length search's segments are tuned to where
+they start; a repetition searched from its own start isn't.
+
+Measured (beam 6–8): laevatain-solo (full energy) 6 repetitions of 29.9–47.5
+s, 35,011–44,603 DPS, no 3 in a row alike (the Stagger cycle again: each
+repetition's best plan differs); opener and repetitions 8,237,799 in
+211.9 s, 38,882 DPS (the 30 s search: 1,156,151, 38,538 DPS).
+
 ### Time
 
 Integer frames at **30 FPS**, the game's own timeline unit (verified across

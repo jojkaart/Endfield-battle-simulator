@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { FPS, critTriggers, randomOutcomes, searchBeams, simulate, simulateDistribution, simulateRuns, type DamageDistribution, type RotationSpread, type TimelineResult, type Build, type CritMode, type Element, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { FPS, critTriggers, randomOutcomes, searchBeams, searchLoop, simulate, simulateDistribution, simulateRuns, type DamageDistribution, type RotationSpread, type TimelineResult, type Build, type CritMode, type Element, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
 import { readBuild } from "./commands.ts";
 import { num, table } from "./format.ts";
 
@@ -200,24 +200,92 @@ export function searchCommand(
     ...(found.spread ? ["", formatSpread(data, full, found.spread, found.result.total)] : []),
   ];
   if (options.out) {
-    const doc = {
-      $schema: "../schemas/scenario.schema.json",
-      description: `Rotation found by efsim search (beam ${found.beamWidth} of ${widths.join(", ")}${found.random.length > 0 ? `, ranked by ${ranked} of ${found.seeds.length} seeded battles` : ""}); replays with efsim simulate.`,
-      team: scenario.team,
-      target: scenario.target,
-      ...(scenario.controlled ? { controlled: scenario.controlled } : {}),
-      ...(scenario.startEnergy ? { startEnergy: scenario.startEnergy } : {}),
-      ...(scenario.startStacks ? { startStacks: scenario.startStacks } : {}),
-      durationSeconds: scenario.durationFrames / FPS,
-      crit: found.crit,
-      ...(scenario.options.seed !== undefined ? { seed: scenario.options.seed } : {}),
-      ...(scenario.options.dodge ? { dodge: scenario.options.dodge } : {}),
-      ...(scenario.options.teammateAttacks === false ? { teammateAttacks: false } : {}),
-      ...(scenario.enemyHp ? { enemyHp: scenario.enemyHp.map((e) => ({ at: e.from / FPS, fraction: e.fraction })) } : {}),
-      ...(scenario.enemyActions ? { enemyActions: scenario.enemyActions.map((a) => ({ ...a, ...(a.at ? { at: a.at.map((f) => f / FPS) } : {}), ...(a.every !== undefined ? { every: a.every / FPS } : {}), ...(a.from !== undefined ? { from: a.from / FPS } : {}) })) } : {}),
-      rotation: found.rotation.map((a) => ({ operator: a.operator, skill: a.skill, ...(a.at !== undefined ? { at: a.at / FPS } : {}) })),
-    };
+    const doc = scenarioDoc(scenario, found.rotation, found.crit, scenario.durationFrames, `Rotation found by efsim search (beam ${found.beamWidth} of ${widths.join(", ")}${found.random.length > 0 ? `, ranked by ${ranked} of ${found.seeds.length} seeded battles` : ""}); replays with efsim simulate.`);
     writeFileSync(options.out, JSON.stringify(doc, null, 2) + "\n");
+    lines.push("", `Wrote ${options.out}.`);
+  }
+  return lines.join("\n");
+}
+
+/** A scenario file's contents for a found rotation (efsim search --out). */
+function scenarioDoc(scenario: TimelineScenario, rotation: readonly RotationAction[], crit: CritMode, durationFrames: number, description: string): Record<string, unknown> {
+  return {
+    $schema: "../schemas/scenario.schema.json",
+    description,
+    team: scenario.team,
+    target: scenario.target,
+    ...(scenario.controlled ? { controlled: scenario.controlled } : {}),
+    ...(scenario.startEnergy ? { startEnergy: scenario.startEnergy } : {}),
+    ...(scenario.startStacks ? { startStacks: scenario.startStacks } : {}),
+    durationSeconds: durationFrames / FPS,
+    crit,
+    ...(scenario.options.seed !== undefined ? { seed: scenario.options.seed } : {}),
+    ...(scenario.options.dodge ? { dodge: scenario.options.dodge } : {}),
+    ...(scenario.options.teammateAttacks === false ? { teammateAttacks: false } : {}),
+    ...(scenario.enemyHp ? { enemyHp: scenario.enemyHp.map((e) => ({ at: e.from / FPS, fraction: e.fraction })) } : {}),
+    ...(scenario.enemyActions ? { enemyActions: scenario.enemyActions.map((a) => ({ ...a, ...(a.at ? { at: a.at.map((f) => f / FPS) } : {}), ...(a.every !== undefined ? { every: a.every / FPS } : {}), ...(a.from !== undefined ? { from: a.from / FPS } : {}) })) } : {}),
+    rotation: rotation.map((a) => ({ operator: a.operator, skill: a.skill, ...(a.at !== undefined ? { at: a.at / FPS } : {}) })),
+  };
+}
+
+/** A rotation's skills (every action but basic attacks) with their times, and the basic attacks between them counted. */
+function formatActions(data: GameData, actions: readonly RotationAction[]): string[] {
+  const out: string[] = [];
+  let basics = 0;
+  const flush = () => {
+    if (basics) out.push(`    … ${basics} basic attack${basics === 1 ? "" : "s"}`);
+    basics = 0;
+  };
+  for (const a of actions) {
+    if (data.kits.operators[a.operator]?.skills.find((s) => s.skillId === a.skill)?.kind === "basic") {
+      basics++;
+      continue;
+    }
+    flush();
+    out.push(`  ${((a.at ?? 0) / FPS).toFixed(2).padStart(6)} s  ${data.operators[a.operator]?.name ?? a.operator}: ${a.skill}`);
+  }
+  flush();
+  return out;
+}
+
+/**
+ * efsim search --loop: an opener and a loop (searchLoop) at beam w: each repetition from a cast of the slowest
+ * ultimate to its next, searched afresh until `repeats` in a row agree; optionally the opener and repetitions saved
+ * as a scenario that `simulate` replays.
+ */
+export function loopCommand(data: GameData, scenario: TimelineScenario, options: { beam: number; swaps?: boolean; out?: string }): string {
+  const { rotation: _ignored, ...rest } = scenario;
+  const t = Date.now();
+  const r = searchLoop(data, rest, { beamWidth: options.beam, swaps: options.swaps ?? false });
+  const s = (f: number) => `${(f / FPS).toFixed(1)} s`;
+  const n = (x: number) => num(Math.round(x), 0);
+  const name = (op: string) => data.operators[op]?.name ?? op;
+  const lines = [
+    `Searched an opener over ${s(r.horizonFrames)} and ${r.repetitions.length} repetition${r.repetitions.length === 1 ? "" : "s"} (beam ${options.beam}, ${((Date.now() - t) / 1000).toFixed(1)} s).`,
+    ...(r.boundary ? [`Each repetition runs from ${name(r.boundary.operator)}'s ultimate (${r.boundary.skill}, the one cast least) to its next cast.`] : []),
+    "",
+    table(
+      ["repetition", "starts", "length", "damage", "DPS"],
+      r.repetitions.map((c, i) => [String(i + 1), s(c.start), s(c.frames), n(c.damage), n(c.damage / (c.frames / FPS))]),
+      ["r", "r", "r", "r", "r"],
+    ),
+    "",
+  ];
+  const l = r.loop;
+  if (l) {
+    lines.push(
+      `Loop: repetitions ${l.first + 1}–${l.first + r.repeats} agree (${l.exact ? "the same actions at the same times" : `the same skills in order, lengths within ${(l.lengthApart * 100).toFixed(1)}%`}); ${s(l.frames)}, ${n(l.dps)} DPS (their damage per second ${(l.damageApart * 100).toFixed(1)}% apart: the enemy's Stagger windows fall differently).`,
+      "",
+      `Opener (${s(l.openerFrames)}, ${n(l.openerDamage)} damage):`,
+      ...formatActions(data, l.opener),
+      "",
+      `Loop (times from its start):`,
+      ...formatActions(data, l.actions),
+    );
+  } else lines.push(`No loop: ${r.reason ?? "the repetitions didn't agree"}. The repetitions above are each the search's best from where the last ended; their mean is the sustained DPS to expect.`);
+  lines.push("", `Opener and all repetitions: ${n(r.total)} damage in ${s(r.frames)}, ${n(r.dps)} DPS (simulate replays it).`);
+  if (options.out) {
+    writeFileSync(options.out, JSON.stringify(scenarioDoc(scenario, r.rotation, scenario.options.crit, r.frames, `Opener and ${r.repetitions.length} repetitions found by efsim search --loop (beam ${options.beam}); replays with efsim simulate.`), null, 2) + "\n");
     lines.push("", `Wrote ${options.out}.`);
   }
   return lines.join("\n");
