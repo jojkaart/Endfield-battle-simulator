@@ -372,8 +372,9 @@ each planned landing's damage and Stagger × E[N] / L (6.1 / 11, 8.6 / 14),
 the distribution counts a cast's sheep as a random sum, rolled crits draw
 the count (stream `landed`) and land that many at random. The example went
 from 152,724 to 114,744 (the mean; standard deviation 17,650; 5–95%
-≈ 83,975–142,039). Log replays still land all 11 / 14 (the log shows
-which landed). Left: the Stagger at E[N] / L is an expected value of a
+≈ 83,975–142,039). Log replays land the sheep the log shows and drop
+the cast's other planned landings (2026-11-14, below). Left: the Stagger
+at E[N] / L is an expected value of a
 threshold effect (Stagger nodes), and every planned landing still fires a
 hit event at expected crits (a trigger on her ultimate's hits, from gear or
 a teammate, would fire 11 / 14 times, not N).
@@ -401,6 +402,68 @@ for her support.
 
 **Next check:** more Ardelia ultimates (logs to import, or the owner's
 counts); low priority.
+
+**Her own damage in the log replays (opus, 2026-11-14):** a sonnet
+diagnosis found her per-log errors (5082 +204%, af7b +158%, 4e36 +199%,
+c3c7 +70%, 9c6e +57%) to be the log check's, not the engine's. Verified
+and fixed, three log-check problems and one fixture problem:
+- *One ultimate placed as several casts.* The sheep fly at random, so
+  they miss their slots' frames; a cast placed from them was superseded by
+  any later cast of hers (her combo's misplaced bomb in 5082, an attack 3
+  in af7b), and distinctCasts didn't merge casts from one key: 3 casts in
+  5082, 4 in af7b, 14 sheep each. Now an ultimate isn't cast again within
+  its action (logcasts.ts `sameUltimate`, and distinctCasts merges an
+  ultimate's casts from one key).
+- *Her combo's bomb split from its projectile across time stops* (5082:
+  6.4 s apart across Yvonne's ultimate and her own; 9c6e: two bombs at one
+  time, the second at half, another enemy's). Now joinable and choose's
+  window count world time, every stop but the cast's own; the placement
+  also takes the stops of logged cast events nothing placed is near
+  (Yvonne's hitless ultimate). Fixed on the way: 0c14 and 489c Wulfgard's
+  combo 2 ticks across a stop (an extra combo each; 489c's combo 3 perfect
+  hit is placed as combo 3 again: choose takes the latest cast whose
+  windows list the step), 9a80 −23.6 → −17.3%.
+- *Every planned sheep landed in the replay* (11 / 14 per cast, the log
+  2–11). Now replayCast drops a landedCount hit's planned landings the log
+  doesn't show.
+- *Build inputs* (fixtures): 4e36's weapon at level 1 with no attribute
+  node (her buff-free combo projectile ×0.4075; 128 of 130 hits match,
+  none before), c3c7's at 60 with none (143 of 164 non-crit hits exact;
+  its logged skill level 7 needs the third breakthrough, at 60, which
+  rules out 56 with 2 nodes).
+Ardelia's error: 5082 −8.4%, af7b −5.3%, 9c6e +9.8%, 4e36 +0.6%, c3c7
++4.8%, 791 −13.7 → −27.4%, 1cd1 and 1d91 unchanged. Some fights' totals
+fall where her extra landings had hidden others' shortfalls: 5082 +6.8 →
+−21.5% (Yvonne −4.2 → −22.9%: the extra combo and ultimates had covered
+her), 791 −11.3 → −18.4%.
+
+**Ruled out:** Ardelia's second "ultimate" event ~3 s after the first
+(5082 +3065 ms, 4e36 +3073, c3c7 +2934, af7b +3417, 9c6e and 791 a third
+~3.1 s later) as another cast: no sheep group of its own follows, and the
+log repeats ultimate events while one lasts (Liino's every ~3.5 s of
+Cosmovoice, 2026-11-12). Not chosen: dropping placed casts without a
+logged cast event (fixtures without `casts` can't, and Si's Final Stroke
+is never logged).
+
+**Still possible:**
+- 791: all 8 of her mismatches are sheep at ×1.407 the engine's reading
+  (176,418 logged): a missing multiplier on her ultimate there (its cast
+  is placed from the first sheep, 59235 ms, the log's ultimate events are
+  at 55120 / 59235 / 62299 ms: an earlier cast whose sheep all missed, or
+  buffs timed to the cast), or a debuff.
+- Her ultimate's cast placed ~0.4–1.4 s late (2700 ms before the first
+  logged sheep, which flies first): its time stop and buffs land late for
+  others' hits.
+- The build-offset report (`buildOffsets`) missing such cases: ATK buffs
+  with flat parts move an operator's ratio from hit to hit (4e36: ×0.34 /
+  0.46 / 0.53 at the assumed build), so no 75% sit within ±0.003 of one
+  ratio. A robust search would replay each candidate build (~0.7 s each)
+  and count exact readings; and the logged weapon skill levels bound the
+  weapon's breakthrough, so its level (WeaponBreakThroughTemplateTable's
+  skillLevelBounds, not in the loaded data yet). Not done.
+- 4e36's remaining 79 log-listing matches: Alesh's weapon ATK layers
+  (wpn_sword_0012_atk_up) differ between the replay and the log
+  (instances log 1 / replay 2 at 12–19 s), and his potential-3 ATK.
 
 ## db87: ×1.3 on Laevatain's hits under her sword buff
 
@@ -905,8 +968,9 @@ damage (buffModifiers takes one per group).
   treatment's at-Max-HP condition (HP isn't simulated) or its timing.
 - af7b 60–72 s: the log lists Ardelia's Arts Susceptibility (0.28) and the
   damage fits it, 12 s past the engine's (battle skills at 10.5 and
-  30.1 s, 30 s each); her ultimates at 56.8 and 60.2 s create none in the
-  data. The old double count happened to match those 30 hits.
+  30.1 s, 30 s each); her ultimate (56.8 s; the event at 60.2 s is its
+  repeat, 2026-11-14) creates none in the data. The old double count
+  happened to match those 30 hits.
 - Hits where the log lists a funnel_0016 or funnel_0008 debuff and the
   engine has none (012a 0 of 35 exact, 3f78, 489c, 9c6e, 7910, d774):
   trigger timing, not stacking.

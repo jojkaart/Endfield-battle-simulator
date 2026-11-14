@@ -40,12 +40,13 @@ export function worldMs(from: number, to: number, stops: readonly TimeStop[]): n
   const [a, b] = [Math.round((from * FPS) / 1000), Math.round((to * FPS) / 1000)];
   const relevant = stops.filter((s) => s.start < b && s.start + s.scales.length > a);
   if (relevant.length === 0) return to - from;
-  let held = 0;
-  for (let f = a; f < b; f++) {
-    let rate = 1;
-    for (const s of relevant) if (f >= s.start && f < s.start + s.scales.length) rate = Math.min(rate, s.scales[f - s.start] as number);
-    held += 1 - rate;
+  // Only the frames a stop covers (a cast long before a landing spans many without one), in frame order.
+  const rates = new Map<number, number>();
+  for (const s of relevant) {
+    for (let f = Math.max(a, s.start); f < Math.min(b, s.start + s.scales.length); f++) rates.set(f, Math.min(rates.get(f) ?? 1, s.scales[f - s.start] as number));
   }
+  let held = 0;
+  for (const f of [...rates.keys()].sort((x, y) => x - y)) held += 1 - (rates.get(f) as number);
   return to - from - msOf(held);
 }
 
