@@ -990,6 +990,63 @@ her array, whose energy block shifts with it. A loop here likely needs
 more than one round of the boundary (two of Akekuri's ≈ three of
 Estella's), or a boundary per operator: still open.
 
+*Synchronized burst rounds* (`sync`, `efsim search --loop --sync`;
+2026-11-14). The boundary is the moment **every** operator's ultimate is
+ready, as players hold the fast ones for a burst window. An operator's
+*lead* ultimates (`leadUltimates`) are those castable from a rotation,
+costing energy, and available at the fight's start before any buff
+(Arcane's Gloompurger Array; not her sequence 2, castable only during
+Gloompurge Arcana). One is *ready* (`ultimatesUnready`) when it's off
+cooldown, its energy is full and it's available (Arcane: neither the
+array nor Gloompurge Arcana up), whether or not the operator is free to
+act. A round starts after the step at such a moment and ends at the first
+step after which every ultimate is ready again, each lead ultimate cast
+in between (`SearchHooks.stopAt` gets the state after the step and the
+rotation); the round's last action is that step, and the next round
+starts after it. The opener runs from the fight's start to the first such
+moment: none when every bar starts full; from zero energy the build-up,
+the stop of the opener search with the most damage landed a second. The
+closing machinery is the boundary mode's (exact replay, moved-later
+replay, closingScore, two plays); energy is full at both ends of a round,
+so closingScore charges only the SP a round takes. Rounds are looked for
+up to `LOOP_SYNC_MAX_FRAMES` (120 s): every bar must refill after one
+cast each, and the team's energy comes mostly from the SP it spends (from
+zero energy, Si's 80 took 98 s).
+
+*Each lead ultimate once a round, none in the opener*
+(`SearchHooks.allow`: refused actions aren't choices and don't count for
+what's soonest). Without it the beam, ranked by damage, casts each
+ultimate the moment it's ready, and its lines rarely meet a moment every
+one is: si-laevatain and the owner's team found no round end at all. With
+it a fast ultimate is held at a full bar until the round ends; what that
+costs is measured: `TimelineState.energyOverflow` counts energy granted
+past a full bar (a statistic, not in the state key), and each repetition
+reports it (`energyLost`), split into **held** (lost while the operator's
+lead ultimate was ready, stepped action by action) and the rest (a grant
+that crosses the cap; Arcane's sequence 2 grant on a bar not yet empty).
+
+Measured, the owner's team, beam 6:
+
+| | zero energy | full energy |
+|---|---|---|
+| loop | **closes**: 81.1 s, played 6 times (rounds 3–8) | none in 20 rounds (MEASURE) |
+| loop DPS over its plays | 40,677 (plays 1.3% apart) | |
+| opener | 255.7 s, 9,319,391 (build-up 78.7 s, 2,601,325; then 2 rounds) | |
+| opener and 6 plays (`simulate`) | 29,120,948 in 742.5 s, 39,218 DPS | |
+| energy held, a play | Estella 34 of 63 (54% of a bar), Arcane 30 of 100 | |
+| boundary mode (no loop) | 42,001 DPS over 803.7 s | 42,962 over 925.5 s |
+| fixed-length search | MEASURE | |
+
+The loop's rounds are about 81 s, the slowest bar (Si's) setting the
+length; Estella's ultimate (back in about 40–45 s) waits half a bar's
+worth at full, Arcane's a third; Arcane also loses about 168 a round to
+her sequence's grant, which holding doesn't cause. A two-round loop
+(Estella twice per round of the others) would gain about one Estella
+ultimate per 81 s at most: not built.
+
+Runs take 5–6 min a round at beam 6 (about 45 min for the zero-energy
+scenario's 8 rounds).
+
 Tried and dropped (2026-11-14): cutting the fixed-length search's rotation
 at two casts of an ultimate and replaying the segment — at its exact
 frames (every cut failed: a chain step not reached, a combo window not

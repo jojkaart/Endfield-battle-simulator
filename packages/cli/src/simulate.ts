@@ -253,7 +253,7 @@ function formatActions(data: GameData, actions: readonly RotationAction[]): stri
  * next, each the best closing plan from where the last ended or the last one replayed, until one plays `repeats` more
  * times exactly; optionally the opener and `loops` plays of the loop saved as a scenario that `simulate` replays.
  */
-export function loopCommand(data: GameData, scenario: TimelineScenario, options: { beam: number; swaps?: boolean; sync?: boolean; out?: string; loops?: number; progress?: (line: string) => void }): string {
+export function loopCommand(data: GameData, scenario: TimelineScenario, options: { beam: number; swaps?: boolean; sync?: boolean; out?: string; loops?: number; rounds?: number; progress?: (line: string) => void }): string {
   const { rotation: _ignored, ...rest } = scenario;
   const t = Date.now();
   const s = (f: number) => `${(f / FPS).toFixed(1)} s`;
@@ -274,6 +274,7 @@ export function loopCommand(data: GameData, scenario: TimelineScenario, options:
     swaps: options.swaps ?? false,
     sync: options.sync ?? false,
     ...(options.loops !== undefined ? { plays: options.loops } : {}),
+    ...(options.rounds !== undefined ? { maxRepetitions: options.rounds } : {}),
     ...(options.progress ? { onRound: (x) => options.progress?.(`round at ${s(x.start)}: ${x.replayed ? "replayed" : x.shifted ? `the last moved ${s(x.shifted)} later` : x.closes !== "no" ? `new plan (plays again from its end${x.closes === "shifted" ? ", moved later" : ""})` : "new plan"}, ${s(x.frames)}, score ${n(x.score)}${x.replayFailure ? ` (the last doesn't replay: ${x.replayFailure.slice(0, 120)})` : ""} (${((Date.now() - t) / 1000).toFixed(0)} s)`) } : {}),
   });
   const rounds = `${r.repetitions.length} round${r.repetitions.length === 1 ? "" : "s"}`;
