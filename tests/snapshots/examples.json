@@ -262,6 +262,47 @@
    "e75f87455823"
   ]
  },
+ "ink-melt-zero.scenario.json": {
+  "total": 3892411.586,
+  "hits": 601,
+  "casts": 234,
+  "perOperator": {
+   "chr_0016_laevat": 2018717.564,
+   "chr_0036_jsspsi": 1242150.492,
+   "chr_0006_wolfgd": 260349.56,
+   "chr_0025_ardelia": 371193.97
+  },
+  "digest": "5b4e0ea11789",
+  "windows": [
+   "423c3e08133c",
+   "518383f1e233",
+   "e6f38d7c9aed",
+   "fbff64d07d2e",
+   "ddfe09268085",
+   "e8275e8926ef"
+  ]
+ },
+ "ink-melt.scenario.json": {
+  "total": 4411885.947,
+  "hits": 583,
+  "casts": 221,
+  "perOperator": {
+   "chr_0016_laevat": 2640061.135,
+   "chr_0036_jsspsi": 1064561.976,
+   "chr_0006_wolfgd": 379895.06,
+   "chr_0025_ardelia": 327367.776
+  },
+  "digest": "de2036f07b79",
+  "windows": [
+   "0f326cc5d27c",
+   "0fdf2c32a710",
+   "88b66a59af2d",
+   "770cafbfeb56",
+   "ba5ff58120f7",
+   "9d37367d8845",
+   "80bed83d0bdc"
+  ]
+ },
  "laevatain-solo.scenario.json": {
   "total": 715593.516,
   "hits": 33,
