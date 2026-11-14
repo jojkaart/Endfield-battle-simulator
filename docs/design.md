@@ -772,7 +772,16 @@ found so far (`SearchHooks.guide`): its nodes keep a place in the beam
 kept takes it over), so the wider beam finds at least as much and the
 spread is what the wider beams found on top (before, the owner's team gave
 3,061,788 / 2,924,392 / 2,928,204 at 12 / 24 / 48: the wider beams lost
-the narrow one's rotation). `--single` runs
+the narrow one's rotation). The owner's team (60 s, 2026-11-14), beams 12 /
+24 / 48, before (single widths, damage so far) → after (guided, with the
+value): full energy 3,061,788 / 2,924,392 / 2,928,204 (spread 4.5%) →
+3,232,373 / 3,273,371 / 3,286,029 (1.6%; 47 / 44 / 50 ms a state, about
+1.1× before); from zero energy 2,827,922 / 3,008,031 / 2,744,453 (8.8%;
+40 / 40 / 45 ms a state) → 2,797,948 / 2,808,913 / 2,973,678 (5.9%; 42 /
+41 / 42 ms): from zero the best of the three fell 1.1% (3,008,031 →
+2,973,678; the value is small while the energies are low, *How the beam
+ranks*), and the widths still disagree. Zero-energy fights are where the
+ranking is weakest. `--single` runs
 w alone. A search stopped by `maxExpansions` (200,000) says so (`capped`,
 and a warning). Beam widths 12 / 24 / 48 (single widths; 2026-10-25):
 
@@ -932,7 +941,18 @@ they start; a repetition searched from its own start isn't.
 Measured (beam 6–8): laevatain-solo (full energy) 6 repetitions of 29.9–47.5
 s, 35,011–44,603 DPS, no 3 in a row alike (the Stagger cycle again: each
 repetition's best plan differs); opener and repetitions 8,237,799 in
-211.9 s, 38,882 DPS (the 30 s search: 1,156,151, 38,538 DPS).
+211.9 s, 38,882 DPS (the 30 s search: 1,156,151, 38,538 DPS). The owner's
+team from zero energy (beam 8, 350 s): the boundary is Arcane's ultimate,
+first cast at 15.3 s; repetitions of 45.2 s (44,137 DPS) and 52.5 s
+(40,554), then the third search didn't cast it again within 60 s;
+4,550,253 in 113.1 s, 40,232 DPS. With full energy (beam 8, 746 s): the
+boundary is Arcane's second ultimate (the ultimate kind cast least),
+repetitions of 41.7 / 48.1 / 49.2 / 53.8 / 59.3 s at 36,385–46,929 DPS,
+then none within 60 s; 11,578,817 in 260.3 s, 44,488 DPS. So `--loop` gives an opener and
+repetitions that replay, and their DPS, but no repeating loop yet in the
+cases measured; what's missing is a search that aims for a repetition that
+ends where it started (the same energy, SP, stacks and Stagger phase),
+not one that hopes to.
 
 ### Time
 
