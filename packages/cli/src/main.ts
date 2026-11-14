@@ -18,6 +18,7 @@ import { checkReactions, formatReactionCheck } from "./reactioncheck.ts";
 import { formatCensus, kitCensus } from "./census.ts";
 import { formatTrim, kitTrim } from "./kittrim.ts";
 import { knifeEdge, type EdgePool } from "./edge.ts";
+import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
 
 const USAGE = `Usage:
   efsim find <text>                       Look up operator, weapon, gear and enemy IDs by name
@@ -64,6 +65,13 @@ const USAGE = `Usage:
                 [--log-buffs]             Kit buffs as the log lists them instead (the check before 2026-10-22)
                 [--simulate]              Simulate the logged casts instead and compare each hit with its landing
                                           (crits, enemy HP and effects no kit models from the log)
+  efsim zmdlogs timing [fixture…]         Buff timing report (a diagnostic, never scored): which kit buff's
+                                          window, shifted, fits the hits the check doesn't (fallback, mismatch),
+                                          as patterns across logs with mechanism candidates (default: every
+                                          development log; hold-out logs are skipped)
+                [--assumed]               Assumed matches too
+                [--singles]               No pairs of toggles
+                [--top n] [--verbose]     Patterns shown (default 20); every run, and each hit's best fit
   efsim zmdlogs reactions <fixture.json>  Replay the kits' inflictions; compare bursts and reactions
   efsim zmdlogs refresh <fixture.json> --detail <file>
                                           Add what a downloaded battle detail records that an older
@@ -82,6 +90,20 @@ Options for calc and compare:
   --buff <id>[:<n>]   Count a kit buff (own or equipment) as active, with n layers (repeatable; calc)
   --verbose           Every stat contribution and the zones of a hit
 `;
+
+/**
+ * The logs the buff timing report reads: those named (paths, or ids under fixtures/pending/), else every development
+ * log of fixtures/pending/holdout.json. Hold-out logs are never read (only counted as skipped): they're measured, never
+ * debugged (docs/accuracy-plan.md, "Choosing logs").
+ */
+function timingFixtures(named: readonly string[]): { files: string[]; skipped: number } {
+  const split = JSON.parse(readFileSync(join(ROOT, "fixtures/pending/holdout.json"), "utf8")) as { development: string[]; holdout: string[] };
+  const holdout = new Set(split.holdout);
+  const idOf = (f: string) => basename(f).replace(/\.json$/, "");
+  const wanted = named.length ? named : split.development;
+  const files = wanted.filter((f) => !holdout.has(idOf(f))).map((f) => (f.endsWith(".json") ? f : join(ROOT, "fixtures/pending", `${f.startsWith("zmdlogs-") ? f : `zmdlogs-${f}`}.json`)));
+  return { files, skipped: wanted.length - files.length };
+}
 
 async function main(argv: string[]): Promise<number> {
   const { values, positionals } = parseArgs({
@@ -117,6 +139,8 @@ async function main(argv: string[]): Promise<number> {
       "attack-every": { type: "string" },
       out: { type: "string" },
       write: { type: "boolean", default: false },
+      assumed: { type: "boolean", default: false },
+      singles: { type: "boolean", default: false },
       help: { type: "boolean", short: "h", default: false },
     },
   });
@@ -181,6 +205,16 @@ async function main(argv: string[]): Promise<number> {
       break;
     case "zmdlogs": {
       const [sub, arg, op] = args;
+      if (sub === "timing") {
+        const start = performance.now();
+        const sel = timingFixtures(args.slice(1));
+        const reports = sel.files.map((f) => {
+          process.stderr.write(`timing ${basename(f)}\n`);
+          return fixtureTiming(data(), readLogFixture(f), { assumed: values.assumed, pairs: !values.singles });
+        });
+        text = formatTimingReport(data(), reports, { verbose: values.verbose, skipped: sel.skipped, seconds: (performance.now() - start) / 1000, ...(values.top !== undefined ? { top: Number(values.top) } : {}) });
+        break;
+      }
       if ((sub === "scales" || sub === "find-scales") && arg && op) {
         const fx = readLogFixture(arg);
         if (sub === "scales") {

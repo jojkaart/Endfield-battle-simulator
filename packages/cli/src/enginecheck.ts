@@ -137,7 +137,7 @@ function categoryOf(inputs: LandingInputs, hit?: KitHit): HitCategory {
  * accounts for (same zone, element and value: a log name several kit buffs share, e.g. one affix for two operators'
  * Susceptibility), as modifiers for the hit's category.
  */
-function loggedEntries(c: EngineCheck, effects: readonly LogEffect[], gameBuffs: ReadonlySet<string>, kept: readonly Modifier[], category: HitCategory): Modifier[] {
+export function loggedEntries(c: EngineCheck, effects: readonly LogEffect[], gameBuffs: ReadonlySet<string>, kept: readonly Modifier[], category: HitCategory): Modifier[] {
   const pool = [...kept];
   const out: LogEffect[] = [];
   for (const e of effects) {
@@ -150,19 +150,20 @@ function loggedEntries(c: EngineCheck, effects: readonly LogEffect[], gameBuffs:
 }
 
 /** One group of alternatives a reading may take (the first: none), each with its assumption and what it changes. */
-interface Alternative {
+export interface Alternative {
   readonly assumption: Assumption | null;
   readonly apply: (o: Reading) => Reading;
 }
 
-interface Reading {
+/** The damage path's arguments of one reading of a landing: the options, the inputs, and possibly another kit hit of the event. */
+export interface Reading {
   readonly options: DamageOptions;
   /** Another kit hit of the event in place of the landed one, with the skill its values come from. */
   readonly other?: { readonly skill: { readonly skillId: string }; readonly hit: KitHit };
   readonly inputs: LandingInputs;
 }
 
-const NONE: Alternative = { assumption: null, apply: (o) => o };
+export const NONE: Alternative = { assumption: null, apply: (o) => o };
 
 /** Above this many combinations of alternatives, each group is tried alone. */
 const MAX_COMBINATIONS = 4096;
@@ -176,8 +177,61 @@ const MAX_COMBINATIONS = 4096;
  * level the replay lacks, log-only buffs at the hit's boundary). Empty without a landing.
  */
 export function engineReadings(c: EngineCheck, hit: LogHit, place: HitPlace): { readings: EngineReading[]; primary: number | null; expected?: number; landing: LandedHit | { readonly unknown: string } } {
+  const basis = readingBasis(c, hit, place);
+  if ("unknown" in basis.landing) return { readings: [], primary: null, landing: basis.landing };
+  const { landing, primary, groups } = basis as ReadingBasis;
+  const combos = groups.reduce((n, g) => n * g.length, 1);
+  const sets: Alternative[][] = combos <= MAX_COMBINATIONS ? groups.reduce<Alternative[][]>((acc, g) => acc.flatMap((a) => g.map((x) => [...a, x])), [[]]) : [[], ...groups.flatMap((g) => g.slice(1).map((x) => [x]))];
+  const readings: EngineReading[] = [];
+  let primaryDamage: number | null = null;
+  for (const set of sets) {
+    const r = set.reduce((o, a) => a.apply(o), primary);
+    try {
+      const d = landingDamage(c.data, c.target, r.inputs, r.options, r.other);
+      const assumptions = set.flatMap((a) => (a.assumption ? [a.assumption] : []));
+      if (assumptions.length === 0) primaryDamage ??= roundDamage(d.exact);
+      readings.push({ predicted: roundDamage(d.exact), assumptions });
+    } catch (e) {
+      // A reading where the hit doesn't happen, or a value needs what it doesn't say.
+      if (!readingDoesNotApply(e)) throw e;
+    }
+  }
+  // A hit whose crit the log doesn't give: the primary reading at expected crits, for the fight's totals (the readings try
+  // both; counting such hits as non-crits biased the totals low: e82d −31%, 0c14 −24%; accuracy plan A3).
+  if (hit.crit === null && primaryDamage !== null) {
+    // Unless the logged value is one of the two exactly: then it says whether the hit crit (40d9a3c1da37: Si's killing
+    // combo finish, 599,622 = ×1.5 the non-crit reading, counted at expected crits as 409,741).
+    if (primaryDamage === hit.value) return { readings, primary: primaryDamage, expected: primaryDamage, landing };
+    const critOnly = readings.find((r) => r.assumptions.length === 1 && r.assumptions[0]?.kind === "crit");
+    if (critOnly && critOnly.predicted === hit.value) return { readings, primary: primaryDamage, expected: critOnly.predicted, landing };
+    try {
+      return { readings, primary: primaryDamage, expected: landingDamage(c.data, c.target, primary.inputs, { ...primary.options, crit: "expected" }, primary.other).exact, landing };
+    } catch (e) {
+      if (!readingDoesNotApply(e)) throw e;
+    }
+  }
+  return { readings, primary: primaryDamage, landing };
+}
+
+/**
+ * What engineReadings reads a logged hit from: its landing, the primary reading (the engine's modifiers with the log's
+ * crit and log-only effects) and the groups of alternatives, in the order the readings try them. `edgeToggles`: the
+ * groups of kit buffs changing within REPLAY_EDGE_MS of the hit (the buff timing report, bufftiming.ts, tries its own
+ * toggles instead).
+ */
+export interface ReadingBasis {
+  readonly landing: LandedHit & { readonly inputs: LandingInputs };
+  readonly primary: Reading;
+  readonly groups: readonly Alternative[][];
+  readonly edgeToggles: ReadonlySet<readonly Alternative[]>;
+  /** The engine's modifiers the primary reading keeps (without the log's, and without kit buffs the replay can't judge). */
+  readonly judged: readonly Modifier[];
+  readonly category: HitCategory;
+}
+
+export function readingBasis(c: EngineCheck, hit: LogHit, place: HitPlace): ReadingBasis | { readonly landing: { readonly unknown: string } } {
   const landing = landingOf(c, hit);
-  if ("unknown" in landing) return { readings: [], primary: null, landing };
+  if ("unknown" in landing) return { landing };
   const inputs = landing.inputs;
   const op = hit.operator;
   const category = categoryOf(inputs);
@@ -217,7 +271,8 @@ export function engineReadings(c: EngineCheck, hit: LogHit, place: HitPlace): { 
     if (on) out.push({ assumption: { kind: "boundary", label: `${k} off (${why})`, buffs: [k] }, apply: (o) => replaceMods(o, (mods) => mods.filter((m) => !ofIt(m))) });
     return out.length ? [[NONE, ...out]] : [];
   });
-  if (toggles.length) groups.push(...(toggles.length <= 4 ? toggles : [[NONE, ...toggles.flatMap((g) => g.slice(1))]]));
+  const edgeToggles = new Set<readonly Alternative[]>(toggles.length <= 4 ? toggles : toggles.length ? [[NONE, ...toggles.flatMap((g) => g.slice(1))]] : []);
+  groups.push(...(edgeToggles as Set<Alternative[]>));
   // Stagger starting or ending near the hit.
   if (c.replay.staggerNearChange(hit.t)) {
     groups.push([NONE, { assumption: { kind: "stagger", label: `${inputs.options.staggered ? "not " : ""}Staggered (the replay's Stagger changes within 500 ms of the hit)` }, apply: (o) => ({ ...o, options: { ...o.options, staggered: !o.options.staggered } }) }]);
@@ -294,37 +349,7 @@ export function engineReadings(c: EngineCheck, hit: LogHit, place: HitPlace): { 
   const boundary = [...boundarySubsets(own.boundary), ...boundarySubsets(own.boundary, true)].filter((b) => b.label !== null);
   if (boundary.length) groups.push([NONE, ...boundary.map((b): Alternative => ({ assumption: { kind: "boundary", label: b.label as string, buffs: [...new Set(b.effects.map((e) => e.buff))] }, apply: (o) => replaceMods(o, (mods) => [...mods, ...logModifiers(b.effects, category, c.caps)]) }))]);
 
-  const combos = groups.reduce((n, g) => n * g.length, 1);
-  const sets: Alternative[][] = combos <= MAX_COMBINATIONS ? groups.reduce<Alternative[][]>((acc, g) => acc.flatMap((a) => g.map((x) => [...a, x])), [[]]) : [[], ...groups.flatMap((g) => g.slice(1).map((x) => [x]))];
-  const readings: EngineReading[] = [];
-  let primaryDamage: number | null = null;
-  for (const set of sets) {
-    const r = set.reduce((o, a) => a.apply(o), primary);
-    try {
-      const d = landingDamage(c.data, c.target, r.inputs, r.options, r.other);
-      const assumptions = set.flatMap((a) => (a.assumption ? [a.assumption] : []));
-      if (assumptions.length === 0) primaryDamage ??= roundDamage(d.exact);
-      readings.push({ predicted: roundDamage(d.exact), assumptions });
-    } catch (e) {
-      // A reading where the hit doesn't happen, or a value needs what it doesn't say.
-      if (!readingDoesNotApply(e)) throw e;
-    }
-  }
-  // A hit whose crit the log doesn't give: the primary reading at expected crits, for the fight's totals (the readings try
-  // both; counting such hits as non-crits biased the totals low: e82d −31%, 0c14 −24%; accuracy plan A3).
-  if (hit.crit === null && primaryDamage !== null) {
-    // Unless the logged value is one of the two exactly: then it says whether the hit crit (40d9a3c1da37: Si's killing
-    // combo finish, 599,622 = ×1.5 the non-crit reading, counted at expected crits as 409,741).
-    if (primaryDamage === hit.value) return { readings, primary: primaryDamage, expected: primaryDamage, landing };
-    const critOnly = readings.find((r) => r.assumptions.length === 1 && r.assumptions[0]?.kind === "crit");
-    if (critOnly && critOnly.predicted === hit.value) return { readings, primary: primaryDamage, expected: critOnly.predicted, landing };
-    try {
-      return { readings, primary: primaryDamage, expected: landingDamage(c.data, c.target, primary.inputs, { ...primary.options, crit: "expected" }, primary.other).exact, landing };
-    } catch (e) {
-      if (!readingDoesNotApply(e)) throw e;
-    }
-  }
-  return { readings, primary: primaryDamage, landing };
+  return { landing, primary, groups, edgeToggles, judged, category };
 }
 
 function castFact<K extends "link" | "windowCount" | "consumed">(facts: ReplayCastFacts | { readonly unknown: string }, key: K): ReplayCastFacts[K] | { readonly unknown: string } {

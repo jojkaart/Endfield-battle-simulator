@@ -113,6 +113,13 @@ export interface BuffReplay {
    * life): its timing could be the replay's, not the game's.
    */
   kitBuffNearChange(hit: Pick<LogHit, "t" | "operator">, kitBuff: string): boolean;
+  /**
+   * The replay's instances of a kit buff (`owner:id`, not one a cast carries) reaching an operator, as windows in ms
+   * (`end` Infinity: never ended; `expired`: it ran out), for the buff timing report (bufftiming.ts). The state is
+   * sampled at the logged hits and REPLAY_EDGE_MS either side: an end before it ran out is at the first sample without
+   * it. Empty when the replay didn't run.
+   */
+  kitWindows(kitBuff: string, operator: string): readonly KitWindow[];
   /** Whether the replay's Stagger starts or ends within REPLAY_EDGE_MS of a time (ms). */
   staggerNearChange(t: number): boolean;
   /** Kit buffs (`owner:id`) the replay can't judge, whatever the log lists: a trigger behind them it can't judge (undecidedBuff), and why. */
@@ -124,6 +131,13 @@ export interface BuffReplay {
   readonly staggers: readonly number[];
   /** The frame the replay stopped at, if it couldn't go on (BuffReplay.failed says why). */
   readonly brokenAt: number | null;
+}
+
+/** One replayed instance of a kit buff at an operator, in ms (BuffReplay.kitWindows). */
+export interface KitWindow {
+  readonly start: number;
+  readonly end: number;
+  readonly expired: boolean;
 }
 
 /** A fact the replay knows, or why it doesn't (the log check then tries alternatives, labelled with the reason). */
@@ -1105,6 +1119,10 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       if (!bound) return false;
       const count = (r: NonNullable<typeof main>) => (r.kitInstances.get(key) ?? []).filter((i) => i.start <= f && f < i.end).length;
       return nearIn(bound.kitChanges, key, f) || count(bound) !== count(main);
+    },
+    kitWindows(kitBuff, operator) {
+      const ms = (f: number) => (Number.isFinite(f) ? (f * 1000) / FPS : f);
+      return (main?.kitInstances.get(`${kitBuff}|${operator}`) ?? []).map((i) => ({ start: ms(i.start), end: ms(i.end), expired: i.expired })).sort((x, y) => x.start - y.start);
     },
     staggerNearChange(t) {
       if (!main) return false;
