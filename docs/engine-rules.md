@@ -213,7 +213,7 @@ are at 30 FPS.
 - B3. Layered buffs (types 2, 11; `maxStacks`): each layer has its own timer; at the maximum the oldest layer goes; modifiers add per layer. [DATA]
 - B4. Shared-timer layers (types 8, 10; `sharedTimer`): each new layer resets every layer's end to its own. [DATA]; kit buffs [OPEN]
 - B5. Stack groups (type 1, or type 11 with a priority key and one instance): instances from different owners don't add; only the highest-priority instance acts, whole; ties and groups without a key go to the latest applied. [DATA]
-- B6. Instances with a priority (`instances` n): at most n per owner; at the limit the weakest (ties: oldest) goes, so a weaker new one doesn't replace a stronger one. [DATA]
+- B6. Instances with a priority (`instances` n): at most n per owner; at the limit the weakest (ties: oldest) goes, so a weaker new one doesn't replace a stronger one. With maxStackCnt 0 (no limit) every instance stays and only the strongest acts: Arcane's Solemn Phalanx (buff_wpn_funnel_0016_will_dmg / _will_atk), Ardelia's (funnel_0013_valid), Xaihi's (funnel_0010_atk_up) and funnel_0008 are listed up to 4 times on a hit while the damage fits one (log ×3, engine ×1: 105 of 129 hits exact in 012a, 49 of 61 in b6aa, 26 of 27 in 9555; funnel_0008 ×3: 33 of 34 in d774; funnel_0010 ×2: 131 of 148 in abfd). Logs also list an elemental Susceptibility or Amp once per element (Arts Susceptibility: four entries), which isn't four instances. [DATA] [SETTLED] (2026-11-14)
 - B7. Type 2 with one literal layer on others is one instance whoever applies it. [SETTLED]
 - B8. `stackingKey` joins buffs of different files into one (all foods share one key: one food per operator). [DATA]
 - B9. A team buff with recipients keeps layers per recipient set.

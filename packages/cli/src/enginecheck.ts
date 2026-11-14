@@ -11,7 +11,7 @@ import {
   Attr, activeModifiers, corrosionModifier, effectiveKit, kitBuffModifiers, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,
   type DamageOptions, type DamageTarget, type GameData, type KitBuff, type KitHit, type LandedHit, type LandingInputs, type Modifier, type SkillType,
 } from "@efsim/engine";
-import type { AbsentLanding, LogEffect, LogFixture, LogHit } from "@efsim/data";
+import { affixesAsChild, type AbsentLanding, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
 import type { BuffReplay, Fact, ReplayCastFacts } from "./buffreplay.ts";
 import type { Assumption } from "./logcheck.ts";
 import { boundarySubsets, buffFile, isCorrosionBuff, kitStackCaps, logModifiers, teamPanels, withoutOwnFood, type HitCategory, type StackCap } from "./logeffects.ts";
@@ -19,11 +19,13 @@ import { boundarySubsets, buffFile, isCorrosionBuff, kitStackCaps, logModifiers,
 /**
  * The game buffs a battle log lists a kit buff's effects under: its gameBuff, its loggedAs, and the affix buffs those
  * files' Susceptibility and Amp actions create (RawBuffFile.affixes: ZMDLogs names the affix, e.g.
- * buff_common_affixes_vulnerable_natural for Li Zhiyan's talent).
+ * buff_common_affixes_vulnerable_natural for Li Zhiyan's talent), or that they stand for as such an action's child
+ * buff (affixesAsChild: Ardelia's Arts and Physical Susceptibility children). Without the latter the log's entries
+ * counted as buffs no kit defines and were added to the engine's own (4e36, c3c7: Si's hits ×1.28 / 1.56, ×1.24 / 1.48).
  */
 export function loggedNames(def: Pick<KitBuff, "gameBuff" | "loggedAs">): string[] {
   const own = [...(def.gameBuff ? [def.gameBuff] : []), ...(def.loggedAs ?? [])];
-  return [...new Set([...own, ...own.flatMap((g) => buffFile(g)?.affixes ?? [])])];
+  return [...new Set([...own, ...own.flatMap((g) => [...(buffFile(g)?.affixes ?? []), ...affixesAsChild(g)])])];
 }
 
 /** The team's kit buffs (their own and what they wear) and the game buffs a log lists each under (loggedNames). */

@@ -173,6 +173,49 @@ export function readBuffFile(buffId: string): RawBuffFile | null {
   };
 }
 
+let childAffixIndex: Map<string, Set<string>> | null = null;
+
+/**
+ * The common affix buffs a battle log lists a buff under when it is the child buff a Susceptibility or Amp action
+ * creates in its place (VulnerableAction / EnhancedAction with asChildBuff and a childBuffId), by the creating action's
+ * subType (AFFIX_ELEMENTS). The child's own file has no such action, so RawBuffFile.affixes can't say it: Ardelia's
+ * buff_chr_0025_ardelia_normal_skill_vulnerable makes buff_chr_0025_ardelia_affixes_vulnerable_spell_child (subType 1)
+ * and _physic_child (subType 2), and ZMDLogs lists them as buff_common_affixes_vulnerable_spell (one entry per Arts
+ * element) and _physical (fixtures/pending/zmdlogs-4e3651100056.json 15251 ms: 0.28 each, the engine's own value; the
+ * same in zmdlogs-c3c735dbb022.json 18219 ms at 0.24). Every listed BuffData file is scanned once, on first use.
+ */
+export function affixesAsChild(buffId: string): string[] {
+  if (!childAffixIndex) {
+    const index = new Map<string, Set<string>>();
+    const dir = join(sourceDir("rmxlinux"), "Json", "BuffData");
+    const files = existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith(".json") && isBuffFileListed(f.slice(0, -5))) : [];
+    for (const f of files) {
+      const text = readFileSync(join(dir, f), "utf8");
+      if (!/"asChildBuff":\s*true/.test(text) || !(text.includes("Core.VulnerableAction+") || text.includes("Core.EnhancedAction+"))) continue;
+      const ctx: Ctx = { source: "rmxlinux", path: `BuffData/${f.slice(0, -5)}` };
+      const walk = (node: unknown): void => {
+        if (Array.isArray(node)) return node.forEach(walk);
+        if (typeof node !== "object" || node === null) return;
+        const o = node as Record<string, unknown>;
+        const t = typeof o["$type"] === "string" ? o["$type"] : "";
+        const kind = t.includes("Core.VulnerableAction+") ? "vulnerable" : t.includes("Core.EnhancedAction+") ? "enhance" : null;
+        const child = o["childBuffId"] as Record<string, unknown> | undefined;
+        if (kind && o["isEnable"] === true && o["asChildBuff"] === true && child && child["useBlackboardKey"] !== true && typeof child["value"] === "string" && child["value"] !== "") {
+          const element = AFFIX_ELEMENTS[get(o, "subType", ctx, int)];
+          if (element === undefined) throw new DataError("rmxlinux", ctx.path, `a ${kind} action of unknown subType ${String(o["subType"])}`);
+          const affix = `buff_common_affixes_${kind}_${element}`;
+          // The common affix's own default child is the affix itself.
+          if (child["value"] !== affix) index.set(child["value"], new Set([...(index.get(child["value"]) ?? []), affix]));
+        }
+        for (const v of Object.values(o)) walk(v);
+      };
+      walk(parseJsonExact(text));
+    }
+    childAffixIndex = index;
+  }
+  return [...(childAffixIndex.get(buffId) ?? [])].sort();
+}
+
 /**
  * The effect buffs a BuffData or SkillData file attaches to a skill cast
  * (CreateBuffAttachingSkill: the buff lives with the cast, ending with it):
