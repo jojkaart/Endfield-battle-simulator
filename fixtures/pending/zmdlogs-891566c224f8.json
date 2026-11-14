@@ -15,7 +15,9 @@
   },
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
-   "Enemy level 90 from the stage's DungeonTable entry (indie_hard018_s)."
+   "Enemy level 90 from the stage's DungeonTable entry (indie_hard018_s).",
+   "2026-11-15: Wulfgard's weapon level 81 (the same roster as c7790d76a4f0). The stage (indie_hard018_s, shields removed by reactions) scales every hit by a window factor (0.5 to 37.7 s, 0.05 at 38.5–39.4 s, 0.2 at 41.0–85.9 s, 1 from 86.8 s) the engine doesn't model (docs/open-problems.md).",
+   "2026-11-15: Liino's weapon level 80 (her hits ×0.937 after the stage's window factor, as in d774d0ce7bd3)."
   ]
  },
  "enemy": {
@@ -36,7 +38,7 @@
    },
    "weapon": {
     "id": "wpn_pistol_0004",
-    "level": 90,
+    "level": 81,
     "skillLevels": [
      6,
      5,
@@ -201,7 +203,7 @@
    },
    "weapon": {
     "id": "wpn_lance_0014",
-    "level": 90,
+    "level": 80,
     "skillLevels": [
      7,
      5,

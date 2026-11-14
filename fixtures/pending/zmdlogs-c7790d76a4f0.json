@@ -15,7 +15,8 @@
   },
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
-   "Enemy level 90 from the stage's DungeonTable entry (dung01_bossrush01_04)."
+   "Enemy level 90 from the stage's DungeonTable entry (dung01_bossrush01_04).",
+   "2026-11-15: Wulfgard's weapon level 81 (56 of his 65 non-status hits ×0.9475 of the engine at 90; level 81 gives 0.94752; the export has no weapon level)."
   ]
  },
  "enemy": {
@@ -146,7 +147,7 @@
    },
    "weapon": {
     "id": "wpn_pistol_0004",
-    "level": 90,
+    "level": 81,
     "skillLevels": [
      6,
      5,

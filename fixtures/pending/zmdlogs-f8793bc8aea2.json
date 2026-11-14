@@ -15,7 +15,8 @@
   },
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
-   "Enemy level 90 from the stage's DungeonTable entry (indie_battletower015_ex)."
+   "Enemy level 90 from the stage's DungeonTable entry (indie_battletower015_ex).",
+   "2026-11-15: Wulfgard's weapon level 80 (his hits ×0.9375 of the engine at 90; level 80 gives 0.9375)."
   ]
  },
  "enemy": {
@@ -146,7 +147,7 @@
    },
    "weapon": {
     "id": "wpn_pistol_0009",
-    "level": 90,
+    "level": 80,
     "skillLevels": [
      8,
      6,

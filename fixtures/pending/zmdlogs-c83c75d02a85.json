@@ -15,7 +15,8 @@
   },
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
-   "Enemy level 90 from the stage's DungeonTable entry (indie_battletower015_ex)."
+   "Enemy level 90 from the stage's DungeonTable entry (indie_battletower015_ex).",
+   "2026-11-15: Si's Jade Vessel third skill 9, not the export's 6 (the log lists its enemy damage taken at 0.21, level 9's value; with 6 every operator's hit is ×1.0404 low), and 0 attribute nodes (all her hits ×0.9399 after that). Sonnet diagnosis; the export's roster is probably newer than the battle."
   ]
  },
  "enemy": {
@@ -197,7 +198,7 @@
     "skillLevels": [
      9,
      9,
-     6
+     9
     ]
    },
    "gear": [
@@ -233,7 +234,8 @@
       0
      ]
     }
-   ]
+   ],
+   "attributeNodes": 0
   }
  ],
  "hits": [

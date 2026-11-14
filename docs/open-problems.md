@@ -416,6 +416,42 @@ what the engine applies), another buff on the same hits, db87's build.
 
 **Next check:** the sword buff's value and stacks in db87 against e989.
 
+## Ink Melt logs (round five): Combustion ticks, a stage factor, Si's late combo buffs
+
+**Shows (sonnet diagnosis, 2026-11-15):** Wulfgard's kit and weapons fit
+(implied scales exact); the four new development logs' "0 plain" were
+build offsets the export omits (fixed in the fixtures: c83c Si's Jade
+Vessel third skill 9 and 0 nodes, c7790 and 8915 Wulfgard weapon 81,
+f879 Wulfgard weapon 80, f978 Si 1 node, 8915 Liino weapon 80). Left:
+- **Combustion ticks** (`buff_common_burning_status`) credited to
+  Wulfgard: c7790 ticks at 11.67, 12.61 s log 12605 and at 44.49–66.74 s
+  9454, where the engine predicts levels 1–4 (2836–8512); both are
+  ×2.2223 (1/0.45) of a level; ticks at 23.9–32.1 s match exactly. f879:
+  15 ticks at 71–83 s ×0.83–1.14. Reaction hits in c7790 at 9.88 s and
+  42.59 s also off. Matters for any Heat team (Ink Melt).
+- **8915's stage** (indie_hard018_s, the Skydrummer's shields that each
+  reaction or physical status removes): every operator's hits ×0.5 to
+  37.7 s, ×0.05 at 38.5–39.4 s, ×0.2 at 41.0–85.9 s, ×1 from 86.8 s;
+  nothing in the log's buffs marks it. Not modelled; the log is mostly
+  not checkable until it is.
+- **c83c Si's combo from ~55 s**: the engine adds Jade Vessel's next-combo
+  bonus (0.7), Yinglung's Edge (0.2 ×2) and P2 ATK that the log doesn't
+  list (combo +21%): buff lifetimes, maybe with "Consumed buffs end at the
+  planned last hit" (being fixed) or the Yinglung stack count (test 106).
+- **f978 Ardelia** ×0.8168 on 137 of 139 hits: a build offset, but no
+  weapon level / node pair fits exactly (4 nodes + 60, 3 + 64, 1 + 71).
+- **f879**: Wulfgard's late hits (104–126 s) ×1.06–1.10 with many
+  Camille talent-1 stacks listed; Laevatain −9.1% not diagnosed.
+
+**Ruled out:** Wulfgard's kit (scales, frames, extra shot, talent,
+potential), his weapons pistol_0004 and 0009, enemy level/DEF, food and a
+fight-wide factor for c83c, c7790, f879, f978.
+
+**Check improvement:** the build-offset line only reads hits with
+`crit === false`; Si's hits there have crit null, so no offset was
+reported. Weapon skill levels could be inferred from logged weapon-buff
+values (c83c's 0.21).
+
 ## Akekuri in 012a: Thermite Cutter's team ATK too early, and ×0.89 left
 
 **Shows (haiku, 2026-11-14):** the engine gives wpn_sword_0012.team_atk
