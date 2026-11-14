@@ -432,8 +432,26 @@ so it neither verifies nor blames the kits); **unquantified** with a
 `reason`: under Corrosion whose damage no level fits but some reading's
 damage with the least and the most shred Corrosion can give brackets
 (outside every bracket Corrosion can't explain it: a mismatch), the
-killing blow, Fixed DMG a fight computes, a status hit of an operator
-without a kit; and **uncovered**. Until 2026-10-24 any hit under any
+killing blow, Fixed DMG a fight computes (where the log can't value it:
+below), a status hit of an operator without a kit; and **uncovered**.
+A recording buff's burst (Si's Artful Intent, `KitBuff.records`; since
+2026-11-14, `packages/cli/src/recordedburst.ts`) is Fixed DMG of what the
+buff recorded, which the log's own hits give: the buff's rate for the
+hitter's build (ink_damage_rate: 0.13 at P0, +0.07 from P1, less below
+battle skill 12) × the sum of every logged hit on the target, by anyone
+(statuses, reactions and ticks too; Fixed DMG not), each at its uncapped
+value where the log has one, from the logged hit that applied the buff
+(inclusive) to the record's end. The log doesn't have the end (Final
+Stroke's frame 12, or the expiry, 0.3–0.9 s before the burst), so each
+logged time up to 1 s before the burst is a reading, and hits logged at
+the start's ms but before it are read both ways; a reading fits within
+±1 and ±0.5 × rate per counted hit (each logged value is rounded). A fit
+is an **assumed** match (assumption `recordEnd`: the end's lag), none a
+mismatch, or unquantified on the killing blow; a multi-target log, or
+one without the applying hit before the burst, leaves it unquantified
+(Fixed DMG). 34 of 40 single-target bursts fit (2026-11-14; misfits in
+docs/open-problems.md). The negative control leaves these matches out:
+they scale with the log's values. Until 2026-10-24 any hit under any
 unquantified buff counted as unmodelled, so a fixture could pass with no
 match at all (d9e59d0fb737: 0 of 98). A fixture is **verified**
 (`verificationProblems`, the rule `tests/logs.test.ts` holds every

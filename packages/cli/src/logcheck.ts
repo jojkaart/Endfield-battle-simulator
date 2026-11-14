@@ -45,6 +45,7 @@ import { assumeValues, valueAssumptions, valueReads } from "./hitvalues.ts";
 import { engineCheck, engineReadings, fightTotals, logDifferences, totalsErrors, type HitPlace, type LogDifference, type TotalsComparison } from "./enginecheck.ts";
 import { boundarySubsets, buffFile, isCorrosionBuff, kitBuffSource, kitStackCaps, logModifiers, teamPanels, withoutOwnFood, type HitCategory, type StackCap } from "./logeffects.ts";
 import { placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
+import { isRecordedBurst, recordedBurst, type RecordedBurstReading } from "./recordedburst.ts";
 import { checkReactions } from "./reactioncheck.ts";
 import { atLayers, disagreementRuns, REPLAY_EDGE_MS, REPLAY_EXPIRY_SLACK, replayedHits, replayKitBuffs, type BuffReplay, type ConsumedBuffs, type DisagreementRun, type Fact, type ReplayCastFacts, type ReplayedHits } from "./buffreplay.ts";
 
@@ -82,7 +83,9 @@ export type AssumptionKind =
   /** The replay's Stagger starting or ending near the hit, read the other way (enginecheck.ts). */
   | "stagger"
   /** The log's own buff listing where the engine's reading fits nothing (LOG_LISTING): the fallback. */
-  | "logListing";
+  | "logListing"
+  /** When a recording buff's record stopped before its burst, which the log doesn't say (recordedburst.ts). */
+  | "recordEnd";
 
 export interface Assumption {
   readonly kind: AssumptionKind;
@@ -958,6 +961,29 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
       };
     };
     if (engineFirst) return match(engineFirst, { tried: engineReadingsTried, matching: engineMatching });
+    // A recording buff's burst (Si's Artful Intent): valued from the logged hits it recorded (recordedburst.ts).
+    if (found.some(([, h]) => isRecordedBurst(h))) {
+      const burst = recordedBurst(data, fx, member, logged);
+      if (!("unknown" in burst) && burst.readings.length > 0) {
+        const fits = burst.readings.filter((r) => Math.abs(r.predicted - actual) <= r.tolerance);
+        const readings = { tried: burst.readings.length, matching: fits.length };
+        const closest = (rs: readonly RecordedBurstReading[]) => [...rs].sort((a, b) => Math.abs(a.predicted - actual) - Math.abs(b.predicted - actual));
+        const best = closest(fits)[0];
+        if (best) {
+          const assumptions: Assumption[] = [{
+            kind: "recordEnd", n: best.lag, buffs: [burst.buff],
+            label:
+              `${burst.buff}'s record of the ${best.counted} logged hits from ${burst.start.t} to ${best.last} ms, ending ${best.lag} ms before its burst (the log doesn't say when it ended)` +
+              (best.withoutEarly ? `, without the ${best.withoutEarly} logged at its start's ms before it` : ""),
+          }];
+          return { kind: "match", hit: logged, predicted: best.predicted, assumed: assumptions.map((a) => a.label), assumptions, class: "assumed", readings };
+        }
+        const near = closest(burst.readings).map((r) => r.predicted);
+        // The killing blow's uncapped value is the log's overkill estimate: a burst that fits no reading isn't a mismatch then.
+        if (killing.has(logged)) return { kind: "unquantified", hit: logged, predicted: near[0] as number, reason: "killingBlow", readings };
+        return { kind: "mismatch", hit: logged, predicted: [...new Set(near)].slice(0, 6), ratio: actual / (near[0] as number), readings };
+      }
+    }
     // The fallback: the log's listing (with the replay's decisions on kit buffs, as before 2026-10-25), labelled.
     // Without a replay (`buffs: "log"`: the log's listing alone, asked for) its readings keep their classes, as before 2026-10-25.
     const fallback = (first: { predicted: number; assumptions: Assumption[] }, readings: Readings, why: string, buffs: readonly string[] = []) =>
