@@ -21,10 +21,17 @@ export interface LoopOptions extends SearchOptions {
   readonly maxRepetitions?: number;
   /** How much better a new round's plan must be than replaying the last one to replace it (default LOOP_HYSTERESIS). */
   readonly hysteresis?: number;
+  /**
+   * How far below the best new plan the plans a round chooses between by two plays (itself, then itself again from
+   * where it ends) may score (default LOOP_CLOSING_MARGIN; 0: the best plan alone, played once).
+   */
+  readonly closingMargin?: number;
+  /** Whether a round that can't be replayed exactly is also offered with its late actions moved later (default true). */
+  readonly shifts?: boolean;
   /** Plays of the loop in the result's rotation (default repeats + 1; more are exact replays, checked). */
   readonly plays?: number;
   /** Called after each round (progress): where it starts, its length, whether it replayed the last, its closingScore and the best new plan's. */
-  readonly onRound?: (round: { readonly start: number; readonly frames: number; readonly replayed: boolean; readonly score: number; readonly best?: number; readonly stops: number; readonly replayFailure?: string }) => void;
+  readonly onRound?: (round: { readonly start: number; readonly frames: number; readonly replayed: boolean; readonly shifted: number; readonly score: number; readonly best?: number; readonly stops: number; readonly closes: "exactly" | "shifted" | "no"; readonly replayFailure?: string }) => void;
 }
 
 /** The opener search's fight length when the scenario's is shorter: 60 s, room for the first round of ultimates from zero energy (a search setting). */
@@ -44,6 +51,10 @@ export const LOOP_MAX_REPETITIONS = 12;
 export const LOOP_TOLERANCE = 0.03;
 /** A replay of the last round's plan is kept unless a new plan scores this much better (closingScore): 2% (a search setting). */
 export const LOOP_HYSTERESIS = 0.02;
+/** The new plans a round chooses between by two plays (itself and itself again) score within 5% of the best (a search setting). */
+export const LOOP_CLOSING_MARGIN = 0.02;
+/** How many of a round's best plans are played twice for that. */
+const LOOP_CLOSING_CANDIDATES = 8;
 /** What a round's plan that leaves its operators' kit stacks different from where it started is scored at (closingScore): × 0.85 (a search setting). */
 export const STACK_MISMATCH = 0.85;
 
@@ -57,6 +68,8 @@ export interface Repetition {
   readonly actions: readonly RotationAction[];
   /** Whether it's the round before it played again (exactly), rather than a newly searched plan. */
   readonly replayed: boolean;
+  /** When it's the round before it played with late actions moved later (LoopOptions.shifts): by how many frames it ended later. */
+  readonly shifted?: number;
 }
 
 /** The opener and the loop (searchLoop). */
@@ -173,19 +186,26 @@ export function slowestUltimate(data: GameData, scenario: Omit<TimelineScenario,
   return best;
 }
 
-/** A loop's actions replayed exactly from a state at `start` (the boundary cast of `actions[0]` included, at `start`), then the next boundary cast at start + frames; the state after it, or why the first action that can't start at its frame can't. */
-function replayRound(ctx: TimelineContext, before: TimelineState, actions: readonly RotationAction[], frames: number, start: number): { state: TimelineState; rotation: RotationAction[] } | { failure: string } {
+/**
+ * A round's actions replayed from a state at `start` (the boundary cast of `actions[0]` included, at `start`), then
+ * the next boundary cast at start + frames: exactly, or with `shift`, each action that can't start at its frame as
+ * soon as it can and everything after it that much later (so what follows keeps its spacing). The state after it and
+ * how much later it ended (0: exact), or why the first action that can't start (at its frame) can't.
+ */
+function replayRound(ctx: TimelineContext, before: TimelineState, actions: readonly RotationAction[], frames: number, start: number, shift = false): { state: TimelineState; rotation: RotationAction[]; shifted: number } | { failure: string } {
   let s = before;
+  let shifted = 0;
   const rotation: RotationAction[] = [];
   for (const a of [...actions, { ...(actions[0] as RotationAction), at: frames }]) {
-    const at = start + (a.at as number);
+    const at = start + (a.at as number) + shifted;
     const e = earliestStart(ctx, s, { ...a, at });
     if ("error" in e) return { failure: `${a.skill} at ${a.at}: ${e.error}` };
-    if (e.frame !== at) return { failure: `${a.skill} at ${a.at}: ${e.frame - at} frames late` };
-    s = apply(ctx, s, { ...a, at });
-    rotation.push({ ...a, at });
+    if (e.frame !== at && !shift) return { failure: `${a.skill} at ${a.at}: ${e.frame - at} frames late` };
+    shifted += e.frame - at;
+    s = apply(ctx, s, { ...a, at: e.frame });
+    rotation.push({ ...a, at: e.frame });
   }
-  return { state: s, rotation };
+  return { state: s, rotation, shifted };
 }
 
 /**
@@ -199,7 +219,7 @@ function replayRound(ctx: TimelineContext, before: TimelineState, actions: reado
  * exact replays too. Deterministic; the whole replays with `simulate`.
  */
 export function searchLoop(data: GameData, scenario: Omit<TimelineScenario, "rotation">, options: LoopOptions = {}): LoopResult {
-  const { horizonFrames, repeats = 3, tolerance = LOOP_TOLERANCE, maxRepetitions = LOOP_MAX_REPETITIONS, hysteresis = LOOP_HYSTERESIS, plays: wanted, onRound, ...search } = options;
+  const { horizonFrames, repeats = 3, tolerance = LOOP_TOLERANCE, maxRepetitions = LOOP_MAX_REPETITIONS, hysteresis = LOOP_HYSTERESIS, shifts = true, closingMargin = LOOP_CLOSING_MARGIN, plays: wanted, onRound, ...search } = options;
   if (!Number.isInteger(repeats) || repeats < 1) throw new EngineError(`repeats must be a whole number ≥ 1, not ${repeats}`);
   if (!Number.isInteger(maxRepetitions) || maxRepetitions < repeats + 1) throw new EngineError(`maxRepetitions must be a whole number ≥ repeats + 1 (${repeats + 1}), not ${maxRepetitions}`);
   const plays = wanted ?? repeats + 1;
@@ -221,7 +241,7 @@ export function searchLoop(data: GameData, scenario: Omit<TimelineScenario, "rot
   const prices = resourcePrices(data, { ...scenario, durationFrames: horizon });
   // Rounds: each ends with the next round's boundary cast, which `prefix` keeps as its last action.
   let prefix = opener.rotation.slice(0, opener.rotation.findIndex(isBoundary) + 1);
-  const rounds: { start: number; frames: number; actions: RotationAction[]; replayed: boolean }[] = [];
+  const rounds: { start: number; frames: number; actions: RotationAction[]; replayed: boolean; shifted?: number }[] = [];
   let streak = 0;
   let reason: string | undefined;
   while (rounds.length < maxRepetitions && streak < repeats) {
@@ -232,14 +252,37 @@ export function searchLoop(data: GameData, scenario: Omit<TimelineScenario, "rot
     const from = apply(ctx, before, prefix.at(-1) as RotationAction);
     const score = (end: TimelineState) => closingScore(scenario.team, prices, from, end, start);
     const r = searchRotation(data, { ...scenario, durationFrames }, { ...search, runs: 0 }, { prefix, stopAt: isBoundary });
-    let best: { rotation: readonly RotationAction[]; score: number } | undefined;
-    for (const x of r.stops ?? []) {
-      if (x.state.frame - start > LOOP_MAX_FRAMES) continue;
-      const s = score(x.state);
-      if (!best || s > best.score) best = { rotation: x.rotation, score: s };
+    // Stable sort: ties keep the order the search found them in.
+    const ranked = (r.stops ?? []).filter((x) => x.state.frame - start <= LOOP_MAX_FRAMES).map((x) => ({ rotation: x.rotation, score: score(x.state) })).sort((x, y) => y.score - x.score);
+    let best: { rotation: readonly RotationAction[]; score: number } | undefined = ranked[0];
+    // Of the best plans (within `closingMargin` of the best), the one that does best over two plays: itself and itself
+    // again from where it ends (exactly, or with late actions moved later); one whose second play can't be played isn't
+    // taken. A plan tuned to where it starts rarely survives its own end; one that does tends to repeat.
+    let closes = 0;
+    if (best && closingMargin > 0) {
+      const long = createContext(data, { ...scenario, durationFrames: start + 2 * LOOP_MAX_FRAMES + LOOKAHEAD_FRAMES, rotation: [] });
+      const at0 = prefix.slice(0, -1).reduce((s, a) => apply(long, s, a), init(long));
+      let two: { c: (typeof ranked)[number]; score: number; shifted: number } | undefined;
+      for (const c of ranked.slice(0, LOOP_CLOSING_CANDIDATES)) {
+        if (c.score < ranked[0]!.score * (1 - closingMargin)) break;
+        const plan = c.rotation.slice(prefix.length - 1);
+        const end = plan.at(-1)?.at as number;
+        const atEnd = plan.slice(0, -1).reduce((s, a) => apply(long, s, a), at0);
+        const again = replayRound(long, atEnd, plan.slice(0, -1).map((a) => ({ ...a, at: (a.at as number) - start })), end - start, end, shifts);
+        if (!("state" in again)) continue;
+        const second = closingScore(scenario.team, prices, apply(long, atEnd, plan.at(-1) as RotationAction), again.state, end);
+        const both = (c.score + second) / 2;
+        if (!two || both > two.score) two = { c, score: both, shifted: again.shifted };
+      }
+      if (two) {
+        closes = two.shifted === 0 ? 1 : 2;
+        best = two.c;
+      }
     }
     const last = rounds.at(-1);
-    const again = last && replayRound(ctx, before, last.actions, last.frames, start);
+    const exact = last && replayRound(ctx, before, last.actions, last.frames, start);
+    // Not exactly: the last plan with its late actions (and what follows) moved later, a plan of its own that may then repeat.
+    const again = exact && "failure" in exact && shifts ? replayRound(ctx, before, last.actions, last.frames, start, true) : exact;
     const replay = again && "state" in again ? { rotation: [...prefix.slice(0, -1), ...again.rotation], score: score(again.state) } : undefined;
     const chosen = replay && (!best || replay.score >= best.score * (1 - hysteresis)) ? replay : best;
     if (!chosen) {
@@ -247,10 +290,12 @@ export function searchLoop(data: GameData, scenario: Omit<TimelineScenario, "rot
       break;
     }
     const end = chosen.rotation.at(-1)?.at as number;
-    rounds.push({ start, frames: end - start, actions: chosen.rotation.slice(prefix.length - 1, -1).map((a) => ({ ...a, at: (a.at as number) - start })), replayed: chosen === replay });
-    streak = chosen === replay ? streak + 1 : 0;
+    const replayed = chosen === replay && again !== undefined && "state" in again && again.shifted === 0;
+    const shifted = chosen === replay && again !== undefined && "state" in again && again.shifted > 0 ? again.shifted : 0;
+    rounds.push({ start, frames: end - start, actions: chosen.rotation.slice(prefix.length - 1, -1).map((a) => ({ ...a, at: (a.at as number) - start })), replayed, ...(shifted ? { shifted } : {}) });
+    streak = replayed ? streak + 1 : 0;
     prefix = chosen.rotation as RotationAction[];
-    onRound?.({ start, frames: end - start, replayed: chosen === replay, score: chosen.score, ...(best ? { best: best.score } : {}), stops: r.stops?.length ?? 0, ...(again && "failure" in again ? { replayFailure: again.failure } : {}) });
+    onRound?.({ start, frames: end - start, replayed, shifted, score: chosen.score, ...(best ? { best: best.score } : {}), stops: r.stops?.length ?? 0, closes: chosen === best ? (closes === 1 ? "exactly" : closes === 2 ? "shifted" : "no") : "no", ...(exact && "failure" in exact ? { replayFailure: exact.failure } : {}) });
   }
   if (streak < repeats && !reason) reason = `no round's plan played ${repeats} more times in a row in ${maxRepetitions} rounds`;
   // The loop's further plays: exact replays (the loop holds, or the result says how far).

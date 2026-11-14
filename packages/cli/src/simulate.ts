@@ -263,7 +263,7 @@ export function loopCommand(data: GameData, scenario: TimelineScenario, options:
     beamWidth: options.beam,
     swaps: options.swaps ?? false,
     ...(options.loops !== undefined ? { plays: options.loops } : {}),
-    ...(options.progress ? { onRound: (x) => options.progress?.(`round at ${s(x.start)}: ${x.replayed ? "replayed" : "new plan"}, ${s(x.frames)}, score ${n(x.score)}${x.replayFailure ? ` (the last doesn't replay: ${x.replayFailure.slice(0, 120)})` : ""} (${((Date.now() - t) / 1000).toFixed(0)} s)`) } : {}),
+    ...(options.progress ? { onRound: (x) => options.progress?.(`round at ${s(x.start)}: ${x.replayed ? "replayed" : x.shifted ? `the last moved ${s(x.shifted)} later` : x.closes !== "no" ? `new plan (plays again from its end${x.closes === "shifted" ? ", moved later" : ""})` : "new plan"}, ${s(x.frames)}, score ${n(x.score)}${x.replayFailure ? ` (the last doesn't replay: ${x.replayFailure.slice(0, 120)})` : ""} (${((Date.now() - t) / 1000).toFixed(0)} s)`) } : {}),
   });
   const lines = [
     `Searched an opener over ${s(r.horizonFrames)} and ${r.repetitions.length} round${r.repetitions.length === 1 ? "" : "s"} (beam ${options.beam}, ${((Date.now() - t) / 1000).toFixed(1)} s).`,
@@ -271,7 +271,7 @@ export function loopCommand(data: GameData, scenario: TimelineScenario, options:
     "",
     table(
       ["round", "starts", "length", "damage", "DPS", "plan"],
-      r.repetitions.map((c, i) => [String(i + 1), s(c.start), s(c.frames), n(c.damage), n(c.damage / (c.frames / FPS)), c.replayed ? "the last, replayed" : "new"]),
+      r.repetitions.map((c, i) => [String(i + 1), s(c.start), s(c.frames), n(c.damage), n(c.damage / (c.frames / FPS)), c.replayed ? "the last, replayed" : c.shifted ? `the last, moved ${s(c.shifted)} later` : "new"]),
       ["r", "r", "r", "r", "r", "l"],
     ),
     "",
