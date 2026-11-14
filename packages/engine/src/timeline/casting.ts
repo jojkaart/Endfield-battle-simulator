@@ -44,7 +44,7 @@ function plannedLandings(own: readonly PendingHit[], planned: readonly PendingJu
  * distributions"), out of the L planned ones: at the expected count every one lands, marked with L (landing.ts
  * scales its damage and Stagger by E[N] / L); with rolled crits N is drawn from the observed counts and N of the L
  * chosen uniformly (stream `landed`); TimelineOptions.landedCounts takes the fewest or most, the first landings.
- * A logged fight's replay (loggedCrits) lands them as the kit says: the log shows which landed.
+ * A logged fight's replay (loggedCrits) leaves them to replayCast, which lands the ones the log shows.
  */
 function landedCounts(ctx: TimelineContext, st: TimelineState, skill: KitSkill, pending: readonly PendingHit[], planned: readonly PendingJump[], operator: string, index: number, speed: number): { state: TimelineState; pending: readonly PendingHit[] } {
   const hits = skill.hits.filter((h): h is KitHit & { landedCount: LandedCount } => h.landedCount !== undefined);

@@ -1329,7 +1329,9 @@ from them the standard deviation and approximate 5th / 95th percentiles.
   (`thinPmf`). The cast is independent of other casts. In `expected` mode
   each landing deals its damage (and Stagger) × E[N] / L, the mean; in
   `rolled` mode N is drawn on stream `landed` and N landings chosen
-  uniformly (so `simulateRuns` samples it).
+  uniformly (so `simulateRuns` samples it). A log replay lands the ones
+  the log shows, at their logged frames, and drops the cast's other
+  planned landings (`replayCast`).
 - **Outcomes that change what happens later** aren't independent of the
   rest: perfect dodges (a scenario's `dodge`; none unless given), kit
   triggers with a `chance`, and crit-triggered effects. Then K seeded

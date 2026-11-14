@@ -151,7 +151,8 @@ describe("an ultimate placed from several keys", () => {
     expect(bombs).toHaveLength(fx.hits.filter((h) => h.operator === L && h.event === `${L}_ultimate_skill_projhit_damage_02`).length);
   });
 
-  it("is one cast placed from one key whose landings miss their slots' frames, across the operator's other casts (Ardelia's sheep in 5082 and af7b)", () => {
+  it("is one cast placed from one key whose landings miss their slots' frames, across the operator's other casts (Ardelia's sheep in 5082 and af7b); the replay lands the sheep the log shows (a random landed count)", async () => {
+    const { logBuffReplay } = await import("@efsim/cli");
     const A = "chr_0025_ardelia";
     for (const [file, n] of [["5082ceaffad1", 10], ["af7b7f865906", 5]] as const) {
       const fx = readLogFixture(new URL(`../fixtures/pending/zmdlogs-${file}.json`, import.meta.url).pathname);
@@ -162,6 +163,8 @@ describe("an ultimate placed from several keys", () => {
       expect(new Set(sheep.map((h) => p.hits.get(h)?.cast)).size).toBe(1);
       expect(sheep.map((h) => p.hits.get(h)?.index)).toEqual([...Array(n).keys()]);
       expect(distinctCasts(p).filter((c) => c.operator === A && c.kind === "ultimate")).toHaveLength(1);
+      // Of the 14 (P5, 5082) or 11 (P2, af7b) planned, not the others (KitHit.landedCount).
+      expect(logBuffReplay(data, fx).replay.hits.filter((h) => h.operator === A && h.skillId === `${A}_ultimate_skill`)).toHaveLength(n);
     }
   });
 
