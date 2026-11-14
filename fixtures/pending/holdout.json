@@ -1,5 +1,5 @@
 {
- "note": "Hold-out logs (docs/accuracy-plan.md, \"Choosing logs\"): only measured, never debugged. Drawn 2026-11-09 with random.seed(20261109), 6 of the 17 screened single-target logs, every favourite on both sides where it has two or more logs, before any of their checks was read. 2026-11-13: 2 of 6 more (logs with Ardelia's ultimate, screened the same way), random.seed(20261113), before any check was read. 2026-11-14: 1 of 4 more (Estella logs, the owner's team), random.seed(20261114), before any check was read.",
+ "note": "Hold-out logs (docs/accuracy-plan.md, \"Choosing logs\"): only measured, never debugged. Drawn 2026-11-09 with random.seed(20261109), 6 of the 17 screened single-target logs, every favourite on both sides where it has two or more logs, before any of their checks was read. 2026-11-13: 2 of 6 more (logs with Ardelia's ultimate, screened the same way), random.seed(20261113), before any check was read. 2026-11-14: 1 of 4 more (Estella logs, the owner's team), random.seed(20261114), before any check was read. 2026-11-14: 2 Avywenna logs with JET (for the owner's Estella's weapon) added to development, no hold-out: both come from one account and team, so a hold-out of one wouldn't be independent of the other.",
  "holdout": [
   "zmdlogs-0ddbbdca1db5",
   "zmdlogs-0dfc9d76c84d",
@@ -29,6 +29,8 @@
   "zmdlogs-af7b7f865906",
   "zmdlogs-a9d7fcb089c5",
   "zmdlogs-ad7f5ee2c91c",
-  "zmdlogs-c4f307cd039a"
+  "zmdlogs-c4f307cd039a",
+  "zmdlogs-4360447193ac",
+  "zmdlogs-984748cfa662"
  ]
 }
