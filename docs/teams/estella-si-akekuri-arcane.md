@@ -9,7 +9,12 @@ assumed). Against Rhodagn Lv90, 60 s, full ultimate energy at the start:
 3,061,788 (51,143 DPS; σ 1.2%, 5–95% 3.01–3.13M; Estella 37.6%, Arcane
 30.8%, Si 25.3%, Akekuri 6.2%). The search's beams disagree by 4.5% (beam
 12 best), so it's a lower bound. Earlier figures (3.99M, 4.75M) used the
-example builds (a P5 Si).
+example builds (a P5 Si). From zero ultimate energy (the harder fights;
+[examples/estella-si-akekuri-arcane-zero.scenario.json](../../examples/estella-si-akekuri-arcane-zero.scenario.json)):
+3,008,031 in 60 s (Estella 48.1%, Arcane 24.2%, Si 20.2%, Akekuri 7.6%;
+ultimates: Arcane 16.4 s, her second 33.2 s, Estella 46.2 s, Si and Akekuri
+50.3 s); beams spread 8.8%. A search for an opener plus a loop between
+ultimate rounds (the owner's request) is being built.
 
 ## Where the damage comes from (sonnet, 2026-11-14)
 
