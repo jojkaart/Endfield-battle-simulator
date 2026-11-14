@@ -5,6 +5,16 @@ their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 Older entries (2026-10-21 and earlier): [journal-archive.md](journal-archive.md).
 
+## 2026-11-15: Ink Melt logs (Laevatain, Si, Wulfgard, Ardelia)
+
+Goal: logs for the owner's Ink Melt team. Done: 4 profiles, 36 exports,
+14 imports (10 single-target in fixtures/pending, 4 multi-target aside),
+3 hold-outs (seed 20261115), snapshots updated, `npm run check` green
+(search-loop timed out once under load 8, passes alone). No log has all
+four operators. First checks and the next step (Wulfgard plain 0 in 4
+of 4 development logs): accuracy-plan.md, round five. Details of the
+screening (accounts, ids) stay in the scratch folder.
+
 ## 2026-11-14: The owner's team (Estella, Si, Akekuri, Arcane), search ranking, loops
 
 Goal: the owner's priority, their team simulated as well as possible, then
