@@ -19,6 +19,7 @@ import { formatCensus, kitCensus } from "./census.ts";
 import { formatTrim, kitTrim } from "./kittrim.ts";
 import { knifeEdge, type EdgePool } from "./edge.ts";
 import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
+import { formatPayoffs, runPayoffs } from "./payoffs.ts";
 
 const USAGE = `Usage:
   efsim find <text>                       Look up operator, weapon, gear and enemy IDs by name
@@ -47,12 +48,21 @@ const USAGE = `Usage:
                 [--rounds n]              With --loop: rounds searched at most (default 12)
                 [--sync]                  With --loop: rounds from a moment every ultimate is ready to the
                                           next, each cast at least once (fast ones held for the slowest)
+                [--prune]                 Drop dominated states and, by branch and bound on the payoff table's
+                                          ceilings (efsim payoffs), states that can't beat the best so far
                 [--swaps]                 Let the rotation swap the controlled operator (default: never; the
                                           scenario's controlled operator does every basic attack and dive)
                 [--seeds k]               With random outcomes: battles each candidate is ranked over (default 4)
                 [--percentile p]          Rank by that percentile (0–100) of them instead of the mean
                 [--runs n]                Battles for the found rotation's distribution (default 50; 0: none)
                 [--seed n] [--dodge p] [--attack-every s]  As for simulate
+  efsim payoffs <scenario.json>           The team's payoff table (engine probes): what each step produces and
+                                          which combo windows it opens, each damaging step's ceiling under the
+                                          best bundle of what the team achieves (and who achieves each piece),
+                                          and chains in which each step opens or sets up the next; with a
+                                          rotation, how close its casts came to their ceilings
+                [--top n] [--json]        Rows printed per table (default 15; data is never cut); everything as JSON
+                [--depth n]               Longest chain (default 6)
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
                                           (fixtures/multi-target/ when it hit several enemies)
                 [--enemy-level n]         (default: the stage's, else inferred from total damage on a clear)
@@ -141,6 +151,9 @@ async function main(argv: string[]): Promise<number> {
       write: { type: "boolean", default: false },
       assumed: { type: "boolean", default: false },
       singles: { type: "boolean", default: false },
+      json: { type: "boolean", default: false },
+      prune: { type: "boolean", default: false },
+      depth: { type: "string" },
       help: { type: "boolean", short: "h", default: false },
     },
   });
@@ -299,7 +312,17 @@ async function main(argv: string[]): Promise<number> {
           ...(percentile !== undefined ? { percentile } : {}),
           ...(runs !== undefined ? { runs } : {}),
           verbose: values.verbose,
+          prune: values.prune,
         });
+      }
+      break;
+    case "payoffs":
+      need(1);
+      {
+        const depth = values.depth === undefined ? undefined : Number(values.depth);
+        if (depth !== undefined && !(Number.isInteger(depth) && depth >= 2)) throw new Error(`--depth must be a whole number ≥ 2`);
+        const run = runPayoffs(data(), readScenario(args[0] as string), depth !== undefined ? { depth } : {});
+        text = values.json ? JSON.stringify(run, (_k, v: unknown) => (typeof v === "number" && !Number.isFinite(v) ? String(v) : v), 2) : formatPayoffs(data(), run, values.top === undefined ? 15 : Number(values.top));
       }
       break;
     case "kit-census":

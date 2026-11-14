@@ -41,6 +41,7 @@ import { maxEnergy } from "./timeline/resources.ts";
 import { SP } from "./timeline/rules.ts";
 import { FPS } from "./units.ts";
 import { windowKey } from "./timeline/timing.ts";
+import { remainingBound, type UpperBound } from "./bound.ts";
 
 export interface Candidate {
   readonly action: RotationAction;
@@ -427,6 +428,18 @@ export interface SearchOptions {
    * VALUE_WEIGHT; 0: damage so far alone, the ranking before 2026-11-14).
    */
   readonly valueWeight?: number;
+  /**
+   * Drop a state another of its layer dominates (docs/design.md "Pruning the search"): the same in everything but SP,
+   * returned SP and ultimate energy (stateKeyer `amounts`), with at least as much committed damage, SP and every
+   * operator's energy and no more returned SP. One battle only (no random outcomes); never a state on the guide's line.
+   */
+  readonly dominance?: boolean;
+  /**
+   * Branch and bound: drop a state whose committed damage plus this bound on what it can still add (remainingBound)
+   * can't beat the most committed damage found so far. Never a state on the guide's line, whose shortfalls are counted
+   * (`boundMisses`: the bound wasn't admissible there).
+   */
+  readonly bound?: UpperBound;
 }
 
 /** SearchOptions.valueWeight's default (measured 2026-11-14: docs/design.md "How the beam ranks"). */
@@ -482,7 +495,20 @@ export interface SearchResult {
    * cut by the beam width (`pruned`); `family`: those the best by score alone would have kept, dropped for a better
    * one of their family (prune).
    */
-  readonly counts: { readonly compared: number; readonly merged: number; readonly family: number; readonly pruned: number };
+  readonly counts: {
+    readonly compared: number;
+    readonly merged: number;
+    readonly family: number;
+    readonly pruned: number;
+    /** Dropped for a state of its layer that dominates it (SearchOptions.dominance). */
+    readonly dominated: number;
+    /**
+     * Children dropped by the bound (SearchOptions.bound); states on the guide's line under it while the guide's own
+     * damage would still have beaten the best found (the bound wasn't admissible there: never dropped).
+     */
+    readonly bounded: number;
+    readonly boundMisses: number;
+  };
   /** The scenario's random outcomes (randomOutcomes); empty: deterministic, one battle is the result. */
   readonly random: readonly string[];
   /** Seeds of the battles every candidate was ranked over (one seed without random outcomes). */
@@ -506,6 +532,8 @@ export interface BeamRun {
   readonly score: number;
   readonly expanded: number;
   readonly capped: boolean;
+  /** SearchResult.counts. */
+  readonly counts: SearchResult["counts"];
 }
 
 /** The best of several beam widths' searches (searchBeams), with what each found. */
@@ -533,9 +561,9 @@ export function searchBeams(data: GameData, scenario: Omit<TimelineScenario, "ro
   for (const w of widths) {
     if (!Number.isInteger(w) || w < 1) throw new EngineError(`beam width must be a whole number ≥ 1, not ${w}`);
     // Guided by the best narrower width's rotation: a wider beam finds at least as much (SearchHooks.guide).
-    const r = search(data, scenario, { ...rest, beamWidth: w }, best ? { guide: best.r.rotation } : {});
+    const r = search(data, scenario, { ...rest, beamWidth: w }, best ? { guide: best.r.rotation, guideScore: best.r.score } : {});
     onBeam?.(r, w);
-    beams.push({ beamWidth: w, score: r.score, expanded: r.expanded, capped: r.capped });
+    beams.push({ beamWidth: w, score: r.score, expanded: r.expanded, capped: r.capped, counts: r.counts });
     if (!best || r.score > best.r.score) best = { r, w };
   }
   const b = best as { r: SearchResult; w: number };
@@ -575,6 +603,8 @@ interface KeyEnv {
   readonly scenario: ScenarioKeyFacts;
   /** The family key (stateKeyer `loose`, prune): who's controlled, now and at each pending hit's cast, and the buffs' order left out. */
   readonly loose?: boolean;
+  /** The dominance key (stateKeyer `amounts`, dominance): SP, returned SP and ultimate energy left out (compared as amounts). */
+  readonly amounts?: boolean;
 }
 
 /** What the key needs of the scenario (stateKeyer: once per search). */
@@ -680,9 +710,9 @@ function triggerStateKey(ts: TimelineState["triggerState"], env: KeyEnv): Record
 const STATE_KEY: KeyRules<TimelineState> = {
   frame: true,
   rng: true,
-  sp: round,
-  spReturned: round,
-  energy: (e) => Object.fromEntries(Object.entries(e).map(([k, v]) => [k, round(v)])),
+  sp: (v, env) => (env.amounts ? undefined : round(v)),
+  spReturned: (v, env) => (env.amounts ? undefined : round(v)),
+  energy: (e, env) => (env.amounts ? undefined : Object.fromEntries(Object.entries(e).map(([k, v]) => [k, round(v)]))),
   // Read as "> frame" (resources.ts gainEnergy) and set anew (casting.ts).
   energyBlockedUntil: (e, env) => entries(e, (f) => f > env.frame),
   energyOverflow: "a statistic (energy lost to a full bar): nothing in the fight reads it",
@@ -787,7 +817,7 @@ function liveCasts(s: TimelineState): Set<number> {
  * What the key needs of a scenario: computed once, then each state's key (stateKey) is cheap. `loose`: the family
  * key instead (prune), which leaves out who's controlled, now and at each pending hit's cast, and the buffs' order.
  */
-export function stateKeyer(ctx: TimelineContext, loose = false): (s: TimelineState) => string {
+export function stateKeyer(ctx: TimelineContext, loose = false, amounts = false): (s: TimelineState) => string {
   const endedWindowsRead = new Set<string>();
   const counted = new Map<string, boolean>();
   for (const b of ctx.scenario.team) {
@@ -804,7 +834,7 @@ export function stateKeyer(ctx: TimelineContext, loose = false): (s: TimelineSta
   const scenario: ScenarioKeyFacts = { endedWindowsRead, counted, maxPoise: maxPoise(ctx) };
   return (s) => {
     const n = s.casts.length;
-    return canonical(project(s, STATE_KEY, { frame: s.frame, rel: (i) => n - i, live: liveCasts(s), scenario, loose }));
+    return canonical(project(s, STATE_KEY, { frame: s.frame, rel: (i) => n - i, live: liveCasts(s), scenario, loose, amounts }));
   };
 }
 
@@ -827,7 +857,7 @@ export function stateKey(ctx: TimelineContext, s: TimelineState): string {
  * point, all 671,349, and the best rotation was dropped). A search policy, not an exact merge: the others are
  * reached by swapping later.
  */
-function prune(nodes: readonly Node[], n: number, counts: { merged: number; family: number; pruned: number }): Node[] {
+function prune(nodes: readonly Node[], n: number, counts: { merged: number; family: number; pruned: number; dominated: number }): Node[] {
   const byKey = new Map<string, Node>();
   for (const x of nodes) {
     const y = byKey.get(x.key);
@@ -837,8 +867,9 @@ function prune(nodes: readonly Node[], n: number, counts: { merged: number; fami
     byKey.set(x.key, guideAt >= 0 && z.guideAt !== guideAt ? { ...z, guideAt } : z);
   }
   counts.merged += nodes.length - byKey.size;
+  const undominated = dominance([...byKey.values()], counts);
   // Stable: ties keep generation order (deterministic).
-  const sorted = [...byKey.values()].sort((a, b) => b.score - a.score);
+  const sorted = undominated.sort((a, b) => b.score - a.score);
   if (sorted.length <= n) return sorted;
   const kept: Node[] = [];
   const rest: Node[] = [];
@@ -860,6 +891,38 @@ function prune(nodes: readonly Node[], n: number, counts: { merged: number; fami
   return kept.sort((a, b) => b.score - a.score);
 }
 
+/**
+ * Whether state `x` dominates `y` (same dominance key, stateKeyer `amounts`): at least as much committed damage, SP and every operator's
+ * ultimate energy, and no more returned SP (which is spent first and gives no energy). Exact for the fight: nothing
+ * reads SP or energy but the gates (enough to cast) and the energy a spend gives, and gains are capped sums, so every
+ * rotation legal from b is legal from a at the same frames and deals the same from there (docs/design.md "Pruning the
+ * search").
+ */
+export function dominatesState(x: TimelineState, xDamage: number, y: TimelineState, yDamage: number): boolean {
+  const eps = 1e-6;
+  if (xDamage < yDamage - eps || x.sp < y.sp - eps || x.spReturned > y.spReturned + eps) return false;
+  for (const op of Object.keys(y.energy)) if ((x.energy[op] ?? 0) < (y.energy[op] ?? 0) - eps) return false;
+  return true;
+}
+
+const dominates = (a: Node, b: Node) => dominatesState(a.states[0] as TimelineState, a.damage, b.states[0] as TimelineState, b.damage);
+
+/** The nodes no other dominates (SearchOptions.dominance), in their order; a node on the guide's line always stays. */
+function dominance(nodes: readonly Node[], counts: { dominated: number }): Node[] {
+  const groups = new Map<string, Node[]>();
+  for (const x of nodes) if (x.dom !== undefined) groups.set(x.dom, [...(groups.get(x.dom) ?? []), x]);
+  const drop = new Set<Node>();
+  for (const g of groups.values()) {
+    if (g.length < 2) continue;
+    for (const b of g) {
+      if (b.guideAt !== undefined) continue;
+      if (g.some((a) => a !== b && !drop.has(a) && dominates(a, b))) drop.add(b);
+    }
+  }
+  counts.dominated += drop.size;
+  return drop.size ? nodes.filter((x) => !drop.has(x)) : [...nodes];
+}
+
 interface Node {
   /** The same rotation's state in each seeded battle (the first: the scenario's own seed, which proposes the actions). */
   readonly states: readonly TimelineState[];
@@ -874,6 +937,8 @@ interface Node {
   readonly score: number;
   /** On the guide's line (SearchHooks.guide): how many of its actions the rotation (or an equivalent state's) has played. */
   readonly guideAt?: number;
+  /** The dominance key (stateKeyer `amounts`) of the first state, with SearchOptions.dominance. */
+  readonly dom?: string;
 }
 
 /** The mean of the values, or their percentile (0–100, nearest rank). One value is itself either way. */
@@ -910,6 +975,8 @@ export interface SearchHooks {
    * narrower widths). It must be one this search can make (the same scenario and options: a found rotation).
    */
   readonly guide?: readonly RotationAction[];
+  /** The guide's damage (its search's score): with SearchOptions.bound, a state on its line under the bound is a miss only when this would beat what's found. */
+  readonly guideScore?: number;
   /**
    * Steps after which a rotation ends (searchLoop: the boundary ultimate's next cast, or with `sync` the first step after
    * which every ultimate is ready again), given the step, the state after it (the first battle's) and the rotation up
@@ -955,10 +1022,16 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
   const familyKey = stateKeyer(ctx, true);
   const weight = options.valueWeight ?? VALUE_WEIGHT;
   const prices = weight === 0 ? undefined : resourcePrices(data, scenario);
+  // Dominance compares one battle's amounts (with random outcomes each node holds several: not done).
+  const domKey = options.dominance && k === 1 ? stateKeyer(ctx, false, true) : undefined;
+  const bound = options.bound;
   const node = (states: readonly TimelineState[], rotation: readonly RotationAction[]): Node => {
     const damages = states.map((s, i) => committedDamage(ctxs[i] as TimelineContext, s, landedBefore[i]));
     const scores = prices ? states.map((s, i) => (damages[i] as number) + resourceValue(ctxs[i] as TimelineContext, prices, s, weight)) : damages;
-    return { states, rotation, family: familyKey(states[0] as TimelineState), key: states.map((s, i) => (keyers[i] as (s: TimelineState) => string)(s)).join("\n"), damage: statistic(damages, percentile), score: statistic(scores, percentile) };
+    return {
+      states, rotation, family: familyKey(states[0] as TimelineState), key: states.map((s, i) => (keyers[i] as (s: TimelineState) => string)(s)).join("\n"), damage: statistic(damages, percentile), score: statistic(scores, percentile),
+      ...(domKey ? { dom: domKey(states[0] as TimelineState) } : {}),
+    };
   };
   const buckets = new Map<number, Node[]>();
   const push = (n: Node) => {
@@ -985,7 +1058,7 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
   push(root);
   let best: Node = root;
   let expanded = 0;
-  const counts = { compared: 0, merged: 0, family: 0, pruned: 0 };
+  const counts = { compared: 0, merged: 0, family: 0, pruned: 0, dominated: 0, bounded: 0, boundMisses: 0 };
   let capped = false;
   const stopAt = hooks.stopAt;
   const allow = hooks.allow;
@@ -1021,6 +1094,22 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
           const made = node(states, [...n.rotation, step]);
           const child = guide && n.guideAt !== undefined && same(guide[n.guideAt], step) ? { ...made, guideAt: n.guideAt + 1 } : made;
           if (child.damage > best.damage) best = child;
+          // Branch and bound: what it has committed and can still add against the most committed so far (a rotation
+          // that stops acting deals exactly its committed damage, so that's reachable). One battle's bound: the mean
+          // and a percentile of several are no more than their largest.
+          if (bound && child !== best) {
+            const most = Math.max(...states.map((st, i) => committedDamage(ctxs[i] as TimelineContext, st, landedBefore[i]) + remainingBound(bound, ctxs[i] as TimelineContext, st)));
+            if (most < best.damage - 1e-6) {
+              // The guide's line always stays; it's a miss (the bound wasn't admissible) only when the guide's own
+              // final damage would have beaten what's found so far.
+              if (child.guideAt !== undefined) {
+                if (hooks.guideScore !== undefined && hooks.guideScore >= best.damage - 1e-6) counts.boundMisses++;
+              } else {
+                counts.bounded++;
+                continue;
+              }
+            }
+          }
           if (stopAt?.(step, states[0] as TimelineState, child.rotation)) {
             stops.push({ rotation: child.rotation, state: states[0] as TimelineState });
             continue;

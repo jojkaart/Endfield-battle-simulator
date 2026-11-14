@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { FPS, critTriggers, randomOutcomes, searchBeams, searchLoop, simulate, simulateDistribution, simulateRuns, type DamageDistribution, type EnergyLost, type RotationSpread, type TimelineResult, type Build, type CritMode, type Element, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { FPS, critTriggers, payoffs, randomOutcomes, searchBeams, upperBound, searchLoop, simulate, simulateDistribution, simulateRuns, type DamageDistribution, type EnergyLost, type RotationSpread, type TimelineResult, type Build, type CritMode, type Element, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
 import { readBuild } from "./commands.ts";
 import { num, table } from "./format.ts";
 
@@ -160,11 +160,15 @@ export function searchWidths(beam: number, single: boolean): number[] {
 export function searchCommand(
   data: GameData,
   scenario: TimelineScenario,
-  options: { beam: number; single?: boolean; swaps?: boolean; out?: string; seeds?: number; percentile?: number; runs?: number; verbose: boolean },
+  options: { beam: number; single?: boolean; swaps?: boolean; out?: string; seeds?: number; percentile?: number; runs?: number; verbose: boolean; prune?: boolean },
 ): string {
   const { rotation: _ignored, ...rest } = scenario;
   const widths = searchWidths(options.beam, options.single ?? false);
   const seconds = new Map<number, number>();
+  // Pruning (docs/design.md "Pruning the search"): dominance, and branch and bound on the payoff table's ceilings.
+  const tBound = Date.now();
+  const bound = options.prune ? upperBound(payoffs(data, rest, { chains: false })) : undefined;
+  const boundSeconds = (Date.now() - tBound) / 1000;
   let t = Date.now();
   const found = searchBeams(data, rest, {
     beams: widths,
@@ -172,6 +176,7 @@ export function searchCommand(
     ...(options.seeds !== undefined ? { seeds: options.seeds } : {}),
     ...(options.percentile !== undefined ? { percentile: options.percentile } : {}),
     ...(options.runs !== undefined ? { runs: options.runs } : {}),
+    ...(bound ? { dominance: true, bound } : {}),
   }, (_r, w) => {
     const now = Date.now();
     seconds.set(w, (now - t) / 1000);
@@ -193,6 +198,9 @@ export function searchCommand(
       ...found.beams.map((b) => `  beam ${String(b.beamWidth).padStart(3)}: ${num(Math.round(b.score), 0)} (${what}; ${b.expanded} states, ${(seconds.get(b.beamWidth) ?? 0).toFixed(1)} s)${b.beamWidth === found.beamWidth ? "  best" : ""}`),
       `  Spread ${(found.beamSpread * 100).toFixed(1)}%: ${found.beamSpread < 0.01 ? "the widths agree within 1%." : "wider beams still found more (each keeps the narrower ones' best and may beat it), so a wider beam may find more again. Treat the best as a lower bound."}`,
     ]),
+    ...(bound
+      ? [`Pruned (bound table ${boundSeconds.toFixed(1)} s${bound.unbounded ? `, unbounded: ${bound.unbounded}` : ""}): ${found.beams.map((b) => `beam ${b.beamWidth}: ${b.counts.dominated} dominated, ${b.counts.bounded} bounded${b.counts.boundMisses ? `, ${b.counts.boundMisses} states of the guide's line under the bound (it wasn't admissible there; kept)` : ""}`).join("; ")}.`]
+      : []),
     ...capped.map((b) => `Warning: beam ${b.beamWidth} stopped at the expansion cap (${b.expanded} states) before the fight's end: its rotation is the best found by then.`),
     ...(found.random.length > 0 ? [`Random outcomes (${found.random.join("; ")}): each candidate ranked by ${ranked} of ${found.seeds.length} battle${found.seeds.length === 1 ? "" : "s"} (${seeds}).`] : []),
     "",

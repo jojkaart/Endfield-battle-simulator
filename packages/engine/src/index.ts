@@ -14,6 +14,8 @@ export * from "./triggers.ts";
 export * from "./buffs.ts";
 export * from "./search.ts";
 export * from "./loop.ts";
+export * from "./payoffs.ts";
+export * from "./bound.ts";
 export * from "./expr.ts";
 export * from "./timeline.ts";
 export * from "./moments.ts";
