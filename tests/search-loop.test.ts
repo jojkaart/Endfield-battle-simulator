@@ -2,7 +2,7 @@
 // its next, each the best closing plan from where the last ended or the last one replayed exactly, until one plays
 // `repeats` more times; the whole replays with simulate.
 import { describe, expect, it } from "vitest";
-import { FPS, LOOP_MAX_FRAMES, SP, closingScore, createContext, init, apply, resourcePrices, searchLoop, searchRotation, simulate, type RotationAction } from "@efsim/engine";
+import { FPS, LOOP_MAX_FRAMES, SP, STACK_MISMATCH, closingScore, createContext, init, apply, searchLoop, searchRotation, simulate, type RotationAction } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { loopCommand, readScenario } from "../packages/cli/src/simulate.ts";
 
@@ -36,8 +36,11 @@ describe("opener and loop", () => {
     expect(sim.total).toBe(r.total);
     for (const c of r.repetitions) {
       expect(c.damage).toBe(sim.hits.filter((h) => h.frame >= c.start && h.frame < c.start + c.frames).reduce((a, h) => a + h.exact, 0));
-      expect(r.rotation.filter((a) => (a.at as number) >= c.start && (a.at as number) < c.start + c.frames).map((a) => ({ ...a, at: (a.at as number) - c.start }))).toEqual(c.actions);
     }
+    // The rounds' actions are the rotation's last ones, in order (an action may share the next round's first frame).
+    const played = r.repetitions.flatMap((c) => c.actions.map((a) => ({ ...a, at: (a.at as number) + c.start })));
+    expect(r.rotation.slice(r.rotation.length - played.length)).toEqual(played);
+    expect(r.rotation[r.rotation.length - played.length]?.at).toBe(r.repetitions[0]?.start);
     expect(r.dps).toBeCloseTo(r.total / (r.frames / FPS), 6);
   });
 
@@ -56,7 +59,7 @@ describe("opener and loop", () => {
       expect(c.frames).toBe(l.frames);
     }
     expect(l.openerFrames).toBe(plays[0]?.start);
-    expect(l.opener).toEqual(r.rotation.filter((a) => (a.at as number) < l.openerFrames));
+    expect([...l.opener, ...plays.flatMap((c) => c.actions.map((a) => ({ ...a, at: (a.at as number) + c.start })))]).toEqual(r.rotation);
     expect(l.dps).toBeCloseTo(plays.reduce((a, c) => a + c.damage, 0) / ((l.frames * l.plays) / FPS), 6);
     expect(l.agrees).toBe(l.damageApart <= r.tolerance);
   });
@@ -83,18 +86,24 @@ describe("closing rounds", () => {
     expect(searchRotation(data, s, { beamWidth: 3, runs: 0 }).stops).toBeUndefined();
   });
 
-  it("closingScore charges the SP a round takes from what it found as the time regeneration needs to make it up", () => {
+  it("closingScore charges what a round takes from the SP and energy it found as the time regeneration needs (the longest)", () => {
     const s = { ...open, durationFrames: 30 * FPS };
     const ctx = createContext(data, { ...s, rotation: [] });
     const from = init(ctx);
     const rotation: RotationAction[] = [{ operator: LAEV, skill: "chr_0016_laevat_normal_skill" }];
     const end = rotation.reduce((st, a) => apply(ctx, st, a), from);
     const later = { ...end, frame: end.frame + 60 };
-    const prices = resourcePrices(data, s);
     const damage = later.hits.filter((h) => h.frame >= 0 && h.frame < later.frame).reduce((a, h) => a + h.exact, 0);
     const spent = from.sp - later.sp;
     expect(spent).toBeGreaterThan(0);
-    expect(closingScore(s.team, prices, from, later, 0)).toBeCloseTo(damage / (later.frame / FPS + spent / SP.perSecond), 6);
+    // Her battle skill gains energy: only the SP is charged.
+    expect(closingScore({ [LAEV]: 5 }, from, later, 0)).toBeCloseTo(damage / (later.frame / FPS + spent / SP.perSecond), 6);
+    // Starting with 200 more energy than it ends with, at 5 a second: 40 s, longer than the SP's.
+    const richer = { ...from, energy: { [LAEV]: (later.energy[LAEV] ?? 0) + 200 } };
+    expect(closingScore({ [LAEV]: 5 }, richer, later, 0)).toBeCloseTo(damage / (later.frame / FPS + 40), 6);
+    // Stacks left different: × STACK_MISMATCH.
+    const stacked = { ...later, stacks: { [LAEV]: { melting_flame: 3 } } };
+    expect(closingScore({}, from, stacked, 0)).toBeCloseTo(STACK_MISMATCH * closingScore({}, from, later, 0), 6);
   });
 
   it("refuses a fight with random outcomes", () => {
