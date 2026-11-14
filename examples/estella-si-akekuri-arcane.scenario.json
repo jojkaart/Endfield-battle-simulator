@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/scenario.schema.json",
-  "description": "The owner's team (2026-11-14): Estella, Si, Akekuri, Arcane (WILL, P0) vs Rhodagn Lv90, 60 s; builds from the single-operator examples (Akekuri's and Arcane's weapons are stand-ins); rotation from `efsim search --single --beam 12`. A regression baseline, not the owner's builds.",
+  "description": "The owner's team (2026-11-14): Estella, Si, Akekuri, Arcane (WILL, P0) vs Rhodagn Lv90, 60 s; builds from the single-operator examples with the owner's weapons for Estella (JET, fully upgraded) and Akekuri (Thermite Cutter; its levels assumed 90 / 9-9-9); Si's and Arcane's weapons are stand-ins; rotation from `efsim search --single --beam 12`. A regression baseline, not the owner's builds.",
   "team": [
     {
       "operator": "chr_0021_whiten",
@@ -14,12 +14,12 @@
         "ultimate": 12
       },
       "weapon": {
-        "id": "wpn_lance_0010",
+        "id": "wpn_lance_0011",
         "level": 90,
         "skillLevels": [
-          3,
           9,
-          6
+          9,
+          9
         ]
       },
       "gear": [
@@ -128,7 +128,7 @@
         "ultimate": 12
       },
       "weapon": {
-        "id": "wpn_sword_0009",
+        "id": "wpn_sword_0012",
         "level": 90,
         "skillLevels": [
           9,

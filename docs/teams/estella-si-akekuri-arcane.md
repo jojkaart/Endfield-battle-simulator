@@ -2,9 +2,10 @@
 
 The owner wants this team simulated as well as possible; it is the
 current priority. Example: [examples/estella-si-akekuri-arcane.scenario.json](../../examples/estella-si-akekuri-arcane.scenario.json)
-(builds from the single-operator examples, not the owner's; Akekuri's and
-Arcane's weapons are stand-ins). Against Rhodagn Lv90, 60 s, the search
-finds 3,994,217 (expected crits; σ 1.5%).
+(builds from the single-operator examples; the owner's weapons for Estella,
+JET fully upgraded, and Akekuri, Thermite Cutter; Si's and Arcane's are
+stand-ins). Against Rhodagn Lv90, 60 s: 4,747,062 with the search's
+rotation (expected crits; σ 1.4%; 3,994,217 with the stand-in weapons).
 
 ## Where the damage comes from (sonnet, 2026-11-14)
 
@@ -50,3 +51,20 @@ Si fail the level-90 rule (she or Wulfgard at 80).
   Shatter (test 11 unseen); Akekuri's Link and SP not in the logs; 012a
   ×0.85–0.89 constant (being checked). Estella low in the recent logs:
   being diagnosed.
+
+## Fixes for this team (2026-11-14)
+
+- Estella: OBJ Razorhorn's ATK on the Shattering hit (a27b, ad7f). The
+  owner's Estella uses JET (wpn_lance_0011): checked on two Avywenna logs
+  (7193, cfa6): values (0.336 at L9) and stacking right, buffs on the
+  wielder only. Estella is Physical: JET's Arts DMG reaches only her battle
+  skill's Cryo projectile (and maybe her Arts reaction hits); the rest is
+  its attribute and ATK% lines. Same rotation, each fully upgraded: Valiant
+  4,887,240 (+3.0%), Razorhorn 4,773,350 (+0.6%), JET 4,747,062 (a fair
+  comparison re-searches the rotation per weapon). Thermite Cutter on
+  Akekuri is worth ~+0.74M against the stand-in sword (team ATK).
+- Akekuri: Thermite Cutter (hers) gains layers only from the wielder's
+  own Link and SP, not a teammate's Link (012a, 82735, d4fb).
+- Si: the log check values her Inksoul burst (34 of 40 fit).
+- The log check no longer adds Ardelia's Susceptibilities twice (hold-out
+  plain 44.4 → 61.5%).
