@@ -645,6 +645,20 @@ engine high in three (Ardelia's 11 sheep hits a part of it). New
 baseline with them: development plain 36.1%, mismatch 19.3%, mean
 |damage error| 22.1%; hold-out 44.1%, 6.2%, 17.7%.
 
+Round four (2026-11-14, the owner's team: Estella, Si, Akekuri, Arcane):
+Estella's and Akekuri's ZMDLogs profiles, 13 game-1.6 exports and 5
+details (authorized by the owner). Imported: 4 single-target with
+Estella (fixtures/pending; 1 hold-out by random.seed(20261114)) and 1
+multi-target with Akekuri (5d1a). ad7f has three of the four (Arcane,
+Alesh, Si, Estella). Not imported: Akekuri's 5 logs with Si at level 80
+(rule: level 90), one with her at level 1, Hard 33 (slug problem), one
+with an operator without a kit. First checks (development): ad7f +0.2%
+(Arcane +1.6%, Si +0.8%, Estella −8.3%, Alesh +19.4%); c4f3 −8.0%
+(Estella −12.4%); a9d7 −15.4% (Estella −24.3%, Chen −17.2%, Alesh
+−18.2%: no plain matches for three operators). New baseline: development
+plain 34.0%, mismatch 23.7%, mean |damage error| 19.3%; hold-out 44.4%,
+6.0%, 15.1%.
+
 ## The screened logs, first rounds (2026-11-11)
 
 Baseline before any change (development 11 logs / hold-out 6): plain

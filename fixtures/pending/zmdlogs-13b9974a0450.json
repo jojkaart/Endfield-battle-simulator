@@ -1,0 +1,4605 @@
+{
+ "$schema": "../schemas/log-fixture.schema.json",
+ "id": "zmdlogs-13b9974a0450",
+ "description": "ZMDLogs battle btl_upload_13b9974a0450 vs eny_0068_lbtough2: chr_0021_whiten, chr_0024_deepfin, chr_0003_endminf, chr_0005_chen; per-hit damage with the logged buff effects.",
+ "provenance": {
+  "source": "ZMDLogs (zmdlogs.com) battle log, captured in game by its client",
+  "url": "https://zmdlogs.com/battles/btl_upload_13b9974a0450",
+  "battleId": "btl_upload_13b9974a0450",
+  "parserVersion": "raw-log-parser-v59",
+  "inGame": true,
+  "measured": "2026-11-02T09:34:00+08:00",
+  "verifiedAgainst": {
+   "rmxlinux": "8b955ea78c6f04b6e5164b75f63f46b503c5f6f2",
+   "555me": "2737bc099e4848517eed01a19614ef88932c18a0"
+  },
+  "notes": [
+   "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
+   "Enemy level 90 from the stage's DungeonTable entry (indie_battletower004_ex)."
+  ]
+ },
+ "enemy": {
+  "id": "eny_0068_lbtough2",
+  "level": 90
+ },
+ "team": [
+  {
+   "operator": "chr_0021_whiten",
+   "level": 90,
+   "promotion": 4,
+   "potential": 5,
+   "skillLevels": {
+    "basic": 12,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_lance_0010",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     9
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_parts_wuling00_hand_04",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atb01_body_05",
+     "artifice": [
+      0,
+      0,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atb01_edc_05",
+     "artifice": [
+      3,
+      3,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atb01_edc_05",
+     "artifice": [
+      3,
+      3,
+      0
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0024_deepfin",
+   "level": 90,
+   "promotion": 4,
+   "potential": 5,
+   "skillLevels": {
+    "basic": 12,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_sword_0012",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     4
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_atb01_hand_03",
+     "artifice": [
+      3,
+      0,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atb01_body_05",
+     "artifice": [
+      3,
+      0,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_parts_wuling01_edc_03",
+     "artifice": [
+      3,
+      3,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_atb01_edc_06",
+     "artifice": [
+      3,
+      0,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0003_endminf",
+   "level": 90,
+   "promotion": 4,
+   "potential": 4,
+   "skillLevels": {
+    "basic": 12,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_sword_0021",
+    "level": 90,
+    "skillLevels": [
+     9,
+     9,
+     7
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_crush_fracture_hand_02",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_phy01_body_03",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_crush_fracture_edc_02",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_crush_fracture_edc_02",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "operator": "chr_0005_chen",
+   "level": 90,
+   "promotion": 4,
+   "potential": 5,
+   "skillLevels": {
+    "basic": 12,
+    "battle": 12,
+    "combo": 12,
+    "ultimate": 12
+   },
+   "weapon": {
+    "id": "wpn_sword_0026",
+    "level": 90,
+    "skillLevels": [
+     4,
+     9,
+     4
+    ]
+   },
+   "gear": [
+    {
+     "id": "item_equip_t4_suit_poise01_hand_01",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_phy01_body_02",
+     "artifice": [
+      3,
+      3,
+      3
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_phy01_edc_01",
+     "artifice": [
+      3,
+      3,
+      0
+     ]
+    },
+    {
+     "id": "item_equip_t4_suit_phy01_edc_01",
+     "artifice": [
+      3,
+      3,
+      0
+     ]
+    }
+   ]
+  }
+ ],
+ "hits": [
+  {
+   "t": 603,
+   "operator": "chr_0021_whiten",
+   "event": "chr_0021_whiten_normal_skill_projhit",
+   "value": 8866,
+   "crit": false,
+   "element": "cryst",
+   "effects": [],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 330
+   }
+  },
+  {
+   "t": 747,
+   "operator": "chr_0024_deepfin",
+   "event": "chr_0024_deepfin_normal_skill",
+   "value": 11864,
+   "crit": false,
+   "element": "physical",
+   "effects": [],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 320
+   }
+  },
+  {
+   "t": 1118,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack1",
+   "value": 3081,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 1514,
+   "operator": "chr_0021_whiten",
+   "event": "buff_common_cryst_triggered_physical_break",
+   "value": 25587,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 297.283
+   }
+  },
+  {
+   "t": 1514,
+   "operator": "chr_0021_whiten",
+   "event": "buff_physical_airborne",
+   "value": 10796,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 297.283
+   }
+  },
+  {
+   "t": 1514,
+   "operator": "chr_0021_whiten",
+   "event": "chr_0015_lifeng_ultimate_skill",
+   "value": 15961,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 1514,
+   "operator": "chr_0021_whiten",
+   "event": "chr_0021_whiten_combo_skill",
+   "value": 29926,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 297.283
+   }
+  },
+  {
+   "t": 2340,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack2",
+   "value": 4238,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 2443,
+   "operator": "chr_0024_deepfin",
+   "event": "chr_0024_deepfin_combo_skill",
+   "value": 3817,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 2796,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack3",
+   "value": 2484,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 2900,
+   "operator": "chr_0024_deepfin",
+   "event": "chr_0024_deepfin_combo_skill",
+   "value": 11450,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 287.283
+   }
+  },
+  {
+   "t": 3067,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack3",
+   "value": 2713,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 3646,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack4",
+   "value": 1516,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 4597,
+   "operator": "chr_0005_chen",
+   "event": "buff_equipsuit_physuit_01",
+   "value": 9032,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 4597,
+   "operator": "chr_0005_chen",
+   "event": "buff_physical_airborne",
+   "value": 19863,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 28.404,
+    "bar": 258.879
+   }
+  },
+  {
+   "t": 4597,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_combo_skill",
+   "value": 10730,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 28.404,
+    "bar": 258.879
+   }
+  },
+  {
+   "t": 5132,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0002_endminm_combo_skill",
+   "value": 9574,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 200.879
+   }
+  },
+  {
+   "t": 6253,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack5",
+   "value": 8617,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 182.879
+   }
+  },
+  {
+   "t": 6584,
+   "operator": "chr_0024_deepfin",
+   "event": "chr_0024_deepfin_attack1",
+   "value": 1619,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 6940,
+   "operator": "chr_0024_deepfin",
+   "event": "chr_0024_deepfin_attack2",
+   "value": 955,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 6940,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack1",
+   "value": 4883,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 7380,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack2",
+   "value": 5840,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 7797,
+   "operator": "chr_0024_deepfin",
+   "event": "chr_0024_deepfin_attack3",
+   "value": 2574,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 7899,
+   "operator": "chr_0021_whiten",
+   "event": "chr_0021_whiten_attack1",
+   "value": 3732,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 7899,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack3",
+   "value": 3255,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8210,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack3",
+   "value": 3255,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8335,
+   "operator": "chr_0021_whiten",
+   "event": "chr_0021_whiten_attack2",
+   "value": 4532,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8541,
+   "operator": "chr_0024_deepfin",
+   "event": "chr_0024_deepfin_attack4",
+   "value": 2574,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8769,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack4",
+   "value": 1819,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8875,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack4",
+   "value": 1819,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 8978,
+   "operator": "chr_0021_whiten",
+   "event": "chr_0021_whiten_attack3",
+   "value": 2266,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 9267,
+   "operator": "chr_0021_whiten",
+   "event": "chr_0021_whiten_attack3",
+   "value": 2999,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 9372,
+   "operator": "chr_0003_endminf",
+   "event": "buff_common_originum_frozen",
+   "value": 57026,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0021_valid",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.792
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 172.879
+   }
+  },
+  {
+   "t": 9372,
+   "operator": "chr_0003_endminf",
+   "event": "buff_physical_do_crushed",
+   "value": 286759,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0021_valid",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.792
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 172.879
+   }
+  },
+  {
+   "t": 9372,
+   "operator": "chr_0024_deepfin",
+   "event": "chr_0024_deepfin_attack5",
+   "value": 2318,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 9372,
+   "operator": "chr_0024_deepfin",
+   "event": "chr_0024_deepfin_attack5",
+   "value": 2318,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 9372,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_normal_skill",
+   "value": 48590,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0021_valid",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.792
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 172.879
+   }
+  },
+  {
+   "t": 10060,
+   "operator": "chr_0024_deepfin",
+   "event": "chr_0024_deepfin_combo_skill",
+   "value": 2804,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 10560,
+   "operator": "chr_0024_deepfin",
+   "event": "chr_0024_deepfin_combo_skill",
+   "value": 8412,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 162.879
+   }
+  },
+  {
+   "t": 10685,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_normal_skill",
+   "value": 17753,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 12,
+    "bar": 150.879
+   }
+  },
+  {
+   "t": 10789,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack5",
+   "value": 9151,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 132.879
+   }
+  },
+  {
+   "t": 14224,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack1",
+   "value": 5185,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 14435,
+   "operator": "chr_0024_deepfin",
+   "event": "chr_0024_deepfin_ultimate_skill",
+   "value": 31860,
+   "crit": false,
+   "element": "cryst",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 112.879
+   }
+  },
+  {
+   "t": 14664,
+   "operator": "chr_0021_whiten",
+   "event": "chr_0021_whiten_attack1",
+   "value": 3403,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 14664,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack2",
+   "value": 6202,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 15122,
+   "operator": "chr_0021_whiten",
+   "event": "chr_0021_whiten_attack2",
+   "value": 3594,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 15122,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack3",
+   "value": 3006,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 15371,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack3",
+   "value": 3006,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 15706,
+   "operator": "chr_0021_whiten",
+   "event": "chr_0021_whiten_attack3",
+   "value": 1797,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 15810,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack1",
+   "value": 894,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 15917,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack1",
+   "value": 894,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 16022,
+   "operator": "chr_0021_whiten",
+   "event": "chr_0021_whiten_attack3",
+   "value": 2378,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 16022,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack4",
+   "value": 1680,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 16270,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack2",
+   "value": 2098,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 16686,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack3",
+   "value": 1165,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 16790,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack3",
+   "value": 1165,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 16999,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_attack5",
+   "value": 7383,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 18,
+    "bar": 94.8785
+   }
+  },
+  {
+   "t": 17102,
+   "operator": "chr_0021_whiten",
+   "event": "chr_0021_whiten_attack4",
+   "value": 4346,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 17206,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack4",
+   "value": 1199,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 17328,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack4",
+   "value": 1199,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 17993,
+   "operator": "chr_0024_deepfin",
+   "event": "chr_0024_deepfin_normal_skill",
+   "value": 13538,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 84.8785
+   }
+  },
+  {
+   "t": 20969,
+   "operator": "chr_0005_chen",
+   "event": "buff_common_cryst_triggered_physical_break",
+   "value": 52828,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 20969,
+   "operator": "chr_0021_whiten",
+   "event": "buff_physical_airborne",
+   "value": 12622,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 12.7175,
+    "bar": 49.4435
+   }
+  },
+  {
+   "t": 20969,
+   "operator": "chr_0021_whiten",
+   "event": "buff_physical_airborne",
+   "value": 12622,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 29.4435
+   }
+  },
+  {
+   "t": 20969,
+   "operator": "chr_0021_whiten",
+   "event": "chr_0015_lifeng_ultimate_skill",
+   "value": 18660,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 20969,
+   "operator": "chr_0021_whiten",
+   "event": "chr_0015_lifeng_ultimate_skill",
+   "value": 18660,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 20969,
+   "operator": "chr_0021_whiten",
+   "event": "chr_0021_whiten_combo_skill",
+   "value": 34987,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 62.161
+   }
+  },
+  {
+   "t": 20969,
+   "operator": "chr_0021_whiten",
+   "event": "chr_0021_whiten_ultimate_skill",
+   "value": 61089,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 20,
+    "bar": 29.4435
+   }
+  },
+  {
+   "t": 21365,
+   "operator": "chr_0005_chen",
+   "event": "buff_physical_airborne",
+   "value": 25667,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 28.404,
+    "bar": 1.03951
+   }
+  },
+  {
+   "t": 21365,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_combo_skill",
+   "value": 13865,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": [],
+   "poise": {
+    "dealt": 28.404,
+    "bar": 1.03951
+   }
+  },
+  {
+   "t": 22277,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0002_endminm_combo_skill",
+   "value": 11321,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 0
+   }
+  },
+  {
+   "t": 22400,
+   "operator": "chr_0024_deepfin",
+   "event": "chr_0024_deepfin_combo_skill",
+   "value": 6476,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 22940,
+   "operator": "chr_0024_deepfin",
+   "event": "chr_0024_deepfin_combo_skill",
+   "value": 19429,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "unquantified": [],
+   "poise": {
+    "dealt": 10,
+    "bar": 0
+   }
+  },
+  {
+   "t": 23168,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_power_attack2",
+   "value": 21413,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 23810,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack1",
+   "value": 1937,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 23915,
+   "operator": "chr_0003_endminf",
+   "event": "chr_0003_endminf_power_attack2",
+   "value": 192717,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_wpn_sword_0021_valid",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.792
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 23915,
+   "operator": "chr_0005_chen",
+   "event": "chr_0005_chen_attack1",
+   "value": 1937,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0005_chen_talent_0_1",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    }
+   ],
+   "boundaryEffects": [],
+   "unquantified": []
+  },
+  {
+   "t": 24268,
+   "operator": "chr_0003_endminf",
+   "event": "buff_common_originum_frozen",
+   "value": 131990,
+   "uncapped": 137846,
+   "crit": true,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0021_valid",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.792
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.36
+    }
+   ],
+   "unquantified": []
+  },
+  {
+   "t": 24268,
+   "operator": "chr_0003_endminf",
+   "event": "buff_physical_do_crushed",
+   "value": 513456,
+   "crit": false,
+   "element": "physical",
+   "effects": [
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.18
+    },
+    {
+     "buff": "buff_chr_0003_endminf_talent_1_tirgger",
+     "zone": "atk",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_common_affixes_vulnerable_physical",
+     "zone": "susceptibility",
+     "element": "physical",
+     "value": 0.15
+    },
+    {
+     "buff": "buff_common_poise_break_damage_taken_scale",
+     "zone": "multiplicative",
+     "element": null,
+     "value": 0.3
+    },
+    {
+     "buff": "buff_equipsuit_combosuit_01_adddamage",
+     "zone": "damageBonus",
+     "element": null,
+     "value": 0.16
+    },
+    {
+     "buff": "buff_wpn_sword_0012_atk_up",
+     "zone": "atk",
+     "element": null,
+     "value": 0.08
+    },
+    {
+     "buff": "buff_chr_0024_deepfin_potential_3",
+     "zone": "atk",
+     "element": null,
+     "value": 0.15
+    },
+    {
+     "buff": "buff_wpn_sword_0021_valid",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.792
+    }
+   ],
+   "boundaryEffects": [
+    {
+     "buff": "buff_equipsuit_crush_fracture_physicdamage",
+     "zone": "damageBonus",
+     "element": "physical",
+     "value": 0.36
+    }
+   ],
+   "unquantified": []
+  }
+ ],
+ "casts": [
+  {
+   "t": 603,
+   "operator": "chr_0021_whiten",
+   "skill": "chr_0021_whiten_normal_skill"
+  }
+ ]
+}

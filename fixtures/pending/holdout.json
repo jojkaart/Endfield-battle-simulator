@@ -1,5 +1,5 @@
 {
- "note": "Hold-out logs (docs/accuracy-plan.md, \"Choosing logs\"): only measured, never debugged. Drawn 2026-11-09 with random.seed(20261109), 6 of the 17 screened single-target logs, every favourite on both sides where it has two or more logs, before any of their checks was read. 2026-11-13: 2 of 6 more (logs with Ardelia's ultimate, screened the same way), random.seed(20261113), before any check was read.",
+ "note": "Hold-out logs (docs/accuracy-plan.md, \"Choosing logs\"): only measured, never debugged. Drawn 2026-11-09 with random.seed(20261109), 6 of the 17 screened single-target logs, every favourite on both sides where it has two or more logs, before any of their checks was read. 2026-11-13: 2 of 6 more (logs with Ardelia's ultimate, screened the same way), random.seed(20261113), before any check was read. 2026-11-14: 1 of 4 more (Estella logs, the owner's team), random.seed(20261114), before any check was read.",
  "holdout": [
   "zmdlogs-0ddbbdca1db5",
   "zmdlogs-0dfc9d76c84d",
@@ -8,7 +8,8 @@
   "zmdlogs-7bbc94d2da9f",
   "zmdlogs-7be1ca9f455b",
   "zmdlogs-0a35d0ad00b4",
-  "zmdlogs-14a91e99b8d7"
+  "zmdlogs-14a91e99b8d7",
+  "zmdlogs-13b9974a0450"
  ],
  "development": [
   "zmdlogs-1cd1657bc305",
@@ -25,6 +26,9 @@
   "zmdlogs-5082ceaffad1",
   "zmdlogs-791020039384",
   "zmdlogs-9c6e97486a9d",
-  "zmdlogs-af7b7f865906"
+  "zmdlogs-af7b7f865906",
+  "zmdlogs-a9d7fcb089c5",
+  "zmdlogs-ad7f5ee2c91c",
+  "zmdlogs-c4f307cd039a"
  ]
 }
