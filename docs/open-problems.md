@@ -416,6 +416,41 @@ what the engine applies), another buff on the same hits, db87's build.
 
 **Next check:** the sword buff's value and stacks in db87 against e989.
 
+## Akekuri in 012a: Thermite Cutter's team ATK too early, and ×0.89 left
+
+**Shows (haiku, 2026-11-14):** the engine gives wpn_sword_0012.team_atk
+(+0.08) from ~14 s to 31 s; the log lists it from 31.08 s (her combo) and
+the teammates' damage fits without it before (Laevatain 41 log-listing
+fits against 2, Camille 59 against 1, Arcane 24 against 2). Without it her
+16–22 s hits go from ×0.851 to ×0.893, like 37–60 s (×0.892): a constant
+×0.89 is left on her 35 physical hits.
+
+**Ruled out (for the ×0.89):** weapon level (skill 9 needs 80+), nodes,
+potential, gear, Thermite skill 3, her skill levels (1/1/1/9 right), food.
+
+**Still possible:** her weapon's skill 2 at 4 instead of the exported 9
+(fits late, less early); the enemy's physical resistance (data 12, ~21
+would fit; Tower 15's 20 fits 458b); Thermite's trigger rule (when its
+team ATK starts).
+
+**Next check:** Thermite Cutter's trigger in the data against 012a's 31 s.
+
+## Estella's Razorhorn ATK: on the Shattering hit; Lifts get about half
+
+**Fixed 2026-11-14 (sonnet diagnosis):** wpn_lance_0013's atk_up (+0.336)
+is on the Shatter and the combo hits at that moment (a27b 14630 / 44993 /
+63630 ms ×1.2446 / ×1.292 / ×1.245, ad7f 12173 ×1.215 = the engine's
+without it + 0.336 ATK); its triggers are beforeDamage now. Estella
+a27b −9.5 → +2.7% (plain 11 → 16), ad7f −8.3 → +5.0% (18 → 21).
+
+**Still open:** her Lifts at that moment fit half the buff (+0.168: ad7f
+×1.105, a27b ×1.124 / 1.136 / 1.124), the full buff overshoots; why (the
+Lift's formula, its timing) is open. ad7f 38169's combo fits one Yinglung
+stack where the engine has three. Her other weapon in c4f3 (wpn_lance_0004,
+ATK +0.42 on the first Vulnerable) triggers at other times than the log
+(8.9–23.4 s listed, engine none; from 81 s the reverse). a9d7: all four
+operators ×1.15–1.33 low from the first hit (a stage factor).
+
 ## OBJ Razorhorn's ATK lasts longer than its 15 s
 
 **Shows:** wpn_lance_0013's atk_up (Estella's weapon) still listed 17.2 s
