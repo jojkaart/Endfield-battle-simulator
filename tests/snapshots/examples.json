@@ -176,6 +176,27 @@
    "7b8e0627d1df"
   ]
  },
+ "estella-si-akekuri-arcane.scenario.json": {
+  "total": 3994217.196,
+  "hits": 485,
+  "casts": 245,
+  "perOperator": {
+   "chr_0021_whiten": 1021884.454,
+   "chr_0036_jsspsi": 2390281.995,
+   "chr_0019_karin": 201734.824,
+   "chr_0032_lizhiyan": 380315.924
+  },
+  "digest": "0ede2165b258",
+  "windows": [
+   "ea805c5413c9",
+   "ab7bb31b9884",
+   "a7f3bfbec356",
+   "a9cb4c47c96a",
+   "df029241457b",
+   "917c1838731c",
+   "d3483ca750ed"
+  ]
+ },
  "estella-solidification.scenario.json": {
   "total": 199360.687,
   "hits": 45,

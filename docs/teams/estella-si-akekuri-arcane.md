@@ -1,0 +1,34 @@
+# Estella, Si, Akekuri, Arcane (the owner's team, 2026-11-14)
+
+The owner wants this team simulated as well as possible; it is the
+current priority. Example: [examples/estella-si-akekuri-arcane.scenario.json](../../examples/estella-si-akekuri-arcane.scenario.json)
+(builds from the single-operator examples, not the owner's; Akekuri's and
+Arcane's weapons are stand-ins). Against Rhodagn Lv90, 60 s, the search
+finds 3,994,217 (expected crits; σ 1.5%).
+
+## Where the damage comes from (sonnet, 2026-11-14)
+
+Si 59.8%, Estella 25.6%, Arcane 9.5%, Akekuri 5.1%. Si's combo 25.6% and
+her Inksoul burst (Artful Intent's end) 14.9%; Shatter 4.5%, Si's
+Solidification hits 3.0%, Estella's plunging hits 4.3%, Lift 1.8%,
+Arcane's bursts 1.7%. 40% of the damage falls inside one Corrosion window
+(Arcane's, 2.67–17.67 s).
+
+## What would move the total most
+
+| # | Mechanic | Touches | Status | What verifies it |
+|---|---|---|---|---|
+| 1 | Si's Artful Intent, combo stack count | ~40% | logs fit Si +0.8% in ad7f; 14% mean over 21 logs | test 10; Si diagnosis (running) |
+| 2 | Freezes on a boss holding Si's timers | ~15% | since 2026-11-13: a freeze on a boss holds the freezer's own debuffs (Artful Intent ends fit to ~10 ms) | test 104 |
+| 3 | Corrosion's shred under freezes | up to 40% | A28–A35 settled; under freezes open | test 37 |
+| 4 | Solidification's length, Shatter | ~10% | length [OPEN] | test 71 (needs Alesh), test 11 |
+| 5 | Akekuri's Link and the team's SP | cast count | Link not in any log; SP not logged | test 57, test 102 |
+
+## Logs with these operators
+
+Si and Arcane together: 24 non-hold-out logs; ad7f (Arcane, Alesh, Si,
+Estella, Tower 4) fits within ~1% for Arcane and Si. Estella: 6 logs
+(engine low in the recent three: −8 / −12 / −24%, being diagnosed).
+Akekuri: 3 (012a ×0.85–0.89 constant, being diagnosed; 458b fits; 5d1a
+multi-target). No log has Estella with Akekuri; Akekuri's five logs with
+Si fail the level-90 rule (she or Wulfgard at 80).
