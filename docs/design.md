@@ -900,59 +900,117 @@ With random outcomes a search costs about K times as much per child
 (each battle is applied and scored; only the first judges the choices):
 si-laevatain with `--dodge 0.7 --attack-every 4` and K = 4 took 23 s.
 
-**Opener and loop** (`searchLoop`, `efsim search --loop`; owner,
-2026-11-14: "complete rotations, not a fixed 60 s window", an opener and
-then a loop that can be repeated for as long as the fight lasts, its
-boundaries at the ultimates' casts). The opener search runs over the
-scenario's fight (at least 60 s, `horizonFrames`); the **boundary** is the
-ultimate its rotation casts least (the slowest to recharge sets the loop's
-length), and the opener ends at its first cast. Then repetition after
-repetition, each **searched afresh**: the beam search from the rotation so
-far (`SearchHooks.prefix`) over the longest repetition (60 s) and 10 s
-more, cut at the boundary's next cast. A plan that depends only on where
-it starts repeats once the starts repeat, so the loop is the last
-`repeats` (3) repetitions once they agree: *exact* (the same actions at the
-same times) or alike (the same skills in the same order, lengths within
-`tolerance`, 1%); at most 6 repetitions. The earlier repetitions are the
-opener's (they still spend what the opener left over). Whatever happens,
-the opener and every repetition replay with `simulate` (one rotation,
-`at` absolute, to the start of the repetition after the last), and each
-repetition's damage is what lands in its frames.
+**Opener and loop** (`searchLoop`, `efsim search --loop [--loops n]`;
+owner, 2026-11-14: "complete rotations, not a fixed 60 s window", an
+opener and then a loop that can be repeated for as long as the fight
+lasts, its boundaries at the ultimates' casts). A **loop** is a round of
+actions (from a cast of the boundary ultimate to its next) that plays
+again *exactly* — the same actions at the same times from its start —
+from where it ends, `repeats` (3) more times in a row; the rounds before
+its first play are the **opener**. Everything replays with `simulate`
+(one rotation, `at` absolute); `--out` saves the opener and n plays of
+the loop (default 4; plays past those found are exact replays, checked).
+Fights with random outcomes are refused (an exact replay in one battle
+needn't hold in another).
 
-Tolerance: the lengths within 1% (the brief's "~1%"), the damage not:
-the enemy's Stagger cycle doesn't follow the loop's, so a finisher and the
-Staggered bonus fall in a different repetition each time (laevatain-solo,
-a loop cut at her ultimate and played three times: one repetition had the
-finisher, 292k of its 1.58M); the loop's DPS is the repetitions' mean and
-`damageApart` says how far apart they were.
+*Boundary* (`slowestUltimate`, `ultimatePeriods`): the ultimate with the
+longest recharge in the opener search's rotation (over the scenario's
+fight, at least 60 s): cast twice or more, the mean time between casts;
+cast once, the time from its cast to the horizon over the share of its
+energy back by then. Fewest casts was the rule before: with full energy
+every ultimate is cast at 0 and that picked one never cast again within
+60 s (Akekuri's), or the fastest when only it was cast twice (Estella's).
 
-Tried first and dropped (2026-11-14): cutting the fixed-length search's
-rotation at two casts of an ultimate and replaying that segment — at its
-exact frames (every cut failed: a chain step not reached, a combo window
-not open, a finisher on an enemy not Staggered, the ultimate 25 frames
-late), as a player would (the skills in order as soon as legal, basic
-attacks, combos and finishers in between: the repetitions drifted, a
-segment that spent the opener's energy came back late, 1188 → 1277 →
-1500 frames), and with closing conditions (the same energy, SP, stacks,
-cooldowns and chain step at the end as at the start: no state of a beam
-of 12 met them). The fixed-length search's segments are tuned to where
-they start; a repetition searched from its own start isn't.
+*Closing rounds.* Round after round from where the last ended (its
+boundary cast), the beam search (`SearchHooks.prefix`) runs over
+`LOOP_MAX_FRAMES` (90 s) and 10 s more and returns every rotation that
+reaches the boundary's next cast (`SearchHooks.stopAt`: such a child ends
+there, isn't expanded, and comes back in `SearchResult.stops`). Plans are
+compared by **`closingScore`**: damage landed per second, where what the
+round takes from the resources it found is charged as the time their
+regeneration needs to make it up — SP at 8 a second, each operator's
+ultimate energy at its bar over its recharge (`energyRates`), the longest
+of them, since they come back side by side — and × 0.85 if it leaves the
+kit stacks different (Laevatain's Melting Flame decides whether her battle
+skill is the empowered one). A surplus isn't credited: in a loop played
+on, it caps and is lost. The round is one of:
 
-Measured (beam 6–8): laevatain-solo (full energy) 6 repetitions of 29.9–47.5
-s, 35,011–44,603 DPS, no 3 in a row alike (the Stagger cycle again: each
-repetition's best plan differs); opener and repetitions 8,237,799 in
-211.9 s, 38,882 DPS (the 30 s search: 1,156,151, 38,538 DPS). The owner's
-team from zero energy (beam 8, 350 s): the boundary is Arcane's ultimate,
-first cast at 15.3 s; repetitions of 45.2 s (44,137 DPS) and 52.5 s
-(40,554), then the third search didn't cast it again within 60 s;
-4,550,253 in 113.1 s, 40,232 DPS. With full energy (beam 8, 746 s): the
-boundary is Arcane's second ultimate (the ultimate kind cast least),
-repetitions of 41.7 / 48.1 / 49.2 / 53.8 / 59.3 s at 36,385–46,929 DPS,
-then none within 60 s; 11,578,817 in 260.3 s, 44,488 DPS. So `--loop` gives an opener and
-repetitions that replay, and their DPS, but no repeating loop yet in the
-cases measured; what's missing is a search that aims for a repetition that
-ends where it started (the same energy, SP, stacks and Stagger phase),
-not one that hopes to.
+1. *A new plan*: of the stops within 5% of the best score
+   (`closingMargin`), the one with the best mean over **two plays** —
+   itself, then itself again from where it ends (moved later as in 3) —
+   trying one plan per set of skills at their frames, at most 8; none
+   whose second play can be played: the best. A plan tuned to where it
+   starts rarely survives its own end (laevatain-solo's best first rounds
+   drain the SP the opener left: 101 → 60 → 17 → 6).
+2. *The last round replayed exactly*: kept unless a new plan scores 2%
+   better (`hysteresis`). Three replays in a row make the loop.
+3. *The last round moved later* (`shifts`), when it can't be replayed
+   exactly: an action that can't start at its frame starts as soon as it
+   can — waiting up to 20 s for energy, SP or a combo window — and
+   everything after it that much later; a basic attack whose chain step
+   isn't there becomes the step that is; a finisher on an enemy not
+   Staggered and a combo whose window doesn't open are dropped. A plan of
+   its own, which may then replay exactly: what's late is mostly what's
+   short, and casting it when it's ready resets it.
+
+Tolerance (3%, `tolerance`): the plays' damage per second, reported
+(`damageApart`, `agrees`), not a condition. The actions are the same in
+every play, but the enemy's Stagger cycle needn't follow the loop's, so
+the Staggered bonus falls in a different play each time; the loop's DPS
+is over all its plays (5–8 in the measurements).
+
+Measured (2026-11-14): laevatain-solo (full energy), beams 4 /
+6 / 8: loops of 35.4 / 31.2 / 34.4 s at 36,214 / 37,215 / 36,939 DPS over
+their plays (14.1% apart at beam 6: Stagger), after openers of 478.7 /
+195.5 / 225.5 s (12 rounds or fewer; 30–50 s a run); opener and 8 plays at
+beam 6: 15,733,256 in 445.4 s, 35,324 DPS, which `simulate` replays. For
+comparison at beam 6: the fixed 60 s search 43,453 DPS and the 300 s one
+36,764 (both with the start's full energy and 200 SP, which a loop can't
+count on): the loop is at the long fight's sustained rate. The rounds are
+chaotic: small changes move the fixed point (before the chain-step and
+combo repairs in 3, beams 4–8 gave loops of 28,260–32,544 DPS or none; at
+beam 6 one run found a 50.0 s loop at 32,544 that repeats to the damage,
+0.0% apart, its Stagger in step).
+
+The owner's team, beam 6, 12 rounds (52–55 min a run, 2.5–5 min a
+round): **no loop**. From zero energy (boundary Estella's ultimate)
+rounds of 41–86 s, opener and rounds 33,754,626 in 803.7 s, 42,001 DPS
+(the fixed 300 s search: 41,024); with full energy (boundary Akekuri's,
+back after 60–80 s) rounds of 63–86 s, 39,759,477 in 925.5 s, 42,962 DPS
+(the fixed 300 s search: 44,503). No new plan within 5% of a round's best
+played twice, and no round's plan replayed: on the second play an
+ultimate lacks energy past the 20 s wait (Si's 80 with 22–56, Arcane's
+100 with 0–95, Akekuri's 108 with 73) or Arcane's sequence 2 finds her
+array (Gloompurge Arcana) gone. Why: the four ultimates don't recharge in
+step — Estella's in about 40–45 s, Si's and Arcane's 45–50 s, Akekuri's
+60–80 s — so a round of one boundary ultimate holds a non-whole number of
+the others', and a plan that casts each once wastes energy while one that
+casts one twice can't do it again; Arcane's ultimate is two casts tied by
+her array, whose energy block shifts with it. A loop here likely needs
+more than one round of the boundary (two of Akekuri's ≈ three of
+Estella's), or a boundary per operator: still open.
+
+Tried and dropped (2026-11-14): cutting the fixed-length search's rotation
+at two casts of an ultimate and replaying the segment — at its exact
+frames (every cut failed: a chain step not reached, a combo window not
+open, a finisher on an enemy not Staggered, the ultimate 25 frames late),
+as a player would (the skills in order as soon as legal: the repetitions
+drifted, 1188 → 1277 → 1500 frames), or with closing conditions as a
+filter (the same energy, SP, stacks, cooldowns and chain step at the end:
+no state of a beam of 12 met them; SP within 3 and the same stacks: none
+of 420 stops of laevatain-solo's first round). Each repetition searched
+afresh until three agree (the first `--loop`): they never did
+(laevatain-solo, 6 repetitions of 29.9–47.5 s; the owner's team, 42–59
+s). Exact replays of each round's best plan alone: laevatain-solo's
+high-DPS plans all failed on their second play (the battle skill late for
+SP, the combo's window not open, the ultimate's enhanced attacks out of
+Twilight); only rounds that hold the ultimate past 49 s replayed (33,380
+DPS, exactly periodic). A round's skills as a skeleton, the search
+choosing the basic attacks in between: the next round couldn't complete
+it (the SP for six battle skills wasn't there). Ultimate energy charged
+at its probed price instead of as recharge time: the owner's team's
+rounds kept casting ultimates on energy the opener left (Si's at 0 of a
+round, short 72 of 80 on the second play).
 
 ### Time
 

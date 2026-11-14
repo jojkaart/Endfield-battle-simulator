@@ -490,6 +490,8 @@ export interface SearchResult {
   readonly score: number;
   /** With random outcomes: the found rotation's distribution over SearchOptions.runs battles (rotationSpread). */
   readonly spread?: RotationSpread;
+  /** With SearchHooks.stopAt: every rotation that ended at a step it chose, with its state (the first battle's), in the order found. */
+  readonly stops?: readonly { readonly rotation: readonly RotationAction[]; readonly state: TimelineState }[];
 }
 
 /** One beam width's search in searchBeams. */
@@ -902,6 +904,11 @@ export interface SearchHooks {
    * narrower widths). It must be one this search can make (the same scenario and options: a found rotation).
    */
   readonly guide?: readonly RotationAction[];
+  /**
+   * Steps after which a rotation ends (searchLoop: the boundary ultimate's next cast): such a child isn't expanded or
+   * kept in the beam; it's returned in SearchResult.stops (and still counts for the best rotation).
+   */
+  readonly stopAt?: (step: RotationAction) => boolean;
 }
 
 function search(data: GameData, given: Omit<TimelineScenario, "rotation">, options: SearchOptions, hooks: SearchHooks = {}): SearchResult {
@@ -950,6 +957,8 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
   let expanded = 0;
   const counts = { compared: 0, merged: 0, family: 0, pruned: 0 };
   let capped = false;
+  const stopAt = hooks.stopAt;
+  const stops: { rotation: readonly RotationAction[]; state: TimelineState }[] = [];
   while (buckets.size > 0 && expanded < maxExpansions) {
     const b = Math.min(...buckets.keys());
     let layer = buckets.get(b) as Node[];
@@ -981,6 +990,10 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
           const made = node(states, [...n.rotation, step]);
           const child = guide && n.guideAt !== undefined && same(guide[n.guideAt], step) ? { ...made, guideAt: n.guideAt + 1 } : made;
           if (child.damage > best.damage) best = child;
+          if (stopAt?.(step)) {
+            stops.push({ rotation: child.rotation, state: states[0] as TimelineState });
+            continue;
+          }
           if (Math.floor((states[0] as TimelineState).frame / bucketFrames) === b) layer.push(child);
           else push(child);
         }
@@ -1003,5 +1016,6 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
     rankedBy: percentile === undefined ? "mean" : { percentile },
     score: best.damage,
     ...(random.length > 0 && runs > 0 ? { spread: rotationSpread(data, full, runs, seed0) } : {}),
+    ...(stopAt ? { stops } : {}),
   };
 }
