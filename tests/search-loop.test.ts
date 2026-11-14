@@ -69,7 +69,8 @@ describe("opener and loop", () => {
     expect(text).toMatch(/Each round runs from Laevatain's ultimate/);
     expect(text).toMatch(/Loop: rounds \d+–\d+ play the same actions at the same times/);
     expect(text).toContain(`Opener and 5 plays of the loop: ${Math.round(r.total).toLocaleString("en-US")} damage in ${(r.frames / FPS).toFixed(1)} s`);
-  });
+    // ~50 s on its own (2026-11-14), so over the default 60 s under the full suite's load.
+  }, 180_000);
 });
 
 describe("closing rounds", () => {

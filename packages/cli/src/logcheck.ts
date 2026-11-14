@@ -1200,6 +1200,10 @@ export function formatEngineReport(data: GameData, r: EngineReport): string[] {
     `  per operator: ${Object.keys(t.logged.perOperator).map((op) => `${name(op)} ${pct(r.errors[`operator ${op}`])}`).join(", ")}`,
     `  per kind: ${Object.keys(r.errors).filter((k) => k.startsWith("kind ")).map((k) => `${k.slice(5)} ${pct(r.errors[k])}`).join(", ")}`,
   );
+  if (t.recordedShifts.length) {
+    const shift = (s: TotalsComparison["recordedShifts"][number]) => `${name(s.operator)}'s at ${seconds(s.t)} s ${s.amount >= 0 ? "+" : ""}${Math.round(s.amount)}`;
+    out.push(`  recorded bursts in the per-operator totals, with the teammates' share of each record as logged, not as replayed: ${t.recordedShifts.map(shift).join(", ")}`);
+  }
   if (t.absent.leftOut) out.push(`  left out: ${t.absent.leftOut} replay landing(s) the fixture marks absent from the log (its \`absent\`)`);
   for (const a of t.absent.unmatched) out.push(`  absent ${name(a.operator)} ${a.skillId} ${a.hitId} at ${seconds(a.t)} s: no such landing in the replay (stale?)`);
   for (const o of r.offsets) {

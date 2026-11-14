@@ -2142,6 +2142,28 @@ small ones) should freeze it.
 **Reply, e.g.:** `104: Rhodagn keeps moving; small enemies freeze` or
 `104: Rhodagn freezes ~1 s too`.
 
+### 107. Si's Amp across teammates' ultimates (ready, if you have Si; lower priority)
+
+**Why:** the engine holds every buff through other operators' ultimate
+time stops: a buff lasts its duration plus each stop that falls inside
+it. ZMDLogs lists Si's ultimate Amp 0.5–2.5 s longer than that, but the
+damage in four logs fits the engine's end, not the listing
+(open-problems, "Buffs through stops"). This settles it by eye, and
+whether the icon itself outlasts the effect.
+**How:** a phone video, with Si, Laevatain, Wulfgard and Ardelia (the
+Ink Melt team). A: Si's ultimate, then only basic attacks; time the Cryo
+/ Heat Amp icon from appearing to disappearing. B: Si's ultimate, then at
+once Laevatain's, Wulfgard's and Ardelia's (any two if energy is short),
+then only basic attacks; time the icon again.
+**Predictions:** A about 12 s under every rule. B: the engine says 12 s
+plus the stops, Laevatain 2.0 s, Wulfgard 1.5 s, Ardelia 2.7 s: about
+18 s with all three (15.5 s Laevatain and Wulfgard, 16.5 s Laevatain and
+Ardelia, 16 s Wulfgard and Ardelia). About 12 s means stops don't hold
+buffs; 1–2 s more than the engine's figure means they hold for longer
+than the time stop (as the log's listing has it).
+**Reply, e.g.:** `107: A 12 s, B (all three) 18 s` or
+`107: A 12 s, B 20 s`.
+
 ## Results
 
 None yet.

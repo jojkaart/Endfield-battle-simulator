@@ -654,7 +654,11 @@ of Laevatain's attack5 has it (batch-1 "Kit errors found").
   means until a trigger ends it or a cast consumes it; 0 means not applied
   (a potential below its level). [DATA] (design "Kits and the game data")
 - Buffs run on the world clock: others' time stops lengthen them (§6.2).
-  [ASSUMED]
+  [ASSUMED]; for a team buff across ultimates [SETTLED] by one log's
+  damage (db87: Si's 12 s Amp ends between 45.7 and 46.6 s by its hits,
+  the engine's 5.0 s of stops put it at 46.5 s). ZMDLogs lists such buffs
+  0.5–2.5 s past where the damage says they stopped acting: go by the
+  damage (open-problems "Buffs through stops"; in-game test 107).
 - `extendBuff`, `endBuff` (all of a buff, or its oldest layers) and a buff's
   end are events (`buffEnded`, with `consumed` when an action ended it).
   [DATA]
@@ -675,6 +679,14 @@ of Laevatain's attack5 has it (batch-1 "Kit errors found").
   every hit of the caster until the cast ends (`whileCasting`: a buff
   attached to the cast, CreateBuffAttachingSkill). Examples: Link and Jade
   Vessel. [DATA]
+- A consumed buff acts on **every** hit of its cast, however late it lands:
+  a stop that holds the caster more than the world (another's ultimate
+  inside the caster's own combo slow-down), or a landing later than the
+  kit's frames. The game's attached buff checks the cast's ID
+  (buff_equipsuit_attrisuitup_02: CheckSkillCastId, 20 s), not a planned
+  end. [SETTLED] (0eef and bdf2: Si's combo final 10 and 1 frames late, bdf
+  exact with Jade Vessel and Yinglung's Edge; 9a80: her combo stretched by
+  her ultimate)
 - Values are fixed at application, at the applier's levels (ValueExprs).
   [DATA] (buffs.ts `applyBuff`)
 - **Snapshotting:** only periodic damage with `takeAtkSnapshot`
@@ -811,6 +823,11 @@ of Laevatain's attack5 has it (batch-1 "Kit errors found").
 - **Buffs a log doesn't list for an operator:** 1d91 never lists Liino's
   stance or lance layers, which are real. Effects lists can be sparse:
   entries vanish and return. [SETTLED] (1d91); sparse lists [OPEN] (Hard 33)
+- **Buffs listed after they stopped acting:** Si's ultimate Amp is listed
+  0.5–2.5 s past where the hits' damage says it ended (db87, 458b, 489c),
+  across ultimates' time stops. A listed end isn't a buff's end: check the
+  damage (the check's "fit engine / log / neither"). [SETTLED] (db87,
+  458b, 489c); why [OPEN]
 - **A buff listed once whatever its layers** (stackingType 8) or several
   times (a `max_stack` key). Link is logged with zero duration and no
   value. [SETTLED]

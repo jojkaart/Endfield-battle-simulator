@@ -77,7 +77,8 @@ describe("unquantified buffs valued from the kit buff that stands for them", () 
     const v = checkLog(data, annotated, { buffs: "log" }).filter((x) => x.hit.operator === "chr_0033_camille");
     expect(v.filter((x) => x.kind === "match")).toHaveLength(85);
     expect(v.some((x) => x.kind === "match" && x.assumed.includes("unquantified buff_wpn_lance_0015_atkup from kit wpn_lance_0015.atk"))).toBe(true);
-  });
+    // ~23 s on its own (2026-11-14), over the default 60 s under the full suite's load.
+  }, 180_000);
 });
 
 describe("repeated boundary buffs: 1 up to all of their instances", () => {

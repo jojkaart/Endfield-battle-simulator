@@ -316,23 +316,22 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
         linkEnded.push(...buffEndedEvents(linkBuffs, frame, true));
       }
       const value = linkValue(costs.kind, n);
-      const lastHit = Math.max(frame, ...pending.map((h) => h.frame));
-      const link: ActiveBuff = { id: "link", owner: operator, target: "self", appliedAt: frame, expiresAt: lastHit + 1, cast: castIndex, modifiers: [{ zone: "multiplicative", value, source: `Link (${n})` }] };
+      const link: ActiveBuff = { id: "link", owner: operator, target: "self", appliedAt: frame, expiresAt: UNTIL_CAST_LANDS, cast: castIndex, modifiers: [{ zone: "multiplicative", value, source: `Link (${n})` }] };
       next = { ...next, link: [], buffs: [...next.buffs, link] };
     } else if (live.length !== next.link.length) next = { ...next, link: live };
   }
-  // Buffs this cast consumes (Jade Vessel's, …) now act on its hits only, until its last hit; one attached to the cast
-  // (KitBuff.consumedScope whileCasting) also on every hit of the caster until the cast ends (endCurrentSkill cuts it short).
+  // Buffs this cast consumes (Jade Vessel's, …) now act on its hits only, until its last hit has landed (settleCastBuffs);
+  // one attached to the cast (KitBuff.consumedScope whileCasting) also on every hit of the caster until the cast ends
+  // (endCurrentSkill cuts it short).
   const consumedBuffs = next.buffs.filter((b) => b.cast === undefined && b.consumedBy?.includes(costs.kind) && reaches(b, operator) && activeAt(b, frame));
   if (consumedBuffs.length) {
-    const lastHit = Math.max(frame, ...pending.map((h) => h.frame));
     const castEnd = frame + scaled(full.timing.durationFrames);
     const scopeOf = (b: ActiveBuff) => ctx.kits.get(b.owner)?.buffs.find((x) => x.id === b.id)?.consumedScope;
     next = {
       ...next,
       buffs: [
         ...next.buffs.filter((b) => !consumedBuffs.includes(b)),
-        ...consumedBuffs.map((b) => (scopeOf(b) === "whileCasting" ? { ...b, cast: castIndex, appliedAt: frame, expiresAt: Math.max(lastHit + 1, castEnd), whileCasting: { operator, until: castEnd } } : { ...b, cast: castIndex, appliedAt: frame, expiresAt: lastHit + 1 })),
+        ...consumedBuffs.map((b) => ({ ...b, cast: castIndex, appliedAt: frame, expiresAt: UNTIL_CAST_LANDS, ...(scopeOf(b) === "whileCasting" ? { whileCasting: { operator, until: castEnd } } : {}) })),
       ],
     };
   }
@@ -369,5 +368,36 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
   const endedEvents: BattleEvent[] = buffEndedEvents(consumedBuffs, frame, true);
   // Buffs the cast used up (Link, consumed ones) may have set a combo's recovery rate.
   const spent = rebaseCooldowns(ctx, { ...cast, buffs: s.buffs }, cast, frame);
-  return { state: slowDown(ctx, spent, operator, { ...costs.timing, slowdowns: plannedSlowdowns(costs.timing, planned) }, frame), events: [...endsNowEvents, castEvent, ...endedEvents, ...linkEnded], origin: { operator, kind: costs.kind } };
+  // A cast with no hits to come (and the one it ended) leaves nothing for the buffs it used up to wait for.
+  const settled = settleCastBuffs(spent, frame);
+  return { state: slowDown(ctx, settled, operator, { ...costs.timing, slowdowns: plannedSlowdowns(costs.timing, planned) }, frame), events: [...endsNowEvents, castEvent, ...endedEvents, ...linkEnded], origin: { operator, kind: costs.kind } };
+}
+
+/**
+ * The end of a buff a cast used up (Link, a consumed buff: ActiveBuff.cast) while that cast still has hits to land: it
+ * acts on each of them whenever it lands, not only up to the frame planned at the cast. Its hits can land later than
+ * planned: a time stop holds the caster's clock more than the world's (its own combo's slow-down already holding the
+ * world when another's ultimate stops it), or a replayed cast's landings are pinned at their logged frames
+ * (0eef2474a26f: Si's combo final at 9331 ms, 10 frames past its planned 9000, logged at 379,860 with Jade Vessel's
+ * next-combo DMG and Yinglung's Edge layers, 179,405 without; bdf223db8e49, one frame past it).
+ */
+export const UNTIL_CAST_LANDS = Infinity;
+
+/**
+ * Buffs used up by a cast whose own hits have all landed (or been cut: jumps, its end) end on the next frame (so a hit
+ * its last landing triggers in the same frame still has them, as when they ended at the planned last hit + 1); one
+ * attached to the cast (whileCasting) runs on to the cast's end. In the order of docs/design.md ("Order within a
+ * frame"), checked after each scheduled item.
+ */
+export function settleCastBuffs(st: TimelineState, frame: number): TimelineState {
+  if (!st.buffs.some((b) => b.cast !== undefined && b.expiresAt === UNTIL_CAST_LANDS)) return st;
+  const waiting = new Set<number>();
+  for (const x of st.scheduled) if (x.kind === "hit" && x.cast !== undefined && !x.trigger && x.deferred === undefined) waiting.add(x.cast.index);
+  let changed = false;
+  const buffs = st.buffs.map((b) => {
+    if (b.cast === undefined || b.expiresAt !== UNTIL_CAST_LANDS || waiting.has(b.cast)) return b;
+    changed = true;
+    return { ...b, expiresAt: Math.max(frame + 1, b.whileCasting?.until ?? 0) };
+  });
+  return changed ? { ...st, buffs } : st;
 }

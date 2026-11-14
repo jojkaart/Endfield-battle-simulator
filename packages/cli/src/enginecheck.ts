@@ -8,12 +8,13 @@
 // replacing them: where they differ is reported (logDifferences). docs/design.md, "The log check's rule".
 
 import {
-  Attr, activeModifiers, corrosionModifier, effectiveKit, kitBuffModifiers, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,
+  Attr, activeModifiers, corrosionModifier, effectiveKit, kitBuffModifiers, kitHitEntries, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,
   type DamageOptions, type DamageTarget, type GameData, type KitBuff, type KitHit, type LandedHit, type LandingInputs, type Modifier, type SkillType,
 } from "@efsim/engine";
 import { affixesAsChild, type AbsentLanding, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
 import type { BuffReplay, Fact, ReplayCastFacts } from "./buffreplay.ts";
 import type { Assumption } from "./logcheck.ts";
+import { isRecordedBurst, recordedBurst, replayRecord } from "./recordedburst.ts";
 import { boundarySubsets, buffFile, isCorrosionBuff, kitStackCaps, logModifiers, teamPanels, withoutOwnFood, type HitCategory, type StackCap } from "./logeffects.ts";
 
 /**
@@ -425,6 +426,56 @@ export interface TotalsComparison {
   readonly simulated: FightTotals;
   /** The fixture's absent landings (LogFixture.absent) the totals left out, and those the replay had none for. */
   readonly absent: { readonly leftOut: number; readonly unmatched: readonly AbsentLanding[] };
+  /**
+   * Per recorded burst (Si's Artful Intent), what its operator's simulated total moved by in `simulated.perOperator`
+   * (recordedBurstShifts): its teammates' share of the record taken as logged, not as replayed. The team's total and
+   * the kinds keep the replay's burst.
+   */
+  readonly recordedShifts: readonly RecordedShift[];
+}
+
+/** One recorded burst's move in its operator's simulated total (TotalsComparison.recordedShifts). */
+export interface RecordedShift {
+  readonly operator: string;
+  /** The logged burst's time (ms). */
+  readonly t: number;
+  /** rate × (teammates' logged hits in the log's record − their landings in the replay's record). */
+  readonly amount: number;
+}
+
+/**
+ * A recorded burst (Si's Artful Intent: Fixed DMG of rate × every hit on the target while it lasted) in the replay
+ * carries every teammate's replay error into its operator's total (489c, 9a80: Rossi's replayed hits short of the
+ * log's). For the per-operator totals its operator is charged only for its own share: the teammates' share of its
+ * record is the log's (the log's window as the hit's verdict reads it, its reading nearest the logged burst:
+ * recordedburst.ts), its own the replay's. Not for a capped (killing) burst, nor where the replay's record can't be
+ * told from its landings (replayRecord).
+ */
+function recordedBurstShifts(c: EngineCheck, counted: ReadonlySet<LandedHit>): RecordedShift[] {
+  const { data, fx } = c;
+  const team = teamPanels(data, fx);
+  const out: RecordedShift[] = [];
+  for (const b of fx.team) {
+    const kit = effectiveKit(data, b);
+    const events = new Set(kit ? kitHitEntries(kit).filter((e) => isRecordedBurst(e.hit)).flatMap((e) => e.hit.events) : []);
+    for (const h of fx.hits) {
+      if (h.operator !== b.operator || !events.has(h.event) || h.uncapped !== undefined) continue;
+      const l = c.replay.landing(h);
+      const member = team.at(h.operator, h.t);
+      if ("unknown" in l || !counted.has(l) || !member) continue;
+      const burst = recordedBurst(data, fx, member, h);
+      if ("unknown" in burst) continue;
+      const reading = [...burst.readings].sort((x, y) => Math.abs(x.predicted - h.value) - Math.abs(y.predicted - h.value))[0];
+      const start = c.replay.landing(burst.start);
+      if (!reading || "unknown" in start) continue;
+      const replayed = replayRecord(c.replay.hits, l, burst.rate, start.frame);
+      if (!replayed) continue;
+      let amount = 0;
+      for (const op of new Set([...Object.keys(reading.byOperator), ...Object.keys(replayed)])) if (op !== h.operator) amount += burst.rate * ((reading.byOperator[op] ?? 0) - (replayed[op] ?? 0));
+      out.push({ operator: h.operator, t: h.t, amount });
+    }
+  }
+  return out;
 }
 
 /** How near its `t` an absent landing (LogFixture.absent) is looked for. */
@@ -500,6 +551,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
   // A fight that ends in a kill: its last logged hits are capped at the enemy's remaining HP, whether or not the log
   // gives the uncapped value (a27b's killing Crush, 161,507 of a predicted 332,879).
   const killing = new Set(kill === null ? [] : fx.hits.filter((h) => h.t === logged.last));
+  const counted = new Set<LandedHit>();
   for (const l of [...c.replay.hits].sort((a, b) => a.frame - b.frame)) {
     const m = matched.get(l);
     const capped = cappedHit.get(l);
@@ -511,6 +563,7 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     else if (l.inputs) damage = landingDamage(data, c.target, l.inputs, { ...l.inputs.options, crit: "expected" }).exact;
     else damage = l.exact;
     if (capped) damage = Math.min(damage, capped.value);
+    counted.add(l);
     sim.damage += damage;
     if (kill !== null && simKill === null && sim.damage >= kill) simKill = (l.frame * 1000) / 30;
     add(sim.perOperator, l.operator, damage);
@@ -524,10 +577,12 @@ export function fightTotals(c: EngineCheck, primary: ReadonlyMap<LogHit, { reado
     if (l.inputs?.options.staggered) sim.staggered++;
     if (l.frame <= end) sim.last = Math.max(sim.last, (l.frame * 1000) / 30);
   }
+  const recordedShifts = recordedBurstShifts(c, counted);
+  for (const s of recordedShifts) add(sim.perOperator, s.operator, s.amount);
   const totals = (x: typeof logged, killMs: number | null): FightTotals => ({
     damage: x.damage, perOperator: x.perOperator, perKind: x.perKind, hits: x.hits, statusHits: x.statusHits, critShare: x.known ? x.crits / x.known : 0, staggeredHits: x.staggered, lastHitMs: x.last, killMs,
   });
-  return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill), absent: { leftOut: absent.size, unmatched } };
+  return { logged: totals(logged, kill !== null ? logged.last : null), simulated: totals(sim, simKill), absent: { leftOut: absent.size, unmatched }, recordedShifts };
 }
 
 /** A totals comparison as rounded percentage errors (simulated / logged − 1, to 0.1 %), for the report and the verdict snapshots. */

@@ -15,7 +15,7 @@ import { actionFrame, counters } from "./timing.ts";
 import { situationAt } from "./situation.ts";
 import { runActions, runTriggers } from "./actions.ts";
 import { asEvents, draw, landBurst, landHit, recordStatus } from "./landing.ts";
-import { castSkill, endCurrentSkill, takeJump } from "./casting.ts";
+import { castSkill, endCurrentSkill, settleCastBuffs, takeJump } from "./casting.ts";
 import { dueBefore, IN_FRAME_RANK, ofCast, schedule, stepOf, unschedule } from "./schedule.ts";
 import { teammateAttack } from "./teammates.ts";
 
@@ -173,10 +173,12 @@ function advanceFrom(ctx: TimelineContext, state: TimelineState, frame: number):
         break;
       }
       case "scheduled":
-        st = runScheduled(ctx, unschedule(st, due.item), due.item);
+        st = settleCastBuffs(runScheduled(ctx, unschedule(st, due.item), due.item), at);
         break;
     }
   }
+  // A trigger may have cut a cast short since (actions.ts): the buffs it used up wait for nothing more.
+  st = settleCastBuffs(st, frame);
   return {
     ...st,
     sp: spAt(st, frame),
