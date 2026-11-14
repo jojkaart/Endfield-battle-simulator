@@ -32,3 +32,21 @@ Estella, Tower 4) fits within ~1% for Arcane and Si. Estella: 6 logs
 Akekuri: 3 (012a ×0.85–0.89 constant, being diagnosed; 458b fits; 5d1a
 multi-target). No log has Estella with Akekuri; Akekuri's five logs with
 Si fail the level-90 rule (she or Wulfgard at 80).
+
+## Diagnoses (2026-11-14)
+
+- **Si (sonnet, 21 logs):** her Artful Intent burst is exactly rate × the
+  sum of every logged hit in its window (0.13 at P0, 0.20 from P1; within
+  0.5% in ~24 of 38 windows) but the log check can't value it yet (42
+  hits, ~13M): being implemented. Teammates' enemy debuffs counted ×4
+  where the logs show one (Arcane's Solemn Phalanx will_susc / will_burst
+  in 7b54 and 6339, Ardelia's weapon in 4e36, Xaihi's crystal Amp in
+  c3c7): being fixed. Log-wide offsets in 0c14 and 9555 (known).
+- **Arcane (sonnet):** most of her mismatches are multi-target logs (the
+  engine has one enemy); a7a7's INT finisher lasers ×1.65 (INT only, not
+  the owner's WILL build); the weapon-debuff timing above.
+- **Estella, Akekuri (haiku):** her Physical Susceptibility value right
+  (0.15), a later window missed in 4e5e; all 12 logged combos with a
+  Shatter (test 11 unseen); Akekuri's Link and SP not in the logs; 012a
+  ×0.85–0.89 constant (being checked). Estella low in the recent logs:
+  being diagnosed.
