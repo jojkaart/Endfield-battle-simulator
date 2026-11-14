@@ -8,12 +8,15 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
 
 ## Next steps
 
-- **First (2026-11-15):** simulate Ink Melt (EndfieldHub's top team)
+- **First (2026-11-15):** planning from the payoffs, phase 3 (journal
+  2026-11-15, design.md "Payoffs and chains"): chains as macro actions in
+  the search, scheduled skeletons as several guides, a setup-aware value;
+  ask the owner whether Arcane's accessories are the WILL version (the
+  example plays her INT: team page); simulate Ink Melt (EndfieldHub's top team)
   next to the owner's team under the same assumptions; the buff timing
   report's leads (`efsim zmdlogs timing`, done 2026-11-15; open-problems
   "Buff timing leads": Yvonne's MI Security on unlogged crits in 5082,
-  Si's hitless ultimate in 9c0b, Hot Work on Combustion ticks); dominance pruning in the search (asked about by the
-  owner); the loop's long openers and a 2-round loop; in-game tests 106
+  Si's hitless ultimate in 9c0b, Hot Work on Combustion ticks); the loop's long openers and a 2-round loop; in-game tests 106
   (Yinglung's Edge) and 107 (Si's Amp across ultimates).
 
 0. **Engine accuracy first** (the owner, 2026-10-26: above the search's

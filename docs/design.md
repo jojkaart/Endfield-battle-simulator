@@ -1165,6 +1165,254 @@ at its probed price instead of as recharge time: the owner's team's
 rounds kept casting ultimates on energy the opener left (Si's at 0 of a
 round, short 72 of 80 on the second play).
 
+### Payoffs and chains
+
+`efsim payoffs <scenario>` (engine `payoffs`, payoffs.ts; owner, 2026-11-15:
+plan from the payoffs, the buffs and debuffs that maximise each action and
+the rotations that set them up; good teams' combos overlap). The forward
+beam keeps the best N states per step, so setups that pay off 10–20 s later
+look worse meanwhile and fall out (Ink Melt: beams 12/24/48 gave 3.50 /
+3.50 / 4.41M). The payoff table is phase 1 of planning backward from the
+payoffs; phase 2 prunes the forward search with it (below, *Pruning the
+search*); phase 3 feeds the backward-built setups into the search (journal,
+roadmap). Every number is the engine's: **probes** on the stepping API
+(runStep, observe), never kit semantics re-derived by hand, so a kit change
+moves the table with it. A planning aid, never part of a fight's result.
+
+*Steps* (`planSteps`): each operator's battle skills, combos and ultimates
+(not follow-ups), and the controlled operator's basic chain from the attack
+input (its first available chain head, or what a buff maps the input to:
+Laevatain's enhanced attacks in Twilight) to its Final Strike, taken as one
+step. They're measured in a planning fight (`planContext`): the scenario's
+team and enemy, every ultimate charged, no enemy actions.
+
+*Probes* (`probeStep`, `observe`): a step cast at its earliest from a
+state, against the same fight without it, watched for 20 s. Buffs, combo
+windows, enemy statuses and pieces are sampled every 8 frames and compared
+by **counts** (instances of each buff, openings of each window, enemy
+events by what happened), not by frames: an ultimate's time stop moves
+everything else in its fight later, so the same buff from something else
+sits at another frame with it than without it (comparing by frames made
+every ultimate "open" every window). What a probe records: damage (all
+hits, its operator's own, reactions), its cast's first and last hit, the
+buffs it created (owner, target, offset, duration, layers, stack group,
+modifiers), enemy events (inflictions, reactions, consumptions, Shatter,
+physical and control statuses), the windows it opened (whose, when), SP
+and energy against the fight without it, its cost and busy frames, and
+the **pieces** it achieves (below).
+
+*Situations*: none; Staggered; each element the team inflicts at one
+stack; Link when the team makes it; the step's operator's kit stacks at
+their maximum (Laevatain's Melting Flame: plain data, so a trigger on
+reaching it doesn't fire). A step that can't be cast from the start gets a
+**prefix**: an opener whose probe opened its window, two steps from the
+start (a reaction: an infliction, then another element), one or two of its
+operator's own steps (Si's strokes after her battle skill), each allowed
+to wait 20 s for availability; failing those, a combo is probed in a window
+forced open (Akekuri's, opened by a Stagger) and a gated skill with the
+buffs its `available` condition reads put on through the engine (`addBuff`:
+Arcane's Gloompurge Arcana, which needs two Final Strikes inside her
+array). Both are marked in the table and listed as unreachable.
+
+*Pieces and ceilings.* A piece is what the team can have on when a payoff
+lands: a buff instance as the engine created it (with modifiers, Link, an
+input mapping, or a buff some skill's `available` reads: Twilight), a
+reaction status (Corrosion, Solidification, Combustion…), a physical
+status (Breach), Vulnerable stacks, Link stacks. Each damaging step's
+**ceiling** is its `dealt` damage (its own kit hits plus the reaction hits
+it adds) under every piece the team achieves (`withPieces`: re-timed to the
+cast; statuses old enough to be at full strength, Corrosion's shred ramps),
+in the best of the exclusive situations (no infliction, each element at 1
+and 4 stacks, each with and without Stagger, each with and without its own
+stacks full), with and without the gating buffs (Twilight shuts
+Laevatain's plain battle skill). Conflicts the engine knows are left to it:
+one infliction at a time (the situations), a stack group's strongest
+acting (buffs.ts reads the instances), element, skill-type and Staggered
+filters, build-fixed modes (Arcane's INT / WILL, Laevatain in slot 1:
+the build). Pieces that lower the ceiling are left out one at a time
+(`against`: a status the cast consumes, Twilight); each kept piece's
+**worth** is what the ceiling loses without it. Each piece lists its
+**achievers** (step, situation, cost) with the **lead**: how long before
+the payoff's start the achiever may start for the piece to be on for all
+its hits ([offset − first hit, offset + duration − last hit]).
+
+*Window payoffs*: reaction statuses (their damage in the probe that formed
+them, and who forms them) and recording buffs (Si's Artful Intent: rate and
+window; the burst lands as the recording step's own hits, so the setup
+efficiency marks it).
+
+*Chains* (`findChains`): depth-first from the fight's start, each step cast
+at its earliest in the engine after the ones before, kept when it's
+**tied** to them: a combo cast within a window an earlier step of the
+chain opened (`opens`), or a step that after them opens a window or causes
+a reaction, consumption, Shatter, physical or control status (its own
+operator's: a time stop reorders others' events) that it doesn't from the
+fight's start (`sets up`, starting within 3 s). Each step once a chain;
+chains of the same steps starting at the same frames are one (the order of
+simultaneous casts). Every chain of two steps or more is kept (the owner:
+rank is for display only, `--top` limits printing, never the data). For
+each: damage (within 20 s of its last start, against the fight without it),
+span (first start to the last moment one of its operators is busy with it),
+SP and energy cost, damage per second of span and per SP. For the best ten
+per second (`measure`): each step's **slack** (how much later it may start,
+half seconds up to 6 s, with every later step still tied and the damage
+within 1%), and a **merge**: setups cast before it (each other step, kept
+when chain and setup deal more together than apart: synergy; greedy, up to
+three) and **fillers** fitted into its idle time (each other step after
+each chain step, kept when no chain step moves and the damage rises: an
+idle operator, spare SP, a gap in a cooldown; up to three). Low-value steps
+stay in the data: they matter when they fill resources that would go
+unused (the owner, 2026-11-15).
+
+*Setup efficiency* (`setupEfficiency`): a rotation's casts, each one's own
+kit hits (its skill's hits until the operator's next cast of it) against
+its ceiling's `bestCast`, and which chains it plays (each step at or after
+the one before and within a combo window and 2 s of it, simultaneous casts
+in any order).
+
+What's exact and what isn't: probes, ties, chains' damage, slack and
+merges are the engine's own numbers for the planning fight (full energy,
+the fight's start, no enemy actions, teammates attacking on their own as
+the scenario says). Ceilings are heuristic upper bounds: the best of the
+situations and pieces probes found, not a proof. Known shortfalls, flagged
+by efficiencies above 100%: payoffs that grow with what comes after them
+(Si's burst records the team's damage in its window; Arcane's INT combo
+explosion is set off by her battle skill), states no probe reaches (a
+stackAtLeast buff, Link above what probes saw, reaction levels above what
+one-stack situations give), and buffs whose value was fixed at another
+applier's levels. JSON (`--json`): the whole report (steps, situations,
+every probe, ceilings with bundles and achievers, chains with slack and
+merges, the efficiency) for phase 3.
+
+Measured (2026-11-15; full energy): the owner's team (examples/
+estella-si-akekuri-arcane: 1,489 probes, 3.1 min; its WILL variant 1,799)
+and Ink Melt (1,020 probes, 42 s); laevatain-solo 82 probes, 0.4 s. The
+owner's chain — Akekuri's battle skill (Heat) → Arcane's combo (opens;
+adds Heat) → Estella's battle skill (Cryo: Solidification of 2, sets up
+both combo windows) → Estella's and Si's combos (opens) — is found,
+315,557 in 2.5 s (124,562 a second; 3rd of 123 chains), merged with Si's,
+Akekuri's and Arcane's ultimates as setups and Si's battle skill and
+Estella's ultimate as fillers to 878,706. Best per second: the same with
+Si's battle skill (Cryo) in Estella's place, 341,717 in 2.3 s (146,450 a
+second). **But only with Arcane in WILL mode**: the example's builds (full
+artifice assumed) put her INT just above WILL (484.4 against 473.5 at the
+fight's start; the owner's in-game copy of a log's loadout was 472 / 473,
+WILL), and in INT mode her combo adds no infliction and opens only on a
+Nature reaction or two stacks, so the chain doesn't exist there
+(tests/slow/payoffs-chains.test.ts checks a WILL variant, her accessories'
+WILL version). The example's rotation (INT) reaches 40–77% of its big
+casts' ceilings and plays none of the five-step chains (Arcane's battle
+skill → combo 4 times). Ink Melt's rotation: Laevatain's Twilight battle
+skill 75%, Si's combos 96 / 88 / 63%, Laevatain's battle skills 59–77%;
+one chain played twice (Si's battle skill → Wulfgard's combo); its best
+chain (Si's battle skill → Laevatain's chain → Wulfgard's combo → Si's
+combo, 236,234 in 4.4 s) merges with Laevatain's, Si's and Wulfgard's
+ultimates as setups and Wulfgard's battle skill and Ardelia's ultimate as
+fillers to 719,456.
+
+*Phase 3 (planned): backward-built setups in the search.* What phases 1
+and 2 showed: the payoffs that matter come in short chains (2–5 s) tied by
+combo windows and reactions, and their worth is mostly in what's around
+them (the owner's chain alone 315,557; with three ultimates as setups and
+two fillers 878,706); the forward beam drops these because a chain's first
+steps deal little (Akekuri's battle skill 9,133). The bound is far too
+loose to prune (below) and dominance fires a few times a search, so the
+gain has to come from *what the beam can see*, not from cutting it. Three
+parts, in order: (1) **chains as macro actions**: at a decision point
+where a chain's first step is among the choices, the whole chain (its
+steps at their earliest, as `playChain` plays them) is one more choice,
+its child in the bucket of its last step; the beam then ranks the state
+after the payoff, not after the setup, and the rotation stays a plain list
+of actions that `simulate` replays. Chains are probed from the planning
+fight's start, so a macro is offered only where it's legal and still tied
+(the window opens) from the node's own state. (2) **skeletons as guides**:
+a scheduler places the merged chains (setups, chain, fillers) on the
+fight's timeline by value per resource (SP at 8 a second plus what steps
+give back, each ultimate's cooldown and energy, combo cooldowns), repairs
+each skeleton with the loop's moved-later replay (`shifts`), and hands the
+K best to the search as guides (`SearchHooks.guide` for a list, each
+keeping a place in the beam) and as the incumbent for the bound. (3) **a
+setup-aware value**: a state's score adds, for each piece it holds (a
+bundle's buff or status still on, a combo window open) and each ready
+payoff whose ceiling bundle has it within its lead, the piece's worth ×
+the value weight: the probed counterpart of the resource value for what
+builds up outside the resources. Each part is measured as the others were
+(beams w/2, w, 2w on the owner's examples and Ink Melt; a part that
+doesn't move results both ways stays off).
+
+### Pruning the search
+
+Two prunings on the beam search (`SearchOptions.dominance`, `.bound`;
+`efsim search --prune` turns both on; off by default).
+
+**Dominance** (`dominatesState`, stateKeyer `amounts`): of two states of a
+layer with the same key but for SP, returned SP and ultimate energy, drop
+one if the other has at least as much committed damage, SP and every
+operator's energy and no more returned SP. Exact for the fight: nothing
+reads SP or energy but the gates (enough SP, enough energy) and the energy
+a spend gives (natural SP: cost less returned SP); every gain is a capped
+sum (min(cap, x + g) keeps the order), SP events carry the nominal amount,
+`clearEnergy` sets both to 0; so every rotation legal from the dominated
+state is legal from the other at the same frames and deals the same from
+there (tests/payoffs.test.ts plays a found rotation from a state with 100
+SP more, at the poorer state's frames). Caveats: the search offers only
+the soonest actions, so the richer state's choices can differ from the
+poorer's (an SP-gated skill becomes the soonest); a state on the guide's
+line is never dropped (the wider beam's guarantee); one battle only (no
+random outcomes). It fires rarely: paths that differ in SP nearly always
+differ in what's scheduled, cast or held too (none in laevatain-solo at
+beam 24 or si-laevatain at 12; 0–5 states a beam below).
+
+**Branch and bound** (`upperBound`, `remainingBound`, bound.ts): drop a
+child whose committed damage plus a bound on what it can still add is
+below the most committed damage found so far (a rotation that stops acting
+deals exactly its committed damage, so that's reachable). The bound is an
+LP relaxation: every step at most its ceiling per cast (the largest of
+`dealt` and every hit's difference, bare or under the bundle), and only
+casts that start before the fight's end less the step's first effect;
+battle skills and chains hold their operator for their busy frames
+(operators in parallel, a fractional knapsack each); combos and ultimates
+count by cooldown only (they may cut into other actions); team SP is what
+the state has plus 8 a second, each cast using its cost less the most SP
+its probes gave back; a Lagrangian over SP (min over λ of λ × SP plus the
+knapsacks at value − λ × net SP; any λ ≥ 0 bounds the relaxation); × (1 +
+the highest recording rate, Si's Artful Intent). Admissible only as far as
+the ceilings are (above): states on the guide's line are never cut, and
+those under the bound while the guide's own damage would beat the best so
+far are counted (`boundMisses`: none measured). Ultimate energy isn't
+bounded, only cooldowns. Tests: committed + bound ≥ what the rotation
+reaches from there at every state of beam 48's and beam 6's rotations
+(laevatain-solo, 15 s); the search finds the same or more with it at the
+same width.
+
+**The bound is too loose to prune.** Along Ink Melt's example rotation it
+is 2.7–3.8× the damage actually still to come (10.2M at the start against
+3.7M; 2.1M at 49.3 s against 0.76M), while the states a layer keeps are
+within a few percent of each other: it cuts only children in the last
+seconds, 0.0–0.4% of them. Tightening it would need bounds the probes
+can't give admissibly (ultimate energy from SP and grants, how often a
+battle skill's ceiling bundle can really be on), so it stays as it is.
+
+Measured (2026-11-15, 60 s, guided beams 12 / 24 / 48 as `efsim search`
+runs them, two jobs at a time on the 4-core machine; score, states
+expanded and seconds per beam, before → with dominance and the bound; the
+bound's table is the payoff probes without chains; measured before the
+bound counted only casts that start in time to do something, which lowers
+it by up to 5% early in the fight and most in its last seconds):
+
+| example | beam 12 | beam 24 | beam 48 | dominated / bounded (12, 24, 48) |
+|---|---|---|---|---|
+| owner's team, full energy | 3,232,373: 2,871 / 161 s → 2,871 / 163 s | 3,273,371: 5,749 / 322 s → 5,729 / 311 s | 3,286,029: 11,709 / 715 s → 11,663 / 690 s | 0, 2, 2 / 0, 18, 45 (table 155 s) |
+| owner's team, zero energy | 2,797,948: 2,581 / 122 s → 2,578 / 126 s | 2,808,913: 5,203 / 252 s → 5,173 / 249 s | 2,973,678: 10,925 / 564 s → 10,921 / 488 s | 6, 12, 2 / 1, 14, 4 (table 147 s) |
+| Ink Melt, full energy | 3,496,392: 2,391 / 136 s → 2,391 / 147 s | 3,504,192: 5,057 / 298 s → 5,052 / 296 s | 4,411,886: 10,438 / 661 s → 10,427 / 636 s | 0, 0, 5 / 0, 5, 11 (table 14 s) |
+| Ink Melt, zero energy | 1,796,863: 2,086 / 96 s → 2,074 / 105 s | 2,993,557: 5,442 / 231 s → 5,418 / 259 s | 3,841,514: 9,693 / 524 s → 9,549 / 523 s | 0, 0, 0 / 15, 25, 42 (table 16 s) |
+
+The found rotations and totals are the same with and without pruning at
+every beam; the states saved (≤ 0.5%) are within the machine's timing
+noise, and the bound's table costs 14–16 s (Ink Melt) to 155 s (the
+owner's team) on top. Dominance and the bound stay off by default; what
+the beam needs is to see setups, not to cut more (phase 3, above).
+
 ### Time
 
 Integer frames at **30 FPS**, the game's own timeline unit (verified across

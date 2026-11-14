@@ -21,6 +21,25 @@ energy, an 81.1 s loop at 40,677 DPS after 255.7 s (beam 8: 84.3 s at
 41,862 after 941.9 s). Each replays with `efsim simulate`:
 [rotations/](rotations/) (the opener and 6 plays).
 
+## Payoffs and chains (2026-11-15)
+
+`efsim payoffs` (docs/design.md "Payoffs and chains") finds the owner's
+basic rotation — Akekuri's battle skill (Heat) → Arcane's combo (adds
+Heat) → Estella's battle skill (Cryo: Solidification) → Estella's and Si's
+combos — at 315,557 in 2.5 s, and the same with Si's battle skill as the
+Cryo at 341,717 in 2.3 s (the best per second), **but only with Arcane in
+WILL mode**. The example's builds put her INT just above WILL (484.4
+against 473.5 at the fight's start: the Eternal Xiranite accessories
+`edc_03`), so the engine plays her INT: her combo then adds no infliction
+and opens only on a Nature reaction or two stacks of another element. This page calls
+the owner's build WILL (and the owner's in-game copy of 0206's loadout was
+Intellect 472, Will 473, WILL mode: open-problems "Arcane's Array Arcana
+on a knife edge"); the example's assumed full artifice puts INT 11 above
+WILL. To confirm with the owner which pieces
+and artifice levels she has; the chain test uses the accessories' WILL
+version (`edc_04`: INT 430, WILL 765). The example's rotation (INT) reaches
+40–77% of its big casts' ceilings and plays none of the five-step chains.
+
 ## Where the damage comes from (sonnet, 2026-11-14)
 
 Si 59.8%, Estella 25.6%, Arcane 9.5%, Akekuri 5.1%. Si's combo 25.6% and
