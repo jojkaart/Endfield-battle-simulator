@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { FPS, critTriggers, randomOutcomes, searchBeams, searchLoop, simulate, simulateDistribution, simulateRuns, type DamageDistribution, type RotationSpread, type TimelineResult, type Build, type CritMode, type Element, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { FPS, critTriggers, randomOutcomes, searchBeams, searchLoop, simulate, simulateDistribution, simulateRuns, type DamageDistribution, type EnergyLost, type RotationSpread, type TimelineResult, type Build, type CritMode, type Element, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
 import { readBuild } from "./commands.ts";
 import { num, table } from "./format.ts";
 
@@ -260,9 +260,14 @@ export function loopCommand(data: GameData, scenario: TimelineScenario, options:
   const n = (x: number) => num(Math.round(x), 0);
   const name = (op: string) => data.operators[op]?.name ?? op;
   const bar = (op: string) => r.ultimates?.find((u) => u.operator === op)?.bar;
-  const lostText = (lost: Readonly<Record<string, number>>) =>
-    Object.entries(lost)
-      .map(([op, v]) => `${name(op)} ${n(v)}${bar(op) ? ` (${((v / (bar(op) as number)) * 100).toFixed(0)}% of a bar)` : ""}`)
+  // Per operator: the energy lost while its ultimate was held (share of its bar), and what else was lost to a full bar.
+  const lostText = (e: EnergyLost) =>
+    Object.entries(e.lost)
+      .map(([op, all]) => {
+        const held = e.held[op] ?? 0;
+        const share = bar(op) ? ` (${((held / (bar(op) as number)) * 100).toFixed(0)}% of a bar)` : "";
+        return `${name(op)} ${n(held)}${share}${all - held >= 0.5 ? ` + ${n(all - held)} otherwise` : ""}`;
+      })
       .join(", ");
   const r = searchLoop(data, rest, {
     beamWidth: options.beam,
@@ -280,7 +285,7 @@ export function loopCommand(data: GameData, scenario: TimelineScenario, options:
     ...(r.ultimates ? [`Each round runs from a moment every ultimate is ready (${r.ultimates.map((u) => name(u.operator)).join(", ")}) to the first step after which every one is ready again, each cast at least once.`] : []),
     "",
     table(
-      ["round", "starts", "length", "damage", "DPS", "plan", "ultimate energy lost at full bars"],
+      ["round", "starts", "length", "damage", "DPS", "plan", "ultimate energy lost while held"],
       r.repetitions.map((c, i) => [String(i + 1), s(c.start), s(c.frames), n(c.damage), n(c.damage / (c.frames / FPS)), c.replayed ? "the last, replayed" : c.shifted ? `the last, moved ${s(c.shifted)} later` : "new", lostText(c.energyLost) || "none"]),
       ["r", "r", "r", "r", "r", "l", "l"],
     ),
@@ -291,7 +296,7 @@ export function loopCommand(data: GameData, scenario: TimelineScenario, options:
     lines.push(
       `Loop: rounds ${l.first + 1}–${l.first + l.plays} play the same actions at the same times; ${s(l.frames)}, ${n(l.dps)} DPS over its ${l.plays} plays, their damage per second ${(l.damageApart * 100).toFixed(1)}% apart (${l.agrees ? "within" : "beyond"} ${(r.tolerance * 100).toFixed(0)}%${l.agrees ? "" : ": the enemy's Stagger windows fall in different plays"}).`,
       "",
-      `Ultimate energy lost at full bars, a play: ${lostText(l.energyLost) || "none"}.`,
+      `Ultimate energy lost at full bars while held, a play (+ lost otherwise to full bars): ${lostText(l.energyLost) || "none"}.`,
       "",
       `Opener (${s(l.openerFrames)}, ${n(l.openerDamage)} damage):`,
       ...formatActions(data, l.opener),

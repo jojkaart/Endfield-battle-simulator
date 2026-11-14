@@ -183,6 +183,9 @@ describe("synchronized burst rounds (--sync)", () => {
     for (const c of r.repetitions) expect(c.damage).toBe(sim.hits.filter((h) => h.frame >= c.start && h.frame < c.start + c.frames).reduce((a, h) => a + h.exact, 0));
     const lost = energyLostIn(data, open, r.rotation, [...r.repetitions.map((c) => c.start), r.frames]);
     expect(r.repetitions.map((c) => c.energyLost)).toEqual(lost);
+    // Held: lost while her ultimate was ready (a part of all that's lost); here most of it, at the round's start before she casts it.
+    for (const c of r.repetitions) for (const [op, held] of Object.entries(c.energyLost.held)) expect(held).toBeLessThanOrEqual((c.energyLost.lost[op] ?? 0) + 1e-9);
+    expect(r.repetitions.some((c) => (c.energyLost.held[LAEV] ?? 0) > 0)).toBe(true);
   });
 
   it("finds a loop for Laevatain alone, every play the same actions and the same energy lost", () => {
@@ -194,17 +197,19 @@ describe("synchronized burst rounds (--sync)", () => {
     const plays = r.repetitions.slice(l.first);
     for (const c of plays) {
       expect(c.actions).toEqual(l.actions);
-      expect(Object.keys(c.energyLost)).toEqual(Object.keys(plays[0]?.energyLost ?? {}));
-      for (const [op, v] of Object.entries(c.energyLost)) expect(v).toBeCloseTo(plays[0]?.energyLost[op] ?? 0, 6);
+      for (const part of ["lost", "held"] as const) {
+        expect(Object.keys(c.energyLost[part])).toEqual(Object.keys(plays[0]?.energyLost[part] ?? {}));
+        for (const [op, v] of Object.entries(c.energyLost[part])) expect(v).toBeCloseTo(plays[0]?.energyLost[part][op] ?? 0, 6);
+      }
     }
-    expect(l.energyLost[LAEV]).toBeCloseTo(plays[0]?.energyLost[LAEV] ?? 0, 6);
+    expect(l.energyLost.held[LAEV]).toBeCloseTo(plays[0]?.energyLost.held[LAEV] ?? 0, 6);
     expect([...l.opener, ...plays.flatMap((c) => c.actions.map((a) => ({ ...a, at: (a.at as number) + c.start })))]).toEqual(r.rotation);
   });
 
   it("efsim search --loop --sync says how rounds are cut and what holding cost", () => {
     const text = loopCommand(data, example, { beam: 6, loops: 5, sync: true });
     expect(text).toMatch(/Each round runs from a moment every ultimate is ready \(Laevatain\)/);
-    expect(text).toMatch(/Ultimate energy lost at full bars, a play: Laevatain \d+/);
+    expect(text).toMatch(/Ultimate energy lost at full bars while held, a play \(\+ lost otherwise to full bars\): Laevatain \d+/);
     expect(text).toContain(`${Math.round(r.total).toLocaleString("en-US")} damage in ${(r.frames / FPS).toFixed(1)} s`);
   });
 });

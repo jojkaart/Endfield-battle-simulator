@@ -86,8 +86,8 @@ export interface Repetition {
   readonly replayed: boolean;
   /** When it's the round before it played with late actions moved later (LoopOptions.shifts): by how many frames it ended later. */
   readonly shifted?: number;
-  /** Per operator: ultimate energy lost to a full bar in its frames (TimelineState.energyOverflow; operators that lost none left out). */
-  readonly energyLost: Readonly<Record<string, number>>;
+  /** Ultimate energy lost to full bars in its frames, and the part lost while held (EnergyLost). */
+  readonly energyLost: EnergyLost;
 }
 
 /** The opener and the loop (searchLoop). */
@@ -119,8 +119,8 @@ export interface LoopResult {
     readonly damageApart: number;
     /** Whether the plays' damage per second agree within the tolerance. */
     readonly agrees: boolean;
-    /** Per operator: ultimate energy lost to a full bar, a play on average (Repetition.energyLost). */
-    readonly energyLost: Readonly<Record<string, number>>;
+    /** Ultimate energy lost to full bars, a play on average (Repetition.energyLost). */
+    readonly energyLost: EnergyLost;
   };
   /**
    * The opener and every repetition, `at` absolute (replays with simulate), to the start of the repetition after the
@@ -501,7 +501,7 @@ export function searchLoop(data: GameData, scenario: Omit<TimelineScenario, "rot
   const sim = simulate(data, { ...scenario, durationFrames: end, rotation });
   const landed = (from: number, to: number) => sim.hits.filter((h) => h.frame >= from && h.frame < to).reduce((a, h) => a + h.exact, 0);
   const lost = energyLostIn(data, scenario, rotation, [...rounds.map((c) => c.start), end]);
-  const repetitions: Repetition[] = rounds.map((c, i) => ({ ...c, damage: landed(c.start, c.start + c.frames), energyLost: lost[i] ?? {} }));
+  const repetitions: Repetition[] = rounds.map((c, i) => ({ ...c, damage: landed(c.start, c.start + c.frames), energyLost: lost[i] ?? { lost: {}, held: {} } }));
   if (streak < repeats) return result(rotation, end, repetitions, { ...cut, ...(reason ? { reason } : {}) });
   // The loop's plays: the last run of replays and the round they replay.
   let first = repetitions.length - 1;
@@ -510,8 +510,6 @@ export function searchLoop(data: GameData, scenario: Omit<TimelineScenario, "rot
   const c0 = counted[0] as Repetition;
   const loopFrames = counted.reduce((a, c) => a + c.frames, 0);
   const perPlay = counted.map((c) => c.damage / c.frames);
-  const energyLost: Record<string, number> = {};
-  for (const c of counted) for (const [op, v] of Object.entries(c.energyLost)) energyLost[op] = (energyLost[op] ?? 0) + v / counted.length;
   return result(rotation, end, repetitions, {
     ...cut,
     ...(reason ? { reason } : {}),
@@ -527,30 +525,63 @@ export function searchLoop(data: GameData, scenario: Omit<TimelineScenario, "rot
       dps: counted.reduce((a, c) => a + c.damage, 0) / (loopFrames / FPS),
       damageApart: apart(perPlay),
       agrees: apart(perPlay) <= tolerance,
-      energyLost,
+      energyLost: meanLost(counted.map((c) => c.energyLost)),
     },
   });
 }
 
+/** Ultimate energy lost to full bars (TimelineState.energyOverflow), per operator (those that lost none left out). */
+export interface EnergyLost {
+  /** All of it. */
+  readonly lost: Readonly<Record<string, number>>;
+  /**
+   * The part lost while one of the operator's lead ultimates was ready (leadUltimates): held, not cast. The rest is
+   * lost to a grant that crosses the cap, or within a sequence (Arcane's Gloompurge Arcana: its full grant on a bar
+   * not yet empty).
+   */
+  readonly held: Readonly<Record<string, number>>;
+}
+
 /**
- * Per stretch between consecutive frames of `bounds`: each operator's ultimate energy lost to a full bar in it
- * (TimelineState.energyOverflow), the rotation replayed with the actions before each bound applied (operators that
- * lost none left out).
+ * Per stretch between consecutive frames of `bounds`: the ultimate energy each operator lost to a full bar in it
+ * (EnergyLost), the rotation replayed with the actions before each bound in the stretch before it. A step's loss counts
+ * as held when the operator's lead ultimate was ready at the state before it (stepped action by action: a loss within
+ * a step that started below the cap isn't held).
  */
-export function energyLostIn(data: GameData, scenario: Omit<TimelineScenario, "rotation">, rotation: readonly RotationAction[], bounds: readonly number[]): Record<string, number>[] {
+export function energyLostIn(data: GameData, scenario: Omit<TimelineScenario, "rotation">, rotation: readonly RotationAction[], bounds: readonly number[]): EnergyLost[] {
   const ctx = createContext(data, { ...scenario, durationFrames: Math.max(0, ...bounds), rotation: [] });
+  const leads = leadUltimates(ctx);
+  const out = bounds.slice(1).map(() => ({ lost: {} as Record<string, number>, held: {} as Record<string, number> }));
   let s = init(ctx);
+  let k = -1; // the stretch now: before bounds[0], none
+  const step = (next: TimelineState) => {
+    const into = out[k];
+    if (into) {
+      for (const [op, v] of Object.entries(next.energyOverflow)) {
+        const d = v - (s.energyOverflow[op] ?? 0);
+        if (d <= 1e-9) continue;
+        into.lost[op] = (into.lost[op] ?? 0) + d;
+        if ((leads.get(op) ?? []).some((skill) => ultimateUnready(ctx, s, op, skill) === undefined)) into.held[op] = (into.held[op] ?? 0) + d;
+      }
+    }
+    s = next;
+  };
   let i = 0;
-  const at: TimelineState[] = [];
   for (const b of bounds) {
-    while (i < rotation.length && ((rotation[i] as RotationAction).at as number) < b) s = apply(ctx, s, rotation[i++] as RotationAction);
-    s = advance(ctx, s, Math.max(s.frame, b));
-    at.push(s);
+    while (i < rotation.length && ((rotation[i] as RotationAction).at as number) < b) step(apply(ctx, s, rotation[i++] as RotationAction));
+    step(advance(ctx, s, Math.max(s.frame, b)));
+    k++;
   }
-  return at.slice(1).map((to, k) => {
-    const from = at[k] as TimelineState;
-    const out: Record<string, number> = {};
-    for (const [op, v] of Object.entries(to.energyOverflow)) if (v - (from.energyOverflow[op] ?? 0) > 1e-9) out[op] = v - (from.energyOverflow[op] ?? 0);
-    return out;
-  });
+  return out;
+}
+
+/** The mean of the plays' EnergyLost, per operator. */
+function meanLost(plays: readonly EnergyLost[]): EnergyLost {
+  const lost: Record<string, number> = {};
+  const held: Record<string, number> = {};
+  for (const p of plays) {
+    for (const [op, v] of Object.entries(p.lost)) lost[op] = (lost[op] ?? 0) + v / plays.length;
+    for (const [op, v] of Object.entries(p.held)) held[op] = (held[op] ?? 0) + v / plays.length;
+  }
+  return { lost, held };
 }
