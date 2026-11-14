@@ -218,7 +218,7 @@ are at 30 FPS.
 - B8. `stackingKey` joins buffs of different files into one (all foods share one key: one food per operator). [DATA]
 - B9. A team buff with recipients keeps layers per recipient set.
 - B10. Duration and values are fixed at application, at the applier's levels and situation; duration 0 means not applied; no duration means until ended. [DATA]
-- B11. Buffs run on the world clock: others' time stops lengthen them. [ASSUMED]
+- B11. Buffs run on the world clock: others' time stops lengthen them. [ASSUMED]; Si's ultimate Amp across ultimates [SETTLED] by db87's damage (the log's listing runs 0.5–2.5 s longer than the damage)
 - B12. `extendBuff` adds seconds to every layer of an active buff; `endBuff` ends all or the oldest layers. [DATA]
 - B13. `endsWithCast` buffs end when the owner's current skill ends or the owner starts another. [DATA]
 - B14. Targets: `self` (owner's hits), `team` (all members, or `recipients` judged at application), `enemy` (every team member's hits on it). [DATA]

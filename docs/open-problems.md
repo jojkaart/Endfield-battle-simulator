@@ -589,6 +589,74 @@ stat-panel warning added for it was removed.
 431.50) splitting if one check floors; 3f78's and e989's gaps ~1 s under
 18 s (no cut source in the data).
 
+## Buffs a cast consumes ended at its planned last hit: closed 2026-11-14
+
+**Shows:** Si's combo final lost Jade Vessel's next-combo DMG and
+Yinglung's Edge when it landed after the frame planned at the cast: 0eef
+(10 frames late, 179,405 against 379,860 logged), bdf2 (1 frame, ×1.456),
+9a80 (her combo stretched by her ultimate: 20 mismatches).
+
+**Settled:** a consumed buff (and Link) acts on every hit of its cast
+however late it lands; it ends the frame after the cast's last own hit has
+landed (casting.ts settleCastBuffs). The game's attached buff checks the
+cast's ID (buff_equipsuit_attrisuitup_02: CheckSkillCastId, 20 s). bdf2's
+final is now exact (287,297); 9a80 Si 20 → 14 mismatches; 0eef's final
+266,134 (the rest: its unlogged crit and Liino's stance ATK, "Liino's
+stance ATK ends early"). Free simulation too: another's stop inside the
+caster's own combo slow-down holds its hits more than the world.
+
+**Still possible:** the game's `finishWithNextSkillIfNotInherited` ending
+such a buff at the caster's next skill: 9a80's combo hits keep it across
+her ultimate (cast during the combo), so not for every next skill.
+
+## Buffs through stops: the log lists them longer than the damage says (Si's Amp, Ardelia's; 2026-11-14)
+
+**Shows (two sonnet diagnoses):** the log lists Si's ultimate Amp 0.5–2.5 s
+past the engine's end: db87 to 48.7–49.0 s (engine 45.7–46.6), 458b
+(ult 76514) to (96.7, 97.4] s (engine (95.6, 96.3]), 458b (ult 152238)
+(173.4, 174.1] (engine (173.2, 173.4]), 489c (ult 87091) past 108.6 s
+(engine (107.3, 108.0]). Ardelia in af7b: her weapon's Arts DMG Taken
+listed to 63.5 s (engine 56.9), her Susceptibility to 72.1 s (engine
+~69.9); 791: her funnel_0016 ATK listed to 62.9 s (engine 59.4).
+
+**Found (opus):** where the damage decides, it fits the engine's end, not
+the listing: db87 Arcane's 7 hits 47.3–48.8 s and Camille's 3 hits
+46.6–48.7 s fit without the Amp the log lists; 458b Wulfgard's 11 listed
+hits fit the engine 3, the log 0; 489c (ult 24447) Rossi's 15 hits
+42.6–58.7 s, where the engine has it and the log doesn't, fit the engine
+6, the log 0; af7b's Susceptibility 70.5–72.1 s fits the engine 12–15,
+the log 0–2. The hold itself is right in db87: the Amp's hits put its end
+between 45.7 and 46.6 s (Camille's ultimate hits at 44.7–45.6 s with it,
+at 46.6 s without; unheld it would end at 41.5 s), and the engine's 151
+frames of stops put it at 46.5 s. So team buffs are held by others'
+stops as the engine has it (B11), measured by damage in one log.
+
+**Ruled out:** a longer hold for team buffs (the damage); per-operator
+clocks for Si's Amp (the "Amp on Laevatain to 53.7 s" were her Combustion
+ticks, which keep the attacker side from their application; Si's and
+Laevatain's listings end at the same 49027 ms boundary);
+`useTimeDilationDt` as what tells buffs apart (false in 1436 of 1450
+BuffData files, Si's atk_buff_2 and funnel_0016's ATK alike); and in db87
+not even every slow-down holding for its whole length reaches the listing
+(47.2 s against 48.7).
+
+**Still possible:** af7b's Arts DMG Taken at 59.6–63.4 s fits the log
+(Liino 19 of 21 hits, Typhoeus 11 of 13), but the replay lacks Liino's
+logged ultimates at 59.9 and 64.5 s and makes Ardelia's ultimate four
+times (57.6–60.2 s), so its stops aren't the game's: recheck after the
+cast placement is fixed (logcasts.ts). 791's ATK at 59.2–62.7 s fits
+neither (0 / 0 / 10), and every Susceptibility she applies refreshes it
+(funnel_0016 int_susceptibility), so its listed end may be a refresh.
+Whether a combo slow-down holds buffs by its lost frames (engine) or its
+whole length: under a second each, no log separates it. Why the log lists
+a buff 0.5–2.5 s after it stopped acting: unknown (a ZMDLogs lag?). The
+enemy clock: db87's Combustion ticks are 1024–1025 ms apart with nothing
+between, and 90–180 ms further apart than the modelled holds across each
+stop (a clock ~2.5% slow against the log's, or holds a little longer).
+
+**Next check:** in-game test 105 (Si's Amp across three ultimates); af7b
+after the placement fix.
+
 ## Liino's volley doubles in 1d91
 
 **Shows:** 442 at 1990 ms, 886 (exactly 2×) at 13713 ms, later 985, 1152;
@@ -926,7 +994,19 @@ battle skill?), then c3c7's crystal Amp window.
   ultimate's 24, the one exception of 156 to the shared-event rule.
 - 1d91: Typhoeus's natural-triggered hits get Barrage Array's +0.10 in the
   engine, which the damage doesn't show (seen before the lance fix: recheck).
-- From the roadmap: bdf2's Si combo finisher ×1.456; Snowshine ×0.96
+- From the roadmap: Snowshine ×0.96
   (04d4), Liino ×1.031 (92b4) offsets; Zhuang Fangyi's Sunderblade count
   (d774); 3aa6's Stagger at 145.6 s; Xaihi's Amp timing (b6aa); Last
-  Rite's weapon buff (b6aa); Ember low by one factor.
+  Rite's weapon buff (b6aa); Ember low by one factor. (bdf2's Si combo
+  finisher ×1.456: closed 2026-11-14, see "Buffs a cast consumes".)
+- b7b3: Tangtang's waterspouts from 15927 ms are ×1.13 the log's in the
+  replay (11060 logged against 12495), as before 2026-11-14; it runs the
+  replay's total over and the time to kill 1.2% early (test bound 1.5%).
+- f879: the placement gives Laevatain's battle skill at 87.1 s the burn
+  ticks and explosion logged at 94.7–96.1 s (another cast's): they keep
+  its Link since 2026-11-14 (10 mismatches ×1.3). A placement fix
+  (logcasts.ts), not an engine one.
+- db87: Laevatain's Combustion ticks from 49.3 s lack Si's Amp in the log
+  (12325 against 16762 at 47.4 s); the engine keeps the Amp its snapshot
+  took at the forced Combustion at 45.7 s. A Combustion re-applied at
+  48.6 s (her combo) taking a new snapshot would fit; not checked.
