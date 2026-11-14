@@ -4,14 +4,15 @@
 
 import { EngineError } from "./errors.ts";
 import type { GameData } from "./model.ts";
-import { randomOutcomes, searchCritMode, searchRotation, type SearchOptions, type SearchResult } from "./search.ts";
-import { advance, apply, createContext, earliestStart, init, simulate, type RotationAction, type TimelineContext, type TimelineScenario, type TimelineState } from "./timeline.ts";
+import { randomOutcomes, searchCritMode, searchRotation, type SearchHooks, type SearchOptions, type SearchResult } from "./search.ts";
+import { advance, apply, createContext, earliestStart, init, simulate, skillAvailable, type RotationAction, type TimelineContext, type TimelineScenario, type TimelineState } from "./timeline.ts";
+import { skillCosts } from "./timeline/context.ts";
 import { SP } from "./timeline/rules.ts";
 import { maxEnergy } from "./timeline/resources.ts";
 import { FPS } from "./units.ts";
 
 export interface LoopOptions extends SearchOptions {
-  /** Length of the fight the opener is searched over, in frames (default the scenario's, at least LOOP_OPENER_FRAMES). */
+  /** Length of the fight the opener is searched over, in frames (default the scenario's, at least LOOP_OPENER_FRAMES; with `sync`, LOOP_SYNC_MAX_FRAMES and 10 s). */
   readonly horizonFrames?: number;
   /** Replays of the loop, after its first play, that make it a loop (default 3: it's played 4 times). */
   readonly repeats?: number;
@@ -28,6 +29,13 @@ export interface LoopOptions extends SearchOptions {
   readonly closingMargin?: number;
   /** Whether a round that can't be replayed exactly is also offered with its late actions moved later (default true). */
   readonly shifts?: boolean;
+  /**
+   * Synchronized burst rounds (2026-11-14): each round runs from a moment every operator's ultimate is ready to the
+   * first step after which every one is ready again, each cast at least once in between (leadUltimates,
+   * ultimatesUnready), instead of from one cast of the slowest ultimate to its next. The opener runs from the fight's
+   * start to the first such moment. Default false.
+   */
+  readonly sync?: boolean;
   /** Plays of the loop in the result's rotation (default repeats + 1; more are exact replays, checked). */
   readonly plays?: number;
   /** Called after each round (progress): where it starts, its length, whether it replayed the last, its closingScore and the best new plan's. */
@@ -38,6 +46,11 @@ export interface LoopOptions extends SearchOptions {
 export const LOOP_OPENER_FRAMES = 60 * FPS;
 /** The longest repetition looked for: 90 s (the owner's team: rounds of 42–59 s, Akekuri's ultimate back after 60–78 s). */
 export const LOOP_MAX_FRAMES = 90 * FPS;
+/**
+ * The longest synchronized round looked for (`sync`): 120 s. Every bar must refill after one cast each, and the team's
+ * energy comes mostly from the SP it spends: the owner's team from zero energy took 98 s for Si's (2026-11-14).
+ */
+export const LOOP_SYNC_MAX_FRAMES = 120 * FPS;
 /** How far past a repetition's longest end each round's search looks, so that resources aren't worth nothing near its end: 10 s. */
 const LOOKAHEAD_FRAMES = 10 * FPS;
 /** Rounds searched at most (the first ones still spend what the opener left over). */
@@ -58,24 +71,31 @@ const LOOP_CLOSING_CANDIDATES = 8;
 /** What a round's plan that leaves its operators' kit stacks different from where it started is scored at (closingScore): × 0.85 (a search setting). */
 export const STACK_MISMATCH = 0.85;
 
-/** One repetition: from a cast of the boundary ultimate to its next. */
+/** One repetition: from a cast of the boundary ultimate to its next (with `sync`: from a moment every ultimate is ready to the next). */
 export interface Repetition {
-  /** Where it starts (the boundary ultimate's cast), its length and the damage landed in its frames. */
+  /** Where it starts (the boundary ultimate's cast; with `sync`, the step after which every ultimate was ready), its length and the damage landed in its frames. */
   readonly start: number;
   readonly frames: number;
   readonly damage: number;
-  /** Its actions, `at` from its start (the first: the boundary ultimate at 0). */
+  /**
+   * Its actions, `at` from its start (the first: the boundary ultimate at 0; with `sync`, the last is the step after
+   * which every ultimate is ready again, at `frames`).
+   */
   readonly actions: readonly RotationAction[];
   /** Whether it's the round before it played again (exactly), rather than a newly searched plan. */
   readonly replayed: boolean;
   /** When it's the round before it played with late actions moved later (LoopOptions.shifts): by how many frames it ended later. */
   readonly shifted?: number;
+  /** Per operator: ultimate energy lost to a full bar in its frames (TimelineState.energyOverflow; operators that lost none left out). */
+  readonly energyLost: Readonly<Record<string, number>>;
 }
 
 /** The opener and the loop (searchLoop). */
 export interface LoopResult {
-  /** The ultimate whose casts start and end each repetition. */
+  /** The ultimate whose casts start and end each repetition (not with `sync`). */
   readonly boundary?: { readonly operator: string; readonly skill: string };
+  /** With `sync`: per operator, the ultimates whose readiness starts and ends each repetition (leadUltimates), and its full bar. */
+  readonly ultimates?: readonly { readonly operator: string; readonly skills: readonly string[]; readonly bar: number }[];
   /** Every repetition, in order: the rounds searched, then the loop's further plays (LoopOptions.plays). */
   readonly repetitions: readonly Repetition[];
   /**
@@ -99,6 +119,8 @@ export interface LoopResult {
     readonly damageApart: number;
     /** Whether the plays' damage per second agree within the tolerance. */
     readonly agrees: boolean;
+    /** Per operator: ultimate energy lost to a full bar, a play on average (Repetition.energyLost). */
+    readonly energyLost: Readonly<Record<string, number>>;
   };
   /**
    * The opener and every repetition, `at` absolute (replays with simulate), to the start of the repetition after the
@@ -108,8 +130,8 @@ export interface LoopResult {
   readonly frames: number;
   readonly total: number;
   readonly dps: number;
-  /** The opener search over the horizon. */
-  readonly opener: SearchResult;
+  /** The opener search over the horizon (with `sync`: to the first moment every ultimate is ready; none when they are at the start). */
+  readonly opener?: SearchResult;
   readonly horizonFrames: number;
   readonly repeats: number;
   readonly tolerance: number;
@@ -127,6 +149,7 @@ function apart(xs: readonly number[]): number {
   const hi = Math.max(...xs);
   return hi > 0 ? (hi - Math.min(...xs)) / hi : 0;
 }
+
 
 /** Damage landed in [from, to). */
 function landedIn(state: TimelineState, from: number, to: number): number {
@@ -201,21 +224,23 @@ export function ultimatePeriods(data: GameData, scenario: Omit<TimelineScenario,
   });
 }
 
+
 /** How long an action of a round played again may wait for the energy or SP it needs, moved later: 20 s (a search setting), in steps of 10 frames. */
 const LOOP_WAIT_FRAMES = 20 * FPS;
 const WAIT_STEP = 10;
 
 /**
- * A round's actions replayed from a state at `start` (the boundary cast of `actions[0]` included, at `start`), then
- * the next boundary cast at start + frames: exactly, or with `shift`, each action that can't start at its frame as
- * soon as it can (waiting for energy or SP it lacks) and everything after it that much later (so what follows keeps its spacing). The state after it and
+ * A round's plays (`at` from its start; with a boundary ultimate, its actions and then the next boundary cast)
+ * replayed from a state at `start`: exactly, or with `shift`, each action that can't start at its frame as soon as it
+ * can (waiting for energy or SP it lacks) and everything after it that much later (so what follows keeps its
+ * spacing); then `ends` judges the state after the last (why it can't end a round, or nothing). The state after it and
  * how much later it ended (0: exact), or why the first action that can't start (at its frame) can't.
  */
-function replayRound(ctx: TimelineContext, before: TimelineState, actions: readonly RotationAction[], frames: number, start: number, shift = false): { state: TimelineState; rotation: RotationAction[]; shifted: number } | { failure: string } {
+function replayRound(ctx: TimelineContext, before: TimelineState, plays: readonly RotationAction[], start: number, shift = false, ends?: (s: TimelineState) => string | undefined): { state: TimelineState; rotation: RotationAction[]; shifted: number } | { failure: string } {
   let s = before;
   let shifted = 0;
   const rotation: RotationAction[] = [];
-  for (const planned of [...actions, { ...(actions[0] as RotationAction), at: frames }]) {
+  for (const planned of plays) {
     let a = planned;
     const at = start + (a.at as number) + shifted;
     let e = earliestStart(ctx, s, { ...a, at });
@@ -244,14 +269,64 @@ function replayRound(ctx: TimelineContext, before: TimelineState, actions: reado
     s = apply(ctx, s, { ...a, at: e.frame });
     rotation.push({ ...a, at: e.frame });
   }
+  const unready = ends?.(s);
+  if (unready !== undefined) return { failure: unready };
   return { state: s, rotation, shifted };
 }
 
 /**
- * The opener and the loop (2026-11-14, closing rounds; docs/design.md "Opener and loop"). The boundary: the ultimate
- * with the longest recharge in the opener search's rotation (slowestUltimate); the opener ends at its first cast.
- * Then round after round from where the last ended, by closingScore (damage per second with what it takes from the
- * resources it found charged as recharge time): a new plan from the beam search to the boundary's next cast
+ * Per operator with an ultimate, the ultimates that lead its sequence (2026-11-14, sync rounds): castable from a
+ * rotation (not a follow-up), costing energy, and available at the fight's start, before any buff. Arcane's sequence 2
+ * (castable only while her Gloompurge Arcana lasts, paid by its energy grant) isn't one; her Gloompurger Array is.
+ */
+export function leadUltimates(ctx: TimelineContext): Map<string, string[]> {
+  const s0 = init(ctx);
+  const out = new Map<string, string[]>();
+  for (const b of ctx.scenario.team) {
+    const skills = (ctx.kits.get(b.operator)?.skills ?? []).filter((k) => k.kind === "ultimate" && !k.followUpOnly && skillCosts(ctx, b.operator, k.skillId, 0).energyCost > 0 && skillAvailable(ctx, s0, b.operator, k.skillId, 0));
+    if (skills.length > 0) out.set(b.operator, skills.map((k) => k.skillId));
+  }
+  return out;
+}
+
+/**
+ * Why an operator's ultimate isn't castable at the state's frame as far as its own state goes — on cooldown, short of
+ * energy, not available (Arcane's array or Gloompurge Arcana still up) — or undefined when it is. Whether the operator
+ * is free to act then isn't asked: a ready ultimate is held for when it is.
+ */
+function ultimateUnready(ctx: TimelineContext, state: TimelineState, operator: string, skill: string): string | undefined {
+  const cooldown = Math.ceil(state.readyAt[skill] ?? 0);
+  if (cooldown > state.frame) return `${skill} on cooldown until frame ${cooldown}`;
+  const cost = skillCosts(ctx, operator, skill, 0).energyCost; // energy costs don't change with time
+  const energy = state.energy[operator] ?? 0;
+  if (energy < cost - 1e-9) return `${skill} needs ${Number(cost.toFixed(1))} energy, ${energy.toFixed(1)}`;
+  if (!skillAvailable(ctx, state, operator, skill, state.frame)) return `${skill} isn't available`;
+  return undefined;
+}
+
+/** Why not every operator's ultimate is ready at the state's frame (one of each operator's lead ultimates: ultimateUnready), or undefined when they all are. */
+export function ultimatesUnready(ctx: TimelineContext, leads: ReadonlyMap<string, readonly string[]>, state: TimelineState): string | undefined {
+  for (const [op, skills] of leads) {
+    const why = skills.map((k) => ultimateUnready(ctx, state, op, k));
+    if (why.every((w) => w !== undefined)) return `not every ultimate is ready at frame ${state.frame}: ${why[0]}`;
+  }
+  return undefined;
+}
+
+/** Whether the actions cast a lead ultimate of every operator. */
+function castsEach(leads: ReadonlyMap<string, readonly string[]>, actions: readonly RotationAction[]): boolean {
+  for (const [op, skills] of leads) if (!actions.some((a) => a.operator === op && skills.includes(a.skill))) return false;
+  return true;
+}
+
+/**
+ * The opener and the loop (2026-11-14, closing rounds; docs/design.md "Opener and loop"). Rounds are cut at a boundary:
+ * by default the ultimate with the longest recharge in the opener search's rotation (slowestUltimate), each round from
+ * one of its casts to the next, the opener to its first; with `sync`, the moments every operator's ultimate is ready
+ * (ultimatesUnready), each round from one to the first step after which every one is ready again, having been cast at
+ * least once (faster ultimates held for the slowest, as players do for a burst window), the opener to the first. Then
+ * round after round from where the last ended, by closingScore (damage per second with what it takes from the
+ * resources it found charged as recharge time): a new plan from the beam search to the round's end
  * (SearchHooks.stopAt), of those within `closingMargin` of the best the one that does best over two plays (itself,
  * then itself again from its end); the last round replayed exactly, kept unless a new plan beats it by `hysteresis`;
  * or, when it can't be, the last round moved later (`shifts`). A plan replayed `repeats` times in a row is the loop;
@@ -259,7 +334,7 @@ function replayRound(ctx: TimelineContext, before: TimelineState, actions: reado
  * replays with `simulate`.
  */
 export function searchLoop(data: GameData, scenario: Omit<TimelineScenario, "rotation">, options: LoopOptions = {}): LoopResult {
-  const { horizonFrames, repeats = 3, tolerance = LOOP_TOLERANCE, maxRepetitions = LOOP_MAX_REPETITIONS, hysteresis = LOOP_HYSTERESIS, shifts = true, closingMargin = LOOP_CLOSING_MARGIN, plays: wanted, onRound, ...search } = options;
+  const { horizonFrames, repeats = 3, tolerance = LOOP_TOLERANCE, maxRepetitions = LOOP_MAX_REPETITIONS, hysteresis = LOOP_HYSTERESIS, shifts = true, closingMargin = LOOP_CLOSING_MARGIN, sync = false, plays: wanted, onRound, ...search } = options;
   if (!Number.isInteger(repeats) || repeats < 1) throw new EngineError(`repeats must be a whole number ≥ 1, not ${repeats}`);
   if (!Number.isInteger(maxRepetitions) || maxRepetitions < repeats + 1) throw new EngineError(`maxRepetitions must be a whole number ≥ repeats + 1 (${repeats + 1}), not ${maxRepetitions}`);
   const plays = wanted ?? repeats + 1;
@@ -267,33 +342,88 @@ export function searchLoop(data: GameData, scenario: Omit<TimelineScenario, "rot
   // A loop is the same actions replayed exactly: with random outcomes a play that holds in one battle may not in another.
   const random = randomOutcomes(data, scenario);
   if (random.length > 0 || searchCritMode(data, scenario) !== scenario.options.crit) throw new EngineError(`a loop is searched for fights without random outcomes; this one has ${random.join(", ")}`);
-  const horizon = horizonFrames ?? Math.max(scenario.durationFrames, LOOP_OPENER_FRAMES);
-  const opener = searchRotation(data, { ...scenario, durationFrames: horizon }, { ...search, runs: 0 });
-  const slowest = slowestUltimate(data, scenario, opener.rotation, horizon);
+  const maxFrames = sync ? LOOP_SYNC_MAX_FRAMES : LOOP_MAX_FRAMES;
+  let opener: SearchResult | undefined;
+  let horizon = 0;
   const result = (rotation: readonly RotationAction[], end: number, repetitions: readonly Repetition[], extra: Partial<LoopResult>): LoopResult => {
     const sim = simulate(data, { ...scenario, durationFrames: end, rotation });
-    return { opener, horizonFrames: horizon, repeats, tolerance, repetitions, rotation, frames: end, total: sim.total, dps: end > 0 ? sim.total / (end / FPS) : 0, ...extra };
+    return { ...(opener ? { opener } : {}), horizonFrames: horizon, repeats, tolerance, repetitions, rotation, frames: end, total: sim.total, dps: end > 0 ? sim.total / (end / FPS) : 0, ...extra };
   };
-  if (slowest === undefined) return result(opener.rotation, horizon, [], { reason: "the rotation casts no ultimate" });
-  const boundary = { operator: slowest.operator, skill: slowest.skill };
-  const { operator: op, skill } = slowest;
-  const isBoundary = (a: RotationAction) => a.operator === op && a.skill === skill;
-  const rates = energyRates(data, scenario, opener.rotation, horizon);
-  // Rounds: each ends with the next round's boundary cast, which `prefix` keeps as its last action.
-  let prefix = opener.rotation.slice(0, opener.rotation.findIndex(isBoundary) + 1);
+
+  // The boundary. `replays`: how many of the rotation's last actions a round plays again (the boundary cast its
+  // predecessor ended with, which starts it; with `sync` none: a round starts after the step that ended the last).
+  // `stopAt`: where a round from the rotation so far (`prefix`) ends; `ends`: why a replayed round can't end one.
+  let prefix: RotationAction[];
+  let rates: Record<string, number> = {};
+  let replays: 0 | 1;
+  let stopAt: (prefix: readonly RotationAction[], ctx: TimelineContext) => NonNullable<SearchHooks["stopAt"]>;
+  let allow: ((prefix: readonly RotationAction[]) => SearchHooks["allow"]) | undefined;
+  let ends: (ctx: TimelineContext) => ((s: TimelineState) => string | undefined) | undefined;
+  let cut: Partial<LoopResult>;
+  if (sync) {
+    horizon = horizonFrames ?? maxFrames + LOOKAHEAD_FRAMES;
+    const octx = createContext(data, { ...scenario, durationFrames: horizon, rotation: [] });
+    const leads = leadUltimates(octx);
+    if (leads.size === 0) return result([], 0, [], { reason: "no operator has an ultimate" });
+    cut = { ultimates: [...leads].map(([operator, skills]) => ({ operator, skills, bar: maxEnergy(octx, operator) })) };
+    replays = 0;
+    // Energy is full at both ends of a round (every ultimate ready): closingScore charges none, only SP.
+    stopAt = (before, ctx) => (_step, state, rotation) => castsEach(leads, rotation.slice(before.length)) && ultimatesUnready(ctx, leads, state) === undefined;
+    // Each lead ultimate once a round, then held: a beam ranked by damage casts an ultimate the moment it's ready, and
+    // its lines would rarely meet a moment every one is (si-laevatain: no round found at all).
+    const isLead = (a: RotationAction) => leads.get(a.operator)?.includes(a.skill) ?? false;
+    allow = (before) => (action, rotation) => !isLead(action) || !rotation.slice(before.length).some((a) => a.operator === action.operator && isLead(a));
+    ends = (ctx) => (s) => ultimatesUnready(ctx, leads, s);
+    if (ultimatesUnready(octx, leads, init(octx)) === undefined) prefix = [];
+    else {
+      // The opener: to the first moment every ultimate is ready, the stop with the most damage landed a second.
+      // No lead ultimate in it (the build-up): cast, it would have to be back before the slowest is ready.
+      opener = searchRotation(data, { ...scenario, durationFrames: horizon }, { ...search, runs: 0 }, { stopAt: (_step, state) => ultimatesUnready(octx, leads, state) === undefined, allow: (action) => !isLead(action) });
+      let best: { rotation: readonly RotationAction[]; dps: number } | undefined;
+      for (const x of opener.stops ?? []) {
+        if (x.state.frame > maxFrames) continue;
+        const dps = landedIn(x.state, 0, x.state.frame) / Math.max(1, x.state.frame);
+        if (!best || dps > best.dps) best = { rotation: x.rotation, dps };
+      }
+      if (!best) return result(opener.rotation, horizon, [], { ...cut, reason: `not every ultimate is ready within ${maxFrames / FPS} s of the fight's start` });
+      prefix = [...best.rotation];
+    }
+  } else {
+    horizon = horizonFrames ?? Math.max(scenario.durationFrames, LOOP_OPENER_FRAMES);
+    opener = searchRotation(data, { ...scenario, durationFrames: horizon }, { ...search, runs: 0 });
+    const slowest = slowestUltimate(data, scenario, opener.rotation, horizon);
+    if (slowest === undefined) return result(opener.rotation, horizon, [], { reason: "the rotation casts no ultimate" });
+    const { operator: op, skill } = slowest;
+    cut = { boundary: { operator: op, skill } };
+    const isBoundary = (a: RotationAction) => a.operator === op && a.skill === skill;
+    rates = energyRates(data, scenario, opener.rotation, horizon);
+    replays = 1;
+    stopAt = () => (step) => isBoundary(step);
+    ends = () => undefined;
+    // Rounds: each ends with the next round's boundary cast, which `prefix` keeps as its last action.
+    prefix = opener.rotation.slice(0, opener.rotation.findIndex(isBoundary) + 1);
+  }
+  /** A round's plays: its actions, then (with a boundary ultimate) the next boundary cast. */
+  const playsOf = (actions: readonly RotationAction[], frames: number): readonly RotationAction[] => (replays ? [...actions, { ...(actions[0] as RotationAction), at: frames }] : actions);
+  const startOf = (rotation: readonly RotationAction[]) => (rotation.at(-1)?.at as number | undefined) ?? 0;
+  const kept = (rotation: readonly RotationAction[]) => rotation.slice(0, rotation.length - replays);
+  const rel = (a: RotationAction, start: number): RotationAction => ({ ...a, at: (a.at as number) - start });
+
   const rounds: { start: number; frames: number; actions: RotationAction[]; replayed: boolean; shifted?: number }[] = [];
   let streak = 0;
   let reason: string | undefined;
   while (rounds.length < maxRepetitions && streak < repeats) {
-    const start = prefix.at(-1)?.at as number;
-    const durationFrames = start + LOOP_MAX_FRAMES + LOOKAHEAD_FRAMES;
+    const start = startOf(prefix);
+    const durationFrames = start + maxFrames + LOOKAHEAD_FRAMES;
     const ctx = createContext(data, { ...scenario, durationFrames, rotation: [] });
-    const before = prefix.slice(0, -1).reduce((s, a) => apply(ctx, s, a), init(ctx));
-    const from = apply(ctx, before, prefix.at(-1) as RotationAction);
+    // `before`: where a replay of a round starts (before the boundary cast that starts it); `from`: where the round starts.
+    const before = kept(prefix).reduce((s, a) => apply(ctx, s, a), init(ctx));
+    const from = replays ? apply(ctx, before, prefix.at(-1) as RotationAction) : before;
     const score = (end: TimelineState) => closingScore(rates, from, end, start);
-    const r = searchRotation(data, { ...scenario, durationFrames }, { ...search, runs: 0 }, { prefix, stopAt: isBoundary });
+    const allowed = allow?.(prefix);
+    const r = searchRotation(data, { ...scenario, durationFrames }, { ...search, runs: 0 }, { prefix, stopAt: stopAt(prefix, ctx), ...(allowed ? { allow: allowed } : {}) });
     // Stable sort: ties keep the order the search found them in.
-    const ranked = (r.stops ?? []).filter((x) => x.state.frame - start <= LOOP_MAX_FRAMES).map((x) => ({ rotation: x.rotation, score: score(x.state) })).sort((x, y) => y.score - x.score);
+    const ranked = (r.stops ?? []).filter((x) => x.state.frame - start <= maxFrames).map((x) => ({ rotation: x.rotation, score: score(x.state) })).sort((x, y) => y.score - x.score);
     let best: { rotation: readonly RotationAction[]; score: number } | undefined = ranked[0];
     // Of the best plans (within `closingMargin` of the best), the one that does best over two plays: itself and itself
     // again from where it ends (exactly, or with late actions moved later); one whose second play can't be played isn't
@@ -301,25 +431,27 @@ export function searchLoop(data: GameData, scenario: Omit<TimelineScenario, "rot
     let closes = 0;
     let closingFailure: string | undefined;
     if (best && closingMargin > 0) {
-      const long = createContext(data, { ...scenario, durationFrames: start + 2 * LOOP_MAX_FRAMES + LOOKAHEAD_FRAMES, rotation: [] });
-      const at0 = prefix.slice(0, -1).reduce((s, a) => apply(long, s, a), init(long));
+      const long = createContext(data, { ...scenario, durationFrames: start + 2 * maxFrames + LOOKAHEAD_FRAMES, rotation: [] });
+      const at0 = kept(prefix).reduce((s, a) => apply(long, s, a), init(long));
       let two: { c: (typeof ranked)[number]; score: number; shifted: number } | undefined;
       // Plans that differ only in their basic attacks mostly fail alike: one of each set of skills at their frames.
       const tried = new Set<string>();
       for (const c of ranked) {
         if (c.score < (ranked[0] as (typeof ranked)[number]).score * (1 - closingMargin) || tried.size >= LOOP_CLOSING_CANDIDATES) break;
-        const plan = c.rotation.slice(prefix.length - 1);
+        // The round as played (from the boundary cast that starts it, with a boundary ultimate), ending where the next starts.
+        const plan = c.rotation.slice(prefix.length - replays);
         const skills = plan.filter((a) => kindOf(data, a) !== "basic").map((a) => `${a.skill}@${a.at}`).join(",");
         if (tried.has(skills)) continue;
         tried.add(skills);
         const end = plan.at(-1)?.at as number;
-        const atEnd = plan.slice(0, -1).reduce((s, a) => apply(long, s, a), at0);
-        const again = replayRound(long, atEnd, plan.slice(0, -1).map((a) => ({ ...a, at: (a.at as number) - start })), end - start, end, shifts);
+        const atEnd = kept(plan).reduce((s, a) => apply(long, s, a), at0);
+        const fromEnd = replays ? apply(long, atEnd, plan.at(-1) as RotationAction) : atEnd;
+        const again = replayRound(long, atEnd, playsOf(kept(plan).map((a) => rel(a, start)), end - start), end, shifts, ends(long));
         if (!("state" in again)) {
           closingFailure ??= again.failure;
           continue;
         }
-        const second = closingScore(rates, apply(long, atEnd, plan.at(-1) as RotationAction), again.state, end);
+        const second = closingScore(rates, fromEnd, again.state, end);
         const both = (c.score + second) / 2;
         if (!two || both > two.score) two = { c, score: both, shifted: again.shifted };
       }
@@ -329,21 +461,21 @@ export function searchLoop(data: GameData, scenario: Omit<TimelineScenario, "rot
       }
     }
     const last = rounds.at(-1);
-    const exact = last && replayRound(ctx, before, last.actions, last.frames, start);
+    const exact = last && replayRound(ctx, before, playsOf(last.actions, last.frames), start, false, ends(ctx));
     // Not exactly: the last plan with its late actions (and what follows) moved later, a plan of its own that may then repeat.
-    const again = exact && "failure" in exact && shifts ? replayRound(ctx, before, last.actions, last.frames, start, true) : exact;
-    const replay = again && "state" in again ? { rotation: [...prefix.slice(0, -1), ...again.rotation], score: score(again.state) } : undefined;
+    const again = exact && "failure" in exact && shifts ? replayRound(ctx, before, playsOf(last.actions, last.frames), start, true, ends(ctx)) : exact;
+    const replay = again && "state" in again ? { rotation: [...kept(prefix), ...again.rotation], score: score(again.state) } : undefined;
     const chosen = replay && (!best || replay.score >= best.score * (1 - hysteresis)) ? replay : best;
     if (!chosen) {
-      reason = `the boundary ultimate isn't cast again within ${LOOP_MAX_FRAMES / FPS} s of ${(start / FPS).toFixed(1)} s`;
+      reason = sync ? `no round from ${(start / FPS).toFixed(1)} s casts every ultimate and has every one ready again within ${maxFrames / FPS} s` : `the boundary ultimate isn't cast again within ${maxFrames / FPS} s of ${(start / FPS).toFixed(1)} s`;
       break;
     }
-    const end = chosen.rotation.at(-1)?.at as number;
+    const end = startOf(chosen.rotation);
     const replayed = chosen === replay && again !== undefined && "state" in again && again.shifted === 0;
     const shifted = chosen === replay && again !== undefined && "state" in again && again.shifted > 0 ? again.shifted : 0;
-    rounds.push({ start, frames: end - start, actions: chosen.rotation.slice(prefix.length - 1, -1).map((a) => ({ ...a, at: (a.at as number) - start })), replayed, ...(shifted ? { shifted } : {}) });
+    rounds.push({ start, frames: end - start, actions: kept(chosen.rotation.slice(prefix.length - replays)).map((a) => rel(a, start)), replayed, ...(shifted ? { shifted } : {}) });
     streak = replayed ? streak + 1 : 0;
-    prefix = chosen.rotation as RotationAction[];
+    prefix = [...chosen.rotation];
     onRound?.({ start, frames: end - start, replayed, shifted, score: chosen.score, ...(best ? { best: best.score } : {}), stops: r.stops?.length ?? 0, ...(closes === 0 && closingFailure ? { closingFailure } : {}), closes: chosen === best ? (closes === 1 ? "exactly" : closes === 2 ? "shifted" : "no") : "no", ...(exact && "failure" in exact ? { replayFailure: exact.failure } : {}) });
   }
   if (streak < repeats && !reason) reason = `no round's plan played ${repeats} more times in a row in ${maxRepetitions} rounds`;
@@ -351,25 +483,26 @@ export function searchLoop(data: GameData, scenario: Omit<TimelineScenario, "rot
   if (streak >= repeats) {
     const last = rounds.at(-1) as (typeof rounds)[number];
     for (let k = repeats + 1; k < plays; k++) {
-      const start = prefix.at(-1)?.at as number;
-      const ctx = createContext(data, { ...scenario, durationFrames: start + LOOP_MAX_FRAMES + LOOKAHEAD_FRAMES, rotation: [] });
-      const before = prefix.slice(0, -1).reduce((s, a) => apply(ctx, s, a), init(ctx));
-      const again = replayRound(ctx, before, last.actions, last.frames, start);
+      const start = startOf(prefix);
+      const ctx = createContext(data, { ...scenario, durationFrames: start + maxFrames + LOOKAHEAD_FRAMES, rotation: [] });
+      const before = kept(prefix).reduce((s, a) => apply(ctx, s, a), init(ctx));
+      const again = replayRound(ctx, before, playsOf(last.actions, last.frames), start, false, ends(ctx));
       if ("failure" in again) {
         reason = `the loop played ${k} times; play ${k + 1} can't be replayed exactly (${again.failure})`;
         break;
       }
       rounds.push({ ...last, start, replayed: true });
-      prefix = [...prefix.slice(0, -1), ...again.rotation];
+      prefix = [...kept(prefix), ...again.rotation];
     }
   }
-  // Up to the repetition after the last: its boundary cast starts it and isn't played.
-  const end = prefix.at(-1)?.at as number;
-  const rotation = prefix.slice(0, -1);
+  // Up to the repetition after the last: with a boundary ultimate its cast starts it and isn't played.
+  const end = startOf(prefix);
+  const rotation = kept(prefix);
   const sim = simulate(data, { ...scenario, durationFrames: end, rotation });
   const landed = (from: number, to: number) => sim.hits.filter((h) => h.frame >= from && h.frame < to).reduce((a, h) => a + h.exact, 0);
-  const repetitions: Repetition[] = rounds.map((c) => ({ ...c, damage: landed(c.start, c.start + c.frames) }));
-  if (streak < repeats) return result(rotation, end, repetitions, { boundary, ...(reason ? { reason } : {}) });
+  const lost = energyLostIn(data, scenario, rotation, [...rounds.map((c) => c.start), end]);
+  const repetitions: Repetition[] = rounds.map((c, i) => ({ ...c, damage: landed(c.start, c.start + c.frames), energyLost: lost[i] ?? {} }));
+  if (streak < repeats) return result(rotation, end, repetitions, { ...cut, ...(reason ? { reason } : {}) });
   // The loop's plays: the last run of replays and the round they replay.
   let first = repetitions.length - 1;
   while (first > 0 && (repetitions[first] as Repetition).replayed) first--;
@@ -377,8 +510,10 @@ export function searchLoop(data: GameData, scenario: Omit<TimelineScenario, "rot
   const c0 = counted[0] as Repetition;
   const loopFrames = counted.reduce((a, c) => a + c.frames, 0);
   const perPlay = counted.map((c) => c.damage / c.frames);
+  const energyLost: Record<string, number> = {};
+  for (const c of counted) for (const [op, v] of Object.entries(c.energyLost)) energyLost[op] = (energyLost[op] ?? 0) + v / counted.length;
   return result(rotation, end, repetitions, {
-    boundary,
+    ...cut,
     ...(reason ? { reason } : {}),
     loop: {
       first,
@@ -392,6 +527,30 @@ export function searchLoop(data: GameData, scenario: Omit<TimelineScenario, "rot
       dps: counted.reduce((a, c) => a + c.damage, 0) / (loopFrames / FPS),
       damageApart: apart(perPlay),
       agrees: apart(perPlay) <= tolerance,
+      energyLost,
     },
+  });
+}
+
+/**
+ * Per stretch between consecutive frames of `bounds`: each operator's ultimate energy lost to a full bar in it
+ * (TimelineState.energyOverflow), the rotation replayed with the actions before each bound applied (operators that
+ * lost none left out).
+ */
+export function energyLostIn(data: GameData, scenario: Omit<TimelineScenario, "rotation">, rotation: readonly RotationAction[], bounds: readonly number[]): Record<string, number>[] {
+  const ctx = createContext(data, { ...scenario, durationFrames: Math.max(0, ...bounds), rotation: [] });
+  let s = init(ctx);
+  let i = 0;
+  const at: TimelineState[] = [];
+  for (const b of bounds) {
+    while (i < rotation.length && ((rotation[i] as RotationAction).at as number) < b) s = apply(ctx, s, rotation[i++] as RotationAction);
+    s = advance(ctx, s, Math.max(s.frame, b));
+    at.push(s);
+  }
+  return at.slice(1).map((to, k) => {
+    const from = at[k] as TimelineState;
+    const out: Record<string, number> = {};
+    for (const [op, v] of Object.entries(to.energyOverflow)) if (v - (from.energyOverflow[op] ?? 0) > 1e-9) out[op] = v - (from.energyOverflow[op] ?? 0);
+    return out;
   });
 }

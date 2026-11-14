@@ -343,6 +343,11 @@ export interface TimelineState {
   /** Per operator: frame until which it gains no energy (some ultimates block it). */
   readonly energyBlockedUntil: Readonly<Record<string, number>>;
   /**
+   * Per operator: ultimate energy lost to a full bar so far (a grant past the cap; not while blocked). Nothing in the
+   * fight reads it: searchLoop reports what holding an ultimate costs.
+   */
+  readonly energyOverflow: Readonly<Record<string, number>>;
+  /**
    * Per operator with a combo trigger: the open combo window, if any; a
    * window of its own skills (an `openCombo` with `skills`) is under
    * `<operator>>skillId` (windowKey). `whileBuff`: open only while that

@@ -147,9 +147,12 @@ export function candidateActions(ctx: TimelineContext, state: TimelineState): Ca
  * basic attack can start then, nothing starts sooner, and the others aren't
  * choices; only when none can are they judged in full. The same choices,
  * in the same order, as judging them all.
+ *
+ * `allow` (SearchHooks.allow): actions it refuses aren't choices and don't
+ * count for what's soonest.
  */
-export function legalActions(ctx: TimelineContext, state: TimelineState): Candidate[] {
-  const actions = actionsToJudge(ctx, state);
+export function legalActions(ctx: TimelineContext, state: TimelineState, allow?: (action: RotationAction) => boolean): Candidate[] {
+  const actions = allow ? actionsToJudge(ctx, state).filter(allow) : actionsToJudge(ctx, state);
   const basics = new Set(nextBasics(ctx.data, state, state.controlled));
   const dive = diveOf(ctx.data, state.controlled);
   const isDive = (a: RotationAction) => a.operator === state.controlled && a.skill === dive;
@@ -680,6 +683,7 @@ const STATE_KEY: KeyRules<TimelineState> = {
   energy: (e) => Object.fromEntries(Object.entries(e).map(([k, v]) => [k, round(v)])),
   // Read as "> frame" (resources.ts gainEnergy) and set anew (casting.ts).
   energyBlockedUntil: (e, env) => entries(e, (f) => f > env.frame),
+  energyOverflow: "a statistic (energy lost to a full bar): nothing in the fight reads it",
   // Read through windowOpen (`until < frame`: closed) or with `until >= frame`, but a follow-up combo's count (endedWindowsRead).
   comboWindow: (w, env) => entries(w, (x, k) => x.until >= env.frame || env.scenario.endedWindowsRead.has(k)),
   // Read by any later `element: "window"` application, however long ago it was set.
@@ -905,10 +909,18 @@ export interface SearchHooks {
    */
   readonly guide?: readonly RotationAction[];
   /**
-   * Steps after which a rotation ends (searchLoop: the boundary ultimate's next cast): such a child isn't expanded or
-   * kept in the beam; it's returned in SearchResult.stops (and still counts for the best rotation).
+   * Steps after which a rotation ends (searchLoop: the boundary ultimate's next cast, or with `sync` the first step after
+   * which every ultimate is ready again), given the step, the state after it (the first battle's) and the rotation up
+   * to and including it: such a child isn't expanded or kept in the beam; it's returned in SearchResult.stops (and
+   * still counts for the best rotation).
    */
-  readonly stopAt?: (step: RotationAction) => boolean;
+  readonly stopAt?: (step: RotationAction, state: TimelineState, rotation: readonly RotationAction[]) => boolean;
+  /**
+   * Whether a rotation may take an action next, given the rotation so far (searchLoop with `sync`: a lead ultimate
+   * once a round and none in the opener, so that the beam holds them for the burst instead of casting each the moment
+   * it's ready): those it refuses aren't choices (legalActions).
+   */
+  readonly allow?: (action: RotationAction, rotation: readonly RotationAction[]) => boolean;
 }
 
 function search(data: GameData, given: Omit<TimelineScenario, "rotation">, options: SearchOptions, hooks: SearchHooks = {}): SearchResult {
@@ -958,6 +970,7 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
   const counts = { compared: 0, merged: 0, family: 0, pruned: 0 };
   let capped = false;
   const stopAt = hooks.stopAt;
+  const allow = hooks.allow;
   const stops: { rotation: readonly RotationAction[]; state: TimelineState }[] = [];
   while (buckets.size > 0 && expanded < maxExpansions) {
     const b = Math.min(...buckets.keys());
@@ -973,7 +986,7 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
         const first = n.states[0] as TimelineState;
         // A swap takes no time: never two in a row (they'd loop within a frame); none at all unless asked for.
         const lastSwap = n.rotation.at(-1)?.skill === "swap";
-        const choices = legalActions(ctx, first).filter((c) => c.action.skill !== "swap" || (swaps && !lastSwap));
+        const choices = legalActions(ctx, first, allow ? (a) => allow(a, n.rotation) : undefined).filter((c) => c.action.skill !== "swap" || (swaps && !lastSwap));
         if (choices.length === 0 && n.damage > best.damage) best = n;
         for (const c of choices) {
           // Applied as recorded, with `at` the frame it starts, so the rotation replays to exactly these states.
@@ -990,7 +1003,7 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
           const made = node(states, [...n.rotation, step]);
           const child = guide && n.guideAt !== undefined && same(guide[n.guideAt], step) ? { ...made, guideAt: n.guideAt + 1 } : made;
           if (child.damage > best.damage) best = child;
-          if (stopAt?.(step)) {
+          if (stopAt?.(step, states[0] as TimelineState, child.rotation)) {
             stops.push({ rotation: child.rotation, state: states[0] as TimelineState });
             continue;
           }

@@ -141,7 +141,10 @@ export function gainEnergy(ctx: TimelineContext, st: TimelineState, operator: st
   const panel = panelAt(ctx, operator, frame);
   const efficiency = opts.ignoreEfficiency ? 1 : attrTotal(ctx, panel, Attr.UltimateSpGainScalar) + buffAttr(st.buffs, operator, frame, Attr.UltimateSpGainScalar, panel.attrs[Attr.UltimateSpGainScalar]);
   const now = st.energy[operator] ?? 0;
-  return { ...st, energy: { ...st.energy, [operator]: Math.min(maxEnergy(ctx, operator), now + amount * efficiency) } };
+  const cap = maxEnergy(ctx, operator);
+  const lost = now + amount * efficiency - cap;
+  const next = { ...st, energy: { ...st.energy, [operator]: Math.min(cap, now + amount * efficiency) } };
+  return lost > 0 ? { ...next, energyOverflow: { ...st.energyOverflow, [operator]: (st.energyOverflow[operator] ?? 0) + lost } } : next;
 }
 
 /** SP for the team: returned SP is spent first and gives no ultimate energy when spent; natural SP does, as regenerated SP. */

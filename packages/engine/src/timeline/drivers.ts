@@ -37,6 +37,7 @@ function initialState(ctx: TimelineContext): TimelineState {
       return [b.operator, v === "full" ? maxEnergy(ctx, b.operator) : Math.min(v, maxEnergy(ctx, b.operator))];
     })),
     energyBlockedUntil: {},
+    energyOverflow: {},
     comboWindow: {},
     comboTrigger: {},
     spPausedUntil: 0,
