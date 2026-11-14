@@ -8,13 +8,13 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
 
 ## Next steps
 
-- **First (2026-11-14, the owner's priority):** the owner's team
-  (Estella, Si, Akekuri, Arcane; docs/teams/estella-si-akekuri-arcane.md):
-  opener + loop for both start energies (a synchronized burst loop: every
-  ultimate ready is the boundary); in-game test 106 (Yinglung's Edge
-  stacks) then the set's kit; the team page's open leads (Estella's Lift
-  half-buff, Akekuri ×0.89 in 012a, lance_0004's late part); the search
-  from zero energy (value ranking didn't help there).
+- **First (2026-11-15):** simulate Ink Melt (EndfieldHub's top team)
+  next to the owner's team under the same assumptions; the buff timing
+  report in the log check (wider windows and every buff as a diagnostic,
+  aggregated per buff, with candidate mechanisms; accuracy-plan "Fits
+  need a mechanism"); dominance pruning in the search (asked about by the
+  owner); the loop's long openers and a 2-round loop; in-game tests 106
+  (Yinglung's Edge) and 107 (Si's Amp across ultimates).
 
 0. **Engine accuracy first** (the owner, 2026-10-26: above the search's
    scoring): [accuracy-plan.md](accuracy-plan.md). Phase A, B1 (Stagger)
