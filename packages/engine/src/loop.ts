@@ -421,7 +421,7 @@ export function searchLoop(data: GameData, scenario: Omit<TimelineScenario, "rot
     const from = replays ? apply(ctx, before, prefix.at(-1) as RotationAction) : before;
     const score = (end: TimelineState) => closingScore(rates, from, end, start);
     const allowed = allow?.(prefix);
-    const r = searchRotation(data, { ...scenario, durationFrames }, { ...search, runs: 0 }, { prefix, stopAt: stopAt(prefix, ctx), ...(allowed ? { allow: allowed } : {}) });
+    const r = searchRotation(data, { ...scenario, durationFrames }, { ...search, runs: 0 }, { prefix, stopAt: stopAt(prefix, ctx), hitsFrom: start, ...(allowed ? { allow: allowed } : {}) });
     // Stable sort: ties keep the order the search found them in.
     const ranked = (r.stops ?? []).filter((x) => x.state.frame - start <= maxFrames).map((x) => ({ rotation: x.rotation, score: score(x.state) })).sort((x, y) => y.score - x.score);
     let best: { rotation: readonly RotationAction[]; score: number } | undefined = ranked[0];

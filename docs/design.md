@@ -900,7 +900,7 @@ With random outcomes a search costs about K times as much per child
 (each battle is applied and scored; only the first judges the choices):
 si-laevatain with `--dodge 0.7 --attack-every 4` and K = 4 took 23 s.
 
-**Opener and loop** (`searchLoop`, `efsim search --loop [--loops n]`;
+**Opener and loop** (`searchLoop`, `efsim search --loop [--loops n] [--rounds n] [--sync]`;
 owner, 2026-11-14: "complete rotations, not a fixed 60 s window", an
 opener and then a loop that can be repeated for as long as the fight
 lasts, its boundaries at the ultimates' casts). A **loop** is a round of

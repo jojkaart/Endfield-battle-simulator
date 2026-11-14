@@ -210,14 +210,16 @@ function timingChoices(ctx: TimelineContext, state: TimelineState, c: Candidate)
 
 /**
  * Damage the state has committed within the fight: landed hits plus everything already on its way. With a context from
- * `memoised`, once per state (states are never changed in place: TimelineContext.committedMemo).
+ * `memoised`, once per state (states are never changed in place: TimelineContext.committedMemo). `landedBefore`: the
+ * sum of hits left out of the state before its first (SearchHooks.hitsFrom), which the sum starts from, so the total is
+ * the same to the bit as with them (and the same for every state of one search: memoised with it).
  */
-export function committedDamage(ctx: TimelineContext, state: TimelineState): number {
+export function committedDamage(ctx: TimelineContext, state: TimelineState, landedBefore = 0): number {
   const known = ctx.committedMemo?.get(state);
   if (known !== undefined) return known;
   // Advanced from a copy, so a memoised context doesn't keep the fight's end (every hit to come) for as long as the state lives.
   const end = advance(ctx, { ...state }, ctx.scenario.durationFrames);
-  let total = 0;
+  let total = landedBefore;
   for (const h of end.hits) total += h.exact;
   ctx.committedMemo?.set(state, total);
   return total;
@@ -921,6 +923,12 @@ export interface SearchHooks {
    * it's ready): those it refuses aren't choices (legalActions).
    */
   readonly allow?: (action: RotationAction, rotation: readonly RotationAction[]) => boolean;
+  /**
+   * With `prefix`: the leading hits it landed before this frame are left out of every state the search makes
+   * (searchLoop: a round's start), so that each node doesn't carry them; their damage still counts (committedDamage's
+   * `landedBefore`): the search finds the same, to the bit. The best rotation's `result` is replayed in full.
+   */
+  readonly hitsFrom?: number;
 }
 
 function search(data: GameData, given: Omit<TimelineScenario, "rotation">, options: SearchOptions, hooks: SearchHooks = {}): SearchResult {
@@ -948,7 +956,7 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
   const weight = options.valueWeight ?? VALUE_WEIGHT;
   const prices = weight === 0 ? undefined : resourcePrices(data, scenario);
   const node = (states: readonly TimelineState[], rotation: readonly RotationAction[]): Node => {
-    const damages = states.map((s, i) => committedDamage(ctxs[i] as TimelineContext, s));
+    const damages = states.map((s, i) => committedDamage(ctxs[i] as TimelineContext, s, landedBefore[i]));
     const scores = prices ? states.map((s, i) => (damages[i] as number) + resourceValue(ctxs[i] as TimelineContext, prices, s, weight)) : damages;
     return { states, rotation, family: familyKey(states[0] as TimelineState), key: states.map((s, i) => (keyers[i] as (s: TimelineState) => string)(s)).join("\n"), damage: statistic(damages, percentile), score: statistic(scores, percentile) };
   };
@@ -963,7 +971,17 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
   const same = (a: RotationAction | undefined, b: RotationAction) => a !== undefined && a.operator === b.operator && a.skill === b.skill && a.at === b.at;
   const prefix = hooks.prefix ?? [];
   const onGuide = guide !== undefined && prefix.every((a, i) => same(guide[i], a));
-  const root = { ...node(ctxs.map((c) => prefix.reduce((st, a) => apply(c, st, a), init(c))), prefix), ...(onGuide ? { guideAt: prefix.length } : {}) };
+  // Hits landed before hooks.hitsFrom (the leading run of the root's hits, in the order they landed) are dropped from the
+  // root: nothing in the fight reads landed hits, and every node would otherwise carry its own copy of them all (a
+  // loop's late rounds ran out of memory). Their sum, in the same order, starts each node's (committedDamage).
+  const starts = ctxs.map((c) => prefix.reduce((st, a) => apply(c, st, a), init(c)));
+  const cuts = starts.map((st) => (hooks.hitsFrom === undefined ? 0 : ((i) => (i < 0 ? st.hits.length : i))(st.hits.findIndex((h) => h.frame >= (hooks.hitsFrom as number)))));
+  const landedBefore = starts.map((st, i) => {
+    let sum = 0;
+    for (let j = 0; j < (cuts[i] as number); j++) sum += (st.hits[j] as TimelineState["hits"][number]).exact;
+    return sum;
+  });
+  const root = { ...node(starts.map((st, i) => (cuts[i] ? { ...st, hits: st.hits.slice(cuts[i]) } : st)), prefix), ...(onGuide ? { guideAt: prefix.length } : {}) };
   push(root);
   let best: Node = root;
   let expanded = 0;

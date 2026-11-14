@@ -129,6 +129,21 @@ describe("closing rounds", () => {
     expect(r.rotation.some((a) => a.skill === ULT)).toBe(false);
     expect(seen.some((x) => x.step.skill === ULT)).toBe(false);
   });
+
+  it("SearchHooks.hitsFrom leaves the prefix's earlier hits out of the states, not the choices", () => {
+    const s = { ...open, durationFrames: 25 * FPS };
+    const prefix = searchRotation(data, { ...s, durationFrames: 8 * FPS }, { beamWidth: 3, runs: 0 }).rotation;
+    const from = prefix.at(-1)?.at as number;
+    const hooks = { prefix, stopAt: (a: RotationAction) => a.skill === "chr_0016_laevat_combo_skill" };
+    const all = searchRotation(data, s, { beamWidth: 3, runs: 0 }, hooks);
+    const cut = searchRotation(data, s, { beamWidth: 3, runs: 0 }, { ...hooks, hitsFrom: from });
+    expect(cut.stops?.length).toBeGreaterThan(0);
+    expect(cut.stops?.map((x) => x.rotation)).toEqual(all.stops?.map((x) => x.rotation));
+    expect(cut.score).toBe(all.score);
+    expect(cut.rotation).toEqual(all.rotation);
+    for (const x of cut.stops ?? []) expect(x.state.hits.every((h) => h.frame >= from)).toBe(true);
+    expect(all.stops?.some((x) => x.state.hits.some((h) => h.frame < from))).toBe(true);
+  });
 });
 
 describe("synchronized burst rounds (--sync)", () => {
