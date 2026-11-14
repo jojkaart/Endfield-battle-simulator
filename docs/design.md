@@ -348,7 +348,12 @@ percentage error; the verdict snapshots pin them to 0.1%. Both sides
 sum to the log's last hit: in a fight that ends in a kill (the log's
 total is the enemy's HP) the replay's damage goes on past the HP to the
 log's kill, so each operator's covers the same span, and when the replay
-reached the HP is its own row, the time to kill. The replay's Stagger bar
+reached the HP is its own row, the time to kill. A recorded burst (Si's
+Artful Intent: rate × every hit on the target while it lasted) counts in
+its operator's row with the teammates' share of its record as logged, not
+as replayed, so a teammate's replay error stays in that teammate's row
+(489c and 9a80: Rossi's; 2026-11-14); the team's total and the kinds keep
+the replay's burst, and the report lists each move. The replay's Stagger bar
 follows the log: set to the log's bar before each hit with Stagger, and a
 Stagger of its own ended where the log shows none (buffreplay.ts
 `loggedPoiseBars`), so its Stagger windows are the log's; the totals'

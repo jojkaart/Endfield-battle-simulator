@@ -2,7 +2,7 @@
 // Fixed DMG of `rate` × the damage of every hit on the target while the buff lasted, which no single logged hit
 // gives, but the log's own hits in the buff's window do (docs/design.md, "What a log check verifies").
 
-import { effectiveKit, evalContext, evaluate, kitHitEntries, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type StatPanel } from "@efsim/engine";
+import { effectiveKit, evalContext, evaluate, kitHitEntries, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type LandedHit, type StatPanel } from "@efsim/engine";
 import type { LogFixture, LogHit } from "@efsim/data";
 
 /**
@@ -26,6 +26,8 @@ export interface RecordedBurstReading {
   readonly counted: number;
   /** Their damage (each hit's uncapped value where the log has one). */
   readonly recorded: number;
+  /** That damage by hitter (operator). */
+  readonly byOperator: Readonly<Record<string, number>>;
   /** rate × recorded, rounded. */
   readonly predicted: number;
   /** How far from the log a match may be: ±1, and ±0.5 × rate for each counted hit (each logged value is rounded). */
@@ -96,11 +98,40 @@ export function recordedBurst(data: GameData, fx: LogFixture, member: { readonly
     (early.size ? [false, true] : [false]).map((withoutEarly): RecordedBurstReading => {
       const counted = window.filter((h) => h.t <= last && !(withoutEarly && early.has(h)));
       const recorded = counted.reduce((s, h) => s + (h.uncapped ?? h.value), 0);
+      const byOperator: Record<string, number> = {};
+      for (const h of counted) byOperator[h.operator] = (byOperator[h.operator] ?? 0) + (h.uncapped ?? h.value);
       return {
-        last, lag: burst.t - last, ...(withoutEarly ? { withoutEarly: early.size } : {}), counted: counted.length, recorded,
+        last, lag: burst.t - last, ...(withoutEarly ? { withoutEarly: early.size } : {}), counted: counted.length, recorded, byOperator,
         predicted: roundDamage(rate * recorded), tolerance: 1 + 0.5 * rate * counted.length,
       };
     }),
   );
   return { start, rate, buff: buff.id, readings };
+}
+
+/**
+ * The replay's record behind a recorded burst's landing (`burst`: its damage is rate × what the buff recorded,
+ * landing.ts addHits), by hitter: a run of the replay's landings (in landing order, up to the burst's frame) whose
+ * total gives the burst's damage, to a float's rounding (a chance match is unlikely). The run starting nearest
+ * `from` (the frame of the logged hit that applied the buff: the replay's start can differ, a battle skill it cast
+ * elsewhere) is taken. A run needn't hold whole frames: within a frame, landings before the applier's or after the
+ * record's end don't count (489c 67808 ms fits only so). Null when no run gives it.
+ */
+export function replayRecord(hits: readonly LandedHit[], burst: LandedHit, rate: number, from: number): Readonly<Record<string, number>> | null {
+  const span = hits.filter((h) => !h.fixed && h.frame <= burst.frame).sort((a, b) => a.frame - b.frame);
+  const gives = (total: number) => Math.abs(rate * total - burst.exact) <= 1e-6 * Math.max(1, burst.exact);
+  const starts = span.map((_, i) => i).sort((a, b) => Math.abs((span[a] as LandedHit).frame - from) - Math.abs((span[b] as LandedHit).frame - from));
+  for (const s of starts) {
+    let total = 0;
+    let end: number | null = null;
+    for (let i = s; i < span.length; i++) {
+      total += (span[i] as LandedHit).exact;
+      if (gives(total)) end = i;
+    }
+    if (end === null) continue;
+    const out: Record<string, number> = {};
+    for (const h of span.slice(s, end + 1)) out[h.operator] = (out[h.operator] ?? 0) + h.exact;
+    return out;
+  }
+  return null;
 }

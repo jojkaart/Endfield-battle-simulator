@@ -5,8 +5,8 @@
 // and that log's own burst.
 import { describe, expect, it } from "vitest";
 import { loadGameData, type LogFixture, type LogHit } from "@efsim/data";
-import { checkLog, readLogFixture, RECORD_END_LAG_MS, recordedBurst } from "@efsim/cli";
-import { computeStats, type Build } from "@efsim/engine";
+import { checkLog, readLogFixture, RECORD_END_LAG_MS, recordedBurst, replayRecord } from "@efsim/cli";
+import { computeStats, type Build, type LandedHit } from "@efsim/engine";
 
 const data = loadGameData();
 const SI = "chr_0036_jsspsi";
@@ -47,6 +47,8 @@ describe("recordedBurst: the window and its readings", () => {
     // The 9600 ms hit (400 ms before) is in range; the next end (6000 ms, 4000 ms before) is the latest before it.
     expect(b.readings.map((r) => [r.last, r.lag, r.counted, r.recorded])).toEqual([[9600, 400, 4, recorded + 1000], [6000, 4000, 3, recorded]]);
     expect(b.readings[0]?.predicted).toBe(Math.round(b.rate * (recorded + 1000)));
+    // By hitter, for the per-operator totals (fightTotals: a teammate's share as logged).
+    expect(b.readings[0]?.byOperator).toEqual({ [SI]: 10000 + 30000 + 1000, chr_0016_laevat: 5000 });
     expect(b.readings[0]?.tolerance).toBeCloseTo(1 + 0.5 * b.rate * 4, 6);
     expect(RECORD_END_LAG_MS).toBe(1000);
   });
@@ -119,5 +121,29 @@ describe("the log check judges the burst", () => {
     const fit = b.readings.find((r) => Math.abs(r.predicted - (burst.uncapped ?? burst.value)) <= r.tolerance);
     expect(fit).toMatchObject({ last: 9331, lag: 699, counted: 55, predicted: 301680 });
     expect(burst.value).toBe(301679);
+  });
+});
+
+describe("replayRecord: the replay's record behind its burst, by hitter (the per-operator totals, 2026-11-14)", () => {
+  const landing = (frame: number, operator: string, exact: number, fixed = false) => ({ frame, operator, exact, ...(fixed ? { fixed: true } : {}) }) as unknown as LandedHit;
+  const hits = [landing(10, SI, 500), landing(30, SI, 1000), landing(30, "chr_0028_wulfa", 2000), landing(60, "chr_0028_wulfa", 4000), landing(70, SI, 99, true), landing(90, SI, 8000)];
+
+  it("finds the run of landings from the buff's start whose total gives the burst, and splits it by hitter", () => {
+    // Recorded from frame 30 to 60 (Fixed DMG not counted): 0.2 × 7000.
+    const burst = landing(100, SI, 0.2 * 7000, true);
+    expect(replayRecord([...hits, burst], burst, 0.2, 30)).toEqual({ [SI]: 1000, chr_0028_wulfa: 6000 });
+    // A start the log places a little off still finds it; a total no run gives, none.
+    expect(replayRecord([...hits, burst], burst, 0.2, 25)).toEqual({ [SI]: 1000, chr_0028_wulfa: 6000 });
+    const odd = landing(100, SI, 0.2 * 7001, true);
+    expect(replayRecord([...hits, odd], odd, 0.2, 30)).toBeNull();
+  });
+
+  it("0eef2474a26f: Si's burst moves only her per-operator total; the team's keeps the replay's", async () => {
+    const { engineHits, engineReport, logBuffReplay } = await import("@efsim/cli");
+    const replay = logBuffReplay(data, real);
+    const t = engineReport(data, real, replay, engineHits(data, real, replay)).totals;
+    expect(t.recordedShifts.map((x) => [x.operator, x.t])).toEqual([[SI, 10030]]);
+    const sum = Object.values(t.simulated.perOperator).reduce((a, b) => a + b, 0);
+    expect(sum - (t.recordedShifts[0]?.amount ?? NaN)).toBeCloseTo(t.simulated.damage, 3);
   });
 });
