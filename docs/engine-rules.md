@@ -222,7 +222,7 @@ are at 30 FPS.
 - B12. `extendBuff` adds seconds to every layer of an active buff; `endBuff` ends all or the oldest layers. [DATA]
 - B13. `endsWithCast` buffs end when the owner's current skill ends or the owner starts another. [DATA]
 - B14. Targets: `self` (owner's hits), `team` (all members, or `recipients` judged at application), `enemy` (every team member's hits on it). [DATA]
-- B15. `consumedBy`: inactive until the next cast of those kinds by someone it reaches; then it acts only on that cast's hits (until its last hit), or with `whileCasting` on every hit of the caster until the cast ends. [DATA]
+- B15. `consumedBy`: inactive until the next cast of those kinds by someone it reaches; then it acts only on that cast's hits, each however late it lands (it ends the frame after the cast's last hit has landed: a stop that holds the caster more than the world, a replayed landing at its logged frame), or with `whileCasting` also on every hit of the caster until the cast ends. Link likewise. [DATA]; the late landings [SETTLED] (0eef, bdf2, 9a80)
 - B16. By default a hit's buffs act from the next hit (applied after its damage). [DATA]
 - B17. `beforeDamage` buffs act on the hit that applies them. Order within a landing: cast SP, applications, before-damage triggers on what they caused, stack gains, before-damage buffs, `spBeforeDamage` SP, damage, `afterDamage` applications, other buffs, hit SP, energy, reaction/burst/status damage, Stagger, then triggers. [DATA]
 - B18. Buff modifiers reach a hit only if active at its landing frame (no snapshot), except snapshots below. [SETTLED]

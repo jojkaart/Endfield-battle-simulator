@@ -675,6 +675,14 @@ of Laevatain's attack5 has it (batch-1 "Kit errors found").
   every hit of the caster until the cast ends (`whileCasting`: a buff
   attached to the cast, CreateBuffAttachingSkill). Examples: Link and Jade
   Vessel. [DATA]
+- A consumed buff acts on **every** hit of its cast, however late it lands:
+  a stop that holds the caster more than the world (another's ultimate
+  inside the caster's own combo slow-down), or a landing later than the
+  kit's frames. The game's attached buff checks the cast's ID
+  (buff_equipsuit_attrisuitup_02: CheckSkillCastId, 20 s), not a planned
+  end. [SETTLED] (0eef and bdf2: Si's combo final 10 and 1 frames late, bdf
+  exact with Jade Vessel and Yinglung's Edge; 9a80: her combo stretched by
+  her ultimate)
 - Values are fixed at application, at the applier's levels (ValueExprs).
   [DATA] (buffs.ts `applyBuff`)
 - **Snapshotting:** only periodic damage with `takeAtkSnapshot`

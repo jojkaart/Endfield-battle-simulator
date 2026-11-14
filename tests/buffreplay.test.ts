@@ -6,7 +6,7 @@
 // log stops listing Camille's weapon buffs.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, computeHit, computeStats, createContext, effectiveKit, FPS, init, parseReactionEvent, replayCast, replayWindowCount, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
+import { advance, computeHit, computeStats, createContext, effectiveKit, FPS, init, parseReactionEvent, replayCast, replayWindowCount, roundDamage, type ActiveBuff, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
 import { loadGameData, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
 import { castsFromBuffLanes, castsFromTriggerHits, checkLog, controlledFromLog, formatBuffReplay, LOG_LISTING, logBuffReplay, loggedRecoveries, readLogFixture, replayedCasts, simulateLog, withLoggedCasts, type HitVerdict } from "@efsim/cli";
 import { placeHits } from "../packages/cli/src/logcasts.ts";
@@ -156,6 +156,21 @@ describe("replayCast: a logged cast at its logged frame", () => {
     const wolfHit = st.hits.find((x) => x.hitId === "wolf");
     expect([wolfHit?.ref, wolfHit?.facts?.castLink, wolfHit?.facts?.consumed]).toEqual(["b", 0, 0]);
     expect(st.hits.find((x) => x.hitId === "h1")?.ref).toBeUndefined();
+  });
+
+  it("gives the buffs a cast uses up to every hit of the cast, however late the log lands it (2026-11-14)", () => {
+    // 0eef2474a26f / bdf223db8e49: Si's combo final logged 10 and 1 frames past its planned frame lost Jade Vessel's DMG
+    // and Yinglung's Edge, which ended at the planned last hit + 1 (bdf: 287,297 logged, with them exactly).
+    const ready: ActiveBuff = { id: "ready", owner: op, target: "self", appliedAt: 0, expiresAt: Infinity, consumedBy: ["battle"], modifiers: [{ zone: "amp", value: 0.5, source: "ready" }] };
+    // A Link stack (its expiry frame) too.
+    const st: TimelineState = { ...init(ctx), buffs: [ready], link: [1000] };
+    const r = advance(ctx, replayCast(ctx, st, op, BATTLE, 30, { landings: [{ hitId: "h2", nth: 0, frame: 120 }] }), 200);
+    const late = r.hits.find((x) => x.hitId === "h2");
+    expect(late?.frame).toBe(120);
+    expect(late?.modifiers.filter((m) => m.source === "ready" || m.source.startsWith("Link")).map((m) => m.source).sort()).toEqual(["Link (1)", "ready"]);
+    // Used up, they end on the frame after the cast's last hit has landed.
+    expect(r.buffs.filter((b) => b.cast !== undefined)).toEqual([]);
+    expect(advance(ctx, replayCast(ctx, st, op, BATTLE, 30, { landings: [{ hitId: "h2", nth: 0, frame: 120 }] }), 120).buffs.filter((b) => b.cast !== undefined).map((b) => [b.id, b.expiresAt])).toEqual([["link", 121], ["ready", 121]]);
   });
 
   it("tells whether a replayed combo finds its window open, and its count (replayWindowCount)", () => {
