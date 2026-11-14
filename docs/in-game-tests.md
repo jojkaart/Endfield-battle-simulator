@@ -1887,6 +1887,8 @@ appear with 2 layers at the first soundwave and show 5 within about 6 s
 
 ### 94. Thermite Cutter's Link half (ready, if you have Thermite Cutter and Lifeng or Camille; low priority)
 
+**Decided by the logs (2026-11-14):** a teammate's Link gives no Thermite layer (Camille's combo in 012a, Lifeng's in 82735 and d4fb); the wielder's own SP grants do. The engine follows it (the kit's Link trigger counts only her own Link).
+
 **Why:** Thermite Cutter gives the team ATK (+14% at level 9, 20 s, up to 2
 layers) "after the wielder's skill recovers SP or grants a Link state".
 In the data the second half fires when a Link stack reaches the wielder.

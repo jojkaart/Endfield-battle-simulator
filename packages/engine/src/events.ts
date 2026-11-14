@@ -165,7 +165,7 @@ export type TriggerOn =
    * Someone (`by`: the one who gains it, e.g. `self` for "after the wielder gains Link") gains Link stacks (abilityEvent 9
    * with CheckBuffIdInContext buff_common_affixes_combo_trigger), from anyone's trigger action `link`; `eventCount`: the stacks.
    */
-  | { readonly event: "linkGained" }
+  | { readonly event: "linkGained"; readonly fromSelf?: boolean }
   /** The owner's own stack reaches a count. */
   | { readonly event: "stackAtLeast"; readonly stack: string; readonly atLeast: number };
 
@@ -440,7 +440,7 @@ export function eventMatches(on: TriggerOn, e: BattleEvent, owner: string, ownSt
     case "perfectDodge":
       return e.type === "perfectDodge";
     case "linkGained":
-      return e.type === "linkGained";
+      return e.type === "linkGained" && (!on.fromSelf || e.from === owner);
   }
   if (e.type !== "status" || !has(on.fromKinds, e.fromKind)) return false;
   const s = e.event;

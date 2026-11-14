@@ -875,6 +875,10 @@
                 "properties": {
                   "event": {
                     "const": "linkGained"
+                  },
+                  "fromSelf": {
+                    "type": "boolean",
+                    "description": "Only Link the trigger's owner granted (its own `link` action): a teammate's Link doesn't count (Thermite Cutter: no layer at Camille's or Lifeng's combo Link in 012a, 82735, d4fb)."
                   }
                 },
                 "description": "Someone (`by`: the one who gains it; `self` for \"after the wielder gains Link\") gains Link stacks (abilityEvent 9 with CheckBuffIdInContext buff_common_affixes_combo_trigger) from anyone's trigger action `link`. Link stacks are the team's: every member gains them. `eventCount`: the stacks."

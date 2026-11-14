@@ -433,7 +433,15 @@ potential, gear, Thermite skill 3, her skill levels (1/1/1/9 right), food.
 would fit; Tower 15's 20 fits 458b); Thermite's trigger rule (when its
 team ATK starts).
 
-**Next check:** Thermite Cutter's trigger in the data against 012a's 31 s.
+**Fixed (sonnet diagnosis, 2026-11-14):** teammates' Link gives no
+Thermite layer (Camille's combo in 012a, Lifeng's in 82735 and d4fb); the
+kit's Link trigger now counts only Link the wielder grants (`fromSelf`).
+012a plain: Laevatain 53 → 90, Arcane 116 → 142, Camille 58 → 117; d4fb:
+Chen 30 → 42, Pogranichnik 93 → 129. Test 94 decided. The constant ×0.89
+on Akekuri's own physical hits stays open.
+
+**Next check:** Akekuri's ×0.89 (weapon skill 2, the enemy's physical
+resistance).
 
 ## Estella's Razorhorn ATK: on the Shattering hit; Lifts get about half
 
