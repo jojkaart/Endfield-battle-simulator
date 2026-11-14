@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
-import { FPS, critTriggers, payoffs, randomOutcomes, searchBeams, upperBound, searchLoop, simulate, simulateDistribution, simulateRuns, type DamageDistribution, type EnergyLost, type RotationSpread, type TimelineResult, type Build, type CritMode, type Element, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
+import { FPS, critTriggers, macroTree, payoffs, setupTable, skeletons, randomOutcomes, searchBeams, upperBound, searchLoop, simulate, simulateDistribution, simulateRuns, type DamageDistribution, type EnergyLost, type RotationSpread, type TimelineResult, type Build, type CritMode, type Element, type GameData, type RotationAction, type TimelineScenario } from "@efsim/engine";
 import { readBuild } from "./commands.ts";
 import { num, table } from "./format.ts";
 
@@ -160,15 +160,25 @@ export function searchWidths(beam: number, single: boolean): number[] {
 export function searchCommand(
   data: GameData,
   scenario: TimelineScenario,
-  options: { beam: number; single?: boolean; swaps?: boolean; out?: string; seeds?: number; percentile?: number; runs?: number; verbose: boolean; prune?: boolean },
+  options: { beam: number; single?: boolean; swaps?: boolean; out?: string; seeds?: number; percentile?: number; runs?: number; verbose: boolean; prune?: boolean; macros?: boolean; skeletons?: boolean; setup?: "score" | "share" },
 ): string {
   const { rotation: _ignored, ...rest } = scenario;
   const widths = searchWidths(options.beam, options.single ?? false);
   const seconds = new Map<number, number>();
   // Pruning (docs/design.md "Pruning the search"): dominance, and branch and bound on the payoff table's ceilings.
   const tBound = Date.now();
-  const bound = options.prune ? upperBound(payoffs(data, rest, { chains: false })) : undefined;
-  const boundSeconds = (Date.now() - tBound) / 1000;
+  // Planning from the payoffs (docs/design.md "Payoffs and chains", phase 3): one payoff table with what's asked for:
+  // ceilings for the bound and the setup value, chains for macros and skeletons (merges measured for skeletons).
+  const wantCeilings = options.prune === true || options.setup !== undefined;
+  const wantChains = options.macros === true || options.skeletons === true;
+  const report = wantCeilings || wantChains ? payoffs(data, rest, { ceilings: wantCeilings, chains: wantChains, measure: options.skeletons ? 10 : 0 }) : undefined;
+  const bound = options.prune && report ? upperBound(report) : undefined;
+  const macros = options.macros && report ? macroTree(report.steps, report.chains) : undefined;
+  const setup = options.setup && report ? setupTable(report) : undefined;
+  const tableSeconds = (Date.now() - tBound) / 1000;
+  const tSkeletons = Date.now();
+  const sk = options.skeletons && report ? skeletons(data, rest, report) : undefined;
+  const skeletonSeconds = (Date.now() - tSkeletons) / 1000;
   let t = Date.now();
   const found = searchBeams(data, rest, {
     beams: widths,
@@ -177,6 +187,9 @@ export function searchCommand(
     ...(options.percentile !== undefined ? { percentile: options.percentile } : {}),
     ...(options.runs !== undefined ? { runs: options.runs } : {}),
     ...(bound ? { dominance: true, bound } : {}),
+    ...(macros ? { macros } : {}),
+    ...(setup ? { setup, ...(options.setup === "share" ? { setupShare: true } : {}) } : {}),
+    ...(sk ? { skeletons: sk } : {}),
   }, (_r, w) => {
     const now = Date.now();
     seconds.set(w, (now - t) / 1000);
@@ -199,8 +212,12 @@ export function searchCommand(
       `  Spread ${(found.beamSpread * 100).toFixed(1)}%: ${found.beamSpread < 0.01 ? "the widths agree within 1%." : "wider beams still found more (each keeps the narrower ones' best and may beat it), so a wider beam may find more again. Treat the best as a lower bound."}`,
     ]),
     ...(bound
-      ? [`Pruned (bound table ${boundSeconds.toFixed(1)} s${bound.unbounded ? `, unbounded: ${bound.unbounded}` : ""}): ${found.beams.map((b) => `beam ${b.beamWidth}: ${b.counts.dominated} dominated, ${b.counts.bounded} bounded${b.counts.boundMisses ? `, ${b.counts.boundMisses} states of the guide's line under the bound (it wasn't admissible there; kept)` : ""}`).join("; ")}.`]
+      ? [`Pruned (bound table ${tableSeconds.toFixed(1)} s${bound.unbounded ? `, unbounded: ${bound.unbounded}` : ""}): ${found.beams.map((b) => `beam ${b.beamWidth}: ${b.counts.dominated} dominated, ${b.counts.bounded} bounded${b.counts.boundMisses ? `, ${b.counts.boundMisses} states of the guide's line under the bound (it wasn't admissible there; kept)` : ""}`).join("; ")}.`]
       : []),
+    ...(report ? [`Payoff table: ${tableSeconds.toFixed(1)} s (${plural(report.chains.length, "chain")}, ${plural(report.ceilings.length, "ceiling")}).`] : []),
+    ...(macros && report ? [`Macros (${plural(report.chains.length, "chain")} as one choice each): ${found.beams.map((b) => `beam ${b.beamWidth}: ${b.counts.macros} children`).join("; ")}.`] : []),
+    ...(sk ? [`Skeletons (${skeletonSeconds.toFixed(1)} s), guides at every width: ${sk.map((x) => num(Math.round(x.damage), 0)).join(" / ")}.`] : []),
+    ...(setup ? [`Setup value (${setup.payoffs.length} payoffs) ${options.setup === "share" ? "ranks the beam's extra share" : "in the score"}.`] : []),
     ...capped.map((b) => `Warning: beam ${b.beamWidth} stopped at the expansion cap (${b.expanded} states) before the fight's end: its rotation is the best found by then.`),
     ...(found.random.length > 0 ? [`Random outcomes (${found.random.join("; ")}): each candidate ranked by ${ranked} of ${found.seeds.length} battle${found.seeds.length === 1 ? "" : "s"} (${seeds}).`] : []),
     "",
@@ -367,3 +384,5 @@ export function formatResult(data: GameData, scenario: TimelineScenario, r: Time
   out.push("", "Assumptions (v1 timeline):", ...r.assumptions.map((a) => `  - ${a}`));
   return out.join("\n");
 }
+
+const plural = (n: number, what: string) => `${n} ${what}${n === 1 ? "" : "s"}`;

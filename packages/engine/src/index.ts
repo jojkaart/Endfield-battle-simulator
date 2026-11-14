@@ -20,3 +20,6 @@ export * from "./expr.ts";
 export * from "./timeline.ts";
 export * from "./moments.ts";
 export * from "./distribution.ts";
+export * from "./macros.ts";
+export * from "./setupvalue.ts";
+export * from "./skeleton.ts";

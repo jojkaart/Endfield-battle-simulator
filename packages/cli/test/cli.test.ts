@@ -30,6 +30,15 @@ describe("cli commands", () => {
     expect(searchCommand(data, { ...solo, durationFrames: 6 * 30 }, { beam: 2, single: true, verbose: false })).toMatch(/^Searched \d+ states \(beam 2\)/);
   });
 
+  it("search plans from the payoffs on request: macros, skeletons, the setup value (one payoff table)", () => {
+    const solo = readScenario(join(ROOT, "examples/laevatain-solo.scenario.json"));
+    const text = searchCommand(data, { ...solo, durationFrames: 10 * 30 }, { beam: 2, single: true, verbose: false, macros: true, skeletons: true, setup: "share" });
+    expect(text).toMatch(/Payoff table: [\d.]+ s \(\d+ chains?, \d+ ceilings?\)\./);
+    expect(text).toMatch(/Macros \(\d+ chains? as one choice each\): beam 2: \d+ children\./);
+    expect(text).toMatch(/Skeletons \([\d.]+ s\), guides at every width: [\d,]+/);
+    expect(text).toMatch(/Setup value \(\d+ payoffs\) ranks the beam's extra share\./);
+  });
+
   it("find looks up IDs by name", () => {
     expect(find(data, "laevatain")).toContain("chr_0016_laevat");
     expect(find(data, "forgeborn")).toContain("wpn_sword_0006");

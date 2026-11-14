@@ -50,6 +50,13 @@ const USAGE = `Usage:
                                           next, each cast at least once (fast ones held for the slowest)
                 [--prune]                 Drop dominated states and, by branch and bound on the payoff table's
                                           ceilings (efsim payoffs), states that can't beat the best so far
+                [--macros]                Offer each chain of the payoff table (efsim payoffs) as one choice
+                                          where its first step is one (played at its steps' earliest frames)
+                [--skeletons]             Guide every width by three skeletons: the payoff table's chains and
+                                          their merges scheduled greedily by value per second (extra beam share)
+                [--setup score|share]     Count what the pieces a state holds are worth to payoffs it can still
+                                          cast (the payoff table's ceilings): in the score, or only in the
+                                          ranking of an extra half-beam share
                 [--swaps]                 Let the rotation swap the controlled operator (default: never; the
                                           scenario's controlled operator does every basic attack and dive)
                 [--seeds k]               With random outcomes: battles each candidate is ranked over (default 4)
@@ -153,6 +160,9 @@ async function main(argv: string[]): Promise<number> {
       singles: { type: "boolean", default: false },
       json: { type: "boolean", default: false },
       prune: { type: "boolean", default: false },
+      macros: { type: "boolean", default: false },
+      skeletons: { type: "boolean", default: false },
+      setup: { type: "string" },
       depth: { type: "string" },
       help: { type: "boolean", short: "h", default: false },
     },
@@ -313,6 +323,9 @@ async function main(argv: string[]): Promise<number> {
           ...(runs !== undefined ? { runs } : {}),
           verbose: values.verbose,
           prune: values.prune,
+          macros: values.macros,
+          skeletons: values.skeletons,
+          ...(values.setup !== undefined ? { setup: setupMode(values.setup) } : {}),
         });
       }
       break;
@@ -373,3 +386,9 @@ main(process.argv.slice(2)).then(
     process.exitCode = 1;
   },
 );
+
+/** --setup's mode. */
+function setupMode(v: string): "score" | "share" {
+  if (v !== "score" && v !== "share") throw new Error(`--setup must be score or share`);
+  return v;
+}

@@ -42,6 +42,8 @@ import { SP } from "./timeline/rules.ts";
 import { FPS } from "./units.ts";
 import { windowKey } from "./timeline/timing.ts";
 import { remainingBound, type UpperBound } from "./bound.ts";
+import { playMacros, type MacroNode } from "./macros.ts";
+import { setupValue, type SetupTable } from "./setupvalue.ts";
 
 export interface Candidate {
   readonly action: RotationAction;
@@ -118,6 +120,16 @@ function judge(ctx: TimelineContext, state: TimelineState, action: RotationActio
     if (free > s.frame) s = earliestStart(ctx, state, { ...action, at: free });
   }
   return !("error" in s) && s.frame <= ctx.scenario.durationFrames ? { action, frame: s.frame } : null;
+}
+
+/** The controlled operator's soonest next basic attack from a state (with `at`), when it starts before a frame: a macro's filler (playMacros). */
+export function nextBasicAttack(ctx: TimelineContext, state: TimelineState, before: number): RotationAction | null {
+  let next: Candidate | null = null;
+  for (const skill of nextBasics(ctx.data, state, state.controlled)) {
+    const c = judge(ctx, state, { operator: state.controlled, skill });
+    if (c && c.frame < before && (!next || c.frame < next.frame)) next = c;
+  }
+  return next ? { ...next.action, at: next.frame } : null;
 }
 
 /** Every action that can still happen, with its earliest legal start (stepping API: legal actions). */
@@ -440,7 +452,34 @@ export interface SearchOptions {
    * (`boundMisses`: the bound wasn't admissible there).
    */
   readonly bound?: UpperBound;
+  /**
+   * Chains as macro actions (docs/design.md "Payoffs and chains", phase 3): where a chain's first step is among a
+   * node's choices, the whole chain is one more choice, played from the node's own state at its steps' earliest
+   * frames (playMacros); its child is the state after its last step. Not in a loop's rounds (SearchHooks.stopAt).
+   */
+  readonly macros?: readonly MacroNode[];
+  /**
+   * With macros or skeletons (SearchHooks.guides): nodes whose rotation played a macro or a skeleton's own action are
+   * kept in a share of their own, up to this many a layer (default half the beam width) on top of the beam's
+   * (prunePools), so the rest of the beam is the search without them.
+   */
+  readonly extraBeam?: number;
+  /**
+   * A setup-aware value (docs/design.md "Payoffs and chains", phase 3): a node's score adds what the pieces it holds
+   * are worth to the payoffs it can still cast while they're on (setupValue), × `setupWeight` (default the value
+   * weight, or VALUE_WEIGHT when that's 0).
+   */
+  readonly setup?: SetupTable;
+  readonly setupWeight?: number;
+  /**
+   * With `setup`: the setup value ranks only the beam's extra share (prunePools; up to `extraBeam` nodes a layer that
+   * the main share, ranked as without it, dropped, and their children), so the search finds at least as much as without it.
+   */
+  readonly setupShare?: boolean;
 }
+
+/** The extra share's children a later bucket keeps waiting, × its width (search: push). */
+const EXTRA_PENDING = 4;
 
 /** SearchOptions.valueWeight's default (measured 2026-11-14: docs/design.md "How the beam ranks"). */
 export const VALUE_WEIGHT = 0.5;
@@ -508,6 +547,8 @@ export interface SearchResult {
      */
     readonly bounded: number;
     readonly boundMisses: number;
+    /** Children made by a macro (SearchOptions.macros: a chain played as one choice). */
+    readonly macros: number;
   };
   /** The scenario's random outcomes (randomOutcomes); empty: deterministic, one battle is the result. */
   readonly random: readonly string[];
@@ -553,15 +594,28 @@ export interface BeamsResult extends SearchResult {
  * (SearchHooks.guide, 2026-11-14): it finds at least as much, and the spread is how much the wider beams still found
  * on top. `onBeam` sees each width's result as it's done (the CLI times them).
  */
-export function searchBeams(data: GameData, scenario: Omit<TimelineScenario, "rotation">, options: SearchOptions & { readonly beams: readonly number[] }, onBeam?: (r: SearchResult, beamWidth: number) => void): BeamsResult {
-  const { beams: widths, ...rest } = options;
+export function searchBeams(
+  data: GameData,
+  scenario: Omit<TimelineScenario, "rotation">,
+  options: SearchOptions & {
+    readonly beams: readonly number[];
+    /**
+     * More guides for every width (skeletons.ts: the payoff table's chains scheduled by value per resource), after the
+     * narrower widths' best; the best of them is the bound's incumbent (with `damage`).
+     */
+    readonly skeletons?: readonly { readonly rotation: readonly RotationAction[]; readonly damage: number }[];
+  },
+  onBeam?: (r: SearchResult, beamWidth: number) => void,
+): BeamsResult {
+  const { beams: widths, skeletons, ...rest } = options;
+  const extra = skeletons?.length ? { guides: skeletons.map((x) => x.rotation), incumbent: Math.max(...skeletons.map((x) => x.damage)) } : {};
   if (widths.length === 0) throw new EngineError("searchBeams: no beam widths");
   let best: { r: SearchResult; w: number } | undefined;
   const beams: BeamRun[] = [];
   for (const w of widths) {
     if (!Number.isInteger(w) || w < 1) throw new EngineError(`beam width must be a whole number ≥ 1, not ${w}`);
     // Guided by the best narrower width's rotation: a wider beam finds at least as much (SearchHooks.guide).
-    const r = search(data, scenario, { ...rest, beamWidth: w }, best ? { guide: best.r.rotation, guideScore: best.r.score } : {});
+    const r = search(data, scenario, { ...rest, beamWidth: w }, { ...extra, ...(best ? { guide: best.r.rotation, guideScore: best.r.score } : {}) });
     onBeam?.(r, w);
     beams.push({ beamWidth: w, score: r.score, expanded: r.expanded, capped: r.capped, counts: r.counts });
     if (!best || r.score > best.r.score) best = { r, w };
@@ -857,14 +911,14 @@ export function stateKey(ctx: TimelineContext, s: TimelineState): string {
  * point, all 671,349, and the best rotation was dropped). A search policy, not an exact merge: the others are
  * reached by swapping later.
  */
-function prune(nodes: readonly Node[], n: number, counts: { merged: number; family: number; pruned: number; dominated: number }): Node[] {
+function prune(nodes: readonly Node[], n: number, counts: { merged: number; family: number; pruned: number; dominated: number }, keepsPlace: (guide: number) => boolean = () => true): Node[] {
   const byKey = new Map<string, Node>();
   for (const x of nodes) {
     const y = byKey.get(x.key);
-    // The guide's place goes to an equivalent state that's kept instead (the same choices follow: SearchHooks.guide).
-    const guideAt = Math.max(x.guideAt ?? -1, y?.guideAt ?? -1);
+    // A guide's place goes to an equivalent state that's kept instead (the same choices follow: SearchHooks.guides).
     const z = !y || x.score > y.score ? x : y;
-    byKey.set(x.key, guideAt >= 0 && z.guideAt !== guideAt ? { ...z, guideAt } : z);
+    const guides = y ? mergeGuides(x.guides, y.guides) : x.guides;
+    byKey.set(x.key, guides && !sameGuides(guides, z.guides) ? { ...z, guides } : z);
   }
   counts.merged += nodes.length - byKey.size;
   const undominated = dominance([...byKey.values()], counts);
@@ -881,9 +935,13 @@ function prune(nodes: readonly Node[], n: number, counts: { merged: number; fami
     } else rest.push(x);
   }
   for (const x of rest) if (kept.length < n) kept.push(x);
-  // The guide's line stays (in the last place) when the score alone would drop it.
-  const guide = sorted.find((x) => x.guideAt !== undefined);
-  if (guide && !kept.includes(guide)) kept[n - 1] = guide;
+  // Each guide's line stays (in the last places, in the guides' order) when the score alone would drop it.
+  let last = n - 1;
+  for (const g of guideIndices(sorted)) {
+    if (!keepsPlace(g) || last < 0) continue;
+    const guide = sorted.find((x) => x.guides?.[g] !== undefined) as Node;
+    if (!kept.includes(guide)) kept[last--] = guide;
+  }
   counts.pruned += sorted.length - n;
   // Those the best n by score would have kept.
   const chosen = new Set(kept);
@@ -915,7 +973,7 @@ function dominance(nodes: readonly Node[], counts: { dominated: number }): Node[
   for (const g of groups.values()) {
     if (g.length < 2) continue;
     for (const b of g) {
-      if (b.guideAt !== undefined) continue;
+      if (b.guides !== undefined) continue;
       if (g.some((a) => a !== b && !drop.has(a) && dominates(a, b))) drop.add(b);
     }
   }
@@ -935,10 +993,60 @@ interface Node {
   readonly damage: number;
   /** What the beam ranks it by: the statistic of committed damage plus the resources' worth (resourceValue) over the battles. */
   readonly score: number;
-  /** On the guide's line (SearchHooks.guide): how many of its actions the rotation (or an equivalent state's) has played. */
-  readonly guideAt?: number;
+  /** On guides' lines (SearchHooks.guides): per guide (its index), how many of its actions the rotation (or an equivalent state's) has played. */
+  readonly guides?: Readonly<Record<number, number>>;
   /** The dominance key (stateKeyer `amounts`) of the first state, with SearchOptions.dominance. */
   readonly dom?: string;
+  /**
+   * Its rotation played a macro (SearchOptions.macros) or a guide's action that wasn't a choice (a skeleton's:
+   * SearchHooks.guides): it's in the beam's extra share (prunePools).
+   */
+  readonly extra?: true;
+  /** With SearchOptions.setupShare: the score with the setup value, which ranks the extra share. */
+  readonly alt?: number;
+}
+
+/**
+ * With macros or skeletons, a layer's nodes in two shares. The first: those whose rotation played neither a macro
+ * nor a skeleton's own action, kept exactly as the search without them keeps them (only the first guide, the
+ * narrower beams' best, keeping a place), so the search finds at least what it finds without them. The second, up to
+ * `extra` more: the others, and those of the first on a skeleton's line it didn't keep (every guide keeps a place
+ * here); a state of theirs equivalent to a kept one of the first share and no better is left out. With `alt`
+ * (SearchOptions.setupShare), every node the first share drops is a candidate for the second, which ranks by the
+ * score with the setup value.
+ */
+function prunePools(nodes: readonly Node[], n: number, extra: number, primary: number, counts: { merged: number; family: number; pruned: number; dominated: number }, alt = false): Node[] {
+  const plain = prune(nodes.filter((x) => !x.extra), n, counts, (g) => g === primary);
+  const kept = new Map(plain.map((x) => [x.key, x.score]));
+  // Those that move to the second share stay there (their children too).
+  const others = nodes
+    .filter((x) => (x.extra || (!kept.has(x.key) && (alt || Object.keys(x.guides ?? {}).some((g) => Number(g) !== primary)))) && !((kept.get(x.key) ?? -Infinity) >= x.score))
+    .map((x): Node => (x.extra ? x : { ...x, extra: true }))
+    // With setupShare, ranked by the score with the setup value.
+    .map((x) => (alt && x.alt !== undefined ? { ...x, score: x.alt } : x));
+  return [...plain, ...prune(others, extra, counts)];
+}
+
+/** Two nodes' guide positions as one (an equivalent state's: the furthest along each guide). */
+function mergeGuides(a: Node["guides"], b: Node["guides"]): Node["guides"] {
+  if (!a) return b;
+  if (!b) return a;
+  const out: Record<number, number> = { ...a };
+  for (const [g, p] of Object.entries(b)) out[Number(g)] = Math.max(out[Number(g)] ?? -1, p);
+  return out;
+}
+
+function sameGuides(a: Node["guides"], b: Node["guides"]): boolean {
+  if (!a || !b) return a === b;
+  const ka = Object.keys(a);
+  return ka.length === Object.keys(b).length && ka.every((g) => a[Number(g)] === b[Number(g)]);
+}
+
+/** The guides any of the nodes is on, in the guides' order. */
+function guideIndices(nodes: readonly Node[]): number[] {
+  const out = new Set<number>();
+  for (const x of nodes) for (const g of Object.keys(x.guides ?? {})) out.add(Number(g));
+  return [...out].sort((a, b) => a - b);
 }
 
 /** The mean of the values, or their percentile (0–100, nearest rank). One value is itself either way. */
@@ -975,6 +1083,14 @@ export interface SearchHooks {
    * narrower widths). It must be one this search can make (the same scenario and options: a found rotation).
    */
   readonly guide?: readonly RotationAction[];
+  /**
+   * More rotations the beam keeps a place for, each its own (after `guide`, which is the first): searchBeams' skeletons
+   * (docs/design.md "Payoffs and chains", phase 3). Any legal rotation of the scenario: where a guide's next action
+   * isn't among a node's choices it's added to them (a skeleton waits where the search's choices wouldn't).
+   */
+  readonly guides?: readonly (readonly RotationAction[])[];
+  /** Damage some rotation is known to reach (the best skeleton's): with SearchOptions.bound, a state that can't beat it is cut from the start. */
+  readonly incumbent?: number;
   /** The guide's damage (its search's score): with SearchOptions.bound, a state on its line under the bound is a miss only when this would beat what's found. */
   readonly guideScore?: number;
   /**
@@ -1022,28 +1138,53 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
   const familyKey = stateKeyer(ctx, true);
   const weight = options.valueWeight ?? VALUE_WEIGHT;
   const prices = weight === 0 ? undefined : resourcePrices(data, scenario);
+  const setup = options.setup;
+  const setupWeight = options.setupWeight ?? (weight || VALUE_WEIGHT);
+  const setupShare = setup !== undefined && options.setupShare === true;
   // Dominance compares one battle's amounts (with random outcomes each node holds several: not done).
   const domKey = options.dominance && k === 1 ? stateKeyer(ctx, false, true) : undefined;
   const bound = options.bound;
   const node = (states: readonly TimelineState[], rotation: readonly RotationAction[]): Node => {
     const damages = states.map((s, i) => committedDamage(ctxs[i] as TimelineContext, s, landedBefore[i]));
     const scores = prices ? states.map((s, i) => (damages[i] as number) + resourceValue(ctxs[i] as TimelineContext, prices, s, weight)) : damages;
+    // The setup value: in the score, or with setupShare only in the extra share's ranking (`alt`).
+    const setups = setup ? states.map((s, i) => setupValue(ctxs[i] as TimelineContext, setup, s, setupWeight)) : undefined;
+    const withSetup = setups ? scores.map((x, i) => x + (setups[i] as number)) : scores;
     return {
-      states, rotation, family: familyKey(states[0] as TimelineState), key: states.map((s, i) => (keyers[i] as (s: TimelineState) => string)(s)).join("\n"), damage: statistic(damages, percentile), score: statistic(scores, percentile),
+      states, rotation, family: familyKey(states[0] as TimelineState), key: states.map((s, i) => (keyers[i] as (s: TimelineState) => string)(s)).join("\n"), damage: statistic(damages, percentile), score: statistic(setupShare ? scores : withSetup, percentile),
+      ...(setupShare ? { alt: statistic(withSetup, percentile) } : {}),
       ...(domKey ? { dom: domKey(states[0] as TimelineState) } : {}),
     };
   };
   const buckets = new Map<number, Node[]>();
+  // The extra share's children waiting in a later bucket (a macro's land up to seconds ahead, many a layer): beyond
+  // twice EXTRA_PENDING × its width, cut to the best EXTRA_PENDING × its width (and every guide's line), so they don't
+  // fill the memory. The main share's are never cut before their bucket.
+  const extraCap = EXTRA_PENDING * (options.extraBeam ?? Math.ceil(beam / 2));
+  const extraPending = new Map<number, number>();
   const push = (n: Node) => {
     const b = Math.floor((n.states[0] as TimelineState).frame / bucketFrames);
-    const list = buckets.get(b) ?? [];
+    let list = buckets.get(b) ?? [];
     list.push(n);
+    if (n.extra) {
+      const pending = (extraPending.get(b) ?? 0) + 1;
+      extraPending.set(b, pending);
+      if (pending > 2 * extraCap) {
+        const extras = list.filter((x) => x.extra).sort((x, y) => y.score - x.score);
+        const keep = new Set(extras.filter((x, i) => i < extraCap || x.guides !== undefined));
+        list = list.filter((x) => !x.extra || keep.has(x));
+        extraPending.set(b, keep.size);
+      }
+    }
     buckets.set(b, list);
   };
-  const guide = hooks.guide;
+  const guideList = [...(hooks.guide ? [hooks.guide] : []), ...(hooks.guides ?? [])];
   const same = (a: RotationAction | undefined, b: RotationAction) => a !== undefined && a.operator === b.operator && a.skill === b.skill && a.at === b.at;
   const prefix = hooks.prefix ?? [];
-  const onGuide = guide !== undefined && prefix.every((a, i) => same(guide[i], a));
+  const rootGuides: Record<number, number> = {};
+  guideList.forEach((g, i) => {
+    if (prefix.every((a, j) => same(g[j], a))) rootGuides[i] = prefix.length;
+  });
   // Hits landed before hooks.hitsFrom (the leading run of the root's hits, in the order they landed) are dropped from the
   // root: nothing in the fight reads landed hits, and every node would otherwise carry its own copy of them all (a
   // loop's late rounds ran out of memory). Their sum, in the same order, starts each node's (committedDamage).
@@ -1054,11 +1195,16 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
     for (let j = 0; j < (cuts[i] as number); j++) sum += (st.hits[j] as TimelineState["hits"][number]).exact;
     return sum;
   });
-  const root = { ...node(starts.map((st, i) => (cuts[i] ? { ...st, hits: st.hits.slice(cuts[i]) } : st)), prefix), ...(onGuide ? { guideAt: prefix.length } : {}) };
+  const root = { ...node(starts.map((st, i) => (cuts[i] ? { ...st, hits: st.hits.slice(cuts[i]) } : st)), prefix), ...(Object.keys(rootGuides).length ? { guides: rootGuides } : {}) };
   push(root);
   let best: Node = root;
   let expanded = 0;
-  const counts = { compared: 0, merged: 0, family: 0, pruned: 0, dominated: 0, bounded: 0, boundMisses: 0 };
+  const counts = { compared: 0, merged: 0, family: 0, pruned: 0, dominated: 0, bounded: 0, boundMisses: 0, macros: 0 };
+  const macros = options.macros?.length ? options.macros : undefined;
+  const extraBeam = options.extraBeam ?? Math.ceil(beam / 2);
+  const pools = macros !== undefined || (hooks.guides?.length ?? 0) > 0 || setupShare;
+  const primary = hooks.guide ? 0 : -1;
+  const nextBasic = (s: TimelineState, before: number) => nextBasicAttack(ctx, s, before);
   let capped = false;
   const stopAt = hooks.stopAt;
   const allow = hooks.allow;
@@ -1070,7 +1216,7 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
     // Children that stay in this bucket (casts at the same frame) are expanded in further rounds, under the same beam.
     while (layer.length > 0 && expanded < maxExpansions) {
       counts.compared += layer.length;
-      const nodes = prune(layer, beam, counts);
+      const nodes = pools ? prunePools(layer, beam, extraBeam, primary, counts, setupShare) : prune(layer, beam, counts);
       layer = [];
       for (const n of nodes) {
         expanded++;
@@ -1079,30 +1225,61 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
         const lastSwap = n.rotation.at(-1)?.skill === "swap";
         const choices = legalActions(ctx, first, allow ? (a) => allow(a, n.rotation) : undefined).filter((c) => c.action.skill !== "swap" || (swaps && !lastSwap));
         if (choices.length === 0 && n.damage > best.damage) best = n;
-        for (const c of choices) {
-          // Applied as recorded, with `at` the frame it starts, so the rotation replays to exactly these states.
-          const step = { ...c.action, at: c.frame };
+        // One child per choice; with SearchOptions.macros also one per chain whose first step is a choice (playMacros).
+        const plays: { steps: RotationAction[]; first?: TimelineState; forced?: true }[] = choices.map((c) => ({ steps: [{ ...c.action, at: c.frame }] }));
+        // A guide's next action that isn't a choice (a skeleton's: SearchHooks.guides) is one, when it's legal at its frame.
+        for (const [g, p] of Object.entries(n.guides ?? {})) {
+          const next = guideList[Number(g)]?.[p];
+          if (!next || plays.some((x) => same(x.steps[0], next))) continue;
+          const e = earliestStart(ctx, first, next);
+          if (!("error" in e) && e.frame === next.at) plays.push({ steps: [next], forced: true });
+        }
+        if (macros && !stopAt) {
+          const firsts = choices.filter((c) => c.action.skill !== "swap");
+          for (const m of playMacros(ctx, first, macros, firsts, allow ? (a, played) => allow(a, [...n.rotation, ...played]) : undefined, nextBasic)) plays.push({ steps: [...m.actions], first: m.state });
+        }
+        for (const play of plays) {
+          // Applied as recorded, with `at` the frame each starts, so the rotation replays to exactly these states.
           const states: TimelineState[] = [];
           for (let i = 0; i < k; i++) {
             const ci = ctxs[i] as TimelineContext;
-            const si = n.states[i] as TimelineState;
-            // The proposing battle found it legal; another may not (its dice went otherwise): then the child is dropped.
-            if (i > 0 && "error" in earliestStart(ci, si, step)) break;
-            states.push(apply(ci, si, step));
+            let si = n.states[i] as TimelineState;
+            if (i === 0 && play.first) {
+              states.push(play.first);
+              continue;
+            }
+            let legal = true;
+            for (const step of play.steps) {
+              // The proposing battle found it legal; another may not (its dice went otherwise): then the child is dropped.
+              if (i > 0 && "error" in earliestStart(ci, si, step)) {
+                legal = false;
+                break;
+              }
+              si = apply(ci, si, step);
+            }
+            if (!legal) break;
+            states.push(si);
           }
           if (states.length < k) continue;
-          const made = node(states, [...n.rotation, step]);
-          const child = guide && n.guideAt !== undefined && same(guide[n.guideAt], step) ? { ...made, guideAt: n.guideAt + 1 } : made;
+          const step = play.steps.at(-1) as RotationAction;
+          const made = node(states, [...n.rotation, ...play.steps]);
+          if (play.first) counts.macros++;
+          let child: Node = n.extra || play.first || play.forced ? { ...made, extra: true } : made;
+          if (n.guides) {
+            const on: Record<number, number> = {};
+            for (const [g, p] of Object.entries(n.guides)) if (play.steps.every((x, j) => same(guideList[Number(g)]?.[p + j], x))) on[Number(g)] = p + play.steps.length;
+            if (Object.keys(on).length) child = { ...child, guides: on };
+          }
           if (child.damage > best.damage) best = child;
           // Branch and bound: what it has committed and can still add against the most committed so far (a rotation
           // that stops acting deals exactly its committed damage, so that's reachable). One battle's bound: the mean
           // and a percentile of several are no more than their largest.
           if (bound && child !== best) {
             const most = Math.max(...states.map((st, i) => committedDamage(ctxs[i] as TimelineContext, st, landedBefore[i]) + remainingBound(bound, ctxs[i] as TimelineContext, st)));
-            if (most < best.damage - 1e-6) {
+            if (most < Math.max(best.damage, hooks.incumbent ?? 0) - 1e-6) {
               // The guide's line always stays; it's a miss (the bound wasn't admissible) only when the guide's own
               // final damage would have beaten what's found so far.
-              if (child.guideAt !== undefined) {
+              if (child.guides !== undefined) {
                 if (hooks.guideScore !== undefined && hooks.guideScore >= best.damage - 1e-6) counts.boundMisses++;
               } else {
                 counts.bounded++;
