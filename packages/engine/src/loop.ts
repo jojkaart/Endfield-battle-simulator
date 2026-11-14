@@ -248,14 +248,15 @@ function replayRound(ctx: TimelineContext, before: TimelineState, actions: reado
 }
 
 /**
- * The opener and the loop (2026-11-14, closing rounds). The boundary: the ultimate the opener search's rotation casts
- * least among those it casts at least twice (else least; the slowest to recharge sets the loop's length); the opener
- * ends at its first cast. Then round after round from where the last ended, each a choice between the rounds the
- * beam search finds from there to the boundary's next cast (SearchHooks.stopAt: every one it reaches within
- * LOOP_MAX_FRAMES) and the last round's plan replayed exactly, by closingScore (damage per second with what it takes
- * from the resources it found charged), the replay kept unless a new plan beats it by `hysteresis`. A plan played
- * `repeats` more times in a row is the loop; the rounds before it are the opener's. Its further plays (`plays`) are
- * exact replays too. Deterministic; the whole replays with `simulate`.
+ * The opener and the loop (2026-11-14, closing rounds; docs/design.md "Opener and loop"). The boundary: the ultimate
+ * with the longest recharge in the opener search's rotation (slowestUltimate); the opener ends at its first cast.
+ * Then round after round from where the last ended, by closingScore (damage per second with what it takes from the
+ * resources it found charged as recharge time): a new plan from the beam search to the boundary's next cast
+ * (SearchHooks.stopAt), of those within `closingMargin` of the best the one that does best over two plays (itself,
+ * then itself again from its end); the last round replayed exactly, kept unless a new plan beats it by `hysteresis`;
+ * or, when it can't be, the last round moved later (`shifts`). A plan replayed `repeats` times in a row is the loop;
+ * the rounds before it are the opener's. Its further plays (`plays`) are exact replays too. Deterministic; the whole
+ * replays with `simulate`.
  */
 export function searchLoop(data: GameData, scenario: Omit<TimelineScenario, "rotation">, options: LoopOptions = {}): LoopResult {
   const { horizonFrames, repeats = 3, tolerance = LOOP_TOLERANCE, maxRepetitions = LOOP_MAX_REPETITIONS, hysteresis = LOOP_HYSTERESIS, shifts = true, closingMargin = LOOP_CLOSING_MARGIN, plays: wanted, onRound, ...search } = options;
