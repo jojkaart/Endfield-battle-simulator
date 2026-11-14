@@ -243,7 +243,7 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
             // those acting before damage run first, as for a hit's (landing.ts landHit), then its damage, then the others.
             const now = asEvents(d.now, fromKind);
             st = retakeCombustionSnapshots(runTriggers(ctx, d.state, now, origin, (x) => x.beforeDamage === true, false), d.now);
-            st = runTriggers(ctx, recordStatus(ctx, st, d.now, r.state), now, origin, (x) => !x.beforeDamage);
+            st = runTriggers(ctx, recordStatus(ctx, st, d.now, r.state, undefined, d.state), now, origin, (x) => !x.beforeDamage);
             continue;
           }
           st = recordStatus(ctx, d.state, d.now, r.state);
