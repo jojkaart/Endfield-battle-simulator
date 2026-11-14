@@ -988,7 +988,8 @@ the others', and a plan that casts each once wastes energy while one that
 casts one twice can't do it again; Arcane's ultimate is two casts tied by
 her array, whose energy block shifts with it. A loop here likely needs
 more than one round of the boundary (two of Akekuri's ≈ three of
-Estella's), or a boundary per operator: still open.
+Estella's), or a boundary where every ultimate is ready: the
+synchronized burst rounds below close for both scenarios.
 
 *Synchronized burst rounds* (`sync`, `efsim search --loop --sync`;
 2026-11-14). The boundary is the moment **every** operator's ultimate is
@@ -1025,27 +1026,61 @@ reports it (`energyLost`), split into **held** (lost while the operator's
 lead ultimate was ready, stepped action by action) and the rest (a grant
 that crosses the cap; Arcane's sequence 2 grant on a bar not yet empty).
 
-Measured, the owner's team, beam 6:
+Measured, the owner's team (2026-11-14; rotations in
+[docs/teams/rotations/](teams/rotations/), each replayed by `simulate` to
+the same total):
 
-| | zero energy | full energy |
-|---|---|---|
-| loop | **closes**: 81.1 s, played 6 times (rounds 3–8) | none in 20 rounds (MEASURE) |
-| loop DPS over its plays | 40,677 (plays 1.3% apart) | |
-| opener | 255.7 s, 9,319,391 (build-up 78.7 s, 2,601,325; then 2 rounds) | |
-| opener and 6 plays (`simulate`) | 29,120,948 in 742.5 s, 39,218 DPS | |
-| energy held, a play | Estella 34 of 63 (54% of a bar), Arcane 30 of 100 | |
-| boundary mode (no loop) | 42,001 DPS over 803.7 s | 42,962 over 925.5 s |
-| fixed-length search | MEASURE | |
+| | zero energy, beam 6 | zero energy, beam 8 | full energy, beam 6 |
+|---|---|---|---|
+| loop | **closes**, rounds 3–8 | **closes**, rounds 11–16 | **closes**, rounds 14–19 |
+| loop length | 81.1 s | 84.3 s | 84.9 s |
+| loop DPS over its 6 plays (apart) | 40,677 (1.3%) | 41,862 (0.0%) | 41,056 (0.3%) |
+| opener (build-up, then rounds) | 255.7 s, 9,319,391 (78.7 s, 2,601,325) | 941.9 s, 37,062,742 (82.6 s) | 1,095.2 s, 42,612,457 (none) |
+| opener and 6 plays | 29,120,948 in 742.5 s, 39,218 DPS | 58,244,871 in 1,447.9 s, 40,226 | 63,526,451 in 1,604.6 s, 39,590 |
+| held at a full bar, a play | Estella 34 of 63, Arcane 30 of 100 | Estella 60, Arcane 112, Si 15 | Estella 63, Arcane 63, Akekuri 22 |
+| run | 8 rounds, 44 min | 16 rounds, 5.1 h (3 jobs at once) | 19 rounds, 2.3 h |
 
-The loop's rounds are about 81 s, the slowest bar (Si's) setting the
-length; Estella's ultimate (back in about 40–45 s) waits half a bar's
-worth at full, Arcane's a third; Arcane also loses about 168 a round to
-her sequence's grant, which holding doesn't cause. A two-round loop
-(Estella twice per round of the others) would gain about one Estella
-ultimate per 81 s at most: not built.
+For comparison, the boundary mode (no loop in 12 rounds): 42,001 DPS over
+803.7 s from zero energy, 42,962 over 925.5 s with full energy; the fixed
+300 s search 41,024 and 44,503 (with the start's energy and 200 SP, which
+a loop's plays don't get). A fixed-length search of the same total length
+(742.5 s from zero energy) wasn't measured: at beam 6 it ran out of the
+default 2.2 GB heap, and with 9 GB hadn't finished after 65 min (stopped).
+The loops run at 40.7–41.9k DPS, a little below the boundary mode's
+rounds, which spend energy as it comes and don't repeat.
 
-Runs take 5–6 min a round at beam 6 (about 45 min for the zero-energy
-scenario's 8 rounds).
+Every loop's length is set by the slowest bar (Si's 80, or Akekuri's
+108): about 81–85 s. Estella's ultimate (back in about 40–45 s otherwise)
+waits half to a whole bar at full, Arcane's a third to one; Arcane also
+loses 150–170 a round to her sequence's grant, which holding doesn't
+cause. Their direct hits are worth about 107–152k (Estella) and 138–182k
+(Arcane's two parts) a cast, so what's held is worth at most about 3%
+(zero energy, beam 6), 8% (full energy) and 10% (beam 8) of the loop's
+damage — a ceiling for a two-round loop (the fast ultimates cast more
+often between the slow ones' casts), which isn't built. The first rounds
+change plans often (chaotic, as the boundary mode's: a new plan's score
+swings with where the enemy's Stagger falls; one round's exact replay
+fails by 1–3 frames, and its moved-later version loses to a new plan
+that scores 2% better), so the opener is long when the loop is found
+late (941.9 and 1,095.2 s).
+
+`--sync` is not the default: it's the mode that closes for the owner's
+team, but other teams' bars don't all refill in 120 s after one cast each
+(si-laevatain: Laevatain's 255 at 102 after 100 s; xaihi-si: not every
+bar full within 90 s from the start; akekuri-laevatain: no round within
+90 s, before the limit was 120 s), and Laevatain alone loops lower than in
+the boundary mode (53.3 s at 31,247 DPS against 31.2 s at 37,578, beam 6:
+her combo's energy, granted at a full bar just before her ultimate, is
+lost); perlica-estella (beam 4) found no loop in 12 rounds.
+
+Rounds take 4–6 min each at beam 6 alone (12 min late in a run with three
+jobs at once). Memory: every state carried every hit landed since the
+fight's start, copied per node, so late rounds ran out of the default heap
+(beam 8 at about 700 s, beam 6 at about 1,300 s, killed); a round's search
+now leaves the prefix's landed hits out of its states
+(`SearchHooks.hitsFrom`; their sum starts each node's damage, so the
+search finds the same to the bit). The fixed-length search has no such
+cut.
 
 Tried and dropped (2026-11-14): cutting the fixed-length search's rotation
 at two casts of an ultimate and replaying the segment — at its exact
