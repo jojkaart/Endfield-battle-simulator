@@ -493,6 +493,62 @@ games' in the ways the report lists (Stagger, inflictions, layers);
 tightening it is the measure of those fixes. The negative control gives
 4e5e 3 of 345 at ×0.97 (two through the fallback), every other 0.
 
+**The buff timing report** (2026-11-15, `efsim zmdlogs timing [fixture…]`,
+`packages/cli/src/bufftiming.ts`; a diagnostic, never scored: it changes
+no verdict, snapshot or accuracy number). The check toggles a kit buff
+only where its replayed instances change within REPLAY_EDGE_MS of a hit;
+a timing error of seconds (a time stop held another length, a trigger the
+replay misses, the wrong recipient) shows up as a fallback or a mismatch.
+For each such hit (`--assumed`: assumed matches too) the report takes the
+engine's reading (enginecheck.ts `readingBasis`: the same primary reading
+and alternatives `engineReadings` evaluates, without its own edge toggles)
+and re-runs only the damage formula (`landingDamage`) with one kit buff of
+the battle changed: off, on as the log lists it at the hit, on as the
+replay values it at its nearest other landings (up to 3 distinct modifier
+sets, which also gives other layer counts), or, where the replay never
+values it, as the kit does (`kitBuffModifiers`, 1–5 layers); a buff on its
+owner alone isn't tried on a teammate's hit, nor one the replay can't
+judge. Each toggle is tried on the check's other alternatives (crit, Link,
+… all combinations up to 16, else the plain reading and the crit's). A
+fit is within ±1, as the check's. For hits no single toggle fits, pairs
+of the 16 toggles nearest an edge (`--singles`: none). Each fit is placed
+against the replay's instances of the buff at the hit's operator
+(`BuffReplay.kitWindows`, sampled at the logged hits ±0.5 s: an early end
+is at the first sample without it): "fits if it ended / started *d* s
+later / earlier" within TIMING_EDGE_MS (5 s) of an edge, else "never
+present in the engine" or "engine has it, damage says absent"; "carried"
+where no instance reaches the operator (a Combustion snapshot or a cast
+carries the modifiers), "inactive" where one does but its modifiers don't
+act, "values" where the engine has it with other values. Each hit keeps
+its smallest explanation (one toggle before two; an edge's, nearest
+first; then values, inactive, carried; missing and extra last); the
+others are listed as "also fits" (two buffs whose values fit alike make a
+hint ambiguous), and hits whose ±1 is coarser than 0.05% (logged value
+below 2,000) are counted as coarse. Hits whose best fit is the same buff,
+direction and edge (without an edge: consecutive within 3 s) form a run;
+two hits or more are a **pattern**, single fits are noise (a buff the
+damage says is absent across a whole engine window shows as "starts
+early" and "ends late" runs on that window's two edges). A pattern
+counts plain matches in its span at its operators that the same change
+would break (**against**), and lists what happens near where the buff
+would have to start or end (casts placed and logged hitless, time stops
+and slow-downs, the log's reactions, Stagger) beside the kit's sources of
+the buff (skill hits and triggers that apply, extend or end it, with
+their events; its duration, consumption and BuffData buff). A source an
+event in the window matches (a cast of the right operator and kind, a hit
+with the crit a crit trigger needs, or whose crit the log doesn't give, a reaction, a heal's cast,
+Stagger; a time stop at the engine's end for an end shift; for a buff
+missing or starting late, casts up to 20 s before the window) is a
+**mechanism candidate**; a pattern without one is marked NO MECHANISM.
+Patterns are summed per buff and direction across logs (runs, hits,
+logs, offset median and spread, damage at stake = |logged − engine
+primary|) and ranked by damage at stake. Without fixtures it reads every
+development log of fixtures/pending/holdout.json; hold-out logs are
+never read, only counted as skipped. It takes ~4.5 s a log (27
+development logs in ~2 min). The hints it gives follow the accuracy
+plan's rule, "Fits need a mechanism": leads in docs/open-problems.md,
+not kit changes.
+
 **Buffs from skills** are kit `buffs` (engine `buffs.ts`): target self,
 team or enemy, a duration (0: not applied; none: until ended) and
 modifiers on a zone or an attribute whose values are ValueExprs at the
