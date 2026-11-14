@@ -43,6 +43,9 @@ const USAGE = `Usage:
                                           slowest ultimate to its next, each the best closing plan at beam w
                                           or the last replayed, until one plays 3 more times exactly
                                           (--out saves the opener and n plays of the loop, default 4)
+                [--rounds n]              With --loop: rounds searched at most (default 12)
+                [--sync]                  With --loop: rounds from a moment every ultimate is ready to the
+                                          next, each cast at least once (fast ones held for the slowest)
                 [--swaps]                 Let the rotation swap the controlled operator (default: never; the
                                           scenario's controlled operator does every basic attack and dive)
                 [--seeds k]               With random outcomes: battles each candidate is ranked over (default 4)
@@ -103,6 +106,8 @@ async function main(argv: string[]): Promise<number> {
       swaps: { type: "boolean", default: false },
       loop: { type: "boolean", default: false },
       loops: { type: "string" },
+      rounds: { type: "string" },
+      sync: { type: "boolean", default: false },
       seed: { type: "string" },
       runs: { type: "string" },
       seeds: { type: "string" },
@@ -246,7 +251,9 @@ async function main(argv: string[]): Promise<number> {
         if (values.loop) {
           const loops = values.loops === undefined ? undefined : Number(values.loops);
           if (loops !== undefined && !(Number.isInteger(loops) && loops >= 1)) throw new Error(`--loops must be a whole number ≥ 1`);
-          text = loopCommand(data(), scenario, { beam, swaps: values.swaps, ...(values.out ? { out: values.out } : {}), ...(loops !== undefined ? { loops } : {}), progress: (line) => process.stderr.write(line + "\n") });
+          const rounds = values.rounds === undefined ? undefined : Number(values.rounds);
+          if (rounds !== undefined && !(Number.isInteger(rounds) && rounds >= 4)) throw new Error(`--rounds must be a whole number ≥ 4`);
+          text = loopCommand(data(), scenario, { beam, swaps: values.swaps, sync: values.sync, ...(values.out ? { out: values.out } : {}), ...(loops !== undefined ? { loops } : {}), ...(rounds !== undefined ? { rounds } : {}), progress: (line) => process.stderr.write(line + "\n") });
           break;
         }
         text = searchCommand(data(), scenario, {

@@ -13,8 +13,13 @@ example builds (a P5 Si). From zero ultimate energy (the harder fights;
 [examples/estella-si-akekuri-arcane-zero.scenario.json](../../examples/estella-si-akekuri-arcane-zero.scenario.json)):
 3,008,031 in 60 s (Estella 48.1%, Arcane 24.2%, Si 20.2%, Akekuri 7.6%;
 ultimates: Arcane 16.4 s, her second 33.2 s, Estella 46.2 s, Si and Akekuri
-50.3 s); beams spread 8.8%. A search for an opener plus a loop between
-ultimate rounds (the owner's request) is being built.
+50.3 s); beams spread 8.8%. Complete rotations, an opener and a loop
+that repeats between moments every ultimate is ready (`efsim search
+--loop --sync`, docs/design.md "Opener and loop", 2026-11-14): full
+energy, an 84.9 s loop at 41,056 DPS after a 1,095.2 s opener; zero
+energy, an 81.1 s loop at 40,677 DPS after 255.7 s (beam 8: 84.3 s at
+41,862 after 941.9 s). Each replays with `efsim simulate`:
+[rotations/](rotations/) (the opener and 6 plays).
 
 ## Where the damage comes from (sonnet, 2026-11-14)
 

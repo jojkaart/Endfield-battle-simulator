@@ -2,7 +2,7 @@
 // its next, each the best closing plan from where the last ended or the last one replayed exactly, until one plays
 // `repeats` more times; the whole replays with simulate.
 import { describe, expect, it } from "vitest";
-import { FPS, LOOP_MAX_FRAMES, SP, STACK_MISMATCH, closingScore, createContext, init, apply, searchLoop, searchRotation, simulate, type RotationAction } from "@efsim/engine";
+import { FPS, LOOP_MAX_FRAMES, SP, STACK_MISMATCH, advance, closingScore, createContext, energyLostIn, init, apply, leadUltimates, searchLoop, searchRotation, simulate, ultimatesUnready, type RotationAction } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { loopCommand, readScenario } from "../packages/cli/src/simulate.ts";
 
@@ -109,5 +109,123 @@ describe("closing rounds", () => {
 
   it("refuses a fight with random outcomes", () => {
     expect(() => searchLoop(data, { ...open, options: { ...open.options, crit: "rolled" } }, options)).toThrow(/random outcomes/);
+    expect(() => searchLoop(data, { ...open, options: { ...open.options, crit: "rolled" } }, { ...options, sync: true })).toThrow(/random outcomes/);
+  });
+
+  it("SearchHooks.stopAt sees the state after the step and the rotation; SearchHooks.allow keeps refused actions out", () => {
+    const s = { ...open, durationFrames: 20 * FPS };
+    const seen: { step: RotationAction; frame: number; last?: RotationAction }[] = [];
+    const r = searchRotation(data, s, { beamWidth: 3, runs: 0 }, {
+      stopAt: (step, state, rotation) => {
+        seen.push({ step, frame: state.frame, ...(rotation.at(-1) ? { last: rotation.at(-1) as RotationAction } : {}) });
+        return false;
+      },
+      allow: (a) => a.skill !== ULT,
+    });
+    expect(seen.length).toBeGreaterThan(0);
+    for (const x of seen) {
+      expect(x.frame).toBe(x.step.at);
+      expect(x.last).toEqual(x.step);
+    }
+    expect(r.rotation.some((a) => a.skill === ULT)).toBe(false);
+    expect(seen.some((x) => x.step.skill === ULT)).toBe(false);
+  });
+
+  it("SearchHooks.hitsFrom leaves the prefix's earlier hits out of the states, not the choices", () => {
+    const s = { ...open, durationFrames: 25 * FPS };
+    const prefix = searchRotation(data, { ...s, durationFrames: 8 * FPS }, { beamWidth: 3, runs: 0 }).rotation;
+    const from = prefix.at(-1)?.at as number;
+    const hooks = { prefix, stopAt: (a: RotationAction) => a.skill === "chr_0016_laevat_combo_skill" };
+    const all = searchRotation(data, s, { beamWidth: 3, runs: 0 }, hooks);
+    const cut = searchRotation(data, s, { beamWidth: 3, runs: 0 }, { ...hooks, hitsFrom: from });
+    expect(cut.stops?.length).toBeGreaterThan(0);
+    expect(cut.stops?.map((x) => x.rotation)).toEqual(all.stops?.map((x) => x.rotation));
+    expect(cut.score).toBe(all.score);
+    expect(cut.rotation).toEqual(all.rotation);
+    for (const x of cut.stops ?? []) expect(x.state.hits.every((h) => h.frame >= from)).toBe(true);
+    expect(all.stops?.some((x) => x.state.hits.some((h) => h.frame < from))).toBe(true);
+  });
+});
+
+describe("synchronized burst rounds (--sync)", () => {
+  const team = readScenario(new URL("../examples/estella-si-akekuri-arcane.scenario.json", import.meta.url).pathname);
+  const zero = readScenario(new URL("../examples/estella-si-akekuri-arcane-zero.scenario.json", import.meta.url).pathname);
+  const ARCANE = "chr_0032_lizhiyan";
+
+  it("leads: each operator's ultimates castable from the fight's start (Arcane's array, not her sequence 2)", () => {
+    const ctx = createContext(data, { ...team, rotation: [] });
+    const leads = leadUltimates(ctx);
+    expect([...leads.keys()]).toEqual(team.team.map((b) => b.operator));
+    expect(leads.get(ARCANE)).toEqual([`${ARCANE}_ultimate_skill`]);
+    // Full energy at the start: every ultimate is ready; from zero: not.
+    expect(ultimatesUnready(ctx, leads, init(ctx))).toBeUndefined();
+    const z = createContext(data, { ...zero, rotation: [] });
+    expect(ultimatesUnready(z, leadUltimates(z), init(z))).toMatch(/needs 63 energy, 0.0/);
+    // Cast, Arcane's array is up: her ultimate isn't ready though her energy is refilled.
+    const cast = apply(ctx, init(ctx), { operator: ARCANE, skill: `${ARCANE}_ultimate_skill`, at: 0 });
+    const s = { ...cast, energy: { ...cast.energy, [ARCANE]: 1e6 } };
+    expect(ultimatesUnready(ctx, leads, advance(ctx, s, 60))).toMatch(/isn't available|cooldown/);
+  });
+
+  const r = searchLoop(data, open, { ...options, sync: true });
+
+  it("cuts the fight at moments every ultimate is ready: each round casts every lead ultimate once and ends with all ready", () => {
+    expect(r.boundary).toBeUndefined();
+    expect(r.ultimates).toEqual([{ operator: LAEV, skills: [ULT], bar: expect.any(Number) }]);
+    // Full energy at the start: no opener search.
+    expect(r.opener).toBeUndefined();
+    expect(r.repetitions[0]?.start).toBe(0);
+    const ctx = createContext(data, { ...open, durationFrames: r.frames, rotation: [] });
+    const leads = leadUltimates(ctx);
+    // The rotation: the opener's actions (none here), then each round's.
+    const played = r.repetitions.flatMap((c) => c.actions.map((a) => ({ ...a, at: (a.at as number) + c.start })));
+    expect(r.rotation.slice(r.rotation.length - played.length)).toEqual(played);
+    let s = r.rotation.slice(0, r.rotation.length - played.length).reduce((st, a) => apply(ctx, st, a), init(ctx));
+    r.repetitions.forEach((c, k) => {
+      expect(c.actions.filter((a) => a.skill === ULT)).toHaveLength(1);
+      expect(c.frames).toBeLessThanOrEqual(LOOP_MAX_FRAMES);
+      expect(c.actions.at(-1)?.at).toBe(c.frames);
+      expect(r.repetitions[k + 1]?.start ?? r.frames).toBe(c.start + c.frames);
+      // Every ultimate ready after the round's last step.
+      s = c.actions.reduce((st, a) => apply(ctx, st, { ...a, at: (a.at as number) + c.start }), s);
+      expect(s.frame).toBe(c.start + c.frames);
+      expect(ultimatesUnready(ctx, leads, s)).toBeUndefined();
+    });
+  });
+
+  it("replays with simulate; the energy lost to full bars is the overflow between the rounds' starts", () => {
+    const sim = simulate(data, { ...open, durationFrames: r.frames, rotation: r.rotation });
+    expect(sim.total).toBe(r.total);
+    for (const c of r.repetitions) expect(c.damage).toBe(sim.hits.filter((h) => h.frame >= c.start && h.frame < c.start + c.frames).reduce((a, h) => a + h.exact, 0));
+    const lost = energyLostIn(data, open, r.rotation, [...r.repetitions.map((c) => c.start), r.frames]);
+    expect(r.repetitions.map((c) => c.energyLost)).toEqual(lost);
+    // Held: lost while her ultimate was ready (a part of all that's lost); here most of it, at the round's start before she casts it.
+    for (const c of r.repetitions) for (const [op, held] of Object.entries(c.energyLost.held)) expect(held).toBeLessThanOrEqual((c.energyLost.lost[op] ?? 0) + 1e-9);
+    expect(r.repetitions.some((c) => (c.energyLost.held[LAEV] ?? 0) > 0)).toBe(true);
+  });
+
+  it("finds a loop for Laevatain alone, every play the same actions and the same energy lost", () => {
+    // 2026-11-14, beam 6: round 1 spends the start's SP; round 2's plan replays 3 more times (53.3 s, 31,247 DPS).
+    const l = r.loop;
+    expect(l, r.reason).toBeDefined();
+    if (!l) return;
+    expect(l.plays).toBe(5);
+    const plays = r.repetitions.slice(l.first);
+    for (const c of plays) {
+      expect(c.actions).toEqual(l.actions);
+      for (const part of ["lost", "held"] as const) {
+        expect(Object.keys(c.energyLost[part])).toEqual(Object.keys(plays[0]?.energyLost[part] ?? {}));
+        for (const [op, v] of Object.entries(c.energyLost[part])) expect(v).toBeCloseTo(plays[0]?.energyLost[part][op] ?? 0, 6);
+      }
+    }
+    expect(l.energyLost.held[LAEV]).toBeCloseTo(plays[0]?.energyLost.held[LAEV] ?? 0, 6);
+    expect([...l.opener, ...plays.flatMap((c) => c.actions.map((a) => ({ ...a, at: (a.at as number) + c.start })))]).toEqual(r.rotation);
+  });
+
+  it("efsim search --loop --sync says how rounds are cut and what holding cost", () => {
+    const text = loopCommand(data, example, { beam: 6, loops: 5, sync: true });
+    expect(text).toMatch(/Each round runs from a moment every ultimate is ready \(Laevatain\)/);
+    expect(text).toMatch(/Ultimate energy lost at full bars while held, a play \(\+ lost otherwise to full bars\): Laevatain \d+/);
+    expect(text).toContain(`${Math.round(r.total).toLocaleString("en-US")} damage in ${(r.frames / FPS).toFixed(1)} s`);
   });
 });

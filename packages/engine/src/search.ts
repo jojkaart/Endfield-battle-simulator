@@ -147,9 +147,12 @@ export function candidateActions(ctx: TimelineContext, state: TimelineState): Ca
  * basic attack can start then, nothing starts sooner, and the others aren't
  * choices; only when none can are they judged in full. The same choices,
  * in the same order, as judging them all.
+ *
+ * `allow` (SearchHooks.allow): actions it refuses aren't choices and don't
+ * count for what's soonest.
  */
-export function legalActions(ctx: TimelineContext, state: TimelineState): Candidate[] {
-  const actions = actionsToJudge(ctx, state);
+export function legalActions(ctx: TimelineContext, state: TimelineState, allow?: (action: RotationAction) => boolean): Candidate[] {
+  const actions = allow ? actionsToJudge(ctx, state).filter(allow) : actionsToJudge(ctx, state);
   const basics = new Set(nextBasics(ctx.data, state, state.controlled));
   const dive = diveOf(ctx.data, state.controlled);
   const isDive = (a: RotationAction) => a.operator === state.controlled && a.skill === dive;
@@ -207,14 +210,16 @@ function timingChoices(ctx: TimelineContext, state: TimelineState, c: Candidate)
 
 /**
  * Damage the state has committed within the fight: landed hits plus everything already on its way. With a context from
- * `memoised`, once per state (states are never changed in place: TimelineContext.committedMemo).
+ * `memoised`, once per state (states are never changed in place: TimelineContext.committedMemo). `landedBefore`: the
+ * sum of hits left out of the state before its first (SearchHooks.hitsFrom), which the sum starts from, so the total is
+ * the same to the bit as with them (and the same for every state of one search: memoised with it).
  */
-export function committedDamage(ctx: TimelineContext, state: TimelineState): number {
+export function committedDamage(ctx: TimelineContext, state: TimelineState, landedBefore = 0): number {
   const known = ctx.committedMemo?.get(state);
   if (known !== undefined) return known;
   // Advanced from a copy, so a memoised context doesn't keep the fight's end (every hit to come) for as long as the state lives.
   const end = advance(ctx, { ...state }, ctx.scenario.durationFrames);
-  let total = 0;
+  let total = landedBefore;
   for (const h of end.hits) total += h.exact;
   ctx.committedMemo?.set(state, total);
   return total;
@@ -680,6 +685,7 @@ const STATE_KEY: KeyRules<TimelineState> = {
   energy: (e) => Object.fromEntries(Object.entries(e).map(([k, v]) => [k, round(v)])),
   // Read as "> frame" (resources.ts gainEnergy) and set anew (casting.ts).
   energyBlockedUntil: (e, env) => entries(e, (f) => f > env.frame),
+  energyOverflow: "a statistic (energy lost to a full bar): nothing in the fight reads it",
   // Read through windowOpen (`until < frame`: closed) or with `until >= frame`, but a follow-up combo's count (endedWindowsRead).
   comboWindow: (w, env) => entries(w, (x, k) => x.until >= env.frame || env.scenario.endedWindowsRead.has(k)),
   // Read by any later `element: "window"` application, however long ago it was set.
@@ -905,10 +911,24 @@ export interface SearchHooks {
    */
   readonly guide?: readonly RotationAction[];
   /**
-   * Steps after which a rotation ends (searchLoop: the boundary ultimate's next cast): such a child isn't expanded or
-   * kept in the beam; it's returned in SearchResult.stops (and still counts for the best rotation).
+   * Steps after which a rotation ends (searchLoop: the boundary ultimate's next cast, or with `sync` the first step after
+   * which every ultimate is ready again), given the step, the state after it (the first battle's) and the rotation up
+   * to and including it: such a child isn't expanded or kept in the beam; it's returned in SearchResult.stops (and
+   * still counts for the best rotation).
    */
-  readonly stopAt?: (step: RotationAction) => boolean;
+  readonly stopAt?: (step: RotationAction, state: TimelineState, rotation: readonly RotationAction[]) => boolean;
+  /**
+   * Whether a rotation may take an action next, given the rotation so far (searchLoop with `sync`: a lead ultimate
+   * once a round and none in the opener, so that the beam holds them for the burst instead of casting each the moment
+   * it's ready): those it refuses aren't choices (legalActions).
+   */
+  readonly allow?: (action: RotationAction, rotation: readonly RotationAction[]) => boolean;
+  /**
+   * With `prefix`: the leading hits it landed before this frame are left out of every state the search makes
+   * (searchLoop: a round's start), so that each node doesn't carry them; their damage still counts (committedDamage's
+   * `landedBefore`): the search finds the same, to the bit. The best rotation's `result` is replayed in full.
+   */
+  readonly hitsFrom?: number;
 }
 
 function search(data: GameData, given: Omit<TimelineScenario, "rotation">, options: SearchOptions, hooks: SearchHooks = {}): SearchResult {
@@ -936,7 +956,7 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
   const weight = options.valueWeight ?? VALUE_WEIGHT;
   const prices = weight === 0 ? undefined : resourcePrices(data, scenario);
   const node = (states: readonly TimelineState[], rotation: readonly RotationAction[]): Node => {
-    const damages = states.map((s, i) => committedDamage(ctxs[i] as TimelineContext, s));
+    const damages = states.map((s, i) => committedDamage(ctxs[i] as TimelineContext, s, landedBefore[i]));
     const scores = prices ? states.map((s, i) => (damages[i] as number) + resourceValue(ctxs[i] as TimelineContext, prices, s, weight)) : damages;
     return { states, rotation, family: familyKey(states[0] as TimelineState), key: states.map((s, i) => (keyers[i] as (s: TimelineState) => string)(s)).join("\n"), damage: statistic(damages, percentile), score: statistic(scores, percentile) };
   };
@@ -951,13 +971,24 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
   const same = (a: RotationAction | undefined, b: RotationAction) => a !== undefined && a.operator === b.operator && a.skill === b.skill && a.at === b.at;
   const prefix = hooks.prefix ?? [];
   const onGuide = guide !== undefined && prefix.every((a, i) => same(guide[i], a));
-  const root = { ...node(ctxs.map((c) => prefix.reduce((st, a) => apply(c, st, a), init(c))), prefix), ...(onGuide ? { guideAt: prefix.length } : {}) };
+  // Hits landed before hooks.hitsFrom (the leading run of the root's hits, in the order they landed) are dropped from the
+  // root: nothing in the fight reads landed hits, and every node would otherwise carry its own copy of them all (a
+  // loop's late rounds ran out of memory). Their sum, in the same order, starts each node's (committedDamage).
+  const starts = ctxs.map((c) => prefix.reduce((st, a) => apply(c, st, a), init(c)));
+  const cuts = starts.map((st) => (hooks.hitsFrom === undefined ? 0 : ((i) => (i < 0 ? st.hits.length : i))(st.hits.findIndex((h) => h.frame >= (hooks.hitsFrom as number)))));
+  const landedBefore = starts.map((st, i) => {
+    let sum = 0;
+    for (let j = 0; j < (cuts[i] as number); j++) sum += (st.hits[j] as TimelineState["hits"][number]).exact;
+    return sum;
+  });
+  const root = { ...node(starts.map((st, i) => (cuts[i] ? { ...st, hits: st.hits.slice(cuts[i]) } : st)), prefix), ...(onGuide ? { guideAt: prefix.length } : {}) };
   push(root);
   let best: Node = root;
   let expanded = 0;
   const counts = { compared: 0, merged: 0, family: 0, pruned: 0 };
   let capped = false;
   const stopAt = hooks.stopAt;
+  const allow = hooks.allow;
   const stops: { rotation: readonly RotationAction[]; state: TimelineState }[] = [];
   while (buckets.size > 0 && expanded < maxExpansions) {
     const b = Math.min(...buckets.keys());
@@ -973,7 +1004,7 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
         const first = n.states[0] as TimelineState;
         // A swap takes no time: never two in a row (they'd loop within a frame); none at all unless asked for.
         const lastSwap = n.rotation.at(-1)?.skill === "swap";
-        const choices = legalActions(ctx, first).filter((c) => c.action.skill !== "swap" || (swaps && !lastSwap));
+        const choices = legalActions(ctx, first, allow ? (a) => allow(a, n.rotation) : undefined).filter((c) => c.action.skill !== "swap" || (swaps && !lastSwap));
         if (choices.length === 0 && n.damage > best.damage) best = n;
         for (const c of choices) {
           // Applied as recorded, with `at` the frame it starts, so the rotation replays to exactly these states.
@@ -990,7 +1021,7 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
           const made = node(states, [...n.rotation, step]);
           const child = guide && n.guideAt !== undefined && same(guide[n.guideAt], step) ? { ...made, guideAt: n.guideAt + 1 } : made;
           if (child.damage > best.damage) best = child;
-          if (stopAt?.(step)) {
+          if (stopAt?.(step, states[0] as TimelineState, child.rotation)) {
             stops.push({ rotation: child.rotation, state: states[0] as TimelineState });
             continue;
           }
