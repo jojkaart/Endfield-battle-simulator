@@ -150,6 +150,60 @@ describe("an ultimate placed from several keys", () => {
     const bombs = logBuffReplay(data, fx).replay.hits.filter((h) => h.operator === L && h.hitId === "bomb");
     expect(bombs).toHaveLength(fx.hits.filter((h) => h.operator === L && h.event === `${L}_ultimate_skill_projhit_damage_02`).length);
   });
+
+  it("is one cast placed from one key whose landings miss their slots' frames, across the operator's other casts (Ardelia's sheep in 5082 and af7b)", () => {
+    const A = "chr_0025_ardelia";
+    for (const [file, n] of [["5082ceaffad1", 10], ["af7b7f865906", 5]] as const) {
+      const fx = readLogFixture(new URL(`../fixtures/pending/zmdlogs-${file}.json`, import.meta.url).pathname);
+      const p = placeHits(data, fx);
+      const sheep = fx.hits.filter((h) => h.operator === A && h.event === `${A}_ultimate_skill_sheep_projhit`);
+      expect(sheep).toHaveLength(n);
+      // The sheep fly at random: 5082's land 0.2-0.9 s apart over 4 s, around her combo's bomb (5082) or attack 3 (af7b).
+      expect(new Set(sheep.map((h) => p.hits.get(h)?.cast)).size).toBe(1);
+      expect(sheep.map((h) => p.hits.get(h)?.index)).toEqual([...Array(n).keys()]);
+      expect(distinctCasts(p).filter((c) => c.operator === A && c.kind === "ultimate")).toHaveLength(1);
+    }
+  });
+
+  it("placed from one key and overflowing its slots, is still one cast within its duration (Liino's projectiles in 9c6e at 71.8-74.2 s)", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-9c6e97486a9d.json", import.meta.url).pathname);
+    const L = "chr_0035_liino";
+    const ults = distinctCasts(placeHits(data, fx)).filter((c) => c.operator === L && c.kind === "ultimate");
+    expect(ults).toHaveLength(1);
+  });
+});
+
+describe("a later landing of a cast across time stops", () => {
+  it("joins its cast: the log's time runs on through every stop, the operator's own ultimate's and a hitless one the log only names (Ardelia's combo bomb in 5082, 6.4 s after its projectile)", async () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-5082ceaffad1.json", import.meta.url).pathname);
+    const A = "chr_0025_ardelia";
+    const p = placeHits(data, fx);
+    const at = (t: number, event: string) => p.hits.get(fx.hits.find((h) => h.operator === A && h.t === t && h.event === `${A}_${event}`) as LogHit)?.cast;
+    // Between them Yvonne's ultimate (a logged cast without hits of its own, 38160 ms) and Ardelia's (41067 ms) stop time.
+    expect(at(42441, "combo_skill_bomb")).toBe(at(36030, "combo_skill_projhit"));
+    expect(distinctCasts(p).filter((c) => c.operator === A && c.kind === "combo")).toHaveLength(3);
+    // Two bombs logged at one time (9c6e at 75097 ms, the second at half: another enemy's) make one combo, not two.
+    const fx2 = readLogFixture(new URL("../fixtures/pending/zmdlogs-9c6e97486a9d.json", import.meta.url).pathname);
+    const p2 = placeHits(data, fx2);
+    const bombs = fx2.hits.filter((h) => h.operator === A && h.t === 75097);
+    expect(bombs).toHaveLength(2);
+    expect(new Set(bombs.map((h) => p2.hits.get(h)?.cast)).size).toBe(1);
+    expect(distinctCasts(p2).filter((c) => c.operator === A && c.kind === "combo")).toHaveLength(4);
+    // The replay lands one combo per logged one.
+    const { logBuffReplay } = await import("@efsim/cli");
+    expect(logBuffReplay(data, fx).replay.hits.filter((h) => h.operator === A && h.hitId === "bomb")).toHaveLength(3);
+  });
+
+  it("a key shared by a skill and its follow-up is the follow-up while a cast that lists it is still acting, in the world's time, though a basic attack came between (489c: Wulfgard's combo 3 perfect hit)", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-489c0be3e162.json", import.meta.url).pathname);
+    const W = "chr_0028_wulfa";
+    const p = placeHits(data, fx);
+    const cast = (t: number, event: string) => p.hits.get(fx.hits.find((h) => h.operator === W && h.t === t && h.event === event) as LogHit)?.cast;
+    // Combo 2 at 104058 ms, its ticks at 106391 ms after Li Zhiyan's ultimate (106055 ms): one cast.
+    expect(cast(106391, `buff_${W}_combo_2_damage`)).toBe(cast(104058, `${W}_combo_2_skill`));
+    // Its follow-up's perfect hit at 107319 ms, logged under combo 2's key, after an attack 3 at 104058 ms.
+    expect(cast(107319, `${W}_combo_2_skill`)?.skillId).toBe(`${W}_combo_3_skill`);
+  });
 });
 
 describe("a trigger's landing on a skill's cast", () => {

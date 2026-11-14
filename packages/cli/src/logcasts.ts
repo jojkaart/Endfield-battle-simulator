@@ -233,12 +233,40 @@ function exactSlots(g: Group, key: string): boolean {
  * 11.3 s runs on across Jsspsi's combo and Last Rite's ultimate).
  */
 export function placeHits(data: GameData, fx: LogFixture): Placement {
-  const placed = placeWith(data, fx, castTimeStops(data, placeWith(data, fx, []).casts));
+  const first = placeWith(data, fx, []).casts;
+  const placed = placeWith(data, fx, [...castTimeStops(data, first), ...unplacedCastStops(data, fx, first)]);
   // An ultimate isn't cast again within its own action: its casts placed from different keys within its duration are one
   // (d774d0ce7bd3: Liino's at 116.5 s, its beats, projectiles and side projectiles placed 2 s apart: three casts, three bombs).
   const merge = new Map<string, number>();
   for (const c of placed.casts) if (c.kind === "ultimate") merge.set(c.skillId, Math.max(CAST_MERGE_MS, msOf(data.skills[c.skillId]?.timing?.durationFrames ?? 0)));
   return { ...placed, merge };
+}
+
+/** How far from a placed cast of its skill a logged cast event may be and still be that cast (ms; unplacedCastStops). */
+const UNPLACED_CAST_MS = 2500;
+
+/**
+ * The time stops of the log's cast events (LogFixture.casts) that no placed cast of their skill is near
+ * (UNPLACED_CAST_MS): skills whose damage comes as other skills' keys, or none (5082ceaffad1: Yvonne's ultimate at
+ * 38160 ms, between Ardelia's combo projectile at 36030 ms and its bomb at 42441 ms). Each from its event's time; an
+ * event within the skill's duration of an earlier one is that cast's (the log repeats some ultimates' events while they
+ * last: Liino's every ~3.5 s of Cosmovoice, Ardelia's ~3 s after hers).
+ */
+function unplacedCastStops(data: GameData, fx: LogFixture, placed: readonly LoggedCast[]): TimeStop[] {
+  const out: TimeStop[] = [];
+  const last = new Map<string, number>();
+  for (const lc of fx.casts ?? []) {
+    const timing = data.skills[lc.skill]?.timing;
+    if (!timing?.slowdowns.length) continue;
+    const key = `${lc.operator}|${lc.skill}`;
+    const prev = last.get(key);
+    if (prev !== undefined && lc.t - prev <= msOf(timing.durationFrames)) continue;
+    last.set(key, lc.t);
+    if (placed.some((c) => c.operator === lc.operator && c.skillId === lc.skill && Math.abs(c.start - lc.t) <= UNPLACED_CAST_MS)) continue;
+    const at = Math.round((lc.t * FPS) / 1000);
+    out.push(...timing.slowdowns.map((d) => ({ start: at + d.from, scales: d.scales, operator: lc.operator, skillId: lc.skill })));
+  }
+  return out;
 }
 
 function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): Placement {
@@ -263,8 +291,9 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
       const current = new Map<string, { cast: LoggedCast; first: number; index: number; span: number; longest: number; slots: Slot[] | null; exact: boolean }>();
       // Casts placed so far, per group: a key's first landing within an earlier cast's reach is that cast's (joinable).
       const opened = new Map<string, LoggedCast[]>();
-      // The operator's latest cast of a skill, for a key several chain steps share (choose: the step after it).
-      let latest: LoggedCast | null = null;
+      // The operator's casts of skills so far, for a key several chain steps share (choose: the step after the latest
+      // whose windows list one).
+      const skillCasts: LoggedCast[] = [];
       for (const h of mine) {
         const candidates = groupsWith(h.event);
         if (candidates.length === 0) continue;
@@ -291,7 +320,12 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         // A cast whose landings of the key are all known (exactSlots) and all logged already: another is a new cast, however
         // soon (Typhoeus's hover shots, 0.6 s apart under one key, were one cast with one landing: every second shot unlanded).
         const used = cur?.exact === true && cur.slots !== null && cur.index + 1 >= cur.slots.length;
-        if (cur && !superseded && !used && !pressed && (elapsed <= cur.span + CAST_SLACK_MS || toCome)) {
+        // An ultimate isn't cast again within its own action: a landing of its key within the skill's duration is the same
+        // cast's while it has landings to come, whatever the operator did since (5082ceaffad1: Ardelia's sheep, which fly
+        // at random, so off their slots' frames, made three casts from 41880 to 45866 ms, around her combo's bomb;
+        // af7b7f865906: five sheep, four casts, around her attack 3 at 59.7 s).
+        const sameUltimate = cur !== undefined && cur.cast.kind === "ultimate" && (cur.slots === null || cur.index + 1 < cur.slots.length) && worldMs(cur.cast.start, h.t, others) <= cur.longest + CAST_SLACK_MS;
+        if (cur && !used && (sameUltimate || (!superseded && !pressed && (elapsed <= cur.span + CAST_SLACK_MS || toCome)))) {
           cur.index++;
           const s = cur.slots;
           const slot = s ? s[Math.min(cur.index, s.length - 1)] : undefined;
@@ -300,12 +334,12 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
         }
         const free = (c: LoggedCast) => ![...placed].some(([x, p]) => p.cast === c && x.event === h.event);
         const late = joinDelayed(candidates, h, slots, opened, stops, free);
-        const g: Group = late?.g ?? choose(candidates, h, starts, slots, latest ? { cast: latest, timing: data.skills[latest.skillId]?.timing } : null);
+        const g: Group = late?.g ?? choose(candidates, h, starts, slots, skillCasts.map((c) => ({ cast: c, timing: data.skills[c.skillId]?.timing })), stops);
         const s = slots(g, h.event);
         const first = s?.[0];
-        const cast: LoggedCast = late?.cast ?? joinable(opened.get(g.id) ?? [], h, first?.frame ?? 0) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, start: h.t - msOf(first?.frame ?? 0), ...(g.anchor ? { anchor: g.anchor } : {}) };
+        const cast: LoggedCast = late?.cast ?? joinable(opened.get(g.id) ?? [], h, first?.frame ?? 0, stops) ?? { operator: build.operator, key: h.event, group: g.id, skillId: g.skillId, kind: g.kind, start: h.t - msOf(first?.frame ?? 0), ...(g.anchor ? { anchor: g.anchor } : {}) };
         if (!opened.get(g.id)?.includes(cast)) opened.set(g.id, [...(opened.get(g.id) ?? []), cast]);
-        if (cast.kind !== null && (!latest || cast.start >= latest.start)) latest = cast;
+        if (cast.kind !== null && !skillCasts.includes(cast)) skillCasts.push(cast);
         const span = s && first ? msOf((s.at(-1) as Slot).frame - first.frame) : 0;
         const longest = Math.max(span, g.kind !== null ? msOf(data.skills[g.skillId]?.timing?.durationFrames ?? 0) : 0);
         current.set(h.event, { cast, first: h.t, index: 0, span, longest, slots: s, exact: exactSlots(g, h.event) });
@@ -325,15 +359,20 @@ function placeWith(data: GameData, fx: LogFixture, stops: readonly TimeStop[]): 
 
 /**
  * The cast of the same skill, placed from another key, that a key's first logged landing belongs to: the latest that
- * started no later than the landing and no earlier than the landing's kit frame (plus CAST_SLACK_MS) before it. A
- * skill's jumps shorten its timeline, so a late landing comes sooner than its kit frame says
+ * started no later than the landing and no earlier than the landing's kit frame (plus CAST_SLACK_MS) of the world's time
+ * before it. A skill's jumps shorten its timeline, so a late landing comes sooner than its kit frame says
  * (fixtures/zmdlogs-4e5e1390085e.json: Rossi's wolves, kit frame 230, land 115 frames after her battle skill at 9483 ms;
- * placed from their frame alone, they made a battle skill at 5647 ms the log doesn't have). Null: none, a new cast.
+ * placed from their frame alone, they made a battle skill at 5647 ms the log doesn't have). The log's time runs on
+ * through time stops, which hold a landing still to come, its own operator's too (5082ceaffad1: Ardelia's combo bomb,
+ * 52 frames after its projectile at 36030 ms, logged at 42441 ms across Yvonne's ultimate and her own). Null: none, a
+ * new cast.
  */
-function joinable(casts: readonly LoggedCast[], h: LogHit, frame: number): LoggedCast | null {
+function joinable(casts: readonly LoggedCast[], h: LogHit, frame: number, stops: readonly TimeStop[]): LoggedCast | null {
   let best: LoggedCast | null = null;
   for (const c of casts) {
-    if (c.key === h.event || c.start > h.t || c.start < h.t - msOf(frame) - CAST_SLACK_MS) continue;
+    // Not the cast's own stops: its frames run on through them (Liino's ultimate).
+    const held = stops.filter((s) => s.operator !== c.operator || s.skillId !== c.skillId);
+    if (c.key === h.event || c.start > h.t || worldMs(c.start, h.t, held) > msOf(frame) + CAST_SLACK_MS) continue;
     if (!best || c.start > best.start) best = c;
   }
   return best;
@@ -372,8 +411,10 @@ export function distinctCasts(placement: Placement): LoggedCast[] {
   const out: LoggedCast[] = [];
   for (const c of [...placement.casts].sort((a, b) => a.start - b.start)) {
     if (c.kind === null) continue;
-    // Placed from the same key they are two casts (the placement already joined what one cast's landings of it can be).
-    if (out.some((x) => x.operator === c.operator && x.skillId === c.skillId && x.key !== c.key && Math.abs(x.start - c.start) <= mergeMs(placement, c.skillId))) continue;
+    // Placed from the same key they are two casts (the placement already joined what one cast's landings of it can be),
+    // unless an ultimate's, which isn't cast again within its own action (9c6e97486a9d: Liino's projectiles at 71835 to
+    // 73824 ms fill their slots, the rest at 74159 ms start another cast 2.3 s after the first).
+    if (out.some((x) => x.operator === c.operator && x.skillId === c.skillId && (x.key !== c.key || c.kind === "ultimate") && Math.abs(x.start - c.start) <= mergeMs(placement, c.skillId))) continue;
     out.push(c);
   }
   // A trigger's landing on a skill's cast that puts the cast earlier than its own keys do moves it there (dbaee23b801d:
@@ -401,13 +442,14 @@ const ANCHOR_MS = 1500;
  * anchor (the skill itself, placed from its other keys, or the skill whose
  * cast fires the trigger, plus the delay) started closest to where this
  * cast would start; else the chain step after the operator's latest cast
- * (`prev`: a candidate its windows list, starting within its action plus
- * CAST_SLACK_MS: Rossi's chain steps share keys); else the first in kit
- * order. Steps gated by the kit's state rather than windows (Typhoeus's
+ * whose windows list a candidate starting within its action plus
+ * CAST_SLACK_MS (`prev`: Rossi's chain steps share keys; a follow-up after
+ * a basic attack cast during its skill: Wulfgard's combo 3); else the
+ * first in kit order. Steps gated by the kit's state rather than windows (Typhoeus's
  * hover attacks): the replay casts the step the engine allows
  * (buffreplay.ts chainStepFor).
  */
-function choose(candidates: readonly Group[], h: LogHit, starts: ReadonlyMap<string, readonly number[]> | null, slots: (g: Group, key: string) => Slot[] | null, prev: { cast: LoggedCast; timing: SkillTiming | null | undefined } | null): Group {
+function choose(candidates: readonly Group[], h: LogHit, starts: ReadonlyMap<string, readonly number[]> | null, slots: (g: Group, key: string) => Slot[] | null, prevs: readonly { cast: LoggedCast; timing: SkillTiming | null | undefined }[], stops: readonly TimeStop[]): Group {
   if (candidates.length === 1 || !starts) return candidates[0] as Group;
   let best: { g: Group; d: number } | null = null;
   for (const g of candidates) {
@@ -419,10 +461,15 @@ function choose(candidates: readonly Group[], h: LogHit, starts: ReadonlyMap<str
     }
   }
   if (best) return best.g;
-  if (prev?.timing) {
-    const start = (g: Group) => h.t - msOf(slots(g, h.event)?.[0]?.frame ?? 0);
+  const start = (g: Group) => h.t - msOf(slots(g, h.event)?.[0]?.frame ?? 0);
+  // The latest first. Within a cast's action in the world's time: other casts' time stops hold it (489c0be3e162:
+  // Wulfgard's combo 2 at 103625 ms, its ticks after Li Zhiyan's ultimate, an attack 3 at 103925 ms, then combo 3's
+  // perfect hit at 107319 ms).
+  for (const prev of [...prevs].sort((a, b) => b.cast.start - a.cast.start)) {
+    if (!prev.timing) continue;
     const listed = new Set(prev.timing.windows.flatMap((w) => w.skills));
-    const next = candidates.find((g) => g.kind !== null && listed.has(g.skillId) && start(g) >= prev.cast.start && start(g) <= prev.cast.start + msOf(prev.timing?.durationFrames ?? 0) + CAST_SLACK_MS);
+    const held = stops.filter((s) => s.operator !== prev.cast.operator || s.skillId !== prev.cast.skillId);
+    const next = candidates.find((g) => g.kind !== null && listed.has(g.skillId) && start(g) >= prev.cast.start && worldMs(prev.cast.start, start(g), held) <= msOf(prev.timing?.durationFrames ?? 0) + CAST_SLACK_MS);
     if (next) return next;
   }
   return candidates[0] as Group;
