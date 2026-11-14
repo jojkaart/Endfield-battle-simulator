@@ -650,7 +650,8 @@ two, 2026-10-25), each applied with `at` the frame it starts, so the found
 rotation replays to exactly the searched states with `simulate`. Per
 half-second bucket the best `beamWidth` nodes survive, ranked by committed
 damage (hits landed plus everything already on its way: the state advanced
-to the fight's end).
+to the fight's end) plus what the state holds for later (below, *How the
+beam ranks*); the result is the node with the most committed damage.
 
 **Pruning** (`prune`): of equivalent states only the best is kept (below);
 then the best of each *family* in score order, then, if there's room, the
@@ -671,7 +672,49 @@ point) was removed for the same reason: it hoards (si-laevatain at weight
 1: 468,743), and with families a weight of 0.2 lowered every result
 measured (liino-laevatain 1,510,467 → 1,436,660 at beam 12, the 4-operator
 example 3,554,349 → 3,316,409 at beam 6); its one-cast prices can't value
-an ultimate whose worth is what it enables (Laevatain's).
+an ultimate whose worth is what it enables (Laevatain's). Its successor,
+priced by probes and with casts in progress counted, is below.
+
+**How the beam ranks** (2026-11-14; `resourcePrices`, `resourceValue`,
+`SearchOptions.valueWeight`, default 0.5). Damage so far prunes the lines
+that bank for later: from zero ultimate energy every line looks alike until
+someone's ultimate is up. So a node's score is its committed damage plus
+`valueWeight` × what it holds:
+
+- *Ultimate energy and team SP* at a price per point found by **probes**,
+  not tables: once per search, from the fight's start with every ultimate
+  charged, each operator's ultimate and battle skill is cast, then the
+  controlled operator basic-attacks for 10 s; a cast's worth is the damage
+  committed by then minus that of the attacks alone. So a cast that pays
+  off through later hits is priced by them (laevatain-solo: her ultimate
+  282,014, her battle skill 4,128), and a kit change moves the prices with
+  it. Energy is worth its operator's ultimate's worth over its cost; SP the
+  mean over the team's battle skills of worth over SP cost (who gets the SP
+  is a choice). The resources' worth falls linearly to 0 over the last 10 s
+  of the fight (no time left to spend them).
+- *Casts in progress*: what of a probed cast's worth is still to come at
+  its age (the probe's curve, half-second steps). Without it a cast turned
+  the energy's worth into nothing until its damage landed, and the beam
+  hoarded: Laevatain held her ultimate to 19.6 s of 30 (630,476 at beam 12
+  against 1,113,946), si-laevatain fell to 390,173. With it, casting is
+  worth at least holding at every age the probe saw.
+
+What it doesn't see: what builds up outside the resources (enemy debuffs,
+inflictions, stacks that a later skill consumes). In the owner's team from
+zero energy (30 s) the best rotation holds Estella's battle skill and combo
+to 27 s for 263k where a cast at 22 s gets 131k; the value is about 20k
+there, too little to keep that line in a wide beam. Probing costs 0.03–0.2 s
+a search; the score about nothing per state (per-state times within the
+machine's noise, 0.9–1.1×). Weights compared (single widths, best of
+w/2 / w / 2w): 0 / 0.5 / 1 gave the owner's team (30 s, full energy)
+1,560,514 / 1,586,388 / 1,598,596, from zero 979,020 / 1,068,442 /
+1,016,787; si-laevatain 2,407,715 / 2,387,476 / 2,387,476; laevatain-solo
+1,155,679 / 1,156,151 / 1,155,621; si-laevatain-liino-gilberta 3,190,240 /
+3,185,817 / 3,170,975 (w 6 / 12 / 24); duo 263,699 at all. Each width alone
+still moves both ways with it (si-laevatain-liino-gilberta at 24:
+3,190,240 → 2,933,298 at 0.5): the value helps the owner's teams most and
+is within ±1% elsewhere, so it's on at 0.5; `valueWeight: 0` is the ranking
+before, bit for bit (the pinned totals in tests/search.test.ts).
 
 **Equivalent states** (`stateKey(ctx, state)`) are equal in every field
 that what comes next reads: each `TimelineState` field, and each field of
@@ -716,13 +759,20 @@ Merges gained (beam 24, nodes compared → merged): si-laevatain 8,943 →
 come, not in what's past.
 
 **How far to trust a result** (`searchBeams`). A beam search isn't
-monotone in its width: what survives a bucket is ranked by damage so far,
-so a rotation that pays off later (Si's Initial Stroke deals nothing
+monotone in its width: what survives a bucket is ranked by a score of the
+present, so a rotation that pays off later (Si's Initial Stroke deals nothing
 itself; Laevatain's ultimate deals little, its enhanced attacks a lot) can
 be dropped when a wider beam brings in more nodes that are ahead for now.
 `efsim search --beam w` (default 24) therefore runs w/2, w and 2w, keeps
 the best and prints each width's result and the spread, (best − worst) /
-best; above 1% it says to treat the best as a lower bound. `--single` runs
+best; above 1% it says to treat the best as a lower bound. Since
+2026-11-14 each width after the first is **guided** by the best rotation
+found so far (`SearchHooks.guide`): its nodes keep a place in the beam
+(the last, when the score alone would drop them; an equivalent state that's
+kept takes it over), so the wider beam finds at least as much and the
+spread is what the wider beams found on top (before, the owner's team gave
+3,061,788 / 2,924,392 / 2,928,204 at 12 / 24 / 48: the wider beams lost
+the narrow one's rotation). `--single` runs
 w alone. A search stopped by `maxExpansions` (200,000) says so (`capped`,
 and a warning). Beam widths 12 / 24 / 48 (single widths; 2026-10-25):
 
@@ -737,7 +787,10 @@ and a warning). Beam widths 12 / 24 / 48 (single widths; 2026-10-25):
 So the gap left is the ranking, not the key or the choices: what the
 beam needs is a score closer to the final damage (a rollout, or a value
 for what a state holds: ready skills, a running ultimate, a set-up
-sequence), which nothing tried so far gave cheaply. Ratchets
+sequence). The probed resource value (*How the beam ranks*) is the cheap
+part of that; what builds up outside the resources is still unseen, and
+the guided widths make sure a wider beam at least keeps what a narrower
+one found. Ratchets
 (tests/slow/search-beams.test.ts): the best of w/2, w, 2w at 2w within 1%
 of that at w; one width alone, 2w within 2% of w (duo and si-laevatain's
 first 10 s at w = 4).

@@ -13,7 +13,10 @@ import {
   legalActions,
   memoised,
   randomOutcomes,
+  resourcePrices,
+  resourceValue,
   rotationSpread,
+  searchBeams,
   searchRotation,
   simulate,
   simulateRuns,
@@ -92,9 +95,14 @@ describe("rotation search", () => {
     // regen through time stops and a 0.5 s pause: 1,148,635.809, 527 states. The rotation found before is still legal
     // and still totals 1,161,308.759; with SP sooner the width-8 beam keeps other states and misses it.
     // 2026-11-13 (proposal, the owner to confirm): Laevatain's battle skill by the game-1.6 data (in-game test 20):
-    // 1,118,447.887, 513 states.
-    expect(found.result.total).toBeCloseTo(1118447.887, 3);
-    expect(found.expanded).toBe(513);
+    // 1,118,447.887, 513 states. Since 2026-11-14 that's the ranking by damage so far alone (valueWeight 0, bit for
+    // bit); the default ranking adds the resources' worth (resourceValue) and its beam of 8 keeps other states here:
+    // 1,113,946.019, 510 states (−0.4%; wider beams: docs/design.md "How the beam ranks").
+    const unvalued = searchRotation(data, open, { beamWidth: 8, valueWeight: 0 });
+    expect(unvalued.result.total).toBeCloseTo(1118447.887, 3);
+    expect(unvalued.expanded).toBe(513);
+    expect(found.result.total).toBeCloseTo(1113946.019, 3);
+    expect(found.expanded).toBe(510);
   });
 
   it("works for a team: casts of both operators interleave, all legal; no swaps unless asked for", () => {
@@ -107,6 +115,44 @@ describe("rotation search", () => {
     const swapping = searchRotation(data, duo, { beamWidth: 6, swaps: true });
     expect(simulate(data, { ...duo, rotation: swapping.rotation }).total).toBe(swapping.result.total);
     expect(swapping.result.total).toBeCloseTo(DUO_TOTAL, 3);
+    expect(searchRotation(data, duo, { beamWidth: 6, swaps: true, valueWeight: 0 }).result.total).toBeCloseTo(DUO_TOTAL_UNVALUED, 3);
+  });
+
+  it("prices ultimate energy and SP by probing the kits; a state's resources and casts in progress count for the beam", () => {
+    const p = resourcePrices(data, open);
+    // Deterministic (plain casts on a copy of the scenario).
+    expect(resourcePrices(data, open)).toEqual(p);
+    const lae = "chr_0016_laevat";
+    const ult = p.casts[lae]?.chr_0016_laevat_ultimate_skill;
+    const bs = p.casts[lae]?.chr_0016_laevat_normal_skill;
+    // Laevatain's ultimate deals little itself and much through her enhanced attacks: worth far more than a battle skill,
+    // and most of it still to come right after the cast.
+    expect(ult && bs && ult.worth > 10 * bs.worth).toBe(true);
+    expect(ult?.remaining[0]).toBeGreaterThan(0.5 * (ult?.worth ?? 0));
+    expect(ult?.remaining.at(-1)).toBe(0);
+    expect(ult?.remaining.every((r, i, xs) => i === 0 || r <= (xs[i - 1] as number))).toBe(true);
+    expect(p.energy[lae]).toBeGreaterThan(0);
+    const ctx = createContext(data, { ...open, rotation: [] });
+    const s = init(ctx);
+    const full = resourceValue(ctx, p, s, 1);
+    expect(full).toBeGreaterThan(resourceValue(ctx, p, { ...s, energy: { [lae]: 0 } }, 1));
+    expect(resourceValue(ctx, p, s, 0)).toBe(0);
+    // Nothing at the fight's end: there's no time left to spend it.
+    expect(resourceValue(ctx, p, { ...s, frame: open.durationFrames }, 1)).toBe(0);
+    // Casting the ultimate turns the energy's worth into the cast's (what of it is still to come), not into nothing.
+    const cast = apply(ctx, s, { operator: lae, skill: "chr_0016_laevat_ultimate_skill" });
+    expect(committedDamage(ctx, cast) + resourceValue(ctx, p, cast, 1)).toBeGreaterThan(0.8 * (committedDamage(ctx, s) + full));
+  });
+
+  it("a wider beam keeps the narrower one's best rotation (searchBeams guides it): the widths never fall", () => {
+    const narrow = searchRotation(data, duo, { beamWidth: 8 });
+    // A beam of 2 guided by the beam of 8's rotation finds at least as much.
+    const guided = searchRotation(data, duo, { beamWidth: 2 }, { guide: narrow.rotation });
+    expect(guided.score).toBeGreaterThanOrEqual(narrow.score);
+    expect(simulate(data, { ...duo, rotation: guided.rotation }).total).toBe(guided.result.total);
+    const r = searchBeams(data, duo, { beams: [2, 4, 8] });
+    for (let i = 1; i < r.beams.length; i++) expect(r.beams[i]?.score).toBeGreaterThanOrEqual(r.beams[i - 1]?.score as number);
+    expect(simulate(data, { ...duo, rotation: r.rotation }).total).toBe(r.result.total);
   });
 
   it("judges the choices at a state as judging every candidate in full would (startsNow and a memoised advance are exact)", () => {
@@ -337,10 +383,13 @@ describe("rotation search with random outcomes", () => {
  * by chance is the old key's total; the key's dead deadlines on their own move neither. 2026-11-12, SP regen through
  * time stops and a 0.5 s pause: 269,663.155.
  */
-const DUO_TOTAL = 269663.1553;
+const DUO_TOTAL_UNVALUED = 269663.1553;
+/** 2026-11-14, ranked with the resources' worth (resourceValue, the default since): 269,663.155 → 269,201.817 (−0.2%); unvalued as before. */
+const DUO_TOTAL = 269201.8172;
 /**
  * The same search without swaps, the default since 2026-10-25 (the owner doesn't swap in battle): the controlled
  * operator does every basic attack, the teammate casts its skills. Lower than with swaps (the swaps let both chains
- * run), as expected. 2026-11-12 (SP as above): 259,112.742 → 263,698.788.
+ * run), as expected. 2026-11-12 (SP as above): 259,112.742 → 263,698.788. 2026-11-14: the same ranked with the
+ * resources' worth (resourceValue).
  */
 const DUO_NO_SWAPS_TOTAL = 263698.788;

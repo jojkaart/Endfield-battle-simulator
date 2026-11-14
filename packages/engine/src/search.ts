@@ -36,7 +36,10 @@ import {
 } from "./timeline.ts";
 import type { CastRef, ChainStep, Scheduled } from "./timeline/state.ts";
 import { ofKind } from "./timeline/schedule.ts";
-import { maxPoise } from "./timeline/context.ts";
+import { maxPoise, skillCosts } from "./timeline/context.ts";
+import { maxEnergy } from "./timeline/resources.ts";
+import { SP } from "./timeline/rules.ts";
+import { FPS } from "./units.ts";
 import { windowKey } from "./timeline/timing.ts";
 
 export interface Candidate {
@@ -218,6 +221,126 @@ export function committedDamage(ctx: TimelineContext, state: TimelineState): num
 }
 
 /**
+ * What a state's resources are worth to the beam on top of its damage (docs/design.md "How the beam ranks"):
+ * ultimate energy at its operator's price per point, team SP at the team's, and casts still paying off. Prices come
+ * from probes (resourcePrices), not tables: a search heuristic, never part of a result.
+ */
+export interface ResourcePrices {
+  /** Damage per point of ultimate energy, per operator. */
+  readonly energy: Readonly<Record<string, number>>;
+  /** Damage per point of team SP. */
+  readonly sp: number;
+  /** Frames a probe runs; the resources' worth falls to 0 over as many before the fight's end (no time left to use them). */
+  readonly horizon: number;
+  /**
+   * Each probed cast (operator → skill): its worth (`worth`) and what of it is still to come at each age
+   * (`remaining[i]`: at i × PROBE_STEP frames after the cast; 0 from the end of the list).
+   */
+  readonly casts: Readonly<Record<string, Readonly<Record<string, { readonly worth: number; readonly remaining: readonly number[] }>>>>;
+}
+
+/** The probe's continuation: the controlled operator basic-attacks (its soonest next attack each time) up to `until`; every state on the way. */
+function attackUntil(ctx: TimelineContext, state: TimelineState, until: number): TimelineState[] {
+  const out = [state];
+  for (;;) {
+    const s = out.at(-1) as TimelineState;
+    const op = s.controlled;
+    let next: Candidate | null = null;
+    for (const skill of nextBasics(ctx.data, s, op)) {
+      const c = judge(ctx, s, { operator: op, skill });
+      if (c && c.frame <= until && (!next || c.frame < next.frame)) next = c;
+    }
+    if (!next) return out;
+    out.push(apply(ctx, s, { ...next.action, at: next.frame }));
+  }
+}
+
+/**
+ * Resource prices by probing the kits (2026-11-14): from the fight's start with every ultimate charged, each
+ * operator's ultimate and battle skill is cast at once, then the controlled operator basic-attacks for `horizon`
+ * frames; the cast's worth is the damage committed by then minus that of the attacks alone (so a buff that
+ * strengthens later hits counts, as Laevatain's ultimate's enhanced attacks do, and a cast that deals nothing itself
+ * isn't free), and how that difference grows over the probe says how much of it is still to come at each age. An
+ * operator's energy price is its ultimate's worth over its cost; SP's, the mean over the operators' battle skills
+ * of worth over SP cost (SP is the team's: who gets it is a choice). Deterministic: plain casts on a copy of the
+ * scenario.
+ */
+export function resourcePrices(data: GameData, scenario: Omit<TimelineScenario, "rotation">, horizon = PROBE_FRAMES): ResourcePrices {
+  const full = Object.fromEntries(scenario.team.map((b) => [b.operator, "full" as const]));
+  const ctx = memoised(createContext(data, { ...scenario, rotation: [], startEnergy: full }));
+  const s0 = init(ctx);
+  const until = Math.min(scenario.durationFrames, horizon);
+  const steps = Math.floor(until / PROBE_STEP);
+  // Damage committed (within the probe) at each step after `from`: by the last state of the attacks started by then.
+  const curve = (s: TimelineState, from: number): number[] => {
+    const path = attackUntil(ctx, s, until);
+    const committed = path.map((x) => advance(ctx, { ...x }, until).hits.reduce((a, h) => a + h.exact, 0));
+    return Array.from({ length: steps + 1 }, (_, i) => {
+      let j = 0;
+      while (j + 1 < path.length && (path[j + 1] as TimelineState).frame <= from + i * PROBE_STEP) j++;
+      return committed[j] as number;
+    });
+  };
+  const base = curve(s0, 0);
+  const energy: Record<string, number> = {};
+  const casts: Record<string, Record<string, { worth: number; remaining: number[] }>> = {};
+  const spPrices: number[] = [];
+  for (const b of scenario.team) {
+    const op = b.operator;
+    const mine: Record<string, { worth: number; remaining: number[] }> = {};
+    casts[op] = mine;
+    let ult = 0;
+    let bs = 0;
+    for (const sk of ctx.kits.get(op)?.skills ?? []) {
+      if (sk.followUpOnly || (sk.kind !== "ultimate" && sk.kind !== "battle")) continue;
+      const start = earliestStart(ctx, s0, { operator: op, skill: sk.skillId });
+      if ("error" in start || start.frame + PROBE_STEP > until) continue;
+      const c = curve(apply(ctx, s0, { operator: op, skill: sk.skillId, at: start.frame }), start.frame);
+      // Against the attacks alone at the same frames (those from the cast's start on).
+      const gained = c.map((d, i) => d - (base[Math.min(steps, i + Math.round(start.frame / PROBE_STEP))] as number));
+      const worth = Math.max(0, gained.at(-1) as number);
+      const remaining: number[] = [];
+      for (const g of gained) remaining.push(Math.min(remaining.at(-1) ?? worth, Math.max(0, worth - g)));
+      mine[sk.skillId] = { worth, remaining };
+      const cost = skillCosts(ctx, op, sk.skillId, 0);
+      if (sk.kind === "ultimate" && cost.energyCost > 0) ult = Math.max(ult, worth / cost.energyCost);
+      if (sk.kind === "battle" && cost.spCost > 0) bs = Math.max(bs, worth / cost.spCost);
+    }
+    energy[op] = maxEnergy(ctx, op) > 0 ? ult : 0;
+    if (bs > 0) spPrices.push(bs);
+  }
+  const sp = spPrices.length ? spPrices.reduce((a, x) => a + x, 0) / spPrices.length : 0;
+  return { energy, sp, horizon, casts };
+}
+
+/** How long a probe's attacks run (resourcePrices), and the taper of the resources' worth before the fight's end: 10 s (a search setting). */
+const PROBE_FRAMES = 10 * FPS;
+/** The probe's time step for what of a cast's worth is still to come: half a second. */
+const PROBE_STEP = 15;
+
+/**
+ * What a state holds beyond its damage, × `weight`: its unspent ultimate energy and SP at the prices (falling
+ * linearly to 0 over the prices' horizon before the fight's end), and what the probed casts of the last horizon
+ * have still to deal by the probe (so casting turns the resources' worth into a cast's, not into nothing until its
+ * damage lands: Laevatain's ultimate deals little itself, its enhanced attacks a lot).
+ */
+export function resourceValue(ctx: TimelineContext, prices: ResourcePrices, state: TimelineState, weight: number): number {
+  const left = ctx.scenario.durationFrames - state.frame;
+  if (weight === 0 || left <= 0) return 0;
+  let v = Math.min(SP.max, state.sp) * prices.sp;
+  for (const b of ctx.scenario.team) v += (state.energy[b.operator] ?? 0) * (prices.energy[b.operator] ?? 0);
+  v *= Math.min(1, left / prices.horizon);
+  for (let i = state.casts.length - 1; i >= 0; i--) {
+    const c = state.casts[i] as TimelineState["casts"][number];
+    const age = state.frame - c.frame;
+    if (age >= prices.horizon) break;
+    const r = prices.casts[c.operator]?.[c.skill]?.remaining;
+    if (r) v += r[Math.floor(age / PROBE_STEP)] ?? 0;
+  }
+  return v * weight;
+}
+
+/**
  * Where a scenario's battles can go differently from seed to seed: rolled
  * crits, a dodge chance strictly between 0 and 1 with enemy attacks to dodge,
  * kit triggers (own or worn) that fire with a chance, and kit triggers on
@@ -294,7 +417,15 @@ export interface SearchOptions {
    * battle skills, combos and ultimates.
    */
   readonly swaps?: boolean;
+  /**
+   * How much the beam counts a state's unspent ultimate energy and SP at their probed prices (resourceValue; default
+   * VALUE_WEIGHT; 0: damage so far alone, the ranking before 2026-11-14).
+   */
+  readonly valueWeight?: number;
 }
+
+/** SearchOptions.valueWeight's default (measured 2026-11-14: docs/design.md "How the beam ranks"). */
+export const VALUE_WEIGHT = 0.5;
 
 /**
  * A rotation's total damage over seeded battles, each with the scenario's
@@ -355,7 +486,7 @@ export interface SearchResult {
   readonly crit: CritMode;
   /** What the beam ranked by: the mean of the seeded battles, or a percentile (SearchOptions.percentile). */
   readonly rankedBy: "mean" | { readonly percentile: number };
-  /** What the found rotation scored as the beam ranked it: its damage, or with random outcomes the statistic of its seeded battles. */
+  /** The found rotation's damage, or with random outcomes the statistic of its seeded battles' (the beam ranks by that plus the resources' worth: resourceValue). */
   readonly score: number;
   /** With random outcomes: the found rotation's distribution over SearchOptions.runs battles (rotationSpread). */
   readonly spread?: RotationSpread;
@@ -376,15 +507,16 @@ export interface BeamsResult extends SearchResult {
   readonly beamWidth: number;
   /** Every width's search, in the order run. */
   readonly beams: readonly BeamRun[];
-  /** How far apart the widths' scores are: (best − worst) / best (0: all found the same). */
+  /** How far apart the widths' scores are: (best − worst) / best (0: all found the same; widths after the first are guided by the best before, so the worst is the first's). */
   readonly beamSpread: number;
 }
 
 /**
  * The search at several beam widths (e.g. w/2, w, 2w: efsim search's default), the best result and how far the others
- * fell short. A beam search's result isn't monotone in its width (review round two: si-laevatain moved ±4.5% between
- * widths 12 and 48): the spread is how much one width's answer can be trusted to be the best this search finds.
- * `onBeam` sees each width's result as it's done (the CLI times them).
+ * fell short. A beam search's result alone isn't monotone in its width (review round two: si-laevatain moved ±4.5%
+ * between widths 12 and 48), so each width after the first keeps a place for the best rotation found so far
+ * (SearchHooks.guide, 2026-11-14): it finds at least as much, and the spread is how much the wider beams still found
+ * on top. `onBeam` sees each width's result as it's done (the CLI times them).
  */
 export function searchBeams(data: GameData, scenario: Omit<TimelineScenario, "rotation">, options: SearchOptions & { readonly beams: readonly number[] }, onBeam?: (r: SearchResult, beamWidth: number) => void): BeamsResult {
   const { beams: widths, ...rest } = options;
@@ -393,7 +525,8 @@ export function searchBeams(data: GameData, scenario: Omit<TimelineScenario, "ro
   const beams: BeamRun[] = [];
   for (const w of widths) {
     if (!Number.isInteger(w) || w < 1) throw new EngineError(`beam width must be a whole number ≥ 1, not ${w}`);
-    const r = search(data, scenario, { ...rest, beamWidth: w });
+    // Guided by the best narrower width's rotation: a wider beam finds at least as much (SearchHooks.guide).
+    const r = search(data, scenario, { ...rest, beamWidth: w }, best ? { guide: best.r.rotation } : {});
     onBeam?.(r, w);
     beams.push({ beamWidth: w, score: r.score, expanded: r.expanded, capped: r.capped });
     if (!best || r.score > best.r.score) best = { r, w };
@@ -690,7 +823,10 @@ function prune(nodes: readonly Node[], n: number, counts: { merged: number; fami
   const byKey = new Map<string, Node>();
   for (const x of nodes) {
     const y = byKey.get(x.key);
-    if (!y || x.score > y.score) byKey.set(x.key, x);
+    // The guide's place goes to an equivalent state that's kept instead (the same choices follow: SearchHooks.guide).
+    const guideAt = Math.max(x.guideAt ?? -1, y?.guideAt ?? -1);
+    const z = !y || x.score > y.score ? x : y;
+    byKey.set(x.key, guideAt >= 0 && z.guideAt !== guideAt ? { ...z, guideAt } : z);
   }
   counts.merged += nodes.length - byKey.size;
   // Stable: ties keep generation order (deterministic).
@@ -706,6 +842,9 @@ function prune(nodes: readonly Node[], n: number, counts: { merged: number; fami
     } else rest.push(x);
   }
   for (const x of rest) if (kept.length < n) kept.push(x);
+  // The guide's line stays (in the last place) when the score alone would drop it.
+  const guide = sorted.find((x) => x.guideAt !== undefined);
+  if (guide && !kept.includes(guide)) kept[n - 1] = guide;
   counts.pruned += sorted.length - n;
   // Those the best n by score would have kept.
   const chosen = new Set(kept);
@@ -721,8 +860,12 @@ interface Node {
   readonly key: string;
   /** familyKey of the first state (prune). */
   readonly family: string;
-  /** What the beam ranks it by: the statistic of committed damage over the battles. */
+  /** The statistic of committed damage over the battles. */
+  readonly damage: number;
+  /** What the beam ranks it by: the statistic of committed damage plus the resources' worth (resourceValue) over the battles. */
   readonly score: number;
+  /** On the guide's line (SearchHooks.guide): how many of its actions the rotation (or an equivalent state's) has played. */
+  readonly guideAt?: number;
 }
 
 /** The mean of the values, or their percentile (0–100, nearest rank). One value is itself either way. */
@@ -746,11 +889,20 @@ function statistic(values: readonly number[], percentile: number | undefined): n
  * whose step isn't legal in some battle is dropped. Its score is the mean
  * (or SearchOptions.percentile) of the K battles' values.
  */
-export function searchRotation(data: GameData, scenario: Omit<TimelineScenario, "rotation">, options: SearchOptions = {}): SearchResult {
-  return search(data, scenario, options);
+export function searchRotation(data: GameData, scenario: Omit<TimelineScenario, "rotation">, options: SearchOptions = {}, hooks: SearchHooks = {}): SearchResult {
+  return search(data, scenario, options, hooks);
 }
 
-function search(data: GameData, given: Omit<TimelineScenario, "rotation">, options: SearchOptions): SearchResult {
+/** What a caller adds to a search (searchBeams: the narrower widths' best). */
+export interface SearchHooks {
+  /**
+   * A rotation the beam keeps a place for, so that the search finds at least as much (searchBeams: the best of the
+   * narrower widths). It must be one this search can make (the same scenario and options: a found rotation).
+   */
+  readonly guide?: readonly RotationAction[];
+}
+
+function search(data: GameData, given: Omit<TimelineScenario, "rotation">, options: SearchOptions, hooks: SearchHooks = {}): SearchResult {
   const beam = options.beamWidth ?? 24;
   const swaps = options.swaps ?? false;
   const bucketFrames = options.bucketFrames ?? 15;
@@ -772,9 +924,12 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
   const keyers = ctxs.map((c) => stateKeyer(c));
   // Families by the proposing battle (the others played the same actions).
   const familyKey = stateKeyer(ctx, true);
+  const weight = options.valueWeight ?? VALUE_WEIGHT;
+  const prices = weight === 0 ? undefined : resourcePrices(data, scenario);
   const node = (states: readonly TimelineState[], rotation: readonly RotationAction[]): Node => {
     const damages = states.map((s, i) => committedDamage(ctxs[i] as TimelineContext, s));
-    return { states, rotation, family: familyKey(states[0] as TimelineState), key: states.map((s, i) => (keyers[i] as (s: TimelineState) => string)(s)).join("\n"), score: statistic(damages, percentile) };
+    const scores = prices ? states.map((s, i) => (damages[i] as number) + resourceValue(ctxs[i] as TimelineContext, prices, s, weight)) : damages;
+    return { states, rotation, family: familyKey(states[0] as TimelineState), key: states.map((s, i) => (keyers[i] as (s: TimelineState) => string)(s)).join("\n"), damage: statistic(damages, percentile), score: statistic(scores, percentile) };
   };
   const buckets = new Map<number, Node[]>();
   const push = (n: Node) => {
@@ -783,7 +938,9 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
     list.push(n);
     buckets.set(b, list);
   };
-  const root = node(ctxs.map((c) => init(c)), []);
+  const guide = hooks.guide;
+  const same = (a: RotationAction | undefined, b: RotationAction) => a !== undefined && a.operator === b.operator && a.skill === b.skill && a.at === b.at;
+  const root = { ...node(ctxs.map((c) => init(c)), []), ...(guide ? { guideAt: 0 } : {}) };
   push(root);
   let best: Node = root;
   let expanded = 0;
@@ -804,7 +961,7 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
         // A swap takes no time: never two in a row (they'd loop within a frame); none at all unless asked for.
         const lastSwap = n.rotation.at(-1)?.skill === "swap";
         const choices = legalActions(ctx, first).filter((c) => c.action.skill !== "swap" || (swaps && !lastSwap));
-        if (choices.length === 0 && n.score > best.score) best = n;
+        if (choices.length === 0 && n.damage > best.damage) best = n;
         for (const c of choices) {
           // Applied as recorded, with `at` the frame it starts, so the rotation replays to exactly these states.
           const step = { ...c.action, at: c.frame };
@@ -817,8 +974,9 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
             states.push(apply(ci, si, step));
           }
           if (states.length < k) continue;
-          const child = node(states, [...n.rotation, step]);
-          if (child.score > best.score) best = child;
+          const made = node(states, [...n.rotation, step]);
+          const child = guide && n.guideAt !== undefined && same(guide[n.guideAt], step) ? { ...made, guideAt: n.guideAt + 1 } : made;
+          if (child.damage > best.damage) best = child;
           if (Math.floor((states[0] as TimelineState).frame / bucketFrames) === b) layer.push(child);
           else push(child);
         }
@@ -839,7 +997,7 @@ function search(data: GameData, given: Omit<TimelineScenario, "rotation">, optio
     seeds,
     crit,
     rankedBy: percentile === undefined ? "mean" : { percentile },
-    score: best.score,
+    score: best.damage,
     ...(random.length > 0 && runs > 0 ? { spread: rotationSpread(data, full, runs, seed0) } : {}),
   };
 }

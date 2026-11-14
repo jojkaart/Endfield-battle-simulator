@@ -191,7 +191,7 @@ export function searchCommand(
       : `Searched beams ${widths.join(", ")} (${states} states, ${total.toFixed(1)} s); the best at beam ${found.beamWidth}:`,
     ...(widths.length === 1 ? [] : [
       ...found.beams.map((b) => `  beam ${String(b.beamWidth).padStart(3)}: ${num(Math.round(b.score), 0)} (${what}; ${b.expanded} states, ${(seconds.get(b.beamWidth) ?? 0).toFixed(1)} s)${b.beamWidth === found.beamWidth ? "  best" : ""}`),
-      `  Spread ${(found.beamSpread * 100).toFixed(1)}%: ${found.beamSpread < 0.01 ? "the widths agree within 1%." : "the widths disagree; the beam ranks by damage so far, so a rotation that pays off later can be dropped. Treat the best as a lower bound."}`,
+      `  Spread ${(found.beamSpread * 100).toFixed(1)}%: ${found.beamSpread < 0.01 ? "the widths agree within 1%." : "wider beams still found more (each keeps the narrower ones' best and may beat it), so a wider beam may find more again. Treat the best as a lower bound."}`,
     ]),
     ...capped.map((b) => `Warning: beam ${b.beamWidth} stopped at the expansion cap (${b.expanded} states) before the fight's end: its rotation is the best found by then.`),
     ...(found.random.length > 0 ? [`Random outcomes (${found.random.join("; ")}): each candidate ranked by ${ranked} of ${found.seeds.length} battle${found.seeds.length === 1 ? "" : "s"} (${seeds}).`] : []),
