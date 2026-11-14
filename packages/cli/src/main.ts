@@ -9,7 +9,7 @@ import { loadGameData } from "@efsim/data";
 import type { CritMode, TimelineScenario } from "@efsim/engine";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "./commands.ts";
 import { kitDraft } from "./kitdraft.ts";
-import { formatRuns, formatSimulation, readScenario, searchCommand } from "./simulate.ts";
+import { formatRuns, formatSimulation, loopCommand, readScenario, searchCommand } from "./simulate.ts";
 import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, simulateLog } from "./logcheck.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
@@ -39,6 +39,9 @@ const USAGE = `Usage:
                 [--beam n] [--out file]   Beam width w (default 24): runs w/2, w and 2w, keeps the best and
                                           shows how far apart they are; save the rotation as a scenario
                 [--single]                Only beam w (a third of the time, no spread)
+                [--loop]                  An opener and a loop instead of one fight: repetitions from a cast of
+                                          the slowest ultimate to its next, each searched afresh at beam w
+                                          until 3 in a row agree (--out saves opener and repetitions)
                 [--swaps]                 Let the rotation swap the controlled operator (default: never; the
                                           scenario's controlled operator does every basic attack and dive)
                 [--seeds k]               With random outcomes: battles each candidate is ranked over (default 4)
@@ -97,6 +100,7 @@ async function main(argv: string[]): Promise<number> {
       top: { type: "string" },
       single: { type: "boolean", default: false },
       swaps: { type: "boolean", default: false },
+      loop: { type: "boolean", default: false },
       seed: { type: "string" },
       runs: { type: "string" },
       seeds: { type: "string" },
@@ -237,6 +241,10 @@ async function main(argv: string[]): Promise<number> {
         const beam = Number(values.beam);
         if (!(Number.isInteger(beam) && beam >= 1)) throw new Error(`--beam must be a whole number ≥ 1`);
         const scenario = withBattleOptions(readScenario(args[0] as string));
+        if (values.loop) {
+          text = loopCommand(data(), scenario, { beam, swaps: values.swaps, ...(values.out ? { out: values.out } : {}) });
+          break;
+        }
         text = searchCommand(data(), scenario, {
           beam,
           single: values.single,
