@@ -14,6 +14,81 @@ Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
 none appear here.
 
+## Buff timing leads (the buff timing report, 2026-11-15)
+
+**Shows:** `efsim zmdlogs timing` (docs/design.md, "The buff timing
+report") over the 27 development logs: of 4,487 fallback and mismatch
+hits, 1,209 fit one kit buff toggled (at stake 1.80M), 148 only a pair,
+3,130 none (19.66M: most misfits aren't timing). Hints, not fixes ("Fits
+need a mechanism"). The top runs, by damage at stake (|logged − engine|):
+
+1. **Yvonne's MI Security ATK** (suit_criti01.atk), 5082: absent in the
+   engine 45.1–48.7 s (19 hits, 418k; its nearest instance 7 s away), and
+   ending 3.1–3.7 s early at 38.1 s (5 hits 41.2–41.8 s, 88k); the log
+   lists it at all 24, none against. *Mechanism candidate:* its trigger is
+   on Yvonne's crits, and her combo and ultimate hits from 41.2 s have no
+   crit flag in the log; the replay counts those as non-crits, so the set
+   never re-stacks. Plausibly part of 5082's Yvonne −23% (journal
+   2026-11-15).
+2. **Si's ultimate Amp**, 9c0b: absent in the engine 13.8–25.4 s on all
+   four operators (47 hits, 402k; listed at 47/47; nearest instance
+   46.6 s away). *Mechanism candidate:* the log's hitless Si ultimate at
+   7.0 s (a cast event): the replay doesn't make it, or its Amp doesn't
+   land; Arcane's ultimate lasers at 21 s are ×1.200 low.
+3. **Typhoeus's Barrage Array** (Nature Burst DMG Taken), 1d91 and 9c6e:
+   "starts early" (7 hits, 80k) and "ends late" (4 hits, 36k) on the same
+   windows (1d91 9.8–16.2 s and 51.5–57.5 s): the hits fit without it
+   across the engine's whole window, the log lists it at none. No
+   mechanism near (its source is the combo's first arrow). Still possible:
+   it doesn't act on these hits (a mask), or it lands later and shorter.
+4. **Laevatain's Forgeborn Scathe basic DMG** (wpn_sword_0006.valid), 9c0b:
+   absent in the engine 32.0–34.8 s (5 hits, 71k), listed at 5/5. NO
+   MECHANISM: its trigger is her ultimate cast, and none is within 20 s
+   before.
+5. **Gilberta's Arts Susceptibility**, 489c, 4360, 9847: 42 hits fit the
+   log's values, not the engine's (59k): a value, not timing. No mechanism.
+6. **Liino's Vocalist Stance ATK**, af7b: absent in the engine 1.5–53.8 s
+   (245 hits, 56k, listed at all); the candidate is her logged hitless
+   battle skill at 1.6 s, which the replay doesn't make (af7b's placement,
+   "Buffs through stops" below). Ambiguous: vocalist_linger and
+   cosmovoice_atk fit the same hits (same values).
+7. **Laevatain's Hot Work Heat DMG** (suit_fire_natr01.heat), 79cc and f879:
+   ends 2.2–4.8 s early (6 hits, 46k), and absent in f879 107.5–108.6 s (3
+   hits, 20k), listed at all. *Mechanism candidate:* its trigger is on
+   Combustion (reaction), and her Combustion ticks come at 100.0 and
+   106.5 s in the windows: a tick (or a re-application) may refresh it in
+   the game, the kit's trigger only the application.
+8. **Estella's Physical Susceptibility** (combo), c4f3: ends 2.6–2.7 s early
+   at 34.3 s (2 hits, 26k). *Mechanism candidate:* Gilberta's ultimate
+   stop starts at 34.5 s and Pogranichnik's combo slow-down ends at 34.4 s,
+   at the engine's end: a hold (B11) of another length.
+9. **Gilberta's Delivery Guaranteed Arts DMG** (wpn_funnel_0011), 4a64: ends
+   2.9–4.4 s early at 23.9 s (14 hits, 23k, listed at all). Three ultimate
+   stops (Si, Rossi, Gilberta) run 24.5–26.6 s, 0.6 s after the engine's
+   end: a hold candidate if its end really falls inside them (outside the
+   report's ±0.5 s, so marked NO MECHANISM).
+10. **Liino's Medicant ATK** (wpn_lance_0014.atk), 1d91: "starts early" by
+    0–3 s in 11 runs (78 hits, 20k), "ends late" in 8 (44 hits, 12k): each
+    engine start is at one of her logged hitless battle-skill events (the
+    stance's beats, `ticksLoggedAs`). *Mechanism candidate:* the heal that
+    triggers it lands after the beat (its projectile), not at it. The log
+    lists none of it (1d91 doesn't list Liino's buffs), so only the damage
+    says so.
+
+Also: Si's Amp carried past its end by Combustion's snapshot (db87, c83c,
+6 hits; "Ink Melt logs" below); Arcane's Imposing Champion Arts DMG Taken
+ending 2.6–3.6 s late in 9c6e (7 hits, 20k, no mechanism); Camille's
+Vesperwings Susceptibility absent by the damage in e989 69.2–70.9 s (5
+hits, 18k) with the engine's instance 61.7–89.3 s.
+
+**Ruled out:** none of these yet (the report only reads).
+**Still possible:** chance fits where two buffs' values fit alike (the
+report lists them as "also fits"), and on small hits (±1 above 0.05%:
+"coarse"); a run that fits "starts early" and "ends late" on one window
+is one buff absent across it (3 above), not two shifts.
+**Next check:** 1 (replay the unknown crits' bound), 2 (why the replay
+skips the logged ultimate), 7 (whether Hot Work refreshes on ticks).
+
 ## Rossi's ultimate ×1.090 (9a80) and ×1.081 (2fd9)
 
 **Shows:** every ultimate hit low by one factor, crits and non-crits alike

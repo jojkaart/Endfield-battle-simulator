@@ -10,9 +10,9 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
 
 - **First (2026-11-15):** simulate Ink Melt (EndfieldHub's top team)
   next to the owner's team under the same assumptions; the buff timing
-  report in the log check (wider windows and every buff as a diagnostic,
-  aggregated per buff, with candidate mechanisms; accuracy-plan "Fits
-  need a mechanism"); dominance pruning in the search (asked about by the
+  report's leads (`efsim zmdlogs timing`, done 2026-11-15; open-problems
+  "Buff timing leads": Yvonne's MI Security on unlogged crits in 5082,
+  Si's hitless ultimate in 9c0b, Hot Work on Combustion ticks); dominance pruning in the search (asked about by the
   owner); the loop's long openers and a 2-round loop; in-game tests 106
   (Yinglung's Edge) and 107 (Si's Amp across ultimates).
 

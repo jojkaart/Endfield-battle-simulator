@@ -27,9 +27,10 @@ by Stagger (wrong windows in 22 of 29 fights), can be measured and fixed.
 ## Fits need a mechanism (the owner, 2026-11-15)
 
 A log check that finds a hit fits "if buff X is added / removed / ends
-later" (the 500 ms boundary toggles today; the planned buff timing report
-tries wider windows and every buff in the battle, as a diagnostic outside
-the scored verdicts) gives a hint, not a fix. A hint becomes a change to
+later" (the 500 ms boundary toggles; the buff timing report, `efsim
+zmdlogs timing`, design.md, tries every buff in the battle at any
+distance, as a diagnostic outside the scored verdicts) gives a hint, not
+a fix. A hint becomes a change to
 a kit or the engine only with a plausible mechanism for the buff to be
 applied or removed there: a trigger, cast, reaction, time stop or rule in
 the game data (or one the owner confirms in game) that would create or
