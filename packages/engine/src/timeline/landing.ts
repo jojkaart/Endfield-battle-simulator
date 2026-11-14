@@ -13,7 +13,7 @@ import { applyToEnemy, type EnemyStatus, expireStatus, type HitApplication, MAX_
 import type { LandedHit, LandingFacts, LandingInputs, PendingBurst, PendingHit, ReactionRecord, TimelineContext, TimelineState } from "./state.ts";
 import { kitSkill, panelAt } from "./context.ts";
 import { dealPoise, gainEnergy, gainSp, isStaggered, spGrantOf } from "./resources.ts";
-import { artsIntensity, attackerSide, buffSituation, damageOptions, healEvents, situationAt, statusTweaks } from "./situation.ts";
+import { artsIntensity, attackerSide, buffSituation, damageOptions, healEvents, retakeCombustionSnapshots, situationAt, statusTweaks } from "./situation.ts";
 import { addBuff, buffAppliedEvent, changedStacks, gainStacks, runTriggers } from "./actions.ts";
 import { ofKind, schedule } from "./schedule.ts";
 import { operatorClockDue } from "./clock.ts";
@@ -379,6 +379,8 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     grantSp(early);
     if (early.length) st = runTriggers(ctx, st, early, { operator: hit.operator, kind });
   }
+  // A Combustion the hit formed keeps the attacker side its damage sees: with what its application's triggers gave.
+  st = retakeCombustionSnapshots(st, statusEvents);
   // A finisher (skillSpecification 8) is multiplied by the enemy's finisher multiplier (attribute 27).
   const finisher = !hit.trigger && ctx.data.skills[hit.skillId]?.timing?.specification === 8;
   const critMode = ctx.scenario.options.crit;
@@ -426,6 +428,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   const lateEvents = applyPhase(true);
   // Triggers that act on a hit's own status events before its damage act on these as they happen.
   if (lateEvents.length && ctx.beforeDamage) st = runTriggers(ctx, st, asEvents(lateEvents, kind, castIndex), { operator: hit.operator, kind }, (t) => t.beforeDamage === true, false);
+  st = retakeCombustionSnapshots(st, lateEvents);
   applyBuffs(false);
   if (hit.usesUp && !late) {
     const own = st.stacks[hit.operator] ?? {};

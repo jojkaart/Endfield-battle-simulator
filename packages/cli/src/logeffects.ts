@@ -212,7 +212,7 @@ export function withoutOwnFood(data: GameData, fx: LogFixture, hit: LogHit): Log
 const MAX_BOUNDARY_SUBSET = 6;
 
 /** Effects with repeats of the same buff, zone, element and value kept once. */
-function collapseRepeats(effects: readonly LogEffect[]): LogEffect[] {
+export function collapseRepeats(effects: readonly LogEffect[]): LogEffect[] {
   const seen = new Set<string>();
   return effects.filter((e) => {
     const k = `${e.buff}|${e.zone}|${e.element}|${e.value}`;

@@ -230,6 +230,21 @@ describe("Wulfgard's equipment kits", () => {
     expect(mine(ult).some((h) => from(h, "Rational Farewell").length > 0)).toBe(false);
   });
 
+  it("a Combustion's ticks keep the buffs its own application gives (Rational Farewell's ATK, Scorching Fangs), a hit's and a trigger's alike", () => {
+    // pending/zmdlogs-c7790d76a4f0.json: ticks ×2.2223 the snapshot taken before them (Combustions at 9882 and 63651 ms).
+    const ticks = (s: TimelineState) => s.hits.filter((h) => h.operator === W && h.skillId === "reaction:combustionTick");
+    const s = run(scenario({}, {}, true), [fluorite("normal_skill"), op("combo_skill")]);
+    expect(ticks(s).length).toBeGreaterThan(0);
+    for (const t of ticks(s)) {
+      expect(from(t, "Rational Farewell").map((m) => m.value)).toEqual([expect.closeTo(0.448, 6)]);
+      expect(from(t, "Scorching Fangs").map((m) => m.value)).toEqual([expect.closeTo(0.3, 6)]);
+    }
+    // His ultimate's forced Combustion (a trigger's application, 45 frames in): Scorching Fangs, which it gives.
+    const ult = run(scenario({}, full), [op("ultimate_skill")], 400);
+    expect(ticks(ult).length).toBe(10);
+    for (const t of ticks(ult)) expect(from(t, "Scorching Fangs").map((m) => m.value)).toEqual([expect.closeTo(0.3, 6)]);
+  });
+
   it("Opus: The Living: ATK +atk_up (0.21) per reaction he applies, up to max_stack (2) layers", () => {
     const opus = weapon("wpn_pistol_0006");
     const s = run(scenario(opus, full), [op("ultimate_skill"), op("attack1")]);
