@@ -43,7 +43,7 @@ import {
 import type { LogEffect, LogFixture, LogHit } from "@efsim/data";
 import { assumeValues, valueAssumptions, valueReads } from "./hitvalues.ts";
 import { engineCheck, engineReadings, fightTotals, logDifferences, totalsErrors, type HitPlace, type LogDifference, type TotalsComparison } from "./enginecheck.ts";
-import { boundarySubsets, buffFile, isCorrosionBuff, kitBuffSource, kitStackCaps, logModifiers, teamPanels, withoutOwnFood, type HitCategory, type StackCap } from "./logeffects.ts";
+import { boundarySubsets, buffFile, collapseRepeats, isCorrosionBuff, kitBuffSource, kitStackCaps, logModifiers, teamPanels, withoutOwnFood, type HitCategory, type StackCap } from "./logeffects.ts";
 import { placeHits, type LoggedCast, type Placement } from "./logcasts.ts";
 import { isRecordedBurst, recordedBurst, type RecordedBurstReading } from "./recordedburst.ts";
 import { checkReactions } from "./reactioncheck.ts";
@@ -453,6 +453,19 @@ function combustionSource(fx: LogFixture, tick: LogHit): LogHit | null {
     if (h.operator === tick.operator && r?.kind === "reaction" && r.element === "fire" && h.t <= tick.t && tick.t - h.t <= ms && (!found || h.t >= found.t)) found = h;
   }
   return found;
+}
+
+/**
+ * A Combustion's application hit (combustionSource) as its ticks' snapshot reads it: with the buffs the Combustion's
+ * own application creates (timeline/situation.ts retakeCombustionSnapshots), which the log lists at that hit's
+ * boundary. Its boundary buffs the tick lists inside it count as its effects, once each (a refresh lists two
+ * instances); pending/zmdlogs-c7790d76a4f0.json at 9882 ms (ticks 11673, 12608 ms).
+ */
+function snapshotHit(source: LogHit, tick: LogHit): LogHit {
+  const onTick = new Set(tick.effects.map((e) => e.buff));
+  const created = collapseRepeats(source.boundaryEffects.filter((e) => onTick.has(e.buff) && !source.effects.some((x) => x.buff === e.buff)));
+  if (!created.length) return source;
+  return { ...source, effects: [...source.effects, ...created], boundaryEffects: source.boundaryEffects.filter((e) => !created.some((x) => x.buff === e.buff)) };
 }
 
 /** One way an unlogged buff may stand at a hit: its modifiers then. */
@@ -990,7 +1003,7 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
       !byEngineHit && buffs.length === 0
         ? match(first, readings)
         : match({ ...first, assumptions: [...first.assumptions, { kind: "logListing", label: `${LOG_LISTING} (${why})`, ...(buffs.length ? { buffs } : {}) }] }, readings);
-    const byReplay = search(hit, decided, applied ? asReplayed(applied) : null);
+    const byReplay = search(hit, decided, applied ? snapshotHit(asReplayed(applied), hit) : null);
     if (byReplay.first) return fallback(byReplay.first, { tried: engineReadingsTried + byReplay.tried, matching: byReplay.matching }, engineWhy);
     let readings: Readings = { tried: engineReadingsTried + byReplay.tried, matching: 0 };
     let byLog: ReturnType<typeof search> | null = null;
@@ -999,7 +1012,7 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
     const setHere = replayed?.decidedAt.get(logged) ?? noneDecided;
     if (setHere.size > 0) {
       // The log's listing, with the layers the replay gives a buff both have on (not tried: layerVariants).
-      byLog = search(atLayers(logged, layersHere), new Set(layersHere.keys()), applied);
+      byLog = search(atLayers(logged, layersHere), new Set(layersHere.keys()), applied ? snapshotHit(applied, logged) : null);
       readings = { tried: engineReadingsTried + byReplay.tried + byLog.tried, matching: byLog.matching };
       if (byLog.first) {
         const buffs = [...setHere].sort();
@@ -1460,7 +1473,8 @@ export function hitPlace(data: GameData, fx: LogFixture, placement: Placement, r
   const kit = build ? effectiveKit(data, build) : undefined;
   const placed = placement.hits.get(logged);
   const kind = placed ? placed.cast.kind : (kit?.skills.find((s) => found.some(([f]) => f.skillId === s.skillId))?.kind ?? null);
-  return { found, kind, castFacts: castFactsOf(replay, placed?.cast), snapshotOf: reaction?.kind === "combustionTick" ? combustionSource(fx, logged) : null };
+  const source = reaction?.kind === "combustionTick" ? combustionSource(fx, logged) : null;
+  return { found, kind, castFacts: castFactsOf(replay, placed?.cast), snapshotOf: source ? snapshotHit(source, logged) : null };
 }
 
 /** The simulation's report: per operator, the logged hits it lands, how many within ±1, and the median ratio of logged to simulated damage. */

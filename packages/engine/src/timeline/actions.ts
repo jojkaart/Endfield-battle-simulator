@@ -16,7 +16,7 @@ import { panelAt, skillCosts, timingOf } from "./context.ts";
 import { controlImmune, shiftDebuffs, shiftEnemy } from "./clock.ts";
 import { cooldownEnd, gainEnergy, gainSp, maxEnergy, rateProgress, rateReady, rebaseCooldowns, spGrantOf } from "./resources.ts";
 import { actionFrame, ownWindowSkills, playheadOf } from "./timing.ts";
-import { artsIntensity, attackerSide, eventCountOf, eventSourceOf, healEvents, situationAt, statusTweaks, triggerSituation } from "./situation.ts";
+import { artsIntensity, attackerSide, eventCountOf, eventSourceOf, healEvents, retakeCombustionSnapshots, situationAt, statusTweaks, triggerSituation } from "./situation.ts";
 import { asEvents, delayBursts, draw, landHit, recordStatus, withLoggedReactionLevel } from "./landing.ts";
 import { castSkill, endCurrentSkill, takeJump } from "./casting.ts";
 import { schedule } from "./schedule.ts";
@@ -237,8 +237,16 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
           const r = applyToEnemy(withLoggedReactionLevel(ctx, expireStatus(st.enemy, frame), resolved, frame, owner), resolved, frame, owner, ai, (key) => skillValue(ctx.data, panel, build, triggerSkillId(owner, t), key), statusTweaks(ctx, st, owner, frame), () => attackerSide(side, owner, frame));
           const fromKind = origin && origin.operator === owner ? origin.kind : "none";
           const d = delayBursts(ctx, { ...st, enemy: r.state }, r.events, fromKind);
-          st = recordStatus(ctx, d.state, d.now, r.state);
           for (const x of r.events) if (x.kind === "consumed") consumed += x.stacks;
+          if (ctx.beforeDamage && d.now.some((x) => x.kind === "reaction" && x.status === "combustion")) {
+            // A Combustion keeps the attacker side with what the triggers on its application give (retakeCombustionSnapshots):
+            // those acting before damage run first, as for a hit's (landing.ts landHit), then its damage, then the others.
+            const now = asEvents(d.now, fromKind);
+            st = retakeCombustionSnapshots(runTriggers(ctx, d.state, now, origin, (x) => x.beforeDamage === true, false), d.now);
+            st = runTriggers(ctx, recordStatus(ctx, st, d.now, r.state, undefined, d.state), now, origin, (x) => !x.beforeDamage);
+            continue;
+          }
+          st = recordStatus(ctx, d.state, d.now, r.state);
           events.push(...asEvents(d.now, fromKind));
         }
         break;

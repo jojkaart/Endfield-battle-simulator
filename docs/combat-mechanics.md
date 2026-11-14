@@ -277,7 +277,17 @@ of Laevatain's attack5 has it (batch-1 "Kit errors found").
   schema `application.afterDamage`)
 - A reaction's own initial hit sees the buffs that `beforeDamage` triggers
   on it apply (Perlica's P3 on her Electrification's hit). [SETTLED] (e82d;
-  design "Arts state")
+  design "Arts state"). Exceptions: Corrosion's own hit sees none of them
+  (its damage comes before its status; 3f78, 4a64), and Combustion's own
+  hit takes their ATK but not their DMG bonuses: Wulfgard's reaction hits
+  fit with Rational Farewell's ATK and without Hot Work's and Scorching
+  Fangs' Heat DMG, all three created by the same Combustion, while his
+  combo's hit at the same ms has all three; one already active counts.
+  [SETTLED] for those three buffs (c7790 at 9882, 22472, 42593, 63651 ms;
+  4e36 at 10580, 37063, 60764 ms; landing.ts `combustionHitSide`). Whether
+  the line is the zone (ATK in, DMG out) or the game event behind the
+  trigger (abilityEvent 206 for Rational Farewell, 102 for the other two):
+  [OPEN] (they differ only for Wedge's reaction DMG, abilityEvent 206).
 
 ### 3.3 Combustion (Heat)
 
@@ -292,6 +302,15 @@ of Laevatain's attack5 has it (batch-1 "Kit errors found").
   `takeAtkSnapshot`). The defender side (Susceptibility, damageTaken,
   multiplicative including Stagger, resistance) is read at each tick.
   [SETTLED] (4e5e, 40d9 18684 ms, 458b; test 77 answered)
+- The snapshot includes the buffs the Combustion's own application creates
+  (the `beforeDamage` triggers on its reaction: Hot Work's Heat DMG,
+  Scorching Fangs, Rational Farewell's ATK), for a forced one too. It is
+  taken once they have run, as the applying hit's damage sees the applier.
+  [SETTLED] (c7790: Wulfgard's ticks ×2.2223 = 1.448 × 2.2962 / 1.4962
+  without them, exact with them; Laevatain's forced Combustions with Hot
+  Work in 458b, 012a, c83c, e989, f879; situation.ts
+  `retakeCombustionSnapshots`). In a log, those buffs are at the
+  application hit's boundary.
 - 458b shows a tick ×1.28 after a Heat infliction lands on a burning enemy,
   as if the snapshot were taken anew. [OPEN] (accuracy plan "458b's
   Combustion ticks")

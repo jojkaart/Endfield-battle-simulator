@@ -486,12 +486,29 @@ what the engine applies), another buff on the same hits, db87's build.
 build offsets the export omits (fixed in the fixtures: c83c Si's Jade
 Vessel third skill 9 and 0 nodes, c7790 and 8915 Wulfgard weapon 81,
 f879 Wulfgard weapon 80, f978 Si 1 node, 8915 Liino weapon 80). Left:
-- **Combustion ticks** (`buff_common_burning_status`) credited to
-  Wulfgard: c7790 ticks at 11.67, 12.61 s log 12605 and at 44.49–66.74 s
-  9454, where the engine predicts levels 1–4 (2836–8512); both are
-  ×2.2223 (1/0.45) of a level; ticks at 23.9–32.1 s match exactly. f879:
-  15 ticks at 71–83 s ×0.83–1.14. Reaction hits in c7790 at 9.88 s and
-  42.59 s also off. Matters for any Heat team (Ink Melt).
+- **Combustion ticks: fixed (2026-11-15).** c7790's Wulfgard ticks
+  ×2.2223 = 1.448 × 2.2962/1.4962: the snapshot was taken before the
+  `beforeDamage` triggers on the Combustion's own reaction (Hot Work +0.5,
+  Scorching Fangs +0.3, Rational Farewell ATK +0.448). Now retaken after
+  them (combat-mechanics §3.3); the log check reads the application hit's
+  boundary buffs that its ticks list. The reaction's own hit takes the new
+  ATK but not the new Heat DMG (7 of 7 hits in c7790 and 4e36; one where
+  Hot Work was still active from his ultimate, 22472, keeps it):
+  combat-mechanics §3.2. c7790 Wulfgard 6 → 0 mismatches, 56 → 63 plain,
+  simulated total +5.9% → +2.2%. Left of the tick problems (none worse):
+  - f879: 4 ticks at 71–83 s ×0.83–0.95 (was 10, ×0.83–1.14) and the
+    Heat burst at 105.5 s ×0.84.
+  - 458b: the re-snapshot pattern (×1.28 / ×1.18 at 88–94 s after a Heat
+    infliction on a burning enemy), Wulfgard's ticks at 162–164 s ×1.91
+    and 227–234 s ×1.49–1.62 (were ×2.33 and ×1.82–1.97).
+  - db87: ×1.4353 ticks at 37.5, 47.4, 49.3 s and ×0.7353 at 50.7–53.7 s
+    (the ratio's inverse: as if the snapshots of two Combustions were
+    swapped), unchanged.
+  - 4e36 (not a development log): Wulfgard's first Combustion's ticks
+    ×1.1315 (were ×1.84), at 65.5 s ×1.36.
+  - c7790: the engine ticks 10 times in 22.5–32.1 s where the log has 7
+    (and 3 against 2 at 63.7 s); the log's ticks there are 1.5–2.6 s
+    apart.
 - **8915's stage** (indie_hard018_s, the Skydrummer's shields that each
   reaction or physical status removes): every operator's hits ×0.5 to
   37.7 s, ×0.05 at 38.5–39.4 s, ×0.2 at 41.0–85.9 s, ×1 from 86.8 s;
@@ -504,11 +521,18 @@ f879 Wulfgard weapon 80, f978 Si 1 node, 8915 Liino weapon 80). Left:
 - **f978 Ardelia** ×0.8168 on 137 of 139 hits: a build offset, but no
   weapon level / node pair fits exactly (4 nodes + 60, 3 + 64, 1 + 71).
 - **f879**: Wulfgard's late hits (104–126 s) ×1.06–1.10 with many
-  Camille talent-1 stacks listed; Laevatain −9.1% not diagnosed.
+  Camille talent-1 stacks listed; Laevatain −8.3% (−9.1% before the
+  Combustion snapshot fix) not diagnosed.
 
 **Ruled out:** Wulfgard's kit (scales, frames, extra shot, talent,
 potential), his weapons pistol_0004 and 0009, enemy level/DEF, food and a
-fight-wide factor for c83c, c7790, f879, f978.
+fight-wide factor for c83c, c7790, f879, f978. For the ticks left: the
+buffs a Combustion's own application creates (in the snapshot now).
+
+**Still possible (ticks left):** a snapshot retaken when Heat lands on a
+burning enemy (458b ×1.28, f879); which Combustion a logged tick belongs
+to where two overlap (db87's swapped ratios); ticks the log drops or the
+engine adds under time stops (c7790's 7 against 10).
 
 **Check improvement:** the build-offset line only reads hits with
 `crit === false`; Si's hits there have crit null, so no offset was

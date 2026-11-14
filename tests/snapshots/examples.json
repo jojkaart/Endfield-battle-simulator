@@ -472,16 +472,16 @@
   ]
  },
  "wulfgard-fluorite.scenario.json": {
-  "total": 114399.506,
+  "total": 113296.727,
   "hits": 48,
   "casts": 31,
   "perOperator": {
-   "chr_0006_wolfgd": 80518.718,
+   "chr_0006_wolfgd": 79415.939,
    "chr_0022_bounda": 33880.788
   },
-  "digest": "61408dfa0148",
+  "digest": "8af094173309",
   "windows": [
-   "b683876131a3",
+   "a2611346c843",
    "1c99e9219eab",
    "064f33ce4e7a"
   ]

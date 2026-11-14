@@ -53,7 +53,7 @@
       "beforeDamage": true,
       "if": { "talentAtLeast": [0, 1] },
       "do": [{ "kind": "buff", "buff": "scorching_fangs" }],
-      "note": "Talent 1: \"Whenever Wulfgard applies Combustion, he gains Scorching Fangs.\" buff_chr_0006_wolfgd_talent_0 (lifeType 1): abilityEvent 102 (he applies a buff) + CheckBuffIdInContext tag -1110095722 (Burning) -> the effect buff on him. The ultimate's forced Combustion counts (the engine's reaction event includes forced ones). Before the hit's damage: the data's SpellInfliction precedes its DamageAction (in-game test 51's question)."
+      "note": "Talent 1: \"Whenever Wulfgard applies Combustion, he gains Scorching Fangs.\" buff_chr_0006_wolfgd_talent_0 (lifeType 1): abilityEvent 102 (he applies a buff) + CheckBuffIdInContext tag -1110095722 (Burning) -> the effect buff on him. The ultimate's forced Combustion counts (the engine's reaction event includes forced ones). Before the hit's damage: the data's SpellInfliction precedes its DamageAction (in-game test 51's question). In the Combustion's ticks' snapshot, not on its own hit (pending/zmdlogs-c7790d76a4f0.json, pending/zmdlogs-4e3651100056.json: timeline/landing.ts combustionHitSide)."
     },
     {
       "id": "thermite_flag",

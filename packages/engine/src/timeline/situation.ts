@@ -8,7 +8,7 @@ import type { EventSource } from "../model.ts";
 import type { BattleEvent } from "../events.ts";
 import { evaluate } from "../expr.ts";
 import { activeAt, type ActiveBuff, buffAttr, buffModifiers, reaches } from "../buffs.ts";
-import { type EnemyStatus, expireStatus, statusModifiers, type StatusTweaks } from "../status.ts";
+import { type EnemyStatus, expireStatus, type StatusEvent, statusModifiers, type StatusTweaks, withCombustionSnapshot } from "../status.ts";
 import { FPS } from "../units.ts";
 import type { TimelineContext, TimelineState } from "./state.ts";
 import { DODGE, JUMP } from "./rules.ts";
@@ -23,6 +23,21 @@ import { actionFrame } from "./timing.ts";
  */
 export function attackerSide(st: TimelineState, operator: string, frame: number): Modifier[] {
   return buffModifiers(st.buffs, operator, frame).filter((m) => SNAPSHOT_ZONES.has(m.zone));
+}
+
+/**
+ * The Combustions these status events formed or forced, with their snapshot (ActiveStatus.snapshot) taken again from
+ * the state now: the applier's attacker side with the buffs that the triggers on its own application gave (KitTrigger
+ * beforeDamage), which the first snapshot, taken as the status was made, lacks. The ticks keep them:
+ * pending/zmdlogs-c7790d76a4f0.json, Wulfgard's Combustions at 9882 and 63651 ms, ticks ×2.2223 the snapshot without
+ * them = Rational Farewell's ATK +0.448 (×1.448) and Hot Work's Heat DMG +0.5 and Scorching Fangs' +0.3 (DMG bonus
+ * 1.4962 → 2.2962), all three created by the Combustion; its ticks at 23.9–32.1 s, where they were already active,
+ * matched before.
+ */
+export function retakeCombustionSnapshots(st: TimelineState, events: readonly StatusEvent[]): TimelineState {
+  let enemy = st.enemy;
+  for (const e of events) if (e.kind === "reaction" && e.status === "combustion") enemy = withCombustionSnapshot(enemy, e.operator, e.frame, attackerSide(st, e.operator, e.frame));
+  return enemy === st.enemy ? st : { ...st, enemy };
 }
 
 /**

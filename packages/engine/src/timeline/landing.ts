@@ -13,7 +13,7 @@ import { applyToEnemy, type EnemyStatus, expireStatus, type HitApplication, MAX_
 import type { LandedHit, LandingFacts, LandingInputs, PendingBurst, PendingHit, ReactionRecord, TimelineContext, TimelineState } from "./state.ts";
 import { kitSkill, panelAt } from "./context.ts";
 import { dealPoise, gainEnergy, gainSp, isStaggered, spGrantOf } from "./resources.ts";
-import { artsIntensity, attackerSide, buffSituation, damageOptions, healEvents, situationAt, statusTweaks } from "./situation.ts";
+import { artsIntensity, attackerSide, buffSituation, damageOptions, healEvents, retakeCombustionSnapshots, situationAt, statusTweaks } from "./situation.ts";
 import { addBuff, buffAppliedEvent, changedStacks, gainStacks, runTriggers } from "./actions.ts";
 import { ofKind, schedule } from "./schedule.ts";
 import { operatorClockDue } from "./clock.ts";
@@ -102,7 +102,19 @@ export function landingDamage(data: GameData, target: DamageTarget, inputs: Land
   return computeReaction(data, inputs.build, inputs.panel, target, inputs.reaction, options, inputs.scale);
 }
 
-function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, st: TimelineState, critRoll?: number, prior?: EnemyStatus): LandedHit | null {
+/**
+ * The attacker side of a Combustion's own (initial) hit: the applier's as the forming hit's damage sees it, but its DMG
+ * bonuses as before the triggers on the Combustion's application (`beforeTriggers`). pending/zmdlogs-c7790d76a4f0.json
+ * at 9882, 42593 and 63651 ms and pending/zmdlogs-4e3651100056.json at 10580, 37063 and 60764 ms: Wulfgard's reaction
+ * hits fit with Rational Farewell's ATK (+0.448), which his combo's Combustion creates, and without the Heat DMG of Hot
+ * Work (+0.5) and Scorching Fangs (+0.3) that the same Combustion creates (at 42593 Fangs, already active, counts); his
+ * combo's hit at the same ms has all three. Corrosion's own hit has none of them (recordStatus).
+ */
+function combustionHitSide(st: TimelineState, beforeTriggers: TimelineState, operator: string, frame: number): Modifier[] {
+  return [...attackerSide(st, operator, frame).filter((m) => m.zone !== "damageBonus"), ...attackerSide(beforeTriggers, operator, frame).filter((m) => m.zone === "damageBonus")];
+}
+
+function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, st: TimelineState, critRoll?: number, prior?: EnemyStatus, side?: readonly Modifier[]): LandedHit | null {
   const reaction = eventReaction(e);
   if (!reaction) return null;
   // Corrosion's own hit comes before its status (buff_common_natural_*_triggered_wrapper creates the damage buff,
@@ -113,7 +125,7 @@ function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, s
   }
   const build = ctx.builds.get(e.operator) as Build;
   // A Combustion tick keeps its applier's attacker side from the application (ActiveStatus.snapshot).
-  const snapshot = e.kind === "combustionTick" ? e.snapshot : undefined;
+  const snapshot = e.kind === "combustionTick" ? e.snapshot : side;
   const scale = e.kind === "combustionTick" ? e.damageScale : e.kind === "physical" && e.multiplier !== undefined ? { key: "multiplier", value: e.multiplier } : undefined;
   const inputs: LandingInputs = {
     kind: "status", operator: e.operator, build, panel: panelAt(ctx, e.operator, e.frame), reaction,
@@ -173,9 +185,12 @@ export function recordStatus(ctx: TimelineContext, st: TimelineState, events: re
     // Corrosion's own hit comes before its status (eventDamage), so before what the status's application triggers ahead
     // of the forming hit's damage (3f78ceb15bc3 at 1334 and 46994 ms, 4a64e58e75ad at 4517 ms: Hot Work's Nature DMG,
     // created on the Corrosion, is on Arcane's hit that forms it, ×1.5, not on the Corrosion's own hit). Other reactions'
-    // tagged buffs come before their own hit (e82d45c46040: Perlica's P3 ATK on her Electrification's hit).
+    // tagged buffs come before their own hit (e82d45c46040: Perlica's P3 ATK on her Electrification's hit), but for
+    // Combustion's own hit only their ATK, not their DMG bonuses (combustionHitSide).
     const own = beforeTriggers && e.kind === "reaction" && e.status === "corrosion" && e.initialHit ? beforeTriggers : st;
-    const d = eventDamage(ctx, e, enemy, own, roll, prior);
+    // Combustion's own hit takes the ATK those triggers give, not their DMG bonuses (combustionHitSide).
+    const side = beforeTriggers && e.kind === "reaction" && e.status === "combustion" && e.initialHit ? combustionHitSide(st, beforeTriggers, e.operator, e.frame) : undefined;
+    const d = eventDamage(ctx, e, enemy, own, roll, prior, side);
     if (d) landed.push(d);
   }
   return records.length ? addHits({ ...next, reactions: [...next.reactions, ...records] }, landed) : st;
@@ -379,6 +394,8 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     grantSp(early);
     if (early.length) st = runTriggers(ctx, st, early, { operator: hit.operator, kind });
   }
+  // A Combustion the hit formed keeps the attacker side its damage sees: with what its application's triggers gave.
+  st = retakeCombustionSnapshots(st, statusEvents);
   // A finisher (skillSpecification 8) is multiplied by the enemy's finisher multiplier (attribute 27).
   const finisher = !hit.trigger && ctx.data.skills[hit.skillId]?.timing?.specification === 8;
   const critMode = ctx.scenario.options.crit;
@@ -425,7 +442,9 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   const enemyAtDamage = st.enemy;
   const lateEvents = applyPhase(true);
   // Triggers that act on a hit's own status events before its damage act on these as they happen.
+  const beforeLateTriggers = st;
   if (lateEvents.length && ctx.beforeDamage) st = runTriggers(ctx, st, asEvents(lateEvents, kind, castIndex), { operator: hit.operator, kind }, (t) => t.beforeDamage === true, false);
+  st = retakeCombustionSnapshots(st, lateEvents);
   applyBuffs(false);
   if (hit.usesUp && !late) {
     const own = st.stacks[hit.operator] ?? {};
@@ -437,7 +456,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
     st = gainEnergy(ctx, st, hit.operator, amount, hit.frame);
   }
   st = recordStatus(ctx, st, statusEvents, enemyAtDamage, before.enemy, beforeTriggers);
-  if (lateEvents.length) st = recordStatus(ctx, st, lateEvents, st.enemy);
+  if (lateEvents.length) st = recordStatus(ctx, st, lateEvents, st.enemy, undefined, beforeLateTriggers);
   // Stagger: Final Strikes' only while their operator is controlled (onlyEnableForMainChar).
   const poiseEvents: BattleEvent[] = [];
   if (withDamage && kitHit.poise !== undefined && (!kitHit.poiseControlledOnly || controlled === hit.operator)) {

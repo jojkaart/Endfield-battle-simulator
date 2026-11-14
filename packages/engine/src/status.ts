@@ -331,6 +331,17 @@ function withStatus(s: EnemyStatus, st: ReactionStatus, level: number, frame: nu
   return { ...s, statuses: [...s.statuses.filter((x) => x.status !== st), status] };
 }
 
+/**
+ * The Combustion an operator applied at a frame with its attacker-side snapshot retaken (ActiveStatus.snapshot):
+ * the timeline takes it again once the buffs its own application creates are in place (timeline/situation.ts
+ * retakeCombustionSnapshots). Unchanged without such a Combustion, or one that keeps no snapshot.
+ */
+export function withCombustionSnapshot(s: EnemyStatus, operator: string, frame: number, snapshot: readonly Modifier[]): EnemyStatus {
+  const i = s.statuses.findIndex((x) => x.status === "combustion" && x.operator === operator && x.appliedAt === frame && x.snapshot !== undefined);
+  if (i < 0) return s;
+  return { ...s, statuses: s.statuses.map((x, j) => (j === i ? { ...x, snapshot } : x)) };
+}
+
 function noSkillValues(key: string): number {
   throw new EngineError(`a forced reaction names skill value ${key}, but no skill values were given`);
 }
