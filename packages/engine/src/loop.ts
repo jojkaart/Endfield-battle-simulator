@@ -52,7 +52,7 @@ export const LOOP_TOLERANCE = 0.03;
 /** A replay of the last round's plan is kept unless a new plan scores this much better (closingScore): 2% (a search setting). */
 export const LOOP_HYSTERESIS = 0.02;
 /** The new plans a round chooses between by two plays (itself and itself again) score within 5% of the best (a search setting). */
-export const LOOP_CLOSING_MARGIN = 0.02;
+export const LOOP_CLOSING_MARGIN = 0.05;
 /** How many of a round's best plans are played twice for that. */
 const LOOP_CLOSING_CANDIDATES = 8;
 /** What a round's plan that leaves its operators' kit stacks different from where it started is scored at (closingScore): × 0.85 (a search setting). */
@@ -186,10 +186,14 @@ export function slowestUltimate(data: GameData, scenario: Omit<TimelineScenario,
   return best;
 }
 
+/** How long an action of a round played again may wait for the energy or SP it needs, moved later: 20 s (a search setting), in steps of 10 frames. */
+const LOOP_WAIT_FRAMES = 20 * FPS;
+const WAIT_STEP = 10;
+
 /**
  * A round's actions replayed from a state at `start` (the boundary cast of `actions[0]` included, at `start`), then
  * the next boundary cast at start + frames: exactly, or with `shift`, each action that can't start at its frame as
- * soon as it can and everything after it that much later (so what follows keeps its spacing). The state after it and
+ * soon as it can (waiting for energy or SP it lacks) and everything after it that much later (so what follows keeps its spacing). The state after it and
  * how much later it ended (0: exact), or why the first action that can't start (at its frame) can't.
  */
 function replayRound(ctx: TimelineContext, before: TimelineState, actions: readonly RotationAction[], frames: number, start: number, shift = false): { state: TimelineState; rotation: RotationAction[]; shifted: number } | { failure: string } {
@@ -198,7 +202,12 @@ function replayRound(ctx: TimelineContext, before: TimelineState, actions: reado
   const rotation: RotationAction[] = [];
   for (const a of [...actions, { ...(actions[0] as RotationAction), at: frames }]) {
     const at = start + (a.at as number) + shifted;
-    const e = earliestStart(ctx, s, { ...a, at });
+    let e = earliestStart(ctx, s, { ...a, at });
+    // Moved later, an action that can't start yet (not enough energy or SP) waits until it can, up to LOOP_WAIT_FRAMES.
+    for (let wait = WAIT_STEP; shift && "error" in e && wait <= LOOP_WAIT_FRAMES; wait += WAIT_STEP) {
+      const later = earliestStart(ctx, s, { ...a, at: at + wait });
+      if (!("error" in later)) e = later;
+    }
     if ("error" in e) return { failure: `${a.skill} at ${a.at}: ${e.error}` };
     if (e.frame !== at && !shift) return { failure: `${a.skill} at ${a.at}: ${e.frame - at} frames late` };
     shifted += e.frame - at;
@@ -263,9 +272,14 @@ export function searchLoop(data: GameData, scenario: Omit<TimelineScenario, "rot
       const long = createContext(data, { ...scenario, durationFrames: start + 2 * LOOP_MAX_FRAMES + LOOKAHEAD_FRAMES, rotation: [] });
       const at0 = prefix.slice(0, -1).reduce((s, a) => apply(long, s, a), init(long));
       let two: { c: (typeof ranked)[number]; score: number; shifted: number } | undefined;
-      for (const c of ranked.slice(0, LOOP_CLOSING_CANDIDATES)) {
-        if (c.score < ranked[0]!.score * (1 - closingMargin)) break;
+      // Plans that differ only in their basic attacks mostly fail alike: one of each set of skills at their frames.
+      const tried = new Set<string>();
+      for (const c of ranked) {
+        if (c.score < (ranked[0] as (typeof ranked)[number]).score * (1 - closingMargin) || tried.size >= LOOP_CLOSING_CANDIDATES) break;
         const plan = c.rotation.slice(prefix.length - 1);
+        const skills = plan.filter((a) => kindOf(data, a) !== "basic").map((a) => `${a.skill}@${a.at}`).join(",");
+        if (tried.has(skills)) continue;
+        tried.add(skills);
         const end = plan.at(-1)?.at as number;
         const atEnd = plan.slice(0, -1).reduce((s, a) => apply(long, s, a), at0);
         const again = replayRound(long, atEnd, plan.slice(0, -1).map((a) => ({ ...a, at: (a.at as number) - start })), end - start, end, shifts);
