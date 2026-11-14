@@ -4,8 +4,9 @@
 // that never fire on her, on their natural wielders' examples (Gilberta, Arcane, Xaihi).
 import { describe, expect, it } from "vitest";
 import { advance, apply, createContext, init, type Build, type LandedHit, type RotationAction, type TimelineScenario, type TimelineState } from "@efsim/engine";
-import { loadGameData } from "@efsim/data";
+import { affixesAsChild, loadGameData } from "@efsim/data";
 import { readScenario } from "@efsim/cli";
+import { loggedNames } from "../packages/cli/src/enginecheck.ts";
 
 const data = loadGameData();
 const A = "chr_0025_ardelia";
@@ -237,5 +238,24 @@ describe("Ardelia's arts units on their wielders", () => {
     // Ardelia's Shadows heal untagged (and aren't simulated): never on her.
     const own = run(solo({ weapon: { id: "wpn_funnel_0010", level: 90, skillLevels: [9, 9, 9] } }), [op("normal_skill"), ...chain()]);
     expect(own.triggerState[`${A}:wpn_funnel_0010.heal`]).toBeUndefined();
+  });
+});
+
+describe("Ardelia's Susceptibility children in battle logs", () => {
+  // buff_chr_0025_ardelia_normal_skill_vulnerable's VulnerableAction (asChildBuff, overrideChildBuffId) makes her own
+  // child buffs in place of the common affix; ZMDLogs lists them under the affix (fixtures/pending/zmdlogs-4e3651100056.json
+  // 15251 ms: buff_common_affixes_vulnerable_spell 0.28 once per Arts element, _physical 0.28), so the log check reads
+  // those entries as her kit buffs, not as buffs no kit defines added on top of hers.
+  it("names the affix of the action that creates a child buff", () => {
+    expect(affixesAsChild("buff_chr_0025_ardelia_affixes_vulnerable_spell_child")).toEqual(["buff_common_affixes_vulnerable_spell"]);
+    expect(affixesAsChild("buff_chr_0025_ardelia_affixes_vulnerable_physic_child")).toEqual(["buff_common_affixes_vulnerable_physical"]);
+    // The common affix isn't its own child; a buff no such action creates has none.
+    expect(affixesAsChild("buff_common_affixes_vulnerable_spell")).toEqual([]);
+    expect(affixesAsChild("buff_wpn_funnel_0013_valid")).toEqual([]);
+  });
+  it("lists her Arts and Physical Susceptibility under the affixes", () => {
+    const def = (id: string) => data.kits.operators[A]?.buffs.find((b) => b.id === id);
+    expect(loggedNames(def("arts_susceptibility") as NonNullable<ReturnType<typeof def>>)).toContain("buff_common_affixes_vulnerable_spell");
+    expect(loggedNames(def("physical_susceptibility") as NonNullable<ReturnType<typeof def>>)).toContain("buff_common_affixes_vulnerable_physical");
   });
 });

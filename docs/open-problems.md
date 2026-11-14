@@ -836,6 +836,52 @@ it); a log with a Solidified enemy of super armor 0. Also seen: 4f7e at
 40603 ms, the engine's Solidification consumed Nature where the log's
 was Heat.
 
+## Teammates' enemy debuffs "×4" (7b54, 6339, 4e36, c3c7): 2026-11-14
+
+**Shows (two sonnet diagnoses):** Arcane's Solemn Phalanx will_susc /
+will_burst ×4 and her Doubles Susceptibility ×2 (7b54, 6339), Ardelia's
+weapon and Arts Susceptibility ×4 (4e36: 143 Si hits at 0.82), Xaihi's
+crystal Amp ×4 (c3c7: 86 Si hits at 1/1.18), read as instances the engine
+counts where the logs show one.
+
+**Cause found (one of them):** none of these is several instances. The
+engine and the log list an elemental modifier once per element (an Arts
+Susceptibility or Amp: four; Doubles: Nature and Cryo). The engine applies
+one acting instance of each (stackingType 1 with a priority key and
+maxStackCnt 0 keeps every instance, only the strongest acts: B6; the logs
+list each instance, up to 4, and the damage fits one). The 0.82 in 4e36
+(and ×0.838 / 0.850 in c3c7) was the log check, not the engine: Ardelia's
+Susceptibilities are child buffs (buff_chr_0025_ardelia_affixes_vulnerable_
+spell_child, _physic_child) that the log lists under the common affix
+(buff_common_affixes_vulnerable_spell / _physical); the check didn't know
+the name, took the log's entries for buffs no kit defines and added them
+to the engine's own (1.28 / 1.56 = 0.821). Fixed: the affix of the action
+that creates a child buff is one of its logged names (affixesAsChild).
+4e36 Si plain 6 → 51, c3c7 Si 86 → 120, 5082 and 1cd1 likewise.
+
+**Ruled out:** several acting instances of funnel_0016, funnel_0013,
+funnel_0010, funnel_0008 (the hits listing them ×2–4 match the engine's
+one exactly: B6); the engine counting a stack group's instances in the
+damage (buffModifiers takes one per group).
+
+**Still possible (separate problems):**
+- 7b54 / 6339: the "Hard 33's slug" entry above (7b54 18999 ms: 722 /
+  (1.312 × 1.1105) = 496, the log's value, with Jade Vessel's, both
+  funnel_0016 debuffs and Doubles not acting).
+- c3c7 56.7–80.1 s: the engine gives Si Xaihi's crystal Amp (0.18) that
+  the log doesn't list and the damage doesn't show (×0.847, 46 hits): the
+  treatment's at-Max-HP condition (HP isn't simulated) or its timing.
+- af7b 60–72 s: the log lists Ardelia's Arts Susceptibility (0.28) and the
+  damage fits it, 12 s past the engine's (battle skills at 10.5 and
+  30.1 s, 30 s each); her ultimates at 56.8 and 60.2 s create none in the
+  data. The old double count happened to match those 30 hits.
+- Hits where the log lists a funnel_0016 or funnel_0008 debuff and the
+  engine has none (012a 0 of 35 exact, 3f78, 489c, 9c6e, 7910, d774):
+  trigger timing, not stacking.
+
+**Next check:** af7b's Ardelia Susceptibility after 60 s (an unlogged
+battle skill?), then c3c7's crystal Amp window.
+
 ## Smaller, not yet diagnosed
 
 - Laevatain's enhanced battle skill (`normal_skill_during_ult`): ×0.833
