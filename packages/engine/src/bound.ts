@@ -21,6 +21,11 @@ export interface BoundItem {
   /** Frames it holds its operator (battle skills and chains; 0 for combos and ultimates, which may cut into other actions: only their cooldowns count). */
   readonly duration: number;
   readonly cooldown: number;
+  /**
+   * Frames from its start to the first thing it does in any probe (a hit, a buff, an enemy event): a cast that starts
+   * later than this before the fight's end adds nothing (time stops only delay).
+   */
+  readonly first: number;
   /** SP a cast uses net (its cost less the most SP its probes saw it give back; negative for a chain's Final Strike). */
   readonly sp: number;
 }
@@ -54,6 +59,7 @@ export function upperBound(report: PayoffReport): UpperBound {
       value: Math.max(c.best, c.bestAll, c.bare, c.bareAll, 0),
       duration: st.kind === "combo" || st.kind === "ultimate" ? 0 : Math.max(1, busy),
       cooldown: c.cost.cooldown,
+      first: Math.max(0, Math.min(...effects.flatMap((e) => [...(e.hits ? [e.hits.first] : []), ...e.buffs.map((b) => b.offset), ...e.enemy.map((x) => x.offset)]))),
       // The probe's SP difference misses the regeneration the spend paused (SP.pauseAfterSpendFrames): given back here.
       sp: c.cost.sp - gain - (c.cost.sp > 0 ? (SP.perSecond * SP.pauseAfterSpendFrames) / FPS : 0),
     });
@@ -74,10 +80,14 @@ export function remainingBound(ub: UpperBound, ctx: TimelineContext, state: Time
   const left = end - state.frame;
   if (left <= 0) return 0;
   // Casts each item can still make: its cooldown from when it's ready.
+  // Casts each item can still make: from when it's ready, every cooldown (or its busy frames), up to its first effect
+  // before the end.
   const counts = ub.items.map((it) => {
-    if (it.cooldown <= 0 || it.skill === undefined) return Infinity;
-    const ready = Math.max(state.frame, Math.ceil(state.readyAt[it.skill] ?? 0));
-    return ready > end ? 0 : Math.floor((end - ready) / it.cooldown) + 1;
+    const last = end - it.first;
+    const ready = Math.max(state.frame, it.skill === undefined ? 0 : Math.ceil(state.readyAt[it.skill] ?? 0));
+    if (ready > last) return 0;
+    const every = Math.max(it.cooldown, it.duration);
+    return every > 0 ? Math.floor((last - ready) / every) + 1 : Infinity;
   });
   const spAvailable = Math.min(SP.max, state.sp) + (SP.perSecond * left) / FPS;
   const at = (lambda: number) => {

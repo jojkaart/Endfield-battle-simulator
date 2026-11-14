@@ -50,7 +50,7 @@ export function formatPayoffs(data: GameData, run: PayoffsRun, top = 15): string
     const e = r.effects.find((x) => x.step === st.id && x.situation === "none");
     if (!e) return [];
     const extra = r.effects.filter((x) => x.step === st.id && x.situation !== "none").flatMap((x) => x.windows.filter((w) => !e.windows.some((y) => y.key === w.key)).map((w) => `${w.key} (${x.situation})`));
-    return [[name(st.id), e.prefix.length ? e.prefix.map(name).join(" → ") : "", n(e.damage), [...e.windows.map((w) => `${w.key} +${s(w.offset)}`), ...new Set(extra)].join(", "), [...new Set(e.enemy.map((x) => x.event))].join(", "), e.buffs.filter((b) => b.damage).map((b) => `${b.id} ${s(b.duration)}${b.layers > 1 ? ` ×${b.layers}` : ""}`).join(", "), `${e.cost.sp ? `${e.cost.sp} SP ` : ""}${e.cost.energy ? `${e.cost.energy} energy ` : ""}${e.cost.cooldown ? `cd ${s(e.cost.cooldown)}` : ""}`.trim()]];
+    return [[name(st.id), e.prefix.length ? e.prefix.map(name).join(" → ") : "", n(e.damage), [...e.windows.map((w) => `${w.key} +${s(w.offset)}`), ...new Set(extra)].join(", "), [...new Set(e.enemy.map((x) => x.event))].join(", "), e.buffs.filter((b) => b.damage).map((b) => `${b.id} ${s(b.duration)}${b.layers > 1 ? ` ×${b.layers}` : ""}`).join(", "), `${e.cost.sp ? `${e.cost.sp} SP ` : ""}${e.cost.energy ? `${Math.round(e.cost.energy)} energy ` : ""}${e.cost.cooldown ? `cd ${s(e.cost.cooldown)}` : ""}`.trim()]];
   });
   out.push(table(["step", "after", "damage", "opens windows", "enemy", "buffs", "cost"], rows, ["l", "l", "r", "l", "l", "l", "l"]));
   // Ceilings.
@@ -58,7 +58,7 @@ export function formatPayoffs(data: GameData, run: PayoffsRun, top = 15): string
   for (const c of r.ceilings.slice(0, top)) {
     out.push(`  ${name(c.step)}: ${n(c.bare)} → ${n(c.best)} (×${(c.best / Math.max(1, c.bare)).toFixed(2)}; own kit hits ${n(c.bestCast)}, every hit ${n(c.bestAll)}), ${c.situation}${c.against.length ? `; left out (lower it): ${c.against.join(", ")}` : ""}`);
     for (const b of c.bundle) {
-      const who = b.achievers.slice(0, 3).map((a) => `${name(a.step)}${a.lead ? ` lead ${s(a.lead.min)}–${s(a.lead.max)}` : " (too short for all hits)"}${a.cost.sp ? `, ${a.cost.sp} SP` : ""}${a.cost.energy ? `, ${a.cost.energy} energy` : ""}`).join("; ");
+      const who = b.achievers.slice(0, 3).map((a) => `${name(a.step)}${a.lead ? ` lead ${s(a.lead.min)}–${s(a.lead.max)}` : " (too short for all hits)"}${a.cost.sp ? `, ${a.cost.sp} SP` : ""}${a.cost.energy ? `, ${Math.round(a.cost.energy)} energy` : ""}`).join("; ");
       out.push(`      +${n(b.worth).padStart(7)}  ${b.key}  ← ${who}${b.achievers.length > 3 ? `; +${b.achievers.length - 3} more` : ""}`);
     }
   }

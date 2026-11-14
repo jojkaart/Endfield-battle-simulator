@@ -121,13 +121,13 @@ describe("pruning the search: the bound", () => {
   const sc = open("laevatain-solo", 15);
   const ub = upperBound(payoffs(data, sc, { chains: false }));
 
-  it("holds on every state of found rotations (committed + bound ≥ the best final damage found)", () => {
+  it("holds on every state of found rotations (committed + bound ≥ the final damage the rotation reaches from there)", () => {
     expect(ub.unbounded).toBeUndefined();
     const ctx = memoised(createContext(data, { ...sc, rotation: [] }));
     const wide = searchRotation(data, sc, { beamWidth: 48, runs: 0 });
     for (const r of [wide, searchRotation(data, sc, { beamWidth: 6, runs: 0 })]) {
       let s = init(ctx);
-      const check = (st: typeof s) => expect(committedDamage(ctx, st) + remainingBound(ub, ctx, st)).toBeGreaterThanOrEqual(wide.score - 1e-6);
+      const check = (st: typeof s) => expect(committedDamage(ctx, st) + remainingBound(ub, ctx, st)).toBeGreaterThanOrEqual(r.score - 1e-6);
       check(s);
       for (const step of r.rotation as RotationAction[]) {
         s = apply(ctx, s, step);
