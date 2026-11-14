@@ -1,5 +1,5 @@
 {
- "note": "Hold-out logs (docs/accuracy-plan.md, \"Choosing logs\"): only measured, never debugged. Drawn 2026-11-09 with random.seed(20261109), 6 of the 17 screened single-target logs, every favourite on both sides where it has two or more logs, before any of their checks was read. 2026-11-13: 2 of 6 more (logs with Ardelia's ultimate, screened the same way), random.seed(20261113), before any check was read. 2026-11-14: 1 of 4 more (Estella logs, the owner's team), random.seed(20261114), before any check was read. 2026-11-14: 2 Avywenna logs with JET (for the owner's Estella's weapon) added to development, no hold-out: both come from one account and team, so a hold-out of one wouldn't be independent of the other.",
+ "note": "Hold-out logs (docs/accuracy-plan.md, \"Choosing logs\"): only measured, never debugged. Drawn 2026-11-09 with random.seed(20261109), 6 of the 17 screened single-target logs, every favourite on both sides where it has two or more logs, before any of their checks was read. 2026-11-13: 2 of 6 more (logs with Ardelia's ultimate, screened the same way), random.seed(20261113), before any check was read. 2026-11-14: 1 of 4 more (Estella logs, the owner's team), random.seed(20261114), before any check was read. 2026-11-14: 2 Avywenna logs with JET (for the owner's Estella's weapon) added to development, no hold-out: both come from one account and team, so a hold-out of one wouldn't be independent of the other. 2026-11-15: 3 of 10 more (logs for the owner's Ink Melt team: Laevatain, Si, Wulfgard, Ardelia; none has all four), random.seed(20261115), before any check was read.",
  "holdout": [
   "zmdlogs-0ddbbdca1db5",
   "zmdlogs-0dfc9d76c84d",
@@ -9,7 +9,10 @@
   "zmdlogs-7be1ca9f455b",
   "zmdlogs-0a35d0ad00b4",
   "zmdlogs-14a91e99b8d7",
-  "zmdlogs-13b9974a0450"
+  "zmdlogs-13b9974a0450",
+  "zmdlogs-c421e6ed4a3b",
+  "zmdlogs-04ac7e501201",
+  "zmdlogs-eb8f397da7ed"
  ],
  "development": [
   "zmdlogs-1cd1657bc305",
@@ -31,6 +34,13 @@
   "zmdlogs-ad7f5ee2c91c",
   "zmdlogs-c4f307cd039a",
   "zmdlogs-4360447193ac",
-  "zmdlogs-984748cfa662"
+  "zmdlogs-984748cfa662",
+  "zmdlogs-79cc42ff7a18",
+  "zmdlogs-891566c224f8",
+  "zmdlogs-9c0bb09daff2",
+  "zmdlogs-c7790d76a4f0",
+  "zmdlogs-c83c75d02a85",
+  "zmdlogs-f8793bc8aea2",
+  "zmdlogs-f978430a083a"
  ]
 }

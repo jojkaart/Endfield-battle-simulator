@@ -659,6 +659,24 @@ with an operator without a kit. First checks (development): ad7f +0.2%
 plain 34.0%, mismatch 23.7%, mean |damage error| 19.3%; hold-out 44.4%,
 6.0%, 15.1%.
 
+Round five (2026-11-15, the owner's Ink Melt team: Laevatain, Si,
+Wulfgard, Ardelia; authorized download batch): the four operators'
+profiles (1,158 listed battles), 36 exports screened 3.6 s apart (the
+battles with two or three of the four in the lists), 14 imported.
+**No battle with all four was found** (none of the 36 has more than
+three; the profile lists only 20 per boss and operator, so the overlap
+is undercounted). Not imported: 10 with an operator below level 90
+(Wulfgard 80 in six), 4 multi-target stages imported to
+fixtures/multi-target/ (Tower 11 and 18, two dungeon 2 rushes; not
+counted), the rest unchosen. 10 single-target imported
+(fixtures/pending): Wulfgard in 6 (with Laevatain and Si 3, Laevatain
+and Ardelia 1, Laevatain 1, Si 1), Laevatain with Si and Ardelia 3,
+Laevatain with Si 1. 3 hold-outs by random.seed(20261115). First checks
+of the 7 development logs (total damage error): -3.4, +4.5, -7.0, -2.4,
++59.7, -2.7, -13.1%. Wulfgard has no plain match in 4 of 4 development
+logs (damage +11.8, +8.7, -5.1, +92.2%), and Si has 0 plain matches in
+two (c83c, f978); next: Wulfgard's kit against these.
+
 ## The screened logs, first rounds (2026-11-11)
 
 Baseline before any change (development 11 logs / hold-out 6): plain
