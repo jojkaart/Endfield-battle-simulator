@@ -227,6 +227,22 @@ level 12 below P2: 0.30, 0.33, 0.36, 0.39, 0.42 for 0–4 stacks (hits ×1.30
 … ×1.42). From P2: 0.36, 0.42, 0.48, 0.54, 0.54. A 0.48 at 3 stacks from
 P2 would mean the data's check is "fewer than 3", not "3 or fewer".
 
+### 106. Type 50 Yinglung's Edge: which battle skills give a stack, and how long it lasts (ready, if a team member wears 3 pieces; higher priority: the owner's team has two wearers)
+
+**Why:** the set gives its wearer a stack when a battle skill is cast (up
+to 3), and the wearer's next combo deals +20% per stack and clears them.
+The logs don't list the buff; their damage fits the engine's count in
+about two thirds of combos and not in the rest, both ways (open-problems,
+"Type 50 Yinglung's Edge"). The buff icon's stack count on the wearer
+settles it.
+**How:** Estella and Si both wearing 3 pieces (as your team). Watch the
+Edge icon's number on each: (a) cast Si's battle skill: does Estella's
+count go up, Si's, or both? Then Arcane's or Akekuri's battle skill: same
+question. (b) Build 3 stacks on Estella, wait 10 s, then 30 s: do they
+stay? (c) With stacks on both, cast Si's combo: do Estella's stacks stay?
+(d) Si's battle-skill strokes (Initial / Final Stroke): does each count?
+**Reply, e.g.:** `106: anyone's battle skill +1 to every wearer; no expiry; Si's combo clears only Si's; strokes count`.
+
 ### 105. Arcane on the mode line: INT's cooldown with WILL's skills? (answered, 2026-11-13: no; 0206 is game 1.5)
 
 **Answered (the owner, game 1.6):** 0206's exact loadout shows Intellect

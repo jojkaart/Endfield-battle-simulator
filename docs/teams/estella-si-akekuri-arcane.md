@@ -2,10 +2,14 @@
 
 The owner wants this team simulated as well as possible; it is the
 current priority. Example: [examples/estella-si-akekuri-arcane.scenario.json](../../examples/estella-si-akekuri-arcane.scenario.json)
-(builds from the single-operator examples; the owner's weapons for Estella,
-JET fully upgraded, and Akekuri, Thermite Cutter; Si's and Arcane's are
-stand-ins). Against Rhodagn Lv90, 60 s: 4,747,062 with the search's
-rotation (expected crits; σ 1.4%; 3,994,217 with the stand-in weapons).
+(the owner's builds, 2026-11-14: Estella P5, JET 9/9/5; Si P0, Jade Vessel
+9/9/4; Akekuri P5, Thermite Cutter 9/9/5; Arcane P0, Solemn Phalanx 9/9/4;
+the owner's gear pieces, base versions at full artifice and weapons at 90
+assumed). Against Rhodagn Lv90, 60 s, full ultimate energy at the start:
+3,061,788 (51,143 DPS; σ 1.2%, 5–95% 3.01–3.13M; Estella 37.6%, Arcane
+30.8%, Si 25.3%, Akekuri 6.2%). The search's beams disagree by 4.5% (beam
+12 best), so it's a lower bound. Earlier figures (3.99M, 4.75M) used the
+example builds (a P5 Si).
 
 ## Where the damage comes from (sonnet, 2026-11-14)
 

@@ -443,6 +443,30 @@ on Akekuri's own physical hits stays open.
 **Next check:** Akekuri's ×0.89 (weapon skill 2, the enemy's physical
 resistance).
 
+## Type 50 Yinglung's Edge: how many stacks a combo gets (Estella, Si)
+
+**Shows (sonnet, 2026-11-14):** the log never lists the buff; rescaling
+each wearer's combo hits to 0–3 stacks (fit within 0.4%) over 34 logs:
+about 25 combo groups fit the engine's count, about 12 don't, both ways.
+Estella's ad7f 38169 and a27b 63630 fit 0 stacks (engine 3 and 1); Si
+over-counted in 3f78 47327, 4a64 54283, db87 41669, 7b54 15595, a7a7
+22503 (fits 1–2, engine 3) and under-counted in e989 7387 / 9408, 489c
+14288, 4f7e 4590 (fits 3, engine 2). Data: a team aura adds a layer to
+the wearer on a battle-skill cast (stackingType 2, no duration); the
+wearer's combo turns them into a one-cast +0.2 × stacks and clears them;
+cap 3 (SkillPatch; the owner agrees: up to three).
+
+**Ruled out:** another cap (fits reach 3 often); "any wearer's combo
+clears everyone's" (ad7f: Estella fits 3 after Si's combo); expiry alone
+(ad7f: Si fits 3 with a 6.2 s old cast, Estella 0 on the same casts).
+
+**Still possible:** which battle-skill casts count (the replay infers
+casts from hits; Laevatain's during-ultimate and Si's strokes, test 29);
+an expiry (3f78: only the casts in the last 3.5 s count, once); Estella's
+combo bound to its own cast id, or landing inside another cast.
+
+**Next check:** in-game test 106 (the buff's stack count on screen).
+
 ## Estella's Razorhorn ATK: on the Shattering hit; Lifts get about half
 
 **Fixed 2026-11-14 (sonnet diagnosis):** wpn_lance_0013's atk_up (+0.336)
