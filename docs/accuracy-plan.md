@@ -659,7 +659,7 @@ with an operator without a kit. First checks (development): ad7f +0.2%
 plain 34.0%, mismatch 23.7%, mean |damage error| 19.3%; hold-out 44.4%,
 6.0%, 15.1%.
 
-Round five (2026-11-15, the owner's Ink Melt team: Laevatain, Si,
+Round five (2026-11-15, Ink Melt, EndfieldHub's top team: Laevatain, Si,
 Wulfgard, Ardelia; authorized download batch): the four operators'
 profiles (1,158 listed battles), 36 exports screened 3.6 s apart (the
 battles with two or three of the four in the lists), 14 imported.

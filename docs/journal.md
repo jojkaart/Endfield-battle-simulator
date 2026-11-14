@@ -7,7 +7,7 @@ Older entries (2026-10-21 and earlier): [journal-archive.md](journal-archive.md)
 
 ## 2026-11-15: Ink Melt logs (Laevatain, Si, Wulfgard, Ardelia)
 
-Goal: logs for the owner's Ink Melt team. Done: 4 profiles, 36 exports,
+Goal: logs for Ink Melt (EndfieldHub's top team), before simulating it. Done: 4 profiles, 36 exports,
 14 imports (10 single-target in fixtures/pending, 4 multi-target aside),
 3 hold-outs (seed 20261115), snapshots updated, `npm run check` green
 (search-loop timed out once under load 8, passes alone). No log has all
