@@ -265,4 +265,23 @@ describe("build offsets: one factor on all of an operator's hits (a build input 
     // As corrected: none.
     expect(offsetOf("../fixtures/pending/zmdlogs-458b03609665.json", "chr_0036_jsspsi", (b) => b)).toBeUndefined();
   });
+
+  it("isn't one factor where ATK buffs move the ratio from hit to hit: Ardelia's weapon in 4e36 (level 1, no node) and c3c7 (level 60, no node), set in the fixtures", async () => {
+    const { engineHits, logBuffReplay } = await import("../packages/cli/src/logcheck.ts");
+    const A = "chr_0025_ardelia";
+    const exact = (file: string, build: (b: Build) => Build) => {
+      const fx = readLogFixture(new URL(file, import.meta.url).pathname);
+      const asAssumed = { ...fx, team: fx.team.map((b) => (b.operator === A ? build(b) : b)) };
+      const byHit = engineHits(data, asAssumed, logBuffReplay(data, asAssumed));
+      const hits = fx.hits.filter((h) => h.operator === A && h.crit === false);
+      return hits.filter((h) => byHit.get(h)?.readings.some((r) => Math.abs(r.predicted - h.value) <= 1)).length / hits.length;
+    };
+    const assumed = ({ attributeNodes: _n, ...b }: Build) => ({ ...b, weapon: { ...(b.weapon as NonNullable<Build["weapon"]>), level: 90 } });
+    // c3c7: none of her hits fits the assumed build (weapon 90, every node); 87% fit as set.
+    expect(exact("../fixtures/pending/zmdlogs-c3c735dbb022.json", assumed)).toBe(0);
+    expect(exact("../fixtures/pending/zmdlogs-c3c735dbb022.json", (b) => b)).toBeGreaterThan(0.85);
+    // 4e36: none against 38% (the rest under Alesh's weapon ATK layers, which the replay has otherwise than the log).
+    expect(exact("../fixtures/pending/zmdlogs-4e3651100056.json", assumed)).toBe(0);
+    expect(exact("../fixtures/pending/zmdlogs-4e3651100056.json", (b) => b)).toBeGreaterThan(0.35);
+  });
 });

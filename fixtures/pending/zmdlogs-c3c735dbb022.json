@@ -19,7 +19,8 @@
    "Si, Last Rite, Xaihi and Ardelia, imported 2026-10-25 with the owner's team logs (b6aa15281db4, 9555de54bb3d).",
    "Si is controlled throughout (Xaihi's crystal Amp always goes to her). 6 Last Rite battle skills, 6 Mirage pairs, all buff_chr_0026_lastrite_normal_skill_phantom on Si's first Final Strike after each cast: consistent with one use per cast (G4), though no swap tests it.",
    "Xaihi wields Chivalric Virtues (wpn_funnel_0010).",
-   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."
+   "Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh).",
+   "Ardelia's weapon (Dreams of the Starry Beach) at level 60 and no attribute node, not the assumed 90 and every node (2026-11-14): her hits are ×0.767–0.774 the assumed readings (not one factor: the ATK buffs at each hit move it), and level 60 with no node gives ATK ×0.7681 (2379 against 3098): 143 of her 164 non-crit hits then have an exact engine reading, against 139 at level 56 with 2 nodes (×0.7688) and at most 125 for any other weapon level from 50 to 64 with 0–3 nodes; and her weapon's logged skill levels (7, 6, 4) need its third breakthrough, at 60 (WeaponBreakThroughTemplateTable: its first skill goes up to 6 before it), which rules out 56. The log check's build offset doesn't report it (the spread: under 75% of her hits within ±0.003 of one ratio). The export has no weapon level or attribute nodes."
   ]
  },
  "enemy": {
@@ -205,7 +206,7 @@
    },
    "weapon": {
     "id": "wpn_funnel_0013",
-    "level": 90,
+    "level": 60,
     "skillLevels": [
      7,
      6,
@@ -245,7 +246,8 @@
       2
      ]
     }
-   ]
+   ],
+   "attributeNodes": 0
   }
  ],
  "hits": [
