@@ -77,6 +77,8 @@
       "id": "barrage_array",
       "label": "Barrage Array: Nature Burst DMG taken",
       "target": "enemy",
+      "gameBuff": "buff_chr_0034_typhoea_combo_enemy_debuff",
+      "dataOverride": { "duration": "The debuff is an aura's (combo_persistentdamage's AuraAction, frames 0-180): it lasts while the Barrage Array does, persistent_time, not the instance file's 20 s (see the buff's note)." },
       "duration": "persistent_time",
       "modifiers": [
         {
@@ -87,7 +89,7 @@
           ]
         }
       ],
-      "note": "buff_chr_0034_typhoea_combo_enemy_debuff, given by the combo's Barrage Array (combo_persistentdamage aura, 180 frames = persistent_time 6 s) while the enemy stands in it: damage_up = persistent_naturalburst_increase (0.10 at level 12, P3 +0.06) on hits with decorate mask 33554432 (Arts Bursts only, of any operator). Logged as a damageTaken zone; fixtures/zmdlogs-dbaee23b801d.json shows it only on bursts."
+      "note": "buff_chr_0034_typhoea_combo_enemy_debuff, given by the combo's Barrage Array (combo_persistentdamage aura, 180 frames = persistent_time 6 s) while the enemy stands in it: damage_up = persistent_naturalburst_increase (0.10 at level 12, P3 +0.06) on hits with decorate mask 33554432 (Arts Bursts only, of any operator). Logged as a damageTaken zone; fixtures/zmdlogs-dbaee23b801d.json shows it only on bursts. gameBuff (2026-11-15): without it the log check counted the listed instance on top of the kit's (Typhoeus's bursts under it ×1.07 over the log in 1d91, fc63, 00ae, 9090, and the buff timing report's \"starts early / ends late\" runs); the replay's own landings of those bursts, with it, match the log exactly (1d91 11 of 15, bdf2 4 of 5, fc63 14 of 30, 00ae 7 of 13)."
     },
     {
       "id": "hail_window",

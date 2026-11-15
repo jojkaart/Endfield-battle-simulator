@@ -39,8 +39,19 @@ need a mechanism"). The top runs, by damage at stake (|logged − engine|):
    "starts early" (7 hits, 80k) and "ends late" (4 hits, 36k) on the same
    windows (1d91 9.8–16.2 s and 51.5–57.5 s): the hits fit without it
    across the engine's whole window, the log lists it at none. No
-   mechanism near (its source is the combo's first arrow). Still possible:
-   it doesn't act on these hits (a mask), or it lands later and shorter.
+   mechanism near (its source is the combo's first arrow). **Closed
+   2026-11-15: the log check's, not the engine's.** The kit buff had no
+   `gameBuff`, so the check counted the logged
+   buff_chr_0034_typhoea_combo_enemy_debuff as a log-only buff on top of
+   the kit's (Typhoeus's bursts ×1.07 over the log), and toggling the
+   kit's off "fitted". The replay's own landings of her bursts under it,
+   with it, match the log exactly (1d91 11 of 15, among them the
+   11.4–14.4 s hits above; bdf2 4 of 5; fc63 14 of 30; 00ae 7 of 13); the
+   log lists it there (the "lists it at 0" above counted the kit's name).
+   With the `gameBuff`, 1d91's listed bursts go from 11 mismatches to 12
+   plain. Left: 1d91 at 55.5 and 56.7 s fit without it exactly (the log
+   stops listing it ~2 s before the engine's end: the boss leaving the
+   6 m area?).
 4. **Laevatain's Forgeborn Scathe basic DMG** (wpn_sword_0006.valid), 9c0b:
    absent in the engine 32.0–34.8 s (5 hits, 71k), listed at 5/5. NO
    MECHANISM: its trigger is her ultimate cast, and none is within 20 s
@@ -1180,6 +1191,45 @@ damage (buffModifiers takes one per group).
 
 **Next check:** af7b's Ardelia Susceptibility after 60 s (an unlogged
 battle skill?), then c3c7's crystal Amp window.
+
+## Typhoeus, Arcane, Liino, Perlica: what the team's logs leave open (2026-11-15)
+
+From the kit check before simulating the team
+([teams/typhoeus-arcane-liino-perlica.md](teams/typhoeus-arcane-liino-perlica.md)).
+
+- **Typhoeus's hover outlasts her logged shots** (9090 60.1 → 68.0 s,
+  29 hits; 1cd1 at 37.5 s, 19 hits; fc63 46.2 s, 2 hits). Shows: the log
+  lists Hovering ATK (P1) on every hit and the damage fits it, while the
+  replay's hover idled out (floating_loop's 30 frames, then floating_end)
+  after her last logged shot; in 9090 her next logged events are a combo
+  at 60.6 s whose arrows land after two ultimates' stops (63.7 s) and
+  five more ABATK shots, i.e. the hovering combo (it keeps the hover).
+  Ruled out: the loop's data (30 frames, CastSkill floating_end at 27,
+  no condition). Still possible: shots that hit nothing (unlogged) keep
+  the hover going and the replay can't see them; a time stop or
+  slow-down holding the loop (1cd1's candidate, not 9090's: no stop
+  between 57.6 and 60.6 s); the replay placing the combo as the grounded
+  one. Next check: whether 9090's combo at 60.6 s is replayed grounded.
+- **9090 (the whole team): Liino −15.0%, Perlica −13.0% in the totals**
+  (the simulation of the logged casts), with every hit-by-hit check
+  matching (Perlica 130 of 130, Liino 171 of 172). Hits under Stagger
+  145 replayed against 208 logged: Perlica's talent 1 (DMG vs Staggered)
+  and her finisher only exist while Staggered. Liino's battle-skill kind
+  −15% (her volleys). Still possible: the replay's Stagger (accuracy
+  plan B1), volleys the replay doesn't fire (each needs a reaction while
+  the window is open), a beat's timing. Next check: count Liino's logged
+  and replayed volleys in 9090.
+- **Perlica in fc63: every hit ×0.934** from the first (4.8 s), before
+  any reaction or buff. Ruled out: her weapon at level 80 (its skills
+  allow 80–90), 2 or 3 attribute nodes, talents at 1 (each tried: worse).
+  Still possible: the export's empty artifice lists on three Pulser Labs
+  pieces read as 0 (the export gives their sub-stat values at level 0),
+  another build input the export omits. Not a kit lead (her other logs
+  fit).
+- **Perlica's misfits elsewhere** (4360, 9847, 4bfc, 3aa6, d774) come in
+  runs of ×1.3–1.5 (or their inverse) on basic attacks and ultimates: the
+  replay's Stagger windows against the log's (her talent 1 and the
+  Stagger multiplier both follow them), not her kit.
 
 ## Smaller, not yet diagnosed
 
