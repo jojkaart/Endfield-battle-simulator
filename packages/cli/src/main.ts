@@ -50,8 +50,9 @@ const USAGE = `Usage:
                                           next, each cast at least once (fast ones held for the slowest)
                 [--prune]                 Drop dominated states and, by branch and bound on the payoff table's
                                           ceilings (efsim payoffs), states that can't beat the best so far
-                [--macros]                Offer each chain of the payoff table (efsim payoffs) as one choice
-                                          where its first step is one (played at its steps' earliest frames)
+                [--no-macros]             Without the payoff table's chains (efsim payoffs) as one choice each
+                                          where their first step is one (default: with them, in an extra
+                                          half-beam share; finds more, takes 1.6–3.8× as long)
                 [--skeletons]             Guide every width by three skeletons: the payoff table's chains and
                                           their merges scheduled greedily by value per second (extra beam share)
                 [--setup score|share]     Count what the pieces a state holds are worth to payoffs it can still
@@ -126,6 +127,7 @@ async function main(argv: string[]): Promise<number> {
   const { values, positionals } = parseArgs({
     args: argv,
     allowPositionals: true,
+    allowNegative: true,
     options: {
       enemy: { type: "string", default: "eny_0051_rodin" },
       level: { type: "string", default: "90" },
@@ -160,7 +162,7 @@ async function main(argv: string[]): Promise<number> {
       singles: { type: "boolean", default: false },
       json: { type: "boolean", default: false },
       prune: { type: "boolean", default: false },
-      macros: { type: "boolean", default: false },
+      macros: { type: "boolean", default: true },
       skeletons: { type: "boolean", default: false },
       setup: { type: "string" },
       depth: { type: "string" },
