@@ -8,6 +8,15 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
 
 ## Next steps
 
+- **Typhoeus, Arcane, Liino, Perlica (2026-11-15, done: 5.76 / 4.99M,
+  docs/teams/typhoeus-arcane-liino-perlica.md):** its zero-energy search
+  is the least converged of the three teams (+27% at beam 48 alone): a
+  beam 96 run, or the search seeded with the found rotations; in-game
+  test 42 (Typhoeus's idle hover) decides a lead the team leans on;
+  9090's Liino / Perlica totals (volleys, the replay's Stagger); `efsim
+  gear` for the other two teams (their gear was each operator's most
+  common loadout overall), and gear chosen jointly with the rotation (a
+  search per candidate set, not a replay).
 - **First (2026-11-15):** after phase 3 (journal 2026-11-15, design.md
   "Payoffs and chains": macros are `efsim search`'s default, skeletons and
   the setup value opt-in): make macros cheaper (the macros played at every

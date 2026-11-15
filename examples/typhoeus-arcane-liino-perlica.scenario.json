@@ -1,0 +1,671 @@
+{
+  "$schema": "../schemas/scenario.schema.json",
+  "description": "Typhoeus P0 (Umbra of Frigid Eventide 9/9/4; Deep Rampart Armor/Gauntlets/Comms + Qingbo Bamboo Cutter), Arcane P0 (the owner's build: Solemn Phalanx 9/9/4, Eternal Xiranite, accessories' Intellect line at 0: Intellect 472.44 / Will 473.50, WILL mode), Liino P0 (Bedazzling Night Debut 9/9/4; LYNX Gauntlets T1, Slab x2 + Eternal Xiranite Light Armor), Perlica P5 (Stanza of Memorials 9/9/9; Pulser Labs Disruptor Suit/Gloves/Probe + Hot Work Power Cartridge): Ink Melt's assumptions (level 90, skills 12, weapons at 90, full artifice), gear by efsim gear from the logs' loadouts and EndfieldHub's (docs/teams/typhoeus-arcane-liino-perlica.md). Typhoeus controlled; no kit reads team slots. Vs Rhodagn Lv90, 60 s, full ultimate energy at the start. Rotation: efsim search --no-macros (beams 12/24/48: 5,205,516 / 5,261,618 / 5,757,797, beam 48 best; --no-macros --skeletons found the same rotation; with macros, the default, 5,472,033 / 5,670,329 / 5,741,752): a lower bound (spread 9.6%).",
+  "team": [
+    {
+      "operator": "chr_0034_typhoea",
+      "level": 90,
+      "promotion": 4,
+      "potential": 0,
+      "skillLevels": {
+        "basic": 12,
+        "battle": 12,
+        "combo": 12,
+        "ultimate": 12
+      },
+      "weapon": {
+        "id": "wpn_funnel_0019",
+        "level": 90,
+        "skillLevels": [
+          9,
+          9,
+          4
+        ]
+      },
+      "gear": [
+        {
+          "id": "item_equip_t4_suit_combo_cd01_edc_02",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_spellburst_body_01",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_spellburst_edc_01",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_spellburst_hand_01",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "operator": "chr_0032_lizhiyan",
+      "level": 90,
+      "promotion": 4,
+      "potential": 0,
+      "skillLevels": {
+        "basic": 12,
+        "battle": 12,
+        "combo": 12,
+        "ultimate": 12
+      },
+      "weapon": {
+        "id": "wpn_funnel_0016",
+        "level": 90,
+        "skillLevels": [
+          9,
+          9,
+          4
+        ]
+      },
+      "gear": [
+        {
+          "id": "item_equip_t4_suit_usp02_body_03",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_usp02_hand_03",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_usp02_edc_03",
+          "artifice": [
+            3,
+            0,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_usp02_edc_03",
+          "artifice": [
+            3,
+            0,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "operator": "chr_0035_liino",
+      "level": 90,
+      "promotion": 4,
+      "potential": 0,
+      "skillLevels": {
+        "basic": 12,
+        "battle": 12,
+        "combo": 12,
+        "ultimate": 12
+      },
+      "weapon": {
+        "id": "wpn_lance_0014",
+        "level": 90,
+        "skillLevels": [
+          9,
+          9,
+          4
+        ]
+      },
+      "gear": [
+        {
+          "id": "item_equip_t4_suit_usp02_body_03",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_heal01_hand_03",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_heal01_edc_03",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_heal01_edc_03",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "operator": "chr_0004_pelica",
+      "level": 90,
+      "promotion": 4,
+      "potential": 5,
+      "skillLevels": {
+        "basic": 12,
+        "battle": 12,
+        "combo": 12,
+        "ultimate": 12
+      },
+      "weapon": {
+        "id": "wpn_funnel_0005",
+        "level": 90,
+        "skillLevels": [
+          9,
+          9,
+          9
+        ]
+      },
+      "gear": [
+        {
+          "id": "item_equip_t4_suit_fire_natr01_edc_03",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_pulse_cryst01_body_01",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_pulse_cryst01_edc_01",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        },
+        {
+          "id": "item_equip_t4_suit_pulse_cryst01_hand_01",
+          "artifice": [
+            3,
+            3,
+            3
+          ]
+        }
+      ]
+    }
+  ],
+  "target": {
+    "enemy": "eny_0051_rodin",
+    "level": 90
+  },
+  "controlled": "chr_0034_typhoea",
+  "startEnergy": {
+    "chr_0034_typhoea": "full",
+    "chr_0032_lizhiyan": "full",
+    "chr_0035_liino": "full",
+    "chr_0004_pelica": "full"
+  },
+  "durationSeconds": 60,
+  "crit": "expected",
+  "rotation": [
+    {
+      "operator": "chr_0032_lizhiyan",
+      "skill": "chr_0032_lizhiyan_ultimate_skill",
+      "at": 0
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_normal_skill_floating_start",
+      "at": 0
+    },
+    {
+      "operator": "chr_0035_liino",
+      "skill": "chr_0035_liino_ultimate_skill",
+      "at": 0
+    },
+    {
+      "operator": "chr_0004_pelica",
+      "skill": "chr_0004_pelica_normal_skill",
+      "at": 0
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack1",
+      "at": 1.2333333333333334
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack2",
+      "at": 1.8333333333333333
+    },
+    {
+      "operator": "chr_0004_pelica",
+      "skill": "chr_0004_pelica_ultimate_skill",
+      "at": 1.8333333333333333
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack3",
+      "at": 2.566666666666667
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack4",
+      "at": 3.1666666666666665
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack5",
+      "at": 4.1
+    },
+    {
+      "operator": "chr_0004_pelica",
+      "skill": "chr_0004_pelica_combo_skill",
+      "at": 4.1
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_combo_skillfloating",
+      "at": 4.1
+    },
+    {
+      "operator": "chr_0032_lizhiyan",
+      "skill": "chr_0032_lizhiyan_combo_skill",
+      "at": 4.1
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack1",
+      "at": 6
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack2",
+      "at": 6.6
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack3",
+      "at": 7.2
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack4",
+      "at": 7.8
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack5",
+      "at": 8.733333333333333
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_ultimate_skillfloating",
+      "at": 8.733333333333333
+    },
+    {
+      "operator": "chr_0032_lizhiyan",
+      "skill": "chr_0032_lizhiyan_normal_skill",
+      "at": 8.733333333333333
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack1",
+      "at": 11.5
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack2",
+      "at": 12.1
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack3",
+      "at": 12.7
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack4",
+      "at": 13.3
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack5",
+      "at": 14.233333333333333
+    },
+    {
+      "operator": "chr_0035_liino",
+      "skill": "chr_0035_liino_combo_skill",
+      "at": 14.233333333333333
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_attack1",
+      "at": 16
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_attack2",
+      "at": 16.3
+    },
+    {
+      "operator": "chr_0032_lizhiyan",
+      "skill": "chr_0032_lizhiyan_ultimate_skill2",
+      "at": 16.3
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_normal_skill_floating_start",
+      "at": 16.3
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack1",
+      "at": 17.166666666666668
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack2",
+      "at": 17.766666666666666
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack3",
+      "at": 18.366666666666667
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack4",
+      "at": 18.966666666666665
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack5",
+      "at": 19.9
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_plunging_attack_end",
+      "at": 21.066666666666666
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_plunging_attack_end",
+      "at": 22.366666666666667
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_attack1",
+      "at": 23.666666666666668
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_attack2",
+      "at": 23.966666666666665
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_normal_skill_floating_start",
+      "at": 23.966666666666665
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack1",
+      "at": 24.833333333333332
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack2",
+      "at": 25.433333333333334
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack3",
+      "at": 26.033333333333335
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack4",
+      "at": 26.633333333333333
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack5",
+      "at": 27.566666666666666
+    },
+    {
+      "operator": "chr_0004_pelica",
+      "skill": "chr_0004_pelica_combo_skill",
+      "at": 27.566666666666666
+    },
+    {
+      "operator": "chr_0035_liino",
+      "skill": "chr_0035_liino_normal_skill",
+      "at": 27.566666666666666
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_combo_skillfloating",
+      "at": 28.433333333333334
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack1",
+      "at": 30.333333333333332
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack2",
+      "at": 30.933333333333334
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack3",
+      "at": 31.533333333333335
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack4",
+      "at": 32.13333333333333
+    },
+    {
+      "operator": "chr_0035_liino",
+      "skill": "chr_0035_liino_normal_skill_end",
+      "at": 32.13333333333333
+    },
+    {
+      "operator": "chr_0035_liino",
+      "skill": "chr_0035_liino_combo_skill",
+      "at": 32.13333333333333
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_floating_attack5",
+      "at": 33.666666666666664
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_power_attack",
+      "at": 33.666666666666664
+    },
+    {
+      "operator": "chr_0032_lizhiyan",
+      "skill": "chr_0032_lizhiyan_normal_skill",
+      "at": 33.666666666666664
+    },
+    {
+      "operator": "chr_0032_lizhiyan",
+      "skill": "chr_0032_lizhiyan_combo_skill",
+      "at": 34.333333333333336
+    },
+    {
+      "operator": "chr_0035_liino",
+      "skill": "chr_0035_liino_normal_skill",
+      "at": 35.766666666666666
+    },
+    {
+      "operator": "chr_0004_pelica",
+      "skill": "chr_0004_pelica_normal_skill",
+      "at": 35.766666666666666
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_plunging_attack_end",
+      "at": 36.46666666666667
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_plunging_attack_end",
+      "at": 37.766666666666666
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_plunging_attack_end",
+      "at": 39.06666666666667
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_plunging_attack_end",
+      "at": 40.36666666666667
+    },
+    {
+      "operator": "chr_0035_liino",
+      "skill": "chr_0035_liino_normal_skill_end",
+      "at": 40.36666666666667
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_plunging_attack_end",
+      "at": 41.666666666666664
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_plunging_attack_end",
+      "at": 42.96666666666667
+    },
+    {
+      "operator": "chr_0035_liino",
+      "skill": "chr_0035_liino_normal_skill",
+      "at": 43.36666666666667
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_plunging_attack_end",
+      "at": 44.266666666666666
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_attack1",
+      "at": 45.56666666666667
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_attack2",
+      "at": 45.86666666666667
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_attack3",
+      "at": 46.266666666666666
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_attack4",
+      "at": 46.93333333333333
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_attack5",
+      "at": 47.833333333333336
+    },
+    {
+      "operator": "chr_0035_liino",
+      "skill": "chr_0035_liino_normal_skill_end",
+      "at": 47.833333333333336
+    },
+    {
+      "operator": "chr_0004_pelica",
+      "skill": "chr_0004_pelica_combo_skill",
+      "at": 48.56666666666667
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_plunging_attack_end",
+      "at": 49.833333333333336
+    },
+    {
+      "operator": "chr_0004_pelica",
+      "skill": "chr_0004_pelica_normal_skill",
+      "at": 49.833333333333336
+    },
+    {
+      "operator": "chr_0004_pelica",
+      "skill": "chr_0004_pelica_ultimate_skill",
+      "at": 50.266666666666666
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_plunging_attack_end",
+      "at": 52.8
+    },
+    {
+      "operator": "chr_0035_liino",
+      "skill": "chr_0035_liino_normal_skill",
+      "at": 53.4
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_plunging_attack_end",
+      "at": 54.1
+    },
+    {
+      "operator": "chr_0032_lizhiyan",
+      "skill": "chr_0032_lizhiyan_ultimate_skill",
+      "at": 54.1
+    },
+    {
+      "operator": "chr_0032_lizhiyan",
+      "skill": "chr_0032_lizhiyan_combo_skill",
+      "at": 55.7
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_plunging_attack_end",
+      "at": 57.36666666666667
+    },
+    {
+      "operator": "chr_0034_typhoea",
+      "skill": "chr_0034_typhoea_plunging_attack_end",
+      "at": 58.666666666666664
+    }
+  ]
+}
