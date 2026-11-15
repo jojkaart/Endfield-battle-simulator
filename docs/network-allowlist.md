@@ -31,7 +31,7 @@ used), **blocked by site** (allowed, but the site rejects our requests),
 | Host | Purpose | Reachable | Status |
 |---|---|---|---|
 | endfield.wiki.gg | Talos Wiki: formula pages, data | `api.php` only, with a descriptive user agent | useful (licence read; robots.txt disallows `/api.php`; owner allows lookups as needed, no scripted mass downloads) |
-| endfieldhub.org | Database, `/webmcp/*.json`, blog build guides | yes | useful, limited: light spot checks only (no skill values in JSON; derived from other sites); per-team gear builds from its guides (2026-11-15: a few pages read by hand for the Typhoeus team's gear candidates) |
+| endfieldhub.org | Database, `/webmcp/*.json`, blog build guides | yes | useful, limited: light spot checks only (no skill values in JSON; derived from other sites); per-team gear builds from its guides (2026-11-15: a few pages read by hand for the Typhoeus team's gear candidates, then for Ink Melt's and the owner's team: the character pages `/characters/<name>`, `/database/gear-sets`, the Si teams post) |
 | zmdlogs.com | Published battle logs (API) | yes | **most useful**: per-hit ground truth |
 | www.end-axis.com | Endaxis simulator site (bare `end-axis.com` not allowed) | yes | not useful (same data as `reference/Endaxis`; no API) |
 | wiki.biligame.com | CN wiki | yes, but returns Tencent EdgeOne "567 Restricted Access" after a few requests; title search disabled | blocked by site (licence read before the block) |
@@ -72,3 +72,4 @@ recommended.
 | end.wiki, www.end.wiki | Domain does not resolve in DNS (2026-10-18). Tried both; removed. |
 | endfield.gg, talos2codex.com, arknightsendfield.wiki, qieyou.com, Dexerto | Stale, borrowed from mainline Arknights, or contradict other sources. |
 | efsim.app | Closed source, no published numbers. |
+| endfieldhub.com, endfield.pages.dev | Refused by the proxy (2026-11-15); endfieldhub.org has the build and team guides. |

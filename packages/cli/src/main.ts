@@ -78,7 +78,9 @@ const USAGE = `Usage:
                 [--candidates file]       More loadouts to try: {"candidates": [{"operator", "gear": [4 ids], "source"}]}
                 [--keep <operator>]       Don't vary this operator (repeatable); its candidates' mode attributes are shown
                 [--min-count n] [--top n] Log loadouts seen at least n times (default 2), at most n per operator (default 6)
-                [--search-beam n]         Where the rotation can't be played with a loadout: a narrow search at beam n (default 12)
+                [--repairs n]             Where steps of the rotation can't be played with a loadout: start each later (up to 2 s,
+                                          or with a later step) or drop it, if at most n (default 20; 0: never)
+                [--search-beam n]         With more: a narrow search at beam n (default 12)
                 [--passes n] [--out file] Passes at most (default 4); save the scenario with the chosen gear (its rotation kept)
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
                                           (fixtures/multi-target/ when it hit several enemies)
@@ -179,6 +181,7 @@ async function main(argv: string[]): Promise<number> {
       keep: { type: "string", multiple: true, default: [] },
       "min-count": { type: "string" },
       "search-beam": { type: "string" },
+      repairs: { type: "string" },
       passes: { type: "string" },
       help: { type: "boolean", short: "h", default: false },
     },
@@ -373,11 +376,12 @@ async function main(argv: string[]): Promise<number> {
         const candidates = gearCandidates(data(), scenario, { files: logFixtureFiles(ROOT), ...(extra ? { extra } : {}), ...(minCount !== undefined ? { minCount } : {}), ...(top !== undefined ? { top } : {}) });
         const beam = whole(values["search-beam"], "search-beam", 1);
         const passes = whole(values.passes, "passes", 1);
-        const r = gearAscent(data(), scenario, candidates, { keep, ...(beam !== undefined ? { beam } : {}), ...(passes !== undefined ? { passes } : {}), progress: (line) => process.stderr.write(line + "\n") });
+        const repairs = whole(values.repairs, "repairs", 0);
+        const r = gearAscent(data(), scenario, candidates, { keep, ...(beam !== undefined ? { beam } : {}), ...(repairs !== undefined ? { repairs } : {}), ...(passes !== undefined ? { passes } : {}), progress: (line) => process.stderr.write(line + "\n") });
         text = formatGear(data(), scenario, r);
         if (values.out) {
-          writeGearScenario(args[0] as string, values.out, r.team, r.rotationReplaced ? r.rotation : undefined);
-          text += `\n\nWrote ${values.out} (the chosen gear, ${r.rotationReplaced ? "the narrow search's rotation" : "the rotation as it was"}).`;
+          writeGearScenario(args[0] as string, values.out, r.team, r.rotationReplaced || r.rotationRepaired ? r.rotation : undefined);
+          text += `\n\nWrote ${values.out} (the chosen gear, ${r.rotationReplaced ? "the narrow search's rotation" : r.rotationRepaired ? `the rotation with the ${r.rotationRepaired} step${r.rotationRepaired === 1 ? "" : "s"} it couldn't play moved or dropped` : "the rotation as it was"}).`;
         }
       }
       break;

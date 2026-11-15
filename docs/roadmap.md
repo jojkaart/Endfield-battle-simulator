@@ -13,10 +13,20 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
   is the least converged of the three teams (+27% at beam 48 alone): a
   beam 96 run, or the search seeded with the found rotations; in-game
   test 42 (Typhoeus's idle hover) decides a lead the team leans on;
-  9090's Liino / Perlica totals (volleys, the replay's Stagger); `efsim
-  gear` for the other two teams (their gear was each operator's most
-  common loadout overall), and gear chosen jointly with the rotation (a
-  search per candidate set, not a replay).
+  9090's Liino / Perlica totals (volleys, the replay's Stagger); gear
+  chosen jointly with the rotation (a search per candidate set, not a
+  replay).
+- **Gear (2026-11-15, `efsim gear` done for all three teams):** the
+  search is chaotic: a small build change sends the beam to other
+  rotations (the owner's team with Estella's +0.7% loadout: −15% / −9% by
+  the search that reproduces the examples), so searches can't confirm
+  gear gains of a few percent: a search seeded with the current rotation
+  (its moves as the guide's first line) would make "re-search with the
+  new gear" meaningful; then the owner's team with Si on the logs' LYNX
+  Slab loadout (4–5% better on every rotation found for it, but none of
+  those reaches the owner's 3.99M rotation, which needs her Rift Trekker
+  Gloves' Ultimate Gain). Tell the owner: Estella's logs loadout (Type 50
+  Yinglung Heavy Armor, Gloves T1, Radar + LYNX Slab) +0.6–0.7%.
 - **First (2026-11-15):** after phase 3 (journal 2026-11-15, design.md
   "Payoffs and chains": macros are `efsim search`'s default, skeletons and
   the setup value opt-in): make macros cheaper (the macros played at every
