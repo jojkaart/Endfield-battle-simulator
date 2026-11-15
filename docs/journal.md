@@ -23,11 +23,15 @@ or, `setupShare`, ranking only the extra share). `efsim search` plays
 macros by default (`--no-macros`), `--skeletons`, `--setup score|share`.
 Results (60 s, guided 12/24/48): macros found more at every width on all
 four examples: the owner's team (Arcane WILL, the corrected build) full
-energy 3,835,505 → 3,922,576, from zero 3,226,208 → 3,394,218; Ink Melt
+energy 3,835,505 → 3,922,576, from zero 3,226,208 → 3,394,218 (with
+skeletons 3,397,119, the example's now); Ink Melt
 4,411,886 → 4,689,365, from zero 3,841,514 → 4,601,305 (the example
 had 3,892,412 from 24/48/96); the examples now play those
 rotations (both owner's rotations play the owner's chain with Si's battle
-skill as the Cryo; none with Estella's). At equal run time macros win on
+skill as the Cryo; none ties Estella's battle skill in: from zero its
+steps come in order at 43–53 s, 6.8 s apart in the middle). Macros and
+skeletons together did worse than macros alone (3,771,274 and 3,228,589:
+one extra share split between them). At equal run time macros win on
 full energy but lose from zero (at the baseline's total time they've
 finished only w/2 and w): they cost 1.6–3.8× a width. Skeletons and the
 setup value stay opt-in: each made examples worse (skeletons both

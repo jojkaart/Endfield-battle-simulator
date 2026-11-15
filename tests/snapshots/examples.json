@@ -177,23 +177,23 @@
   ]
  },
  "estella-si-akekuri-arcane-zero.scenario.json": {
-  "total": 3394218.444,
-  "hits": 470,
-  "casts": 234,
+  "total": 3397119.016,
+  "hits": 472,
+  "casts": 231,
   "perOperator": {
-   "chr_0021_whiten": 1497830.562,
-   "chr_0036_jsspsi": 1376977.078,
-   "chr_0019_karin": 273846.1,
-   "chr_0032_lizhiyan": 245564.705
+   "chr_0021_whiten": 1588798.969,
+   "chr_0036_jsspsi": 1278579.674,
+   "chr_0019_karin": 267617.351,
+   "chr_0032_lizhiyan": 262123.022
   },
-  "digest": "c76bcb2d827f",
+  "digest": "ab71982750d1",
   "windows": [
-   "59b07fcfbd13",
-   "944ababe33b0",
-   "b1837f434cf5",
-   "48586c5a7e8e",
-   "fa80006233c9",
-   "21845508eb9a"
+   "a26c2b9eeb14",
+   "a281c2c2a2eb",
+   "745167f5dc31",
+   "871c9c3d9495",
+   "4ea53d1c9679",
+   "aac2c64d6d88"
   ]
  },
  "estella-si-akekuri-arcane.scenario.json": {

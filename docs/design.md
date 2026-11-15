@@ -1441,8 +1441,11 @@ full-energy fights, Ink Melt 3.66M against 4.41M and the owner's team
 3.73M against 3.84M: the wider widths' guide changes with the share,
 above; from zero they found the owner's team's best, 3,397,119; the setup value in the score Ink Melt both energies and the
 owner's team both energies, from zero by a third: it still overvalues
-holding a piece over casting). The setup value's share variant
-(`setupShare`) is implemented and tested but wasn't measured at 60 s.
+holding a piece over casting). Macros and skeletons together did worse than macros alone on the
+owner's team (3,675,264 / 3,766,856 / 3,771,274 with full energy,
+2,502,659 / 2,525,620 / 3,228,589 from zero: one extra share split
+between them). The setup value's share variant (`setupShare`) is
+implemented and tested but wasn't measured at 60 s.
 
 ### Pruning the search
 
