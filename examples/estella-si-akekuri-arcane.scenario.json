@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/scenario.schema.json",
-  "description": "The owner's team (2026-11-14): Estella P5 (JET 9/9/5), Si P0 (Jade Vessel 9/9/4), Akekuri P5 (Thermite Cutter 9/9/5), Arcane P0 (Type 42: Solemn Phalanx 9/9/4) with the owner's gear pieces (base versions, weapon level 90 assumed; artifice full except the accessories' Intellect lines, tuned as the owner does to the most Intellect just below Will: Intellect 472.44, Will 473.50, WILL mode) vs Rhodagn Lv90, 60 s, full ultimate energy at the start. Rotation: `efsim search` (2026-11-15, beams 12/24/48 with the value ranking, spread 13.1%, beam 48 best: a lower bound).",
+  "description": "The owner's team (2026-11-14): Estella P5 (JET 9/9/5), Si P0 (Jade Vessel 9/9/4), Akekuri P5 (Thermite Cutter 9/9/5), Arcane P0 (Type 42: Solemn Phalanx 9/9/4) with the owner's gear pieces (base versions, weapon level 90 assumed; artifice full except the accessories' Intellect lines, tuned as the owner does to the most Intellect just below Will: Intellect 472.44, Will 473.50, WILL mode) vs Rhodagn Lv90, 60 s, full ultimate energy at the start. Rotation: `efsim search` with macros (2026-11-15, the payoff table's chains as one choice each, phase 3; beams 12/24/48: 3,918,666 / 3,918,666 / 3,922,576, beam 48 best; without macros 3,835,505: a lower bound).",
   "team": [
     {
       "operator": "chr_0021_whiten",
@@ -421,29 +421,29 @@
       "at": 23.933333333333334
     },
     {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_normal_skill_1",
+      "at": 23.933333333333334
+    },
+    {
       "operator": "chr_0021_whiten",
       "skill": "chr_0021_whiten_plunging_attack_end",
       "at": 25.166666666666668
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "skill": "chr_0021_whiten_plunging_attack_end",
+      "at": 26.4
     },
     {
       "operator": "chr_0019_karin",
       "skill": "chr_0019_karin_normal_skill",
-      "at": 25.166666666666668
-    },
-    {
-      "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_plunging_attack_end",
       "at": 26.4
     },
     {
       "operator": "chr_0032_lizhiyan",
       "skill": "chr_0032_lizhiyan_combo_skill",
-      "at": 26.4
-    },
-    {
-      "operator": "chr_0036_jsspsi",
-      "skill": "chr_0036_jsspsi_normal_skill_1",
-      "at": 26.4
+      "at": 27.066666666666666
     },
     {
       "operator": "chr_0021_whiten",
@@ -461,208 +461,193 @@
       "at": 30.5
     },
     {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_normal_skill_2",
+      "at": 30.5
+    },
+    {
       "operator": "chr_0021_whiten",
       "skill": "chr_0021_whiten_attack2",
       "at": 30.933333333333334
     },
     {
-      "operator": "chr_0036_jsspsi",
-      "skill": "chr_0036_jsspsi_normal_skill_2",
-      "at": 30.933333333333334
-    },
-    {
       "operator": "chr_0021_whiten",
       "skill": "chr_0021_whiten_attack3",
-      "at": 31.466666666666665
+      "at": 31.333333333333332
     },
     {
       "operator": "chr_0021_whiten",
       "skill": "chr_0021_whiten_attack4",
-      "at": 32.2
-    },
-    {
-      "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_plunging_attack_end",
-      "at": 33.36666666666667
-    },
-    {
-      "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_plunging_attack_end",
-      "at": 34.5
+      "at": 32.06666666666667
     },
     {
       "operator": "chr_0021_whiten",
       "skill": "chr_0021_whiten_attack1",
-      "at": 35.63333333333333
+      "at": 33.233333333333334
     },
     {
       "operator": "chr_0021_whiten",
       "skill": "chr_0021_whiten_attack2",
-      "at": 35.96666666666667
+      "at": 33.56666666666667
     },
     {
       "operator": "chr_0021_whiten",
       "skill": "chr_0021_whiten_attack3",
-      "at": 36.36666666666667
-    },
-    {
-      "operator": "chr_0036_jsspsi",
-      "skill": "chr_0036_jsspsi_normal_skill",
-      "at": 36.96666666666667
+      "at": 33.96666666666667
     },
     {
       "operator": "chr_0021_whiten",
       "skill": "chr_0021_whiten_attack4",
-      "at": 37.3
+      "at": 34.7
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "skill": "chr_0021_whiten_plunging_attack_end",
+      "at": 35.86666666666667
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_normal_skill",
+      "at": 35.86666666666667
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "skill": "chr_0021_whiten_attack1",
+      "at": 37.1
     },
     {
       "operator": "chr_0036_jsspsi",
       "skill": "chr_0036_jsspsi_combo_skill",
-      "at": 37.46666666666667
+      "at": 37.1
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_normal_skill_1",
+      "at": 37.766666666666666
     },
     {
       "operator": "chr_0021_whiten",
       "skill": "chr_0021_whiten_combo_skill",
-      "at": 38.53333333333333
-    },
-    {
-      "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_attack1",
-      "at": 39.63333333333333
+      "at": 37.833333333333336
     },
     {
       "operator": "chr_0021_whiten",
       "skill": "chr_0021_whiten_attack2",
-      "at": 40.06666666666667
+      "at": 38.93333333333333
     },
     {
       "operator": "chr_0021_whiten",
       "skill": "chr_0021_whiten_attack3",
-      "at": 40.6
-    },
-    {
-      "operator": "chr_0036_jsspsi",
-      "skill": "chr_0036_jsspsi_normal_skill_1",
-      "at": 40.6
+      "at": 39.46666666666667
     },
     {
       "operator": "chr_0021_whiten",
       "skill": "chr_0021_whiten_attack4",
-      "at": 41.53333333333333
-    },
-    {
-      "operator": "chr_0036_jsspsi",
-      "skill": "chr_0036_jsspsi_normal_skill_2",
-      "at": 41.53333333333333
-    },
-    {
-      "operator": "chr_0019_karin",
-      "skill": "chr_0019_karin_combo_skill",
-      "at": 42.233333333333334
-    },
-    {
-      "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_attack1",
-      "at": 43.46666666666667
+      "at": 40.4
     },
     {
       "operator": "chr_0021_whiten",
       "skill": "chr_0021_whiten_power_attack",
-      "at": 43.63333333333333
+      "at": 41.1
     },
     {
-      "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_normal_skill",
-      "at": 44.4
-    },
-    {
-      "operator": "chr_0036_jsspsi",
-      "skill": "chr_0036_jsspsi_normal_skill",
-      "at": 44.4
-    },
-    {
-      "operator": "chr_0032_lizhiyan",
-      "skill": "chr_0032_lizhiyan_combo_skill",
-      "at": 44.8
-    },
-    {
-      "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_ultimate_skill",
-      "at": 45.333333333333336
-    },
-    {
-      "operator": "chr_0036_jsspsi",
-      "skill": "chr_0036_jsspsi_ultimate_skill",
-      "at": 45.333333333333336
-    },
-    {
-      "operator": "chr_0032_lizhiyan",
-      "skill": "chr_0032_lizhiyan_ultimate_skill",
-      "at": 45.333333333333336
-    },
-    {
-      "operator": "chr_0036_jsspsi",
-      "skill": "chr_0036_jsspsi_normal_skill_1",
-      "at": 46.96666666666667
-    },
-    {
-      "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_attack1",
-      "at": 47
-    },
-    {
-      "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_attack2",
-      "at": 47.333333333333336
-    },
-    {
-      "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_attack3",
-      "at": 47.733333333333334
-    },
-    {
-      "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_attack4",
-      "at": 48.46666666666667
-    },
-    {
-      "operator": "chr_0036_jsspsi",
-      "skill": "chr_0036_jsspsi_normal_skill_2",
-      "at": 48.46666666666667
-    },
-    {
-      "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_attack1",
-      "at": 49.63333333333333
-    },
-    {
-      "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_attack2",
-      "at": 49.96666666666667
-    },
-    {
-      "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_attack3",
-      "at": 50.36666666666667
-    },
-    {
-      "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_attack4",
-      "at": 51.1
+      "operator": "chr_0019_karin",
+      "skill": "chr_0019_karin_combo_skill",
+      "at": 41.1
     },
     {
       "operator": "chr_0021_whiten",
       "skill": "chr_0021_whiten_plunging_attack_end",
-      "at": 52.266666666666666
-    },
-    {
-      "operator": "chr_0032_lizhiyan",
-      "skill": "chr_0032_lizhiyan_ultimate_skill2",
-      "at": 52.266666666666666
+      "at": 43.166666666666664
     },
     {
       "operator": "chr_0019_karin",
       "skill": "chr_0019_karin_normal_skill",
+      "at": 43.166666666666664
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_normal_skill_2",
+      "at": 43.166666666666664
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "skill": "chr_0021_whiten_ultimate_skill",
+      "at": 44.3
+    },
+    {
+      "operator": "chr_0032_lizhiyan",
+      "skill": "chr_0032_lizhiyan_normal_skill",
+      "at": 44.9
+    },
+    {
+      "operator": "chr_0032_lizhiyan",
+      "skill": "chr_0032_lizhiyan_combo_skill",
+      "at": 45.4
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "skill": "chr_0021_whiten_attack1",
+      "at": 45.833333333333336
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_ultimate_skill",
+      "at": 45.833333333333336
+    },
+    {
+      "operator": "chr_0032_lizhiyan",
+      "skill": "chr_0032_lizhiyan_ultimate_skill",
+      "at": 45.833333333333336
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "skill": "chr_0021_whiten_attack2",
+      "at": 47.833333333333336
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "skill": "chr_0021_whiten_attack3",
+      "at": 48.233333333333334
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "skill": "chr_0021_whiten_attack4",
+      "at": 48.96666666666667
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "skill": "chr_0021_whiten_attack1",
+      "at": 50.13333333333333
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "skill": "chr_0021_whiten_attack2",
+      "at": 50.46666666666667
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "skill": "chr_0021_whiten_attack3",
+      "at": 50.86666666666667
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "skill": "chr_0021_whiten_attack4",
+      "at": 51.6
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "skill": "chr_0021_whiten_attack1",
+      "at": 52.766666666666666
+    },
+    {
+      "operator": "chr_0032_lizhiyan",
+      "skill": "chr_0032_lizhiyan_ultimate_skill2",
+      "at": 52.766666666666666
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_normal_skill",
       "at": 53.13333333333333
     },
     {
@@ -672,23 +657,43 @@
     },
     {
       "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_plunging_attack_end",
-      "at": 55.3
+      "skill": "chr_0021_whiten_attack2",
+      "at": 54.86666666666667
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "skill": "chr_0021_whiten_combo_skill",
+      "at": 55.06666666666667
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "skill": "chr_0021_whiten_attack3",
+      "at": 56.166666666666664
+    },
+    {
+      "operator": "chr_0021_whiten",
+      "skill": "chr_0021_whiten_attack4",
+      "at": 57.1
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_normal_skill_1",
+      "at": 57.1
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_normal_skill_2",
+      "at": 57.833333333333336
     },
     {
       "operator": "chr_0021_whiten",
       "skill": "chr_0021_whiten_plunging_attack_end",
-      "at": 56.53333333333333
+      "at": 58.63333333333333
     },
     {
       "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_plunging_attack_end",
-      "at": 57.766666666666666
-    },
-    {
-      "operator": "chr_0021_whiten",
-      "skill": "chr_0021_whiten_plunging_attack_end",
-      "at": 59
+      "skill": "chr_0021_whiten_attack1",
+      "at": 59.766666666666666
     }
   ]
 }

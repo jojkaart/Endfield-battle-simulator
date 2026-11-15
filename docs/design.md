@@ -1313,35 +1313,136 @@ combo, 236,234 in 4.4 s) merges with Laevatain's, Si's and Wulfgard's
 ultimates as setups and Wulfgard's battle skill and Ardelia's ultimate as
 fillers to 719,456.
 
-*Phase 3 (planned): backward-built setups in the search.* What phases 1
+*Phase 3: backward-built setups in the search* (2026-11-15). What phases 1
 and 2 showed: the payoffs that matter come in short chains (2–5 s) tied by
 combo windows and reactions, and their worth is mostly in what's around
 them (the owner's chain alone 315,557; with three ultimates as setups and
 two fillers 878,706); the forward beam drops these because a chain's first
 steps deal little (Akekuri's battle skill 9,133). The bound is far too
 loose to prune (below) and dominance fires a few times a search, so the
-gain has to come from *what the beam can see*, not from cutting it. Three
-parts, in order: (1) **chains as macro actions**: at a decision point
-where a chain's first step is among the choices, the whole chain (its
-steps at their earliest, as `playChain` plays them) is one more choice,
-its child in the bucket of its last step; the beam then ranks the state
-after the payoff, not after the setup, and the rotation stays a plain list
-of actions that `simulate` replays. Chains are probed from the planning
-fight's start, so a macro is offered only where it's legal and still tied
-(the window opens) from the node's own state. (2) **skeletons as guides**:
-a scheduler places the merged chains (setups, chain, fillers) on the
-fight's timeline by value per resource (SP at 8 a second plus what steps
-give back, each ultimate's cooldown and energy, combo cooldowns), repairs
-each skeleton with the loop's moved-later replay (`shifts`), and hands the
-K best to the search as guides (`SearchHooks.guide` for a list, each
-keeping a place in the beam) and as the incumbent for the bound. (3) **a
-setup-aware value**: a state's score adds, for each piece it holds (a
-bundle's buff or status still on, a combo window open) and each ready
-payoff whose ceiling bundle has it within its lead, the piece's worth ×
-the value weight: the probed counterpart of the resource value for what
-builds up outside the resources. Each part is measured as the others were
-(beams w/2, w, 2w on the owner's examples and Ink Melt; a part that
-doesn't move results both ways stays off).
+gain has to come from *what the beam can see*. Three parts and the share
+of the beam they live in, each an option of the search (`efsim search`:
+macros on by default, `--no-macros`; `--skeletons`; `--setup score|share`):
+
+1. **Chains as macro actions** (macros.ts; `SearchOptions.macros`). The
+   payoff table's chains (all of them: rank is for display) as a prefix
+   tree of their steps (`macroTree`). At a node where a chain's first step
+   is among the choices, `playMacros` plays the tree from the node's own
+   state (so the probes run from arbitrary search states, not the planning
+   fight's start): the first step at its choice's frame, each later one at
+   its earliest (`runStep`; a combo tied by `opens` waits up to its 6 s
+   window, which must have opened since the macro's first step, another
+   step 3 s), and offers a child at every node where a found chain ends
+   (two steps or more). Between steps of teammates the controlled operator
+   basic-attacks while that doesn't move the next step's start (judged once
+   for all of them: without it the controlled operator idled through every
+   macro, and Ink Melt over 40 s fell from 3,120,118 to 2,399,719 at beam
+   6). The child is the state after the last step, in that step's bucket:
+   the beam ranks the state after the payoff. Its rotation is the plain
+   actions, each with the frame it starts, which `simulate` replays
+   (tests/planning.test.ts). Not in a loop's rounds (their `stopAt` needs
+   every step). The macro hands back a copy of its last state: what the
+   tree's deeper steps advanced it to is memoised on the state object, and
+   a node holding it kept all of that alive (Ink Melt ran out of a 4.5 GB
+   heap).
+2. **The beam's extra share** (`prunePools`; `SearchOptions.extraBeam`,
+   default half the width). Offered in the main beam, macro children
+   crowded out the lines that set up later payoffs (Ink Melt over 40 s,
+   beam 6: 2,399,719 against 3,120,118 before the fill). So a node whose
+   rotation played a macro (or a skeleton's own action, or with
+   `setupShare` any node the main share dropped) is kept in a share of its
+   own, up to `extraBeam` more a layer; the main share is exactly the
+   search without them (its nodes, its pruning, only the narrower width's
+   guide keeping a place). With the same guide the search therefore finds
+   at least as much at the same width; across `searchBeams`' widths the
+   guide itself changes (the wider width is guided by what the narrower
+   one found with the share), so that isn't guaranteed there (skeletons on
+   Ink Melt, below). The share's children waiting in a later bucket are
+   cut to the best 4 × its width once they're twice that (a macro lands up
+   to seconds ahead; the main share's are never cut early).
+3. **Skeletons as guides** (skeleton.ts; `searchBeams` `skeletons`,
+   `SearchHooks.guides`, `incumbent`). Items: every chain and each
+   measured chain merged with its setups (before) and fillers (after the
+   chain step each follows). A skeleton is a greedy rollout from the
+   fight's start: at each decision every choice the search would have and
+   every item whose first step is one of them (played as a macro) is valued
+   by what it adds to the state's worth (committed damage plus the
+   resources at their probed prices × the value weight, so what a cast
+   spends is charged at the resources' price) per second it takes (to its
+   last step's start, plus half a second), and the best is played; the
+   i-th skeleton takes the i-th best option at the start (3 by default).
+   Played in the engine as it's built, each step as soon as it's legal
+   (waiting for its window, SP or energy), a skeleton is already repaired:
+   the loop's moved-later replay isn't needed. The guide becomes a list:
+   each guide keeps a place in the beam (the last places, in the guides'
+   order; one guide is exactly the old rule); where a skeleton's next
+   action isn't among a node's choices it's added to them (a skeleton waits
+   where the search's choices wouldn't); nodes that left the main share's
+   guide to follow a skeleton are in the extra share. The best skeleton's
+   damage is the bound's incumbent. The skeletons themselves are weak
+   (greedy: 60–80% of the search's results); what they add is the extra
+   share's lines along them.
+4. **A setup-aware value** (setupvalue.ts; `SearchOptions.setup`,
+   `setupWeight`, `setupShare`). From the ceilings: each damaging step's
+   bundle pieces and their worth (what the ceiling loses without each). A
+   state's score adds, for each piece it holds (a buff instance active, a
+   reaction or physical status, Vulnerable or Link stacks; a lower level or
+   fewer stacks in proportion), its worth to the best payoff that can still
+   be cast before the piece ends (cooldown, SP with regeneration, energy,
+   and its availability now), plus a combo's bare damage while its window
+   is open and it's off cooldown; × the value weight, tapering over the
+   last 10 s as the resources do. A piece counts once (the best payoff),
+   and a buff of the payoff's own operator doesn't count (its own sequence,
+   which the resource value prices through its casts in progress:
+   Laevatain's Twilight for her enhanced attacks): summed over every ready
+   payoff, the first version reached 357k at 2 s of Ink Melt's example
+   rotation (the resources' 81k) and sent the beam into early ultimates.
+   `setupShare`: the value ranks only the extra share.
+
+Measured (2026-11-15; 60 s, guided beams 12 / 24 / 48 as `efsim search`
+runs them; each cell the three widths' totals, then the run's seconds:
+table (payoff probes, and skeletons) + the three widths; four such jobs at
+a time on the 4-core machine, which other sessions shared, so times are
+comparable within a row only roughly):
+
+| example | without (as before) | macros (the default) | skeletons | setup value in the score |
+|---|---|---|---|---|
+| owner's team, full energy | 3.33M / 3.33M / 3,835,505; 1,722 s | **3,918,666 / 3,918,666 / 3,922,576**; 267 + 417 / 774 / 1,442 s | 3,527,197 / 3,616,937 / 3,725,740; 330 + 371 / 717 / 1,334 s | 3,215,303 / 3,242,469 / 3,309,886; 235 + 197 / 462 / 789 s |
+| owner's team, zero energy | 2.50M / 2.53M / 3,226,208; 1,596 s | **2,502,659 / 2,581,516 / 3,394,218**; 281 + 350 / 662 / 1,081 s | 2,502,659 / 2,758,499 / 3,397,119; 272 + 277 / 506 / 836 s | 1,829,952 / 2,137,125 / 2,137,953; 223 + 180 / 361 / 589 s |
+| Ink Melt, full energy | 3,496,392 / 3,504,192 / 4,411,886; 137 / 274 / 590 s | **4,479,156 / 4,620,703 / 4,689,365**; 11 + 522 / 998 / 2,313 s | 3,496,392 / 3,610,514 / 3,661,634; 32 + 208 / 472 / 908 s | 3,644,528 / 4,013,440 / 4,013,440; 13 + 147 / 349 / 605 s |
+| Ink Melt, zero energy | 1,796,863 / 2,993,557 / 3,841,514; 100 / 262 / 529 s | **1,820,477 / 4,320,354 / 4,601,305**; 23 + 630 / 1,014 / 1,670 s | 2,540,005 / 3,729,608 / 3,909,985; 31 + 165 / 309 / 885 s | 3,001,627 / 3,001,627 / 3,160,093; 18 + 128 / 272 / 571 s |
+
+The owner's team is Arcane in WILL mode (her accessories' Intellect
+artifice at 0: Intellect 472.44, Will 473.50, the owner's build); its
+"without" column is the plain `efsim search --beam 24` that searched its
+example rotations (commit 30850ad, another job mix; the narrower widths'
+totals as rounded there). Before the build
+was corrected the same parts were measured on the INT build (full
+artifice) and on a WILL variant (the accessories' WILL version), with the
+same pattern: macros better at every width (INT full energy 3,286,029 →
+3,430,236, from zero 2,973,678 → 3,010,131; the WILL variant 3,356,828 →
+3,504,173), the setup value better on the WILL variant (3,697,570) and
+worse from zero (2,903,988), skeletons best on the WILL variant
+(3,755,026, playing the owner's chain with Si's battle skill twice).
+
+**Decisions.** Macros found more at every width on every example. At
+equal run time they win with full energy (their w/2 alone, table
+included, beats the search without them at 2w: 3.92M in 684 s against
+3.84M in 1,722 s; 4.48M in 533 s against 4.41M in 1,001 s) but lose from
+zero energy, where the search without them reaches its best only at 2w
+and macros have by then finished w/2 and w (the owner's team 2.58M
+against 3.23M; Ink Melt 1.82M against 3.84M). They are `efsim search`'s default
+(`--no-macros` for the search before; the engine's `SearchOptions.macros`
+stays opt-in, so the pinned tests and loops are unchanged). The cost is
+1.6–3.8× the time a width (the extra half-beam of nodes, and the macros
+played at each node: on Ink Melt 145 ms a state against 57). Skeletons
+and the setup value stay opt-in: each made examples worse (skeletons both
+full-energy fights, Ink Melt 3.66M against 4.41M and the owner's team
+3.73M against 3.84M: the wider widths' guide changes with the share,
+above; from zero they found the owner's team's best, 3,397,119; the setup value in the score Ink Melt both energies and the
+owner's team both energies, from zero by a third: it still overvalues
+holding a piece over casting). The setup value's share variant
+(`setupShare`) is implemented and tested but wasn't measured at 60 s.
 
 ### Pruning the search
 

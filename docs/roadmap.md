@@ -8,10 +8,15 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
 
 ## Next steps
 
-- **First (2026-11-15):** planning from the payoffs, phase 3 (journal
-  2026-11-15, design.md "Payoffs and chains"): chains as macro actions in
-  the search, scheduled skeletons as several guides, a setup-aware value;
-  search the owner's opener and loop again with Arcane in WILL mode
+- **First (2026-11-15):** after phase 3 (journal 2026-11-15, design.md
+  "Payoffs and chains": macros are `efsim search`'s default, skeletons and
+  the setup value opt-in): make macros cheaper (the macros played at every
+  node: 145 ms a state against 57 on Ink Melt; from zero energy they lose
+  at equal run time), the setup value without its overvaluing of held
+  pieces (worse on both teams; its extra-share variant `--setup share`
+  unmeasured at 60 s), skeletons that aren't greedy (a schedule over the
+  fight with slack, the merges' setups placed by their leads), macros in
+  the loop's rounds; search the owner's opener and loop again with Arcane in WILL mode
   (docs/teams/rotations/ are still the INT build's); simulate Ink Melt (EndfieldHub's top team)
   next to the owner's team under the same assumptions; the buff timing
   report's leads (`efsim zmdlogs timing`, done 2026-11-15; open-problems

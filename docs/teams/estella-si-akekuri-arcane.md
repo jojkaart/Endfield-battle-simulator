@@ -16,20 +16,28 @@ from zero).
 ## Results (2026-11-15; lower bounds)
 
 - Against Rhodagn Lv90, 60 s, full ultimate energy at the start:
-  **3,835,505** (63,996 DPS; Si 47.3%, Estella 31.8%, Akekuri 10.5%,
-  Arcane 10.4%); beams 12/24/48 gave 3.33 / 3.33 / 3.84M (spread 13.1%).
-  Ultimates: all four at 0 s, Arcane's second 10.8 s, Estella, Si and
-  Arcane again at 45.3 s, Arcane's second 52.3 s. Crits: sd 51,071
-  (1.3%), 5–95% ≈ 3.77–3.94M.
+  **3,922,576** (65,413 DPS; Si 48.6%, Estella 33.7%, Arcane 10.6%,
+  Akekuri 7.1%), from `efsim search` with macros (phase 3: the payoff
+  table's chains as one choice each; beams 12/24/48 gave 3.92 / 3.92 /
+  3.92M; without macros 3.33 / 3.33 / 3,835,505, spread 13.1%).
+  Ultimates: all four at 0 s, Arcane's second 10.8 s, Estella 44.3 s, Si
+  and Arcane 45.8 s, Arcane's second 52.8 s. It plays the owner's chain
+  with Si's battle skill as the Cryo at 43.2 s (Akekuri's battle skill →
+  Arcane's combo → Si's battle skill → Si's and Estella's combos). Crits:
+  sd 49,832 (1.3%), 5–95% ≈ 3.86–4.02M.
 - From zero ultimate energy (the harder fights;
   [examples/estella-si-akekuri-arcane-zero.scenario.json](../../examples/estella-si-akekuri-arcane-zero.scenario.json)):
-  **3,226,208** (53,860 DPS; Si 44.3%, Estella 40.3%, Arcane 8.6%, Akekuri
-  6.8%); beams 2.50 / 2.53 / 3.23M (spread 22.4%). Ultimates: Arcane
-  26.5 s, Estella and Arcane's second 34.6 s, Akekuri and Si 50.0 s. It
-  opens with the owner's chain, Si's battle skill as the Cryo: Akekuri's
-  battle skill, Si's battle skill, Arcane's combo, then Si's and Estella's
-  combos at 1.33 s. Crits: sd 42,927 (1.3%), 5–95% ≈ 3.17–3.31M.
-- Both searches' spreads are wide: wider beams may find more.
+  **3,394,218** (56,665 DPS; Estella 44.1%, Si 40.6%, Akekuri 8.1%, Arcane
+  7.2%), with macros (beams 2.50 / 2.58 / 3.39M; without them 2.50 / 2.53
+  / 3,226,208, spread 22.4%). Ultimates: Arcane 24.9 s, Estella and
+  Arcane's second 35.6 s, Si 50.9 s, Akekuri 55.4 s. It opens with the
+  owner's chain, Si's battle skill as the Cryo (Akekuri's battle skill
+  0.4 s, Si's 1.0 s, Arcane's combo 1.1 s, Si's and Estella's combos),
+  and plays it again at 42.3 s. Crits: sd 46,431 (1.4%), 5–95% ≈
+  3.33–3.49M.
+- Both searches' spreads are wide (the widths' totals still rise 2w over
+  w): wider beams may find more. Neither plays the chain with Estella's
+  battle skill as the Cryo.
 - Complete rotations (opener and loop, `efsim search --loop --sync`,
   docs/design.md "Opener and loop", 2026-11-14) in [rotations/](rotations/)
   are still from the INT build (full energy: an 84.9 s loop at 41,056 DPS

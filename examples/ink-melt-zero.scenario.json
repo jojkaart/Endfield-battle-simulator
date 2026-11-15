@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/scenario.schema.json",
-  "description": "Ink Melt (2026-11-15): Laevatain P0 (Forgeborn Scathe 9/9/4; Hot Work body/hand/accessory + one LYNX accessory), Si P0 (Jade Vessel 9/9/4; Type 50 Yinglung armor/gloves/beacon + one LYNX accessory), Wulfgard P0 (Rational Farewell 9/9/4; four Hot Work pieces), Ardelia P0 (Dreams of the Starry Beach 9/9/4; Hot Work body/hand/accessory + one LYNX accessory): each operator's most common loadout in the imported logs (base versions, full artifice, skills 12, weapons level 90). EndfieldHub's top-rated team, simulated under the owner's team's assumptions vs Rhodagn Lv90, 60 s, no ultimate energy at the start. Rotation: efsim search (beams 24/48/96 spread 53.6%, beam 96 best; the search is far from converged for this team, a lower bound).",
+  "description": "Ink Melt (2026-11-15): Laevatain P0 (Forgeborn Scathe 9/9/4; Hot Work body/hand/accessory + one LYNX accessory), Si P0 (Jade Vessel 9/9/4; Type 50 Yinglung armor/gloves/beacon + one LYNX accessory), Wulfgard P0 (Rational Farewell 9/9/4; four Hot Work pieces), Ardelia P0 (Dreams of the Starry Beach 9/9/4; Hot Work body/hand/accessory + one LYNX accessory): each operator's most common loadout in the imported logs (base versions, full artifice, skills 12, weapons level 90). EndfieldHub's top-rated team, simulated under the owner's team's assumptions vs Rhodagn Lv90, 60 s, no ultimate energy at the start. Rotation: efsim search with macros (the payoff table's chains as one choice each, phase 3; beams 12/24/48: 1,820,477 / 4,320,354 / 4,601,305, beam 48 best; without them 3,841,514 at 12/24/48 and 3,892,412 at 24/48/96: the search is far from converged for this team, a lower bound).",
   "team": [
     {
       "operator": "chr_0016_laevat",
@@ -246,34 +246,34 @@
       "at": 0.3333333333333333
     },
     {
-      "operator": "chr_0006_wolfgd",
-      "skill": "chr_0006_wolfgd_normal_skill",
-      "at": 0.3333333333333333
-    },
-    {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack3",
       "at": 0.8666666666666667
     },
     {
-      "operator": "chr_0006_wolfgd",
-      "skill": "chr_0006_wolfgd_combo_skill",
-      "at": 1.1
-    },
-    {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack4",
-      "at": 1.6666666666666667
+      "at": 1.2666666666666666
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack5",
-      "at": 2.4
+      "at": 2
+    },
+    {
+      "operator": "chr_0006_wolfgd",
+      "skill": "chr_0006_wolfgd_normal_skill",
+      "at": 2
+    },
+    {
+      "operator": "chr_0006_wolfgd",
+      "skill": "chr_0006_wolfgd_combo_skill",
+      "at": 2.7666666666666666
     },
     {
       "operator": "chr_0036_jsspsi",
       "skill": "chr_0036_jsspsi_normal_skill_1",
-      "at": 2.7333333333333334
+      "at": 2.9
     },
     {
       "operator": "chr_0036_jsspsi",
@@ -343,377 +343,412 @@
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_normal_skill",
-      "at": 10.733333333333333
+      "at": 10.9
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack5",
-      "at": 12.466666666666667
+      "at": 12.633333333333333
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack1",
-      "at": 13.333333333333334
+      "at": 13.5
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack2",
-      "at": 13.6
+      "at": 13.766666666666667
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack3",
-      "at": 14
+      "at": 14.166666666666666
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack4",
-      "at": 14.3
+      "at": 14.466666666666667
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack5",
-      "at": 14.866666666666667
+      "at": 15.033333333333333
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_plunging_attack_end",
-      "at": 16.266666666666666
+      "at": 16.433333333333334
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_plunging_attack_end",
+      "at": 17.6
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack1",
-      "at": 17.433333333333334
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack2",
-      "at": 17.766666666666666
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack3",
-      "at": 18.3
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack4",
-      "at": 18.7
+      "at": 18.766666666666666
     },
     {
       "operator": "chr_0036_jsspsi",
       "skill": "chr_0036_jsspsi_normal_skill",
-      "at": 18.733333333333334
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack5",
-      "at": 19.433333333333334
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_plunging_attack_end",
-      "at": 20.833333333333332
-    },
-    {
-      "operator": "chr_0036_jsspsi",
-      "skill": "chr_0036_jsspsi_combo_skill",
-      "at": 20.833333333333332
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack1",
-      "at": 22.533333333333335
+      "at": 18.9
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack2",
-      "at": 22.866666666666667
+      "at": 19.1
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack3",
-      "at": 23.4
+      "at": 19.633333333333333
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack4",
-      "at": 23.8
+      "at": 20.033333333333335
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_attack5",
+      "at": 20.766666666666666
     },
     {
       "operator": "chr_0036_jsspsi",
       "skill": "chr_0036_jsspsi_normal_skill_1",
-      "at": 23.8
+      "at": 21.266666666666666
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_combo_skill",
+      "at": 21.633333333333333
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_attack1",
+      "at": 22.433333333333334
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_attack2",
+      "at": 22.766666666666666
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_attack3",
+      "at": 23.3
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_attack4",
+      "at": 23.7
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack5",
-      "at": 24.533333333333335
+      "at": 24.433333333333334
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_plunging_attack_end",
-      "at": 25.933333333333334
+      "skill": "chr_0016_laevat_attack1",
+      "at": 25.566666666666666
     },
     {
       "operator": "chr_0025_ardelia",
       "skill": "chr_0025_ardelia_combo_skill",
-      "at": 25.933333333333334
+      "at": 25.566666666666666
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack1",
-      "at": 27.633333333333333
+      "skill": "chr_0016_laevat_attack2",
+      "at": 26.433333333333334
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_attack3",
+      "at": 26.966666666666665
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_attack4",
+      "at": 27.366666666666667
     },
     {
       "operator": "chr_0036_jsspsi",
       "skill": "chr_0036_jsspsi_normal_skill_2",
-      "at": 27.633333333333333
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack2",
-      "at": 27.966666666666665
+      "at": 27.366666666666667
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_combo_skill",
-      "at": 28.4
+      "at": 27.966666666666665
     },
     {
       "operator": "chr_0025_ardelia",
       "skill": "chr_0025_ardelia_normal_skill",
-      "at": 29.1
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack3",
-      "at": 29.866666666666667
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack4",
-      "at": 30.166666666666668
+      "at": 29.266666666666666
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack5",
-      "at": 30.733333333333334
+      "at": 29.433333333333334
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack1",
-      "at": 31.6
+      "at": 30.3
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack2",
-      "at": 31.866666666666667
+      "at": 30.566666666666666
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack3",
-      "at": 32.266666666666666
+      "at": 30.966666666666665
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack4",
-      "at": 32.56666666666667
+      "at": 31.266666666666666
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack5",
-      "at": 33.13333333333333
+      "at": 31.833333333333332
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_plunging_attack_end",
-      "at": 34.2
+      "skill": "chr_0016_laevat_attack1",
+      "at": 32.7
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_plunging_attack_end",
-      "at": 35.36666666666667
+      "skill": "chr_0016_laevat_attack2",
+      "at": 32.96666666666667
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_plunging_attack_end",
-      "at": 36.53333333333333
+      "skill": "chr_0016_laevat_attack3",
+      "at": 33.36666666666667
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_attack4",
+      "at": 33.766666666666666
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_attack5",
+      "at": 34.5
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_attack1",
+      "at": 35.63333333333333
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_attack2",
+      "at": 35.96666666666667
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_attack3",
+      "at": 36.5
     },
     {
       "operator": "chr_0036_jsspsi",
       "skill": "chr_0036_jsspsi_normal_skill",
+      "at": 36.5
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_attack4",
+      "at": 36.9
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_power_attack",
       "at": 37.1
     },
     {
       "operator": "chr_0006_wolfgd",
       "skill": "chr_0006_wolfgd_combo_skill",
-      "at": 37.6
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_power_attack",
-      "at": 38.1
+      "at": 37.1
     },
     {
       "operator": "chr_0036_jsspsi",
       "skill": "chr_0036_jsspsi_combo_skill",
-      "at": 38.266666666666666
+      "at": 37.666666666666664
     },
     {
       "operator": "chr_0025_ardelia",
       "skill": "chr_0025_ardelia_normal_skill",
-      "at": 38.266666666666666
+      "at": 37.666666666666664
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_attack5",
+      "at": 39.7
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack1",
-      "at": 40.3
+      "at": 40.833333333333336
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack2",
-      "at": 40.63333333333333
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack3",
       "at": 41.166666666666664
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack4",
-      "at": 41.56666666666667
+      "skill": "chr_0016_laevat_attack3",
+      "at": 41.7
     },
     {
-      "operator": "chr_0036_jsspsi",
-      "skill": "chr_0036_jsspsi_normal_skill_1",
-      "at": 41.56666666666667
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_attack4",
+      "at": 42.1
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_attack5",
-      "at": 42.3
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack1",
-      "at": 43.43333333333333
-    },
-    {
-      "operator": "chr_0036_jsspsi",
-      "skill": "chr_0036_jsspsi_normal_skill_2",
-      "at": 43.43333333333333
+      "at": 42.833333333333336
     },
     {
       "operator": "chr_0025_ardelia",
       "skill": "chr_0025_ardelia_combo_skill",
-      "at": 43.43333333333333
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack2",
-      "at": 44.3
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack3",
-      "at": 44.833333333333336
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack4",
-      "at": 45.13333333333333
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack5",
-      "at": 45.7
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_attack1",
-      "at": 46.56666666666667
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_combo_skill",
-      "at": 46.733333333333334
+      "at": 43.7
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_normal_skill",
-      "at": 47.96666666666667
+      "at": 43.7
     },
     {
       "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_ultimate_skill",
-      "at": 49.36666666666667
+      "skill": "chr_0016_laevat_combo_skill",
+      "at": 45.5
     },
     {
       "operator": "chr_0036_jsspsi",
       "skill": "chr_0036_jsspsi_ultimate_skill",
-      "at": 49.36666666666667
+      "at": 45.5
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ultimate_skill",
+      "at": 45.5
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_ult_attack1",
-      "at": 51.233333333333334
+      "at": 47.93333333333333
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_ult_attack2",
-      "at": 51.666666666666664
+      "at": 48.5
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_ult_attack3",
-      "at": 52.36666666666667
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_ult_attack1",
-      "at": 53.333333333333336
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_ult_attack2",
-      "at": 53.9
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_ult_attack3",
-      "at": 54.8
+      "at": 49.4
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_ult_attack4",
-      "at": 55.266666666666666
+      "at": 49.86666666666667
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_normal_skill_1",
+      "at": 49.86666666666667
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_normal_skill_2",
+      "at": 50.6
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_ult_attack1",
-      "at": 56.43333333333333
-    },
-    {
-      "operator": "chr_0036_jsspsi",
-      "skill": "chr_0036_jsspsi_combo_skill",
-      "at": 56.43333333333333
+      "at": 51.03333333333333
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_ult_attack2",
-      "at": 57.53333333333333
-    },
-    {
-      "operator": "chr_0016_laevat",
-      "skill": "chr_0016_laevat_normal_skill_during_ult",
-      "at": 58.233333333333334
+      "at": 51.46666666666667
     },
     {
       "operator": "chr_0016_laevat",
       "skill": "chr_0016_laevat_ult_attack3",
-      "at": 59.53333333333333
+      "at": 52.166666666666664
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack4",
+      "at": 52.53333333333333
+    },
+    {
+      "operator": "chr_0036_jsspsi",
+      "skill": "chr_0036_jsspsi_combo_skill",
+      "at": 53.2
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_normal_skill_during_ult",
+      "at": 53.2
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack1",
+      "at": 54.2
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack2",
+      "at": 54.63333333333333
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack3",
+      "at": 55.333333333333336
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack4",
+      "at": 55.7
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack1",
+      "at": 56.6
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack2",
+      "at": 57.166666666666664
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack3",
+      "at": 58.06666666666667
+    },
+    {
+      "operator": "chr_0016_laevat",
+      "skill": "chr_0016_laevat_ult_attack4",
+      "at": 58.53333333333333
+    },
+    {
+      "operator": "chr_0006_wolfgd",
+      "skill": "chr_0006_wolfgd_combo_skill",
+      "at": 58.53333333333333
     }
   ]
 }

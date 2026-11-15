@@ -29,22 +29,25 @@ whatever her battle skill does.
 
 | | Ink Melt | The owner's team |
 |---|---|---|
-| Full energy, 60 s | 4,411,886 (73,531 DPS) | 3,835,505 (63,996 DPS) |
-| From zero, 60 s | 3,892,412 (64,946 DPS) | 3,226,208 (53,860 DPS) |
+| Full energy, 60 s | 4,689,365 (78,156 DPS) | 3,922,576 (65,413 DPS) |
+| From zero, 60 s | 4,601,305 (76,688 DPS) | 3,394,218 (56,665 DPS) |
 
-- Shares, full energy: Laevatain 59.8%, Si 24.1%, Wulfgard 8.6%, Ardelia
-  7.4%. From zero: Laevatain 51.9%, Si 31.9%, Ardelia 9.5%, Wulfgard 6.7%.
+- Both from `efsim search` with macros (phase 3, 2026-11-15: the payoff
+  table's chains as one choice each; design.md "Payoffs and chains"), as
+  are the owner's team's.
+- Shares, full energy: Laevatain 58.1%, Si 26.0%, Wulfgard 9.0%, Ardelia
+  6.9%. From zero: Laevatain 55.9%, Si 29.3%, Ardelia 8.0%, Wulfgard 6.8%.
 - Ultimates, full energy: Si, Ardelia, Wulfgard at 0 s, Laevatain at
-  0.13 s and again at 49.3 s. From zero: Laevatain and Si at 49.4 s;
+  0.13 s and again at 48.6 s. From zero: Laevatain and Si at 45.5 s;
   Wulfgard's and Ardelia's don't come within 60 s.
-- Crit spread: full energy sd 49,363 (1.1%), 5–95% ≈ 4.34–4.50M; zero sd
-  46,587 (1.2%), 5–95% ≈ 3.83–3.98M.
+- Crit spread: full energy sd 51,650 (1.1%), 5–95% ≈ 4.61–4.78M; zero sd
+  50,995 (1.1%), 5–95% ≈ 4.53–4.70M.
 - **The search is far from converged for this team.** Full energy: beams
-  12/24/48 gave 3.50 / 3.50 / 4.41M (spread 20.8%), while an unguided
-  24/48/96 run found only 3.53M; zero: 24/48/96 gave 1.80 / 3.81 /
-  3.89M (53.6%), a guided 12/24/48 run 3.84M. The owner's team's
-  spreads were 1.6% and 8.8%. Both teams' numbers are lower bounds, Ink
-  Melt's looser.
+  12/24/48 gave 4.48 / 4.62 / 4.69M with macros, 3.50 / 3.50 / 4.41M
+  without (an unguided 24/48/96 run without them found only 3.53M);
+  zero: 1.82 / 4.32 / 4.60M with macros, 1.80 / 2.99 / 3.84M without
+  (24/48/96: 1.80 / 3.81 / 3.89M). Both teams' numbers are lower bounds,
+  Ink Melt's looser.
 
 ## Kit checks behind these numbers (2026-11-15)
 
