@@ -29,8 +29,8 @@ whatever her battle skill does.
 
 | | Ink Melt | The owner's team |
 |---|---|---|
-| Full energy, 60 s | 4,411,886 (73,531 DPS) | 3,286,029 (54,767 DPS) |
-| From zero, 60 s | 3,892,412 (64,946 DPS) | 3,008,031 (50,134 DPS) |
+| Full energy, 60 s | 4,411,886 (73,531 DPS) | 3,835,505 (63,996 DPS) |
+| From zero, 60 s | 3,892,412 (64,946 DPS) | 3,226,208 (53,860 DPS) |
 
 - Shares, full energy: Laevatain 59.8%, Si 24.1%, Wulfgard 8.6%, Ardelia
   7.4%. From zero: Laevatain 51.9%, Si 31.9%, Ardelia 9.5%, Wulfgard 6.7%.

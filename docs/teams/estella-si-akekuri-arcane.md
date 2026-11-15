@@ -4,43 +4,54 @@ The owner wants this team simulated as well as possible; it is the
 current priority. Example: [examples/estella-si-akekuri-arcane.scenario.json](../../examples/estella-si-akekuri-arcane.scenario.json)
 (the owner's builds, 2026-11-14: Estella P5, JET 9/9/5; Si P0, Jade Vessel
 9/9/4; Akekuri P5, Thermite Cutter 9/9/5; Arcane P0, Solemn Phalanx 9/9/4;
-the owner's gear pieces, base versions at full artifice and weapons at 90
-assumed). Against Rhodagn Lv90, 60 s, full ultimate energy at the start:
-3,286,029 (54,767 DPS; Estella 40.6%, Arcane 30.0%, Si 23.8%, Akekuri
-5.6%) with the search's value ranking (2026-11-14; 3,061,788 before);
-beams within 1.6%, a lower bound. Earlier figures (3.99M, 4.75M) used the
-example builds (a P5 Si). From zero ultimate energy (the harder fights;
-[examples/estella-si-akekuri-arcane-zero.scenario.json](../../examples/estella-si-akekuri-arcane-zero.scenario.json)):
-3,008,031 in 60 s (Estella 48.1%, Arcane 24.2%, Si 20.2%, Akekuri 7.6%;
-ultimates: Arcane 16.4 s, her second 33.2 s, Estella 46.2 s, Si and Akekuri
-50.3 s); beams spread 8.8%. Complete rotations, an opener and a loop
-that repeats between moments every ultimate is ready (`efsim search
---loop --sync`, docs/design.md "Opener and loop", 2026-11-14): full
-energy, an 84.9 s loop at 41,056 DPS after a 1,095.2 s opener; zero
-energy, an 81.1 s loop at 40,677 DPS after 255.7 s (beam 8: 84.3 s at
-41,862 after 941.9 s). Each replays with `efsim simulate`:
-[rotations/](rotations/) (the opener and 6 plays).
+the owner's gear pieces, base versions, weapons at 90 assumed). Artifice is
+assumed full except Arcane's accessories' Intellect lines: the owner tunes
+her to the most Intellect just below Will (2026-11-15), which with these
+pieces is Intellect 472.44 against Will 473.50, WILL mode (the loadout the
+owner copied in game: open-problems "Arcane's Array Arcana on a knife
+edge"). Until 2026-11-15 the example assumed full artifice, which put her
+INT 11 above WILL and played her INT (3,286,029 full energy, 3,008,031
+from zero).
+
+## Results (2026-11-15; lower bounds)
+
+- Against Rhodagn Lv90, 60 s, full ultimate energy at the start:
+  **3,835,505** (63,996 DPS; Si 47.3%, Estella 31.8%, Akekuri 10.5%,
+  Arcane 10.4%); beams 12/24/48 gave 3.33 / 3.33 / 3.84M (spread 13.1%).
+  Ultimates: all four at 0 s, Arcane's second 10.8 s, Estella, Si and
+  Arcane again at 45.3 s, Arcane's second 52.3 s. Crits: sd 51,071
+  (1.3%), 5–95% ≈ 3.77–3.94M.
+- From zero ultimate energy (the harder fights;
+  [examples/estella-si-akekuri-arcane-zero.scenario.json](../../examples/estella-si-akekuri-arcane-zero.scenario.json)):
+  **3,226,208** (53,860 DPS; Si 44.3%, Estella 40.3%, Arcane 8.6%, Akekuri
+  6.8%); beams 2.50 / 2.53 / 3.23M (spread 22.4%). Ultimates: Arcane
+  26.5 s, Estella and Arcane's second 34.6 s, Akekuri and Si 50.0 s. It
+  opens with the owner's chain, Si's battle skill as the Cryo: Akekuri's
+  battle skill, Si's battle skill, Arcane's combo, then Si's and Estella's
+  combos at 1.33 s. Crits: sd 42,927 (1.3%), 5–95% ≈ 3.17–3.31M.
+- Both searches' spreads are wide: wider beams may find more.
+- Complete rotations (opener and loop, `efsim search --loop --sync`,
+  docs/design.md "Opener and loop", 2026-11-14) in [rotations/](rotations/)
+  are still from the INT build (full energy: an 84.9 s loop at 41,056 DPS
+  after a 1,095.2 s opener; zero: 81.1 s at 40,677 DPS after 255.7 s; beam
+  8: 84.3 s at 41,862 after 941.9 s): to be searched again.
 
 ## Payoffs and chains (2026-11-15)
 
 `efsim payoffs` (docs/design.md "Payoffs and chains") finds the owner's
 basic rotation — Akekuri's battle skill (Heat) → Arcane's combo (adds
 Heat) → Estella's battle skill (Cryo: Solidification) → Estella's and Si's
-combos — at 315,557 in 2.5 s, and the same with Si's battle skill as the
-Cryo at 341,717 in 2.3 s (the best per second), **but only with Arcane in
-WILL mode**. The example's builds put her INT just above WILL (484.4
-against 473.5 at the fight's start: the Eternal Xiranite accessories
-`edc_03`), so the engine plays her INT: her combo then adds no infliction
-and opens only on a Nature reaction or two stacks of another element. This page calls
-the owner's build WILL (and the owner's in-game copy of 0206's loadout was
-Intellect 472, Will 473, WILL mode: open-problems "Arcane's Array Arcana
-on a knife edge"); the example's assumed full artifice puts INT 11 above
-WILL. To confirm with the owner which pieces
-and artifice levels she has; the chain test uses the accessories' WILL
-version (`edc_04`: INT 430, WILL 765). The example's rotation (INT) reaches
-40–77% of its big casts' ceilings and plays none of the five-step chains.
+combos — at 310,171 in 2.5 s (851,633 merged with ultimates as setups and
+Si's battle skill and Estella's ultimate as fillers), and the same with
+Si's battle skill as the Cryo at 335,897 in 2.3 s, the best per second of
+123 chains. Only in WILL mode: in INT mode her combo adds no infliction
+and opens only on a Nature reaction or two stacks of another element, so
+the chain doesn't exist. The rotations above play 13 (full energy) and 16
+(zero) of the chains; Si's best combo reaches 98% of its ceiling at 2.3 s
+(full) and later ones exceed it (her Artful Intent burst records the
+team's damage, which the ceiling misses).
 
-## Where the damage comes from (sonnet, 2026-11-14)
+## Where the damage comes from (sonnet, 2026-11-14; the INT build's rotation)
 
 Si 59.8%, Estella 25.6%, Arcane 9.5%, Akekuri 5.1%. Si's combo 25.6% and
 her Inksoul burst (Artful Intent's end) 14.9%; Shatter 4.5%, Si's

@@ -11,8 +11,8 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
 - **First (2026-11-15):** planning from the payoffs, phase 3 (journal
   2026-11-15, design.md "Payoffs and chains"): chains as macro actions in
   the search, scheduled skeletons as several guides, a setup-aware value;
-  ask the owner whether Arcane's accessories are the WILL version (the
-  example plays her INT: team page); simulate Ink Melt (EndfieldHub's top team)
+  search the owner's opener and loop again with Arcane in WILL mode
+  (docs/teams/rotations/ are still the INT build's); simulate Ink Melt (EndfieldHub's top team)
   next to the owner's team under the same assumptions; the buff timing
   report's leads (`efsim zmdlogs timing`, done 2026-11-15; open-problems
   "Buff timing leads": Yvonne's MI Security on unlogged crits in 5082,

@@ -1302,7 +1302,10 @@ Nature reaction or two stacks, so the chain doesn't exist there
 (tests/slow/payoffs-chains.test.ts checks a WILL variant, her accessories'
 WILL version). The example's rotation (INT) reaches 40–77% of its big
 casts' ceilings and plays none of the five-step chains (Arcane's battle
-skill → combo 4 times). Ink Melt's rotation: Laevatain's Twilight battle
+skill → combo 4 times). Settled the same day: the owner tunes her to the
+most Intellect just below Will (472.44 / 473.50 with these pieces, WILL);
+the examples and the test now use that build, and re-searched they gain
+16.7% and 7.3% (3,835,505 and 3,226,208; the team page). Ink Melt's rotation: Laevatain's Twilight battle
 skill 75%, Si's combos 96 / 88 / 63%, Laevatain's battle skills 59–77%;
 one chain played twice (Si's battle skill → Wulfgard's combo); its best
 chain (Si's battle skill → Laevatain's chain → Wulfgard's combo → Si's
