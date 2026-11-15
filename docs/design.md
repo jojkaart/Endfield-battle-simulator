@@ -1531,6 +1531,46 @@ noise, and the bound's table costs 14–16 s (Ink Melt) to 155 s (the
 owner's team) on top. Dominance and the bound stay off by default; what
 the beam needs is to see setups, not to cut more (phase 3, above).
 
+### Gear from the logs
+
+`efsim gear <scenario.json>` (packages/cli/src/gear.ts, 2026-11-15; the
+owner: different teams do best with different gear, so try every common
+setup). Until a real gear search exists, it picks each operator's gear
+from loadouts players actually run:
+
+- **Candidates** per operator: the scenario's own loadout; the distinct
+  loadouts (four piece IDs as logged) in the log fixtures (fixtures/,
+  pending/, multi-target/; hold-out logs are left out: they're only
+  measured), seen at least `--min-count` times (default 2), at most
+  `--top` (default 6), ordered by how many of the scenario's teammates
+  the log also has (the whole team first), then by count; and loadouts
+  from `--candidates file` (`{"candidates": [{operator, gear, source}]}`:
+  guide sites, screened logs not imported), each citing its source. One
+  loadout from several places is one candidate with every source.
+- **Score**: the scenario's rotation replayed with only that operator's
+  gear swapped (pieces at full artifice; the scenario's own loadout as
+  it is). Where the rotation can't be played with it (a cooldown, SP or
+  energy the gear changes makes an action impossible: EngineError), a
+  narrow search (`--search-beam`, default 12, no macros) gives its score instead,
+  compared with the current loadout's own narrow search, never with a
+  replay (a first version compared them directly: a beam-6 search's
+  rotation beat the beam-12 one it was compared with, and a loadout won
+  for the search's sake). Narrow searches are noisy (two beam-6 searches of
+  one team differed by 50% from zero energy), so a searched winner wants
+  a proper search of its own before it's trusted; taking a searched loadout takes its search's
+  rotation too. A replayed score favours the gear the rotation was
+  searched with, so a candidate's total is a lower bound for it.
+- **Coordinate ascent**: each pass takes every varied operator's best
+  candidate with the others fixed (ties keep the current one), until a
+  pass changes nothing (`--passes`, default 4). `--keep <operator>` holds
+  one fixed (the owner's Arcane); for an operator whose mode two
+  attributes decide (Arcane's Intellect / Will), the kept operator's
+  candidates are listed with the pair, to see which would change the mode.
+- **Output**: a table per operator (each candidate, sources, logs by
+  teammates, team total, against the chosen one); `--out` writes the
+  scenario with the chosen gear and the same rotation. A full search
+  with the chosen gear comes after (it may find a better rotation for it).
+
 ### Time
 
 Integer frames at **30 FPS**, the game's own timeline unit (verified across

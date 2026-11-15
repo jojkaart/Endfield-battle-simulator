@@ -233,7 +233,7 @@ export function searchCommand(
 }
 
 /** A scenario file's contents for a found rotation (efsim search --out). */
-function scenarioDoc(scenario: TimelineScenario, rotation: readonly RotationAction[], crit: CritMode, durationFrames: number, description: string): Record<string, unknown> {
+export function scenarioDoc(scenario: TimelineScenario, rotation: readonly RotationAction[], crit: CritMode, durationFrames: number, description: string): Record<string, unknown> {
   return {
     $schema: "../schemas/scenario.schema.json",
     description,

@@ -494,6 +494,47 @@
    "7a4e707fa710"
   ]
  },
+ "typhoeus-arcane-liino-perlica-zero.scenario.json": {
+  "total": 4989348.142,
+  "hits": 605,
+  "casts": 201,
+  "perOperator": {
+   "chr_0034_typhoea": 3797023.854,
+   "chr_0032_lizhiyan": 248934.11,
+   "chr_0035_liino": 331853.791,
+   "chr_0004_pelica": 611536.387
+  },
+  "digest": "847538695abc",
+  "windows": [
+   "b636155383d7",
+   "1f275a163953",
+   "5787c25baf34",
+   "b9635f6736b2",
+   "78b269e626c4",
+   "e0490208d58e",
+   "8ee8392c27dc"
+  ]
+ },
+ "typhoeus-arcane-liino-perlica.scenario.json": {
+  "total": 5757797.456,
+  "hits": 482,
+  "casts": 186,
+  "perOperator": {
+   "chr_0034_typhoea": 4301324.154,
+   "chr_0032_lizhiyan": 458692.507,
+   "chr_0035_liino": 284651.571,
+   "chr_0004_pelica": 713129.224
+  },
+  "digest": "c823392f9b2f",
+  "windows": [
+   "ef3bf54eb22d",
+   "d386bebe3871",
+   "91846bf657f9",
+   "8490e90c06fd",
+   "52ec8b915795",
+   "a3f7288d63c9"
+  ]
+ },
  "typhoeus-gilberta.scenario.json": {
   "total": 1116412.429,
   "hits": 174,

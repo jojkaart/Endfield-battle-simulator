@@ -1,5 +1,5 @@
 {
- "note": "Hold-out logs (docs/accuracy-plan.md, \"Choosing logs\"): only measured, never debugged. Drawn 2026-11-09 with random.seed(20261109), 6 of the 17 screened single-target logs, every favourite on both sides where it has two or more logs, before any of their checks was read. 2026-11-13: 2 of 6 more (logs with Ardelia's ultimate, screened the same way), random.seed(20261113), before any check was read. 2026-11-14: 1 of 4 more (Estella logs, the owner's team), random.seed(20261114), before any check was read. 2026-11-14: 2 Avywenna logs with JET (for the owner's Estella's weapon) added to development, no hold-out: both come from one account and team, so a hold-out of one wouldn't be independent of the other. 2026-11-15: 3 of 10 more (logs for Ink Melt: Laevatain, Si, Wulfgard, Ardelia; none has all four), random.seed(20261115), before any check was read.",
+ "note": "Hold-out logs (docs/accuracy-plan.md, \"Choosing logs\"): only measured, never debugged. Drawn 2026-11-09 with random.seed(20261109), 6 of the 17 screened single-target logs, every favourite on both sides where it has two or more logs, before any of their checks was read. 2026-11-13: 2 of 6 more (logs with Ardelia's ultimate, screened the same way), random.seed(20261113), before any check was read. 2026-11-14: 1 of 4 more (Estella logs, the owner's team), random.seed(20261114), before any check was read. 2026-11-14: 2 Avywenna logs with JET (for the owner's Estella's weapon) added to development, no hold-out: both come from one account and team, so a hold-out of one wouldn't be independent of the other. 2026-11-15: 3 of 10 more (logs for Ink Melt: Laevatain, Si, Wulfgard, Ardelia; none has all four), random.seed(20261115), before any check was read. 2026-11-15 (Typhoeus, Arcane, Liino, Perlica): 1 of 5 more (logs with three or four of the team; one has all four), random.seed(2026111503), before any check was read.",
  "holdout": [
   "zmdlogs-0ddbbdca1db5",
   "zmdlogs-0dfc9d76c84d",
@@ -12,7 +12,8 @@
   "zmdlogs-13b9974a0450",
   "zmdlogs-c421e6ed4a3b",
   "zmdlogs-04ac7e501201",
-  "zmdlogs-eb8f397da7ed"
+  "zmdlogs-eb8f397da7ed",
+  "zmdlogs-890bcadb4933"
  ],
  "development": [
   "zmdlogs-1cd1657bc305",
@@ -41,6 +42,10 @@
   "zmdlogs-c7790d76a4f0",
   "zmdlogs-c83c75d02a85",
   "zmdlogs-f8793bc8aea2",
-  "zmdlogs-f978430a083a"
+  "zmdlogs-f978430a083a",
+  "zmdlogs-9090afbacec9",
+  "zmdlogs-00ae0a364ad4",
+  "zmdlogs-fc63a2001251",
+  "zmdlogs-4d60e7fe92c2"
  ]
 }

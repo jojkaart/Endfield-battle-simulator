@@ -20,7 +20,7 @@ interface Candidate {
 }
 
 /** The pair of attributes a kit's mode condition compares (`attrAtLeast: [a, b]`), with the condition's ID. */
-function modePair(data: GameData, operator: string): { readonly id: string; readonly a: number; readonly b: number } {
+export function modePair(data: GameData, operator: string): { readonly id: string; readonly a: number; readonly b: number } {
   for (const [id, p] of Object.entries(data.kits.operators[operator]?.activeConditions ?? {}))
     if (typeof p === "object" && p !== null && "attrAtLeast" in p) {
       const [a, b] = (p as { readonly attrAtLeast: readonly [number, number] }).attrAtLeast;

@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 // efsim: Endfield battle simulator command line.
 
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadGameData } from "@efsim/data";
-import type { CritMode, TimelineScenario } from "@efsim/engine";
+import { FPS, type CritMode, type TimelineScenario } from "@efsim/engine";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "./commands.ts";
 import { kitDraft } from "./kitdraft.ts";
 import { formatRuns, formatSimulation, loopCommand, readScenario, searchCommand } from "./simulate.ts";
@@ -20,6 +20,7 @@ import { formatTrim, kitTrim } from "./kittrim.ts";
 import { knifeEdge, type EdgePool } from "./edge.ts";
 import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
 import { formatPayoffs, runPayoffs } from "./payoffs.ts";
+import { formatGear, gearAscent, gearCandidates, logFixtureFiles, type GearCandidatesFile } from "./gear.ts";
 
 const USAGE = `Usage:
   efsim find <text>                       Look up operator, weapon, gear and enemy IDs by name
@@ -71,6 +72,14 @@ const USAGE = `Usage:
                                           rotation, how close its casts came to their ceilings
                 [--top n] [--json]        Rows printed per table (default 15; data is never cut); everything as JSON
                 [--depth n]               Longest chain (default 6)
+  efsim gear <scenario.json>              Each operator's gear from the loadouts seen in the logs (fixtures; hold-outs left out), scored
+                                          on the scenario's rotation with only that operator's gear swapped (full artifice), best
+                                          per operator with the others fixed until nothing changes; a table per operator
+                [--candidates file]       More loadouts to try: {"candidates": [{"operator", "gear": [4 ids], "source"}]}
+                [--keep <operator>]       Don't vary this operator (repeatable); its candidates' mode attributes are shown
+                [--min-count n] [--top n] Log loadouts seen at least n times (default 2), at most n per operator (default 6)
+                [--search-beam n]         Where the rotation can't be played with a loadout: a narrow search at beam n (default 12)
+                [--passes n] [--out file] Passes at most (default 4); save the scenario with the chosen gear (its rotation kept)
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
                                           (fixtures/multi-target/ when it hit several enemies)
                 [--enemy-level n]         (default: the stage's, else inferred from total damage on a clear)
@@ -166,6 +175,11 @@ async function main(argv: string[]): Promise<number> {
       skeletons: { type: "boolean", default: false },
       setup: { type: "string" },
       depth: { type: "string" },
+      candidates: { type: "string" },
+      keep: { type: "string", multiple: true, default: [] },
+      "min-count": { type: "string" },
+      "search-beam": { type: "string" },
+      passes: { type: "string" },
       help: { type: "boolean", short: "h", default: false },
     },
   });
@@ -340,6 +354,33 @@ async function main(argv: string[]): Promise<number> {
         text = values.json ? JSON.stringify(run, (_k, v: unknown) => (typeof v === "number" && !Number.isFinite(v) ? String(v) : v), 2) : formatPayoffs(data(), run, values.top === undefined ? 15 : Number(values.top));
       }
       break;
+    case "gear":
+      need(1);
+      {
+        const whole = (v: string | undefined, name: string, min: number) => {
+          if (v === undefined) return undefined;
+          const n = Number(v);
+          if (!(Number.isInteger(n) && n >= min)) throw new Error(`--${name} must be a whole number ≥ ${min}`);
+          return n;
+        };
+        const scenario = readScenario(args[0] as string);
+        const extra = values.candidates ? (JSON.parse(readFileSync(values.candidates, "utf8")) as GearCandidatesFile) : undefined;
+        if (extra && !Array.isArray(extra.candidates)) throw new Error(`${values.candidates}: a candidates file has "candidates": [{ "operator", "gear", "source" }]`);
+        const keep = new Set(values.keep);
+        for (const k of keep) if (!scenario.team.some((b) => b.operator === k)) throw new Error(`--keep ${k}: not in the scenario's team`);
+        const minCount = whole(values["min-count"], "min-count", 1);
+        const top = whole(values.top, "top", 0);
+        const candidates = gearCandidates(data(), scenario, { files: logFixtureFiles(ROOT), ...(extra ? { extra } : {}), ...(minCount !== undefined ? { minCount } : {}), ...(top !== undefined ? { top } : {}) });
+        const beam = whole(values["search-beam"], "search-beam", 1);
+        const passes = whole(values.passes, "passes", 1);
+        const r = gearAscent(data(), scenario, candidates, { keep, ...(beam !== undefined ? { beam } : {}), ...(passes !== undefined ? { passes } : {}), progress: (line) => process.stderr.write(line + "\n") });
+        text = formatGear(data(), scenario, r);
+        if (values.out) {
+          writeGearScenario(args[0] as string, values.out, r.team, r.rotationReplaced ? r.rotation : undefined);
+          text += `\n\nWrote ${values.out} (the chosen gear, ${r.rotationReplaced ? "the narrow search's rotation" : "the rotation as it was"}).`;
+        }
+      }
+      break;
     case "kit-census":
       text = formatCensus(kitCensus());
       break;
@@ -388,6 +429,18 @@ main(process.argv.slice(2)).then(
     process.exitCode = 1;
   },
 );
+
+/** A scenario file with its team's gear replaced (efsim gear --out): everything else as it was. */
+function writeGearScenario(from: string, to: string, team: readonly { readonly operator: string; readonly gear: readonly unknown[] }[], rotation?: TimelineScenario["rotation"]): void {
+  const doc = JSON.parse(readFileSync(from, "utf8")) as { team: ({ operator: string; gear: unknown[] } | string)[]; rotation: unknown[] };
+  if (rotation) doc.rotation = rotation.map((a) => ({ operator: a.operator, skill: a.skill, ...(a.at !== undefined ? { at: a.at / FPS } : {}) }));
+  doc.team = doc.team.map((t) => {
+    if (typeof t === "string") throw new Error(`${from}: --out needs the team's builds inline, not as files`);
+    const b = team.find((x) => x.operator === t.operator);
+    return b ? { ...t, gear: [...b.gear] } : t;
+  });
+  writeFileSync(to, JSON.stringify(doc, null, 2) + "\n");
+}
 
 /** --setup's mode. */
 function setupMode(v: string): "score" | "share" {

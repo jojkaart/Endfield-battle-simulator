@@ -926,7 +926,13 @@ instead: they shouldn't.
 shot 4) if you give no input, and her new kit does the same; until then
 the engine kept the floating shots, floating combo and P1's ATK +18% on
 after a short hover. Separately, her Signs and arrows may expire after
-24 s held.
+24 s held. 2026-11-15 (the Typhoeus, Arcane, Liino, Perlica team): logs
+9090 and 1cd1 keep her hover's ATK listed, and the damage fits it, 3–8 s
+past the point where the engine's idle hover ends after her last logged
+shot (open-problems "Typhoeus's hover outlasts her logged shots"): either
+the hover idles longer than the data says, or players fire shots that hit
+nothing. The first half below decides which; it moves her hovering
+combo and P1's ATK in that team's rotations.
 **How:** battle skill, one floating shot, then nothing: does she land about
 2 s after that shot? In a fight, hold Signs and arrows for 30 s without
 using them: do they drop at 24 s?
