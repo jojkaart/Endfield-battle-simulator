@@ -1309,6 +1309,10 @@ export function formatBuffReplay(data: GameData, r: LogBuffReplay, verdicts: rea
     out.push(`  casts the replay couldn't make: ${r.replay.failed.length}`);
     for (const f of r.replay.failed.slice(0, 5)) out.push(`    ${f.cast.operator} ${f.cast.skillId} at ${f.cast.start} ms: ${f.error}`);
   }
+  if (r.replay.missed.length) {
+    out.push(`  assumed: ${r.replay.missed.length} cast(s) that hit nothing (no log shows one), added where a logged cast needs them:`);
+    for (const m of r.replay.missed) out.push(`    ${name(m.operator)} ${m.skillId} at ${Math.round(m.start)} ms, before the logged ${m.need.skillId} at ${Math.round(m.need.start)} ms, which the kit allows only after it`);
+  }
   if (r.runs.length === 0) {
     out.push("  The replay and the log agree at every logged hit where the replay decides.");
     return out;

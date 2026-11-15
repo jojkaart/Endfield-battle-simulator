@@ -941,3 +941,37 @@ end steps: an idle hover end refreshes Arts Intensity and gives 4 Windform), 36 
 cooldown), 42 (idle end; Signs and arrows lifetime), 43 (off-field shots), 44 (teammate burst
 Signs), 45 (combo at hover end, not modelled), 46 (Hail of Arrows count), 47 (burst delay). The
 finisher and the dive attack have no logged hit.
+
+## Shots that hit nothing (2026-11-15)
+
+The owner, who plays her: holding attack while she hovers, she keeps shooting
+when the shots hit nothing, and ZMDLogs lists shots only as hits, so such a
+shot leaves no trace. What one does, from the data:
+
+- **Hunting Arrow: used at the cast.** floating_attack1–4 timeline action at
+  frame 1 (attack1: action 33; 2 and 3: 29; 4: 24): IfElse on arrow_num ≥ 1 →
+  FinishBuffAdvanced arrow_num (finishLayerCnt 1), enhence_arrow = 1, then the
+  LaunchProjectile (a `notarget` projectile when nothing is found). A shot that
+  hits nothing still uses its arrow (the kit's `requires.consume` without
+  `consumeAt: hit` already does it at the cast). floating_attack5's
+  FinishBuff is disabled, as before.
+- **On the hit only:** the Sign (arrow_energy_buffer_2), team energy
+  (ObtainCostAction), the Nature consumption and forced burst
+  (natural_triggered_typhoea), the damage and its Stagger (DamageAction's
+  poiseCalculation) are in floating_attack1_01_projhit (floating_attack5_01_projhit
+  for the 5th, with its SP: normal_attack5_atb_recovered), which runs when the
+  projectile hits. A missed shot gives none of them.
+- **What the cast does anyway:** its attempt index (abatk_step), its idle loop
+  (chain_N at frame 22/22/23, so the hover goes on: floating_end 27 frames
+  after the loop, landing 8 later) and the 5th shot's hover end.
+
+The log check's replay adds such shots (buffreplay.ts `missedCasts`, replayCast
+`missed`: the cast's own hits dropped) only before a logged shot the kit
+allows none of her shots for (her hover idled out, or the attempt index is
+short), when the log shows no shot of hers from the first frame another could
+start: the fewest (at most 4: the 5th ends the hover), each at the earliest
+frame that still keeps the hover to the logged one. Each is listed in the
+check's report as an assumption. Found: 9090afbacec9 (one at 58.7 s, before
+the shot at 60.6 s; her combo at 62.6 s is then the hovering one) and
+dbaee23b801d (3.8 s and 6.6 s; the second may instead be Liino's ultimate
+stop holding the hover, whose placement at 5.7 s the log doesn't settle).

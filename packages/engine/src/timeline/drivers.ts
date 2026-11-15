@@ -130,7 +130,11 @@ export function replayCast(ctx: TimelineContext, state: TimelineState, operator:
   const keepPrevious = afterCantCast(ctx, advanced, operator, frame) > frame ? true : opts.keepPrevious === true ? ("uncast" as const) : false;
   const r = castSkill(ctx, advanced, operator, skillId, frame, false, keepPrevious);
   let st = r.state;
-  if (opts.landings?.length) {
+  // A cast that hit nothing: its own hits never land, so nothing they do happens (damage, Stagger, SP, inflictions, the
+  // stacks and energy they give, the triggers on them); what the cast does as it starts still does (its costs, the stacks
+  // it uses up at the cast, its on-cast triggers and follow-ups).
+  if (opts.missed) st = { ...st, scheduled: st.scheduled.filter((h) => h.kind !== "hit" || !ofCast(h, operator, index) || h.trigger !== undefined || h.skillId !== skillId) };
+  else if (opts.landings?.length) {
     // The cast's own landings of each kit hit, in frame order: the n-th moves to its logged frame.
     const own = new Map<string, PendingHit[]>();
     for (const h of ofKind(st.scheduled, "hit")) if (ofCast(h, operator, index) && !h.trigger && h.skillId === skillId) own.set(h.hitId, [...(own.get(h.hitId) ?? []), h]);
@@ -167,6 +171,11 @@ export interface ReplayCastOptions {
   readonly landings?: readonly { readonly hitId: string; readonly nth: number; readonly frame: number; readonly ref?: string }[];
   /** A teammate's own basic attack (the log shows someone else controlled): the controlled operator stays. */
   readonly teammate?: boolean;
+  /**
+   * A cast that hit nothing (its hits aren't in the log, the enemy out of reach: the log check's inferred missed shots,
+   * cli buffreplay.ts missedCasts): its own hits are dropped as it's cast.
+   */
+  readonly missed?: boolean;
 }
 
 /** The count of the combo window a replayed combo would use at a frame (the state advanced to it), or null when none is open (replayCast then opens one, counting 1). */
