@@ -12,57 +12,50 @@ owner copied in game: open-problems "Arcane's Array Arcana on a knife
 edge"). Until 2026-11-15 the example assumed full artifice, which put her
 INT 11 above WILL and played her INT (3,286,029 full energy, 3,008,031
 from zero).
+Akekuri is in slot 1 (the owner, 2026-11-15): Si's battle skill inflicts
+Heat (the slot-1 operator's element) and Akekuri gets Si's combo cooldown
+cut. Estella is the controlled operator. Until 2026-11-15 the examples put
+Estella in slot 1, so Si's battle skill inflicted Cryo (3,922,576 full
+energy, 3,397,119 from zero, partly from chains the owner's team can't
+play).
 
 ## Results (2026-11-15; lower bounds)
 
 - Against Rhodagn Lv90, 60 s, full ultimate energy at the start:
-  **3,922,576** (65,413 DPS; Si 48.6%, Estella 33.7%, Arcane 10.6%,
-  Akekuri 7.1%), from `efsim search` with macros (phase 3: the payoff
-  table's chains as one choice each; beams 12/24/48 gave 3.92 / 3.92 /
-  3.92M; without macros 3.33 / 3.33 / 3,835,505, spread 13.1%).
-  Ultimates: all four at 0 s, Arcane's second 10.8 s, Estella 44.3 s, Si
-  and Arcane 45.8 s, Arcane's second 52.8 s. It plays the owner's chain
-  with Si's battle skill as the Cryo at 43.2 s (Akekuri's battle skill →
-  Arcane's combo → Si's battle skill → Si's and Estella's combos). Crits:
-  sd 49,832 (1.3%), 5–95% ≈ 3.86–4.02M.
+  **3,990,122** (66,502 DPS; Estella 43.3%, Si 42.1%, Arcane 7.9%,
+  Akekuri 6.7%), from `efsim search --no-macros --skeletons` (beams
+  12/24/48: 3.35 / 3.99 / 3.99M; with macros, the CLI's default, 3.44 /
+  3.44 / 3,486,730). Ultimates: all four at 1.1 s, Arcane's second 15.0 s,
+  Arcane 44.5 s, Estella 46.8 s, Si 49.2 s, Arcane's second 56.4 s.
+  Crits: sd 51,683 (1.3%), 5–95% ≈ 3.92–4.09M.
 - From zero ultimate energy (the harder fights;
   [examples/estella-si-akekuri-arcane-zero.scenario.json](../../examples/estella-si-akekuri-arcane-zero.scenario.json)):
-  **3,397,119** (56,682 DPS; Estella 46.8%, Si 37.6%, Akekuri 7.9%, Arcane
-  7.7%), with skeletons as guides (`--skeletons`; beams 2.50 / 2.76 /
-  3.40M; with macros, the default, 2.50 / 2.58 / 3,394,218; plain 2.50 /
-  2.53 / 3,226,208, spread 22.4%). Ultimates: Arcane 28.7 s, Estella 36.5
-  s, Arcane's second 44.1 s, Si 51.4 s, Akekuri 57.5 s. It opens with the
-  owner's chain, Si's battle skill as the Cryo (Akekuri's battle skill at
-  0 s, Arcane's combo 0.7 s, Si's battle skill 1.4 s, Si's and Estella's
-  combos); at 43–53 s it casts the owner's own steps in order (Akekuri's
-  battle skill 43.2 s, Arcane's combo 44.1 s, Estella's battle skill 50.9
-  s, her and Si's combos), but 6.8 s apart in the middle, so not as a tied
-  chain. Crits: sd 48,031 (1.4%), 5–95% ≈ 3.34–3.49M.
-- Both searches' spreads are wide (the widths' totals still rise 2w over
-  w): wider beams may find more. Neither plays the chain with Estella's
-  battle skill as the Cryo as a tied chain.
+  **3,263,818** (54,427 DPS; Si 47.6%, Estella 38.0%, Arcane 8.7%, Akekuri
+  5.7%), also with skeletons (beams 2.42 / 2.69 / 3.26M, spread 26.0%;
+  with macros 2.95 / 2.96 / 2,982,948). Ultimates: Arcane 27.7 s, Si and
+  Arcane's second 37.0 s, Estella 53.9 s, Akekuri 55.8 s. Crits: sd 45,268
+  (1.4%), 5–95% ≈ 3.21–3.36M.
+- With this team order macros settle early (spreads 1.2% / 1.1%) below the
+  skeletons' results: they don't win here as they did on Ink Melt.
 - Complete rotations (opener and loop, `efsim search --loop --sync`,
   docs/design.md "Opener and loop", 2026-11-14) in [rotations/](rotations/)
-  are still from the INT build (full energy: an 84.9 s loop at 41,056 DPS
-  after a 1,095.2 s opener; zero: 81.1 s at 40,677 DPS after 255.7 s; beam
-  8: 84.3 s at 41,862 after 941.9 s): to be searched again.
+  are still from the INT build and Estella in slot 1 (full energy: an
+  84.9 s loop at 41,056 DPS after a 1,095.2 s opener; zero: 81.1 s at
+  40,677 DPS after 255.7 s): to be searched again.
 
 ## Payoffs and chains (2026-11-15)
 
-`efsim payoffs` (docs/design.md "Payoffs and chains") finds the owner's
-basic rotation — Akekuri's battle skill (Heat) → Arcane's combo (adds
-Heat) → Estella's battle skill (Cryo: Solidification) → Estella's and Si's
-combos — at 310,171 in 2.5 s (851,633 merged with ultimates as setups and
-Si's battle skill and Estella's ultimate as fillers), and the same with
-Si's battle skill as the Cryo at 335,897 in 2.3 s, the best per second of
-123 chains. Only in WILL mode: in INT mode her combo adds no infliction
-and opens only on a Nature reaction or two stacks of another element, so
-the chain doesn't exist. The rotations above play 13 (full energy) and 16
-(zero) of the chains; Si's best combo reaches 98% of its ceiling at 2.3 s
-(full) and later ones exceed it (her Artful Intent burst records the
-team's damage, which the ceiling misses).
+`efsim payoffs` (docs/design.md "Payoffs and chains"), 122 chains. With
+Akekuri in slot 1 every top chain is the owner's basic rotation: a Heat
+battle skill (Si's or Akekuri's), Arcane's combo adding Heat, Estella's
+battle skill (Cryo: Solidification) opening Si's and Estella's combos.
+Best by damage: Si's battle skill → Arcane's combo → Estella's battle skill
+→ Si's and Estella's combos, 358,305 in 2.4 s (874,844 merged with
+ultimates as setups and fillers); from Akekuri's battle skill 311,663 in
+2.5 s. Only in WILL mode: in INT mode Arcane's combo adds no infliction
+and opens only on a Nature reaction or two stacks of another element.
 
-## Where the damage comes from (sonnet, 2026-11-14; the INT build's rotation)
+## Where the damage comes from (sonnet, 2026-11-14; the INT build with Estella in slot 1)
 
 Si 59.8%, Estella 25.6%, Arcane 9.5%, Akekuri 5.1%. Si's combo 25.6% and
 her Inksoul burst (Artful Intent's end) 14.9%; Shatter 4.5%, Si's

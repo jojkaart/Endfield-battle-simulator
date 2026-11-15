@@ -29,8 +29,8 @@ whatever her battle skill does.
 
 | | Ink Melt | The owner's team |
 |---|---|---|
-| Full energy, 60 s | 4,689,365 (78,156 DPS) | 3,922,576 (65,413 DPS) |
-| From zero, 60 s | 4,601,305 (76,688 DPS) | 3,397,119 (56,682 DPS) |
+| Full energy, 60 s | 4,689,365 (78,156 DPS) | 3,990,122 (66,502 DPS) |
+| From zero, 60 s | 4,601,305 (76,688 DPS) | 3,263,818 (54,427 DPS) |
 
 - Both from `efsim search` with macros (phase 3, 2026-11-15: the payoff
   table's chains as one choice each; design.md "Payoffs and chains"), as
