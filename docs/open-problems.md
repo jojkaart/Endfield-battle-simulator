@@ -1205,7 +1205,9 @@ From the kit check before simulating the team
   at 60.6 s whose arrows land after two ultimates' stops (63.7 s) and
   five more ABATK shots, i.e. the hovering combo (it keeps the hover).
   Ruled out: the loop's data (30 frames, CastSkill floating_end at 27,
-  no condition). Still possible: shots that hit nothing (unlogged) keep
+  no condition); an idle hover longer than the data (in-game test 42,
+  owner 2026-11-15: after letting go of attack she drops within about a
+  second, as the data's 0.9 s loop plus landing). Still possible: shots that hit nothing (unlogged) keep
   the hover going and the replay can't see them; a time stop or
   slow-down holding the loop (1cd1's candidate, not 9090's: no stop
   between 57.6 and 60.6 s); the replay placing the combo as the grounded

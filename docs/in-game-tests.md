@@ -920,7 +920,7 @@ next combo. The engine now follows the data; the old kit had it always on.
 her combo: its slashes should carry the bonus. Again, waiting 25 s
 instead: they shouldn't.
 
-### 42. Typhoeus's hover end and stack lifetime (ready, if you have Typhoeus)
+### 42. Typhoeus's hover end and stack lifetime (hover half answered 2026-11-15; stack half ready)
 
 **Why:** the data ends her hover about 1.9 s after shots 1–3 (1.5 s after
 shot 4) if you give no input, and her new kit does the same; until then
@@ -936,6 +936,14 @@ combo and P1's ATK in that team's rotations.
 **How:** battle skill, one floating shot, then nothing: does she land about
 2 s after that shot? In a fight, hold Signs and arrows for 30 s without
 using them: do they drop at 24 s?
+**Result (owner, 2026-11-15, hover half):** controlled, after her battle
+skill, letting go of the attack button: she drops "almost immediately, at
+most one second" later. That fits the data: the idle loop runs 27 frames
+(0.9 s) before floating_end starts her landing, whose frame 8 ends the
+hover. So the hover doesn't idle longer than the data says; no engine
+change. The logs' long hovers need another cause (open-problems
+"Typhoeus's hover outlasts her logged shots"). Still open: the Signs and
+arrows' 24 s lifetime.
 
 ### 43. Typhoeus's shots off-field (ready, if you have Typhoeus)
 

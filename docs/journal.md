@@ -5,6 +5,17 @@ their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 Older entries (2026-10-21 and earlier): [journal-archive.md](journal-archive.md).
 
+## 2026-11-15: In-game test 42, hover half: the idle hover matches the data
+
+The owner, controlling Typhoeus: after her battle skill, letting go of
+attack, she drops within about a second. The data's idle loop is 27
+frames (0.9 s) before her landing starts, so the kit is right and nothing
+changes. This rules out the first explanation for the logs' long hovers
+(9090, 1cd1); still possible: shots that hit nothing (not logged) keep the
+hover going, a time stop holding the loop, or the replay placing 9090's
+combo at 60.6 s as the grounded one (next check). Test 42's other half
+(Signs and arrows expiring after 24 s) is still open.
+
 ## 2026-11-15: Typhoeus, Arcane (WILL), Liino, Perlica simulated; `efsim gear`
 
 Goal (the owner): a third team next to Ink Melt and the owner's, same
