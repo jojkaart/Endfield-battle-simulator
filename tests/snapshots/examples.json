@@ -262,44 +262,44 @@
   ]
  },
  "ink-melt-zero.scenario.json": {
-  "total": 4601305.461,
+  "total": 4642408.983,
   "hits": 600,
   "casts": 236,
   "perOperator": {
    "chr_0016_laevat": 2571613.148,
-   "chr_0036_jsspsi": 1347785.835,
-   "chr_0006_wolfgd": 313365.669,
+   "chr_0036_jsspsi": 1350580.718,
+   "chr_0006_wolfgd": 351674.308,
    "chr_0025_ardelia": 368540.81
   },
-  "digest": "b9c07dec974c",
+  "digest": "8f4933dc1539",
   "windows": [
-   "96a9266bb7a2",
-   "8424db132d58",
-   "023f5ede939a",
-   "2055521d3ebc",
-   "c93226a5e90a",
-   "0238cf16359c",
-   "db26c278338e"
+   "bc88416752a9",
+   "f52be26c3ecd",
+   "e917d264ab13",
+   "a2c89a6cdc75",
+   "de20a68a9935",
+   "94b927a7d8d3",
+   "8e2412a29354"
   ]
  },
  "ink-melt.scenario.json": {
-  "total": 4689364.672,
+  "total": 4732088.191,
   "hits": 581,
   "casts": 207,
   "perOperator": {
    "chr_0016_laevat": 2724029.352,
-   "chr_0036_jsspsi": 1219074.671,
-   "chr_0006_wolfgd": 421711.915,
+   "chr_0036_jsspsi": 1222238.416,
+   "chr_0006_wolfgd": 461271.689,
    "chr_0025_ardelia": 324548.735
   },
-  "digest": "ac182851c6d8",
+  "digest": "01683e0aa11e",
   "windows": [
-   "0f326cc5d27c",
-   "0fdf2c32a710",
-   "5dccc140b5b4",
-   "d127a9757166",
-   "17d03c65a877",
-   "5ffdbeb77478",
+   "c5db5ea5dcf6",
+   "5cafbe30498a",
+   "dfe7c02ddb59",
+   "2b9eb60450c0",
+   "3ceddd219d5d",
+   "3eab8a4db2b8",
    "79c6ee64e4eb"
   ]
  },

@@ -231,15 +231,16 @@ shortfalls (1cd1 −9.1 → −13.8%, af7b −4.1 → −8.0%, dbae −2.0 → �
 
 | | Typhoeus, Arcane, Liino, Perlica | Ink Melt | The owner's team |
 |---|---|---|---|
-| Full energy, 60 s | **5,757,797** (96,933 DPS) | 4,689,365 (78,156 DPS) | 3,990,122 (66,502 DPS) |
-| From zero, 60 s | **4,989,348** (83,156 DPS) | 4,601,305 (76,688 DPS) | 3,263,818 (54,427 DPS) |
-| Carry's share (full) | Typhoeus 74.7% | Laevatain 58.1% | Estella 43.3% |
+| Full energy, 60 s | **5,757,797** (96,933 DPS) | 4,732,088 (78,868 DPS) | 3,990,122 (66,502 DPS) |
+| From zero, 60 s | **4,989,348** (83,156 DPS) | 4,642,409 (77,373 DPS) | 3,263,818 (54,427 DPS) |
+| Carry's share (full) | Typhoeus 74.7% | Laevatain 57.6% | Estella 43.3% |
 | Search spread of the kept run (full / zero) | 9.6% / 21.2% | 4.5% / 60.4% | 16.0% / 26.0% |
 
 All three under the same assumptions (Rhodagn Lv90, 60 s, expected
-crits; Ink Melt's and this team's builds from the logs; the owner's
-team the owner's), all lower bounds. This team leads by 23% with full
-energy and 8% from zero. Caveats: the search's spread is largest here;
+crits; Ink Melt's and this team's gear from `efsim gear`, Ink Melt's
+since 2026-11-15 with a Bonekrusha Wristband on Wulfgard; the owner's
+team the owner's), all lower bounds. This team leads by 22% with full
+energy and 7% from zero. Caveats: the search's spread is largest here;
 Typhoeus's hover is the one mechanic all of it leans on, and the logs
 show her hover lasting longer than the engine lets it (in-game test 42:
 if the game's idle hover is longer, this team gains; the engine's rule

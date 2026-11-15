@@ -68,6 +68,33 @@ describe("the ascent", () => {
   });
 });
 
+describe("a repaired replay", () => {
+  it("moves later or drops the steps a loadout can't play and scores the rest against the current loadout's replay", () => {
+    // The owner's team: with this Akekuri loadout Estella's finisher at 42.7 s comes before the enemy is Staggered (a few
+    // steps fail in all, where the default allows 20).
+    const scenario = readScenario(new URL("../examples/estella-si-akekuri-arcane.scenario.json", import.meta.url).pathname);
+    const akekuri = "chr_0019_karin";
+    const yinglung = [`${E}atk02_body_02`, `${E}atk02_hand_01`, `${E}atk02_edc_02`, `${E}atb01_edc_01`];
+    const swapped = scenario.team.map((b) => (b.operator === akekuri ? { ...b, gear: yinglung.map((id) => ({ id, artifice: [3, 3, 3] as const })) } : b));
+    expect(() => simulate(data, { ...scenario, team: swapped })).toThrow(/finisher/);
+    const c = gearCandidates(data, scenario, { files: [], extra: { candidates: [{ operator: akekuri, gear: yinglung, source: "site" }] } });
+    const keep = new Set(scenario.team.map((b) => b.operator).filter((op) => op !== akekuri));
+    const r = gearAscent(data, scenario, c, { keep, passes: 1 });
+    const row = (r.tables.get(akekuri) ?? []).find((x) => x.candidate.sources.some((s) => s.label === "site"));
+    expect(row?.how).toBe("repaired");
+    const changed = (row?.moved ?? 0) + (row?.dropped ?? 0);
+    expect(changed).toBeGreaterThanOrEqual(1);
+    expect(changed).toBeLessThanOrEqual(20);
+    expect(r.searched).toBe(0);
+    // Against the scenario's own replay; it loses here, so the rotation stays the scenario's.
+    expect(row?.gain).toBeCloseTo((row?.total ?? 0) / r.start, 12);
+    expect(row?.gain).toBeLessThan(1);
+    expect(r.rotationRepaired).toBe(0);
+    expect(r.rotation).toBe(scenario.rotation);
+    expect(formatGear(data, scenario, r)).toMatch(/\((\d+ steps? later)?(, )?(\d+ dropped)?\)/);
+  });
+});
+
 describe("describeGear", () => {
   it("groups pieces by set and counts duplicates", () => {
     expect(describeGear(data, [`${E}spellburst_body_01`, `${E}spellburst_hand_01`, `${E}spellburst_edc_01`, `${E}spellburst_edc_01`])).toBe("Deep Rampart: Armor, Gauntlets, Comms ×2");

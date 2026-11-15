@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/scenario.schema.json",
-  "description": "Ink Melt (2026-11-15): Laevatain P0 (Forgeborn Scathe 9/9/4; Hot Work body/hand/accessory + one LYNX accessory), Si P0 (Jade Vessel 9/9/4; Type 50 Yinglung armor/gloves/beacon + one LYNX accessory), Wulfgard P0 (Rational Farewell 9/9/4; four Hot Work pieces), Ardelia P0 (Dreams of the Starry Beach 9/9/4; Hot Work body/hand/accessory + one LYNX accessory): each operator's most common loadout in the imported logs (base versions, full artifice, skills 12, weapons level 90). EndfieldHub's top-rated team, simulated under the owner's team's assumptions vs Rhodagn Lv90, 60 s, no ultimate energy at the start. Rotation: efsim search with macros (the payoff table's chains as one choice each, phase 3; beams 12/24/48: 1,820,477 / 4,320,354 / 4,601,305, beam 48 best; without them 3,841,514 at 12/24/48 and 3,892,412 at 24/48/96: the search is far from converged for this team, a lower bound).",
+  "description": "Ink Melt (2026-11-15): Laevatain P0 (Forgeborn Scathe 9/9/4; Hot Work Exo-Rig, Gauntlets, Pyrometer + LYNX Slab), Si P0 (Jade Vessel 9/9/4; Type 50 Yinglung Soft Armor, Gloves, Beacon + LYNX Slab), Wulfgard P0 (Rational Farewell 9/9/4; Hot Work Exoskeleton, Power Bank ×2 + Bonekrusha Wristband), Ardelia P0 (Dreams of the Starry Beach 9/9/4; Hot Work Exo-Rig, Hands PPE, Insulation Slab + LYNX Slab): gear from efsim gear (the logs' loadouts and EndfieldHub's, scored on this rotation: docs/teams/ink-melt.md; base versions, full artifice, skills 12, weapons level 90). EndfieldHub's top-rated team, simulated under the owner's team's assumptions vs Rhodagn Lv90, 60 s, no ultimate energy at the start. Rotation: efsim search with macros (beams 12/24/48: 1,820,477 / 4,320,354 / 4,601,305 with Hot Work Gloves on Wulfgard), replayed with the new gear: 4,642,409, which the macros search with it found again (1,870,788 / 4,362,875 / 4,642,409): the search is far from converged for this team, a lower bound.",
   "team": [
     {
       "operator": "chr_0016_laevat",
@@ -142,7 +142,7 @@
           ]
         },
         {
-          "id": "item_equip_t4_suit_fire_natr01_hand_01",
+          "id": "item_equip_t4_suit_attri01_hand_01",
           "artifice": [
             3,
             3,

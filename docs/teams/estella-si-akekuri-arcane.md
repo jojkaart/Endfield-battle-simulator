@@ -43,6 +43,120 @@ play).
   84.9 s loop at 41,056 DPS after a 1,095.2 s opener; zero: 81.1 s at
   40,677 DPS after 255.7 s): to be searched again.
 
+## Gear recommendation (2026-11-15; the examples keep the owner's gear)
+
+`efsim gear` (docs/design.md "Gear from the logs") on both examples,
+Arcane kept (`--keep`: her build is tuned to Intellect 472.44 just below
+Will 473.50), Akekuri, Si and Estella varied: the loadouts seen at least
+twice in the log fixtures and guide-site loadouts (EndfieldHub, looked up
+by hand, facts only): the operator pages for
+[Si](https://endfieldhub.org/characters/si) (and the [Si build
+guide](https://endfieldhub.org/blog/best-si-build-arknights-endfield)),
+[Akekuri](https://endfieldhub.org/characters/akekuri) and
+[Estella](https://endfieldhub.org/characters/estella), and the
+per-operator variants of [Best Gear Sets by
+Operator](https://endfieldhub.org/database/gear-sets). None of them names
+a build for this team (the Si teams post lists a Si, Estella team without
+gear); Si's page says to take Type 50 Yinglung when a teammate holds
+Eternal Xiranite (here Arcane). Each loadout is scored by replaying the
+owner's rotation with only that operator's gear swapped, coordinate
+ascent until nothing changes.
+
+**Artifice:** the candidates are scored at full artifice; the owner's
+Akekuri, Si and Estella pieces are in the examples at full artifice too
+(their real artifice isn't recorded), so the tables compare gear choice
+only. What artifice adds on top isn't measured here.
+
+**The result: only Estella's gear would change, by 0.6–0.7%.** The
+logs' Type 50 Yinglung Heavy Armor, Gloves T1, Radar + LYNX Slab on
+Estella replays the owner's rotation at **4,019,037** (+0.7%) with full
+energy and **3,283,829** (+0.6%) from zero. Every guide-site loadout
+loses to the owner's, for all three. Tables (the last pass, with
+Estella's new loadout; against the chosen one; "later / dropped": steps
+of the owner's rotation that loadout couldn't play were started later or
+dropped, a lower bound):
+
+Akekuri (no log has her with two of the same loadout):
+
+| Loadout | Source | Full energy | From zero |
+|---|---|---|---|
+| **Frontiers Protection Suit, Blight RES Gloves, Extra O2 Tube; Redeemer Seal** | the owner's | 4,019,037 | 3,283,829 |
+| Frontiers Armor T3, Extra O2 Tube ×2; Eternal Xiranite Gloves | EndfieldHub Akekuri (short or multi-wave fights) | −0.4% | −8.1% (3 dropped) |
+| Frontiers Protection Suit, Extra O2 Tube ×2; Eternal Xiranite Gloves | EndfieldHub Akekuri (middle option) | −0.7% | −8.3% (3 dropped) |
+| Frontiers Protection Suit, Extra O2 Tube; Eternal Xiranite Gloves; Redeemer Seal | EndfieldHub Akekuri (main; no 3-piece set) | −7.9% | −6.1% |
+| Frontiers Armor T1, Fiber Gloves T1, Comm; Type 50 Yinglung Radar T1 | EndfieldHub gear sets (V1) | −8.4% (2 later, 1 dropped) | −11.0% (3 dropped) |
+| Type 50 Yinglung Heavy Armor T1, Gloves, Radar T1; Frontiers Comm | EndfieldHub gear sets (V2) | −12.9% (2 later, 2 dropped) | −13.5% (3 dropped) |
+| Eternal Xiranite Overalls, Hands, Bracing Slab T1; Æthertech Stabilizer | EndfieldHub gear sets (V4) | −15.2% (2 later, 1 dropped) | −15.4% |
+
+Si:
+
+| Loadout | Source | Logs (0/1/2/3 teammates) | Full energy | From zero |
+|---|---|---|---|---|
+| **Type 50 Yinglung Soft Armor, Beacon ×2; Rift Trekker Gloves** | the owner's; logs | 4 (0/4/0/0) | 4,019,037 | 3,283,829 |
+| Type 50 Yinglung Soft Armor, Gloves, Beacon; Redeemer Seal | logs | 11 (4/7/0/0) | −0.6% | −0.7% |
+| Type 50 Yinglung Soft Armor, Gloves, Beacon; LYNX Slab (the logs' most common) | logs | 15 (2/11/2/0) | −5.9% (2 later, 5 dropped) | −16.2% (3 later, 2 dropped) |
+| Type 50 Yinglung Soft Armor, Gloves, Beacon ×2 | logs | 3 (0/3/0/0) | −8.1% (2 later, 5 dropped) | −18.2% (3 later, 2 dropped) |
+| Type 50 Yinglung Soft Armor, Beacon ×2; Eternal Xiranite Channeling Gloves (the same lines as Yinglung's Gloves) | EndfieldHub Si page and build guide | | −8.1% (2 later, 5 dropped) | −18.2% (3 later, 2 dropped) |
+| AIC Fieldwork Plate, Hands, Ember; Eternal Xiranite Power Core | EndfieldHub Si page (Laevatain team) | | −12.0% | −15.4% |
+| Eternal Xiranite MOD Armor, Channeling Gloves, Rangefinder ×2 | EndfieldHub Si page (no teammate on Eternal Xiranite) | | −13.9% (2 later, 5 dropped) | −25.0% (3 later, 2 dropped) |
+
+Estella:
+
+| Loadout | Source | Logs | Full energy | From zero |
+|---|---|---|---|---|
+| **Type 50 Yinglung Heavy Armor, Gloves T1, Radar; LYNX Slab** | logs | 2 (0/0/2/0) | 4,019,037 | 3,283,829 |
+| Type 50 Yinglung Light Armor, Radar ×2; Æthertech Light Gloves | the owner's | | −0.7% | −0.6% |
+| Swordmancer Fiber Armor, TAC Gloves, Micro Filter; Hot Work Power Cartridge | EndfieldHub gear sets (V2) | | −2.7% | −2.1% |
+| Type 50 Yinglung Light Armor, Radar ×2; Swordmancer TAC Gauntlets | EndfieldHub Estella page (any team) | | −4.4% | −4.1% |
+| Eternal Xiranite Armor, Wraps, Auxiliary Arm; Hot Work Power Cartridge | EndfieldHub gear sets (V1) | | −12.9% | −15.2% |
+| Tide Fall Light Armor T1, Deepsink Gloves, Turbid Cutting Torch T1; Hot Work Power Cartridge | EndfieldHub gear sets (V3) | | −15.8% | −15.9% |
+| Type 50 Yinglung Light Armor; Eternal Xiranite Gloves T1, Auxiliary Arm ×2 | EndfieldHub Estella page (Solidification teams) | | −17.7% | −16.6% |
+
+**Searches with other gear** (`--no-macros --skeletons`, guided beams
+12 / 24 / 48, as the owner's examples were found; the owner's gear run
+again as the control and found the examples' rotations exactly):
+
+| Loadouts | Full energy | From zero |
+|---|---|---|
+| The owner's | 3,353,446 / **3,990,122** / 3,990,122 | 2,416,632 / 2,692,055 / **3,263,818** |
+| Estella on the logs' loadout | 3,332,619 / 3,336,389 / 3,394,287 | 2,701,839 / 2,701,839 / 2,979,077 |
+| … and Si on the site's (Channeling Gloves, Beacon ×2) | 3,473,999 / 3,495,605 / 3,591,971 | 2,570,776 / 2,570,776 / 2,629,722 |
+| … and Si on the logs' most common (Gloves, Beacon, LYNX Slab) | 3,599,060 / 3,599,060 / 3,686,748 | 2,505,458 / 2,875,337 / 2,875,337 |
+
+Every rotation found replayed with every loadout set (full energy /
+from zero; "–": Si's second ultimate lacks energy without the Rift
+Trekker Gloves' Ultimate Gain):
+
+| Rotation found with → | the owner's | Estella's | … + Si site's | … + Si logs' |
+|---|---|---|---|---|
+| the owner's gear | 3,990,122 / 3,263,818 | 3,360,158 / 2,943,962 | 3,488,715 / 2,541,142 | 3,463,218 / 2,707,945 |
+| Estella on the logs' loadout | **4,019,037 / 3,283,829** | 3,394,287 / 2,979,077 | 3,507,300 / 2,573,251 | 3,506,418 / 2,739,264 |
+| … + Si on the site's | – / – | – / – | 3,591,971 / 2,629,722 | 3,590,961 / 2,818,909 |
+| … + Si on the logs' most common | – / – | – / – | 3,683,829 / 2,683,173 | 3,686,748 / 2,875,337 |
+
+- **Estella:** the logs' loadout beats the owner's on every rotation
+  (+0.5% to +1.3%): a real if small gain, though no search with it found
+  the owner's rotation (−15% / −9% by the same search: the search is
+  chaotic for this team, a small change in a build sends it elsewhere).
+  The proof is the owner's rotation itself played with it.
+- **Si:** on the owner's rotation her Rift Trekker Gloves win: their
+  Ultimate Gain brings her second ultimate (49.2 s) on time, which the
+  best rotation needs. On the rotations found with other gear, where her
+  ultimates come later anyway, the logs' LYNX Slab loadout is 4.3–5.1%
+  better than the owner's gloves and the site's pick 2.2–2.9% better;
+  but no rotation found for them reaches the owner's (best 3,686,748 /
+  2,875,337). Whether a rotation built for the LYNX Slab loadout can
+  beat 3.99M is open (a wider search, or one seeded with the owner's
+  rotation).
+- **Akekuri:** the owner's Frontiers set wins; the site's Frontiers
+  variants lose 0.4–0.7% with full energy and 8% from zero (three steps
+  dropped: a lower bound).
+- **The sites against the logs:** for Si the site's pick (Channeling
+  Gloves for Yinglung's Gloves, the same stat lines) is below the logs'
+  most common LYNX Slab variant on every rotation (−2.0% to −2.6%
+  where both play); for Estella the logs' loadout beats every site pick
+  (2.1–17.7%); Akekuri has no common log loadout.
+
 ## Payoffs and chains (2026-11-15)
 
 `efsim payoffs` (docs/design.md "Payoffs and chains"), 122 chains. With

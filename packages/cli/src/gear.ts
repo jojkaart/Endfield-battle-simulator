@@ -2,12 +2,12 @@
 // each operator of a team, scored on the team's own rotation (docs/design.md "Gear from the logs"). Per operator the
 // candidates are the distinct loadouts of the log fixtures (pieces as logged, full artifice), counted overall and by
 // how many of the scenario's teammates the log has; each is scored by replaying the scenario's rotation with only that
-// operator's gear swapped (a narrow search where the rotation can't be played), and a coordinate ascent takes each
-// operator's best with the others fixed until nothing changes.
+// operator's gear swapped (a step that can't be played is moved later or dropped: a repaired replay; with too many such
+// steps, a narrow search), and a coordinate ascent takes each operator's best with the others fixed until nothing changes.
 
 import { readdirSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { computeStats, EngineError, searchBeams, simulate, type Build, type GameData, type TimelineScenario } from "@efsim/engine";
+import { apply, computeStats, createContext, EngineError, init, searchBeams, simulate, type Build, type GameData, type TimelineScenario } from "@efsim/engine";
 import { modePair } from "./edge.ts";
 import { num, table } from "./format.ts";
 import { readLogFixture } from "./logs.ts";
@@ -132,10 +132,15 @@ export interface GearScore {
   readonly candidate: GearCandidate;
   readonly total: number;
   /**
-   * `replay`: the current rotation played as it is; `search`: it couldn't be played with this loadout, so a narrow
-   * search's best, compared with the current loadout's own narrow search (`against`).
+   * `replay`: the current rotation played as it is; `repaired`: played with each step it can't play with this loadout
+   * moved later (`moved`: up to 2 s, else before a later step, else after the last) or, where nothing works, dropped (`dropped`; together at most the ascent's
+   * `repairs`), compared with the current loadout's replay; `search`: more steps than that fail, so a narrow search's
+   * best, compared with the current loadout's own narrow search (`against`).
    */
-  readonly how: "replay" | "search";
+  readonly how: "replay" | "repaired" | "search";
+  /** For a repaired replay: the rotation's steps it started later, and those it dropped. */
+  readonly moved?: number;
+  readonly dropped?: number;
   /** For a searched score: the current loadout's narrow search, which it's compared with. */
   readonly against?: number;
   /** Against the current loadout on the same footing (replay to replay, search to search): 1 is as good. */
@@ -152,9 +157,11 @@ export interface GearResult {
   readonly tables: ReadonlyMap<string, readonly GearScore[]>;
   readonly chosen: ReadonlyMap<string, readonly string[]>;
   readonly team: readonly Build[];
-  /** The rotation at the end: the scenario's, or a narrow search's where a chosen loadout couldn't play it. */
+  /** The rotation at the end: the scenario's, a repaired one (steps a chosen loadout couldn't play moved or dropped), or a narrow search's. */
   readonly rotation: TimelineScenario["rotation"];
   readonly rotationReplaced: boolean;
+  /** Steps of the scenario's rotation moved later or dropped by repaired replays the ascent took (0 when it took none). */
+  readonly rotationRepaired: number;
   /** Kept operators (not varied) whose mode two attributes decide: each candidate's pair, to see none would change it. */
   readonly modes: ReadonlyMap<string, readonly { readonly candidate: GearCandidate; readonly a: number; readonly b: number }[]>;
   /** Narrow searches run (loadouts the rotation couldn't be played with, and the current loadouts they're compared with). */
@@ -165,18 +172,33 @@ export interface GearResult {
 
 const FULL: readonly [number, number, number] = [3, 3, 3];
 
+/** How much later a repaired replay tries a step it can't play (frames: 0.33 to 2 s at once, up to 15 s after the last step), first that works. */
+const LATER = [10, 20, 30, 45, 60, 90, 120, 150, 210, 300, 450];
+
+/** A repaired replay's changes: "2 steps later, 1 dropped". */
+function repairText(x: { readonly moved?: number; readonly dropped?: number }): string {
+  const m = x.moved ?? 0;
+  const d = x.dropped ?? 0;
+  return [m ? `${m} step${m === 1 ? "" : "s"} later` : "", d ? `${d} dropped` : ""].filter(Boolean).join(", ");
+}
+
 /**
  * Coordinate ascent over the candidates: per pass, each varied operator in team order takes its best candidate with
  * the others fixed, until a pass changes nothing or `passes` is reached. A candidate is scored by replaying the current
- * rotation; where that can't be played with it (EngineError), by a narrow search (`beam`, default 12) compared with the
- * current loadout's narrow search, so replays meet replays and searches searches. Taking a searched loadout takes its
- * search's rotation too. A loadout's pieces get full artifice; the scenario's own loadout keeps its artifice.
+ * rotation; where a step can't be played with it (EngineError: a finisher whose Stagger came later, a combo whose window
+ * didn't open, an ultimate whose energy comes later), by the replay with each such step moved to the first later start
+ * that works (up to 2 s later, else before the first later step it can go before, else up to 15 s after the last) or
+ * else dropped (at most `repairs` such steps, default 20; the rest as it was), against
+ * the current loadout's replay: a lower bound for the candidate, which plays its rotation late; with more, by a narrow
+ * search (`beam`, default 12) compared with the current loadout's narrow search, so replays meet replays and searches
+ * searches. Taking a repaired or searched loadout takes its rotation too. A loadout's pieces get full artifice; the
+ * scenario's own loadout keeps its artifice.
  */
 export function gearAscent(
   data: GameData,
   scenario: TimelineScenario,
   candidates: ReadonlyMap<string, readonly GearCandidate[]>,
-  options: { readonly beam?: number; readonly passes?: number; readonly keep?: ReadonlySet<string>; readonly progress?: (line: string) => void } = {},
+  options: { readonly beam?: number; readonly repairs?: number; readonly passes?: number; readonly keep?: ReadonlySet<string>; readonly progress?: (line: string) => void } = {},
 ): GearResult {
   const own = new Map(scenario.team.map((b) => [b.operator, key(b.gear.map((g) => g.id))]));
   const gearOf = (op: string, gear: readonly string[]): Build["gear"] => {
@@ -200,6 +222,56 @@ export function gearAscent(
     replays.set(k, r);
     return r;
   };
+  // The rotation with each step this team can't play moved to a later start that works, or dropped (each tried from the
+  // state the kept ones left), or null when more than `repairs` steps fail.
+  type Repaired = { total: number; rotation: TimelineScenario["rotation"]; moved: number; dropped: number };
+  const limit = options.repairs ?? 20;
+  const repairs = new Map<string, Repaired | null>();
+  const repair = (team: readonly Build[]): Repaired | null => {
+    const k = `${version}#${teamKey(team)}`;
+    if (repairs.has(k)) return repairs.get(k) ?? null;
+    const sc = { ...scenario, team, rotation };
+    const ctx = createContext(data, sc);
+    let state = init(ctx);
+    const kept: TimelineScenario["rotation"][number][] = [];
+    let moved = 0;
+    let dropped = 0;
+    const tryApply = (a: TimelineScenario["rotation"][number]) => {
+      try {
+        state = apply(ctx, state, a);
+        kept.push(a);
+        return true;
+      } catch (e) {
+        if (!(e instanceof EngineError)) throw e;
+        return false;
+      }
+    };
+    // A step that can't start within 2 s waits (an ultimate's energy may come from the steps after it): it's tried again
+    // before each later step, and after the last one up to 15 s on; dropped only if none of that works.
+    const pending: TimelineScenario["rotation"][number][] = [];
+    for (const action of rotation) {
+      for (let i = 0; i < pending.length; ) {
+        if (tryApply({ ...(pending[i] as TimelineScenario["rotation"][number]), at: state.frame })) {
+          pending.splice(i, 1);
+          moved++;
+        } else i++;
+      }
+      if (tryApply(action)) continue;
+      const from = Math.max(action.at ?? 0, state.frame);
+      if (LATER.slice(0, 5).some((d) => tryApply({ ...action, at: from + d }))) moved++;
+      else pending.push(action);
+      if (moved + pending.length > limit) break;
+    }
+    const over = moved + pending.length > limit;
+    if (!over) for (const a of pending) {
+      if (LATER.some((d) => tryApply({ ...a, at: state.frame + d }))) moved++;
+      else dropped++;
+    }
+    const r = !over ? { total: simulate(data, { ...sc, rotation: kept }).total, rotation: kept, moved, dropped } : null;
+    repairs.set(k, r);
+    return r;
+  };
+  let repaired = 0;
   const searches = new Map<string, { total: number; rotation: TimelineScenario["rotation"] }>();
   const search = (team: readonly Build[]) => {
     const k = teamKey(team);
@@ -239,6 +311,8 @@ export function gearAscent(
         const mode = pair && stats ? { mode: { a: stats.attrs[pair.a]?.total ?? 0, b: stats.attrs[pair.b]?.total ?? 0 } } : {};
         const r = replay(t);
         if (r !== null) return { candidate: c, total: r, how: "replay" as const, gain: r / now, ...mode };
+        const fixed = repair(t);
+        if (fixed) return { candidate: c, total: fixed.total, how: "repaired" as const, moved: fixed.moved, dropped: fixed.dropped, gain: fixed.total / now, ...mode };
         const s = search(t).total;
         const against = search(team).total;
         return { candidate: c, total: s, how: "search" as const, against, gain: s / against, ...mode };
@@ -248,13 +322,20 @@ export function gearAscent(
       const best = rows[0] as GearScore;
       if (key(best.candidate.gear) !== current && best.gain > 1) {
         team = team.map((b, j) => (j === i ? { ...b, gear: gearOf(op, best.candidate.gear) } : b));
-        if (best.how === "search") {
+        if (best.how === "repaired") {
+          const fixed = repair(team);
+          if (fixed) {
+            rotation = fixed.rotation;
+            repaired += fixed.moved + fixed.dropped;
+            version++;
+          }
+        } else if (best.how === "search") {
           rotation = search(team).rotation;
           version++;
           replaced = true;
         }
         changed = true;
-        options.progress?.(`pass ${pass}: ${data.operators[op]?.name ?? op} → ${describeGear(data, best.candidate.gear)} (${best.how === "search" ? `narrow search ${num(Math.round(best.total), 0)} against ${num(Math.round(best.against ?? 0), 0)}; its rotation from now on` : num(Math.round(best.total), 0)})`);
+        options.progress?.(`pass ${pass}: ${data.operators[op]?.name ?? op} → ${describeGear(data, best.candidate.gear)} (${best.how === "search" ? `narrow search ${num(Math.round(best.total), 0)} against ${num(Math.round(best.against ?? 0), 0)}; its rotation from now on` : best.how === "repaired" ? `${num(Math.round(best.total), 0)}, the replay ${repairText(best)}; that rotation from now on` : num(Math.round(best.total), 0)})`);
       }
     }
     if (!changed) break;
@@ -284,6 +365,7 @@ export function gearAscent(
     team,
     rotation,
     rotationReplaced: replaced,
+    rotationRepaired: repaired,
     searched: searches.size,
     scored: replays.size,
   };
@@ -315,8 +397,8 @@ export function describeGear(data: GameData, gear: readonly string[]): string {
 export function formatGear(data: GameData, scenario: TimelineScenario, r: GearResult): string {
   const name = (op: string) => data.operators[op]?.name ?? op;
   const lines = [
-    `Team total ${num(Math.round(r.start), 0)} with the scenario's gear → ${num(Math.round(r.final), 0)} (${r.final >= r.start ? "+" : ""}${((r.final / r.start - 1) * 100).toFixed(1)}%) after ${r.passes} pass${r.passes === 1 ? "" : "es"}${r.rotationReplaced ? " (on a narrow search's rotation: a chosen loadout couldn't play the scenario's)" : ""}; ${r.scored} replays, ${r.searched} narrow searches (loadouts the rotation couldn't be played with, and the loadouts they're compared with).`,
-    "Each candidate is scored with the others at their final loadouts (the last pass) on the rotation, against the chosen loadout on the same footing (\"searched\": a narrow search, against the chosen loadout's own): a lower bound for gear the rotation wasn't searched with.",
+    `Team total ${num(Math.round(r.start), 0)} with the scenario's gear → ${num(Math.round(r.final), 0)} (${r.final >= r.start ? "+" : ""}${((r.final / r.start - 1) * 100).toFixed(1)}%) after ${r.passes} pass${r.passes === 1 ? "" : "es"}${r.rotationReplaced ? " (on a narrow search's rotation: a chosen loadout couldn't play the scenario's)" : r.rotationRepaired ? ` (on the scenario's rotation with ${r.rotationRepaired} step${r.rotationRepaired === 1 ? "" : "s"} a chosen loadout couldn't play moved later or dropped)` : ""}; ${r.scored} replays, ${r.searched} narrow searches (loadouts the rotation couldn't be played with, and the loadouts they're compared with).`,
+    "Each candidate is scored with the others at their final loadouts (the last pass) on the rotation, against the chosen loadout on the same footing (\"n steps later, m dropped\": the replay with the steps it couldn't play started later or dropped, against the chosen loadout's replay; \"searched\": a narrow search, against the chosen loadout's own): a lower bound for gear the rotation wasn't searched with.",
   ];
   for (const [op, rows] of r.tables) {
     const chosen = key(r.chosen.get(op) ?? []);
@@ -332,7 +414,7 @@ export function formatGear(data: GameData, scenario: TimelineScenario, r: GearRe
             x.candidate.sources.map((s) => (s.kind === "log" ? "logs" : s.kind === "scenario" ? "scenario" : s.label)).join("; "),
             x.candidate.logs ? `${x.candidate.logs.total} (${x.candidate.logs.byTeammates.join("/")})` : "",
             ...(rows.some((y) => y.mode) ? [x.mode ? `${x.mode.a.toFixed(2)} / ${x.mode.b.toFixed(2)}` : ""] : []),
-            `${num(Math.round(x.total), 0)}${x.how === "search" ? ` (searched; chosen ${num(Math.round(x.against ?? 0), 0)})` : ""}`,
+            `${num(Math.round(x.total), 0)}${x.how === "search" ? ` (searched; chosen ${num(Math.round(x.against ?? 0), 0)})` : x.how === "repaired" ? ` (${repairText(x)})` : ""}`,
             `${((x.gain - 1) * 100).toFixed(1)}%`,
           ];
         }),
