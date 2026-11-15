@@ -1207,7 +1207,11 @@ From the kit check before simulating the team
   Ruled out: the loop's data (30 frames, CastSkill floating_end at 27,
   no condition); an idle hover longer than the data (in-game test 42,
   owner 2026-11-15: after her last shot she drops within about a
-  second, as the data's 0.9 s loop plus landing). Still possible: shots that hit nothing (unlogged) keep
+  second, as the data's 0.9 s loop plus landing). Leading cause: the owner
+  confirms (2026-11-15) that holding attack keeps her shooting when the
+  shots hit nothing, and such shots leave no log entry; in 9090 nobody
+  lands a hit from 57.9 to 60.6 s (the enemy out of reach), and in fc63 a
+  shot is missing between 45.7 s and the 5th at 46.8 s. Still possible: shots that hit nothing (unlogged) keep
   the hover going and the replay can't see them; a time stop or
   slow-down holding the loop (1cd1's candidate, not 9090's: no stop
   between 57.6 and 60.6 s); the replay placing the combo as the grounded

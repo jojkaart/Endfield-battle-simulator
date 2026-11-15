@@ -920,7 +920,7 @@ next combo. The engine now follows the data; the old kit had it always on.
 her combo: its slashes should carry the bonus. Again, waiting 25 s
 instead: they shouldn't.
 
-### 42. Typhoeus's hover end and stack lifetime (hover half answered 2026-11-15; stack half ready)
+### 42. Typhoeus's hover end and stack lifetime (answered 2026-11-15)
 
 **Why:** the data ends her hover about 1.9 s after shots 1–3 (1.5 s after
 shot 4) if you give no input, and her new kit does the same; until then
@@ -944,8 +944,14 @@ floating_end starts her landing, whose frame 8 ends the hover. (The
 battle skill with no shot at all wasn't tried: it only wastes SP, so no
 rotation uses it.) So the hover doesn't idle longer than the data says; no engine
 change. The logs' long hovers need another cause (open-problems
-"Typhoeus's hover outlasts her logged shots"). Still open: the Signs and
-arrows' 24 s lifetime.
+"Typhoeus's hover outlasts her logged shots"). The owner adds: holding the
+attack button, she keeps shooting even when the shots hit nothing. Those
+shots aren't in a log (ZMDLogs lists her shots only as hits), which is the
+likely cause.
+**Result (stack half):** the owner has never seen Signs or Hunting Arrows
+vanish without being used. The kit keeps them until used (no lifetime), so
+nothing changes. (Not proof they never expire: holding them 24 s unused
+may simply not come up in play.)
 
 ### 43. Typhoeus's shots off-field (ready, if you have Typhoeus)
 
