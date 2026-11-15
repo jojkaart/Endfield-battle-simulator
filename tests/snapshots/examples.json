@@ -177,45 +177,43 @@
   ]
  },
  "estella-si-akekuri-arcane-zero.scenario.json": {
-  "total": 3008030.56,
-  "hits": 471,
+  "total": 3226208.282,
+  "hits": 478,
   "casts": 245,
   "perOperator": {
-   "chr_0021_whiten": 1447440.126,
-   "chr_0036_jsspsi": 606498.275,
-   "chr_0019_karin": 227384.699,
-   "chr_0032_lizhiyan": 726707.46
+   "chr_0021_whiten": 1300741.584,
+   "chr_0036_jsspsi": 1427618.423,
+   "chr_0019_karin": 219125.9,
+   "chr_0032_lizhiyan": 278722.374
   },
-  "digest": "3f0eeba4a72b",
+  "digest": "aa903196c0c1",
   "windows": [
-   "14e524686cb7",
-   "e6462f32fb48",
-   "2848bc30f23d",
-   "89fd34489554",
-   "a36fede8cda9",
-   "85f48e22d68b",
-   "7912c1959aab"
+   "38fe55bdc275",
+   "1b791fbb370f",
+   "500a1c6aa603",
+   "850bb0f0f7b5",
+   "5dd07e6b956f",
+   "3bd4d5520144"
   ]
  },
  "estella-si-akekuri-arcane.scenario.json": {
-  "total": 3286028.824,
-  "hits": 480,
-  "casts": 237,
+  "total": 3835505.159,
+  "hits": 495,
+  "casts": 250,
   "perOperator": {
-   "chr_0021_whiten": 1332761.481,
-   "chr_0036_jsspsi": 781711.495,
-   "chr_0019_karin": 184413.571,
-   "chr_0032_lizhiyan": 987142.277
+   "chr_0021_whiten": 1218859.986,
+   "chr_0036_jsspsi": 1813571.665,
+   "chr_0019_karin": 403209.553,
+   "chr_0032_lizhiyan": 399863.954
   },
-  "digest": "89abdd1bd047",
+  "digest": "ea0ca48d34b7",
   "windows": [
-   "fcc933e189ae",
-   "77a8c9821fba",
-   "d8acdb9a50d3",
-   "443b4f2f6488",
-   "d2d36941acc8",
-   "595aef2bc2b8",
-   "1e70920f51f0"
+   "1ddbbdf11b5f",
+   "5417004a919f",
+   "d8a04828d593",
+   "e38b8e6e1395",
+   "69680f78d668",
+   "2a08b8c51bf1"
   ]
  },
  "estella-solidification.scenario.json": {

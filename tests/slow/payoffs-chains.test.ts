@@ -1,20 +1,16 @@
 // The owner's team's basic rotation, found by the chain search (docs/design.md "Payoffs and chains"; the owner,
 // 2026-11-15): Akekuri's battle skill inflicts Heat, which opens Arcane's combo; her combo adds another Heat stack;
 // Estella's battle skill (Cryo) consumes them into Solidification, which opens both Si's and Estella's combos.
-// Arcane's combo adds its window's element only in her WILL mode (WILL above INT): the example's builds put her INT
-// just above WILL (484 / 473 at the fight's start), so this checks a WILL variant (her accessories' WILL version).
+// Arcane's combo adds its window's element only in her WILL mode (WILL above INT): the owner tunes her gear to the most
+// INT just below WILL (the example: Intellect 472.44, Will 473.50).
 // Slow (minutes): `npm run test:logs`.
 import { describe, expect, it } from "vitest";
-import { payoffs, type Build, type TimelineScenario } from "@efsim/engine";
+import { payoffs } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
 import { readScenario } from "../../packages/cli/src/simulate.ts";
 
 const data = loadGameData();
 const { rotation: _r, ...example } = readScenario(new URL("../../examples/estella-si-akekuri-arcane.scenario.json", import.meta.url).pathname);
-const will: Omit<TimelineScenario, "rotation"> = {
-  ...example,
-  team: example.team.map((b): Build => (b.operator === "chr_0032_lizhiyan" ? { ...b, gear: b.gear.map((g) => ({ ...g, id: g.id.replace("usp02_edc_03", "usp02_edc_04") })) } : b)),
-};
 const AKEKURI_BS = "chr_0019_karin:chr_0019_karin_normal_skill";
 const ARCANE_COMBO = "chr_0032_lizhiyan:chr_0032_lizhiyan_combo_skill";
 const ESTELLA_BS = "chr_0021_whiten:chr_0021_whiten_normal_skill";
@@ -22,7 +18,7 @@ const ESTELLA_COMBO = "chr_0021_whiten:chr_0021_whiten_combo_skill";
 const SI_COMBO = "chr_0036_jsspsi:chr_0036_jsspsi_combo_skill";
 
 describe("chains: the owner's basic rotation", () => {
-  const report = payoffs(data, will, { ceilings: false, measure: 0, depth: 5 });
+  const report = payoffs(data, example, { ceilings: false, measure: 0, depth: 5 });
 
   it("finds Akekuri's battle skill → Arcane's combo → Estella's battle skill → Estella's and Si's combos", () => {
     const owner = report.chains.find((c) => {

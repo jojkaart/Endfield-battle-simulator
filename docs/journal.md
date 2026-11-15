@@ -5,11 +5,25 @@ their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 Older entries (2026-10-21 and earlier): [journal-archive.md](journal-archive.md).
 
+## 2026-11-15: Arcane plays WILL in the owner's examples; re-searched
+
+Goal: settle the payoff report's finding that the owner's example played
+Arcane in INT mode. The owner: her gear is tuned to the most Intellect
+just below Will. With the example's pieces that is exactly Intellect
+472.44 / Will 473.50 (both accessories' Intellect artifice line at 0; the
+loadout the owner copied in game for 0206), WILL mode. Done: both owner
+examples use it, the chain test uses the example itself (no `edc_04`
+stand-in), both re-searched (beams 12/24/48): full energy 3,286,029 →
+3,835,505 (+16.7%), from zero 3,008,031 → 3,226,208 (+7.3%); the zero
+rotation opens with the owner's chain (Si's battle skill as the Cryo).
+Spreads 13.1% / 22.4%: lower bounds. The sync-loop rotations in
+docs/teams/rotations/ are still the INT build's (roadmap).
+
 ## 2026-11-15: Payoffs and chains (planning from the payoffs, phases 1 and 2)
 
 Goal: the forward beam drops setups that pay off 10–20 s later (Ink Melt's
 beams 3.50 / 3.50 / 4.41M); the owner proposed planning from the payoffs
-and combining overlapping setups (his team's chain: a battle skill's
+and combining overlapping setups (their team's chain: a battle skill's
 infliction → Arcane's combo → Estella's battle skill's Solidification →
 Si's and Estella's combos). Done: `efsim payoffs` (engine payoffs.ts;
 design.md "Payoffs and chains"): every step probed from representative
