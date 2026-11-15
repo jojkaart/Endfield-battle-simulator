@@ -96,6 +96,11 @@ export interface BuffReplay {
   readonly undecided: ReadonlyMap<string, string>;
   /** Logged casts the engine couldn't cast (its error). */
   readonly failed: readonly { readonly cast: ReplayedCast; readonly error: string }[];
+  /**
+   * Casts that hit nothing the replay added (missedCasts: an assumption the log can't show): the skill each was made as,
+   * its start in ms, and the logged cast that needs it.
+   */
+  readonly missed: readonly MissedCast[];
   /** Replayed instances of a decided game buff reaching a logged hit's operator (or on the enemy) at it; null near a change (REPLAY_EDGE_MS). */
   instances(hit: Pick<LogHit, "t" | "operator">, gameBuff: string): number | null;
   /** What the replay knows of a logged cast (placed: logcasts.ts), or why it knows nothing. */
@@ -131,6 +136,16 @@ export interface BuffReplay {
   readonly staggers: readonly number[];
   /** The frame the replay stopped at, if it couldn't go on (BuffReplay.failed says why). */
   readonly brokenAt: number | null;
+}
+
+/** A cast that hit nothing the replay added (BuffReplay.missed). */
+export interface MissedCast {
+  readonly operator: string;
+  readonly skillId: string;
+  /** Its start, in ms. */
+  readonly start: number;
+  /** The logged cast that needs it: its placed skill and start (ms). */
+  readonly need: { readonly skillId: string; readonly start: number };
 }
 
 /** One replayed instance of a kit buff at an operator, in ms (BuffReplay.kitWindows). */
@@ -231,6 +246,11 @@ export interface ReplayedCast extends LoggedCast {
   readonly whileBuff?: { readonly buff: string; readonly endsAt: number };
   /** A basic attack of an operator the log shows isn't controlled then: its own attack beside the controlled one's (controlledFromLog). */
   readonly teammate?: true;
+  /**
+   * A cast that hit nothing, which the log can't show (missedCasts): added only before a logged cast of its operator that
+   * the kit allows only with it, `skill` at `at` ms. Its skill is the step the kit allows at its frame (missedStep).
+   */
+  readonly missed?: { readonly skill: string; readonly at: number };
 }
 
 /** How far from a placed cast's start a logged cast event of its skill may be to be that cast (ms). */
@@ -766,7 +786,177 @@ function replayedSkill(ctx: TimelineContext, st: TimelineState, c: ReplayedCast,
   const chain = st.chainNext[c.operator];
   const steps = [...(chain ? [chain, ...(chain.alternatives ?? [])].filter((x) => x.until >= f).map((x) => x.skill) : []), ...(kit?.skills.filter((k) => k.kind === "basic").map((k) => k.skillId) ?? [])];
   for (const skill of steps) if (skill !== c.skillId && hasKey(skill) && startsBy(skill)) return skill;
+  // None can start by the logged frame by the kit's timing (the log's casts come a few frames sooner than its windows:
+  // 9090afbacec9's shots at 91455 and 92002 ms, 16 frames apart, where shot 2's window for shot 3 opens at 18): the one
+  // the kit's state allows then (its `available`: the attempt index), not the placed one, whose index is the placement's
+  // guess (the placed shot 1 there made the next logged shot the 5th, which ended her hover before the logged 5th).
+  if (!skillAvailable(ctx, st, c.operator, c.skillId, f)) for (const skill of steps) if (skill !== c.skillId && hasKey(skill) && skillAvailable(ctx, st, c.operator, skill, f)) return skill;
   return c.skillId;
+}
+
+/**
+ * The step a cast that hit nothing is (ReplayedCast.missed): the operator's next basic-attack step the kit allows at the
+ * frame by its state and timing (the chain's next steps first, then any of its basic attacks in kit order; not a
+ * finisher or a dive, which aren't the attack input's repeats), only while it's the controlled operator (holding the
+ * attack input). Null: none.
+ */
+function missedStep(ctx: TimelineContext, st: TimelineState, operator: string, f: number): string | null {
+  if (st.controlled !== operator) return null;
+  const chain = st.chainNext[operator];
+  const basic = attackSteps(ctx, operator);
+  const steps = [...(chain ? [chain, ...(chain.alternatives ?? [])].filter((x) => x.until >= f).map((x) => x.skill) : []), ...basic].filter((x) => basic.includes(x));
+  for (const skill of steps) {
+    if (!skillAvailable(ctx, st, operator, skill, f)) continue;
+    const r = earliestStart(ctx, st, { operator, skill });
+    if (!("error" in r) && r.frame <= f + 1) return skill;
+  }
+  return null;
+}
+
+/** An operator's basic attacks the attack input repeats: not a finisher (skillSpecification 8) or a dive (6), nor a follow-up. */
+function attackSteps(ctx: TimelineContext, operator: string): string[] {
+  return (ctx.kits.get(operator)?.skills ?? []).filter((k) => k.kind === "basic" && !k.followUpOnly && ![6, 8].includes(ctx.data.skills[k.skillId]?.timing?.specification ?? 0)).map((k) => k.skillId);
+}
+
+/**
+ * Whether the kit allows none of a logged basic attack's skills (its placed one and the operator's others with its key)
+ * at its frame in the replay (the state there): its `available` isn't met (Typhoeus's floating shots need her hover and
+ * their attempt index). Only a cast the log shows by its own hits.
+ */
+function unmet(ctx: TimelineContext, st: TimelineState, c: ReplayedCast, f: number): boolean {
+  if (c.missed || c.slot || c.kind !== "basic" || c.landings.length === 0) return false;
+  const kit = ctx.kits.get(c.operator);
+  const skills = [c.skillId, ...(kit?.skills ?? []).filter((k) => k.kind === "basic" && k.hits.some((h) => h.events.includes(c.key))).map((k) => k.skillId)];
+  return skills.every((s) => !skillAvailable(ctx, st, c.operator, s, f));
+}
+
+/** The most casts that hit nothing added before one logged cast (Typhoeus's hover takes at most 4 shots before the 5th, which ends it). */
+const MISSED_MAX = 4;
+
+/** The most logged casts the replay adds casts that hit nothing before (missedCasts), per fight. */
+const MISSED_ROUNDS = 12;
+
+/** One replay's casts as made and its steps, for missedCasts. */
+interface MissedSearch {
+  readonly ctx: TimelineContext;
+  readonly made: readonly { readonly c: ReplayedCast; readonly f: number; readonly post: TimelineState }[];
+  readonly steps: readonly { readonly frame: number; readonly cast: ReplayedCast | null }[];
+}
+
+/**
+ * Casts that hit nothing (ReplayedCast.missed), which no log shows (ZMDLogs lists hits; a shot that hits nothing leaves no
+ * entry: the owner, who plays Typhoeus, 2026-11-15: holding attack while she hovers, she keeps shooting when the shots
+ * hit nothing), added before a logged cast the kit allows none of its skills for (unmet): the fewest of the operator's
+ * basic-attack steps (missedStep) after its previous cast that make the kit allow it, each at the earliest frame that
+ * still does, the latest first; none when no number up to MISSED_MAX does (9090afbacec9: Typhoeus's shot at 57615 ms,
+ * no hit by anyone from 57.9 to 60.6 s, a shot at 60630 ms that needs her hover, which idles out 1.9 s after a shot). Each
+ * candidate is judged by making the casts from the previous one's state to the need's frame (`make`: the replay's own
+ * cast making, the others' casts in between included).
+ */
+function missedCasts(r: MissedSearch, need: { c: ReplayedCast; f: number }, make: (st: TimelineState, c: ReplayedCast, f: number) => { st: TimelineState; skillId: string | null }, tickEvents: ReadonlyMap<string, readonly number[]>, hits: readonly Pick<LogHit, "t" | "operator" | "event">[]): ReplayedCast[] {
+  const { ctx } = r;
+  const op = need.c.operator;
+  const prev = r.made.filter((m) => m.c.operator === op && m.f < need.f).at(-1);
+  if (!prev) return [];
+  const [i, j] = [r.steps.findIndex((s) => s.cast === prev.c), r.steps.findIndex((s) => s.cast === need.c)];
+  if (i < 0 || j < 0) return [];
+  const between = r.steps.slice(i + 1, j).flatMap((s) => (s.cast ? [{ frame: s.frame, cast: s.cast }] : []));
+  const shot = (t: number): ReplayedCast => {
+    const start = (t * 1000) / FPS;
+    return { operator: op, key: "", group: "", skillId: need.c.skillId, kind: "basic", start, lastHit: start, keepPrevious: prev.c.lastHit > start, landings: [], missed: { skill: need.c.skillId, at: need.c.start } };
+  };
+  /** The casts from the previous one's state with these shots, to `until`: the skills the shots were made as (null: not every shot was), and the state then. */
+  const tried = new Map<string, { skills: string[] | null; st: TimelineState }>();
+  const trial = (times: readonly number[], until: number): { skills: string[] | null; st: TimelineState } => {
+    const key = `${times.join(",")}|${until}`;
+    const known = tried.get(key);
+    if (known) return known;
+    const r = trialOf(times, until);
+    tried.set(key, r);
+    return r;
+  };
+  const trialOf = (times: readonly number[], until: number): { skills: string[] | null; st: TimelineState } => {
+    const events = [...between.filter((x) => x.frame <= until).map((x) => ({ ...x, missed: false })), ...times.filter((t) => t <= until).map((t) => ({ frame: t, cast: shot(t), missed: true }))].sort((a, b) => a.frame - b.frame || Number(a.missed) - Number(b.missed));
+    let st = prev.post;
+    const skills: string[] = [];
+    for (const e of events) {
+      st = heldTicks(st, Math.max(e.frame, st.frame), tickEvents);
+      try {
+        const m = make(st, e.cast, Math.max(e.frame, st.frame));
+        if (e.missed && m.skillId === null) return { skills: null, st };
+        if (e.missed) skills.push(m.skillId as string);
+        st = m.st;
+      } catch (err) {
+        if (e.missed) return { skills: null, st };
+        if (!(err instanceof Error)) throw err;
+      }
+    }
+    return { skills, st: advance(ctx, heldTicks(st, Math.max(until, st.frame), tickEvents), Math.max(until, st.frame)) };
+  };
+  const ok = (times: readonly number[]) => {
+    const t = trial(times, need.f);
+    return t.skills !== null && !unmet(ctx, t.st, need.c, need.f);
+  };
+  /** The skill a shot at `t` after `times` is made as, or null. */
+  const madeAs = (times: readonly number[], t: number) => trial([...times, t], t).skills?.at(-1) ?? null;
+  /** The first frame after `times` a shot can start (the earliest start from the state after them, of a step the kit allows), and its step. */
+  const first = (times: readonly number[]): { t: number; skill: string } | null => {
+    const from = (times.at(-1) ?? prev.f) + 1;
+    if (from >= need.f) return null;
+    const st = trial(times, from).st;
+    const starts = attackSteps(ctx, op).flatMap((skill) => {
+      if (!skillAvailable(ctx, st, op, skill, from)) return [];
+      const e = earliestStart(ctx, st, { operator: op, skill });
+      return "error" in e || e.frame >= need.f ? [] : [e.frame];
+    });
+    for (const t of [...new Set(starts)].sort((a, b) => a - b)) {
+      const skill = madeAs(times, t);
+      if (skill !== null) return { t, skill };
+    }
+    return null;
+  };
+  /**
+   * The last frame before the need a shot after `times` can start as the same step as at its first (the operator's state
+   * ends it: Typhoeus's hover, after which the attack input is her grounded attack 1).
+   */
+  const last = (times: readonly number[], from: { t: number; skill: string }): number => {
+    const same = (t: number) => madeAs(times, t) === from.skill;
+    let [lo, hi] = [from.t, need.f - 1];
+    if (same(hi)) return hi;
+    while (hi - lo > 1) {
+      const mid = Math.floor((lo + hi) / 2);
+      if (same(mid)) lo = mid;
+      else hi = mid;
+    }
+    return lo;
+  };
+  // Only where the log shows no hit of the need's key from the first frame another attack could start: one there is a cast
+  // the placement put elsewhere, not one that hit nothing (fc63a2001251: the shot at 95138 ms, whose cast the placement
+  // started at 93999 ms from the burst before it).
+  const opening = first([]);
+  if (!opening || hits.some((h) => h.operator === op && h.event === need.c.key && frameOf(h.t) >= opening.t && frameOf(h.t) < need.f)) return [];
+  // The fewest: each shot as late as it can be (the longest reach), until the need is met.
+  const times: number[] = [];
+  for (let k = 1; k <= MISSED_MAX; k++) {
+    const a = k === 1 ? opening : first(times);
+    if (a === null) return [];
+    times.push(last(times, a));
+    if (!ok(times)) continue;
+    // The earliest that still meet it: the latest shot first, each as early as it can be with the later ones where they are.
+    for (let n = times.length - 1; n >= 0; n--) {
+      let [lo, hi] = [first(times.slice(0, n))?.t ?? (times[n] as number), times[n] as number];
+      const at = (t: number) => times.map((x, m) => (m === n ? t : x));
+      if (ok(at(lo))) hi = lo;
+      while (hi - lo > 1) {
+        const mid = Math.floor((lo + hi) / 2);
+        if (ok(at(mid))) hi = mid;
+        else lo = mid;
+      }
+      times[n] = hi;
+    }
+    return times.map(shot);
+  }
+  return [];
 }
 
 export interface ReplayOptions {
@@ -826,23 +1016,43 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   const recoveries = loggedRecoveries(fx).map(frameOf);
   // The bar is set a frame before its hit, so the hit sees the bar the log has before it.
   const poiseBars = loggedPoiseBars(fx).map((g) => ({ frame: Math.max(0, frameOf(g.t) - 1), bar: g.bar, calm: g.notStaggered }));
-  const casts = control?.casts ?? assembled;
-  const tickEvents = loggedTickFrames(kits, casts);
+  const logged = control?.casts ?? assembled;
+  // With the casts that hit nothing the log needs (missedCasts), added below.
+  let casts: readonly ReplayedCast[] = logged;
+  const tickEvents = loggedTickFrames(kits, logged);
   const sampleFrames = [...new Set(fx.hits.flatMap((h) => [frameOf(h.t) - edge, frameOf(h.t), frameOf(h.t) + edge]))].filter((f) => f >= 0).sort((a, b) => a - b);
-  type Made = { c: ReplayedCast; f: number; pre: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs };
+  type Made = { c: ReplayedCast; f: number; skillId: string; pre: TimelineState; post: TimelineState; index: number; link: number; windowCount: number | null; consumed: ConsumedBuffs };
+  /** A logged cast the kit allows none of its skills for at its frame in the replay (missedCasts), and the state before it. */
+  type Need = { c: ReplayedCast; f: number };
+  /**
+   * One cast made at `f` (the state not yet advanced to it): the state after it, the skill it was made as (null: none,
+   * a tick or a press the slot doesn't make), the state before it and the combo window count it found.
+   */
+  const makeCast = (ctx: TimelineContext, st0: TimelineState, c: ReplayedCast, f: number, list: readonly ReplayedCast[]) => {
+    let st = advance(ctx, withoutFollowUps(ctx, st0, list, f), f);
+    const windowCount = c.kind === "combo" ? replayWindowCount(ctx, st, c.operator, c.skillId, f) : null;
+    const pre = st;
+    const tick = c.missed ? null : loggedTick(ctx, st, c, f);
+    if (tick) return { st: tick, skillId: null, pre, windowCount };
+    const skillId = c.missed ? missedStep(ctx, st, c.operator, f) : replayedSkill(ctx, st, c, f);
+    if (skillId === null) return { st, skillId, pre, windowCount };
+    // A slot cast the log shows only by its press (Si's Initial Stroke during her combo) keeps the running cast's hits.
+    st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious || c.slot === true, landings: c.landings, ...(c.teammate ? { teammate: true } : {}), ...(c.missed ? { missed: true } : {}) });
+    return { st, skillId, pre, windowCount };
+  };
   /**
    * One replay of the logged casts. Landings whose crit the log gives crit as it says (TimelineScenario.loggedCrits);
    * the others as `crit` says: never for the replay the check reads, always for the bound on the buffs a trigger on crits
    * is behind (critDependent: where the two disagree, the replay doesn't decide them).
    */
-  const run = (crit: "never" | "always") => {
+  const run = (crit: "never" | "always", list: readonly ReplayedCast[] = casts) => {
     // Per game buff and operator: its instances (summed over the kit buffs standing for it: theirs don't overlap at one recipient).
     const instances = new Map<string, Instance[]>();
     // Every kit buff's instances per recipient (`owner:id|operator`), and the Stagger windows (frames).
     const kitInstances = new Map<string, Instance[]>();
     const staggerWindows: Instance[] = [];
     let brokenAt: number | null = null;
-    const firstBasic = control ? { operator: control.first } : casts.find((c) => c.kind === "basic");
+    const firstBasic = control ? { operator: control.first } : list.find((c) => c.kind === "basic");
     const enemyHp = loggedEnemyHp(data, fx);
     const scenario: TimelineScenario = {
       team: fx.team,
@@ -921,12 +1131,13 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     const steps: Step[] = [
       ...recoveries.map((frame) => ({ frame, cast: null as ReplayedCast | null, recover: true })),
       ...poiseBars.map((g) => ({ frame: g.frame, cast: null as ReplayedCast | null, recover: false, bar: g.bar, calm: g.calm })),
-      ...casts.map((c) => ({ frame: Math.max(0, frameOf(c.start)), cast: c as ReplayedCast | null, recover: false })),
+      ...list.map((c) => ({ frame: Math.max(0, frameOf(c.start)), cast: c as ReplayedCast | null, recover: false })),
       ...sampleFrames.map((frame) => ({ frame, cast: null as ReplayedCast | null, recover: false })),
     ].sort((a, b) => a.frame - b.frame || Number(b.recover) - Number(a.recover) || (a.cast ? 0 : 1) - (b.cast ? 0 : 1));
     // The state after each step, for the facts' check at REPLAY_EDGE_MS either side of a cast (stateAt).
     const checkpoints: TimelineState[] = [st];
     const made: Made[] = [];
+    const needs: Need[] = [];
     const castErrors: { cast: ReplayedCast; error: string }[] = [];
     for (const s of steps) {
       st = heldTicks(st, Math.max(s.frame, st.frame), tickEvents);
@@ -935,29 +1146,22 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
         const c = s.cast;
         try {
           const f = Math.max(s.frame, st.frame);
-          st = advance(ctx, withoutFollowUps(ctx, st, casts, f), f);
-          const windowCount = c.kind === "combo" ? replayWindowCount(ctx, st, c.operator, c.skillId, f) : null;
-          const pre = st;
-          const tick = loggedTick(ctx, st, c, f);
-          if (tick) {
-            st = tick;
-            continue;
-          }
-          const skillId = replayedSkill(ctx, st, c, f);
-          if (skillId === null) continue;
-          // A slot cast the log shows only by its press (Si's Initial Stroke during her combo) keeps the running cast's hits.
-          st = replayCast(ctx, st, c.operator, skillId, f, { keepPrevious: c.keepPrevious || c.slot === true, landings: c.landings, ...(c.teammate ? { teammate: true } : {}) });
+          const r = makeCast(ctx, st, c, f, list);
+          if (crit === "never" && unmet(ctx, r.pre, c, f)) needs.push({ c, f });
+          st = r.st;
+          if (r.skillId === null) continue;
+          const skillId = r.skillId;
           const index = st.casts.findLastIndex((x) => x.frame === f && x.operator === c.operator && x.skill === skillId);
           const carried = st.buffs.filter((b) => b.cast === index && b.id !== "link");
           const consumed: ConsumedBuffs = { buffs: carried.map((b) => b.id).sort(), modifiers: buffModifiers(carried, c.operator, f, index) };
-          made.push({ c, f, pre, index, link: st.casts[index]?.link ?? 0, windowCount, consumed });
+          made.push({ c, f, skillId, pre: r.pre, post: st, index, link: st.casts[index]?.link ?? 0, windowCount: r.windowCount, consumed });
         } catch (e) {
           castErrors.push({ cast: c, error: e instanceof Error ? e.message : String(e) });
         }
         continue;
       }
       try {
-        st = advance(ctx, withoutFollowUps(ctx, st, casts, Math.max(s.frame, st.frame)), Math.max(s.frame, st.frame));
+        st = advance(ctx, withoutFollowUps(ctx, st, list, Math.max(s.frame, st.frame)), Math.max(s.frame, st.frame));
         if (s.recover) {
           st = refillPoise(ctx, st);
           continue;
@@ -969,7 +1173,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
       } catch (e) {
         // The timeline can't go on (a hit it can't land from what the replay knows): it decides nothing from here.
         brokenAt = s.frame;
-        castErrors.push({ cast: casts.filter((c) => frameOf(c.start) <= s.frame).at(-1) as ReplayedCast, error: `the replay stops at ${Math.round((s.frame * 1000) / FPS)} ms: ${e instanceof Error ? e.message : String(e)}` });
+        castErrors.push({ cast: list.filter((c) => frameOf(c.start) <= s.frame).at(-1) as ReplayedCast, error: `the replay stops at ${Math.round((s.frame * 1000) / FPS)} ms: ${e instanceof Error ? e.message : String(e)}` });
         break;
       }
       sample(s.frame);
@@ -979,9 +1183,23 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     const lastStagger = staggerOpen as { start: number; until: number } | null;
     if (lastStagger) staggerWindows.push({ start: lastStagger.start, end: brokenAt ?? lastStagger.until, expired: brokenAt === null });
     if (checkpoints.at(-1) !== st) checkpoints.push(st);
-    return { ctx, st, instances, brokenAt, made, checkpoints, castErrors, changes: countChanges(instances, edge), kitInstances, kitChanges: countChanges(kitInstances, edge), staggerWindows };
+    return { ctx, st, instances, brokenAt, made, needs, steps, checkpoints, castErrors, changes: countChanges(instances, edge), kitInstances, kitChanges: countChanges(kitInstances, edge), staggerWindows };
   };
-  const main = kits.length > 0 ? run("never") : null;
+  let main = kits.length > 0 ? run("never") : null;
+  // Casts that hit nothing before logged casts the kit allows only after them (missedCasts): the earliest need first, the
+  // replay made again with its casts, until no need is left that such casts meet.
+  const tried = new Set<ReplayedCast>();
+  for (let added = 0; main && added < MISSED_ROUNDS; ) {
+    const r = main;
+    const need = r.needs.find((n) => !tried.has(n.c));
+    if (!need) break;
+    tried.add(need.c);
+    const shots = missedCasts(r, need, (st, c, f) => makeCast(r.ctx, st, c, f, [...casts, c]), tickEvents, fx.hits);
+    if (!shots.length) continue;
+    casts = [...casts, ...shots].sort((a, b) => a.start - b.start);
+    main = run("never");
+    added++;
+  }
   // The bound for buffs a trigger on crits is behind: only needed where some landing's crit isn't logged.
   // …and for every kit buff a trigger on crits is behind (BuffReplay.kitBuffNearChange: the log check's engine readings).
   const anyCritTrigger = kits.some((k) => k.triggers.some((t) => t.on.event === "hit" && t.on.crit !== undefined));
@@ -1057,7 +1275,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
   }
   const hitIndex = new Map(fx.hits.map((h, i) => [h, i]));
   const broken = (ms: number) => brokenAt !== null && frameOf(ms) >= brokenAt - edge;
-  const replayedCast = (c: Pick<LoggedCast, "operator" | "skillId" | "start">) => casts.find((d) => d.operator === c.operator && d.skillId === c.skillId && Math.abs(d.start - c.start) <= 1000);
+  const replayedCast = (c: Pick<LoggedCast, "operator" | "skillId" | "start">) => casts.find((d) => !d.missed && d.operator === c.operator && d.skillId === c.skillId && Math.abs(d.start - c.start) <= 1000);
   const castFacts = (c: Pick<LoggedCast, "operator" | "skillId" | "start" | "kind">): ReplayCastFacts | { unknown: string } => {
     if (kits.length === 0) return { unknown: "no kit to replay" };
     // A trigger's hits (a placed group of kind null) belong to no cast in the timeline: no Link, no consumed buffs.
@@ -1099,6 +1317,7 @@ export function replayKitBuffs(data: GameData, fx: LogFixture, placement: Placem
     undecided,
     failed,
     unjudgedKitBuffs,
+    missed: (main?.made ?? []).flatMap((m) => (m.c.missed ? [{ operator: m.c.operator, skillId: m.skillId, start: m.c.start, need: { skillId: m.c.missed.skill, start: m.c.missed.at } }] : [])),
     hits: main?.st.hits ?? [],
     reactions: main?.st.reactions ?? [],
     staggers: main ? main.staggerWindows.map((w) => w.start) : [],

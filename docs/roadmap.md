@@ -11,8 +11,10 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
 - **Typhoeus, Arcane, Liino, Perlica (2026-11-15, done: 5.76 / 4.99M,
   docs/teams/typhoeus-arcane-liino-perlica.md):** its zero-energy search
   is the least converged of the three teams (+27% at beam 48 alone): a
-  beam 96 run, or the search seeded with the found rotations; in-game
-  test 42 (Typhoeus's idle hover) decides a lead the team leans on;
+  beam 96 run, or the search seeded with the found rotations; the log
+  check's casts placed across others' time stops (open-problems.md,
+  Typhoeus's hover: 1cd1's combo, 9090's, dbae's battle skill start up to
+  3 s late) and Typhoeus's 4th shot anchored to her 5th's cast (fc63);
   9090's Liino / Perlica totals (volleys, the replay's Stagger); `efsim
   gear` for the other two teams (their gear was each operator's most
   common loadout overall), and gear chosen jointly with the rotation (a

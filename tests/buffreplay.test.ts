@@ -6,7 +6,7 @@
 // log stops listing Camille's weapon buffs.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { advance, computeHit, computeStats, createContext, effectiveKit, FPS, init, parseReactionEvent, replayCast, replayWindowCount, roundDamage, type ActiveBuff, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
+import { activeAt, advance, computeHit, computeStats, createContext, effectiveKit, FPS, init, parseReactionEvent, replayCast, replayWindowCount, roundDamage, type ActiveBuff, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit, type TimelineState } from "@efsim/engine";
 import { loadGameData, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
 import { castsFromBuffLanes, castsFromTriggerHits, checkLog, controlledFromLog, formatBuffReplay, LOG_LISTING, logBuffReplay, loggedRecoveries, readLogFixture, replayedCasts, simulateLog, withLoggedCasts, type HitVerdict } from "@efsim/cli";
 import { placeHits } from "../packages/cli/src/logcasts.ts";
@@ -327,6 +327,52 @@ describe("3aa6ab93bad4: a press the log shows as a variant by its own keys", () 
     const ult = fx.hits.filter((h) => h.operator === Z && h.event === `${Z}_normal_skill_ult_abilityrange` && h.t > 19639 && h.t < 22000);
     expect(ult.length).toBeGreaterThan(0);
     expect(ult.every((h) => !("unknown" in r.landing(h)))).toBe(true);
+  });
+});
+
+describe("Typhoeus's shots that hit nothing (2026-11-15)", () => {
+  const T = "chr_0034_typhoea";
+  const typhoeus = JSON.parse(readFileSync(new URL("../examples/typhoeus-p5.json", import.meta.url), "utf8")) as Build;
+
+  it("replayCast `missed`: no hit lands, but the Hunting Arrow is used at the cast and the shot counts and keeps her hover", () => {
+    const ctx = createContext(data, { team: [typhoeus], target, durationFrames: 20 * FPS, rotation: [], options: { crit: "never" }, controlled: T });
+    const hovering = (st: TimelineState) => st.buffs.some((b) => b.id === "hovering" && b.owner === T && activeAt(b, st.frame));
+    let st = replayCast(ctx, init(ctx), T, `${T}_normal_skill_floating_start`, 0);
+    st = advance(ctx, st, 40);
+    const before = st.stacks[T] as Record<string, number>;
+    st = replayCast(ctx, st, T, `${T}_floating_attack1`, 40, { missed: true });
+    st = advance(ctx, st, 90);
+    // floating_attack1 timeline action 33, frame 1: FinishBuffAdvanced of arrow_num (1 layer) before the projectile
+    // launches, so a shot that hits nothing still uses its arrow; the Sign and team energy come from the projectile's
+    // hit (floating_attack1_01_projhit), so none.
+    expect(st.hits.filter((h) => h.skillId === `${T}_floating_attack1`)).toEqual([]);
+    expect(st.stacks[T]?.arrows).toBe((before.arrows as number) - 1);
+    expect(st.stacks[T]?.signs).toBe(before.signs);
+    expect(st.stacks[T]?.abatk).toBe(1);
+    // Her idle restarts from the shot (its loop at frame 22, floating_end 27 frames on, the landing 8 after: frame 97), so
+    // at frame 90 she still hovers, where the battle skill's own idle (loop at 37: frame 72) would have ended it.
+    expect(hovering(st)).toBe(true);
+    expect(hovering(advance(ctx, st, 98))).toBe(false);
+  });
+
+  it("9090afbacec9: adds the one shot that keeps her hover to her logged shot at 60630 ms, so the combo is the hovering one", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-9090afbacec9.json", import.meta.url).pathname);
+    const r = logBuffReplay(data, fx).replay;
+    // Her shot at 57615 ms, then no hit by anyone until 60630 ms: one shot that hit nothing in between (the 2nd), at the
+    // earliest frame from which her idle hover (1.9 s after a shot) still reaches the logged one.
+    expect(r.missed.map((m) => ({ ...m, start: Math.round(m.start) }))).toEqual([{ operator: T, skillId: `${T}_floating_attack2`, start: 58733, need: { skillId: `${T}_floating_attack1`, start: expect.closeTo(60597, 0) } }]);
+    const at = (t: number, event: string) => fx.hits.find((h) => h.operator === T && h.t === t && h.event === `${T}_${event}`) as LogHit;
+    const combo = at(63748, "combo_01_projhit");
+    const l = r.landing(combo);
+    expect("unknown" in l ? l.unknown : l.skillId).toBe(`${T}_combo_skillfloating`);
+    // Hovering ATK (P1) on her hits after the combo, as the log lists it.
+    for (const h of [combo, at(64503, "floating_attack1_01_projhit"), at(65785, "floating_attack1_01_projhit")]) expect(r.instances(h, "buff_chr_0034_typhoea_potential_atkup")).toBe(1);
+    expect(formatBuffReplay(data, logBuffReplay(data, fx)).join("\n")).toContain(`assumed: 1 cast(s) that hit nothing (no log shows one), added where a logged cast needs them:\n    Typhoeus ${T}_floating_attack2 at 58733 ms`);
+  });
+
+  it("fc63a2001251: none where the log shows a shot in the gap (a cast the placement started elsewhere)", () => {
+    const fx = readLogFixture(new URL("../fixtures/pending/zmdlogs-fc63a2001251.json", import.meta.url).pathname);
+    expect(logBuffReplay(data, fx).replay.missed).toEqual([]);
   });
 });
 

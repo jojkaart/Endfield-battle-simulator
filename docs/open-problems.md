@@ -1197,25 +1197,55 @@ battle skill?), then c3c7's crystal Amp window.
 From the kit check before simulating the team
 ([teams/typhoeus-arcane-liino-perlica.md](teams/typhoeus-arcane-liino-perlica.md)).
 
-- **Typhoeus's hover outlasts her logged shots** (9090 60.1 → 68.0 s,
-  29 hits; 1cd1 at 37.5 s, 19 hits; fc63 46.2 s, 2 hits). Shows: the log
-  lists Hovering ATK (P1) on every hit and the damage fits it, while the
-  replay's hover idled out (floating_loop's 30 frames, then floating_end)
-  after her last logged shot; in 9090 her next logged events are a combo
-  at 60.6 s whose arrows land after two ultimates' stops (63.7 s) and
-  five more ABATK shots, i.e. the hovering combo (it keeps the hover).
-  Ruled out: the loop's data (30 frames, CastSkill floating_end at 27,
-  no condition); an idle hover longer than the data (in-game test 42,
-  owner 2026-11-15: after her last shot she drops within about a
-  second, as the data's 0.9 s loop plus landing). Leading cause: the owner
-  confirms (2026-11-15) that holding attack keeps her shooting when the
-  shots hit nothing, and such shots leave no log entry; in 9090 nobody
-  lands a hit from 57.9 to 60.6 s (the enemy out of reach), and in fc63 a
-  shot is missing between 45.7 s and the 5th at 46.8 s. Still possible: shots that hit nothing (unlogged) keep
-  the hover going and the replay can't see them; a time stop or
-  slow-down holding the loop (1cd1's candidate, not 9090's: no stop
-  between 57.6 and 60.6 s); the replay placing the combo as the grounded
-  one. Next check: whether 9090's combo at 60.6 s is replayed grounded.
+- **Typhoeus's hover outlasts her logged shots** (narrowed 2026-11-15:
+  9090 and dbae explained; 1cd1 and fc63 are placement errors, not missed
+  shots). Shows: the log lists Hovering ATK (P1) on hits where the replay's
+  hover had idled out (floating_loop, then floating_end) after her last
+  logged shot. Ruled out: the loop's data; an idle hover longer than the
+  data (in-game test 42). Explained: shots that hit nothing (the owner:
+  holding attack, she keeps shooting; ZMDLogs lists only hits). The replay
+  now adds them where a logged shot needs them (buffreplay.ts
+  `missedCasts`, listed in the check's report as assumed): 9090 one at
+  58.7 s (no hit by anyone 57.9–60.6 s; her shot at 60.6 s is then the
+  3rd, her combo at 62.6 s the hovering one, the 29 hits 63.7–68.0 s
+  replay with Hovering ATK: plain 331 → 346); dbae at 3.8 and 6.6 s
+  (plain 22 → 33; the second may be Liino's ultimate stop holding the
+  hover instead: her ultimate's placement at 5.7 s is unsure). Also a
+  replay bug, not a missed shot: 9090 at 93.9 s, shots 16 frames apart
+  against the kit's 18-frame window made the replay keep the placed
+  index (shot 1 again), so a logged 4th was replayed as a 5th and ended
+  the hover; the step is now the one her attempt index allows.
+  **Still open:**
+  - 1cd1 at 37.5 s (26 hits): not missed shots. Her 4th shot is logged at
+    34.39 s (no shot can follow but the 5th, which ends the hover); the
+    log's combo cast is at 34.70 s, inside the hover, but the placement
+    starts it at 37.87 s (its arrows at 39.04 s less frame 35), ignoring
+    the time stop between (Liino's ultimate, placed at 36.2 s; nobody's
+    hit is logged from 34.7 to 38.0 s), so the replay casts the grounded
+    combo after the hover ended. Same shape
+    in 9090 (combo event 60.63 s, placed 62.57 s) and dbae (battle skill
+    event 0.44 s, placed 2.43 s). Next: place a cast's start from its first
+    landing less the time other casts' stops held it (logcasts.ts
+    `placeWith`), or from its logged cast event when that fits.
+  - fc63 at 46.8 s (4 hits): no shot is missing (39.94 s and 44.43–45.66 s
+    are shots 1–4, 46.82 s the 5th). The replay has one too many: the
+    burst at 43.58 s (39.94 s's, held by the stops before everyone's hits
+    resume at 43.58 s) became a shot of its own, so 45.66 s was replayed
+    as the 5th. Joining an orphan burst to the latest shot (tried) fixes
+    the count but moves its Nature consumption to the shot's frame (the
+    stops don't hold it in the replay): Typhoeus's totals there −11%, and
+    in 9090 −8.5%; not kept. Also tried: a landing can't join a cast
+    whose delayed landing was logged before it (fixes fc63 92–98 s, where
+    bursts opened casts the next shots joined), but distinctCasts then
+    merges the 4th shot (placed as floating_attack5 by its off-field key)
+    with the 5th (bdf2 −11%, 00ae −7%): not kept. Root: the 5th shot's
+    off-field key is the other shots' key, so the placement anchors a 4th
+    shot to the 5th's cast.
+  - fc63 96.5–98.2 s (10 hits, fit neither), 9090 51.5 s (a delayed burst
+    after the 5th shot's hover end), 00ae 30.0 s, 9c6e 52.5 s: not looked
+    at. 9c6e logs two hits per shot (two targets), so its placement makes
+    two casts per shot; with the attempt-index step its hovers end early
+    (Typhoeus +48 → +62% in the totals, mismatches 65 → 58).
 - **9090 (the whole team): Liino −15.0%, Perlica −13.0% in the totals**
   (the simulation of the logged casts), with every hit-by-hit check
   matching (Perlica 130 of 130, Liino 171 of 172). Hits under Stagger

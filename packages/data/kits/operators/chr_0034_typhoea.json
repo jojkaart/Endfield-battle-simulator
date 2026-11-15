@@ -19,14 +19,14 @@
         "talent": 0,
         "key": "energy_enterfight"
       },
-      "note": "buff_chr_0034_typhoea_normal_skill_arrow_energy maxStackCnt 8; talent 1: \"up to … 8 Signs\". Fight start: energy_enterfight of talent 1's passive_arrowrecover (1/2/4; 0 while talent 1 isn't learned). A Sign added at 8 opens the combo (combo_trigger_combo)."
+      "note": "buff_chr_0034_typhoea_normal_skill_arrow_energy maxStackCnt 8; talent 1: \"up to … 8 Signs\". Fight start: energy_enterfight of talent 1's passive_arrowrecover (1/2/4; 0 while talent 1 isn't learned). A Sign added at 8 opens the combo (combo_trigger_combo). A shot's Sign, its team energy (ObtainCostAction), its Nature consumption, burst, Stagger and the 5th shot's SP (normal_attack5_atb_recovered) all come from its projectile's hit (floating_attack1_01_projhit / floating_attack5_01_projhit): none for a shot that hits nothing."
     },
     {
       "id": "arrows",
       "label": "Hunting Arrows",
       "max": 4,
       "initial": 4,
-      "note": "buff_chr_0034_typhoea_normal_skill_arrow_num maxStackCnt 4. Fight start: 4 in the dungeon categories of passive_arrowrecover (boss rush, resource, high difficulty, …: where benchmarks and the fixtures are), else what she held when the last fight ended; set a scenario's startStacks for other fights."
+      "note": "buff_chr_0034_typhoea_normal_skill_arrow_num maxStackCnt 4. Fight start: 4 in the dungeon categories of passive_arrowrecover (boss rush, resource, high difficulty, …: where benchmarks and the fixtures are), else what she held when the last fight ended; set a scenario's startStacks for other fights. A shot uses its arrow at its cast, hit or not (floating_attack1–4 timeline frame 1: FinishBuffAdvanced arrow_num, 1 layer, before LaunchProjectile; floating_attack5's is disabled): a shot that hits nothing (the log check's inferred missed shots) still uses one."
     },
     {
       "id": "abatk",
