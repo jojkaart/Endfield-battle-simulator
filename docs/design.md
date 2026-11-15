@@ -1425,6 +1425,17 @@ same pattern: macros better at every width (INT full energy 3,286,029 →
 worse from zero (2,903,988), skeletons best on the WILL variant
 (3,755,026, playing the owner's chain with Si's battle skill twice).
 
+**The owner's team order (2026-11-15, after the table).** The table's
+owner's-team rows had Estella in slot 1, so Si's battle skill inflicted
+Cryo; the owner's order puts Akekuri in slot 1 (Heat). Re-measured with
+that order (same build, same widths, four jobs at a time): plain 3,135,336
+/ 3,344,984 / 3,360,158 full energy and 2,313,225 / 2,319,339 / 2,604,968
+from zero; macros 3,444,884 / 3,444,884 / 3,486,730 and 2,949,334 /
+2,962,844 / 2,982,948; skeletons (without macros) **3,353,446 / 3,990,122
+/ 3,990,122** and **2,416,632 / 2,692,055 / 3,263,818**, the examples'
+rotations now. Macros still beat the plain search at every width, but
+settle early (spreads 1.2% / 1.1%); skeletons win both energies here.
+
 **Decisions.** Macros found more at every width on every example. At
 equal run time they win with full energy (their w/2 alone, table
 included, beats the search without them at 2w: 3.92M in 684 s against

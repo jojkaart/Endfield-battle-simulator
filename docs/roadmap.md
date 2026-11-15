@@ -17,7 +17,7 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
   unmeasured at 60 s), skeletons that aren't greedy (a schedule over the
   fight with slack, the merges' setups placed by their leads), macros in
   the loop's rounds; search the owner's opener and loop again with Arcane in WILL mode
-  (docs/teams/rotations/ are still the INT build's); simulate Ink Melt (EndfieldHub's top team)
+  (docs/teams/rotations/ are still the INT build's, with Estella in slot 1); simulate Ink Melt (EndfieldHub's top team)
   next to the owner's team under the same assumptions; the buff timing
   report's leads (`efsim zmdlogs timing`, done 2026-11-15; open-problems
   "Buff timing leads": Yvonne's MI Security on unlogged crits in 5082,

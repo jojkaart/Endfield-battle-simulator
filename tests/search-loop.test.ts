@@ -160,7 +160,7 @@ describe("synchronized burst rounds (--sync)", () => {
     // Full energy at the start: every ultimate is ready; from zero: not.
     expect(ultimatesUnready(ctx, leads, init(ctx))).toBeUndefined();
     const z = createContext(data, { ...zero, rotation: [] });
-    expect(ultimatesUnready(z, leadUltimates(z), init(z))).toMatch(/needs 63 energy, 0.0/);
+    expect(ultimatesUnready(z, leadUltimates(z), init(z))).toMatch(/chr_0019_karin_ultimate_skill needs 108 energy, 0\.0/);
     // Cast, Arcane's array is up: her ultimate isn't ready though her energy is refilled.
     const cast = apply(ctx, init(ctx), { operator: ARCANE, skill: `${ARCANE}_ultimate_skill`, at: 0 });
     const s = { ...cast, energy: { ...cast.energy, [ARCANE]: 1e6 } };
