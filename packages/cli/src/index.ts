@@ -9,3 +9,4 @@ export * from "./simulate.ts";
 export * from "./buffreplay.ts";
 export * from "./jsonEdit.ts";
 export * from "./kittrim.ts";
+export * from "./gear.ts";
