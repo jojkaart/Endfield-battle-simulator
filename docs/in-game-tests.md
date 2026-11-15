@@ -937,10 +937,12 @@ combo and P1's ATK in that team's rotations.
 2 s after that shot? In a fight, hold Signs and arrows for 30 s without
 using them: do they drop at 24 s?
 **Result (owner, 2026-11-15, hover half):** controlled, after her battle
-skill, letting go of the attack button: she drops "almost immediately, at
-most one second" later. That fits the data: the idle loop runs 27 frames
-(0.9 s) before floating_end starts her landing, whose frame 8 ends the
-hover. So the hover doesn't idle longer than the data says; no engine
+skill and some floating shots, letting go of the attack button: she drops
+"almost immediately, at most one second" after the last shot. That fits
+the data: after a shot the idle loop runs 27 frames (0.9 s) before
+floating_end starts her landing, whose frame 8 ends the hover. (The
+battle skill with no shot at all wasn't tried: it only wastes SP, so no
+rotation uses it.) So the hover doesn't idle longer than the data says; no engine
 change. The logs' long hovers need another cause (open-problems
 "Typhoeus's hover outlasts her logged shots"). Still open: the Signs and
 arrows' 24 s lifetime.

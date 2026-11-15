@@ -7,8 +7,8 @@ Older entries (2026-10-21 and earlier): [journal-archive.md](journal-archive.md)
 
 ## 2026-11-15: In-game test 42, hover half: the idle hover matches the data
 
-The owner, controlling Typhoeus: after her battle skill, letting go of
-attack, she drops within about a second. The data's idle loop is 27
+The owner, controlling Typhoeus: after her battle skill and some shots,
+letting go of attack, she drops within about a second of the last shot. The data's idle loop is 27
 frames (0.9 s) before her landing starts, so the kit is right and nothing
 changes. This rules out the first explanation for the logs' long hovers
 (9090, 1cd1); still possible: shots that hit nothing (not logged) keep the
