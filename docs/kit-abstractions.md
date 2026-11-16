@@ -213,7 +213,7 @@ Several of the problems above come from that setup, not from the game:
 - **Verification ran on the wrong code.** In worktrees the CLI and tests
   resolved the main checkout's packages and found no data, so part of the
   first round's "checks" weren't of the agent's own kit (now
-  `scripts/setup-worktree.sh`).
+  `scripts/setup-worktree.ts`).
 - **Shared files edited in parallel** (the kits test's known-gap list) caused
   merge conflicts every round.
 
@@ -229,7 +229,7 @@ Several of the problems above come from that setup, not from the game:
    review merges or rejects them.
 4. Briefs carry only facts with a source (file and key, or log and time);
    anything taken from an earlier report is marked as a claim to check.
-5. Agents in worktrees `source scripts/setup-worktree.sh` before any check,
+5. Agents in worktrees run `node scripts/setup-worktree.ts` before any check,
    and report the check output, not a summary of it.
 6. Per-kit data that tests need (known gaps) lives in the kit file, not in a
    shared test file.

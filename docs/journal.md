@@ -4,9 +4,37 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 85 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 86 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-16: Game-data cache; worktrees without `source`
+
+Architecture review items 1 and 7. **Cache:** `loadGameData` keeps a
+v8-serialised GameData in the main checkout's `node_modules/.cache/efsim`
+(packages/data cache.ts; design.md "Data layer"). The key hashes the
+sources' commits and table stats, the kits, schemas, tables.json, the
+data package's sources and the engine modules it runs (traced from its
+imports: 11 of 43 files, not the planning code, so policy edits keep the
+cache; an untraceable import falls back to the whole engine). Atomic
+writes, any read error rebuilds, `EFSIM_NO_CACHE=1`, `efsim cache [clear]`.
+Tests: a cached load and the worker's shared data equal a fresh build
+(a tampered entry fails it), kit/loader/engine/schema edits change the
+key. Measured under load 11–15 (no cache → cache): `efsim find` 12.5 →
+1.1 s, `simulate` 17.7 → 1.5 s, one test worker 16.5 → 2.7 s, `efsim
+rules` (Ink Melt, 300 s × 5 seeds) 55 → 47 s (the rest is the rule run).
+v8 rather than JSON: it keeps shared objects shared, `undefined` and
+NaN; deserialising takes ~0.1 s. Comparing `v8.serialize` bytes of a
+fresh and a read copy is no equality test (string representations
+differ), so the test uses `isDeepStrictEqual`. **Worktrees:**
+`node scripts/setup-worktree.ts` links node_modules/@efsim (the .sh only
+calls it); the vitest configs run it and alias `@efsim/*` to the
+checkout's own packages; tsconfig `paths` does the same for tsc; the
+data loader reads the main checkout's data/ when the worktree's is
+empty; the CLI exits with a clear message when an @efsim package
+resolves outside its checkout. Limit: when the other checkout lacks an
+export the CLI imports, Node fails at link time (a SyntaxError naming
+the export) before the check runs; loud, but less clear.
 
 ## 2026-11-16: Faster tests, snapshot regeneration, accuracy scoreboard
 
@@ -246,45 +274,3 @@ list is the example (examples/estella-si-akekuri-arcane.rules.json) and on
 the team page. Lesson for the rule search: it never tried the "button
 shows the plain battle skill" condition on Si, so a cue-gated variant of
 each repeated press is worth adding to its moves.
-
-## 2026-11-16: Rule-based rotations, phase 1
-
-Goal (the owner): rotations a person can learn and play: a short opener
-and a priority list "when cue X is visible, do Y", played by a simulated
-player with a reaction delay, measured by sustained DPS over a long
-fight. Done (design.md "Rule-based rotations", with the owner's cue
-ranking): the format (schemas/rules.schema.json; cues only from what the
-UI shows, plus a few justified operator states), the driver (engine
-policy.ts `playRules`, frame by frame on init / advance / startsNow /
-apply, no fork of the damage model; reaction delay 0.3 s ± 50% seeded,
-drawn at each cue's onset; pairs; opener; basic-attack or dive filler),
-learnability (cue cost by rank, complexity), `efsim rules` (sustained
-DPS, spread over seeds, rolled crits, robustness at 0 / 0.3 / 0.6 s,
-rules fired, the scenario's rotation as the 60 s reference), the rule
-search (policysearch.ts, local search, Pareto front of DPS against
-complexity), tests (tests/policy.test.ts), examples/*.rules.json, each
-team page's "Rules", in-game test 108 (the Finisher input).
-
-Results (sustained DPS over 300 s, 0.3 s delay, 10 seeds, full energy /
-from zero): the owner's team 55,462 / 56,370 (hand-written list; first
-60 s −8.8% / +4.2% against the 60 s timelines; its 300 s total +18.9%
-over a fixed 300 s search at beam 6); Ink Melt 66,058 / 60,464 (searched:
-+28% over the hand-written list; first 60 s −25.5% / −45.8%; 300 s
-+20.8% over the fixed search); Typhoeus's team 53,302 / 48,560
-(searched: +16%; first 60 s −28.2% / −47.5%; 300 s −5.5% under the fixed
-search). Over a long fight the rules match or beat the beam-6 search; the
-60 s timelines stay well above them for Ink Melt and Typhoeus.
-Decisions: a press may start only where earliestStart from the state
-after the last press agrees, and is applied to that state, so `simulate`
-replays the rules' rotation exactly (startsNow on the state advanced
-frame by frame allowed Typhoeus's battle skill 48 frames sooner than
-the replay could cast it, after a dive; found by the replay check); the
-finisher is part of the basic attack (no delay; test 108 checks the
-assumption); no swaps; no timers in the search's cues. Problems: the
-fight is chaotic for the driver too: a list's sustained DPS moves 2–5%
-(sd) between reaction-delay seeds, so the search chases noise at 2–3
-seeds (the owner's team: every "gain" vanished at 10 seeds) and the bot
-is sometimes worse than the 0.3 s player; the gains that held (Ink Melt,
-Typhoeus) were 15–30%. The basic attack's options judged at every frame
-were most of a run's time: now from their earliest start after each
-press (exact; `judgeEveryFrame` checks it).

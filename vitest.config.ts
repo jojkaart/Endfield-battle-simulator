@@ -1,6 +1,8 @@
 import { configDefaults, defineConfig } from "vitest/config";
+import { efsimAlias } from "./vitest.shared.ts";
 
 export default defineConfig({
+  resolve: { alias: efsimAlias },
   test: {
     include: ["packages/*/test/**/*.test.ts", "tests/**/*.test.ts"],
     // The slow log checks (pending fixtures' verdict snapshots, the negative control) run in `npm run test:logs`

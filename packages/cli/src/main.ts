@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 // efsim: Endfield battle simulator command line.
 
+import "./checkout.ts"; // first: refuses to run another checkout's @efsim packages
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { loadGameData } from "@efsim/data";
+import { cacheDir, cacheDisabled, clearGameDataCache, gameDataCacheKey, listGameDataCache, loadGameData } from "@efsim/data";
 import { FPS, type CritMode, type TimelineScenario } from "@efsim/engine";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "./commands.ts";
 import { kitDraft } from "./kitdraft.ts";
@@ -151,6 +152,8 @@ const USAGE = `Usage:
   efsim kit-draft <operator>              Draft a kit from SkillData (to verify against logs)
   efsim kit-census                        Kit features per operator, for the review after each new kit
   efsim kit-trim [--write]                Kit values the loader takes from the data anyway (--write removes them)
+  efsim cache [clear]                     The compiled game-data cache: where it is, its entries, whether the
+                                          current inputs have one; clear removes them (EFSIM_NO_CACHE=1: off)
 
 Options for calc and compare:
   --enemy <id>        Target (default eny_0051_rodin, Rhodagn)
@@ -535,6 +538,9 @@ async function main(argv: string[]): Promise<number> {
     case "kit-census":
       text = formatCensus(kitCensus());
       break;
+    case "cache":
+      text = cacheCommand(args[0]);
+      break;
     case "kit-trim":
       text = formatTrim(kitTrim(data(), values.write), values.write);
       break;
@@ -591,6 +597,29 @@ function writeGearScenario(from: string, to: string, team: readonly { readonly o
     return b ? { ...t, gear: [...b.gear] } : t;
   });
   writeFileSync(to, JSON.stringify(doc, null, 2) + "\n");
+}
+
+/** efsim cache [clear]: the compiled game-data cache (packages/data cache.ts). */
+function cacheCommand(sub: string | undefined): string {
+  const dir = cacheDir();
+  if (sub === "clear") {
+    const n = clearGameDataCache(dir);
+    return `Removed ${n} file${n === 1 ? "" : "s"} from ${dir}.`;
+  }
+  if (sub !== undefined) throw new Error(`efsim cache takes no argument, or "clear"`);
+  let key: string;
+  try {
+    key = gameDataCacheKey();
+  } catch (e) {
+    key = `(none: ${e instanceof Error ? e.message : String(e)})`;
+  }
+  const entries = listGameDataCache(dir);
+  const cached = entries.some((e) => basename(e.file) === `gamedata-${key}.v8`);
+  return [
+    `Game-data cache: ${dir}${cacheDisabled() ? " (off: EFSIM_NO_CACHE)" : ""}`,
+    `The current inputs' key: ${key} (${cached ? "cached" : "not cached: the next load builds it"})`,
+    ...entries.map((e) => `  ${basename(e.file)}  ${(e.bytes / 1e6).toFixed(1)} MB  used ${e.used.toISOString()}`),
+  ].join("\n");
 }
 
 /** --setup's mode. */
