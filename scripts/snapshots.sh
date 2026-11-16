@@ -33,9 +33,15 @@ for f in tests/snapshots/*.json; do
   echo '{}' > "$f"
 done
 
+# The test lock premerge takes (scripts/premerge.ts), so parallel worktrees' suites queue instead of timing out.
+lock=()
+if [ "${EFSIM_NO_TEST_LOCK:-}" != "1" ] && command -v flock >/dev/null; then
+  lock=(flock "$(git rev-parse --path-format=absolute --git-common-dir)/efsim-tests.lock")
+fi
+
 export EFSIM_UPDATE_SNAPSHOTS=1
-npx vitest run tests/examples.test.ts tests/logs.test.ts tests/kits.test.ts
-npx vitest run --config vitest.logs.config.ts tests/slow/logs-pending
+"${lock[@]}" npx vitest run tests/examples.test.ts tests/logs.test.ts tests/kits.test.ts
+"${lock[@]}" npx vitest run --config vitest.logs.config.ts tests/slow/logs-pending
 unset EFSIM_UPDATE_SNAPSHOTS
 node scripts/accuracy.ts --write
 trap - ERR INT TERM

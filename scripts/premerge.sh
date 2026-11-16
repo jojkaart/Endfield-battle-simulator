@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 # Before merging a branch into main (CLAUDE.md "Branches"): what `npm run
-# check` doesn't cover, then the check itself.
+# check` doesn't cover, then the check itself, step by step (scripts/premerge.ts:
+# every step runs even after one fails, a table of pass/fail and times at the
+# end, a re-run of files that only timed out, a lock so parallel worktrees'
+# suites queue). Expect about 15-20 min on this 4-core container (more under
+# other agents' load): run it in the background with a limit of 40 min.
 #   - the tree is clean (uncommitted work wouldn't be merged, and the check
 #     would run on it);
 #   - in a worktree, its own packages are linked (scripts/setup-worktree.ts,
@@ -33,7 +37,12 @@ if echo "$changed" | grep -qE '^(packages/|examples/|schemas/)' && ! echo "$chan
   exit 1
 fi
 
-npm run check
+status=0
+node scripts/premerge.ts || status=$?
 # The branch's accuracy change (docs/accuracy.md, from the verdict snapshots) for the reviewer.
 node scripts/accuracy.ts --compare "$(git merge-base "$base" HEAD)"
+if [ "$status" -ne 0 ]; then
+  echo "premerge: not ready: a step failed (the table above)" >&2
+  exit "$status"
+fi
 echo "premerge: ready to merge into $base"
