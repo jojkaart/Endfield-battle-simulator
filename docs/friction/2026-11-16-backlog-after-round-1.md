@@ -117,13 +117,16 @@ original reports are in docs/friction-done/.
 - **Why it helps:** test:logs, the longest part of premerge, drops toward total
   work ÷ workers. Cost: one more generated file.
 
-## 7. Tests of over ~30 s still in `npm test`
+## 7. Watch single tests' times (none over ~30 s in `npm test` now)
 
 - **What happened:** premerge failures under load were 60 s timeouts of single
-  tests that take 30–50 s on an idle machine (search-loop's CLI test was moved;
-  buffreplay's slowest cases were split). Round 1 made premerge re-run
-  timed-out files alone and queue suites behind a lock, which hides the
-  symptom, not the cause.
+  tests that took 30–50 s on an idle machine. Those were moved or split before
+  round 1; round 1's premerge (load 1.4–4) measured the slowest default-suite
+  test at 13 s (team-order's Typhoeus scenario) and file at 26 s
+  (team-order.test.ts). In `test:logs` the two `efsim search --loop` CLI tests
+  took 172 s and 142 s in one file (round 1 split them into two files). Round 1
+  also made premerge re-run timed-out files and queue suites behind a lock,
+  which would hide a new slow test.
 - **Cause:** a global 60 s `testTimeout` and no check on single tests' time.
 - **Suggestion:** premerge now prints each vitest step's slowest files and
   tests (scripts/premerge.ts `slowest`; round 1's run is quoted in
