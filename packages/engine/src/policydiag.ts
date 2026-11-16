@@ -6,8 +6,8 @@
 // the enemy's statuses) and how much of its damage, and of its ultimate's, they cover; damage shares. Plus the
 // distribution of sustained DPS over reaction-delay seeds and crits (policyDistribution).
 
-import { attrTotal, kitSkill, panelAt } from "./timeline/context.ts";
-import { advance, apply, buttonSkill, createContext, init, memoised, simulate, type RotationAction } from "./timeline.ts";
+import { attrTotal } from "./timeline/context.ts";
+import { advance, apply, buttonSkill, createContext, init, isStaggered, kitSkill, maxEnergy, memoised, panelAt, simulate, SP, spAt, type RotationAction, type TimelineScenario, type TimelineState } from "./timeline.ts";
 import { Attr } from "./attributes.ts";
 import { activeAt, reaches } from "./buffs.ts";
 import { EngineError } from "./errors.ts";
@@ -15,9 +15,6 @@ import type { GameData, OperatorKit } from "./model.ts";
 import { allActions } from "./events.ts";
 import { type DamageMoments, Z_95 } from "./moments.ts";
 import { playRules, stepsOf, type PolicyFrameView, type PolicyOptions, type PolicyRun, type RuleList } from "./policy.ts";
-import { SP } from "./timeline/rules.ts";
-import { isStaggered, maxEnergy, spAt } from "./timeline/resources.ts";
-import type { TimelineScenario, TimelineState } from "./timeline/state.ts";
 import { FPS } from "./units.ts";
 
 /** Seconds an operator's ultimate was ready but not cast, by why. */

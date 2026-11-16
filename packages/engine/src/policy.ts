@@ -13,12 +13,35 @@ import { FPS } from "./units.ts";
 import { hitsMoments, NO_DAMAGE, scaleMoments, type DamageMoments } from "./moments.ts";
 import { diveOf, nextBasics } from "./search.ts";
 import { activeAt } from "./buffs.ts";
-import { advance, apply, buttonSkill, buttonSkills, canStartAt, createContext, SKILL_BUTTONS, startsNow, earliestStart, exclusiveUntil, init, memoised, SP, type RotationAction, type TimelineContext, type TimelineScenario, type TimelineState } from "./timeline.ts";
-import { nextEventAfter } from "./timeline/advance.ts";
-import { isStaggered, maxEnergy, skillSpGain, spAt, spCostAt } from "./timeline/resources.ts";
-import { kitSkill, maxPoise, skillCosts, timingOf } from "./timeline/context.ts";
-import { castBound } from "./timeline/schedule.ts";
-import { actionFrame, needsWindow, skillAvailable, windowKey, windowOpen } from "./timeline/timing.ts";
+import {
+  advance,
+  apply,
+  buttonSkill,
+  buttonSkills,
+  canStartAt,
+  createContext,
+  earliestStart,
+  exclusiveUntil,
+  init,
+  isStaggered,
+  kitSkill,
+  maxEnergy,
+  maxPoise,
+  memoised,
+  needsWindow,
+  nextChangeAfter,
+  skillAvailable,
+  skillCosts,
+  skillSpGain,
+  spAt,
+  startsNow,
+  windowKey,
+  windowOpen,
+  type RotationAction,
+  type TimelineContext,
+  type TimelineScenario,
+  type TimelineState,
+} from "./timeline.ts";
 
 // --- The format ----------------------------------------------------------------
 
@@ -679,74 +702,14 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
   // hit's launch, SP reaching a level a cue or a skill's cost names; and the driver's own clocks: a rule's reaction
   // delay, the queue's wait, a `since` timer. Visiting a frame early is harmless; missing one would change the run, which
   // the `frames` stepping checks (tests/policy.test.ts).
-  const spLevels = new Set(clocks.sp);
   const nextWake = (frame: number): number => {
-    let w = end;
-    // A frame from which something may differ (a time in the past changes nothing more).
-    const mark = (g: number | null | undefined) => {
-      if (g === null || g === undefined || !Number.isFinite(g)) return;
-      const c = Math.ceil(g);
-      if (c > frame && c < w) w = c;
+    let w = nextChangeAfter(ctx, st, frame, end, clocks.sp);
+    const mark = (g: number | undefined) => {
+      if (g !== undefined && g > frame && g < w) w = g;
     };
-    for (const x of st.scheduled) {
-      mark(Math.max(frame + 1, x.frame));
-      mark(castBound(x));
-    }
-    if (w === frame + 1) return w;
-    mark(nextEventAfter(st, frame));
-    for (const b of st.buffs) {
-      mark(b.appliedAt);
-      mark(b.expiresAt);
-    }
-    const e = st.enemy;
-    mark(e.infliction?.expiresAt);
-    mark(e.vulnerable?.expiresAt);
-    for (const x of e.statuses) mark(x.expiresAt);
-    for (const x of e.physical) mark(x.expiresAt);
-    if (st.stagger.until !== null) {
-      mark(st.stagger.until);
-      mark(st.stagger.until + 1);
-    }
-    for (const v of Object.values(st.readyAt)) mark(v);
-    for (const v of Object.values(st.comboWindow)) {
-      mark(v.from);
-      mark(v.until + 1);
-    }
-    for (const c of Object.values(st.chainNext)) {
-      for (const x of [c, ...(c.alternatives ?? [])]) {
-        mark(x.from);
-        mark(x.until + 1);
-      }
-    }
-    for (const cur of Object.values(st.acting)) {
-      const t = timingOf(ctx, cur.skill);
-      const at = (x: number) => mark(actionFrame(cur, x));
-      at(t.durationFrames);
-      at(t.exclusiveFrames);
-      for (const m of t.interruptibleFrom ?? []) at(m);
-      for (const x of t.windows) {
-        at(x.from);
-        at(x.to + 1);
-      }
-      for (const x of t.channels) {
-        at(x.from);
-        at(x.to);
-      }
-    }
-    mark(st.spPausedUntil);
-    // SP reaching a level: from the frame before (the state then may round it a hair differently).
-    const sp = spAt(st, frame);
-    if (sp < SP.max) {
-      const levels = new Set(spLevels);
-      for (const b of ctx.scenario.team) for (const k of SKILL_BUTTONS) for (const x of buttonSkills(ctx, b.operator, k)) levels.add(spCostAt(ctx, st, b.operator, skillCosts(ctx, b.operator, x.skillId, frame), frame));
-      for (const level of levels) {
-        if (sp >= level || level > SP.max) continue;
-        mark(Math.max(frame + 1, Math.max(frame, st.spPausedUntil) + Math.floor(((level - sp) * FPS) / SP.perSecond) - 1));
-      }
-    }
     for (const c of clocks.since) {
       const last = lastPress.get(c.key);
-      if (last !== undefined) mark(last + c.frames);
+      if (last !== undefined) mark(Math.ceil(last + c.frames));
     }
     for (let i = 0; i < list.rules.length; i++) if (onset[i] !== null) mark(readyAt[i]);
     if (queue.length > 0) mark((queue[0] as (typeof queue)[number]).since + wait);

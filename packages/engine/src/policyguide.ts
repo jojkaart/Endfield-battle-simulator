@@ -38,10 +38,7 @@ import {
   type PolicyStep,
   type RuleList,
 } from "./policy.ts";
-import { SP } from "./timeline/rules.ts";
-import { spAt } from "./timeline/resources.ts";
-import { kitSkill, panelAt } from "./timeline/context.ts";
-import type { LandedHit, TimelineScenario } from "./timeline/state.ts";
+import { kitSkill, panelAt, SP, spAt, type LandedHit, type TimelineScenario } from "./timeline.ts";
 import type { StatPanel } from "./stats.ts";
 import { FPS } from "./units.ts";
 

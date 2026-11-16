@@ -33,7 +33,8 @@ import {
 import { num, pct, table } from "./format.ts";
 import { playSettings, seedJobs, type PlaySettings } from "./diagnose.ts";
 import { describeRuleList } from "./rules.ts";
-import { codeStamp, commandPool, type RulesPool, type RulesResult } from "./rulespool.ts";
+import { commandPool, type RulesPool, type RulesResult } from "./rulespool.ts";
+import { codeProvenance } from "./provenance.ts";
 import { alternatives, holds, underAssume } from "./assume.ts";
 
 export interface GuidedOptions {
@@ -107,7 +108,7 @@ export interface GuidedResult {
   readonly assumptions?: readonly { readonly label: string; readonly gain: number; readonly se: number; readonly holds: "holds" | "flips" | "unclear" }[];
   readonly runs: number;
   readonly secondsTaken: number;
-  /** The code the run used (rulespool.ts codeStamp). */
+  /** The code the run used (provenance.ts codeProvenance). */
   readonly code: string;
 }
 
@@ -301,7 +302,7 @@ export async function guidedSearch(data: GameData, scenario: Omit<TimelineScenar
         assumptions.push({ label: alt.label, ...g, holds: holds(check, g) });
       }
     }
-    return { settings, screenSeeds: S, confirmSeeds: C, start, final, rounds, check, runs, secondsTaken: (performance.now() - t0) / 1000, code: codeStamp(), ...(o.also ? { also: o.also.label } : {}), ...(o.assumptions ? { assumptions } : {}) };
+    return { settings, screenSeeds: S, confirmSeeds: C, start, final, rounds, check, runs, secondsTaken: (performance.now() - t0) / 1000, code: codeProvenance(), ...(o.also ? { also: o.also.label } : {}), ...(o.assumptions ? { assumptions } : {}) };
   } finally {
     // The pool stays for the command's other batches (its idle threads don't hold the process).
   }

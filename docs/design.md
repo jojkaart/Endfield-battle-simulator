@@ -1864,12 +1864,27 @@ noise is a third, but a list's own level still moves). Judge a list at
 bot (delay 0, one run) is one sample of the same noise, sometimes below
 the 0.3 s player. Gains that held: Ink Melt +28%, Typhoeus's team +16%.
 
-**How many seeds** (measured 2026-11-16, seeds 2000–2127, 300 s, 0.3 s; an
-edit of the kind the searches make: each example list against the same
-list with its first two rules swapped; the standard error of the paired
-relative difference, and the smallest gain it can show, twice that):
+**How many seeds** (measured 2026-11-16, seeds 2000–2127, 300 s, 0.3 s,
+full energy): the standard error of a paired relative difference between
+two lists on common seeds, and in brackets the smallest gain it can show
+(twice that). A list's own sustained DPS has an sd of 2.5–4.6% a seed
+(the owner's 2.9%, Ink Melt 4.4%, Typhoeus's 2.8%), so unpaired
+comparisons are hopeless; paired ones depend on how far the edit moves the
+timeline:
 
-POWER_TABLE
+| Edit (its gain at 128 seeds) | 10 seeds | 32 | 64 | 128 |
+|---|---|---|---|---|
+| Typhoeus's list without its last rule (+0.98%), a typical small edit | 1.20% (2.4%) | 0.77% (1.5%) | 0.52% (1.0%) | 0.36% (0.7%) |
+| The owner's list, first two rules swapped (−0.06%) | 0.34% (0.7%) | 0.32% (0.6%) | 0.17% (0.3%) | 0.14% (0.3%) |
+| The owner's list without its last rule (−19.0%) | 0.80% | 0.46% | 0.38% | 0.26% |
+| Ink Melt's list without its last rule (−46.2%) | 1.05% | 0.72% | 0.58% | 0.39% |
+
+Swapping the first two rules changes nothing on Ink Melt's and Typhoeus's
+lists (their first rules rarely compete; standard error ≈ 0). The
+differences are heavy-tailed (the owner's swap: the same standard error
+at 10 and 32 seeds), so the first rows are the guide: a gain under 1.5%
+needs 64 seeds or more, under 1% 128, and 10 seeds tell only gains over
+2.5%. The guided search's 32 confirm seeds match this (0.5–1.2% there).
 
 A comparison of two lists is `efsim rules <scenario> <a.rules.json>
 --compare <b.rules.json>`: the paired gain ± standard error on seeds 1–k
@@ -1990,7 +2005,7 @@ threads (rulespool.ts; each loads the game data once). Since 2026-11-16 a
 command has one pool (`commandPool`: started on first use, kept for all
 its batches; idle threads don't hold the process), `efsim rules` uses it
 too (`--workers`), and each long command's output starts with the commit
-it ran on and whether the code had uncommitted changes (`codeStamp`).
+it ran on and whether the code had uncommitted changes (`codeProvenance`).
 `gear --rules` takes a change only if it isn't worse on the team's
 zero-energy start (`examples/<team>-zero.scenario.json`, by default when
 it exists; `--also` overrides) by more than one standard error, and

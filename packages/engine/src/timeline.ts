@@ -31,3 +31,4 @@ export type { ReplayCastOptions, TimelineResult, RunSpread } from "./timeline/dr
 export { kitSkill, skillCosts, maxPoise } from "./timeline/context.ts";
 export { spAt, maxEnergy, isStaggered, skillSpGain } from "./timeline/resources.ts";
 export { windowKey, windowOpen, needsWindow } from "./timeline/timing.ts";
+export { nextChangeAfter } from "./timeline/wake.ts";

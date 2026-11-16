@@ -2,10 +2,7 @@
 // playRules (with its diagnosis when asked) on a scenario whose team may wear probe pieces (synthetic gear with one
 // stat line: the marginal values); many runs go to worker threads, each loading the game data once.
 
-import { execFileSync } from "node:child_process";
 import { availableParallelism } from "node:os";
-import { dirname, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
 import { Worker } from "node:worker_threads";
 import { diagnoseRules, guideRules, playRules, type DamageMoments, type GameData, type GearData, type GuideRun, type PolicyDiagnosis, type PolicyOptions, type PolicyRun, type RuleList, type TimelineScenario } from "@efsim/engine";
 
@@ -94,6 +91,12 @@ export async function runRulesJobs(data: GameData, jobs: readonly RulesJob[], wo
 }
 
 let shared: RulesPool | null = null;
+let kitFiles: readonly string[] = [];
+
+/** What-if kit files (efsim --kit) the worker threads load in place of the operators' own, as the main thread does (absolute paths). */
+export function setWorkerKitFiles(files: readonly string[]): void {
+  kitFiles = [...files];
+}
 let sharedData: GameData | null = null;
 
 /**
@@ -110,22 +113,6 @@ export function commandPool(data: GameData, workers = defaultWorkers()): RulesPo
   return shared;
 }
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-
-/**
- * The code a run used, for the head of a long command's output (gear on rules, diagnose, the guided search, rules): the
- * commit and whether the engine, CLI, data code or kits had uncommitted changes then.
- */
-export function codeStamp(): string {
-  try {
-    const head = execFileSync("git", ["rev-parse", "--short", "HEAD"], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
-    const dirty = execFileSync("git", ["status", "--porcelain", "--", "packages", "schemas"], { cwd: ROOT, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim() !== "";
-    return `code ${head}${dirty ? " with uncommitted changes" : ""}`;
-  } catch {
-    return "code: unknown (no git)";
-  }
-}
-
 /** Worker threads kept alive across batches of runs (each loads the game data once): the guided search's many small batches. */
 export interface RulesPool {
   readonly workers: number;
@@ -136,7 +123,7 @@ export interface RulesPool {
 /** A pool of `workers` threads (1: every run here, no threads). One batch at a time. */
 export function openRulesPool(data: GameData, workers = defaultWorkers()): RulesPool {
   if (workers <= 1) return { workers: 1, run: (jobs, progress) => runRulesJobs(data, jobs, 1, progress), close: () => Promise.resolve() };
-  const threads = Array.from({ length: workers }, () => new Worker(new URL("./rulesworker.ts", import.meta.url)));
+  const threads = Array.from({ length: workers }, () => new Worker(new URL("./rulesworker.ts", import.meta.url), { workerData: { kitFiles } }));
   // Idle threads don't keep the process alive (a command ends without closing its pool); a batch holds them.
   for (const w of threads) w.unref();
   let busy = false;

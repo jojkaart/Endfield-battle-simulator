@@ -4,7 +4,7 @@
 // and a candidates file's loadouts (gear.ts gearCandidates). Coordinate ascent across operators, a change taken only
 // when its gain is beyond the seeds' spread of the difference (docs/design.md "Rule-based rotations", gear on rules).
 
-import { activeGearSets, attrName, computeStats, resolveRuleList, Target, type Build, type GameData, type GearData, type RuleList, type TimelineScenario } from "@efsim/engine";
+import { activeGearSets, attrLabel, computeStats, resolveRuleList, Target, type AttrType, type Build, type GameData, type GearData, type RuleList, type TimelineScenario } from "@efsim/engine";
 import { beyondNoise, diagnose, findings, formatDiagnosis, MARGINAL_NOISY, mvText, paired, seedJobs, type Diagnosed, type DiagnoseOptions, type MarginalValue, type PlaySettings } from "./diagnose.ts";
 import { modePair } from "./edge.ts";
 import { describeGear, type GearCandidate } from "./gear.ts";
@@ -138,7 +138,7 @@ export interface RuleGearResult {
   readonly confirmAlso?: { readonly gain: number; readonly se: number } | null;
   /** The chosen gear against the start on the fresh seeds under each other reading of the team's kits' open assumptions (assume.ts). */
   readonly assumptions?: readonly { readonly label: string; readonly gain: number; readonly se: number; readonly holds: "holds" | "flips" | "unclear" }[];
-  /** The code the run used (rulespool.ts codeStamp). */
+  /** The code the run used (provenance.ts codeProvenance). */
   readonly code: string;
   readonly start: readonly number[];
   readonly final: readonly number[];
@@ -270,7 +270,7 @@ export async function gearOnRules(data: GameData, scenario: Omit<TimelineScenari
       const curMode = modeOf(cur.gear.map((g) => g.id));
       const flip = (gear: readonly string[]) => {
         const m = modeOf(gear);
-        const word = (n: number) => (n === 41 ? "Intellect" : n === 42 ? "Will" : attrName(n));
+        const word = (n: number) => attrLabel(n as AttrType);
         return m !== undefined && m !== curMode ? `flips the mode: ${word(m)} over ${word(m === pair?.a ? pair.b : (pair?.a ?? 0))}` : undefined;
       };
       const rowOf = (r: (typeof list2)[number], base: readonly number[], d: readonly number[]): RuleGearRow => {

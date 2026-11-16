@@ -33,7 +33,8 @@ import {
 import { num, pct, signedPct, table } from "./format.ts";
 import { alternatives, gainText, holds, underAssume, verdict } from "./assume.ts";
 import { paired } from "./diagnose.ts";
-import { codeStamp, defaultWorkers, runRulesJobs, type RulesJob, type RulesResult } from "./rulespool.ts";
+import { defaultWorkers, runRulesJobs, type RulesJob, type RulesResult } from "./rulespool.ts";
+import { codeProvenance } from "./provenance.ts";
 
 const verdictWords = (m: { readonly gain: number; readonly se: number }) => ({ gain: "a gain beyond twice its standard error", loss: "a loss beyond twice its standard error", noise: "within the noise" })[verdict(m)];
 const describeLearn = (l: Learnability) => `complexity ${l.complexity}`;
@@ -216,7 +217,7 @@ export async function rulesCommand(data: GameData, scenario: TimelineScenario, r
   const controlled = scenario.controlled ?? (team[0] as string);
   const assumed = Object.entries(scenario.options.assume ?? {});
   const lines = [
-    `Rules ${file}: ${team.map((op) => data.operators[op]?.name ?? op).join(", ")}; ${data.operators[controlled]?.name ?? controlled} controlled; ${seconds} s fight; reaction ${reaction} s ± ${POLICY_JITTER * 100}%; cue ranks ${JSON.stringify(POLICY_CUE_RANKS)}; ${codeStamp()}${assumed.length ? `; assuming ${assumed.map(([k, v]) => `${k}=${v}`).join(", ")}` : ""}`,
+    `Rules ${file}: ${team.map((op) => data.operators[op]?.name ?? op).join(", ")}; ${data.operators[controlled]?.name ?? controlled} controlled; ${seconds} s fight; reaction ${reaction} s ± ${POLICY_JITTER * 100}%; cue ranks ${JSON.stringify(POLICY_CUE_RANKS)}; ${codeProvenance()}${assumed.length ? `; assuming ${assumed.map(([k, v]) => `${k}=${v}`).join(", ")}` : ""}`,
     "",
   ];
   const start = await evaluate(data, fight, list, reaction, seeds, workers);

@@ -5,7 +5,6 @@
 
 import {
   Attr,
-  attrName,
   averageDiagnoses,
   distributionCritMode,
   critTriggers,
@@ -15,7 +14,9 @@ import {
   POLICY_REACTION_SECONDS,
   resolveRuleList,
   Slot,
+  statLabel,
   Target,
+  type AttrType,
   type Build,
   type GameData,
   type GearData,
@@ -26,7 +27,8 @@ import {
   type TimelineScenario,
 } from "@efsim/engine";
 import { num, pct, table } from "./format.ts";
-import { codeStamp, defaultWorkers, runRulesJobs, type RulesJob, type RulesResult } from "./rulespool.ts";
+import { defaultWorkers, runRulesJobs, type RulesJob, type RulesResult } from "./rulespool.ts";
+import { codeProvenance } from "./provenance.ts";
 import { alternatives, underAssume } from "./assume.ts";
 
 // --- Probes: one gear stat line of a typical size ---------------------------------------------------------
@@ -49,35 +51,9 @@ export interface Probe {
 const NOT_DAMAGE = new Set<number>([Attr.HealOutputIncrease, Attr.MaxHp]);
 const ELEMENT_OF = new Map<number, string>(Object.entries(ELEMENT_DAMAGE_INCREASE).map(([e, a]) => [a, e]));
 const KIND_OF = new Map<number, string>([[Attr.NormalAttackDamageIncrease, "basic"], [Attr.NormalSkillDamageIncrease, "battle"], [Attr.ComboSkillDamageIncrease, "combo"], [Attr.UltimateSkillDamageIncrease, "ultimate"]]);
-const ATTR_WORDS: Readonly<Record<number, string>> = {
-  [Attr.Str]: "Strength",
-  [Attr.Agi]: "Agility",
-  [Attr.Wisd]: "Intellect",
-  [Attr.Will]: "Will",
-  [Attr.CriticalRate]: "Crit Rate",
-  [Attr.CriticalDamageIncrease]: "Crit DMG",
-  [Attr.UltimateSpGainScalar]: "Ultimate Gain Efficiency",
-  [Attr.PhysicalAndSpellInflictionEnhance]: "Arts Intensity",
-  [Attr.PhysicalDamageIncrease]: "Physical DMG",
-  [Attr.FireDamageIncrease]: "Heat DMG",
-  [Attr.PulseDamageIncrease]: "Electric DMG",
-  [Attr.CrystDamageIncrease]: "Cryo DMG",
-  [Attr.NaturalDamageIncrease]: "Nature DMG",
-  [Attr.NormalAttackDamageIncrease]: "Basic Attack DMG",
-  [Attr.NormalSkillDamageIncrease]: "Battle Skill DMG",
-  [Attr.ComboSkillDamageIncrease]: "Combo Skill DMG",
-  [Attr.UltimateSkillDamageIncrease]: "Ultimate DMG",
-  [Attr.DamageToBrokenUnitIncrease]: "DMG to Staggered",
-  [Attr.Atk]: "ATK",
-};
 
 const median = (xs: readonly number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] as number;
 
-function probeLabel(attr: number, slot: number, target: number, value: number): string {
-  const who = target === Target.MainAttribute ? "main attribute" : target === Target.SecondaryAttribute ? "secondary attribute" : (ATTR_WORDS[attr] ?? attrName(attr));
-  const percent = slot === Slot.Percent || (slot === Slot.Add && value < 1.5 && attr !== Attr.PhysicalAndSpellInflictionEnhance && target === Target.AsWritten && ![Attr.Str, Attr.Agi, Attr.Wisd, Attr.Will].includes(attr as 39));
-  return `${who} +${percent ? `${(value * 100).toFixed(1)}%` : Math.round(value)}`;
-}
 
 /**
  * The stat lines the game's gear offers (T4 pieces, lines 1–3 at full artifice; healing, HP and damage-taken lines
@@ -101,7 +77,7 @@ export function gearProbes(data: GameData): Probe[] {
     const element = ELEMENT_OF.get(e.attr);
     const kind = KIND_OF.get(e.attr);
     const only = element ? { element } : kind ? { kind } : e.attr === Attr.DamageToBrokenUnitIncrease ? { staggered: true as const } : undefined;
-    return { key, label: probeLabel(e.attr, e.slot, e.target, value), attr: e.attr, slot: e.slot, target: e.target, value, ...(only ? { only } : {}) };
+    return { key, label: statLabel(e.attr as AttrType, e.slot, e.target, value), attr: e.attr, slot: e.slot, target: e.target, value, ...(only ? { only } : {}) };
   });
   out.push(
     { key: "ref:atk%", label: "ATK +10% (reference: sets give 8–15%)", attr: Attr.Atk, slot: Slot.Percent, target: Target.AsWritten, value: 0.1, reference: true },
@@ -194,7 +170,7 @@ export interface Diagnosed {
   /** Runs played and seconds taken. */
   readonly runs: number;
   readonly secondsTaken: number;
-  /** The code the run used (rulespool.ts codeStamp). */
+  /** The code the run used (provenance.ts codeProvenance). */
   readonly code: string;
   /**
    * Under each other reading of the team's kits' open assumptions (DiagnoseOptions.assumptions): sustained DPS on the
@@ -279,7 +255,7 @@ export async function diagnose(data: GameData, scenario: Omit<TimelineScenario, 
       });
     }
   }
-  const out: Diagnosed = { list, diagnosis, distribution: policyDistribution(base.map((r) => r.moments)), dps, marginal, settings, ...(critNote ? { critNote } : {}), runs, secondsTaken: (performance.now() - t0) / 1000, code: codeStamp() };
+  const out: Diagnosed = { list, diagnosis, distribution: policyDistribution(base.map((r) => r.moments)), dps, marginal, settings, ...(critNote ? { critNote } : {}), runs, secondsTaken: (performance.now() - t0) / 1000, code: codeProvenance() };
   if (!o.assumptions) return out;
   // The same seeds under each other reading (the marginal values stay the reading in use's: findings that read them are kept).
   const keyed = (f: readonly Finding[]) => new Map(f.filter((x) => x.key !== "per-minute").map((x) => [x.key, x.text]));

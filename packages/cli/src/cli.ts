@@ -6,7 +6,7 @@ import { parseArgs } from "node:util";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { cacheDir, cacheDisabled, clearGameDataCache, gameDataCacheKey, listGameDataCache, loadGameData, withKitFiles } from "@efsim/data";
-import { FPS, type CritMode, type TimelineScenario } from "@efsim/engine";
+import { EngineError, FPS, simulate as simulateScenario, type CritMode, type TimelineScenario } from "@efsim/engine";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "./commands.ts";
 import { kitDraft } from "./kitdraft.ts";
 import { formatRuns, formatSimulation, loopCommand, readScenario, searchCommand } from "./simulate.ts";
@@ -30,6 +30,7 @@ import { formatMentions, gamedataTree, whoMentions } from "./gamedata.ts";
 import { diagnose, formatDiagnosis } from "./diagnose.ts";
 import { formatRuleGear, gearOnRules } from "./gearrules.ts";
 import { parseAssume, underAssume, zeroCompanion } from "./assume.ts";
+import { setWorkerKitFiles } from "./rulespool.ts";
 
 const USAGE = `Usage:
   efsim find <text>                       Look up operator, weapon, gear and enemy IDs by name
@@ -368,9 +369,8 @@ async function main(argv: string[]): Promise<number> {
     };
   };
   // Loaded on first use, after the arguments and input files are checked (a mistake is reported without the load's wait).
-  // --kit: what-if kit files in place of the operators' own (withKitFiles). Worker threads load the data themselves,
-  // so the commands that use them don't take it yet.
-  if (values.kit.length && (command === "diagnose" || values.guided || (command === "gear" && values.rules))) throw new Error("--kit isn't passed to worker threads yet: it works with simulate, search, rules (not --guided), gear (not --rules), payoffs and calc");
+  // --kit: what-if kit files in place of the operators' own (withKitFiles); worker threads load them too.
+  setWorkerKitFiles(values.kit.map((f) => resolve(f)));
   let loaded: ReturnType<typeof loadGameData> | undefined;
   const data = () => (loaded ??= withKitFiles(loadGameData(), values.kit));
   /** The scenario with --duration (simulate, search): the fight's length in seconds. */
@@ -688,8 +688,16 @@ async function main(argv: string[]): Promise<number> {
           });
           text = formatRuleGear(data(), rg, `efsim gear --rules ${values.rules} on ${args[0]}`);
           if (values.out) {
-            writeGearScenario(args[0] as string, values.out, rg.team);
-            text += `\n\nWrote ${values.out} (the chosen gear; the timeline rotation as it was, which a loadout that moves ultimates may not play: the rules are the rotation here).`;
+            // The timeline rotation only if the chosen gear still plays it (a loadout that moves ultimates may not); else none.
+            let plays = true;
+            try {
+              simulateScenario(data(), { ...scenario, team: [...rg.team] });
+            } catch (e) {
+              if (!(e instanceof EngineError)) throw e;
+              plays = false;
+            }
+            writeGearScenario(args[0] as string, values.out, rg.team, plays ? undefined : []);
+            text += `\n\nWrote ${values.out} (the chosen gear; ${plays ? "the timeline rotation as it was, which it still plays" : "no timeline rotation: the old one can't be played with this gear"}; the rules are the rotation here).`;
           }
           break;
         }
