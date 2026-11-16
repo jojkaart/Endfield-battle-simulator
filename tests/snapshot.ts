@@ -26,7 +26,7 @@ export function readStored<T>(file: string, updating = UPDATING): Record<string,
   } catch (e) {
     if (updating) return {};
     const conflict = /^(<<<<<<<|=======|>>>>>>>)( |$)/m.test(text);
-    throw new Error(`${file} doesn't parse${conflict ? " (merge conflict markers)" : ""}: take either side and run \`npm run snapshots:update\`; never merge a snapshot by hand (${e instanceof Error ? e.message : String(e)})`);
+    throw new Error(`${file} doesn't parse${conflict ? " (merge conflict markers)" : ""}: take either side and run \`npm run snapshots:update\`; never merge a snapshot by hand (${e instanceof Error ? e.message : String(e)})`, { cause: e });
   }
 }
 
