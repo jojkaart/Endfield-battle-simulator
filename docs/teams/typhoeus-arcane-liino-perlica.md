@@ -148,6 +148,63 @@ Liino's ultimate) and Perlica's Stanza ATK. The logs' teams agree in kind:
 in 9090 (this team, 165 s against Tower 15's boss) Typhoeus dealt 82% of
 the damage.
 
+### Rules: what to play (2026-11-16)
+
+A rotation to learn rather than a timeline (docs/design.md "Rule-based
+rotations"; [examples/typhoeus-arcane-liino-perlica.rules.json](../../examples/typhoeus-arcane-liino-perlica.rules.json),
+`efsim rules`). Typhoeus controlled, no swaps. Start with **Liino's
+battle skill** (her stance); then at every moment do the first of these
+that applies:
+
+1. When Liino's ultimate is ready: Liino's ultimate.
+2. When Arcane's ultimate is ready: Arcane's ultimate (her second part
+   too, when its button lights up).
+3. When Typhoeus's ultimate is ready and she's hovering: Typhoeus's
+   ultimate.
+4. When Typhoeus's combo lights up and she's hovering: Typhoeus's combo
+   (both restart her five shots).
+5. When Typhoeus's combo lights up (she's on the ground): Perlica's
+   ultimate, then Typhoeus's combo.
+6. When Perlica's combo lights up: Perlica's combo.
+7. When Liino isn't in Vocalist Stance: Arcane's battle skill, then
+   Liino's battle skill.
+8. When Arcane's combo lights up: Arcane's combo.
+9. When Typhoeus is on the ground: Typhoeus's battle skill (take flight).
+10. When Typhoeus is on the ground: Typhoeus's combo (if it's ready).
+
+Otherwise Typhoeus's basic attacks (her aerial shots while she hovers).
+Learnability: 1 opener press, 10 rules (12 presses), cue cost 34,
+complexity 47; the hardest cues are the "ultimate ready" ones (rank 4);
+"hovering" and "Vocalist Stance" are states the game shows on the
+character and the skill button (rank 3).
+
+| Simulated player, 0.3 s reaction ± 50%, 10 seeds | Full energy | From zero |
+|---|---|---|
+| Sustained DPS over 300 s (sd over seeds) | **53,302** (2,080) | **48,560** (1,760) |
+| As a bot (0 s) / at 0.6 s | 60,422 / 49,927 | 54,003 / 48,713 |
+| First 60 s against the 60 s timeline (the examples) | 4,134,011 against 5,757,797 (−28.2%) | 2,620,990 against 4,989,348 (−47.5%) |
+| 300 s total against a fixed 300 s search (beam 6, full energy, 86 min) | 15,990,554 against 16,925,847 (−5.5%) | |
+
+- **Found by the rule search**, from hand-written lists (Typhoeus's
+  battle skill whenever she's on the ground and dives while she is,
+  ultimates when ready, every combo when it lights up, Liino's stance and
+  the others' battle skills from 200 SP): 46,069 → 53,302 (+16%), two runs
+  (150 and 200 lists) and rules that never fired removed. What it found:
+  Typhoeus's ultimate and combo only while she hovers (each restarts her
+  shots), Perlica's ultimate just before a grounded combo, Liino's stance
+  kept up with an Arcane battle skill first, basic attacks on the ground
+  instead of dives (the 5th shot and the ground chain's Final Strikes
+  give SP for the next flight).
+- **The most reaction-sensitive team:** a bot gets 13% more (60,422) and
+  0.6 s costs another 6%: Typhoeus's hover is a string of short windows.
+- **The gap to the 60 s timeline** is the largest of the three teams
+  (−28% / −48%): the timeline times her flights, combo and ultimate inside
+  each hover and shares SP between her flights and Perlica's and
+  Arcane's battle skills (Electrification and Corrosion windows) to the
+  frame; as rules, the SP sharing has no good visible cue. Over a long
+  fight the gap is small: the fixed 300 s search (beam 6) is only 5.5%
+  above the rules, the one team of the three where it is above them.
+
 ## Payoffs and chains
 
 `efsim payoffs` on the full-energy scenario with the chosen gear (16
