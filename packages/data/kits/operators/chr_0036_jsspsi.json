@@ -97,7 +97,7 @@
           }
         }
       ],
-      "note": "Talent 2 (Unsoiled Brush): \"when the Inksoul disappears, allied operators gain 15% / 30% Haste for 5 s\". BuffData talent1_speedup (SpeedupAction, stackingType 1 priority ratio_speed: strongest only), created by xianjing_inkboom / xianjing_linkline. 0 s while the talent isn't learned, so it's skipped. What Haste speeds up is assumed (in-game test 19). Its instances rank by ratio_speed (the priority key), which the creating buffs (xianjing_inkboom, xianjing_linkline) pass from their own ratio_speed: the effect's value."
+      "note": "Talent 2 (Unsoiled Brush): \"when the Inksoul disappears, allied operators gain 15% / 30% Haste for 5 s\". BuffData talent1_speedup (SpeedupAction, stackingType 1 priority ratio_speed: strongest only), created by xianjing_inkboom / xianjing_linkline only, never by Artful Intent bursting without an Inksoul (trigger inksoul_haste). 0 s while the talent isn't learned, so it's skipped. What Haste speeds up is assumed (in-game test 19). Its instances rank by ratio_speed (the priority key), which the creating buffs (xianjing_inkboom, xianjing_linkline) pass from their own ratio_speed: the effect's value."
     }
   ],
   "triggers": [
@@ -285,7 +285,7 @@
           "buff": "talent_haste"
         }
       ],
-      "note": "Talent 2: \"when the Inksoul disappears\" (BuffData xianjing_inkboom / xianjing_linkline create talent1_x)."
+      "note": "Talent 2: \"when the Inksoul disappears\". BuffData creates talent1_speedup in exactly two places, both on the Inksoul path, each reading ratio_speed / duration_speedup from talent1_1 (else talent1_2) on Si and giving it to the whole team (CharacterTeamFinder): xianjing_linkline (the Inksoul) at its finish (buffEvent 2, when iswaitenemy is 0; the Inksoul left waiting after its host dies ends with no Haste), and xianjing_inkboom (Final Stroke) on enable (buffEvent 5) while the target still has xianjing_inkhurteffect. Artful Intent's own end without an Inksoul (xianjing_inkhurteffect buffEvent 2: LaunchProjectile inkmark when EntityBB_havesoul is 0) and the projectile's skills (inkmark_projhit, inboom_projhit) create none, so the burst_mark path gives no Haste (checked 2026-11-16, tests/kit-si.test.ts). ZMDLogs doesn't record the Haste (none in four raw details with 2 Final Stroke, 4 Inksoul-expiry and 3 no-Inksoul ends); in-game test 109 checks the no-Inksoul burst by eye."
     }
   ],
   "skills": [

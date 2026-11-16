@@ -55,9 +55,10 @@ what you saw, in a line; the formats below are only suggestions.
 | 9 | [8](#8-where-link-comes-from-and-its-values-ready-higher-priority-affects-every-team) where Link comes from | Gilberta, Estella, Camille | `8: a 10,000 b 10,000 c 12,000 d 10,000` |
 | 10 | [97](#97-dive-attacks-their-pace-and-what-a-jump-can-do-ready-any-operator-higher-priority-the-search-now-uses-dives) dive attacks | anyone | `97: ten dives 11 s; jump cuts a skill yes; no air dash` |
 | 11 | [19](#19-what-haste-speeds-up-ready-if-you-have-si) what Haste speeds up | Si | `19: 13 numbers vs 10; cooldown same` |
-| 12 | [12](#12-gilbertas-arts-susceptibility-value-and-duration-ready-if-you-have-gilberta) Gilberta's Susceptibility | Gilberta | `12: 0.30 for 5 s; with 2 Vulnerable 0.36` |
-| 13 | [10](#10-sis-combo-by-stacks-consumed-ready-if-you-have-si) Si's combo by stacks | Si | `10: 1 / 2 / 3 stacks → numbers; highest count wins` |
-| 14 | [108](#108-is-a-finisher-what-the-basic-attack-button-does-on-a-staggered-enemy-ready-any-operator-for-the-rule-based-rotations) the Finisher from the attack button | anyone | `108: the next tap is the Finisher; dives aren't` |
+| 12 | [109](#109-does-sis-haste-need-initial-stroke-ready-if-you-have-si-with-talent-unsoiled-brush-higher-priority-it-decides-how-sis-battle-skill-is-played) Si's Haste without Initial Stroke | Si | `109: A no icon, B icon` |
+| 13 | [12](#12-gilbertas-arts-susceptibility-value-and-duration-ready-if-you-have-gilberta) Gilberta's Susceptibility | Gilberta | `12: 0.30 for 5 s; with 2 Vulnerable 0.36` |
+| 14 | [10](#10-sis-combo-by-stacks-consumed-ready-if-you-have-si) Si's combo by stacks | Si | `10: 1 / 2 / 3 stacks → numbers; highest count wins` |
+| 15 | [108](#108-is-a-finisher-what-the-basic-attack-button-does-on-a-staggered-enemy-ready-any-operator-for-the-rule-based-rotations) the Finisher from the attack button | anyone | `108: the next tap is the Finisher; dives aren't` |
 
 Left out for now: swap tests (15 and parts of 97: the default search
 doesn't swap) and tests for operators the owner doesn't use.
@@ -2207,6 +2208,30 @@ enemy become the Finisher, or only a basic-attack tap?
 Finisher, and a dive isn't.
 **Reply, e.g.:** `108: the next tap is the Finisher; dives aren't` or
 `108: a prompt appears, I have to press E`.
+
+### 109. Does Si's Haste need Initial Stroke? (ready, if you have Si with talent Unsoiled Brush; higher priority: it decides how Si's battle skill is played)
+
+**Why:** her talent says the team gains Haste "when the Inksoul
+disappears". In the game data only the Inksoul's end and Final Stroke
+create the Haste; Artful Intent bursting by itself with no Inksoul (you
+never pressed Initial Stroke) creates none, and the simulator follows
+that. ZMDLogs doesn't record the Haste at all, so no log can check it
+(2026-11-16). It decides whether Initial Stroke is worth its 15 SP: for
+your team (Estella, Si, Akekuri, Arcane), pressing Initial Stroke right
+after the battle skill is about 3% more DPS than not pressing it with
+the data's reading, and about 3% less if the burst gives Haste anyway.
+**How:** a training dummy, Si with Unsoiled Brush learned. Watch the
+small icons on the squad portraits (or above the operators' heads): the
+Haste shows as a speed-up icon, the same as Tangtang's Haste, for 5 s.
+A: cast Si's battle skill once and don't press it again (no Initial
+Stroke); basic-attack with anyone and wait about 20 s until Artful
+Intent bursts (a big Fixed DMG number). Does the speed-up icon appear
+as it bursts? B: cast Si's battle skill, then Initial Stroke at once,
+and wait for the burst the same way: does the icon appear?
+**Predictions:** the data and the simulator: A no icon, B the icon for
+5 s from the burst. An icon in A too means the Haste comes with every
+burst, and the simulator gives it on every end of Artful Intent.
+**Reply, e.g.:** `109: A no icon, B icon` or `109: icon in both`.
 
 ## Results
 

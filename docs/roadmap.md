@@ -26,6 +26,9 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
   The rule search should also try gating a repeated press on the
   button's visible state (Si's battle skill only while her button shows
   it, not Initial Stroke): the owner found that one by hand, 2026-11-16.
+  Whether Initial Stroke is worth pressing hangs on Si's talent Haste
+  (in-game test 109: the data gives it only on the Inksoul path; ±3% for
+  the owner's team either way).
 - **Typhoeus, Arcane, Liino, Perlica (2026-11-15, done: 5.76 / 4.99M,
   docs/teams/typhoeus-arcane-liino-perlica.md):** its zero-energy search
   is the least converged of the three teams (+27% at beam 48 alone): a
