@@ -2,7 +2,7 @@
 // common random numbers), with candidates proposed by the diagnosis' marginal values: single-piece swaps that keep
 // the active sets (ranked by the lines' predicted worth), each set's best loadout (screened by play), plus the logs'
 // and a candidates file's loadouts (gear.ts gearCandidates). Coordinate ascent across operators, a change taken only
-// when its gain is beyond the seeds' spread of the difference (docs/design.md "Rule-based rotations", gear on rules).
+// when its gain is beyond the seeds' spread of the difference (docs/design/rules.md "Rule-based rotations", gear on rules).
 
 import { activeGearSets, attrLabel, computeStats, resolveRuleList, Target, type AttrType, type Build, type GameData, type GearData, type RuleList, type TimelineScenario } from "@efsim/engine";
 import { beyondNoise, diagnose, findings, formatDiagnosis, MARGINAL_NOISY, mvText, paired, seedJobs, type Diagnosed, type DiagnoseOptions, type MarginalValue, type PlaySettings } from "./diagnose.ts";

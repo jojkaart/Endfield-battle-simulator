@@ -1,4 +1,4 @@
-// Damage distributions as five additive numbers (docs/design.md "Damage distributions"; the owner, 2026-11-13):
+// Damage distributions as five additive numbers (docs/design/damage.md "Damage distributions"; the owner, 2026-11-13):
 // every random outcome contributes its least and most possible damage, its mean, its variance and its third
 // central moment, and for independent outcomes all five add. A fight's totals are their sums; from them the
 // standard deviation and approximate 5th / 95th percentiles (Cornish–Fisher with the skew).

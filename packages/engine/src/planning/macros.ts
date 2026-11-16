@@ -1,4 +1,4 @@
-// Chains as macro actions (docs/design.md "Payoffs and chains", phase 3): a chain the payoff table found (payoffs.ts
+// Chains as macro actions (docs/design/search.md "Payoffs and chains", phase 3): a chain the payoff table found (payoffs.ts
 // findChains: each step opens or sets up the next) is offered to the beam search as one more choice where its first
 // step is among a node's choices, played from that node's own state, each step at its earliest. The child is the
 // state after the chain's last step, so the beam ranks the state after the payoff rather than after the setup (whose

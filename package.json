@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:changed": "node scripts/lint-changed.ts",
+    "links": "node scripts/check-links.ts",
     "test": "vitest run",
     "test:logs": "vitest run --config vitest.logs.config.ts",
     "test:tools": "node --test tools/skport-capture/test/*.test.js",

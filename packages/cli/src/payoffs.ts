@@ -1,4 +1,4 @@
-// efsim payoffs: the payoff table, the trigger graph's chains and a rotation's setup efficiency (docs/design.md
+// efsim payoffs: the payoff table, the trigger graph's chains and a rotation's setup efficiency (docs/design/search.md
 // "Payoffs and chains"). Display only: `--top` limits what's printed, never the data (`--json` has everything).
 
 import { EngineError, FPS, payoffs, setupEfficiency, type GameData, type PayoffOptions, type PayoffReport, type SetupEfficiency, type TimelineScenario } from "@efsim/engine";

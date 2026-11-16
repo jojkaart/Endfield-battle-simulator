@@ -96,7 +96,7 @@ damage, R = resources, S = state, T = timing / legality.
 | 4 | Chain windows 24–49, 23–38, 32–52; `dontInterruptCombo` on the battle skill and combo | supported (data) | loader (chainStep, keepsChain) |
 | 5 | Finisher: BreakingAttackCalculation `atk_scale` 9 at 34, multiplier 1, disable-cast buff | supported | P2 finisher; no factor |
 | 6 | Dive attack (skillSpecification 6) | supported | not castable until rotations have jumps (S10) |
-| 7 | Dash attack (`dash_attack`, `atk_scale` 0.96, poise 5) | gap (engine-wide) | G5: not modelled for any operator (design.md "Enemy attacks and dodges") |
+| 7 | Dash attack (`dash_attack`, `atk_scale` 0.96, poise 5) | gap (engine-wide) | G5: not modelled for any operator (design/damage.md "Enemy attacks and dodges") |
 | 8 | Battle skill shots 1–2 at 6 and 16, `atk_scale`, poise `poise_first_bullet` | supported | one hit, count 2 |
 | 9 | "If the target has active Combustion or Electrification": the data decides it at frames 0–2 (`SpellInflict`, CheckTagMatch Burning / Conduct on the smart target) | supported | a cast trigger with `if: {any: [{enemyStatus: combustion}, {enemyStatus: electrification}]}` → marker buff `spell_inflict` (`endsWithCast`) |
 | 10 | Third shot at 23: "The final shot also applies Heat Infliction" unless the flag is set (projhit_FireSpellInfiction vs projhit_1) | supported | two hits in `branch: shot3` on `buffActive: spell_inflict` |

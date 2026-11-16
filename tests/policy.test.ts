@@ -1,4 +1,4 @@
-// Rule-based rotations (engine policy.ts, policysearch.ts; docs/design.md "Rule-based rotations"): the driver's
+// Rule-based rotations (engine policy.ts, policysearch.ts; docs/design/rules.md "Rule-based rotations"): the driver's
 // semantics (opener, priority, reaction delay, pairs, cue reading), its rotation replaying with `simulate`, the
 // learnability numbers, the rule search, and the example rule lists against their teams.
 import { readdirSync } from "node:fs";

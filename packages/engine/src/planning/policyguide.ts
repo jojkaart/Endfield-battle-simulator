@@ -1,4 +1,4 @@
-// A payoff-guided rule search's analysis (docs/design.md "Rule-based rotations", the guided search; the owner,
+// A payoff-guided rule search's analysis (docs/design/rules.md "Rule-based rotations", the guided search; the owner,
 // 2026-11-16: "put together ideal combos and seek to change the rules in directions that can get closer to achieving
 // the optimal damage output"). A rules run is watched (playRules' observer: it never changes the run) and its hits
 // read afterwards:
@@ -567,7 +567,7 @@ export interface GuidedEditOptions {
 }
 
 /**
- * Rule edits aimed at the summary's biggest losses (docs/design.md "Rule-based rotations", the guided search), each
+ * Rule edits aimed at the summary's biggest losses (docs/design/rules.md "Rule-based rotations", the guided search), each
  * a player can follow by visible cues:
  *
  * - `hold-giver`: the rules that press the multiplier's giver wait for the window's cue (or the window operator's
@@ -751,7 +751,7 @@ export function pairedGain(base: readonly number[], other: readonly number[]): {
 }
 
 /**
- * The guided search's acceptance rule (docs/design.md "Rule-based rotations", the guided search): an edit screened
+ * The guided search's acceptance rule (docs/design/rules.md "Rule-based rotations", the guided search): an edit screened
  * on the first `screenSeeds` seeds and played on more is kept when its paired gain over all of them exceeds twice its
  * standard error and `minGain` (default 0.2%), and is positive on the seeds after the screening ones alone (the pick
  * of the best screened edit biases its screening seeds up).

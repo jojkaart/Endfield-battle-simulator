@@ -1,4 +1,4 @@
-// Verified log fixtures (fixtures/zmdlogs-*.json): the check must verify each (docs/design.md, "What a log check
+// Verified log fixtures (fixtures/zmdlogs-*.json): the check must verify each (docs/design/data.md, "What a log check
 // verifies": no mismatch, no unvalued hit, a plain or assumed match for every operator with a kit), and its verdict
 // counts mustn't fall behind their snapshot (tests/snapshots/log-verdicts.json, a regression baseline, not values
 // with provenance: principle 11): per operator no fewer plain, plain + assumed or total matches, no more log-listing

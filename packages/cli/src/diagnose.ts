@@ -1,7 +1,7 @@
 // efsim diagnose: what a rule list leaves on the table (engine policydiag.ts) and what each stat gear can change is
 // worth to the team (marginal values: the list played again with one gear-line-sized step more of a stat on one
 // operator, on the same reaction-delay seeds: common random numbers), with the inefficiencies in plain words
-// (docs/design.md "Rule-based rotations", diagnosis and marginal values; the owner, 2026-11-16).
+// (docs/design/rules.md "Rule-based rotations", diagnosis and marginal values; the owner, 2026-11-16).
 
 import {
   Attr,

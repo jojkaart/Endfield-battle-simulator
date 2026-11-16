@@ -1,4 +1,4 @@
-// What a rule list leaves on the table (docs/design.md "Rule-based rotations", diagnosis; the owner, 2026-11-16: find
+// What a rule list leaves on the table (docs/design/rules.md "Rule-based rotations", diagnosis; the owner, 2026-11-16: find
 // inefficiencies in how a team plays, then gear that fixes them). A rules run watched frame by frame (playRules'
 // observer: it never changes the run) and its final state read: per operator ultimate energy gained (by source),
 // spent, wasted at the cap and held at the end; time with the ultimate ready but not cast, and why; combos lit but

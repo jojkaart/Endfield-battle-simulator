@@ -1,4 +1,4 @@
-// A scenario's total damage as a distribution (docs/design.md "Damage distributions"; the owner, 2026-11-13):
+// A scenario's total damage as a distribution (docs/design/damage.md "Damage distributions"; the owner, 2026-11-13):
 // mean, variance and third central moment from battles' five additive fields (moments.ts), the true bounds from two
 // deterministic battles, and approximate 5th / 95th percentiles by Cornish–Fisher.
 //

@@ -1,4 +1,4 @@
-// efsim rules --guided: the payoff-guided rule search (docs/design.md "Rule-based rotations", the guided search; the
+// efsim rules --guided: the payoff-guided rule search (docs/design/rules.md "Rule-based rotations", the guided search; the
 // owner, 2026-11-16: "put together ideal combos and seek to change the rules in directions that can get closer to
 // achieving the optimal damage output"). From the list's runs (common random numbers), each damage window's ideal
 // combo (every multiplier the team puts on it, on every hit) and what each missing multiplier costs (engine

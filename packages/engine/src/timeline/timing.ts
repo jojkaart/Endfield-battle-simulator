@@ -1,4 +1,4 @@
-// When an operator may act (docs/design.md "Skill timing"): action gates, chains, combo windows, earliest starts.
+// When an operator may act (docs/design/timeline.md "Skill timing"): action gates, chains, combo windows, earliest starts.
 
 import type { Build } from "../build.ts";
 import { decide, evalContext } from "../damage.ts";

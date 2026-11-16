@@ -1976,7 +1976,7 @@ is the most, not what to expect. Counted from 23 ultimates in 20 logs
 (2026-11-13): on average 6.1 hits below P3 (engine 11), 8.6 from P3
 (engine 14). No in-game count needed.
 **In the engine (2026-11-13):** the count is a random outcome
-(`landedCount` on the sheep hit, docs/design.md "Damage distributions"):
+(`landedCount` on the sheep hit, docs/design/damage.md "Damage distributions"):
 with expected crits each of the 11 / 14 hits deals × 6.1 / 11 (× 8.6 / 14)
 of its damage, and `efsim simulate` shows the spread the count adds; with
 rolled crits each battle draws a count from the 21 counted casts. The
@@ -2194,7 +2194,7 @@ than the time stop (as the log's listing has it).
 
 ### 108. Is a Finisher what the basic-attack button does on a Staggered enemy? (ready, any operator; for the rule-based rotations)
 
-**Why:** the rule-based rotations (design.md "Rule-based rotations",
+**Why:** the rule-based rotations (design/rules.md "Rule-based rotations",
 2026-11-16) assume that while you keep pressing basic attack, the game
 turns the next attack into the Finisher by itself once the enemy is
 Staggered, so the simulated player does it with no reaction delay. If the

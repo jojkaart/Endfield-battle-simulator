@@ -1,4 +1,4 @@
-// The rule tooling around the driver (cli rules.ts, assume.ts; docs/design.md "Rule-based rotations"): comparing two
+// The rule tooling around the driver (cli rules.ts, assume.ts; docs/design/rules.md "Rule-based rotations"): comparing two
 // lists on common and fresh seeds, the kits' assumption switches (in-game test 109's alternative for Si's Haste), and
 // the zero-energy companion scenario the guided search and gear on rules judge by default.
 import { dirname, join, resolve } from "node:path";

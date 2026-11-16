@@ -1,6 +1,6 @@
 // Rotations as an opener and a loop (owner, 2026-11-14: "complete rotations, not a fixed 60 s window"): an opener
 // from the fight's start to a round of ultimate casts, then a loop from that round to the next that can be played
-// again and again for as long as the fight lasts (docs/design.md "Opener and loop").
+// again and again for as long as the fight lasts (docs/design/search.md "Opener and loop").
 
 import { EngineError, advance, apply, createContext, earliestStart, init, simulate, skillAvailable, skillCosts, SP, maxEnergy, FPS, type GameData, type RotationAction, type TimelineContext, type TimelineScenario, type TimelineState } from "../core.ts";
 import { randomOutcomes, searchCritMode, searchRotation, type SearchHooks, type SearchOptions, type SearchResult } from "./search.ts";
@@ -165,7 +165,7 @@ function sameStacks(a: TimelineState, b: TimelineState): boolean {
 
 /**
  * How well a round from `start` (state `from`, just after the boundary cast) to `end` (just after the next) would do
- * as a loop (docs/design.md "Opener and loop"): its damage per second, with what it takes from the resources it found
+ * as a loop (docs/design/search.md "Opener and loop"): its damage per second, with what it takes from the resources it found
  * charged as the time their regeneration needs to make it up — SP at SP.perSecond, each operator's ultimate energy at
  * `energyPerSecond` (energyRates) — the longest of them (they come back side by side), and × STACK_MISMATCH for a
  * plan that leaves the kit stacks different (Laevatain's Melting Flame). A surplus isn't credited: in a loop played
@@ -314,7 +314,7 @@ function castsEach(leads: ReadonlyMap<string, readonly string[]>, actions: reado
 }
 
 /**
- * The opener and the loop (2026-11-14, closing rounds; docs/design.md "Opener and loop"). Rounds are cut at a boundary:
+ * The opener and the loop (2026-11-14, closing rounds; docs/design/search.md "Opener and loop"). Rounds are cut at a boundary:
  * by default the ultimate with the longest recharge in the opener search's rotation (slowestUltimate), each round from
  * one of its casts to the next, the opener to its first; with `sync`, the moments every operator's ultimate is ready
  * (ultimatesUnready), each round from one to the first step after which every one is ready again, having been cast at

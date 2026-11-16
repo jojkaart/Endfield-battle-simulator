@@ -1,4 +1,4 @@
-// Payoffs and chains (docs/design.md "Payoffs and chains"), and the search's pruning by them ("Pruning the search"):
+// Payoffs and chains (docs/design/search.md "Payoffs and chains"), and the search's pruning by them ("Pruning the search"):
 // the table is the engine's probes (what a step produces, what it deals at most under the team's setups), the
 // dominance rule is exact, the bound holds on the states of found rotations.
 import { describe, expect, it } from "vitest";

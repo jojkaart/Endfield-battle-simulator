@@ -73,7 +73,7 @@ export interface SkillLevelData {
 
 /**
  * When a skill lets its operator act again (SkillData; rules in
- * docs/design.md "Skill timing"), 30 FPS frames from its start.
+ * docs/design/timeline.md "Skill timing"), 30 FPS frames from its start.
  */
 export interface SkillTiming {
   /** The whole action (durationFrame): after it, nothing is casting. */
@@ -329,7 +329,7 @@ export interface FoodData {
   readonly buffs: readonly { readonly buffId: string; readonly modifiers: readonly AttrModifier[] }[];
 }
 
-// ── Kits: hand-written hit structure (docs/design.md#skills-and-buffs-from-skilldata--buffdata) ──
+// ── Kits: hand-written hit structure (docs/design/data.md#skills-and-buffs-from-skilldata--buffdata) ──
 
 /** One kind of hit of a skill. Its multiplier is the product of the named blackboard values. */
 export interface KitHit {
@@ -773,7 +773,7 @@ export interface StackDef {
 }
 
 /**
- * An open reading of a kit (docs/design.md "Rule-based rotations", assumption switches): its readings by ID with what
+ * An open reading of a kit (docs/design/rules.md "Rule-based rotations", assumption switches): its readings by ID with what
  * each says, the one the kit stands by, and the in-game test that decides it.
  */
 export interface KitAssumption {

@@ -14,7 +14,7 @@ import { ATK_ATTRIBUTES, atkAttributeBonus, percentOfLine, skillLevel, type Stat
 /**
  * `expected`: the crit zone at its average; `rolled`: each hit crits or not, by a roll the caller makes
  * (DamageOptions.critRoll); `distribution`: expected, but a hit given a roll is rolled (the timeline rolls the hits a
- * crit-triggered effect could fire on: docs/design.md "Damage distributions").
+ * crit-triggered effect could fire on: docs/design/damage.md "Damage distributions").
  */
 export type CritMode = "never" | "always" | "expected" | "rolled" | "distribution";
 

@@ -70,7 +70,7 @@ teleport, target finding and ComboCacheAction are left out.
 | 3 | attack5 Final Strike: 1.24, SP 15, stagger 15 for the controlled operator | data | `finalStrike`, `sp: atb` compiled; `poise: "poise"`, `poiseControlledOnly` hand-written (D3) |
 | 4 | Finisher 9.0, multiplier 1.0 | supported | one hit at 32, no factor |
 | 5 | Dive attack 1.8 | supported | kept for calc; not castable (S10) |
-| 6 | Dash attack (not in the NormalAttack group) | supported | not a kit skill; dash attacks aren't modelled for anyone ([design.md](../../design.md#damage)) |
+| 6 | Dash attack (not in the NormalAttack group) | supported | not a kit skill; dash attacks aren't modelled for anyone ([design.md](../../design/damage.md#damage)) |
 | 7 | Battle skill: 100 SP, no damage; the crystal comes out at frame 37 and only if Xaihi starts nothing before then (spawnball finishWithNextSkillIfNotInherited) | supported | trigger `crystal_out`: cast, `delay: 37`, `awaited`, not detached; buff `crystal` (20 s: `duration`) |
 | 8 | Battle skill team energy at frame 37 (`buff_common_obtain_ultimate_sp` in the spawnball tick) | supported | `teamEnergy: [{frame: 37, ratio: 1}]` (compiled); cut with the cast, like the crystal |
 | 9 | Battle skill frame-6 SP if `buff_…_talent_1_atb` | supported | unreachable: no talent attaches `chr_0011_seraph_talent_1` (row 33). Leave it out; kit-draft's note about it is misleading (D3 note) |

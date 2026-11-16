@@ -1,4 +1,4 @@
-// Payoffs and chains (docs/design.md "Payoffs and chains"): what each action of a team produces, what each damaging
+// Payoffs and chains (docs/design/search.md "Payoffs and chains"): what each action of a team produces, what each damaging
 // action deals at most under the setups the team can make, and the chains of actions in which each step opens or sets
 // up the next. Everything is measured by the engine (probes on the stepping API: apply, advance, earliestStart), never
 // re-derived from the kits by hand: a kit change moves the table with it. A planning aid and the input of a planner

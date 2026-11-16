@@ -24,7 +24,7 @@ import {
 
 describe("cross-check between the two data sources", () => {
   // Design: the tables the engine uses must agree exactly between
-  // rmxlinux and 555me (docs/design.md#fixtures-and-tests).
+  // rmxlinux and 555me (docs/design/tests.md#fixtures-and-tests).
   it("BattleConst agrees", () => {
     expect(compare(loadBattleConst("rmxlinux"), loadBattleConst("555me"))).toEqual([]);
   });

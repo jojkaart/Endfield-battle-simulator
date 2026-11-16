@@ -694,7 +694,7 @@ b7b3762d5da8, P5 bdf223db8e49).
   false).
 - evidence: buff_chr_0032_lizhiyan_combo_skill_seal buffEvent 5
   SealAction; the tutorial text "An enemy under Imprisonment will
-  experience a slower flow of time"; design.md "Time" ("Not modelled yet:
+  experience a slower flow of time"; design/timeline.md "Time" ("Not modelled yet:
   entity-layer dilation").
 - impact: unknown until test I: if enemy-held timers follow its clock, a
   6.6 s WILL Imprisonment adds ~2.5 s to every status and debuff on the
@@ -708,7 +708,7 @@ b7b3762d5da8, P5 bdf223db8e49).
   0.55 s, battle skill 0.4 s, ult 2 0.4 s, most basic attacks.
 - evidence: HitStopAction in seal_total, abilityentity_end,
   seal_finisher_wisd, normal_skill_abilityrange2, ultimate_skill2;
-  bdf223db8e49 explosion +0.5 s; design.md "Time".
+  bdf223db8e49 explosion +0.5 s; design/timeline.md "Time".
 - impact: her own actions 0.2–0.5 s later per skill than modelled; small
   shifts of the explosion and the lasers. Shared with every operator.
 

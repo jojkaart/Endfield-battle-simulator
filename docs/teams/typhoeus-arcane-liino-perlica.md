@@ -37,7 +37,7 @@ Final Strike).
 
 ## Gear played by the rules (2026-11-16)
 
-`efsim diagnose` and `efsim gear --rules` (docs/design.md "Diagnosis,
+`efsim diagnose` and `efsim gear --rules` (docs/design/rules.md "Diagnosis,
 marginal values, gear on rules"): the rule list below played over 300 s
 on common seeds (8, more for noisy gains), 1,322 runs in 24 min on 3
 workers.
@@ -73,7 +73,7 @@ mode (the team as the owner described it) until the owner decides.
 
 ## Gear from the logs and guide sites
 
-`efsim gear` (docs/design.md "Gear from the logs"): per operator the
+`efsim gear` (docs/design/gear.md "Gear from the logs"): per operator the
 loadouts seen at least twice in the log fixtures (hold-outs left out),
 counted by how many of the team's other three the log has; the loadouts
 of the screened ZMDLogs exports not imported (counts in brackets: with
@@ -186,7 +186,7 @@ the damage.
 
 ### Rules: what to play (2026-11-16)
 
-A rotation to learn rather than a timeline (docs/design.md "Rule-based
+A rotation to learn rather than a timeline (docs/design/rules.md "Rule-based
 rotations"; [examples/typhoeus-arcane-liino-perlica.rules.json](../../examples/typhoeus-arcane-liino-perlica.rules.json),
 `efsim rules`). Typhoeus controlled, no swaps. Start with **Liino's
 battle skill** (her stance); then at every moment do the first of these
@@ -224,7 +224,7 @@ character and the skill button (rank 3).
 | First 60 s against the 60 s timeline (the examples) | 4,226,194 against 5,774,076 (−26.8%) | 2,858,065 against 5,019,331 (−43.1%) |
 | 300 s total against a fixed 300 s search (beam 6, full energy, 86 min; Perlica's earlier gear) | 16,382,151 against 16,925,847 (−3.2%) | |
 
-The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
+The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design/rules.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
 
 **Rule 7 fixed (2026-11-16).** It read only Vocalist Stance, so it also
 fired during Cosmovoice (her ultimate's stance), and its second press
@@ -237,7 +237,7 @@ paired gain is +2.6% ± 0.5 (53,321 → 54,636); 0.6 s reactions now cost almost
 nothing more than 0.3 s. One Arcane battle skill at 0.3 s is still spent
 for nothing (Liino's stance shows only once her first projectile lands).
 
-**The guided search (2026-11-16; `efsim rules --guided`, design.md "The
+**The guided search (2026-11-16; `efsim rules --guided`, design/rules.md "The
 guided rule search").** Its ideal combos: Typhoeus's hover shots are 63%
 of the team's damage (34,481 DPS of 54,604, 4.4 hovers a minute) and get
 35% of what they would with every multiplier the team puts on them; the

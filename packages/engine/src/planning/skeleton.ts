@@ -1,4 +1,4 @@
-// Skeletons as guides (docs/design.md "Payoffs and chains", phase 3, part 2): the payoff table's chains, merged with
+// Skeletons as guides (docs/design/search.md "Payoffs and chains", phase 3, part 2): the payoff table's chains, merged with
 // their setups and fillers, scheduled on the fight's timeline by value per resource, each played in the engine as
 // soon as it's legal (so every skeleton is a legal rotation, repaired as it's built: a step that can't start yet waits
 // for its window, SP or energy, as the loop's moved-later replay does), and handed to the beam search as guides

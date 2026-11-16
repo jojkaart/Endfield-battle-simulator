@@ -38,14 +38,14 @@ play).
 - With this team order macros settle early (spreads 1.2% / 1.1%) below the
   skeletons' results: they don't win here as they did on Ink Melt.
 - Complete rotations (opener and loop, `efsim search --loop --sync`,
-  docs/design.md "Opener and loop", 2026-11-14) in [rotations/](rotations/)
+  docs/design/search.md "Opener and loop", 2026-11-14) in [rotations/](rotations/)
   are still from the INT build and Estella in slot 1 (full energy: an
   84.9 s loop at 41,056 DPS after a 1,095.2 s opener; zero: 81.1 s at
   40,677 DPS after 255.7 s): to be searched again.
 
 ### Rules: what to play (2026-11-16)
 
-A rotation to learn rather than a timeline (docs/design.md "Rule-based
+A rotation to learn rather than a timeline (docs/design/rules.md "Rule-based
 rotations"; [examples/estella-si-akekuri-arcane.rules.json](../../examples/estella-si-akekuri-arcane.rules.json),
 `efsim rules`). Estella controlled, no swaps. Start with **Si's battle
 skill**; then at every moment do the first of these that applies:
@@ -96,7 +96,7 @@ decides it.
 | First 60 s against the 60 s timeline (the examples) | 3,569,656 against 3,990,122 (−10.5%) | 3,042,921 against 3,263,818 (−6.8%) |
 | 300 s total against a fixed 300 s search (beam 6, full energy) | 16,947,851 against 13,994,230 (**+21.1%**) | |
 
-The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
+The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design/rules.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
 
 The earlier list (Si's battle skill at every 100 SP, ending Artful Intent
 early) played 55,462 / 56,370 sustained and was better in the first 60 s
@@ -104,7 +104,7 @@ from zero (+4.2% against the timeline): ending Artful Intent early spends
 SP sooner, and the extra battle skills' team energy brings the first
 ultimates sooner. Over a long fight the two are level.
 
-**The guided search (2026-11-16; `efsim rules --guided`, design.md "The
+**The guided search (2026-11-16; `efsim rules --guided`, design/rules.md "The
 guided rule search").** Its ideal combos: Si's combo is the biggest
 window (11,393 DPS of 57,102, 2.5 a minute, always on Solidification)
 at 62% of its ideal; it misses Si's own ultimate Amp (on 41% of its
@@ -141,7 +141,7 @@ it is; waiting costs casts); every hold of a combo for a Stagger loses
 
 ## Gear (2026-11-16, played by the rules; the examples keep the owner's gear)
 
-`efsim diagnose` and `efsim gear --rules` (docs/design.md "Diagnosis,
+`efsim diagnose` and `efsim gear --rules` (docs/design/rules.md "Diagnosis,
 marginal values, gear on rules"): the rule list above played over 300 s
 on common seeds, so the rules adapt to each loadout (no repaired
 rotation). Arcane kept (her Intellect is tuned just below her Will).
@@ -195,7 +195,7 @@ better (its best 61,293 against the list's 61,480, 10 seeds).
 
 ## Gear recommendation (2026-11-15; the examples keep the owner's gear)
 
-`efsim gear` (docs/design.md "Gear from the logs") on both examples,
+`efsim gear` (docs/design/gear.md "Gear from the logs") on both examples,
 Arcane kept (`--keep`: her build is tuned to Intellect 472.44 just below
 Will 473.50), Akekuri, Si and Estella varied: the loadouts seen at least
 twice in the log fixtures and guide-site loadouts (EndfieldHub, looked up
@@ -309,7 +309,7 @@ Trekker Gloves' Ultimate Gain):
 
 ## Payoffs and chains (2026-11-15)
 
-`efsim payoffs` (docs/design.md "Payoffs and chains"), 122 chains. With
+`efsim payoffs` (docs/design/search.md "Payoffs and chains"), 122 chains. With
 Akekuri in slot 1 every top chain is the owner's basic rotation: a Heat
 battle skill (Si's or Akekuri's), Arcane's combo adding Heat, Estella's
 battle skill (Cryo: Solidification) opening Si's and Estella's combos.

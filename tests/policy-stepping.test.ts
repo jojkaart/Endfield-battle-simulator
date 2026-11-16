@@ -1,5 +1,5 @@
 // The rule driver's event stepping against its frame-by-frame reference, and the checks on a rules run (engine
-// policy.ts playRules, policydiag.ts checkRuleRun; docs/design.md "Rule-based rotations").
+// policy.ts playRules, policydiag.ts checkRuleRun; docs/design/rules.md "Rule-based rotations").
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";

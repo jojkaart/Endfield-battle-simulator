@@ -1,4 +1,4 @@
-// The buff timing report (`efsim zmdlogs timing`): a diagnostic, never scored (docs/design.md, "The buff timing
+// The buff timing report (`efsim zmdlogs timing`): a diagnostic, never scored (docs/design/data.md, "The buff timing
 // report"; docs/accuracy-plan.md, "Fits need a mechanism"). The log check toggles a kit buff only where its replayed
 // instances change within REPLAY_EDGE_MS of a hit; a timing error of seconds (a time stop, a missing trigger, the
 // wrong teammate) shows up as a fallback or a mismatch instead. For each such hit this tries every kit buff of the

@@ -46,14 +46,14 @@ export const TIMELINE_ASSUMPTIONS = [
 ] as const;
 
 /**
- * Who may interrupt whom (Endaxis's native-type priorities, docs/design.md
+ * Who may interrupt whom (Endaxis's native-type priorities, docs/design/timeline.md
  * "Skill timing"): a skill of higher priority may start at any frame of the
  * current one; plunging attacks always. By SkillData skillSpecification.
  */
 const PRIORITY: Readonly<Record<number, number>> = { 1: 1, 3: 2, 8: 2, 4: 5, 5: 7 };
 
 /**
- * Haste (attribute 92, KeywordSpeedUpScalar; docs/design.md "Time"): a cast at `speed` plays its skill frames
+ * Haste (attribute 92, KeywordSpeedUpScalar; docs/design/timeline.md "Time"): a cast at `speed` plays its skill frames
  * faster. The real frames `x` skill frames take, in whole frames (no speed, or 1: the same).
  */
 export function hasteFrames(x: number, speed: number | undefined): number {

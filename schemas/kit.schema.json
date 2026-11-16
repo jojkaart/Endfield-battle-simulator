@@ -100,7 +100,7 @@
           },
           "dataOverride": {
             "type": "object",
-            "description": "Its duration differs on purpose from what the data's CreateBuff of its game buff gives (where a skill's hit or own cast trigger applies it), with the reason (docs/design.md, \"Kits and the game data\").",
+            "description": "Its duration differs on purpose from what the data's CreateBuff of its game buff gives (where a skill's hit or own cast trigger applies it), with the reason (docs/design/data.md, \"Kits and the game data\").",
             "properties": { "duration": { "type": "string", "minLength": 10 } },
             "additionalProperties": false
           },
@@ -1154,7 +1154,7 @@
           },
           "dataOverride": {
             "type": "object",
-            "description": "A cast trigger's actions compared with its skill's compiled SkillData (energy, sp, apply at the delay's frame): the ones that differ on purpose, each with the reason (docs/design.md, \"Kits and the game data\").",
+            "description": "A cast trigger's actions compared with its skill's compiled SkillData (energy, sp, apply at the delay's frame): the ones that differ on purpose, each with the reason (docs/design/data.md, \"Kits and the game data\").",
             "propertyNames": { "enum": ["energy", "sp", "apply"] },
             "additionalProperties": { "type": "string", "minLength": 10 }
           },
@@ -1709,7 +1709,7 @@
     },
     "assumptions": {
       "type": "array",
-      "description": "Open readings of this kit that move results and wait for an in-game test (docs/design.md \"Rule-based rotations\", assumption switches): a trigger with `reading` exists only under that reading. The default is the reading the kit stands by; `efsim rules`, `diagnose` and `gear --rules` run under the others with --assume and --assumptions.",
+      "description": "Open readings of this kit that move results and wait for an in-game test (docs/design/rules.md \"Rule-based rotations\", assumption switches): a trigger with `reading` exists only under that reading. The default is the reading the kit stands by; `efsim rules`, `diagnose` and `gear --rules` run under the others with --assume and --assumptions.",
       "items": {
         "type": "object",
         "required": [
@@ -1951,7 +1951,7 @@
   "$defs": {
     "visibleBuff": {
       "type": "object",
-      "description": "A state the player sees without reading buff icons (on the character or its skill button), so rule lists may read it (rules.schema.json buff cue; docs/design.md \"Rule-based rotations\"): `on` / `off` say it in the player's words after the operator's name, `why` says how it shows.",
+      "description": "A state the player sees without reading buff icons (on the character or its skill button), so rule lists may read it (rules.schema.json buff cue; docs/design/rules.md \"Rule-based rotations\"): `on` / `off` say it in the player's words after the operator's name, `why` says how it shows.",
       "required": [
         "on",
         "off",
@@ -3455,7 +3455,7 @@
         },
         "dataOverride": {
           "type": "object",
-          "description": "Fields in which this hit differs from the compiled SkillData on purpose (a value the kit writes that isn't the data's, or one it leaves out that the data has), each with the reason: the loader neither fills these in from the data nor refuses the difference (docs/design.md, \"Kits and the game data\").",
+          "description": "Fields in which this hit differs from the compiled SkillData on purpose (a value the kit writes that isn't the data's, or one it leaves out that the data has), each with the reason: the loader neither fills these in from the data nor refuses the difference (docs/design/data.md, \"Kits and the game data\").",
           "propertyNames": {
             "enum": ["frames", "count", "events", "scale", "factor", "element", "poise", "poiseControlledOnly", "finalStrike", "detached", "launch", "energy", "sp", "spBeforeDamage"]
           },
@@ -3524,7 +3524,7 @@
         },
         "landedCount": {
           "type": "object",
-          "description": "A random number of the cast's landings of this hit happen (Ardelia's sheep fly at random: in-game test 96): observed counts per cast, each equally likely, out of the cast's planned landings (its frames less those its jumps decided at the cast skip). Expected crits: every planned landing lands with its damage and Stagger × E[N] / landings, and the damage distribution counts the cast's landings as a random sum; rolled crits: N drawn from the counts (stream landed) and N landings chosen at random. A skill's hit with a fixed count that deals only damage and Stagger (docs/design.md \"Damage distributions\").",
+          "description": "A random number of the cast's landings of this hit happen (Ardelia's sheep fly at random: in-game test 96): observed counts per cast, each equally likely, out of the cast's planned landings (its frames less those its jumps decided at the cast skip). Expected crits: every planned landing lands with its damage and Stagger × E[N] / landings, and the damage distribution counts the cast's landings as a random sum; rolled crits: N drawn from the counts (stream landed) and N landings chosen at random. A skill's hit with a fixed count that deals only damage and Stagger (docs/design/damage.md \"Damage distributions\").",
           "required": ["counts"],
           "additionalProperties": false,
           "properties": {

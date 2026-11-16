@@ -1,4 +1,4 @@
-// The owner's team's basic rotation, found by the chain search (docs/design.md "Payoffs and chains"; the owner,
+// The owner's team's basic rotation, found by the chain search (docs/design/search.md "Payoffs and chains"; the owner,
 // 2026-11-15): Akekuri's battle skill inflicts Heat, which opens Arcane's combo; her combo adds another Heat stack;
 // Estella's battle skill (Cryo) consumes them into Solidification, which opens both Si's and Estella's combos.
 // Arcane's combo adds its window's element only in her WILL mode (WILL above INT): the owner tunes her gear to the most

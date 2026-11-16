@@ -1,6 +1,6 @@
 # Pending log fixtures
 
-Imported battle logs that the check doesn't verify yet (docs/design.md,
+Imported battle logs that the check doesn't verify yet (docs/design/data.md,
 "What a log check verifies"), because something outside the kits doesn't
 match. `npm run test:logs` (tests/slow/) pins each one's current verdict
 counts per operator (tests/snapshots/log-verdicts-pending.json), so any
@@ -122,7 +122,7 @@ Avywenna has no log on the site since 1.6.
 
 **With the kit-buff replay (2026-10-22;** `zmdlogs check` takes kit buffs
 from the replay of the logged casts, the log's listing where that fits
-nothing; docs/design.md, "Kit buffs in the log check"). Matches that went
+nothing; docs/design/data.md, "Kit buffs in the log check"). Matches that went
 up: 012ae1c80ae6 Arcane 69 → 155/155, Camille 81 → 122, Laevatain 65 → 75
 (Camille's `buff_wpn_lance_0015_atkup` drops out of the log as in 4e5e,
 and the damage keeps it); 0c14fb3ce77d Rossi 11 → 12, Si 0 → 7;
@@ -140,7 +140,7 @@ no damage of (abfd's `buff_wpn_funnel_0010_atk_up` and
 `buff_equipsuit_usp_02_AddAttack`) and the enemy's
 `buff_common_affixes_vulnerable_physical` in d4fb, d572 and de6a.
 
-**With the replay's facts (2026-10-25;** docs/design.md, "What the replay
+**With the replay's facts (2026-10-25;** docs/design/data.md, "What the replay
 decides": Link, cast-consumed buffs, event counts, own stacks, layers,
 Corrosion, crits and casts without damage from the replay of the logged
 casts). Gains: d572 Camille plain 121 → 223, Rossi 2 → 35; 458b Laevatain
@@ -163,7 +163,7 @@ Corrosion bracket).
 ## Through the engine's damage path, 2026-10-25
 
 The check now computes each hit through the engine at its landing in the
-replay of the logged casts (docs/design.md, "The log check's rule"):
+replay of the logged casts (docs/design/data.md, "The log check's rule"):
 plain and assumed matches are the engine's readings, and a match only the
 log's own listing gives is a fallback. Across the 20 pending fixtures
 plain 1947 → 1332, assumed 1123 → 346, fallback 1100 → 2736, mismatch

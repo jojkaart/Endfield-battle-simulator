@@ -1,10 +1,10 @@
 // The scheduled list (TimelineState.scheduled): one pass each to shift a clock, end a cast and jump on a cast's
-// timeline, for every kind of item alike (docs/design.md "Order within a frame").
+// timeline, for every kind of item alike (docs/design/timeline.md "Order within a frame").
 
 import type { Clock, Scheduled, TimelineState } from "./state.ts";
 
 /**
- * The order of what's due at one frame (docs/design.md "Order within a frame"): each step runs once everything before
+ * The order of what's due at one frame (docs/design/timeline.md "Order within a frame"): each step runs once everything before
  * it at that frame (and everything at earlier frames) has, and what it does may add to any step still to come. The
  * enemy's status ticks and buffs' ends and periodic ticks come from their own state (status.ts, buffs); the rest is
  * scheduled (Scheduled, by its kind; a delayed action marked afterHits is the step after hits).

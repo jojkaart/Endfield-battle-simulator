@@ -92,12 +92,12 @@ poise 10, `usp` 10, `duration` 5, cooldown 20 s (19 s at L12); ultimate
 | 2 | Basic attack 2: two projectiles @9, @12, each `atk_scale` (display_atk_scale = 2 × atk_scale) | supported | count 2, frames [9, 12], `sp: atb × 0.333333` (atb is 0) |
 | 3 | Basic attack 3: three projectiles @16, @19, @22 | supported | count 3 |
 | 4 | Basic attack 4: Final Strike @27, 15 SP, 15 stagger while controlled (attack4_projhit mask 2097280, poise unit `onlyEnableForMainChar`) | supported | `finalStrike`, `sp: atb`, `poise: poise`, `poiseControlledOnly` (poise hand-written: row 12) |
-| 5 | Chain timing, windows, exclusive frames, `dontInterruptCombo` (AllowNextSkillAction per file) | supported | engine reads SkillData (design.md "Skill timing") |
+| 5 | Chain timing, windows, exclusive frames, `dontInterruptCombo` (AllowNextSkillAction per file) | supported | engine reads SkillData (design/timeline.md "Skill timing") |
 | 6 | Finisher: BreakingAttackCalculation 9.0 × multiplier 1.0 @35, finisher SP (GainBreakingAttackAtb) | supported | hit `atk_scale`, frame 35; the engine gates it on Staggered, adds the enemy's multiplier and SP |
 | 7 | Finisher's **forced Knock Down** when she's controlled (power_attack IfElse CheckMainCharacter → KnockDownAction forceKnockDown, after the DamageAction) | data | `applies: [{kind: physicalStatus, status: knockdown, forced: true, if: {controlled: true}}]`; kit-draft doesn't emit it (D3: its Knock Down). Shared: Da Pan's ultimate has a forced KnockDownAction too |
 | 8 | Finisher's disable-cast buff 0–35 | supported | engine reads `buff_common_power_attack_disable_cast_skill` |
 | 9 | Dive attack (plunging_attack_end @3, 1.8) | supported | hit kept for `calc`; not castable in rotations (S10 interim: no jumps) |
-| 10 | Dash attack (chr_0004_pelica_dash_attack: projectile @3, 0.96, poise 5) | gap | G3: no dash attack action in the engine (design.md "Enemy attacks and dodges": not modelled); every operator |
+| 10 | Dash attack (chr_0004_pelica_dash_attack: projectile @3, 0.96, poise 5) | gap | G3: no dash attack action in the engine (design/damage.md "Enemy attacks and dodges": not modelled); every operator |
 | 11 | Battle skill: Electric Infliction then the hit @13 (`atk_scale` 4.0), 100 SP, team energy from `buff_common_obtain_ultimate_sp` @13 | supported | hit `applies: infliction pulse`, `teamEnergy: [{frame: 13, ratio: 1}]` (kit-draft) |
 | 12 | Stagger of every hit (poise units: attack4 15, battle 10, combo 10, ultimate 20) | data | `poise` on each hit by hand; kit-draft emits none (D3: poise) |
 | 13 | Combo trigger: "When controlled operator performs a Final Strike on any enemy." (CharGrowthTable) | supported | trigger `on: {event: hit, finalStrike: true}`, `by: controlled`, `do: openCombo` |

@@ -165,9 +165,9 @@ export function searchCommand(
   const { rotation: _ignored, ...rest } = scenario;
   const widths = searchWidths(options.beam, options.single ?? false);
   const seconds = new Map<number, number>();
-  // Pruning (docs/design.md "Pruning the search"): dominance, and branch and bound on the payoff table's ceilings.
+  // Pruning (docs/design/search.md "Pruning the search"): dominance, and branch and bound on the payoff table's ceilings.
   const tBound = Date.now();
-  // Planning from the payoffs (docs/design.md "Payoffs and chains", phase 3): one payoff table with what's asked for:
+  // Planning from the payoffs (docs/design/search.md "Payoffs and chains", phase 3): one payoff table with what's asked for:
   // ceilings for the bound and the setup value, chains for macros and skeletons (merges measured for skeletons).
   const wantCeilings = options.prune === true || options.setup !== undefined;
   const wantChains = options.macros === true || options.skeletons === true;

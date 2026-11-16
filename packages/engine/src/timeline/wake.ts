@@ -1,5 +1,5 @@
 // When a state can next read differently to a driver that steps over frames (the rule driver's event stepping, policy.ts;
-// docs/design.md "Rule-based rotations"), with nothing pressed in between.
+// docs/design/rules.md "Rule-based rotations"), with nothing pressed in between.
 
 import { FPS } from "../units.ts";
 import type { TimelineContext, TimelineState } from "./state.ts";

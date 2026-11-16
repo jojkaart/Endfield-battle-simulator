@@ -1,4 +1,4 @@
-// Rule-based rotations (docs/design.md "Rule-based rotations"; the owner, 2026-11-16): a short opener and an ordered
+// Rule-based rotations (docs/design/rules.md "Rule-based rotations"; the owner, 2026-11-16): a short opener and an ordered
 // list of rules "when cue X is visible, do Y", played by a simulated player with a reaction delay on the same
 // timeline the search and `simulate` use (init / advance / startsNow / apply). The driver never decides anything a
 // player couldn't: rules read only what the game's UI shows (POLICY_CUE_RANKS), and the actions are button presses
@@ -85,7 +85,7 @@ export interface RuleList {
 }
 
 /**
- * The owner's ranking of cues, easiest first (2026-11-16; docs/design.md "Rule-based rotations"): 1 a combo lighting
+ * The owner's ranking of cues, easiest first (2026-11-16; docs/design/rules.md "Rule-based rotations"): 1 a combo lighting
  * up, 2 Typhoeus's arrows and Signs, SP, 3 the enemy's inflictions and statuses, 4 an ultimate ready (corner of the
  * screen), 5 counting Final Strikes, 6 a combo's cooldown, 7 a timer in the head.
  */

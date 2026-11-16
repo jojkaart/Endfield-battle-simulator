@@ -1,4 +1,4 @@
-// The skill buttons (docs/design.md "Rule-based rotations", the button model): what an operator's battle-skill, combo and
+// The skill buttons (docs/design/rules.md "Rule-based rotations", the button model): what an operator's battle-skill, combo and
 // ultimate button casts at a moment. A player presses a button, not a skill ID; the kits say which skills a button can
 // cast (its kind's skills that aren't follow-ups: the game's skill slot, CharGrowthTable's groups plus what a
 // ChangeSkillAction switches the slot to, data gameData.ts) and when each applies (its `available` condition: Si's

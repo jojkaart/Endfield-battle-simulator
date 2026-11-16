@@ -23,7 +23,7 @@ sets they use), in phases that repeat until nothing is missing:
    them against the logs, then the [pattern review](kit-abstractions.md#repeating-the-review).
    Leave out what the loader takes from the compiled SkillData (frames,
    count, events, factor, element, poise, detached, energy, team energy,
-   energy blocks: [design.md](design.md#skills-and-buffs-from-skilldata--buffdata),
+   energy blocks: [design.md](design/data.md#skills-and-buffs-from-skilldata--buffdata),
    "Kits and the game data"); `efsim kit-trim --write` removes what was
    written anyway. A value that differs from the data's on purpose is
    marked where it is, `dataOverride: {field: "reason"}` (the reason says

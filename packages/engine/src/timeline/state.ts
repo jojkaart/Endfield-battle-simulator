@@ -131,7 +131,7 @@ export interface EnemyAction {
 }
 
 /**
- * The clock a scheduled item runs on (docs/design.md "Time"): a slow-down or freeze that stops that clock delays it
+ * The clock a scheduled item runs on (docs/design/timeline.md "Time"): a slow-down or freeze that stops that clock delays it
  * (clock.ts). `world`: everything but the operators (nothing scheduled runs on it today); `enemy`: the enemy's own
  * (its actions, Arts Bursts), which a freeze stops too; an operator's: its casts' hits, delayed actions, team
  * energy and jumps.
@@ -271,7 +271,7 @@ export interface PendingAuto extends ScheduledHeader {
   readonly step: "start" | "next";
 }
 
-/** Everything due at a later frame (TimelineState.scheduled); advance.ts runs them in the order of docs/design.md "Order within a frame". */
+/** Everything due at a later frame (TimelineState.scheduled); advance.ts runs them in the order of docs/design/timeline.md "Order within a frame". */
 export type Scheduled = PendingHit | PendingAction | PendingEnergy | PendingJump | PendingBurst | PendingEnemyAction | PendingAuto;
 
 export interface Cast {
@@ -413,7 +413,7 @@ export interface TimelineState {
   /**
    * Everything due later, in the order it was scheduled (Scheduled: hits on their way, delayed trigger actions, team
    * energy, jumps on casts' timelines, Arts Bursts, the enemy's actions); advance runs them in the order of
-   * docs/design.md "Order within a frame".
+   * docs/design/timeline.md "Order within a frame".
    */
   readonly scheduled: readonly Scheduled[];
   /** The team's Link stacks (combo casts leave one each, 15 s): their expiry frames. */
@@ -447,7 +447,7 @@ export interface TimelineState {
   readonly reactions: readonly ReactionRecord[];
 }
 
-/** Precomputed per scenario: the build stage of docs/design.md#simulation-model. */
+/** Precomputed per scenario: the build stage of docs/design/timeline.md#simulation-model. */
 export interface TimelineContext {
   readonly data: GameData;
   readonly scenario: TimelineScenario;

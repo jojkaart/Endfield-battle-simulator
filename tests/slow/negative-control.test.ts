@@ -1,6 +1,6 @@
 // Negative control for the log check: every verified fixture with each logged value scaled ×0.97 and ×1.03 must
 // give (close to) no matches. A reading that still fits a scaled hit fits by chance: the check tries many readings per
-// hit (docs/design.md, "What a log check verifies"), and this bounds how often that makes a match. The counts and
+// hit (docs/design/data.md, "What a log check verifies"), and this bounds how often that makes a match. The counts and
 // the readings behind each chance match are printed. In `npm run test:logs`.
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";

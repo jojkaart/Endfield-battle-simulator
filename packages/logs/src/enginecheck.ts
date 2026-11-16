@@ -5,7 +5,7 @@
 // only what the engine can't produce: the crit flag, buffs no kit defines (and the hitter's food the log lists), the
 // enemy's HP (in the replay), and the outcome of what the replay can't judge (chance and enemy-action triggers, heals of
 // the controlled operator). The log's listing of the buffs the engine models verifies the engine's modifiers instead of
-// replacing them: where they differ is reported (logDifferences). docs/design.md, "The log check's rule".
+// replacing them: where they differ is reported (logDifferences). docs/design/data.md, "The log check's rule".
 
 import {
   Attr, activeModifiers, corrosionModifier, effectiveKit, kitBuffModifiers, kitHitEntries, landingDamage, linkValue, parseReactionEvent, readingDoesNotApply, roundDamage, SNAPSHOT_ZONES,

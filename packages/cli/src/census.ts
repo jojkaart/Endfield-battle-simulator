@@ -12,7 +12,7 @@ const KITS = join(ROOT, "packages/data/kits/operators");
 
 /**
  * Fields the loader fills in from the compiled SkillData where a kit leaves
- * them out (kits.ts withDataFacts; docs/design.md, "Kits and the game
+ * them out (kits.ts withDataFacts; docs/design/data.md, "Kits and the game
  * data"). One a kit still writes is one the data can't say alone (its
  * landings aren't one path of the hit's own) or a marked difference;
  * `efsim kit-trim` removes the rest.

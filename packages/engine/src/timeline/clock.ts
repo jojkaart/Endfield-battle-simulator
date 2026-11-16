@@ -1,4 +1,4 @@
-// Slow-downs and the clocks they stop (docs/design.md "Time"): the world's, the enemy's and each operator's.
+// Slow-downs and the clocks they stop (docs/design/timeline.md "Time"): the world's, the enemy's and each operator's.
 
 import { Attr } from "../attributes.ts";
 import type { SkillTiming } from "../model.ts";
@@ -10,7 +10,7 @@ import { clampAttr } from "../stats.ts";
 import { onOperator, shiftClock } from "./schedule.ts";
 
 /**
- * A skill's global slow-downs (docs/design.md "Time"): the world (enemy
+ * A skill's global slow-downs (docs/design/timeline.md "Time"): the world (enemy
  * statuses and timers, every buff, combo windows, SP regen, energy blocks)
  * and every operator but the caster (its hits on the way, its current
  * action) lose the frames the slow-down takes; cooldowns run on. Where

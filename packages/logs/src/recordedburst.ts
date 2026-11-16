@@ -1,6 +1,6 @@
 // A recording buff's burst (Si's Artful Intent, KitBuff.records) valued from the logged hits it recorded: the burst is
 // Fixed DMG of `rate` × the damage of every hit on the target while the buff lasted, which no single logged hit
-// gives, but the log's own hits in the buff's window do (docs/design.md, "What a log check verifies").
+// gives, but the log's own hits in the buff's window do (docs/design/data.md, "What a log check verifies").
 
 import { effectiveKit, evalContext, evaluate, kitHitEntries, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type LandedHit, type StatPanel } from "@efsim/engine";
 import type { LogFixture, LogHit } from "./zmdlogs.ts";

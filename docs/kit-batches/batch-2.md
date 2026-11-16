@@ -29,7 +29,7 @@ Phase: **kits done (2026-10-19)**; open items below. Shared features done: L1, B
 data's unconditional ones, conditional ones by `KitSkill.jumps`, event-driven
 ones by a trigger's `jump`; InterruptCurSkillAction ends the action); E1
 (enemy attacks and charges; dodges with a success chance, perfect dodges
-from BuffData; [design.md](../design.md#damage)). Open: D3, V3.
+from BuffData; [design.md](../design/damage.md#damage)). Open: D3, V3.
 
 **Kits done (2026-10-19):** the Endministrator (one kit for chr_0003_endminf
 and chr_0002_endminm), Akekuri, Catcher, Fluorite and Antal, with all 27

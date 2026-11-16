@@ -50,7 +50,7 @@ are at 30 FPS.
 - C6. Rolled crits use a seeded mulberry32 stream (`crit`), one draw per damaging landing (ticks included); in `distribution` mode one per rolled kit hit (C8) only.
 - C7. Crit stats on a Combustion tick come from the applier's snapshot (B21) but are not used, since ticks can't crit.
 - C8. A kit hit rolls its crit in `distribution` mode when some team trigger on crits (`on: {event: hit, crit}`) matches its hit event on every other filter of `on` and on `by`; the trigger's `if`, cooldown and counts aren't judged (a hit may roll that no trigger would fire on). Status-event damage never rolls there (no crit trigger listens to it).
-- C9. A hit's distribution (docs/design.md "Damage distributions"): with expected crits and a crit rate strictly between 0 and 1, two values, v without the crit and v(1 + crit DMG) with it (HitDamage.critSpread), mean the expected value; otherwise all at its value. Independent across hits.
+- C9. A hit's distribution (docs/design/damage.md "Damage distributions"): with expected crits and a crit rate strictly between 0 and 1, two values, v without the crit and v(1 + crit DMG) with it (HitDamage.critSpread), mean the expected value; otherwise all at its value. Independent across hits.
 - C10. The distribution's bounds are two battles: crits `never` with the fewest landed counts (K38), and `always` with the most. This assumes crit-triggered effects only raise damage. With dodges or trigger chances, over the K seeded battles' never / always battles.
 
 ## R. Resistance, defense, level

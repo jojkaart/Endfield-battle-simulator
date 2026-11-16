@@ -94,7 +94,7 @@ describe("rotation search", () => {
     // 2026-11-13 (proposal, the owner to confirm): Laevatain's battle skill by the game-1.6 data (in-game test 20):
     // 1,118,447.887, 513 states. Since 2026-11-14 that's the ranking by damage so far alone (valueWeight 0, bit for
     // bit); the default ranking adds the resources' worth (resourceValue) and its beam of 8 keeps other states here:
-    // 1,113,946.019, 510 states (−0.4%; wider beams: docs/design.md "How the beam ranks").
+    // 1,113,946.019, 510 states (−0.4%; wider beams: docs/design/search.md "How the beam ranks").
     const unvalued = searchRotation(data, open, { beamWidth: 8, valueWeight: 0 });
     expect(unvalued.result.total).toBeCloseTo(1118447.887, 3);
     expect(unvalued.expanded).toBe(513);

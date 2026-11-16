@@ -1,4 +1,4 @@
-// Gear on rules (docs/design.md "Rule-based rotations": common random numbers, diagnosis, marginal values, gear on
+// Gear on rules (docs/design/rules.md "Rule-based rotations": common random numbers, diagnosis, marginal values, gear on
 // rules): delays common per rule onset whatever the other rules, the diagnosis' energy accounting, held ultimates by
 // why, marginal values' signs, the sustained-DPS distribution, and efsim gear --rules on a small case.
 import { dirname, join, resolve } from "node:path";

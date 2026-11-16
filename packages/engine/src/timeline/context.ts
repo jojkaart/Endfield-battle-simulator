@@ -1,4 +1,4 @@
-// The timeline's context (docs/design.md#simulation-model: the build stage) and what it looks up in the data.
+// The timeline's context (docs/design/timeline.md#simulation-model: the build stage) and what it looks up in the data.
 
 import { Attr, type AttrType, type SkillType } from "../attributes.ts";
 import type { Build } from "../build.ts";

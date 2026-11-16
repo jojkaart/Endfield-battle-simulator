@@ -1,4 +1,4 @@
-// A setup-aware value for the beam (docs/design.md "Payoffs and chains", phase 3, part 3): what a state holds that a
+// A setup-aware value for the beam (docs/design/search.md "Payoffs and chains", phase 3, part 3): what a state holds that a
 // payoff it can still cast would use. The payoff table's ceilings (payoffs.ts) say, for each damaging step, which
 // pieces (a buff, a reaction or physical status, Vulnerable or Link stacks) raise it and by how much (the piece's
 // worth: what the ceiling loses without it); a state that holds such a piece while that step is ready to be cast

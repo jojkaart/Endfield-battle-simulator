@@ -1,4 +1,4 @@
-// Assumption switches (docs/design.md "Rule-based rotations"; the architecture review's item 10): the kits' open
+// Assumption switches (docs/design/rules.md "Rule-based rotations"; the architecture review's item 10): the kits' open
 // readings that move results and wait for an in-game test (OperatorKit.assumptions, e.g. test 109: does Si's Haste come
 // with every end of Artful Intent?). A command runs under chosen readings (--assume <id>=<reading>) and, with
 // --assumptions, says whether its conclusion holds or flips under each other reading of an assumption the team has.

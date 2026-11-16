@@ -1,4 +1,4 @@
-// Damage distributions (docs/design.md "Damage distributions"): the five additive fields of a hit, their sums, the
+// Damage distributions (docs/design/damage.md "Damage distributions"): the five additive fields of a hit, their sums, the
 // random sum of a random landed count, battles combined by the law of total cumulance, Cornish–Fisher percentiles;
 // and on the timeline: the mean is the expected-mode total, Ardelia's sheep land a random number of times, the
 // bounds hold, and a small Monte Carlo agrees with the distribution.

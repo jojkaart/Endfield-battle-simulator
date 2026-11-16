@@ -1,6 +1,6 @@
 // Checks a log fixture: predicts every logged hit that a kit covers from the
 // stored build, the logged buff effects and what the replay of the logged
-// casts decides (buffreplay.ts; docs/design.md, "What the replay decides"),
+// casts decides (buffreplay.ts; docs/design/data.md, "What the replay decides"),
 // and compares with the real damage.
 
 import {
@@ -94,7 +94,7 @@ export type HitVerdict =
    * A covered hit no reading fits, under buffs the log lists without a value
    * (not Corrosion) that no kit values (unquantifiedFromKit): the prediction
    * lacks them, so the hit is neither verified nor a mismatch the kits are
-   * to blame for. A verified fixture has none (docs/design.md, "What a log
+   * to blame for. A verified fixture has none (docs/design/data.md, "What a log
    * check verifies").
    */
   | { readonly kind: "unvalued"; readonly hit: LogHit; readonly predicted: number; readonly buffs: readonly string[]; readonly readings: Readings };
@@ -698,7 +698,7 @@ export function engineHits(data: GameData, fx: LogFixture, replay: LogBuffReplay
 }
 
 /**
- * Verdicts for every logged hit (docs/design.md, "The log check's rule"). First the engine's readings at the hit's
+ * Verdicts for every logged hit (docs/design/data.md, "The log check's rule"). First the engine's readings at the hit's
  * landing in the replay (enginecheck.ts engineReadings: the engine's damage path, the log supplying only what the
  * engine can't produce): the first within ±1 is a plain match, or an assumed one where it takes for granted what the
  * replay's timing or facts leave open. Where none fits, or the replay has no landing for the hit, the log's own
@@ -1000,7 +1000,7 @@ export function checkLog(data: GameData, fx: LogFixture, opts: CheckLogOptions =
 
 
 /**
- * Why a log check doesn't verify its fixture (none: it does; docs/design.md, "What a log check verifies"): a
+ * Why a log check doesn't verify its fixture (none: it does; docs/design/data.md, "What a log check verifies"): a
  * mismatch or an unvalued hit, or an operator with a kit and hits the check can judge (covered, and not unmodelled
  * for a reason other than Corrosion) without one plain or assumed match. A log-listing fallback match isn't a
  * mismatch, but it shows the damage with the log's buffs, not the replay's: it doesn't verify an operator alone.
@@ -1187,7 +1187,7 @@ export function formatLogCheck(data: GameData, fx: LogFixture, verdicts: readonl
     `${fx.id}: ${fx.provenance.url}`,
     problems.length === 0
       ? "Verified: no mismatch or unvalued hit, and every operator with a kit has a plain or assumed match."
-      : `Not verified (docs/design.md, "What a log check verifies"): ${problems.length} reason(s), e.g.\n${problems.slice(0, 5).map((p) => `  ${p}`).join("\n")}`,
+      : `Not verified (docs/design/data.md, "What a log check verifies"): ${problems.length} reason(s), e.g.\n${problems.slice(0, 5).map((p) => `  ${p}`).join("\n")}`,
   ];
   for (const build of fx.team) {
     const mine = verdicts.filter((v) => v.hit.operator === build.operator);
@@ -1233,7 +1233,7 @@ const UNQUANTIFIED_REASONS: Readonly<Record<UnquantifiedReason, string>> = {
   noKit: "a status hit of an operator without a kit",
 };
 
-/** Below this share of plain matches, an operator's matches are flagged as mostly assumed (docs/design.md, "What a log check verifies"). */
+/** Below this share of plain matches, an operator's matches are flagged as mostly assumed (docs/design/data.md, "What a log check verifies"). */
 export const MOSTLY_ASSUMED = 0.5;
 
 /** How strong an operator's matches are, or null without one: readings per match, and a flag when most are assumed or fallback. */

@@ -60,7 +60,7 @@ level table when given (file defaults can be placeholders).
 format (it validates against the schema): hits with frames, count, events,
 factor, applies, energy, sp, detached, finalStrike; `teamEnergyFrame`,
 `energyBlockSeconds`; notes for branches, jumps and event-driven hits.
-**Since 2026-10-25 the loader uses it** ([design.md](design.md#skills-and-buffs-from-skilldata--buffdata),
+**Since 2026-10-25 the loader uses it** ([design.md](design/data.md#skills-and-buffs-from-skilldata--buffdata),
 "Kits and the game data"): it fills in frames, count, events, factor,
 element, poise, detached, energy, team energy and energy blocks a kit leaves
 out, and refuses a written value that differs from the compiled one unless

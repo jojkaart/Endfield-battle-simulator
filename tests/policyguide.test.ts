@@ -1,4 +1,4 @@
-// The payoff-guided rule search (engine policyguide.ts, cli guided.ts; docs/design.md "Rule-based rotations", the
+// The payoff-guided rule search (engine policyguide.ts, cli guided.ts; docs/design/rules.md "Rule-based rotations", the
 // guided search): a hit's damage with a multiplier added or taken away, window and multiplier attribution on a small
 // fight (who gives what, the factor when on, the loss when off), edits made from a loss (a hold rule, a chain), and
 // the acceptance rule.

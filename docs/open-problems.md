@@ -65,7 +65,7 @@ too high; no Breach hit had a plain match). Now it sees no Breach: plain
 
 ## Buff timing leads (the buff timing report, 2026-11-15)
 
-**Shows:** `efsim zmdlogs timing` (docs/design.md, "The buff timing
+**Shows:** `efsim zmdlogs timing` (docs/design/data.md, "The buff timing
 report") over the 27 development logs: of 4,487 fallback and mismatch
 hits, 1,209 fit one kit buff toggled (at stake 1.80M), 148 only a pair,
 3,130 none (19.66M: most misfits aren't timing). Hints, not fixes ("Fits
@@ -502,7 +502,7 @@ hit in our logs), against the engine's 11 below P3 (14 from P3), which
 assumed the 0.3 s per-enemy cap is always reached (until 2026-11-13).
 
 **Done (2026-11-13):** the count below is now the kit's (`landedCount` on
-the sheep hit; docs/design.md "Damage distributions"): expected crits deal
+the sheep hit; docs/design/damage.md "Damage distributions"): expected crits deal
 each planned landing's damage and Stagger × E[N] / L (6.1 / 11, 8.6 / 14),
 the distribution counts a cast's sheep as a random sum, rolled crits draw
 the count (stream `landed`) and land that many at random. The example went
@@ -946,7 +946,7 @@ lands no volley here.
 
 **Shows (2026-11-14, recordedburst.ts):** the log check values each burst
 as the build's ink_damage_rate × every logged hit from Si's battle-skill
-hit to the record's end (docs/design.md, "What a log check verifies").
+hit to the record's end (docs/design/data.md, "What a log check verifies").
 34 of 40 single-target bursts in non-hold-out logs fit within the per-hit
 rounding (most within ±3: 489c 38772 ms 446279 vs 446281, 9555 53088 ms,
 db87 45457 ms, e82d 11111 ms, c3c7 100082 ms; abfd's three at rate 0.11,
@@ -1029,7 +1029,7 @@ check. 3f78 at 46994 ms: level 1 in the replay (at 45458 ms Arcane's
 ultimate lands before Xaihi's Cryst, so its "enemy's element"
 infliction adds nothing); level 2 in the reaction check (the hit fits 2,
 or 1 with a set buff the replay isn't sure of). The replay now takes the
-level the log shows (docs/design.md, "The log check's rule"): 4a64 plain
+level the log shows (docs/design/data.md, "The log check's rule"): 4a64 plain
 68 → 114, unquantified 193 → 131, mismatches 3 → 1; 3f78 plain 30 → 32,
 assumed 6 → 25, unquantified 208 → 179, mismatches 8 → 5. Totals: 4a64
 −36.5 → −38.7%, 3f78 −36.5 → −35.0% (less shred in 4a64; the

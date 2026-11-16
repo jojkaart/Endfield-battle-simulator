@@ -1,4 +1,4 @@
-// Rotation search: a driver on the stepping API (docs/design.md#stepping-api)
+// Rotation search: a driver on the stepping API (docs/design/timeline.md#stepping-api)
 // that generates the action list while the fight runs, instead of reading a
 // recorded one. Every decision goes through the same apply / earliestStart
 // as recorded rotations, so a found rotation is legal by construction and
@@ -8,7 +8,7 @@
 // rotation's damage is a distribution, not a number (owner, 2026-10-20): the
 // search then plays every candidate in several seeded battles at once and
 // ranks it by a statistic of their damage, and reports the found rotation's
-// distribution over many more (docs/design.md#rotation-search).
+// distribution over many more (docs/design/search.md#rotation-search).
 
 import { diveOf, nextBasics, EngineError, allActions, predicateRefs, advance, apply, createContext, earliestStart, exclusiveUntil, enemyActionsOf, init, memoised, simulate, startsNow, ofKind, maxPoise, skillCosts, maxEnergy, SP, FPS, windowKey, type ActiveBuff, type GameData, type CritMode, type BattleEvent, type RotationAction, type RunSpread, type TimelineContext, type TimelineResult, type TimelineScenario, type TimelineState, type CastRef, type ChainStep, type Scheduled } from "../core.ts";
 import { remainingBound, type UpperBound } from "./bound.ts";
@@ -183,7 +183,7 @@ export function committedDamage(ctx: TimelineContext, state: TimelineState, land
 }
 
 /**
- * What a state's resources are worth to the beam on top of its damage (docs/design.md "How the beam ranks"):
+ * What a state's resources are worth to the beam on top of its damage (docs/design/search.md "How the beam ranks"):
  * ultimate energy at its operator's price per point, team SP at the team's, and casts still paying off. Prices come
  * from probes (resourcePrices), not tables: a search heuristic, never part of a result.
  */
@@ -332,7 +332,7 @@ export function randomOutcomes(data: GameData, scenario: Omit<TimelineScenario, 
 
 /**
  * The team's kit triggers (own or worn) that listen to crits (`on: {event: hit, crit}`), as "operator: trigger IDs"
- * per operator. With expected crits no hit counts as a crit (design.md "Crit modes"), so they never fire.
+ * per operator. With expected crits no hit counts as a crit (design/damage.md "Crit modes"), so they never fire.
  */
 export function critTriggers(data: GameData, scenario: Omit<TimelineScenario, "rotation">): string[] {
   const ctx = createContext(data, { ...scenario, rotation: [] });
@@ -385,7 +385,7 @@ export interface SearchOptions {
    */
   readonly valueWeight?: number;
   /**
-   * Drop a state another of its layer dominates (docs/design.md "Pruning the search"): the same in everything but SP,
+   * Drop a state another of its layer dominates (docs/design/search.md "Pruning the search"): the same in everything but SP,
    * returned SP and ultimate energy (stateKeyer `amounts`), with at least as much committed damage, SP and every
    * operator's energy and no more returned SP. One battle only (no random outcomes); never a state on the guide's line.
    */
@@ -397,7 +397,7 @@ export interface SearchOptions {
    */
   readonly bound?: UpperBound;
   /**
-   * Chains as macro actions (docs/design.md "Payoffs and chains", phase 3): where a chain's first step is among a
+   * Chains as macro actions (docs/design/search.md "Payoffs and chains", phase 3): where a chain's first step is among a
    * node's choices, the whole chain is one more choice, played from the node's own state at its steps' earliest
    * frames (playMacros); its child is the state after its last step. Not in a loop's rounds (SearchHooks.stopAt).
    */
@@ -409,7 +409,7 @@ export interface SearchOptions {
    */
   readonly extraBeam?: number;
   /**
-   * A setup-aware value (docs/design.md "Payoffs and chains", phase 3): a node's score adds what the pieces it holds
+   * A setup-aware value (docs/design/search.md "Payoffs and chains", phase 3): a node's score adds what the pieces it holds
    * are worth to the payoffs it can still cast while they're on (setupValue), × `setupWeight` (default the value
    * weight, or VALUE_WEIGHT when that's 0).
    */
@@ -425,7 +425,7 @@ export interface SearchOptions {
 /** The extra share's children a later bucket keeps waiting, × its width (search: push). */
 const EXTRA_PENDING = 4;
 
-/** SearchOptions.valueWeight's default (measured 2026-11-14: docs/design.md "How the beam ranks"). */
+/** SearchOptions.valueWeight's default (measured 2026-11-14: docs/design/search.md "How the beam ranks"). */
 export const VALUE_WEIGHT = 0.5;
 
 /**
@@ -659,7 +659,7 @@ const SCHEDULED_KINDS = Object.keys(SCHEDULED_KEY) as Scheduled["kind"][];
 
 /**
  * The scheduled list as each kind's items, in order: the order within a kind is what advance's ties go by (the first
- * scheduled), how kinds interleave isn't (each kind has its own place in a frame: docs/design.md "Order within a frame").
+ * scheduled), how kinds interleave isn't (each kind has its own place in a frame: docs/design/timeline.md "Order within a frame").
  */
 function scheduledKey(list: readonly Scheduled[], env: KeyEnv): Record<string, unknown> {
   return Object.fromEntries(SCHEDULED_KINDS.map((k) => [k, list.filter((x) => x.kind === k).map((x) => project(x, SCHEDULED_KEY[k] as KeyRules<typeof x>, env))]));
@@ -902,7 +902,7 @@ function prune(nodes: readonly Node[], n: number, counts: { merged: number; fami
  * Whether state `x` dominates `y` (same dominance key, stateKeyer `amounts`): at least as much committed damage, SP and every operator's
  * ultimate energy, and no more returned SP (which is spent first and gives no energy). Exact for the fight: nothing
  * reads SP or energy but the gates (enough to cast) and the energy a spend gives, and gains are capped sums, so every
- * rotation legal from b is legal from a at the same frames and deals the same from there (docs/design.md "Pruning the
+ * rotation legal from b is legal from a at the same frames and deals the same from there (docs/design/search.md "Pruning the
  * search").
  */
 export function dominatesState(x: TimelineState, xDamage: number, y: TimelineState, yDamage: number): boolean {
@@ -1034,7 +1034,7 @@ export interface SearchHooks {
   readonly guide?: readonly RotationAction[];
   /**
    * More rotations the beam keeps a place for, each its own (after `guide`, which is the first): searchBeams' skeletons
-   * (docs/design.md "Payoffs and chains", phase 3). Any legal rotation of the scenario: where a guide's next action
+   * (docs/design/search.md "Payoffs and chains", phase 3). Any legal rotation of the scenario: where a guide's next action
    * isn't among a node's choices it's added to them (a skeleton waits where the search's choices wouldn't).
    */
   readonly guides?: readonly (readonly RotationAction[])[];

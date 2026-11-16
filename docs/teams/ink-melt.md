@@ -26,7 +26,7 @@ whatever her battle skill does.
 
 ## Gear played by the rules (2026-11-16; the example keeps its gear)
 
-`efsim diagnose` and `efsim gear --rules` (docs/design.md "Diagnosis,
+`efsim diagnose` and `efsim gear --rules` (docs/design/rules.md "Diagnosis,
 marginal values, gear on rules"): the rule list below played over 300 s
 on common seeds (8, more for noisy gains).
 
@@ -64,7 +64,7 @@ reason. 1,000 runs, 18 min on 3 workers.
 ## Gear from the logs and guide sites (2026-11-15)
 
 The gear above was a template assumption (each operator's most common
-loadout overall). `efsim gear` (docs/design.md "Gear from the logs"), as
+loadout overall). `efsim gear` (docs/design/gear.md "Gear from the logs"), as
 for the Typhoeus team: per operator the loadouts seen at least twice in
 the log fixtures (hold-outs left out), counted by how many of the team's
 other three the log has, and guide-site loadouts (EndfieldHub, looked up
@@ -157,7 +157,7 @@ Ardelia:
 | From zero, 60 s | **4,642,409** (77,373 DPS; 4,601,305 before) | 3,263,818 (54,427 DPS) |
 
 - Both from `efsim search` with macros (phase 3, 2026-11-15: the payoff
-  table's chains as one choice each; design.md "Payoffs and chains"), as
+  table's chains as one choice each; design/search.md "Payoffs and chains"), as
   is the owner's team's with full energy (from zero: with skeletons).
 - With the new gear (Wulfgard's Bonekrusha Wristband) the same rotations
   replayed: the examples' totals above. Searched again with it (guided
@@ -191,7 +191,7 @@ Ardelia:
 
 ### Rules: what to play (2026-11-16)
 
-A rotation to learn rather than a timeline (docs/design.md "Rule-based
+A rotation to learn rather than a timeline (docs/design/rules.md "Rule-based
 rotations"; [examples/ink-melt.rules.json](../../examples/ink-melt.rules.json),
 `efsim rules`). Laevatain controlled, no swaps. Start with **Si's battle
 skill, then Laevatain's battle skill**; then at every moment do the first
@@ -224,7 +224,7 @@ complexity 46; the hardest cues are the three "ultimate ready" ones
 | First 60 s against the 60 s timeline (the examples) | 3,454,357 against 4,732,088 (−27.0%) | 2,506,673 against 4,642,409 (−46.0%) |
 | 300 s total against a fixed 300 s search (beam 6, full energy, 36 min) | 20,900,414 against 16,406,168 (**+27.4%**) | |
 
-The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
+The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design/rules.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
 
 **Re-tuned for the fixed driver? No change found (2026-11-16).** The fix
 made this list +5.0% ± 1.0 at full energy and −2.4% ± 1.2 from zero (32
@@ -257,7 +257,7 @@ same seeds); also holding Wulfgard's adds nothing (68,723) and makes
 loses (60,142); saving SP for Twilight battle skills changes nothing
 (65,909) or loses (61,860). The previous list: 65,922 / 61,962.
 
-**The guided search (2026-11-16; `efsim rules --guided`, design.md "The
+**The guided search (2026-11-16; `efsim rules --guided`, design/rules.md "The
 guided rule search").** Its ideal combos: Laevatain's Twilight attacks
 are the biggest window (14,377 DPS of 67,357, always in Twilight), at 55%
 of their ideal; they miss Stagger (on 29% of their damage: −3,052 DPS if

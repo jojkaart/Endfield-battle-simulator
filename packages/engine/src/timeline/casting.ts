@@ -40,7 +40,7 @@ function plannedLandings(own: readonly PendingHit[], planned: readonly PendingJu
 }
 
 /**
- * A cast's landings of its hits with a random landed count (KitHit.landedCount; docs/design.md "Damage
+ * A cast's landings of its hits with a random landed count (KitHit.landedCount; docs/design/damage.md "Damage
  * distributions"), out of the L planned ones: at the expected count every one lands, marked with L (landing.ts
  * scales its damage and Stagger by E[N] / L); with rolled crits N is drawn from the observed counts and N of the L
  * chosen uniformly (stream `landed`); TimelineOptions.landedCounts takes the fewest or most, the first landings.
@@ -389,7 +389,7 @@ export const UNTIL_CAST_LANDS = Infinity;
 /**
  * Buffs used up by a cast whose own hits have all landed (or been cut: jumps, its end) end on the next frame (so a hit
  * its last landing triggers in the same frame still has them, as when they ended at the planned last hit + 1); one
- * attached to the cast (whileCasting) runs on to the cast's end. In the order of docs/design.md ("Order within a
+ * attached to the cast (whileCasting) runs on to the cast's end. In the order of docs/design/timeline.md ("Order within a
  * frame"), checked after each scheduled item.
  */
 export function settleCastBuffs(st: TimelineState, frame: number): TimelineState {

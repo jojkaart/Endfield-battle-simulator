@@ -1,4 +1,4 @@
-// A local search over rule lists (docs/design.md "Rule-based rotations", the rule search): from a hand-written list,
+// A local search over rule lists (docs/design/rules.md "Rule-based rotations", the rule search): from a hand-written list,
 // small edits (add, remove or reorder a rule, change a cue or a threshold, add or drop a condition, toggle a battle
 // skill that pre-empts a combo, change the opener or the filler), each scored by the sustained DPS the driver plays
 // at the default reaction delay over a few seeds. Every list scored is kept; the result is the Pareto front of DPS
@@ -225,7 +225,7 @@ export function editRuleList(rng: () => number, pool: Pool, list: RuleList, maxR
   return { ...list, rules };
 }
 
-/** Local search over rule lists from `start` (docs/design.md "Rule-based rotations"). */
+/** Local search over rule lists from `start` (docs/design/rules.md "Rule-based rotations"). */
 export function searchRules(data: GameData, scenario: Omit<TimelineScenario, "rotation">, start: RuleList, options: RuleSearchOptions = {}): RuleSearchResult {
   const team = scenario.team.map((b) => b.operator);
   const controlled = scenario.controlled ?? (team[0] as string);

@@ -9,7 +9,7 @@ updated.
 
 ## Rule-based rotations
 
-**Rule-based rotations (2026-11-16, phases 1 and 2 done: design.md
+**Rule-based rotations (2026-11-16, phases 1 and 2 done: design/rules.md
 "Rule-based rotations", `efsim rules`, `efsim diagnose`, `efsim gear
 --rules`, examples/*.rules.json, each team page's "Rules" and "Gear"):**
 next, the owner's call on the owner's team's gear (Estella's Grizzled
@@ -84,7 +84,7 @@ Yinglung Heavy Armor, Gloves T1, Radar + LYNX Slab) +0.6–0.7%.
 
 ## Planning from the payoffs, after phase 3
 
-**First (2026-11-15):** after phase 3 (journal 2026-11-15, design.md
+**First (2026-11-15):** after phase 3 (journal 2026-11-15, design/search.md
 "Payoffs and chains": macros are `efsim search`'s default, skeletons and
 the setup value opt-in): make macros cheaper (the macros played at every
 node: 145 ms a state against 57 on Ink Melt; from zero energy they lose
@@ -144,14 +144,14 @@ default, the owner's call 2026-10-25). The search's beams still disagree
 by 4–14%: a score closer to the final damage (a cheap rollout, or a value
 for what a state holds), then searches of the favourites' teams and a
 report of the best rotations found. Ask the owner for their roster.
-Damage distributions are in (design.md "Damage distributions"); next
+Damage distributions are in (design/damage.md "Damage distributions"); next
 there: the mean of crit-triggered teams from one deterministic battle
 with those buffs at their expected state (so the search ranks by it
 and stays one battle), then `--percentile` from the distribution.
 
 ## Log check leads
 
-**Log check leads** (design.md "The log check's rule"; the report names
+**Log check leads** (design/data.md "The log check's rule"; the report names
 them, largest first): Stagger the log has that no logged hit explains
 (4e5e: 24 at 53.2 s), Rossi's Wolven Blood layers, Typhoeus's hover through
 her combo, Arcane's Solemn Phalanx WILL buffs, Camille's weapon ATK the
@@ -169,7 +169,7 @@ in 4e5e) hold hit by hit.
 
 ## Kit values from the data
 
-**Kit values from the data** (design.md "Kits and the game data"): fill
+**Kit values from the data** (design/data.md "Kits and the game data"): fill
 launch frames, applications and bonuses; SP of hitless skills as cast
 triggers; the Typhoeus arrowrain `dataOverride` that hides dbae's
 verified hits; Mi Fu's per-fixture factor (2fd9 / 99fb / de6a).
@@ -199,7 +199,7 @@ test helpers. Still open from setup: a `Result` schema,
 
 - Interactive search: drivers on the engine's stepping API that generate
   the action list on the fly, with a battle policy / evaluator exploring the
-  tree of choices ([design.md](design.md#stepping-api)).
+  tree of choices ([design.md](design/timeline.md#stepping-api)).
 - **Account import** from the SKPORT capture extension
   ([player-data.md](player-data.md)), only once the system is verified and
   can find useful new team rotations (owner's call, 2026-10-18). Until then,

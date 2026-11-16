@@ -1,4 +1,4 @@
-// What a log check's verdicts say (2026-10-24, docs/design.md "What a log check verifies"): a match's class,
+// What a log check's verdicts say (2026-10-24, docs/design/data.md "What a log check verifies"): a match's class,
 // readings and assumptions as data; Corrosion as an excuse only where its shred range brackets the damage; buffs
 // no kit values as their own verdict; only "the reading doesn't apply" errors taken as such; and what verifies a
 // fixture. Shown with a small hand-made change to Laevatain's kit and a synthetic log whose numbers the engine

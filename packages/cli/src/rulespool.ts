@@ -1,4 +1,4 @@
-// Rule-list runs for efsim diagnose and efsim gear --rules (docs/design.md "Rule-based rotations"): one run is
+// Rule-list runs for efsim diagnose and efsim gear --rules (docs/design/rules.md "Rule-based rotations"): one run is
 // playRules (with its diagnosis when asked) on a scenario whose team may wear probe pieces (synthetic gear with one
 // stat line: the marginal values); many runs go to worker threads, each loading the game data once.
 

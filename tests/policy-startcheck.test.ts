@@ -1,4 +1,4 @@
-// One "can this start now" (timeline drivers.ts canStartAt; docs/design.md "Rule-based rotations"): the start check a
+// One "can this start now" (timeline drivers.ts canStartAt; docs/design/rules.md "Rule-based rotations"): the start check a
 // frame-stepping driver asks agrees with earliestStart's `at`, so `simulate` replays what the rule driver pressed.
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";

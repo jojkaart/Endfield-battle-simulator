@@ -287,7 +287,7 @@ function hitEventOf(st: TimelineState, hit: PendingHit, kitHit: KitHit, finisher
  * Whether a crit-triggered effect could fire on a hit event (TimelineContext.critListeners): a trigger on crits whose
  * other filters (`on` but its `crit`) and cause (`by`) match it. Its `if`, cooldown and counts aren't judged, so a hit
  * may roll that no trigger would have fired on: still right, a little less exact. With crit `distribution` only these
- * hits roll their crit (docs/design.md "Damage distributions").
+ * hits roll their crit (docs/design/damage.md "Damage distributions").
  */
 function critMatters(ctx: TimelineContext, e: BattleEvent): boolean {
   return (ctx.critListeners ?? []).some(({ owner, trigger: t }) => {

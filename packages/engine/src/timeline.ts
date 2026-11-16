@@ -1,4 +1,4 @@
-// The timeline engine, v1: the stepping API of docs/design.md#stepping-api.
+// The timeline engine, v1: the stepping API of docs/design/timeline.md#stepping-api.
 // State is plain data; every function returns a new state. Recorded
 // rotations and (later) search are drivers on top of init / legalActions /
 // apply / advance.
@@ -9,7 +9,7 @@
 // reactions and their statuses. What it doesn't model yet is listed in TIMELINE_ASSUMPTIONS
 // and returned with every result.
 //
-// The engine is split by concern under timeline/ (docs/design.md, "Engine modules"); this module re-exports
+// The engine is split by concern under timeline/ (docs/design/timeline.md, "Engine modules"); this module re-exports
 // the stepping API and its types, as @efsim/engine exports them.
 
 export type { RotationAction, TimelineOptions, TimelineScenario, EnemyActionSpec, EnemyAction, Cast, LandedHit, LandingFacts, LandingInputs, ReactionRecord, TimelineState, TimelineContext, Acting, ChainStep, PendingBurst } from "./timeline/state.ts";

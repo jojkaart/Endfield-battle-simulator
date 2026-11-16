@@ -1,4 +1,4 @@
-// Whether a fight's result depends on the order its team is listed in (docs/design.md "Order within a frame"). It
+// Whether a fight's result depends on the order its team is listed in (docs/design/timeline.md "Order within a frame"). It
 // does where the game reads team positions (a kit's `teamSlotElement` predicate, a cooldown change for the member in
 // a slot: Si reads Team Position 01), so those examples are only checked to name a slot; every other example must
 // give the same hits under every order of its team (the controlled operator kept), with expected and rolled crits.

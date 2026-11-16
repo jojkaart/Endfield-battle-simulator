@@ -1,4 +1,4 @@
-// An upper bound on the damage a search state can still add (branch and bound: docs/design.md "Pruning the search"),
+// An upper bound on the damage a search state can still add (branch and bound: docs/design/search.md "Pruning the search"),
 // from the payoff table (payoffs.ts): every step a team can cast, at most its ceiling each time, as often as its
 // operator's time, its cooldown and the team's SP allow, plus a recording buff's share of all of it. Admissible only
 // as far as the ceilings are ceilings: they're probed (the best bundle of what the team achieves, in the best

@@ -1,4 +1,4 @@
-// Si's Artful Intent burst valued from the logged hits it recorded (packages/logs/src/recordedburst.ts; docs/design.md
+// Si's Artful Intent burst valued from the logged hits it recorded (packages/logs/src/recordedburst.ts; docs/design/data.md
 // "What a log check verifies"): ink_damage_rate × every logged hit on the target from the battle-skill hit
 // (inclusive) to the record's end, which the log doesn't have (each logged time up to RECORD_END_LAG_MS before the
 // burst is a reading). Synthetic logs with Si's build from zmdlogs-0eef2474a26f (P5, battle skill 12: rate 0.20),

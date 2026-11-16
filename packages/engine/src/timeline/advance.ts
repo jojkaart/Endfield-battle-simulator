@@ -1,4 +1,4 @@
-// Running the fight forward: everything scheduled up to a frame, in the order of docs/design.md (advance).
+// Running the fight forward: everything scheduled up to a frame, in the order of docs/design/timeline.md "Order within a frame" (advance).
 
 import type { Build } from "../build.ts";
 import { decide, evalContext } from "../damage.ts";

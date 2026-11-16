@@ -204,7 +204,7 @@ Then re-analysis of all seven.
   Predicate (`available`, replacing `availableWhile` / `unavailableWhile`,
   kits migrated); cooldown groups (`cooldownGroup`); `takesControl`; buffs
   that block energy gain while they last (`blocksEnergy`).
-- S3, S5: when the next action may start (docs/design.md "Skill timing"):
+- S3, S5: when the next action may start (docs/design/timeline.md "Skill timing"):
   SkillData windows, channels, `skillSpecification` priorities, exclusive
   time; interrupts cancel hits still to land (detached ones excepted);
   basic-attack chain steps from the data; swaps blocked only by

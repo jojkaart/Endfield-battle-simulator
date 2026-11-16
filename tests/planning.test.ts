@@ -1,4 +1,4 @@
-// Planning from the payoffs, phase 3 (docs/design.md "Payoffs and chains"): chains as macro actions in the beam
+// Planning from the payoffs, phase 3 (docs/design/search.md "Payoffs and chains"): chains as macro actions in the beam
 // search, skeletons as guides, a setup-aware value. A macro is a plain list of actions that replays through simulate;
 // the beam's extra share leaves the rest of the beam as without it (never worse at the same width); the value is a
 // plain function of the state.

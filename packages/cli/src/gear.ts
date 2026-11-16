@@ -1,5 +1,5 @@
 // `efsim gear`: which of the gear loadouts seen in logs (and any given by hand, e.g. from guide sites) does best for
-// each operator of a team, scored on the team's own rotation (docs/design.md "Gear from the logs"). Per operator the
+// each operator of a team, scored on the team's own rotation (docs/design/gear.md "Gear from the logs"). Per operator the
 // candidates are the distinct loadouts of the log fixtures (pieces as logged, full artifice), counted overall and by
 // how many of the scenario's teammates the log has; each is scored by replaying the scenario's rotation with only that
 // operator's gear swapped (a step that can't be played is moved later or dropped: a repaired replay; with too many such
