@@ -230,7 +230,8 @@ landed on Liino's button when it showed End Stance: once at 3 s just
 before her first ultimate, and three times cutting Cosmovoice short.
 With the Cosmovoice cue and the press limited to when her button shows
 her battle skill (`"shows"` in the rule format), the list plays 54,771
-against 52,561 (+4.2%, same seeds); 0.6 s reactions now cost almost
+against 52,561 on seeds 1–10 (+4.2%); on 64 fresh seeds (1001–1064) the
+paired gain is +2.6% ± 0.5 (53,321 → 54,636); 0.6 s reactions now cost almost
 nothing more than 0.3 s. One Arcane battle skill at 0.3 s is still spent
 for nothing (Liino's stance shows only once her first projectile lands).
 

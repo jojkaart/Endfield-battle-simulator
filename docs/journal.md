@@ -193,7 +193,8 @@ press resolved to End Stance when her button had changed (once at 3 s,
 before her first ultimate; three times cutting Cosmovoice short). New in
 the rule format: a press's `"shows"` (only if the button shows that
 skill, else skipped); Liino's Cosmovoice is a visible cue. Rule 7 with
-both: 54,771 against 52,561 sustained (+4.2%, same seeds), from zero
+both: 54,771 against 52,561 sustained (+4.2% on seeds 1–10; +2.6% ± 0.5
+paired on 64 fresh seeds, checked afterwards), from zero
 50,178 against 49,964. Left: one Arcane battle skill at 0.3 s is still
 wasted (her stance shows only when her first projectile lands).
 
