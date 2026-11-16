@@ -202,24 +202,37 @@ that applies:
 5. When Typhoeus's combo lights up (she's on the ground): Perlica's
    ultimate, then Typhoeus's combo.
 6. When Perlica's combo lights up: Perlica's combo.
-7. When Liino isn't in Vocalist Stance: Arcane's battle skill, then
-   Liino's battle skill.
+7. When Liino is in neither stance (her button shows her battle skill,
+   not End Stance): Arcane's battle skill, then Liino's battle skill, but
+   only if her button still shows it. Never press End Stance: her
+   ultimate goes straight on from Vocalist Stance (the owner,
+   2026-11-16).
 8. When Arcane's combo lights up: Arcane's combo.
 9. When Typhoeus is on the ground: Typhoeus's battle skill (take flight).
 10. When Typhoeus is on the ground: Typhoeus's combo (if it's ready).
 
 Otherwise Typhoeus's basic attacks (her aerial shots while she hovers).
-Learnability: 1 opener press, 10 rules (12 presses), cue cost 34,
-complexity 47; the hardest cues are the "ultimate ready" ones (rank 4);
+Learnability: 1 opener press, 10 rules (12 presses), cue cost 37,
+complexity 50; the hardest cues are the "ultimate ready" ones (rank 4);
 "hovering" and "Vocalist Stance" are states the game shows on the
 character and the skill button (rank 3).
 
 | Simulated player, 0.3 s reaction ± 50%, 10 seeds (common random numbers; Perlica's 2026-11-16 gear) | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **52,561** (1,913) | **49,964** (1,005) |
-| As a bot (0 s) / at 0.6 s | 60,776 / 49,166 | 54,376 / 48,783 |
-| First 60 s against the 60 s timeline (the examples) | 3,987,749 against 5,774,076 (−30.9%) | 2,704,986 against 5,019,331 (−46.1%) |
-| 300 s total against a fixed 300 s search (beam 6, full energy, 86 min; Perlica's earlier gear) | 15,768,155 against 16,925,847 (−6.8%) | |
+| Sustained DPS over 300 s (sd over seeds) | **54,771** (1,812) | **50,178** (1,970) |
+| As a bot (0 s) / at 0.6 s | 61,246 / 54,566 | 58,351 / 49,919 |
+| First 60 s against the 60 s timeline (the examples) | 4,150,895 against 5,774,076 (−28.1%) | 2,746,167 against 5,019,331 (−45.3%) |
+| 300 s total against a fixed 300 s search (beam 6, full energy, 86 min; Perlica's earlier gear) | 16,431,240 against 16,925,847 (−2.9%) | |
+
+**Rule 7 fixed (2026-11-16).** It read only Vocalist Stance, so it also
+fired during Cosmovoice (her ultimate's stance), and its second press
+landed on Liino's button when it showed End Stance: once at 3 s just
+before her first ultimate, and three times cutting Cosmovoice short.
+With the Cosmovoice cue and the press limited to when her button shows
+her battle skill (`"shows"` in the rule format), the list plays 54,771
+against 52,561 (+4.2%, same seeds); 0.6 s reactions now cost almost
+nothing more than 0.3 s. One Arcane battle skill at 0.3 s is still spent
+for nothing (Liino's stance shows only once her first projectile lands).
 
 - **Found by the rule search**, from hand-written lists (Typhoeus's
   battle skill whenever she's on the ground and dives while she is,
