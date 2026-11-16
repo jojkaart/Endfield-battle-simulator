@@ -195,3 +195,13 @@ answered the question and the kit was right. The logs couldn't answer it.
   tool tests in one command, with a clear "ready to merge" line.
 - `fixtures/pending/holdout.json` listing hold-outs explicitly, so a
   script could skip them by name.
+
+## Outcome (round 1)
+
+1. Fixtures drop fields; raw logs not kept: **done** for new imports and refreshes: `LogHit.poise.origin` (poiseDamage.orig_source) and effect sources; the raw detail is kept in the git-ignored cache (node_modules/.cache/efsim/zmdlogs/) by import and refresh; `efsim zmdlogs raw <fixture|id> [--buffs re] [--events re]` prints its lanes, fetching a missing one once, never a hold-out (packages/cli/src/zmdraw.ts); docs/data-sources.md says ZMDLogs records only buffs it can value. Filling older fixtures: **backlog** (no mass download).
+2. Worktree setup and shell forms: **done** (setup without `source` landed before this round; CLAUDE.md command shapes).
+3. Hold-outs mixed with development logs: **done.** The 13 hold-out fixtures and the split moved to fixtures/holdout/ (moved by id, unread); `efsim zmdlogs list [--with <op>] [--dir] [--json]` never lists them; `zmdlogs check`, `hits`, `raw` and `import` refuse a hold-out; the pending suite and the scoreboard read the new place; all 67 pending verdicts unchanged.
+4. Reading BuffData trees: **done.** `efsim gamedata tree <id> [--grep] [--depth]` and `efsim gamedata who <id>` (packages/cli/src/gamedata.ts): who creates Si's Haste in one command; the enum readings in one table in docs/game-data-format.md.
+5. Expired buffs in tests: **done** as a test helper (tests/helpers/buffs.ts `buffHistory`, `scenarioBuffHistory`) and a doc comment on `TimelineState.buffs`; an engine-side opt-in buff log wasn't needed for that.
+6. What-if kits: **done.** `--kit <file>` (packages/data `withKitFiles`) for every command that reads the data; refused by diagnose, rules --guided and gear --rules, whose worker threads load the real kits (phase 2's pool would pass the files on).
+7. Premerge runtime: **done** (CLAUDE.md: 15–20 min, run in the background with a 40 min limit; premerge prints each step's time).

@@ -123,3 +123,10 @@ session-start reading drops; cut the roadmap to one screen; update CLAUDE.md
   entry to the other side's text.
 - **Node runs `.ts` directly.** The script is typed, typechecked through its
   test, and needs no build step.
+
+## Outcome (round 1)
+
+1. Premerge timeouts and fail-fast: **done** (scripts/premerge.ts: every step, a table, timeout re-runs, a shared test lock). Moving the slowest tests: **backlog** with the measured list.
+2. Worktree setup and command shapes: **done** (setup without `source` landed before this round; CLAUDE.md command shapes).
+3. Built journal files conflicting: **done**, option (b): `npm run merge -- <branch>` (scripts/merge.ts) merges, adopts old-style entries from MERGE_HEAD, rebuilds docs/journal.md and its index, and commits; tested in a throwaway repository (tests/merge.test.ts).
+4. Citing the journal by line: **done** (CLAUDE.md "Journal and roadmap": cite an entry by its file).

@@ -206,3 +206,13 @@ list (`efsim gear --rules`), runs on three teams, docs and tests. Branch
   owner's-team fights.
 - `scripts/premerge.sh` caught nothing wrong but gave confidence in one
   command.
+
+## Outcome (round 1)
+
+1. Worktree setup and sandbox: **done** (setup without `source` landed before this round; CLAUDE.md now lists the command shapes that work, `scratch/` and the Write/Edit rule).
+2. Noise of timing stats, more seeds, fresh-seed confirmation, analytic estimate, profiling `playRules`: **assigned to phase 2** (rule driver and rule noise).
+3. Worker pool per command: **assigned to phase 2.** Printing the code at the head of long runs: helper **done** (packages/cli/src/provenance.ts `codeProvenance()`), the call sites in diagnose / gear --rules are phase 2's.
+4. Seeded numbers copied by hand (`rules --markdown-row`, a snapshot of the example rule lists): **assigned to phase 2** (rules.ts, tests/policy*.test.ts).
+5. Readable stat lines: **done.** `statLabel` / `attrLabel` in packages/engine/src/labels.ts, used by gear.ts and edge.ts; diagnose.ts and gearrules.ts are phase 2's to switch (tests/labels.test.ts checks statLabel gives the diagnosis' probe labels exactly).
+6. `gear --rules --out` writes a rotation the new gear can't play: **assigned to phase 2** (rule tooling).
+7. Journal and roadmap conflicts: **done** (journal entries as files before this round; `npm run merge -- <branch>`, scripts/merge.ts, rebuilds the built journal files on a merge).

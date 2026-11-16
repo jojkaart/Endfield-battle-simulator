@@ -13,6 +13,10 @@ below ([review-2026-10.md](review-2026-10.md)).
   2026-11-16): the quick wins 1–7 first, then the button model with
   event-driven rule stepping (8, 9), then the accuracy scoreboard and
   assumption toggles (11, 10).
+- **Friction rounds** ([friction/](friction/README.md)): round 1 done
+  (2026-11-16); its backlog
+  ([2026-11-16-backlog-after-round-1.md](friction/2026-11-16-backlog-after-round-1.md))
+  joins the next round once about five new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done): the owner's call on the
   owner's team's gear (+8.0%) and on Arcane in INT mode for Typhoeus's team
   (+5.9%, a rule search for INT first); a cheaper worth for timeline-moving

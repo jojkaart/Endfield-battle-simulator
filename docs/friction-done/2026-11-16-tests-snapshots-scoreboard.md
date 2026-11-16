@@ -199,3 +199,12 @@ pending-log check. Branch: the worktree branch of `agent-aff447bdcfbde9fa1`
   symlinks by hand (since `source` was refused) took one command.
 - `scripts/premerge.sh` and the snapshot tests' `UPDATE_HINT` messages
   made every step's next action clear.
+
+## Outcome (round 1)
+
+1. Timings under load: **done** for commands (`npm run bench`, scripts/bench.ts: alternating runs, CPU seconds, load); CLAUDE.md asks for CPU seconds or a paired run in timing claims. A paired run of the test suite against a base ref (tests from another commit): **backlog**.
+2. Vitest hides passing files' output: **done.** tests/logs.test.ts's "keep the gain" hint goes through `process.stdout.write`; the rule is in CLAUDE.md and design.md "Fixtures and tests".
+3. Sandbox and git: **done** (CLAUDE.md command shapes; hold-outs live in fixtures/holdout/, read only through code).
+4. Copied test helpers and unused imports: **done** in part. Shared builders in tests/helpers/ (synthetic.ts: withOperatorKit, kitHit, logHitOf, syntheticFixture; buffs.ts), used by batch4-logs2.test.ts so far; `npm run prune-unused -- <files>` (scripts/prune-unused.ts, TypeScript's own fixes; no eslint plugin, which would have broken every worktree's lint until the main checkout reinstalled). Moving the other files' copies: **backlog**.
+5. Pending shards balanced by time, shared setup in the logs config: **not done** (the game-data cache made each file's load ~1 s, so the second matters less; the first needs a generated cost file). Backlog, with this round's shard times.
+6. Snapshot robustness: **done.** tests/snapshot.ts `readStored`: a file with conflict markers is empty for an update run and otherwise fails with the fix; tests/logs.test.ts records before its asserts (tests/snapshot-file.test.ts).

@@ -52,3 +52,12 @@ Task: build a rule search guided by ideal combos (the damage windows, the multip
 - `diagnose.ts`'s `playSettings`, `seedJobs` and `paired` were directly reusable.
 - `scripts/premerge.sh` caught nothing but gave confidence in one command.
 - The design doc's sections on rules, diagnosis and payoffs were accurate and quick to orient from.
+
+## Outcome (round 1)
+
+1. Seed counts, fresh-seed confirmation, `rules --compare`, variance reduction: **assigned to phase 2.**
+2. The zero-energy companion: **assigned to phase 2.**
+3. Partial results and checkpoints of guided runs, profiling `playRules`: **assigned to phase 2.** The waiting pattern (background run, Monitor on its progress file): **done** (CLAUDE.md).
+4. Hits and buffs that know their cast, a structured status tag, `recomputeHit`: **done** except the tag. `LandedHit.cast`, `ActiveBuff.createdBy` {skill, cast} (left out of the search's state key), `TimelineScenario.keepInputs` and `recomputeHit(data, target, hit, modifiers)` (landing.ts, exported); no number changed (tests/engine-records.test.ts). `Modifier.status`: **backlog** (the log check matches engine and log modifiers by their fields, so a new field needs an audit first).
+5. Sandbox: **done** (CLAUDE.md command shapes, `scratch/`, template).
+6. Worktrees on a stale base: **done** (CLAUDE.md: the lead names the base commit or branch in the brief).

@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-16: Improvement round 1: friction reports to tools, docs and engine records](2026-11-16-14-improvement-round-1-friction-reports-to-tools-docs-and.md)
 - [2026-11-16: A payoff-guided rule search (`efsim rules --guided`)](2026-11-16-13-a-payoff-guided-rule-search-efsim-rules-guided.md)
 - [2026-11-16: Friction reports after every sub-agent task](2026-11-16-12-friction-reports-after-every-sub-agent-task.md)
 - [2026-11-16: Game-data cache; worktrees without `source`](2026-11-16-11-game-data-cache-worktrees-without-source.md)

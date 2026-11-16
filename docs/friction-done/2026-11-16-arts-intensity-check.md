@@ -190,3 +190,12 @@ holds. It also meant fixing anything wrong. Branch
   showed the fix's effect per fixture and operator at once.
 - `docs/open-problems.md` and combat-mechanics' tags gave clear places
   to record what was ruled out.
+
+## Outcome (round 1)
+
+1. Per-hit export: **done.** `efsim zmdlogs hits [fixture…] [--kind] [--operator] [--json] [--workers n]` (packages/cli/src/hitexport.ts, hitsworker.ts): one record per logged hit from the check's own computations, with scale parts, zones, modifier sources, the landing's operator, kit hits' enemy statuses. Every development log (28,693 hits) in 94 s on 3 workers. Status events' own landings record no facts, so their enemy statuses come from the next kit hit's record.
+2. Who applied an infliction: **done.** `Infliction.by` (one applier per stack) and `inflictionBy` on reaction and burst events (packages/engine/src/status.ts); the search's state key leaves it out; no number changed.
+3. Debuff sources in fixtures: **done for new imports** (`LogEffect.source` / `since`, schema optional). Older fixtures are unchanged: their raw details aren't on disk, and fetching them all again would be a mass download. Moved to the backlog (fill them as details get cached).
+4. What the data can't tell: **done.** docs/game-data-format.md "What the data can't tell" (skill-setting table not extracted, `enhanceAttributeSource` meaningless, tooltip formulas in C#, the stat hint as the only data). The listing of the 21 keys and their files: `efsim gamedata who <key>` finds every file that reads a key, so no separate script.
+5. Scratch scripts: **done.** Git-ignored `scratch/` that resolves `@efsim/*`, `scripts/scratch-template.ts`, `logFixtureFiles` moved to packages/cli/src/logs.ts (exported), CLAUDE.md "Worktrees and sub-agents" command shapes. Python: `efsim zmdlogs list --json` instead of a mirror helper.
+6. Status special cases: **done.** `OWN_HIT_SEES` table in status.ts (used by landing.ts eventDamage), combat-mechanics §3.8, one test per row (tests/own-hit.test.ts); behaviour unchanged.
