@@ -45,6 +45,11 @@ export interface TimelineOptions {
    * (rolled: drawn; otherwise every planned landing at E[N] / landings).
    */
   readonly landedCounts?: "least" | "most";
+  /**
+   * Readings of the kits' open assumptions (OperatorKit.assumptions) by assumption ID: a kit trigger tied to a reading
+   * (KitTrigger.reading) exists only under it. Absent: each assumption's default, the reading its kit stands by.
+   */
+  readonly assume?: Readonly<Record<string, string>>;
 }
 
 export interface TimelineScenario {

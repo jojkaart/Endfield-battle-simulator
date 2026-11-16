@@ -253,6 +253,12 @@ export function afterCantCast(ctx: TimelineContext, state: TimelineState, operat
  * judged from the frame that happens.
  */
 export function earliestStart(ctx: TimelineContext, state: TimelineState, action: RotationAction): { frame: number } | { error: string } {
+  // A start not before a later frame (`at`) is judged on the state then: everything due by that frame happens whatever
+  // is pressed (the SP its hits grant, a dive's landing replacing its jump, a teammate's own attack replacing a skill), and
+  // the cast would see it all (apply advances to the start). Judged on the earlier state, the gates read SP and the
+  // current action as they were (2026-11-16: Si's battle skill 67 frames late, an SP grant on the way missed; Typhoeus's
+  // battle skill 48 frames late after a dive). So this agrees with startsNow on the state advanced to `at` (canStartAt).
+  if (action.at !== undefined && action.at > state.frame && action.at <= ctx.scenario.durationFrames) return earliestStart(ctx, advance(ctx, state, action.at), action);
   const r = startFrom(ctx, state, action);
   const cur = state.acting[action.operator];
   // Its action may end sooner: a kit's endAction or follow-up cast (Purrchena's block or loop replaces the current skill), a jump or end on its timeline, a perfect dodge.

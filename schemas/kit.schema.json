@@ -78,6 +78,9 @@
           "label": {
             "type": "string"
           },
+          "visible": {
+            "$ref": "#/$defs/visibleBuff"
+          },
           "target": {
             "enum": [
               "self",
@@ -1097,6 +1100,23 @@
             ],
             "description": "Whose events count. Stack and own-buff events are always the owner's."
           },
+        "reading": {
+          "type": "object",
+          "required": [
+            "assumption",
+            "reading"
+          ],
+          "additionalProperties": false,
+          "description": "The trigger exists only under this reading of one of the kit's open assumptions (assumptions).",
+          "properties": {
+            "assumption": {
+              "type": "string"
+            },
+            "reading": {
+              "type": "string"
+            }
+          }
+        },
           "if": {
             "$ref": "#/$defs/predicate",
             "description": "Judged for the owner when the event happens."
@@ -1687,6 +1707,45 @@
         }
       }
     },
+    "assumptions": {
+      "type": "array",
+      "description": "Open readings of this kit that move results and wait for an in-game test (docs/design.md \"Rule-based rotations\", assumption switches): a trigger with `reading` exists only under that reading. The default is the reading the kit stands by; `efsim rules`, `diagnose` and `gear --rules` run under the others with --assume and --assumptions.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "question",
+          "default",
+          "readings"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "test": {
+            "type": "string",
+            "description": "The in-game test that decides it (docs/in-game-tests.md)."
+          },
+          "question": {
+            "type": "string"
+          },
+          "default": {
+            "type": "string",
+            "description": "The reading the kit stands by (a key of readings)."
+          },
+          "readings": {
+            "type": "object",
+            "minProperties": 2,
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Each reading's ID and what it says, in the player's words."
+          }
+        }
+      }
+    },
     "statusTweaks": {
       "type": "array",
       "description": "How the statuses this operator applies differ from the standard ones (Arcane's talent: Corrosion lasts longer, shreds more).",
@@ -1740,6 +1799,9 @@
           },
           "label": {
             "type": "string"
+          },
+          "visible": {
+            "$ref": "#/$defs/visibleStack"
           },
           "max": {
             "type": "integer",
@@ -1887,6 +1949,40 @@
     }
   },
   "$defs": {
+    "visibleBuff": {
+      "type": "object",
+      "description": "A state the player sees without reading buff icons (on the character or its skill button), so rule lists may read it (rules.schema.json buff cue; docs/design.md \"Rule-based rotations\"): `on` / `off` say it in the player's words after the operator's name, `why` says how it shows.",
+      "required": [
+        "on",
+        "off",
+        "why"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "on": {
+          "type": "string"
+        },
+        "off": {
+          "type": "string"
+        },
+        "why": {
+          "type": "string"
+        }
+      }
+    },
+    "visibleStack": {
+      "type": "object",
+      "description": "A stack the game's HUD shows, so rule lists may read it (rules.schema.json stacks cue); `why` says where it shows.",
+      "required": [
+        "why"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "why": {
+          "type": "string"
+        }
+      }
+    },
     "element": {
       "enum": [
         "physical",

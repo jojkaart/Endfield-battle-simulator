@@ -334,6 +334,8 @@ export interface KitTrigger {
   readonly on: TriggerOn;
   /** Whose events count: the owner's, a teammate's, anyone's, or the controlled operator's. */
   readonly by: "self" | "teammate" | "anyone" | "controlled";
+  /** It exists only under this reading of one of its kit's open assumptions (OperatorKit.assumptions; TimelineOptions.assume). */
+  readonly reading?: { readonly assumption: string; readonly reading: string };
   /** Judged for the owner when the event happens. */
   readonly if?: Predicate;
   /** Seconds before it can fire again. */

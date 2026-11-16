@@ -634,6 +634,8 @@ export interface KitBuff {
   /** Unique within the kit. Reapplying replaces the active instance and resets its duration. */
   readonly id: string;
   readonly label: string;
+  /** A state the player sees without buff icons (on the character or its skill button): rule lists may read it (policy.ts buff cue), in these words. */
+  readonly visible?: VisibleState;
   readonly target: "self" | "team" | "enemy";
   /** Seconds (0: not applied, e.g. below the potential that unlocks it); absent: until something ends it. */
   readonly duration?: ValueExpr;
@@ -763,9 +765,30 @@ export interface HitBonus {
 export interface StackDef {
   readonly id: string;
   readonly label: string;
+  /** A stack the game's HUD shows: rule lists may read it (policy.ts stacks cue). */
+  readonly visible?: { readonly why: string };
   readonly max: number;
   /** At the start of a fight (default 0), e.g. from a talent's attached buff: `{ key, skill }`. */
   readonly initial?: ValueExpr;
+}
+
+/**
+ * An open reading of a kit (docs/design.md "Rule-based rotations", assumption switches): its readings by ID with what
+ * each says, the one the kit stands by, and the in-game test that decides it.
+ */
+export interface KitAssumption {
+  readonly id: string;
+  readonly test?: string;
+  readonly question: string;
+  readonly default: string;
+  readonly readings: Readonly<Record<string, string>>;
+}
+
+/** A kit buff the player sees (KitBuff.visible): after the operator's name while it's on and off ("is hovering", "is on the ground"), and how it shows. */
+export interface VisibleState {
+  readonly on: string;
+  readonly off: string;
+  readonly why: string;
 }
 
 export interface StackRequirement {
@@ -876,6 +899,8 @@ export interface OperatorKit {
    * combo skill can be cast whenever it's off cooldown.
    */
   readonly triggers: readonly KitTrigger[];
+  /** Open readings that move results and wait for an in-game test: a trigger with `reading` exists only under that reading (TimelineOptions.assume). */
+  readonly assumptions?: readonly KitAssumption[];
   /** How the statuses this operator applies differ from the standard ones. */
   readonly statusTweaks?: readonly StatusTweak[];
   readonly skills: readonly KitSkill[];

@@ -27,8 +27,8 @@ import {
   describeCue,
   describeStep,
   playRules,
-  POLICY_VISIBLE_BUFFS,
-  POLICY_VISIBLE_STACKS,
+  visibleBuffs,
+  visibleStacks,
   stepsOf,
   type PolicyCue,
   type PolicyFrameView,
@@ -158,8 +158,8 @@ export function guideCues(data: GameData, team: readonly string[]): PolicyCue[] 
   for (const op of team) {
     if (has(data, op, "ultimate")) cues.push({ ultimate: op });
     if (has(data, op, "combo")) cues.push({ combo: op });
-    for (const buff of POLICY_VISIBLE_BUFFS[op] ?? []) cues.push({ buff: { operator: op, buff } });
-    for (const stack of POLICY_VISIBLE_STACKS[op] ?? []) {
+    for (const buff of visibleBuffs(data, op)) cues.push({ buff: { operator: op, buff } });
+    for (const stack of visibleStacks(data, op)) {
       const max = data.kits.operators[op]?.stacks?.find((s) => s.id === stack)?.max ?? 1;
       for (const n of new Set([1, max])) cues.push({ stacks: { operator: op, stack, atLeast: n } });
     }
@@ -373,7 +373,7 @@ export function guideRules(data: GameData, scenario: Omit<TimelineScenario, "rot
   windows.sort((a, b) => b.damage - a.damage);
   const giverRecord = (key: string) => Object.fromEntries(givers.get(key) ?? []);
   const visibleGivers: Record<string, Record<string, number>> = {};
-  for (const op of team) for (const buff of POLICY_VISIBLE_BUFFS[op] ?? []) visibleGivers[`${op}:${buff}`] = giverRecord(`${op}:${buff}`);
+  for (const op of team) for (const buff of visibleBuffs(data, op)) visibleGivers[`${op}:${buff}`] = giverRecord(`${op}:${buff}`);
   return {
     run,
     guide: {
@@ -564,11 +564,11 @@ export function windowCues(w: GuideWindow): PolicyCue[] {
 }
 
 /** A visible cue that says a multiplier is up, if the game shows one: Stagger, a status, a visible operator state; for a buff from an ultimate, its giver's ultimate being ready (the press comes next). */
-export function multiplierCues(key: string, s: GuideSummary): PolicyCue[] {
+export function multiplierCues(data: GameData, key: string, s: GuideSummary): PolicyCue[] {
   if (key === "stagger") return [{ staggered: true }, { stagger: { atLeast: 70 } }];
   if (key.startsWith("status:")) return [{ status: key.slice(7) }];
   const [owner, id] = key.split(":") as [string, string];
-  if ((POLICY_VISIBLE_BUFFS[owner] ?? []).includes(id)) return [{ buff: { operator: owner, buff: id } }];
+  if (visibleBuffs(data, owner).includes(id)) return [{ buff: { operator: owner, buff: id } }];
   const g = topOf(s.multipliers[key]?.givers);
   if (g === `${owner}:ultimate`) return [{ ultimate: owner }];
   return [];
@@ -676,7 +676,7 @@ export function guidedEdits(data: GameData, list: RuleList, s: GuideSummary, opt
       // Of several rules pressing that button, those that read the window's own cue (Laevatain's battle skill in Twilight, not her plain one).
       const own = all.filter((i) => wCues.some((c) => mentions((list.rules[i] as PolicyRule).when, c)));
       const idx = own.length ? own : all;
-      for (const mc of multiplierCues(l.multiplier, s)) {
+      for (const mc of multiplierCues(data, l.multiplier, s)) {
         const hold = mc;
         if (idx.length === 0 || idx.every((i) => mentions((list.rules[i] as PolicyRule).when, hold))) continue;
         push({ list: withRules(list.rules.map((r, i) => (idx.includes(i) && !mentions(r.when, hold) ? { ...r, when: andCue(r.when, hold) } : r))), kind: "start-window", text: `${describeStep(data, trig)} waits until ${cueWords(hold)} (${why})`, target });

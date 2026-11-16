@@ -13,6 +13,7 @@
     {
       "id": "artful_intent",
       "label": "Artful Intent (damage record)",
+      "visible": { "on": "has Artful Intent up", "off": "hasn't Artful Intent up", "why": "the battle-skill button becomes Initial Stroke" },
       "target": "enemy",
       "gameBuff": "buff_chr_0036_jsspsi_xianjing_inkhurteffect",
       "duration": "duration",
@@ -25,6 +26,7 @@
     {
       "id": "inksoul",
       "label": "Inksoul",
+      "visible": { "on": "has Inksoul up", "off": "hasn't Inksoul up", "why": "the battle-skill button becomes Final Stroke" },
       "target": "self",
       "modifiers": [],
       "note": "BuffData xianjing_linkline, created by Initial Stroke at frame 8: \"lasts as long as the remaining duration of Artful Intent\", so it has no duration of its own and ends with Artful Intent (trigger artful_intent_end). Gates Final Stroke (normal_skill_2) and decides the burst's path."
@@ -286,6 +288,35 @@
         }
       ],
       "note": "Talent 2: \"when the Inksoul disappears\". BuffData creates talent1_speedup in exactly two places, both on the Inksoul path, each reading ratio_speed / duration_speedup from talent1_1 (else talent1_2) on Si and giving it to the whole team (CharacterTeamFinder): xianjing_linkline (the Inksoul) at its finish (buffEvent 2, when iswaitenemy is 0; the Inksoul left waiting after its host dies ends with no Haste), and xianjing_inkboom (Final Stroke) on enable (buffEvent 5) while the target still has xianjing_inkhurteffect. Artful Intent's own end without an Inksoul (xianjing_inkhurteffect buffEvent 2: LaunchProjectile inkmark when EntityBB_havesoul is 0) and the projectile's skills (inkmark_projhit, inboom_projhit) create none, so the burst_mark path gives no Haste (checked 2026-11-16, tests/kit-si.test.ts). ZMDLogs doesn't record the Haste (none in four raw details with 2 Final Stroke, 4 Inksoul-expiry and 3 no-Inksoul ends); in-game test 109 checks the no-Inksoul burst by eye."
+    },
+    {
+      "id": "artful_intent_haste",
+      "on": {
+        "event": "buffEnded",
+        "buff": "artful_intent"
+      },
+      "by": "self",
+      "reading": { "assumption": "si-haste-every-end", "reading": "every-end" },
+      "if": { "not": { "buffActive": "inksoul" } },
+      "do": [
+        {
+          "kind": "buff",
+          "buff": "talent_haste"
+        }
+      ],
+      "note": "Only under in-game test 109's alternative (assumption si-haste-every-end, reading every-end): Artful Intent ending with no Inksoul (Initial Stroke never pressed) gives the talent's Haste too. The data's reading (the default) gives it only on the Inksoul path (inksoul_haste); with an Inksoul up, its own end gives the Haste as before."
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "si-haste-every-end",
+      "test": "109",
+      "question": "Does Si's talent Haste (Unsoiled Brush) come with every end of Artful Intent, or only on the Inksoul's path (Initial Stroke pressed, then the Inksoul's end or Final Stroke)?",
+      "default": "data",
+      "readings": {
+        "data": "only on the Inksoul's path, as the game data creates it",
+        "every-end": "on every end of Artful Intent, Initial Stroke pressed or not"
+      }
     }
   ],
   "skills": [

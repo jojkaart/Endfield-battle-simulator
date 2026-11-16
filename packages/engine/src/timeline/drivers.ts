@@ -299,3 +299,19 @@ export function startsNow(ctx: TimelineContext, state: TimelineState, action: Ro
   const r = startFrom(ctx, state, action);
   return "frame" in r && r.frame === state.frame;
 }
+
+/**
+ * Whether an action can start at `frame` (at or after the state's own) with nothing pressed in between: the one "can
+ * this start now" of a driver that steps over frames (the rule driver, policy.ts). It is startsNow on the state
+ * advanced to that frame, so a press waits for the current skill's own hits as the search's do; and since earliestStart
+ * judges an `at` on the state then, apply(state, { ...action, at: frame }) starts it at exactly that frame, and the
+ * rotation a driver records replays with `simulate` (tests/timeline.test.ts checks both on the example rotations and
+ * rule runs). Before 2026-11-16 a driver had to ask both startsNow on the advanced state and earliestStart from the
+ * state after its last press: the latter read SP as it was then, without what hits granted on the way (every
+ * disagreement on the three example rule lists, the dive-landing case among them).
+ */
+export function canStartAt(ctx: TimelineContext, state: TimelineState, action: RotationAction, frame: number): boolean {
+  if (frame < state.frame) return false;
+  const { at: _at, ...plain } = action;
+  return startsNow(ctx, frame > state.frame ? advance(ctx, state, frame) : state, plain);
+}

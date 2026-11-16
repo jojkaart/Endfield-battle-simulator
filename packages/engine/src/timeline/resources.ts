@@ -17,7 +17,19 @@ import { attrTotal, enemyAttr, maxPoise, panelAt, skillCosts, skillGroup } from 
 /** SP at a later frame, with regeneration (whole frames, no fractions lost): from the state's frame, after its pause, outside its stops. */
 export function spAt(state: TimelineState, frame: number): number {
   // On raw time, through time stops and slow-downs (rules.ts SP).
-  return Math.min(SP.max, state.sp + (Math.max(0, frame - Math.max(state.frame, state.spPausedUntil)) * SP.perSecond) / FPS);
+  const v = Math.min(SP.max, state.sp + (Math.max(0, frame - Math.max(state.frame, state.spPausedUntil)) * SP.perSecond) / FPS);
+  // A level a whole number of regeneration steps from a whole one (every level, when grants are whole) is snapped to
+  // the step's grid: then SP is the same however the frames were advanced, one by one or at once (2/15 a frame added
+  // frame by frame rounds: 99.99999999999997 where 100 was due, a battle skill a frame late; the rule driver, 2026-11-16).
+  const k = Math.round(v * SP_GRID);
+  return Math.abs(v * SP_GRID - k) < 1e-7 ? k / SP_GRID : v;
+}
+
+/** Steps per SP of the grid regeneration moves on (SP.perSecond / FPS a frame: 8/60 = 2/15, so fifteenths). */
+const SP_GRID = FPS / gcd(SP.perSecond, FPS);
+
+function gcd(a: number, b: number): number {
+  return b === 0 ? a : gcd(b, a % b);
 }
 
 /** The frame by which SP has regenerated for `frames` frames from `from` (no earlier than the pause after a spend). */

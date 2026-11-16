@@ -14,12 +14,13 @@
 
 export type { RotationAction, TimelineOptions, TimelineScenario, EnemyActionSpec, EnemyAction, Cast, LandedHit, LandingFacts, LandingInputs, ReactionRecord, TimelineState, TimelineContext, Acting, ChainStep, PendingBurst } from "./timeline/state.ts";
 export { SP, ENERGY, COMBO_WINDOW_FRAMES, TIMELINE_ASSUMPTIONS, DODGE, JUMP, diveFrames, linkValue } from "./timeline/rules.ts";
-export { createContext, panelAt, enemyActionsOf, enemyHpAt } from "./timeline/context.ts";
+export { createContext, kitAssumptions, panelAt, enemyActionsOf, enemyHpAt } from "./timeline/context.ts";
 export type { EnergyGrantOptions } from "./timeline/resources.ts";
 export { setPoise, refillPoise, staggerFrames } from "./timeline/resources.ts";
 export { exclusiveUntil, earliestStart, skillAvailable } from "./timeline/timing.ts";
 export { landingDamage, nextRandom } from "./timeline/landing.ts";
 export { TEAMMATE_PAUSE_FRAMES } from "./timeline/teammates.ts";
 export { advance, memoised } from "./timeline/advance.ts";
-export { init, apply, replayCast, replayWindowCount, simulate, simulateRuns, startsNow } from "./timeline/drivers.ts";
+export { init, apply, canStartAt, replayCast, replayWindowCount, simulate, simulateRuns, startsNow } from "./timeline/drivers.ts";
+export { SKILL_BUTTONS, buttonShows, buttonSkill, buttonSkills, type SkillButton } from "./timeline/buttons.ts";
 export type { ReplayCastOptions, TimelineResult, RunSpread } from "./timeline/drivers.ts";
