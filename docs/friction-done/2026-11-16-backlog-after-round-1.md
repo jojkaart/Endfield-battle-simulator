@@ -168,3 +168,29 @@ Round 1's notes: the reports' format (what happened, cause, suggestion, why)
 made each point implementable without the agents' transcripts, and points
 named by several reports (premerge, the sandbox, hold-outs) were the easy
 first priorities.
+
+## Outcome (round 2)
+
+Round 2 (docs/friction-done/2026-11-16-round-2.md), one line per point:
+
+1. **Scattered data reads, cache key by proxies:** not done. The key now hashes only the data sources the build runs
+   (cache.ts `dataSources`, traced from gameData.ts) and prints why it rebuilds, but the table files are still keyed by
+   size and time and the ~40 read sites still build their own paths. Carried to the round-2 backlog (point 1).
+2. **The engine's single index:** done. `packages/engine/src/core.ts` (`@efsim/engine/core`) is the core; the planning
+   code moved to `packages/engine/src/planning/` and imports the core only through it (lint); the data package
+   imports only the core (lint); the cache key traces the names it imports through core.ts.
+3. **Older fixtures lack the new fields:** not done: it needs the raw details, which means a fetch per fixture (a mass
+   download: the owner's call). Carried to the backlog (point 3).
+4. **Status and Stagger modifiers identified by text:** not done (the audit of the log check's modifier comparisons is
+   the work). Carried to the backlog (point 4).
+5. **Test helpers duplicated:** not done (no restructure needed it; an hour of careful moves). Carried (point 5).
+6. **Pending shards by hit count:** done. `shard()` (tests/logverdicts.ts) weighs logs by their check time in
+   tests/slow/pending-costs.json, written at each `npm run snapshots:update` by scripts/pending-costs.ts from the
+   pending run's vitest report; a log without a time falls back to its hits scaled to seconds.
+7. **Single tests' times:** done as a warning: premerge prints the default suite's files over 40 s and tests over 30 s
+   (scripts/premerge.ts `overLimits`). Not a failing test: times under load vary too much for a hard limit.
+8. **Paired timing against a base commit:** done. `node scripts/at-commit.ts <ref>` makes a worktree of the ref with
+   its own packages linked under scratch/at/<hash>; `npm run bench -- "cd scratch/at/<hash> && npx vitest run <f>"
+   "npx vitest run <f>"` times both (CLAUDE.md "Worktrees and sub-agents").
+9. **Fixed-length search times undocumented:** not done (an hours-long measuring session that this round's
+   restructures had no use for). Carried (point 7).

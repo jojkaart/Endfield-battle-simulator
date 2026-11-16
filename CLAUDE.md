@@ -36,6 +36,21 @@ After that milestone, a `dev` branch takes over the role `main` has now.
 - Update the roadmap's next steps: a line or two each, the rest in
   roadmap-details.md.
 
+## Code layout
+
+- `packages/engine`: `src/core.ts` (`@efsim/engine/core`: the kit model,
+  damage, statuses and the timeline) and `src/planning/` (search,
+  payoffs, the rule driver), which imports the core only through
+  `../core.ts` (lint). `@efsim/engine` exports both.
+- `packages/data`: tables, the SkillData / BuffData compiler, kits; it
+  imports only `@efsim/engine/core`.
+- `packages/logs` (`@efsim/logs`): log import and the log check.
+- `packages/cli`: one module per command in `src/commands/<name>.ts`
+  (usage lines, options, run), listed in `src/commands/index.ts`.
+- `docs/design.md`: the principles and an index; each subsystem is in
+  `docs/design/<topic>.md`. `node scripts/check-links.ts` (a test runs it)
+  checks that relative doc links resolve.
+
 ## Correctness
 
 The tool is only useful if its numbers are right. Keep tests up to date and

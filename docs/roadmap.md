@@ -12,12 +12,14 @@ below ([review-2026-10.md](review-2026-10.md)).
 - **Architecture review** ([architecture-review.md](architecture-review.md),
   2026-11-16): the quick wins 1–7 first; the button model, one start
   check, event stepping, run checks, visible states in kits and assumption
-  switches (8, 9, 3, 4, 10) are done; next the accuracy scoreboard (11),
+  switches (8, 9, 3, 4, 10) are done, and the package boundaries and
+  the design.md split (12–14, friction round 2); next the accuracy scoreboard (11),
   more open readings registered as kit assumptions (tests 101, 102, 108),
   and a cheaper basic-attack start for the rule driver (now most of a run).
-- **Friction rounds** ([friction/](friction/README.md)): round 1 done
-  (2026-11-16); its backlog
-  ([2026-11-16-backlog-after-round-1.md](friction/2026-11-16-backlog-after-round-1.md))
+- **Friction rounds** ([friction/](friction/README.md)): rounds 1 and 2
+  done (2026-11-16; round 2: engine core vs planning, @efsim/logs, one
+  module per CLI command, design.md split); the backlog
+  ([2026-11-16-backlog-after-round-2.md](friction/2026-11-16-backlog-after-round-2.md))
   joins the next round once about five new reports have collected.
 - **Rule-based rotations** (phases 1 and 2 done): the owner's call on the
   owner's team's gear (+8.0%) and on Arcane in INT mode for Typhoeus's team

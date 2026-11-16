@@ -153,3 +153,25 @@ then refreshing the rule numbers and re-tuning Ink Melt's list. Branch
   `codeProvenance` were drop-in replacements.
 - `scripts/premerge.ts`'s step table and re-run of timeouts made the
   final check readable under load.
+
+## Outcome (round 2)
+
+Round 2 (docs/friction-done/2026-11-16-round-2.md), one line per point:
+
+1. **No way to run an earlier commit's code beside the current one:** done. `node scripts/at-commit.ts <ref>
+   [--dir d] [--patch f]` (a detached worktree under scratch/at/<hash>, its own @efsim packages linked, data from the
+   main checkout; `--remove <dir>`). Round 2 used it for every before/after CLI comparison.
+2. **A scratch script hard-coded 60 frames a second:** done. `framesOf` / `secondsOf` (units.ts) and
+   `withSeconds(scenario, s)` (timeline); the CLI's --duration, rules and diagnose use them; CLAUDE.md and the scratch
+   template say never a literal.
+3. **SP depended on the advance path:** not done. The snap in `spAt` already makes SP the same whichever way a state
+   is advanced (the event stepping and the frame loop agree exactly); an anchor (`sp` plus its frame) would change
+   every SP read and grant, and could move SP ties in the snapshots for no accuracy gain. Carried to the backlog
+   (point 6) for when a shortcut needs it.
+4. **CPU-heavy measurements overlap:** done. `node scripts/with-lock.ts <cmd>` queues a job behind premerge's lock
+   (scripts/testlock.ts; nested lock takers don't wait for themselves); CLAUDE.md says when to use it. The load next
+   to the rule tooling's timings: not done (with-lock prints it before and after).
+5. **A job started with `&` can't be stopped:** done. CLAUDE.md: background mode only, never `&` or `nohup`.
+6. **Diagnosing a start-check disagreement needed engine edits:** done for the hook: `PolicyObserver.check` sees every
+   start check with its answer (startsNow, canStartAt or earliestStart) and `.press` every press; a test shows they
+   see each press and change nothing. The optional `TimelineOptions.legacy` switches: not done (no current need).

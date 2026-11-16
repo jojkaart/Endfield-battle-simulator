@@ -213,3 +213,29 @@ docs/friction/2026-11-16-backlog-after-round-1.md aren't repeated.
   a single command after each engine edit.
 - **The game-data cache.** It made CLI and test iteration about 1 s when the
   key didn't move (see point 3).
+
+## Outcome (round 2)
+
+Round 2 (docs/friction-done/2026-11-16-round-2.md), one line per point:
+
+1. **No lint of just the changed files:** done. `npm run lint:changed [-- <ref>]` (scripts/lint-changed.ts: the files
+   changed since the merge base with main, plus untracked ones); premerge skips the test suites when typecheck or
+   lint fails (`--keep-going` runs them anyway). CLAUDE.md "Correctness" mentions it.
+2. **Every CLI command in one file:** done. `packages/cli/src/commands/<name>.ts` per command (usage lines, options,
+   run), registered in commands/index.ts; cli.ts builds the parse and the usage text from them and dispatches. The
+   help text is byte for byte the old one.
+3. **Any data-package edit rebuilt the game data:** done. The key hashes only the build's run-time imports
+   (cache.ts `dataSources`; the log importer moved to packages/logs anyway), and a rebuild prints one line on stderr
+   naming the inputs that changed since the last entry written.
+4. **Which shell forms the sandbox refuses:** done. CLAUDE.md states it without exceptions: no heredoc, no multi-line
+   `python3 -c` (round 2 saw one refused too), Write/Edit tools and one plain command.
+5. **Status landings have no facts:** not done; documented on `LandedHit.facts` (status landings never have them).
+   The audit is done and carried to the backlog (point 2) with what it found.
+6. **Renaming snapshot keys re-implemented the format:** done. tests/snapshot.ts exports the one writer
+   (`formatSnapshot`, `writeSnapshotFile`, `snapshotLayout`); `node scripts/snapshot-keys.ts <file> --rename <re> <to>`
+   prints counts only. A test checks every committed snapshot is in the writer's layout.
+7. **Record-only fields broke exact-shape tests:** done. packages/engine/test/status.test.ts matches behaviour fields
+   with `toMatchObject`; one test pins `by` / `inflictionBy`. design.md (now design/tests.md) "Record fields and exact
+   shapes" states the convention.
+8. **Background runs' progress invisible:** done. scripts/vitest-progress.ts prints a line per finished file (count,
+   time, load); premerge and snapshots.sh add it when their output isn't a terminal; CLAUDE.md recommends it.
