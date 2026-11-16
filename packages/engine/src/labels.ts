@@ -1,6 +1,5 @@
 // Stat lines as the game shows them: attribute names in the game's English (Intellect, not Wisd) and a gear or buff
-// line's size with its unit, so reports don't each keep a label map (cli gear.ts, edge.ts; diagnose.ts and
-// gearrules.ts still have their own: phase 2's to switch).
+// line's size with its unit, so reports don't each keep a label map (cli gear.ts, edge.ts, diagnose.ts, gearrules.ts).
 
 import { Attr, attrName, type AttrType } from "./attributes.ts";
 import { Slot, Target } from "./model.ts";

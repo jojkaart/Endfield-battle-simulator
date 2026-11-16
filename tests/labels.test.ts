@@ -21,7 +21,7 @@ describe("stat labels", () => {
     expect(statLabel(Attr.Wisd, Slot.Add, Target.AsWritten, 41)).toBe("Intellect +41");
   });
 
-  it("agrees with the diagnosis' gear probes (whose own label map phase 2 is to replace by it)", () => {
+  it("gives the diagnosis' gear probes their labels", () => {
     for (const p of gearProbes(loadGameData()).filter((x) => !x.reference)) expect(statLabel(p.attr, p.slot, p.target, p.value)).toBe(p.label);
   });
 });
