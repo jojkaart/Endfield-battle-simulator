@@ -32,6 +32,9 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
   The rule search should also try gating a repeated press on the
   button's visible state (Si's battle skill only while her button shows
   it, not Initial Stroke): the owner found that one by hand, 2026-11-16.
+  Likewise conditions that line up buffs across operators (Si's
+  ultimate held for Laevatain's Twilight: +4.1% on Ink Melt, found by
+  hand from the damage graph; Liino's stance rule needed `shows`).
   Whether Initial Stroke is worth pressing hangs on Si's talent Haste
   (in-game test 109: the data gives it only on the Inksoul path; ±3% for
   the owner's team either way).

@@ -1,11 +1,11 @@
 {
   "$schema": "../schemas/rules.schema.json",
-  "description": "Ink Melt (2026-11-16): `efsim rules --search` from a hand-written list (ultimates when ready, every combo when it lights up, Laevatain's battle skill in Twilight and with SP to spare), two searches of 150 and 200 lists, the best cleaned of rules that never fired: 66,058 sustained DPS over 300 s at a 0.3 s reaction delay (10 seeds, sd 2,088), the hand-written list 51,674 (the old delay draws; with common random numbers, 2026-11-16: 65,922, sd 1,750). Its finds: pre-empt Laevatain's and Ardelia's combos with Si's battle skill and Wulfgard's with Ardelia's, Laevatain's battle skill from 150 SP, Ardelia's ultimate never.",
+  "description": "Ink Melt (2026-11-16): `efsim rules --search` from a hand-written list (ultimates when ready, every combo when it lights up, Laevatain's battle skill in Twilight and with SP to spare), two searches of 150 and 200 lists, the best cleaned of rules that never fired: 66,058 sustained DPS over 300 s at a 0.3 s reaction delay (10 seeds, sd 2,088), the hand-written list 51,674 (the old delay draws; with common random numbers, 2026-11-16: 65,922, sd 1,750). Its finds: pre-empt Laevatain's and Ardelia's combos with Si's battle skill and Wulfgard's with Ardelia's, Laevatain's battle skill from 150 SP, Ardelia's ultimate never. Si's ultimate held for Laevatain's Twilight (2026-11-16, from the owner's question about a one-off spike at 80 s: Si's Heat Amp, a Stagger and Wulfgard's and Ardelia's debuffs had lined up on Twilight by chance): 68,609 sustained (sd 1,627) against 65,922, same seeds.",
   "opener": [{ "operator": "Si", "cast": "battle" }, { "operator": "Laevatain", "cast": "battle" }],
   "rules": [
     { "when": { "ultimate": "Laevatain" }, "do": { "operator": "Laevatain", "cast": "ultimate" } },
     { "when": { "ultimate": "Wulfgard" }, "do": { "operator": "Wulfgard", "cast": "ultimate" } },
-    { "when": { "ultimate": "Si" }, "do": { "operator": "Si", "cast": "ultimate" } },
+    { "when": { "all": [{ "ultimate": "Si" }, { "any": [{ "buff": { "operator": "Laevatain", "buff": "twilight" } }, { "ultimate": "Laevatain" }] }] }, "do": { "operator": "Si", "cast": "ultimate" } },
     { "when": { "combo": "Laevatain" }, "do": [{ "operator": "Si", "cast": "battle" }, { "operator": "Laevatain", "cast": "combo" }] },
     { "when": { "combo": "Si" }, "do": { "operator": "Si", "cast": "combo" } },
     { "when": { "combo": "Wulfgard" }, "do": [{ "operator": "Ardelia", "cast": "battle" }, { "operator": "Wulfgard", "cast": "combo" }] },

@@ -199,7 +199,8 @@ of these that applies:
 
 1. When Laevatain's ultimate is ready: Laevatain's ultimate.
 2. When Wulfgard's ultimate is ready: Wulfgard's ultimate.
-3. When Si's ultimate is ready: Si's ultimate.
+3. When Si's ultimate is ready and Laevatain is in Twilight (or her
+   ultimate is ready): Si's ultimate.
 4. When Laevatain's combo lights up: Si's battle skill, then Laevatain's
    combo.
 5. When Si's combo lights up: Si's combo.
@@ -212,16 +213,30 @@ of these that applies:
    battle skill.
 
 Otherwise Laevatain's basic attacks. Ardelia's ultimate isn't cast.
-Learnability: 2 opener presses, 9 rules (12 presses), cue cost 24,
-complexity 38; the hardest cues are the three "ultimate ready" ones
+Learnability: 2 opener presses, 9 rules (12 presses), cue cost 32,
+complexity 46; the hardest cues are the three "ultimate ready" ones
 (rank 4).
 
 | Simulated player, 0.3 s reaction ± 50%, 10 seeds (common random numbers, 2026-11-16) | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **65,922** (1,750) | **61,962** (2,916) |
-| As a bot (0 s) / at 0.6 s | 67,711 / 65,245 | 69,666 / 60,216 |
-| First 60 s against the 60 s timeline (the examples) | 3,533,314 against 4,732,088 (−25.3%) | 2,570,589 against 4,642,409 (−44.6%) |
-| 300 s total against a fixed 300 s search (beam 6, full energy, 36 min) | 19,776,510 against 16,406,168 (**+20.5%**) | |
+| Sustained DPS over 300 s (sd over seeds) | **68,609** (1,627) | **63,719** (3,176) |
+| As a bot (0 s) / at 0.6 s | 69,521 / 63,877 | 68,082 / 60,473 |
+| First 60 s against the 60 s timeline (the examples) | 3,513,194 against 4,732,088 (−25.8%) | 2,570,327 against 4,642,409 (−44.6%) |
+| 300 s total against a fixed 300 s search (beam 6, full energy, 36 min) | 20,582,596 against 16,406,168 (**+25.5%**) | |
+
+**Si's ultimate waits for Twilight (2026-11-16).** The owner asked about
+a one-off surge around 80 s in the rules' damage graph. In that window
+Laevatain's Twilight battle skill hit for 78–96k instead of 32k: Si's
+ultimate's Heat Amp (×1.36), a Stagger (×1.3) and Wulfgard's and
+Ardelia's debuffs had lined up on Twilight by chance; the other Twilights
+got one of them or none. The damage itself is the model working (the
+multipliers are each log-checked); the list just had no rule lining them
+up, and the rule search never tries a condition on another operator's
+state. Holding Si's ultimate for Twilight: 68,609 against 65,922 (+4.1%,
+same seeds); also holding Wulfgard's adds nothing (68,723) and makes
+0.6 s reactions cost 14%; holding Laevatain's ultimate for a Stagger
+loses (60,142); saving SP for Twilight battle skills changes nothing
+(65,909) or loses (61,860). The previous list: 65,922 / 61,962.
 
 - **Found by the rule search**, from a hand-written list (ultimates when
   ready, every combo when it lights up, Laevatain's battle skill in

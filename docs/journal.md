@@ -5,6 +5,21 @@ their reasons, dead ends, and anything a future session should know. Newest
 entry first. Keep entries short; details belong in the docs they produced.
 Older entries (2026-10-21 and earlier): [journal-archive.md](journal-archive.md).
 
+## 2026-11-16: Ink Melt's one-off surge at 80 s
+
+From the rules' damage graph (artifact "Rule Rotation Damage") the owner
+asked why Ink Melt surges around 80 s once. Laevatain's Twilight battle
+skill hit 78–96k there against 32k elsewhere: Si's ultimate's Heat Amp
+×1.36, a Stagger ×1.3, Wulfgard's and Ardelia's debuffs lined up on
+Twilight by chance. Not a bug: the list fired each ultimate when ready,
+so their cycles drift. Holding Si's ultimate for Twilight (or Laevatain's
+ultimate ready): 68,609 against 65,922 sustained (+4.1%), from zero
+63,719 against 61,962; now the example. Dead ends: also holding
+Wulfgard's (no gain, more delay-sensitive), holding Laevatain's ultimate
+for a Stagger (−9%), saving SP for Twilight (0 / −6%). For the rule
+search: moves that add a condition on another operator's visible state
+to an ultimate rule (it found none of this itself).
+
 ## 2026-11-16: Liino's rule in Typhoeus's team pressed End Stance
 
 The owner noted Liino goes straight from Vocalist Stance to her ultimate
