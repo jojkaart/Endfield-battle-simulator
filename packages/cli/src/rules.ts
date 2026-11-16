@@ -18,7 +18,6 @@ import {
   distributionCritMode,
   describeStep,
   learnability,
-  playRules,
   policyDistribution,
   resolveRuleList,
   searchRules,
@@ -32,6 +31,13 @@ import {
   type TimelineScenario,
 } from "@efsim/engine";
 import { num, pct, signedPct, table } from "./format.ts";
+import { alternatives, gainText, holds, underAssume, verdict } from "./assume.ts";
+import { paired } from "./diagnose.ts";
+import { defaultWorkers, runRulesJobs, type RulesJob, type RulesResult } from "./rulespool.ts";
+import { codeProvenance } from "./provenance.ts";
+
+const verdictWords = (m: { readonly gain: number; readonly se: number }) => ({ gain: "a gain beyond twice its standard error", loss: "a loss beyond twice its standard error", noise: "within the noise" })[verdict(m)];
+const describeLearn = (l: Learnability) => `complexity ${l.complexity}`;
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
@@ -58,16 +64,37 @@ export interface RulesOptions {
   /** Lists of the search's Pareto front scored again over the whole fight (default 8). */
   readonly front?: number;
   readonly out?: string;
+  /** Another list to compare with: the paired gain ± standard error on the usual seeds and on fresh ones. */
+  readonly compare?: { readonly list: RuleList; readonly file: string };
+  /** Fresh seeds (1001…) of the comparison (default 32; 0: none). */
+  readonly fresh?: number;
+  /** Whether the result holds under each other reading of the team's kits' open assumptions (assume.ts). */
+  readonly assumptions?: boolean;
+  /** Worker threads (default: cores less one; 1: none). */
+  readonly workers?: number;
   readonly progress?: (line: string) => void;
 }
 
 export const RULES_SECONDS = 300;
+/** Fresh seeds of a comparison: 1001… (never the seeds a list was found or judged on). */
+export const FRESH_SEED = 1001;
+
+/** One run's numbers for the report (the first seed's: fired counts, per minute, given up, shares). */
+interface EvalRun {
+  readonly fired: readonly number[];
+  readonly perOperator: Readonly<Record<string, number>>;
+  readonly total: number;
+  readonly byMinute: readonly number[];
+  readonly givenUp: PolicyRun["givenUp"];
+  readonly openerEnd: number;
+  readonly durationFrames: number;
+}
 
 interface Evaluation {
   readonly list: RuleList;
   readonly learn: Learnability;
   /** Seed 1 at the default delay, expected crits: fired counts, per minute, the reference comparison. */
-  readonly run: PolicyRun;
+  readonly run: EvalRun;
   /** Sustained DPS per seed at the default delay (expected crits). */
   readonly dps: readonly number[];
   /**
@@ -89,21 +116,37 @@ const sd = (xs: readonly number[]) => {
   return Math.sqrt(xs.reduce((a, x) => a + (x - m) ** 2, 0) / xs.length);
 };
 
-function evaluate(data: GameData, scenario: TimelineScenario, list: RuleList, reaction: number, seeds: number): Evaluation {
+/** The list's runs on seeds first…first + n − 1 at the delay (the battle's crit mode as `efsim rules` plays it). */
+function seedRuns(data: GameData, scenario: TimelineScenario, list: RuleList, reaction: number, seeds: number, first = 1, detailFirst = false): RulesJob[] {
+  const crit = distributionCritMode(data, scenario);
+  return Array.from({ length: seeds }, (_, i) => ({
+    scenario: { ...scenario, options: { ...scenario.options, crit, seed: first + i } },
+    list,
+    options: { reactionSeconds: reaction, seed: first + i },
+    ...(detailFirst && i === 0 ? { detail: true } : {}),
+  }));
+}
+
+async function evaluate(data: GameData, scenario: TimelineScenario, list: RuleList, reaction: number, seeds: number, workers: number): Promise<Evaluation> {
   const crit = distributionCritMode(data, scenario);
   const triggers = crit === "distribution" ? critTriggers(data, scenario) : [];
-  const runs = Array.from({ length: seeds }, (_, i) => playRules(data, { ...scenario, options: { ...scenario.options, crit, seed: i + 1 } }, list, { reactionSeconds: reaction, seed: i + 1 }));
-  const bot = playRules(data, scenario, list, { reactionSeconds: 0 }).sustainedDps;
-  const slow = mean(Array.from({ length: seeds }, (_, i) => playRules(data, scenario, list, { reactionSeconds: reaction * 2, seed: i + 1 }).sustainedDps));
+  const jobs: RulesJob[] = [
+    ...seedRuns(data, scenario, list, reaction, seeds, 1, true),
+    { scenario, list, options: { reactionSeconds: 0 } },
+    ...Array.from({ length: seeds }, (_, i): RulesJob => ({ scenario, list, options: { reactionSeconds: reaction * 2, seed: i + 1 } })),
+  ];
+  const res = await runRulesJobs(data, jobs, workers);
+  const runs = res.slice(0, seeds);
+  const first = runs[0] as RulesResult;
   const dps = runs.map((r) => r.sustainedDps);
   return {
     list,
     learn: learnability(list),
-    run: runs[0] as PolicyRun,
+    run: { fired: first.fired, perOperator: first.perOperator, total: first.total, ...(first.detail as NonNullable<RulesResult["detail"]>) },
     dps,
-    distribution: policyDistribution(runs.map((r) => r.sustainedMoments)),
+    distribution: policyDistribution(runs.map((r) => r.moments)),
     ...(triggers.length ? { critNote: `crit-triggered effects (${triggers.join(", ")}): the crits they read are rolled, seeded with the delay's seed` } : {}),
-    robust: { bot, normal: mean(dps), slow },
+    robust: { bot: (res[seeds] as RulesResult).sustainedDps, normal: mean(dps), slow: mean(res.slice(seeds + 1).map((r) => r.sustainedDps)) },
     first60: runs.map((r) => r.first60),
     totals: runs.map((r) => r.total),
   };
@@ -151,11 +194,12 @@ function formatEvaluation(data: GameData, e: Evaluation, reaction: number, refer
   return lines;
 }
 
-/** `efsim rules <scenario> <rules.json>`: the list's report; with `search`, the rule search's Pareto front and best list too. */
-export function rulesCommand(data: GameData, scenario: TimelineScenario, rawList: RuleList, file: string, options: RulesOptions = {}): string {
+/** `efsim rules <scenario> <rules.json>`: the list's report; with `compare`, the paired gain of another list; with `assumptions`, whether it holds under the kits' other readings; with `search`, the rule search's Pareto front and best list too. */
+export async function rulesCommand(data: GameData, scenario: TimelineScenario, rawList: RuleList, file: string, options: RulesOptions = {}): Promise<string> {
   const seconds = options.seconds ?? RULES_SECONDS;
   const reaction = options.reactionSeconds ?? POLICY_REACTION_SECONDS;
   const seeds = options.seeds ?? 5;
+  const workers = options.workers ?? defaultWorkers();
   const team = scenario.team.map((b) => b.operator);
   const list = resolveRuleList(data, team, rawList);
   const fight: TimelineScenario = { ...scenario, durationFrames: Math.round(seconds * FPS), rotation: [] };
@@ -171,13 +215,56 @@ export function rulesCommand(data: GameData, scenario: TimelineScenario, rawList
     }
   }
   const controlled = scenario.controlled ?? (team[0] as string);
+  const assumed = Object.entries(scenario.options.assume ?? {});
   const lines = [
-    `Rules ${file}: ${team.map((op) => data.operators[op]?.name ?? op).join(", ")}; ${data.operators[controlled]?.name ?? controlled} controlled; ${seconds} s fight; reaction ${reaction} s ± ${POLICY_JITTER * 100}%; cue ranks ${JSON.stringify(POLICY_CUE_RANKS)}`,
+    `Rules ${file}: ${team.map((op) => data.operators[op]?.name ?? op).join(", ")}; ${data.operators[controlled]?.name ?? controlled} controlled; ${seconds} s fight; reaction ${reaction} s ± ${POLICY_JITTER * 100}%; cue ranks ${JSON.stringify(POLICY_CUE_RANKS)}; ${codeProvenance()}${assumed.length ? `; assuming ${assumed.map(([k, v]) => `${k}=${v}`).join(", ")}` : ""}`,
     "",
   ];
-  const start = evaluate(data, fight, list, reaction, seeds);
+  const start = await evaluate(data, fight, list, reaction, seeds, workers);
   lines.push(...formatEvaluation(data, start, reaction, reference));
   if (noReference) lines.push(noReference);
+
+  // Another list on common seeds: the usual ones and fresh ones (a list found or judged on seeds 1…k is biased up there).
+  const fresh = options.fresh ?? 32;
+  const dpsOf = async (l: RuleList, sc: TimelineScenario, n: number, first: number) => (await runRulesJobs(data, seedRuns(data, sc, l, reaction, n, first), workers)).map((r) => r.sustainedDps);
+  let comparison: { usual: { gain: number; se: number }; fresh: { gain: number; se: number } | null } | null = null;
+  let other: RuleList | null = null;
+  if (options.compare) {
+    other = resolveRuleList(data, team, options.compare.list);
+    options.progress?.(`compare: ${options.compare.file} on seeds 1–${seeds}${fresh ? ` and ${FRESH_SEED}–${FRESH_SEED + fresh - 1}` : ""}`);
+    const usual = paired(start.dps, await dpsOf(other, fight, seeds, 1));
+    const freshGain = fresh > 0 ? paired(await dpsOf(list, fight, fresh, FRESH_SEED), await dpsOf(other, fight, fresh, FRESH_SEED)) : null;
+    comparison = { usual, fresh: freshGain };
+    lines.push("", `Compared with ${options.compare.file} (its sustained DPS against this list's, paired on common seeds):`);
+    lines.push(`  seeds 1–${seeds}: ${gainText(usual)} (${verdictWords(usual)})`);
+    if (freshGain) lines.push(`  fresh seeds ${FRESH_SEED}–${FRESH_SEED + fresh - 1}: ${gainText(freshGain)} (${verdictWords(freshGain)})`);
+    lines.push(`  ${describeLearn(start.learn)} → ${describeLearn(learnability(other))}`);
+  }
+
+  // Under the kits' other readings: this list's DPS against the default reading, and the comparison's verdict.
+  if (options.assumptions) {
+    const alts = alternatives(data, fight);
+    lines.push("", alts.length ? "Under the kits' open assumptions (each other reading of an in-game test the team's kits register):" : "Under the kits' open assumptions: the team's kits register none.");
+    const summary: string[] = [];
+    for (const alt of alts) {
+      options.progress?.(`assumption ${alt.id}=${alt.reading}`);
+      const sc = underAssume(fight, alt.assume);
+      const dps = await dpsOf(list, sc, seeds, 1);
+      const delta = paired(start.dps, dps);
+      let line = `  ${alt.label}: sustained DPS ${n0(mean(dps))} (${gainText(delta)} against the reading in use, seeds 1–${seeds})`;
+      if (other && comparison) {
+        const ref = comparison.fresh ?? comparison.usual;
+        const n = comparison.fresh ? fresh : seeds;
+        const first = comparison.fresh ? FRESH_SEED : 1;
+        const g = paired(await dpsOf(list, sc, n, first), await dpsOf(other, sc, n, first));
+        const h = holds(ref, g);
+        line += `; the comparison there: ${gainText(g)} (in use: ${gainText(ref)}): ${h}`;
+        summary.push(`${h === "unclear" ? "is unclear" : h} under ${alt.label}`);
+      }
+      lines.push(line);
+    }
+    if (summary.length) lines.push(`  In short: the comparison ${summary.join("; ")}.`);
+  }
   if (!options.search) return lines.join("\n");
 
   const searchSeconds = options.searchSeconds ?? 180;
@@ -196,7 +283,8 @@ export function rulesCommand(data: GameData, scenario: TimelineScenario, rawList
   const frontSize = options.front ?? 8;
   const penalty = options.penalty ?? RULE_SEARCH_PENALTY;
   const front = thin(result.pareto, frontSize);
-  const full = front.map((s) => ({ s, e: evaluate(data, fight, s.list, reaction, seeds) }));
+  const full: { s: RuleScore; e: Evaluation }[] = [];
+  for (const s of front) full.push({ s, e: await evaluate(data, fight, s.list, reaction, seeds, workers) });
   const fullScore = (x: (typeof full)[number]) => mean(x.e.dps) * (1 - penalty * x.e.learn.complexity);
   const best = full.reduce((a, b) => (fullScore(b) > fullScore(a) ? b : a));
   lines.push("", `Rule search: ${result.evaluated} lists scored in ${searchTime.toFixed(0)} s (${searchSeconds} s fights, ${options.searchSeeds ?? 2} seeds); start ${n0(result.start.dps)} → best ${n0(result.best.dps)} DPS (complexity ${result.start.learn.complexity} → ${result.best.learn.complexity}).`);

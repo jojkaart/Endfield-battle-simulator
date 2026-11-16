@@ -10,9 +10,11 @@ below ([review-2026-10.md](review-2026-10.md)).
 ## Next steps
 
 - **Architecture review** ([architecture-review.md](architecture-review.md),
-  2026-11-16): the quick wins 1–7 first, then the button model with
-  event-driven rule stepping (8, 9), then the accuracy scoreboard and
-  assumption toggles (11, 10).
+  2026-11-16): the quick wins 1–7 first; the button model, one start
+  check, event stepping, run checks, visible states in kits and assumption
+  switches (8, 9, 3, 4, 10) are done; next the accuracy scoreboard (11),
+  more open readings registered as kit assumptions (tests 101, 102, 108),
+  and a cheaper basic-attack start for the rule driver (now most of a run).
 - **Friction rounds** ([friction/](friction/README.md)): round 1 done
   (2026-11-16); its backlog
   ([2026-11-16-backlog-after-round-1.md](friction/2026-11-16-backlog-after-round-1.md))

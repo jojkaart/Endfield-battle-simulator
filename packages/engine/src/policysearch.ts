@@ -7,7 +7,7 @@
 
 import { EngineError } from "./errors.ts";
 import type { GameData } from "./model.ts";
-import { learnability, playRules, POLICY_VISIBLE_BUFFS, POLICY_VISIBLE_STACKS, resolveRuleList, stepsOf, type Learnability, type PolicyCue, type PolicyOptions, type PolicyRule, type PolicyStep, type RuleList } from "./policy.ts";
+import { learnability, playRules, visibleBuffs, visibleStacks, resolveRuleList, stepsOf, type Learnability, type PolicyCue, type PolicyOptions, type PolicyRule, type PolicyStep, type RuleList } from "./policy.ts";
 import type { TimelineScenario } from "./timeline.ts";
 
 export interface RuleSearchOptions {
@@ -83,11 +83,11 @@ export function rulePool(data: GameData, team: readonly string[], controlled: st
   for (const op of team) {
     if (has(op, "combo")) cues.push({ combo: op }, { comboCooldown: op });
     if (has(op, "ultimate")) cues.push({ ultimate: op });
-    for (const stack of POLICY_VISIBLE_STACKS[op] ?? []) {
+    for (const stack of visibleStacks(data, op)) {
       const max = data.kits.operators[op]?.stacks?.find((s) => s.id === stack)?.max ?? 1;
       for (const n of new Set([1, Math.ceil(max / 2), max])) cues.push({ stacks: { operator: op, stack, atLeast: n } });
     }
-    for (const buff of POLICY_VISIBLE_BUFFS[op] ?? []) cues.push({ buff: { operator: op, buff } }, { not: { buff: { operator: op, buff } } });
+    for (const buff of visibleBuffs(data, op)) cues.push({ buff: { operator: op, buff } }, { not: { buff: { operator: op, buff } } });
     for (const cast of ["battle", "combo", "ultimate"] as const) if (has(op, cast)) steps.push({ operator: op, cast });
   }
   if (data.operators[controlled]?.dive?.end !== undefined) steps.push({ operator: controlled, cast: "dive" });

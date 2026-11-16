@@ -6,16 +6,15 @@
 // the enemy's statuses) and how much of its damage, and of its ultimate's, they cover; damage shares. Plus the
 // distribution of sustained DPS over reaction-delay seeds and crits (policyDistribution).
 
-import { attrTotal, kitSkill, panelAt } from "./timeline/context.ts";
+import { attrTotal } from "./timeline/context.ts";
+import { advance, apply, buttonSkill, createContext, init, isStaggered, kitSkill, maxEnergy, memoised, panelAt, simulate, SP, spAt, type RotationAction, type TimelineScenario, type TimelineState } from "./timeline.ts";
 import { Attr } from "./attributes.ts";
 import { activeAt, reaches } from "./buffs.ts";
 import { EngineError } from "./errors.ts";
-import type { GameData } from "./model.ts";
+import type { GameData, OperatorKit } from "./model.ts";
+import { allActions } from "./events.ts";
 import { type DamageMoments, Z_95 } from "./moments.ts";
 import { playRules, stepsOf, type PolicyFrameView, type PolicyOptions, type PolicyRun, type RuleList } from "./policy.ts";
-import { SP } from "./timeline/rules.ts";
-import { isStaggered, maxEnergy, spAt } from "./timeline/resources.ts";
-import type { TimelineScenario, TimelineState } from "./timeline/state.ts";
 import { FPS } from "./units.ts";
 
 /** Seconds an operator's ultimate was ready but not cast, by why. */
@@ -368,4 +367,103 @@ export function policyDistribution(runs: readonly DamageMoments[]): SustainedDis
   };
   const p = normalCdf(-Z_95);
   return { mean, sd: spread, sdDelays: Math.sqrt(delayVar), sdCrits: Math.sqrt(critVar), p5: quantile(p), p95: quantile(1 - p), runs: n };
+}
+
+// --- Checks on a rules run (the architecture review's rule-run invariants, 2026-11-16) --------------------------------
+
+/** What a rules run did that its list shouldn't make a player do, and whether `simulate` replays it. */
+export interface RuleRunChecks {
+  /** Presses of a battle, combo or ultimate button that cast another skill than the button showed then, or than the step's `shows`. */
+  readonly wrongSkill: readonly { readonly frame: number; readonly operator: string; readonly skill: string; readonly shown: string | null; readonly shows?: string }[];
+  /**
+   * Presses of an operator's battle or combo button that ended a state its own ultimate gave it (a buff of its own from
+   * the ultimate's cast) sooner than it would have ended without the press (Liino's End Stance in Cosmovoice: the class
+   * of the bug the owner found on the damage graph, 2026-11-16).
+   */
+  readonly cutsOwnUltimate: readonly { readonly frame: number; readonly operator: string; readonly skill: string; readonly buff: string }[];
+  /** `simulate` of the recorded rotation lands the same hits (count and total) as the run. */
+  readonly replays: boolean;
+}
+
+/** How long after a press its effect on the presser's ultimate state is looked for. */
+const CUT_HORIZON_FRAMES = 2 * FPS;
+
+/**
+ * Checks a rules run (playRules on this scenario and list): every press of a skill button cast what the button showed
+ * (buttonSkill, judged on the replayed state at the press) and, with `shows`, that; no press of an operator's battle or
+ * combo button cut a state of its own ultimate short (compared with the same rotation without that press, over the
+ * next 2 s); `simulate` replays the rotation to the same hits.
+ */
+export function checkRuleRun(data: GameData, scenario: Omit<TimelineScenario, "rotation">, run: PolicyRun): RuleRunChecks {
+  const fight: TimelineScenario = { ...scenario, rotation: run.rotation };
+  const ctx = memoised(createContext(data, fight));
+  const kindOf = (op: string, skill: string) => ctx.kits.get(op)?.skills.find((s) => s.skillId === skill)?.kind;
+  const labelOf = (op: string, skill: string) => ctx.kits.get(op)?.skills.find((s) => s.skillId === skill)?.label ?? skill;
+  const states: TimelineState[] = [];
+  let st = init(ctx);
+  const wrongSkill: RuleRunChecks["wrongSkill"][number][] = [];
+  run.rotation.forEach((a, i) => {
+    states.push(st);
+    const at = a.at as number;
+    const step = run.presses[i]?.step ?? null;
+    const kind = kindOf(a.operator, a.skill);
+    if (step && (step.cast === "battle" || step.cast === "combo" || step.cast === "ultimate")) {
+      const shown = buttonSkill(ctx, at > st.frame ? advance(ctx, st, at) : st, a.operator, step.cast, at);
+      if (shown !== a.skill || kind !== step.cast || (step.shows !== undefined && labelOf(a.operator, a.skill) !== step.shows)) {
+        wrongSkill.push({ frame: at, operator: a.operator, skill: a.skill, shown, ...(step.shows !== undefined ? { shows: step.shows } : {}) });
+      }
+    }
+    st = apply(ctx, st, a);
+  });
+  const end = advance(ctx, st, scenario.durationFrames);
+  const replay = simulate(data, fight);
+  const replays = replay.hits.length === end.hits.length && replay.total === run.total;
+  // The presser's own ultimate state: its buffs applied since its last ultimate cast, within that cast's duration.
+  const cutsOwnUltimate: RuleRunChecks["cutsOwnUltimate"][number][] = [];
+  const replayTo = (from: TimelineState, skip: number, until: number): TimelineState => {
+    let s = from;
+    for (let j = skip + 1; j < run.rotation.length && (run.rotation[j]?.at as number) <= until; j++) {
+      try {
+        s = apply(ctx, s, run.rotation[j] as RotationAction);
+      } catch (e) {
+        if (!(e instanceof EngineError)) throw e;
+        break;
+      }
+    }
+    return advance(ctx, s, Math.max(s.frame, until));
+  };
+  run.rotation.forEach((a, i) => {
+    const kind = kindOf(a.operator, a.skill);
+    if (kind !== "battle" && kind !== "combo") return;
+    const at = a.at as number;
+    const before = advance(ctx, states[i] as TimelineState, at);
+    const ult = before.casts.findLast((c) => c.operator === a.operator && kindOf(a.operator, c.skill) === "ultimate");
+    if (!ult) return;
+    const given = ultimateBuffs(ctx.kits.get(a.operator), ult.skill);
+    const own = before.buffs.filter((b) => b.owner === a.operator && given.has(b.id) && b.cast === undefined && activeAt(b, at) && b.appliedAt >= ult.frame);
+    if (own.length === 0) return;
+    const h = Math.min(scenario.durationFrames, at + CUT_HORIZON_FRAMES);
+    const withPress = replayTo(apply(ctx, states[i] as TimelineState, a), i, h);
+    const without = replayTo(states[i] as TimelineState, i, h);
+    const on = (s: TimelineState, id: string) => s.buffs.some((b) => b.id === id && b.owner === a.operator && b.cast === undefined && activeAt(b, h));
+    for (const id of new Set(own.map((b) => b.id))) if (on(without, id) && !on(withPress, id)) cutsOwnUltimate.push({ frame: at, operator: a.operator, skill: a.skill, buff: id });
+  });
+  return { wrongSkill, cutsOwnUltimate, replays };
+}
+
+/**
+ * The buffs an ultimate gives its own operator's side (self or team): those its hits apply, and those its kit's
+ * triggers on its cast give (Liino's Cosmovoice, Laevatain's Twilight). Not enemy debuffs, Link stacks or what equipment gives.
+ */
+function ultimateBuffs(kit: OperatorKit | undefined, skill: string): ReadonlySet<string> {
+  const out = new Set<string>();
+  if (!kit) return out;
+  for (const h of kit.skills.find((s) => s.skillId === skill)?.hits ?? []) for (const b of h.buffs ?? []) out.add(b.buff);
+  for (const t of kit.triggers) {
+    if (t.on.event !== "cast" || !(t.on.skills ?? []).includes(skill)) continue;
+    for (const x of allActions(t.do)) if (x.kind === "buff") out.add(x.buff);
+  }
+  // A Link stack is there to be used by the next battle skill (Akekuri's Zone Link): using it isn't cutting it short.
+  for (const id of [...out]) if (kit.buffs.find((b) => b.id === id)?.target === "enemy" || kit.buffs.find((b) => b.id === id)?.link) out.delete(id);
+  return out;
 }

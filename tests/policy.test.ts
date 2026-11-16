@@ -7,7 +7,11 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import {
+  advance,
   apply,
+  buttonShows,
+  buttonSkill,
+  buttonSkills,
   createContext,
   cueCost,
   describeRule,
@@ -15,6 +19,9 @@ import {
   init,
   learnability,
   playRules,
+  SKILL_BUTTONS,
+  visibleBuffs,
+  visibleStacks,
   resolveRuleList,
   searchRules,
   simulate,
@@ -181,7 +188,7 @@ describe("the rule driver", () => {
 });
 
 describe("the rule driver with hovers and dives (Typhoeus)", () => {
-  it("presses only where earliestStart from the last press agrees, so the replay matches", () => {
+  it("presses only where the replay starts them (earliestStart from the last press, with the frame as `at`)", () => {
     const sc = readScenario(join(ROOT, "examples/typhoeus-arcane-liino-perlica.scenario.json"));
     const grounded = { not: { buff: { operator: "Typhoeus", buff: "hovering" } } };
     const l = resolveRuleList(data, sc.team.map((b) => b.operator), {
@@ -270,5 +277,55 @@ describe("example rule lists", () => {
     expect(l.rules.length).toBeGreaterThan(0);
     const r = playRules(data, { ...sc, durationFrames: 10 * 30 }, l);
     expect(r.total).toBeGreaterThan(0);
+  });
+});
+
+// --- Phase 2 of the architecture review (2026-11-16): the button model, one start check, event stepping, run checks ---
+
+const EXAMPLE_TEAMS = ["estella-si-akekuri-arcane", "ink-melt", "typhoeus-arcane-liino-perlica"] as const;
+const example = (t: string, zero = false) => {
+  const sc = readScenario(join(ROOT, "examples", `${t}${zero ? "-zero" : ""}.scenario.json`));
+  return { sc, list: resolveRuleList(data, sc.team.map((b) => b.operator), readRuleList(join(ROOT, "examples", `${t}.rules.json`))) };
+};
+
+describe("the skill buttons (engine buttons.ts)", () => {
+  it.each(EXAMPLE_TEAMS)("%s: at every frame of a rules run, each button shows at most one skill", (t) => {
+    const { sc, list: l } = example(t);
+    const ambiguous = new Set<string>();
+    playRules(data, { ...sc, durationFrames: 60 * 30 }, l, {
+      seed: 1,
+      observer: {
+        frame: (v) => {
+          for (const b of sc.team) for (const k of SKILL_BUTTONS) {
+            const shows = buttonShows(v.ctx, v.st, b.operator, k, v.frame);
+            if (shows.length > 1) ambiguous.add(`${b.operator} ${k}: ${shows.join(", ")}`);
+          }
+        },
+      },
+    });
+    expect([...ambiguous]).toEqual([]);
+  });
+  it("a button casts what its kit's conditions say: Si's battle button is Artful Intent, then Initial Stroke while it's up", () => {
+    const ctx = createContext(data, fight(20));
+    let st = init(ctx);
+    expect(buttonSkill(ctx, st, SI, "battle", 0)).toBe("chr_0036_jsspsi_normal_skill");
+    st = apply(ctx, st, { operator: SI, skill: "chr_0036_jsspsi_normal_skill" });
+    const later = advance(ctx, st, st.frame + 60);
+    expect(buttonSkill(ctx, later, SI, "battle", later.frame)).toBe("chr_0036_jsspsi_normal_skill_1");
+    expect(buttonSkills(ctx, SI, "battle").map((s) => s.label)).toEqual(["Battle skill (Artful Intent)", "Initial Stroke", "Final Stroke"]);
+  });
+});
+
+describe("visible states come from the kits", () => {
+  it("a kit buff or stack marked visible is a cue, in its kit's words; others are refused", () => {
+    const { sc } = example("typhoeus-arcane-liino-perlica");
+    const ops = sc.team.map((b) => b.operator);
+    expect(visibleBuffs(data, "chr_0034_typhoea")).toEqual(["hovering"]);
+    expect(visibleStacks(data, "chr_0034_typhoea")).toEqual(["signs", "arrows"]);
+    expect(visibleBuffs(data, "chr_0035_liino")).toEqual(["vocalist_stance", "cosmovoice_amp"]);
+    const l = resolveRuleList(data, ops, { opener: [], rules: [{ when: { not: { buff: { operator: "Typhoeus", buff: "hovering" } } }, do: { operator: "Typhoeus", cast: "battle" } }] });
+    expect(describeRule(data, l.rules[0] as PolicyRule)).toBe("When Typhoeus is on the ground: Typhoeus's battle skill");
+    expect(() => resolveRuleList(data, ops, { opener: [], rules: [{ when: { buff: { operator: "Typhoeus", buff: "hovering_atk" } }, do: { operator: "Typhoeus", cast: "battle" } }] })).toThrow(/isn't a state the game shows/);
+    expect(() => resolveRuleList(data, ops, { opener: [], rules: [{ when: { stacks: { operator: "Typhoeus", stack: "abatk", atLeast: 1 } }, do: { operator: "Typhoeus", cast: "battle" } }] })).toThrow(/isn't a stack the HUD shows/);
   });
 });

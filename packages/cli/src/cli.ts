@@ -6,7 +6,7 @@ import { parseArgs } from "node:util";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { cacheDir, cacheDisabled, clearGameDataCache, gameDataCacheKey, listGameDataCache, loadGameData, withKitFiles } from "@efsim/data";
-import { FPS, type CritMode, type TimelineScenario } from "@efsim/engine";
+import { EngineError, FPS, simulate as simulateScenario, type CritMode, type TimelineScenario } from "@efsim/engine";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "./commands.ts";
 import { kitDraft } from "./kitdraft.ts";
 import { formatRuns, formatSimulation, loopCommand, readScenario, searchCommand } from "./simulate.ts";
@@ -29,6 +29,8 @@ import { battleIdOf, cacheRawDetail, formatRaw, rawDetail, rawDir } from "./zmdr
 import { formatMentions, gamedataTree, whoMentions } from "./gamedata.ts";
 import { diagnose, formatDiagnosis } from "./diagnose.ts";
 import { formatRuleGear, gearOnRules } from "./gearrules.ts";
+import { parseAssume, underAssume, zeroCompanion } from "./assume.ts";
+import { setWorkerKitFiles } from "./rulespool.ts";
 
 const USAGE = `Usage:
   efsim find <text>                       Look up operator, weapon, gear and enemy IDs by name
@@ -89,6 +91,13 @@ const USAGE = `Usage:
                 [--search-seconds s]      Searched fights' length (default 180)
                 [--search-seeds k]        Seeds per list in the search (default 2)
                 [--front n]               Front lists scored again over the whole fight (default 8)
+                [--compare <rules.json>]  Another list against this one: the paired gain ± standard error on seeds
+                                          1–k and on fresh seeds 1001… (--fresh n, default 32; 0: none)
+                [--assume <id>=<reading>] Run under another reading of a kit's open assumption (repeatable; e.g.
+                                          si-haste-every-end=every-end, in-game test 109; the kits register them)
+                [--assumptions]           Also under each other reading of the team's kits' open assumptions: the
+                                          list's DPS and whether --compare's verdict holds or flips there
+                [--workers n]             Worker threads (default: cores less one; 1: none)
                 [--guided] [--out file]   The payoff-guided search instead: each damage window's ideal combo (every
                                           multiplier the team puts on it, on every hit) and what each missing one
                                           costs; edits aimed at the biggest losses (hold the giver for the window's
@@ -101,9 +110,11 @@ const USAGE = `Usage:
                 [--screen-seeds k] [--confirm-seeds k] [--extend n]  Seeds each edit is screened on (default 6),
                                           the best n (default 4) are played on (default 32)
                 [--max-seeds k]           Seeds a close call (1.2 to 2 standard errors) is taken to (default 64)
-                [--also <scenario.json>]  A second start of the fight (the zero-energy scenario): the best edits are
-                                          played on it too, and one is kept only if it isn't worse there (by more
-                                          than one standard error)
+                [--also <scenario.json>]  A second start of the fight: the best edits are played on it too, and one is
+                                          kept only if it isn't worse there (by more than one standard error);
+                                          default: the zero-energy companion (<team>-zero.scenario.json) if there is
+                                          one. --assume, --assumptions (the final check under each other reading) and
+                                          --out (written as rounds keep lists, then the final one) as above
                 [--check-seeds k] [--workers n]  The final list against the start on k fresh seeds (default the
                                           confirm seeds; 0: none); worker threads (default: cores less one)
   efsim payoffs <scenario.json>           The team's payoff table (engine probes): what each step produces and
@@ -127,6 +138,7 @@ const USAGE = `Usage:
                 [--operator <op>]         Only this operator's marginal values (repeatable)
                 [--workers n]             Worker threads (default: cores less one; 1: none)
                 [--json]                  Everything as JSON
+                [--assume <id>=<reading>] [--assumptions]  As for rules: the diagnosis under each other reading
   efsim gear <scenario.json>              Each operator's gear from the loadouts seen in the logs (fixtures; hold-outs left out), scored
                                           on the scenario's rotation with only that operator's gear swapped (full artifice), best
                                           per operator with the others fixed until nothing changes; a table per operator
@@ -146,6 +158,10 @@ const USAGE = `Usage:
                                           300 s, 0.3 s, 4, cores less one)
                 [--generated n] [--sets n]  With --rules: swaps per operator per pass (default 4), set builds kept after
                                           screening (default 2)
+                [--also <scenario.json>]  With --rules: a change is taken only if it isn't worse on this start (by more
+                                          than one standard error); default the zero-energy companion if there is one
+                [--assume <id>=<reading>] [--assumptions]  With --rules: as for rules (the chosen gear on fresh seeds
+                                          under each other reading)
   efsim zmdlogs list                      The development logs (never a hold-out): file, team with potentials,
                                           enemy, hits, casts, length; the safe start of any scan over the logs
                 [--with <operator>]       Only logs whose team has it (id or part of the name; repeatable: all of them)
@@ -299,6 +315,10 @@ async function main(argv: string[]): Promise<number> {
       rules: { type: "string" },
       generated: { type: "string" },
       sets: { type: "string" },
+      compare: { type: "string" },
+      fresh: { type: "string" },
+      assume: { type: "string", multiple: true, default: [] },
+      assumptions: { type: "boolean", default: false },
       kit: { type: "string", multiple: true, default: [] },
       with: { type: "string", multiple: true, default: [] },
       kind: { type: "string" },
@@ -349,9 +369,8 @@ async function main(argv: string[]): Promise<number> {
     };
   };
   // Loaded on first use, after the arguments and input files are checked (a mistake is reported without the load's wait).
-  // --kit: what-if kit files in place of the operators' own (withKitFiles). Worker threads load the data themselves,
-  // so the commands that use them don't take it yet.
-  if (values.kit.length && (command === "diagnose" || values.guided || (command === "gear" && values.rules))) throw new Error("--kit isn't passed to worker threads yet: it works with simulate, search, rules (not --guided), gear (not --rules), payoffs and calc");
+  // --kit: what-if kit files in place of the operators' own (withKitFiles); worker threads load them too.
+  setWorkerKitFiles(values.kit.map((f) => resolve(f)));
   let loaded: ReturnType<typeof loadGameData> | undefined;
   const data = () => (loaded ??= withKitFiles(loadGameData(), values.kit));
   /** The scenario with --duration (simulate, search): the fight's length in seconds. */
@@ -530,8 +549,9 @@ async function main(argv: string[]): Promise<number> {
             if (!(Number.isInteger(x) && x >= min)) throw new Error(`--${name} must be a whole number ≥ ${min}`);
             return x;
           };
-          const scenario = withBattleOptions(readScenario(args[0] as string));
+          const scenario = underAssume(withBattleOptions(readScenario(args[0] as string)), parseAssume(data(), values.assume));
           const team = scenario.team.map((b) => b.operator);
+          const also = values.also ?? zeroCompanion(args[0] as string);
           const g = await guidedSearch(data(), scenario, readRuleList(args[1] as string), {
             ...opt("seconds", positive(values.duration, "duration")),
             ...opt("reaction", reaction),
@@ -539,7 +559,9 @@ async function main(argv: string[]): Promise<number> {
             ...opt("confirmSeeds", count(values["confirm-seeds"], "confirm-seeds", 2)),
             ...opt("checkSeeds", count(values["check-seeds"], "check-seeds", 0)),
             ...opt("maxSeeds", count(values["max-seeds"], "max-seeds", 2)),
-            ...(values.also ? { also: { scenario: withBattleOptions(readScenario(values.also)), label: values.also } } : {}),
+            ...(also ? { also: { scenario: underAssume(withBattleOptions(readScenario(also)), parseAssume(data(), values.assume)), label: also } } : {}),
+            assumptions: values.assumptions,
+            ...(values.out ? { out: values.out } : {}),
             ...opt("extend", count(values.extend, "extend", 1)),
             ...opt("rounds", count(values.rounds, "rounds", 1)),
             ...opt("candidates", count(values.edits, "edits", 1)),
@@ -555,7 +577,7 @@ async function main(argv: string[]): Promise<number> {
           }
           break;
         }
-        text = rulesCommand(data(), withBattleOptions(readScenario(args[0] as string)), readRuleList(args[1] as string), args[1] as string, {
+        text = await rulesCommand(data(), underAssume(withBattleOptions(readScenario(args[0] as string)), parseAssume(data(), values.assume)), readRuleList(args[1] as string), args[1] as string, {
           ...opt("seconds", positive(values.duration, "duration")),
           ...opt("reactionSeconds", reaction),
           ...opt("seeds", positive(values.seeds, "seeds", true)),
@@ -566,6 +588,10 @@ async function main(argv: string[]): Promise<number> {
           ...opt("penalty", penalty),
           ...opt("front", positive(values.front, "front", true)),
           ...(values.out ? { out: values.out } : {}),
+          ...(values.compare ? { compare: { list: readRuleList(values.compare), file: values.compare } } : {}),
+          ...(values.fresh !== undefined ? { fresh: Number(values.fresh) } : {}),
+          ...opt("workers", positive(values.workers, "workers", true)),
+          assumptions: values.assumptions,
           progress: (line) => process.stderr.write(line + "\n"),
         });
       }
@@ -583,7 +609,7 @@ async function main(argv: string[]): Promise<number> {
         if (reaction !== undefined && !(reaction >= 0)) throw new Error("--reaction must be a number of seconds ≥ 0");
         const seconds = values.duration === undefined ? undefined : Number(values.duration);
         if (seconds !== undefined && !(seconds > 0)) throw new Error("--duration must be > 0");
-        const scenario = readScenario(args[0] as string);
+        const scenario = underAssume(readScenario(args[0] as string), parseAssume(data(), values.assume));
         const team = scenario.team.map((b) => b.operator);
         const ops = values.operator.map((x) => {
           const id = team.find((op) => op === x || data().operators[op]?.name.toLowerCase() === x.toLowerCase());
@@ -598,6 +624,7 @@ async function main(argv: string[]): Promise<number> {
           ...opt("marginalSeeds", count(values["marginal-seeds"], "marginal-seeds", 0)),
           ...opt("workers", count(values.workers, "workers", 1)),
           ...(ops.length ? { operators: ops } : {}),
+          assumptions: values.assumptions,
           progress: (line) => process.stderr.write(line + "\n"),
         });
         text = values.json ? JSON.stringify(d, null, 2) : formatDiagnosis(data(), d, `Diagnosis of ${args[1]} on ${args[0]}: ${team.map((op) => data().operators[op]?.name ?? op).join(", ")}`);
@@ -638,8 +665,12 @@ async function main(argv: string[]): Promise<number> {
           const seconds = values.duration === undefined ? undefined : Number(values.duration);
           if (seconds !== undefined && !(seconds > 0)) throw new Error("--duration must be > 0");
           const opt = (k: string, v: number | undefined) => (v === undefined ? {} : { [k]: v });
-          const rg = await gearOnRules(data(), scenario, readRuleList(values.rules), candidates, {
+          const also = values.also ?? zeroCompanion(args[0] as string);
+          const assume = parseAssume(data(), values.assume);
+          const rg = await gearOnRules(data(), underAssume(scenario, assume), readRuleList(values.rules), candidates, {
             keep,
+            ...(also ? { also: { scenario: underAssume(readScenario(also), assume), label: also } } : {}),
+            assumptions: values.assumptions,
             ...opt("seconds", seconds),
             ...opt("reaction", reaction),
             ...opt("seeds", whole(values.seeds, "seeds", 2)),
@@ -657,8 +688,16 @@ async function main(argv: string[]): Promise<number> {
           });
           text = formatRuleGear(data(), rg, `efsim gear --rules ${values.rules} on ${args[0]}`);
           if (values.out) {
-            writeGearScenario(args[0] as string, values.out, rg.team);
-            text += `\n\nWrote ${values.out} (the chosen gear; the timeline rotation as it was, which a loadout that moves ultimates may not play: the rules are the rotation here).`;
+            // The timeline rotation only if the chosen gear still plays it (a loadout that moves ultimates may not); else none.
+            let plays = true;
+            try {
+              simulateScenario(data(), { ...scenario, team: [...rg.team] });
+            } catch (e) {
+              if (!(e instanceof EngineError)) throw e;
+              plays = false;
+            }
+            writeGearScenario(args[0] as string, values.out, rg.team, plays ? undefined : []);
+            text += `\n\nWrote ${values.out} (the chosen gear; ${plays ? "the timeline rotation as it was, which it still plays" : "no timeline rotation: the old one can't be played with this gear"}; the rules are the rotation here).`;
           }
           break;
         }

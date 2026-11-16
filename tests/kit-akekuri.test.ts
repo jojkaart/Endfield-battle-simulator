@@ -40,7 +40,7 @@ describe("Akekuri's kit", () => {
     const at = (f: number) => run(example, rot, f);
     expect([59, 86, 119].map((f) => at(f).spReturned)).toEqual([0, 0, 0]);
     const steps = [59, 86, 119].map((f) => at(f).sp - at(f - 1).sp - SP.perSecond / 30);
-    expect(Math.floor(steps[0] ?? 0)).toBe(26);
+    expect(Math.floor((steps[0] ?? 0) + 1e-9)).toBe(26);
     expect(steps[1]).toBeGreaterThanOrEqual(27 - 1e-9);
     expect(steps[2]).toBeGreaterThanOrEqual(27 - 1e-9);
     const at119 = run(example, ult, 119);

@@ -5,7 +5,6 @@
 
 import {
   Attr,
-  attrName,
   averageDiagnoses,
   distributionCritMode,
   critTriggers,
@@ -15,7 +14,9 @@ import {
   POLICY_REACTION_SECONDS,
   resolveRuleList,
   Slot,
+  statLabel,
   Target,
+  type AttrType,
   type Build,
   type GameData,
   type GearData,
@@ -27,6 +28,8 @@ import {
 } from "@efsim/engine";
 import { num, pct, table } from "./format.ts";
 import { defaultWorkers, runRulesJobs, type RulesJob, type RulesResult } from "./rulespool.ts";
+import { codeProvenance } from "./provenance.ts";
+import { alternatives, underAssume } from "./assume.ts";
 
 // --- Probes: one gear stat line of a typical size ---------------------------------------------------------
 
@@ -48,35 +51,9 @@ export interface Probe {
 const NOT_DAMAGE = new Set<number>([Attr.HealOutputIncrease, Attr.MaxHp]);
 const ELEMENT_OF = new Map<number, string>(Object.entries(ELEMENT_DAMAGE_INCREASE).map(([e, a]) => [a, e]));
 const KIND_OF = new Map<number, string>([[Attr.NormalAttackDamageIncrease, "basic"], [Attr.NormalSkillDamageIncrease, "battle"], [Attr.ComboSkillDamageIncrease, "combo"], [Attr.UltimateSkillDamageIncrease, "ultimate"]]);
-const ATTR_WORDS: Readonly<Record<number, string>> = {
-  [Attr.Str]: "Strength",
-  [Attr.Agi]: "Agility",
-  [Attr.Wisd]: "Intellect",
-  [Attr.Will]: "Will",
-  [Attr.CriticalRate]: "Crit Rate",
-  [Attr.CriticalDamageIncrease]: "Crit DMG",
-  [Attr.UltimateSpGainScalar]: "Ultimate Gain Efficiency",
-  [Attr.PhysicalAndSpellInflictionEnhance]: "Arts Intensity",
-  [Attr.PhysicalDamageIncrease]: "Physical DMG",
-  [Attr.FireDamageIncrease]: "Heat DMG",
-  [Attr.PulseDamageIncrease]: "Electric DMG",
-  [Attr.CrystDamageIncrease]: "Cryo DMG",
-  [Attr.NaturalDamageIncrease]: "Nature DMG",
-  [Attr.NormalAttackDamageIncrease]: "Basic Attack DMG",
-  [Attr.NormalSkillDamageIncrease]: "Battle Skill DMG",
-  [Attr.ComboSkillDamageIncrease]: "Combo Skill DMG",
-  [Attr.UltimateSkillDamageIncrease]: "Ultimate DMG",
-  [Attr.DamageToBrokenUnitIncrease]: "DMG to Staggered",
-  [Attr.Atk]: "ATK",
-};
 
 const median = (xs: readonly number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)] as number;
 
-function probeLabel(attr: number, slot: number, target: number, value: number): string {
-  const who = target === Target.MainAttribute ? "main attribute" : target === Target.SecondaryAttribute ? "secondary attribute" : (ATTR_WORDS[attr] ?? attrName(attr));
-  const percent = slot === Slot.Percent || (slot === Slot.Add && value < 1.5 && attr !== Attr.PhysicalAndSpellInflictionEnhance && target === Target.AsWritten && ![Attr.Str, Attr.Agi, Attr.Wisd, Attr.Will].includes(attr as 39));
-  return `${who} +${percent ? `${(value * 100).toFixed(1)}%` : Math.round(value)}`;
-}
 
 /**
  * The stat lines the game's gear offers (T4 pieces, lines 1–3 at full artifice; healing, HP and damage-taken lines
@@ -100,7 +77,7 @@ export function gearProbes(data: GameData): Probe[] {
     const element = ELEMENT_OF.get(e.attr);
     const kind = KIND_OF.get(e.attr);
     const only = element ? { element } : kind ? { kind } : e.attr === Attr.DamageToBrokenUnitIncrease ? { staggered: true as const } : undefined;
-    return { key, label: probeLabel(e.attr, e.slot, e.target, value), attr: e.attr, slot: e.slot, target: e.target, value, ...(only ? { only } : {}) };
+    return { key, label: statLabel(e.attr as AttrType, e.slot, e.target, value), attr: e.attr, slot: e.slot, target: e.target, value, ...(only ? { only } : {}) };
   });
   out.push(
     { key: "ref:atk%", label: "ATK +10% (reference: sets give 8–15%)", attr: Attr.Atk, slot: Slot.Percent, target: Target.AsWritten, value: 0.1, reference: true },
@@ -193,6 +170,13 @@ export interface Diagnosed {
   /** Runs played and seconds taken. */
   readonly runs: number;
   readonly secondsTaken: number;
+  /** The code the run used (provenance.ts codeProvenance). */
+  readonly code: string;
+  /**
+   * Under each other reading of the team's kits' open assumptions (DiagnoseOptions.assumptions): sustained DPS on the
+   * same seeds, paired against the reading in use, and the findings that go away or come.
+   */
+  readonly assumptions?: readonly { readonly label: string; readonly dps: number; readonly gain: number; readonly se: number; readonly gone: readonly string[]; readonly came: readonly string[] }[];
 }
 
 export interface DiagnoseOptions {
@@ -207,6 +191,8 @@ export interface DiagnoseOptions {
   readonly workers?: number;
   /** Only these operators' marginal values (default all). */
   readonly operators?: readonly string[];
+  /** The diagnosis again under each other reading of the team's kits' open assumptions (assume.ts). */
+  readonly assumptions?: boolean;
   readonly progress?: (line: string) => void;
 }
 
@@ -269,7 +255,27 @@ export async function diagnose(data: GameData, scenario: Omit<TimelineScenario, 
       });
     }
   }
-  return { list, diagnosis, distribution: policyDistribution(base.map((r) => r.moments)), dps, marginal, settings, ...(critNote ? { critNote } : {}), runs, secondsTaken: (performance.now() - t0) / 1000 };
+  const out: Diagnosed = { list, diagnosis, distribution: policyDistribution(base.map((r) => r.moments)), dps, marginal, settings, ...(critNote ? { critNote } : {}), runs, secondsTaken: (performance.now() - t0) / 1000, code: codeProvenance() };
+  if (!o.assumptions) return out;
+  // The same seeds under each other reading (the marginal values stay the reading in use's: findings that read them are kept).
+  const keyed = (f: readonly Finding[]) => new Map(f.filter((x) => x.key !== "per-minute").map((x) => [x.key, x.text]));
+  const now = keyed(findings(data, out));
+  const assumptions: NonNullable<Diagnosed["assumptions"]>[number][] = [];
+  for (const alt of alternatives(data, scenario)) {
+    o.progress?.(`assumption ${alt.id}=${alt.reading}: ${seeds} seeds`);
+    const r = await runRulesJobs(data, seedJobs(underAssume(scenario, alt.assume), list, settings, seeds, { diagnose: true }), settings.workers);
+    runs += r.length;
+    const altDps = r.map((x) => x.sustainedDps);
+    const there = keyed(findings(data, { ...out, diagnosis: averageDiagnoses(r.map((x) => x.diagnosis as PolicyDiagnosis)), dps: altDps, distribution: policyDistribution(r.map((x) => x.moments)) }));
+    assumptions.push({
+      label: alt.label,
+      dps: mean(altDps),
+      ...paired(dps, altDps),
+      gone: [...now].filter(([k]) => !there.has(k)).map(([, t]) => t),
+      came: [...there].filter(([k]) => !now.has(k)).map(([, t]) => t),
+    });
+  }
+  return { ...out, runs, secondsTaken: (performance.now() - t0) / 1000, assumptions };
 }
 
 // --- In plain words ---------------------------------------------------------------------------------------------
@@ -353,7 +359,7 @@ export function formatDiagnosis(data: GameData, d: Diagnosed, title: string): st
   const s = d.distribution;
   const lines = [
     title,
-    `${d.settings.seconds} s fight, reaction ${d.settings.reaction} s ± 50%, ${s.runs} seeds (common random numbers: each rule's k-th cue onset draws the same delay in every run), crits ${d.settings.crit === "distribution" ? "rolled where an effect reads them, else expected" : "expected, their spread from each hit's chance"}; ${d.runs} runs in ${d.secondsTaken.toFixed(0)} s.`,
+    `${d.code}; ${d.settings.seconds} s fight, reaction ${d.settings.reaction} s ± 50%, ${s.runs} seeds (common random numbers: each rule's k-th cue onset draws the same delay in every run), crits ${d.settings.crit === "distribution" ? "rolled where an effect reads them, else expected" : "expected, their spread from each hit's chance"}; ${d.runs} runs in ${d.secondsTaken.toFixed(0)} s.`,
     ...(d.critNote ? [`Note: ${d.critNote}.`] : []),
     "",
     `Sustained DPS: ${n0(s.mean)} (sd ${n0(s.sd)}: reaction delays ${n0(s.sdDelays)}, crits ${n0(s.sdCrits)}; 5–95% ${n0(s.p5)}–${n0(s.p95)})`,
@@ -394,5 +400,13 @@ export function formatDiagnosis(data: GameData, d: Diagnosed, title: string): st
   }
   const f = findings(data, d);
   if (f.length) lines.push("", "Findings:", ...f.map((x) => `- ${x.text}`));
+  if (d.assumptions) {
+    lines.push("", d.assumptions.length ? "Under the kits' open assumptions (each other reading of an in-game test the team's kits register; the same seeds):" : "The kits' open assumptions: none for this team.");
+    for (const a of d.assumptions) {
+      lines.push(`- ${a.label}: sustained DPS ${n0(a.dps)} (${mvText(a)} against the reading in use)${a.gone.length || a.came.length ? "" : "; the same findings"}`);
+      for (const t of a.gone) lines.push(`    no longer: ${t}`);
+      for (const t of a.came) lines.push(`    new: ${t}`);
+    }
+  }
   return lines.join("\n");
 }

@@ -14,7 +14,7 @@ import type { CompiledSkill, CompiledValue } from "./skillCompile.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";
 import { buffFilePath, isBuffFileListed, readBuffFile, skillAttachedEffects, type RawBuffFile } from "./buffData.ts";
 import { buffTagFilter, SHIELD_TAG } from "./buffTags.ts";
-import { Attr, attrFeedsZone, attrModifier, buffAttrHasEffect, buffReach, type BuffCategory, type TriggerOn, type KitBuffModifier, ELEMENTS, predicateRefs, predicateValues, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type KitTrigger, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type LandedCount, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
+import { Attr, attrFeedsZone, attrModifier, buffAttrHasEffect, buffReach, type BuffCategory, type TriggerOn, type KitBuffModifier, ELEMENTS, predicateRefs, predicateValues, valueRefs, allActions, STATUS_EVENTS, triggerSkillId, type KitHit, type Effect, valueKeys, type BuffApplication, type KitTrigger, type KitAssumption, type TriggerAction, type KitBuff, type Predicate, type ValueExpr, type KitApplication, type LandedCount, type StatusTweak, type StackDef, type StackRequirement, type Element, type EquipmentKit, type Kits, type OperatorKit, type SkillData, type SkillType, type Zone } from "@efsim/engine";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 const KITS = join(ROOT, "packages/data/kits");
@@ -99,6 +99,18 @@ export function triggerOn(on: RawOn, where: string): TriggerOn {
   }
 }
 
+/** A kit's triggers tied to a reading (KitTrigger.reading) name one of its own assumptions and one of that one's readings. */
+function checkReadings(where: string, triggers: KitTrigger[], assumptions: readonly KitAssumption[] | undefined): KitTrigger[] {
+  for (const a of assumptions ?? []) if (!(a.default in a.readings)) throw new Error(`${where}: assumption ${a.id}: its default ${a.default} isn't one of its readings`);
+  for (const t of triggers) {
+    if (!t.reading) continue;
+    const a = (assumptions ?? []).find((x) => x.id === t.reading?.assumption);
+    if (!a) throw new Error(`${where}: trigger ${t.id}: the kit has no assumption ${t.reading.assumption}`);
+    if (!(t.reading.reading in a.readings)) throw new Error(`${where}: trigger ${t.id}: assumption ${a.id} has no reading ${t.reading.reading}`);
+  }
+  return triggers;
+}
+
 /** A list of raw actions with those inside its choose options (an option's after its choose). */
 const flatActions = (list: readonly RawAction[]): RawAction[] => list.flatMap((a) => (a.kind === "choose" ? [a, ...a.options.flatMap((o) => flatActions(o.do))] : [a]));
 
@@ -112,6 +124,7 @@ interface RawKit {
   triggers?: RawTrigger[];
   statusTweaks?: (StatusTweak & { note?: string })[];
   activeConditions?: Record<string, Predicate>;
+  assumptions?: KitAssumption[];
   skills: {
     skillId: string;
     label: string;
@@ -1089,10 +1102,11 @@ function loadOperatorKit(data: KitData, file: string, kit: RawKit, options: KitL
     operator: kit.operator,
     stacks: (kit.stacks ?? []).map((x) => {
       if (x.initial !== undefined) c.checkValue(x.initial, "", `${where0}: stack ${x.id} initial`);
-      return { id: x.id, label: x.label, max: x.max, ...(x.initial !== undefined ? { initial: x.initial } : {}) };
+      return { id: x.id, label: x.label, ...(x.visible !== undefined ? { visible: x.visible } : {}), max: x.max, ...(x.initial !== undefined ? { initial: x.initial } : {}) };
     }),
     ...(kit.activeConditions ? { activeConditions: kit.activeConditions } : {}),
-    triggers,
+    triggers: checkReadings(where0, triggers, kit.assumptions),
+    ...(kit.assumptions ? { assumptions: kit.assumptions } : {}),
     buffs,
     ...(kit.statusTweaks
       ? {

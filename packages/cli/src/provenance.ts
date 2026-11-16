@@ -1,6 +1,6 @@
 // Which code made a report: the commit and whether the tree had uncommitted changes, for the head of long runs'
-// output (gear --rules, diagnose: results that took minutes are only comparable when they say what made them; phase 2
-// is to print it there).
+// output (gear --rules, diagnose, rules, the guided search: results that took minutes are only comparable when they say
+// what made them).
 
 import { execFileSync } from "node:child_process";
 import { dirname, resolve } from "node:path";

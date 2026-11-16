@@ -3,7 +3,7 @@
 import { Attr, type AttrType, type SkillType } from "../attributes.ts";
 import type { Build } from "../build.ts";
 import { EngineError } from "../errors.ts";
-import type { GameData, KitSkill, SkillTiming } from "../model.ts";
+import type { GameData, KitAssumption, KitSkill, OperatorKit, SkillTiming } from "../model.ts";
 import { effectiveKit } from "../triggers.ts";
 import { allActions } from "../events.ts";
 import { computeStats, DEFAULT_STAT_OPTIONS, foodOf, skillLevel, skillParam, type StatPanel } from "../stats.ts";
@@ -33,6 +33,26 @@ function byOperatorEvent<T extends { readonly operator: string; readonly event: 
   return out;
 }
 
+/** Every open assumption of the kits (OperatorKit.assumptions), with the operator whose kit has it. */
+export function kitAssumptions(data: GameData): readonly (KitAssumption & { readonly operator: string })[] {
+  return Object.values(data.kits.operators).flatMap((k) => (k.assumptions ?? []).map((a) => ({ ...a, operator: k.operator })));
+}
+
+/** A kit with only the triggers of the chosen readings (the default reading of each assumption not chosen); unknown readings are refused. */
+function underReadings(data: GameData, kit: OperatorKit, assume: Readonly<Record<string, string>> | undefined): OperatorKit {
+  if (assume) {
+    const known = kitAssumptions(data);
+    for (const [id, reading] of Object.entries(assume)) {
+      const a = known.find((x) => x.id === id);
+      if (!a) throw new EngineError(`no kit has an assumption ${id} (${known.map((x) => x.id).join(", ") || "none"})`);
+      if (!(reading in a.readings)) throw new EngineError(`assumption ${id} has no reading ${reading} (${Object.keys(a.readings).join(", ")})`);
+    }
+  }
+  if (!kit.triggers.some((t) => t.reading)) return kit;
+  const chosen = (id: string) => assume?.[id] ?? kitAssumptions(data).find((x) => x.id === id)?.default;
+  return { ...kit, triggers: kit.triggers.filter((t) => !t.reading || chosen(t.reading.assumption) === t.reading.reading) };
+}
+
 export function createContext(data: GameData, scenario: TimelineScenario): TimelineContext {
   if (scenario.team.length === 0 || scenario.team.length > 4) throw new EngineError("a team has 1–4 operators");
   const builds = new Map(scenario.team.map((b) => [b.operator, b]));
@@ -46,7 +66,7 @@ export function createContext(data: GameData, scenario: TimelineScenario): Timel
   const modifiers = new Map(scenario.team.map((b) => [b.operator, scenario.options.modifiers ?? []]));
   const kits = new Map(scenario.team.flatMap((b) => {
     const kit = effectiveKit(data, b);
-    return kit ? [[b.operator, kit] as const] : [];
+    return kit ? [[b.operator, underReadings(data, kit, scenario.options.assume)] as const] : [];
   }));
   const beforeDamage = [...kits.values()].some((k) => k.triggers.some((t) => t.beforeDamage));
   const critListeners = [...kits].flatMap(([owner, k]) => k.triggers.filter((t) => t.on.event === "hit" && t.on.crit !== undefined).map((trigger) => ({ owner, trigger })));

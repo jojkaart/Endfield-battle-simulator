@@ -15,6 +15,7 @@
     {
       "id": "vocalist_stance",
       "label": "Vocalist Stance (battle skill): team ATK",
+      "visible": { "on": "is in Vocalist Stance", "off": "isn't in Vocalist Stance", "why": "the battle-skill button becomes End Stance" },
       "target": "team",
       "gameBuff": "buff_chr_0035_liino_atkup",
       "loggedAs": ["buff_chr_0035_liino_atkup_owner"],
@@ -66,6 +67,7 @@
     {
       "id": "cosmovoice_amp",
       "label": "Cosmovoice Stance (ultimate): team Electric and Nature Amp",
+      "visible": { "on": "is in Cosmovoice (her ultimate's stance)", "off": "isn't in Cosmovoice", "why": "her ultimate's stance: the battle-skill button becomes End Stance" },
       "target": "team",
       "gameBuff": "buff_chr_0035_liino_spellenhance",
       "duration": "ultmusic_duration",

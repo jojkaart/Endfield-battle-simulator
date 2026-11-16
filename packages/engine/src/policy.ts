@@ -13,10 +13,35 @@ import { FPS } from "./units.ts";
 import { hitsMoments, NO_DAMAGE, scaleMoments, type DamageMoments } from "./moments.ts";
 import { diveOf, nextBasics } from "./search.ts";
 import { activeAt } from "./buffs.ts";
-import { advance, apply, createContext, earliestStart, exclusiveUntil, init, memoised, startsNow, type RotationAction, type TimelineContext, type TimelineScenario, type TimelineState } from "./timeline.ts";
-import { isStaggered, maxEnergy, skillSpGain, spAt } from "./timeline/resources.ts";
-import { kitSkill, maxPoise, skillCosts } from "./timeline/context.ts";
-import { needsWindow, skillAvailable, windowKey, windowOpen } from "./timeline/timing.ts";
+import {
+  advance,
+  apply,
+  buttonSkill,
+  buttonSkills,
+  canStartAt,
+  createContext,
+  earliestStart,
+  exclusiveUntil,
+  init,
+  isStaggered,
+  kitSkill,
+  maxEnergy,
+  maxPoise,
+  memoised,
+  needsWindow,
+  nextChangeAfter,
+  skillAvailable,
+  skillCosts,
+  skillSpGain,
+  spAt,
+  startsNow,
+  windowKey,
+  windowOpen,
+  type RotationAction,
+  type TimelineContext,
+  type TimelineScenario,
+  type TimelineState,
+} from "./timeline.ts";
 
 // --- The format ----------------------------------------------------------------
 
@@ -46,7 +71,7 @@ export const POLICY_CASTS: readonly PolicyStep["cast"][] = ["battle", "combo", "
 export type PolicyCue =
   /** Rank 1: the operator's combo skill is lit (off cooldown, its window open, available). */
   | { readonly combo: string }
-  /** Rank 2: a stack the HUD shows (POLICY_VISIBLE_STACKS: Typhoeus's Hunting Arrows and Signs). */
+  /** Rank 2: a stack the HUD shows (visibleStacks: Typhoeus's Hunting Arrows and Signs). */
   | { readonly stacks: { readonly operator: string; readonly stack: string; readonly atLeast?: number; readonly below?: number } }
   /** Rank 2: team SP (the bar's three segments of 100: "battle skills ready"). */
   | { readonly sp: { readonly atLeast?: number; readonly below?: number } }
@@ -60,7 +85,7 @@ export type PolicyCue =
   | { readonly staggered: boolean }
   /** Rank 3: how full the enemy's Stagger bar is, in percent (100 while it is Staggered). */
   | { readonly stagger: { readonly atLeast?: number; readonly below?: number } }
-  /** Rank 3: an operator's state the game shows on the character or its skill button (POLICY_VISIBLE_BUFFS: Typhoeus hovering, …). */
+  /** Rank 3: an operator's state the game shows on the character or its skill button (visibleBuffs: Typhoeus hovering, …). */
   | { readonly buff: { readonly operator: string; readonly buff: string } }
   /** Rank 4: the operator's ultimate is ready (energy full, off cooldown, available). */
   | { readonly ultimate: string }
@@ -105,21 +130,27 @@ export const POLICY_CUE_RANKS = { combo: 1, stacks: 2, sp: 2, infliction: 3, sta
 /** What a cue of each rank costs to learn and watch: the rank itself up to 3, steeper after; a timer counts heavily (owner: "avoid, or count heavily against"). */
 export const POLICY_RANK_COST: Readonly<Record<number, number>> = { 1: 1, 2: 2, 3: 3, 4: 5, 5: 6, 6: 7, 7: 20 };
 
-/** Kit stacks the game's HUD shows (owner, 2026-11-16: Typhoeus's Hunting Arrows and Signs, "very easy"); others are refused. */
-export const POLICY_VISIBLE_STACKS: Readonly<Record<string, readonly string[]>> = { chr_0034_typhoea: ["signs", "arrows"] };
+/**
+ * The stacks of an operator's kit the game's HUD shows (StackDef.visible: Typhoeus's Hunting Arrows and Signs, "very
+ * easy", the owner 2026-11-16), in kit order; rules may read no others.
+ */
+export function visibleStacks(data: GameData, operator: string): readonly string[] {
+  return (data.kits.operators[operator]?.stacks ?? []).filter((x) => x.visible !== undefined).map((x) => x.id);
+}
 
 /**
- * Kit buffs a player sees without reading buff icons, each for a reason (others are refused): Typhoeus `hovering` (she
- * is in the air), Laevatain `twilight` (her ultimate's form; the battle-skill button changes), Liino `vocalist_stance`
- * (the battle-skill button becomes End Stance) and `cosmovoice_amp` (her ultimate's stance: the same), Si `artful_intent` / `inksoul` (the battle-skill button becomes
- * Initial / Final Stroke).
+ * The buffs of an operator's kit a player sees without reading buff icons (KitBuff.visible, each with how it shows:
+ * Typhoeus hovering, Laevatain's Twilight, Liino's stances, Si's Artful Intent and Inksoul), in kit order; rules may
+ * read no others.
  */
-export const POLICY_VISIBLE_BUFFS: Readonly<Record<string, readonly string[]>> = {
-  chr_0034_typhoea: ["hovering"],
-  chr_0016_laevat: ["twilight"],
-  chr_0035_liino: ["vocalist_stance", "cosmovoice_amp"],
-  chr_0036_jsspsi: ["artful_intent", "inksoul"],
-};
+export function visibleBuffs(data: GameData, operator: string): readonly string[] {
+  return (data.kits.operators[operator]?.buffs ?? []).filter((x) => x.visible !== undefined).map((x) => x.id);
+}
+
+/** Every visible stack and buff of a team, by operator (for error messages). */
+function visibleList(data: GameData, team: readonly string[], of: (data: GameData, op: string) => readonly string[]): string {
+  return JSON.stringify(Object.fromEntries(team.flatMap((op) => (of(data, op).length ? [[op, of(data, op)]] : []))));
+}
 
 /** The game's element names (as the UI shows them) for the engine's. */
 const ELEMENTS: Readonly<Record<string, ArtsElement>> = { heat: "fire", fire: "fire", electric: "pulse", pulse: "pulse", cryo: "cryst", cryst: "cryst", nature: "natural", natural: "natural" };
@@ -178,19 +209,9 @@ export function describeStep(data: GameData, s: PolicyStep): string {
   return s.shows === undefined ? base : `${base} (only if it shows ${s.shows})`;
 }
 
-/** The visible states (POLICY_VISIBLE_BUFFS) in words: [while it's on, while it's off]. */
-const BUFF_WORDS: Readonly<Record<string, readonly [string, string]>> = {
-  hovering: ["is hovering", "is on the ground"],
-  twilight: ["is in Twilight", "isn't in Twilight"],
-  vocalist_stance: ["is in Vocalist Stance", "isn't in Vocalist Stance"],
-  cosmovoice_amp: ["is in Cosmovoice (her ultimate's stance)", "isn't in Cosmovoice"],
-  artful_intent: ["has Artful Intent up", "hasn't Artful Intent up"],
-  inksoul: ["has Inksoul up", "hasn't Inksoul up"],
-};
-
 function buffWords(data: GameData, b: { readonly operator: string; readonly buff: string }, on: boolean): string {
-  const w = BUFF_WORDS[b.buff] ?? [`has ${b.buff} up`, `hasn't ${b.buff} up`];
-  return `${data.operators[b.operator]?.name ?? b.operator} ${on ? w[0] : w[1]}`;
+  const v = data.kits.operators[b.operator]?.buffs.find((x) => x.id === b.buff)?.visible;
+  return `${data.operators[b.operator]?.name ?? b.operator} ${v ? (on ? v.on : v.off) : on ? `has ${b.buff} up` : `hasn't ${b.buff} up`}`;
 }
 
 /** A cue as the player would say it ("Arcane's combo lights up"). */
@@ -263,7 +284,7 @@ export function resolveRuleList(data: GameData, team: readonly string[], list: R
     if ("comboCooldown" in c) return { comboCooldown: opId(c.comboCooldown, where) };
     if ("stacks" in c) {
       const op = opId(c.stacks.operator, where);
-      if (!(POLICY_VISIBLE_STACKS[op] ?? []).includes(c.stacks.stack)) throw new EngineError(`${where}: ${op}'s ${c.stacks.stack} isn't a stack the HUD shows (shown: ${JSON.stringify(POLICY_VISIBLE_STACKS)})`);
+      if (!visibleStacks(data, op).includes(c.stacks.stack)) throw new EngineError(`${where}: ${op}'s ${c.stacks.stack} isn't a stack the HUD shows (shown: ${visibleList(data, team, visibleStacks)})`);
       range(c.stacks, where);
       return { stacks: { ...c.stacks, operator: op } };
     }
@@ -285,7 +306,7 @@ export function resolveRuleList(data: GameData, team: readonly string[], list: R
     }
     if ("buff" in c) {
       const op = opId(c.buff.operator, where);
-      if (!(POLICY_VISIBLE_BUFFS[op] ?? []).includes(c.buff.buff)) throw new EngineError(`${where}: ${op}'s ${c.buff.buff} isn't a state the game shows without buff icons (shown: ${JSON.stringify(POLICY_VISIBLE_BUFFS)})`);
+      if (!visibleBuffs(data, op).includes(c.buff.buff)) throw new EngineError(`${where}: ${op}'s ${c.buff.buff} isn't a state the game shows without buff icons (shown: ${visibleList(data, team, visibleBuffs)})`);
       return { buff: { operator: op, buff: c.buff.buff } };
     }
     if ("finalStrikes" in c) {
@@ -325,8 +346,13 @@ export interface PolicyOptions {
   readonly observer?: PolicyObserver;
   /** A press of the opener or of a rule's sequence that can't start within this many seconds is given up (default 6). */
   readonly waitSeconds?: number;
-  /** Judge the basic attack's options at every frame instead of from their earliest start (a check of that shortcut; slower). */
+  /** Judge the basic attack's options at every frame visited instead of from their earliest start (a check of that shortcut; slower). */
   readonly judgeEveryFrame?: boolean;
+  /**
+   * `events` (default): the driver visits only the frames where something it reads can change (playRules' nextWake);
+   * `frames`: every frame, the reference the event stepping is checked against (the same run; slower).
+   */
+  readonly stepping?: "events" | "frames";
 }
 
 export const POLICY_REACTION_SECONDS = 0.3;
@@ -351,6 +377,8 @@ export interface PolicyRun {
   readonly givenUp: readonly { readonly frame: number; readonly step: PolicyStep; readonly rule: number | null }[];
   /** Everything pressed, as a rotation with absolute frames: `simulate` replays it to the same hits. */
   readonly rotation: readonly RotationAction[];
+  /** For each press of `rotation`, the list's step that made it (null: the filler) and its rule (null: the opener or the filler). */
+  readonly presses: readonly { readonly step: PolicyStep | null; readonly rule: number | null }[];
   readonly durationFrames: number;
   /**
    * Sustained DPS as a distribution over what's random in this run and changes nothing later (each hit's crit:
@@ -423,25 +451,18 @@ export function policyDelay(seed: number, key: number, k: number): number {
   return keyedUniform(seed, key, k);
 }
 
-/** The skills a button of an operator can cast (the button casts whichever is available then; follow-ups never). */
-function buttonSkills(ctx: TimelineContext, step: PolicyStep, controlled: string): readonly string[] {
+/** Checks a step against the team: the controlled operator's own inputs, and an operator with that button in its kit. */
+function checkStep(ctx: TimelineContext, step: PolicyStep, controlled: string): void {
   const own = step.cast === "dive" || step.cast === "basic" || step.cast === "finisher";
   if (own && step.operator !== controlled) throw new EngineError(`a ${step.cast} is the controlled operator's (${controlled}), not ${step.operator}'s`);
-  if (step.cast === "dive") {
-    const d = diveOf(ctx.data, step.operator);
-    if (d === undefined) throw new EngineError(`${step.operator} has no dive in its kit`);
-    return [d];
-  }
-  // The basic-attack input: whatever it is then (playRules' basicAttack).
-  if (step.cast === "basic") return [];
-  if (step.cast === "finisher") {
-    const f = (ctx.kits.get(step.operator)?.skills ?? []).filter((s) => s.kind === "basic" && ctx.data.skills[s.skillId]?.timing?.specification === 8).map((s) => s.skillId);
-    if (f.length === 0) throw new EngineError(`${step.operator} has no finisher in its kit`);
-    return f;
-  }
-  const out = (ctx.kits.get(step.operator)?.skills ?? []).filter((s) => s.kind === step.cast && !s.followUpOnly).map((s) => s.skillId);
-  if (out.length === 0) throw new EngineError(`${step.operator} has no ${step.cast} skill`);
-  return out;
+  if (step.cast === "dive" && diveOf(ctx.data, step.operator) === undefined) throw new EngineError(`${step.operator} has no dive in its kit`);
+  if (step.cast === "finisher" && finishers(ctx, step.operator).length === 0) throw new EngineError(`${step.operator} has no finisher in its kit`);
+  if ((step.cast === "battle" || step.cast === "combo" || step.cast === "ultimate") && buttonSkills(ctx, step.operator, step.cast).length === 0) throw new EngineError(`${step.operator} has no ${step.cast} skill`);
+}
+
+/** An operator's finishers (basic attacks of skillSpecification 8: the attack input on a Staggered enemy). */
+function finishers(ctx: TimelineContext, operator: string): readonly string[] {
+  return (ctx.kits.get(operator)?.skills ?? []).filter((s) => s.kind === "basic" && ctx.data.skills[s.skillId]?.timing?.specification === 8).map((s) => s.skillId);
 }
 
 /** The controlled operator's Final Strikes: its basic-chain steps that give SP (the chain's last, `atb`). */
@@ -453,7 +474,6 @@ interface CueEnv {
   readonly ctx: TimelineContext;
   readonly st: TimelineState;
   readonly frame: number;
-  readonly buttons: (step: PolicyStep) => readonly string[];
   /** The controlled operator's Final Strikes since the rule last fired. */
   readonly strikes: number;
   readonly lastPress: ReadonlyMap<string, number>;
@@ -461,14 +481,12 @@ interface CueEnv {
 
 const inRange = (x: number, r: { readonly atLeast?: number; readonly below?: number }) => (r.atLeast === undefined || x >= r.atLeast) && (r.below === undefined || x < r.below);
 
+/** The operator's combo button is lit: the skill it shows (buttonSkill) is off cooldown and, `needWindow`, its window open. */
 function comboLit(env: CueEnv, op: string, needWindow: boolean): boolean {
   const { ctx, st, frame } = env;
-  return env.buttons({ operator: op, cast: "combo" }).some((id) => {
-    if ((st.readyAt[id] ?? 0) > frame) return false;
-    const skill = kitSkill(ctx, op, id);
-    if (needWindow && needsWindow(ctx, op, skill) && !windowOpen(st, op, windowKey(ctx, op, id), frame)) return false;
-    return skillAvailable(ctx, st, op, id, frame);
-  });
+  const id = buttonSkill(ctx, st, op, "combo", frame);
+  if (id === null || (st.readyAt[id] ?? 0) > frame) return false;
+  return !needWindow || !needsWindow(ctx, op, kitSkill(ctx, op, id)) || windowOpen(st, op, windowKey(ctx, op, id), frame);
 }
 
 function cueHolds(env: CueEnv, cue: PolicyCue): boolean {
@@ -480,11 +498,10 @@ function cueHolds(env: CueEnv, cue: PolicyCue): boolean {
   if ("comboCooldown" in cue) return comboLit(env, cue.comboCooldown, false);
   if ("ultimate" in cue) {
     const op = cue.ultimate;
-    return env.buttons({ operator: op, cast: "ultimate" }).some((id) => {
-      if ((st.readyAt[id] ?? 0) > frame) return false;
-      const cost = skillCosts(ctx, op, id, frame).energyCost;
-      return (st.energy[op] ?? 0) >= Math.min(cost, maxEnergy(ctx, op)) - 1e-9 && skillAvailable(ctx, st, op, id, frame);
-    });
+    const id = buttonSkill(ctx, st, op, "ultimate", frame);
+    if (id === null || (st.readyAt[id] ?? 0) > frame) return false;
+    const cost = skillCosts(ctx, op, id, frame).energyCost;
+    return (st.energy[op] ?? 0) >= Math.min(cost, maxEnergy(ctx, op)) - 1e-9;
   }
   if ("stacks" in cue) return inRange(st.stacks[cue.stacks.operator]?.[cue.stacks.stack] ?? 0, cue.stacks);
   if ("sp" in cue) return inRange(spAt(st, frame), cue.sp);
@@ -514,11 +531,26 @@ function cueHolds(env: CueEnv, cue: PolicyCue): boolean {
   throw new EngineError(`unknown cue ${JSON.stringify(cue)}`);
 }
 
+/** Every SP level a list's cues compare with, and every `since` timer (operator:cast → seconds): what changes a cue with time alone. */
+function cueClocks(list: RuleList): { readonly sp: readonly number[]; readonly since: readonly { readonly key: string; readonly frames: number }[] } {
+  const sp = new Set<number>();
+  const since: { key: string; frames: number }[] = [];
+  const walk = (c: PolicyCue): void => {
+    if ("all" in c) return c.all.forEach(walk);
+    if ("any" in c) return c.any.forEach(walk);
+    if ("not" in c) return walk(c.not);
+    if ("sp" in c) for (const v of [c.sp.atLeast, c.sp.below]) if (v !== undefined) sp.add(v);
+    if ("since" in c) since.push({ key: `${c.since.operator}:${c.since.cast}`, frames: c.since.atLeast * FPS });
+  };
+  for (const r of list.rules) walk(r.when);
+  return { sp: [...sp], since };
+}
+
 /**
  * Plays a rule list (resolved: resolveRuleList) on the scenario's team over its whole fight (scenario.durationFrames;
- * its rotation is ignored). Frame by frame, the state advanced to the frame:
+ * its rotation is ignored). At each frame, on the state after the last press advanced to it:
  *
- * 1. The opener's presses, in order, each at the first frame it can start (startsNow; no reaction delay: the player
+ * 1. The opener's presses, in order, each at the first frame it can start (canStartAt; no reaction delay: the player
  *    planned them), the controlled operator's basic attacks in between; a press that can't start within `waitSeconds`
  *    is given up. No rule is read before the opener is over.
  * 2. Then the rules, in order: a rule may fire once its cue has held for its reaction delay (drawn at the cue's onset,
@@ -529,8 +561,10 @@ function cueHolds(env: CueEnv, cue: PolicyCue): boolean {
  * 3. Else the controlled operator's basic attack (a finisher when the enemy is Staggered; the input's own mapping, e.g.
  *    Typhoeus's aerial attacks while she hovers), as soon as it can start.
  *
- * Several presses may start at one frame. Everything goes through `apply`, so the recorded rotation (absolute frames)
- * replays with `simulate` to the same hits.
+ * A press of a button casts the skill the button shows then (buttonSkill), or nothing. Several presses may start at one
+ * frame. Everything goes through `apply`, so the recorded rotation (absolute frames) replays with `simulate` to the same
+ * hits. The driver visits only the frames where something can change (stepping `events`, the default; module comment
+ * at nextWake); `frames` visits every frame and gives the same run (tests/policy.test.ts).
  */
 export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rotation">, list: RuleList, options: PolicyOptions = {}): PolicyRun {
   const ctx = memoised(createContext(data, { ...scenario, rotation: [] }));
@@ -548,22 +582,30 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
   };
   const end = scenario.durationFrames;
   const exact = options.judgeEveryFrame === true;
+  const everyFrame = options.stepping === "frames";
   const observer = options.observer;
 
-  let st = init(ctx);
-  const controlled = st.controlled;
-  const buttonCache = new Map<string, readonly string[]>();
-  const buttons = (s: PolicyStep) => {
-    const key = `${s.operator}:${s.cast}`;
-    let b = buttonCache.get(key);
-    if (!b) buttonCache.set(key, (b = buttonSkills(ctx, s, controlled)));
-    return b;
+  // The state right after the last press, and the state the driver reads at the current frame: that one advanced to
+  // the frame (right after a press, at the press's frame, the same). Every press is applied to the first with its frame,
+  // as `simulate` replays the recorded rotation, and may start only where canStartAt allows, which is what apply then
+  // does (earliestStart judges an `at` on the state then). The event stepping advances the read state from the frame it
+  // last visited (the same state: advance runs what's due in order, and SP doesn't depend on the steps: spAt) and asks
+  // startsNow on it; the `frames` stepping, the reference, advances from the last press at every frame and asks
+  // canStartAt.
+  let pressed = init(ctx);
+  let st = pressed;
+  const stateAt = (f: number): TimelineState => {
+    if (everyFrame) return f === pressed.frame ? pressed : advance(ctx, pressed, f);
+    return f === st.frame ? st : advance(ctx, st, f);
   };
+  const controlled = st.controlled;
   // Every press a list names is checked up front (an operator without that button fails loudly, not when first read).
-  for (const s of [...list.opener, ...list.rules.flatMap(stepsOf)]) buttons(s);
+  for (const s of [...list.opener, ...list.rules.flatMap(stepsOf)]) checkStep(ctx, s, controlled);
   const strikeSkills = finalStrikes(ctx, controlled);
+  const clocks = cueClocks(list);
 
   const rotation: RotationAction[] = [];
+  const presses: { step: PolicyStep | null; rule: number | null }[] = [];
   const fired = list.rules.map(() => 0);
   const givenUp: { frame: number; step: PolicyStep; rule: number | null }[] = [];
   const onset: (number | null)[] = list.rules.map(() => null);
@@ -574,55 +616,55 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
   let queue: { step: PolicyStep; rule: number | null; since: number }[] = list.opener.map((step) => ({ step, rule: null, since: 0 }));
   let openerEnd = list.opener.length === 0 ? 0 : -1;
 
-  // The state right after the last press. A press is applied to it (with its frame), as `simulate` replays the recorded
-  // rotation, and may start only where earliestStart from it agrees: startsNow on the state advanced frame by frame can
-  // allow a frame that earliestStart from the last press doesn't (a dive's landing replacing its jump; Typhoeus's
-  // battle skill 48 frames sooner), and the replay would then cast it later.
-  let pressed = st;
-  const canPress = (a: RotationAction): boolean => {
-    if (!startsNow(ctx, st, a)) return false;
-    const e = earliestStart(ctx, pressed, { ...a, at: st.frame });
-    return "frame" in e && e.frame === st.frame;
-  };
-  const press = (action: RotationAction, frame: number) => {
+  const canPress = (a: RotationAction): boolean => (everyFrame ? canStartAt(ctx, pressed, a, st.frame) : startsNow(ctx, st, a));
+  const press = (action: RotationAction, frame: number, step: PolicyStep | null, rule: number | null) => {
     st = apply(ctx, pressed, { ...action, at: frame });
     pressed = st;
     basicCache = null;
     rotation.push({ ...action, at: frame });
+    presses.push({ step, rule });
     if (action.operator === controlled && strikeSkills.has(action.skill)) for (let i = 0; i < strikesSince.length; i++) strikesSince[i] = (strikesSince[i] as number) + 1;
   };
   const labelOf = (op: string, skill: string) => ctx.kits.get(op)?.skills.find((k) => k.skillId === skill)?.label ?? skill;
-  /** The press of a button that can start now (the first of its skills that can), null, or "skip" (it shows another skill than `shows`). */
+  /** The press of a step that can start now, null, or "skip" (its button shows another skill than `shows`). */
   const startable = (s: PolicyStep): RotationAction | null | "skip" => {
     // A dive (a jump) only once the current skill is past its exclusive frames, as the search dives: the timeline lets a
     // jump cut anything, which the game doesn't check.
-    if (s.cast === "dive" && exclusiveUntil(ctx, st, s.operator) > st.frame) return null;
+    if (s.cast === "dive") {
+      if (exclusiveUntil(ctx, st, s.operator) > st.frame) return null;
+      const a = { operator: s.operator, skill: diveOf(ctx.data, s.operator) as string };
+      return canPress(a) ? a : null;
+    }
     if (s.cast === "basic") return basicAttack(st.frame);
-    if (s.cast === "finisher" && (!isStaggered(st, st.frame) || st.stagger.finisherUsed)) return null;
-    let skills = buttons(s);
-    if (s.shows !== undefined) {
-      const showing = skills.filter((id) => skillAvailable(ctx, st, s.operator, id, st.frame));
-      skills = skills.filter((id) => labelOf(s.operator, id) === s.shows);
-      if (showing.length > 0 && !showing.some((id) => skills.includes(id))) return "skip";
+    if (s.cast === "finisher") {
+      if (!isStaggered(st, st.frame) || st.stagger.finisherUsed) return null;
+      for (const skill of finishers(ctx, s.operator)) if (canPress({ operator: s.operator, skill })) return { operator: s.operator, skill };
+      return null;
     }
-    for (const skill of skills) {
-      const a = { operator: s.operator, skill };
-      if (canPress(a)) return a;
-    }
-    return null;
+    // The skill the button shows now; with `shows`, only that one (the player doesn't press a button that changed).
+    const skill = buttonSkill(ctx, st, s.operator, s.cast, st.frame);
+    if (skill === null) return null;
+    if (s.shows !== undefined && labelOf(s.operator, skill) !== s.shows) return "skip";
+    const a = { operator: s.operator, skill };
+    return canPress(a) ? a : null;
   };
-  // The basic attack's options and, per option, the earliest frame it can start (earliestStart from the state after the
-  // last press: exact while nothing is pressed, so the frames before it needn't be judged), or "error" (then judged at
-  // every frame). Judging every option at every frame was most of a run's time.
+  // The basic attack's options and, per option, the earliest frame it can start (earliestStart from the state then: a
+  // lower bound while nothing is pressed, so the frames before it needn't be judged), or "error" (judged at each frame
+  // the driver visits). Judging every option at every frame was most of a run's time.
   let basicCache: { key: string; earliest: Map<string, number | "error"> } | null = null;
   const isFinisher = (skill: string) => ctx.data.skills[skill]?.timing?.specification === 8;
-  const basicAttack = (frame: number): RotationAction | null => {
-    if (st.controlled !== controlled) return null;
+  const basicOptions = (): string[] => {
     const options = nextBasics(ctx.data, st, controlled);
     // A finisher first (the input on a Staggered enemy), then the chain's step, then the chain's heads (nextBasics' order).
     options.sort((x, y) => Number(isFinisher(y)) - Number(isFinisher(x)));
     const key = options.join(",");
     if (!basicCache || basicCache.key !== key) basicCache = { key, earliest: new Map() };
+    return options;
+  };
+  const basicAttack = (frame: number): RotationAction | null => {
+    if (st.controlled !== controlled) return null;
+    const options = basicOptions();
+    const cache = basicCache as NonNullable<typeof basicCache>;
     for (const skill of options) {
       // A finisher only on a Staggered enemy whose finisher is unused (judged directly: the Stagger starts with a hit).
       if (isFinisher(skill) && (!isStaggered(st, frame) || st.stagger.finisherUsed)) continue;
@@ -631,31 +673,67 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
         if (canPress(a)) return a;
         continue;
       }
-      let e = basicCache.earliest.get(skill);
+      let e = cache.earliest.get(skill);
       if (e === undefined) {
-        // Not available now (Typhoeus's aerial attacks on the ground): judged again at the next frame, cheaply.
+        // Not available now (Typhoeus's aerial attacks on the ground): judged again at the next frame visited, cheaply.
         if (!skillAvailable(ctx, st, controlled, skill, frame)) continue;
         const r = earliestStart(ctx, st, a);
-        basicCache.earliest.set(skill, (e = "error" in r ? "error" : r.frame));
+        cache.earliest.set(skill, (e = "error" in r ? "error" : r.frame));
       }
-      // Can't start from here as things stand (its error may pass later as events happen): judged at every frame.
+      // Can't start from here as things stand (its error may pass later as events happen): judged at each frame visited.
       if (e === "error") {
         if (canPress(a)) return a;
         continue;
       }
       if (frame < e) continue;
       if (canPress(a)) return a;
-      basicCache.earliest.delete(skill);
+      cache.earliest.delete(skill);
     }
     return null;
   };
   const record = (s: PolicyStep, frame: number) => lastPress.set(`${s.operator}:${s.cast}`, frame);
 
-  for (let frame = 0; frame <= end; frame++) {
-    st = advance(ctx, st, frame);
+  // The next frame anything the driver reads can change, after `frame` (its presses made): the frame-by-frame driver
+  // would do the same at every frame in between. The state changes only as something scheduled comes due (hits,
+  // actions, the enemy's, teammates' own attacks, buffs' ticks and ends: nextEventAfter; one at this frame a press
+  // scheduled runs at the next). Between those, what the cues and the start checks (startsNow's gates) read changes
+  // with time alone, at times the state holds: buffs' starts and ends, the enemy's states' ends, Stagger's end,
+  // cooldowns, combo and chain windows, the current actions' frames (end, exclusive frame, windows, channels), a detached
+  // hit's launch, SP reaching a level a cue or a skill's cost names; and the driver's own clocks: a rule's reaction
+  // delay, the queue's wait, a `since` timer. Visiting a frame early is harmless; missing one would change the run, which
+  // the `frames` stepping checks (tests/policy.test.ts).
+  const nextWake = (frame: number): number => {
+    let w = nextChangeAfter(ctx, st, frame, end, clocks.sp);
+    const mark = (g: number | undefined) => {
+      if (g !== undefined && g > frame && g < w) w = g;
+    };
+    for (const c of clocks.since) {
+      const last = lastPress.get(c.key);
+      if (last !== undefined) mark(Math.ceil(last + c.frames));
+    }
+    for (let i = 0; i < list.rules.length; i++) if (onset[i] !== null) mark(readyAt[i]);
+    if (queue.length > 0) mark((queue[0] as (typeof queue)[number]).since + wait);
+    return w;
+  };
+  const observe = (f: number) => {
+    if (!observer) return;
+    const view = f === st.frame ? st : stateAt(f);
+    observer.frame({
+      ctx,
+      st: view,
+      frame: f,
+      list,
+      cueHolds: (cue) => cueHolds({ ctx, st: view, frame: f, strikes: Infinity, lastPress }, cue),
+      ruleState: (i) => (onset[i] === null ? "off" : f < (readyAt[i] as number) ? "waiting" : "seen"),
+      queued: queue.length > 0,
+    });
+  };
+
+  for (let frame = 0; frame <= end; ) {
+    st = stateAt(frame);
     // What the player sees now: each rule's cue, its onset and the delay to it (watched during the opener too).
     for (let i = 0; i < list.rules.length; i++) {
-      const env: CueEnv = { ctx, st, frame, buttons, strikes: strikesSince[i] as number, lastPress };
+      const env: CueEnv = { ctx, st, frame, strikes: strikesSince[i] as number, lastPress };
       if (cueHolds(env, (list.rules[i] as PolicyRule).when)) {
         if (onset[i] === null) {
           onset[i] = frame;
@@ -663,15 +741,20 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
         }
       } else onset[i] = null;
     }
+    // A press changes what the cues read: they are read again at the next frame (as the frame-by-frame driver does).
+    let pressedNow = false;
     for (let n = 0; n < 8; n++) {
       let action: RotationAction | null = null;
+      let by: { step: PolicyStep | null; rule: number | null } = { step: null, rule: null };
       // The queue's head: pressed when it can start, given up after waiting too long; the next one waits from then.
       while (queue.length > 0 && action === null) {
         const head = queue[0] as (typeof queue)[number];
         const next = startable(head.step);
         action = next === "skip" ? null : next;
-        if (action) record(head.step, frame);
-        else if (next === "skip" || frame - head.since >= wait) givenUp.push({ frame, step: head.step, rule: head.rule });
+        if (action) {
+          record(head.step, frame);
+          by = { step: head.step, rule: head.rule };
+        } else if (next === "skip" || frame - head.since >= wait) givenUp.push({ frame, step: head.step, rule: head.rule });
         else break;
         queue = queue.slice(1).map((q, i) => (i === 0 ? { ...q, since: Math.max(q.since, frame) } : q));
       }
@@ -685,6 +768,7 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
           action = next === "skip" ? null : next;
           if (action) {
             record(first as PolicyStep, frame);
+            by = { step: first as PolicyStep, rule: i };
             fired[i] = (fired[i] as number) + 1;
             onset[i] = frame;
             readyAt[i] = frame + 1 + drawDelay(i);
@@ -698,24 +782,20 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
         action = fill === "skip" ? null : fill;
       }
       if (!action) break;
-      press(action, frame);
+      press(action, frame, by.step, by.rule);
+      pressedNow = true;
     }
-    if (observer) {
-      const f = frame;
-      observer.frame({
-        ctx,
-        st,
-        frame: f,
-        list,
-        cueHolds: (cue) => cueHolds({ ctx, st, frame: f, buttons, strikes: Infinity, lastPress }, cue),
-        ruleState: (i) => (onset[i] === null ? "off" : f < (readyAt[i] as number) ? "waiting" : "seen"),
-        queued: queue.length > 0,
-      });
-    }
+    observe(frame);
+    if (frame === end) break;
+    const next = everyFrame || pressedNow ? frame + 1 : nextWake(frame);
+    for (let g = frame + 1; g < next; g++) observe(g);
+    frame = next;
   }
 
   const perOperator: Record<string, number> = Object.fromEntries(scenario.team.map((b) => [b.operator, 0]));
   const byMinute: number[] = Array.from({ length: Math.max(1, Math.ceil(end / (60 * FPS))) }, () => 0);
+  // The fight's end: what's due by its last frame has landed (the frame-by-frame driver's last state).
+  st = stateAt(end);
   let total = 0;
   let first60 = 0;
   let after = 0;
@@ -730,5 +810,5 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
   }
   const seconds = (end - from) / FPS;
   const sustainedMoments = end > from ? scaleMoments(hitsMoments(st.hits.filter((h) => h.frame > from)), 1 / seconds) : NO_DAMAGE;
-  return { total, perOperator, byMinute, first60, openerEnd: from, sustainedDps: end > from ? after / seconds : 0, fired, givenUp, rotation, durationFrames: end, sustainedMoments };
+  return { total, perOperator, byMinute, first60, openerEnd: from, sustainedDps: end > from ? after / seconds : 0, fired, givenUp, rotation, presses, durationFrames: end, sustainedMoments };
 }

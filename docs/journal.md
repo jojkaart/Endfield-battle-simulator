@@ -4,9 +4,71 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 89 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 90 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-16: Rule driver phase 2: button model, one start check, event stepping, run checks, assumption switches
+
+Goal: phase 2 of the [architecture review](architecture-review.md)
+(items 3, 4, 8, 9, 10) and the rule-noise points of the three friction
+reports on rules, gear on rules and the guided search. Done (design.md
+"Rule-based rotations", its "Assumption switches"):
+- **Button model** (engine timeline/buttons.ts): what each battle, combo
+  and ultimate button shows and casts, from the kits' `available`
+  conditions, follow-ups and own combo windows. A press casts that skill
+  or nothing; `shows` checks its label. No example button is ambiguous at
+  any frame (test).
+- **One start check** (`canStartAt`): earliestStart now judges an `at` on
+  the state advanced to it. Every disagreement between the old pair
+  (startsNow on the advanced state, earliestStart from the last press) was
+  SP granted on the way, the dive-landing case included; the old driver
+  waited for the stale check, so SP-gated presses came late (Ardelia's
+  battle skill 1.7 s). SP is snapped to its regeneration grid, so it reads
+  the same however a state was advanced. Property test on the examples'
+  rotations and rule runs.
+- **Event stepping**: the driver visits the frames where something it
+  reads can change (about a third); `stepping: "frames"` is the reference
+  and gives the same rotations (test: three lists, several seeds, both
+  energies). 1.2–1.7× faster a run (the simulation itself is the floor).
+- **Run checks** (`checkRuleRun`): no press casts another skill than its
+  button showed, none cuts its operator's own ultimate state (a
+  counterfactual without the press), `simulate` replays it; zero on the
+  three lists; a constructed End Stance list is caught.
+- **Visible states in the kits**: `visible` on kit buffs and stacks
+  replaces policy.ts's operator tables; cues unchanged.
+- **Assumption switches**: kits register open readings (`assumptions`,
+  triggers with `reading`); test 109's alternative is the first
+  (`si-haste-every-end`). `--assume` and `--assumptions` on `rules`,
+  `diagnose`, `gear --rules`, `--guided`.
+- **Noise tooling**: `efsim rules --compare` (paired gain ± SE on seeds
+  1–k and fresh 1001…), a seed/power table in design.md, the zero-energy
+  companion judged by default (`gear --rules`, `--guided`), one worker
+  pool per command (`efsim rules` uses it too), the commit at the head of
+  long outputs, the guided search's list written after each kept round.
+  Antithetic delays tried: no gain (the owner's
+  team: SE 0.17% against 0.14% plain at 128 seeds), dropped.
+
+Behaviour changes (32 fresh seeds, 1001–1032, 300 s; before → after):
+
+| Team | Full energy | From zero |
+|---|---|---|
+| The owner's | 56,274 → 56,493, +0.39% ± 0.47 | 55,852 → 56,055, +0.36% ± 0.25 |
+| Ink Melt | 66,355 → 69,668, +4.99% ± 0.99 | 63,213 → 61,716, −2.37% ± 1.23 |
+| Typhoeus's | 54,847 → 54,607, −0.44% ± 0.78 | 50,818 → 51,076, +0.51% ± 0.62 |
+
+All of it comes from earliestStart's fix: the old driver with only that
+fix gives the same means (against the new driver: the
+owner's team identical on 31 of 32 seeds, Ink Melt +0.01% ± 0.15 and
++0.23% ± 0.23 from zero; Typhoeus's −0.40% ± 0.40 and −0.15% ± 0.09,
+presses an SP tie now starts a frame sooner (the snap)). The two moved example scenarios
+(akekuri-laevatain, wulfgard-fluorite) are SP ties the snap now reads
+exactly. The documented 10-seed numbers on the team pages predate this.
+
+Not done: the review's estimate of 3–10× for event stepping was too
+high: after the probes, most of a run is the simulation and the basic
+attack's earliest start (it advances copies of the state). The friction
+reports stay in docs/friction/ for the improvement round to file.
 
 ## 2026-11-16: Improvement round 1: friction reports to tools, docs and engine records
 
@@ -237,39 +299,3 @@ both: 54,771 against 52,561 sustained (+4.2% on seeds 1–10; +2.6% ± 0.5
 paired on 64 fresh seeds, checked afterwards), from zero
 50,178 against 49,964. Left: one Arcane battle skill at 0.3 s is still
 wasted (her stance shows only when her first projectile lands).
-
-## 2026-11-16: Is the Arts Intensity handling right? (yes; one Breach fix)
-
-Goal (the owner): check the engine's Arts Intensity against the logs and
-the data, since `efsim gear --rules` puts Estella on Grizzled Edge
-Gauntlets (+3.7%) for their Arts Intensity line. Done (combat-mechanics
-§3.7, open-problems "Arts Intensity"):
-
-- **Inventory:** damage × (1 + AI/100) on bursts, reaction hits,
-  Combustion ticks (snapshotted), Lift / Knock Down / Crush / Breach hits,
-  "Crush DMG" skill hits and Shatter (damage.ts reactionScaleParts /
-  statusScaleParts); strength × (1 + 2·AI / (AI + 300)) on Breach,
-  Electrification and Corrosion, the applier's AI at application
-  (situation.ts artsIntensity, status.ts); no cap; nothing else. The data
-  has no coefficient: every reaction value is a ReadSkillSettingData from
-  a table not extracted; the stat hint (AttributeShowConfigTable 87)
-  lists exactly those three effects (and Lift Stagger), one value each.
-- **Logs:** every status hit of the 79 development logs at its replay
-  landing (scratch scripts on engineHits / readingBasis). Exact matches
-  across AI 0–287 (bursts, reactions), 0–182 (ticks), 0–163 (Lift),
-  119–180 (Crush), 0 and 98.7 (Shatter, Estella); no slope of logged ÷
-  predicted on AI. Electrification's logged strength exact at AI 0–287.4,
-  Breach's at 31–209. The trigger's AI counts (81 reactions where the
-  consumed infliction's applier differs), and Shatter's is the shattering
-  operator's (a9d7).
-- **Fix:** Breach's own hit saw its own new DMG Taken; the logs show it
-  sees no Breach, not even the one it replaces (7e19, d4fb, c4f3 exact
-  after). Breach hits plain 0 → 7; pogranichnik-chen example 335,507.5 →
-  332,358.6; test in tests/kit-pogranichnik.test.ts.
-
-The owner's team doesn't Breach, so its numbers don't move, and the
-Grizzled Edge advice stands: Estella's AI is 0 today, and her Shatter,
-Solidification and Lift (23% of her damage in the 60 s example) scale
-with her own AI in the logs' range. Left open: Pogranichnik's Breach
-strength one Fervent Morale layer off the replay in 12 of 21 instances
-(the layer's timing, not the curve). In-game test 3 answered by the logs.

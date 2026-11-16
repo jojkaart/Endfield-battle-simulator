@@ -33,7 +33,9 @@ import {
 import { num, pct, table } from "./format.ts";
 import { playSettings, seedJobs, type PlaySettings } from "./diagnose.ts";
 import { describeRuleList } from "./rules.ts";
-import { openRulesPool, type RulesPool, type RulesResult } from "./rulespool.ts";
+import { commandPool, type RulesPool, type RulesResult } from "./rulespool.ts";
+import { codeProvenance } from "./provenance.ts";
+import { alternatives, holds, underAssume } from "./assume.ts";
 
 export interface GuidedOptions {
   readonly seconds?: number;
@@ -62,6 +64,8 @@ export interface GuidedOptions {
    * (the confirm seeds, paired), and an edit is kept only if it isn't worse there by more than one standard error.
    */
   readonly also?: { readonly scenario: Omit<TimelineScenario, "rotation">; readonly label: string };
+  /** The final list against the start, on the fresh seeds, under each other reading of the team's kits' open assumptions (assume.ts). */
+  readonly assumptions?: boolean;
   readonly progress?: (line: string) => void;
 }
 
@@ -100,8 +104,12 @@ export interface GuidedResult {
   readonly also?: string;
   /** Final against start on fresh seeds (1001…), paired. */
   readonly check: { readonly seeds: number; readonly gain: number; readonly se: number; readonly start: number; readonly final: number } | null;
+  /** The check under each other reading of the team's kits' open assumptions (GuidedOptions.assumptions). */
+  readonly assumptions?: readonly { readonly label: string; readonly gain: number; readonly se: number; readonly holds: "holds" | "flips" | "unclear" }[];
   readonly runs: number;
   readonly secondsTaken: number;
+  /** The code the run used (provenance.ts codeProvenance). */
+  readonly code: string;
 }
 
 const mean = (xs: readonly number[]) => (xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0);
@@ -128,7 +136,8 @@ export async function guidedSearch(data: GameData, scenario: Omit<TimelineScenar
   const C = Math.max(S, o.confirmSeeds ?? 32);
   const M = Math.max(C, o.maxSeeds ?? 64);
   const penalty = o.penalty ?? RULE_SEARCH_PENALTY;
-  const pool: RulesPool = openRulesPool(data, settings.workers);
+  // The command's pool, kept for its other batches (rulespool.ts commandPool).
+  const pool: RulesPool = commandPool(data, settings.workers);
   const elapsed = () => `${((performance.now() - t0) / 1000).toFixed(0)} s`;
   let runs = 0;
   const play = async (list: RuleList, seeds: number, first = 1, guide = true) => {
@@ -270,6 +279,8 @@ export async function guidedSearch(data: GameData, scenario: Omit<TimelineScenar
       cur = kept.list;
       curRuns = kept.runs as RulesResult[];
       alsoBase = kept.alsoRuns ? [...kept.alsoRuns] : null;
+      // A long run's partial result: the list kept so far, saved as it goes (overwritten by the final one).
+      if (o.out) writeFileSync(o.out, JSON.stringify({ ...cur, description: `Partial result of efsim rules --guided (after round ${round}, ${elapsed()}): the list kept so far.` }, null, 2) + "\n");
     }
     const final = { list: cur, dps: curRuns.slice(0, C).map((r) => r.sustainedDps), summary: summariseGuide(guidesOf(curRuns)), learn: learnability(cur) };
     let check: GuidedResult["check"] = null;
@@ -280,9 +291,20 @@ export async function guidedSearch(data: GameData, scenario: Omit<TimelineScenar
       const b = (await play(cur, K, 1001, false)).map((r) => r.sustainedDps);
       check = { seeds: K, ...pairedGain(a, b), start: mean(a), final: mean(b) };
     }
-    return { settings, screenSeeds: S, confirmSeeds: C, start, final, rounds, check, runs, secondsTaken: (performance.now() - t0) / 1000, ...(o.also ? { also: o.also.label } : {}) };
+    const assumptions: NonNullable<GuidedResult["assumptions"]>[number][] = [];
+    if (o.assumptions && check) {
+      for (const alt of alternatives(data, scenario)) {
+        o.progress?.(`assumption ${alt.id}=${alt.reading}: start and final on ${K} fresh seeds (${elapsed()})`);
+        const sc = underAssume(scenario, alt.assume);
+        const r = await pool.run([...seedJobs(sc, start.list, settings, K, {}, 1001), ...seedJobs(sc, cur, settings, K, {}, 1001)]);
+        runs += r.length;
+        const g = pairedGain(r.slice(0, K).map((x) => x.sustainedDps), r.slice(K).map((x) => x.sustainedDps));
+        assumptions.push({ label: alt.label, ...g, holds: holds(check, g) });
+      }
+    }
+    return { settings, screenSeeds: S, confirmSeeds: C, start, final, rounds, check, runs, secondsTaken: (performance.now() - t0) / 1000, code: codeProvenance(), ...(o.also ? { also: o.also.label } : {}), ...(o.assumptions ? { assumptions } : {}) };
   } finally {
-    await pool.close();
+    // The pool stays for the command's other batches (its idle threads don't hold the process).
   }
 }
 
@@ -340,7 +362,7 @@ function formatAchievement(data: GameData, a: GuideSummary, b: GuideSummary, top
 export function formatGuided(data: GameData, r: GuidedResult, title: string, file: string): string {
   const lines = [
     title,
-    `${r.settings.seconds} s fights, reaction ${r.settings.reaction} s ± 50%; common random numbers: candidates screened on seeds 1–${r.screenSeeds}, the best few played on 1–${r.confirmSeeds} (close calls on more); kept when the paired gain is over twice its standard error (and 0.2%) and positive on seeds ${r.screenSeeds + 1}–${r.confirmSeeds} alone; ${r.runs} runs in ${r.secondsTaken.toFixed(0)} s on ${r.settings.workers} worker${r.settings.workers === 1 ? "" : "s"}.`,
+    `${r.code}; ${r.settings.seconds} s fights, reaction ${r.settings.reaction} s ± 50%; common random numbers: candidates screened on seeds 1–${r.screenSeeds}, the best few played on 1–${r.confirmSeeds} (close calls on more); kept when the paired gain is over twice its standard error (and 0.2%) and positive on seeds ${r.screenSeeds + 1}–${r.confirmSeeds} alone; ${r.runs} runs in ${r.secondsTaken.toFixed(0)} s on ${r.settings.workers} worker${r.settings.workers === 1 ? "" : "s"}.`,
     ...(r.also ? [`Second start ${r.also}: the edits played on the confirm seeds are played there too (paired), and one is kept only if it isn't worse there by more than one standard error.`] : []),
     "",
     `Start (${file}): ${n0(mean(r.start.dps))} sustained DPS over ${r.confirmSeeds} seeds; ${learnWords(r.start.learn)}.`,
@@ -373,6 +395,10 @@ export function formatGuided(data: GameData, r: GuidedResult, title: string, fil
   }
   lines.push("", `Final: ${n0(mean(r.final.dps))} sustained DPS over ${r.confirmSeeds} seeds (start ${n0(mean(r.start.dps))}); ${learnWords(r.final.learn)}.`);
   if (r.check) lines.push(`Check on ${r.check.seeds} fresh seeds (1001…): start ${n0(r.check.start)}, final ${n0(r.check.final)}: ${pm(r.check)}.`);
+  if (r.assumptions) {
+    lines.push(r.assumptions.length ? "The check under the kits' open assumptions (each other reading of an in-game test; the same fresh seeds):" : "The kits' open assumptions: none for this team (or no change to check).");
+    for (const a of r.assumptions) lines.push(`- ${a.label}: ${pm(a)}: ${a.holds}`);
+  }
   const kept = r.rounds.filter((x) => x.kept);
   if (kept.length) {
     lines.push("", "The path (each kept list; a Pareto choice of DPS against what it takes to learn):");

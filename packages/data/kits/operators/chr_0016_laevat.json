@@ -21,6 +21,7 @@
     {
       "id": "twilight",
       "label": "Twilight (ultimate)",
+      "visible": { "on": "is in Twilight", "off": "isn't in Twilight", "why": "her ultimate's form; the battle-skill button changes" },
       "target": "self",
       "duration": 15,
       "modifiers": [],
