@@ -2234,7 +2234,10 @@ as it bursts? B: cast Si's battle skill, then Initial Stroke at once,
 and wait for the burst the same way: does the icon appear?
 **Predictions:** the data and the simulator: A no icon, B the icon for
 5 s from the burst. An icon in A too means the Haste comes with every
-burst, and the simulator gives it on every end of Artful Intent.
+burst, and the simulator gives it on every end of Artful Intent. (Until
+the reply, `efsim rules`, `diagnose`, `gear --rules` and `rules --guided`
+can run that reading with `--assume si-haste-every-end=every-end` and say
+whether a conclusion flips under it with `--assumptions`.)
 **Reply, e.g.:** `109: A no icon, B icon` or `109: icon in both`.
 
 ## Results

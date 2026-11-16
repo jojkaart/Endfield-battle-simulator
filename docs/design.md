@@ -1638,13 +1638,17 @@ repair needed), which later makes gear comparison cheap.
    heavily against).
 
 Rules may read only what the game's UI shows: the list above, plus a few
-operator states without buff icons, each for a reason
-(`POLICY_VISIBLE_BUFFS`, ranked with 3): Typhoeus hovering (she's in the
-air), Laevatain's Twilight (her ultimate's form; the battle-skill button
-changes), Liino's Vocalist Stance (the button becomes End Stance), Si's
-Artful Intent and Inksoul (the button becomes Initial / Final Stroke).
-Visible stacks (`POLICY_VISIBLE_STACKS`) are Typhoeus's arrows and Signs
-only; any other stack or buff in a rule is refused.
+operator states without buff icons, each for a reason, ranked with 3:
+Typhoeus hovering (she's in the air), Laevatain's Twilight (her ultimate's
+form; the battle-skill button changes), Liino's Vocalist Stance and
+Cosmovoice (the button becomes End Stance), Si's Artful Intent and Inksoul
+(the button becomes Initial / Final Stroke); and the stacks the HUD shows,
+Typhoeus's arrows and Signs. They are **kit data** (2026-11-16): a kit
+buff with `visible: { on, off, why }` (the words after the operator's name
+while it's on and off, and how the game shows it) or a kit stack with
+`visible: { why }` (schemas/kit.schema.json), so a new operator's stance
+needs no engine edit (`visibleBuffs`, `visibleStacks`, policy.ts). Any
+other stack or buff in a rule is refused.
 
 **The format** (schemas/rules.schema.json; examples/*.rules.json, one per
 team next to its scenario):
@@ -1664,7 +1668,20 @@ team next to its scenario):
   button, resolved to the skill the button casts then (Si's battle skill
   is Artful Intent, then Initial and Final Stroke; Arcane's ultimate is
   her array, then sequence 2; Liino's battle skill ends her stance while
-  she's in it); the controlled operator's `dive`, `basic` (whatever the
+  she's in it). **The button model** (engine timeline/buttons.ts,
+  2026-11-16): a button's skills are its kind's kit skills that aren't
+  follow-ups (the game's skill slot: CharGrowthTable's groups plus what a
+  ChangeSkillAction switches the slot to); it shows those whose kit
+  `available` holds then, and a combo on a window of its own (Rossi's
+  sequence 2) only while that window is open (`buttonShows`). The kits make
+  these exclusive: at every frame of the three example rule runs each
+  button shows at most one skill (tests/policy.test.ts). Where they overlap
+  (no example team: Camille's Hunter Pursuit has a condition, Heartstake
+  Thorn none) `buttonSkill` takes the replacement (an own window, then a
+  condition, then kit order). A press casts the skill its button shows, or
+  nothing: not "the first startable skill of that kind" as before, which
+  could land on a skill the button didn't show. `shows` is a check of that
+  skill's label; the controlled operator's `dive`, `basic` (whatever the
   attack input is then) or `finisher`. Operators by ID or by the name the
   game shows. **No swaps** (as the search's default): the scenario's
   controlled operator does every basic attack, dive and finisher.
@@ -1680,9 +1697,9 @@ team next to its scenario):
   *Filler*: what the controlled operator does when no rule fires, its
   basic attacks (default) or dives.
 
-**The driver** (`playRules`): frame by frame on the timeline (init /
-advance / startsNow / apply, as the search and `simulate` use: no fork of
-the damage model), the state advanced to the frame:
+**The driver** (`playRules`): on the timeline (init / advance / apply, as
+the search and `simulate` use: no fork of the damage model), at each
+frame it visits, on the state after the last press advanced to the frame:
 
 1. The opener's presses in order, each at the first frame it can start
    (no reaction delay: planned), basic attacks in between; a press that
@@ -1702,19 +1719,63 @@ the damage model), the state advanced to the frame:
    attack input does: no delay), or its dive.
 
 A dive starts only once the current skill is past its exclusive frames,
-as the search dives. Several presses may start at one frame. "Can start
-now" is startsNow on the state advanced to the frame **and**
-earliestStart from the state right after the last press, with the
-frame as `at`, giving that frame; the press is applied to that state.
-So everything pressed is recorded with its frame and `simulate` replays
-that rotation to the same hits (tests/policy.test.ts). The second check
-matters: startsNow on the advanced state allowed Typhoeus's battle skill
-48 frames before earliestStart from the last press did (after a dive,
-whose landing replaces its jump), and the replay would have cast it
-later. Speed: the basic attack's
-options are judged from their earliest start after the last press
-(exact while nothing is pressed; `judgeEveryFrame` checks it), about
-1–2 s per 300 s fight for the owner's team, 3–5 s for Typhoeus's.
+as the search dives. Several presses may start at one frame.
+
+**One "can this start now"** (2026-11-16): `canStartAt(ctx, state, action,
+frame)` (timeline/drivers.ts) is startsNow on the state advanced to the
+frame, and the driver asks only that. Every press is applied to the state
+after the last press with the frame as `at`, as `simulate` replays the
+recorded rotation, and **earliestStart judges an `at` on the state then**
+(advanced to it), so the replay starts each press at exactly its frame.
+Before, earliestStart judged an `at` on the earlier state: it read SP
+without what hits granted on the way, and the driver had to ask both it
+and startsNow (they disagreed for Typhoeus's battle skill after a dive,
+48 frames). On seed 1 of the three example lists the old pair disagreed
+on 39, 269 and 681 frames, every one of them SP granted between the last
+press and the frame (the dive-landing case too: the landing's hit grants
+SP); now none. A property test checks, at sampled frames between the
+presses of the examples' own rotations and of rule runs, that startsNow
+on the advanced state implies earliestStart's `at` start there, and that
+the converse fails only by the current skill's own hits (a press without a
+time waits for them; one with a time may cut them). SP is also read the
+same however a state was advanced: regenerated SP on its grid (2/15 SP a
+frame, so fifteenths) is snapped to it (`spAt`), where adding 4/15 frame by
+frame gave 99.99999999999997 at a level of 100, a battle skill a frame
+late. This moved two example scenarios' snapshots (akekuri-laevatain,
+wulfgard-fluorite: ties at an SP level).
+
+**Event stepping** (2026-11-16): the driver visits only the frames where
+something it reads can change, which the frame-by-frame driver would see
+too: the frame after a press (the cues are read again); anything
+scheduled coming due (hits, actions, the enemy's, teammates' own attacks,
+buffs' ticks and ends); what the cues and startsNow's gates read changing
+with time alone (buffs' starts and ends, the enemy's states' ends,
+Stagger's end, cooldowns, combo and chain windows, the current actions'
+frames, a detached hit's launch, SP reaching a level a cue or a skill's
+cost names, from the frame before); a rule's reaction delay ending; the
+queue's wait; a `since` timer (`nextWake`). `stepping: "frames"` visits
+every frame from the last press (the reference); tests/policy.test.ts
+checks the two give the same rotation on the three example lists (seeds
+1–3 full energy, 4 from zero, 90 s). It visits about a third of the
+frames. Speed (300 s, one thread, the same machine and load; the old
+driver against the new): the owner's team 1.59 → 0.92 s a run, Ink Melt
+1.85 → 1.54 s, Typhoeus's 1.90 → 1.64 s; replaying the rotation
+(`simulate`, the floor) takes 0.4–0.6 s. Most of the rest is the basic
+attack's earliest start after each press (earliestStart, which advances a
+copy of the state) and the presses themselves. The basic attack's options
+are judged from their earliest start after the last press (`judgeEveryFrame`
+checks that shortcut).
+
+**Checks on a run** (`checkRuleRun`, policydiag.ts; the architecture
+review's invariants): every press of a skill button cast what the button
+showed then (and `shows`, if given); no press of an operator's battle or
+combo button ended a state its own ultimate gave it (the buffs its hits
+and its cast's triggers give its side, Link stacks aside) sooner than
+without that press, compared over the next 2 s (Liino's End Stance in
+Cosmovoice: the class of the bug found on the damage graph); `simulate`
+replays the rotation to the same hits. tests/policy.test.ts runs the three
+example lists (2 seeds full energy, 1 from zero, 120 s) and expects none
+of the first two, and a constructed End Stance list to be caught.
 
 **Learnability** (`learnability`): opener presses, rules, the rules'
 presses and their **cue cost**: each cue part costs by its rank (1, 2, 3,
@@ -1737,7 +1798,13 @@ seeds against 4,006 with independent ones (the old shared stream already
 gave 76 here: the gear didn't change the order of draws); two rules
 swapped (Akekuri's combo rule above Si's), 1,097 against 3,174 (the old
 stream: 3,836, its draw order changed). Every list in the rule search is
-scored on the same seeds 1…k. Stratified draws (a Latin hypercube per
+scored on the same seeds 1…k. Antithetic delays (seeds 2k and 2k + 1
+drawing u and 1 − u) were tried on 2026-11-16 too: on the owner's
+team (its list against the same with its first two rules swapped, seeds
+2000–2127) the paired difference's standard error was 0.17% antithetic
+against 0.14% plain at 128 seeds (0.29% against 0.17% at 64), and no
+better on Ink Melt: dropped (a chaotic response isn't monotone in the
+draws, so u and 1 − u don't cancel). Stratified draws (a Latin hypercube per
 (rule, onset) over the seeds) were tried and dropped: over 20 replicates
 of 5 seeds the sd of the mean was 1,029 plain against 997 stratified for
 one list, 1,238 against 828 for another, and 467 against 597 for their
@@ -1796,6 +1863,19 @@ noise is a third, but a list's own level still moves). Judge a list at
 10 seeds (`--seeds 10`) before taking it; the
 bot (delay 0, one run) is one sample of the same noise, sometimes below
 the 0.3 s player. Gains that held: Ink Melt +28%, Typhoeus's team +16%.
+
+**How many seeds** (measured 2026-11-16, seeds 2000–2127, 300 s, 0.3 s; an
+edit of the kind the searches make: each example list against the same
+list with its first two rules swapped; the standard error of the paired
+relative difference, and the smallest gain it can show, twice that):
+
+POWER_TABLE
+
+A comparison of two lists is `efsim rules <scenario> <a.rules.json>
+--compare <b.rules.json>`: the paired gain ± standard error on seeds 1–k
+and on fresh seeds 1001… (`--fresh`, default 32), where a list found or
+judged on seeds 1–k isn't biased up. A gain written in the docs should
+come from fresh seeds.
 
 **Results** (sustained DPS over 300 s, 0.3 s delay, 10 seeds, common
 random numbers (2026-11-16; the numbers before them, with the old shared
@@ -1906,7 +1986,15 @@ Melt +3.9% ± 1.0 (Wulfgard's efficiency, a bottleneck) but −1.5% on the
 60 s timeline, example kept; Typhoeus's team +0.9% (Perlica, damage only,
 example changed) and +5.9% for Arcane in INT mode (the owner's call). A
 60-list rule search on the owner's new gear found no better list. Runs go to worker
-threads (rulespool.ts; each loads the game data once, ~15 s).
+threads (rulespool.ts; each loads the game data once). Since 2026-11-16 a
+command has one pool (`commandPool`: started on first use, kept for all
+its batches; idle threads don't hold the process), `efsim rules` uses it
+too (`--workers`), and each long command's output starts with the commit
+it ran on and whether the code had uncommitted changes (`codeStamp`).
+`gear --rules` takes a change only if it isn't worse on the team's
+zero-energy start (`examples/<team>-zero.scenario.json`, by default when
+it exists; `--also` overrides) by more than one standard error, and
+reports the chosen gear on fresh seeds from there too.
 
 #### The guided rule search (2026-11-16)
 
@@ -1997,7 +2085,11 @@ a list, as `--search` does):
    32 fresh seeds (1001…). With `--also <scenario>` (the team's
    zero-energy start, added after the results below) the edits played on
    the confirm seeds are played there too, and one is kept only if it
-   isn't worse there by more than one standard error.
+   isn't worse there by more than one standard error. Since 2026-11-16
+   the zero-energy companion (`examples/<team>-zero.scenario.json`) is
+   the default second start when it exists, and with `--out` the list
+   kept so far is written after each round that keeps one (a long run's
+   partial result).
 
 The report: the ideal combos (each window's DPS, its ideal's gain,
 achievement, the multipliers it misses most with presence, factor, loss
@@ -2040,6 +2132,39 @@ a player would think of, and the dead ends are measured (holding a
 window's own trigger for a multiplier loses 7–57% on every team; holding
 Liino's ultimate for Typhoeus's hover, the obvious move for the biggest
 miss of all, gains nothing).
+
+#### Assumption switches (2026-11-16)
+
+The architecture review's item 10: a recommendation is only as good as
+the open readings under it (the Initial Stroke advice was +3% under the
+data's reading of Si's Haste and −3% under in-game test 109's
+alternative). A kit registers such a reading as data: `assumptions: [{
+id, test, question, default, readings }]` on the kit, and a trigger with
+`reading: { assumption, reading }` exists only under that reading
+(schemas/kit.schema.json; the loader checks both). The scenario's
+`options.assume` chooses readings (`createContext` keeps the triggers of
+the chosen ones, each assumption's default otherwise). The first one is
+Si's `si-haste-every-end` (test 109): `data` (the default: the Haste only
+on the Inksoul's path) or `every-end` (Artful Intent ending with no
+Inksoul gives it too: trigger `artful_intent_haste`).
+
+`efsim rules`, `diagnose`, `gear --rules` and the guided search take
+`--assume <id>=<reading>` (run under it) and `--assumptions`: for each
+other reading of an assumption the team's kits register, `rules` gives
+the list's DPS against the reading in use and whether `--compare`'s
+verdict holds, flips or is unclear there (a verdict: a gain or a loss
+beyond twice the standard error, else noise; it holds when the same,
+flips when opposite); `diagnose` gives the DPS and the findings that go
+away or come; `gear --rules` and the guided search check the chosen gear
+or final list against the start under it on the fresh seeds. A new open
+reading needs only kit data. Measured (2026-11-16, the owner's team,
+`efsim rules … --compare <the list with rule 9 pressing Si's battle skill
+once, no Initial Stroke> --seeds 10 --fresh 32 --assumptions`): dropping
+Initial Stroke is +0.35% ± 0.83 on the fresh seeds under the data's
+reading (noise; the +3% of the hand-made comparison before the driver's
+fixes no longer holds) and +2.84% ± 0.62 under test 109's alternative
+(a gain), so the verdict is "unclear" there: test 109 decides it. The
+whole command took 160 s on one worker under load.
 
 ### Time
 
