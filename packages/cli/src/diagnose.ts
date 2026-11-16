@@ -26,7 +26,8 @@ import {
   type TimelineScenario,
 } from "@efsim/engine";
 import { num, pct, table } from "./format.ts";
-import { defaultWorkers, runRulesJobs, type RulesJob, type RulesResult } from "./rulespool.ts";
+import { codeStamp, defaultWorkers, runRulesJobs, type RulesJob, type RulesResult } from "./rulespool.ts";
+import { alternatives, underAssume } from "./assume.ts";
 
 // --- Probes: one gear stat line of a typical size ---------------------------------------------------------
 
@@ -193,6 +194,13 @@ export interface Diagnosed {
   /** Runs played and seconds taken. */
   readonly runs: number;
   readonly secondsTaken: number;
+  /** The code the run used (rulespool.ts codeStamp). */
+  readonly code: string;
+  /**
+   * Under each other reading of the team's kits' open assumptions (DiagnoseOptions.assumptions): sustained DPS on the
+   * same seeds, paired against the reading in use, and the findings that go away or come.
+   */
+  readonly assumptions?: readonly { readonly label: string; readonly dps: number; readonly gain: number; readonly se: number; readonly gone: readonly string[]; readonly came: readonly string[] }[];
 }
 
 export interface DiagnoseOptions {
@@ -207,6 +215,8 @@ export interface DiagnoseOptions {
   readonly workers?: number;
   /** Only these operators' marginal values (default all). */
   readonly operators?: readonly string[];
+  /** The diagnosis again under each other reading of the team's kits' open assumptions (assume.ts). */
+  readonly assumptions?: boolean;
   readonly progress?: (line: string) => void;
 }
 
@@ -269,7 +279,27 @@ export async function diagnose(data: GameData, scenario: Omit<TimelineScenario, 
       });
     }
   }
-  return { list, diagnosis, distribution: policyDistribution(base.map((r) => r.moments)), dps, marginal, settings, ...(critNote ? { critNote } : {}), runs, secondsTaken: (performance.now() - t0) / 1000 };
+  const out: Diagnosed = { list, diagnosis, distribution: policyDistribution(base.map((r) => r.moments)), dps, marginal, settings, ...(critNote ? { critNote } : {}), runs, secondsTaken: (performance.now() - t0) / 1000, code: codeStamp() };
+  if (!o.assumptions) return out;
+  // The same seeds under each other reading (the marginal values stay the reading in use's: findings that read them are kept).
+  const keyed = (f: readonly Finding[]) => new Map(f.filter((x) => x.key !== "per-minute").map((x) => [x.key, x.text]));
+  const now = keyed(findings(data, out));
+  const assumptions: NonNullable<Diagnosed["assumptions"]>[number][] = [];
+  for (const alt of alternatives(data, scenario)) {
+    o.progress?.(`assumption ${alt.id}=${alt.reading}: ${seeds} seeds`);
+    const r = await runRulesJobs(data, seedJobs(underAssume(scenario, alt.assume), list, settings, seeds, { diagnose: true }), settings.workers);
+    runs += r.length;
+    const altDps = r.map((x) => x.sustainedDps);
+    const there = keyed(findings(data, { ...out, diagnosis: averageDiagnoses(r.map((x) => x.diagnosis as PolicyDiagnosis)), dps: altDps, distribution: policyDistribution(r.map((x) => x.moments)) }));
+    assumptions.push({
+      label: alt.label,
+      dps: mean(altDps),
+      ...paired(dps, altDps),
+      gone: [...now].filter(([k]) => !there.has(k)).map(([, t]) => t),
+      came: [...there].filter(([k]) => !now.has(k)).map(([, t]) => t),
+    });
+  }
+  return { ...out, runs, secondsTaken: (performance.now() - t0) / 1000, assumptions };
 }
 
 // --- In plain words ---------------------------------------------------------------------------------------------
@@ -353,7 +383,7 @@ export function formatDiagnosis(data: GameData, d: Diagnosed, title: string): st
   const s = d.distribution;
   const lines = [
     title,
-    `${d.settings.seconds} s fight, reaction ${d.settings.reaction} s ± 50%, ${s.runs} seeds (common random numbers: each rule's k-th cue onset draws the same delay in every run), crits ${d.settings.crit === "distribution" ? "rolled where an effect reads them, else expected" : "expected, their spread from each hit's chance"}; ${d.runs} runs in ${d.secondsTaken.toFixed(0)} s.`,
+    `${d.code}; ${d.settings.seconds} s fight, reaction ${d.settings.reaction} s ± 50%, ${s.runs} seeds (common random numbers: each rule's k-th cue onset draws the same delay in every run), crits ${d.settings.crit === "distribution" ? "rolled where an effect reads them, else expected" : "expected, their spread from each hit's chance"}; ${d.runs} runs in ${d.secondsTaken.toFixed(0)} s.`,
     ...(d.critNote ? [`Note: ${d.critNote}.`] : []),
     "",
     `Sustained DPS: ${n0(s.mean)} (sd ${n0(s.sd)}: reaction delays ${n0(s.sdDelays)}, crits ${n0(s.sdCrits)}; 5–95% ${n0(s.p5)}–${n0(s.p95)})`,
@@ -394,5 +424,13 @@ export function formatDiagnosis(data: GameData, d: Diagnosed, title: string): st
   }
   const f = findings(data, d);
   if (f.length) lines.push("", "Findings:", ...f.map((x) => `- ${x.text}`));
+  if (d.assumptions) {
+    lines.push("", d.assumptions.length ? "Under the kits' open assumptions (each other reading of an in-game test the team's kits register; the same seeds):" : "The kits' open assumptions: none for this team.");
+    for (const a of d.assumptions) {
+      lines.push(`- ${a.label}: sustained DPS ${n0(a.dps)} (${mvText(a)} against the reading in use)${a.gone.length || a.came.length ? "" : "; the same findings"}`);
+      for (const t of a.gone) lines.push(`    no longer: ${t}`);
+      for (const t of a.came) lines.push(`    new: ${t}`);
+    }
+  }
   return lines.join("\n");
 }

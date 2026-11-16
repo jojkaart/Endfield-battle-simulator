@@ -10,6 +10,7 @@ import { modePair } from "./edge.ts";
 import { describeGear, type GearCandidate } from "./gear.ts";
 import { num, pct, table } from "./format.ts";
 import { runRulesJobs } from "./rulespool.ts";
+import { alternatives, holds, underAssume } from "./assume.ts";
 
 const FULL = [3, 3, 3] as const;
 const key = (gear: readonly string[]) => [...gear].sort().join("+");
@@ -129,7 +130,16 @@ export interface RuleGearResult {
   readonly team: readonly Build[];
   readonly tables: ReadonlyMap<string, readonly RuleGearRow[]>;
   /** The changes taken, in order: operator, from, to, gain, se, why. */
-  readonly changes: readonly { readonly operator: string; readonly from: readonly string[]; readonly to: readonly string[]; readonly gain: number; readonly se: number; readonly sources: readonly string[] }[];
+  readonly changes: readonly { readonly operator: string; readonly from: readonly string[]; readonly to: readonly string[]; readonly gain: number; readonly se: number; readonly sources: readonly string[]; readonly also?: { readonly gain: number; readonly se: number } }[];
+  /** Changes that gained but were worse on the second start (RuleGearOptions.also) by more than one standard error. */
+  readonly rejected: readonly { readonly operator: string; readonly to: readonly string[]; readonly gain: number; readonly se: number; readonly also: { readonly gain: number; readonly se: number } }[];
+  /** The second start's label, and the chosen gear against the start there on the fresh seeds. */
+  readonly also?: string;
+  readonly confirmAlso?: { readonly gain: number; readonly se: number } | null;
+  /** The chosen gear against the start on the fresh seeds under each other reading of the team's kits' open assumptions (assume.ts). */
+  readonly assumptions?: readonly { readonly label: string; readonly gain: number; readonly se: number; readonly holds: "holds" | "flips" | "unclear" }[];
+  /** The code the run used (rulespool.ts codeStamp). */
+  readonly code: string;
   readonly start: readonly number[];
   readonly final: readonly number[];
   /** The start and the chosen gear on fresh seeds (1001…), and the paired gain there; null without a change. */
@@ -154,6 +164,12 @@ export interface RuleGearOptions extends DiagnoseOptions {
   readonly maxSeeds?: number;
   /** Skip the diagnosis with the chosen gear. */
   readonly noAfter?: boolean;
+  /**
+   * A second start of the fight (the team's zero-energy scenario: main.ts passes examples/<team>-zero.scenario.json by
+   * default when it exists): a change is played there too on the same seeds and taken only if it isn't worse there by
+   * more than one standard error.
+   */
+  readonly also?: { readonly scenario: Omit<TimelineScenario, "rotation">; readonly label: string };
 }
 
 /** Gear chosen by playing the rule list (see the file's comment). `candidates`: the logs' and file's (gear.ts gearCandidates). */
@@ -206,7 +222,15 @@ export async function gearOnRules(data: GameData, scenario: Omit<TimelineScenari
   }
   let team: Build[] = scenario.team.map((b) => ({ ...b }));
   const tables = new Map<string, RuleGearRow[]>();
-  const changes: { operator: string; from: readonly string[]; to: readonly string[]; gain: number; se: number; sources: readonly string[] }[] = [];
+  const changes: { operator: string; from: readonly string[]; to: readonly string[]; gain: number; se: number; sources: readonly string[]; also?: { gain: number; se: number } }[] = [];
+  const rejected: RuleGearResult["rejected"][number][] = [];
+  /** Sustained DPS per seed (1…n) on the second start, for each team. */
+  const alsoScore = async (teams: readonly Build[][], n = seeds): Promise<number[][]> => {
+    const sc = o.also?.scenario as Omit<TimelineScenario, "rotation">;
+    const res = await runRulesJobs(data, teams.flatMap((t) => seedJobs({ ...sc, team: t }, list, s, n)), s.workers);
+    runs += res.length;
+    return teams.map((_, i) => res.slice(i * n, (i + 1) * n).map((r) => r.sustainedDps));
+  };
   let passes = 0;
   for (let pass = 1; pass <= (o.passes ?? 3); pass++) {
     passes = pass;
@@ -270,8 +294,19 @@ export async function gearOnRules(data: GameData, scenario: Omit<TimelineScenari
       tables.set(op, scored);
       const best = scored[0];
       if (best && key(best.gear) !== key(cur.gear.map((g) => g.id)) && best.gain > 0 && beyondNoise(best)) {
-        changes.push({ operator: op, from: cur.gear.map((g) => g.id), to: best.gear, gain: best.gain, se: best.se, sources: best.modeFlip ? [...best.sources, `NOTE: ${best.modeFlip}`] : best.sources });
-        team = team.map((b, j) => (j === i ? { ...b, gear: gearOf(op, best.gear) } : b));
+        const next = team.map((b, j) => (j === i ? { ...b, gear: gearOf(op, best.gear) } : b));
+        let alsoGain: { gain: number; se: number } | undefined;
+        if (o.also) {
+          const [a, b] = await alsoScore([team, next], best.seeds);
+          alsoGain = paired(a as number[], b as number[]);
+          if (alsoGain.gain < -alsoGain.se) {
+            rejected.push({ operator: op, to: best.gear, gain: best.gain, se: best.se, also: alsoGain });
+            o.progress?.(`  ✗ ${describeGear(data, best.gear)}: ${mvText(best)}, but ${mvText(alsoGain)} on ${o.also.label}: not taken`);
+            continue;
+          }
+        }
+        changes.push({ operator: op, from: cur.gear.map((g) => g.id), to: best.gear, gain: best.gain, se: best.se, sources: best.modeFlip ? [...best.sources, `NOTE: ${best.modeFlip}`] : best.sources, ...(alsoGain ? { also: alsoGain } : {}) });
+        team = next;
         changed = true;
         o.progress?.(`  → ${describeGear(data, best.gear)}: ${mvText(best)}`);
       }
@@ -289,9 +324,31 @@ export async function gearOnRules(data: GameData, scenario: Omit<TimelineScenari
     const b = fresh.slice(seeds).map((r) => r.sustainedDps);
     confirm = { start: a, final: b, ...paired(a, b) };
   }
+  let confirmAlso: RuleGearResult["confirmAlso"] = null;
+  if (changes.length && o.also) {
+    const fresh = await runRulesJobs(data, [...seedJobs(o.also.scenario, list, s, seeds, {}, 1001), ...seedJobs({ ...o.also.scenario, team }, list, s, seeds, {}, 1001)], s.workers);
+    runs += fresh.length;
+    confirmAlso = paired(fresh.slice(0, seeds).map((r) => r.sustainedDps), fresh.slice(seeds).map((r) => r.sustainedDps));
+  }
+  // The chosen gear under each other reading of an open assumption, on the fresh seeds (does the advice depend on it?).
+  const assumptions: { label: string; gain: number; se: number; holds: "holds" | "flips" | "unclear" }[] = [];
+  if (changes.length && o.assumptions && confirm) {
+    for (const alt of alternatives(data, scenario)) {
+      o.progress?.(`assumption ${alt.id}=${alt.reading}: the chosen gear on ${seeds} fresh seeds`);
+      const sc = underAssume(scenario, alt.assume);
+      const r = await runRulesJobs(data, [...seedJobs(sc, list, s, seeds, {}, 1001), ...seedJobs({ ...sc, team }, list, s, seeds, {}, 1001)], s.workers);
+      runs += r.length;
+      const g = paired(r.slice(0, seeds).map((x) => x.sustainedDps), r.slice(seeds).map((x) => x.sustainedDps));
+      assumptions.push({ label: alt.label, ...g, holds: holds(confirm, g) });
+    }
+  }
   const after = changes.length && !o.noAfter ? await diagnose(data, { ...scenario, team }, list, { ...o, seeds }) : null;
   if (after) runs += after.runs;
-  return { before, after, team, tables, changes, start: before.dps, final, confirm, passes, runs, secondsTaken: (performance.now() - t0) / 1000, settings: s };
+  return {
+    before, after, team, tables, changes, rejected, start: before.dps, final, confirm, passes, runs, secondsTaken: (performance.now() - t0) / 1000, settings: s, code: before.code,
+    ...(o.also ? { also: o.also.label, confirmAlso } : {}),
+    ...(o.assumptions ? { assumptions } : {}),
+  };
 }
 
 /** The result as text: the diagnosis before, each operator's candidates, the changes, the diagnosis after and what changed. */
@@ -309,8 +366,14 @@ export function formatRuleGear(data: GameData, r: RuleGearResult, title: string)
     lines.push(table(["loadout", "sources", "predicted (lines)", "sustained DPS", "vs current"], rows.map((x) => [describeGear(data, x.gear), [...x.sources, ...(x.modeFlip ? [x.modeFlip] : [])].join("; "), x.predicted !== undefined ? `${x.predicted >= 0 ? "+" : ""}${(x.predicted * 100).toFixed(2)}%` : "", num(Math.round(x.dps), 0), `${mvText(x)}${x.seeds > r.start.length ? ` [${x.seeds} seeds]` : ""}${beyondNoise(x) ? "" : " (noise)"}`]), ["l", "l", "r", "r", "r"]));
   }
   if (r.confirm) lines.push("", `On ${r.confirm.start.length} fresh seeds (1001…, no choice made on them): ${num(Math.round(mean(r.confirm.start)), 0)} → ${num(Math.round(mean(r.confirm.final)), 0)}, ${mvText(r.confirm)}${beyondNoise(r.confirm) && r.confirm.gain > 0 ? "" : ": not confirmed (within the noise), so not a gain to rely on; more seeds decide it"}.`);
+  if (r.confirmAlso) lines.push(`On ${r.also} (the second start), the same fresh seeds: ${mvText(r.confirmAlso)}${beyondNoise(r.confirmAlso) ? (r.confirmAlso.gain > 0 ? "" : ": worse from this start") : " (within the noise)"}.`);
   lines.push("", r.changes.length ? "Changes taken:" : "No change beyond the noise: the scenario's gear stays.");
-  for (const c of r.changes) lines.push(`- ${name(c.operator)}: ${describeGear(data, c.from)} → ${describeGear(data, c.to)} (${mvText(c)}; ${c.sources.join("; ")})`);
+  for (const c of r.changes) lines.push(`- ${name(c.operator)}: ${describeGear(data, c.from)} → ${describeGear(data, c.to)} (${mvText(c)}${c.also ? `; ${mvText(c.also)} on ${r.also}` : ""}; ${c.sources.join("; ")})`);
+  if (r.rejected.length) lines.push("", `Gains not taken: worse on ${r.also} by more than one standard error:`, ...r.rejected.map((c) => `- ${name(c.operator)}: ${describeGear(data, c.to)} (${mvText(c)}; ${mvText(c.also)} there)`));
+  if (r.assumptions) {
+    lines.push("", r.assumptions.length ? "The chosen gear under the kits' open assumptions (each other reading of an in-game test; fresh seeds, paired):" : "The kits' open assumptions: none for this team (or no change to check).");
+    for (const a of r.assumptions) lines.push(`- ${a.label}: ${mvText(a)}: ${a.holds}`);
+  }
   if (r.after) {
     lines.push("", formatDiagnosis(data, r.after, "After (the chosen gear):"));
     lines.push("", "What changed (before → after):");
