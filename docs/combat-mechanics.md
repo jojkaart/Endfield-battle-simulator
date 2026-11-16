@@ -322,7 +322,7 @@ of Laevatain's attack5 has it (batch-1 "Kit errors found").
 - Arts DMG Taken (damageTaken zone) of +12 / 16 / 20 / 24% by level ×
   (1 + 2·AI / (AI + 300)), where AI is the applier's Arts Intensity at
   application. It lasts 12 / 18 / 24 / 30 s. [SETTLED] (e82d 0.39571 at AI
-  287.4, level III; d9e5 0.12 at AI 0)
+  287.4, level III; d9e5 0.12 at AI 0; §3.7: 47 instances, AI 0–287.4)
 - The engine applies it to the four arts elements only. ZMDLogs lists the
   reaction Electrification for element "all" and the forced one for the
   four arts elements. [OPEN] (data-sources "Electrification"). Perlica's
@@ -370,6 +370,47 @@ of Laevatain's attack5 has it (batch-1 "Kit errors found").
 - Whether a Shatter counts as consuming a reaction, for combo triggers:
   [OPEN] (test 63).
 
+### 3.7 Arts Intensity (attribute 87)
+
+Checked against every development log on 2026-11-16 (open-problems "Arts
+Intensity"; the game data has no coefficient: the BuffData reactions read
+their values with `ReadSkillSettingData` from a skill-setting table that
+isn't extracted, and the stat hint's numbers are computed in C#).
+
+- The stat hint (AttributeShowConfigTable 87) names three effects, one
+  value each: **damage** of Crush, Combustion, Solidification, Shatter and
+  Arts Burst (one `{Damage}` for all of them, and for the next two
+  groups); **damage and effect strength** (`{Debuff}`) of Breach,
+  Electrification and Corrosion; **damage and Stagger** (`{Poise}`) of
+  Lift and Knock Down. Nothing else (no durations). [DATA]
+- Damage: × (1 + AI/100). [SETTLED] Plain or assumed matches (within ±1)
+  at many Arts Intensities: bursts 179 hits, AI 0–287 (20 distinct
+  values); reaction initial hits 58, 0–287; Combustion ticks 182, 0–182;
+  Lift 81, 0–163; Breach 11, 31–209; Crush 9, 119–180; Shatter 11, 0 and
+  98.7 (Estella, 4e5e). Logged ÷ predicted against AI, hits within 15%:
+  slope per 100 AI +0.007 ± 0.006 (bursts), +0.006 ± 0.007 (reactions),
+  −0.007 ± 0.009 (ticks), −0.008 ± 0.010 (Lift), −0.03 ± 0.03 (Shatter):
+  none.
+- Strength: × (1 + 2·AI / (AI + 300)). [SETTLED] Electrification's logged
+  `vuln_taken` equals it at the applier's AI in 47 of 53 instances
+  (Perlica at 12 values from 107.6 to 287.4; the other 6 are levels or
+  appliers the replay has otherwise); Breach's in 9 of 21 (AI 31–209), and
+  each of the other 12 maps exactly to the applier's AI ± one Fervent
+  Morale layer (Pogranichnik's +8: open-problems "Arts Intensity"); hits
+  under Corrosion match plainly at appliers' AI up to 287.4 (2,110 of the
+  2,785 plain matches under Corrosion have an applier with AI > 0).
+- **Whose AI:** the operator whose hit triggers the reaction or applies
+  the physical status, at that moment, not the one whose infliction was
+  consumed. [SETTLED] 81 reactions and bursts where the two differ by more
+  than 5 AI fit the trigger's AI exactly (1 fits only the other's: a log-
+  listing fallback). Shatter takes the AI of the operator whose physical
+  status shatters it, not the Solidification's: a9d7's six Shatters by
+  Estella (AI 0) of Deepfin's Solidification (AI 70) sit at exactly the
+  ratio of her Lift at the same ms. Combustion ticks keep the applier's
+  AI from the application (§3.3).
+- Lift and Knock Down's Stagger term: the logs show no Stagger of their
+  own (§4), so it has nothing to scale. [OPEN] for the one exception.
+
 ## 4. Physical statuses
 
 - **Vulnerable** (`buff_physical_no_guard`) has at most 4 stacks and lasts
@@ -399,12 +440,19 @@ of Laevatain's attack5 has it (batch-1 "Kit errors found").
   50% + 50% × n (1–2.5). It adds Physical damageTaken of +12 / 16 / 20 / 24%
   × the applier's AI effect × `extra_scaling` (`scaleKey`; the key is the
   misleading `physical_res_down`). A new Breach replaces the old one
-  (stacking key `fracture`). [DATA]. Its AI scaling is untested [OPEN]
-  (test 3). Its duration is 12 / 18 / 24 / 30 s by level in the engine
+  (stacking key `fracture`). [DATA]. Its AI scaling: [SETTLED] (§3.7; test
+  3 answered by the logs). Its duration is 12 / 18 / 24 / 30 s by level in the engine
   (Talos), while the buff file's own default is 15 s [ASSUMED; the code and
-  the data differ].
+  the data differ; c4f3's level 3 listed 20.9 s, d4fb's level 4 windows
+  agree with the replay's within 3 s].
+- **Breach's own hit sees no Breach**: neither its own DMG Taken nor the
+  Breach it replaces. [SETTLED] (7e19 14984, d4fb 21563 / 86672 / 161592:
+  the prediction ÷ 1 + its own 0.42–0.44; c4f3 34038 / 92929 / 126489:
+  ÷ 1.285 with the earlier Breach listed up to 0.1–0.9 s before;
+  landing.ts `eventDamage`, 2026-11-16). The hits after it see the new one.
 - Physical-status hits scale × (1 + AI/100) and use the physical level
-  coefficient (§1.7). [SETTLED] for Crush (test 91) and Lift (4e5e)
+  coefficient (§1.7). [SETTLED] (§3.7: Lift 0–163, Crush 119–180, Breach
+  31–209)
 
 ## 5. Stagger
 
@@ -883,7 +931,7 @@ of Laevatain's attack5 has it (batch-1 "Kit errors found").
 - Combustion: the buff file says 11 s, the code 10 s. This is deliberate:
   the logs count 10 ticks (B5).
 - Breach: the buff file's default is 15 s, the code 12–30 s by level (Talos;
-  not log-checked).
+  c4f3's level 3 listed 20.9 s, more than the file's 15 s).
 - data-sources "Physical state" and its AI list still credit Lift and Knock
   Down with 10 × (1 + AI/200) Stagger. The engine and the logs give them
   none.

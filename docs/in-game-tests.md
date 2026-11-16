@@ -95,12 +95,16 @@ Settled from Zero Sanity's in-game values: damage rounds to the nearest
 whole number (1572.75 → 1573, 1952.38 → 1952). See
 [data-sources.md](data-sources.md#open-questions).
 
-### 3. Breach and Arts Intensity (later: needs a simple setup chosen)
+### 3. Breach and Arts Intensity (done: answered by the logs, 2026-11-16)
 
 **Why:** game data says Breach's damage-taken bonus scales with the
 applier's Arts Intensity (Breach IV at 150 AI → +40%, not +24%); untested.
 **How (planned):** apply Breach from an operator with known AI, then
 compare another operator's hit with and without Breach.
+**Answered by the logs:** Pogranichnik's logged Breach values equal
++12–24% × (1 + 2·AI / (AI + 300)) at his Arts Intensity (31–209) in 9
+instances, and each of the other 12 at his AI ± one Fervent Morale layer
+(combat-mechanics §3.7). No need to test by hand.
 
 ### 4. Corrosion ramp (later)
 

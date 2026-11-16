@@ -123,6 +123,11 @@ function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, s
   if (e.kind === "reaction" && e.status === "corrosion" && e.initialHit && prior) {
     enemy = { ...enemy, statuses: [...enemy.statuses.filter((x) => x.status !== "corrosion"), ...prior.statuses.filter((x) => x.status === "corrosion" && x.expiresAt > e.frame)] };
   }
+  // Breach's own hit sees no Breach: neither its own Physical DMG Taken nor the one it replaces (2026-11-16, Arts
+  // Intensity review: 7e19489ae503 at 14984 ms and d4fb69b036fe at 21563 / 86672 / 161592 ms logged exactly the
+  // prediction ÷ (1 + its own 0.437 / 0.422); c4f307cd039a at 34038 / 92929 / 126489 ms ÷ 1.285 although the log lists
+  // the earlier Breach, 0.27–0.31, on every physical hit up to 0.1–0.9 s before).
+  if (e.kind === "physical" && e.status === "breach") enemy = { ...enemy, physical: enemy.physical.filter((x) => x.status !== "breach") };
   const build = ctx.builds.get(e.operator) as Build;
   // A Combustion tick keeps its applier's attacker side from the application (ActiveStatus.snapshot).
   const snapshot = e.kind === "combustionTick" ? e.snapshot : side;

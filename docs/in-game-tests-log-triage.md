@@ -56,7 +56,7 @@ cooldowns, dodges, dashes, positions, screen).
 | # | Verdict | Why / logs and what to measure |
 |---|---|---|
 | 1 Stat panels | PARTLY | Plain matches check ATK aggregation; rounding and flat-ATK gear need the panel. |
-| 3 Breach and Arts Intensity | LOGS | `physical_do_fracture` listed with a varying value (0.313–0.437); Pogranichnik in 7e19, d4fb, de6a, 10df, 8273: compare with the applier's AI. |
+| 3 Breach and Arts Intensity | LOGS (answered 2026-11-16) | `physical_do_fracture` listed with a varying value (0.313–0.437); Pogranichnik in 7e19, d4fb, de6a, 10df, 8273: compare with the applier's AI. Done: the curve fits at AI 31–209 (combat-mechanics §3.7). |
 | 4 Corrosion ramp | LOGS | See ranked list. |
 | 5 Reaction bonus grouping | LOGS IF | No "Arts Reaction DMG" buff listed anywhere. |
 | 6 Liino's ultimate | LOGS | 175 projectile hits in 9–10 logs: value / (ATK × scale). |

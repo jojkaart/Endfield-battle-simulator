@@ -154,6 +154,12 @@ seeds; the whole set checked on fresh seeds):
 | Akekuri: Frontiers Blight RES Gloves → Frontiers Fiber Gloves T1 | Battle Skill DMG for Ultimate Gain Efficiency: her ultimate is a bottleneck | +1.7% ± 0.8 (24 fresh seeds) |
 | All three | | **+8.0% ± 0.9** (24 fresh seeds: 56,243 → 60,755) |
 
+Estella's Arts Intensity is 0 with the owner's gear; the +45 line scales
+her Shatter, Solidification and Lift hits (23% of her damage in the 60 s
+example), and those effects are checked against the logs (2026-11-16,
+combat-mechanics §3.7: × (1 + AI/100), her own AI as the operator who
+triggers them, exact up to AI 287).
+
 Estella's change is damage-only, so its gain hardly moves between seeds;
 Si's and Akekuri's change when ultimates come, so they need more seeds
 (Akekuri's: +1.7% ± 1.4 at 16 seeds in the ascent, left out there as

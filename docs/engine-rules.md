@@ -97,7 +97,7 @@ are at 30 FPS.
 - A28. Corrosion lasts 15 s at every level. [SETTLED]
 - A29. Corrosion shred (resistance points) by level: start 3.6 / 4.8 / 6 / 7.2; +0.84 / 1.12 / 1.4 / 1.68 per full second elapsed; cap 12 / 16 / 20 / 24; all × (1 + 2·AI / (AI + 300)) of the applier at application. [SETTLED]
 - A30. The shred ramps in whole-second steps (floor of elapsed seconds); each step adds then clamps to the cap. [SETTLED] (fits logs); under slow-downs and freezes [OPEN]
-- A31. Arts Intensity effect on status strength: × (1 + 2·AI / (AI + 300)), approaching ×3; on damage: × (1 + AI/100). [SETTLED]
+- A31. Arts Intensity effect on status strength: × (1 + 2·AI / (AI + 300)), approaching ×3; on damage: × (1 + AI/100). [SETTLED] (every development log, 2026-11-16: combat-mechanics §3.7)
 - A32. Corrosion carry-over: a new Corrosion while one runs starts from max(running shred now, own start), then ramps to its own cap, which its first tick clamps to. [SETTLED]
 - A33. Corrosion's own initial hit sees the Corrosion that was on the enemy before (not its own shred) and not the buffs its status triggers. [SETTLED]
 - A34. Talent `statusTweaks`: `capScale` multiplies Corrosion's cap, `extraSeconds` lengthens the status; a forced Corrosion's `extra_scaling` multiplies start, per-second gain and cap. [DATA]
@@ -105,7 +105,7 @@ are at 30 FPS.
 - A36. Solidification lasts 5.75 / 6.75 / 7.75 / 8.75 s by level (native settings say 6–9 s). [OPEN]
 - A37. Solidification has no damage modifier and does not freeze or control the enemy in the engine.
 - A38. Shatter: a physical status, a Vulnerable stack added directly, or a physical status's stack-only add on a Solidified enemy consumes the Solidification: (120% + 120% × its level) Physical (2.4 / 3.6 / 4.8 / 6.0) × attribute 49 × (1 + AI/100), after the status's own hit; Vulnerable is unaffected. [DATA]
-- A39. Every damage-dealing status event's attacker is its applier; status-dealt damage deals no Stagger (S8).
+- A39. Every damage-dealing status event's attacker is its applier (the operator whose hit triggers the reaction or applies the physical status; for Shatter, the physical status's, not the Solidification's), with its Arts Intensity then; status-dealt damage deals no Stagger (S8). [SETTLED] for whose AI (combat-mechanics §3.7)
 
 ## P. Physical statuses
 
@@ -116,8 +116,8 @@ are at 30 FPS.
 - P5. Knock Down: same as Lift with a 10 s status. [DATA]
 - P6. Lift and Knock Down deal no Stagger of their own. [SETTLED]; one exception in logs [OPEN]
 - P7. Crush: consumes all n Vulnerable stacks (n ≥ 1), hit (150% + 150% × n) (3 / 4.5 / 6 / 7.5) × the action's `damageMultiplier` × attribute 25 × (1 + AI/100); status 3 s. [DATA]
-- P8. Breach: consumes all n stacks, hit (50% + 50% × n) (1 / 1.5 / 2 / 2.5) × attribute 25 × (1 + AI/100). [DATA]
-- P9. Breach debuff: Physical damage taken +12 / 16 / 20 / 24% by n × (1 + 2·AI / (AI + 300)) × `extra_scaling`; lasts 12 / 18 / 24 / 30 s by n (buff file default 15 s); a new Breach replaces the old. [DATA]; AI scaling [OPEN]; duration [ASSUMED]
+- P8. Breach: consumes all n stacks, hit (50% + 50% × n) (1 / 1.5 / 2 / 2.5) × attribute 25 × (1 + AI/100); the hit sees no Breach, neither its own nor the one it replaces. [SETTLED] (combat-mechanics §4)
+- P9. Breach debuff: Physical damage taken +12 / 16 / 20 / 24% by n × (1 + 2·AI / (AI + 300)) × `extra_scaling`; lasts 12 / 18 / 24 / 30 s by n (buff file default 15 s); a new Breach replaces the old. [DATA]; AI scaling [SETTLED]; duration [ASSUMED]
 - P10. One instance per physical status; reapplying replaces it.
 - P11. Physical-status hits can crit, take element (Physical) DMG, Amp, Susceptibility, damage taken and Stagger's ×1.3, and no skill-type DMG.
 - P12. Physical statuses run on the enemy clock (held by time stops and freezes).
