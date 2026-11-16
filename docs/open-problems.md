@@ -1269,6 +1269,17 @@ From the kit check before simulating the team
 
 ## Smaller, not yet diagnosed
 
+- Si's talent Haste after a burst without an Inksoul (2026-11-16): the
+  data (only xianjing_linkline's finish and xianjing_inkboom create
+  talent1_speedup; xianjing_inkhurteffect's end doesn't) and the kit give
+  none. **Ruled out:** a log check: ZMDLogs records no Haste (no speed-up
+  buff in four raw details with 2 Final Stroke, 4 Inksoul-expiry and 3
+  no-Inksoul ends), and fixtures keep only buffs with damage effects.
+  **Still possible:** the game acting otherwise than its data reads (no
+  sign of it). It flips the owner's team's rule comparison (Initial
+  Stroke right away +3.0% now, −3.0% with Haste on every burst).
+  **Next check:** in-game test 109.
+
 - Laevatain's enhanced battle skill (`normal_skill_during_ult`): ×0.833
   in e989, ×1.083 in db87; its `ratio` key has no value in the data
   (in-game test 20).

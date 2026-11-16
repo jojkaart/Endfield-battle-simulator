@@ -13,7 +13,10 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
   --rules`, examples/*.rules.json, each team page's "Rules" and "Gear"):**
   next, the owner's call on the owner's team's gear (Estella's Grizzled
   Edge loadout, Si's LYNX Slab loadout, Akekuri's Fiber Gloves: +8.0% ±
-  0.9 together, played by the rules); timeline-moving stats (Ultimate
+  0.9 together, played by the rules) and on Arcane in INT mode for
+  Typhoeus's team (Hot Work loadout, +5.9% ± 0.7: a rule search for INT
+  mode first, docs/teams/typhoeus-arcane-liino-perlica.md "Gear played by
+  the rules"); timeline-moving stats (Ultimate
   Gain Efficiency, mode-flipping attributes) are noisy even on common
   seeds (±1–2% a line at 4 seeds, ±0.6–1.3% at 16): a cheaper estimate of
   their worth (energy held / wasted against the ultimate's value per
@@ -26,6 +29,12 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
   60-list search: see the journal); Typhoeus's team is the furthest from
   its timeline (hover upkeep and SP sharing are hard to say as cues);
   in-game test 108 (the Finisher input) decides the filler's assumption.
+  The rule search should also try gating a repeated press on the
+  button's visible state (Si's battle skill only while her button shows
+  it, not Initial Stroke): the owner found that one by hand, 2026-11-16.
+  Whether Initial Stroke is worth pressing hangs on Si's talent Haste
+  (in-game test 109: the data gives it only on the Inksoul path; ±3% for
+  the owner's team either way).
 - **Typhoeus, Arcane, Liino, Perlica (2026-11-15, done: 5.76 / 4.99M,
   docs/teams/typhoeus-arcane-liino-perlica.md):** its zero-energy search
   is the least converged of the three teams (+27% at beam 48 alone): a
