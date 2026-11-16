@@ -34,7 +34,11 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
   it, not Initial Stroke): the owner found that one by hand, 2026-11-16.
   Whether Initial Stroke is worth pressing hangs on Si's talent Haste
   (in-game test 109: the data gives it only on the Inksoul path; ±3% for
-  the owner's team either way).
+  the owner's team either way). The Arts Intensity effects behind
+  Estella's Grizzled Edge advice are log-verified (2026-11-16,
+  combat-mechanics §3.7); left from that review: Pogranichnik's Breach
+  strength one Fervent Morale layer off in 12 of 21 instances
+  (open-problems "Arts Intensity").
 - **Typhoeus, Arcane, Liino, Perlica (2026-11-15, done: 5.76 / 4.99M,
   docs/teams/typhoeus-arcane-liino-perlica.md):** its zero-energy search
   is the least converged of the three teams (+27% at beam 48 alone): a

@@ -346,7 +346,12 @@ stats (attribute types 64–69, 70–75, 62, 63), not zones.
   - Breach, Electrification and Corrosion effect strength:
     ×(1 + 2·AI/(AI+300)), approaching ×3 (the "soft cap 300%": a ceiling of
     3× the base, not a cap at 300 AI); ×1.5 at 100 AI, ×2 at 300;
-  - Lift / Knock Down stagger: ×(1 + AI/200).
+  - Lift / Knock Down stagger: ×(1 + AI/200) (the logs show no Stagger of
+    Lift's own: combat-mechanics §4).
+
+  Checked 2026-11-16 against every development log (combat-mechanics §3.7):
+  the first two curves fit exactly across AI 0–287, and the AI is the
+  triggering operator's (for Shatter, the shattering physical status's).
 - **Constants:** `BattleConst` is identical in 555me and rmxlinux 1.6; no
   formula constant changed since March. Talos edits since then are listed in
   the journal (2026-10-18).

@@ -14,6 +14,55 @@ Started 2026-11-11 (the owner: keeping a record of what hasn't been ruled
 out is necessary, not only of what has). Hold-out logs aren't debugged, so
 none appear here.
 
+## Arts Intensity: what the logs settle and what they leave (2026-11-16)
+
+The owner asked whether the engine's Arts Intensity handling is right (it
+carries the Grizzled Edge and Arts Intensity gear advice for Estella).
+Every status hit of the 79 development logs (1,424 hits; hold-outs
+skipped) was compared with the engine's reading at its landing, with the
+source operator's AI from the engine's scale part. Details:
+combat-mechanics §3.7.
+
+**Ruled out:**
+- A wrong damage coefficient: exact matches at AI 0–287 for bursts (179
+  hits) and reaction hits (58), 0–182 for Combustion ticks (182), 0–163
+  for Lift (81), 31–209 for Breach (11), 119–180 for Crush (9), 0 and 98.7
+  for Shatter (11, Estella); logged ÷ predicted shows no slope against AI
+  (within ±0.01 per 100 AI for bursts, reactions, ticks and Lift; ±0.03
+  for Shatter). The stat hint has one `{Damage}` value for every kind.
+- A wrong strength curve: Electrification exact at AI 0–287.4 (47 of 53
+  instances), Breach at 31–209 (9 of 21; the rest below), 2,110 plain
+  matches under Corrosion from appliers with AI > 0 (up to 287.4).
+- The wrong owner: 81 reactions and bursts whose consumed infliction came
+  from an operator with a different AI fit the trigger's AI exactly;
+  Shatter takes the shattering operator's AI (a9d7: Estella's Shatters of
+  Deepfin's Solidification sit at her Lift's ratio, not ×1.70).
+- A missing scaled effect: the stat hint lists only damage, strength and
+  Lift / Knock Down Stagger; durations aren't on it.
+
+**Found and fixed:** Breach's own hit saw its own new DMG Taken (×1.29–1.44
+too high; no Breach hit had a plain match). Now it sees no Breach: plain
+0 → 7, assumed 0 → 4, fallback 17 → 6 (combat-mechanics §4).
+
+**Still possible:**
+- Pogranichnik's Breach strength: 12 of 21 logged instances carry his AI
+  ± one Fervent Morale layer (+8) against the replay's (c4f3, a9d7, de6a,
+  10df, d4fb). In c4f3 the battle skill's own SP layer counts for the
+  strength (71150: hit lists 2 layers, strength 3) though not for the
+  hit's listing; elsewhere the replay has a layer the log doesn't. A layer
+  timing (talent bank, expiry) rather than the curve. Next check: the
+  strength read after the battle skill's `beforeDamage` SP trigger, against
+  each instance.
+- Shatter's coefficient itself is checked at two AIs only (0 and 98.7);
+  it shares the `{Damage}` value with the kinds checked to 287.
+- Lift / Knock Down Stagger × (1 + AI/200): the logs show no Stagger of
+  their own (4e5e 12219's one exception open), so nothing to scale.
+- Ember's status hits in 04d4 are ×1.0226 at AI 0 and 12 alike (Knock
+  Down and Shatter): AI-independent, the ×1.023 her other hits there have
+  too (accuracy plan: Ember low in every log, uniformly per build).
+- Multi-target logs (10df, 8273) and a9d7's fight-wide factor leave their
+  Breach hits as mismatches.
+
 ## Buff timing leads (the buff timing report, 2026-11-15)
 
 **Shows:** `efsim zmdlogs timing` (docs/design.md, "The buff timing
