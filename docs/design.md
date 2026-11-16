@@ -2330,6 +2330,27 @@ once and branch from it.
 
 ### Engine modules
 
+**Core and planning** (2026-11-16, architecture review item 12): the
+engine is two parts with a lint-enforced boundary.
+
+- The **core** (`packages/engine/src/core.ts`, also the package entry
+  `@efsim/engine/core`): the kit DSL (model, expr, events), attributes,
+  stats, effects, damage, reactions and statuses, buffs, triggers, units,
+  errors, crit moments, and the timeline through its façade. What happens
+  in a fight. The core modules stay at the top of `src/` and under
+  `timeline/`; none imports the planning code.
+- The **planning** code (`packages/engine/src/planning/`: the rotation
+  search, bound, macros, setup value, skeletons, the loop, payoffs, a
+  rotation's distribution, and the rule driver `policy*`): what to press.
+  It imports the core only through `../core.ts`, never a core module or
+  `timeline/*` directly; what it needs of the timeline's internals is on
+  the façade (`timeline.ts`). `nextBasics` and `diveOf` (what the attack
+  input and the dive cast: game rules) live in `timeline/buttons.ts`.
+- The data package imports only `@efsim/engine/core`, and the game-data
+  cache's key traces the names it imports through `core.ts` (packages/data
+  cache.ts `engineSources`). `@efsim/engine` re-exports core and planning,
+  as before.
+
 The timeline (`packages/engine/src/timeline.ts`, a façade re-exporting the
 stepping API as `@efsim/engine` exports it) is split by concern under
 `timeline/` (review 3.3, 2026-10-25; lines as of then):
@@ -2547,7 +2568,7 @@ vs 1,171,134 ± 2,773, sd 57,886 vs 55,452, 5–95% 1,042,740–1,233,169 vs
 1,023,380–1,220,403; every sampled total within the bounds. A cheap version
 is in tests/distribution.test.ts.
 
-The two parts are kept apart (`packages/engine/src/distribution.ts`):
+The two parts are kept apart (`packages/engine/src/planning/distribution.ts`):
 `fightMoments` (mean, var, m3) and `damageBounds`. The planned follow-up
 replaces `fightMoments`' K battles by one deterministic battle with
 crit-triggered buffs at their expected state (probability up, expected

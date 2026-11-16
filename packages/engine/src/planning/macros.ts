@@ -7,10 +7,7 @@
 
 import type { Chain, PlanStep } from "./payoffs.ts";
 import { runStep } from "./payoffs.ts";
-import { advance, apply, earliestStart, type RotationAction, type TimelineContext, type TimelineState } from "./timeline.ts";
-import { COMBO_WINDOW_FRAMES } from "./timeline/rules.ts";
-import { windowKey } from "./timeline/timing.ts";
-import { FPS } from "./units.ts";
+import { advance, apply, earliestStart, COMBO_WINDOW_FRAMES, windowKey, FPS, type RotationAction, type TimelineContext, type TimelineState } from "../core.ts";
 
 /** A node of the chains' prefix tree: a step, how it's tied to the chain so far, whether a found chain ends here. */
 export interface MacroNode {

@@ -17,7 +17,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync,
 import { dirname, join, relative, resolve } from "node:path";
 import { deserialize, serialize } from "node:v8";
 import { threadId } from "node:worker_threads";
-import type { GameData } from "@efsim/engine";
+import type { GameData } from "@efsim/engine/core";
 import { mainCheckoutOf, REPO_ROOT } from "./checkout.ts";
 import { sourceCommit, sourceDir, SOURCES, TABLES, tablesDir } from "./sources.ts";
 
@@ -49,7 +49,7 @@ function filesUnder(dir: string, ext: string): string[] {
 /** Import statements that bring in types only: they don't run, so the modules they name aren't run-time inputs. */
 const TYPE_ONLY = /^\s*(?:import|export)\s+type\s[^;]*?from\s*["'][^"']+["']/gm;
 const RELATIVE_TS = /["'](\.\.?\/[^"']+?\.ts)["']/g;
-const NAMED_ENGINE_IMPORT = /import\s+(type\s+)?\{([^}]*)\}\s*from\s*["']@efsim\/engine["']/g;
+const NAMED_ENGINE_IMPORT = /import\s+(type\s+)?\{([^}]*)\}\s*from\s*["']@efsim\/engine\/core["']/g;
 const ESCAPE = /[.*+?^${}()|[\]\\]/g;
 
 /** Every relative .ts module a file runs, transitively, from `entry` (type-only imports left out), within `within`. */
@@ -86,9 +86,10 @@ export function dataSources(root: string = REPO_ROOT): { files: string[]; traced
 
 /**
  * The engine source files the data package's code runs: the modules that export the names the build's own sources
- * (dataSources) import from @efsim/engine, and every module those import (type-only imports left out). The whole
- * engine when an import or an export can't be traced, so a miss here can only make the cache rebuild more often,
- * never go stale.
+ * (dataSources) import from @efsim/engine/core (core.ts, whose `export *` lines name the core modules; the data
+ * package imports nothing else of the engine: lint), and every module those import (type-only imports left out). The
+ * whole engine when an import or an export can't be traced, so a miss here can only make the cache rebuild more
+ * often, never go stale. The planning code (planning/) is never reached: the core doesn't import it (lint).
  */
 export function engineSources(root: string = REPO_ROOT): { files: string[]; traced: boolean } {
   const engine = join(root, "packages", "engine", "src");
@@ -98,7 +99,7 @@ export function engineSources(root: string = REPO_ROOT): { files: string[]; trac
   if (!data.traced) return whole;
   for (const file of data.files) {
     const text = readFileSync(file, "utf8");
-    const mentions = text.split(/["']@efsim\/engine["']/).length - 1;
+    const mentions = text.split(/["']@efsim\/engine(?:\/[^"']*)?["']/).length - 1;
     const imports = [...text.matchAll(NAMED_ENGINE_IMPORT)];
     if (imports.length !== mentions) return whole;
     for (const [, typeOnly, list] of imports) {
@@ -110,8 +111,8 @@ export function engineSources(root: string = REPO_ROOT): { files: string[]; trac
       }
     }
   }
-  const index = readFileSync(join(engine, "index.ts"), "utf8");
-  const lines = index.split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("//"));
+  const entry = readFileSync(join(engine, "core.ts"), "utf8");
+  const lines = entry.split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("//"));
   const modules: string[] = [];
   for (const line of lines) {
     const m = /^export \* from "(\.\/[^"]+\.ts)";$/.exec(line);

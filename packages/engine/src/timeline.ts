@@ -23,7 +23,7 @@ export { landingDamage, nextRandom, recomputeHit } from "./timeline/landing.ts";
 export { TEAMMATE_PAUSE_FRAMES } from "./timeline/teammates.ts";
 export { advance, memoised } from "./timeline/advance.ts";
 export { init, apply, canStartAt, replayCast, replayWindowCount, simulate, simulateRuns, startsNow } from "./timeline/drivers.ts";
-export { SKILL_BUTTONS, buttonShows, buttonSkill, buttonSkills, type SkillButton } from "./timeline/buttons.ts";
+export { SKILL_BUTTONS, buttonShows, buttonSkill, buttonSkills, diveOf, nextBasics, type SkillButton } from "./timeline/buttons.ts";
 export type { ReplayCastOptions, TimelineResult, RunSpread } from "./timeline/drivers.ts";
 
 // State queries: read-only questions about a context or a state that drivers, reports and scratch scripts may ask
@@ -33,3 +33,12 @@ export { kitSkill, skillCosts, maxPoise } from "./timeline/context.ts";
 export { spAt, maxEnergy, isStaggered, skillSpGain } from "./timeline/resources.ts";
 export { windowKey, windowOpen, needsWindow } from "./timeline/timing.ts";
 export { nextChangeAfter } from "./timeline/wake.ts";
+
+// What the planning code (planning/: search, payoffs, the rule driver) reads beyond the stepping API: it imports the
+// timeline only through this façade (and core.ts), never timeline/* (lint). Probes and keys of planning states.
+export type { CastRef, Scheduled } from "./timeline/state.ts";
+export { ofKind } from "./timeline/schedule.ts";
+export { LINK_FRAMES } from "./timeline/rules.ts";
+export { attrTotal } from "./timeline/context.ts";
+export { addBuff } from "./timeline/actions.ts";
+export { situationAt } from "./timeline/situation.ts";

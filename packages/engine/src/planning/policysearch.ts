@@ -5,10 +5,8 @@
 // against learnability (Learnability.complexity), for the owner to choose from, and the best by DPS less a small
 // penalty per complexity point. A search heuristic, never part of a battle's result.
 
-import { EngineError } from "./errors.ts";
-import type { GameData } from "./model.ts";
+import { EngineError, type GameData, type TimelineScenario } from "../core.ts";
 import { learnability, playRules, visibleBuffs, visibleStacks, resolveRuleList, stepsOf, type Learnability, type PolicyCue, type PolicyOptions, type PolicyRule, type PolicyStep, type RuleList } from "./policy.ts";
-import type { TimelineScenario } from "./timeline.ts";
 
 export interface RuleSearchOptions {
   /** Lists scored at most (default 150). */

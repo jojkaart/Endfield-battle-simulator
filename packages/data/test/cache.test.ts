@@ -108,7 +108,7 @@ describe("game-data cache", () => {
     }
     // The planning code isn't a build input: editing it keeps the cache. (If the data package comes to import it, this
     // flips, and engineSources' trace says so.)
-    expect(edit("packages/engine/src/policy.ts", (t) => `${t}\n`)).toBe(base);
+    expect(edit("packages/engine/src/planning/policy.ts", (t) => `${t}\n`)).toBe(base);
     // Nor is the data package's tooling the build never runs (the log importer).
     expect(edit("packages/data/src/zmdlogs.ts", (t) => `${t}\n`)).toBe(base);
 

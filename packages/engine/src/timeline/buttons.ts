@@ -6,9 +6,35 @@
 // becomes End Stance in her stances; Laevatain's changes in Twilight). A combo with a window of its own (Rossi's
 // sequence 2) is on the button while that window is open.
 
-import type { KitSkill } from "../model.ts";
+import { activeAt } from "../buffs.ts";
+import type { GameData, KitSkill } from "../model.ts";
 import type { TimelineContext, TimelineState } from "./state.ts";
 import { ownWindowSkills, skillAvailable, windowKey, windowOpen } from "./timing.ts";
+
+/**
+ * The basic attacks the attack input can be for an operator: the chain's next step while it points at one, what a buff
+ * maps the input to, the chain heads (basic attacks that aren't chain steps), and finishers; not the dive, which is a
+ * jump (diveOf). A game rule the search and the rule driver share (moved here from the search, 2026-11-16).
+ */
+export function nextBasics(data: GameData, state: TimelineState, operator: string): string[] {
+  const out = new Set<string>();
+  const chain = state.chainNext[operator];
+  for (const c of chain ? [chain, ...(chain.alternatives ?? [])] : []) if (c.until >= state.frame) out.add(c.skill);
+  // What a buff maps the attack input to (KitBuff.basicAttack), while it's active.
+  for (const b of state.buffs) if (b.basicAttack && b.owner === operator && b.cast === undefined && activeAt(b, state.frame)) out.add(b.basicAttack);
+  for (const s of data.kits.operators[operator]?.skills ?? []) {
+    // Basic attacks that start a chain, and finishers (castable only on a Staggered enemy).
+    const spec = data.skills[s.skillId]?.timing?.specification;
+    if (s.kind === "basic" && ((!s.chainStep && spec === 1) || spec === 8)) out.add(s.skillId);
+  }
+  return [...out];
+}
+
+/** The controlled operator's dive (its landing skill, when its kit has it: a jump, then the plunge). */
+export function diveOf(data: GameData, operator: string): string | undefined {
+  const end = data.operators[operator]?.dive?.end;
+  return end !== undefined && data.kits.operators[operator]?.skills.some((s) => s.skillId === end) ? end : undefined;
+}
 
 /** The three skill buttons of an operator. */
 export type SkillButton = "battle" | "combo" | "ultimate";

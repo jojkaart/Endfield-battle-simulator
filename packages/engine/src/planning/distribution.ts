@@ -5,13 +5,8 @@
 // Two parts, kept apart so either can be replaced: fightMoments (mean, var, m3: one exact battle, or K seeded
 // battles combined when outcomes change what happens later) and damageBounds (min and max).
 
-import type { CritMode } from "./damage.ts";
-import { EngineError } from "./errors.ts";
-import type { GameData } from "./model.ts";
-import { combineBattles, cornishFisher, type DamageMoments, Z_95 } from "./moments.ts";
+import { EngineError, combineBattles, cornishFisher, Z_95, simulate, type CritMode, type GameData, type DamageMoments, type TimelineScenario } from "../core.ts";
 import { critTriggers, randomOutcomes } from "./search.ts";
-import { simulate } from "./timeline/drivers.ts";
-import type { TimelineScenario } from "./timeline/state.ts";
 
 /** Seeded battles a distribution plays when outcomes change what happens later (DistributionOptions.battles). */
 export const DEFAULT_DISTRIBUTION_BATTLES = 8;

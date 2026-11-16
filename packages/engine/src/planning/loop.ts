@@ -2,14 +2,8 @@
 // from the fight's start to a round of ultimate casts, then a loop from that round to the next that can be played
 // again and again for as long as the fight lasts (docs/design.md "Opener and loop").
 
-import { EngineError } from "./errors.ts";
-import type { GameData } from "./model.ts";
+import { EngineError, advance, apply, createContext, earliestStart, init, simulate, skillAvailable, skillCosts, SP, maxEnergy, FPS, type GameData, type RotationAction, type TimelineContext, type TimelineScenario, type TimelineState } from "../core.ts";
 import { randomOutcomes, searchCritMode, searchRotation, type SearchHooks, type SearchOptions, type SearchResult } from "./search.ts";
-import { advance, apply, createContext, earliestStart, init, simulate, skillAvailable, type RotationAction, type TimelineContext, type TimelineScenario, type TimelineState } from "./timeline.ts";
-import { skillCosts } from "./timeline/context.ts";
-import { SP } from "./timeline/rules.ts";
-import { maxEnergy } from "./timeline/resources.ts";
-import { FPS } from "./units.ts";
 
 export interface LoopOptions extends SearchOptions {
   /** Length of the fight the opener is searched over, in frames (default the scenario's, at least LOOP_OPENER_FRAMES; with `sync`, LOOP_SYNC_MAX_FRAMES and 10 s). */

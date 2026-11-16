@@ -20,27 +20,8 @@
 // window's cue; chain the two presses; start the window when the multiplier is up; save SP; `shows`; spare SP), each
 // judged by play on common random numbers (the CLI's guided search). A planning aid, never part of a fight's result.
 
-import type { Modifier, Zone } from "./effects.ts";
-import { EngineError } from "./errors.ts";
-import type { GameData } from "./model.ts";
-import {
-  describeCue,
-  describeStep,
-  playRules,
-  visibleBuffs,
-  visibleStacks,
-  stepsOf,
-  type PolicyCue,
-  type PolicyFrameView,
-  type PolicyOptions,
-  type PolicyRule,
-  type PolicyRun,
-  type PolicyStep,
-  type RuleList,
-} from "./policy.ts";
-import { kitSkill, panelAt, SP, spAt, type LandedHit, type TimelineScenario } from "./timeline.ts";
-import type { StatPanel } from "./stats.ts";
-import { FPS } from "./units.ts";
+import { EngineError, kitSkill, panelAt, SP, spAt, FPS, type Modifier, type Zone, type GameData, type LandedHit, type TimelineScenario, type StatPanel } from "../core.ts";
+import { describeCue, describeStep, playRules, visibleBuffs, visibleStacks, stepsOf, type PolicyCue, type PolicyFrameView, type PolicyOptions, type PolicyRule, type PolicyRun, type PolicyStep, type RuleList } from "./policy.ts";
 
 // --- Multipliers ------------------------------------------------------------------------------------------------
 

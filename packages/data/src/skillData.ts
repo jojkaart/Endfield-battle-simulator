@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { arr, at, get, int, num, obj, str, type Ctx } from "./fields.ts";
 import { parseJsonExact } from "./json.ts";
 import { DATA_FILES, sourceDir } from "./sources.ts";
-import type { SkillTiming, SpKind } from "@efsim/engine";
+import type { SkillTiming, SpKind } from "@efsim/engine/core";
 
 export interface RawSkillFile {
   /** When the skill lets its operator act again (engine SkillTiming). */

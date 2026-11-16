@@ -10,37 +10,7 @@
 // ranks it by a statistic of their damage, and reports the found rotation's
 // distribution over many more (docs/design.md#rotation-search).
 
-import { activeAt, type ActiveBuff } from "./buffs.ts";
-import { EngineError } from "./errors.ts";
-import type { GameData } from "./model.ts";
-import type { CritMode } from "./damage.ts";
-import { allActions, type BattleEvent } from "./events.ts";
-import { predicateRefs } from "./expr.ts";
-import {
-  advance,
-  apply,
-  createContext,
-  earliestStart,
-  exclusiveUntil,
-  enemyActionsOf,
-  init,
-  memoised,
-  simulate,
-  startsNow,
-  type RotationAction,
-  type RunSpread,
-  type TimelineContext,
-  type TimelineResult,
-  type TimelineScenario,
-  type TimelineState,
-} from "./timeline.ts";
-import type { CastRef, ChainStep, Scheduled } from "./timeline/state.ts";
-import { ofKind } from "./timeline/schedule.ts";
-import { maxPoise, skillCosts } from "./timeline/context.ts";
-import { maxEnergy } from "./timeline/resources.ts";
-import { SP } from "./timeline/rules.ts";
-import { FPS } from "./units.ts";
-import { windowKey } from "./timeline/timing.ts";
+import { diveOf, nextBasics, EngineError, allActions, predicateRefs, advance, apply, createContext, earliestStart, exclusiveUntil, enemyActionsOf, init, memoised, simulate, startsNow, ofKind, maxPoise, skillCosts, maxEnergy, SP, FPS, windowKey, type ActiveBuff, type GameData, type CritMode, type BattleEvent, type RotationAction, type RunSpread, type TimelineContext, type TimelineResult, type TimelineScenario, type TimelineState, type CastRef, type ChainStep, type Scheduled } from "../core.ts";
 import { remainingBound, type UpperBound } from "./bound.ts";
 import { playMacros, type MacroNode } from "./macros.ts";
 import { setupValue, type SetupTable } from "./setupvalue.ts";
@@ -51,35 +21,9 @@ export interface Candidate {
   readonly frame: number;
 }
 
-/**
- * The basic attacks an attack input can be for an operator: the chain's
- * next step while it points at one, and the chain heads (basic attacks that
- * aren't chain steps), and finishers; not the dive, which is a jump
- * (actionsToJudge).
- */
-export function nextBasics(data: GameData, state: TimelineState, operator: string): string[] {
-  const out = new Set<string>();
-  const chain = state.chainNext[operator];
-  for (const c of chain ? [chain, ...(chain.alternatives ?? [])] : []) if (c.until >= state.frame) out.add(c.skill);
-  // What a buff maps the attack input to (KitBuff.basicAttack), while it's active.
-  for (const b of state.buffs) if (b.basicAttack && b.owner === operator && b.cast === undefined && activeAt(b, state.frame)) out.add(b.basicAttack);
-  for (const s of data.kits.operators[operator]?.skills ?? []) {
-    // Basic attacks that start a chain, and finishers (castable only on a Staggered enemy).
-    const spec = data.skills[s.skillId]?.timing?.specification;
-    if (s.kind === "basic" && ((!s.chainStep && spec === 1) || spec === 8)) out.add(s.skillId);
-  }
-  return [...out];
-}
-
 /** Whether an operator has basic attacks at all (so swapping to it can be worth it). */
 function hasBasics(data: GameData, operator: string): boolean {
   return (data.kits.operators[operator]?.skills ?? []).some((s) => s.kind === "basic");
-}
-
-/** The controlled operator's dive (its landing skill, when its kit has it: a jump, then the plunge). */
-export function diveOf(data: GameData, operator: string): string | undefined {
-  const end = data.operators[operator]?.dive?.end;
-  return end !== undefined && data.kits.operators[operator]?.skills.some((s) => s.skillId === end) ? end : undefined;
 }
 
 /**

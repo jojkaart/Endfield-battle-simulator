@@ -6,9 +6,7 @@
 // and never prunes those.
 
 import type { PayoffReport } from "./payoffs.ts";
-import type { TimelineContext, TimelineState } from "./timeline.ts";
-import { SP } from "./timeline/rules.ts";
-import { FPS } from "./units.ts";
+import { SP, FPS, type TimelineContext, type TimelineState } from "../core.ts";
 
 /** One step in the bound: what a cast deals at most, how long it holds its operator, its cooldown and the net SP it uses. */
 export interface BoundItem {

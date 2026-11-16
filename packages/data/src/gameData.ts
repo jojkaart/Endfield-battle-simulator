@@ -15,8 +15,8 @@ import type {
   SkillData,
   SkillType,
   WeaponData,
-} from "@efsim/engine";
-import { ELEMENTS } from "@efsim/engine";
+} from "@efsim/engine/core";
+import { ELEMENTS } from "@efsim/engine/core";
 import { loadCachedGameData } from "./cache.ts";
 import { DataError } from "./errors.ts";
 import { at, get, obj, type Ctx } from "./fields.ts";

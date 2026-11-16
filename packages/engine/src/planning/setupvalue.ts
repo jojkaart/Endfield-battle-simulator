@@ -7,11 +7,7 @@
 // of a result.
 
 import type { PayoffReport, PlanStep } from "./payoffs.ts";
-import type { TimelineContext, TimelineState } from "./timeline.ts";
-import { skillCosts } from "./timeline/context.ts";
-import { SP } from "./timeline/rules.ts";
-import { skillAvailable, windowKey } from "./timeline/timing.ts";
-import { FPS } from "./units.ts";
+import { skillCosts, SP, skillAvailable, windowKey, FPS, type TimelineContext, type TimelineState } from "../core.ts";
 
 /** How a bundle's piece is found in a state (by its payoffs.ts key) and what it's worth to its payoff. */
 export interface SetupPiece {

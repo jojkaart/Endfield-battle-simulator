@@ -5,43 +5,7 @@
 // (an operator's battle skill, combo or ultimate, resolved to the skill the button casts then; the controlled
 // operator's dive). The default action is the controlled operator's basic attack.
 
-import { EngineError } from "./errors.ts";
-import type { GameData } from "./model.ts";
-import type { ArtsElement } from "./reactions.ts";
-import type { PhysicalStatus, ReactionStatus } from "./status.ts";
-import { FPS } from "./units.ts";
-import { hitsMoments, NO_DAMAGE, scaleMoments, type DamageMoments } from "./moments.ts";
-import { diveOf, nextBasics } from "./search.ts";
-import { activeAt } from "./buffs.ts";
-import {
-  advance,
-  apply,
-  buttonSkill,
-  buttonSkills,
-  canStartAt,
-  createContext,
-  earliestStart,
-  exclusiveUntil,
-  init,
-  isStaggered,
-  kitSkill,
-  maxEnergy,
-  maxPoise,
-  memoised,
-  needsWindow,
-  nextChangeAfter,
-  skillAvailable,
-  skillCosts,
-  skillSpGain,
-  spAt,
-  startsNow,
-  windowKey,
-  windowOpen,
-  type RotationAction,
-  type TimelineContext,
-  type TimelineScenario,
-  type TimelineState,
-} from "./timeline.ts";
+import { EngineError, FPS, hitsMoments, NO_DAMAGE, scaleMoments, diveOf, nextBasics, activeAt, advance, apply, buttonSkill, buttonSkills, canStartAt, createContext, earliestStart, exclusiveUntil, init, isStaggered, kitSkill, maxEnergy, maxPoise, memoised, needsWindow, nextChangeAfter, skillAvailable, skillCosts, skillSpGain, spAt, startsNow, windowKey, windowOpen, type GameData, type ArtsElement, type PhysicalStatus, type ReactionStatus, type DamageMoments, type RotationAction, type TimelineContext, type TimelineScenario, type TimelineState } from "../core.ts";
 
 // --- The format ----------------------------------------------------------------
 

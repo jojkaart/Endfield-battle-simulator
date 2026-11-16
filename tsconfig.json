@@ -16,7 +16,7 @@
     "allowImportingTsExtensions": true,
     "noEmit": true,
     "skipLibCheck": true,
-    "paths": { "@efsim/*": ["./packages/*/src/index.ts"] }
+    "paths": { "@efsim/engine/core": ["./packages/engine/src/core.ts"], "@efsim/*": ["./packages/*/src/index.ts"] }
   },
   "include": ["packages/*/src", "packages/*/test", "tests", "vitest.config.ts", "vitest.logs.config.ts", "vitest.shared.ts", "scripts/*.ts", "eslint.config.js"]
 }

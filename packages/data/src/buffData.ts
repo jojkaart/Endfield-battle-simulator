@@ -8,7 +8,7 @@ import { join } from "node:path";
 import { arr, at, get, int, num, obj, str, type Ctx } from "./fields.ts";
 import { DataError } from "./errors.ts";
 import { parseJsonExact } from "./json.ts";
-import type { PerfectDodge } from "@efsim/engine";
+import type { PerfectDodge } from "@efsim/engine/core";
 import { globToRegExp, isSkillFileListed as ALLOWED_SKILL_FILE, slowdownOf } from "./skillData.ts";
 import { DATA_FILES, sourceDir } from "./sources.ts";
 

@@ -4,21 +4,7 @@
 // re-derived from the kits by hand: a kit change moves the table with it. A planning aid and the input of a planner
 // that builds rotations backward from the payoffs (phase 3); never part of a fight's result.
 
-import { activeAt, type ActiveBuff } from "./buffs.ts";
-import type { SkillType } from "./attributes.ts";
-import { EngineError } from "./errors.ts";
-import type { GameData } from "./model.ts";
-import type { Modifier } from "./effects.ts";
-import { ARTS_ELEMENTS, INFLICTION_FRAMES, MAX_INFLICTION_STACKS, type ActiveStatus, type StatusEvent } from "./status.ts";
-import type { ArtsElement } from "./reactions.ts";
-import { advance, apply, createContext, earliestStart, exclusiveUntil, init, memoised, simulate, type RotationAction, type TimelineContext, type TimelineScenario, type TimelineState } from "./timeline.ts";
-import { skillCosts } from "./timeline/context.ts";
-import { COMBO_WINDOW_FRAMES, LINK_FRAMES } from "./timeline/rules.ts";
-import { skillAvailable, windowKey } from "./timeline/timing.ts";
-import { addBuff } from "./timeline/actions.ts";
-import { situationAt } from "./timeline/situation.ts";
-import { predicateRefs } from "./expr.ts";
-import { FPS } from "./units.ts";
+import { activeAt, EngineError, ARTS_ELEMENTS, INFLICTION_FRAMES, MAX_INFLICTION_STACKS, advance, apply, createContext, earliestStart, exclusiveUntil, init, memoised, simulate, skillCosts, COMBO_WINDOW_FRAMES, LINK_FRAMES, skillAvailable, windowKey, addBuff, situationAt, predicateRefs, FPS, type ActiveBuff, type SkillType, type GameData, type Modifier, type ActiveStatus, type StatusEvent, type ArtsElement, type RotationAction, type TimelineContext, type TimelineScenario, type TimelineState } from "../core.ts";
 
 /**
  * One planning action: a kit skill an operator casts from a rotation (battle skill, combo, ultimate), or the

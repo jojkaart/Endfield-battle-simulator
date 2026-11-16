@@ -17,7 +17,7 @@
 //   Weakness (buff_common_affixes_weak), −1757502026 a shield (Ember's,
 //   Mi Fu's, Catcher's, Thunderberge's shield buffs).
 
-import type { BuffCategory, Element } from "@efsim/engine";
+import type { BuffCategory, Element } from "@efsim/engine/core";
 
 const ARTS: readonly Element[] = ["fire", "pulse", "cryst", "natural"];
 

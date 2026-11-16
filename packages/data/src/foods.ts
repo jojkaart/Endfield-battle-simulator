@@ -5,7 +5,7 @@
 // for a while (a dispel, a heal, an instant ultimate-energy gain, a damage
 // modifier) is refused, so a food never loads half understood.
 
-import type { FoodData } from "@efsim/engine";
+import type { FoodData } from "@efsim/engine/core";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { isBuffFileListed, readBuffFile } from "./buffData.ts";

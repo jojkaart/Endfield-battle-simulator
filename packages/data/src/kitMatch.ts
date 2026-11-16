@@ -5,7 +5,7 @@
 // timing values at the skill's highest level), shared by kit-draft, the
 // loader and the tests.
 
-import type { Effect, Element, KitHit, Predicate, SkillData } from "@efsim/engine";
+import type { Effect, Element, KitHit, Predicate, SkillData } from "@efsim/engine/core";
 import { compileSkill, formatCompiledValue, prefixOf, type CompiledCost, type CompiledEffect, type CompiledLanding, type CompiledPoiseLanding, type CompiledSkill, type CompiledValue } from "./skillCompile.ts";
 
 /** What compiling an operator's skill reads of the loaded data. */

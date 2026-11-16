@@ -24,7 +24,7 @@
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { Slot, type Element, type PhysicalStatus, type Predicate, type Zone } from "@efsim/engine";
+import { Slot, type Element, type PhysicalStatus, type Predicate, type Zone } from "@efsim/engine/core";
 import { parseJsonExact } from "./json.ts";
 import { sourceDir } from "./sources.ts";
 import { isSkillFileListed, skillFilePath } from "./skillData.ts";

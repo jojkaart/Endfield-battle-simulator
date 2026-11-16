@@ -3,8 +3,8 @@
 // each damage hit with the buff effects the log says were active. No player
 // names or account IDs (docs/data-sources.md#licences-and-terms-in-short).
 
-import type { Build, Element, Zone } from "@efsim/engine";
-import { ELEMENTS } from "@efsim/engine";
+import type { Build, Element, Zone } from "@efsim/engine/core";
+import { ELEMENTS } from "@efsim/engine/core";
 
 /** ZMDLogs zone names → our zones (verified on btl_upload_40d9a3c1da37, see effects.ts). */
 export const ZMDLOGS_ZONES: Readonly<Record<string, Zone>> = {

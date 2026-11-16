@@ -33,4 +33,45 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // The core never imports the planning code (packages/engine/src/core.ts says where the core ends).
+    files: ["packages/engine/src/**/*.ts"],
+    ignores: ["packages/engine/src/index.ts", "packages/engine/src/planning/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            { group: ["@efsim/*", "../../*", "node:*"], message: "The engine has no dependencies." },
+            { group: ["./planning/*", "../planning/*"], message: "The core doesn't import the planning code (core.ts)." },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // The planning code imports the core only through its entry (core.ts), never a core module directly.
+    files: ["packages/engine/src/planning/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            { group: ["@efsim/*", "../../*", "node:*"], message: "The engine has no dependencies." },
+            { group: ["../*", "!../core.ts"], message: "Planning code imports the core through ../core.ts only (core.ts)." },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // The data package uses the engine's core only (@efsim/engine/core): the game-data cache's key traces it.
+    files: ["packages/data/src/**/*.ts"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        { paths: [{ name: "@efsim/engine", message: "The data package imports @efsim/engine/core (the engine's core: core.ts), not the whole engine." }] },
+      ],
+    },
+  },
 );

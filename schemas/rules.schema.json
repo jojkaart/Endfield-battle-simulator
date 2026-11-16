@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/jojkaart/Endfield-battle-simulator/schemas/rules.schema.json",
   "title": "Rule list",
-  "description": "A rule-based rotation (packages/engine/src/policy.ts; docs/design.md \"Rule-based rotations\"): an opener and an ordered list of rules \"when cue X is visible, do Y\", played by a simulated player with a reaction delay. Operators by ID or by the name the game shows.",
+  "description": "A rule-based rotation (packages/engine/src/planning/policy.ts; docs/design.md \"Rule-based rotations\"): an opener and an ordered list of rules \"when cue X is visible, do Y\", played by a simulated player with a reaction delay. Operators by ID or by the name the game shows.",
   "type": "object",
   "required": ["opener", "rules"],
   "additionalProperties": false,
