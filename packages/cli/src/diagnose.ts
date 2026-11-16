@@ -143,12 +143,12 @@ export interface PlaySettings {
   readonly crit: TimelineScenario["options"]["crit"];
 }
 
-/** Jobs for seeds 1…n of a list on a scenario (the fight at the settings' length). */
-export function seedJobs(scenario: Omit<TimelineScenario, "rotation">, list: RuleList, s: PlaySettings, seeds: number, extra: Partial<RulesJob> = {}): RulesJob[] {
+/** Jobs for seeds first…first + n − 1 (default 1…n) of a list on a scenario (the fight at the settings' length). */
+export function seedJobs(scenario: Omit<TimelineScenario, "rotation">, list: RuleList, s: PlaySettings, seeds: number, extra: Partial<RulesJob> = {}, first = 1): RulesJob[] {
   return Array.from({ length: seeds }, (_, i) => ({
-    scenario: { ...scenario, durationFrames: Math.round(s.seconds * FPS), options: { ...scenario.options, crit: s.crit, seed: i + 1 } },
+    scenario: { ...scenario, durationFrames: Math.round(s.seconds * FPS), options: { ...scenario.options, crit: s.crit, seed: first + i } },
     list,
-    options: { reactionSeconds: s.reaction, seed: i + 1 },
+    options: { reactionSeconds: s.reaction, seed: first + i },
     ...extra,
   }));
 }
@@ -174,7 +174,12 @@ export interface MarginalValue {
   /** Team sustained DPS change for one step (fraction), on common seeds, and its standard error. */
   readonly gain: number;
   readonly se: number;
+  /** Seeds it's over (more for a noisy one: DiagnoseOptions.marginalMaxSeeds). */
+  readonly seeds: number;
 }
+
+/** A marginal value's standard error above which it gets more seeds (0.25% of team DPS). */
+export const MARGINAL_NOISY = 0.0025;
 
 export interface Diagnosed {
   readonly list: RuleList;
@@ -197,6 +202,8 @@ export interface DiagnoseOptions {
   readonly seeds?: number;
   /** Seeds of each marginal value (default 4; common with the diagnosis' first ones); 0: none. */
   readonly marginalSeeds?: number;
+  /** Seeds a noisy marginal value (standard error over MARGINAL_NOISY) is taken to (default 16). */
+  readonly marginalMaxSeeds?: number;
   readonly workers?: number;
   /** Only these operators' marginal values (default all). */
   readonly operators?: readonly string[];
@@ -240,10 +247,27 @@ export async function diagnose(data: GameData, scenario: Omit<TimelineScenario, 
       if (done % 20 === 0 || done === of) o.progress?.(`  ${done} / ${of} (${((performance.now() - t0) / 1000).toFixed(0)} s)`);
     });
     runs += jobs.length;
-    marginal = plan.map(({ op, p }, i) => {
-      const got = res.slice(i * mSeeds, (i + 1) * mSeeds).map((r: RulesResult) => r.sustainedDps);
-      return { operator: op, probe: p, ...paired(dps.slice(0, mSeeds), got) };
-    });
+    const got = plan.map((_, i) => res.slice(i * mSeeds, (i + 1) * mSeeds).map((r: RulesResult) => r.sustainedDps));
+    marginal = plan.map(({ op, p }, i) => ({ operator: op, probe: p, ...paired(dps.slice(0, mSeeds), got[i] as number[]), seeds: mSeeds }));
+    // Steps that move the timeline (Ultimate Gain Efficiency, an attribute that flips a mode) don't line up with the
+    // base's events, so their differences stay noisy on common seeds: those whose standard error is over the bar get
+    // more seeds, up to marginalMaxSeeds (the base's extra seeds played once).
+    const maxSeeds = o.marginalMaxSeeds ?? 16;
+    const noisy = marginal.map((m, i) => (m.se > MARGINAL_NOISY && !beyondNoise(m) ? i : -1)).filter((i) => i >= 0);
+    if (noisy.length && maxSeeds > mSeeds) {
+      const more = maxSeeds - mSeeds;
+      const baseFrom = dps.length + 1;
+      const baseJobs = maxSeeds > dps.length ? seedJobs(scenario, list, settings, maxSeeds - dps.length, {}, baseFrom) : [];
+      const extra = noisy.flatMap((i) => seedJobs(wearing(scenario, (plan[i] as { op: string }).op, [`probe:${(plan[i] as { p: Probe }).p.key}`]), list, settings, more, { probes }, mSeeds + 1));
+      o.progress?.(`  ${noisy.length} noisy steps (se over ${(MARGINAL_NOISY * 100).toFixed(2)}%): ${more} more seeds each, ${extra.length + baseJobs.length} runs`);
+      const r2 = await runRulesJobs(data, [...baseJobs, ...extra], settings.workers);
+      runs += r2.length;
+      const baseAll = [...dps, ...r2.slice(0, baseJobs.length).map((r) => r.sustainedDps)];
+      noisy.forEach((i, j) => {
+        const all = [...(got[i] as number[]), ...r2.slice(baseJobs.length + j * more, baseJobs.length + (j + 1) * more).map((r) => r.sustainedDps)];
+        marginal[i] = { ...(marginal[i] as MarginalValue), ...paired(baseAll.slice(0, maxSeeds), all), seeds: maxSeeds };
+      });
+    }
   }
   return { list, diagnosis, distribution: policyDistribution(base.map((r) => r.moments)), dps, marginal, settings, ...(critNote ? { critNote } : {}), runs, secondsTaken: (performance.now() - t0) / 1000 };
 }
@@ -264,43 +288,55 @@ export const beyondNoise = (m: { readonly gain: number; readonly se: number }) =
 
 const SOURCE_WORDS = (data: GameData, s: string) => (s === "sp" ? "SP spent" : s === "hits" ? "own hits" : s.startsWith("kit:") ? s.slice(4) : s);
 
+/** A finding: a stable key (its kind and who: to tell which went away with other gear) and its text. */
+export interface Finding {
+  readonly key: string;
+  readonly text: string;
+}
+
 /** The inefficiencies, in plain words (findings the gear search uses too). */
-export function findings(data: GameData, d: Diagnosed): string[] {
+export function findings(data: GameData, d: Diagnosed): Finding[] {
   const name = (op: string) => data.operators[op]?.name ?? op;
-  const out: string[] = [];
+  const out: Finding[] = [];
+  const add = (key: string, text: string) => out.push({ key, text });
   const dg = d.diagnosis;
   const mvOf = (op: string, attr: number) => d.marginal.find((m) => m.operator === op && m.probe.attr === attr && m.probe.target === Target.AsWritten && !m.probe.reference);
+  const bestOf = (op: string, but?: string) => d.marginal.filter((m) => m.operator === op && !m.probe.reference && m.probe.key !== but).sort((a, b) => b.gain - a.gain)[0];
   for (const o of dg.operators) {
     const u = o.ultimate;
     const ue = mvOf(o.operator, Attr.UltimateSpGainScalar);
     const wasted = o.energy.gained > 0 ? o.energy.wasted / o.energy.gained : 0;
-    if (u) {
+    if (u && ue) {
       const heldPart = u.heldSeconds / dg.seconds;
       const why = [u.held.priority > 0.5 ? `${s1(u.held.priority)} s behind other presses` : "", u.held.condition > 0.5 ? `${s1(u.held.condition)} s held by its rule's condition` : "", u.held.noRule > 0.5 ? `${s1(u.held.noRule)} s with no rule for it` : "", u.held.reaction > 0.5 ? `${s1(u.held.reaction)} s reaction` : ""].filter(Boolean).join(", ");
-      if (ue && !beyondNoise(ue) && (heldPart > 0.03 || wasted > 0.05))
-        out.push(`${name(o.operator)}'s ultimate is ready but not cast ${pct(heldPart)} of the fight (${why || "reaction"}) and ${pct(wasted)} of its energy is lost at a full bar: its Ultimate Gain Efficiency is worth ~0 now (${ue.probe.label}: ${mvText(ue)}); a gear line spent on it could go to damage.`);
-      else if (ue && beyondNoise(ue) && ue.gain > 0) {
-        const best = d.marginal.filter((m) => m.operator === o.operator).sort((a, b) => b.gain - a.gain)[0];
-        out.push(`${name(o.operator)}'s ultimate energy is a bottleneck: ${ue.probe.label} on it is worth ${mvText(ue)}${best && best.probe.key !== ue.probe.key ? ` (its best step: ${best.probe.label}, ${mvText(best)})` : " (its best step)"}.`);
-      }
-      if (u.held.noRule > 1) out.push(`The list has no rule for ${name(o.operator)}'s ultimate: it sits ready ${s1(u.held.noRule)} s.`);
+      const best = bestOf(o.operator, ue.probe.key);
+      const surplus = heldPart > 0.03 || wasted > 0.05;
+      const state = `ready but not cast ${pct(heldPart)} of the fight (${why || "reaction"}), ${pct(wasted)} of its energy lost at a full bar`;
+      // Clearly below its best damage line: the difference beyond both errors.
+      const below = best !== undefined && best.gain - ue.gain > 2 * Math.hypot(best.se, ue.se);
+      if (below && surplus && best)
+        add(`ue-low:${o.operator}`, `${name(o.operator)}'s ultimate is ${state}: its Ultimate Gain Efficiency is worth ${mvText(ue)} a line, clearly less than ${best.probe.label} (${mvText(best)}): a line spent on efficiency would do more as damage.`);
+      else if (beyondNoise(ue) && ue.gain > 0)
+        add(`ue-bottleneck:${o.operator}`, `${name(o.operator)}'s ultimate energy is a bottleneck: ${ue.probe.label} on it is worth ${mvText(ue)}${best ? ` (its best damage line: ${best.probe.label}, ${mvText(best)})` : ""}.`);
+      else if (surplus && ue.se > MARGINAL_NOISY)
+        add(`ue-noisy:${o.operator}`, `${name(o.operator)}'s ultimate is ${state}, but what its Ultimate Gain Efficiency is worth can't be told from the seeds' noise (${mvText(ue)} at ${ue.seeds} seeds: a change of timing moves the whole fight).`);
     }
-    if (o.combo && o.combo.litSeconds / dg.seconds > 0.08) out.push(`${name(o.operator)}'s combo is lit but unused ${s1(o.combo.litSeconds)} s (${pct(o.combo.litSeconds / dg.seconds)} of the fight).`);
+    if (u && u.held.noRule > 1) add(`norule:${o.operator}`, `The list has no rule for ${name(o.operator)}'s ultimate: it sits ready ${s1(u.held.noRule)} s.`);
+    if (o.combo && o.combo.litSeconds / dg.seconds > 0.08) add(`combo:${o.operator}`, `${name(o.operator)}'s combo is lit but unused ${s1(o.combo.litSeconds)} s (${pct(o.combo.litSeconds / dg.seconds)} of the fight).`);
+    // More of a stat that loses beyond the noise: a kit threshold crossed (a mode decided by two attributes).
+    for (const m of d.marginal.filter((x) => x.operator === o.operator && x.gain < 0 && beyondNoise(x)))
+      add(`loses:${o.operator}:${m.probe.key}`, `${m.probe.label} on ${name(o.operator)} loses ${mvText(m)}: it crosses a threshold of the kit (such as a mode decided by two attributes).`);
   }
-  if (dg.sp.atCapSeconds / dg.seconds > 0.03) out.push(`Team SP sits at the cap ${s1(dg.sp.atCapSeconds)} s (${n0(dg.sp.wastedRegen + dg.sp.wastedGrants)} SP lost): room for more battle skills.`);
+  if (dg.sp.atCapSeconds / dg.seconds > 0.03) add("sp", `Team SP sits at the cap ${s1(dg.sp.atCapSeconds)} s (${n0(dg.sp.wastedRegen + dg.sp.wastedGrants)} SP lost): room for more battle skills.`);
   const main = dg.operators.find((o) => o.operator === dg.main);
-  const others = dg.operators.filter((o) => o.operator !== dg.main && o.ultimate);
-  if (main?.ultimate && others.length) {
-    out.push(`Ultimates per minute: ${dg.operators.filter((o) => o.ultimate).map((o) => `${name(o.operator)} ${(o.ultimate?.perMinute ?? 0).toFixed(2)}`).join(", ")} (${name(dg.main)} deals the most damage, ${pct(main.share)}).`);
-  }
+  if (main?.ultimate) add("per-minute", `Ultimates per minute: ${dg.operators.filter((o) => o.ultimate).map((o) => `${name(o.operator)} ${(o.ultimate?.perMinute ?? 0).toFixed(2)}`).join(", ")} (${name(dg.main)} deals the most damage, ${pct(main.share)}).`);
   for (const e of dg.effects.slice(0, 6)) {
-    if (e.onMain > 0.15 && e.onMainUltimate < 0.7 && (dg.mainUltimates > 0)) out.push(`${name(dg.main)}'s ultimate lands under ${name(e.owner)}'s ${e.label} only ${pct(e.onMainUltimate)} of its damage (all its damage: ${pct(e.onMain)}; uptime ${pct(e.uptime)}).`);
+    if (e.onMain > 0.15 && e.onMainUltimate < 0.7 && dg.mainUltimates > 0) add(`overlap:${e.owner}:${e.id}`, `${name(dg.main)}'s ultimate lands under ${name(e.owner)}'s ${e.label} for only ${pct(e.onMainUltimate)} of its damage (all its damage: ${pct(e.onMain)}; uptime ${pct(e.uptime)}).`);
   }
-  // Each operator's best step, beyond noise.
   for (const o of dg.operators) {
     const ms = d.marginal.filter((m) => m.operator === o.operator && !m.probe.reference).sort((a, b) => b.gain - a.gain);
     const best = ms[0];
-    if (best && beyondNoise(best)) out.push(`Best gear line for ${name(o.operator)}: ${best.probe.label} (${mvText(best)}); then ${ms.slice(1, 3).map((m) => `${m.probe.label} ${mvText(m)}`).join(", ")}.`);
+    if (best && beyondNoise(best)) add(`best:${o.operator}`, `Best gear line for ${name(o.operator)}: ${best.probe.label} (${mvText(best)}); then ${ms.slice(1, 3).map((m) => `${m.probe.label} ${mvText(m)}`).join(", ")}.`);
   }
   return out;
 }
@@ -348,10 +384,10 @@ export function formatDiagnosis(data: GameData, d: Diagnosed, title: string): st
     const ops = [...new Set(d.marginal.map((m) => m.operator))];
     for (const op of ops) {
       const ms = d.marginal.filter((m) => m.operator === op).sort((a, b) => b.gain - a.gain);
-      lines.push(`  ${name(op)}: ${ms.map((m) => `${m.probe.label} ${mvText(m)}${beyondNoise(m) ? "" : " (noise)"}`).join("; ")}`);
+      lines.push(`  ${name(op)}: ${ms.map((m) => `${m.probe.label} ${mvText(m)}${m.seeds > Math.min(...d.marginal.map((x) => x.seeds)) ? ` [${m.seeds} seeds]` : ""}${beyondNoise(m) ? "" : " (noise)"}`).join("; ")}`);
     }
   }
   const f = findings(data, d);
-  if (f.length) lines.push("", "Findings:", ...f.map((x) => `- ${x}`));
+  if (f.length) lines.push("", "Findings:", ...f.map((x) => `- ${x.text}`));
   return lines.join("\n");
 }

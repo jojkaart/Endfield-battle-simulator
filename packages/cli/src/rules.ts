@@ -11,11 +11,14 @@ import {
   POLICY_JITTER,
   POLICY_REACTION_SECONDS,
   RULE_SEARCH_PENALTY,
+  critTriggers,
   cueCost,
   describeRule,
+  distributionCritMode,
   describeStep,
   learnability,
   playRules,
+  policyDistribution,
   resolveRuleList,
   searchRules,
   simulate,
@@ -24,6 +27,7 @@ import {
   type PolicyRun,
   type RuleList,
   type RuleScore,
+  type SustainedDistribution,
   type TimelineScenario,
 } from "@efsim/engine";
 import { num, pct, signedPct, table } from "./format.ts";
@@ -65,8 +69,13 @@ interface Evaluation {
   readonly run: PolicyRun;
   /** Sustained DPS per seed at the default delay (expected crits). */
   readonly dps: readonly number[];
-  /** … with rolled crits (the battle's seed = the delay's). */
-  readonly rolled: readonly number[];
+  /**
+   * Sustained DPS as a distribution over the seeds' delays and each hit's crit (policyDistribution: the runs' crit
+   * spread from each hit's chance, combined by the law of total variance; with crit-triggered effects in the team the
+   * crits they read are rolled, seeded with the delay's seed).
+   */
+  readonly distribution: SustainedDistribution;
+  readonly critNote?: string;
   /** Mean sustained DPS at delay 0 (one run: no jitter), the default (dps) and twice it. */
   readonly robust: { readonly bot: number; readonly normal: number; readonly slow: number };
   readonly first60: readonly number[];
@@ -80,8 +89,9 @@ const sd = (xs: readonly number[]) => {
 };
 
 function evaluate(data: GameData, scenario: TimelineScenario, list: RuleList, reaction: number, seeds: number): Evaluation {
-  const runs = Array.from({ length: seeds }, (_, i) => playRules(data, scenario, list, { reactionSeconds: reaction, seed: i + 1 }));
-  const rolled = Array.from({ length: seeds }, (_, i) => playRules(data, { ...scenario, options: { ...scenario.options, crit: "rolled", seed: i + 1 } }, list, { reactionSeconds: reaction, seed: i + 1 }).sustainedDps);
+  const crit = distributionCritMode(data, scenario);
+  const triggers = crit === "distribution" ? critTriggers(data, scenario) : [];
+  const runs = Array.from({ length: seeds }, (_, i) => playRules(data, { ...scenario, options: { ...scenario.options, crit, seed: i + 1 } }, list, { reactionSeconds: reaction, seed: i + 1 }));
   const bot = playRules(data, scenario, list, { reactionSeconds: 0 }).sustainedDps;
   const slow = mean(Array.from({ length: seeds }, (_, i) => playRules(data, scenario, list, { reactionSeconds: reaction * 2, seed: i + 1 }).sustainedDps));
   const dps = runs.map((r) => r.sustainedDps);
@@ -90,7 +100,8 @@ function evaluate(data: GameData, scenario: TimelineScenario, list: RuleList, re
     learn: learnability(list),
     run: runs[0] as PolicyRun,
     dps,
-    rolled,
+    distribution: policyDistribution(runs.map((r) => r.sustainedMoments)),
+    ...(triggers.length ? { critNote: `crit-triggered effects (${triggers.join(", ")}): the crits they read are rolled, seeded with the delay's seed` } : {}),
     robust: { bot, normal: mean(dps), slow },
     first60: runs.map((r) => r.first60),
     totals: runs.map((r) => r.total),
@@ -122,7 +133,8 @@ function formatEvaluation(data: GameData, e: Evaluation, reaction: number, refer
   lines.push(...describeRuleList(data, e.list, e.run.fired));
   lines.push("");
   lines.push(`Sustained DPS after the opener (expected crits, ${seeds} seed${seeds === 1 ? "" : "s"} of the reaction delay): ${n0(mean(e.dps))} (sd ${n0(sd(e.dps))}, ${n0(Math.min(...e.dps))}–${n0(Math.max(...e.dps))})`);
-  lines.push(`  with rolled crits: ${n0(mean(e.rolled))} (sd ${n0(sd(e.rolled))}, ${n0(Math.min(...e.rolled))}–${n0(Math.max(...e.rolled))})`);
+  const d = e.distribution;
+  lines.push(`  as a distribution over the delays and crits: sd ${n0(d.sd)} (reaction delays ${n0(d.sdDelays)}, crits ${n0(d.sdCrits)}), 5–95% ${n0(d.p5)}–${n0(d.p95)}${e.critNote ? ` (${e.critNote})` : ""}`);
   lines.push(`Whole fight (${e.run.durationFrames / FPS} s): ${n0(mean(e.totals))} (${n0(mean(e.totals) / (e.run.durationFrames / FPS))} DPS); opener over at ${(e.run.openerEnd / FPS).toFixed(1)} s`);
   lines.push(`Per minute (seed 1): ${e.run.byMinute.map((x) => n0(x)).join(" / ")}`);
   const r = e.robust;

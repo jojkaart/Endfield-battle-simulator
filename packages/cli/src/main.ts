@@ -510,6 +510,11 @@ async function main(argv: string[]): Promise<number> {
             ...opt("passes", passes),
             ...opt("generated", whole(values.generated, "generated", 0)),
             ...opt("sets", whole(values.sets, "sets", 0)),
+            ...(values.operator.length ? { operators: values.operator.map((x) => {
+              const id = scenario.team.map((b) => b.operator).find((op) => op === x || data().operators[op]?.name.toLowerCase() === x.toLowerCase());
+              if (!id) throw new Error(`--operator ${x}: not in the scenario's team`);
+              return id;
+            }) } : {}),
             progress: (line) => process.stderr.write(line + "\n"),
           });
           text = formatRuleGear(data(), rg, `efsim gear --rules ${values.rules} on ${args[0]}`);

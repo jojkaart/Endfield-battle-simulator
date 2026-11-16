@@ -298,11 +298,6 @@ export interface PolicyOptions {
    * differ a little (gear, another rule) draw the same delays wherever their cues' onsets line up.
    */
   readonly seed?: number;
-  /**
-   * Stratified draws over a set of seeds (Latin hypercube per rule onset): with `samples` n, seeds 1…n each draw a
-   * delay from their own n-th of the delay's range, the n-ths shuffled per (rule, onset) by `base`. Off by default.
-   */
-  readonly stratify?: { readonly samples: number; readonly base?: number };
   /** Watches the run frame by frame (the rules' diagnosis: policydiag.ts); never changes it. */
   readonly observer?: PolicyObserver;
   /** A press of the opener or of a rule's sequence that can't start within this many seconds is given up (default 6). */
@@ -398,21 +393,11 @@ export function ruleDelayKeys(list: RuleList): number[] {
 
 /**
  * The uniform draw (0–1) behind the delay of a rule's k-th cue onset (k from 0): common random numbers, a function of
- * (seed, the rule's key, k) only. Stratified (PolicyOptions.stratify, n samples, seed s in 1…n): stratum π(s − 1) of n,
- * π a shuffle of 0…n − 1 drawn from (base, key, k), plus a uniform offset within it.
+ * (seed, the rule's key, k) only. (Stratified draws across seeds, a Latin hypercube per rule onset, were measured on
+ * the owner's team, 2026-11-16: no clear drop in the spread of a 5-seed mean or of a difference, so not kept.)
  */
-export function policyDelay(seed: number, key: number, k: number, stratify?: PolicyOptions["stratify"]): number {
-  if (!stratify) return keyedUniform(seed, key, k);
-  const n = stratify.samples;
-  const index = (((seed - 1) % n) + n) % n;
-  const base = stratify.base ?? 0;
-  // Fisher–Yates on 0…n − 1 with draws keyed by (base, key, k, step): the same shuffle for every seed of the set.
-  const perm = Array.from({ length: n }, (_, i) => i);
-  for (let i = n - 1; i > 0; i--) {
-    const j = Math.floor(keyedUniform(0x5eed, base, key, k, i) * (i + 1));
-    [perm[i], perm[j]] = [perm[j] as number, perm[i] as number];
-  }
-  return ((perm[index] as number) + keyedUniform(0x0ff5e7, base, key, k, index)) / n;
+export function policyDelay(seed: number, key: number, k: number): number {
+  return keyedUniform(seed, key, k);
 }
 
 /** The skills a button of an operator can cast (the button casts whichever is available then; follow-ups never). */
@@ -526,13 +511,12 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
   const wait = Math.round((options.waitSeconds ?? POLICY_WAIT_SECONDS) * FPS);
   if (!(reaction >= 0) || !(jitter >= 0 && jitter <= 1) || !(wait > 0)) throw new EngineError("reaction delay ≥ 0, jitter 0–1, wait > 0");
   const seed = options.seed ?? scenario.options.seed ?? 1;
-  if (options.stratify && !(Number.isInteger(options.stratify.samples) && options.stratify.samples >= 1)) throw new EngineError("stratify.samples must be a whole number ≥ 1");
   const delayKeys = ruleDelayKeys(list);
   const onsets = list.rules.map(() => 0);
   const drawDelay = (i: number) => {
     const k = onsets[i] as number;
     onsets[i] = k + 1;
-    return reaction === 0 ? 0 : Math.max(0, Math.round(reaction * (1 + jitter * (2 * policyDelay(seed, delayKeys[i] as number, k, options.stratify) - 1))));
+    return reaction === 0 ? 0 : Math.max(0, Math.round(reaction * (1 + jitter * (2 * policyDelay(seed, delayKeys[i] as number, k) - 1))));
   };
   const end = scenario.durationFrames;
   const exact = options.judgeEveryFrame === true;

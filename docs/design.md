@@ -1680,7 +1680,7 @@ the damage model), the state advanced to the frame:
 2. Then the first rule whose cue the player has seen for its **reaction
    delay** and whose first press can start now. The delay is drawn when a
    cue appears (onset): 0.3 s by default (`--reaction`; 0: a bot),
-   uniform within ±50% (seeded, its own stream). A rule that fired sees
+   uniform within ±50% (seeded; common random numbers, below). A rule that fired sees
    its own cue afresh (a new delay) before firing again. A rule whose
    cue holds but whose press can't start yet doesn't block the rules
    after it. A rule's later presses play as the opener's (each as soon
@@ -1712,10 +1712,44 @@ its parts; `complexity` = opener presses + rule presses + cue costs, the
 one number the search trades DPS against. The report gives each rule's
 cost and the hardest rank used.
 
+**Common random numbers** (2026-11-16): the delay of rule i's k-th cue
+onset (a rule firing counts as an onset: it sees its cue afresh) is a
+function of (seed, the rule, k) only (`policyDelay`), the rule known by
+its cue and presses (`ruleDelayKeys`; among identical rules, by its place
+among them), not by its index or the order other rules drew in. So two
+runs of a list with a little different gear, or two lists that differ in
+one rule, see the same delays wherever their cues' onsets line up, and a
+difference measured on common seeds is mostly the change's. Measured on
+the owner's team (300 s, 10 seeds; sample sd of the per-seed
+difference): Estella's gear swapped for the logs' loadout, 64 with common
+seeds against 4,006 with independent ones (the old shared stream already
+gave 76 here: the gear didn't change the order of draws); two rules
+swapped (Akekuri's combo rule above Si's), 1,097 against 3,174 (the old
+stream: 3,836, its draw order changed). Every list in the rule search is
+scored on the same seeds 1…k. Stratified draws (a Latin hypercube per
+(rule, onset) over the seeds) were tried and dropped: over 20 replicates
+of 5 seeds the sd of the mean was 1,029 plain against 997 stratified for
+one list, 1,238 against 828 for another, and 467 against 597 for their
+difference: no clear gain (a chaotic response isn't additive in the
+draws).
+
+**Crits as a distribution** (2026-11-16): crits don't change the
+timeline (but crit-triggered effects, below), so each run's sustained
+DPS is a distribution over its hits' crits, from each hit's chance
+(`PolicyRun.sustainedMoments`, moments.ts as for `efsim simulate`); the
+runs (seeds) combine by the law of total variance (`policyDistribution`):
+mean of means, variance E[σ²] + Var[μ], and the 5th / 95th percentiles of
+the mixture of each run's normal approximation. The report splits the sd
+into the reaction delays' (sd of the runs' means) and the crits' (√ of
+their mean variance). With a crit-triggered effect in the team
+(`critTriggers`) the battle plays crit mode `distribution` (the crits it
+reads rolled, seeded with the delay's seed) and says so. This replaces
+the rolled-crit runs. On the three teams the crits' sd is 350–380 DPS,
+the delays' 550–2,900: the delays dominate.
+
 **The report**: sustained DPS after the opener over a long fight (300 s
 default, `--duration`), mean and spread over 5 reaction-delay seeds with
-expected crits, and again with rolled crits (the battle seeded with the
-delay's seed); the whole fight's total, damage per minute, the first 60 s
+expected crits, and the distribution over delays and crits; the whole fight's total, damage per minute, the first 60 s
 (comparable with a 60 s timeline under the same start); **robustness**:
 sustained DPS as a bot (delay 0), at the default delay and at twice it;
 which rules fired how often; presses given up; shares; and the
@@ -1743,21 +1777,25 @@ per team (three teams at once on four cores); 200 lists at 3 seeds and
 **Noise.** The fight is chaotic for the driver too: a different
 reaction-delay draw moves where Stagger windows, combo triggers and
 ultimates fall, and a list's sustained DPS has a standard deviation of
-2–5% over seeds (the owner's team 2,929 of 55,462 at 10 seeds). That is
+1–5% over seeds (the owner's team 1,402 of 57,096 at 10 seeds). That is
 as much as most single edits gain, so at 2–3 seeds the search often
-keeps a lucky list: on the owner's team every "gain" it found vanished at
-10 seeds. Judge a list at 10 seeds (`--seeds 10`) before taking it; the
+kept a lucky list (before common random numbers: on the owner's team
+every "gain" it found vanished at 10 seeds; with them a difference's
+noise is a third, but a list's own level still moves). Judge a list at
+10 seeds (`--seeds 10`) before taking it; the
 bot (delay 0, one run) is one sample of the same noise, sometimes below
 the 0.3 s player. Gains that held: Ink Melt +28%, Typhoeus's team +16%.
 
-**Results** (sustained DPS over 300 s, 0.3 s delay, 10 seeds; each team
-page's "Rules" has the list in plain words):
+**Results** (sustained DPS over 300 s, 0.3 s delay, 10 seeds, common
+random numbers (2026-11-16; the numbers before them, with the old shared
+stream, were within the seeds' spread of these); each team page's
+"Rules" has the list in plain words):
 
-| Team | Full energy | From zero | First 60 s against the 60 s timeline (full / zero) | 300 s total against a fixed 300 s search (beam 6) | Complexity |
+| Team | Full energy (sd) | From zero (sd) | First 60 s against the 60 s timeline (full / zero) | 300 s total against a fixed 300 s search (beam 6) | Complexity |
 |---|---|---|---|---|---|
-| The owner's (hand-written) | 55,462 | 56,370 | −8.8% / +4.2% | +18.9% | 37 |
-| Ink Melt (searched) | 66,058 | 60,464 | −25.5% / −45.8% | +20.8% | 38 |
-| Typhoeus, Arcane, Liino, Perlica (searched) | 53,302 | 48,560 | −28.2% / −47.5% | −5.5% | 47 |
+| The owner's (hand-written; Artful Intent runs its 20 s, 2026-11-16) | 57,096 (1,402) | 55,394 (553) | −9.3% / −7.8% | +22.4% | 44 |
+| Ink Melt (searched) | 65,922 (1,750) | 61,962 (2,916) | −25.3% / −44.6% | +20.5% | 38 |
+| Typhoeus, Arcane, Liino, Perlica (searched) | 52,088 (1,946) | 49,522 (999) | −31.4% / −46.2% | −7.7% | 47 |
 
 The 60 s timeline is the upper reference for a 60 s window, not
 sustained DPS; the fixed 300 s search (the scenario at 300 s, full
@@ -1766,6 +1804,76 @@ one. The opener-and-loop searches (`--loop --sync`) take hours per team
 (44 min to 5 h in their measurements) and weren't run again; their old
 loops for the owner's team (INT build, other team order) aren't
 comparable.
+
+#### Diagnosis, marginal values, gear on rules (phase 2, 2026-11-16)
+
+The owner: find the inefficiencies in how a team plays, then the gear
+that fixes them (too much Ultimate Gain Efficiency on a main damage
+dealer whose ultimate comes faster than the supports' it needs is a gear
+line that could have been damage).
+
+**`efsim diagnose <scenario> <rules.json>`** (CLI diagnose.ts; engine
+policydiag.ts `diagnoseRules`, a frame-by-frame observer of `playRules`
+that never changes the run). A separate command rather than a section of
+`efsim rules`: it plays ~300 runs for the marginal values (workers), and
+`efsim gear --rules` reuses it whole. Over 5 seeds (`--seeds`), averaged:
+
+- per operator: damage share; ultimate energy gained (after efficiency,
+  before the cap; by source: SP spent, own hits, each kit trigger),
+  spent, wasted at the cap and held at the end (start + gained = spent +
+  wasted + end; engine statistics `energyGained`, `energySpent`,
+  `energyOverflow`, read by nothing in the fight); ultimates per minute
+  and seconds ready but not cast, by why: within a rule's reaction delay,
+  behind other presses (the rule's cue was seen: another rule came first,
+  a skill still acting, a sequence playing), held by the rule's condition
+  (the list presses it, but that rule's cue didn't hold), or no rule for
+  it; combos per minute and seconds lit but unused; battle skills per
+  minute; damage by element, kind and while Staggered;
+- team SP: seconds at the cap, SP lost to it by regeneration and by
+  grants (`spOverflow`);
+- the main damage dealer (most damage): other operators' buffs on its
+  hits (from each hit's modifiers: the share of its damage, and of its
+  ultimate's, each applied to; uptime on it) and the enemy's states
+  (Vulnerable, inflictions, statuses, Staggered: uptime, share of its
+  damage and ultimate damage landed under them);
+- sustained DPS as a distribution (mean, sd split delays / crits, 5–95%).
+
+**Marginal values**: per operator, the team's sustained DPS with one
+gear-line-sized step more of each stat gear offers, paired on common
+seeds (4, `--marginal-seeds`) with the diagnosis' runs: (probe − base) /
+base, ± the per-seed differences' sd / √n. The steps are the game's T4
+gear lines at full artifice (each kind's median size: main attribute
++71, secondary +48, other attributes +55 / +75, main attribute +26.9%,
+secondary +23%, Crit Rate +13.5%, Ultimate Gain Efficiency +26.7%, Arts
+Intensity +45, element DMG +24.9–29.9%, Battle Skill DMG +44.8%, Combo /
+Ultimate DMG +35.9%, Basic Attack DMG +29.9%, DMG to Staggered +53.8%;
+healing, HP and damage-taken lines left out), worn as a fifth synthetic
+piece (`probe:<attr>:<slot>:<target>`) so the panel goes through the
+same stat code, plus reference steps for what only sets and weapons give
+(ATK +10%, flat ATK +20, Crit DMG +10%). An element's, skill kind's or
+Staggered bonus is measured only for an operator with such damage. A
+value is "noise" within two standard errors or under 0.1%. Findings in
+plain words follow from these: an ultimate held or energy wasted while
+its efficiency is worth ~0; an ultimate energy bottleneck (efficiency
+worth something); no rule for an ultimate; combos lit but unused; SP at
+the cap; the main damage dealer's ultimate landing outside a support's
+buff; each operator's best line.
+
+**`efsim gear <scenario> --rules <rules.json>`** (CLI gearrules.ts):
+loadouts scored by sustained DPS from playing the list (8 seeds by
+default here, common random numbers, 300 s), coordinate ascent across
+operators as `efsim gear` does, a change taken only when its paired gain
+is over twice its standard error. Candidates per operator: the logs' and
+a candidates file's (`gearCandidates`), plus two kinds from the
+marginal values: **swaps** (one piece for another T4 piece of the same
+part that keeps every active set, ranked by the lines' predicted worth,
+linear in their sizes, the best 4 a pass) and **set builds** (each set's
+best three or four pieces by the lines' worth, the rest the best piece
+of any set; all screened by play on 2 seeds, the best 2 per operator
+kept: a set's effect is in no marginal value). Then the diagnosis again
+with the chosen gear, what changed per operator, and which findings went
+away; `--out` writes the scenario with the chosen gear. Runs go to worker
+threads (rulespool.ts; each loads the game data once, ~15 s).
 
 ### Time
 
