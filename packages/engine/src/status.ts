@@ -249,6 +249,45 @@ export const PHYSICAL_KEYS: Readonly<Record<PhysicalStatus, string>> = {
   breach: "buff_physical_do_fracture",
 };
 
+/**
+ * What a status event's own hit sees of the status it applies (docs/combat-mechanics.md §3.8, one row per status that
+ * changes damage): `own`, the enemy after the event (its own new status); `prior`, the status as it was before the
+ * event (not its own); `none`, neither. The general rule is `own` (what a hit applies acts before its own damage,
+ * §3.2); the exceptions are measured. Statuses without a damage modifier of their own (Combustion, Solidification,
+ * Lift, Knock Down, Crush) have no row: their own hit sees nothing of them either way. (What a Crush's hit sees of the
+ * Vulnerable stacks it consumes, or a Shatter's of a Breach, are other questions: §3.8.)
+ */
+export const OWN_HIT_SEES: Readonly<Record<"corrosion" | "electrification" | "breach", { readonly sees: "own" | "prior" | "none"; readonly tag: "SETTLED" | "ASSUMED"; readonly evidence: string }>> = {
+  corrosion: { sees: "prior", tag: "SETTLED", evidence: "accuracy plan B7 (2026-10-28): logged ×0.91–0.94 of the prediction with its own shred, matched without it" },
+  breach: { sees: "none", tag: "SETTLED", evidence: "2026-11-16 Arts Intensity review: 7e19489ae503, d4fb69b036fe exactly ÷ (1 + its own DMG Taken); c4f307cd039a without the earlier Breach the log lists" },
+  electrification: { sees: "own", tag: "ASSUMED", evidence: "the general rule; not measured apart from it" },
+};
+
+/** The OWN_HIT_SEES row a status event falls under, if any (a forced reaction has no initial hit to see anything). */
+export function ownHitRow(e: StatusEvent): keyof typeof OWN_HIT_SEES | null {
+  if (e.kind === "reaction" && e.initialHit && (e.status === "corrosion" || e.status === "electrification")) return e.status;
+  if (e.kind === "physical" && e.status === "breach") return "breach";
+  return null;
+}
+
+/**
+ * The enemy a status event's own hit sees (OWN_HIT_SEES): `enemy` is the state after the event, `prior` before it (when
+ * known: without it a `prior` row sees none of the status).
+ */
+export function ownHitEnemy(e: StatusEvent, enemy: EnemyStatus, prior?: EnemyStatus): EnemyStatus {
+  const row = ownHitRow(e);
+  const sees = row ? OWN_HIT_SEES[row].sees : "own";
+  if (sees === "own" || !row) return enemy;
+  // A `prior` row without the state before: the enemy as it is (the replay always passes it for Corrosion's hit).
+  if (sees === "prior" && !prior) return enemy;
+  if (row === "breach") {
+    const was = sees === "prior" && prior ? prior.physical.filter((x) => x.status === row && x.expiresAt > e.frame) : [];
+    return { ...enemy, physical: [...enemy.physical.filter((x) => x.status !== row), ...was] };
+  }
+  const was = sees === "prior" && prior ? prior.statuses.filter((x) => x.status === row && x.expiresAt > e.frame) : [];
+  return { ...enemy, statuses: [...enemy.statuses.filter((x) => x.status !== row), ...was] };
+}
+
 /** The log event key of a burst or reaction's initial hit (ZMDLogs naming). */
 export function statusEventKey(e: StatusEvent): string | null {
   if (e.kind === "burst") return `buff_common_${e.element}_${e.element}_triggered`;

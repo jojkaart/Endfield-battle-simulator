@@ -405,7 +405,11 @@ export interface TimelineState {
    */
   readonly slowdowns: readonly { readonly start: number; readonly scales: readonly number[]; readonly exempt: string; readonly ultimate?: true }[];
   readonly enemy: EnemyStatus;
-  /** Timed buffs and debuffs from skills. */
+  /**
+   * Timed buffs and debuffs from skills: only those still active. `advance` prunes a buff once it has ended, so the
+   * final state of a run shows none that ran out; to see every instance a run had, step through it (the tests'
+   * helper tests/helpers/buffs.ts buffHistory).
+   */
   readonly buffs: readonly ActiveBuff[];
   /** Per kit trigger (`operator:triggerId`): when it can fire again and how often it has. */
   readonly triggerState: Readonly<Record<string, { readonly readyAt: number; readonly count: number }>>;

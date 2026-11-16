@@ -411,6 +411,28 @@ isn't extracted, and the stat hint's numbers are computed in C#).
 - Lift and Knock Down's Stagger term: the logs show no Stagger of their
   own (§4), so it has nothing to scale. [OPEN] for the one exception.
 
+### 3.8 What a status event's own hit sees of its status
+
+The general rule is that what a hit applies acts before its own damage
+(§3.2). For a status event's own hit (a reaction's initial hit, a
+physical status's hit) and the damage-changing status it applies, the
+logs say otherwise for two statuses. One row per status; the code is one
+table, `OWN_HIT_SEES` in packages/engine/src/status.ts (used by
+timeline/landing.ts eventDamage), each row tested in tests/own-hit.test.ts.
+
+| Status (its own hit) | Sees | Tag | Evidence |
+|---|---|---|---|
+| Corrosion (initial hit) | the Corrosion that was on the enemy before, not its own | SETTLED | accuracy plan B7 (2026-10-28): logged ×0.91–0.94 of the prediction with its own shred, matched without it |
+| Breach | no Breach: neither its own Physical DMG Taken nor the one it replaces | SETTLED | 2026-11-16 Arts Intensity review: 7e19489ae503, d4fb69b036fe exactly ÷ (1 + its own); c4f307cd039a without the earlier Breach the log lists |
+| Electrification (initial hit) | its own new Electrification | ASSUMED | the general rule; not measured apart from it |
+
+Not rows (their status changes no damage, or the question is another
+one): Combustion, Solidification, Lift, Knock Down and Crush (no damage
+modifier of their own); what a Crush's hit sees of the Vulnerable stacks
+it consumes, and whether a Shatter's hit sees a Breach on the enemy
+(the enemy after the event, both ASSUMED: the general rule). A forced
+reaction has no initial hit.
+
 ## 4. Physical statuses
 
 - **Vulnerable** (`buff_physical_no_guard`) has at most 4 stacks and lasts

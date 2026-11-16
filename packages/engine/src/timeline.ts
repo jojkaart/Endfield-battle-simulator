@@ -23,3 +23,10 @@ export { TEAMMATE_PAUSE_FRAMES } from "./timeline/teammates.ts";
 export { advance, memoised } from "./timeline/advance.ts";
 export { init, apply, replayCast, replayWindowCount, simulate, simulateRuns, startsNow } from "./timeline/drivers.ts";
 export type { ReplayCastOptions, TimelineResult, RunSpread } from "./timeline/drivers.ts";
+
+// State queries: read-only questions about a context or a state that drivers, reports and scratch scripts may ask
+// (what a skill costs, the team's SP at a frame, an operator's energy cap, combo windows, Stagger, a kit skill), so
+// none of them imports timeline/* internals. Planning code should import these from here (architecture review item 12).
+export { kitSkill, skillCosts, maxPoise } from "./timeline/context.ts";
+export { spAt, maxEnergy, isStaggered, skillSpGain } from "./timeline/resources.ts";
+export { windowKey, windowOpen, needsWindow } from "./timeline/timing.ts";
