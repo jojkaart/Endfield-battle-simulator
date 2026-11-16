@@ -1795,7 +1795,7 @@ stream, were within the seeds' spread of these); each team page's
 |---|---|---|---|---|---|
 | The owner's (hand-written; Artful Intent runs its 20 s, 2026-11-16) | 57,096 (1,402) | 55,394 (553) | −9.3% / −7.8% | +22.4% | 44 |
 | Ink Melt (searched) | 65,922 (1,750) | 61,962 (2,916) | −25.3% / −44.6% | +20.5% | 38 |
-| Typhoeus, Arcane, Liino, Perlica (searched) | 52,088 (1,946) | 49,522 (999) | −31.4% / −46.2% | −7.7% | 47 |
+| Typhoeus, Arcane, Liino, Perlica (searched; Perlica's gear of 2026-11-16) | 52,561 (1,913) | 49,964 (1,005) | −30.9% / −46.1% | −6.8% | 47 |
 
 The 60 s timeline is the upper reference for a 60 s window, not
 sustained DPS; the fixed 300 s search (the scenario at 300 s, full
@@ -1840,7 +1840,7 @@ that never changes the run). A separate command rather than a section of
 
 **Marginal values**: per operator, the team's sustained DPS with one
 gear-line-sized step more of each stat gear offers, paired on common
-seeds (4, `--marginal-seeds`) with the diagnosis' runs: (probe − base) /
+seeds (4, `--marginal-seeds`, 16 for noisy ones) with the diagnosis' runs: (probe − base) /
 base, ± the per-seed differences' sd / √n. The steps are the game's T4
 gear lines at full artifice (each kind's median size: main attribute
 +71, secondary +48, other attributes +55 / +75, main attribute +26.9%,
@@ -1852,7 +1852,12 @@ piece (`probe:<attr>:<slot>:<target>`) so the panel goes through the
 same stat code, plus reference steps for what only sets and weapons give
 (ATK +10%, flat ATK +20, Crit DMG +10%). An element's, skill kind's or
 Staggered bonus is measured only for an operator with such damage. A
-value is "noise" within two standard errors or under 0.1%. Findings in
+value is "noise" within two standard errors or under 0.1%. Damage-only
+steps don't move the timeline, so on common seeds they're exact to
+±0.1%; steps that move it (Ultimate Gain Efficiency, an attribute that
+flips a mode) don't line up with the base's events and stay at ±1–2% at
+4 seeds: those with a standard error over 0.25% get 16 seeds
+(`DiagnoseOptions.marginalMaxSeeds`; ±0.6–1.3% then). Findings in
 plain words follow from these: an ultimate held or energy wasted while
 its efficiency is worth ~0; an ultimate energy bottleneck (efficiency
 worth something); no rule for an ultimate; combos lit but unused; SP at
@@ -1870,9 +1875,26 @@ part that keeps every active set, ranked by the lines' predicted worth,
 linear in their sizes, the best 4 a pass) and **set builds** (each set's
 best three or four pieces by the lines' worth, the rest the best piece
 of any set; all screened by play on 2 seeds, the best 2 per operator
-kept: a set's effect is in no marginal value). Then the diagnosis again
-with the chosen gear, what changed per operator, and which findings went
-away; `--out` writes the scenario with the chosen gear. Runs go to worker
+kept: a set's effect is in no marginal value). A gain whose standard error is over 0.25%
+(a change of timing) gets 16 seeds before it's taken. The chosen gear is
+checked against the start on 8 fresh seeds (1001…), since the ascent's
+best-of-many gain is biased up (Ink Melt: +7.3% in the ascent, +2.1% and
++3.9% on fresh seeds). A loadout that flips a mode decided by two
+attributes (Arcane's Intellect / Will) is flagged. Then the diagnosis
+again with the chosen gear, what changed per operator, and which findings
+went away or came; `--out` writes the scenario with the chosen gear (the
+timeline rotation kept, which a loadout that moves ultimates may not
+play: `efsim rules` then reports no reference).
+
+Results (2026-11-16, each team page's "Gear"): the owner's team +8.0% ±
+0.9 on fresh seeds with three changes (Estella's Grizzled Edge loadout,
+the one the owner's example describes: her efficiency worth ~0, Arts
+Intensity +5% a line; Si's logs' LYNX Slab loadout; Akekuri's Fiber
+Gloves: more efficiency for a bottleneck support), examples kept; Ink
+Melt +3.9% ± 1.0 (Wulfgard's efficiency, a bottleneck) but −1.5% on the
+60 s timeline, example kept; Typhoeus's team +0.9% (Perlica, damage only,
+example changed) and +5.9% for Arcane in INT mode (the owner's call). A
+60-list rule search on the owner's new gear found no better list. Runs go to worker
 threads (rulespool.ts; each loads the game data once, ~15 s).
 
 ### Time

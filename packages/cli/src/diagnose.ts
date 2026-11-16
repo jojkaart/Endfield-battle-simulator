@@ -253,7 +253,7 @@ export async function diagnose(data: GameData, scenario: Omit<TimelineScenario, 
     // base's events, so their differences stay noisy on common seeds: those whose standard error is over the bar get
     // more seeds, up to marginalMaxSeeds (the base's extra seeds played once).
     const maxSeeds = o.marginalMaxSeeds ?? 16;
-    const noisy = marginal.map((m, i) => (m.se > MARGINAL_NOISY && !beyondNoise(m) ? i : -1)).filter((i) => i >= 0);
+    const noisy = marginal.map((m, i) => (m.se > MARGINAL_NOISY ? i : -1)).filter((i) => i >= 0);
     if (noisy.length && maxSeeds > mSeeds) {
       const more = maxSeeds - mSeeds;
       const baseFrom = dps.length + 1;
@@ -323,15 +323,20 @@ export function findings(data: GameData, d: Diagnosed): Finding[] {
     }
     if (u && u.held.noRule > 1) add(`norule:${o.operator}`, `The list has no rule for ${name(o.operator)}'s ultimate: it sits ready ${s1(u.held.noRule)} s.`);
     if (o.combo && o.combo.litSeconds / dg.seconds > 0.08) add(`combo:${o.operator}`, `${name(o.operator)}'s combo is lit but unused ${s1(o.combo.litSeconds)} s (${pct(o.combo.litSeconds / dg.seconds)} of the fight).`);
-    // More of a stat that loses beyond the noise: a kit threshold crossed (a mode decided by two attributes).
-    for (const m of d.marginal.filter((x) => x.operator === o.operator && x.gain < 0 && beyondNoise(x)))
-      add(`loses:${o.operator}:${m.probe.key}`, `${m.probe.label} on ${name(o.operator)} loses ${mvText(m)}: it crosses a threshold of the kit (such as a mode decided by two attributes).`);
+    // More of a stat that loses beyond the noise: an attribute crossing a kit threshold (a mode decided by two
+    // attributes), or a stat that moves the timeline putting ultimates at worse moments for this list.
+    for (const m of d.marginal.filter((x) => x.operator === o.operator && x.gain < 0 && beyondNoise(x))) {
+      const attribute = m.probe.attr === 0 || [Attr.Str, Attr.Agi, Attr.Wisd, Attr.Will].includes(m.probe.attr as 39);
+      add(`loses:${o.operator}:${m.probe.key}`, `${m.probe.label} on ${name(o.operator)} loses ${mvText(m)}: ${attribute ? "it crosses a threshold of the kit (such as a mode decided by two attributes)" : "it moves when ultimates come, to worse moments for this list"}.`);
+    }
   }
   if (dg.sp.atCapSeconds / dg.seconds > 0.03) add("sp", `Team SP sits at the cap ${s1(dg.sp.atCapSeconds)} s (${n0(dg.sp.wastedRegen + dg.sp.wastedGrants)} SP lost): room for more battle skills.`);
   const main = dg.operators.find((o) => o.operator === dg.main);
   if (main?.ultimate) add("per-minute", `Ultimates per minute: ${dg.operators.filter((o) => o.ultimate).map((o) => `${name(o.operator)} ${(o.ultimate?.perMinute ?? 0).toFixed(2)}`).join(", ")} (${name(dg.main)} deals the most damage, ${pct(main.share)}).`);
+  // Only for a main damage dealer whose ultimate deals damage itself (Laevatain's empowers her other skills).
+  const ultDamage = main?.byKind["ultimate"] ?? 0;
   for (const e of dg.effects.slice(0, 6)) {
-    if (e.onMain > 0.15 && e.onMainUltimate < 0.7 && dg.mainUltimates > 0) add(`overlap:${e.owner}:${e.id}`, `${name(dg.main)}'s ultimate lands under ${name(e.owner)}'s ${e.label} for only ${pct(e.onMainUltimate)} of its damage (all its damage: ${pct(e.onMain)}; uptime ${pct(e.uptime)}).`);
+    if (e.onMain > 0.15 && e.onMainUltimate < 0.7 && dg.mainUltimates > 0 && ultDamage > 0.05 * (main?.damage ?? 0)) add(`overlap:${e.owner}:${e.id}`, `${name(dg.main)}'s ultimate lands under ${name(e.owner)}'s ${e.label} for only ${pct(e.onMainUltimate)} of its damage (all its damage: ${pct(e.onMain)}; uptime ${pct(e.uptime)}).`);
   }
   for (const o of dg.operators) {
     const ms = d.marginal.filter((m) => m.operator === o.operator && !m.probe.reference).sort((a, b) => b.gain - a.gain);

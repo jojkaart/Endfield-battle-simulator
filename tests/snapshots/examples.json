@@ -495,44 +495,44 @@
   ]
  },
  "typhoeus-arcane-liino-perlica-zero.scenario.json": {
-  "total": 4989348.142,
+  "total": 5019331.094,
   "hits": 605,
   "casts": 201,
   "perOperator": {
-   "chr_0034_typhoea": 3797023.854,
-   "chr_0032_lizhiyan": 248934.11,
-   "chr_0035_liino": 331853.791,
-   "chr_0004_pelica": 611536.387
+   "chr_0034_typhoea": 3741004.222,
+   "chr_0032_lizhiyan": 246588.701,
+   "chr_0035_liino": 328421.659,
+   "chr_0004_pelica": 703316.512
   },
-  "digest": "847538695abc",
+  "digest": "5749a28a97eb",
   "windows": [
-   "b636155383d7",
-   "1f275a163953",
-   "5787c25baf34",
-   "b9635f6736b2",
-   "78b269e626c4",
-   "e0490208d58e",
-   "8ee8392c27dc"
+   "49d5906de656",
+   "83aaabc99343",
+   "462b11b5d703",
+   "d0bc68952662",
+   "724994c47c1f",
+   "1172975c8c71",
+   "d0d4d9e9861c"
   ]
  },
  "typhoeus-arcane-liino-perlica.scenario.json": {
-  "total": 5757797.456,
+  "total": 5774075.666,
   "hits": 482,
   "casts": 186,
   "perOperator": {
-   "chr_0034_typhoea": 4301324.154,
-   "chr_0032_lizhiyan": 458692.507,
-   "chr_0035_liino": 284651.571,
-   "chr_0004_pelica": 713129.224
+   "chr_0034_typhoea": 4239378.223,
+   "chr_0032_lizhiyan": 451679.48,
+   "chr_0035_liino": 281780.003,
+   "chr_0004_pelica": 801237.96
   },
-  "digest": "c823392f9b2f",
+  "digest": "b0848175e827",
   "windows": [
-   "ef3bf54eb22d",
-   "d386bebe3871",
-   "91846bf657f9",
-   "8490e90c06fd",
-   "52ec8b915795",
-   "a3f7288d63c9"
+   "23c29201ecab",
+   "45f4ff519795",
+   "7790b38703c8",
+   "527cc7014368",
+   "843b109da6f8",
+   "6a7848797567"
   ]
  },
  "typhoeus-gilberta.scenario.json": {

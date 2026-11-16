@@ -78,18 +78,19 @@ little when ended early (Artful Intent records 8% of all damage the enemy
 takes while it lasts, and the next one starts recording again soon after),
 but each early end costs 115 SP. Letting it run and putting the spare SP
 into Akekuri's battle skill plays 56,423 (sd 2,039) against 55,462
-(sd 2,929), 10 seeds each: as good or a little better, and calmer.
+(sd 2,929), 10 seeds each (the old delay draws; the table below has
+the numbers with common random numbers): as good or a little better, and calmer.
 Letting it run while wasting the spare SP loses about 20% (44,092); spare
 SP into Estella's battle skill (46,014) costs her combo's trigger, into
 Arcane's (45,486) isn't worth it. Pressing Initial Stroke right away (for
 the Inksoul's haste when it ends) is +4% over leaving it.
 
-| Simulated player, 0.3 s reaction ± 50%, 10 seeds | Full energy | From zero |
+| Simulated player, 0.3 s reaction ± 50%, 10 seeds (common random numbers, 2026-11-16) | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **56,423** (2,039) | **56,156** (1,311) |
-| As a bot (0 s) / at 0.6 s | 57,838 / 56,694 | 55,099 / 55,628 |
-| First 60 s against the 60 s timeline (the examples) | 3,559,238 against 3,990,122 (−10.8%) | 3,065,770 against 3,263,818 (−6.1%) |
-| 300 s total against a fixed 300 s search (beam 6, full energy) | 16,926,924 against 13,994,230 (**+21.0%**) | |
+| Sustained DPS over 300 s (sd over seeds) | **57,096** (1,402) | **55,394** (553) |
+| As a bot (0 s) / at 0.6 s | 57,838 / 56,262 | 55,099 / 55,810 |
+| First 60 s against the 60 s timeline (the examples) | 3,621,208 against 3,990,122 (−9.3%) | 3,008,149 against 3,263,818 (−7.8%) |
+| 300 s total against a fixed 300 s search (beam 6, full energy) | 17,128,703 against 13,994,230 (**+22.4%**) | |
 
 The earlier list (Si's battle skill at every 100 SP, ending Artful Intent
 early) played 55,462 / 56,370 sustained and was better in the first 60 s
@@ -114,6 +115,54 @@ ultimates sooner. Over a long fight the two are level.
   the opener). Lighter lists on its Pareto front lose: without Si's
   ultimate rule (complexity 30) 51,137, without Si's and Estella's
   (complexity 25) 48,039 (5 seeds each).
+
+## Gear (2026-11-16, played by the rules; the examples keep the owner's gear)
+
+`efsim diagnose` and `efsim gear --rules` (docs/design.md "Diagnosis,
+marginal values, gear on rules"): the rule list above played over 300 s
+on common seeds, so the rules adapt to each loadout (no repaired
+rotation). Arcane kept (her Intellect is tuned just below her Will).
+
+**What's inefficient now (the owner's gear, 8 seeds):**
+
+- Estella's ultimate waits 5.5 s of the 300 (3.2 s behind other presses) and
+  10% of her energy is lost at a full bar; her Ultimate Gain Efficiency
+  isn't worth a gear line (+0.3% ± 0.8 a line, against +5.2% for Arts
+  Intensity and +4.9% for Physical DMG). She is the operator the owner's
+  example describes: the line is better spent on damage.
+- Akekuri's and Arcane's ultimates are the bottleneck the other way: one
+  Ultimate Gain Efficiency line is worth +2.9% ± 0.9 on Akekuri (more
+  than any damage line on her) and +1.3% ± 0.6 on Arcane (as much as her
+  best damage line). Si's efficiency is worth nothing either way (−0.3%
+  ± 0.9).
+- Arcane wastes 36% of her energy at a full bar (her cluster strikes
+  overfill it), but her ultimate still counts: it's what keeps her
+  Susceptibility on Si and Estella. More Intellect on her loses 7%
+  (it flips her to INT mode).
+- Team SP: almost never at the cap (0.6 s) with the current list. The
+  same list without rule 10 (spare SP to Akekuri) sits at the cap 165 s
+  of 300 and loses 2,358 SP: −19% (46,311). That was the cost of letting
+  Artful Intent run without somewhere to put the SP.
+
+**What to change** (each against the gear current then, paired on common
+seeds; the whole set checked on fresh seeds):
+
+| Change | Why | Gain |
+|---|---|---|
+| Estella: Type 50 Yinglung Light Armor → Heavy Armor, Æthertech Light Gloves → Grizzled Edge Gauntlets (Radar ×2 kept) | trades Battle / Combo / Ultimate DMG lines for Arts Intensity +45 and Physical DMG: what she's worth most per line | +3.7% ± 0.1 |
+| Si: Rift Trekker Gloves + Beacon → Type 50 Yinglung Gloves + LYNX Slab (the logs' most common, 15 logs) | her Ultimate Gain Efficiency gloves aren't needed when the rules adapt (they were for the owner's 60 s timeline) | +3.6% ± 0.8 |
+| Akekuri: Frontiers Blight RES Gloves → Frontiers Fiber Gloves T1 | Battle Skill DMG for Ultimate Gain Efficiency: her ultimate is a bottleneck | +1.7% ± 0.8 (24 fresh seeds) |
+| All three | | **+8.0% ± 0.9** (24 fresh seeds: 56,243 → 60,755) |
+
+Estella's change is damage-only, so its gain hardly moves between seeds;
+Si's and Akekuri's change when ultimates come, so they need more seeds
+(Akekuri's: +1.7% ± 1.4 at 16 seeds in the ascent, left out there as
+within the noise; +1.7% ± 0.8 on 24 more). The earlier timeline-based
+`efsim gear` found only Estella's logs loadout (+0.7%); played by the
+rules it is −2.5% against the Grizzled Edge loadout (and +1.1% over the
+owner's). The ascent's run: 1,154 runs, 20 min on 3 workers. With all
+three changes the rule list stays: a 60-list rule search found nothing
+better (its best 61,293 against the list's 61,480, 10 seeds).
 
 ## Gear recommendation (2026-11-15; the examples keep the owner's gear)
 

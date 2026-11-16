@@ -8,24 +8,24 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
 
 ## Next steps
 
-- **Rule-based rotations (2026-11-16, phase 1 done: design.md "Rule-based
-  rotations", `efsim rules`, examples/*.rules.json, each team page's
-  "Rules"):** next, gear on rules: what a rule list leaves on the table
-  per loop (energy surplus, ultimates held at a full bar, SP wasted at
-  the cap), the marginal value of each resource (a point of SP, energy,
-  a second off a combo cooldown) measured by replaying the rules with a
-  little more of it, and gear ranked by those values (cheap: no search
-  per loadout, the rules adapt); then the diagnosis report (why a rule
-  list is below the timeline: which presses come late, which windows
-  are missed). Also: the rule search is noisy (a list's sustained DPS
-  moves 2–4% between reaction-delay seeds, as much as most edits gain):
-  more seeds or common random numbers per cue onset, and workers to run
-  lists in parallel; Typhoeus's team is the furthest from its timeline
-  (hover upkeep and SP sharing are hard to say as cues); in-game test
-  108 (the Finisher input) decides the filler's assumption.
-  The rule search should also try gating a repeated press on the
-  button's visible state (Si's battle skill only while her button shows
-  it, not Initial Stroke): the owner found that one by hand, 2026-11-16.
+- **Rule-based rotations (2026-11-16, phases 1 and 2 done: design.md
+  "Rule-based rotations", `efsim rules`, `efsim diagnose`, `efsim gear
+  --rules`, examples/*.rules.json, each team page's "Rules" and "Gear"):**
+  next, the owner's call on the owner's team's gear (Estella's Grizzled
+  Edge loadout, Si's LYNX Slab loadout, Akekuri's Fiber Gloves: +8.0% ±
+  0.9 together, played by the rules); timeline-moving stats (Ultimate
+  Gain Efficiency, mode-flipping attributes) are noisy even on common
+  seeds (±1–2% a line at 4 seeds, ±0.6–1.3% at 16): a cheaper estimate of
+  their worth (energy held / wasted against the ultimate's value per
+  cast, or many short fights) would let the ascent decide those without
+  16–24 seeds; the ascent is path-dependent where gains are within the
+  noise (a first run took Akekuri's change, a second Si's): a joint check
+  of the top changes on fresh seeds; the diagnosis report as a reason
+  list for the rules' gap to the timeline (which presses come late, which
+  windows are missed); the rule search re-run on the new gear (a first
+  60-list search: see the journal); Typhoeus's team is the furthest from
+  its timeline (hover upkeep and SP sharing are hard to say as cues);
+  in-game test 108 (the Finisher input) decides the filler's assumption.
 - **Typhoeus, Arcane, Liino, Perlica (2026-11-15, done: 5.76 / 4.99M,
   docs/teams/typhoeus-arcane-liino-perlica.md):** its zero-energy search
   is the least converged of the three teams (+27% at beam 48 alone): a

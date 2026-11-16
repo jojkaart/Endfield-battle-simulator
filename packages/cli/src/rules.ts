@@ -6,6 +6,7 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Ajv2020 } from "ajv/dist/2020.js";
 import {
+  EngineError,
   FPS,
   POLICY_CUE_RANKS,
   POLICY_JITTER,
@@ -158,7 +159,17 @@ export function rulesCommand(data: GameData, scenario: TimelineScenario, rawList
   const team = scenario.team.map((b) => b.operator);
   const list = resolveRuleList(data, team, rawList);
   const fight: TimelineScenario = { ...scenario, durationFrames: Math.round(seconds * FPS), rotation: [] };
-  const reference = scenario.rotation.length > 0 ? { total: simulate(data, scenario).total, seconds: scenario.durationFrames / FPS } : null;
+  // The scenario's own rotation as the reference, when it can be played (other gear may not play a timeline made for the old: Si without her Ultimate Gain gloves).
+  let reference: { total: number; seconds: number } | null = null;
+  let noReference = "";
+  if (scenario.rotation.length > 0) {
+    try {
+      reference = { total: simulate(data, scenario).total, seconds: scenario.durationFrames / FPS };
+    } catch (e) {
+      if (!(e instanceof EngineError)) throw e;
+      noReference = `Reference: the scenario's own rotation can't be played with this team (${e.message}).`;
+    }
+  }
   const controlled = scenario.controlled ?? (team[0] as string);
   const lines = [
     `Rules ${file}: ${team.map((op) => data.operators[op]?.name ?? op).join(", ")}; ${data.operators[controlled]?.name ?? controlled} controlled; ${seconds} s fight; reaction ${reaction} s ± ${POLICY_JITTER * 100}%; cue ranks ${JSON.stringify(POLICY_CUE_RANKS)}`,
@@ -166,6 +177,7 @@ export function rulesCommand(data: GameData, scenario: TimelineScenario, rawList
   ];
   const start = evaluate(data, fight, list, reaction, seeds);
   lines.push(...formatEvaluation(data, start, reaction, reference));
+  if (noReference) lines.push(noReference);
   if (!options.search) return lines.join("\n");
 
   const searchSeconds = options.searchSeconds ?? 180;

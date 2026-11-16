@@ -520,7 +520,7 @@ async function main(argv: string[]): Promise<number> {
           text = formatRuleGear(data(), rg, `efsim gear --rules ${values.rules} on ${args[0]}`);
           if (values.out) {
             writeGearScenario(args[0] as string, values.out, rg.team);
-            text += `\n\nWrote ${values.out} (the chosen gear; the rotation as it was).`;
+            text += `\n\nWrote ${values.out} (the chosen gear; the timeline rotation as it was, which a loadout that moves ultimates may not play: the rules are the rotation here).`;
           }
           break;
         }

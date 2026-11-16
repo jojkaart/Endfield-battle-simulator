@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/rules.schema.json",
-  "description": "The owner's team (2026-11-16). Si's battle skill only when her button shows it (Artful Intent isn't up), Initial Stroke right after; her Artful Intent then runs its full 20 s and bursts by itself (the owner: ending it early wastes SP). Spare SP (200) goes to Akekuri's battle skill. Ultimates when ready; combos when lit; Estella's battle skill after Arcane's combo. 56,423 sustained DPS over 300 s at a 0.3 s reaction delay (10 seeds, sd 2,039), against 55,462 (sd 2,929) for the earlier list that ended Artful Intent early at every 100 SP.",
+  "description": "The owner's team (2026-11-16). Si's battle skill only when her button shows it (Artful Intent isn't up), Initial Stroke right after; her Artful Intent then runs its full 20 s and bursts by itself (the owner: ending it early wastes SP). Spare SP (200) goes to Akekuri's battle skill. Ultimates when ready; combos when lit; Estella's battle skill after Arcane's combo. 56,423 sustained DPS over 300 s at a 0.3 s reaction delay (10 seeds, sd 2,039), against 55,462 (sd 2,929) for the earlier list that ended Artful Intent early at every 100 SP (the old delay draws; with common random numbers, 2026-11-16: 57,096, sd 1,402).",
   "opener": [{ "operator": "Si", "cast": "battle" }],
   "rules": [
     { "when": { "ultimate": "Si" }, "do": { "operator": "Si", "cast": "ultimate" } },

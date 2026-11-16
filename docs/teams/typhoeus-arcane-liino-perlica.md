@@ -22,7 +22,7 @@ accessories' Intellect line at 0). Gear: `efsim gear` (below).
 | Typhoeus | Umbra of Frigid Eventide | Deep Rampart Armor, Gauntlets, Comms; Qingbo Bamboo Cutter |
 | Arcane | Type 42: Solemn Phalanx | Eternal Xiranite Light Armor, Wraps, Auxiliary Arm ×2 (the owner's) |
 | Liino | Bedazzling Night Debut | LYNX Gauntlets T1, LYNX Slab ×2; Eternal Xiranite Light Armor |
-| Perlica (P5) | Stanza of Memorials | Pulser Labs Disruptor Suit, Gloves, Probe; Hot Work Power Cartridge |
+| Perlica (P5) | Stanza of Memorials | Pulser Labs Disruptor Suit, Gloves, Calibrator; LYNX Slab (2026-11-16, gear played by the rules; was Probe + Hot Work Power Cartridge) |
 
 **Team order** doesn't matter: no kit of this team (nor its gear or
 weapons) reads team slots (only Si's does), so tests/team-order.test.ts
@@ -34,6 +34,42 @@ which only the controlled operator gets: the hovering combo slot is made
 only for her controlled), Perlica 48,512, Liino 40,297, Arcane 34,720.
 Her Final Strikes also open Perlica's combo (the controlled operator's
 Final Strike).
+
+## Gear played by the rules (2026-11-16)
+
+`efsim diagnose` and `efsim gear --rules` (docs/design.md "Diagnosis,
+marginal values, gear on rules"): the rule list below played over 300 s
+on common seeds (8, more for noisy gains), 1,322 runs in 24 min on 3
+workers.
+
+**What's inefficient:**
+
+- Typhoeus deals 80% of the damage; her best lines are main attribute
+  (+14.7% for +26.9%), Nature DMG (+9.7%), Arts Intensity (+6.9%) and DMG
+  to Staggered (+6.5%). Her Ultimate Gain Efficiency is worth nothing
+  measurable (+0.9% ± 0.7).
+- Perlica's ultimate sits ready 114 s of 300, held by its rule's
+  condition (cast just before a grounded Typhoeus combo), and 40% of her
+  energy overflows: her efficiency is worth nothing either (+0.6% ± 0.7).
+- Liino's combo is lit but unused 96 s (32%).
+- Arcane wastes 35% of her energy; more Intellect on her loses 3–4% (it
+  flips her to INT mode on its own, without the gear below).
+
+**What changed in the example:** Perlica's Pulser Labs Probe + Hot Work
+Power Cartridge → Pulser Labs Calibrator + LYNX Slab (an Arts Intensity
+line for main attribute +26.9%, an Agility line for more Intellect): **+0.87% ± 0.04**
+on 8 fresh seeds (damage only, so nearly exact), and +0.3% / +0.6% on the
+examples' 60 s rotations replayed (5,774,076 / 5,019,331).
+
+**For the owner to decide: Arcane in INT mode.** The ascent's biggest
+gain is Arcane on the logs' Hot Work loadout (Exo-Rig, Hands PPE,
+Insulation Slab + LYNX Slab, 3 logs): Intellect 813 against Will 363,
+so INT mode. **+5.9% ± 0.7** on 24 fresh seeds (52,441 → 55,542): her
+own damage rises from 7% to 23% of the team's, Typhoeus's falls 11%
+(her WILL Susceptibility and burst Arts DMG Taken are gone), and her
+energy waste drops from 35% to 16%. The list was searched for WILL mode,
+so a list searched for INT mode may gain more. The example keeps WILL
+mode (the team as the owner described it) until the owner decides.
 
 ## Gear from the logs and guide sites
 
@@ -113,7 +149,7 @@ Labs, and Qingbo loses 5% here.
 
 | | Full energy | From zero |
 |---|---|---|
-| Total (60 s) | **5,757,797** (96,933 DPS to the last hit at 59.4 s) | **4,989,348** (83,156 DPS) |
+| Total (60 s) | **5,757,797** (96,933 DPS to the last hit at 59.4 s); 5,774,076 with Perlica's 2026-11-16 gear (the same rotation) | **4,989,348** (83,156 DPS); 5,019,331 with Perlica's 2026-11-16 gear |
 | Found by | `--no-macros` (and `--no-macros --skeletons`: the same rotation), beam 48 | macros (the default), beam 48 |
 | Shares | Typhoeus 74.7%, Perlica 12.4%, Arcane 8.0%, Liino 4.9% | Typhoeus 76.1%, Perlica 12.3%, Liino 6.7%, Arcane 5.0% |
 | Ultimates | Arcane, Liino 0.0 s; Perlica 1.8 s; Typhoeus 8.7 s; Arcane's second 16.3 s; Perlica 50.3 s; Arcane 54.1 s | Arcane 25.2 s; Arcane's second 42.3 s; Perlica and Liino 48.7 s; Typhoeus's (200 energy) doesn't come |
@@ -178,17 +214,17 @@ complexity 47; the hardest cues are the "ultimate ready" ones (rank 4);
 "hovering" and "Vocalist Stance" are states the game shows on the
 character and the skill button (rank 3).
 
-| Simulated player, 0.3 s reaction ± 50%, 10 seeds | Full energy | From zero |
+| Simulated player, 0.3 s reaction ± 50%, 10 seeds (common random numbers; Perlica's 2026-11-16 gear) | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **53,302** (2,080) | **48,560** (1,760) |
-| As a bot (0 s) / at 0.6 s | 60,422 / 49,927 | 54,003 / 48,713 |
-| First 60 s against the 60 s timeline (the examples) | 4,134,011 against 5,757,797 (−28.2%) | 2,620,990 against 4,989,348 (−47.5%) |
-| 300 s total against a fixed 300 s search (beam 6, full energy, 86 min) | 15,990,554 against 16,925,847 (−5.5%) | |
+| Sustained DPS over 300 s (sd over seeds) | **52,561** (1,913) | **49,964** (1,005) |
+| As a bot (0 s) / at 0.6 s | 60,776 / 49,166 | 54,376 / 48,783 |
+| First 60 s against the 60 s timeline (the examples) | 3,987,749 against 5,774,076 (−30.9%) | 2,704,986 against 5,019,331 (−46.1%) |
+| 300 s total against a fixed 300 s search (beam 6, full energy, 86 min; Perlica's earlier gear) | 15,768,155 against 16,925,847 (−6.8%) | |
 
 - **Found by the rule search**, from hand-written lists (Typhoeus's
   battle skill whenever she's on the ground and dives while she is,
   ultimates when ready, every combo when it lights up, Liino's stance and
-  the others' battle skills from 200 SP): 46,069 → 53,302 (+16%), two runs
+  the others' battle skills from 200 SP): 46,069 → 53,302 (old delay draws; +16%), two runs
   (150 and 200 lists) and rules that never fired removed. What it found:
   Typhoeus's ultimate and combo only while she hovers (each restarts her
   shots), Perlica's ultimate just before a grounded combo, Liino's stance
@@ -288,8 +324,8 @@ shortfalls (1cd1 −9.1 → −13.8%, af7b −4.1 → −8.0%, dbae −2.0 → �
 
 | | Typhoeus, Arcane, Liino, Perlica | Ink Melt | The owner's team |
 |---|---|---|---|
-| Full energy, 60 s | **5,757,797** (96,933 DPS) | 4,732,088 (78,868 DPS) | 3,990,122 (66,502 DPS) |
-| From zero, 60 s | **4,989,348** (83,156 DPS) | 4,642,409 (77,373 DPS) | 3,263,818 (54,427 DPS) |
+| Full energy, 60 s | **5,757,797** (96,933 DPS; 5,774,076 with Perlica's 2026-11-16 gear) | 4,732,088 (78,868 DPS) | 3,990,122 (66,502 DPS) |
+| From zero, 60 s | **4,989,348** (83,156 DPS; 5,019,331 with Perlica's 2026-11-16 gear) | 4,642,409 (77,373 DPS) | 3,263,818 (54,427 DPS) |
 | Carry's share (full) | Typhoeus 74.7% | Laevatain 57.6% | Estella 43.3% |
 | Search spread of the kept run (full / zero) | 9.6% / 21.2% | 4.5% / 60.4% | 16.0% / 26.0% |
 

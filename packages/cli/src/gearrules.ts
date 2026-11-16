@@ -4,8 +4,9 @@
 // and a candidates file's loadouts (gear.ts gearCandidates). Coordinate ascent across operators, a change taken only
 // when its gain is beyond the seeds' spread of the difference (docs/design.md "Rule-based rotations", gear on rules).
 
-import { activeGearSets, resolveRuleList, Target, type Build, type GameData, type GearData, type RuleList, type TimelineScenario } from "@efsim/engine";
+import { activeGearSets, attrName, computeStats, resolveRuleList, Target, type Build, type GameData, type GearData, type RuleList, type TimelineScenario } from "@efsim/engine";
 import { beyondNoise, diagnose, findings, formatDiagnosis, MARGINAL_NOISY, mvText, paired, seedJobs, type Diagnosed, type DiagnoseOptions, type MarginalValue, type PlaySettings } from "./diagnose.ts";
+import { modePair } from "./edge.ts";
 import { describeGear, type GearCandidate } from "./gear.ts";
 import { num, pct, table } from "./format.ts";
 import { runRulesJobs } from "./rulespool.ts";
@@ -115,9 +116,11 @@ export interface RuleGearRow {
   readonly dps: number;
   readonly gain: number;
   readonly se: number;
-  /** Seeds it's over (more for a close call). */
+  /** Seeds it's over (more for a noisy gain). */
   readonly seeds: number;
   readonly predicted?: number;
+  /** Set when the loadout flips the operator's mode (two attributes decide it: Arcane's Intellect / Will). */
+  readonly modeFlip?: string;
 }
 
 export interface RuleGearResult {
@@ -147,7 +150,7 @@ export interface RuleGearOptions extends DiagnoseOptions {
   readonly sets?: number;
   /** Seeds of the set builds' screening (default 2). */
   readonly screenSeeds?: number;
-  /** Seeds a close call (a gain within a large noise) is taken to (default 16). */
+  /** Seeds a gain with a large noise (standard error over MARGINAL_NOISY) is taken to (default 16). */
   readonly maxSeeds?: number;
   /** Skip the diagnosis with the chosen gear. */
   readonly noAfter?: boolean;
@@ -227,17 +230,39 @@ export async function gearOnRules(data: GameData, scenario: Omit<TimelineScenari
       const list2 = [...rows.values()];
       const teams = list2.map((r) => team.map((b, j) => (j === i ? { ...b, gear: gearOf(op, r.gear) } : b)));
       o.progress?.(`pass ${pass}: ${data.operators[op]?.name ?? op}, ${list2.length} loadouts × ${seeds} seeds`);
-      const rowOf = (r: (typeof list2)[number], base: readonly number[], d: readonly number[]): RuleGearRow => ({ gear: r.gear, sources: r.sources, dps: d.reduce((a, b) => a + b, 0) / d.length, ...paired(base, d), seeds: d.length, ...(r.predicted !== undefined ? { predicted: r.predicted } : {}) });
+      // An operator whose mode two attributes decide (Arcane's Intellect / Will): a loadout that flips it is flagged.
+      const pair = (() => {
+        try {
+          return modePair(data, op);
+        } catch {
+          return undefined;
+        }
+      })();
+      const modeOf = (gear: readonly string[]) => {
+        if (!pair) return undefined;
+        const st = computeStats(data, { ...cur, gear: gearOf(op, gear) });
+        return (st.attrs[pair.a]?.total ?? 0) >= (st.attrs[pair.b]?.total ?? 0) ? pair.a : pair.b;
+      };
+      const curMode = modeOf(cur.gear.map((g) => g.id));
+      const flip = (gear: readonly string[]) => {
+        const m = modeOf(gear);
+        const word = (n: number) => (n === 41 ? "Intellect" : n === 42 ? "Will" : attrName(n));
+        return m !== undefined && m !== curMode ? `flips the mode: ${word(m)} over ${word(m === pair?.a ? pair.b : (pair?.a ?? 0))}` : undefined;
+      };
+      const rowOf = (r: (typeof list2)[number], base: readonly number[], d: readonly number[]): RuleGearRow => {
+        const f = flip(r.gear);
+        return { gear: r.gear, sources: r.sources, dps: d.reduce((a, b) => a + b, 0) / d.length, ...paired(base, d), seeds: d.length, ...(r.predicted !== undefined ? { predicted: r.predicted } : {}), ...(f ? { modeFlip: f } : {}) };
+      };
       const got = await score([team, ...teams]);
       let scored: RuleGearRow[] = list2.map((r, j) => rowOf(r, got[0] as number[], got[j + 1] as number[]));
-      // Close calls (a gain within its noise, the noise large: a change of timing) get more seeds, up to maxSeeds.
+      // Gains with a large noise (a change of timing) get more seeds, up to maxSeeds, before one is taken.
       const maxSeeds = o.maxSeeds ?? 16;
       const close = list2.map((_, j) => j).filter((j) => {
         const x = scored[j] as RuleGearRow;
-        return x.gain > 0 && !beyondNoise(x) && x.se > MARGINAL_NOISY;
+        return x.gain > 0 && x.se > MARGINAL_NOISY;
       });
       if (close.length && maxSeeds > seeds) {
-        o.progress?.(`  ${close.length} close call${close.length === 1 ? "" : "s"}: ${maxSeeds} seeds`);
+        o.progress?.(`  ${close.length} noisy gain${close.length === 1 ? "" : "s"}: ${maxSeeds} seeds`);
         const more = await score([team, ...close.map((j) => teams[j] as Build[])], maxSeeds);
         scored = scored.map((x, j) => (close.includes(j) ? rowOf(list2[j] as (typeof list2)[number], more[0] as number[], more[close.indexOf(j) + 1] as number[]) : x));
       }
@@ -245,7 +270,7 @@ export async function gearOnRules(data: GameData, scenario: Omit<TimelineScenari
       tables.set(op, scored);
       const best = scored[0];
       if (best && key(best.gear) !== key(cur.gear.map((g) => g.id)) && best.gain > 0 && beyondNoise(best)) {
-        changes.push({ operator: op, from: cur.gear.map((g) => g.id), to: best.gear, gain: best.gain, se: best.se, sources: best.sources });
+        changes.push({ operator: op, from: cur.gear.map((g) => g.id), to: best.gear, gain: best.gain, se: best.se, sources: best.modeFlip ? [...best.sources, `NOTE: ${best.modeFlip}`] : best.sources });
         team = team.map((b, j) => (j === i ? { ...b, gear: gearOf(op, best.gear) } : b));
         changed = true;
         o.progress?.(`  → ${describeGear(data, best.gear)}: ${mvText(best)}`);
@@ -281,9 +306,9 @@ export function formatRuleGear(data: GameData, r: RuleGearResult, title: string)
   ];
   for (const [op, rows] of r.tables) {
     lines.push("", `${name(op)} (last pass; against the loadout current then):`);
-    lines.push(table(["loadout", "sources", "predicted (lines)", "sustained DPS", "vs current"], rows.map((x) => [describeGear(data, x.gear), x.sources.join("; "), x.predicted !== undefined ? `${x.predicted >= 0 ? "+" : ""}${(x.predicted * 100).toFixed(2)}%` : "", num(Math.round(x.dps), 0), `${mvText(x)}${x.seeds > r.start.length ? ` [${x.seeds} seeds]` : ""}${beyondNoise(x) ? "" : " (noise)"}`]), ["l", "l", "r", "r", "r"]));
+    lines.push(table(["loadout", "sources", "predicted (lines)", "sustained DPS", "vs current"], rows.map((x) => [describeGear(data, x.gear), [...x.sources, ...(x.modeFlip ? [x.modeFlip] : [])].join("; "), x.predicted !== undefined ? `${x.predicted >= 0 ? "+" : ""}${(x.predicted * 100).toFixed(2)}%` : "", num(Math.round(x.dps), 0), `${mvText(x)}${x.seeds > r.start.length ? ` [${x.seeds} seeds]` : ""}${beyondNoise(x) ? "" : " (noise)"}`]), ["l", "l", "r", "r", "r"]));
   }
-  if (r.confirm) lines.push("", `On ${r.confirm.start.length} fresh seeds (1001…, no choice made on them): ${num(Math.round(mean(r.confirm.start)), 0)} → ${num(Math.round(mean(r.confirm.final)), 0)}, ${mvText(r.confirm)}${beyondNoise(r.confirm) ? "" : " (within the noise)"}.`);
+  if (r.confirm) lines.push("", `On ${r.confirm.start.length} fresh seeds (1001…, no choice made on them): ${num(Math.round(mean(r.confirm.start)), 0)} → ${num(Math.round(mean(r.confirm.final)), 0)}, ${mvText(r.confirm)}${beyondNoise(r.confirm) && r.confirm.gain > 0 ? "" : ": not confirmed (within the noise), so not a gain to rely on; more seeds decide it"}.`);
   lines.push("", r.changes.length ? "Changes taken:" : "No change beyond the noise: the scenario's gear stays.");
   for (const c of r.changes) lines.push(`- ${name(c.operator)}: ${describeGear(data, c.from)} → ${describeGear(data, c.to)} (${mvText(c)}; ${c.sources.join("; ")})`);
   if (r.after) {

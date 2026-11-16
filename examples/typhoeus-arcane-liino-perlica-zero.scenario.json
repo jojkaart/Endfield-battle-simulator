@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/scenario.schema.json",
-  "description": "Typhoeus P0 (Umbra of Frigid Eventide 9/9/4; Deep Rampart Armor/Gauntlets/Comms + Qingbo Bamboo Cutter), Arcane P0 (the owner's build: Solemn Phalanx 9/9/4, Eternal Xiranite, accessories' Intellect line at 0: Intellect 472.44 / Will 473.50, WILL mode), Liino P0 (Bedazzling Night Debut 9/9/4; LYNX Gauntlets T1, Slab x2 + Eternal Xiranite Light Armor), Perlica P5 (Stanza of Memorials 9/9/9; Pulser Labs Disruptor Suit/Gloves/Probe + Hot Work Power Cartridge): Ink Melt's assumptions (level 90, skills 12, weapons at 90, full artifice), gear by efsim gear from the logs' loadouts and EndfieldHub's (docs/teams/typhoeus-arcane-liino-perlica.md). Typhoeus controlled; no kit reads team slots. Vs Rhodagn Lv90, 60 s, from zero ultimate energy. Rotation: efsim search with macros (the default; beams 12/24/48: 3,932,836 / 3,932,836 / 4,989,348, beam 48 best; --no-macros --skeletons 4,204,562; --no-macros 3,932,836 at every width): a lower bound (spread 21.2%).",
+  "description": "Typhoeus P0 (Umbra of Frigid Eventide 9/9/4; Deep Rampart Armor/Gauntlets/Comms + Qingbo Bamboo Cutter), Arcane P0 (the owner's build: Solemn Phalanx 9/9/4, Eternal Xiranite, accessories' Intellect line at 0: Intellect 472.44 / Will 473.50, WILL mode), Liino P0 (Bedazzling Night Debut 9/9/4; LYNX Gauntlets T1, Slab x2 + Eternal Xiranite Light Armor), Perlica P5 (Stanza of Memorials 9/9/9; Pulser Labs Disruptor Suit/Gloves/Calibrator + LYNX Slab: efsim gear --rules, 2026-11-16, was Probe + Hot Work Power Cartridge): Ink Melt's assumptions (level 90, skills 12, weapons at 90, full artifice), gear by efsim gear from the logs' loadouts and EndfieldHub's (docs/teams/typhoeus-arcane-liino-perlica.md). Typhoeus controlled; no kit reads team slots. Vs Rhodagn Lv90, 60 s, from zero ultimate energy. Rotation: efsim search with macros (the default; beams 12/24/48: 3,932,836 / 3,932,836 / 4,989,348, beam 48 best; --no-macros --skeletons 4,204,562; --no-macros 3,932,836 at every width; with Perlica's 2026-11-16 gear the same rotation replays to 5,019,331): a lower bound (spread 21.2%).",
   "team": [
     {
       "operator": "chr_0034_typhoea",
@@ -189,7 +189,7 @@
       },
       "gear": [
         {
-          "id": "item_equip_t4_suit_fire_natr01_edc_03",
+          "id": "item_equip_t4_suit_heal01_edc_03",
           "artifice": [
             3,
             3,
@@ -205,7 +205,7 @@
           ]
         },
         {
-          "id": "item_equip_t4_suit_pulse_cryst01_edc_01",
+          "id": "item_equip_t4_suit_pulse_cryst01_edc_02",
           "artifice": [
             3,
             3,

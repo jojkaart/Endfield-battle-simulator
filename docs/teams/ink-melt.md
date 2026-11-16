@@ -24,6 +24,43 @@ Laevatain in slot 1 turns Si's infliction to Heat and gives Laevatain her
 combo cooldown cut. Si's ultimate gives the team Cryo and Heat Amp
 whatever her battle skill does.
 
+## Gear played by the rules (2026-11-16; the example keeps its gear)
+
+`efsim diagnose` and `efsim gear --rules` (docs/design.md "Diagnosis,
+marginal values, gear on rules"): the rule list below played over 300 s
+on common seeds (8, more for noisy gains).
+
+**What's inefficient:**
+
+- Wulfgard's ultimate is the bottleneck: one Ultimate Gain Efficiency
+  line on him is worth +6.6% ± 1.5 (16 seeds), five times his best damage
+  line (main attribute +26.9%: +1.3%). His ultimate's buffs drive
+  Laevatain, who deals 62% of the damage.
+- Laevatain's own efficiency is worth less than nothing (−3.1% ± 1.1):
+  her ultimate would come sooner but at worse moments for this list; her
+  best lines are main attribute (+10.5% for +26.9%), Heat DMG (+6.7%) and
+  DMG to Staggered (+5.8%). Si's efficiency likewise (−3.4% ± 1.1).
+- Ardelia's ultimate is never cast (the list leaves it out on purpose:
+  the search found it worth nothing), so her energy all overflows; it
+  costs nothing but means her Ultimate Gain lines are dead weight.
+- Wulfgard's combo is lit but unused 51 s of 300 (17%), Laevatain's 27 s.
+- Team SP never reaches the cap.
+
+**What to change:** Wulfgard's Bonekrusha Wristband → LYNX Gloves (an
+Ultimate Gain Efficiency line for his Wristband's damage lines): his
+ultimates go from 0.80 to 1.00 a minute, Laevatain's energy wasted at a
+full bar from 8.8% to 5.4%. **+3.9% ± 1.0** on 24 fresh seeds (66,418 →
+69,007; +2.1% ± 2.5 on 8 others, +7.3% ± 2.4 in the ascent, which is
+biased up by choosing the best of many). Nothing else beyond the noise
+(Si, Laevatain and Ardelia keep the logs' most common loadouts). The
+rule-played gain is for a long fight; the example's 60 s timeline,
+replayed with the LYNX Gloves, is 1.5% lower (4,661,951 against
+4,732,088: it was searched with the Wristband, and full energy at the
+start makes Wulfgard's efficiency worth less), so the example keeps the
+Wristband. The earlier timeline-based choice (Hot Work Gloves →
+Bonekrusha Wristband, +0.9%) is the opposite trade for the opposite
+reason. 1,000 runs, 18 min on 3 workers.
+
 ## Gear from the logs and guide sites (2026-11-15)
 
 The gear above was a template assumption (each operator's most common
@@ -179,16 +216,16 @@ Learnability: 2 opener presses, 9 rules (12 presses), cue cost 24,
 complexity 38; the hardest cues are the three "ultimate ready" ones
 (rank 4).
 
-| Simulated player, 0.3 s reaction ± 50%, 10 seeds | Full energy | From zero |
+| Simulated player, 0.3 s reaction ± 50%, 10 seeds (common random numbers, 2026-11-16) | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **66,058** (2,088) | **60,464** (2,528) |
-| As a bot (0 s) / at 0.6 s | 67,711 / 63,762 | 69,666 / 59,225 |
-| First 60 s against the 60 s timeline (the examples) | 3,523,323 against 4,732,088 (−25.5%) | 2,515,431 against 4,642,409 (−45.8%) |
-| 300 s total against a fixed 300 s search (beam 6, full energy, 36 min) | 19,817,451 against 16,406,168 (**+20.8%**) | |
+| Sustained DPS over 300 s (sd over seeds) | **65,922** (1,750) | **61,962** (2,916) |
+| As a bot (0 s) / at 0.6 s | 67,711 / 65,245 | 69,666 / 60,216 |
+| First 60 s against the 60 s timeline (the examples) | 3,533,314 against 4,732,088 (−25.3%) | 2,570,589 against 4,642,409 (−44.6%) |
+| 300 s total against a fixed 300 s search (beam 6, full energy, 36 min) | 19,776,510 against 16,406,168 (**+20.5%**) | |
 
 - **Found by the rule search**, from a hand-written list (ultimates when
   ready, every combo when it lights up, Laevatain's battle skill in
-  Twilight and from 100 SP, Si's from 200): 51,674 → 66,058 (+28%, well
+  Twilight and from 100 SP, Si's from 200): 51,674 → 66,058 (old delay draws; +28%, well
   beyond the seeds' spread), two runs (150 lists, then 200 from the
   first's best) and rules that never fired removed. What it found:
   pre-empt Laevatain's and Ardelia's combos with Si's battle skill (Si's
