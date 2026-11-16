@@ -23,6 +23,9 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
   lists in parallel; Typhoeus's team is the furthest from its timeline
   (hover upkeep and SP sharing are hard to say as cues); in-game test
   108 (the Finisher input) decides the filler's assumption.
+  The rule search should also try gating a repeated press on the
+  button's visible state (Si's battle skill only while her button shows
+  it, not Initial Stroke): the owner found that one by hand, 2026-11-16.
 - **Typhoeus, Arcane, Liino, Perlica (2026-11-15, done: 5.76 / 4.99M,
   docs/teams/typhoeus-arcane-liino-perlica.md):** its zero-energy search
   is the least converged of the three teams (+27% at beam 48 alone): a

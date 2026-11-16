@@ -60,32 +60,55 @@ skill**; then at every moment do the first of these that applies:
 7. When Arcane's combo lights up: Arcane's combo, then Estella's battle
    skill.
 8. When Akekuri's combo lights up: Akekuri's combo.
-9. When the SP bar has a battle skill's worth (100): Si's battle skill
-   (it goes on to Initial and Final Stroke by itself).
+9. When Si's battle-skill button shows her battle skill (not Initial
+   Stroke: Artful Intent isn't up) and SP is at least 115: Si's battle
+   skill, then Initial Stroke right away. Don't press Final Stroke: let
+   Artful Intent run its 20 s and burst by itself.
+10. When SP is at least 200: Akekuri's battle skill.
 
-Otherwise Estella's basic attacks. Learnability: 1 opener press, 9 rules
-(10 presses), cue cost 26, complexity 37; the hardest cues are the four
+Otherwise Estella's basic attacks. Learnability: 1 opener press, 10 rules
+(12 presses), cue cost 31, complexity 44; the hardest cues are the four
 "ultimate ready" ones (rank 4).
+
+**Why rule 9 changed (2026-11-16).** The first list pressed Si's battle
+skill at every 100 SP, so it ran on through Initial and Final Stroke and
+ended Artful Intent after 7–9 s, 35 times in 300 s. The owner pointed out
+that ending it early wastes SP. In the simulator the record itself loses
+little when ended early (Artful Intent records 8% of all damage the enemy
+takes while it lasts, and the next one starts recording again soon after),
+but each early end costs 115 SP. Letting it run and putting the spare SP
+into Akekuri's battle skill plays 56,423 (sd 2,039) against 55,462
+(sd 2,929), 10 seeds each: as good or a little better, and calmer.
+Letting it run while wasting the spare SP loses about 20% (44,092); spare
+SP into Estella's battle skill (46,014) costs her combo's trigger, into
+Arcane's (45,486) isn't worth it. Pressing Initial Stroke right away (for
+the Inksoul's haste when it ends) is +4% over leaving it.
 
 | Simulated player, 0.3 s reaction ± 50%, 10 seeds | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **55,462** (2,929) | **56,370** (1,312) |
-| As a bot (0 s) / at 0.6 s | 54,956 / 55,998 | 54,543 / 56,399 |
-| First 60 s against the 60 s timeline (the examples) | 3,637,294 against 3,990,122 (−8.8%) | 3,402,278 against 3,263,818 (**+4.2%**) |
-| 300 s total against a fixed 300 s search (beam 6, full energy) | 16,638,660 against 13,994,230 (**+18.9%**) | |
+| Sustained DPS over 300 s (sd over seeds) | **56,423** (2,039) | **56,156** (1,311) |
+| As a bot (0 s) / at 0.6 s | 57,838 / 56,694 | 55,099 / 55,628 |
+| First 60 s against the 60 s timeline (the examples) | 3,559,238 against 3,990,122 (−10.8%) | 3,065,770 against 3,263,818 (−6.1%) |
+| 300 s total against a fixed 300 s search (beam 6, full energy) | 16,926,924 against 13,994,230 (**+21.0%**) | |
+
+The earlier list (Si's battle skill at every 100 SP, ending Artful Intent
+early) played 55,462 / 56,370 sustained and was better in the first 60 s
+from zero (+4.2% against the timeline): ending Artful Intent early spends
+SP sooner, and the extra battle skills' team energy brings the first
+ultimates sooner. Over a long fight the two are level.
 
 - **The references:** the 60 s timeline is the upper reference for a
   60 s window (planned to the frame, every bar spent by 60 s); it isn't
   sustained DPS. For a long fight, the fixed 300 s search (`efsim search`
   of the scenario at 300 s, beam 6, no macros, 34 min) is the sustained
-  reference, and the rules beat it by 19%: over 300 s the beam is too
+  reference, and the rules beat it by 19–21%: over 300 s the beam is too
   narrow to plan well, and the rules' simple reactions hold up. The
   opener-and-loop rotations in [rotations/](rotations/) (40.7–41.9k DPS)
   are from the INT build with Estella in slot 1: not comparable.
-- **Robustness:** the reaction delay costs nothing here (the bot is no
-  better): the fight is chaotic, so any change of timing moves where the
-  Stagger windows and ultimates fall, ±5% between seeds.
-- **The rule search** (two runs, 150 and 200 lists from this list) found
+- **Robustness:** a bot does 2.5% better than a 0.3 s player, and 0.6 s
+  costs no more: the fight is chaotic, so any change of timing moves where
+  the Stagger windows and ultimates fall, ±4% between seeds.
+- **The rule search** (two runs, 150 and 200 lists from the earlier list) found
   nothing better beyond the seeds' spread: its best lists played 54,880
   and 56,341 at 10 seeds (reordered ultimate and combo rules, a dive as
   the opener). Lighter lists on its Pareto front lose: without Si's

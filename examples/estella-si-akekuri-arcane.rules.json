@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/rules.schema.json",
-  "description": "The owner's team, hand-written (2026-11-16) from its best rotations (docs/teams/estella-si-akekuri-arcane.md): Si's Heat battle skill opens Arcane's combo, Estella's Cryo battle skill after it opens Si's and Estella's combos; ultimates when ready; Si's battle skill whenever a battle skill's SP is there. 55,462 sustained DPS over 300 s at a 0.3 s reaction delay (10 seeds, sd 2,929); two rule searches (150 and 200 lists) found nothing better beyond the seeds' spread.",
+  "description": "The owner's team (2026-11-16). Si's battle skill only when her button shows it (Artful Intent isn't up), Initial Stroke right after; her Artful Intent then runs its full 20 s and bursts by itself (the owner: ending it early wastes SP). Spare SP (200) goes to Akekuri's battle skill. Ultimates when ready; combos when lit; Estella's battle skill after Arcane's combo. 56,423 sustained DPS over 300 s at a 0.3 s reaction delay (10 seeds, sd 2,039), against 55,462 (sd 2,929) for the earlier list that ended Artful Intent early at every 100 SP.",
   "opener": [{ "operator": "Si", "cast": "battle" }],
   "rules": [
     { "when": { "ultimate": "Si" }, "do": { "operator": "Si", "cast": "ultimate" } },
@@ -11,6 +11,7 @@
     { "when": { "combo": "Estella" }, "do": { "operator": "Estella", "cast": "combo" } },
     { "when": { "combo": "Arcane" }, "do": [{ "operator": "Arcane", "cast": "combo" }, { "operator": "Estella", "cast": "battle" }] },
     { "when": { "combo": "Akekuri" }, "do": { "operator": "Akekuri", "cast": "combo" } },
-    { "when": { "sp": { "atLeast": 100 } }, "do": { "operator": "Si", "cast": "battle" } }
+    { "when": { "all": [{ "sp": { "atLeast": 115 } }, { "not": { "buff": { "operator": "Si", "buff": "artful_intent" } } }] }, "do": [{ "operator": "Si", "cast": "battle" }, { "operator": "Si", "cast": "battle" }] },
+    { "when": { "sp": { "atLeast": 200 } }, "do": { "operator": "Akekuri", "cast": "battle" } }
   ]
 }
