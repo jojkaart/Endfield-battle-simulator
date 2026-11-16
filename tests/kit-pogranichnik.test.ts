@@ -98,6 +98,23 @@ describe("Pogranichnik's skills", () => {
     expect(energy(38)).toBeGreaterThan(energy(37));
   });
 
+  it("a Breach's own hit sees no Breach, neither its own nor the one it replaces (logs 7e19, d4fb, c4f3: ÷ 1 + its DMG Taken); the hits after it see the new one", () => {
+    // A level 4 Breach (30 s), then a level 2 one while it runs.
+    const s = run(scenario({}, { startEnergy: {} }), [d("normal_skill"), c("combo_skill"), c("normal_skill"), o("normal_skill"), ...stacks2, o("normal_skill")], 1200);
+    const breaches = s.hits.filter((h) => h.skillId === "reaction:breach");
+    const levels = s.reactions.flatMap((r) => (r.kind === "physical" && r.status === "breach" ? [r.level] : []));
+    expect(levels).toEqual([4, 2]);
+    for (const h of breaches) expect(from(h, "Breach level")).toEqual([]);
+    const [first, second] = breaches.map((h) => h.frame) as [number, number];
+    const physical = (lo: number, hi: number) => s.hits.filter((h) => h.element === "physical" && h.skillId !== "reaction:breach" && h.frame > lo && h.frame < hi);
+    // The first still runs at the second (level 4 lasts 900 frames): the hits before the second have it, those after only the new one.
+    expect(second - first).toBeLessThan(900);
+    expect(physical(first, second).length).toBeGreaterThan(0);
+    expect(physical(second, Infinity).length).toBeGreaterThan(0);
+    for (const h of physical(first, second)) expect(from(h, "Breach level", "damageTaken")).toEqual([from(h, "Breach level 4", "damageTaken")[0]]);
+    for (const h of physical(second, Infinity)) expect(from(h, "Breach level", "damageTaken")).toEqual([from(h, "Breach level 2", "damageTaken")[0]]);
+  });
+
   it("battle-skill SP by the stacks its Breach consumed: atb1–atb4 = 5 / 15 / 25 / 35 (L12) at frame 38, none on an enemy without stacks (Vulnerable only, no Breach)", () => {
     // The SP across frame 38 is its grant and a frame of regen (the pause after spending is 0.5 s).
     const grant = (before: RotationAction[]) => {
