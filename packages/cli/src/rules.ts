@@ -189,7 +189,7 @@ export function rulesCommand(data: GameData, scenario: TimelineScenario, rawList
   });
   lines.push("", `Best (DPS less ${penalty * 100}% a complexity point, over ${seconds} s): #${full.indexOf(best) + 1}`, ...formatEvaluation(data, best.e, reaction, reference));
   if (options.out) {
-    writeFileSync(options.out, JSON.stringify({ description: `Found by efsim rules --search from ${file} (${result.evaluated} lists): ${n0(mean(best.e.dps))} sustained DPS over ${seconds} s at a ${reaction} s reaction delay; complexity ${best.e.learn.complexity}.`, ...best.e.list }, null, 2) + "\n");
+    writeFileSync(options.out, JSON.stringify({ ...best.e.list, description: `Found by efsim rules --search from ${file} (${result.evaluated} lists): ${n0(mean(best.e.dps))} sustained DPS over ${seconds} s at a ${reaction} s reaction delay; complexity ${best.e.learn.complexity}.` }, null, 2) + "\n");
     lines.push("", `Wrote ${options.out} (the best list).`);
   }
   return lines.join("\n");

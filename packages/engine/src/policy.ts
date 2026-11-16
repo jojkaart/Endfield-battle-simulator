@@ -168,12 +168,30 @@ export function describeStep(data: GameData, s: PolicyStep): string {
   return `${data.operators[s.operator]?.name ?? s.operator}'s ${CAST_NAMES[s.cast]}`;
 }
 
+/** The visible states (POLICY_VISIBLE_BUFFS) in words: [while it's on, while it's off]. */
+const BUFF_WORDS: Readonly<Record<string, readonly [string, string]>> = {
+  hovering: ["is hovering", "is on the ground"],
+  twilight: ["is in Twilight", "isn't in Twilight"],
+  vocalist_stance: ["is in Vocalist Stance", "isn't in Vocalist Stance"],
+  artful_intent: ["has Artful Intent up", "hasn't Artful Intent up"],
+  inksoul: ["has Inksoul up", "hasn't Inksoul up"],
+};
+
+function buffWords(data: GameData, b: { readonly operator: string; readonly buff: string }, on: boolean): string {
+  const w = BUFF_WORDS[b.buff] ?? [`has ${b.buff} up`, `hasn't ${b.buff} up`];
+  return `${data.operators[b.operator]?.name ?? b.operator} ${on ? w[0] : w[1]}`;
+}
+
 /** A cue as the player would say it ("Arcane's combo lights up"). */
 export function describeCue(data: GameData, cue: PolicyCue): string {
   const name = (op: string) => data.operators[op]?.name ?? op;
   if ("all" in cue) return cue.all.map((c) => describeCue(data, c)).join(" and ");
   if ("any" in cue) return cue.any.map((c) => describeCue(data, c)).join(" or ");
-  if ("not" in cue) return `not (${describeCue(data, cue.not)})`;
+  if ("not" in cue) {
+    if ("buff" in cue.not) return buffWords(data, cue.not.buff, false);
+    if ("staggered" in cue.not) return describeCue(data, { staggered: !cue.not.staggered });
+    return `not (${describeCue(data, cue.not)})`;
+  }
   if ("combo" in cue) return `${name(cue.combo)}'s combo lights up`;
   if ("ultimate" in cue) return `${name(cue.ultimate)}'s ultimate is ready`;
   if ("comboCooldown" in cue) return `${name(cue.comboCooldown)}'s combo is off cooldown`;
@@ -186,7 +204,7 @@ export function describeCue(data: GameData, cue: PolicyCue): string {
   if ("status" in cue) return `the enemy has ${cue.status[0]?.toUpperCase()}${cue.status.slice(1)}`;
   if ("vulnerable" in cue) return `the enemy's Vulnerable stacks ${rangeWords(cue.vulnerable)}`;
   if ("staggered" in cue) return cue.staggered ? "the enemy is Staggered" : "the enemy isn't Staggered";
-  if ("buff" in cue) return `${name(cue.buff.operator)} is in ${cue.buff.buff.replace(/_/g, " ")}`;
+  if ("buff" in cue) return buffWords(data, cue.buff, true);
   if ("finalStrikes" in cue) return `${cue.finalStrikes.atLeast} Final Strike${cue.finalStrikes.atLeast === 1 ? "" : "s"} since this rule last fired`;
   if ("since" in cue) return `${cue.since.atLeast} s since ${name(cue.since.operator)}'s last ${CAST_NAMES[cue.since.cast]}`;
   return JSON.stringify(cue);

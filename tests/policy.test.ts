@@ -183,7 +183,16 @@ describe("the rule driver", () => {
 describe("the rule driver with hovers and dives (Typhoeus)", () => {
   it("presses only where earliestStart from the last press agrees, so the replay matches", () => {
     const sc = readScenario(join(ROOT, "examples/typhoeus-arcane-liino-perlica.scenario.json"));
-    const l = resolveRuleList(data, sc.team.map((b) => b.operator), readRuleList(join(ROOT, "examples/typhoeus-arcane-liino-perlica.rules.json")));
+    const grounded = { not: { buff: { operator: "Typhoeus", buff: "hovering" } } };
+    const l = resolveRuleList(data, sc.team.map((b) => b.operator), {
+      opener: [{ operator: "Typhoeus", cast: "battle" }],
+      rules: [
+        { when: { combo: "Typhoeus" }, do: { operator: "Typhoeus", cast: "combo" } },
+        { when: { combo: "Perlica" }, do: { operator: "Perlica", cast: "combo" } },
+        { when: grounded, do: { operator: "Typhoeus", cast: "battle" } },
+        { when: grounded, do: { operator: "Typhoeus", cast: "dive" } },
+      ],
+    });
     const fight60 = { ...sc, durationFrames: 60 * 30 };
     const r = playRules(data, fight60, l, { seed: 1 });
     expect(r.rotation.some((a) => a.skill === "chr_0034_typhoea_plunging_attack_end")).toBe(true);

@@ -1,18 +1,16 @@
 {
   "$schema": "../schemas/rules.schema.json",
-  "description": "Ink Melt, hand-written (2026-11-16) from its best rotations (docs/teams/ink-melt.md): ultimates when ready, every combo when it lights up, Laevatain's battle skill in Twilight and whenever a battle skill's SP is there, Si's with SP to spare.",
+  "description": "Ink Melt (2026-11-16): `efsim rules --search` from a hand-written list (ultimates when ready, every combo when it lights up, Laevatain's battle skill in Twilight and with SP to spare), two searches of 150 and 200 lists, the best cleaned of rules that never fired: 66,058 sustained DPS over 300 s at a 0.3 s reaction delay (10 seeds, sd 2,088), the hand-written list 51,674. Its finds: pre-empt Laevatain's and Ardelia's combos with Si's battle skill and Wulfgard's with Ardelia's, Laevatain's battle skill from 150 SP, Ardelia's ultimate never.",
   "opener": [{ "operator": "Si", "cast": "battle" }, { "operator": "Laevatain", "cast": "battle" }],
   "rules": [
-    { "when": { "ultimate": "Si" }, "do": { "operator": "Si", "cast": "ultimate" } },
     { "when": { "ultimate": "Laevatain" }, "do": { "operator": "Laevatain", "cast": "ultimate" } },
-    { "when": { "ultimate": "Ardelia" }, "do": { "operator": "Ardelia", "cast": "ultimate" } },
     { "when": { "ultimate": "Wulfgard" }, "do": { "operator": "Wulfgard", "cast": "ultimate" } },
-    { "when": { "combo": "Laevatain" }, "do": { "operator": "Laevatain", "cast": "combo" } },
+    { "when": { "ultimate": "Si" }, "do": { "operator": "Si", "cast": "ultimate" } },
+    { "when": { "combo": "Laevatain" }, "do": [{ "operator": "Si", "cast": "battle" }, { "operator": "Laevatain", "cast": "combo" }] },
     { "when": { "combo": "Si" }, "do": { "operator": "Si", "cast": "combo" } },
-    { "when": { "combo": "Wulfgard" }, "do": { "operator": "Wulfgard", "cast": "combo" } },
-    { "when": { "combo": "Ardelia" }, "do": { "operator": "Ardelia", "cast": "combo" } },
+    { "when": { "combo": "Wulfgard" }, "do": [{ "operator": "Ardelia", "cast": "battle" }, { "operator": "Wulfgard", "cast": "combo" }] },
+    { "when": { "combo": "Ardelia" }, "do": [{ "operator": "Si", "cast": "battle" }, { "operator": "Ardelia", "cast": "combo" }] },
     { "when": { "buff": { "operator": "Laevatain", "buff": "twilight" } }, "do": { "operator": "Laevatain", "cast": "battle" } },
-    { "when": { "sp": { "atLeast": 100 } }, "do": { "operator": "Laevatain", "cast": "battle" } },
-    { "when": { "sp": { "atLeast": 200 } }, "do": { "operator": "Si", "cast": "battle" } }
+    { "when": { "sp": { "atLeast": 150 } }, "do": { "operator": "Laevatain", "cast": "battle" } }
   ]
 }

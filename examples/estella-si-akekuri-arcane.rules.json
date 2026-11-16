@@ -1,6 +1,6 @@
 {
   "$schema": "../schemas/rules.schema.json",
-  "description": "The owner's team, hand-written (2026-11-16) from its best rotations (docs/teams/estella-si-akekuri-arcane.md): Si's Heat battle skill opens Arcane's combo, Estella's Cryo battle skill after it opens Si's and Estella's combos; ultimates when ready; Si's battle skill whenever a battle skill's SP is there.",
+  "description": "The owner's team, hand-written (2026-11-16) from its best rotations (docs/teams/estella-si-akekuri-arcane.md): Si's Heat battle skill opens Arcane's combo, Estella's Cryo battle skill after it opens Si's and Estella's combos; ultimates when ready; Si's battle skill whenever a battle skill's SP is there. 55,462 sustained DPS over 300 s at a 0.3 s reaction delay (10 seeds, sd 2,929); two rule searches (150 and 200 lists) found nothing better beyond the seeds' spread.",
   "opener": [{ "operator": "Si", "cast": "battle" }],
   "rules": [
     { "when": { "ultimate": "Si" }, "do": { "operator": "Si", "cast": "ultimate" } },
