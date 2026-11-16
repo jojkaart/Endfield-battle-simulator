@@ -35,7 +35,8 @@ export function pendingSuite(index: number): void {
       const n = (d: Direction) => ds.filter((x) => x === d).length;
       return [`${g} ${n("better")} better, ${n("worse")} worse, ${n("mixed")} mixed, ${n("other")} other, ${n("same")} unchanged`];
     });
-    console.info(`pending logs against the snapshot (shard ${index + 1} of ${PENDING_SHARDS}, by plain matches, mismatches and |total damage error|): ${summary.join("; ") || "none checked"}`);
+    // Written past vitest's console capture (which hides a passing file's output), so every run shows it.
+    process.stdout.write(`pending logs against the snapshot (shard ${index + 1} of ${PENDING_SHARDS}, by plain matches, mismatches and |total damage error|): ${summary.join("; ") || "no stored entry to compare with"}\n`);
   });
 
   if (index === 0) {
