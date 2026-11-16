@@ -1595,6 +1595,178 @@ from loadouts players actually run:
   change in the team sends the beam elsewhere, so keep the better of the
   two).
 
+### Rule-based rotations
+
+`efsim rules <scenario.json> <rules.json>` (engine `playRules`, policy.ts;
+the search `searchRules`, policysearch.ts; CLI rules.ts; 2026-11-16).
+**Why** (the owner, who plays daily): a rotation is only useful if a
+person can learn and play it. The search's fixed frame timelines are
+hard: timers in your head are hard, and a loop that's a little different
+each time is too complex to learn; guide sites' rotations often last over
+a minute and must be restartable. The easiest rotation to learn: a couple
+of skills that get things started, then reacting to combo skills lighting
+up, either casting the combo at once or pre-empting it with an extra
+battle skill first. So a rotation here is a **short opener plus a
+priority list of rules "when cue X is visible, do Y"**, played by a
+simulated player with a reaction delay and measured by sustained DPS over
+a long fight. Rules adapt by themselves when gear changes timing (no
+repair needed), which later makes gear comparison cheap.
+
+**Cues, ranked by the owner (2026-11-16), easiest first:**
+
+1. A combo skill lighting up (by far the easiest).
+2. Typhoeus's Hunting Arrows and Signs (very easy); SP and how many
+   battle skills are ready (easy).
+3. Inflictions and vulnerabilities on the enemy (relatively easy, shown
+   on the enemy).
+4. An ultimate being ready (harder: it's in the corner of the screen).
+5. Counting Final Strikes (takes practice, doable).
+6. A combo skill's cooldown status (visible, but the owner isn't used to
+   looking at it).
+7. Anything needing a timer in your head (hardest; avoid, or count
+   heavily against).
+
+Rules may read only what the game's UI shows: the list above, plus a few
+operator states without buff icons, each for a reason
+(`POLICY_VISIBLE_BUFFS`, ranked with 3): Typhoeus hovering (she's in the
+air), Laevatain's Twilight (her ultimate's form; the battle-skill button
+changes), Liino's Vocalist Stance (the button becomes End Stance), Si's
+Artful Intent and Inksoul (the button becomes Initial / Final Stroke).
+Visible stacks (`POLICY_VISIBLE_STACKS`) are Typhoeus's arrows and Signs
+only; any other stack or buff in a rule is refused.
+
+**The format** (schemas/rules.schema.json; examples/*.rules.json, one per
+team next to its scenario):
+
+```json
+{
+  "opener": [{ "operator": "Si", "cast": "battle" }],
+  "rules": [
+    { "when": { "combo": "Arcane" }, "do": [{ "operator": "Estella", "cast": "battle" }, { "operator": "Arcane", "cast": "combo" }] },
+    { "when": { "all": [{ "sp": { "atLeast": 100 } }, { "not": { "status": "solidification" } }] }, "do": { "operator": "Si", "cast": "battle" } }
+  ],
+  "filler": "basic"
+}
+```
+
+- *Presses* (`cast`): an operator's `battle`, `combo` or `ultimate`
+  button, resolved to the skill the button casts then (Si's battle skill
+  is Artful Intent, then Initial and Final Stroke; Arcane's ultimate is
+  her array, then sequence 2; Liino's battle skill ends her stance while
+  she's in it); the controlled operator's `dive`, `basic` (whatever the
+  attack input is then) or `finisher`. Operators by ID or by the name the
+  game shows. **No swaps** (as the search's default): the scenario's
+  controlled operator does every basic attack, dive and finisher.
+- *Cues* (`when`): `combo` (lit: off cooldown, its window open,
+  available; rank 1), `stacks` and `sp` (2), `infliction`, `status`
+  (reaction and physical statuses), `vulnerable`, `staggered`, `buff` (3),
+  `ultimate` (4), `finalStrikes` (the controlled operator's since the rule
+  last fired; 5), `comboCooldown` (6), `since` (seconds since an
+  operator's last press of a button: a timer; 7), and `all` / `any` /
+  `not`.
+- *Rules* are ordered; `do` is one press or a short sequence (at most 3:
+  "battle skill A, then combo B"). *Opener*: a few presses played first.
+  *Filler*: what the controlled operator does when no rule fires, its
+  basic attacks (default) or dives.
+
+**The driver** (`playRules`): frame by frame on the timeline (init /
+advance / startsNow / apply, as the search and `simulate` use: no fork of
+the damage model), the state advanced to the frame:
+
+1. The opener's presses in order, each at the first frame it can start
+   (no reaction delay: planned), basic attacks in between; a press that
+   can't start within `waitSeconds` (6 s) is given up. No rule fires
+   before the opener is over.
+2. Then the first rule whose cue the player has seen for its **reaction
+   delay** and whose first press can start now. The delay is drawn when a
+   cue appears (onset): 0.3 s by default (`--reaction`; 0: a bot),
+   uniform within ±50% (seeded, its own stream). A rule that fired sees
+   its own cue afresh (a new delay) before firing again. A rule whose
+   cue holds but whose press can't start yet doesn't block the rules
+   after it. A rule's later presses play as the opener's (each as soon
+   as it can start, a combo waiting for its window, up to 6 s), and no
+   other rule fires meanwhile.
+3. Else the filler: the controlled operator's basic attack as soon as it
+   can start (a finisher first when the enemy is Staggered, as the game's
+   attack input does: no delay), or its dive.
+
+A dive starts only once the current skill is past its exclusive frames,
+as the search dives. Several presses may start at one frame. "Can start
+now" is startsNow on the state advanced to the frame **and**
+earliestStart from the state right after the last press, with the
+frame as `at`, giving that frame; the press is applied to that state.
+So everything pressed is recorded with its frame and `simulate` replays
+that rotation to the same hits (tests/policy.test.ts). The second check
+matters: startsNow on the advanced state allowed Typhoeus's battle skill
+48 frames before earliestStart from the last press did (after a dive,
+whose landing replaces its jump), and the replay would have cast it
+later. Speed: the basic attack's
+options are judged from their earliest start after the last press
+(exact while nothing is pressed; `judgeEveryFrame` checks it), about
+1–2 s per 300 s fight for the owner's team, 3–5 s for Typhoeus's.
+
+**Learnability** (`learnability`): opener presses, rules, the rules'
+presses and their **cue cost**: each cue part costs by its rank (1, 2, 3,
+then 5, 6, 7 for ranks 4–6, and 20 for a timer), a combination the sum of
+its parts; `complexity` = opener presses + rule presses + cue costs, the
+one number the search trades DPS against. The report gives each rule's
+cost and the hardest rank used.
+
+**The report**: sustained DPS after the opener over a long fight (300 s
+default, `--duration`), mean and spread over 5 reaction-delay seeds with
+expected crits, and again with rolled crits (the battle seeded with the
+delay's seed); the whole fight's total, damage per minute, the first 60 s
+(comparable with a 60 s timeline under the same start); **robustness**:
+sustained DPS as a bot (delay 0), at the default delay and at twice it;
+which rules fired how often; presses given up; shares; and the
+scenario's own rotation simulated as the reference.
+
+**The rule search** (`efsim rules … --search`, `searchRules`): local
+search from the given list. Edits: add a rule (mostly the natural ones:
+a lit combo cast, a ready ultimate cast, a lit combo pre-empted by a
+battle skill; else a random cue and press), remove one, swap two
+neighbours, change a cue, add or drop a condition (`all`), negate a cue,
+move a threshold (SP by 50, stacks by 1), add, drop or change a
+pre-empting battle skill, change a rule's first press, change the
+opener, toggle the filler; cues from what the team's UI shows, no
+timers. Each list is played at the default delay over 2 seeds in a 180 s
+fight (`--search-seconds`, `--search-seeds`), scored by mean sustained
+DPS; every list scored is kept. A parent is the best so far (DPS less
+0.2% a complexity point, `--penalty`) 60% of the time, else a list from
+the Pareto front of DPS against complexity; one or two edits a child.
+The report: the front (up to 8 lists, `--front`) scored again over the
+whole fight, each in plain words, and the best of them by the penalised
+score in full; `--out` saves it. 150 lists (the default) take 5–6 min
+per team (three teams at once on four cores); 200 lists at 3 seeds and
+240 s, 16–20 min.
+
+**Noise.** The fight is chaotic for the driver too: a different
+reaction-delay draw moves where Stagger windows, combo triggers and
+ultimates fall, and a list's sustained DPS has a standard deviation of
+2–5% over seeds (the owner's team 2,929 of 55,462 at 10 seeds). That is
+as much as most single edits gain, so at 2–3 seeds the search often
+keeps a lucky list: on the owner's team every "gain" it found vanished at
+10 seeds. Judge a list at 10 seeds (`--seeds 10`) before taking it; the
+bot (delay 0, one run) is one sample of the same noise, sometimes below
+the 0.3 s player. Gains that held: Ink Melt +28%, Typhoeus's team +16%.
+
+**Results** (sustained DPS over 300 s, 0.3 s delay, 10 seeds; each team
+page's "Rules" has the list in plain words):
+
+| Team | Full energy | From zero | First 60 s against the 60 s timeline (full / zero) | 300 s total against a fixed 300 s search (beam 6) | Complexity |
+|---|---|---|---|---|---|
+| The owner's (hand-written) | 55,462 | 56,370 | −8.8% / +4.2% | +18.9% | 37 |
+| Ink Melt (searched) | 66,058 | 60,464 | −25.5% / −45.8% | +20.8% | 38 |
+| Typhoeus, Arcane, Liino, Perlica (searched) | 53,302 | 48,560 | −28.2% / −47.5% | −5.5% | 47 |
+
+The 60 s timeline is the upper reference for a 60 s window, not
+sustained DPS; the fixed 300 s search (the scenario at 300 s, full
+energy, beam 6, no macros: 34 min for the owner's team) is the sustained
+one. The opener-and-loop searches (`--loop --sync`) take hours per team
+(44 min to 5 h in their measurements) and weren't run again; their old
+loops for the owner's team (INT build, other team order) aren't
+comparable.
+
 ### Time
 
 Integer frames at **30 FPS**, the game's own timeline unit (verified across

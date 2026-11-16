@@ -8,6 +8,21 @@ done but for the items below ([review-2026-10.md](review-2026-10.md)).
 
 ## Next steps
 
+- **Rule-based rotations (2026-11-16, phase 1 done: design.md "Rule-based
+  rotations", `efsim rules`, examples/*.rules.json, each team page's
+  "Rules"):** next, gear on rules: what a rule list leaves on the table
+  per loop (energy surplus, ultimates held at a full bar, SP wasted at
+  the cap), the marginal value of each resource (a point of SP, energy,
+  a second off a combo cooldown) measured by replaying the rules with a
+  little more of it, and gear ranked by those values (cheap: no search
+  per loadout, the rules adapt); then the diagnosis report (why a rule
+  list is below the timeline: which presses come late, which windows
+  are missed). Also: the rule search is noisy (a list's sustained DPS
+  moves 2–4% between reaction-delay seeds, as much as most edits gain):
+  more seeds or common random numbers per cue onset, and workers to run
+  lists in parallel; Typhoeus's team is the furthest from its timeline
+  (hover upkeep and SP sharing are hard to say as cues); in-game test
+  108 (the Finisher input) decides the filler's assumption.
 - **Typhoeus, Arcane, Liino, Perlica (2026-11-15, done: 5.76 / 4.99M,
   docs/teams/typhoeus-arcane-liino-perlica.md):** its zero-energy search
   is the least converged of the three teams (+27% at beam 48 alone): a

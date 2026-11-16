@@ -57,7 +57,7 @@ export interface Candidate {
  * aren't chain steps), and finishers; not the dive, which is a jump
  * (actionsToJudge).
  */
-function nextBasics(data: GameData, state: TimelineState, operator: string): string[] {
+export function nextBasics(data: GameData, state: TimelineState, operator: string): string[] {
   const out = new Set<string>();
   const chain = state.chainNext[operator];
   for (const c of chain ? [chain, ...(chain.alternatives ?? [])] : []) if (c.until >= state.frame) out.add(c.skill);
@@ -77,7 +77,7 @@ function hasBasics(data: GameData, operator: string): boolean {
 }
 
 /** The controlled operator's dive (its landing skill, when its kit has it: a jump, then the plunge). */
-function diveOf(data: GameData, operator: string): string | undefined {
+export function diveOf(data: GameData, operator: string): string | undefined {
   const end = data.operators[operator]?.dive?.end;
   return end !== undefined && data.kits.operators[operator]?.skills.some((s) => s.skillId === end) ? end : undefined;
 }

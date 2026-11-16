@@ -152,6 +152,57 @@ Ardelia:
   (24/48/96: 1.80 / 3.81 / 3.89M). Both teams' numbers are lower bounds,
   Ink Melt's looser.
 
+### Rules: what to play (2026-11-16)
+
+A rotation to learn rather than a timeline (docs/design.md "Rule-based
+rotations"; [examples/ink-melt.rules.json](../../examples/ink-melt.rules.json),
+`efsim rules`). Laevatain controlled, no swaps. Start with **Si's battle
+skill, then Laevatain's battle skill**; then at every moment do the first
+of these that applies:
+
+1. When Laevatain's ultimate is ready: Laevatain's ultimate.
+2. When Wulfgard's ultimate is ready: Wulfgard's ultimate.
+3. When Si's ultimate is ready: Si's ultimate.
+4. When Laevatain's combo lights up: Si's battle skill, then Laevatain's
+   combo.
+5. When Si's combo lights up: Si's combo.
+6. When Wulfgard's combo lights up: Ardelia's battle skill, then
+   Wulfgard's combo.
+7. When Ardelia's combo lights up: Si's battle skill, then Ardelia's
+   combo.
+8. When Laevatain is in Twilight: Laevatain's battle skill.
+9. When the SP bar is at 150 (one and a half battle skills): Laevatain's
+   battle skill.
+
+Otherwise Laevatain's basic attacks. Ardelia's ultimate isn't cast.
+Learnability: 2 opener presses, 9 rules (12 presses), cue cost 24,
+complexity 38; the hardest cues are the three "ultimate ready" ones
+(rank 4).
+
+| Simulated player, 0.3 s reaction ± 50%, 10 seeds | Full energy | From zero |
+|---|---|---|
+| Sustained DPS over 300 s (sd over seeds) | **66,058** (2,088) | **60,464** (2,528) |
+| As a bot (0 s) / at 0.6 s | 67,711 / 63,762 | 69,666 / 59,225 |
+| First 60 s against the 60 s timeline (the examples) | 3,523,323 against 4,732,088 (−25.5%) | 2,515,431 against 4,642,409 (−45.8%) |
+| 300 s total against a fixed 300 s search (beam 6, full energy, 36 min) | 19,817,451 against 16,406,168 (**+20.8%**) | |
+
+- **Found by the rule search**, from a hand-written list (ultimates when
+  ready, every combo when it lights up, Laevatain's battle skill in
+  Twilight and from 100 SP, Si's from 200): 51,674 → 66,058 (+28%, well
+  beyond the seeds' spread), two runs (150 lists, then 200 from the
+  first's best) and rules that never fired removed. What it found:
+  pre-empt Laevatain's and Ardelia's combos with Si's battle skill (Si's
+  Heat infliction before the combos' hits, and her strokes after),
+  Wulfgard's with Ardelia's, keep 150 SP before Laevatain's own battle
+  skill, and leave Ardelia's ultimate out.
+- **The gap to the 60 s timeline** is large (−25% / −46%): the timeline
+  plans Laevatain's Melting Flame and empowered battle skill, Si's
+  strokes and the ultimates to the frame within 60 s, which no visible
+  cue says (Melting Flame isn't among the cues the owner listed); from
+  zero the rules spend SP as it comes and build energy slowly. Over a
+  long fight the fixed 300 s search is the sustained reference, and the
+  rules beat it by 21% (row above): a beam of 6 can't plan 300 s well.
+
 ## Kit checks behind these numbers (2026-11-15)
 
 - Wulfgard: kit and weapons fit the logs once the export's missing build

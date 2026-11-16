@@ -43,6 +43,55 @@ play).
   84.9 s loop at 41,056 DPS after a 1,095.2 s opener; zero: 81.1 s at
   40,677 DPS after 255.7 s): to be searched again.
 
+### Rules: what to play (2026-11-16)
+
+A rotation to learn rather than a timeline (docs/design.md "Rule-based
+rotations"; [examples/estella-si-akekuri-arcane.rules.json](../../examples/estella-si-akekuri-arcane.rules.json),
+`efsim rules`). Estella controlled, no swaps. Start with **Si's battle
+skill**; then at every moment do the first of these that applies:
+
+1. When Si's ultimate is ready: Si's ultimate.
+2. When Estella's ultimate is ready: Estella's ultimate.
+3. When Arcane's ultimate is ready: Arcane's ultimate (her second part
+   too, when its button lights up).
+4. When Akekuri's ultimate is ready: Akekuri's ultimate.
+5. When Si's combo lights up: Si's combo.
+6. When Estella's combo lights up: Estella's combo.
+7. When Arcane's combo lights up: Arcane's combo, then Estella's battle
+   skill.
+8. When Akekuri's combo lights up: Akekuri's combo.
+9. When the SP bar has a battle skill's worth (100): Si's battle skill
+   (it goes on to Initial and Final Stroke by itself).
+
+Otherwise Estella's basic attacks. Learnability: 1 opener press, 9 rules
+(10 presses), cue cost 26, complexity 37; the hardest cues are the four
+"ultimate ready" ones (rank 4).
+
+| Simulated player, 0.3 s reaction ± 50%, 10 seeds | Full energy | From zero |
+|---|---|---|
+| Sustained DPS over 300 s (sd over seeds) | **55,462** (2,929) | **56,370** (1,312) |
+| As a bot (0 s) / at 0.6 s | 54,956 / 55,998 | 54,543 / 56,399 |
+| First 60 s against the 60 s timeline (the examples) | 3,637,294 against 3,990,122 (−8.8%) | 3,402,278 against 3,263,818 (**+4.2%**) |
+| 300 s total against a fixed 300 s search (beam 6, full energy) | 16,638,660 against 13,994,230 (**+18.9%**) | |
+
+- **The references:** the 60 s timeline is the upper reference for a
+  60 s window (planned to the frame, every bar spent by 60 s); it isn't
+  sustained DPS. For a long fight, the fixed 300 s search (`efsim search`
+  of the scenario at 300 s, beam 6, no macros, 34 min) is the sustained
+  reference, and the rules beat it by 19%: over 300 s the beam is too
+  narrow to plan well, and the rules' simple reactions hold up. The
+  opener-and-loop rotations in [rotations/](rotations/) (40.7–41.9k DPS)
+  are from the INT build with Estella in slot 1: not comparable.
+- **Robustness:** the reaction delay costs nothing here (the bot is no
+  better): the fight is chaotic, so any change of timing moves where the
+  Stagger windows and ultimates fall, ±5% between seeds.
+- **The rule search** (two runs, 150 and 200 lists from this list) found
+  nothing better beyond the seeds' spread: its best lists played 54,880
+  and 56,341 at 10 seeds (reordered ultimate and combo rules, a dive as
+  the opener). Lighter lists on its Pareto front lose: without Si's
+  ultimate rule (complexity 30) 51,137, without Si's and Estella's
+  (complexity 25) 48,039 (5 seeds each).
+
 ## Gear recommendation (2026-11-15; the examples keep the owner's gear)
 
 `efsim gear` (docs/design.md "Gear from the logs") on both examples,

@@ -23,3 +23,5 @@ export * from "./distribution.ts";
 export * from "./macros.ts";
 export * from "./setupvalue.ts";
 export * from "./skeleton.ts";
+export * from "./policy.ts";
+export * from "./policysearch.ts";
