@@ -15,7 +15,10 @@
   },
   "notes": [
    "Promotion, weapon level and talent levels aren't in the log; the highest possible for the logged levels is assumed.",
-   "Enemy level 90 from the stage's DungeonTable entry (indie_hard033_s)."
+   "Enemy level 90 from the stage's DungeonTable entry (indie_hard033_s).",
+   "The skill each Stagger is credited to (poise.origin) added from the same battle detail (efsim zmdlogs refresh).",
+   "Each buff effect's giver (effects' and boundaryEffects' source) added from the same battle detail (efsim zmdlogs refresh).",
+   "Each buff effect's start (effects' and boundaryEffects' since) added from the same battle detail (efsim zmdlogs refresh)."
   ]
  },
  "enemy": {
@@ -258,13 +261,16 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 10,
-    "bar": 50
+    "bar": 50,
+    "origin": "chr_0016_laevat_normal_skill"
    }
   },
   {
@@ -280,13 +286,16 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 5,
-    "bar": 45
+    "bar": 45,
+    "origin": "chr_0036_jsspsi_normal_skill"
    }
   },
   {
@@ -301,7 +310,9 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     }
    ],
    "boundaryEffects": [],
@@ -319,7 +330,9 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     }
    ],
    "boundaryEffects": [],
@@ -337,7 +350,9 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     }
    ],
    "boundaryEffects": [],
@@ -355,7 +370,9 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     }
    ],
    "boundaryEffects": [],
@@ -373,7 +390,9 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     }
    ],
    "boundaryEffects": [],
@@ -391,7 +410,9 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     }
    ],
    "boundaryEffects": [],
@@ -409,7 +430,9 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     }
    ],
    "boundaryEffects": [],
@@ -427,7 +450,9 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     }
    ],
    "boundaryEffects": [],
@@ -445,7 +470,9 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     }
    ],
    "boundaryEffects": [],
@@ -463,7 +490,9 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     }
    ],
    "boundaryEffects": [],
@@ -481,7 +510,9 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     }
    ],
    "boundaryEffects": [
@@ -489,19 +520,25 @@
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     }
    ],
    "unquantified": []
@@ -518,32 +555,41 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     }
    ],
    "boundaryEffects": [],
    "unquantified": [],
    "poise": {
     "dealt": 5,
-    "bar": 40
+    "bar": 40,
+    "origin": "chr_0032_lizhiyan_combo_skill"
    }
   },
   {
@@ -558,25 +604,33 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     }
    ],
    "boundaryEffects": [],
@@ -594,25 +648,33 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     }
    ],
    "boundaryEffects": [],
@@ -630,25 +692,33 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     }
    ],
    "boundaryEffects": [],
@@ -666,25 +736,33 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     }
    ],
    "boundaryEffects": [],
@@ -702,25 +780,33 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     }
    ],
    "boundaryEffects": [
@@ -728,7 +814,9 @@
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 7425
     }
    ],
    "unquantified": []
@@ -745,31 +833,41 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 7425
     }
    ],
    "boundaryEffects": [],
@@ -787,31 +885,41 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 7425
     }
    ],
    "boundaryEffects": [],
@@ -829,31 +937,41 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 7425
     }
    ],
    "boundaryEffects": [],
@@ -871,38 +989,49 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 7425
     }
    ],
    "boundaryEffects": [],
    "unquantified": [],
    "poise": {
     "dealt": 18,
-    "bar": 22
+    "bar": 22,
+    "origin": "chr_0016_laevat_attack5"
    }
   },
   {
@@ -917,31 +1046,41 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 7425
     }
    ],
    "boundaryEffects": [],
@@ -959,37 +1098,49 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 7425
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.17
+     "value": 0.17,
+     "source": "chr_0036_jsspsi",
+     "since": 9912
     }
    ],
    "boundaryEffects": [],
@@ -1007,31 +1158,41 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 7425
     }
    ],
    "boundaryEffects": [],
@@ -1049,37 +1210,49 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 7425
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.17
+     "value": 0.17,
+     "source": "chr_0036_jsspsi",
+     "since": 9912
     }
    ],
    "boundaryEffects": [],
@@ -1097,31 +1270,41 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 7425
     }
    ],
    "boundaryEffects": [],
@@ -1140,37 +1323,49 @@
      "buff": "buff_wpn_claym_0018_enemyvul",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.21
+     "value": 0.21,
+     "source": "chr_0036_jsspsi",
+     "since": 4529
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 6246
     },
     {
      "buff": "buff_wpn_funnel_0016_will_atk",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 7425
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.17
+     "value": 0.17,
+     "source": "chr_0036_jsspsi",
+     "since": 9912
     }
    ],
    "boundaryEffects": [],
@@ -1188,7 +1383,9 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.17
+     "value": 0.17,
+     "source": "chr_0036_jsspsi",
+     "since": 9912
     }
    ],
    "boundaryEffects": [
@@ -1196,13 +1393,17 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     }
    ],
    "unquantified": []
@@ -1220,19 +1421,24 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 10,
-    "bar": 45
+    "bar": 45,
+    "origin": "chr_0033_camille_combo_skill"
    }
   },
   {
@@ -1247,19 +1453,25 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.17
+     "value": 0.17,
+     "source": "chr_0036_jsspsi",
+     "since": 9912
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     }
    ],
    "boundaryEffects": [],
@@ -1277,19 +1489,25 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.17
+     "value": 0.17,
+     "source": "chr_0036_jsspsi",
+     "since": 9912
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     }
    ],
    "boundaryEffects": [],
@@ -1307,19 +1525,25 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.17
+     "value": 0.17,
+     "source": "chr_0036_jsspsi",
+     "since": 9912
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     }
    ],
    "boundaryEffects": [],
@@ -1337,19 +1561,25 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.17
+     "value": 0.17,
+     "source": "chr_0036_jsspsi",
+     "since": 9912
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     }
    ],
    "boundaryEffects": [],
@@ -1367,13 +1597,17 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     }
    ],
    "boundaryEffects": [],
@@ -1392,26 +1626,33 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.17
+     "value": 0.17,
+     "source": "chr_0036_jsspsi",
+     "since": 9912
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     }
    ],
    "boundaryEffects": [],
    "unquantified": [],
    "poise": {
     "dealt": 10,
-    "bar": 40
+    "bar": 40,
+    "origin": "chr_0036_jsspsi_combo_skill"
    }
   },
   {
@@ -1427,26 +1668,33 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.17
+     "value": 0.17,
+     "source": "chr_0036_jsspsi",
+     "since": 9912
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     }
    ],
    "boundaryEffects": [],
    "unquantified": [],
    "poise": {
     "dealt": 10,
-    "bar": 40
+    "bar": 40,
+    "origin": "chr_0036_jsspsi_combo_skill"
    }
   },
   {
@@ -1461,25 +1709,33 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.17
+     "value": 0.17,
+     "source": "chr_0036_jsspsi",
+     "since": 9912
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 14089
     }
    ],
    "boundaryEffects": [],
@@ -1497,19 +1753,25 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 14089
     }
    ],
    "boundaryEffects": [],
@@ -1527,26 +1789,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 14089
     }
    ],
    "boundaryEffects": [],
    "unquantified": [],
    "poise": {
     "dealt": 18,
-    "bar": 32
+    "bar": 32,
+    "origin": "chr_0016_laevat_attack5"
    }
   },
   {
@@ -1561,19 +1830,25 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 14089
     }
    ],
    "boundaryEffects": [],
@@ -1591,19 +1866,25 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 14089
     }
    ],
    "boundaryEffects": [],
@@ -1621,19 +1902,25 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 14089
     }
    ],
    "boundaryEffects": [],
@@ -1651,19 +1938,25 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 14089
     }
    ],
    "boundaryEffects": [],
@@ -1681,19 +1974,25 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 14089
     }
    ],
    "boundaryEffects": [],
@@ -1711,19 +2010,25 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 14089
     }
    ],
    "boundaryEffects": [],
@@ -1741,19 +2046,25 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 14089
     }
    ],
    "boundaryEffects": [],
@@ -1771,19 +2082,25 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 14089
     }
    ],
    "boundaryEffects": [],
@@ -1801,26 +2118,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 14089
     }
    ],
    "boundaryEffects": [],
    "unquantified": [],
    "poise": {
     "dealt": 18,
-    "bar": 14
+    "bar": 14,
+    "origin": "chr_0016_laevat_attack5"
    }
   },
   {
@@ -1835,19 +2159,25 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 14089
     }
    ],
    "boundaryEffects": [],
@@ -1865,13 +2195,17 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     }
    ],
    "boundaryEffects": [
@@ -1879,25 +2213,32 @@
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 14089
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 19684
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 10,
-    "bar": 4
+    "bar": 4,
+    "origin": "chr_0033_camille_normal_skill_abilityrange"
    }
   },
   {
@@ -1912,25 +2253,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 19684
     }
    ],
    "boundaryEffects": [
@@ -1938,19 +2287,24 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.17
+     "value": 0.17,
+     "source": "chr_0036_jsspsi",
+     "since": 9912
     },
     {
      "buff": "buff_common_poise_break_damage_taken_scale",
      "zone": "multiplicative",
      "element": null,
-     "value": 0.3
+     "value": 0.3,
+     "source": "chr_0036_jsspsi",
+     "since": 19914
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 5,
-    "bar": 0
+    "bar": 0,
+    "origin": "chr_0036_jsspsi_normal_skill_2"
    }
   },
   {
@@ -1965,25 +2319,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 19684
     }
    ],
    "boundaryEffects": [
@@ -1991,19 +2353,24 @@
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.17
+     "value": 0.17,
+     "source": "chr_0036_jsspsi",
+     "since": 9912
     },
     {
      "buff": "buff_common_poise_break_damage_taken_scale",
      "zone": "multiplicative",
      "element": null,
-     "value": 0.3
+     "value": 0.3,
+     "source": "chr_0036_jsspsi",
+     "since": 19914
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 5,
-    "bar": 0
+    "bar": 0,
+    "origin": "chr_0036_jsspsi_normal_skill_2"
    }
   },
   {
@@ -2019,31 +2386,41 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_poise_break_damage_taken_scale",
      "zone": "multiplicative",
      "element": null,
-     "value": 0.3
+     "value": 0.3,
+     "source": "chr_0036_jsspsi",
+     "since": 19914
     }
    ],
    "boundaryEffects": [
@@ -2051,7 +2428,9 @@
      "buff": "buff_chr_0016_laevat_ignore_fire_resist",
      "zone": "ignoreResistance",
      "element": "fire",
-     "value": 20
+     "value": 20,
+     "source": "chr_0016_laevat",
+     "since": 20367
     }
    ],
    "unquantified": []
@@ -2068,19 +2447,25 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     }
    ],
    "boundaryEffects": [
@@ -2088,13 +2473,16 @@
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 10,
-    "bar": 45
+    "bar": 45,
+    "origin": "chr_0033_camille_normal_skill_abilityrange"
    }
   },
   {
@@ -2109,25 +2497,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2145,25 +2541,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2181,25 +2585,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2217,25 +2629,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2253,25 +2673,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2289,25 +2717,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2325,25 +2761,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2361,25 +2805,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2397,25 +2849,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2433,25 +2893,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2469,25 +2937,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2505,38 +2981,49 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0016_laevat_ignore_fire_resist",
      "zone": "ignoreResistance",
      "element": "fire",
-     "value": 20
+     "value": 20,
+     "source": "chr_0016_laevat",
+     "since": 20367
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
    "unquantified": [],
    "poise": {
     "dealt": 10,
-    "bar": 35
+    "bar": 35,
+    "origin": "chr_0016_laevat_normal_skill"
    }
   },
   {
@@ -2551,25 +3038,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2587,25 +3082,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2623,31 +3126,41 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0016_laevat_ignore_fire_resist",
      "zone": "ignoreResistance",
      "element": "fire",
-     "value": 20
+     "value": 20,
+     "source": "chr_0016_laevat",
+     "since": 20367
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2665,25 +3178,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2701,25 +3222,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2737,25 +3266,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2773,25 +3310,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2809,31 +3354,41 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0016_laevat_ignore_fire_resist",
      "zone": "ignoreResistance",
      "element": "fire",
-     "value": 20
+     "value": 20,
+     "source": "chr_0016_laevat",
+     "since": 20367
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2851,25 +3406,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2887,25 +3450,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2923,31 +3494,41 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0016_laevat_ignore_fire_resist",
      "zone": "ignoreResistance",
      "element": "fire",
-     "value": 20
+     "value": 20,
+     "source": "chr_0016_laevat",
+     "since": 20367
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -2965,31 +3546,41 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0016_laevat_ignore_fire_resist",
      "zone": "ignoreResistance",
      "element": "fire",
-     "value": 20
+     "value": 20,
+     "source": "chr_0016_laevat",
+     "since": 20367
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -3007,31 +3598,41 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0016_laevat_ignore_fire_resist",
      "zone": "ignoreResistance",
      "element": "fire",
-     "value": 20
+     "value": 20,
+     "source": "chr_0016_laevat",
+     "since": 20367
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -3049,31 +3650,41 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0016_laevat_ignore_fire_resist",
      "zone": "ignoreResistance",
      "element": "fire",
-     "value": 20
+     "value": 20,
+     "source": "chr_0016_laevat",
+     "since": 20367
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [],
@@ -3092,31 +3703,41 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0016_laevat_ignore_fire_resist",
      "zone": "ignoreResistance",
      "element": "fire",
-     "value": 20
+     "value": 20,
+     "source": "chr_0016_laevat",
+     "since": 20367
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 20596
     }
    ],
    "boundaryEffects": [
@@ -3124,7 +3745,9 @@
      "buff": "buff_equipsuit_fninflict_01_firedamageadd",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.5
+     "value": 0.5,
+     "source": "chr_0016_laevat",
+     "since": 24019
     }
    ],
    "unquantified": []
@@ -3141,19 +3764,25 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     }
    ],
    "boundaryEffects": [
@@ -3161,13 +3790,16 @@
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 10,
-    "bar": 50
+    "bar": 50,
+    "origin": "chr_0033_camille_normal_skill_abilityrange"
    }
   },
   {
@@ -3182,25 +3814,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     }
    ],
    "boundaryEffects": [],
@@ -3218,25 +3858,33 @@
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     }
    ],
    "boundaryEffects": [],
@@ -3254,19 +3902,25 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     }
    ],
    "boundaryEffects": [],
@@ -3284,44 +3938,57 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     }
    ],
    "boundaryEffects": [],
    "unquantified": [],
    "poise": {
     "dealt": 5,
-    "bar": 45
+    "bar": 45,
+    "origin": "chr_0032_lizhiyan_combo_skill"
    }
   },
   {
@@ -3336,43 +4003,57 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     }
    ],
    "boundaryEffects": [],
@@ -3390,37 +4071,49 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     }
    ],
    "boundaryEffects": [],
@@ -3438,43 +4131,57 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     }
    ],
    "boundaryEffects": [],
@@ -3492,43 +4199,57 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     }
    ],
    "boundaryEffects": [],
@@ -3546,37 +4267,49 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     }
    ],
    "boundaryEffects": [],
@@ -3594,43 +4327,57 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     }
    ],
    "boundaryEffects": [],
@@ -3648,43 +4395,57 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     }
    ],
    "boundaryEffects": [],
@@ -3702,43 +4463,57 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     }
    ],
    "boundaryEffects": [],
@@ -3756,43 +4531,57 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     }
    ],
    "boundaryEffects": [],
@@ -3810,43 +4599,57 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     }
    ],
    "boundaryEffects": [],
@@ -3864,43 +4667,57 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     }
    ],
    "boundaryEffects": [],
@@ -3919,49 +4736,65 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0016_laevat_ignore_fire_resist",
      "zone": "ignoreResistance",
      "element": "fire",
-     "value": 20
+     "value": 20,
+     "source": "chr_0016_laevat",
+     "since": 20367
     },
     {
      "buff": "buff_equipsuit_fninflict_01_firedamageadd",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.5
+     "value": 0.5,
+     "source": "chr_0016_laevat",
+     "since": 24019
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     }
    ],
    "boundaryEffects": [
@@ -3969,13 +4802,17 @@
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     }
    ],
    "unquantified": []
@@ -3992,37 +4829,49 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     }
    ],
    "boundaryEffects": [
@@ -4030,19 +4879,24 @@
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.1
+     "value": 0.1,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 10,
-    "bar": 35
+    "bar": 35,
+    "origin": "chr_0033_camille_combo_skill"
    }
   },
   {
@@ -4057,31 +4911,41 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     }
    ],
    "boundaryEffects": [
@@ -4089,25 +4953,33 @@
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 24555
     },
     {
      "buff": "buff_wpn_funnel_0016_will_dmg",
      "zone": "damageTaken",
      "element": null,
-     "value": 0.096
+     "value": 0.096,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_crystal",
      "zone": "susceptibility",
      "element": "cryst",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     },
     {
      "buff": "buff_common_affixes_vulnerable_natural",
      "zone": "susceptibility",
      "element": "natural",
-     "value": 0.157437
+     "value": 0.157437,
+     "source": "chr_0032_lizhiyan",
+     "since": 28287
     }
    ],
    "unquantified": []
@@ -4124,38 +4996,49 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     }
    ],
    "boundaryEffects": [],
    "unquantified": [],
    "poise": {
     "dealt": 10,
-    "bar": 50
+    "bar": 50,
+    "origin": "chr_0036_jsspsi_combo_skill"
    }
   },
   {
@@ -4170,25 +5053,33 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.1
+     "value": 0.1,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     }
    ],
    "boundaryEffects": [
@@ -4196,13 +5087,16 @@
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 29672
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 10,
-    "bar": 40
+    "bar": 40,
+    "origin": "chr_0033_camille_normal_skill_abilityrange"
    }
   },
   {
@@ -4217,43 +5111,57 @@
      "buff": "buff_wpn_lance_0015_atkup",
      "zone": "atk",
      "element": null,
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 10913
     },
     {
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_equipsuit_fninflict_01_firedamageadd",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.5
+     "value": 0.5,
+     "source": "chr_0016_laevat",
+     "since": 24019
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_chr_0016_laevat_ignore_fire_resist",
      "zone": "ignoreResistance",
      "element": "fire",
-     "value": 20
+     "value": 20,
+     "source": "chr_0016_laevat",
+     "since": 29382
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 29672
     }
    ],
    "boundaryEffects": [],
@@ -4271,25 +5179,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 29672
     }
    ],
    "boundaryEffects": [],
@@ -4307,25 +5223,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 29672
     }
    ],
    "boundaryEffects": [],
@@ -4343,25 +5267,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 29672
     }
    ],
    "boundaryEffects": [],
@@ -4379,25 +5311,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 29672
     }
    ],
    "boundaryEffects": [],
@@ -4415,25 +5355,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 29672
     }
    ],
    "boundaryEffects": [],
@@ -4452,37 +5400,49 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_equipsuit_fninflict_01_firedamageadd",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.5
+     "value": 0.5,
+     "source": "chr_0016_laevat",
+     "since": 24019
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_chr_0016_laevat_ignore_fire_resist",
      "zone": "ignoreResistance",
      "element": "fire",
-     "value": 20
+     "value": 20,
+     "source": "chr_0016_laevat",
+     "since": 29382
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 29672
     }
    ],
    "boundaryEffects": [],
@@ -4500,25 +5460,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 29672
     }
    ],
    "boundaryEffects": [],
@@ -4536,19 +5504,25 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.1
+     "value": 0.1,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     }
    ],
    "boundaryEffects": [
@@ -4556,13 +5530,16 @@
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "unquantified": [],
    "poise": {
     "dealt": 10,
-    "bar": 50
+    "bar": 50,
+    "origin": "chr_0033_camille_normal_skill_abilityrange"
    }
   },
   {
@@ -4577,31 +5554,41 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -4619,31 +5606,41 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -4661,31 +5658,41 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -4703,25 +5710,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -4739,25 +5754,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -4775,25 +5798,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -4811,25 +5842,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -4847,25 +5886,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -4883,31 +5930,41 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -4925,25 +5982,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -4961,25 +6026,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -4997,31 +6070,41 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -5039,31 +6122,41 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -5081,25 +6174,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -5117,31 +6218,41 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -5159,31 +6270,41 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -5201,31 +6322,41 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -5243,25 +6374,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -5279,25 +6418,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -5315,31 +6462,41 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0036_jsspsi_combo_potential2",
      "zone": "atk",
      "element": null,
-     "value": 0.14
+     "value": 0.14,
+     "source": "chr_0036_jsspsi",
+     "since": 28161
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -5357,25 +6514,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -5393,25 +6558,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -5429,25 +6602,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -5465,25 +6646,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -5501,25 +6690,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -5537,25 +6734,33 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [],
@@ -5574,31 +6779,41 @@
      "buff": "buff_wpn_lance_0015_dmgup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.144
+     "value": 0.144,
+     "source": "chr_0033_camille",
+     "since": 19684
     },
     {
      "buff": "buff_chr_0033_camille_talent1_atkup",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.025
+     "value": 0.025,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_equipsuit_combosuit_01_adddamage",
      "zone": "damageBonus",
      "element": null,
-     "value": 0.16
+     "value": 0.16,
+     "source": "chr_0033_camille",
+     "since": 29258
     },
     {
      "buff": "buff_chr_0016_laevat_ignore_fire_resist",
      "zone": "ignoreResistance",
      "element": "fire",
-     "value": 20
+     "value": 20,
+     "source": "chr_0016_laevat",
+     "since": 29382
     },
     {
      "buff": "buff_common_affixes_vulnerable_fire",
      "zone": "susceptibility",
      "element": "fire",
-     "value": 0.12
+     "value": 0.12,
+     "source": "chr_0033_camille",
+     "since": 32158
     }
    ],
    "boundaryEffects": [
@@ -5606,7 +6821,9 @@
      "buff": "buff_equipsuit_fninflict_01_firedamageadd",
      "zone": "damageBonus",
      "element": "fire",
-     "value": 0.5
+     "value": 0.5,
+     "source": "chr_0016_laevat",
+     "since": 35704
     }
    ],
    "unquantified": []
