@@ -277,7 +277,9 @@ export function guideRules(data: GameData, scenario: Omit<TimelineScenario, "rot
     const reaction = topSkill.startsWith("reaction:");
     const kind = reaction ? "reaction" : kindOf(view, operator, topSkill);
     const kitLabel = reaction ? topSkill.slice(9) : (ctx.kits.get(operator)?.skills.find((s) => s.skillId === topSkill)?.label ?? topSkill);
-    const wlabel = `${data.operators[operator]?.name ?? operator}'s ${kitLabel.replace(/\s\d+(?=\s|$)/, "")}`;
+    // The family's name: its top skill's without the step number (and without "(final strike)" for a chain of several steps).
+    const famLabel = kitLabel.replace(/\s\d+(?=\s|$)/, "").replace(bySkill.size > 1 ? /\s*\((final strike|Final Strike)\)/ : /$^/, "");
+    const wlabel = `${data.operators[operator]?.name ?? operator}'s ${famLabel}`;
     const panel = (() => {
       try {
         return panelAt(ctx, operator, 0);
@@ -725,6 +727,21 @@ export function guidedEdits(data: GameData, list: RuleList, s: GuideSummary, opt
     }
   }
   return guided;
+}
+
+/**
+ * Two edits of `base` together, when each only changed rules in place (same opener, filler and number of rules) and
+ * they changed different rules: `a` with `b`'s changed rules; null otherwise.
+ */
+export function mergeEdits(base: RuleList, a: RuleList, b: RuleList): RuleList | null {
+  const same = (x: unknown, y: unknown) => JSON.stringify(x) === JSON.stringify(y);
+  const n = base.rules.length;
+  if (a.rules.length !== n || b.rules.length !== n || !same(a.opener, base.opener) || !same(b.opener, base.opener) || a.filler !== base.filler || b.filler !== base.filler) return null;
+  const changed = (l: RuleList) => base.rules.map((r, i) => (same(r, l.rules[i]) ? -1 : i)).filter((i) => i >= 0);
+  const ca = changed(a);
+  const cb = changed(b);
+  if (ca.length === 0 || cb.length === 0 || ca.some((i) => cb.includes(i))) return null;
+  return { ...a, rules: a.rules.map((r, i) => (cb.includes(i) ? (b.rules[i] as PolicyRule) : r)) };
 }
 
 // --- Judging an edit ------------------------------------------------------------------------------------------

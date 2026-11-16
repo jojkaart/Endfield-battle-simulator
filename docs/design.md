@@ -1897,6 +1897,100 @@ example changed) and +5.9% for Arcane in INT mode (the owner's call). A
 60-list rule search on the owner's new gear found no better list. Runs go to worker
 threads (rulespool.ts; each loads the game data once, ~15 s).
 
+#### The guided rule search (2026-11-16)
+
+The owner: "Our rule search needs a similar approach as the one that
+worked for precisely timed workflows: we put together ideal combos and
+seek to change the rules in directions that can get closer to achieving
+the optimal damage output." The random rule search (above) never found
+the edits found by hand the same day (Si's ultimate held for
+Laevatain's Twilight; Si's battle skill only when her button shows it;
+Liino's stance rule with `shows` and a Cosmovoice cue): each is one
+structured change aimed at one missed multiplier or one changing button,
+and a random walk over cues and presses rarely makes it.
+`efsim rules <scenario> <rules> --guided` (engine policyguide.ts, CLI
+guided.ts; a flag of `rules` because it takes the same inputs and gives
+a list, as `--search` does):
+
+1. **Ideal combos** (`guideRules`, an observer of `playRules` that never
+   changes the run, then the run's hits). A **window** is an operator's
+   skill family (its skills without the step number: Laevatain's Twilight
+   attacks 1–4 are one window, Typhoeus's hover shots 1–5 one; a reaction
+   kind one) with at least 2% of the team's damage, its **occurrences**
+   its hits in clusters (a gap over 3 s starts the next). A
+   **multiplier** is what a modifier on a window's hit comes from: a kit
+   buff (`owner:id`, which covers team buffs, Amps, debuffs,
+   Susceptibility and DMG Taken, weapon and set effects), Stagger's ×1.3,
+   a reaction or physical status (Corrosion, Electrification, Breach);
+   not the stat panel, a finisher's or Link's. Its **giver** is the press
+   that created the buff: its owner's latest cast at or before it, by
+   kind (Si's Amp ← Si's ultimate). The window's **ideal combo** is every
+   multiplier the team puts on that window at least once, on every hit
+   (Stagger always); a missing multiplier's **loss** is what the hits
+   without it would gain with it: its modifiers as they were on a hit of
+   the same kind (the same hit ID, else any of the family) added and the
+   zones recomputed from the hit's modifiers (`withModifiers`: damage
+   bonus, Amp, Susceptibility, DMG Taken as 1 + Σ, the multiplicative
+   zone as a product, ignored resistance into the resistance zone, the
+   crit zone at its expected value, ATK % into ATK with the panel's base;
+   attribute points and Arts Intensity are left as they were, ×1). All of
+   a window's missing ones at once give its ideal; actual / (actual +
+   ideal gain) is its **achievement**. Fixed damage (Si's recorded burst)
+   takes no modifiers and is skipped. An upper bound, not a plan:
+   multipliers' uptimes and cooldowns aren't checked (Stagger on every
+   hit can't happen).
+2. **Measured over a long fight**: the same seeds as the candidates
+   (common random numbers), per (window, multiplier): its presence (the
+   share of the window's damage it was on), its factor when on, the DPS
+   lost without it, its giver; per window the **visible cues** at each
+   occurrence's start (the frame before its cast) against how often each
+   holds over the fight (its lift): Laevatain's Twilight attacks come with
+   "Laevatain is in Twilight" (100% of their starts, 34% of the fight).
+   Team SP at the cap too.
+3. **Directed edits** (`guidedEdits`) for the biggest losses (six
+   (window, multiplier) pairs a round), each a player can follow by a
+   visible cue (the owner's ranking):
+   - *hold the giver*: the rules pressing the multiplier's giver wait for
+     the window's cue (held at ≥ 60% of its starts and 1.3× as often as
+     over the fight; no SP level), alone or "or the window operator's
+     ultimate is ready";
+   - *chain*: "when both ultimates are ready: the giver's, then the
+     window's" as a new first rule, alone and with the giver held;
+   - *start the window when the multiplier is up*: the rule that starts
+     the window (its own button; for basic attacks under a visible state,
+     the press that gives the state: Laevatain's ultimate for Twilight,
+     Typhoeus's battle skill for her hover) waits for the multiplier's
+     visible cue: Stagger (Staggered, the bar at 70%), a status, a
+     visible operator state (Liino's Cosmovoice), else the giver's
+     ultimate being ready;
+   - *save SP* for an SP-gated window: other operators' battle skills
+     wait while its visible state holds;
+   - *`shows`* on each press of a button that changes;
+   - *spare SP* (SP at the cap over 3% of the fight): a last rule spends
+     200 SP on a battle skill;
+   - *move up* the giver's rule; and four of the random search's moves as
+     a complement.
+   The giver of a window's own operator counts only for its ultimate on a
+   window its ultimate doesn't start (Si's Amp on her combos).
+4. **Judged by play** (`judgeEdit`): every candidate on seeds 1–6
+   (300 s), the best four by that gain on 1–32, close calls (over 1.2
+   standard errors, not 2) on 1–64 with the base; kept when the paired
+   gain is over twice its standard error and 0.2%, and positive on the
+   seeds after the screening six alone (picking the best screened edit
+   biases those six up); among several, the best by gain less 0.2% a
+   complexity point (the others are reported as Pareto alternatives).
+   Then the analysis again on the kept list's runs, and the next round,
+   until nothing clears the bar; finally the start and final lists on 32
+   fresh seeds (1001…).
+
+The report: the ideal combos (each window's DPS, its ideal's gain,
+achievement, the multipliers it misses most with presence, factor, loss
+and giver, and the cues it comes with), each round's edits with their
+gains on 6 / 32 / 64 seeds, the fresh seeds' gain, complexity and
+hardest cue; the kept edits; the path of kept lists (DPS against
+complexity); achievement per window before and after; the final list in
+the player's words (`--out` saves it).
+
 ### Time
 
 Integer frames at **30 FPS**, the game's own timeline unit (verified across

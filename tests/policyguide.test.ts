@@ -10,6 +10,7 @@ import {
   guidedEdits,
   guideRules,
   judgeEdit,
+  mergeEdits,
   multiplierKey,
   pairedGain,
   playRules,
@@ -174,6 +175,27 @@ describe("edits from a loss", () => {
     // Not again once judged.
     const again = guidedEdits(data, list, s, { tried: new Set(edits.map((e) => JSON.stringify(e.list))) });
     expect(again).toHaveLength(0);
+  });
+});
+
+describe("two edits together", () => {
+  const base: RuleList = {
+    opener: [],
+    rules: [
+      { when: { ultimate: SI }, do: { operator: SI, cast: "ultimate" } },
+      { when: { combo: SI }, do: { operator: SI, cast: "combo" } },
+      { when: { sp: { atLeast: 100 } }, do: { operator: SI, cast: "battle" } },
+    ],
+  };
+  const hold: RuleList = { ...base, rules: base.rules.map((r, i) => (i === 0 ? { ...r, when: { all: [r.when, { staggered: true }] } } : r)) };
+  const shows: RuleList = { ...base, rules: base.rules.map((r, i) => (i === 2 ? { ...r, do: { operator: SI, cast: "battle" as const, shows: "x" } } : r)) };
+  it("merges in-place edits of different rules, and nothing else", () => {
+    const m = mergeEdits(base, hold, shows);
+    expect(m?.rules[0]).toEqual(hold.rules[0]);
+    expect(m?.rules[1]).toEqual(base.rules[1]);
+    expect(m?.rules[2]).toEqual(shows.rules[2]);
+    expect(mergeEdits(base, hold, hold)).toBeNull();
+    expect(mergeEdits(base, hold, { ...base, rules: [...base.rules, base.rules[0] as RuleList["rules"][number]] })).toBeNull();
   });
 });
 
