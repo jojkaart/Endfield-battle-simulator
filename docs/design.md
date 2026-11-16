@@ -2482,6 +2482,14 @@ exactly and additively across the operators whose effects contributed.
   test:logs`** (`tests/slow/`, a few minutes: the pending fixtures in four
   shards, the negative control, the search's beam ratchets, and single
   tests of tens of seconds) runs them, and `npm run check` runs both.
+- **Test output:** vitest 5 shows a file's `console.*` output only when
+  the file fails (unless `--silent=false`). A line meant for every run (a
+  shard's summary, a "keep the gain" hint) goes through
+  `process.stdout.write`.
+- **Snapshot files** that don't parse (merge conflict markers) are read as
+  empty by an update run and fail otherwise with the fix (tests/snapshot.ts
+  `readStored`); snapshot tests record their entry before any assertion
+  that can fail, so an update never keeps a stale entry.
 
 ## Code layout (proposed)
 

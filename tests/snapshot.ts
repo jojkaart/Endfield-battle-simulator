@@ -14,6 +14,22 @@ export const UPDATING = process.env.EFSIM_UPDATE_SNAPSHOTS === "1";
 
 export const UPDATE_HINT = "if the change is deliberate, run `npm run snapshots:update` and commit the snapshot's diff with the reason";
 
+/**
+ * A snapshot file's entries. One that doesn't parse (conflict markers after a merge, a cut-off write) is empty when
+ * updating, since the update rewrites it from the code alone; otherwise it fails with what to do.
+ */
+export function readStored<T>(file: string, updating = UPDATING): Record<string, T> {
+  if (!existsSync(file)) return {};
+  const text = readFileSync(file, "utf8");
+  try {
+    return JSON.parse(text) as Record<string, T>;
+  } catch (e) {
+    if (updating) return {};
+    const conflict = /^(<<<<<<<|=======|>>>>>>>)( |$)/m.test(text);
+    throw new Error(`${file} doesn't parse${conflict ? " (merge conflict markers)" : ""}: take either side and run \`npm run snapshots:update\`; never merge a snapshot by hand (${e instanceof Error ? e.message : String(e)})`);
+  }
+}
+
 /** A snapshot file: its entries by key, and (when updating) the entries this run gives, written at the end. */
 export class Snapshot<T> {
   readonly file: string;
@@ -26,7 +42,7 @@ export class Snapshot<T> {
   constructor(name: string, compact = false) {
     this.compact = compact;
     this.file = join(DIR, name);
-    this.stored = existsSync(this.file) ? (JSON.parse(readFileSync(this.file, "utf8")) as Record<string, T>) : {};
+    this.stored = readStored(this.file);
   }
 
   /** Records an entry; returns the stored one (undefined when there is none). */
@@ -52,7 +68,7 @@ export class Snapshot<T> {
       }
     }
     try {
-      const onDisk = existsSync(this.file) ? (JSON.parse(readFileSync(this.file, "utf8")) as Record<string, T>) : {};
+      const onDisk = readStored<T>(this.file, true);
       const out: Record<string, T> = {};
       const keys = new Set([...Object.keys(onDisk).filter(keep), ...this.current.keys()]);
       for (const k of [...keys].sort()) out[k] = (this.current.has(k) ? this.current.get(k) : onDisk[k]) as T;

@@ -79,18 +79,20 @@ describe.each(files)("%s", (file) => {
 
   it("is verified, and its verdict counts don't fall behind the snapshot", () => {
     const verdicts = verdictsOf();
-    expect(verificationProblems(data, fx, verdicts)).toEqual([]);
     const { replay, byHit } = checked();
     const totals = engineReport(data, fx, replay, byHit, verdicts).errors;
-    expect(Math.abs(totals["damage"] ?? Infinity), `total damage error ${totals["damage"]}%`).toBeLessThanOrEqual(MAX_DAMAGE_ERROR);
     const now = verdictCounts(fx, verdicts);
+    // Recorded before any assertion can fail, so an update run never keeps a stale entry for a failing log.
     const stored = snapshot.record(file, entry(now, totals));
+    expect(verificationProblems(data, fx, verdicts)).toEqual([]);
+    expect(Math.abs(totals["damage"] ?? Infinity), `total damage error ${totals["damage"]}%`).toBeLessThanOrEqual(MAX_DAMAGE_ERROR);
     if (UPDATING || stored === undefined) return;
     expect(regressions(now, stored), `verdict counts fell behind the snapshot (${UPDATE_HINT}); all changes: ${changes(now, stored).join("; ")}`).toEqual([]);
     // The total damage's error mustn't grow (the other totals show in the snapshot's diff).
     const was = totalsOf(stored)["damage"];
     if (was !== undefined && was !== null) expect(Math.abs(totals["damage"] ?? Infinity), `total damage error ${was}% → ${totals["damage"]}% (${UPDATE_HINT})`).toBeLessThanOrEqual(Math.abs(was) + 0.1);
     const gained = [...changes(now, stored), ...totalsChanges(totals, totalsOf(stored))];
-    if (gained.length) console.info(`${file}: counts or totals moved from the snapshot (update it to keep the gain): ${gained.join("; ")}`);
+    // process.stdout.write, not console.info: vitest shows a passing file's console output only with --silent=false.
+    if (gained.length) process.stdout.write(`${file}: counts or totals moved from the snapshot (update it to keep the gain): ${gained.join("; ")}\n`);
   });
 });
