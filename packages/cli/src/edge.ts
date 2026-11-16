@@ -4,7 +4,7 @@
 // set shown) and her passive buff's CompareDeckAttr (her skills' branches). If one floors and the other doesn't, a
 // build whose floors tie while raw Intellect is still below Will is INT for the first and WILL for the second.
 
-import { computeStats, type Build, type GameData } from "@efsim/engine";
+import { attrLabel, computeStats, type Build, type GameData } from "@efsim/engine";
 
 /** What the player owns to try: weapons (optional: else the build's) and gear pieces, each piece usable once. */
 export interface EdgePool {
@@ -63,7 +63,7 @@ export function knifeEdge(data: GameData, build: Build, pool: EdgePool, top = 5)
     const p = computeStats(data, { ...build, weapon: l.weapon, gear: l.gear });
     out.push({ ...l, a: p.attrs[pair.a]?.total ?? 0, b: p.attrs[pair.b]?.total ?? 0 });
   }
-  const name = (attr: number) => (attr === 41 ? "Intellect" : attr === 42 ? "Will" : `attribute ${attr}`);
+  const name = attrLabel;
   const line = (c: Candidate) =>
     `  ${name(pair.a)} ${c.a.toFixed(2)} (${Math.floor(c.a)}), ${name(pair.b)} ${c.b.toFixed(2)} (${Math.floor(c.b)}), difference ${(c.a - c.b).toFixed(2)}\n` +
     `    weapon ${c.weapon ? (data.weapons[c.weapon.id]?.name ?? c.weapon.id) : "none"}; gear ${c.gear.map((g) => `${data.gear[g.id]?.name ?? g.id} [${g.artifice.join(",")}]`).join(", ")}`;

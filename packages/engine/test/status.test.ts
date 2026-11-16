@@ -35,7 +35,7 @@ describe("inflictions", () => {
   it("the same element stacks to 4, bursts every time after the first, and resets the duration", () => {
     const apps = Array.from({ length: 6 }, (_, i): [number, HitApplication] => [i * 10, { kind: "infliction", element: "fire" }]);
     const { s, events } = run(apps);
-    expect(s.infliction).toEqual({ element: "fire", stacks: 4, expiresAt: 50 + INFLICTION_FRAMES });
+    expect(s.infliction).toEqual({ element: "fire", stacks: 4, expiresAt: 50 + INFLICTION_FRAMES, by: ["op", "op", "op", "op"] });
     expect(events.filter((e) => e.kind === "burst")).toHaveLength(5);
     expect(events.filter((e) => e.kind === "inflicted").map((e) => (e.kind === "inflicted" ? e.stacks : 0))).toEqual([1, 2, 3, 4, 4, 4]);
     expect(statusEventKey(events.find((e) => e.kind === "burst") as StatusEvent)).toBe("buff_common_fire_fire_triggered");
@@ -60,7 +60,7 @@ describe("inflictions", () => {
     ]);
     expect(s.infliction).toBeNull();
     const r = events.at(-1);
-    expect(r).toEqual({ kind: "reaction", frame: 3, operator: "op", status: "combustion", element: "fire", level: 3, consumed: "natural", initialHit: true });
+    expect(r).toEqual({ kind: "reaction", frame: 3, operator: "op", status: "combustion", element: "fire", level: 3, consumed: "natural", initialHit: true, inflictionBy: ["op", "op", "op"] });
     expect(statusEventKey(r as StatusEvent)).toBe("buff_common_fire_natural_triggered");
     expect(s.statuses.map((x) => [x.status, x.level])).toEqual([["combustion", 3]]);
   });
@@ -148,9 +148,21 @@ describe("arts state: applications kits need (batch 1, A1–A5)", () => {
     expect(r.events.map((e) => e.kind)).toEqual(["inflicted", "burst"]);
   });
 
+  it("records who applied each stack, and carries it into the reaction and the burst (a record: damage doesn't read it)", () => {
+    const ab = applyToEnemy(applyToEnemy(NO_STATUS, { kind: "infliction", element: "natural" }, 0, "a", 0).state, { kind: "infliction", element: "natural" }, 1, "b", 0);
+    expect(ab.state.infliction?.by).toEqual(["a", "b"]);
+    expect(ab.events.find((e) => e.kind === "burst")).toMatchObject({ operator: "b", inflictionBy: ["a"] });
+    const reacted = applyToEnemy(ab.state, { kind: "infliction", element: "fire" }, 2, "c", 0);
+    expect(reacted.events[0]).toMatchObject({ kind: "reaction", operator: "c", level: 2, inflictionBy: ["a", "b"] });
+    // At the cap the oldest appliers stay; consuming takes from the front.
+    const capped = [1, 2, 3, 4].reduce((s, i) => applyToEnemy(s, { kind: "infliction", element: "natural" }, i, `o${i}`, 0).state, ab.state);
+    expect(capped.infliction?.by).toEqual(["a", "b", "o1", "o2"]);
+    expect(applyToEnemy(capped, { kind: "consumeInfliction", stacks: 3 }, 9, "x", 0).state.infliction?.by).toEqual(["o2"]);
+  });
+
   it("consuming a number of stacks leaves the rest with its timer", () => {
     const r = applyToEnemy(nature2, { kind: "consumeInfliction", stacks: 1 }, 5, "a", 0);
-    expect(r.state.infliction).toEqual({ ...nature2.infliction, stacks: 1 });
+    expect(r.state.infliction).toEqual({ ...nature2.infliction, stacks: 1, by: ["a"] });
     expect(r.events).toEqual([{ kind: "consumed", frame: 5, operator: "a", element: "natural", stacks: 1 }]);
     expect(applyToEnemy(nature2, { kind: "consumeInfliction", stacks: 9 }, 5, "a", 0).state.infliction).toBeNull();
   });

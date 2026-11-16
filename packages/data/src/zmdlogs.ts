@@ -30,6 +30,10 @@ export interface LogEffect {
   readonly zone: Zone;
   readonly element: Element | null;
   readonly value: number;
+  /** The operator whose buff it is (the buff lane's sourceCharacterKey; imports since 2026-11-16). */
+  readonly source?: string;
+  /** When the buff lane started, ms (imports since 2026-11-16). */
+  readonly since?: number;
 }
 
 export interface LogHit {
@@ -56,9 +60,11 @@ export interface LogHit {
   readonly unquantified: readonly { readonly buff: string; readonly since: number; readonly source: string }[];
   /**
    * The Stagger the hit dealt, as the log has it (poiseDamage): `dealt` (positive) and the enemy's Stagger bar
-   * after it. Absent on hits that dealt none, and in fixtures imported before 2026-10-26 (zmdlogsPoise).
+   * after it. Absent on hits that dealt none, and in fixtures imported before 2026-10-26 (zmdlogsPoise). `origin`: the
+   * skill the Stagger is credited to (poiseDamage.orig_source; imports and refreshes since 2026-11-16), which tells
+   * e.g. Si's Final Stroke burst (normal_skill_2) from an Inksoul expiry (normal_skill_inkmove_2).
    */
-  readonly poise?: { readonly dealt: number; readonly bar: number };
+  readonly poise?: { readonly dealt: number; readonly bar: number; readonly origin?: string };
 }
 
 export interface LogFixture {
@@ -122,7 +128,8 @@ function poiseOf(e: Json): LogHit["poise"] {
   if (p === null || p === undefined) return undefined;
   const q = o(p, "poiseDamage");
   const dealt = -n(q["value"], "poiseDamage.value");
-  return dealt > 0 ? { dealt, bar: n(q["current_value"], "poiseDamage.current_value") } : undefined;
+  const origin = q["orig_source"];
+  return dealt > 0 ? { dealt, bar: n(q["current_value"], "poiseDamage.current_value"), ...(typeof origin === "string" && origin ? { origin } : {}) } : undefined;
 }
 
 /** A detail's damage events (positive value), in its order: one fixture hit each (zmdlogsToFixture). */
@@ -160,6 +167,15 @@ export async function fetchBattle(battleId: string, detail?: unknown): Promise<{
   }
   const exported = await get(`https://zmdlogs.com/api/v1/battles/${battleId}/export`);
   return { detail, exported };
+}
+
+/** Fetches a battle's detail only (/api/battles/<id>): one request (efsim zmdlogs raw, when it isn't cached). */
+export async function fetchDetail(battleId: string): Promise<unknown> {
+  if (!/^btl_[a-z0-9_]+$/.test(battleId)) throw new Error(`not a battle ID: ${battleId}`);
+  const url = `https://zmdlogs.com/api/battles/${battleId}`;
+  const res = await fetch(url, { headers: { "user-agent": UA, accept: "application/json" } });
+  if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
+  return (await res.json()) as unknown;
 }
 
 type Json = Record<string, unknown>;
@@ -274,7 +290,16 @@ export function zmdlogsToFixture(battleId: string, detail: unknown, exported: un
       const zone = ZMDLOGS_ZONES[s(f["zone"], "zone")];
       if (!zone) throw new Error(`ZMDLogs: unknown zone ${String(f["zone"])} on ${String(b["eventKey"])}`);
       if (b["targetEnemyKey"] == null && TARGET_SIDE_ZONES.has(zone)) return [];
-      return [{ buff: s(b["eventKey"], "eventKey").replace(/::.*$/, ""), zone, element: element(f["element"]), value: n(f["rate"], "rate") }];
+      const source = b["sourceCharacterKey"];
+      const since = b["actualStartMsFromStart"];
+      return [{
+        buff: s(b["eventKey"], "eventKey").replace(/::.*$/, ""),
+        zone,
+        element: element(f["element"]),
+        value: n(f["rate"], "rate"),
+        ...(typeof source === "string" ? { source: source === ENDMIN_VIRTUAL ? ENDMIN : source } : {}),
+        ...(typeof since === "number" ? { since } : {}),
+      }];
     });
 
   const hits: LogHit[] = [];

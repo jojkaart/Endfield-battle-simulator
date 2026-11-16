@@ -5,9 +5,7 @@
 // operator's gear swapped (a step that can't be played is moved later or dropped: a repaired replay; with too many such
 // steps, a narrow search), and a coordinate ascent takes each operator's best with the others fixed until nothing changes.
 
-import { readdirSync, readFileSync } from "node:fs";
-import { basename, join } from "node:path";
-import { apply, computeStats, createContext, EngineError, init, searchBeams, simulate, type Build, type GameData, type TimelineScenario } from "@efsim/engine";
+import { apply, attrLabel, computeStats, createContext, EngineError, init, searchBeams, simulate, type Build, type GameData, type TimelineScenario } from "@efsim/engine";
 import { modePair } from "./edge.ts";
 import { num, table } from "./format.ts";
 import { readLogFixture } from "./logs.ts";
@@ -39,27 +37,6 @@ export interface LogLoadout {
 
 const key = (gear: readonly string[]) => [...gear].sort().join("+");
 
-/**
- * Every log fixture under `dirs` (zmdlogs-*.json, one level deep), but the hold-out logs (fixtures/pending/
- * holdout.json: they're only measured, never opened; docs/accuracy-plan.md "Choosing logs").
- */
-export function logFixtureFiles(root: string, dirs = ["fixtures", "fixtures/pending", "fixtures/multi-target"]): string[] {
-  let holdout = new Set<string>();
-  try {
-    holdout = new Set((JSON.parse(readFileSync(join(root, "fixtures/pending/holdout.json"), "utf8")) as { holdout: string[] }).holdout);
-  } catch {
-    // no split: every log
-  }
-  return dirs.flatMap((d) => {
-    let names: string[];
-    try {
-      names = readdirSync(join(root, d));
-    } catch {
-      return [];
-    }
-    return names.filter((f) => /^zmdlogs-.*\.json$/.test(f) && !holdout.has(basename(f, ".json"))).map((f) => join(root, d, f));
-  });
-}
 
 /** An operator's loadouts (four pieces) in the logs, with how many of `teammates` each log also has. */
 export function logLoadouts(files: readonly string[], operator: string, teammates: readonly string[]): LogLoadout[] {
@@ -428,7 +405,7 @@ export function formatGear(data: GameData, scenario: TimelineScenario, r: GearRe
     } catch {
       continue;
     }
-    const attr = (n: number) => (n === 41 ? "Intellect" : n === 42 ? "Will" : `attribute ${n}`);
+    const attr = attrLabel;
     lines.push("", `${name(op)} (kept as in the scenario; ${attr(pair.a)} / ${attr(pair.b)} with each candidate, full artifice):`);
     lines.push(table(["loadout", "sources", attr(pair.a), attr(pair.b), "mode"], rows.map((x) => [
       describeGear(data, x.candidate.gear),

@@ -88,11 +88,51 @@ ability-entity (`*_abilityentity`) skills do exist as SkillData files.
 - Some values come from skill-setting keys with Chinese names
   (e.g. `碎甲物理伤害提高`, `腐蚀每跳减抗`) that scale with the caster's stats.
 
+## Reading the files: `efsim gamedata`
+
+- `efsim gamedata tree <id> [--grep re] [--depth n]`: a BuffData or
+  SkillData file as an event → action → condition tree, presentation
+  actions (animation, sound, camera, effects) and default values left out,
+  value fields as `key k (default v)`, the enums below named.
+- `efsim gamedata who <id>`: every file that names a buff or skill id,
+  with the action around it (`CreateBuffAction`, `FinishBuffAction`, a
+  check) and its buff event or frame: "who creates buff X" in one command.
+- The enum names it prints come from `ENUMS` in packages/cli/src/gamedata.ts;
+  keep it in step with the table below (a `?` marks an inferred reading).
+
+## What the data can't tell
+
+Questions whose answer is not in either extraction, so the logs (or an
+in-game test) decide them. Don't spend time establishing these negatives
+again:
+
+- **Skill-setting values.** Reaction and status values (Breach's DMG Taken,
+  Corrosion's shred per tick, durations: keys with Chinese names such as
+  `碎甲物理伤害提高`, `腐蚀每跳减抗`) are read in BuffData with
+  `ReadSkillSettingData` from a skill-setting table that **isn't extracted**
+  in rmxlinux or 555me (checked 2026-11-16). Coefficients come from the
+  logs (combat-mechanics §3.7).
+- **`enhanceAttributeSource` says nothing about scaling:** every
+  skill-setting read carries it, whether the value scales or not.
+- **Attribute tooltip formulas** (e.g. Arts Intensity's effect numbers)
+  are computed in C#
+  (`CS.Beyond.Gameplay.PhysicalAndSpellInflictionEnhanceFormatData`, called
+  from the Lua UI), not in data. The only data on which effects Arts
+  Intensity touches is the stat hint text of AttributeShowConfigTable
+  (attribute 87).
+- **Native templates:** the character template's plunging-attack pairing,
+  the input mapping of buttons to skills, ProjectileData, AbilityEntityData
+  and CharacterData are not in rmxlinux (the dive is paired by file names:
+  skillData.ts `diveOf`).
+- **What a battle log can't show:** buffs without a damage zone (speed,
+  stance markers: ZMDLogs records only buffs it can value; data-sources.md
+  "ZMDLogs").
+
 ## Known enum values
 
 To be moved into the version-pinned enum map with a verifying effect for
 each. Sources: End-DPScope `research/附录A 全属性列表.md` (MIT), the English
-text table, BuffData effects.
+text table, BuffData effects, the kit analyses (docs/kit-batches/).
 
 | Enum | Value | Meaning | Evidence |
 |---|---|---|---|
@@ -108,4 +148,13 @@ text table, BuffData effects.
 | attributeType | 78, 79 | possibly Link-related; Link itself is applied as a `ComboCalcZone` damage modifier (`buff_common_affixes_skillimbue_atk`), not an attribute | unverified |
 | attributeType | 94–98 | resistance points, five elements | English text table; Corrosion buff |
 | costType | 0 / 1 | ultimate energy / SP | SkillPatchTable |
+| buffEvent | 0 | on start (the buff is added) | inferred: kit-batches batch-3 chr_0007_ikut, batch-4 chr_0017_yvonne |
+| buffEvent | 1 | on tick (every `triggerInterval`) | inferred: batch-4 chr_0017_yvonne |
+| buffEvent | 2 | on finish | inferred: batch-3 chr_0007_ikut, batch-4 chr_0017_yvonne |
+| buffEvent | 5 | while enabled (holds state actions: RefrainObtainUsp, SwitchMode, ChangeSkill, Speedup) | inferred: batch-4 chr_0017_yvonne; skillCompile.ts |
+| buffEvent | 6 | on stack change (holds CheckBuffStackNumAdvanced) | inferred: batch-2 notes; `?` in `efsim gamedata` |
+| buffEvent | 7 | on every stack added | inferred: batch-2 chr_0003_endminf row 16 |
+| CompareFloat.compare | 0 / 1 / 2 / 3 / 4 | `<` / `<=` / `>` / `>=` / `==` | derived from branches whose meaning the descriptions fix: batch-1 chr_0032_lizhiyan, chr_0036_jsspsi |
+| SpellInfliction.inflictionType | 0 / 1 / 2 / 3 | Heat / Electric / Cryo / Nature | batch-1 chr_0032_lizhiyan; design.md |
+| lifeType | 0 / 1 | timed (its `duration`) / until something finishes it (duration ignored) | inferred: batch-1 chr_0034_typhoea (rows 8, 41: open test T1) |
 | stackingType | 13 values | unlimited, high priority, stack, enhance, refresh, extend, modify, unique, enhance+refresh, overwrite duration, enhance+overwrite, high priority with max, timed growing enhance (order to verify) | Endaxis (described, not copied) |

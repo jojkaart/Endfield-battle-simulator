@@ -18,9 +18,16 @@ export { createContext, kitAssumptions, panelAt, enemyActionsOf, enemyHpAt } fro
 export type { EnergyGrantOptions } from "./timeline/resources.ts";
 export { setPoise, refillPoise, staggerFrames } from "./timeline/resources.ts";
 export { exclusiveUntil, earliestStart, skillAvailable } from "./timeline/timing.ts";
-export { landingDamage, nextRandom } from "./timeline/landing.ts";
+export { landingDamage, nextRandom, recomputeHit } from "./timeline/landing.ts";
 export { TEAMMATE_PAUSE_FRAMES } from "./timeline/teammates.ts";
 export { advance, memoised } from "./timeline/advance.ts";
 export { init, apply, canStartAt, replayCast, replayWindowCount, simulate, simulateRuns, startsNow } from "./timeline/drivers.ts";
 export { SKILL_BUTTONS, buttonShows, buttonSkill, buttonSkills, type SkillButton } from "./timeline/buttons.ts";
 export type { ReplayCastOptions, TimelineResult, RunSpread } from "./timeline/drivers.ts";
+
+// State queries: read-only questions about a context or a state that drivers, reports and scratch scripts may ask
+// (what a skill costs, the team's SP at a frame, an operator's energy cap, combo windows, Stagger, a kit skill), so
+// none of them imports timeline/* internals. Planning code should import these from here (architecture review item 12).
+export { kitSkill, skillCosts, maxPoise } from "./timeline/context.ts";
+export { spAt, maxEnergy, isStaggered, skillSpGain } from "./timeline/resources.ts";
+export { windowKey, windowOpen, needsWindow } from "./timeline/timing.ts";

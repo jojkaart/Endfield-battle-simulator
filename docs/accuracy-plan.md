@@ -631,7 +631,11 @@ promotion. 50 loadouts may be screened (authorized 2026-11-08).
   in the session's scratch folder, never in the repository.
 - **After import:** a third of the new logs are a hold-out, only ever
   measured (before any change and after each round), never debugged:
-  their errors are the honest accuracy. Every new log's first check is
+  their errors are the honest accuracy. Hold-out fixtures live in
+  fixtures/holdout/ (with the split, holdout.json), apart from the
+  development logs, so no glob or listing over fixtures/pending touches
+  one; `efsim zmdlogs list` (or `logFixtureFiles`) is the safe way to
+  find development logs. Every new log's first check is
   recorded before any fix. An operator with a build offset sends us to
   another log first; a log is corrected only when no cleaner one exists,
   with the evidence in its notes.
@@ -640,8 +644,8 @@ Done 2026-11-08 / 09: 80 loadouts screened in two rounds, 29 imported:
 17 single-target (fixtures/pending), 9 multi-target (the export doesn't
 show it: Towers 3 and 12, Hard 10 and 32 have more than one enemy), 2
 refused (Tower 1's stage buff, a zone the importer doesn't know), 1 more
-multi-target on retry. Hold-out: 6 of the 17 (fixtures/pending/
-holdout.json, drawn by a fixed seed before any check was read). What the
+multi-target on retry. Hold-out: 6 of the 17 (then fixtures/pending/
+holdout.json, since 2026-11-16 fixtures/holdout/; drawn by a fixed seed before any check was read). What the
 loadouts showed: `weaponRefine` is the weapon's potential + 1, and the
 unique skill's logged level already includes it (refinement 6: 9);
 `potentialLevel` on weapon skills is the operator's potential copied.

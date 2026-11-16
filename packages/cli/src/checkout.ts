@@ -1,4 +1,4 @@
-// Imported first by main.ts: stops the CLI when @efsim/* would resolve to another checkout's packages (and so its
+// Imported by main.ts before the CLI (cli.ts) is loaded: stops the CLI when @efsim/* would resolve to another checkout's packages (and so its
 // kits). That happens in a git worktree under the main checkout without its own node_modules/@efsim links: Node walks
 // up to the main checkout's node_modules and silently runs the main checkout's code. `node scripts/setup-worktree.ts`
 // (and every vitest run) makes the links. No imports of @efsim/* here: this module is evaluated before them.

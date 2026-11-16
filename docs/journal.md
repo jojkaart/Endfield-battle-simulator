@@ -4,9 +4,111 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 88 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 90 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-16: Rule driver phase 2: button model, one start check, event stepping, run checks, assumption switches
+
+Goal: phase 2 of the [architecture review](architecture-review.md)
+(items 3, 4, 8, 9, 10) and the rule-noise points of the three friction
+reports on rules, gear on rules and the guided search. Done (design.md
+"Rule-based rotations", its "Assumption switches"):
+- **Button model** (engine timeline/buttons.ts): what each battle, combo
+  and ultimate button shows and casts, from the kits' `available`
+  conditions, follow-ups and own combo windows. A press casts that skill
+  or nothing; `shows` checks its label. No example button is ambiguous at
+  any frame (test).
+- **One start check** (`canStartAt`): earliestStart now judges an `at` on
+  the state advanced to it. Every disagreement between the old pair
+  (startsNow on the advanced state, earliestStart from the last press) was
+  SP granted on the way, the dive-landing case included; the old driver
+  waited for the stale check, so SP-gated presses came late (Ardelia's
+  battle skill 1.7 s). SP is snapped to its regeneration grid, so it reads
+  the same however a state was advanced. Property test on the examples'
+  rotations and rule runs.
+- **Event stepping**: the driver visits the frames where something it
+  reads can change (about a third); `stepping: "frames"` is the reference
+  and gives the same rotations (test: three lists, several seeds, both
+  energies). 1.2–1.7× faster a run (the simulation itself is the floor).
+- **Run checks** (`checkRuleRun`): no press casts another skill than its
+  button showed, none cuts its operator's own ultimate state (a
+  counterfactual without the press), `simulate` replays it; zero on the
+  three lists; a constructed End Stance list is caught.
+- **Visible states in the kits**: `visible` on kit buffs and stacks
+  replaces policy.ts's operator tables; cues unchanged.
+- **Assumption switches**: kits register open readings (`assumptions`,
+  triggers with `reading`); test 109's alternative is the first
+  (`si-haste-every-end`). `--assume` and `--assumptions` on `rules`,
+  `diagnose`, `gear --rules`, `--guided`.
+- **Noise tooling**: `efsim rules --compare` (paired gain ± SE on seeds
+  1–k and fresh 1001…), a seed/power table in design.md, the zero-energy
+  companion judged by default (`gear --rules`, `--guided`), one worker
+  pool per command (`efsim rules` uses it too), the commit at the head of
+  long outputs, the guided search's list written after each kept round.
+  Antithetic delays tried: no gain (the owner's
+  team: SE 0.17% against 0.14% plain at 128 seeds), dropped.
+
+Behaviour changes (32 fresh seeds, 1001–1032, 300 s; before → after):
+
+| Team | Full energy | From zero |
+|---|---|---|
+| The owner's | 56,274 → 56,493, +0.39% ± 0.47 | 55,852 → 56,055, +0.36% ± 0.25 |
+| Ink Melt | 66,355 → 69,668, +4.99% ± 0.99 | 63,213 → 61,716, −2.37% ± 1.23 |
+| Typhoeus's | 54,847 → 54,607, −0.44% ± 0.78 | 50,818 → 51,076, +0.51% ± 0.62 |
+
+All of it comes from earliestStart's fix: the old driver with only that
+fix gives the same means (against the new driver: the
+owner's team identical on 31 of 32 seeds, Ink Melt +0.01% ± 0.15 and
++0.23% ± 0.23 from zero; Typhoeus's −0.40% ± 0.40 and −0.15% ± 0.09,
+presses an SP tie now starts a frame sooner (the snap)). The two moved example scenarios
+(akekuri-laevatain, wulfgard-fluorite) are SP ties the snap now reads
+exactly. The documented 10-seed numbers on the team pages predate this.
+
+Not done: the review's estimate of 3–10× for event stepping was too
+high: after the probes, most of a run is the simulation and the basic
+attack's earliest start (it advances copies of the state). The friction
+reports stay in docs/friction/ for the improvement round to file.
+
+## 2026-11-16: Improvement round 1: friction reports to tools, docs and engine records
+
+**Goal:** the owner's standing workflow (docs/friction/README.md): read the
+eight friction reports of the day, find the common causes, implement the
+improvements. Rule tooling (driver, noise, pools) was phase 2's, in parallel.
+
+**Done** (summary and measurements: docs/friction-done/2026-11-16-round-1.md;
+each report's per-point outcome at its end in docs/friction-done/):
+
+- premerge: every step to the end, a pass/fail table with times and the
+  slowest tests, a re-run of files that only timed out, a lock shared by all
+  worktrees (scripts/premerge.ts).
+- Sandbox: the command shapes that work, a git-ignored `scratch/` that
+  resolves `@efsim/*`, a template (CLAUDE.md, scripts/scratch-template.ts).
+- Hold-outs in fixtures/holdout/ (moved by id, unread);
+  `efsim zmdlogs list` never lists them; check/hits/raw/import refuse them.
+- `efsim zmdlogs hits` (per-hit records, JSON Lines, workers),
+  `efsim zmdlogs raw` (cached raw details), importer keeps effect sources and
+  Stagger origins (new imports only), `efsim gamedata tree / who`, an enum
+  table and "What the data can't tell" (game-data-format.md).
+- Engine: `OWN_HIT_SEES` table (combat-mechanics §3.8, a test per row);
+  infliction appliers, a landing's cast, a buff's maker, `keepInputs` and
+  `recomputeHit`; state queries exported from timeline.ts; `statLabel`.
+- CLI `--kit <file>`, `--duration` on simulate and search; `npm run bench`,
+  `npm run merge` (rebuilds the built journal), `npm run prune-unused`;
+  tests/helpers/; snapshots readable mid-merge; stdout for must-see lines.
+- main.ts is a thin entry running the checkout check before cli.ts loads
+  (its own commit, droppable if phase 2 edited main.ts).
+
+**Decisions:** no eslint plugin for unused imports (main's node_modules
+would lack it until reinstalled, breaking every worktree's lint): a script on
+TypeScript's own fixes instead. Older fixtures keep their fields (no mass
+download). No number changed: examples, kits and verified-log snapshots
+identical, all 67 pending verdicts identical (13 hold-outs by group only);
+docs/accuracy.md changed only in labels.
+
+**Left:** docs/friction/2026-11-16-backlog-after-round-1.md (data-file
+module, engine core entry, older fixtures, a status tag on modifiers, helper
+migration, shard costs, slow tests, paired suite timing, search times).
 
 ## 2026-11-16: A payoff-guided rule search (`efsim rules --guided`)
 
@@ -197,108 +299,3 @@ both: 54,771 against 52,561 sustained (+4.2% on seeds 1–10; +2.6% ± 0.5
 paired on 64 fresh seeds, checked afterwards), from zero
 50,178 against 49,964. Left: one Arcane battle skill at 0.3 s is still
 wasted (her stance shows only when her first projectile lands).
-
-## 2026-11-16: Is the Arts Intensity handling right? (yes; one Breach fix)
-
-Goal (the owner): check the engine's Arts Intensity against the logs and
-the data, since `efsim gear --rules` puts Estella on Grizzled Edge
-Gauntlets (+3.7%) for their Arts Intensity line. Done (combat-mechanics
-§3.7, open-problems "Arts Intensity"):
-
-- **Inventory:** damage × (1 + AI/100) on bursts, reaction hits,
-  Combustion ticks (snapshotted), Lift / Knock Down / Crush / Breach hits,
-  "Crush DMG" skill hits and Shatter (damage.ts reactionScaleParts /
-  statusScaleParts); strength × (1 + 2·AI / (AI + 300)) on Breach,
-  Electrification and Corrosion, the applier's AI at application
-  (situation.ts artsIntensity, status.ts); no cap; nothing else. The data
-  has no coefficient: every reaction value is a ReadSkillSettingData from
-  a table not extracted; the stat hint (AttributeShowConfigTable 87)
-  lists exactly those three effects (and Lift Stagger), one value each.
-- **Logs:** every status hit of the 79 development logs at its replay
-  landing (scratch scripts on engineHits / readingBasis). Exact matches
-  across AI 0–287 (bursts, reactions), 0–182 (ticks), 0–163 (Lift),
-  119–180 (Crush), 0 and 98.7 (Shatter, Estella); no slope of logged ÷
-  predicted on AI. Electrification's logged strength exact at AI 0–287.4,
-  Breach's at 31–209. The trigger's AI counts (81 reactions where the
-  consumed infliction's applier differs), and Shatter's is the shattering
-  operator's (a9d7).
-- **Fix:** Breach's own hit saw its own new DMG Taken; the logs show it
-  sees no Breach, not even the one it replaces (7e19, d4fb, c4f3 exact
-  after). Breach hits plain 0 → 7; pogranichnik-chen example 335,507.5 →
-  332,358.6; test in tests/kit-pogranichnik.test.ts.
-
-The owner's team doesn't Breach, so its numbers don't move, and the
-Grizzled Edge advice stands: Estella's AI is 0 today, and her Shatter,
-Solidification and Lift (23% of her damage in the 60 s example) scale
-with her own AI in the logs' range. Left open: Pogranichnik's Breach
-strength one Fervent Morale layer off the replay in 12 of 21 instances
-(the layer's timing, not the curve). In-game test 3 answered by the logs.
-
-## 2026-11-16: Rule-based rotations, phase 2: gear on rules
-
-Goal (the owner): gear chosen analytically: find what a team's play
-leaves on the table, then the gear that fixes it (too much Ultimate Gain
-Efficiency on a damage dealer whose ultimate comes faster than the
-supports' it needs). Done (design.md "Rule-based rotations": common
-random numbers, crits as a distribution, "Diagnosis, marginal values,
-gear on rules"):
-
-- **Common random numbers**: a rule's k-th cue onset draws its delay from
-  (seed, the rule's cue and presses, k) only. Owner's team, 10 seeds, sd
-  of a per-seed difference: a gear change 64 (independent seeds 4,006);
-  two rules swapped 1,097 against 3,174 (the old shared stream 3,836).
-  Stratified (Latin hypercube) draws: no clear gain over 20 replicates,
-  dropped. Seeded numbers in the docs re-drawn (the owner's list now
-  57,096 sd 1,402; Ink Melt 65,922; Typhoeus's 52,088).
-- **Crits as a distribution** in `efsim rules` (the lead's addition):
-  each run's crit spread from each hit's chance, combined over seeds by
-  the law of total variance; mean, sd split delays / crits, 5–95%. Crits'
-  sd is 350–380 DPS on all three teams, delays' 550–2,900; none of the
-  three has a crit-triggered effect (the code falls back to rolled crits
-  for those that do). Replaces the rolled-crit runs.
-- **`efsim diagnose`** (engine policydiag.ts, an observer of
-  `playRules`; engine statistics `energyGained` by source, `energySpent`,
-  `spOverflow`): energy gained / spent / wasted / held (balances), time
-  with an ultimate ready but not cast by why, combos lit but unused, SP
-  at the cap, other operators' buffs and enemy states on the main damage
-  dealer's hits, shares; **marginal values** per operator for one
-  gear-line-sized step of each stat the game's T4 gear offers (a fifth
-  synthetic piece, paired on common seeds; noisy ones taken to 16
-  seeds); findings in plain words.
-- **`efsim gear --rules`**: loadouts scored by playing the list (8 seeds,
-  16 for noisy gains), candidates from the logs plus swaps and set builds
-  proposed by the marginal values, coordinate ascent, a change only
-  beyond twice its standard error, the result checked on fresh seeds,
-  the diagnosis before and after. Workers (rulespool.ts).
-
-Results (examples keep their gear; team pages' "Gear"):
-- Owner's team: Estella's efficiency is the owner's example (worth +0.3%
-  ± 0.8 a line, Arts Intensity +5.2%); Akekuri's and Arcane's are
-  bottlenecks (+2.9% ± 0.9, +1.3% ± 0.6). Estella Heavy Armor + Grizzled
-  Edge Gauntlets +3.7% ± 0.1 (a candidate no log or site had), Si the
-  logs' LYNX Slab loadout +3.6% ± 0.8, Akekuri Fiber Gloves T1 +1.7% ±
-  0.8: together +8.0% ± 0.9 on 24 fresh seeds. A 60-list rule search on
-  the new gear found nothing better than the current list (61,293
-  against 61,480). Without rule 10 (spare SP to Akekuri) the list sits at
-  the SP cap 165 s of 300 (−19%): the diagnosis shows it at once.
-- Ink Melt: Wulfgard's efficiency is the bottleneck (+6.6% ± 1.5 a line);
-  Bonekrusha Wristband → LYNX Gloves +3.9% ± 1.0 on 24 fresh seeds, but
-  −1.5% on the example's 60 s timeline: example kept.
-- Typhoeus's team: Perlica's Probe + Hot Work Power Cartridge →
-  Calibrator + LYNX Slab +0.87% ± 0.04 (damage only), +0.3% / +0.6% on the
-  60 s rotations: example changed (5,774,076 / 5,019,331; snapshots
-  updated). The ascent's biggest gain, Arcane on the logs' Hot Work
-  loadout (+5.9% ± 0.7, 24 fresh seeds), flips her to INT mode (Intellect
-  813 / Will 363): left to the owner; gear --rules now flags mode flips.
-
-Decisions: a separate `diagnose` command (its ~300 runs need workers,
-and gear --rules reuses it); the marginal values' steps are the game's
-median T4 line sizes; a change is confirmed on fresh seeds because the
-ascent's best-of-many gain is biased up (Ink Melt: +7.3% in the ascent,
-+2.1% / +3.9% on fresh seeds). Problems: stats that move the timeline
-(Ultimate Gain Efficiency, mode-flipping attributes) stay noisy on common
-seeds (±1–2% a line at 4 seeds) while damage-only stats are exact to
-±0.1%; the ascent is path-dependent where gains are within that noise (a
-first owner's-team run took Akekuri's change first, a second Si's).
-Runtimes (4 cores, 3 workers): diagnose with marginal values 3–4 min a
-team; gear --rules 18–20 min a team (1,000–1,150 runs of 300 s).

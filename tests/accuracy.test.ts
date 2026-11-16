@@ -1,7 +1,7 @@
 // The accuracy scoreboard (docs/accuracy.md, scripts/accuracy.ts): it says what the committed log verdict snapshots
 // give, so a change to a verdict can't land without its accuracy change in the scoreboard's diff; and the fit measure
 // that tells a better log from a worse one.
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { direction, directionSummary, groupOf, readSnapshots, readSplit, render, ROOT, SCOREBOARD, type Entry, type Snapshots } from "../scripts/accuracy.ts";
@@ -18,8 +18,16 @@ describe("accuracy scoreboard", () => {
     const [d] = split.development;
     const [h] = split.holdout;
     expect(groupOf(`pending/${d}.json`, split)).toBe("development");
+    expect(groupOf(`holdout/${h}.json`, split)).toBe("holdout");
     expect(groupOf(`pending/${h}.json`, split)).toBe("holdout");
     expect(groupOf("pending/zmdlogs-none.json", split)).toBe("earlier");
+  });
+
+  it("keeps the hold-out logs apart: fixtures/holdout/ holds exactly them, no other directory holds one (by file name only)", () => {
+    const split = readSplit();
+    const names = (d: string) => readdirSync(join(ROOT, d)).filter((f) => f.startsWith("zmdlogs-")).map((f) => f.replace(/\.json$/, ""));
+    expect(names("fixtures/holdout").sort()).toEqual([...split.holdout].sort());
+    for (const d of ["fixtures", "fixtures/pending", "fixtures/multi-target"]) expect(names(d).filter((id) => split.holdout.has(id)), d).toEqual([]);
   });
 });
 
@@ -45,5 +53,8 @@ describe("the fit measure (direction)", () => {
     expect(lines.some((l) => l.includes("zmdlogs-h"))).toBe(false);
     expect(lines.some((l) => l.startsWith("Hold-out") && l.includes("0 better, 1 worse"))).toBe(true);
     expect(directionSummary(at(1, 1), at(1, 1))).toEqual(["No log's verdicts moved."]);
+    // A hold-out moved to fixtures/holdout/ is the same log as under pending/ at an older ref.
+    const moved: Snapshots = { verified: {}, pending: { "pending/zmdlogs-d.json": log(1, 0, 1), "holdout/zmdlogs-h.json": log(1, 0, 1) }, split };
+    expect(directionSummary(at(1, 1), moved)).toEqual(["No log's verdicts moved."]);
   });
 });

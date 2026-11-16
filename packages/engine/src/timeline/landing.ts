@@ -9,7 +9,7 @@ import { type EventSource, type GameData, type KitHit, type KitSkill, landedCoun
 import { type BattleEvent, causeMatches, eventMatches, triggerActionAt } from "../events.ts";
 import { evaluate } from "../expr.ts";
 import { activeAt, resolveValue } from "../buffs.ts";
-import { applyToEnemy, type EnemyStatus, expireStatus, type HitApplication, MAX_INFLICTION_STACKS, NO_STATUS, type StatusEvent } from "../status.ts";
+import { applyToEnemy, type EnemyStatus, expireStatus, type HitApplication, MAX_INFLICTION_STACKS, NO_STATUS, ownHitEnemy, type StatusEvent } from "../status.ts";
 import type { LandedHit, LandingFacts, LandingInputs, PendingBurst, PendingHit, ReactionRecord, TimelineContext, TimelineState } from "./state.ts";
 import { kitSkill, panelAt } from "./context.ts";
 import { dealPoise, gainEnergy, gainSp, isStaggered, spGrantOf } from "./resources.ts";
@@ -97,6 +97,17 @@ const dealsDamage = (e: StatusEvent): boolean => eventReaction(e) !== null;
  * another kit hit (and the skill its values come from) in place of the landed one when given. The log check computes its readings of a logged hit with it,
  * so they and the simulation share every rule.
  */
+/**
+ * A landed hit's damage again with other modifiers (what it would have dealt without a buff, or with one more), through
+ * the same path its damage took (landingDamage on its inputs). The landing needs its inputs: a replayed fight's have
+ * them, and any run's with TimelineScenario.keepInputs.
+ */
+export function recomputeHit(data: GameData, target: DamageTarget, hit: Pick<LandedHit, "inputs" | "skillId" | "hitId">, modifiers: (current: readonly Modifier[]) => readonly Modifier[]): HitDamage {
+  const inputs = hit.inputs;
+  if (!inputs) throw new EngineError(`recomputeHit: ${hit.skillId} ${hit.hitId} has no inputs (run with TimelineScenario.keepInputs)`);
+  return landingDamage(data, target, inputs, { ...inputs.options, modifiers: [...modifiers(inputs.options.modifiers ?? [])] });
+}
+
 export function landingDamage(data: GameData, target: DamageTarget, inputs: LandingInputs, options: DamageOptions = inputs.options, other?: { readonly skill: Pick<KitSkill, "skillId">; readonly hit: KitHit }): HitDamage {
   if (inputs.kind === "hit") return computeHit(data, inputs.build, inputs.panel, target, other?.skill ?? inputs.skill, other?.hit ?? inputs.hit, options);
   return computeReaction(data, inputs.build, inputs.panel, target, inputs.reaction, options, inputs.scale);
@@ -117,17 +128,14 @@ function combustionHitSide(st: TimelineState, beforeTriggers: TimelineState, ope
 function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, st: TimelineState, critRoll?: number, prior?: EnemyStatus, side?: readonly Modifier[]): LandedHit | null {
   const reaction = eventReaction(e);
   if (!reaction) return null;
-  // Corrosion's own hit comes before its status (buff_common_natural_*_triggered_wrapper creates the damage buff,
-  // buff_common_natural_triggered, first): it sees the Corrosion that was on the enemy, not its own (2026-10-28,
-  // accuracy plan B7: logged ×0.91–0.94 of the prediction with its own shred, matched without it).
-  if (e.kind === "reaction" && e.status === "corrosion" && e.initialHit && prior) {
-    enemy = { ...enemy, statuses: [...enemy.statuses.filter((x) => x.status !== "corrosion"), ...prior.statuses.filter((x) => x.status === "corrosion" && x.expiresAt > e.frame)] };
-  }
+  // What the event's own hit sees of the status it applies: one row per status (status.ts OWN_HIT_SEES, combat-mechanics
+  // §3.8). Corrosion's own hit comes before its status (buff_common_natural_*_triggered_wrapper creates the damage buff,
+  // buff_common_natural_triggered, first): it sees the Corrosion that was on the enemy, not its own (accuracy plan B7).
   // Breach's own hit sees no Breach: neither its own Physical DMG Taken nor the one it replaces (2026-11-16, Arts
   // Intensity review: 7e19489ae503 at 14984 ms and d4fb69b036fe at 21563 / 86672 / 161592 ms logged exactly the
   // prediction ÷ (1 + its own 0.437 / 0.422); c4f307cd039a at 34038 / 92929 / 126489 ms ÷ 1.285 although the log lists
   // the earlier Breach, 0.27–0.31, on every physical hit up to 0.1–0.9 s before).
-  if (e.kind === "physical" && e.status === "breach") enemy = { ...enemy, physical: enemy.physical.filter((x) => x.status !== "breach") };
+  enemy = ownHitEnemy(e, enemy, prior);
   const build = ctx.builds.get(e.operator) as Build;
   // A Combustion tick keeps its applier's attacker side from the application (ActiveStatus.snapshot).
   const snapshot = e.kind === "combustionTick" ? e.snapshot : side;
@@ -137,8 +145,9 @@ function eventDamage(ctx: TimelineContext, e: StatusEvent, enemy: EnemyStatus, s
     options: { ...damageOptions(ctx, st, e.operator, enemy, e.frame, undefined, snapshot), ...(critRoll !== undefined ? { critRoll } : {}) },
     ...(scale ? { scale } : {}),
   };
-  // A replayed fight's landings keep their inputs (LandedHit.inputs: the log check computes them again).
-  return { ...landingDamage(ctx.data, ctx.scenario.target, inputs), frame: e.frame, operator: e.operator, ...(ctx.loggedCrits ? { inputs } : {}) };
+  // A replayed fight's landings keep their inputs (LandedHit.inputs: the log check computes them again), as do every
+  // run's with TimelineScenario.keepInputs (recomputeHit).
+  return { ...landingDamage(ctx.data, ctx.scenario.target, inputs), frame: e.frame, operator: e.operator, ...(ctx.keepInputs ? { inputs } : {}) };
 }
 
 /** Landed hits, and what the recording buffs active at their frames record of them (KitBuff.records; not Fixed DMG). */
@@ -439,9 +448,9 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
       buffLayers: layers, staggered: before.staggered ?? false, enemyHp: before.enemyHp ?? 1,
     };
   };
-  if (result) st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}), ...(hit.ref !== undefined ? { ref: hit.ref } : {}),
+  if (result) st = addHits(st, [{ ...result, count: 1, frame: hit.frame, operator: hit.operator, ...(castIndex !== undefined ? { cast: castIndex } : {}), ...(kitHit.fixedDamage !== undefined ? { fixed: true as const } : {}), ...(hit.ref !== undefined ? { ref: hit.ref } : {}),
     // A replay's landings carry their facts (a pinned one with its reference; one a trigger lands, matched to the log by time).
-    ...(hit.ref !== undefined || ctx.loggedCrits ? { facts: facts() } : {}), ...(loggedCrit !== undefined ? { loggedCrit } : {}), ...(ctx.loggedCrits && inputs ? { inputs } : {}),
+    ...(hit.ref !== undefined || ctx.loggedCrits ? { facts: facts() } : {}), ...(loggedCrit !== undefined ? { loggedCrit } : {}), ...(ctx.keepInputs && inputs ? { inputs } : {}),
     ...(landedCounts && castIndex !== undefined ? { landed: { cast: castIndex, of: hit.landedOf as number, counts: landedCounts, scale: landedScale } } : {}) }]);
   // The enemy the damage saw: the reactions of the applications before it see it too.
   const enemyAtDamage = st.enemy;

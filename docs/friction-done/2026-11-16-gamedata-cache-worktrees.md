@@ -128,3 +128,12 @@ CLI, tests and vitest work in a git worktree without a shell `source` step. Bran
   (`$.operators.chr_0002_endminm.rarity: 7 vs 6`) when I tested a tampered entry. A pitfall for whoever touches this
   next: comparing `v8.serialize` bytes of a fresh build and of a read copy does not work, because string
   representations differ.
+
+## Outcome (round 1)
+
+1. Premerge under load: **done.** scripts/premerge.ts runs every step to the end, prints each step's time and load and a pass/fail table, re-runs once the files whose only failures are timeouts, and takes a lock shared by all worktrees around the vitest steps (snapshots.sh too). Moving the remaining tests over ~30 s to tests/slow: **backlog** (with the measured list).
+2. Checkout check before linking: **done** as the last commit of the round (`main.ts` is a three-line entry, the CLI is cli.ts), kept separate so the lead can drop it if phase 2 edited main.ts and redo it after (`git mv main.ts cli.ts`, new entry).
+3. One data-file access module: **not done** (a ~40-call-site refactor of the loaders that touches the cache key; no other report needed it this round). Backlog.
+4. Engine core entry: **not done** (architecture review item 12, a large move best done in a quiet window). Backlog.
+5. Sandbox command shapes: **done** (CLAUDE.md "Worktrees and sub-agents").
+6. Timings under load: **done.** `npm run bench -- "<cmd A>" "<cmd B>"` (scripts/bench.ts): alternating runs, median wall and CPU seconds, load at start and end; CLAUDE.md says to use it for timing claims.

@@ -69,6 +69,12 @@ export interface ActiveBuff {
   readonly records?: { readonly rate: number; readonly total: number };
   /** A ticking buff whose tick hits keep an ATK snapshot (KitHit.atkSnapshot): its owner's attacker-side modifiers when it was applied. */
   readonly snapshot?: readonly Modifier[];
+  /**
+   * What made it: the skill (or talent, trigger source) it was applied for, and that skill's latest cast by its owner
+   * at the time (an index into TimelineState.casts) when the skill is one it casts. A record for analyses (who gave a
+   * multiplier, from which press); nothing in the fight reads it (search.ts BUFF_KEY leaves it out).
+   */
+  readonly createdBy?: { readonly skill: string; readonly cast?: number };
 }
 
 /** Whether a buff is active at a frame: applied by then, not yet ended. */

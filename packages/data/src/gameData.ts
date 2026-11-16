@@ -2,6 +2,7 @@
 // English names. Building takes ~10 s, so the result is cached in the process
 // and on disk (cache.ts).
 
+import { readFileSync } from "node:fs";
 import type {
   AttrModifier,
   Effect,
@@ -19,7 +20,7 @@ import { ELEMENTS } from "@efsim/engine";
 import { loadCachedGameData } from "./cache.ts";
 import { DataError } from "./errors.ts";
 import { at, get, obj, type Ctx } from "./fields.ts";
-import { loadKits } from "./kits.ts";
+import { loadKits, loadOperatorKitFile, type KitData } from "./kits.ts";
 import { Names } from "./names.ts";
 import { diveOf, isSkillFileListed, passiveBuffModifiers, reachedSp, readSkillFile } from "./skillData.ts";
 import { burstDelays, castHelpers, perfectDodgeData, staggerDamageTaken, switchedSkills } from "./buffData.ts";
@@ -290,6 +291,23 @@ let cached: GameData | undefined;
 export function loadGameData(): GameData {
   cached ??= loadCachedGameData(build);
   return cached;
+}
+
+/**
+ * The GameData with operator kits replaced from kit files (efsim --kit <file>: a what-if variant of a kit without
+ * editing packages/data/kits). Each file is a kit as in kits/operators/ (any file name), loaded and checked exactly as
+ * the loader does; its variants come with it.
+ */
+export function withKitFiles(data: GameData, files: readonly string[]): GameData {
+  if (!files.length) return data;
+  const operators = { ...data.kits.operators };
+  for (const file of files) {
+    const raw = JSON.parse(readFileSync(file, "utf8")) as { operator?: unknown };
+    if (typeof raw.operator !== "string") throw new Error(`${file}: not an operator kit (no "operator")`);
+    if (!data.kits.operators[raw.operator]) throw new Error(`${file}: ${raw.operator} has no kit to replace`);
+    for (const kit of loadOperatorKitFile(data as unknown as KitData, `${raw.operator}.json`, raw)) operators[kit.operator] = kit;
+  }
+  return { ...data, kits: { ...data.kits, operators } };
 }
 
 /** A fresh build, bypassing both caches (the cache's own test compares the two). */

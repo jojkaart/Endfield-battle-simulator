@@ -5,35 +5,25 @@
 // numbers the engine computes itself, and on the fixtures that showed them.
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { computeHit, computeStats, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier, type OperatorKit } from "@efsim/engine";
+import { computeHit, computeStats, roundDamage, type Build, type GameData, type KitBuff, type KitHit, type KitSkill, type KitTrigger, type Modifier } from "@efsim/engine";
 import { loadGameData, type LogEffect, type LogFixture, type LogHit } from "@efsim/data";
 import { boundarySubsets, checkLog, readLogFixture, type HitVerdict } from "@efsim/cli";
 import { placeHits, worldMs } from "../packages/cli/src/logcasts.ts";
+import { kitHit, logHitOf, syntheticFixture, withOperatorKit } from "./helpers/synthetic.ts";
 import { checkReactions } from "../packages/cli/src/reactioncheck.ts";
 
 const data = loadGameData();
 const build = JSON.parse(readFileSync(new URL("../examples/laevatain-forgeborn.json", import.meta.url), "utf8")) as Build;
 const op = build.operator;
-const kit = data.kits.operators[op] as OperatorKit;
 const panel = computeStats(data, build);
 const target = { enemy: "eny_0051_rodin", level: 90 };
 const BATTLE = "chr_0016_laevat_normal_skill";
 
-const withKit = (k: { skills: KitSkill[]; buffs?: KitBuff[]; triggers?: KitTrigger[] }): GameData => ({
-  ...data,
-  kits: { ...data.kits, operators: { ...data.kits.operators, [op]: { ...kit, skills: k.skills, buffs: [...kit.buffs, ...(k.buffs ?? [])], triggers: [...kit.triggers, ...(k.triggers ?? [])] } } },
-});
-const hit = (id: string, events: string[], extra: Partial<KitHit> = {}): KitHit => ({ id, label: id, scale: ["atk_scale"], count: 1, events, damageType: "battle", element: "fire", ...extra });
+const withKit = (k: { skills: KitSkill[]; buffs?: KitBuff[]; triggers?: KitTrigger[] }): GameData => withOperatorKit(data, op, k);
+const hit = kitHit;
 const battle = (hits: KitHit[]): KitSkill => ({ skillId: BATTLE, label: "battle", kind: "battle", hits });
-const logHit = (t: number, event: string, value: number, extra: Partial<LogHit> = {}): LogHit => ({ t, operator: op, event, value, crit: false, element: "fire", effects: [], boundaryEffects: [], unquantified: [], ...extra });
-const fixture = (hits: LogHit[]): LogFixture => ({
-  id: "synthetic",
-  description: "synthetic log",
-  provenance: { source: "test", url: "test", battleId: "test", parserVersion: "test", inGame: true, measured: "test", verifiedAgainst: {}, notes: [] },
-  enemy: { id: target.enemy, level: target.level },
-  team: [build],
-  hits,
-});
+const logHit = (t: number, event: string, value: number, extra: Partial<LogHit> = {}): LogHit => logHitOf(op, t, event, value, extra);
+const fixture = (hits: LogHit[]): LogFixture => syntheticFixture(hits, [build], target);
 const damage = (g: GameData, h: KitHit, modifiers: Modifier[] = []) =>
   roundDamage(computeHit(g, build, panel, target, { skillId: BATTLE }, h, { crit: "never", staggered: false, modifiers }).exact);
 const assumed = (v: HitVerdict | undefined) => (v?.kind === "match" ? v.assumed : [v?.kind ?? "none"]);

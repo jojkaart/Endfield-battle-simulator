@@ -149,3 +149,13 @@ hand-written and searched lists for three teams, tests and docs. Branch `worktre
   Arcane's combo, Typhoeus's hover upkeep), so the hand-written lists were close from the first try.
 - **Kit labels and notes in the kit JSON** (e.g. Typhoeus's stacks, Liino's stance): they explained mechanics
   without reading SkillData.
+
+## Outcome (round 1)
+
+1. Two answers to "can this start now": **assigned to phase 2.**
+2. Scoring noise: **assigned to phase 2.**
+3. Per-frame driving caches, structured `earliestStart` errors: **assigned to phase 2.**
+4. A scratch place that imports the packages: **done** (git-ignored `scratch/`, ignored by lint, typecheck and premerge; `scripts/scratch-template.ts`; CLAUDE.md).
+5. Skill buttons: **assigned to phase 2.**
+6. `--duration` on search and simulate: **done** (packages/cli/src/main.ts). A table of measured search times: **backlog** (needs runs of tens of minutes per team).
+7. Engine internals exported: **done** (packages/engine/src/timeline.ts re-exports the state queries kitSkill, skillCosts, maxPoise, spAt, maxEnergy, isStaggered, skillSpGain, windowKey, windowOpen, needsWindow; policy.ts's deep imports are phase 2's to switch).

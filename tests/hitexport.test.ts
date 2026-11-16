@@ -1,0 +1,55 @@
+// `efsim zmdlogs hits` (packages/cli/src/hitexport.ts): one record per logged hit, with the same verdicts and primary
+// readings as the log check, and the reading's parts that analyses across logs need.
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import { loadGameData } from "@efsim/data";
+import { checkLog, engineHits, logBuffReplay, readLogFixture, verdictCounts } from "@efsim/cli";
+import { filterRecords, formatRecord, hitRecords } from "../packages/cli/src/hitexport.ts";
+import { readDevFixture } from "../packages/cli/src/logs.ts";
+import { ROOT } from "./logverdicts.ts";
+
+const data = loadGameData();
+const file = "fixtures/zmdlogs-0eef2474a26f.json";
+const fx = readLogFixture(join(ROOT, file));
+const records = hitRecords(data, fx, file);
+
+describe("per-hit records of the log check", () => {
+  it("has one record per logged hit, with the check's verdict classes and primary readings", () => {
+    expect(records).toHaveLength(fx.hits.length);
+    const replay = logBuffReplay(data, fx);
+    const byHit = engineHits(data, fx, replay);
+    const counts = verdictCounts(fx, checkLog(data, fx, { replay, engineHits: byHit }));
+    const mine: Record<string, Record<string, number>> = {};
+    for (const r of records) (mine[r.operator] ??= {})[r.class] = (mine[r.operator]?.[r.class] ?? 0) + 1;
+    for (const [op, c] of Object.entries(counts)) for (const [k, n] of Object.entries(c)) if (n) expect(mine[op]?.[k], `${op} ${k}`).toBe(n);
+    fx.hits.forEach((h, i) => {
+      const p = byHit.get(h)?.primary;
+      if (p !== null && p !== undefined) expect(records[i]?.predicted).toBe(p);
+    });
+  });
+
+  it("gives a plain match's reading with its scale parts, zones and modifier sources, a status hit's reaction, a kit hit's enemy statuses", () => {
+    const plain = records.find((r) => r.class === "plain" && r.landing);
+    expect(plain?.landing?.scaleParts.length).toBeGreaterThan(0);
+    expect(plain?.landing?.zones.atk).toBeGreaterThan(0);
+    expect(plain?.landing?.modifiers.some((m) => m.source.startsWith("stat panel"))).toBe(true);
+    expect(Math.round(plain?.landing?.exact ?? 0)).toBe(plain?.predicted);
+    const status = records.find((r) => r.kind !== "skill" && r.landing);
+    expect(status?.landing?.reaction).toBeDefined();
+    const kit = records.find((r) => r.kind === "skill" && r.landing?.enemy?.length);
+    expect(kit?.landing?.enemy?.[0]).toMatchObject({ level: expect.any(Number), operator: expect.any(String), artsIntensity: expect.any(Number) });
+  });
+
+  it("filters by kind and operator, and prints JSON lines or a row", () => {
+    expect(filterRecords(records, { kind: "skill" }).every((r) => r.kind === "skill")).toBe(true);
+    const op = records[0]?.operator as string;
+    expect(filterRecords(records, { operators: [op] }).every((r) => r.operator === op)).toBe(true);
+    const r = records[0] as (typeof records)[number];
+    expect(JSON.parse(formatRecord(r, true))).toEqual(JSON.parse(JSON.stringify(r)));
+    expect(formatRecord(r, false)).toContain(`logged ${r.value}`);
+  });
+
+  it("refuses a hold-out fixture", () => {
+    expect(() => readDevFixture(join(ROOT, "fixtures/holdout/zmdlogs-anything.json"))).toThrow(/hold-out/);
+  });
+});

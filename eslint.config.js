@@ -3,7 +3,7 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["data/", "reference/", "node_modules/", "tools/skport-capture/", ".proto/", ".claude/worktrees/"] },
+  { ignores: ["data/", "reference/", "node_modules/", "tools/skport-capture/", ".proto/", ".claude/worktrees/", "scratch/"] },
   js.configs.recommended,
   ...tseslint.configs.strict,
   {
