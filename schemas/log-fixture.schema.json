@@ -83,7 +83,11 @@
             "description": "The Stagger the hit dealt as the log has it: dealt (positive) and the Stagger bar after it.",
             "required": ["dealt", "bar"],
             "additionalProperties": false,
-            "properties": { "dealt": { "type": "number", "exclusiveMinimum": 0 }, "bar": { "type": "number", "minimum": 0 } }
+            "properties": {
+              "dealt": { "type": "number", "exclusiveMinimum": 0 },
+              "bar": { "type": "number", "minimum": 0 },
+              "origin": { "type": "string", "description": "The skill the Stagger is credited to (poiseDamage.orig_source; imports since 2026-11-16)." }
+            }
           }
         }
       }
@@ -100,7 +104,9 @@
           "buff": { "type": "string" },
           "zone": { "enum": ["atk", "damageBonus", "amp", "susceptibility", "damageTaken", "multiplicative", "ignoreResistance", "artsIntensity"] },
           "element": { "type": ["string", "null"] },
-          "value": { "type": "number" }
+          "value": { "type": "number" },
+          "source": { "type": "string", "description": "The operator whose buff it is (the buff lane's sourceCharacterKey; imports since 2026-11-16)." },
+          "since": { "type": "number", "description": "When the buff lane started, ms (imports since 2026-11-16)." }
         }
       }
     }

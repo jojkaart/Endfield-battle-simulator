@@ -536,7 +536,10 @@ nothing on a server. API documented in
   - Stagger: a damage event's `poiseDamage` ({type "PoiseDamage", value
     −dealt, current_value: the bar after the hit, source, orig_source}),
     on damage events only. The importer keeps it as the hit's `poise`
-    ({dealt, bar}; 2026-10-26, `zmdlogs refresh` for older fixtures).
+    ({dealt, bar}; 2026-10-26, `zmdlogs refresh` for older fixtures), and
+    since 2026-11-16 `orig_source` as `poise.origin`: the skill the Stagger
+    is credited to, which tells Si's Final Stroke burst
+    (`normal_skill_2`) from an Inksoul expiry (`normal_skill_inkmove_2`).
     Stagger itself is a buff lane, `buff_common_poise_break_damage_taken_scale`
     on the enemy (its `durationMs`: the window, in real time; the buff's own
     data lasts 0.1 s and is renewed while Staggered). Some hits deal Stagger
@@ -555,6 +558,18 @@ nothing on a server. API documented in
     enemy (`eny_0120_klbear_tower015`) use an attribute template through
     EnemyTable. The total damage equals the boss's HP only on some stages
     (Rhodagn), so the stage is the level's source.
+  - **Only buffs it can value are recorded:** a buff lane exists for buffs
+    with damage `effects` or `dynamicEffects`. Si's Haste
+    (`talent1_speedup`), Artful Intent and Inksoul are absent from the raw
+    log (checked 2026-11-16), so no log can show them.
+  - What the importer keeps of a buff lane: per hit its effects inside or
+    at the boundary, each with the lane's `sourceCharacterKey` and start
+    as `source` and `since` (imports since 2026-11-16; older fixtures lack
+    them). The whole raw detail is kept in the git-ignored cache
+    (node_modules/.cache/efsim/zmdlogs/) by `zmdlogs import` and `refresh`;
+    `efsim zmdlogs raw <fixture> [--buffs re] [--events re]` prints its
+    lanes, fetching a missing one once (never a hold-out). The cache holds
+    player names: never copy it into the repository.
   - The Endministrator can appear as the game's virtual ID
     `chr_9000_endmin`, without skill levels (the importer reads it as
     `chr_0003_endminf` with 12 and says so in the notes).

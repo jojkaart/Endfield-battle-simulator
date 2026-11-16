@@ -26,6 +26,7 @@ import { readRuleList, rulesCommand } from "./rules.ts";
 import { formatGuided, guidedSearch, writeGuided } from "./guided.ts";
 import { formatLogList, logDirs } from "./logtools.ts";
 import { exportHits, exportHitsParallel, formatRecord, type HitRecord } from "./hitexport.ts";
+import { battleIdOf, cacheRawDetail, formatRaw, rawDetail, rawDir } from "./zmdraw.ts";
 import { diagnose, formatDiagnosis } from "./diagnose.ts";
 import { formatRuleGear, gearOnRules } from "./gearrules.ts";
 
@@ -156,6 +157,11 @@ const USAGE = `Usage:
                                           Arts Intensity)
                 [--kind <k>] [--operator <op>]  Only this reaction kind ("skill": kit hits) / operator (repeatable)
                 [--json] [--workers n]    JSON Lines; fixtures on n worker threads (default 1)
+  efsim zmdlogs raw <fixture | id>        A battle's raw detail as ZMDLogs recorded it: buff lanes (key, target,
+                                          source, start–end, effects) and events (key, value, the skill a Stagger is
+                                          credited to). From the git-ignored cache (filled by import and refresh),
+                                          else fetched once; never a hold-out
+                [--buffs <regex>] [--events <regex>]  Only buff lanes / events whose key matches
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
                                           (fixtures/multi-target/ when it hit several enemies)
                 [--enemy-level n]         (default: the stage's, else inferred from total damage on a clear)
@@ -284,6 +290,8 @@ async function main(argv: string[]): Promise<number> {
       sets: { type: "string" },
       with: { type: "string", multiple: true, default: [] },
       kind: { type: "string" },
+      buffs: { type: "string" },
+      events: { type: "string" },
       dir: { type: "string", multiple: true, default: [] },
       help: { type: "boolean", short: "h", default: false },
     },
@@ -355,6 +363,14 @@ async function main(argv: string[]): Promise<number> {
         text = formatLogList(data(), { withOperators: values.with, ...(dirs ? { dirs } : {}), json: values.json });
         break;
       }
+      if (sub === "raw") {
+        if (args.length !== 2 || !arg) throw new Error("zmdlogs raw takes one fixture file, fixture id or battle id (--buffs <regex>, --events <regex>)");
+        const battleId = arg.endsWith(".json") ? readDevFixture(arg).provenance.battleId : battleIdOf(arg);
+        const { detail, fetched } = await rawDetail(battleId);
+        if (fetched) process.stderr.write(`fetched ${battleId} once from zmdlogs.com; cached in ${rawDir()}\n`);
+        text = formatRaw(detail, { ...(values.buffs !== undefined ? { buffs: values.buffs } : {}), ...(values.events !== undefined ? { events: values.events } : {}) });
+        break;
+      }
       if (sub === "hits") {
         const named = args.slice(1);
         for (const f of named) refuseHoldoutFile(f);
@@ -402,7 +418,7 @@ async function main(argv: string[]): Promise<number> {
       if (args.length !== 2 || !arg || (sub !== "import" && sub !== "check" && sub !== "reactions" && sub !== "refresh")) throw new Error(`zmdlogs takes import <battle id>, check <file>, reactions <file>, refresh <file> --detail <file>, scales <file> <op> or find-scales <file> <op>\n\n${USAGE}`);
       if (sub === "refresh") {
         if (!values.detail) throw new Error("zmdlogs refresh needs --detail <file> (an already downloaded /api/battles/<id> response)");
-        const r = refreshFixture(arg, values.detail);
+        const r = refreshFixture(arg, values.detail, (d) => cacheRawDetail(readDevFixture(arg).provenance.battleId, d));
         text = `${arg}: ${r.casts} cast(s), ${r.poise} hit(s) with Stagger`;
       } else if (sub === "reactions") {
         const fx = readDevFixture(arg);
@@ -418,7 +434,7 @@ async function main(argv: string[]): Promise<number> {
         const verdicts = checkLog(data(), fx, replay ? { replay, ...(byHit ? { engineHits: byHit } : {}) } : { buffs: "log" });
         text = formatLogCheck(data(), fx, verdicts, replay ?? undefined, replay && byHit ? engineReport(data(), fx, replay, byHit, verdicts) : undefined);
       } else {
-        const file = await importBattle(data(), arg, values["enemy-level"] === undefined ? undefined : Number(values["enemy-level"]), values.note, values.detail);
+        const file = await importBattle(data(), arg, values["enemy-level"] === undefined ? undefined : Number(values["enemy-level"]), values.note, values.detail, (d) => cacheRawDetail(arg, d));
         text = `wrote ${file}`;
       }
       break;

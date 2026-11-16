@@ -161,9 +161,11 @@ function inferEnemyLevel(data: GameData, detail: unknown): number {
  * damage on a single-target clear. A fight against several enemies goes to fixtures/multi-target/ with each hit's
  * target (90 assumed when the stage doesn't say).
  */
-export async function importBattle(data: GameData, battleId: string, enemyLevel?: number, notes: readonly string[] = [], detailFile?: string): Promise<string> {
+export async function importBattle(data: GameData, battleId: string, enemyLevel?: number, notes: readonly string[] = [], detailFile?: string, keepDetail?: (detail: unknown) => void): Promise<string> {
   refuseHoldout(battleId);
   const { detail, exported } = await fetchBattle(battleId, detailFile === undefined ? undefined : (JSON.parse(readFileSync(detailFile, "utf8")) as unknown));
+  // The raw detail, kept where the caller says (the CLI: the git-ignored cache, zmdraw.ts), for questions a fixture can't answer.
+  keepDetail?.(detail);
   const enemies = enemiesHit(detail);
   const multi = enemies.length > 1;
   const fromStage = enemyLevel === undefined ? stageEnemyLevel(data, detail) : undefined;
@@ -202,13 +204,14 @@ export async function importBattle(data: GameData, battleId: string, enemyLevel?
 /**
  * Adds what a battle's detail records that older imports of it lack, from an already downloaded /api/battles/<id>
  * response (no network), with a provenance note: the casts without damage (zmdlogsCasts, 2026-10-25) and each hit's
- * Stagger (LogHit.poise, zmdlogsPoise, 2026-10-26). Returns how many casts and Stagger-dealing hits it has.
+ * Stagger (LogHit.poise, zmdlogsPoise, 2026-10-26; with the skill it's credited to since 2026-11-16). Returns how many casts and Stagger-dealing hits it has.
  */
-export function refreshFixture(file: string, detailFile: string): { casts: number; poise: number } {
+export function refreshFixture(file: string, detailFile: string, keepDetail?: (detail: unknown) => void): { casts: number; poise: number } {
   const fx = readLogFixture(file);
   const detail: unknown = JSON.parse(readFileSync(detailFile, "utf8"));
   const id = (detail as { battle?: { id?: string } }).battle?.id;
   if (id !== fx.provenance.battleId) throw new Error(`${detailFile} is battle ${String(id)}, not ${fx.provenance.battleId}`);
+  keepDetail?.(detail);
   const casts = zmdlogsCasts(detail, fx.team.map((b) => b.operator));
   const poise = zmdlogsPoise(detail, fx.hits);
   const hits = fx.hits.map((h, i) => {
@@ -219,6 +222,7 @@ export function refreshFixture(file: string, detailFile: string): { casts: numbe
   const added = [
     ...(fx.casts ? [] : ["Casts (the detail's skill events without damage) added from the same battle detail (efsim zmdlogs refresh)."]),
     ...(fx.hits.some((h) => h.poise) ? [] : ["Each hit's Stagger (poise) added 2026-10-26 from the same battle detail (efsim zmdlogs refresh)."]),
+    ...(fx.hits.some((h) => h.poise?.origin) || !poise.some((p) => p?.origin) ? [] : ["The skill each Stagger is credited to (poise.origin) added from the same battle detail (efsim zmdlogs refresh)."]),
   ];
   const notes = [...fx.provenance.notes, ...added.filter((n) => !fx.provenance.notes.includes(n))];
   const out: LogFixture = { ...fx, provenance: { ...fx.provenance, notes }, hits, casts };

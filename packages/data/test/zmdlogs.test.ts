@@ -67,6 +67,14 @@ describe("zmdlogsToFixture", () => {
     ]);
   });
 
+  it("keeps who gave each effect and when its buff started", () => {
+    const [hit] = fx.hits;
+    expect(hit?.effects.map((e) => [e.buff, e.source, e.since])).toEqual([
+      ["buff_ally_atk", "chr_0003_endminf", 0],
+      ["buff_enemy_side", "chr_0003_endminf", 0],
+    ]);
+  });
+
   it("drops damage-taken zones on an operator: they're about damage the operator takes", () => {
     expect(fx.hits[0]?.effects.some((e) => e.buff === "buff_ally_side")).toBe(false);
   });
@@ -128,6 +136,12 @@ describe("zmdlogsPoise", () => {
     const fx = zmdlogsToFixture("btl_upload_test", staggered, exported, lookups, 90);
     expect(fx.hits.map((h) => h.poise)).toEqual([{ dealt: 18, bar: 262 }, undefined, undefined]);
     expect(zmdlogsPoise(staggered, fx.hits)).toEqual([{ dealt: 18, bar: 262 }, undefined, undefined]);
+  });
+
+  it("keeps the skill the Stagger is credited to (poiseDamage.orig_source)", () => {
+    const credited = { ...detail, timelineEvents: [{ ...hit(1000, 500, 18, 262), poiseDamage: { type: "PoiseDamage", value: -18, current_value: 262, orig_source: "chr_0036_jsspsi_normal_skill_2" } }] };
+    const fx = zmdlogsToFixture("btl_upload_test", credited, exported, lookups, 90);
+    expect(fx.hits[0]?.poise).toEqual({ dealt: 18, bar: 262, origin: "chr_0036_jsspsi_normal_skill_2" });
   });
 
   it("refuses hits that aren't the detail's damage events in order", () => {
