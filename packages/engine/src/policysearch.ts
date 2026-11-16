@@ -98,7 +98,9 @@ function poolOf(data: GameData, team: readonly string[], controlled: string): Po
   for (const element of ["heat", "electric", "cryo", "nature"]) cues.push({ infliction: { element } });
   cues.push({ infliction: {} }, { not: { infliction: {} } });
   for (const status of ["solidification", "corrosion", "combustion", "electrification", "lift", "knockdown", "crush", "breach"]) cues.push({ status });
-  cues.push({ vulnerable: { atLeast: 1 } }, { staggered: true }, { finalStrikes: { atLeast: 1 } }, { finalStrikes: { atLeast: 2 } });
+  cues.push({ vulnerable: { atLeast: 1 } }, { staggered: true }, { staggered: false }, { finalStrikes: { atLeast: 1 } }, { finalStrikes: { atLeast: 2 } });
+  for (const n of [50, 70, 85]) cues.push({ stagger: { atLeast: n } });
+  cues.push({ stagger: { below: 50 } });
   return { team, controlled, cues, steps };
 }
 
@@ -127,6 +129,7 @@ function newRule(rng: () => number, pool: Pool): PolicyRule {
 function tweak(rng: () => number, c: PolicyCue): PolicyCue | null {
   const step = (x: number, by: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, x + (rng() < 0.5 ? -by : by)));
   if ("sp" in c) return { sp: { ...(c.sp.atLeast !== undefined ? { atLeast: step(c.sp.atLeast, 50, 0, 300) } : {}), ...(c.sp.below !== undefined ? { below: step(c.sp.below, 50, 50, 300) } : {}) } };
+  if ("stagger" in c) return { stagger: { ...(c.stagger.atLeast !== undefined ? { atLeast: step(c.stagger.atLeast, 10, 0, 100) } : {}), ...(c.stagger.below !== undefined ? { below: step(c.stagger.below, 10, 10, 100) } : {}) } };
   if ("stacks" in c) return { stacks: { ...c.stacks, ...(c.stacks.atLeast !== undefined ? { atLeast: step(c.stacks.atLeast, 1, 0, 8) } : {}), ...(c.stacks.below !== undefined ? { below: step(c.stacks.below, 1, 1, 9) } : {}) } };
   if ("finalStrikes" in c) return { finalStrikes: { atLeast: step(c.finalStrikes.atLeast, 1, 1, 4) } };
   if ("vulnerable" in c) return { vulnerable: { atLeast: step(c.vulnerable.atLeast ?? 1, 1, 1, 4) } };

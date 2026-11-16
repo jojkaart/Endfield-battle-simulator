@@ -249,6 +249,18 @@ describe("a press that names what its button shows", () => {
   });
 });
 
+describe("the Stagger bar cue", () => {
+  it("reads how full the bar is (100 while Staggered), resolves, and reads in words", () => {
+    const l = list({ opener: [], rules: [{ when: { stagger: { atLeast: 70 } }, do: { operator: "Si", cast: "battle" } }] });
+    expect(describeRule(data, l.rules[0] as PolicyRule)).toBe("When the enemy's Stagger bar is at least 70% full: Si's battle skill");
+    expect(() => list({ opener: [], rules: [{ when: { stagger: { atLeast: 120 } }, do: { operator: "Si", cast: "battle" } }] })).toThrow(/0 to 100/);
+    expect(cueCost({ stagger: { atLeast: 70 } })).toEqual({ cost: 3, rank: 3 });
+    // A rule that fires only near the Stagger presses later than the same rule without the condition.
+    const at = (when: PolicyRule["when"]) => playRules(data, fight(60), list({ opener: [], rules: [{ when, do: { operator: "Arcane", cast: "battle" } }] }), { reactionSeconds: 0 }).rotation.find((a) => a.operator === ARCANE)?.at ?? Infinity;
+    expect(at({ stagger: { atLeast: 1 } })).toBeGreaterThan(at({ sp: { atLeast: 0 } }));
+  });
+});
+
 describe("example rule lists", () => {
   const files = readdirSync(join(ROOT, "examples")).filter((f) => f.endsWith(".rules.json"));
   it("there are some", () => expect(files.length).toBeGreaterThan(0));

@@ -15,7 +15,7 @@ import { diveOf, nextBasics } from "./search.ts";
 import { activeAt } from "./buffs.ts";
 import { advance, apply, createContext, earliestStart, exclusiveUntil, init, memoised, startsNow, type RotationAction, type TimelineContext, type TimelineScenario, type TimelineState } from "./timeline.ts";
 import { isStaggered, maxEnergy, skillSpGain, spAt } from "./timeline/resources.ts";
-import { kitSkill, skillCosts } from "./timeline/context.ts";
+import { kitSkill, maxPoise, skillCosts } from "./timeline/context.ts";
 import { needsWindow, skillAvailable, windowKey, windowOpen } from "./timeline/timing.ts";
 
 // --- The format ----------------------------------------------------------------
@@ -58,6 +58,8 @@ export type PolicyCue =
   | { readonly vulnerable: { readonly atLeast?: number; readonly below?: number } }
   /** Rank 3: the enemy is Staggered (its bar shows it). */
   | { readonly staggered: boolean }
+  /** Rank 3: how full the enemy's Stagger bar is, in percent (100 while it is Staggered). */
+  | { readonly stagger: { readonly atLeast?: number; readonly below?: number } }
   /** Rank 3: an operator's state the game shows on the character or its skill button (POLICY_VISIBLE_BUFFS: Typhoeus hovering, …). */
   | { readonly buff: { readonly operator: string; readonly buff: string } }
   /** Rank 4: the operator's ultimate is ready (energy full, off cooldown, available). */
@@ -98,7 +100,7 @@ export interface RuleList {
  * up, 2 Typhoeus's arrows and Signs, SP, 3 the enemy's inflictions and statuses, 4 an ultimate ready (corner of the
  * screen), 5 counting Final Strikes, 6 a combo's cooldown, 7 a timer in the head.
  */
-export const POLICY_CUE_RANKS = { combo: 1, stacks: 2, sp: 2, infliction: 3, status: 3, vulnerable: 3, staggered: 3, buff: 3, ultimate: 4, finalStrikes: 5, comboCooldown: 6, since: 7 } as const;
+export const POLICY_CUE_RANKS = { combo: 1, stacks: 2, sp: 2, infliction: 3, status: 3, vulnerable: 3, staggered: 3, stagger: 3, buff: 3, ultimate: 4, finalStrikes: 5, comboCooldown: 6, since: 7 } as const;
 
 /** What a cue of each rank costs to learn and watch: the rank itself up to 3, steeper after; a timer counts heavily (owner: "avoid, or count heavily against"). */
 export const POLICY_RANK_COST: Readonly<Record<number, number>> = { 1: 1, 2: 2, 3: 3, 4: 5, 5: 6, 6: 7, 7: 20 };
@@ -213,6 +215,7 @@ export function describeCue(data: GameData, cue: PolicyCue): string {
   if ("status" in cue) return `the enemy has ${cue.status[0]?.toUpperCase()}${cue.status.slice(1)}`;
   if ("vulnerable" in cue) return `the enemy's Vulnerable stacks ${rangeWords(cue.vulnerable)}`;
   if ("staggered" in cue) return cue.staggered ? "the enemy is Staggered" : "the enemy isn't Staggered";
+  if ("stagger" in cue) return `the enemy's Stagger bar is ${rangeWords(cue.stagger)}% full`;
   if ("buff" in cue) return buffWords(data, cue.buff, true);
   if ("finalStrikes" in cue) return `${cue.finalStrikes.atLeast} Final Strike${cue.finalStrikes.atLeast === 1 ? "" : "s"} since this rule last fired`;
   if ("since" in cue) return `${cue.since.atLeast} s since ${name(cue.since.operator)}'s last ${CAST_NAMES[cue.since.cast]}`;
@@ -275,6 +278,11 @@ export function resolveRuleList(data: GameData, team: readonly string[], list: R
       return c;
     }
     if ("staggered" in c) return c;
+    if ("stagger" in c) {
+      range(c.stagger, where);
+      for (const v of [c.stagger.atLeast, c.stagger.below]) if (v !== undefined && !(v >= 0 && v <= 100)) throw new EngineError(`${where}: the Stagger bar is 0 to 100 (%)`);
+      return c;
+    }
     if ("buff" in c) {
       const op = opId(c.buff.operator, where);
       if (!(POLICY_VISIBLE_BUFFS[op] ?? []).includes(c.buff.buff)) throw new EngineError(`${where}: ${op}'s ${c.buff.buff} isn't a state the game shows without buff icons (shown: ${JSON.stringify(POLICY_VISIBLE_BUFFS)})`);
@@ -492,6 +500,11 @@ function cueHolds(env: CueEnv, cue: PolicyCue): boolean {
   }
   if ("vulnerable" in cue) return inRange(st.enemy.vulnerable && st.enemy.vulnerable.expiresAt > frame ? st.enemy.vulnerable.stacks : 0, cue.vulnerable);
   if ("staggered" in cue) return isStaggered(st, frame) === cue.staggered;
+  if ("stagger" in cue) {
+    const max = maxPoise(ctx);
+    const full = isStaggered(st, frame) || max <= 0 ? 100 : (100 * (max - st.stagger.poise)) / max;
+    return inRange(full, cue.stagger);
+  }
   if ("buff" in cue) return st.buffs.some((b) => b.id === cue.buff.buff && b.owner === cue.buff.operator && b.cast === undefined && activeAt(b, frame));
   if ("finalStrikes" in cue) return env.strikes >= cue.finalStrikes.atLeast;
   if ("since" in cue) {

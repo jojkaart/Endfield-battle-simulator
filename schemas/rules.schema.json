@@ -66,6 +66,7 @@
         "status": { "enum": ["solidification", "corrosion", "combustion", "electrification", "lift", "knockdown", "crush", "breach"], "description": "Rank 3: a status on the enemy." },
         "vulnerable": { "$ref": "#/$defs/range", "description": "Rank 3: the enemy's Vulnerable stacks." },
         "staggered": { "type": "boolean", "description": "Rank 3: the enemy is Staggered." },
+        "stagger": { "$ref": "#/$defs/range", "description": "Rank 3: how full the enemy's Stagger bar is, in percent (100 while Staggered)." },
         "buff": {
           "type": "object",
           "required": ["operator", "buff"],
