@@ -217,12 +217,31 @@ Learnability: 2 opener presses, 9 rules (12 presses), cue cost 32,
 complexity 46; the hardest cues are the three "ultimate ready" ones
 (rank 4).
 
-| Simulated player, 0.3 s reaction ± 50%, 10 seeds (common random numbers, 2026-11-16) | Full energy | From zero |
+| Simulated player, 0.3 s reaction ± 50%, 32 fresh seeds (1001–1032; the fixed driver, 2026-11-16) | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **68,609** (1,627) | **63,719** (3,176) |
-| As a bot (0 s) / at 0.6 s | 69,521 / 63,877 | 68,082 / 60,473 |
-| First 60 s against the 60 s timeline (the examples) | 3,513,194 against 4,732,088 (−25.8%) | 2,570,327 against 4,642,409 (−44.6%) |
-| 300 s total against a fixed 300 s search (beam 6, full energy, 36 min) | 20,582,596 against 16,406,168 (**+25.5%**) | |
+| Sustained DPS over 300 s (sd over seeds) | **69,668** (2,657) | **61,716** (2,408) |
+| As a bot (0 s) / at 0.6 s | 70,347 / 66,655 | 66,705 / 60,522 |
+| First 60 s against the 60 s timeline (the examples) | 3,454,357 against 4,732,088 (−27.0%) | 2,506,673 against 4,642,409 (−46.0%) |
+| 300 s total against a fixed 300 s search (beam 6, full energy, 36 min) | 20,900,414 against 16,406,168 (**+27.4%**) | |
+
+The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
+
+**Re-tuned for the fixed driver? No change found (2026-11-16).** The fix
+made this list +5.0% ± 1.0 at full energy and −2.4% ± 1.2 from zero (32
+fresh seeds, paired against the old driver): Si's and Ardelia's
+SP-gated presses now come when the SP is there, which helps a full start
+and spends SP sooner from zero. To win back the zero start:
+- the guided search with the zero-energy start judged as well (38 edits,
+  2 rounds, 4 min) kept nothing: every directed edit lost at full energy
+  on the screening seeds, the best by −1.1% (rule 9 with `shows`);
+- the guided search led by the zero start, judged on full energy too (40
+  edits, 7 min): its best, Si's ultimate waiting for Combustion, gained
+  +1.17% ± 1.16 from zero (noise) and lost −6.6% ± 1.3 at full energy;
+- a short rule search (60 lists, 180 s fights, 3 seeds): its best only
+  dropped the opener and played 68,388 against the list's 72,249 on the
+  same 10 seeds.
+
+The list stays as it is.
 
 **Si's ultimate waits for Twilight (2026-11-16).** The owner asked about
 a one-off surge around 80 s in the rules' damage graph. In that window

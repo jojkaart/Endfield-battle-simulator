@@ -66,6 +66,8 @@ export interface RulesOptions {
   readonly out?: string;
   /** Another list to compare with: the paired gain ± standard error on the usual seeds and on fresh ones. */
   readonly compare?: { readonly list: RuleList; readonly file: string };
+  /** The first reaction-delay seed of the report (default 1; 1001: fresh seeds, never the ones a list was judged on). */
+  readonly firstSeed?: number;
   /** Fresh seeds (1001…) of the comparison (default 32; 0: none). */
   readonly fresh?: number;
   /** Whether the result holds under each other reading of the team's kits' open assumptions (assume.ts). */
@@ -93,6 +95,8 @@ interface EvalRun {
 interface Evaluation {
   readonly list: RuleList;
   readonly learn: Learnability;
+  /** The first reaction-delay seed (RulesOptions.firstSeed). */
+  readonly firstSeed: number;
   /** Seed 1 at the default delay, expected crits: fired counts, per minute, the reference comparison. */
   readonly run: EvalRun;
   /** Sustained DPS per seed at the default delay (expected crits). */
@@ -127,13 +131,13 @@ function seedRuns(data: GameData, scenario: TimelineScenario, list: RuleList, re
   }));
 }
 
-async function evaluate(data: GameData, scenario: TimelineScenario, list: RuleList, reaction: number, seeds: number, workers: number): Promise<Evaluation> {
+async function evaluate(data: GameData, scenario: TimelineScenario, list: RuleList, reaction: number, seeds: number, workers: number, firstSeed = 1): Promise<Evaluation> {
   const crit = distributionCritMode(data, scenario);
   const triggers = crit === "distribution" ? critTriggers(data, scenario) : [];
   const jobs: RulesJob[] = [
-    ...seedRuns(data, scenario, list, reaction, seeds, 1, true),
+    ...seedRuns(data, scenario, list, reaction, seeds, firstSeed, true),
     { scenario, list, options: { reactionSeconds: 0 } },
-    ...Array.from({ length: seeds }, (_, i): RulesJob => ({ scenario, list, options: { reactionSeconds: reaction * 2, seed: i + 1 } })),
+    ...Array.from({ length: seeds }, (_, i): RulesJob => ({ scenario, list, options: { reactionSeconds: reaction * 2, seed: firstSeed + i } })),
   ];
   const res = await runRulesJobs(data, jobs, workers);
   const runs = res.slice(0, seeds);
@@ -142,6 +146,7 @@ async function evaluate(data: GameData, scenario: TimelineScenario, list: RuleLi
   return {
     list,
     learn: learnability(list),
+    firstSeed,
     run: { fired: first.fired, perOperator: first.perOperator, total: first.total, ...(first.detail as NonNullable<RulesResult["detail"]>) },
     dps,
     distribution: policyDistribution(runs.map((r) => r.moments)),
@@ -176,7 +181,7 @@ function formatEvaluation(data: GameData, e: Evaluation, reaction: number, refer
   lines.push(`Learnability: ${learnLine(e.learn)}`);
   lines.push(...describeRuleList(data, e.list, e.run.fired));
   lines.push("");
-  lines.push(`Sustained DPS after the opener (expected crits, ${seeds} seed${seeds === 1 ? "" : "s"} of the reaction delay): ${n0(mean(e.dps))} (sd ${n0(sd(e.dps))}, ${n0(Math.min(...e.dps))}–${n0(Math.max(...e.dps))})`);
+  lines.push(`Sustained DPS after the opener (expected crits, ${seeds} seed${seeds === 1 ? "" : "s"} of the reaction delay${e.firstSeed === 1 ? "" : `, ${e.firstSeed}–${e.firstSeed + seeds - 1}`}): ${n0(mean(e.dps))} (sd ${n0(sd(e.dps))}, ${n0(Math.min(...e.dps))}–${n0(Math.max(...e.dps))})`);
   const d = e.distribution;
   lines.push(`  as a distribution over the delays and crits: sd ${n0(d.sd)} (reaction delays ${n0(d.sdDelays)}, crits ${n0(d.sdCrits)}), 5–95% ${n0(d.p5)}–${n0(d.p95)}${e.critNote ? ` (${e.critNote})` : ""}`);
   lines.push(`Whole fight (${e.run.durationFrames / FPS} s): ${n0(mean(e.totals))} (${n0(mean(e.totals) / (e.run.durationFrames / FPS))} DPS); opener over at ${(e.run.openerEnd / FPS).toFixed(1)} s`);
@@ -220,7 +225,8 @@ export async function rulesCommand(data: GameData, scenario: TimelineScenario, r
     `Rules ${file}: ${team.map((op) => data.operators[op]?.name ?? op).join(", ")}; ${data.operators[controlled]?.name ?? controlled} controlled; ${seconds} s fight; reaction ${reaction} s ± ${POLICY_JITTER * 100}%; cue ranks ${JSON.stringify(POLICY_CUE_RANKS)}; ${codeProvenance()}${assumed.length ? `; assuming ${assumed.map(([k, v]) => `${k}=${v}`).join(", ")}` : ""}`,
     "",
   ];
-  const start = await evaluate(data, fight, list, reaction, seeds, workers);
+  const firstSeed = options.firstSeed ?? 1;
+  const start = await evaluate(data, fight, list, reaction, seeds, workers, firstSeed);
   lines.push(...formatEvaluation(data, start, reaction, reference));
   if (noReference) lines.push(noReference);
 

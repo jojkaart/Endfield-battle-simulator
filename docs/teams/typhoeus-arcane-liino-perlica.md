@@ -217,12 +217,14 @@ complexity 50; the hardest cues are the "ultimate ready" ones (rank 4);
 "hovering" and "Vocalist Stance" are states the game shows on the
 character and the skill button (rank 3).
 
-| Simulated player, 0.3 s reaction ± 50%, 10 seeds (common random numbers; Perlica's 2026-11-16 gear) | Full energy | From zero |
+| Simulated player, 0.3 s reaction ± 50%, 32 fresh seeds (1001–1032; the fixed driver, 2026-11-16) | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **54,771** (1,812) | **50,178** (1,970) |
-| As a bot (0 s) / at 0.6 s | 61,246 / 54,566 | 58,351 / 49,919 |
-| First 60 s against the 60 s timeline (the examples) | 4,150,895 against 5,774,076 (−28.1%) | 2,746,167 against 5,019,331 (−45.3%) |
-| 300 s total against a fixed 300 s search (beam 6, full energy, 86 min; Perlica's earlier gear) | 16,431,240 against 16,925,847 (−2.9%) | |
+| Sustained DPS over 300 s (sd over seeds) | **54,607** (1,566) | **51,076** (1,602) |
+| As a bot (0 s) / at 0.6 s | 61,698 / 53,558 | 56,993 / 50,683 |
+| First 60 s against the 60 s timeline (the examples) | 4,226,194 against 5,774,076 (−26.8%) | 2,858,065 against 5,019,331 (−43.1%) |
+| 300 s total against a fixed 300 s search (beam 6, full energy, 86 min; Perlica's earlier gear) | 16,382,151 against 16,925,847 (−3.2%) | |
+
+The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
 
 **Rule 7 fixed (2026-11-16).** It read only Vocalist Stance, so it also
 fired during Cosmovoice (her ultimate's stance), and its second press

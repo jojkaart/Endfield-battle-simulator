@@ -4,9 +4,34 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 90 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 91 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-16: Rule numbers refreshed for the fixed driver; Ink Melt re-tuning finds nothing
+
+Goal (the lead): after the rule driver's fixes (one start check, event
+stepping), refresh the documented rule numbers, and win back Ink Melt's
+−2.4% from zero if a change holds up.
+
+Done:
+- `efsim rules --first-seed n` (default 1): the report on fresh seeds.
+  The three team pages' "Rules" tables, design.md's results table and the
+  example lists' descriptions now give 32 fresh seeds (1001–1032), full
+  energy and from zero. The old 10-seed numbers are marked superseded in
+  one line. The owner's team: 56,493 / 56,055; Ink Melt: 69,668 / 61,716;
+  Typhoeus's: 54,607 / 51,076. Against the fixed 300 s search: +21.1%,
+  +27.4%, −3.2%.
+- The owner's page: Initial Stroke's +4% was the old driver's. Now
+  leaving it out is noise under the data's reading and +2.8% ± 0.6 under
+  test 109's alternative (`--assumptions`), so test 109 decides it.
+- Ink Melt: neither guided search kept an edit: the default one, judged
+  on the zero start too, and one led by the zero start. Nor did a short
+  random search. From zero the best edit was noise (+1.2% ± 1.2) and lost
+  6.6% at full energy. The example list stays (team page).
+
+Also: the friction report of phase 2
+(docs/friction/2026-11-16-phase-2-friction.md).
 
 ## 2026-11-16: Rule driver phase 2: button model, one start check, event stepping, run checks, assumption switches
 
@@ -284,18 +309,3 @@ in 300 s. A bot gains from it (50%: 73,927 against 69,521), a 0.3 s
 player doesn't. For the rule
 search: moves that add a condition on another operator's visible state
 to an ultimate rule (it found none of this itself).
-
-## 2026-11-16: Liino's rule in Typhoeus's team pressed End Stance
-
-The owner noted Liino goes straight from Vocalist Stance to her ultimate
-(the kit already allows it). The graph of the rules showed End Stance
-presses anyway: rule 7 ("Liino not in Vocalist Stance: Arcane's battle
-skill, then Liino's") also fired during Cosmovoice, and its queued Liino
-press resolved to End Stance when her button had changed (once at 3 s,
-before her first ultimate; three times cutting Cosmovoice short). New in
-the rule format: a press's `"shows"` (only if the button shows that
-skill, else skipped); Liino's Cosmovoice is a visible cue. Rule 7 with
-both: 54,771 against 52,561 sustained (+4.2% on seeds 1–10; +2.6% ± 0.5
-paired on 64 fresh seeds, checked afterwards), from zero
-50,178 against 49,964. Left: one Arcane battle skill at 0.3 s is still
-wasted (her stance shows only when her first projectile lands).

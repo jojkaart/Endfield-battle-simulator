@@ -84,6 +84,7 @@ const USAGE = `Usage:
                 [--duration s]            Fight length (default 300)
                 [--reaction s]            Reaction delay (default 0.3, jittered ±50%, seeded; 0: a bot)
                 [--seeds k]               Delay seeds (default 5)
+                [--first-seed n]          The first of them (default 1; 1001: fresh seeds, for numbers to write down)
                 [--search] [--out file]   Local search over rule lists from this one: the Pareto front of DPS
                                           against complexity, the best (less --penalty a complexity point,
                                           default 0.002) saved to --out
@@ -317,6 +318,7 @@ async function main(argv: string[]): Promise<number> {
       sets: { type: "string" },
       compare: { type: "string" },
       fresh: { type: "string" },
+      "first-seed": { type: "string" },
       assume: { type: "string", multiple: true, default: [] },
       assumptions: { type: "boolean", default: false },
       kit: { type: "string", multiple: true, default: [] },
@@ -590,6 +592,7 @@ async function main(argv: string[]): Promise<number> {
           ...(values.out ? { out: values.out } : {}),
           ...(values.compare ? { compare: { list: readRuleList(values.compare), file: values.compare } } : {}),
           ...(values.fresh !== undefined ? { fresh: Number(values.fresh) } : {}),
+          ...opt("firstSeed", positive(values["first-seed"], "first-seed", true)),
           ...opt("workers", positive(values.workers, "workers", true)),
           assumptions: values.assumptions,
           progress: (line) => process.stderr.write(line + "\n"),

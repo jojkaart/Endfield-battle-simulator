@@ -1898,16 +1898,16 @@ and on fresh seeds 1001… (`--fresh`, default 32), where a list found or
 judged on seeds 1–k isn't biased up. A gain written in the docs should
 come from fresh seeds.
 
-**Results** (sustained DPS over 300 s, 0.3 s delay, 10 seeds, common
-random numbers (2026-11-16; the numbers before them, with the old shared
-stream, were within the seeds' spread of these); each team page's
-"Rules" has the list in plain words):
+**Results** (sustained DPS over 300 s, 0.3 s delay, 32 fresh seeds
+1001–1032, common random numbers, the fixed driver (one start check and
+event stepping, 2026-11-16); the 10-seed numbers before the fixes are
+superseded; each team page's "Rules" has the list in plain words):
 
 | Team | Full energy (sd) | From zero (sd) | First 60 s against the 60 s timeline (full / zero) | 300 s total against a fixed 300 s search (beam 6) | Complexity |
 |---|---|---|---|---|---|
-| The owner's (hand-written; Artful Intent runs its 20 s, 2026-11-16) | 57,096 (1,402) | 55,394 (553) | −9.3% / −7.8% | +22.4% | 44 |
-| Ink Melt (searched) | 65,922 (1,750) | 61,962 (2,916) | −25.3% / −44.6% | +20.5% | 38 |
-| Typhoeus, Arcane, Liino, Perlica (searched; Perlica's gear of 2026-11-16) | 52,561 (1,913) | 49,964 (1,005) | −30.9% / −46.1% | −6.8% | 47 |
+| The owner's (hand-written; Artful Intent runs its 20 s, 2026-11-16) | 56,493 (1,913) | 56,055 (1,309) | −10.5% / −6.8% | +21.1% | 44 |
+| Ink Melt (searched, then the Twilight hold) | 69,668 (2,657) | 61,716 (2,408) | −27.0% / −46.0% | +27.4% | 46 |
+| Typhoeus, Arcane, Liino, Perlica (searched; Perlica's gear of 2026-11-16) | 54,607 (1,566) | 51,076 (1,602) | −26.8% / −43.1% | −3.2% | 50 |
 
 The 60 s timeline is the upper reference for a 60 s window, not
 sustained DPS; the fixed 300 s search (the scenario at 300 s, full

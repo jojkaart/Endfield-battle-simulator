@@ -83,14 +83,20 @@ the numbers with common random numbers): as good or a little better, and calmer.
 Letting it run while wasting the spare SP loses about 20% (44,092); spare
 SP into Estella's battle skill (46,014) costs her combo's trigger, into
 Arcane's (45,486) isn't worth it. Pressing Initial Stroke right away (for
-the Inksoul's haste when it ends) is +4% over leaving it.
+the Inksoul's haste when it ends) was +4% over leaving it with the old
+driver; with the fixed one, leaving it is +0.35% ± 0.83 on 32 fresh seeds
+(noise) under the data's reading and +2.84% ± 0.62 under in-game test
+109's alternative (`efsim rules … --compare … --assumptions`): test 109
+decides it.
 
-| Simulated player, 0.3 s reaction ± 50%, 10 seeds (common random numbers, 2026-11-16) | Full energy | From zero |
+| Simulated player, 0.3 s reaction ± 50%, 32 fresh seeds (1001–1032; the fixed driver, 2026-11-16) | Full energy | From zero |
 |---|---|---|
-| Sustained DPS over 300 s (sd over seeds) | **57,096** (1,402) | **55,394** (553) |
-| As a bot (0 s) / at 0.6 s | 57,838 / 56,262 | 55,099 / 55,810 |
-| First 60 s against the 60 s timeline (the examples) | 3,621,208 against 3,990,122 (−9.3%) | 3,008,149 against 3,263,818 (−7.8%) |
-| 300 s total against a fixed 300 s search (beam 6, full energy) | 17,128,703 against 13,994,230 (**+22.4%**) | |
+| Sustained DPS over 300 s (sd over seeds) | **56,493** (1,913) | **56,055** (1,309) |
+| As a bot (0 s) / at 0.6 s | 57,835 / 55,713 | 56,552 / 55,928 |
+| First 60 s against the 60 s timeline (the examples) | 3,569,656 against 3,990,122 (−10.5%) | 3,042,921 against 3,263,818 (−6.8%) |
+| 300 s total against a fixed 300 s search (beam 6, full energy) | 16,947,851 against 13,994,230 (**+21.1%**) | |
+
+The 10-seed numbers of 2026-11-16 before the driver's fixes (seeds 1–10) are superseded by these (design.md "Rule-based rotations": a stale SP check delayed SP-gated presses).
 
 The earlier list (Si's battle skill at every 100 SP, ending Artful Intent
 early) played 55,462 / 56,370 sustained and was better in the first 60 s
