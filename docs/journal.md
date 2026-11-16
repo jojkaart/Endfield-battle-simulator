@@ -4,9 +4,32 @@
 
 A concise record of each working session: what was attempted, decisions and
 their reasons, dead ends, and anything a future session should know. Newest
-entry first; this page shows the last 10. All 84 entries: [journal/README.md](journal/README.md).
+entry first; this page shows the last 10. All 85 entries: [journal/README.md](journal/README.md).
 Each entry is a file under docs/journal/; add one with
 `npm run journal:new -- "Title"`, then `npm run journal` (CLAUDE.md "Journal and roadmap").
+
+## 2026-11-16: Faster tests, snapshot regeneration, accuracy scoreboard
+
+Architecture review items 2, 5 and 11. **Tests:** buffreplay.test.ts was
+split into three files and search.test.ts into two. The six single tests
+of 25–60 s (whole log checks on 3f78, 4a64 and 4e5e, and `efsim search
+--loop` output) moved to tests/slow/log-cases and search-loop-cli. No
+assertion was dropped. test:logs now runs 3 workers and the pending logs
+in 4 shards, because a log's check time doesn't follow its hit count
+(340 hits can take 59 s). `npm test`, base and branch back to back at
+load 11–12: 629 s with 2 timeouts (exactly the moved tests) against 380 s
+passing. At load 3–5 the base took 383 s. **Snapshots:** `npm run
+snapshots:update` (scripts/snapshots.sh) empties every snapshot and writes
+it again, so the result doesn't depend on which side of a conflict was
+taken. It restores the files if a run fails. **Scoreboard:**
+[accuracy.md](accuracy.md) comes from the verdict snapshots and
+holdout.json (scripts/accuracy.ts; a test keeps it in step). First
+numbers: development 31 fights, plain 47.2%, mismatch 19.8%, mean |damage
+error| 15.8%; hold-out 13 fights, 62.1%, 7.6%, 13.5%; verified 6 fights,
+71.0%, 0 mismatches, 1.7%. The fit measure for "better/worse": plain
+matches, mismatches and |total damage error|. Hold-outs count only in
+totals. It is used in the pending check's failures and shard summaries,
+in `--compare <ref>`, and at the end of premerge.
 
 ## 2026-11-16: Journal entries as files; a one-screen roadmap
 
@@ -265,36 +288,3 @@ is sometimes worse than the 0.3 s player; the gains that held (Ink Melt,
 Typhoeus) were 15–30%. The basic attack's options judged at every frame
 were most of a run's time: now from their earliest start after each
 press (exact; `judgeEveryFrame` checks it).
-
-## 2026-11-15: Typhoeus's shots that hit nothing, in the log check's replay
-
-Goal: the replay idled Typhoeus's hover out after her last logged shot
-where the log shows it went on (open-problems.md). Done: a cast that hit
-nothing (replayCast `missed`: its own hits dropped; what the cast does as
-it starts stays). From the data: a shot uses its Hunting Arrow at its cast
-(floating_attack1–4 frame 1, FinishBuffAdvanced arrow_num before the
-projectile launches), while its Sign, team energy, Nature consumption,
-burst, Stagger and the 5th's SP are its projectile's hit's
-(floating_attack*_01_projhit). The replay (buffreplay.ts `missedCasts`)
-adds the fewest such shots, each at the earliest frame that still works,
-only before a logged shot the kit allows none of her shots for, and only
-where the log shows no shot of hers from the first frame another could
-start; each is listed in the check's report as assumed. Also fixed: a
-logged shot whose step the kit's timing doesn't allow by its frame (the
-log's shots 16 frames apart, the window 18) kept the placement's index
-(shot 1 again); it is now the step her attempt index allows. Results:
-9090 Typhoeus plain 331 → 346 of 457 (one missed shot at 58.7 s; the
-29-hit Hovering ATK run at 63.7–68.0 s and the 93.9 s one gone; her
-totals −2.7 → −4.8%: a phantom shot and burst, 109k, are gone, and her
-weapon's Arts DMG layers after 98 s now run a layer short of the log);
-dbae plain 22 → 33 of 43, totals −5.7 → −2.4% (two missed shots); 9c6e
-(two hits per shot) mismatches 65 → 58 but totals +48 → +62%.
-Development Typhoeus plain 55.2 → 56.4%, mismatch 13.07 → 12.73%, mean
-|operator totals error| 8.91 → 9.96%; team plain 46.9 → 47.0%, mismatch
-21.95 → 21.93%; hold-outs unchanged. Dead ends: 1cd1 isn't missed shots
-(her 4th is logged before the hover ends; the combo is placed 3.2 s after
-its cast event, past a time stop), nor fc63 46.8 s (no shot missing; a
-burst held by stops became a shot). Two placement rules for the latter
-(an orphan burst joins the latest shot; a landing can't join a cast whose
-delayed landing came first) made the totals worse (−7 to −11%) and were
-dropped (open-problems.md). Next: placing casts across others' time stops.

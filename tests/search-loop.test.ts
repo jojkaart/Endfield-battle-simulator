@@ -4,11 +4,10 @@
 import { describe, expect, it } from "vitest";
 import { FPS, LOOP_MAX_FRAMES, SP, STACK_MISMATCH, advance, closingScore, createContext, energyLostIn, init, apply, leadUltimates, searchLoop, searchRotation, simulate, ultimatesUnready, type RotationAction } from "@efsim/engine";
 import { loadGameData } from "@efsim/data";
-import { loopCommand, readScenario } from "../packages/cli/src/simulate.ts";
+import { readScenario } from "../packages/cli/src/simulate.ts";
 
 const data = loadGameData();
-const example = readScenario(new URL("../examples/laevatain-solo.scenario.json", import.meta.url).pathname);
-const { rotation: _r, ...open } = example;
+const { rotation: _r, ...open } = readScenario(new URL("../examples/laevatain-solo.scenario.json", import.meta.url).pathname);
 const options = { beamWidth: 6, plays: 5 };
 const LAEV = "chr_0016_laevat";
 const ULT = "chr_0016_laevat_ultimate_skill";
@@ -64,13 +63,7 @@ describe("opener and loop", () => {
     expect(l.agrees).toBe(l.damageApart <= r.tolerance);
   });
 
-  it("efsim search --loop prints the rounds, the loop and the total that simulate replays (the same again: deterministic)", () => {
-    const text = loopCommand(data, example, { beam: 6, loops: 5 });
-    expect(text).toMatch(/Each round runs from Laevatain's ultimate/);
-    expect(text).toMatch(/Loop: rounds \d+–\d+ play the same actions at the same times/);
-    expect(text).toContain(`Opener and 5 plays of the loop: ${Math.round(r.total).toLocaleString("en-US")} damage in ${(r.frames / FPS).toFixed(1)} s`);
-    // ~50 s on its own (2026-11-14), so over the default 60 s under the full suite's load.
-  }, 180_000);
+  // efsim search --loop as printed (loopCommand, ~50 s): tests/slow/search-loop-cli.test.ts.
 });
 
 describe("closing rounds", () => {
@@ -222,10 +215,5 @@ describe("synchronized burst rounds (--sync)", () => {
     expect([...l.opener, ...plays.flatMap((c) => c.actions.map((a) => ({ ...a, at: (a.at as number) + c.start })))]).toEqual(r.rotation);
   });
 
-  it("efsim search --loop --sync says how rounds are cut and what holding cost", () => {
-    const text = loopCommand(data, example, { beam: 6, loops: 5, sync: true });
-    expect(text).toMatch(/Each round runs from a moment every ultimate is ready \(Laevatain\)/);
-    expect(text).toMatch(/Ultimate energy lost at full bars while held, a play \(\+ lost otherwise to full bars\): Laevatain \d+/);
-    expect(text).toContain(`${Math.round(r.total).toLocaleString("en-US")} damage in ${(r.frames / FPS).toFixed(1)} s`);
-  });
+  // efsim search --loop --sync as printed (loopCommand, ~50 s): tests/slow/search-loop-cli.test.ts.
 });

@@ -8,6 +8,7 @@ the heading `## YYYY-MM-DD: Title` (CLAUDE.md "Journal and roadmap").
 
 ## 2026-11
 
+- [2026-11-16: Faster tests, snapshot regeneration, accuracy scoreboard](2026-11-16-10-faster-tests-snapshot-regeneration-accuracy-scoreboard.md)
 - [2026-11-16: Journal entries as files; a one-screen roadmap](2026-11-16-09-journal-entries-as-files-a-one-screen-roadmap.md)
 - [2026-11-16: Architecture review](2026-11-16-08-architecture-review.md)
 - [2026-11-16: Ink Melt's one-off surge at 80 s](2026-11-16-07-ink-melt-s-one-off-surge-at-80-s.md)

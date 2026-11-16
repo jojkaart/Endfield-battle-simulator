@@ -13,7 +13,6 @@ import {
   type ActiveBuff, type Build, type GameData, type KitBuff, type KitHit, type KitTrigger, type Modifier, type OperatorKit, type RotationAction, type TimelineScenario,
 } from "@efsim/engine";
 import { loadGameData, loadKits, withGameBuff } from "@efsim/data";
-import { checkLog, readLogFixture } from "@efsim/cli";
 
 const data = loadGameData();
 const readBuild = (f: string) => JSON.parse(readFileSync(new URL(`../examples/${f}`, import.meta.url), "utf8")) as Build;
@@ -158,14 +157,7 @@ describe("V2: periodic damage keeps its applier's attacker side (takeAtkSnapshot
     expect(() => loadEquipment(on({ event: "fightStart" }, { atkSnapshot: true }))).toThrow(/atkSnapshot is for the hits of a buffTick trigger/);
   });
 
-  it("zmdlogs check: 4e5e's three Combustion ticks match with Camille's DMG bonuses at the reaction (Lustrous Carmine's ATK applied)", () => {
-    const fx = readLogFixture(new URL("../fixtures/zmdlogs-4e5e1390085e.json", import.meta.url).pathname);
-    // Lustrous Carmine's ATK +9.6% acts on every hit from 49418 ms, where the log stops listing it (the kit-buff replay keeps it on).
-    const atk = { buff: "buff_wpn_lance_0015_atkup", zone: "atk" as const, element: null, value: 0.096 };
-    const quantified = { ...fx, hits: fx.hits.map((h) => (h.t >= 49418 && !h.effects.some((e) => e.buff === atk.buff) ? { ...h, effects: [...h.effects, atk] } : h)) };
-    const ticks = checkLog(data, quantified, { buffs: "log" }).filter((v) => v.hit.event === "buff_common_burning_status");
-    expect(ticks.map((v) => [v.hit.t, v.kind])).toEqual([[66004, "match"], [67447, "match"], [68449, "match"]]);
-  });
+  // zmdlogs check: 4e5e's three Combustion ticks (a whole log check): tests/slow/log-cases.test.ts.
 });
 
 describe("B2: a stack cap (maxStackCntKey) the applying skill doesn't have", () => {

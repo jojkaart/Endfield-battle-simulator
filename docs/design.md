@@ -2320,11 +2320,24 @@ exactly and additively across the operators whose effects contributed.
   plain, plain + assumed or total matches, no more fallbacks), and
   `log-verdicts-pending.json` those of every pending fixture (exactly: they
   only pin the current state). A deliberate change: `npm run
-  snapshots:update` (`EFSIM_UPDATE_SNAPSHOTS=1`), and the file's diff goes
-  in the commit with the reason.
-- **`npm test`** runs everything but the slow log checks; **`npm run
-  test:logs`** (`tests/slow/`, a few minutes: the pending fixtures in two
-  shards, and the negative control) runs them, and `npm run check` runs both.
+  snapshots:update` (scripts/snapshots.sh: every snapshot emptied and
+  written again with `EFSIM_UPDATE_SNAPSHOTS=1`, so the result depends only
+  on the code), and the file's diff goes in the commit with the reason.
+- **The accuracy scoreboard** (docs/accuracy.md, scripts/accuracy.ts) is
+  computed from the verdict snapshots and the hold-out split: per group
+  (verified, development, hold-out, earlier pending) the shares of plain
+  matches, matches and mismatches, the mean |total damage error| and the
+  fights within ±5%, and the same per operator over every log but the
+  hold-outs. `snapshots:update` writes it, a test checks it matches the
+  snapshots, and `node scripts/accuracy.ts --compare <ref>` gives the change
+  against another commit with each log's direction by the fit measure (more
+  plain matches, fewer mismatches, a smaller |damage error|; hold-outs only
+  as counts). The pending check's failures and shard summaries use the
+  same measure.
+- **`npm test`** runs everything but the slow checks; **`npm run
+  test:logs`** (`tests/slow/`, a few minutes: the pending fixtures in four
+  shards, the negative control, the search's beam ratchets, and single
+  tests of tens of seconds) runs them, and `npm run check` runs both.
 
 ## Code layout (proposed)
 
