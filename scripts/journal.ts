@@ -131,14 +131,12 @@ export function newFileName(date: string, title: string, existing: Entry[]): str
 }
 
 /**
- * The dated `## ` entries of a journal written the old way (links relative to docs/), oldest first. Conflict markers
- * are dropped, so a conflicted docs/journal.md can be read as it is. An entry runs to the next `#`/`##` heading.
+ * The dated `## ` entries of a journal written the old way (links relative to docs/), oldest first. An entry runs to
+ * the next `#`/`##` heading. A conflicted docs/journal.md can be read as it is: conflict markers are dropped, and an
+ * entry also ends where one side of a conflict ends (`|||||||`, `=======`), so one side's text isn't glued to the other's.
  */
 export function splitOldJournal(text: string): { heading: string; text: string }[] {
-  const lines = text
-    .replace(/\r\n/g, "\n")
-    .split("\n")
-    .filter((l) => !/^(<{7}|\|{7}|={7}|>{7})( |$)/.test(l));
+  const lines = text.replace(/\r\n/g, "\n").split("\n");
   const out: { heading: string; text: string }[] = [];
   let cur: string[] | undefined;
   const flush = () => {
@@ -146,7 +144,9 @@ export function splitOldJournal(text: string): { heading: string; text: string }
     cur = undefined;
   };
   for (const l of lines) {
-    if (/^##? /.test(l)) {
+    if (/^(<{7}|>{7})( |$)/.test(l)) continue;
+    if (/^(\|{7}|={7})( |$)/.test(l)) flush();
+    else if (/^##? /.test(l)) {
       flush();
       if (HEADING.test(l)) cur = [l];
     } else if (l.startsWith("<!-- Built by `npm run journal`")) {

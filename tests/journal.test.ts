@@ -96,6 +96,26 @@ describe("adopting entries written the old way", () => {
     expect(plan.differ).toEqual(["2026-11-15-03-edited-old-entry.md"]);
   });
 
+  it("ends an entry where its side of a conflict ends", () => {
+    const conflicted = [
+      "<<<<<<< HEAD",
+      "## 2026-11-16: Architecture review",
+      "",
+      "See [r](roadmap.md).",
+      "=======",
+      "Older entries: the old header, edited on the branch.",
+      "",
+      "## 2026-11-17: Branch work",
+      "",
+      "B.",
+      ">>>>>>> branch",
+    ].join("\n");
+    expect(adoptPlan(splitOldJournal(conflicted), existing)).toEqual({
+      write: [{ file: "2026-11-17-01-branch-work.md", text: "## 2026-11-17: Branch work\n\nB.\n" }],
+      differ: [],
+    });
+  });
+
   it("numbers several new entries of one date in their order (the lower one older)", () => {
     const two = "## 2026-11-17: Second\n\nB.\n\n## 2026-11-17: First\n\nA.\n";
     expect(adoptPlan(splitOldJournal(two), existing).write.map((w) => w.file)).toEqual([
