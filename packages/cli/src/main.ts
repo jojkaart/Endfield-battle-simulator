@@ -23,6 +23,7 @@ import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
 import { formatPayoffs, runPayoffs } from "./payoffs.ts";
 import { formatGear, gearAscent, gearCandidates, logFixtureFiles, type GearCandidatesFile } from "./gear.ts";
 import { readRuleList, rulesCommand } from "./rules.ts";
+import { formatGuided, guidedSearch, writeGuided } from "./guided.ts";
 import { diagnose, formatDiagnosis } from "./diagnose.ts";
 import { formatRuleGear, gearOnRules } from "./gearrules.ts";
 
@@ -84,6 +85,23 @@ const USAGE = `Usage:
                 [--search-seconds s]      Searched fights' length (default 180)
                 [--search-seeds k]        Seeds per list in the search (default 2)
                 [--front n]               Front lists scored again over the whole fight (default 8)
+                [--guided] [--out file]   The payoff-guided search instead: each damage window's ideal combo (every
+                                          multiplier the team puts on it, on every hit) and what each missing one
+                                          costs; edits aimed at the biggest losses (hold the giver for the window's
+                                          visible cue, chain the presses, start the window when the multiplier is up,
+                                          save SP, "shows", spare SP; a few random moves), screened on common seeds,
+                                          the best played on more, one kept a round when its gain clears twice its
+                                          standard error; achievement before / after; the final list to --out
+                [--rounds n] [--edits n] [--random n]  Rounds at most (default 6), directed edits a round
+                                          (default 28), random ones added (default 4)
+                [--screen-seeds k] [--confirm-seeds k] [--extend n]  Seeds each edit is screened on (default 6),
+                                          the best n (default 4) are played on (default 32)
+                [--max-seeds k]           Seeds a close call (1.2 to 2 standard errors) is taken to (default 64)
+                [--also <scenario.json>]  A second start of the fight (the zero-energy scenario): the best edits are
+                                          played on it too, and one is kept only if it isn't worse there (by more
+                                          than one standard error)
+                [--check-seeds k] [--workers n]  The final list against the start on k fresh seeds (default the
+                                          confirm seeds; 0: none); worker threads (default: cores less one)
   efsim payoffs <scenario.json>           The team's payoff table (engine probes): what each step produces and
                                           which combo windows it opens, each damaging step's ceiling under the
                                           best bundle of what the team achieves (and who achieves each piece),
@@ -229,6 +247,15 @@ async function main(argv: string[]): Promise<number> {
       passes: { type: "string" },
       duration: { type: "string" },
       search: { type: "boolean", default: false },
+      guided: { type: "boolean", default: false },
+      "screen-seeds": { type: "string" },
+      "confirm-seeds": { type: "string" },
+      "check-seeds": { type: "string" },
+      "max-seeds": { type: "string" },
+      also: { type: "string" },
+      extend: { type: "string" },
+      edits: { type: "string" },
+      random: { type: "string" },
       reaction: { type: "string" },
       iterations: { type: "string" },
       "search-seconds": { type: "string" },
@@ -420,6 +447,38 @@ async function main(argv: string[]): Promise<number> {
         const penalty = values.penalty === undefined ? undefined : Number(values.penalty);
         if (penalty !== undefined && !(penalty >= 0)) throw new Error("--penalty must be ≥ 0");
         const opt = (k: string, v: number | undefined) => (v === undefined ? {} : { [k]: v });
+        if (values.guided) {
+          const count = (v: string | undefined, name: string, min: number) => {
+            if (v === undefined) return undefined;
+            const x = Number(v);
+            if (!(Number.isInteger(x) && x >= min)) throw new Error(`--${name} must be a whole number ≥ ${min}`);
+            return x;
+          };
+          const scenario = withBattleOptions(readScenario(args[0] as string));
+          const team = scenario.team.map((b) => b.operator);
+          const g = await guidedSearch(data(), scenario, readRuleList(args[1] as string), {
+            ...opt("seconds", positive(values.duration, "duration")),
+            ...opt("reaction", reaction),
+            ...opt("screenSeeds", count(values["screen-seeds"], "screen-seeds", 2)),
+            ...opt("confirmSeeds", count(values["confirm-seeds"], "confirm-seeds", 2)),
+            ...opt("checkSeeds", count(values["check-seeds"], "check-seeds", 0)),
+            ...opt("maxSeeds", count(values["max-seeds"], "max-seeds", 2)),
+            ...(values.also ? { also: { scenario: withBattleOptions(readScenario(values.also)), label: values.also } } : {}),
+            ...opt("extend", count(values.extend, "extend", 1)),
+            ...opt("rounds", count(values.rounds, "rounds", 1)),
+            ...opt("candidates", count(values.edits, "edits", 1)),
+            ...opt("random", count(values.random, "random", 0)),
+            ...opt("penalty", penalty),
+            ...opt("workers", count(values.workers, "workers", 1)),
+            progress: (line) => process.stderr.write(line + "\n"),
+          });
+          text = formatGuided(data(), g, `Guided rule search: ${team.map((op) => data().operators[op]?.name ?? op).join(", ")}`, args[1] as string);
+          if (values.out) {
+            writeGuided(g, values.out, args[1] as string);
+            text += `\n\nWrote ${values.out} (the final list).`;
+          }
+          break;
+        }
         text = rulesCommand(data(), withBattleOptions(readScenario(args[0] as string)), readRuleList(args[1] as string), args[1] as string, {
           ...opt("seconds", positive(values.duration, "duration")),
           ...opt("reactionSeconds", reaction),
