@@ -177,43 +177,43 @@
   ]
  },
  "estella-si-akekuri-arcane-zero.scenario.json": {
-  "total": 3263818.223,
-  "hits": 471,
+  "total": 3273602.619,
+  "hits": 470,
   "casts": 232,
   "perOperator": {
-   "chr_0019_karin": 185494.572,
-   "chr_0036_jsspsi": 1553505.004,
-   "chr_0021_whiten": 1240007.01,
-   "chr_0032_lizhiyan": 284811.637
+   "chr_0019_karin": 185430.229,
+   "chr_0036_jsspsi": 1562880.519,
+   "chr_0021_whiten": 1239839.563,
+   "chr_0032_lizhiyan": 285452.307
   },
-  "digest": "497ae1d55d14",
+  "digest": "1b2807da9719",
   "windows": [
    "1b6590c45e71",
    "2049f5b0a8da",
-   "5a554eeef8d2",
-   "b0312a0889f2",
-   "469e6ecd5057",
-   "53ff502d083c"
+   "211ec1b5aed0",
+   "727f6ae31fd1",
+   "cdbb3d520b6e",
+   "f492defc2c7d"
   ]
  },
  "estella-si-akekuri-arcane.scenario.json": {
-  "total": 3990121.792,
+  "total": 4006615.576,
   "hits": 462,
   "casts": 233,
   "perOperator": {
-   "chr_0019_karin": 268393.227,
-   "chr_0036_jsspsi": 1678664.969,
-   "chr_0021_whiten": 1727620.733,
-   "chr_0032_lizhiyan": 315442.863
+   "chr_0019_karin": 269995.682,
+   "chr_0036_jsspsi": 1681552.904,
+   "chr_0021_whiten": 1732363.275,
+   "chr_0032_lizhiyan": 322703.716
   },
-  "digest": "fb4c28aec46d",
+  "digest": "4dc90c08ef42",
   "windows": [
    "961fc044a675",
-   "9a75bdf208b5",
+   "265ede95721a",
    "9e8d63135ca0",
-   "222026f0b714",
+   "8d58cf520a15",
    "f6f66a17ec73",
-   "73b6209c02f3",
+   "d90167e5ca84",
    "5545ed3a2288"
   ]
  },
@@ -262,43 +262,43 @@
   ]
  },
  "ink-melt-zero.scenario.json": {
-  "total": 4642408.983,
+  "total": 4722319.264,
   "hits": 600,
   "casts": 236,
   "perOperator": {
-   "chr_0016_laevat": 2571613.148,
-   "chr_0036_jsspsi": 1350580.718,
-   "chr_0006_wolfgd": 351674.308,
-   "chr_0025_ardelia": 368540.81
+   "chr_0016_laevat": 2622676.204,
+   "chr_0036_jsspsi": 1367919.562,
+   "chr_0006_wolfgd": 360693.492,
+   "chr_0025_ardelia": 371030.006
   },
-  "digest": "8f4933dc1539",
+  "digest": "305b2cda0c4c",
   "windows": [
    "bc88416752a9",
    "f52be26c3ecd",
    "e917d264ab13",
    "a2c89a6cdc75",
-   "de20a68a9935",
-   "94b927a7d8d3",
-   "8e2412a29354"
+   "283656f9ce3e",
+   "b13969906911",
+   "be865e8582e1"
   ]
  },
  "ink-melt.scenario.json": {
-  "total": 4732088.191,
+  "total": 4746870.265,
   "hits": 581,
   "casts": 207,
   "perOperator": {
-   "chr_0016_laevat": 2724029.352,
-   "chr_0036_jsspsi": 1222238.416,
-   "chr_0006_wolfgd": 461271.689,
-   "chr_0025_ardelia": 324548.735
+   "chr_0016_laevat": 2729664.163,
+   "chr_0036_jsspsi": 1225993.625,
+   "chr_0006_wolfgd": 463320.514,
+   "chr_0025_ardelia": 327891.963
   },
-  "digest": "01683e0aa11e",
+  "digest": "3754d22d66e4",
   "windows": [
    "c5db5ea5dcf6",
    "5cafbe30498a",
    "dfe7c02ddb59",
-   "2b9eb60450c0",
-   "3ceddd219d5d",
+   "0408f7548dc1",
+   "f067babdc7cb",
    "3eab8a4db2b8",
    "79c6ee64e4eb"
   ]
@@ -437,19 +437,19 @@
   ]
  },
  "si-laevatain-liino-gilberta.scenario.json": {
-  "total": 2998384.655,
-  "hits": 166,
+  "total": 3077894.88,
+  "hits": 165,
   "casts": 74,
   "perOperator": {
-   "chr_0036_jsspsi": 733446.946,
-   "chr_0016_laevat": 1924218.681,
-   "chr_0035_liino": 191102.482,
-   "chr_0013_aglina": 149616.546
+   "chr_0036_jsspsi": 747764.458,
+   "chr_0016_laevat": 1985639.79,
+   "chr_0035_liino": 193621.181,
+   "chr_0013_aglina": 150869.451
   },
-  "digest": "d66e585d6757",
+  "digest": "95eca931b887",
   "windows": [
-   "2a0edc0a427b",
-   "defe64ad9fe4"
+   "421144530dcb",
+   "17e456be888a"
   ]
  },
  "si-laevatain.scenario.json": {

@@ -9,7 +9,7 @@ const build = JSON.parse(readFileSync(new URL("../examples/laevatain-forgeborn.j
 const L = "chr_0016_laevat_";
 const op = build.operator;
 const chain: RotationAction[] = ["attack1", "attack2", "attack3", "attack4", "attack5"].map((s) => ({ operator: op, skill: L + s }));
-// Rhodagn, not control-immune here (as a Boss he is by default: clock.ts controlImmune), so freezes show.
+// Rhodagn, not control-immune (said here; by default he isn't either: clock.ts controlImmune), so freezes show.
 const scenario = (rotation: RotationAction[]): TimelineScenario => ({
   team: [build],
   target: { enemy: "eny_0051_rodin", level: 90, controlImmune: false },
@@ -1253,16 +1253,19 @@ describe("timeline: what ends with a cast, cast blocks, mid-air, control immunit
     }
     const imm: KitTrigger = { id: "imm", on: { event: "cast", kinds: ["basic"] }, by: "self", maxCount: 1, do: [{ kind: "apply", applies: [{ kind: "infliction", element: "fire" }, { kind: "control", status: "immobilization", seconds: 1, freezes: true }] }] };
     const g = withKit({ triggers: [...kit.triggers, imm] });
-    const heat = (controlImmune: boolean | undefined) => {
-      const ctx = createContext(g, { ...scenario([a("attack1")]), target: { enemy: "eny_0051_rodin", level: 90, ...(controlImmune !== undefined ? { controlImmune } : {}) } });
+    const heat = (controlImmune: boolean | undefined, enemy = "eny_0051_rodin") => {
+      const ctx = createContext(g, { ...scenario([a("attack1")]), target: { enemy, level: 90, ...(controlImmune !== undefined ? { controlImmune } : {}) } });
       return advance(ctx, apply(ctx, init(ctx), a("attack1")), 5).enemy.infliction?.expiresAt;
     };
     expect(heat(false)).toBe(630);
     expect(heat(true)).toBe(600);
-    // Unsaid, a Boss (rank 2: Rhodagn) is control-immune (4a64e58e75ad: Si's freeze holding Arcane's debuffs on
-    // eny_0134 halves Arcane's plain matches; only the freezer's own debuffs are held there).
+    // Unsaid, an enemy freezes, a Boss too (in-game test 104: most bosses do; Rhodagn is rank 2), unless the data
+    // lists it as control-immune (packages/data/src/enemyFacts.ts: eny_0134, where Si's freeze holding Arcane's
+    // debuffs halves Arcane's plain matches in 4a64e58e75ad).
     expect(data.enemies["eny_0051_rodin"]?.rank).toBe(2);
-    expect(heat(undefined)).toBe(600);
+    expect(heat(undefined)).toBe(630);
+    expect(data.enemies["eny_0134_jsspsi"]?.controlImmune).toBe(true);
+    expect(heat(undefined, "eny_0134_jsspsi")).toBe(600);
   });
 
   it("a combo's cast event carries its window's count", () => {
@@ -1397,7 +1400,7 @@ describe("timeline: delays under Haste, freezes with before-damage triggers", ()
       return [s.buffs.find((b) => b.id === "debuff")?.expiresAt, s.buffs.find((b) => b.id === "other")?.expiresAt];
     };
     expect(ends(false)).toEqual([6 + 150 + 30, 330]);
-    // 4a64e58e75ad (eny_0134, a Boss): Si's freeze holding Arcane's will_burst too halves Arcane's plain matches.
+    // 4a64e58e75ad (eny_0134, control-immune): Si's freeze holding Arcane's will_atk too halves Arcane's plain matches.
     expect(ends(true)).toEqual([6 + 150 + 30, 300]);
   });
 });

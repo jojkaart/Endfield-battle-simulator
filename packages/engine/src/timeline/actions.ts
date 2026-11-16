@@ -112,15 +112,15 @@ export function runTriggers(ctx: TimelineContext, state: TimelineState, initial:
     // after its damage, not in the before-damage run, so buffs the hit applies are frozen with the enemy too.
     const engine = reactOnInitial || !first.has(e);
     // A control status that freezes the enemy stops its clock and every debuff on it (overlapping freezes count once).
-    // A control-immune enemy (clock.ts controlImmune: a Boss) isn't frozen, but the freezing operator's own debuffs on
-    // it are still held (overlapping freezes of theirs count once). Non-bosses: everyone's debuffs held fits the logs,
-    // b6aa15281db4 (Si's freeze ~37.8 s holds Xaihi's cryo_fragility: Si 89 plain, 77 with only hers held),
-    // 489c0be3e162 (Rossi's holds Arcane's will_burst ~45.5 s: Arcane 132 plain, 123 without), 791020039384
-    // (Tangtang's stare: damage error −8.9%, −11.7% without). Bosses: only the freezer's own, 4a64e58e75ad (eny_0134:
-    // Si's freeze holding Arcane's will_burst too halves Arcane's plain matches 64 → 32, Si 37 → 25), c3c735dbb022
-    // (Si 86 plain, 82 with everyone's held), while Si's Artful Intent ends fit only with hers held (abfd4b7478ec
-    // Rhodagn −318 / +7 / −174 ms against 1318 / 393 / 1174 unheld; c3c7 0 / −4 / −15 against 0 / 971 / 949;
-    // 0c14fb3ce77d 1 / 5 against 834 / 39).
+    // A control-immune enemy (clock.ts controlImmune: listed per enemy from the logs) isn't frozen, but the freezing
+    // operator's own debuffs on it are still held (overlapping freezes of theirs count once). Frozen enemies:
+    // everyone's debuffs held fits the logs, b6aa15281db4 (Si's freeze ~37.8 s holds Xaihi's cryo_fragility: Si 89
+    // plain, 77 with only hers held), 489c0be3e162 (Arcane's will_burst ~45.5 s: Arcane 132 plain, 123 without),
+    // 791020039384 (Tangtang's stare: damage error −8.9%, −11.7% without). Immune ones: only the freezer's own,
+    // 4a64e58e75ad (eny_0134: Si's freeze holding Arcane's will_atk too halves Arcane's plain matches 64 → 32, Si 37 →
+    // 25), c3c735dbb022 (Chiliarch: holding Ardelia's Arts Susceptibility, Ardelia 139 → 122 plain), while Si's Artful
+    // Intent ends fit only with hers held (c3c7 0 / −4 / −15 ms against 0 / 971 / 949 unheld; 0c14fb3ce77d 1 / 5
+    // against 834 / 39; abfd4b7478ec, Rhodagn, now frozen whole: −318 / +7 / −174 against 1318 / 393 / 1174).
     if (engine && e.type === "status" && e.event.kind === "control" && e.event.freezes) {
       const end = e.frame + e.event.frames;
       if (!controlImmune(ctx)) {

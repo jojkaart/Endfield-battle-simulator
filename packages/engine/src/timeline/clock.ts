@@ -86,12 +86,12 @@ export function operatorClockDue(st: TimelineState, operator: string, from: numb
  * Whether the enemy's control-immune (the game's tag 188749032, which skips a control status's freeze: Tangtang's
  * OLDEN STARE, Si's Immobilization; the freezing operator's own debuffs on it are still held: actions.ts runTriggers).
  * No table gives the tag (only Tangtang's and Si's buff files carry it, no enemy): the scenario's target says, or else
- * a Boss (rank 2, EnemyTemplateDisplayInfoTable displayType) is. 4a64e58e75ad (eny_0134): Si's freeze holding Arcane's
- * debuffs halves Arcane's plain matches (64 → 32); b7b3762d5da8 (Rhodagn, Tangtang's stare) is the same either way
- * since Arts Bursts run on their operator's clock. In-game tests 37 and 104.
+ * the enemy's `controlImmune` (set from the logs per enemy: packages/data/src/enemyFacts.ts). Every other enemy
+ * freezes, bosses too (in-game test 104, the owner 2026-11-16: most bosses do; until then every Boss was taken as
+ * immune). Rhodagn's five logs with a freezer check the same either way.
  */
 export function controlImmune(ctx: TimelineContext): boolean {
-  return ctx.scenario.target.controlImmune ?? ctx.data.enemies[ctx.scenario.target.enemy]?.rank === 2;
+  return ctx.scenario.target.controlImmune ?? ctx.data.enemies[ctx.scenario.target.enemy]?.controlImmune === true;
 }
 
 /**
