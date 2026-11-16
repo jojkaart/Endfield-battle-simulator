@@ -348,6 +348,16 @@ export interface TimelineState {
    */
   readonly energyOverflow: Readonly<Record<string, number>>;
   /**
+   * Per operator: ultimate energy gained so far (after its efficiency, before the cap: what reached the bar or
+   * overflowed it), by source (`sp`: the team's natural SP spent; `hits`: its own hits' energy; `kit:<trigger>`: a kit
+   * trigger's grant). A statistic for the rules' diagnosis (policydiag.ts); nothing in the fight reads it.
+   */
+  readonly energyGained: Readonly<Record<string, Readonly<Record<string, number>>>>;
+  /** Per operator: ultimate energy taken from its bar so far (ultimates' costs, kit actions that empty it). A statistic, as energyGained. */
+  readonly energySpent: Readonly<Record<string, number>>;
+  /** Team SP granted past the cap so far (regeneration at the cap aside). A statistic, as energyGained. */
+  readonly spOverflow: number;
+  /**
    * Per operator with a combo trigger: the open combo window, if any; a
    * window of its own skills (an `openCombo` with `skills`) is under
    * `<operator>>skillId` (windowKey). `whileBuff`: open only while that

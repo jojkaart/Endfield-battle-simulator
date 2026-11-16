@@ -22,6 +22,8 @@ import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
 import { formatPayoffs, runPayoffs } from "./payoffs.ts";
 import { formatGear, gearAscent, gearCandidates, logFixtureFiles, type GearCandidatesFile } from "./gear.ts";
 import { readRuleList, rulesCommand } from "./rules.ts";
+import { diagnose, formatDiagnosis } from "./diagnose.ts";
+import { formatRuleGear, gearOnRules } from "./gearrules.ts";
 
 const USAGE = `Usage:
   efsim find <text>                       Look up operator, weapon, gear and enemy IDs by name
@@ -88,6 +90,20 @@ const USAGE = `Usage:
                                           rotation, how close its casts came to their ceilings
                 [--top n] [--json]        Rows printed per table (default 15; data is never cut); everything as JSON
                 [--depth n]               Longest chain (default 6)
+  efsim diagnose <scenario.json> <rules.json>  What a rule list leaves on the table, averaged over reaction-delay
+                                          seeds (common random numbers): per operator ultimate energy gained
+                                          (by source), spent, wasted at the cap, time ready but not cast (and
+                                          why), combos lit but unused, team SP at the cap, what drives the main
+                                          damage dealer (other operators' effects and enemy states on its hits),
+                                          damage shares, sustained DPS's spread (reaction delays vs crits);
+                                          then marginal values: team sustained DPS for one gear-line-sized step
+                                          of each stat gear offers on each operator; findings in plain words
+                [--duration s] [--reaction s]  As for rules (default 300, 0.3)
+                [--seeds k]               Seeds of the diagnosis (default 5)
+                [--marginal-seeds k]      Seeds of each marginal value (default 4; 0: none)
+                [--operator <op>]         Only this operator's marginal values (repeatable)
+                [--workers n]             Worker threads (default: cores less one; 1: none)
+                [--json]                  Everything as JSON
   efsim gear <scenario.json>              Each operator's gear from the loadouts seen in the logs (fixtures; hold-outs left out), scored
                                           on the scenario's rotation with only that operator's gear swapped (full artifice), best
                                           per operator with the others fixed until nothing changes; a table per operator
@@ -97,7 +113,16 @@ const USAGE = `Usage:
                 [--repairs n]             Where steps of the rotation can't be played with a loadout: start each later (up to 2 s,
                                           or with a later step) or drop it, if at most n (default 20; 0: never)
                 [--search-beam n]         With more: a narrow search at beam n (default 12)
-                [--passes n] [--out file] Passes at most (default 4); save the scenario with the chosen gear (its rotation kept)
+                [--passes n] [--out file] Passes at most (default 4; 3 with --rules); save the scenario with the chosen gear (its rotation kept)
+                [--rules <rules.json>]    Score loadouts by playing this rule list instead (sustained DPS over reaction-delay
+                                          seeds, common random numbers; a change only when its gain is beyond twice its
+                                          standard error); candidates also from the diagnosis' marginal values (piece swaps
+                                          that keep the active sets, each set's best loadout screened by play); prints the
+                                          diagnosis before and after (efsim diagnose)
+                [--seeds k] [--duration s] [--reaction s] [--marginal-seeds k] [--workers n]  With --rules (default 6 seeds,
+                                          300 s, 0.3 s, 4, cores less one)
+                [--generated n] [--sets n]  With --rules: swaps per operator per pass (default 4), set builds kept after
+                                          screening (default 2)
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
                                           (fixtures/multi-target/ when it hit several enemies)
                 [--enemy-level n]         (default: the stage's, else inferred from total damage on a clear)
@@ -207,6 +232,12 @@ async function main(argv: string[]): Promise<number> {
       "search-seeds": { type: "string" },
       penalty: { type: "string" },
       front: { type: "string" },
+      "marginal-seeds": { type: "string" },
+      operator: { type: "string", multiple: true, default: [] },
+      workers: { type: "string" },
+      rules: { type: "string" },
+      generated: { type: "string" },
+      sets: { type: "string" },
       help: { type: "boolean", short: "h", default: false },
     },
   });
@@ -401,6 +432,39 @@ async function main(argv: string[]): Promise<number> {
         });
       }
       break;
+    case "diagnose":
+      need(2);
+      {
+        const count = (v: string | undefined, name: string, min: number) => {
+          if (v === undefined) return undefined;
+          const x = Number(v);
+          if (!(Number.isInteger(x) && x >= min)) throw new Error(`--${name} must be a whole number ≥ ${min}`);
+          return x;
+        };
+        const reaction = values.reaction === undefined ? undefined : Number(values.reaction);
+        if (reaction !== undefined && !(reaction >= 0)) throw new Error("--reaction must be a number of seconds ≥ 0");
+        const seconds = values.duration === undefined ? undefined : Number(values.duration);
+        if (seconds !== undefined && !(seconds > 0)) throw new Error("--duration must be > 0");
+        const scenario = readScenario(args[0] as string);
+        const team = scenario.team.map((b) => b.operator);
+        const ops = values.operator.map((x) => {
+          const id = team.find((op) => op === x || data().operators[op]?.name.toLowerCase() === x.toLowerCase());
+          if (!id) throw new Error(`--operator ${x}: not in the scenario's team`);
+          return id;
+        });
+        const opt = (k: string, v: number | undefined) => (v === undefined ? {} : { [k]: v });
+        const d = await diagnose(data(), scenario, readRuleList(args[1] as string), {
+          ...opt("seconds", seconds),
+          ...opt("reaction", reaction),
+          ...opt("seeds", count(values.seeds, "seeds", 1)),
+          ...opt("marginalSeeds", count(values["marginal-seeds"], "marginal-seeds", 0)),
+          ...opt("workers", count(values.workers, "workers", 1)),
+          ...(ops.length ? { operators: ops } : {}),
+          progress: (line) => process.stderr.write(line + "\n"),
+        });
+        text = values.json ? JSON.stringify(d, null, 2) : formatDiagnosis(data(), d, `Diagnosis of ${args[1]} on ${args[0]}: ${team.map((op) => data().operators[op]?.name ?? op).join(", ")}`);
+      }
+      break;
     case "payoffs":
       need(1);
       {
@@ -430,6 +494,31 @@ async function main(argv: string[]): Promise<number> {
         const beam = whole(values["search-beam"], "search-beam", 1);
         const passes = whole(values.passes, "passes", 1);
         const repairs = whole(values.repairs, "repairs", 0);
+        if (values.rules) {
+          const reaction = values.reaction === undefined ? undefined : Number(values.reaction);
+          if (reaction !== undefined && !(reaction >= 0)) throw new Error("--reaction must be a number of seconds ≥ 0");
+          const seconds = values.duration === undefined ? undefined : Number(values.duration);
+          if (seconds !== undefined && !(seconds > 0)) throw new Error("--duration must be > 0");
+          const opt = (k: string, v: number | undefined) => (v === undefined ? {} : { [k]: v });
+          const rg = await gearOnRules(data(), scenario, readRuleList(values.rules), candidates, {
+            keep,
+            ...opt("seconds", seconds),
+            ...opt("reaction", reaction),
+            ...opt("seeds", whole(values.seeds, "seeds", 2)),
+            ...opt("marginalSeeds", whole(values["marginal-seeds"], "marginal-seeds", 0)),
+            ...opt("workers", whole(values.workers, "workers", 1)),
+            ...opt("passes", passes),
+            ...opt("generated", whole(values.generated, "generated", 0)),
+            ...opt("sets", whole(values.sets, "sets", 0)),
+            progress: (line) => process.stderr.write(line + "\n"),
+          });
+          text = formatRuleGear(data(), rg, `efsim gear --rules ${values.rules} on ${args[0]}`);
+          if (values.out) {
+            writeGearScenario(args[0] as string, values.out, rg.team);
+            text += `\n\nWrote ${values.out} (the chosen gear; the rotation as it was).`;
+          }
+          break;
+        }
         const r = gearAscent(data(), scenario, candidates, { keep, ...(beam !== undefined ? { beam } : {}), ...(repairs !== undefined ? { repairs } : {}), ...(passes !== undefined ? { passes } : {}), progress: (line) => process.stderr.write(line + "\n") });
         text = formatGear(data(), scenario, r);
         if (values.out) {

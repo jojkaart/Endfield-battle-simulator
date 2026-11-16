@@ -453,7 +453,7 @@ export function landHit(ctx: TimelineContext, state: TimelineState, hit: Pending
   if (kitHit.sp !== undefined && !kitHit.spBeforeDamage) grantSp(spEvents);
   if (kitHit.energy && !late) {
     const amount = resolveValue(ctx.data, build, panel, hit.skillId, kitHit.energy, at(consumed));
-    st = gainEnergy(ctx, st, hit.operator, amount, hit.frame);
+    st = gainEnergy(ctx, st, hit.operator, amount, hit.frame, { source: "hits" });
   }
   st = recordStatus(ctx, st, statusEvents, enemyAtDamage, before.enemy, beforeTriggers);
   if (lateEvents.length) st = recordStatus(ctx, st, lateEvents, st.enemy, undefined, beforeLateTriggers);

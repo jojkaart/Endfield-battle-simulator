@@ -201,7 +201,7 @@ function runScheduled(ctx: TimelineContext, st: TimelineState, x: Scheduled): Ti
     case "energy": {
       const caster = x.cast.operator;
       const holds = !x.if || decide(x.if, evalContext(ctx.data, ctx.builds.get(caster) as Build, panelAt(ctx, caster, x.frame), "", situationAt(ctx, caster, st, x.frame)));
-      return holds ? gainEnergy(ctx, st, x.operator, x.amount, x.frame) : st;
+      return holds ? gainEnergy(ctx, st, x.operator, x.amount, x.frame, { source: "sp" }) : st;
     }
     case "enemyAction":
       return enemyAct(ctx, st, x);

@@ -260,11 +260,11 @@ export function runActions(ctx: TimelineContext, state: TimelineState, t: KitTri
         break;
       case "energy": {
         const v = evaluate(a.value, ec());
-        st = gainEnergy(ctx, st, owner, a.percentOfMax ? v * maxEnergy(ctx, owner) : v, frame, a);
+        st = gainEnergy(ctx, st, owner, a.percentOfMax ? v * maxEnergy(ctx, owner) : v, frame, { ...(a.ignoreEfficiency ? { ignoreEfficiency: true } : {}), ...(a.ignoreBlock ? { ignoreBlock: true } : {}), source: `kit:${t.id}` });
         break;
       }
       case "clearEnergy":
-        st = { ...st, energy: { ...st.energy, [owner]: 0 } };
+        st = { ...st, energy: { ...st.energy, [owner]: 0 }, energySpent: { ...st.energySpent, [owner]: (st.energySpent[owner] ?? 0) + (st.energy[owner] ?? 0) } };
         break;
       case "sp":
         {

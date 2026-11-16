@@ -285,7 +285,7 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
   if (natural > 0) {
     // A cast beside the current action plays no timeline (the game runs its switchToBuffConfig buff instead, which
     // creates buff_common_obtain_ultimate_sp as it starts: Last Rite's _inattack), so its team energy comes at the cast.
-    if (skill.teamEnergy === undefined || beside) for (const b of ctx.scenario.team) next = gainEnergy(ctx, next, b.operator, natural * ENERGY.perNaturalSp, frame);
+    if (skill.teamEnergy === undefined || beside) for (const b of ctx.scenario.team) next = gainEnergy(ctx, next, b.operator, natural * ENERGY.perNaturalSp, frame, { source: "sp" });
     else
       for (const part of skill.teamEnergy) {
         const at = frame + scaled(part.frame);
@@ -293,7 +293,10 @@ export function castSkill(ctx: TimelineContext, advanced: TimelineState, operato
         next = schedule(next, grants);
       }
   }
-  if (costs.energyCost > 0) next = { ...next, energy: { ...next.energy, [operator]: Math.max(0, (next.energy[operator] ?? 0) - costs.energyCost) } };
+  if (costs.energyCost > 0) {
+    const had = next.energy[operator] ?? 0;
+    next = { ...next, energy: { ...next.energy, [operator]: Math.max(0, had - costs.energyCost) }, energySpent: { ...next.energySpent, [operator]: (next.energySpent[operator] ?? 0) + Math.min(had, costs.energyCost) } };
+  }
   if (skill.energyBlockSeconds) next = { ...next, energyBlockedUntil: { ...next.energyBlockedUntil, [operator]: frame + Math.round(skill.energyBlockSeconds * FPS) } };
   if (!followUp && windowOf !== undefined && next.comboWindow[windowOf]) {
     const { [windowOf]: _used, ...rest } = next.comboWindow;

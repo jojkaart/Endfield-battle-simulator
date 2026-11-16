@@ -133,6 +133,8 @@ export interface EnergyGrantOptions {
   readonly ignoreEfficiency?: boolean;
   /** useUspRecoverTag: given even while the operator's energy gain is blocked. */
   readonly ignoreBlock?: boolean;
+  /** Where it comes from, for the statistic TimelineState.energyGained (default `kit`). */
+  readonly source?: string;
 }
 
 export function gainEnergy(ctx: TimelineContext, st: TimelineState, operator: string, amount: number, frame: number, opts: EnergyGrantOptions = {}): TimelineState {
@@ -143,7 +145,9 @@ export function gainEnergy(ctx: TimelineContext, st: TimelineState, operator: st
   const now = st.energy[operator] ?? 0;
   const cap = maxEnergy(ctx, operator);
   const lost = now + amount * efficiency - cap;
-  const next = { ...st, energy: { ...st.energy, [operator]: Math.min(cap, now + amount * efficiency) } };
+  const source = opts.source ?? "kit";
+  const own = st.energyGained[operator] ?? {};
+  const next = { ...st, energy: { ...st.energy, [operator]: Math.min(cap, now + amount * efficiency) }, energyGained: { ...st.energyGained, [operator]: { ...own, [source]: (own[source] ?? 0) + amount * efficiency } } };
   return lost > 0 ? { ...next, energyOverflow: { ...st.energyOverflow, [operator]: (st.energyOverflow[operator] ?? 0) + lost } } : next;
 }
 
@@ -152,7 +156,8 @@ export function gainSp(st: TimelineState, amount: number, frame: number, kind: S
   if (amount <= 0) return st;
   const before = spAt(st, frame);
   const after = Math.min(SP.max, before + amount);
-  return { ...st, sp: after, spReturned: Math.min(after, st.spReturned + (kind === "returned" ? after - before : 0)), frame: Math.max(st.frame, frame) };
+  const lost = before + amount - after;
+  return { ...st, ...(lost > 0 ? { spOverflow: st.spOverflow + lost } : {}), sp: after, spReturned: Math.min(after, st.spReturned + (kind === "returned" ? after - before : 0)), frame: Math.max(st.frame, frame) };
 }
 
 /**

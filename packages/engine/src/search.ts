@@ -770,6 +770,9 @@ const STATE_KEY: KeyRules<TimelineState> = {
   // Read as "> frame" (resources.ts gainEnergy) and set anew (casting.ts).
   energyBlockedUntil: (e, env) => entries(e, (f) => f > env.frame),
   energyOverflow: "a statistic (energy lost to a full bar): nothing in the fight reads it",
+  energyGained: "a statistic (energy gained by source, for the rules' diagnosis): nothing in the fight reads it",
+  energySpent: "a statistic (energy taken from the bar): nothing in the fight reads it",
+  spOverflow: "a statistic (SP granted past the cap): nothing in the fight reads it",
   // Read through windowOpen (`until < frame`: closed) or with `until >= frame`, but a follow-up combo's count (endedWindowsRead).
   comboWindow: (w, env) => entries(w, (x, k) => x.until >= env.frame || env.scenario.endedWindowsRead.has(k)),
   // Read by any later `element: "window"` application, however long ago it was set.

@@ -10,6 +10,7 @@ import type { GameData } from "./model.ts";
 import type { ArtsElement } from "./reactions.ts";
 import type { PhysicalStatus, ReactionStatus } from "./status.ts";
 import { FPS } from "./units.ts";
+import { hitsMoments, NO_DAMAGE, scaleMoments, type DamageMoments } from "./moments.ts";
 import { diveOf, nextBasics } from "./search.ts";
 import { activeAt } from "./buffs.ts";
 import { advance, apply, createContext, earliestStart, exclusiveUntil, init, memoised, startsNow, type RotationAction, type TimelineContext, type TimelineScenario, type TimelineState } from "./timeline.ts";
@@ -291,8 +292,19 @@ export interface PolicyOptions {
   readonly reactionSeconds?: number;
   /** Each delay is drawn uniformly within ± this fraction of it (default 0.5). */
   readonly jitter?: number;
-  /** Seed of the delays' draws (default the scenario's seed, else 1). */
+  /**
+   * Seed of the delays' draws (default the scenario's seed, else 1). Common random numbers: the delay of a rule's k-th
+   * cue onset depends only on (seed, the rule, k), the rule known by its cue and presses (policyDelay), so two runs that
+   * differ a little (gear, another rule) draw the same delays wherever their cues' onsets line up.
+   */
   readonly seed?: number;
+  /**
+   * Stratified draws over a set of seeds (Latin hypercube per rule onset): with `samples` n, seeds 1…n each draw a
+   * delay from their own n-th of the delay's range, the n-ths shuffled per (rule, onset) by `base`. Off by default.
+   */
+  readonly stratify?: { readonly samples: number; readonly base?: number };
+  /** Watches the run frame by frame (the rules' diagnosis: policydiag.ts); never changes it. */
+  readonly observer?: PolicyObserver;
   /** A press of the opener or of a rule's sequence that can't start within this many seconds is given up (default 6). */
   readonly waitSeconds?: number;
   /** Judge the basic attack's options at every frame instead of from their earliest start (a check of that shortcut; slower). */
@@ -322,18 +334,85 @@ export interface PolicyRun {
   /** Everything pressed, as a rotation with absolute frames: `simulate` replays it to the same hits. */
   readonly rotation: readonly RotationAction[];
   readonly durationFrames: number;
+  /**
+   * Sustained DPS as a distribution over what's random in this run and changes nothing later (each hit's crit:
+   * moments.ts hitsMoments of the hits after the opener, over the seconds): its mean is `sustainedDps`. The spread from
+   * the reaction delays is across runs (policyDistribution).
+   */
+  readonly sustainedMoments: DamageMoments;
 }
 
-/** A small seeded generator (mulberry32) for the reaction delays: the driver's own stream, separate from the battle's. */
-function delayStream(seed: number): () => number {
-  let a = seed >>> 0;
-  return () => {
-    a = (a + 0x6d2b79f5) >>> 0;
-    let t = a;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
+/** What an observer sees at the end of each frame (after that frame's presses). */
+export interface PolicyFrameView {
+  readonly ctx: TimelineContext;
+  readonly st: TimelineState;
+  readonly frame: number;
+  readonly list: RuleList;
+  /** Whether a cue holds now (a Final Strikes count as reached: the observer has no rule to count since). */
+  readonly cueHolds: (cue: PolicyCue) => boolean;
+  /** Rule i's cue: `off` (doesn't hold), `waiting` (holds, within its reaction delay), `seen` (holds, delay over). */
+  readonly ruleState: (i: number) => "off" | "waiting" | "seen";
+  /** A press of the opener or of a fired rule's sequence is still waiting to start. */
+  readonly queued: boolean;
+}
+
+export interface PolicyObserver {
+  readonly frame: (view: PolicyFrameView) => void;
+}
+
+/** mulberry32's output function on one 32-bit state: a uniform value in [0, 1). */
+function mix32(a: number): number {
+  let t = (a + 0x6d2b79f5) >>> 0;
+  t = Math.imul(t ^ (t >>> 15), t | 1);
+  t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+
+/** FNV-1a of a string (a rule's identity for its delays). */
+function hashText(text: string): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 0x01000193) >>> 0;
+  return h;
+}
+
+/** A uniform value in [0, 1) that depends only on its integer parts (each folded in turn). */
+function keyedUniform(...parts: readonly number[]): number {
+  let h = 0x9e3779b9;
+  for (const p of parts) {
+    h = (Math.imul(h ^ (p >>> 0), 0x85ebca6b) + 0x27d4eb2f) >>> 0;
+    h = Math.floor(mix32(h) * 4294967296) >>> 0;
+  }
+  return mix32(h);
+}
+
+/** The identity of each rule for its delays: its cue and presses, and among identical rules its place among them. */
+export function ruleDelayKeys(list: RuleList): number[] {
+  const seen = new Map<string, number>();
+  return list.rules.map((r) => {
+    const text = JSON.stringify([r.when, stepsOf(r)]);
+    const n = seen.get(text) ?? 0;
+    seen.set(text, n + 1);
+    return hashText(`${text}#${n}`);
+  });
+}
+
+/**
+ * The uniform draw (0–1) behind the delay of a rule's k-th cue onset (k from 0): common random numbers, a function of
+ * (seed, the rule's key, k) only. Stratified (PolicyOptions.stratify, n samples, seed s in 1…n): stratum π(s − 1) of n,
+ * π a shuffle of 0…n − 1 drawn from (base, key, k), plus a uniform offset within it.
+ */
+export function policyDelay(seed: number, key: number, k: number, stratify?: PolicyOptions["stratify"]): number {
+  if (!stratify) return keyedUniform(seed, key, k);
+  const n = stratify.samples;
+  const index = (((seed - 1) % n) + n) % n;
+  const base = stratify.base ?? 0;
+  // Fisher–Yates on 0…n − 1 with draws keyed by (base, key, k, step): the same shuffle for every seed of the set.
+  const perm = Array.from({ length: n }, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(keyedUniform(0x5eed, base, key, k, i) * (i + 1));
+    [perm[i], perm[j]] = [perm[j] as number, perm[i] as number];
+  }
+  return ((perm[index] as number) + keyedUniform(0x0ff5e7, base, key, k, index)) / n;
 }
 
 /** The skills a button of an operator can cast (the button casts whichever is available then; follow-ups never). */
@@ -446,10 +525,18 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
   const jitter = options.jitter ?? POLICY_JITTER;
   const wait = Math.round((options.waitSeconds ?? POLICY_WAIT_SECONDS) * FPS);
   if (!(reaction >= 0) || !(jitter >= 0 && jitter <= 1) || !(wait > 0)) throw new EngineError("reaction delay ≥ 0, jitter 0–1, wait > 0");
-  const random = delayStream(options.seed ?? scenario.options.seed ?? 1);
-  const drawDelay = () => (reaction === 0 ? 0 : Math.max(0, Math.round(reaction * (1 + jitter * (2 * random() - 1)))));
+  const seed = options.seed ?? scenario.options.seed ?? 1;
+  if (options.stratify && !(Number.isInteger(options.stratify.samples) && options.stratify.samples >= 1)) throw new EngineError("stratify.samples must be a whole number ≥ 1");
+  const delayKeys = ruleDelayKeys(list);
+  const onsets = list.rules.map(() => 0);
+  const drawDelay = (i: number) => {
+    const k = onsets[i] as number;
+    onsets[i] = k + 1;
+    return reaction === 0 ? 0 : Math.max(0, Math.round(reaction * (1 + jitter * (2 * policyDelay(seed, delayKeys[i] as number, k, options.stratify) - 1))));
+  };
   const end = scenario.durationFrames;
   const exact = options.judgeEveryFrame === true;
+  const observer = options.observer;
 
   let st = init(ctx);
   const controlled = st.controlled;
@@ -553,7 +640,7 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
       if (cueHolds(env, (list.rules[i] as PolicyRule).when)) {
         if (onset[i] === null) {
           onset[i] = frame;
-          readyAt[i] = frame + drawDelay();
+          readyAt[i] = frame + drawDelay(i);
         }
       } else onset[i] = null;
     }
@@ -579,7 +666,7 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
             record(first as PolicyStep, frame);
             fired[i] = (fired[i] as number) + 1;
             onset[i] = frame;
-            readyAt[i] = frame + 1 + drawDelay();
+            readyAt[i] = frame + 1 + drawDelay(i);
             strikesSince[i] = 0;
             queue = rest.map((step) => ({ step, rule: i, since: frame }));
           }
@@ -588,6 +675,18 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
       action ??= list.filler === "dive" ? startable({ operator: controlled, cast: "dive" }) : basicAttack(frame);
       if (!action) break;
       press(action, frame);
+    }
+    if (observer) {
+      const f = frame;
+      observer.frame({
+        ctx,
+        st,
+        frame: f,
+        list,
+        cueHolds: (cue) => cueHolds({ ctx, st, frame: f, buttons, strikes: Infinity, lastPress }, cue),
+        ruleState: (i) => (onset[i] === null ? "off" : f < (readyAt[i] as number) ? "waiting" : "seen"),
+        queued: queue.length > 0,
+      });
     }
   }
 
@@ -605,5 +704,7 @@ export function playRules(data: GameData, scenario: Omit<TimelineScenario, "rota
     if (h.frame <= 60 * FPS) first60 += h.exact;
     if (h.frame > from) after += h.exact;
   }
-  return { total, perOperator, byMinute, first60, openerEnd: from, sustainedDps: end > from ? after / ((end - from) / FPS) : 0, fired, givenUp, rotation, durationFrames: end };
+  const seconds = (end - from) / FPS;
+  const sustainedMoments = end > from ? scaleMoments(hitsMoments(st.hits.filter((h) => h.frame > from)), 1 / seconds) : NO_DAMAGE;
+  return { total, perOperator, byMinute, first60, openerEnd: from, sustainedDps: end > from ? after / seconds : 0, fired, givenUp, rotation, durationFrames: end, sustainedMoments };
 }

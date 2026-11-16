@@ -25,3 +25,4 @@ export * from "./setupvalue.ts";
 export * from "./skeleton.ts";
 export * from "./policy.ts";
 export * from "./policysearch.ts";
+export * from "./policydiag.ts";
