@@ -5,7 +5,7 @@
 // operator's gear swapped (a step that can't be played is moved later or dropped: a repaired replay; with too many such
 // steps, a narrow search), and a coordinate ascent takes each operator's best with the others fixed until nothing changes.
 
-import { apply, computeStats, createContext, EngineError, init, searchBeams, simulate, type Build, type GameData, type TimelineScenario } from "@efsim/engine";
+import { apply, attrLabel, computeStats, createContext, EngineError, init, searchBeams, simulate, type Build, type GameData, type TimelineScenario } from "@efsim/engine";
 import { modePair } from "./edge.ts";
 import { num, table } from "./format.ts";
 import { readLogFixture } from "./logs.ts";
@@ -405,7 +405,7 @@ export function formatGear(data: GameData, scenario: TimelineScenario, r: GearRe
     } catch {
       continue;
     }
-    const attr = (n: number) => (n === 41 ? "Intellect" : n === 42 ? "Will" : `attribute ${n}`);
+    const attr = attrLabel;
     lines.push("", `${name(op)} (kept as in the scenario; ${attr(pair.a)} / ${attr(pair.b)} with each candidate, full artifice):`);
     lines.push(table(["loadout", "sources", attr(pair.a), attr(pair.b), "mode"], rows.map((x) => [
       describeGear(data, x.candidate.gear),
