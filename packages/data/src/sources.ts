@@ -1,8 +1,8 @@
 // Where the game tables live: the git submodules under data/.
 
 import { readFileSync, existsSync, statSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { join, resolve } from "node:path";
+import { mainCheckoutOf, REPO_ROOT } from "./checkout.ts";
 import { parseJsonExact } from "./json.ts";
 
 export type SourceName = "rmxlinux" | "555me";
@@ -17,11 +17,28 @@ const SOURCE_DIRS: Record<SourceName, { repo: string; tables: string }> = {
   "555me": { repo: "555me-beyondGameData", tables: "tableCfg" },
 };
 
-const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
+const hasPrimaryTables = (dir: string) => existsSync(join(dir, SOURCE_DIRS[PRIMARY].repo, SOURCE_DIRS[PRIMARY].tables));
 
-/** The data/ directory. Override with EFSIM_DATA_DIR. */
+let defaultDataDir: string | undefined;
+
+/**
+ * The data/ directory: this checkout's or, in a git worktree whose submodules aren't checked out, the main
+ * checkout's (checkout.ts). Override with EFSIM_DATA_DIR.
+ */
 export function dataDir(): string {
-  return process.env["EFSIM_DATA_DIR"] ?? join(REPO_ROOT, "data");
+  const env = process.env["EFSIM_DATA_DIR"];
+  if (env) return env;
+  if (defaultDataDir === undefined) {
+    const own = join(REPO_ROOT, "data");
+    const main = hasPrimaryTables(own) ? null : mainCheckoutOf(REPO_ROOT);
+    defaultDataDir = main !== null && hasPrimaryTables(join(main, "data")) ? join(main, "data") : own;
+  }
+  return defaultDataDir;
+}
+
+/** The folder of a source's tables (TableCfg or tableCfg). */
+export function tablesDir(source: SourceName): string {
+  return join(sourceDir(source), SOURCE_DIRS[source].tables);
 }
 
 export function sourceDir(source: SourceName): string {

@@ -110,6 +110,17 @@ producing the same `DataBundle` JSON for it.
 - **Source of truth:** the raw tables in the `data/` submodules, read at
   build time. The `DataBundle` is generated, never committed (we don't
   republish data).
+- **Compiled-data cache:** building the GameData takes ~10 s, so
+  `loadGameData` keeps a v8-serialised copy in the main checkout's
+  `node_modules/.cache/efsim` (git-ignored, shared by its worktrees; packages/data
+  `cache.ts`). Its key hashes everything the build reads: the sources' commits
+  and table file stats, the kits, schemas, `tables.json`, the data package's
+  sources and the engine modules they run (traced from their imports), the V8
+  version and a format number. A hit is the build's exact result (a test
+  compares it with a fresh build); any read error rebuilds.
+  `EFSIM_NO_CACHE=1` turns it off, `efsim cache clear` empties it.
+- **Worktrees:** in a git worktree whose `data/` submodules are empty, the
+  loader reads the main checkout's `data/` (`EFSIM_DATA_DIR` overrides).
 - **Adapters per source:** `rmxlinux` and `555me` differ in format (inline vs
   table i18n, numbers as strings in 555me). Each has an adapter producing the
   same normalised records, which makes the cross-check a plain comparison.

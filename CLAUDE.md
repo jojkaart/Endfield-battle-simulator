@@ -51,8 +51,9 @@ After a batch's kits are in, repeat the pattern review in
 ## Worktrees and sub-agents
 
 In a git worktree (sub-agents' `.claude/worktrees/…`), run
-`source scripts/setup-worktree.sh` first: otherwise the CLI and tests use
-the main checkout's packages and kits, and find no game data. Before
+`node scripts/setup-worktree.ts` once (no `source`, no `EFSIM_DATA_DIR`): it
+links the worktree's own packages, which the CLI refuses to run without.
+Vitest does it itself; the game data is found in the main checkout. Before
 merging a branch into `main`, run `scripts/premerge.sh`.
 
 ## Data and reference code

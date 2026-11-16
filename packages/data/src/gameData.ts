@@ -1,5 +1,6 @@
 // Builds the engine's GameData from the primary source (rmxlinux), with
-// English names. Loading takes a few seconds, so the result is cached.
+// English names. Building takes ~10 s, so the result is cached in the process
+// and on disk (cache.ts).
 
 import type {
   AttrModifier,
@@ -15,6 +16,7 @@ import type {
   WeaponData,
 } from "@efsim/engine";
 import { ELEMENTS } from "@efsim/engine";
+import { loadCachedGameData } from "./cache.ts";
 import { DataError } from "./errors.ts";
 import { at, get, obj, type Ctx } from "./fields.ts";
 import { loadKits } from "./kits.ts";
@@ -284,7 +286,13 @@ function build(): GameData {
 
 let cached: GameData | undefined;
 
+/** The GameData, once per process; from the on-disk cache when its inputs haven't changed (cache.ts). */
 export function loadGameData(): GameData {
-  cached ??= build();
+  cached ??= loadCachedGameData(build);
   return cached;
+}
+
+/** A fresh build, bypassing both caches (the cache's own test compares the two). */
+export function buildGameData(): GameData {
+  return build();
 }

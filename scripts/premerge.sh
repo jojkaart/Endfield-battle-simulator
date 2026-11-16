@@ -3,8 +3,8 @@
 # check` doesn't cover, then the check itself.
 #   - the tree is clean (uncommitted work wouldn't be merged, and the check
 #     would run on it);
-#   - in a worktree, its own packages are linked (scripts/setup-worktree.sh),
-#     or the check runs the main checkout's code;
+#   - in a worktree, its own packages are linked (scripts/setup-worktree.ts,
+#     run here), or the check runs the main checkout's code;
 #   - a branch that changes code, kits or examples also adds a journal entry
 #     (docs/journal.md: CLAUDE.md "Journal and roadmap").
 # Usage: scripts/premerge.sh [base]   (base: main by default)
@@ -19,9 +19,10 @@ if [ -n "$(git status --porcelain)" ]; then
   exit 1
 fi
 
+node scripts/setup-worktree.ts
 main="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
 if [ "$root" != "$main" ] && [ "$(readlink -f node_modules/@efsim/engine 2>/dev/null)" != "$root/packages/engine" ]; then
-  echo "premerge: a worktree without its own packages linked; run: source scripts/setup-worktree.sh" >&2
+  echo "premerge: a worktree without its own packages linked, even after scripts/setup-worktree.ts" >&2
   exit 1
 fi
 
