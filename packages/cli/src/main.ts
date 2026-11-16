@@ -6,7 +6,7 @@ import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { cacheDir, cacheDisabled, clearGameDataCache, gameDataCacheKey, listGameDataCache, loadGameData } from "@efsim/data";
+import { cacheDir, cacheDisabled, clearGameDataCache, gameDataCacheKey, listGameDataCache, loadGameData, withKitFiles } from "@efsim/data";
 import { FPS, type CritMode, type TimelineScenario } from "@efsim/engine";
 import { calc, compare, find, readBuild, template, type CalcOptions } from "./commands.ts";
 import { kitDraft } from "./kitdraft.ts";
@@ -41,6 +41,7 @@ const USAGE = `Usage:
   efsim simulate <scenario.json>          Run a team rotation on the timeline (--verbose: every hit); with
                                           expected crits also the total's distribution (mean, standard
                                           deviation, 5–95%, bounds)
+                [--duration s]            Fight length instead of the scenario's (also for search)
                 [--seed n]                Seed of the battle's rolls (scenario crit "rolled")
                 [--battles k]             Seeded battles for the distribution when random outcomes change
                                           what follows (crit-triggered effects, dodges, chances; default 8)
@@ -200,6 +201,10 @@ const USAGE = `Usage:
   efsim cache [clear]                     The compiled game-data cache: where it is, its entries, whether the
                                           current inputs have one; clear removes them (EFSIM_NO_CACHE=1: off)
 
+Any command reading the game data:
+  --kit <file>        An operator kit file (as in packages/data/kits/operators/, any name) in place of that
+                      operator's own, for this run (repeatable): what-if variants without editing the real kit
+
 Options for calc and compare:
   --enemy <id>        Target (default eny_0051_rodin, Rhodagn)
   --level <n>         Enemy level (default 90)
@@ -295,6 +300,7 @@ async function main(argv: string[]): Promise<number> {
       rules: { type: "string" },
       generated: { type: "string" },
       sets: { type: "string" },
+      kit: { type: "string", multiple: true, default: [] },
       with: { type: "string", multiple: true, default: [] },
       kind: { type: "string" },
       buffs: { type: "string" },
@@ -344,8 +350,18 @@ async function main(argv: string[]): Promise<number> {
     };
   };
   // Loaded on first use, after the arguments and input files are checked (a mistake is reported without the load's wait).
+  // --kit: what-if kit files in place of the operators' own (withKitFiles). Worker threads load the data themselves,
+  // so the commands that use them don't take it yet.
+  if (values.kit.length && (command === "diagnose" || values.guided || (command === "gear" && values.rules))) throw new Error("--kit isn't passed to worker threads yet: it works with simulate, search, rules (not --guided), gear (not --rules), payoffs and calc");
   let loaded: ReturnType<typeof loadGameData> | undefined;
-  const data = () => (loaded ??= loadGameData());
+  const data = () => (loaded ??= withKitFiles(loadGameData(), values.kit));
+  /** The scenario with --duration (simulate, search): the fight's length in seconds. */
+  const withDuration = (scenario: TimelineScenario): TimelineScenario => {
+    if (values.duration === undefined) return scenario;
+    const s = Number(values.duration);
+    if (!(s > 0)) throw new Error("--duration must be a number of seconds > 0");
+    return { ...scenario, durationFrames: Math.round(s * FPS) };
+  };
   let text: string;
   switch (command) {
     case "find":
@@ -450,7 +466,7 @@ async function main(argv: string[]): Promise<number> {
     case "simulate":
       need(1);
       {
-        const seeded = withBattleOptions(readScenario(args[0] as string));
+        const seeded = withDuration(withBattleOptions(readScenario(args[0] as string)));
         const runs = values.runs === undefined ? undefined : Number(values.runs);
         if (runs !== undefined && !(Number.isInteger(runs) && runs >= 1)) throw new Error(`--runs must be a whole number ≥ 1`);
         const battles = values.battles === undefined ? undefined : Number(values.battles);
@@ -469,7 +485,7 @@ async function main(argv: string[]): Promise<number> {
         if (runs !== undefined && !(Number.isInteger(runs) && runs >= 0)) throw new Error(`--runs must be a whole number ≥ 0`);
         const beam = Number(values.beam);
         if (!(Number.isInteger(beam) && beam >= 1)) throw new Error(`--beam must be a whole number ≥ 1`);
-        const scenario = withBattleOptions(readScenario(args[0] as string));
+        const scenario = withDuration(withBattleOptions(readScenario(args[0] as string)));
         if (values.loop) {
           const loops = values.loops === undefined ? undefined : Number(values.loops);
           if (loops !== undefined && !(Number.isInteger(loops) && loops >= 1)) throw new Error(`--loops must be a whole number ≥ 1`);
