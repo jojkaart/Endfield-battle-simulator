@@ -46,6 +46,18 @@ export function refuseHoldout(id: string, root: string = ROOT): void {
   }
 }
 
+/** Throws when a fixture path is in HOLDOUT_DIR or names a hold-out log (refuseHoldout). */
+export function refuseHoldoutFile(file: string, root: string = ROOT): void {
+  if (resolve(file).startsWith(resolve(root, HOLDOUT_DIR) + "/")) throw new Error(`${file}: ${HOLDOUT_DIR} holds the hold-out logs: they're only measured in aggregate, never opened`);
+  refuseHoldout(basename(file).replace(/\.json$/, ""), root);
+}
+
+/** A development log fixture (readLogFixture), refusing a hold-out (the CLI's `zmdlogs check` and the like). */
+export function readDevFixture(file: string): LogFixture {
+  refuseHoldoutFile(file);
+  return readLogFixture(file);
+}
+
 /**
  * Every development log fixture under `dirs` (zmdlogs-*.json, one level deep), as absolute paths, sorted. Never a
  * hold-out: HOLDOUT_DIR is refused, and a file whose id the split lists as a hold-out is left out wherever it is.

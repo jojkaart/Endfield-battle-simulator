@@ -14,7 +14,7 @@ import { formatRuns, formatSimulation, loopCommand, readScenario, searchCommand 
 import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, simulateLog } from "./logcheck.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-import { importBattle, logFixtureFiles, readLogFixture, readLogSplit, refreshFixture } from "./logs.ts";
+import { importBattle, LOG_DIRS, logFixtureFiles, readDevFixture, readLogFixture, readLogSplit, refreshFixture, refuseHoldoutFile } from "./logs.ts";
 import { checkReactions, formatReactionCheck } from "./reactioncheck.ts";
 import { formatCensus, kitCensus } from "./census.ts";
 import { formatTrim, kitTrim } from "./kittrim.ts";
@@ -25,6 +25,7 @@ import { formatGear, gearAscent, gearCandidates, type GearCandidatesFile } from 
 import { readRuleList, rulesCommand } from "./rules.ts";
 import { formatGuided, guidedSearch, writeGuided } from "./guided.ts";
 import { formatLogList, logDirs } from "./logtools.ts";
+import { exportHits, exportHitsParallel, formatRecord, type HitRecord } from "./hitexport.ts";
 import { diagnose, formatDiagnosis } from "./diagnose.ts";
 import { formatRuleGear, gearOnRules } from "./gearrules.ts";
 
@@ -147,6 +148,14 @@ const USAGE = `Usage:
                                           enemy, hits, casts, length; the safe start of any scan over the logs
                 [--with <operator>]       Only logs whose team has it (id or part of the name; repeatable: all of them)
                 [--dir <dir>] [--json]    Only verified, pending or multi (repeatable); everything as JSON
+  efsim zmdlogs hits [fixture…]           The log check's numbers per logged hit, one line each (default: every
+                                          verified and pending development log; never a hold-out): logged value,
+                                          verdict and class, the engine's primary reading and its error; with
+                                          --json a JSON line with its scale parts, zones, modifiers, the landing's
+                                          operator and, for kit hits, the enemy's statuses (applier, level,
+                                          Arts Intensity)
+                [--kind <k>] [--operator <op>]  Only this reaction kind ("skill": kit hits) / operator (repeatable)
+                [--json] [--workers n]    JSON Lines; fixtures on n worker threads (default 1)
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
                                           (fixtures/multi-target/ when it hit several enemies)
                 [--enemy-level n]         (default: the stage's, else inferred from total damage on a clear)
@@ -274,6 +283,7 @@ async function main(argv: string[]): Promise<number> {
       generated: { type: "string" },
       sets: { type: "string" },
       with: { type: "string", multiple: true, default: [] },
+      kind: { type: "string" },
       dir: { type: "string", multiple: true, default: [] },
       help: { type: "boolean", short: "h", default: false },
     },
@@ -345,6 +355,20 @@ async function main(argv: string[]): Promise<number> {
         text = formatLogList(data(), { withOperators: values.with, ...(dirs ? { dirs } : {}), json: values.json });
         break;
       }
+      if (sub === "hits") {
+        const named = args.slice(1);
+        for (const f of named) refuseHoldoutFile(f);
+        const files = named.length ? named : logFixtureFiles(ROOT, [LOG_DIRS.verified, LOG_DIRS.pending]);
+        const workers = values.workers === undefined ? 1 : Number(values.workers);
+        if (!(Number.isInteger(workers) && workers >= 1)) throw new Error("--workers must be a whole number ≥ 1");
+        const lines: string[] = [];
+        const filter = { ...(values.kind !== undefined ? { kind: values.kind } : {}), operators: values.operator, progress: (l: string) => process.stderr.write(l + "\n") };
+        const out = (r: HitRecord) => lines.push(formatRecord(r, values.json));
+        if (workers > 1) await exportHitsParallel(files, workers, out, filter);
+        else exportHits(data(), files, readLogFixture, out, filter);
+        text = lines.join("\n");
+        break;
+      }
       if (sub === "timing") {
         const start = performance.now();
         const sel = timingFixtures(args.slice(1));
@@ -356,7 +380,7 @@ async function main(argv: string[]): Promise<number> {
         break;
       }
       if ((sub === "scales" || sub === "find-scales") && arg && op) {
-        const fx = readLogFixture(arg);
+        const fx = readDevFixture(arg);
         if (sub === "scales") {
           const lines: string[] = [];
           for (const r of impliedScales(data(), fx, op)) {
@@ -381,10 +405,10 @@ async function main(argv: string[]): Promise<number> {
         const r = refreshFixture(arg, values.detail);
         text = `${arg}: ${r.casts} cast(s), ${r.poise} hit(s) with Stagger`;
       } else if (sub === "reactions") {
-        const fx = readLogFixture(arg);
+        const fx = readDevFixture(arg);
         text = formatReactionCheck(checkReactions(data(), fx));
       } else if (sub === "check") {
-        const fx = readLogFixture(arg);
+        const fx = readDevFixture(arg);
         if (values.simulate) {
           text = formatSimulatedLog(data(), fx, simulateLog(data(), fx));
           break;

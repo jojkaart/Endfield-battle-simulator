@@ -1,0 +1,176 @@
+// `efsim zmdlogs hits`: the log check's per-hit numbers as records, one per logged hit, for analyses across logs ("does
+// X trend with Y"): the logged value, the verdict, the engine's primary reading with its scale parts, zones and
+// modifier sources, the landing's operator, and for kit hits the enemy's statuses there (applier, level, Arts
+// Intensity: the landing's facts; a status event's own landing records none, so read the next kit hit's).
+// The same computations as `zmdlogs check` (logBuffReplay, engineHits, checkLog, readingBasis), not a copy of them.
+
+import { landingDamage, parseReactionEvent, readingDoesNotApply, roundDamage, type GameData, type Zones } from "@efsim/engine";
+import type { LogFixture } from "@efsim/data";
+import { engineCheck, readingBasis } from "./enginecheck.ts";
+import { placeHits } from "./logcasts.ts";
+import { checkLog, engineHits, hitPlace, logBuffReplay, verdictCount, type HitVerdict, type VerdictCount } from "./logcheck.ts";
+
+export interface HitRecord {
+  /** The fixture's path as given (or its id). */
+  readonly fixture: string;
+  readonly t: number;
+  readonly operator: string;
+  readonly event: string;
+  /** The reaction kind (reactions.ts parseReactionEvent), or "skill" for a kit hit. */
+  readonly kind: string;
+  readonly value: number;
+  readonly crit: boolean | null;
+  readonly verdict: HitVerdict["kind"];
+  /** The verdict's count class (plain, assumed, fallback, mismatch, …), as the snapshots count it. */
+  readonly class: VerdictCount;
+  /** The engine's primary reading, rounded (null without a landing or when no reading applies). */
+  readonly predicted: number | null;
+  /** logged / predicted − 1 (null without a prediction). */
+  readonly error: number | null;
+  /** Why the replay has no landing for the hit. */
+  readonly unknown?: string;
+  readonly landing?: {
+    readonly frame: number;
+    readonly operator: string;
+    readonly skillId: string;
+    readonly hitId: string;
+    /** The primary reading's unrounded damage, scale parts, zones and modifiers (source, zone, element, value). */
+    readonly exact: number;
+    readonly scaleParts: readonly { readonly key: string; readonly value: number }[];
+    readonly zones: Zones;
+    readonly modifiers: readonly { readonly source: string; readonly zone: string; readonly element?: string; readonly value: number; readonly kitBuff?: string }[];
+    /** A status event's reaction (kind, element, stacks). */
+    readonly reaction?: { readonly kind: string; readonly element: string; readonly stacks: number };
+    /** A kit hit's enemy statuses at the landing (before its own applications): applier, level, Arts Intensity. Status events record none. */
+    readonly enemy?: readonly { readonly status: string; readonly level: number; readonly operator: string; readonly artsIntensity: number; readonly appliedAt: number; readonly damageScale?: number }[];
+  };
+}
+
+/** Every logged hit of a fixture as a record (the multi-target fixtures aren't checked: single-target engine). */
+export function hitRecords(data: GameData, fx: LogFixture, fixture: string = fx.id): HitRecord[] {
+  const placement = placeHits(data, fx);
+  const replay = logBuffReplay(data, fx, placement);
+  const byHit = engineHits(data, fx, replay, placement);
+  const verdicts = new Map(checkLog(data, fx, { replay, engineHits: byHit }).map((v) => [v.hit, v]));
+  const c = engineCheck(data, fx, replay.replay);
+  return fx.hits.map((hit) => {
+    const v = verdicts.get(hit) as HitVerdict;
+    const base = {
+      fixture,
+      t: hit.t,
+      operator: hit.operator,
+      event: hit.event,
+      kind: parseReactionEvent(hit.event)?.kind ?? "skill",
+      value: hit.value,
+      crit: hit.crit,
+      verdict: v.kind,
+      class: verdictCount(v),
+    };
+    const e = byHit.get(hit);
+    const predicted = e?.primary ?? null;
+    const error = predicted ? hit.value / predicted - 1 : null;
+    const basis = readingBasis(c, hit, hitPlace(data, fx, placement, replay, hit));
+    if ("unknown" in basis.landing) return { ...base, predicted, error, unknown: basis.landing.unknown };
+    const { landing, primary } = basis as Exclude<typeof basis, { readonly landing: { readonly unknown: string } }>;
+    let d;
+    try {
+      d = landingDamage(data, c.target, primary.inputs, primary.options, primary.other);
+    } catch (err) {
+      if (!readingDoesNotApply(err)) throw err;
+      return { ...base, predicted, error, unknown: "no reading applies" };
+    }
+    const inputs = primary.inputs;
+    return {
+      ...base,
+      predicted: predicted ?? roundDamage(d.exact),
+      error: hit.value / (predicted ?? roundDamage(d.exact)) - 1,
+      landing: {
+        frame: landing.frame,
+        operator: inputs.operator,
+        skillId: d.skillId,
+        hitId: d.hitId,
+        exact: d.exact,
+        scaleParts: d.scaleParts,
+        zones: d.zones,
+        modifiers: d.modifiers.map((m) => ({ source: m.source, zone: m.zone, ...(m.element ? { element: m.element } : {}), value: m.value, ...(m.kitBuff ? { kitBuff: `${m.kitBuff.owner}:${m.kitBuff.id}` } : {}) })),
+        ...(inputs.kind === "status" ? { reaction: { kind: inputs.reaction.kind, element: inputs.reaction.element, stacks: inputs.reaction.stacks } } : {}),
+        ...(landing.facts
+          ? {
+              enemy: landing.facts.enemy.statuses.map((s) => ({
+                status: s.status,
+                level: s.level,
+                operator: s.operator,
+                artsIntensity: s.artsIntensity,
+                appliedAt: s.appliedAt,
+                ...(s.damageScale ? { damageScale: s.damageScale.value } : {}),
+              })),
+            }
+          : {}),
+      },
+    };
+  });
+}
+
+/** The records a filter keeps: by reaction kind ("skill" for kit hits) and by operator id. */
+export function filterRecords(records: readonly HitRecord[], opts: { readonly kind?: string; readonly operators?: readonly string[] }): HitRecord[] {
+  return records.filter((r) => (opts.kind === undefined || r.kind === opts.kind) && (!opts.operators?.length || opts.operators.includes(r.operator)));
+}
+
+/** One line per record: JSON Lines with `json`, else a readable table row. */
+export function formatRecord(r: HitRecord, json: boolean): string {
+  if (json) return JSON.stringify(r);
+  const err = r.error === null ? "-" : `${(100 * r.error).toFixed(1)}%`;
+  return `${r.fixture}  t=${r.t}  ${r.operator}  ${r.event}  ${r.class}  logged ${r.value}  predicted ${r.predicted ?? "-"}  ${err}${r.unknown ? `  (${r.unknown})` : ""}`;
+}
+
+/** The hits of a list of fixtures, read one at a time (readFixture), each record handed to `out` as it's made. */
+export function exportHits(data: GameData, files: readonly string[], readFixture: (file: string) => LogFixture, out: (r: HitRecord) => void, opts: { readonly kind?: string; readonly operators?: readonly string[]; readonly progress?: (line: string) => void } = {}): number {
+  let n = 0;
+  for (const f of files) {
+    opts.progress?.(`hits ${f}`);
+    for (const r of filterRecords(hitRecords(data, readFixture(f), f), opts)) {
+      out(r);
+      n++;
+    }
+  }
+  return n;
+}
+
+/**
+ * As exportHits, on `workers` worker threads (hitsworker.ts), each loading the game data once: a fixture's records
+ * arrive together, in the order fixtures finish.
+ */
+export async function exportHitsParallel(files: readonly string[], workers: number, out: (r: HitRecord) => void, opts: { readonly kind?: string; readonly operators?: readonly string[]; readonly progress?: (line: string) => void } = {}): Promise<number> {
+  const { Worker } = await import("node:worker_threads");
+  const queue = [...files];
+  let n = 0;
+  const one = () =>
+    new Promise<void>((resolveAll, reject) => {
+      const w = new Worker(new URL("./hitsworker.ts", import.meta.url));
+      const next = () => {
+        const file = queue.shift();
+        if (file === undefined) {
+          void w.terminate().then(() => resolveAll());
+          return;
+        }
+        opts.progress?.(`hits ${file}`);
+        w.postMessage({ file, ...(opts.kind !== undefined ? { kind: opts.kind } : {}), ...(opts.operators?.length ? { operators: [...opts.operators] } : {}) });
+      };
+      w.on("message", (m: { file: string; records?: HitRecord[]; error?: string }) => {
+        if (m.error !== undefined) {
+          void w.terminate();
+          reject(new Error(`${m.file}: ${m.error}`));
+          return;
+        }
+        for (const r of m.records ?? []) {
+          out(r);
+          n++;
+        }
+        next();
+      });
+      w.on("error", reject);
+      next();
+    });
+  await Promise.all(Array.from({ length: Math.max(1, Math.min(workers, files.length)) }, one));
+  return n;
+}
