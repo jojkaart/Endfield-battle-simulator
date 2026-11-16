@@ -1760,7 +1760,13 @@ checks the two give the same rotation on the three example lists (seeds
 frames. Speed (300 s, one thread, the same machine and load; the old
 driver against the new): the owner's team 1.59 → 0.92 s a run, Ink Melt
 1.85 → 1.54 s, Typhoeus's 1.90 → 1.64 s; replaying the rotation
-(`simulate`, the floor) takes 0.4–0.6 s. Most of the rest is the basic
+(`simulate`, the floor) takes 0.4–0.6 s. With an observer (the
+diagnosis, the guided search) every frame is still shown to it, so those
+runs gain less: 1.60 → 1.32, 2.40 → 1.66, 2.35 → 2.04 s (diagnosis) and
+1.49 → 1.33, 2.30 → 1.79, 2.29 → 2.37 s (guided analysis). `efsim rules
+--seeds 10` (the old one in-process): 30 / 43 / 38 s → 20 / 30 / 35 s on
+one worker, 11 / 15 / 16 s on three (it plays through the command's pool
+now). Most of the rest is the basic
 attack's earliest start after each press (earliestStart, which advances a
 copy of the state) and the presses themselves. The basic attack's options
 are judged from their earliest start after the last press (`judgeEveryFrame`
