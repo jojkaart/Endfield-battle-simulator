@@ -1,4 +1,4 @@
-// Pending log fixtures (fixtures/pending/): not verified yet (fixtures/pending/README.md says why), so their
+// Pending log fixtures (fixtures/pending/, and the hold-outs in fixtures/holdout/): not verified yet (fixtures/pending/README.md says why), so their
 // check only pins its current state: per operator, every verdict count equals the snapshot
 // (tests/snapshots/log-verdicts-pending.json, a regression baseline, not values with provenance: docs/design.md
 // principle 11). Any change, better or worse, is to be looked at and the snapshot updated with it
@@ -22,7 +22,8 @@ export const PENDING_SHARDS = 4;
 
 export function pendingSuite(index: number): void {
   const data = loadGameData();
-  const all = logFixtures("pending");
+  // The hold-out logs (fixtures/holdout/) are checked here too, but only ever counted in aggregate (their group).
+  const all = [...logFixtures("pending"), ...logFixtures("holdout")].sort();
   const files = shard(all, PENDING_SHARDS, index);
   const snapshot = new Snapshot<FixtureCounts>("log-verdicts-pending.json", true);
   const split = readSplit();

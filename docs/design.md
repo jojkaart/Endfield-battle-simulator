@@ -554,7 +554,7 @@ missing or starting late, casts up to 20 s before the window) is a
 Patterns are summed per buff and direction across logs (runs, hits,
 logs, offset median and spread, damage at stake = |logged − engine
 primary|) and ranked by damage at stake. Without fixtures it reads every
-development log of fixtures/pending/holdout.json; hold-out logs are
+development log of the split (fixtures/holdout/holdout.json); hold-out logs are
 never read, only counted as skipped. It takes ~4.5 s a log (27
 development logs in ~2 min). The hints it gives follow the accuracy
 plan's rule, "Fits need a mechanism": leads in docs/open-problems.md,
@@ -1551,8 +1551,8 @@ from loadouts players actually run:
 
 - **Candidates** per operator: the scenario's own loadout; the distinct
   loadouts (four piece IDs as logged) in the log fixtures (fixtures/,
-  pending/, multi-target/; hold-out logs are left out: they're only
-  measured), seen at least `--min-count` times (default 2), at most
+  pending/, multi-target/; hold-out logs live in fixtures/holdout/ and
+  are never read: they're only measured), seen at least `--min-count` times (default 2), at most
   `--top` (default 6), ordered by how many of the scenario's teammates
   the log also has (the whole team first), then by count; and loadouts
   from `--candidates file` (`{"candidates": [{operator, gear, source}]}`:

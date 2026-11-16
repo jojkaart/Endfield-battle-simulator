@@ -257,4 +257,6 @@ Second screened batch, 2026-11-09: `zmdlogs-1cd1657bc305`,
 `-63398339803e`, `-7bbc94d2da9f`, `-7be1ca9f455b`, `-9a8097fcf351`,
 `-db8711232de9`, `-e9896c8d02be`. The hold-out (6 of the 17, drawn
 before their checks were read) is in `holdout.json`: those are only
-measured, never debugged.
+measured, never debugged. Since 2026-11-16 the hold-out fixtures and
+`holdout.json` live in fixtures/holdout/, so this folder holds only
+development logs.

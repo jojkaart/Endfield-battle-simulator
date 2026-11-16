@@ -14,16 +14,17 @@ import { formatRuns, formatSimulation, loopCommand, readScenario, searchCommand 
 import { checkLog, engineHits, engineReport, findScales, formatLogCheck, formatSimulatedLog, impliedScales, logBuffReplay, simulateLog } from "./logcheck.ts";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
-import { importBattle, readLogFixture, refreshFixture } from "./logs.ts";
+import { importBattle, logFixtureFiles, readLogFixture, readLogSplit, refreshFixture } from "./logs.ts";
 import { checkReactions, formatReactionCheck } from "./reactioncheck.ts";
 import { formatCensus, kitCensus } from "./census.ts";
 import { formatTrim, kitTrim } from "./kittrim.ts";
 import { knifeEdge, type EdgePool } from "./edge.ts";
 import { fixtureTiming, formatTimingReport } from "./bufftiming.ts";
 import { formatPayoffs, runPayoffs } from "./payoffs.ts";
-import { formatGear, gearAscent, gearCandidates, logFixtureFiles, type GearCandidatesFile } from "./gear.ts";
+import { formatGear, gearAscent, gearCandidates, type GearCandidatesFile } from "./gear.ts";
 import { readRuleList, rulesCommand } from "./rules.ts";
 import { formatGuided, guidedSearch, writeGuided } from "./guided.ts";
+import { formatLogList, logDirs } from "./logtools.ts";
 import { diagnose, formatDiagnosis } from "./diagnose.ts";
 import { formatRuleGear, gearOnRules } from "./gearrules.ts";
 
@@ -142,6 +143,10 @@ const USAGE = `Usage:
                                           300 s, 0.3 s, 4, cores less one)
                 [--generated n] [--sets n]  With --rules: swaps per operator per pass (default 4), set builds kept after
                                           screening (default 2)
+  efsim zmdlogs list                      The development logs (never a hold-out): file, team with potentials,
+                                          enemy, hits, casts, length; the safe start of any scan over the logs
+                [--with <operator>]       Only logs whose team has it (id or part of the name; repeatable: all of them)
+                [--dir <dir>] [--json]    Only verified, pending or multi (repeatable); everything as JSON
   efsim zmdlogs import <battle id>        Turn a ZMDLogs battle into fixtures/zmdlogs-<id>.json
                                           (fixtures/multi-target/ when it hit several enemies)
                 [--enemy-level n]         (default: the stage's, else inferred from total damage on a clear)
@@ -184,12 +189,12 @@ Options for calc and compare:
 
 /**
  * The logs the buff timing report reads: those named (paths, or ids under fixtures/pending/), else every development
- * log of fixtures/pending/holdout.json. Hold-out logs are never read (only counted as skipped): they're measured, never
- * debugged (docs/accuracy-plan.md, "Choosing logs").
+ * log of the split (fixtures/holdout/holdout.json). Hold-out logs are never read (only counted as skipped): they're
+ * measured, never debugged (docs/accuracy-plan.md, "Choosing logs").
  */
 function timingFixtures(named: readonly string[]): { files: string[]; skipped: number } {
-  const split = JSON.parse(readFileSync(join(ROOT, "fixtures/pending/holdout.json"), "utf8")) as { development: string[]; holdout: string[] };
-  const holdout = new Set(split.holdout);
+  const split = readLogSplit(ROOT);
+  const holdout = split.holdout;
   const idOf = (f: string) => basename(f).replace(/\.json$/, "");
   const wanted = named.length ? named : split.development;
   const files = wanted.filter((f) => !holdout.has(idOf(f))).map((f) => (f.endsWith(".json") ? f : join(ROOT, "fixtures/pending", `${f.startsWith("zmdlogs-") ? f : `zmdlogs-${f}`}.json`)));
@@ -268,6 +273,8 @@ async function main(argv: string[]): Promise<number> {
       rules: { type: "string" },
       generated: { type: "string" },
       sets: { type: "string" },
+      with: { type: "string", multiple: true, default: [] },
+      dir: { type: "string", multiple: true, default: [] },
       help: { type: "boolean", short: "h", default: false },
     },
   });
@@ -332,6 +339,12 @@ async function main(argv: string[]): Promise<number> {
       break;
     case "zmdlogs": {
       const [sub, arg, op] = args;
+      if (sub === "list") {
+        if (args.length !== 1) throw new Error("zmdlogs list takes no argument (--with <operator>, --dir <dir>, --json)");
+        const dirs = logDirs(values.dir);
+        text = formatLogList(data(), { withOperators: values.with, ...(dirs ? { dirs } : {}), json: values.json });
+        break;
+      }
       if (sub === "timing") {
         const start = performance.now();
         const sel = timingFixtures(args.slice(1));

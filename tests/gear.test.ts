@@ -2,7 +2,8 @@
 import { describe, expect, it } from "vitest";
 import { loadGameData } from "@efsim/data";
 import { simulate, type Build } from "@efsim/engine";
-import { describeGear, formatGear, gearAscent, gearCandidates, logFixtureFiles, logLoadouts } from "../packages/cli/src/gear.ts";
+import { describeGear, formatGear, gearAscent, gearCandidates, logLoadouts } from "../packages/cli/src/gear.ts";
+import { logFixtureFiles } from "../packages/cli/src/logs.ts";
 import { readScenario } from "../packages/cli/src/simulate.ts";
 
 const data = loadGameData();
@@ -26,6 +27,7 @@ describe("loadouts from the logs", () => {
     const files = logFixtureFiles(root);
     expect(files.some((f) => f.endsWith("zmdlogs-890bcadb4933.json"))).toBe(false);
     expect(files.some((f) => f.endsWith("zmdlogs-9090afbacec9.json"))).toBe(true);
+    expect(() => logFixtureFiles(root, ["fixtures/holdout"])).toThrow(/never listed/);
   });
 });
 
